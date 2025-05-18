@@ -4,6 +4,7 @@ import { z } from "zod";
 export namespace Identifier {
   const prefixes = {
     session: "ses",
+    message: "msg",
   } as const;
 
   export function create(

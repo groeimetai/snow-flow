@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import { AppPath } from "./path";
 import { Log } from "../util/log";
 import { Context } from "../util/context";
+import { Config } from "./config";
 
 export namespace App {
   const log = Log.create({ service: "app" });
@@ -13,29 +14,40 @@ export namespace App {
   export async function create(input: { directory: string }) {
     log.info("creating");
 
+    const config = await Config.load(input.directory);
+
     const dataDir = AppPath.data(input.directory);
     await fs.mkdir(dataDir, { recursive: true });
     log.info("created", { path: dataDir });
 
     const services = new Map<any, any>();
 
-    return {
+    const result = {
+      get services() {
+        return services;
+      },
+      get config() {
+        return config;
+      },
       get root() {
         return input.directory;
       },
-      service<T extends () => any>(service: any, init: T) {
-        if (!services.has(service)) {
-          log.info("registering service", { name: service });
-          services.set(service, init());
-        }
-        return services.get(service) as ReturnType<T>;
-      },
+      service<T extends (app: any) => any>(service: any, init: T) {},
     };
+
+    return result;
   }
 
-  export function service<T extends () => any>(key: any, init: T) {
-    const app = ctx.use();
-    return app.service(key, init);
+  export function state<T extends (app: Info) => any>(key: any, init: T) {
+    return () => {
+      const app = ctx.use();
+      const services = app.services;
+      if (!services.has(key)) {
+        log.info("registering service", { name: key });
+        services.set(key, init(app));
+      }
+      return services.get(key) as ReturnType<T>;
+    };
   }
 
   export async function use() {

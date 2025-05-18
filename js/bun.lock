@@ -4,22 +4,25 @@
     "": {
       "name": "js",
       "dependencies": {
+        "@ai-sdk/anthropic": "^2.0.0-alpha.2",
         "@flystorage/file-storage": "^1.1.0",
         "@flystorage/local-fs": "^1.1.0",
         "ai": "^5.0.0-alpha.2",
-        "ulid": "^3.0.0",
-        "zod": "^3.24.4",
+        "ulid": "3.0.0",
+        "zod": "^3.25.0-beta.20250518T002810",
       },
       "devDependencies": {
         "@tsconfig/bun": "^1.0.7",
         "@types/bun": "latest",
       },
       "peerDependencies": {
-        "typescript": "^5",
+        "typescript": "5",
       },
     },
   },
   "packages": {
+    "@ai-sdk/anthropic": ["@ai-sdk/anthropic@2.0.0-alpha.2", "", { "dependencies": { "@ai-sdk/provider": "2.0.0-alpha.2", "@ai-sdk/provider-utils": "3.0.0-alpha.2" }, "peerDependencies": { "zod": "^3.24.0" } }, "sha512-ynD9RHZBAoLKUh8wqmS0EROSZQGSYZkVoF5Y0ZgMQfyVkeDXTl3PCXfc0jqwBTjNk6OOHza6BD5hCZDSjh0Sqg=="],
+
     "@ai-sdk/provider": ["@ai-sdk/provider@2.0.0-alpha.2", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-jgRpHhpKmXnUEp41xUZyqJ8VPF9gS6W7SP2iYRaM9jaq66edcg6gTYOJLqM+nSU2tXYfkzfoBGGRvtl9ijH/VQ=="],
 
     "@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@3.0.0-alpha.2", "", { "dependencies": { "@ai-sdk/provider": "2.0.0-alpha.2", "@standard-schema/spec": "^1.0.0", "zod-to-json-schema": "^3.24.1" }, "peerDependencies": { "zod": "^3.23.8" } }, "sha512-oTlF6UlVitSdVPQv0e+kAkZmbuunJAUYdVEh7ZRvoti+kY/T4vOT6p22X0xTaWgl0+MI1igAT+c83j7tCMuo2w=="],
@@ -78,7 +81,7 @@
 
     "undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
-    "zod": ["zod@3.24.4", "", {}, "sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg=="],
+    "zod": ["zod@3.25.0-beta.20250518T002810", "", {}, "sha512-3/aIqMbUXG9EjTelJkDcWd+izJP5MxFgQEMSYI8n41pwYhRDYYxy2dnbkgfNcnLbFZ9uByZn9XXqHTh05QHqSQ=="],
 
     "zod-to-json-schema": ["zod-to-json-schema@3.24.5", "", { "peerDependencies": { "zod": "^3.24.1" } }, "sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g=="],
   }
