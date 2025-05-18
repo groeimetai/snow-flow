@@ -22,7 +22,6 @@ export namespace Storage {
     const storageDir = AppPath.storage(app.root);
     await fs.mkdir(storageDir, { recursive: true });
     const storage = new FileStorage(new LocalStorageAdapter(storageDir));
-    await storage.write("test", "test");
     log.info("created", { path: storageDir });
     return {
       storage,
