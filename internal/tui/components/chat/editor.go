@@ -247,7 +247,8 @@ func (m *editorCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Handle history navigation with up/down arrow keys
-		if m.textarea.Focused() && key.Matches(msg, editorMaps.HistoryUp) {
+		// Only handle history navigation if the filepicker is not open
+		if m.textarea.Focused() && key.Matches(msg, editorMaps.HistoryUp) && !m.app.IsFilepickerOpen() {
 			// Get the current line number
 			currentLine := m.textarea.Line()
 			
@@ -267,7 +268,7 @@ func (m *editorCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		
-		if m.textarea.Focused() && key.Matches(msg, editorMaps.HistoryDown) {
+		if m.textarea.Focused() && key.Matches(msg, editorMaps.HistoryDown) && !m.app.IsFilepickerOpen() {
 			// Get the current line number and total lines
 			currentLine := m.textarea.Line()
 			value := m.textarea.Value()

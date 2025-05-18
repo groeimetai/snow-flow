@@ -417,6 +417,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if a.showFilepicker {
 				a.showFilepicker = false
 				a.filepicker.ToggleFilepicker(a.showFilepicker)
+				a.app.SetFilepickerOpen(a.showFilepicker)
 			}
 			if a.showModelDialog {
 				a.showModelDialog = false
@@ -539,6 +540,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if a.showFilepicker {
 					a.showFilepicker = false
 					a.filepicker.ToggleFilepicker(a.showFilepicker)
+					a.app.SetFilepickerOpen(a.showFilepicker)
 					return a, nil
 				}
 				if a.currentPage == page.LogsPage {
@@ -571,6 +573,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Toggle filepicker
 			a.showFilepicker = !a.showFilepicker
 			a.filepicker.ToggleFilepicker(a.showFilepicker)
+			a.app.SetFilepickerOpen(a.showFilepicker)
 			
 			// Close other dialogs if opening filepicker
 			if a.showFilepicker {

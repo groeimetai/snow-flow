@@ -40,6 +40,9 @@ type App struct {
 	watcherCancelFuncs []context.CancelFunc
 	cancelFuncsMutex   sync.Mutex
 	watcherWG          sync.WaitGroup
+	
+	// UI state
+	filepickerOpen bool
 }
 
 func New(ctx context.Context, conn *sql.DB) (*App, error) {
@@ -126,6 +129,16 @@ func (app *App) initTheme() {
 	} else {
 		slog.Debug("Set theme from config", "theme", cfg.TUI.Theme)
 	}
+}
+
+// IsFilepickerOpen returns whether the filepicker is currently open
+func (app *App) IsFilepickerOpen() bool {
+	return app.filepickerOpen
+}
+
+// SetFilepickerOpen sets the state of the filepicker
+func (app *App) SetFilepickerOpen(open bool) {
+	app.filepickerOpen = open
 }
 
 // Shutdown performs a clean shutdown of the application
