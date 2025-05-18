@@ -1,34 +1,64 @@
 import { Log } from "../util/log";
+import { Bus } from "../bus";
 
-export namespace RPC {
-  const log = Log.create({ service: "rpc" });
+import { Hono } from "hono";
+import { streamSSE } from "hono/streaming";
+import { Session } from "../session/session";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
+
+export namespace Server {
+  const log = Log.create({ service: "server" });
   const PORT = 16713;
-  export function listen(input?: { port?: number }) {
-    const port = input?.port ?? PORT;
-    log.info("trying", { port });
-    try {
-      const server = Bun.serve({
-        port,
-        websocket: {
-          open() {},
-          message() {},
+
+  export type App = ReturnType<typeof listen>;
+
+  export function listen() {
+    const app = new Hono()
+      .get("/event", async (c) => {
+        log.info("event connected");
+        return streamSSE(c, async (stream) => {
+          const unsub = Bus.subscribeAll(async (event) => {
+            await stream.writeSSE({
+              data: JSON.stringify(event),
+            });
+          });
+          await new Promise<void>((resolve) => {
+            stream.onAbort(() => {
+              unsub();
+              resolve();
+              log.info("event disconnected");
+            });
+          });
+        });
+      })
+      .post("/session_create", async (c) => {
+        const session = await Session.create();
+        return c.json(session);
+      })
+      .post(
+        "/session_chat",
+        zValidator(
+          "json",
+          z.object({
+            sessionID: z.string(),
+            parts: z.custom<Session.Message["parts"]>(),
+          }),
+        ),
+        async (c) => {
+          const body = c.req.valid("json");
+          const msg = await Session.chat(body.sessionID, ...body.parts);
+          return c.json(msg);
         },
-        routes: {
-          "/ws": (req, server) => {
-            if (server.upgrade(req)) return;
-            return new Response("Not a websocket request", { status: 400 });
-          },
-        },
-      });
-      log.info("listening", { port });
-      return {
-        server,
-      };
-    } catch (e: any) {
-      if (e?.code === "EADDRINUSE") {
-        return listen({ port: port + 1 });
-      }
-      throw e;
-    }
+      );
+
+    Bun.serve({
+      port: PORT,
+      hostname: "0.0.0.0",
+      idleTimeout: 0,
+      fetch: app.fetch,
+    });
+
+    return app;
   }
 }

@@ -1,5 +1,5 @@
 import path from "path";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { App } from "../app/";
 import { Identifier } from "../id/id";
 import { LLM } from "../llm/llm";
@@ -11,7 +11,9 @@ import {
   tool,
   type TextUIPart,
   type ToolInvocationUIPart,
+  type UIDataTypes,
   type UIMessage,
+  type UIMessagePart,
 } from "ai";
 
 export namespace Session {
@@ -20,11 +22,18 @@ export namespace Session {
   export interface Info {
     id: string;
     title: string;
+    tokens: {
+      input: number;
+      output: number;
+      reasoning: number;
+    };
   }
+
+  export type Message = UIMessage<{ sessionID: string }>;
 
   const state = App.state("session", () => {
     const sessions = new Map<string, Info>();
-    const messages = new Map<string, UIMessage[]>();
+    const messages = new Map<string, Message[]>();
 
     return {
       sessions,
@@ -36,12 +45,14 @@ export namespace Session {
     const result: Info = {
       id: Identifier.descending("session"),
       title: "New Session - " + new Date().toISOString(),
+      tokens: {
+        input: 0,
+        output: 0,
+        reasoning: 0,
+      },
     };
     log.info("created", result);
-    await Storage.write(
-      "session/info/" + result.id + ".json",
-      JSON.stringify(result),
-    );
+    await Storage.writeJSON("session/info/" + result.id, result);
     state().sessions.set(result.id, result);
     return result;
   }
@@ -51,23 +62,35 @@ export namespace Session {
     if (result) {
       return result;
     }
-    const read = JSON.parse(await Storage.readToString("session/info/" + id));
+    const read = await Storage.readJSON<Info>("session/info/" + id);
     state().sessions.set(id, read);
-    return read;
+    return read as Info;
+  }
+
+  export async function update(session: Info) {
+    state().sessions.set(session.id, session);
+    await Storage.writeJSON("session/info/" + session.id, session);
   }
 
   export async function messages(sessionID: string) {
-    const result = state().messages.get(sessionID);
-    if (result) {
-      return result;
+    const match = state().messages.get(sessionID);
+    if (match) {
+      return match;
     }
-    const read = JSON.parse(
-      await Storage.readToString(
-        "session/message/" + sessionID + ".json",
-      ).catch(() => "[]"),
-    );
-    state().messages.set(sessionID, read);
-    return read;
+    const result = [] as Message[];
+    const list = await Storage.list("session/message/" + sessionID)
+      .then((x) => x.toArray())
+      .catch(() => {});
+    if (!list) return result;
+    for (const item of list) {
+      const messageID = path.basename(item.path, ".json");
+      const read = await Storage.readJSON<Message>(
+        "session/message/" + sessionID + "/" + messageID,
+      );
+      result.push(read);
+    }
+    state().messages.set(sessionID, result);
+    return result;
   }
 
   export async function* list() {
@@ -81,11 +104,23 @@ export namespace Session {
     }
   }
 
-  export async function chat(sessionID: string, msg: UIMessage) {
+  export async function chat(
+    sessionID: string,
+    ...parts: UIMessagePart<UIDataTypes>[]
+  ) {
+    const session = await get(sessionID);
     const l = log.clone().tag("session", sessionID);
     l.info("chatting");
-    const msgs = (await messages(sessionID)) ?? [
-      {
+
+    const msgs = await messages(sessionID);
+    async function write(msg: Message) {
+      return Storage.writeJSON(
+        "session/message/" + sessionID + "/" + msg.id,
+        msg,
+      );
+    }
+    if (msgs.length === 0) {
+      const system: UIMessage<{ sessionID: string }> = {
         id: Identifier.ascending("message"),
         role: "system",
         parts: [
@@ -94,40 +129,38 @@ export namespace Session {
             text: "You are a helpful assistant called opencode",
           },
         ],
-      } as UIMessage,
-    ];
-    msgs.push(msg);
-    state().messages.set(sessionID, msgs);
-    async function write() {
-      return Storage.write(
-        "session/message/" + sessionID + ".json",
-        JSON.stringify(msgs),
-      );
+        metadata: {
+          sessionID,
+        },
+      };
+      msgs.push(system);
+      state().messages.set(sessionID, msgs);
+      await write(system);
     }
-    await write();
+    const msg: Message = {
+      role: "user",
+      id: Identifier.ascending("message"),
+      parts,
+      metadata: {
+        sessionID,
+      },
+    };
+    msgs.push(msg);
+    await write(msg);
 
     const model = await LLM.findModel("claude-3-7-sonnet-20250219");
     const result = streamText({
       messages: convertToModelMessages(msgs),
       temperature: 0,
-      tools: {
-        test: tool({
-          id: "opencode.test" as const,
-          parameters: z.object({
-            feeling: z.string(),
-          }),
-          execute: async () => {
-            return `Hello`;
-          },
-          description: "call this tool to get a greeting",
-        }),
-      },
       model,
     });
-    const next: UIMessage = {
+    const next: Message = {
       id: Identifier.ascending("message"),
       role: "assistant",
       parts: [],
+      metadata: {
+        sessionID,
+      },
     };
     msgs.push(next);
     let text: TextUIPart | undefined;
@@ -135,7 +168,9 @@ export namespace Session {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      l.info("part", value);
+      l.info("part", {
+        type: value.type,
+      });
       switch (value.type) {
         case "start":
           break;
@@ -175,15 +210,15 @@ export namespace Session {
               state: "result",
               result: value.result,
             };
-            await write();
           }
           break;
 
         case "finish":
-          await write();
           break;
         case "finish-step":
-          await write();
+          break;
+        case "error":
+          log.error("error", value);
           break;
 
         default:
@@ -191,6 +226,13 @@ export namespace Session {
             type: value.type,
           });
       }
+      await write(next);
     }
+    const usage = await result.totalUsage;
+    session.tokens.input += usage.inputTokens || 0;
+    session.tokens.output += usage.outputTokens || 0;
+    session.tokens.reasoning += usage.reasoningTokens || 0;
+    await update(session);
+    return next;
   }
 }

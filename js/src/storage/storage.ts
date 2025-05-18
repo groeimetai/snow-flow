@@ -4,9 +4,18 @@ import fs from "fs/promises";
 import { Log } from "../util/log";
 import { App } from "../app";
 import { AppPath } from "../app/path";
+import { Bus } from "../bus";
+import z from "zod/v4";
 
 export namespace Storage {
   const log = Log.create({ service: "storage" });
+
+  export const Event = {
+    Write: Bus.event(
+      "storage.write",
+      z.object({ key: z.string(), body: z.any() }),
+    ),
+  };
 
   const state = App.state("storage", async () => {
     const app = await App.use();
@@ -36,4 +45,15 @@ export namespace Storage {
   export const read = expose("read");
   export const list = expose("list");
   export const readToString = expose("readToString");
+
+  export async function readJSON<T>(key: string) {
+    const data = await readToString(key + ".json");
+    return JSON.parse(data) as T;
+  }
+
+  export async function writeJSON<T>(key: string, data: T) {
+    Bus.publish(Event.Write, { key, body: data });
+    const json = JSON.stringify(data);
+    await write(key + ".json", json);
+  }
 }

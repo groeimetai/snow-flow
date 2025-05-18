@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import { randomBytes } from "crypto";
 
 export namespace Identifier {
@@ -11,7 +11,7 @@ export namespace Identifier {
     return z.string().startsWith(prefixes[prefix]);
   }
 
-  const LENGTH = 24;
+  const LENGTH = 26;
 
   export function ascending(prefix: keyof typeof prefixes, given?: string) {
     return generateID(prefix, false, given);
@@ -45,6 +45,11 @@ export namespace Identifier {
     const randLength = (LENGTH - 12) / 2;
     const random = randomBytes(randLength);
 
-    return prefix + "_" + timeBytes.toString("hex") + random.toString("hex");
+    return (
+      prefixes[prefix] +
+      "_" +
+      timeBytes.toString("hex") +
+      random.toString("hex")
+    );
   }
 }
