@@ -1,0 +1,19 @@
+{
+  "name": "opencode",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@tsconfig/bun": "^1.0.7",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "5"
+  },
+  "dependencies": {
+    "@flystorage/file-storage": "^1.1.0",
+    "@flystorage/local-fs": "^1.1.0",
+    "ai": "5.0.0-alpha.2",
+    "ulid": "3.0.0",
+    "zod": "3.24.4"
+  }
+}
