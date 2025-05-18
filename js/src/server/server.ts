@@ -11,10 +11,10 @@ export namespace Server {
   const log = Log.create({ service: "server" });
   const PORT = 16713;
 
-  export type App = ReturnType<typeof listen>;
+  export type App = ReturnType<typeof app>;
 
-  export function listen() {
-    const app = new Hono()
+  function app() {
+    return new Hono()
       .get("/event", async (c) => {
         log.info("event connected");
         return streamSSE(c, async (stream) => {
@@ -51,14 +51,15 @@ export namespace Server {
           return c.json(msg);
         },
       );
+  }
 
-    Bun.serve({
+  export function listen() {
+    const server = Bun.serve({
       port: PORT,
       hostname: "0.0.0.0",
       idleTimeout: 0,
-      fetch: app.fetch,
+      fetch: app().fetch,
     });
-
-    return app;
+    return server;
   }
 }
