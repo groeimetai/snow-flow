@@ -34,7 +34,7 @@ export namespace Session {
 
   export async function create() {
     const result: Info = {
-      id: Identifier.create("session"),
+      id: Identifier.descending("session"),
       title: "New Session - " + new Date().toISOString(),
     };
     log.info("created", result);
@@ -86,7 +86,7 @@ export namespace Session {
     l.info("chatting");
     const msgs = (await messages(sessionID)) ?? [
       {
-        id: Identifier.create("message"),
+        id: Identifier.ascending("message"),
         role: "system",
         parts: [
           {
@@ -125,7 +125,7 @@ export namespace Session {
       model,
     });
     const next: UIMessage = {
-      id: Identifier.create("message"),
+      id: Identifier.ascending("message"),
       role: "assistant",
       parts: [],
     };

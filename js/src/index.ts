@@ -16,7 +16,7 @@ App.provide(app, async () => {
 
   await Session.chat(sessionID, {
     role: "user",
-    id: Identifier.create("message"),
+    id: Identifier.ascending("message"),
     parts: [
       {
         type: "text",
