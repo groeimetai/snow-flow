@@ -3,6 +3,7 @@ package models
 const (
 	ProviderOpenAI ModelProvider = "openai"
 
+	CodexMini    ModelID = "codex-mini"
 	GPT41        ModelID = "gpt-4.1"
 	GPT41Mini    ModelID = "gpt-4.1-mini"
 	GPT41Nano    ModelID = "gpt-4.1-nano"
@@ -18,6 +19,20 @@ const (
 )
 
 var OpenAIModels = map[ModelID]Model{
+	CodexMini: {
+		ID:                  CodexMini,
+		Name:                "Codex Mini",
+		Provider:            ProviderOpenAI,
+		APIModel:            "codex-mini-latest",
+		CostPer1MIn:         1.50,
+		CostPer1MInCached:   0.375,
+		CostPer1MOutCached:  0.0,
+		CostPer1MOut:        6.00,
+		ContextWindow:       200_000,
+		DefaultMaxTokens:    100_000,
+		CanReason:           true,
+		SupportsAttachments: true,
+	},
 	GPT41: {
 		ID:                  GPT41,
 		Name:                "GPT 4.1",

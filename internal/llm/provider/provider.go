@@ -3,11 +3,11 @@ package provider
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/sst/opencode/internal/llm/models"
 	"github.com/sst/opencode/internal/llm/tools"
 	"github.com/sst/opencode/internal/message"
-	"log/slog"
 )
 
 type EventType string

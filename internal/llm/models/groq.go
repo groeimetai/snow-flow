@@ -41,6 +41,7 @@ var GroqModels = map[ModelID]Model{
 		CostPer1MInCached:   0,
 		CostPer1MOutCached:  0,
 		CostPer1MOut:        0.34,
+		DefaultMaxTokens:    8192,
 		ContextWindow:       128_000, // 10M when?
 		SupportsAttachments: true,
 	},
@@ -54,6 +55,7 @@ var GroqModels = map[ModelID]Model{
 		CostPer1MInCached:   0,
 		CostPer1MOutCached:  0,
 		CostPer1MOut:        0.20,
+		DefaultMaxTokens:    8192,
 		ContextWindow:       128_000,
 		SupportsAttachments: true,
 	},
