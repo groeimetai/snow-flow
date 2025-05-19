@@ -32,6 +32,9 @@ export namespace Server {
       .get("/event", async (c) => {
         log.info("event connected");
         return streamSSE(c, async (stream) => {
+          stream.writeSSE({
+            data: JSON.stringify({}),
+          });
           const unsub = Bus.subscribeAll(async (event) => {
             await stream.writeSSE({
               data: JSON.stringify(event),

@@ -20,18 +20,18 @@ type EventMessage struct {
 
 func (c *Client) Event(ctx context.Context) (<-chan any, error) {
 	events := make(chan any)
-	req, err := http.NewRequestWithContext(ctx, "GET", c.Server+"/event", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", c.Server+"event", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
 	go func() {
 		defer close(events)
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return
-		}
 		defer resp.Body.Close()
 
 		scanner := bufio.NewScanner(resp.Body)
@@ -47,11 +47,6 @@ func (c *Client) Event(ctx context.Context) (<-chan any, error) {
 
 				eventTemplate, exists := EventMap[eventMsg.Type]
 				if !exists {
-					select {
-					case events <- eventMsg:
-					case <-ctx.Done():
-						return
-					}
 					continue
 				}
 

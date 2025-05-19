@@ -32,7 +32,7 @@ export namespace Log {
       })
         .map(([key, value]) => `${key}=${value}`)
         .join(" ");
-      return [prefix, message].join(" ");
+      return [prefix, message].join(" ") + "\n";
     }
     const result = {
       info(message?: any, extra?: Record<string, any>) {
