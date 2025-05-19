@@ -1,6 +1,6 @@
 import path from "node:path";
 import { Log } from "../util/log";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 export namespace Config {
   const log = Log.create({ service: "config" });

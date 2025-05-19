@@ -1,10 +1,10 @@
 import { Log } from "../util/log";
 import { Bus } from "../bus";
-
+import { describeRoute, generateSpecs, openAPISpecs } from "hono-openapi";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { Session } from "../session/session";
-import { zValidator } from "@hono/zod-validator";
+import { resolver, validator as zValidator } from "hono-openapi/zod";
 import { z } from "zod";
 
 export namespace Server {
@@ -14,7 +14,21 @@ export namespace Server {
   export type App = ReturnType<typeof app>;
 
   function app() {
-    return new Hono()
+    const app = new Hono();
+
+    const result = app
+      .get(
+        "/openapi",
+        openAPISpecs(app, {
+          documentation: {
+            info: {
+              title: "opencode",
+              version: "1.0.0",
+              description: "opencode api",
+            },
+          },
+        }),
+      )
       .get("/event", async (c) => {
         log.info("event connected");
         return streamSSE(c, async (stream) => {
@@ -32,10 +46,26 @@ export namespace Server {
           });
         });
       })
-      .post("/session_create", async (c) => {
-        const session = await Session.create();
-        return c.json(session);
-      })
+      .post(
+        "/session_create",
+        describeRoute({
+          description: "Create a new session",
+          responses: {
+            200: {
+              description: "Successfully created session",
+              content: {
+                "application/json": {
+                  schema: resolver(Session.Info),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          const session = await Session.create();
+          return c.json(session);
+        },
+      )
       .post(
         "/session_chat",
         zValidator(
@@ -51,6 +81,22 @@ export namespace Server {
           return c.json(msg);
         },
       );
+
+    return result;
+  }
+
+  export async function openapi() {
+    const a = app();
+    const result = await generateSpecs(a, {
+      documentation: {
+        info: {
+          title: "opencode",
+          version: "1.0.0",
+          description: "opencode api",
+        },
+      },
+    });
+    return result;
   }
 
   export function listen() {

@@ -1,5 +1,4 @@
 import path from "path";
-import { z } from "zod/v3";
 import { App } from "../app/";
 import { Identifier } from "../id/id";
 import { LLM } from "../llm/llm";
@@ -8,26 +7,27 @@ import { Log } from "../util/log";
 import {
   convertToModelMessages,
   streamText,
-  tool,
   type TextUIPart,
   type ToolInvocationUIPart,
   type UIDataTypes,
   type UIMessage,
   type UIMessagePart,
 } from "ai";
+import { z } from "zod";
 
 export namespace Session {
   const log = Log.create({ service: "session" });
 
-  export interface Info {
-    id: string;
-    title: string;
-    tokens: {
-      input: number;
-      output: number;
-      reasoning: number;
-    };
-  }
+  export const Info = z.object({
+    id: Identifier.schema("session"),
+    title: z.string(),
+    tokens: z.object({
+      input: z.number(),
+      output: z.number(),
+      reasoning: z.number(),
+    }),
+  });
+  export type Info = z.output<typeof Info>;
 
   export type Message = UIMessage<{ sessionID: string }>;
 

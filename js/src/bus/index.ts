@@ -1,4 +1,4 @@
-import type { z, ZodSchema } from "zod/v4";
+import type { z, ZodSchema } from "zod";
 import { App } from "../app";
 import { Log } from "../util/log";
 
