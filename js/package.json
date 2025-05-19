@@ -1,7 +1,11 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "opencode",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build": "bun build src/index.ts --compile --outfile ./dist/opencode"
+  },
   "devDependencies": {
     "@tsconfig/bun": "^1.0.7",
     "@types/bun": "latest",

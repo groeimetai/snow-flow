@@ -14,10 +14,10 @@ export namespace Log {
   export function file(directory: string) {
     const out = Bun.file(
       path.join(AppPath.data(directory), "opencode.out.log"),
-    );
+    ).writer();
     const err = Bun.file(
       path.join(AppPath.data(directory), "opencode.err.log"),
-    );
+    ).writer();
     write["out"] = (msg) => out.write(msg);
     write["err"] = (msg) => err.write(msg);
   }

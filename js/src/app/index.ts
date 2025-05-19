@@ -12,7 +12,7 @@ export namespace App {
   const ctx = Context.create<Info>("app");
 
   export async function create(input: { directory: string }) {
-    // Log.file(input.directory);
+    Log.file(input.directory);
     log.info("creating");
 
     const config = await Config.load(input.directory);

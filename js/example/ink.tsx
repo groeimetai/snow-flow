@@ -78,13 +78,19 @@ function App() {
     <>
       <Text>{session.title}</Text>
       {
-        Object.values(state.session.message[session.id]).map(message => {
-          return Object.values(message.parts).map((part, index) => {
-            if (part.type === "text") {
-              return <Text key={`${message.id}-${index}`}>{message.role}: {part.text}</Text>
-            }
+        Object.values(state.session.message[session.id])
+          .filter(message => message.role !== "system")
+          .map(message => {
+            return Object.values(message.parts)
+              .map((part, index) => {
+                if (part.type === "text") {
+                  return <Text key={`${message.id}-${index}`}>{message.role}: {part.text}</Text>
+                }
+                if (part.type === "tool-invocation") {
+                  return <Text key={`${message.id}-${index}`}>{message.role}: {part.toolInvocation.toolName} {JSON.stringify(part.toolInvocation.args)}</Text>
+                }
+              })
           })
-        })
       }
       <Box gap={1} >
         <Text>Input:</Text>

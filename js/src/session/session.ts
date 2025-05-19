@@ -7,6 +7,7 @@ import { Log } from "../util/log";
 import {
   convertToModelMessages,
   streamText,
+  tool,
   type TextUIPart,
   type ToolInvocationUIPart,
   type UIDataTypes,
@@ -14,6 +15,10 @@ import {
   type UIMessagePart,
 } from "ai";
 import { z } from "zod";
+import { BashTool } from "../tool/bash";
+import { EditTool } from "../tool/edit";
+import ANTHROPIC_PROMPT from "./prompt/anthropic.txt";
+import { ViewTool } from "../tool/view";
 
 export namespace Session {
   const log = Log.create({ service: "session" });
@@ -126,7 +131,7 @@ export namespace Session {
         parts: [
           {
             type: "text",
-            text: "You are a helpful assistant called opencode",
+            text: ANTHROPIC_PROMPT,
           },
         ],
         metadata: {
@@ -150,8 +155,14 @@ export namespace Session {
 
     const model = await LLM.findModel("claude-3-7-sonnet-20250219");
     const result = streamText({
+      maxSteps: 1000,
       messages: convertToModelMessages(msgs),
       temperature: 0,
+      tools: {
+        ...BashTool,
+        ...ViewTool,
+        ...EditTool,
+      },
       model,
     });
     const next: Message = {
@@ -175,6 +186,7 @@ export namespace Session {
         case "start":
           break;
         case "start-step":
+          text = undefined;
           next.parts.push({
             type: "step-start",
           });
