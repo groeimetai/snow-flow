@@ -5,7 +5,7 @@ import { Log } from "../util/log";
 import { App } from "../app";
 import { AppPath } from "../app/path";
 import { Bus } from "../bus";
-import z from "zod";
+import z from "zod/v4";
 
 export namespace Storage {
   const log = Log.create({ service: "storage" });

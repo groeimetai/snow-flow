@@ -182,6 +182,18 @@ to assist developers in writing, debugging, and understanding code directly from
 			}
 		}()
 
+		evts, err := app.Client.Event(ctx)
+		if err != nil {
+			slog.Error("Failed to subscribe to events", "error", err)
+			return err
+		}
+
+		go func() {
+			for item := range evts {
+				program.Send(item)
+			}
+		}()
+
 		// Cleanup function for when the program exits
 		cleanup := func() {
 			// Cancel subscriptions first

@@ -20,6 +20,7 @@ import (
 	"github.com/sst/opencode/internal/session"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/theme"
+	"github.com/sst/opencode/pkg/client"
 )
 
 type App struct {
@@ -30,6 +31,7 @@ type App struct {
 	History        history.Service
 	Permissions    permission.Service
 	Status         status.Service
+	Client         *client.Client
 
 	PrimaryAgent agent.Service
 
@@ -79,7 +81,14 @@ func New(ctx context.Context, conn *sql.DB) (*App, error) {
 	}
 	fileutil.Init()
 
+	client, err := client.NewClient("http://localhost:16713")
+	if err != nil {
+		slog.Error("Failed to create client", "error", err)
+		return nil, err
+	}
+
 	app := &App{
+		Client:         client,
 		CurrentSession: &session.Session{},
 		Logs:           logging.GetService(),
 		Sessions:       session.GetService(),

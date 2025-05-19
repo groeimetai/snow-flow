@@ -1,5 +1,0 @@
-package: client
-output: generated.go
-generate:
-  - client
-  - types

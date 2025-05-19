@@ -1,6 +1,9 @@
 import { App } from "./app";
 import { Server } from "./server/server";
 import { Cli, Command, runExit } from "clipanion";
+import fs from "fs/promises";
+import path from "path";
+import { Bus } from "./bus";
 
 const cli = new Cli({
   binaryLabel: `opencode`,
@@ -22,11 +25,21 @@ cli.register(
   },
 );
 cli.register(
-  class OpenApi extends Command {
-    static paths = [["openapi"]];
+  class Generate extends Command {
+    static paths = [["generate"]];
     async execute() {
       const specs = await Server.openapi();
-      this.context.stdout.write(JSON.stringify(specs, null, 2));
+      const dir = "gen";
+      await fs.rmdir(dir, { recursive: true }).catch(() => {});
+      await fs.mkdir(dir, { recursive: true });
+      await Bun.write(
+        path.join(dir, "openapi.json"),
+        JSON.stringify(specs, null, 2),
+      );
+      await Bun.write(
+        path.join(dir, "event.json"),
+        JSON.stringify(Bus.specs(), null, 2),
+      );
     }
   },
 );

@@ -1,4 +1,4 @@
-import type { z, ZodSchema } from "zod";
+import { z, type ZodType } from "zod/v4";
 import { App } from "../app";
 import { Log } from "../util/log";
 
@@ -16,14 +16,30 @@ export namespace Bus {
 
   export type EventDefinition = ReturnType<typeof event>;
 
-  export function event<Type extends string, Properties extends ZodSchema>(
+  const registry = new Map<string, EventDefinition>();
+
+  export function event<Type extends string, Properties extends ZodType>(
     type: Type,
     properties: Properties,
   ) {
-    return {
+    const result = {
       type,
       properties,
     };
+    registry.set(type, result);
+    return result;
+  }
+
+  export function specs() {
+    const children = {} as any;
+    for (const [type, def] of registry.entries()) {
+      children[def.type] = def.properties;
+    }
+    const result = z.toJSONSchema(z.object(children)) as any;
+    result.definitions = result.properties;
+    delete result.properties;
+    delete result.required;
+    return result;
   }
 
   export function publish<Definition extends EventDefinition>(
