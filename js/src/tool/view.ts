@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { tool } from "./tool";
 import * as fs from "fs";
 import * as path from "path";
+import { Tool } from "./tool";
 
 const MAX_READ_SIZE = 250 * 1024;
 const DEFAULT_READ_LIMIT = 2000;
@@ -38,7 +38,7 @@ TIPS:
 - For code exploration, first use Grep to find relevant files, then View to examine them
 - When viewing large files, use the offset parameter to read specific sections`;
 
-export const ViewTool = tool({
+export const ViewTool = Tool.define({
   name: "view",
   description: DESCRIPTION,
   parameters: z.object({
@@ -117,55 +117,11 @@ export const ViewTool = tool({
     }
     output += "\n</file>";
 
-    return output;
+    return {
+      output: output,
+    };
   },
 });
-
-function addLineNumbers(content: string, startLine: number): string {
-  if (!content) {
-    return "";
-  }
-
-  const lines = content.split("\n");
-
-  return lines
-    .map((line, i) => {
-      const lineNum = i + startLine;
-      const numStr = lineNum.toString();
-
-      if (numStr.length >= 6) {
-        return `${numStr}|${line}`;
-      } else {
-        const paddedNum = numStr.padStart(6, " ");
-        return `${paddedNum}|${line}`;
-      }
-    })
-    .join("\n");
-}
-
-function readTextFile(
-  filePath: string,
-  offset: number,
-  limit: number,
-): { content: string; lineCount: number } {
-  const fileContent = fs.readFileSync(filePath, "utf8");
-  const allLines = fileContent.split("\n");
-  let lineCount = allLines.length;
-
-  // Get the lines we want based on offset and limit
-  const selectedLines = allLines
-    .slice(offset, offset + limit)
-    .map((line) =>
-      line.length > MAX_LINE_LENGTH
-        ? line.substring(0, MAX_LINE_LENGTH) + "..."
-        : line,
-    );
-
-  return {
-    content: selectedLines.join("\n"),
-    lineCount,
-  };
-}
 
 function isImageFile(filePath: string): string | false {
   const ext = path.extname(filePath).toLowerCase();

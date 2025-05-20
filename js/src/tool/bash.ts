@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { tool } from "./tool";
+import { Tool, tool } from "./tool";
 
 const MAX_OUTPUT_LENGTH = 30000;
 const BANNED_COMMANDS = [
@@ -170,7 +170,7 @@ Important:
 - Return an empty response - the user will see the gh output directly
 - Never update git config`;
 
-export const BashTool = tool({
+export const BashTool = Tool.define({
   name: "bash",
   description: DESCRIPTION,
   parameters: z.object({
@@ -193,7 +193,9 @@ export const BashTool = tool({
       timeout: timeout,
     });
     return {
-      content: process.stdout.toString("utf-8"),
+      output: {
+        content: process.stdout.toString("utf-8"),
+      },
     };
   },
 });

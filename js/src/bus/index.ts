@@ -33,7 +33,7 @@ export namespace Bus {
   export function specs() {
     const children = {} as any;
     for (const [type, def] of registry.entries()) {
-      children[def.type] = def.properties;
+      children["event." + def.type] = def.properties;
     }
     const result = z.toJSONSchema(z.object(children)) as any;
     result.definitions = result.properties;

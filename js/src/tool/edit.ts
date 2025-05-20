@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { tool } from "./tool";
 import * as fs from "fs";
 import * as path from "path";
 import { Log } from "../util/log";
-import { App } from "../app";
+import { Tool } from "./tool";
+import { FileTimes } from "./util/file-times";
 
-const log = Log.create({ service: "edit-tool" });
+const log = Log.create({ service: "tool.edit" });
 
 // Simple diff generation
 function generateDiff(
@@ -116,7 +116,7 @@ When making edits:
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.`;
 
-export const EditTool = tool({
+export const EditTool = Tool.define({
   name: "edit",
   description: DESCRIPTION,
   parameters: z.object({
@@ -136,14 +136,20 @@ export const EditTool = tool({
 
     // Handle different operations based on parameters
     if (params.old_string === "") {
-      return createNewFile(filePath, params.new_string);
+      return {
+        output: createNewFile(filePath, params.new_string),
+      };
     }
 
     if (params.new_string === "") {
-      return deleteContent(filePath, params.old_string);
+      return {
+        output: deleteContent(filePath, params.old_string),
+      };
     }
 
-    return replaceContent(filePath, params.old_string, params.new_string);
+    return {
+      output: replaceContent(filePath, params.old_string, params.new_string),
+    };
   },
 });
 

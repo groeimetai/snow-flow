@@ -7,7 +7,6 @@ import { Log } from "../util/log";
 import {
   convertToModelMessages,
   streamText,
-  tool,
   type TextUIPart,
   type ToolInvocationUIPart,
   type UIDataTypes,
@@ -17,8 +16,10 @@ import {
 import { z } from "zod";
 import { BashTool } from "../tool/bash";
 import { EditTool } from "../tool/edit";
-import ANTHROPIC_PROMPT from "./prompt/anthropic.txt";
 import { ViewTool } from "../tool/view";
+
+import ANTHROPIC_PROMPT from "./prompt/anthropic.txt";
+import type { Tool } from "../tool/tool";
 
 export namespace Session {
   const log = Log.create({ service: "session" });
@@ -34,7 +35,13 @@ export namespace Session {
   });
   export type Info = z.output<typeof Info>;
 
-  export type Message = UIMessage<{ sessionID: string }>;
+  export type Message = UIMessage<{
+    time: {
+      created: number;
+    };
+    sessionID: string;
+    tool: Record<string, Tool.Metadata>;
+  }>;
 
   const state = App.state("session", () => {
     const sessions = new Map<string, Info>();
@@ -125,7 +132,7 @@ export namespace Session {
       );
     }
     if (msgs.length === 0) {
-      const system: UIMessage<{ sessionID: string }> = {
+      const system: Message = {
         id: Identifier.ascending("message"),
         role: "system",
         parts: [
@@ -136,6 +143,10 @@ export namespace Session {
         ],
         metadata: {
           sessionID,
+          time: {
+            created: Date.now(),
+          },
+          tool: {},
         },
       };
       msgs.push(system);
@@ -147,7 +158,11 @@ export namespace Session {
       id: Identifier.ascending("message"),
       parts,
       metadata: {
+        time: {
+          created: Date.now(),
+        },
         sessionID,
+        tool: {},
       },
     };
     msgs.push(msg);
@@ -170,9 +185,14 @@ export namespace Session {
       role: "assistant",
       parts: [],
       metadata: {
+        time: {
+          created: Date.now(),
+        },
         sessionID,
+        tool: {},
       },
     };
+    const metadata = next.metadata!;
     msgs.push(next);
     let text: TextUIPart | undefined;
     const reader = result.toUIMessageStream().getReader();
@@ -217,10 +237,12 @@ export namespace Session {
               p.toolInvocation.toolCallId === value.toolCallId,
           ) as ToolInvocationUIPart | undefined;
           if (match) {
+            const { output, metadata } = value.result as any;
+            next.metadata!.tool[value.toolCallId] = metadata;
             match.toolInvocation = {
               ...match.toolInvocation,
               state: "result",
-              result: value.result,
+              result: output,
             };
           }
           break;

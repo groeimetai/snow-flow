@@ -10,7 +10,7 @@ import (
 )
 
 var EventMap = map[string]any{
-	"storage.write": StorageWrite{},
+	"storage.write": EventStorageWrite{},
 }
 
 type EventMessage struct {

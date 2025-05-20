@@ -6,6 +6,7 @@ import { streamSSE } from "hono/streaming";
 import { Session } from "../session/session";
 import { resolver, validator as zValidator } from "hono-openapi/zod";
 import { z } from "zod";
+import "zod-openapi/extend";
 
 export namespace Server {
   const log = Log.create({ service: "server" });
@@ -58,7 +59,35 @@ export namespace Server {
               description: "Successfully created session",
               content: {
                 "application/json": {
-                  schema: resolver(Session.Info),
+                  schema: resolver(
+                    Session.Info.openapi({
+                      ref: "Session.Info",
+                    }),
+                  ),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          const session = await Session.create();
+          return c.json(session);
+        },
+      )
+      .post(
+        "/session_messages",
+        describeRoute({
+          description: "Get messages for a session",
+          responses: {
+            200: {
+              description: "Successfully created session",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    Session.Info.openapi({
+                      ref: "Session.Info",
+                    }),
+                  ),
                 },
               },
             },

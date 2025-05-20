@@ -12,7 +12,6 @@ export namespace App {
   const ctx = Context.create<Info>("app");
 
   export async function create(input: { directory: string }) {
-    Log.file(input.directory);
     log.info("creating");
 
     const config = await Config.load(input.directory);
@@ -20,6 +19,7 @@ export namespace App {
     const dataDir = AppPath.data(input.directory);
     await fs.mkdir(dataDir, { recursive: true });
     log.info("created", { path: dataDir });
+    Log.file(input.directory);
 
     const services = new Map<any, any>();
 
