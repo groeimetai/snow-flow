@@ -198,6 +198,37 @@ OpenCode supports a variety of AI models from different providers:
 
 - Gemini 2.5
 - Gemini 2.5 Flash
+
+## Using Bedrock Models
+
+To use bedrock models with OpenCode you need three things.
+
+1. Valid AWS credentials (the env vars: `AWS_SECRET_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_REGION`)
+2. Access to the corresponding model in AWS Bedrock in your region.
+    a. You can request access in the AWS console on the Bedrock -> "Model access" page.
+3. A correct configuration file. You don't need the `providers` key. Instead you have to prefix your models per agent with `bedrock.` and then a valid model. For now only Claude 3.7 is supported.
+
+```json
+{
+  "agents": {
+    "primary": {
+      "model": "bedrock.claude-3.7-sonnet",
+      "maxTokens": 5000,
+      "reasoningEffort": ""
+    },
+    "task": {
+      "model": "bedrock.claude-3.7-sonnet",
+      "maxTokens": 5000,
+      "reasoningEffort": ""
+    },
+    "title": {
+      "model": "bedrock.claude-3.7-sonnet",
+      "maxTokens": 80,
+      "reasoningEffort": ""
+    }
+  },
+}
+```
  
 ## Interactive Mode Usage
 
