@@ -1,3 +1,42 @@
 ---
 title: MCP servers
 ---
+
+OpenCode implements the Model Context Protocol (MCP) to extend its capabilities through external tools. MCP provides a standardized way for the AI assistant to interact with external services and tools.
+
+### MCP Features
+
+- **External Tool Integration**: Connect to external tools and services via a standardized protocol
+- **Tool Discovery**: Automatically discover available tools from MCP servers
+- **Multiple Connection Types**:
+  - **Stdio**: Communicate with tools via standard input/output
+  - **SSE**: Communicate with tools via Server-Sent Events
+- **Security**: Permission system for controlling access to MCP tools
+
+### Configuring MCP Servers
+
+MCP servers are defined in the configuration file under the `mcpServers` section:
+
+```json
+{
+  "mcpServers": {
+    "example": {
+      "type": "stdio",
+      "command": "path/to/mcp-server",
+      "env": [],
+      "args": []
+    },
+    "web-example": {
+      "type": "sse",
+      "url": "https://example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer token"
+      }
+    }
+  }
+}
+```
+
+### MCP Tool Usage
+
+Once configured, MCP tools are automatically available to the AI assistant alongside built-in tools. They follow the same permission model as other tools, requiring user approval before execution.

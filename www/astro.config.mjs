@@ -41,6 +41,7 @@ export default defineConfig({
 				"docs/models",
 				"docs/themes",
 				"docs/shortcuts",
+				"docs/lsp-servers",
 				"docs/mcp-servers",
 			],
 			components: {
