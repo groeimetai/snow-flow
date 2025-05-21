@@ -132,6 +132,9 @@ export const edit = Tool.define({
     }
 
     return {
+      metadata: {
+        diagnostics,
+      },
       output,
     };
   },
