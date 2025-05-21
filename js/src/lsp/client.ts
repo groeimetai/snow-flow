@@ -9,11 +9,22 @@ import {
 import { App } from "../app";
 import { Log } from "../util/log";
 import { LANGUAGE_EXTENSIONS } from "./language";
+import { Bus } from "../bus";
+import z from "zod/v4";
 
 export namespace LSPClient {
   const log = Log.create({ service: "lsp.client" });
 
   export type Info = Awaited<ReturnType<typeof create>>;
+
+  export const Event = {
+    Diagnostics: Bus.event(
+      "lsp.client.diagnostics",
+      z.object({
+        path: z.string(),
+      }),
+    ),
+  };
 
   export async function create(input: { cmd: string[] }) {
     log.info("starting client", input);
@@ -33,10 +44,12 @@ export namespace LSPClient {
 
     const diagnostics = new Map<string, any>();
     connection.onNotification("textDocument/publishDiagnostics", (params) => {
+      const path = new URL(params.uri).pathname;
       log.info("textDocument/publishDiagnostics", {
-        path: new URL(params.uri).pathname,
+        path,
       });
-      diagnostics.set(new URL(params.uri).pathname, params.diagnostics);
+      diagnostics.set(path, params.diagnostics);
+      Bus.publish(Event.Diagnostics, { path });
     });
     connection.listen();
 
@@ -144,31 +157,26 @@ export namespace LSPClient {
       },
       async refreshDiagnostics(input: { path: string }) {
         log.info("refreshing diagnostics", input);
-        let notif: Disposable | undefined;
+        let unsub: () => void;
+        let timeout: NodeJS.Timeout;
         return await Promise.race([
           new Promise<void>(async (resolve) => {
-            notif = connection.onNotification(
-              "textDocument/publishDiagnostics",
-              (params) => {
+            unsub = Bus.subscribe(Event.Diagnostics, (event) => {
+              if (event.properties.path === input.path) {
                 log.info("refreshed diagnostics", input);
-                if (new URL(params.uri).pathname === input.path) {
-                  diagnostics.set(
-                    new URL(params.uri).pathname,
-                    params.diagnostics,
-                  );
-                  resolve();
-                  notif?.dispose();
-                }
-              },
-            );
+                clearTimeout(timeout);
+                unsub?.();
+                resolve();
+              }
+            });
             await result.notify.change(input);
           }),
-          new Promise<void>((resolve) =>
-            setTimeout(() => {
-              notif?.dispose();
+          new Promise<void>((resolve) => {
+            timeout = setTimeout(() => {
+              unsub?.();
               resolve();
-            }, 5000),
-          ),
+            }, 5000);
+          }),
         ]);
       },
     };
