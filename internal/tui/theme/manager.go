@@ -202,6 +202,54 @@ func LoadCustomTheme(customTheme map[string]any) (Theme, error) {
 			theme.DiffAddedLineNumberBgColor = adaptiveColor
 		case "diffremovedlinenumberbg":
 			theme.DiffRemovedLineNumberBgColor = adaptiveColor
+		case "syntaxcomment":
+			theme.SyntaxCommentColor = adaptiveColor
+		case "syntaxkeyword":
+			theme.SyntaxKeywordColor = adaptiveColor
+		case "syntaxfunction":
+			theme.SyntaxFunctionColor = adaptiveColor
+		case "syntaxvariable":
+			theme.SyntaxVariableColor = adaptiveColor
+		case "syntaxstring":
+			theme.SyntaxStringColor = adaptiveColor
+		case "syntaxnumber":
+			theme.SyntaxNumberColor = adaptiveColor
+		case "syntaxtype":
+			theme.SyntaxTypeColor = adaptiveColor
+		case "syntaxoperator":
+			theme.SyntaxOperatorColor = adaptiveColor
+		case "syntaxpunctuation":
+			theme.SyntaxPunctuationColor = adaptiveColor
+		case "markdowntext":
+			theme.MarkdownTextColor = adaptiveColor
+		case "markdownheading":
+			theme.MarkdownHeadingColor = adaptiveColor
+		case "markdownlink":
+			theme.MarkdownLinkColor = adaptiveColor
+		case "markdownlinktext":
+			theme.MarkdownLinkTextColor = adaptiveColor
+		case "markdowncode":
+			theme.MarkdownCodeColor = adaptiveColor
+		case "markdownblockquote":
+			theme.MarkdownBlockQuoteColor = adaptiveColor
+		case "markdownemph":
+			theme.MarkdownEmphColor = adaptiveColor
+		case "markdownstrong":
+			theme.MarkdownStrongColor = adaptiveColor
+		case "markdownhorizontalrule":
+			theme.MarkdownHorizontalRuleColor = adaptiveColor
+		case "markdownlistitem":
+			theme.MarkdownListItemColor = adaptiveColor
+		case "markdownlistitemenum":
+			theme.MarkdownListEnumerationColor = adaptiveColor
+		case "markdownimage":
+			theme.MarkdownImageColor = adaptiveColor
+		case "markdownimagetext":
+			theme.MarkdownImageTextColor = adaptiveColor
+		case "markdowncodeblock":
+			theme.MarkdownCodeBlockColor = adaptiveColor
+		case "markdownlistenumeration":
+			theme.MarkdownListEnumerationColor = adaptiveColor
 		default:
 			slog.Warn("Unknown color key in custom theme", "key", key)
 		}

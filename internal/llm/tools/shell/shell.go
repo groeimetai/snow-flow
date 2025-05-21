@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/status"
 )
 
@@ -59,12 +60,27 @@ func GetPersistentShell(workingDir string) *PersistentShell {
 }
 
 func newPersistentShell(cwd string) *PersistentShell {
-	shellPath := os.Getenv("SHELL")
-	if shellPath == "" {
-		shellPath = "/bin/bash"
+	cfg := config.Get()
+	
+	// Use shell from config if specified
+	shellPath := ""
+	shellArgs := []string{"-l"}
+	
+	if cfg != nil && cfg.Shell.Path != "" {
+		shellPath = cfg.Shell.Path
+		if len(cfg.Shell.Args) > 0 {
+			shellArgs = cfg.Shell.Args
+		}
+	} else {
+		// Fall back to environment variable
+		shellPath = os.Getenv("SHELL")
+		if shellPath == "" {
+			// Default to bash if neither config nor environment variable is set
+			shellPath = "/bin/bash"
+		}
 	}
 
-	cmd := exec.Command(shellPath, "-l")
+	cmd := exec.Command(shellPath, shellArgs...)
 	cmd.Dir = cwd
 
 	stdinPipe, err := cmd.StdinPipe()

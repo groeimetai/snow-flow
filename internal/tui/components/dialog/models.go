@@ -10,7 +10,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/llm/models"
-	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/layout"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -127,7 +126,6 @@ func (m *modelDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.switchProvider(1)
 			}
 		case key.Matches(msg, modelKeys.Enter):
-			status.Info(fmt.Sprintf("selected model: %s", m.models[m.selectedIdx].Name))
 			return m, util.CmdHandler(ModelSelectedMsg{Model: m.models[m.selectedIdx]})
 		case key.Matches(msg, modelKeys.Escape):
 			return m, util.CmdHandler(CloseModelDialogMsg{})

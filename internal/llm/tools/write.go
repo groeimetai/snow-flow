@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/sst/opencode/internal/config"
@@ -161,16 +160,11 @@ func (w *writeTool) Run(ctx context.Context, call ToolCall) (ToolResponse, error
 		filePath,
 	)
 
-	rootDir := config.WorkingDirectory()
-	permissionPath := filepath.Dir(filePath)
-	if strings.HasPrefix(filePath, rootDir) {
-		permissionPath = rootDir
-	}
 	p := w.permissions.Request(
 		ctx,
 		permission.CreatePermissionRequest{
 			SessionID:   sessionID,
-			Path:        permissionPath,
+			Path:        filePath,
 			ToolName:    WriteToolName,
 			Action:      "write",
 			Description: fmt.Sprintf("Create file %s", filePath),

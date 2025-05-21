@@ -74,6 +74,8 @@ You can configure OpenCode using environment variables:
 | `ANTHROPIC_API_KEY`        | For Claude models                                      |
 | `OPENAI_API_KEY`           | For OpenAI models                                      |
 | `GEMINI_API_KEY`           | For Google Gemini models                               |
+| `VERTEXAI_PROJECT`         | For Google Cloud VertexAI (Gemini)                     |
+| `VERTEXAI_LOCATION`        | For Google Cloud VertexAI (Gemini)                     |
 | `GROQ_API_KEY`             | For Groq models                                        |
 | `AWS_ACCESS_KEY_ID`        | For AWS Bedrock (Claude)                               |
 | `AWS_SECRET_ACCESS_KEY`    | For AWS Bedrock (Claude)                               |
@@ -81,7 +83,6 @@ You can configure OpenCode using environment variables:
 | `AZURE_OPENAI_ENDPOINT`    | For Azure OpenAI models                                |
 | `AZURE_OPENAI_API_KEY`     | For Azure OpenAI models (optional when using Entra ID) |
 | `AZURE_OPENAI_API_VERSION` | For Azure OpenAI models                                |
-
 ### Configuration File Structure
 
 ```json
@@ -134,6 +135,10 @@ You can configure OpenCode using environment variables:
       "disabled": false,
       "command": "gopls"
     }
+  },
+  "shell": {
+    "path": "/bin/zsh",
+    "args": ["-l"]
   },
   "debug": false,
   "debugLSP": false
@@ -189,7 +194,43 @@ OpenCode supports a variety of AI models from different providers:
 - O3 family (o3, o3-mini)
 - O4 Mini
 
-## Usage
+### Google Cloud VertexAI
+
+- Gemini 2.5
+- Gemini 2.5 Flash
+
+## Using Bedrock Models
+
+To use bedrock models with OpenCode you need three things.
+
+1. Valid AWS credentials (the env vars: `AWS_SECRET_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_REGION`)
+2. Access to the corresponding model in AWS Bedrock in your region.
+    a. You can request access in the AWS console on the Bedrock -> "Model access" page.
+3. A correct configuration file. You don't need the `providers` key. Instead you have to prefix your models per agent with `bedrock.` and then a valid model. For now only Claude 3.7 is supported.
+
+```json
+{
+  "agents": {
+    "primary": {
+      "model": "bedrock.claude-3.7-sonnet",
+      "maxTokens": 5000,
+      "reasoningEffort": ""
+    },
+    "task": {
+      "model": "bedrock.claude-3.7-sonnet",
+      "maxTokens": 5000,
+      "reasoningEffort": ""
+    },
+    "title": {
+      "model": "bedrock.claude-3.7-sonnet",
+      "maxTokens": 80,
+      "reasoningEffort": ""
+    }
+  },
+}
+```
+ 
+## Interactive Mode Usage
 
 ```bash
 # Start OpenCode
@@ -202,13 +243,65 @@ opencode -d
 opencode -c /path/to/project
 ```
 
+## Non-interactive Prompt Mode
+
+You can run OpenCode in non-interactive mode by passing a prompt directly as a command-line argument. This is useful for scripting, automation, or when you want a quick answer without launching the full TUI.
+
+```bash
+# Run a single prompt and print the AI's response to the terminal
+opencode -p "Explain the use of context in Go"
+
+# Get response in JSON format
+opencode -p "Explain the use of context in Go" -f json
+
+# Run without showing the spinner
+opencode -p "Explain the use of context in Go" -q
+
+# Enable verbose logging to stderr
+opencode -p "Explain the use of context in Go" --verbose
+
+# Restrict the agent to only use specific tools
+opencode -p "Explain the use of context in Go" --allowedTools=view,ls,glob
+
+# Prevent the agent from using specific tools
+opencode -p "Explain the use of context in Go" --excludedTools=bash,edit
+```
+
+In this mode, OpenCode will process your prompt, print the result to standard output, and then exit. All permissions are auto-approved for the session.
+
+### Tool Restrictions
+
+You can control which tools the AI assistant has access to in non-interactive mode:
+
+- `--allowedTools`: Comma-separated list of tools that the agent is allowed to use. Only these tools will be available.
+- `--excludedTools`: Comma-separated list of tools that the agent is not allowed to use. All other tools will be available.
+
+These flags are mutually exclusive - you can use either `--allowedTools` or `--excludedTools`, but not both at the same time.
+
+### Output Formats
+
+OpenCode supports the following output formats in non-interactive mode:
+
+| Format | Description                            |
+| ------ | -------------------------------------- |
+| `text` | Plain text output (default)            |
+| `json` | Output wrapped in a JSON object        |
+
+The output format is implemented as a strongly-typed `OutputFormat` in the codebase, ensuring type safety and validation when processing outputs.
+
 ## Command-line Flags
 
-| Flag      | Short | Description                   |
-| --------- | ----- | ----------------------------- |
-| `--help`  | `-h`  | Display help information      |
-| `--debug` | `-d`  | Enable debug mode             |
-| `--cwd`   | `-c`  | Set current working directory |
+| Flag              | Short | Description                                                |
+| ----------------- | ----- | ---------------------------------------------------------- |
+| `--help`          | `-h`  | Display help information                                   |
+| `--debug`         | `-d`  | Enable debug mode                                          |
+| `--cwd`           | `-c`  | Set current working directory                              |
+| `--prompt`        | `-p`  | Run a single prompt in non-interactive mode                |
+| `--output-format` | `-f`  | Output format for non-interactive mode (text, json)        |
+| `--quiet`         | `-q`  | Hide spinner in non-interactive mode                       |
+| `--verbose`       |       | Display logs to stderr in non-interactive mode             |
+| `--allowedTools`  |       | Restrict the agent to only use specified tools             |
+| `--excludedTools` |       | Prevent the agent from using specified tools               |
 
 ## Keyboard Shortcuts
 
@@ -373,6 +466,35 @@ You can define any of the following color keys in your `customTheme`:
 - Diff view colors: `diffAdded`, `diffRemoved`, `diffContext`, etc.
 
 You don't need to define all colors. Any undefined colors will fall back to the default "opencode" theme colors.
+
+### Shell Configuration
+
+OpenCode allows you to configure the shell used by the `bash` tool. By default, it uses:
+1. The shell specified in the config file (if provided)
+2. The shell from the `$SHELL` environment variable (if available)
+3. Falls back to `/bin/bash` if neither of the above is available
+
+To configure a custom shell, add a `shell` section to your `.opencode.json` configuration file:
+
+```json
+{
+  "shell": {
+    "path": "/bin/zsh",
+    "args": ["-l"]
+  }
+}
+```
+
+You can specify any shell executable and custom arguments:
+
+```json
+{
+  "shell": {
+    "path": "/usr/bin/fish",
+    "args": []
+  }
+}
+```
 
 ## Architecture
 

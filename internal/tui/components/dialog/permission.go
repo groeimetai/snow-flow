@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/diff"
 	"github.com/sst/opencode/internal/llm/tools"
 	"github.com/sst/opencode/internal/permission"
@@ -13,6 +14,7 @@ import (
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
 	"github.com/sst/opencode/internal/tui/util"
+	"path/filepath"
 	"strings"
 )
 
@@ -204,10 +206,19 @@ func (p *permissionDialogCmp) renderHeader() string {
 		Render(fmt.Sprintf(": %s", p.permission.ToolName))
 
 	pathKey := baseStyle.Foreground(t.TextMuted()).Bold(true).Render("Path")
+	
+	// Get the current working directory to display relative path
+	relativePath := p.permission.Path
+	if filepath.IsAbs(relativePath) {
+		if cwd, err := filepath.Rel(config.WorkingDirectory(), relativePath); err == nil {
+			relativePath = cwd
+		}
+	}
+	
 	pathValue := baseStyle.
 		Foreground(t.Text()).
 		Width(p.width - lipgloss.Width(pathKey)).
-		Render(fmt.Sprintf(": %s", p.permission.Path))
+		Render(fmt.Sprintf(": %s", relativePath))
 
 	headerParts := []string{
 		lipgloss.JoinHorizontal(

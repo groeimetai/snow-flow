@@ -42,4 +42,5 @@ Thumbs.db
 .env.local
 
 .opencode/
-
+# ignore locally built binary
+opencode*

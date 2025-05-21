@@ -15,6 +15,7 @@ import (
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/db"
+	"github.com/sst/opencode/internal/format"
 	"github.com/sst/opencode/internal/llm/agent"
 	"github.com/sst/opencode/internal/logging"
 	"github.com/sst/opencode/internal/lsp/discovery"
@@ -86,6 +87,25 @@ to assist developers in writing, debugging, and understanding code directly from
 		_, err := config.Load(cwd, debug, lvl)
 		if err != nil {
 			return err
+		}
+
+		// Check if we're in non-interactive mode
+		prompt, _ := cmd.Flags().GetString("prompt")
+		if prompt != "" {
+			outputFormatStr, _ := cmd.Flags().GetString("output-format")
+			outputFormat := format.OutputFormat(outputFormatStr)
+			if !outputFormat.IsValid() {
+				return fmt.Errorf("invalid output format: %s", outputFormatStr)
+			}
+
+			quiet, _ := cmd.Flags().GetBool("quiet")
+			verbose, _ := cmd.Flags().GetBool("verbose")
+
+			// Get tool restriction flags
+			allowedTools, _ := cmd.Flags().GetStringSlice("allowedTools")
+			excludedTools, _ := cmd.Flags().GetStringSlice("excludedTools")
+
+			return handleNonInteractiveMode(cmd.Context(), prompt, outputFormat, quiet, verbose, allowedTools, excludedTools)
 		}
 
 		// Run LSP auto-discovery
@@ -296,4 +316,16 @@ func init() {
 	rootCmd.Flags().BoolP("version", "v", false, "Version")
 	rootCmd.Flags().BoolP("debug", "d", false, "Debug")
 	rootCmd.Flags().StringP("cwd", "c", "", "Current working directory")
+	rootCmd.Flags().StringP("prompt", "p", "", "Run a single prompt in non-interactive mode")
+	rootCmd.Flags().StringP("output-format", "f", "text", "Output format for non-interactive mode (text, json)")
+	rootCmd.Flags().BoolP("quiet", "q", false, "Hide spinner in non-interactive mode")
+	rootCmd.Flags().BoolP("verbose", "", false, "Display logs to stderr in non-interactive mode")
+	rootCmd.Flags().StringSlice("allowedTools", nil, "Restrict the agent to only use the specified tools in non-interactive mode (comma-separated list)")
+	rootCmd.Flags().StringSlice("excludedTools", nil, "Prevent the agent from using the specified tools in non-interactive mode (comma-separated list)")
+
+	// Make allowedTools and excludedTools mutually exclusive
+	rootCmd.MarkFlagsMutuallyExclusive("allowedTools", "excludedTools")
+
+	// Make quiet and verbose mutually exclusive
+	rootCmd.MarkFlagsMutuallyExclusive("quiet", "verbose")
 }

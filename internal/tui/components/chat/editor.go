@@ -2,6 +2,7 @@ package chat
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"slices"
@@ -16,6 +17,7 @@ import (
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/components/dialog"
+	"github.com/sst/opencode/internal/tui/image"
 	"github.com/sst/opencode/internal/tui/layout"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -23,17 +25,23 @@ import (
 )
 
 type editorCmp struct {
-	width       int
-	height      int
-	app         *app.App
-	textarea    textarea.Model
-	attachments []message.Attachment
-	deleteMode  bool
+	width          int
+	height         int
+	app            *app.App
+	textarea       textarea.Model
+	attachments    []message.Attachment
+	deleteMode     bool
+	history        []string
+	historyIndex   int
+	currentMessage string
 }
 
 type EditorKeyMaps struct {
 	Send       key.Binding
 	OpenEditor key.Binding
+	Paste      key.Binding
+	HistoryUp  key.Binding
+	HistoryDown key.Binding
 }
 
 type bluredEditorKeyMaps struct {
@@ -56,6 +64,18 @@ var editorMaps = EditorKeyMaps{
 		key.WithKeys("ctrl+e"),
 		key.WithHelp("ctrl+e", "open editor"),
 	),
+	Paste: key.NewBinding(
+		key.WithKeys("ctrl+v"),
+		key.WithHelp("ctrl+v", "paste content"),
+	),
+	HistoryUp: key.NewBinding(
+		key.WithKeys("up"),
+		key.WithHelp("up", "previous message"),
+	),
+	HistoryDown: key.NewBinding(
+		key.WithKeys("down"),
+		key.WithHelp("down", "next message"),
+	),
 }
 
 var DeleteKeyMaps = DeleteAttachmentKeyMaps{
@@ -69,7 +89,7 @@ var DeleteKeyMaps = DeleteAttachmentKeyMaps{
 	),
 	DeleteAllAttachments: key.NewBinding(
 		key.WithKeys("r"),
-		key.WithHelp("ctrl+r+r", "delete all attchments"),
+		key.WithHelp("ctrl+r+r", "delete all attachments"),
 	),
 }
 
@@ -131,6 +151,15 @@ func (m *editorCmp) send() tea.Cmd {
 	value := m.textarea.Value()
 	m.textarea.Reset()
 	attachments := m.attachments
+
+	// Save to history if not empty and not a duplicate of the last entry
+	if value != "" {
+		if len(m.history) == 0 || m.history[len(m.history)-1] != value {
+			m.history = append(m.history, value)
+		}
+		m.historyIndex = len(m.history)
+		m.currentMessage = ""
+	}
 
 	m.attachments = nil
 	if value == "" {
@@ -200,6 +229,67 @@ func (m *editorCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.deleteMode = false
 			return m, nil
 		}
+
+		if key.Matches(msg, editorMaps.Paste) {
+			imageBytes, text, err := image.GetImageFromClipboard()
+			if err != nil {
+				slog.Error(err.Error())
+				return m, cmd
+			}
+			if len(imageBytes) != 0 {
+				attachmentName := fmt.Sprintf("clipboard-image-%d", len(m.attachments))
+				attachment := message.Attachment{FilePath: attachmentName, FileName: attachmentName, Content: imageBytes, MimeType: "image/png"}
+				m.attachments = append(m.attachments, attachment)
+			} else {
+				m.textarea.SetValue(m.textarea.Value() + text)
+			}
+			return m, cmd
+		}
+
+		// Handle history navigation with up/down arrow keys
+		// Only handle history navigation if the filepicker is not open
+		if m.textarea.Focused() && key.Matches(msg, editorMaps.HistoryUp) && !m.app.IsFilepickerOpen() {
+			// Get the current line number
+			currentLine := m.textarea.Line()
+			
+			// Only navigate history if we're at the first line
+			if currentLine == 0 && len(m.history) > 0 {
+				// Save current message if we're just starting to navigate
+				if m.historyIndex == len(m.history) {
+					m.currentMessage = m.textarea.Value()
+				}
+				
+				// Go to previous message in history
+				if m.historyIndex > 0 {
+					m.historyIndex--
+					m.textarea.SetValue(m.history[m.historyIndex])
+				}
+				return m, nil
+			}
+		}
+		
+		if m.textarea.Focused() && key.Matches(msg, editorMaps.HistoryDown) && !m.app.IsFilepickerOpen() {
+			// Get the current line number and total lines
+			currentLine := m.textarea.Line()
+			value := m.textarea.Value()
+			lines := strings.Split(value, "\n")
+			totalLines := len(lines)
+			
+			// Only navigate history if we're at the last line
+			if currentLine == totalLines-1 {
+				if m.historyIndex < len(m.history)-1 {
+					// Go to next message in history
+					m.historyIndex++
+					m.textarea.SetValue(m.history[m.historyIndex])
+				} else if m.historyIndex == len(m.history)-1 {
+					// Return to the current message being composed
+					m.historyIndex = len(m.history)
+					m.textarea.SetValue(m.currentMessage)
+				}
+				return m, nil
+			}
+		}
+
 		// Handle Enter key
 		if m.textarea.Focused() && key.Matches(msg, editorMaps.Send) {
 			value := m.textarea.Value()
@@ -243,7 +333,6 @@ func (m *editorCmp) SetSize(width, height int) tea.Cmd {
 	m.height = height
 	m.textarea.SetWidth(width - 3) // account for the prompt and padding right
 	m.textarea.SetHeight(height)
-	m.textarea.SetWidth(width)
 	return nil
 }
 
@@ -314,7 +403,10 @@ func CreateTextArea(existing *textarea.Model) textarea.Model {
 func NewEditorCmp(app *app.App) tea.Model {
 	ta := CreateTextArea(nil)
 	return &editorCmp{
-		app:      app,
-		textarea: ta,
+		app:          app,
+		textarea:     ta,
+		history:      []string{},
+		historyIndex: 0,
+		currentMessage: "",
 	}
 }

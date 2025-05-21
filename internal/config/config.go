@@ -73,6 +73,12 @@ type TUIConfig struct {
 	CustomTheme map[string]any `json:"customTheme,omitempty"`
 }
 
+// ShellConfig defines the configuration for the shell used by the bash tool.
+type ShellConfig struct {
+	Path string   `json:"path,omitempty"`
+	Args []string `json:"args,omitempty"`
+}
+
 // Config is the main configuration structure for the application.
 type Config struct {
 	Data         Data                              `json:"data"`
@@ -85,6 +91,7 @@ type Config struct {
 	DebugLSP     bool                              `json:"debugLSP,omitempty"`
 	ContextPaths []string                          `json:"contextPaths,omitempty"`
 	TUI          TUIConfig                         `json:"tui"`
+	Shell        ShellConfig                       `json:"shell,omitempty"`
 }
 
 // Application constants
@@ -235,6 +242,7 @@ func setProviderDefaults() {
 	// 5. OpenRouter
 	// 6. AWS Bedrock
 	// 7. Azure
+	// 8. Google Cloud VertexAI
 
 	// Anthropic configuration
 	if key := viper.GetString("providers.anthropic.apiKey"); strings.TrimSpace(key) != "" {
@@ -299,6 +307,15 @@ func setProviderDefaults() {
 		viper.SetDefault("agents.title.model", models.AzureGPT41Mini)
 		return
 	}
+
+	// Google Cloud VertexAI configuration
+	if hasVertexAICredentials() {
+		viper.SetDefault("agents.coder.model", models.VertexAIGemini25)
+		viper.SetDefault("agents.summarizer.model", models.VertexAIGemini25)
+		viper.SetDefault("agents.task.model", models.VertexAIGemini25Flash)
+		viper.SetDefault("agents.title.model", models.VertexAIGemini25Flash)
+		return
+	}
 }
 
 // hasAWSCredentials checks if AWS credentials are available in the environment.
@@ -324,6 +341,19 @@ func hasAWSCredentials() bool {
 		return true
 	}
 
+	return false
+}
+
+// hasVertexAICredentials checks if VertexAI credentials are available in the environment.
+func hasVertexAICredentials() bool {
+	// Check for explicit VertexAI parameters
+	if os.Getenv("VERTEXAI_PROJECT") != "" && os.Getenv("VERTEXAI_LOCATION") != "" {
+		return true
+	}
+	// Check for Google Cloud project and location
+	if os.Getenv("GOOGLE_CLOUD_PROJECT") != "" && (os.Getenv("GOOGLE_CLOUD_REGION") != "" || os.Getenv("GOOGLE_CLOUD_LOCATION") != "") {
+		return true
+	}
 	return false
 }
 
@@ -549,6 +579,10 @@ func getProviderAPIKey(provider models.ModelProvider) string {
 		if hasAWSCredentials() {
 			return "aws-credentials-available"
 		}
+	case models.ProviderVertexAI:
+		if hasVertexAICredentials() {
+			return "vertex-ai-credentials-available"
+		}
 	}
 	return ""
 }
@@ -665,6 +699,24 @@ func setDefaultModelForAgent(agent AgentName) bool {
 			Model:           models.BedrockClaude37Sonnet,
 			MaxTokens:       maxTokens,
 			ReasoningEffort: "medium", // Claude models support reasoning
+		}
+		return true
+	}
+
+	if hasVertexAICredentials() {
+		var model models.ModelID
+		maxTokens := int64(5000)
+
+		if agent == AgentTitle {
+			model = models.VertexAIGemini25Flash
+			maxTokens = 80
+		} else {
+			model = models.VertexAIGemini25
+		}
+
+		cfg.Agents[agent] = Agent{
+			Model:     model,
+			MaxTokens: maxTokens,
 		}
 		return true
 	}

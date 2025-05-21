@@ -386,6 +386,8 @@ func (m *messagesCmp) help() string {
 			baseStyle.Foreground(t.TextMuted()).Bold(true).Render("+"),
 			baseStyle.Foreground(t.Text()).Bold(true).Render("enter"),
 			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" for newline,"),
+			baseStyle.Foreground(t.Text()).Bold(true).Render(" ↑↓"),
+			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" for history,"),
 			baseStyle.Foreground(t.Text()).Bold(true).Render(" ctrl+h"),
 			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" to toggle tool messages"),
 		)

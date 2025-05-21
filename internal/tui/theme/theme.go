@@ -235,7 +235,19 @@ func ParseAdaptiveColor(value any) (lipgloss.AdaptiveColor, error) {
 		}, nil
 	}
 
-	// Case 2: Map with dark and light keys
+	// Case 2: Int value between 0 and 255
+	if numericVal, ok := value.(float64); ok {
+		intVal := int(numericVal)
+		if intVal < 0 || intVal > 255 {
+			return lipgloss.AdaptiveColor{}, fmt.Errorf("invalid int color value (must be between 0 and 255): %d", intVal)
+		}
+		return lipgloss.AdaptiveColor{
+			Dark:  fmt.Sprintf("%d", intVal),
+			Light: fmt.Sprintf("%d", intVal),
+		}, nil
+	}
+
+	// Case 3: Map with dark and light keys
 	if colorMap, ok := value.(map[string]any); ok {
 		darkVal, darkOk := colorMap["dark"]
 		lightVal, lightOk := colorMap["light"]
@@ -248,7 +260,20 @@ func ParseAdaptiveColor(value any) (lipgloss.AdaptiveColor, error) {
 		lightHex, lightIsString := lightVal.(string)
 
 		if !darkIsString || !lightIsString {
-			return lipgloss.AdaptiveColor{}, fmt.Errorf("color values must be strings")
+			darkVal, darkIsNumber := darkVal.(float64)
+			lightVal, lightIsNumber := lightVal.(float64)
+
+			if !darkIsNumber || !lightIsNumber {
+				return lipgloss.AdaptiveColor{}, fmt.Errorf("color map values must be strings or ints")
+			}
+
+			darkInt := int(darkVal)
+			lightInt := int(lightVal)
+
+			return lipgloss.AdaptiveColor{
+				Dark:  fmt.Sprintf("%d", darkInt),
+				Light: fmt.Sprintf("%d", lightInt),
+			}, nil
 		}
 
 		if !hexColorRegex.MatchString(darkHex) || !hexColorRegex.MatchString(lightHex) {

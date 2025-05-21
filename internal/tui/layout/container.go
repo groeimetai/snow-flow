@@ -11,16 +11,16 @@ type Container interface {
 	tea.Model
 	Sizeable
 	Bindings
-	Focus() // Add focus method
-	Blur()  // Add blur method
+	Focus()
+	Blur()
 }
+
 type container struct {
 	width  int
 	height int
 
 	content tea.Model
 
-	// Style options
 	paddingTop    int
 	paddingRight  int
 	paddingBottom int
@@ -32,7 +32,7 @@ type container struct {
 	borderLeft   bool
 	borderStyle  lipgloss.Border
 
-	focused bool // Track focus state
+	focused bool
 }
 
 func (c *container) Init() tea.Cmd {
@@ -152,16 +152,13 @@ func (c *container) Blur() {
 type ContainerOption func(*container)
 
 func NewContainer(content tea.Model, options ...ContainerOption) Container {
-
 	c := &container{
 		content:     content,
 		borderStyle: lipgloss.NormalBorder(),
 	}
-
 	for _, option := range options {
 		option(c)
 	}
-
 	return c
 }
 

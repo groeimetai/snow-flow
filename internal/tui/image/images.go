@@ -1,8 +1,10 @@
 package image
 
 import (
+	"bytes"
 	"fmt"
 	"image"
+	"image/png"
 	"os"
 	"strings"
 
@@ -70,4 +72,14 @@ func ImagePreview(width int, filename string) (string, error) {
 	imageString := ToString(width, img)
 
 	return imageString, nil
+}
+
+func ImageToBytes(image image.Image) ([]byte, error) {
+	buf := new(bytes.Buffer)
+    err := png.Encode(buf, image)
+    if err != nil {
+        return nil, err
+    }
+    
+    return buf.Bytes(), nil
 }

@@ -71,8 +71,7 @@ func (m *sidebarCmp) View() string {
 	return baseStyle.
 		Width(m.width).
 		PaddingLeft(4).
-		PaddingRight(2).
-		Height(m.height - 1).
+		PaddingRight(1).
 		Render(
 			lipgloss.JoinVertical(
 				lipgloss.Top,
@@ -98,14 +97,9 @@ func (m *sidebarCmp) sessionSection() string {
 
 	sessionValue := baseStyle.
 		Foreground(t.Text()).
-		Width(m.width - lipgloss.Width(sessionKey)).
 		Render(fmt.Sprintf(": %s", m.app.CurrentSession.Title))
 
-	return lipgloss.JoinHorizontal(
-		lipgloss.Left,
-		sessionKey,
-		sessionValue,
-	)
+	return sessionKey + sessionValue
 }
 
 func (m *sidebarCmp) modifiedFile(filePath string, additions, removals int) string {

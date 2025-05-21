@@ -84,7 +84,7 @@ func (i *detailCmp) updateContent() {
 	messageStyle := lipgloss.NewStyle().Bold(true).Foreground(t.Text())
 	content.WriteString(messageStyle.Render("Message:"))
 	content.WriteString("\n")
-	content.WriteString(lipgloss.NewStyle().Padding(0, 2).Render(i.currentLog.Message))
+	content.WriteString(lipgloss.NewStyle().Padding(0, 2).Width(i.width).Render(i.currentLog.Message))
 	content.WriteString("\n\n")
 
 	// Attributes section
@@ -112,7 +112,7 @@ func (i *detailCmp) updateContent() {
 				valueStyle.Render(value),
 			)
 
-			content.WriteString(lipgloss.NewStyle().Padding(0, 2).Render(attrLine))
+			content.WriteString(lipgloss.NewStyle().Padding(0, 2).Width(i.width).Render(attrLine))
 			content.WriteString("\n")
 		}
 	}
@@ -123,7 +123,7 @@ func (i *detailCmp) updateContent() {
 		content.WriteString("\n")
 		content.WriteString(sessionStyle.Render("Session:"))
 		content.WriteString("\n")
-		content.WriteString(lipgloss.NewStyle().Padding(0, 2).Render(i.currentLog.SessionID))
+		content.WriteString(lipgloss.NewStyle().Padding(0, 2).Width(i.width).Render(i.currentLog.SessionID))
 	}
 
 	i.viewport.SetContent(content.String())

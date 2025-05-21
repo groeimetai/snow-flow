@@ -3,11 +3,11 @@ package provider
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/sst/opencode/internal/llm/models"
 	"github.com/sst/opencode/internal/llm/tools"
 	"github.com/sst/opencode/internal/message"
-	"log/slog"
 )
 
 type EventType string
@@ -122,6 +122,11 @@ func NewProvider(providerName models.ModelProvider, opts ...ProviderClientOption
 		return &baseProvider[AzureClient]{
 			options: clientOptions,
 			client:  newAzureClient(clientOptions),
+		}, nil
+	case models.ProviderVertexAI:
+		return &baseProvider[VertexAIClient]{
+			options: clientOptions,
+			client:  newVertexAIClient(clientOptions),
 		}, nil
 	case models.ProviderOpenRouter:
 		clientOptions.openaiOptions = append(clientOptions.openaiOptions,
