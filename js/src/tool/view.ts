@@ -40,7 +40,7 @@ TIPS:
 - For code exploration, first use Grep to find relevant files, then View to examine them
 - When viewing large files, use the offset parameter to read specific sections`;
 
-export const ViewTool = Tool.define({
+export const view = Tool.define({
   name: "view",
   description: DESCRIPTION,
   parameters: z.object({
@@ -84,29 +84,25 @@ export const ViewTool = Tool.define({
       throw new Error(`File not found: ${filePath}`);
     }
     const stats = await file.stat();
-    if (stats.isDirectory())
-      throw new Error(`Path is a directory, not a file: ${filePath}`);
 
-    if (stats.size > MAX_READ_SIZE) {
+    if (stats.size > MAX_READ_SIZE)
       throw new Error(
         `File is too large (${stats.size} bytes). Maximum size is ${MAX_READ_SIZE} bytes`,
       );
-    }
     const limit = params.limit ?? DEFAULT_READ_LIMIT;
     const offset = params.offset || 0;
     const isImage = isImageFile(filePath);
-    if (isImage) {
+    if (isImage)
       throw new Error(
         `This is an image file of type: ${isImage}\nUse a different tool to process images`,
       );
-    }
     const lines = await file.text().then((text) => text.split("\n"));
     const content = lines.slice(offset, offset + limit).map((line, index) => {
       line =
         line.length > MAX_LINE_LENGTH
           ? line.substring(0, MAX_LINE_LENGTH) + "..."
           : line;
-      return `${index + offset + 1}|${line}`;
+      return `${(index + offset + 1).toString().padStart(5, "0")}| ${line}`;
     });
 
     let output = "<file>\n";

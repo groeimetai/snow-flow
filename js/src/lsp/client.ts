@@ -2,7 +2,6 @@ import { spawn } from "child_process";
 import path from "path";
 import {
   createMessageConnection,
-  Disposable,
   StreamMessageReader,
   StreamMessageWriter,
 } from "vscode-jsonrpc/node";

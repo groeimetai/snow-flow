@@ -11,15 +11,16 @@ export namespace App {
 
   const ctx = Context.create<Info>("app");
 
-  export async function create(input: { directory: string }) {
+  async function create(input: { directory: string }) {
+    const dataDir = AppPath.data(input.directory);
+    await fs.mkdir(dataDir, { recursive: true });
+    await Log.file(input.directory);
+
     log.info("creating");
 
     const config = await Config.load(input.directory);
 
-    const dataDir = AppPath.data(input.directory);
-    await fs.mkdir(dataDir, { recursive: true });
     log.info("created", { path: dataDir });
-    Log.file(input.directory);
 
     const services = new Map<any, any>();
 
@@ -55,5 +56,11 @@ export namespace App {
     return ctx.use();
   }
 
-  export const provide = ctx.provide;
+  export async function provide<T extends (app: Info) => any>(
+    input: { directory: string },
+    cb: T,
+  ) {
+    const app = await create(input);
+    return ctx.provide(app, () => cb(app));
+  }
 }

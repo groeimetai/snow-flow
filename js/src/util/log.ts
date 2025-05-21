@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import { AppPath } from "../app/path";
 export namespace Log {
@@ -11,16 +10,23 @@ export namespace Log {
     },
   };
 
-  export function file(directory: string) {
-    return;
+  export async function file(directory: string) {
     const out = Bun.file(
       path.join(AppPath.data(directory), "opencode.out.log"),
-    ).writer();
+    );
     const err = Bun.file(
       path.join(AppPath.data(directory), "opencode.err.log"),
-    ).writer();
-    write["out"] = (msg) => out.write(msg);
-    write["err"] = (msg) => err.write(msg);
+    );
+    const outWriter = out.writer();
+    const errWriter = err.writer();
+    write["out"] = (msg) => {
+      outWriter.write(msg);
+      outWriter.flush();
+    };
+    write["err"] = (msg) => {
+      errWriter.write(msg);
+      errWriter.flush();
+    };
   }
 
   export function create(tags?: Record<string, any>) {

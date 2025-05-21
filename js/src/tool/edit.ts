@@ -1,5 +1,4 @@
 import { z } from "zod";
-import * as fs from "fs";
 import * as path from "path";
 import { Log } from "../util/log";
 import { Tool } from "./tool";
@@ -7,67 +6,6 @@ import { FileTimes } from "./util/file-times";
 import { LSP } from "../lsp";
 
 const log = Log.create({ service: "tool.edit" });
-
-// Simple diff generation
-function generateDiff(
-  oldContent: string,
-  newContent: string,
-  filePath: string,
-): {
-  diff: string;
-  additions: number;
-  removals: number;
-} {
-  const oldLines = oldContent.split("\n");
-  const newLines = newContent.split("\n");
-
-  let diff = `--- ${filePath}\n+++ ${filePath}\n`;
-  let additions = 0;
-  let removals = 0;
-
-  // Very simple diff implementation - in a real implementation, you'd use a proper diff algorithm
-  if (oldContent === "") {
-    // New file
-    diff += "@@ -0,0 +1," + newLines.length + " @@\n";
-    for (const line of newLines) {
-      diff += "+" + line + "\n";
-      additions++;
-    }
-  } else if (newContent === "") {
-    // Deleted content
-    diff += "@@ -1," + oldLines.length + " +0,0 @@\n";
-    for (const line of oldLines) {
-      diff += "-" + line + "\n";
-      removals++;
-    }
-  } else {
-    // Modified content
-    diff += "@@ -1," + oldLines.length + " +1," + newLines.length + " @@\n";
-
-    // This is a very simplified diff - a real implementation would use a proper diff algorithm
-    const maxLines = Math.max(oldLines.length, newLines.length);
-    for (let i = 0; i < maxLines; i++) {
-      if (i < oldLines.length && i < newLines.length) {
-        if (oldLines[i] !== newLines[i]) {
-          diff += "-" + oldLines[i] + "\n";
-          diff += "+" + newLines[i] + "\n";
-          removals++;
-          additions++;
-        } else {
-          diff += " " + oldLines[i] + "\n";
-        }
-      } else if (i < oldLines.length) {
-        diff += "-" + oldLines[i] + "\n";
-        removals++;
-      } else if (i < newLines.length) {
-        diff += "+" + newLines[i] + "\n";
-        additions++;
-      }
-    }
-  }
-
-  return { diff, additions, removals };
-}
 
 const DESCRIPTION = `Edits files by replacing text, creating new files, or deleting content. For moving or renaming files, use the Bash tool with the 'mv' command instead. For larger file edits, use the FileWrite tool to overwrite files.
 
@@ -117,7 +55,7 @@ When making edits:
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.`;
 
-export const EditTool = Tool.define({
+export const edit = Tool.define({
   name: "edit",
   description: DESCRIPTION,
   parameters: z.object({
@@ -137,7 +75,7 @@ export const EditTool = Tool.define({
 
     await (async () => {
       if (params.old_string === "") {
-        await createNewFile(filePath, params.new_string);
+        await Bun.write(filePath, params.new_string);
         return;
       }
 
@@ -173,7 +111,6 @@ export const EditTool = Tool.define({
         params.new_string +
         content.substring(index + params.old_string.length);
 
-      console.log(newContent);
       await file.write(newContent);
     })();
 
@@ -193,45 +130,9 @@ export const EditTool = Tool.define({
         output += `\n<project_diagnostics>\n${JSON.stringify(params)}\n</project_diagnostics>\n`;
       }
     }
-    console.log(output);
 
     return {
       output,
     };
   },
 });
-
-async function createNewFile(
-  filePath: string,
-  content: string,
-): Promise<string> {
-  try {
-    try {
-      const fileStats = fs.statSync(filePath);
-      if (fileStats.isDirectory()) {
-        throw new Error(`Path is a directory, not a file: ${filePath}`);
-      }
-      throw new Error(`File already exists: ${filePath}`);
-    } catch (err: any) {
-      if (err.code !== "ENOENT") {
-        throw err;
-      }
-    }
-
-    const dir = path.dirname(filePath);
-    fs.mkdirSync(dir, { recursive: true });
-
-    const { diff, additions, removals } = generateDiff("", content, filePath);
-
-    fs.writeFileSync(filePath, content);
-
-    FileTimes.write(filePath);
-    FileTimes.read(filePath);
-
-    return `File created: ${filePath}`;
-  } catch (err: any) {
-    throw new Error(`Failed to create file: ${err.message}`);
-  }
-}
-
-function getFile(filePath: string) {}

@@ -1,0 +1,37 @@
+import { describe, expect, test } from "bun:test";
+import { App } from "../../src/app";
+import { glob } from "../../src/tool/glob";
+
+describe("tool.glob", () => {
+  test("truncate", async () => {
+    await App.provide({ directory: process.cwd() }, async () => {
+      let result = await glob.execute(
+        {
+          pattern: "./node_modules/**/*",
+        },
+        {
+          toolCallId: "test",
+          messages: [],
+        },
+      );
+      expect(result.metadata.truncated).toBe(true);
+    });
+  });
+  test("basic", async () => {
+    await App.provide({ directory: process.cwd() }, async () => {
+      let result = await glob.execute(
+        {
+          pattern: "*.json",
+        },
+        {
+          toolCallId: "test",
+          messages: [],
+        },
+      );
+      expect(result.metadata).toMatchObject({
+        truncated: false,
+        count: 3,
+      });
+    });
+  });
+});

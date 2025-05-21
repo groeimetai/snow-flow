@@ -14,9 +14,7 @@ import {
   type UIMessagePart,
 } from "ai";
 import { z } from "zod";
-import { BashTool } from "../tool/bash";
-import { EditTool } from "../tool/edit";
-import { ViewTool } from "../tool/view";
+import * as tools from "../tool";
 
 import ANTHROPIC_PROMPT from "./prompt/anthropic.txt";
 import type { Tool } from "../tool/tool";
@@ -173,11 +171,7 @@ export namespace Session {
       maxSteps: 1000,
       messages: convertToModelMessages(msgs),
       temperature: 0,
-      tools: {
-        ...BashTool,
-        ...ViewTool,
-        ...EditTool,
-      },
+      tools,
       model,
     });
     const next: Message = {
@@ -192,7 +186,7 @@ export namespace Session {
         tool: {},
       },
     };
-    const metadata = next.metadata!;
+
     msgs.push(next);
     let text: TextUIPart | undefined;
     const reader = result.toUIMessageStream().getReader();

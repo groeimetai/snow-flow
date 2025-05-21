@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Tool, tool } from "./tool";
+import { Tool } from "./tool";
 
 const MAX_OUTPUT_LENGTH = 30000;
 const BANNED_COMMANDS = [
@@ -170,7 +170,7 @@ Important:
 - Return an empty response - the user will see the gh output directly
 - Never update git config`;
 
-export const BashTool = Tool.define({
+export const bash = Tool.define({
   name: "bash",
   description: DESCRIPTION,
   parameters: z.object({
@@ -182,7 +182,7 @@ export const BashTool = Tool.define({
       .describe("Optional timeout in milliseconds")
       .optional(),
   }),
-  async execute(params, opts) {
+  async execute(params) {
     const timeout = Math.min(params.timeout ?? DEFAULT_TIMEOUT, MAX_TIMEOUT);
     if (BANNED_COMMANDS.some((item) => params.command.startsWith(item)))
       throw new Error(`Command '${params.command}' is not allowed`);
