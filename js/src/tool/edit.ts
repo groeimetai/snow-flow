@@ -4,6 +4,7 @@ import * as path from "path";
 import { Log } from "../util/log";
 import { Tool } from "./tool";
 import { FileTimes } from "./util/file-times";
+import { LSP } from "../lsp";
 
 const log = Log.create({ service: "tool.edit" });
 
@@ -78,7 +79,7 @@ Before using this tool:
    - Use the LS tool to verify the parent directory exists and is the correct location
 
 To make a file edit, provide the following:
-1. file_path: The absolute path to the file to modify (must be absolute, not relative)
+1. file_path: The relative path to the file to modify (must be relative, not absolute)
 2. old_string: The text to replace (must be unique within the file, and must match the file contents exactly, including all whitespace and indentation)
 3. new_string: The edited text to replace the old_string
 
@@ -112,7 +113,7 @@ WARNING: If you do not follow these requirements:
 When making edits:
    - Ensure the edit results in idiomatic, correct code
    - Do not leave the code in a broken state
-   - Always use absolute file paths (starting with /)
+   - Always use relative file paths 
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.`;
 
@@ -134,21 +135,68 @@ export const EditTool = Tool.define({
       filePath = path.join(process.cwd(), filePath);
     }
 
-    // Handle different operations based on parameters
-    if (params.old_string === "") {
-      return {
-        output: createNewFile(filePath, params.new_string),
-      };
-    }
+    await (async () => {
+      if (params.old_string === "") {
+        await createNewFile(filePath, params.new_string);
+        return;
+      }
 
-    if (params.new_string === "") {
-      return {
-        output: deleteContent(filePath, params.old_string),
-      };
+      const read = FileTimes.get(filePath);
+      if (!read)
+        throw new Error(
+          `You must read the file ${filePath} before editing it. Use the View tool first`,
+        );
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) throw new Error(`File ${filePath} not found`);
+      const stats = await file.stat();
+      if (stats.isDirectory())
+        throw new Error(`Path is a directory, not a file: ${filePath}`);
+      if (stats.mtime.getTime() > read.getTime())
+        throw new Error(
+          `File ${filePath} has been modified since it was last read.\nLast modification: ${read.toISOString()}\nLast read: ${stats.mtime.toISOString()}\n\nPlease read the file again before modifying it.`,
+        );
+
+      const content = await file.text();
+      const index = content.indexOf(params.old_string);
+      if (index === -1)
+        throw new Error(
+          `old_string not found in file. Make sure it matches exactly, including whitespace and line breaks`,
+        );
+      const lastIndex = content.lastIndexOf(params.old_string);
+      if (index !== lastIndex)
+        throw new Error(
+          `old_string appears multiple times in the file. Please provide more context to ensure a unique match`,
+        );
+
+      const newContent =
+        content.substring(0, index) +
+        params.new_string +
+        content.substring(index + params.old_string.length);
+
+      console.log(newContent);
+      await file.write(newContent);
+    })();
+
+    FileTimes.write(filePath);
+    FileTimes.read(filePath);
+
+    let output = "";
+    await LSP.run((client) => client.refreshDiagnostics({ path: filePath }));
+    const diagnostics = await LSP.run(async (client) => client.diagnostics);
+    for (const diagnostic of diagnostics) {
+      for (const [file, params] of diagnostic.entries()) {
+        if (params.length === 0) continue;
+        if (file === filePath) {
+          output += `\nThis file has errors, please fix\n<file_diagnostics>\n${JSON.stringify(params)}\n</file_diagnostics>\n`;
+          continue;
+        }
+        output += `\n<project_diagnostics>\n${JSON.stringify(params)}\n</project_diagnostics>\n`;
+      }
     }
+    console.log(output);
 
     return {
-      output: replaceContent(filePath, params.old_string, params.new_string),
+      output,
     };
   },
 });
@@ -186,160 +234,4 @@ async function createNewFile(
   }
 }
 
-async function deleteContent(
-  filePath: string,
-  oldString: string,
-): Promise<string> {
-  try {
-    // Check if file exists
-    let fileStats;
-    try {
-      fileStats = fs.statSync(filePath);
-      if (fileStats.isDirectory()) {
-        throw new Error(`Path is a directory, not a file: ${filePath}`);
-      }
-    } catch (err: any) {
-      if (err.code === "ENOENT") {
-        throw new Error(`File not found: ${filePath}`);
-      }
-      throw err;
-    }
-
-    const lastReadTime = FileTimes.get(filePath);
-    if (!lastReadTime) {
-      throw new Error(
-        "You must read the file before editing it. Use the View tool first",
-      );
-    }
-
-    const modTime = fileStats.mtime;
-    if (modTime > lastReadTime) {
-      throw new Error(
-        `File ${filePath} has been modified since it was last read (mod time: ${modTime.toISOString()}, last read: ${lastReadTime.toISOString()})`,
-      );
-    }
-
-    const oldContent = fs.readFileSync(filePath, "utf8");
-    const index = oldContent.indexOf(oldString);
-    if (index === -1) {
-      throw new Error(
-        "old_string not found in file. Make sure it matches exactly, including whitespace and line breaks",
-      );
-    }
-
-    const lastIndex = oldContent.lastIndexOf(oldString);
-    if (index !== lastIndex) {
-      throw new Error(
-        "old_string appears multiple times in the file. Please provide more context to ensure a unique match",
-      );
-    }
-
-    const newContent =
-      oldContent.substring(0, index) +
-      oldContent.substring(index + oldString.length);
-
-    const { diff, additions, removals } = generateDiff(
-      oldContent,
-      newContent,
-      filePath,
-    );
-
-    // Write the file
-    fs.writeFileSync(filePath, newContent);
-
-    FileTimes.write(filePath);
-    FileTimes.read(filePath);
-
-    return `Content deleted from file: ${filePath}`;
-  } catch (err: any) {
-    throw new Error(`Failed to delete content: ${err.message}`);
-  }
-}
-
-async function replaceContent(
-  filePath: string,
-  oldString: string,
-  newString: string,
-): Promise<string> {
-  try {
-    // Check if file exists
-    let fileStats;
-    try {
-      fileStats = fs.statSync(filePath);
-      if (fileStats.isDirectory()) {
-        throw new Error(`Path is a directory, not a file: ${filePath}`);
-      }
-    } catch (err: any) {
-      if (err.code === "ENOENT") {
-        throw new Error(`File not found: ${filePath}`);
-      }
-      throw err;
-    }
-
-    // Check if file has been read before
-    const lastReadTime = getLastReadTime(filePath);
-    if (!lastReadTime) {
-      throw new Error(
-        "You must read the file before editing it. Use the View tool first",
-      );
-    }
-
-    // Check if file has been modified since last read
-    const modTime = fileStats.mtime;
-    if (modTime > lastReadTime) {
-      throw new Error(
-        `File ${filePath} has been modified since it was last read (mod time: ${modTime.toISOString()}, last read: ${lastReadTime.toISOString()})`,
-      );
-    }
-
-    // Read the file content
-    const oldContent = fs.readFileSync(filePath, "utf8");
-
-    // Find the string to replace
-    const index = oldContent.indexOf(oldString);
-    if (index === -1) {
-      throw new Error(
-        "old_string not found in file. Make sure it matches exactly, including whitespace and line breaks",
-      );
-    }
-
-    // Check if the string appears multiple times
-    const lastIndex = oldContent.lastIndexOf(oldString);
-    if (index !== lastIndex) {
-      throw new Error(
-        "old_string appears multiple times in the file. Please provide more context to ensure a unique match",
-      );
-    }
-
-    // Create the new content
-    const newContent =
-      oldContent.substring(0, index) +
-      newString +
-      oldContent.substring(index + oldString.length);
-
-    // Check if content actually changed
-    if (oldContent === newContent) {
-      throw new Error(
-        "new content is the same as old content. No changes made.",
-      );
-    }
-
-    // Generate diff
-    const { diff, additions, removals } = generateDiff(
-      oldContent,
-      newContent,
-      filePath,
-    );
-
-    // Write the file
-    fs.writeFileSync(filePath, newContent);
-
-    FileTimes.write(filePath);
-    FileTimes.read(filePath);
-
-    return `Content replaced in file: ${filePath}`;
-  } catch (err: any) {
-    throw new Error(`Failed to replace content: ${err.message}`);
-  }
-}
-
+function getFile(filePath: string) {}

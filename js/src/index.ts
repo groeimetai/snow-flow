@@ -1,10 +1,11 @@
 import { App } from "./app";
 import { Server } from "./server/server";
-import { Cli, Command, Option, runExit } from "clipanion";
+import { Cli, Command, Option } from "clipanion";
 import fs from "fs/promises";
 import path from "path";
 import { Bus } from "./bus";
 import { Session } from "./session/session";
+import { LSP } from "./lsp";
 
 const cli = new Cli({
   binaryLabel: `opencode`,
@@ -25,6 +26,7 @@ cli.register(
     }
   },
 );
+
 cli.register(
   class extends Command {
     static paths = [["generate"]];
@@ -71,6 +73,9 @@ cli.register(
               "tool:",
               part.toolInvocation.toolName,
               part.toolInvocation.args,
+              part.toolInvocation.state === "result"
+                ? part.toolInvocation.result
+                : "",
             );
           }
         }

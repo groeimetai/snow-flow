@@ -2,6 +2,8 @@ import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
 import { Tool } from "./tool";
+import { LSP } from "../lsp";
+import { FileTimes } from "./util/file-times";
 
 const MAX_READ_SIZE = 250 * 1024;
 const DEFAULT_READ_LIMIT = 2000;
@@ -117,8 +119,11 @@ export const ViewTool = Tool.define({
     }
     output += "\n</file>";
 
+    await LSP.run((client) => client.notify.open({ path: filePath }));
+    FileTimes.read(filePath);
+
     return {
-      output: output,
+      output,
     };
   },
 });
@@ -143,4 +148,3 @@ function isImageFile(filePath: string): string | false {
       return false;
   }
 }
-

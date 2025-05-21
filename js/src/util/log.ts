@@ -12,6 +12,7 @@ export namespace Log {
   };
 
   export function file(directory: string) {
+    return;
     const out = Bun.file(
       path.join(AppPath.data(directory), "opencode.out.log"),
     ).writer();

@@ -26,6 +26,9 @@
     "clipanion": "^4.0.0-rc.4",
     "hono": "^4.7.10",
     "hono-openapi": "^0.4.8",
+    "ts-lsp-client": "^1.0.3",
+    "vscode-jsonrpc": "^8.2.1",
+    "vscode-languageclient": "8",
     "zod": "^3.25.3",
     "zod-openapi": "^4.2.4"
   }

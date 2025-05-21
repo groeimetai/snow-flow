@@ -40,6 +40,9 @@ export namespace Tool {
               output: result.output,
             };
           } catch (e: any) {
+            log.error("error", {
+              msg: e.toString(),
+            });
             return "An error occurred: " + e.toString();
           }
         },
