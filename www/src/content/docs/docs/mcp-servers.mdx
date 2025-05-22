@@ -2,31 +2,40 @@
 title: MCP servers
 ---
 
-OpenCode implements the Model Context Protocol (MCP) to extend its capabilities through external tools. MCP provides a standardized way for the AI assistant to interact with external services and tools.
+You can add external tools to OpenCode using the _Model Context Protocol_, or MCP. OpenCode supports both:
 
-### MCP Features
+- Local servers that use standard input/output, `stdio`
+- Remote servers that use server-sent events `sse`
 
-- **External Tool Integration**: Connect to external tools and services via a standardized protocol
-- **Tool Discovery**: Automatically discover available tools from MCP servers
-- **Multiple Connection Types**:
-  - **Stdio**: Communicate with tools via standard input/output
-  - **SSE**: Communicate with tools via Server-Sent Events
-- **Security**: Permission system for controlling access to MCP tools
+## Add MCP servers
 
-### Configuring MCP Servers
+You can define MCP servers in your OpenCode config under the `mcpServers` section:
 
-MCP servers are defined in the configuration file under the `mcpServers` section:
+### Local
 
-```json
+To add a local or `stdio` MCP server.
+
+```json title=".opencode.json" {4}
 {
   "mcpServers": {
-    "example": {
+    "local-example": {
       "type": "stdio",
       "command": "path/to/mcp-server",
       "env": [],
       "args": []
-    },
-    "web-example": {
+    }
+  }
+}
+```
+
+### Remote
+
+To add a remote or `sse` MCP server.
+
+```json title=".opencode.json" {4}
+{
+  "mcpServers": {
+    "remote-example": {
       "type": "sse",
       "url": "https://example.com/mcp",
       "headers": {
@@ -37,6 +46,6 @@ MCP servers are defined in the configuration file under the `mcpServers` section
 }
 ```
 
-### MCP Tool Usage
+## Usage
 
-Once configured, MCP tools are automatically available to the AI assistant alongside built-in tools. They follow the same permission model as other tools, requiring user approval before execution.
+Once added, MCP tools are automatically available to the LLM alongside built-in tools. They follow the same permission model; requiring user approval before execution.

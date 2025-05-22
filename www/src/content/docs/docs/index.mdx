@@ -1,16 +1,33 @@
 ---
-title: Get started
+title: Intro
 ---
 
+OpenCode is an AI coding agent built natively for the terminal. It features:
+
+- Native TUI for a smoother, snappier experience
+- Uses LSPs to help the LLM make fewer mistakes
+- Opening multiple conversations with the same project
+- Use of any model through the AI SDK
+- Tracks and visualizes all the file changes
+- Editing longer messages with Vim
+
 ## Installation
+
+```bash
+npm i -g opencode
+```
+
+If you don't have NPM installed, you can also install the OpenCode binary through the following.
 
 #### Using the install script
 
 ```bash
-# Install the latest version
 curl -fsSL https://opencode.ai/install | bash
+```
 
-# Install a specific version
+Or install a specific version.
+
+```bash
 curl -fsSL https://opencode.ai/install | VERSION=0.1.0 bash
 ```
 
@@ -20,13 +37,17 @@ curl -fsSL https://opencode.ai/install | VERSION=0.1.0 bash
 brew install sst/tap/opencode
 ```
 
-#### Using AUR (Arch Linux)
+#### Using AUR in Arch Linux
+
+With yay.
 
 ```bash
-# Using yay
 yay -S opencode-bin
+```
 
-# Using paru
+Or with paru.
+
+```bash
 paru -S opencode-bin
 ```
 

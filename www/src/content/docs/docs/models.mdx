@@ -2,87 +2,33 @@
 title: Models
 ---
 
-## Supported AI Models
+OpenCode uses the [AI SDK](https://ai-sdk.dev/) to have the support for **all the AI models**.
 
-OpenCode supports a variety of AI models from different providers:
+Start by setting the [keys for the providers](/docs/config) you want to use in your OpenCode config.
 
-### OpenAI
+## Model select
 
-- GPT-4.1 family (gpt-4.1, gpt-4.1-mini, gpt-4.1-nano)
-- GPT-4.5 Preview
-- GPT-4o family (gpt-4o, gpt-4o-mini)
-- O1 family (o1, o1-pro, o1-mini)
-- O3 family (o3, o3-mini)
-- O4 Mini
+You can now select the model you want from the menu by hitting `Ctrl+O`.
 
-### Anthropic
+## Multiple models
 
-- Claude 3.5 Sonnet
-- Claude 3.5 Haiku
-- Claude 3.7 Sonnet
-- Claude 3 Haiku
-- Claude 3 Opus
+You can also use specific models for specific tasks. For example, you can use a smaller model to generate the title of the conversation or to run a sub task.
 
-### Google
-
-- Gemini 2.5
-- Gemini 2.5 Flash
-- Gemini 2.0 Flash
-- Gemini 2.0 Flash Lite
-
-### AWS Bedrock
-
-- Claude 3.7 Sonnet
-
-### Groq
-
-- Llama 4 Maverick (17b-128e-instruct)
-- Llama 4 Scout (17b-16e-instruct)
-- QWEN QWQ-32b
-- Deepseek R1 distill Llama 70b
-- Llama 3.3 70b Versatile
-
-### Azure OpenAI
-
-- GPT-4.1 family (gpt-4.1, gpt-4.1-mini, gpt-4.1-nano)
-- GPT-4.5 Preview
-- GPT-4o family (gpt-4o, gpt-4o-mini)
-- O1 family (o1, o1-mini)
-- O3 family (o3, o3-mini)
-- O4 Mini
-
-### Google Cloud VertexAI
-
-- Gemini 2.5
-- Gemini 2.5 Flash
-
-## Using Bedrock Models
-
-To use bedrock models with OpenCode you need three things.
-
-1. Valid AWS credentials (the env vars: `AWS_SECRET_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_REGION`)
-2. Access to the corresponding model in AWS Bedrock in your region.
-    a. You can request access in the AWS console on the Bedrock -> "Model access" page.
-3. A correct configuration file. You don't need the `providers` key. Instead you have to prefix your models per agent with `bedrock.` and then a valid model. For now only Claude 3.7 is supported.
-
-```json
+```json title=".opencode.json"
 {
   "agents": {
     "primary": {
-      "model": "bedrock.claude-3.7-sonnet",
-      "maxTokens": 5000,
-      "reasoningEffort": ""
+      "model": "gpt-4",
+      "maxTokens": 5000
     },
     "task": {
-      "model": "bedrock.claude-3.7-sonnet",
-      "maxTokens": 5000,
-      "reasoningEffort": ""
+      "model": "gpt-3.5-turbo",
+      "maxTokens": 5000
     },
     "title": {
-      "model": "bedrock.claude-3.7-sonnet",
-      "maxTokens": 80,
-      "reasoningEffort": ""
+      "model": "gpt-3.5-turbo",
+      "maxTokens": 80
     }
-  },
+  }
 }
 ```

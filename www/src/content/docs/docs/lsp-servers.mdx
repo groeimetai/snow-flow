@@ -2,19 +2,22 @@
 title: LSP servers
 ---
 
-OpenCode integrates with Language Server Protocol to provide code intelligence features across multiple programming languages.
+OpenCode integrates with _Language Server Protocol_, or LSP to improve how the LLM interacts with your codebase.
 
-### LSP Features
+LSP servers for different languages give the LLM:
 
-- **Multi-language Support**: Connect to language servers for different programming languages
-- **Diagnostics**: Receive error checking and linting information
-- **File Watching**: Automatically notify language servers of file changes
+- **Diagnostics**: These include things like errors and lint warnings. So the LLM can generate code that has fewer mistakes without having to run the code.
+- **Quick actions**: The LSP can allow the LLM to better navigate the codebase through features like _go-to-definition_ and _find references_.
 
-### Configuring LSP
+## Auto-detection
 
-Language servers are configured in the configuration file under the `lsp` section:
+By default, OpenCode will **automatically detect** the languages used in your project and add the right LSP servers.
 
-```json
+## Manual configuration
+
+You can also manually configure LSP servers by adding them under the `lsp` section in your OpenCode config.
+
+```json title=".opencode.json"
 {
   "lsp": {
     "go": {
@@ -28,12 +31,4 @@ Language servers are configured in the configuration file under the `lsp` sectio
     }
   }
 }
-
-### LSP Integration with AI
-
-The AI assistant can access LSP features through the `diagnostics` tool, allowing it to:
-
-- Check for errors in your code
-- Suggest fixes based on diagnostics
-
-While the LSP client implementation supports the full LSP protocol (including completions, hover, definition, etc.), currently only diagnostics are exposed to the AI assistant.
+```

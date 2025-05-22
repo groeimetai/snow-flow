@@ -2,13 +2,13 @@
 title: Themes
 ---
 
-OpenCode supports multiple themes for customizing the appearance of the terminal interface.
+OpenCode supports most common terminal themes and you can create your own custom theme.
 
-### Available Themes
+## Built-in themes
 
 The following predefined themes are available:
 
-- `opencode` (default)
+- `opencode`
 - `catppuccin`
 - `dracula`
 - `flexoki`
@@ -17,13 +17,15 @@ The following predefined themes are available:
 - `onedark`
 - `tokyonight`
 - `tron`
-- `custom` (user-defined)
+- `custom`
 
-### Setting a Theme
+Where `opencode` is the default theme and `custom` let's you define your own theme.
 
-You can set a theme in your `.opencode.json` configuration file:
+## Setting a theme
 
-```json
+You can set your theme in your OpenCode config.
+
+```json title=".opencode.json"
 {
   "tui": {
     "theme": "monokai"
@@ -31,11 +33,11 @@ You can set a theme in your `.opencode.json` configuration file:
 }
 ```
 
-### Custom Themes
+## Create a theme
 
-You can define your own custom theme by setting the `theme` to `"custom"` and providing color definitions in the `customTheme` map:
+You can create your own custom theme by setting the `theme: custom` and providing color definitions through the `customTheme`.
 
-```json
+```json title=".opencode.json"
 {
   "tui": {
     "theme": "custom",
@@ -49,23 +51,25 @@ You can define your own custom theme by setting the `theme` to `"custom"` and pr
 }
 ```
 
-#### Color Definition Formats
+#### Color keys
 
-Custom theme colors support two formats:
+You can define any of the following color keys in your `customTheme`.
 
-1. **Simple Hex String**: A single hex color string (e.g., `"#aabbcc"`) that will be used for both light and dark terminal backgrounds.
+| Type | Color keys |
+| --- | --- |
+| Base colors | `primary`, `secondary`, `accent` |
+| Status colors | `error`, `warning`, `success`, `info` |
+| Text colors | `text`, `textMuted`, `textEmphasized` |
+| Background colors | `background`, `backgroundSecondary`, `backgroundDarker` |
+| Border colors | `borderNormal`, `borderFocused`, `borderDim` |
+| Diff view colors | `diffAdded`, `diffRemoved`, `diffContext`, etc. |
 
-2. **Adaptive Object**: An object with `dark` and `light` keys, each holding a hex color string. This allows for adaptive colors based on the terminal's background.
+You don't need to define all the color keys. Any undefined colors will fall back to the default `opencode` theme colors.
 
-#### Available Color Keys
+#### Color definitions
 
-You can define any of the following color keys in your `customTheme`:
+Color keys can take:
 
-- Base colors: `primary`, `secondary`, `accent`
-- Status colors: `error`, `warning`, `success`, `info`
-- Text colors: `text`, `textMuted`, `textEmphasized`
-- Background colors: `background`, `backgroundSecondary`, `backgroundDarker`
-- Border colors: `borderNormal`, `borderFocused`, `borderDim`
-- Diff view colors: `diffAdded`, `diffRemoved`, `diffContext`, etc.
+1. **Hex string**: A single hex color string, like `"#aabbcc"`, that'll be used for both light and dark terminal backgrounds.
 
-You don't need to define all colors. Any undefined colors will fall back to the default "opencode" theme colors.
+2. **Light and dark colors**: An object with `dark` and `light` hex colors that'll be set based on the terminal's background.

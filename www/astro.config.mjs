@@ -29,6 +29,9 @@ export default defineConfig({
 			editLink: {
 				baseUrl: `${github}/edit/master/www/`,
 			},
+			markdown: {
+				headingLinks: false,
+			},
 			logo: {
 				light: "./src/assets/logo-light.svg",
 				dark: "./src/assets/logo-dark.svg",

@@ -2,75 +2,88 @@
 title: CLI
 ---
 
-## Usage
+Once installed you can run the OpenCode CLI.
 
 ```bash
-# Start OpenCode
 opencode
+```
 
-# Start with debug logging
+Or pass in flags. For example, to start with debug logging:
+
+```bash
 opencode -d
+```
 
-# Start with a specific working directory
+Or start with a specific working directory.
+
+```bash
 opencode -c /path/to/project
 ```
 
-## Non-interactive Prompt Mode
+## Flags 
 
-You can run OpenCode in non-interactive mode by passing a prompt directly as a command-line argument. This is useful for scripting, automation, or when you want a quick answer without launching the full TUI.
+The OpenCode CLI takes the following flags.
 
-```bash
-# Run a single prompt and print the AI's response to the terminal
+| Flag | Short | Description |
+| -- | -- | -- |
+| `--help` | `-h`  | Display help |
+| `--debug` | `-d`  | Enable debug mode |
+| `--cwd` | `-c`  | Set current working directory |
+| `--prompt` | `-p`  | Run a single prompt in non-interactive mode |
+| `--output-format` | `-f`  | Output format for non-interactive mode, `text` or `json` |
+| `--quiet` | `-q`  | Hide spinner in non-interactive mode |
+| `--verbose` |       | Display logs to stderr in non-interactive mode |
+| `--allowedTools` |       | Restrict the agent to only use specified tools |
+| `--excludedTools` |       | Prevent the agent from using specified tools |
+
+## Non-interactive
+
+By default, OpenCode runs in interactive mode.
+
+But you can also run OpenCode in non-interactive mode by passing a prompt directly as a command-line argument. This is useful for scripting, automation, or when you want a quick answer without launching the full TUI.
+
+For example, to run a single prompt use the `-p` flag.
+
+```bash "-p"
 opencode -p "Explain the use of context in Go"
-
-# Get response in JSON format
-opencode -p "Explain the use of context in Go" -f json
-
-# Run without showing the spinner
-opencode -p "Explain the use of context in Go" -q
-
-# Enable verbose logging to stderr
-opencode -p "Explain the use of context in Go" --verbose
-
-# Restrict the agent to only use specific tools
-opencode -p "Explain the use of context in Go" --allowedTools=view,ls,glob
-
-# Prevent the agent from using specific tools
-opencode -p "Explain the use of context in Go" --excludedTools=bash,edit
 ```
 
-In this mode, OpenCode will process your prompt, print the result to standard output, and then exit. All permissions are auto-approved for the session.
+If you want to run without showing the spinner, use `-q`.
 
-### Tool Restrictions
+```bash "-q"
+opencode -p "Explain the use of context in Go" -q
+```
 
-You can control which tools the AI assistant has access to in non-interactive mode:
+In this mode, OpenCode will process your prompt, print the result to standard output, and then exit. All **permissions are auto-approved** for the session.
 
-- `--allowedTools`: Comma-separated list of tools that the agent is allowed to use. Only these tools will be available.
-- `--excludedTools`: Comma-separated list of tools that the agent is not allowed to use. All other tools will be available.
+#### Tool restrictions
 
-These flags are mutually exclusive - you can use either `--allowedTools` or `--excludedTools`, but not both at the same time.
+You can control which tools the AI assistant has access to in non-interactive mode.
 
-### Output Formats
+- `--allowedTools`
 
-OpenCode supports the following output formats in non-interactive mode:
+  A comma-separated list of tools that the agent is allowed to use. Only these tools will be available.
 
-| Format | Description                            |
-| ------ | -------------------------------------- |
-| `text` | Plain text output (default)            |
-| `json` | Output wrapped in a JSON object        |
+  ```bash "--allowedTools"
+  opencode -p "Explain the use of context in Go" --allowedTools=view,ls,glob
+  ```
 
-The output format is implemented as a strongly-typed `OutputFormat` in the codebase, ensuring type safety and validation when processing outputs.
+- `--excludedTools`
 
-## Command-line Flags
+  Comma-separated list of tools that the agent is not allowed to use. All other tools will be available.
 
-| Flag              | Short | Description                                                |
-| ----------------- | ----- | ---------------------------------------------------------- |
-| `--help`          | `-h`  | Display help information                                   |
-| `--debug`         | `-d`  | Enable debug mode                                          |
-| `--cwd`           | `-c`  | Set current working directory                              |
-| `--prompt`        | `-p`  | Run a single prompt in non-interactive mode                |
-| `--output-format` | `-f`  | Output format for non-interactive mode (text, json)        |
-| `--quiet`         | `-q`  | Hide spinner in non-interactive mode                       |
-| `--verbose`       |       | Display logs to stderr in non-interactive mode             |
-| `--allowedTools`  |       | Restrict the agent to only use specified tools             |
-| `--excludedTools` |       | Prevent the agent from using specified tools               |
+  ```bash "--excludedTools"
+  opencode -p "Explain the use of context in Go" --excludedTools=bash,edit
+  ```
+
+These flags are mutually exclusive. So you can either use `--allowedTools` or `--excludedTools`, but not both.
+
+#### Output formats
+
+In non-interactive mode, you can also set the CLI to return as JSON using `-f`.
+
+```bash "-f json"
+opencode -p "Explain the use of context in Go" -f json
+```
+
+By default, this is set to `text`, to return plain text.
