@@ -1,0 +1,51 @@
+---
+title: MCP servers
+---
+
+You can add external tools to OpenCode using the _Model Context Protocol_, or MCP. OpenCode supports both:
+
+- Local servers that use standard input/output, `stdio`
+- Remote servers that use server-sent events `sse`
+
+## Add MCP servers
+
+You can define MCP servers in your OpenCode config under the `mcpServers` section:
+
+### Local
+
+To add a local or `stdio` MCP server.
+
+```json title=".opencode.json" {4}
+{
+  "mcpServers": {
+    "local-example": {
+      "type": "stdio",
+      "command": "path/to/mcp-server",
+      "env": [],
+      "args": []
+    }
+  }
+}
+```
+
+### Remote
+
+To add a remote or `sse` MCP server.
+
+```json title=".opencode.json" {4}
+{
+  "mcpServers": {
+    "remote-example": {
+      "type": "sse",
+      "url": "https://example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer token"
+      }
+    }
+  }
+}
+```
+
+## Usage
+
+Once added, MCP tools are automatically available to the LLM alongside built-in tools. They follow the same permission model; requiring user approval before execution.

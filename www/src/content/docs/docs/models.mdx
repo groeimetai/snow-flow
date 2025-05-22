@@ -1,0 +1,34 @@
+---
+title: Models
+---
+
+OpenCode uses the [AI SDK](https://ai-sdk.dev/) to have the support for **all the AI models**.
+
+Start by setting the [keys for the providers](/docs/config) you want to use in your OpenCode config.
+
+## Model select
+
+You can now select the model you want from the menu by hitting `Ctrl+O`.
+
+## Multiple models
+
+You can also use specific models for specific tasks. For example, you can use a smaller model to generate the title of the conversation or to run a sub task.
+
+```json title=".opencode.json"
+{
+  "agents": {
+    "primary": {
+      "model": "gpt-4",
+      "maxTokens": 5000
+    },
+    "task": {
+      "model": "gpt-3.5-turbo",
+      "maxTokens": 5000
+    },
+    "title": {
+      "model": "gpt-3.5-turbo",
+      "maxTokens": 80
+    }
+  }
+}
+```

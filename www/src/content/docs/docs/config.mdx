@@ -1,0 +1,88 @@
+---
+title: Config
+---
+
+You can configure OpenCode using the OpenCode config. It can be places in:
+
+- `$HOME/.opencode.json`
+- `$XDG_CONFIG_HOME/opencode/.opencode.json`
+
+Or in the current directory, `./.opencode.json`.
+
+## OpenCode config
+
+The config file has the following structure.
+
+```json title=".opencode.json"
+{
+  "data": {
+    "directory": ".opencode"
+  },
+  "providers": {
+    "openai": {
+      "apiKey": "your-api-key",
+      "disabled": false
+    },
+    "anthropic": {
+      "apiKey": "your-api-key",
+      "disabled": false
+    },
+    "groq": {
+      "apiKey": "your-api-key",
+      "disabled": false
+    },
+    "openrouter": {
+      "apiKey": "your-api-key",
+      "disabled": false
+    }
+  },
+  "agents": {
+    "primary": {
+      "model": "claude-3.7-sonnet",
+      "maxTokens": 5000
+    },
+    "task": {
+      "model": "claude-3.7-sonnet",
+      "maxTokens": 5000
+    },
+    "title": {
+      "model": "claude-3.7-sonnet",
+      "maxTokens": 80
+    }
+  },
+  "mcpServers": {
+    "example": {
+      "type": "stdio",
+      "command": "path/to/mcp-server",
+      "env": [],
+      "args": []
+    }
+  },
+  "lsp": {
+    "go": {
+      "disabled": false,
+      "command": "gopls"
+    }
+  },
+  "debug": false,
+  "debugLSP": false
+}
+```
+
+## Environment variables
+
+For the providers, you can also specify the keys using environment variables.
+
+| Environment Variable       | Models   |
+| -------------------------- | ----------- |
+| `ANTHROPIC_API_KEY`        | Claude |
+| `OPENAI_API_KEY`           | OpenAI |
+| `GEMINI_API_KEY`           | Google Gemini |
+| `GROQ_API_KEY`             | Groq |
+| `AWS_ACCESS_KEY_ID`        | Amazon Bedrock |
+| `AWS_SECRET_ACCESS_KEY`    | Amazon Bedrock |
+| `AWS_REGION`               | Amazon Bedrock |
+| `AZURE_OPENAI_ENDPOINT`    | Azure OpenAI |
+| `AZURE_OPENAI_API_KEY`     | Azure OpenAI, optional when using Entra ID |
+| `AZURE_OPENAI_API_VERSION` | Azure OpenAI |
+
