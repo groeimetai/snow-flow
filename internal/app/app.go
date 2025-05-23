@@ -43,6 +43,7 @@ type App struct {
 	
 	// UI state
 	filepickerOpen bool
+	completionDialogOpen bool
 }
 
 func New(ctx context.Context, conn *sql.DB) (*App, error) {
@@ -139,6 +140,16 @@ func (app *App) IsFilepickerOpen() bool {
 // SetFilepickerOpen sets the state of the filepicker
 func (app *App) SetFilepickerOpen(open bool) {
 	app.filepickerOpen = open
+}
+
+// IsCompletionDialogOpen returns whether the completion dialog is currently open
+func (app *App) IsCompletionDialogOpen() bool {
+	return app.completionDialogOpen
+}
+
+// SetCompletionDialogOpen sets the state of the completion dialog
+func (app *App) SetCompletionDialogOpen(open bool) {
+	app.completionDialogOpen = open
 }
 
 // Shutdown performs a clean shutdown of the application

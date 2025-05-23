@@ -123,10 +123,12 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return p, nil
 	case dialog.CompletionDialogCloseMsg:
 		p.showCompletionDialog = false
+		p.app.SetCompletionDialogOpen(false)
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keyMap.ShowCompletionDialog):
 			p.showCompletionDialog = true
+			p.app.SetCompletionDialogOpen(true)
 			// Continue sending keys to layout->chat
 		case key.Matches(msg, keyMap.NewSession):
 			p.app.CurrentSession = &session.Session{}
