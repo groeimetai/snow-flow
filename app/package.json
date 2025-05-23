@@ -1,0 +1,37 @@
+{
+  "name": "opencontrol",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun",
+  "description": "OpenCode",
+  "scripts": {},
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@tsconfig/node22": "22.0.0",
+    "@types/node": "^22.13.9",
+    "prettier": "^3.5.3",
+    "sst": "3.16.0",
+    "typescript": "5.8.2"
+  },
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sst/opencode"
+  },
+  "license": "MIT",
+  "prettier": {
+    "semi": false
+  },
+  "overrides": {
+    "zod": "3.24.2"
+  },
+  "trustedDependencies": [
+    "esbuild",
+    "protobufjs"
+  ]
+}
