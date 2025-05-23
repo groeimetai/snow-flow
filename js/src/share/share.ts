@@ -20,11 +20,9 @@ export namespace Share {
           sessionID: sessionID,
           shareID: session.shareID,
           key: payload.properties.key,
-          content: payload.properties.content,
+          content: JSON.stringify(payload.properties.content),
         }),
-      })
-        .then((x) => x.text())
-        .then(console.log);
+      });
     });
   });
 
