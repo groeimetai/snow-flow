@@ -1,6 +1,13 @@
+export const domain = (() => {
+  if ($app.stage === "production") return "opencode.ai"
+  if ($app.stage === "dev") return "dev.opencode.ai"
+  return `${$app.stage}.dev.opencode.ai`
+})()
+
 const bucket = new sst.cloudflare.Bucket("Bucket")
 
 export const api = new sst.cloudflare.Worker("Api", {
+  domain: `api.${domain}`,
   handler: "packages/function/src/api.ts",
   url: true,
   link: [bucket],
@@ -25,12 +32,12 @@ export const api = new sst.cloudflare.Worker("Api", {
 
 new sst.cloudflare.StaticSite("Web", {
   path: "packages/web",
+  domain,
   environment: {
     VITE_API_URL: api.url,
   },
-  errorPage: "fallback.html",
   build: {
     command: "bun run build",
-    output: "dist/client",
+    output: "dist",
   },
 })
