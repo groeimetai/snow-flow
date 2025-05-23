@@ -21,20 +21,20 @@ export class SyncServer extends DurableObject {
     })
   }
 
-  async publish(filename: string, content: string) {
+  async publish(key: string, content: string) {
     console.log(
       "SyncServer publish",
-      filename,
+      key,
       content,
       "to",
       this.ctx.getWebSockets().length,
       "subscribers",
     )
-    this.files.set(filename, content)
-    await this.ctx.storage.put(filename, content)
+    this.files.set(key, content)
+    await this.ctx.storage.put(key, content)
 
     this.ctx.getWebSockets().forEach((client) => {
-      client.send(JSON.stringify({ filename, content }))
+      client.send(JSON.stringify({ key, content }))
     })
   }
 
@@ -57,8 +57,8 @@ export class SyncServer extends DurableObject {
     this.ctx.acceptWebSocket(server)
 
     setTimeout(() => {
-      this.files.forEach((content, filename) =>
-        server.send(JSON.stringify({ filename, content })),
+      this.files.forEach((content, key) =>
+        server.send(JSON.stringify({ key, content })),
       )
     }, 0)
 
@@ -107,12 +107,12 @@ export default {
       const body = await request.json()
       const sessionID = body.session_id
       const shareID = body.share_id
-      const filename = body.filename
+      const key = body.key
       const content = body.content
 
-      // validate filename
-      if (!filename.startsWith("info/") && !filename.startsWith("message/"))
-        return new Response("Error: Invalid filename", { status: 400 })
+      // validate key
+      if (!key.startsWith("info/") && !key.startsWith("message/"))
+        return new Response("Error: Invalid key", { status: 400 })
 
       const infoFile = `${shareID}/info/${sessionID}.json`
       const ret = await Resource.Bucket.get(infoFile)
@@ -122,10 +122,10 @@ export default {
       // send message to server
       const id = env.SYNC_SERVER.idFromName(sessionID)
       const stub = env.SYNC_SERVER.get(id)
-      await stub.publish(filename, content)
+      await stub.publish(key, content)
 
       // store message
-      await Resource.Bucket.put(`${shareID}/${filename}`, content)
+      await Resource.Bucket.put(`${shareID}/${key}`, content)
 
       return new Response(JSON.stringify({}), {
         headers: { "Content-Type": "application/json" },

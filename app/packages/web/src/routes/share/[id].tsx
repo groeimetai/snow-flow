@@ -3,7 +3,7 @@ import { createSignal, onCleanup, onMount, Show, For } from "solid-js"
 import { useParams } from "@solidjs/router"
 
 type Message = {
-  filename: string
+  key: string
   content: string
 }
 
@@ -39,7 +39,7 @@ export default function SharePage() {
       setConnectionStatus("Connecting...")
 
       // Always use secure WebSocket protocol (wss)
-      const wsBaseUrl = apiUrl.replace(/^https?:\/\//, 'wss://')
+      const wsBaseUrl = apiUrl.replace(/^https?:\/\//, "wss://")
       const wsUrl = `${wsBaseUrl}/share_poll?share_id=${shareId}`
       console.log("Connecting to WebSocket URL:", wsUrl)
 
@@ -78,7 +78,7 @@ export default function SharePage() {
         clearTimeout(reconnectTimer)
         reconnectTimer = window.setTimeout(
           setupWebSocket,
-          2000
+          2000,
         ) as unknown as number
       }
     }
@@ -133,7 +133,7 @@ export default function SharePage() {
                     }}
                   >
                     <div>
-                      <strong>Filename:</strong> {msg.filename}
+                      <strong>Key:</strong> {msg.key}
                     </div>
                     <div>
                       <strong>Content:</strong> {msg.content}
