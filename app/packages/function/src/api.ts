@@ -82,7 +82,7 @@ export default {
       const body = await request.json()
       const sessionID = body.sessionID
       const shareID = createHash("sha256").update(sessionID).digest("hex")
-      const infoFile = `${shareID}/info/${sessionID}.json`
+      const infoFile = `${shareID}/session/info/${sessionID}.json`
       const ret = await Resource.Bucket.get(infoFile)
       if (ret)
         return new Response("Error: Session already sharing", { status: 400 })
@@ -97,7 +97,7 @@ export default {
       const body = await request.json()
       const sessionID = body.sessionID
       const shareID = body.shareID
-      const infoFile = `${shareID}/info/${sessionID}.json`
+      const infoFile = `${shareID}/session/info/${sessionID}.json`
       await Resource.Bucket.delete(infoFile)
       return new Response(JSON.stringify({}), {
         headers: { "Content-Type": "application/json" },
@@ -107,14 +107,17 @@ export default {
       const body = await request.json()
       const sessionID = body.sessionID
       const shareID = body.shareID
-      const key = body.key
+      const key = `${body.key}.json`
       const content = body.content
 
       // validate key
-      if (!key.startsWith("info/") && !key.startsWith("message/"))
+      if (
+        !key.startsWith(`session/info/${sessionID}`) &&
+        !key.startsWith(`session/message/${sessionID}/`)
+      )
         return new Response("Error: Invalid key", { status: 400 })
 
-      const infoFile = `${shareID}/info/${sessionID}.json`
+      const infoFile = `${shareID}/session/info/${sessionID}.json`
       const ret = await Resource.Bucket.get(infoFile)
       if (!ret)
         return new Response("Error: Session not shared", { status: 400 })
@@ -148,7 +151,7 @@ export default {
 
       // Get session ID
       const listRet = await Resource.Bucket.list({
-        prefix: `${shareID}/info/`,
+        prefix: `${shareID}/session/info/`,
         delimiter: "/",
       })
 
