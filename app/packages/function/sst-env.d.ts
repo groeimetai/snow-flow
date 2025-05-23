@@ -6,10 +6,6 @@
 import "sst"
 declare module "sst" {
   export interface Resource {
-    "Web": {
-      "type": "sst.cloudflare.StaticSite"
-      "url": string
-    }
   }
 }
 // cloudflare 

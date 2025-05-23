@@ -12,10 +12,6 @@ declare module "sst" {
     "Bucket": {
       "type": "sst.cloudflare.Bucket"
     }
-    "Web": {
-      "type": "sst.cloudflare.StaticSite"
-      "url": string
-    }
   }
 }
 /// <reference path="sst-env.d.ts" />

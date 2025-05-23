@@ -23,14 +23,14 @@ export const api = new sst.cloudflare.Worker("Api", {
   },
 })
 
-new sst.cloudflare.StaticSite("Web", {
-  path: "packages/web",
-  environment: {
-    VITE_API_URL: api.url,
-  },
-  errorPage: "fallback.html",
-  build: {
-    command: "bun run build",
-    output: "dist/client",
-  },
-})
+//new sst.cloudflare.StaticSite("Web", {
+//  path: "packages/web",
+//  environment: {
+//    VITE_API_URL: api.url,
+//  },
+//  errorPage: "fallback.html",
+//  build: {
+//    command: "bun run build",
+//    output: "dist/client",
+//  },
+//})

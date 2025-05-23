@@ -7,14 +7,6 @@ export default $config({
       removal: input?.stage === "production" ? "retain" : "remove",
       protect: ["production"].includes(input?.stage),
       home: "cloudflare",
-      providers: {
-        cloudflare: {
-          apiToken:
-            input?.stage === "production"
-              ? process.env.PRODUCTION_CLOUDFLARE_API_TOKEN
-              : process.env.DEV_CLOUDFLARE_API_TOKEN,
-        },
-      },
     }
   },
   async run() {
