@@ -1,20 +1,16 @@
 import { DurableObject } from "cloudflare:workers"
-import {
-  DurableObjectNamespace,
-  ExecutionContext,
-} from "@cloudflare/workers-types"
 import { createHash } from "node:crypto"
 import path from "node:path"
 import { Resource } from "sst"
 
 type Bindings = {
-  SYNC_SERVER: DurableObjectNamespace<WebSocketHibernationServer>
+  SYNC_SERVER: DurableObjectNamespace
 }
 
 export class SyncServer extends DurableObject {
   private files: Map<string, string> = new Map()
 
-  constructor(ctx, env) {
+  constructor(ctx: DurableObjectState, env: Bindings) {
     super(ctx, env)
     this.ctx.blockConcurrencyWhile(async () => {
       this.files = await this.ctx.storage.list()
@@ -38,10 +34,7 @@ export class SyncServer extends DurableObject {
     })
   }
 
-  async webSocketMessage(ws, message) {
-    if (message === "load_history") {
-    }
-  }
+  async webSocketMessage(ws, message) {}
 
   async webSocketClose(ws, code, reason, wasClean) {
     ws.close(code, "Durable Object is closing WebSocket")
