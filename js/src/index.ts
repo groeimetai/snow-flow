@@ -40,7 +40,8 @@ cli
       await Share.init();
       const session = await Session.create();
       const shareID = await Session.share(session.id);
-      if (shareID) console.log("Share ID:", shareID);
+      if (shareID)
+        console.log("Share ID: https://dev.opencode.ai/share/" + shareID);
       const result = await Session.chat(session.id, {
         type: "text",
         text: message.join(" "),

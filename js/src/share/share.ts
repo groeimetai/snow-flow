@@ -2,8 +2,11 @@ import { App } from "../app";
 import { Bus } from "../bus";
 import { Session } from "../session/session";
 import { Storage } from "../storage/storage";
+import { Log } from "../util/log";
 
 export namespace Share {
+  const log = Log.create({ service: "share" });
+
   const state = App.state("share", async () => {
     Bus.subscribe(Storage.Event.Write, async (payload) => {
       const [root, ...splits] = payload.properties.key.split("/");
@@ -11,12 +14,6 @@ export namespace Share {
       const [type, sessionID] = splits;
       const session = await Session.get(sessionID);
       if (!session.shareID) return;
-      console.log({
-        sessionID: sessionID,
-        shareID: session.shareID,
-        key: payload.properties.key,
-        content: payload.properties.content,
-      });
       await fetch(`${URL}/share_sync`, {
         method: "POST",
         body: JSON.stringify({
@@ -25,7 +22,9 @@ export namespace Share {
           key: payload.properties.key,
           content: payload.properties.content,
         }),
-      }).then(console.log);
+      })
+        .then((x) => x.text())
+        .then(console.log);
     });
   });
 
