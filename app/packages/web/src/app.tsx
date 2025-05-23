@@ -45,7 +45,7 @@ export default function App() {
 
       // Always use secure WebSocket protocol (wss)
       const wsBaseUrl = apiUrl.replace(/^https?:\/\//, "wss://")
-      const wsUrl = `${wsBaseUrl}/share_poll?share_id=${shareId}`
+      const wsUrl = `${wsBaseUrl}/share_poll?shareID=${shareId}`
       console.log("Connecting to WebSocket URL:", wsUrl)
 
       // Create WebSocket connection

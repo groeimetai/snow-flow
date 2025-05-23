@@ -80,7 +80,7 @@ export default {
     }
     if (request.method === "POST" && url.pathname.endsWith("/share_create")) {
       const body = await request.json()
-      const sessionID = body.session_id
+      const sessionID = body.sessionID
       const shareID = createHash("sha256").update(sessionID).digest("hex")
       const infoFile = `${shareID}/info/${sessionID}.json`
       const ret = await Resource.Bucket.get(infoFile)
@@ -89,14 +89,14 @@ export default {
 
       await Resource.Bucket.put(infoFile, "")
 
-      return new Response(JSON.stringify({ share_id: shareID }), {
+      return new Response(JSON.stringify({ shareID }), {
         headers: { "Content-Type": "application/json" },
       })
     }
     if (request.method === "POST" && url.pathname.endsWith("/share_delete")) {
       const body = await request.json()
-      const sessionID = body.session_id
-      const shareID = body.share_id
+      const sessionID = body.sessionID
+      const shareID = body.shareID
       const infoFile = `${shareID}/info/${sessionID}.json`
       await Resource.Bucket.delete(infoFile)
       return new Response(JSON.stringify({}), {
@@ -105,8 +105,8 @@ export default {
     }
     if (request.method === "POST" && url.pathname.endsWith("/share_sync")) {
       const body = await request.json()
-      const sessionID = body.session_id
-      const shareID = body.share_id
+      const sessionID = body.sessionID
+      const shareID = body.shareID
       const key = body.key
       const content = body.content
 
@@ -142,7 +142,7 @@ export default {
       }
 
       // get query parameters
-      const shareID = url.searchParams.get("share_id")
+      const shareID = url.searchParams.get("shareID")
       if (!shareID)
         return new Response("Error: Share ID is required", { status: 400 })
 
