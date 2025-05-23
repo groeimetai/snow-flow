@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"sync"
 	"time"
@@ -91,6 +92,16 @@ to assist developers in writing, debugging, and understanding code directly from
 
 		// Check if we're in non-interactive mode
 		prompt, _ := cmd.Flags().GetString("prompt")
+		
+		// Check for piped input if no prompt was provided via flag
+		if prompt == "" {
+			pipedInput, hasPipedInput := checkStdinPipe()
+			if hasPipedInput {
+				prompt = pipedInput
+			}
+		}
+		
+		// If we have a prompt (either from flag or piped input), run in non-interactive mode
 		if prompt != "" {
 			outputFormatStr, _ := cmd.Flags().GetString("output-format")
 			outputFormat := format.OutputFormat(outputFormatStr)
@@ -309,6 +320,25 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
+}
+
+// checkStdinPipe checks if there's data being piped into stdin
+func checkStdinPipe() (string, bool) {
+	// Check if stdin is not a terminal (i.e., it's being piped)
+	stat, _ := os.Stdin.Stat()
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		// Read all data from stdin
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return "", false
+		}
+		
+		// If we got data, return it
+		if len(data) > 0 {
+			return string(data), true
+		}
+	}
+	return "", false
 }
 
 func init() {

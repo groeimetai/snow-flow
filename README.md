@@ -245,26 +245,39 @@ opencode -c /path/to/project
 
 ## Non-interactive Prompt Mode
 
-You can run OpenCode in non-interactive mode by passing a prompt directly as a command-line argument. This is useful for scripting, automation, or when you want a quick answer without launching the full TUI.
+You can run OpenCode in non-interactive mode by passing a prompt directly as a command-line argument or by piping text into the command. This is useful for scripting, automation, or when you want a quick answer without launching the full TUI.
 
 ```bash
 # Run a single prompt and print the AI's response to the terminal
 opencode -p "Explain the use of context in Go"
 
+# Pipe input to OpenCode (equivalent to using -p flag)
+echo "Explain the use of context in Go" | opencode
+
 # Get response in JSON format
 opencode -p "Explain the use of context in Go" -f json
+# Or with piped input
+echo "Explain the use of context in Go" | opencode -f json
 
 # Run without showing the spinner
 opencode -p "Explain the use of context in Go" -q
+# Or with piped input
+echo "Explain the use of context in Go" | opencode -q
 
 # Enable verbose logging to stderr
 opencode -p "Explain the use of context in Go" --verbose
+# Or with piped input
+echo "Explain the use of context in Go" | opencode --verbose
 
 # Restrict the agent to only use specific tools
 opencode -p "Explain the use of context in Go" --allowedTools=view,ls,glob
+# Or with piped input
+echo "Explain the use of context in Go" | opencode --allowedTools=view,ls,glob
 
 # Prevent the agent from using specific tools
 opencode -p "Explain the use of context in Go" --excludedTools=bash,edit
+# Or with piped input
+echo "Explain the use of context in Go" | opencode --excludedTools=bash,edit
 ```
 
 In this mode, OpenCode will process your prompt, print the result to standard output, and then exit. All permissions are auto-approved for the session.
