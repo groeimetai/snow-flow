@@ -30,7 +30,7 @@ export default function App() {
       setConnectionStatus("Error: API URL not found")
       return
     }
-
+    
     let reconnectTimer: number | undefined
     let socket: WebSocket | null = null
 
@@ -62,7 +62,20 @@ export default function App() {
         console.log("WebSocket message received")
         try {
           const data = JSON.parse(event.data) as Message
-          setMessages((prev) => [...prev, data])
+          setMessages((prev) => {
+            // Check if message with this key already exists
+            const existingIndex = prev.findIndex(msg => msg.key === data.key)
+            
+            if (existingIndex >= 0) {
+              // Update existing message
+              const updated = [...prev]
+              updated[existingIndex] = data
+              return updated
+            } else {
+              // Add new message
+              return [...prev, data]
+            }
+          })
         } catch (error) {
           console.error("Error parsing WebSocket message:", error)
         }
