@@ -6,11 +6,13 @@ import { Bus } from "./bus";
 import { Session } from "./session/session";
 import cac from "cac";
 import { Storage } from "./storage/storage";
+import { Share } from "./share/share";
 
 const cli = cac("opencode");
 
 cli.command("", "Start the opencode in interactive mode").action(async () => {
-  await App.provide({ directory: process.cwd() }, () => {
+  await App.provide({ directory: process.cwd() }, async () => {
+    await Share.init();
     Server.listen();
   });
 });
@@ -35,14 +37,10 @@ cli
   .action(async (message: string[]) => {
     await App.provide({ directory: process.cwd() }, async () => {
       console.log("Thinking...");
-      Bus.subscribe(Storage.Event.Write, (evt) => {
-        const splits = evt.properties.key.split("/");
-
-        if (splits[0] === "session" && splits[1] === "message") {
-          console.log("opencode:", evt.properties.body);
-        }
-      });
+      await Share.init();
       const session = await Session.create();
+      const shareID = await Session.share(session.id);
+      if (shareID) console.log("Share ID:", shareID);
       const result = await Session.chat(session.id, {
         type: "text",
         text: message.join(" "),

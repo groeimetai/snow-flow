@@ -18,12 +18,14 @@ import * as tools from "../tool";
 
 import ANTHROPIC_PROMPT from "./prompt/anthropic.txt";
 import type { Tool } from "../tool/tool";
+import { Share } from "../share/share";
 
 export namespace Session {
   const log = Log.create({ service: "session" });
 
   export const Info = z.object({
     id: Identifier.schema("session"),
+    shareID: z.string().optional(),
     title: z.string(),
     tokens: z.object({
       input: z.number(),
@@ -75,6 +77,16 @@ export namespace Session {
     const read = await Storage.readJSON<Info>("session/info/" + id);
     state().sessions.set(id, read);
     return read as Info;
+  }
+
+  export async function share(id: string) {
+    const session = await get(id);
+    if (session.shareID) return session.shareID;
+    const shareID = await Share.create(id);
+    if (!shareID) return;
+    session.shareID = shareID;
+    await update(session);
+    return shareID;
   }
 
   export async function update(session: Info) {

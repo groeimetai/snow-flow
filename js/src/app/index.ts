@@ -3,6 +3,7 @@ import { AppPath } from "./path";
 import { Log } from "../util/log";
 import { Context } from "../util/context";
 import { Config } from "./config";
+import { Share } from "../share/share";
 
 export namespace App {
   const log = Log.create({ service: "app" });
@@ -61,6 +62,9 @@ export namespace App {
     cb: T,
   ) {
     const app = await create(input);
-    return ctx.provide(app, () => cb(app));
+
+    return ctx.provide(app, async () => {
+      return cb(app);
+    });
   }
 }

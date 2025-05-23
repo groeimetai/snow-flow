@@ -13,7 +13,7 @@ export namespace Storage {
   export const Event = {
     Write: Bus.event(
       "storage.write",
-      z.object({ key: z.string(), body: z.any() }),
+      z.object({ key: z.string(), content: z.any() }),
     ),
   };
 
@@ -50,9 +50,9 @@ export namespace Storage {
     return JSON.parse(data) as T;
   }
 
-  export async function writeJSON<T>(key: string, data: T) {
-    Bus.publish(Event.Write, { key, body: data });
-    const json = JSON.stringify(data);
+  export async function writeJSON<T>(key: string, content: T) {
+    const json = JSON.stringify(content);
     await write(key + ".json", json);
+    Bus.publish(Event.Write, { key, content });
   }
 }
