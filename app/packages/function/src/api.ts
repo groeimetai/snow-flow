@@ -1,6 +1,5 @@
 import { DurableObject } from "cloudflare:workers"
-import { createHash } from "node:crypto"
-import path from "node:path"
+import { randomUUID } from "node:crypto"
 import { Resource } from "sst"
 
 type Bindings = {
@@ -9,6 +8,7 @@ type Bindings = {
 
 export class SyncServer extends DurableObject {
   private files: Map<string, string> = new Map()
+  private shareID?: string
 
   constructor(ctx: DurableObjectState, env: Bindings) {
     super(ctx, env)
@@ -17,33 +17,9 @@ export class SyncServer extends DurableObject {
     })
   }
 
-  async publish(key: string, content: string) {
-    console.log(
-      "SyncServer publish",
-      key,
-      content,
-      "to",
-      this.ctx.getWebSockets().length,
-      "subscribers",
-    )
-    this.files.set(key, content)
-    await this.ctx.storage.put(key, content)
-
-    this.ctx.getWebSockets().forEach((client) => {
-      client.send(JSON.stringify({ key, content }))
-    })
-  }
-
-  async webSocketMessage(ws, message) {}
-
-  async webSocketClose(ws, code, reason, wasClean) {
-    ws.close(code, "Durable Object is closing WebSocket")
-  }
-
   async fetch(req: Request) {
     console.log("SyncServer subscribe")
 
-    // Creates two ends of a WebSocket connection.
     const webSocketPair = new WebSocketPair()
     const [client, server] = Object.values(webSocketPair)
 
@@ -60,6 +36,34 @@ export class SyncServer extends DurableObject {
       webSocket: client,
     })
   }
+
+  async webSocketMessage(ws, message) {}
+
+  async webSocketClose(ws, code, reason, wasClean) {
+    ws.close(code, "Durable Object is closing WebSocket")
+  }
+
+  async publish(key: string, content: string) {
+    this.files.set(key, content)
+    await this.ctx.storage.put(key, content)
+
+    const clients = this.ctx.getWebSockets()
+    console.log("SyncServer publish", key, "to", clients.length, "subscribers")
+    clients.forEach((client) => client.send(JSON.stringify({ key, content })))
+  }
+
+  async setShareID(shareID: string) {
+    this.shareID = shareID
+  }
+
+  async getShareID() {
+    return this.shareID
+  }
+
+  async clear() {
+    await this.ctx.storage.deleteAll()
+    this.files.clear()
+  }
 }
 
 export default {
@@ -74,13 +78,18 @@ export default {
     if (request.method === "POST" && url.pathname.endsWith("/share_create")) {
       const body = await request.json()
       const sessionID = body.sessionID
-      const shareID = createHash("sha256").update(sessionID).digest("hex")
-      const infoFile = `${shareID}/session/info/${sessionID}.json`
-      const ret = await Resource.Bucket.get(infoFile)
-      if (ret)
-        return new Response("Error: Session already sharing", { status: 400 })
 
-      await Resource.Bucket.put(infoFile, "")
+      // Get existing shareID
+      const id = env.SYNC_SERVER.idFromName(sessionID)
+      const stub = env.SYNC_SERVER.get(id)
+      let shareID = await stub.getShareID()
+      if (!shareID) {
+        shareID = randomUUID()
+        await stub.setShareID(shareID)
+      }
+
+      // Store session ID
+      await Resource.Bucket.put(`${shareID}/session/id`, sessionID)
 
       return new Response(JSON.stringify({ shareID }), {
         headers: { "Content-Type": "application/json" },
@@ -90,8 +99,15 @@ export default {
       const body = await request.json()
       const sessionID = body.sessionID
       const shareID = body.shareID
-      const infoFile = `${shareID}/session/info/${sessionID}.json`
-      await Resource.Bucket.delete(infoFile)
+
+      // Delete from bucket
+      await Resource.Bucket.delete(`${shareID}/session/id`)
+
+      // Delete from durable object
+      const id = env.SYNC_SERVER.idFromName(sessionID)
+      const stub = env.SYNC_SERVER.get(id)
+      await stub.clear()
+
       return new Response(JSON.stringify({}), {
         headers: { "Content-Type": "application/json" },
       })
@@ -100,7 +116,7 @@ export default {
       const body = await request.json()
       const sessionID = body.sessionID
       const shareID = body.shareID
-      const key = `${body.key}.json`
+      const key = body.key
       const content = body.content
 
       // validate key
@@ -110,8 +126,7 @@ export default {
       )
         return new Response("Error: Invalid key", { status: 400 })
 
-      const infoFile = `${shareID}/session/info/${sessionID}.json`
-      const ret = await Resource.Bucket.get(infoFile)
+      const ret = await Resource.Bucket.get(`${shareID}/session/id`)
       if (!ret)
         return new Response("Error: Session not shared", { status: 400 })
 
@@ -121,7 +136,7 @@ export default {
       await stub.publish(key, content)
 
       // store message
-      await Resource.Bucket.put(`${shareID}/${key}`, content)
+      await Resource.Bucket.put(`${shareID}/${key}.json`, content)
 
       return new Response(JSON.stringify({}), {
         headers: { "Content-Type": "application/json" },
@@ -143,16 +158,12 @@ export default {
         return new Response("Error: Share ID is required", { status: 400 })
 
       // Get session ID
-      const listRet = await Resource.Bucket.list({
-        prefix: `${shareID}/session/info/`,
-        delimiter: "/",
-      })
-
-      if (listRet.objects.length === 0)
+      const sessionID = await Resource.Bucket.get(`${shareID}/session/id`).then(
+        (res) => res?.text(),
+      )
+      console.log("sessionID", sessionID)
+      if (!sessionID)
         return new Response("Error: Session not shared", { status: 400 })
-      if (listRet.objects.length > 1)
-        return new Response("Error: Multiple sessions found", { status: 400 })
-      const sessionID = path.parse(listRet.objects[0].key).name
 
       // subscribe to server
       const id = env.SYNC_SERVER.idFromName(sessionID)
