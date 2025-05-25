@@ -1,15 +1,41 @@
-import { createSignal, onCleanup, onMount, Show, For } from "solid-js"
+import { createSignal, onCleanup, onMount, Show, For, createMemo } from "solid-js"
 import { useParams } from "@solidjs/router"
+
+type MessagePart = {
+  type: string
+  text?: string
+  [key: string]: any
+}
+
+type MessageContent = {
+  role?: string
+  parts?: MessagePart[]
+  metadata?: {
+    time?: {
+      created?: number
+    }
+  }
+  [key: string]: any
+}
 
 type Message = {
   key: string
   content: string
 }
 
+type SessionInfo = {
+  tokens?: {
+    input?: number
+    output?: number
+    reasoning?: number
+  }
+}
+
 export default function App() {
   const params = useParams<{ id: string }>()
   const [messages, setMessages] = createSignal<Message[]>([])
   const [connectionStatus, setConnectionStatus] = createSignal("Disconnected")
+  const [sessionInfo, setSessionInfo] = createSignal<SessionInfo | null>(null)
 
   onMount(() => {
     // Get the API URL from environment
@@ -62,20 +88,33 @@ export default function App() {
         console.log("WebSocket message received")
         try {
           const data = JSON.parse(event.data) as Message
-          setMessages((prev) => {
-            // Check if message with this key already exists
-            const existingIndex = prev.findIndex(msg => msg.key === data.key)
-            
-            if (existingIndex >= 0) {
-              // Update existing message
-              const updated = [...prev]
-              updated[existingIndex] = data
-              return updated
-            } else {
-              // Add new message
-              return [...prev, data]
+          
+          // Check if this is a session info message
+          if (data.key.startsWith("session/info/")) {
+            try {
+              const infoContent = JSON.parse(data.content) as SessionInfo;
+              setSessionInfo(infoContent);
+              console.log("Session info updated:", infoContent);
+            } catch (e) {
+              console.error("Error parsing session info:", e);
             }
-          })
+          } else {
+            // For all other messages
+            setMessages((prev) => {
+              // Check if message with this key already exists
+              const existingIndex = prev.findIndex(msg => msg.key === data.key)
+              
+              if (existingIndex >= 0) {
+                // Update existing message
+                const updated = [...prev]
+                updated[existingIndex] = data
+                return updated
+              } else {
+                // Add new message
+                return [...prev, data]
+              }
+            })
+          }
         } catch (error) {
           console.error("Error parsing WebSocket message:", error)
         }
@@ -125,6 +164,32 @@ export default function App() {
         </p>
 
         <h3>Live Updates</h3>
+        
+        <Show when={sessionInfo()}>
+          <div 
+            style={{
+              backgroundColor: "#f8f9fa",
+              padding: "1rem",
+              borderRadius: "0.5rem",
+              marginBottom: "1rem",
+              border: "1px solid #dee2e6"
+            }}
+          >
+            <h4 style={{ margin: "0 0 0.75rem 0" }}>Session Information</h4>
+            <div style={{ display: "flex", gap: "1.5rem" }}>
+              <div>
+                <strong>Input Tokens:</strong> {sessionInfo()?.tokens?.input || 0}
+              </div>
+              <div>
+                <strong>Output Tokens:</strong> {sessionInfo()?.tokens?.output || 0}
+              </div>
+              <div>
+                <strong>Reasoning Tokens:</strong> {sessionInfo()?.tokens?.reasoning || 0}
+              </div>
+            </div>
+          </div>
+        </Show>
+        
         <div
           style={{
             border: "1px solid #ccc",
@@ -143,18 +208,140 @@ export default function App() {
                 {(msg) => (
                   <li
                     style={{
-                      padding: "0.5rem",
-                      margin: "0.5rem 0",
+                      padding: "0.75rem",
+                      margin: "0.75rem 0",
                       backgroundColor: "#f5f5f5",
-                      borderRadius: "0.25rem",
+                      borderRadius: "0.5rem",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                     }}
                   >
                     <div>
                       <strong>Key:</strong> {msg.key}
                     </div>
-                    <div>
-                      <strong>Content:</strong> {msg.content}
-                    </div>
+                    
+                    {(() => {
+                      try {
+                        const parsed = JSON.parse(msg.content) as MessageContent;
+                        const createdTime = parsed.metadata?.time?.created 
+                          ? new Date(parsed.metadata.time.created).toLocaleString() 
+                          : 'Unknown time';
+                        
+                        return (
+                          <>
+                            <div style={{ marginTop: "0.5rem" }}>
+                              <strong>Full Content:</strong>
+                              <pre
+                                style={{
+                                  backgroundColor: "#f0f0f0",
+                                  padding: "0.5rem",
+                                  borderRadius: "0.25rem",
+                                  overflow: "auto",
+                                  maxHeight: "150px",
+                                  whiteSpace: "pre-wrap",
+                                  wordBreak: "break-word",
+                                  fontSize: "0.85rem",
+                                }}
+                              >
+                                {JSON.stringify(parsed, null, 2)}
+                              </pre>
+                            </div>
+                            
+                            {parsed.parts && parsed.parts.length > 0 && (
+                              <div style={{ marginTop: "0.75rem" }}>
+                                <div style={{ 
+                                  display: "flex", 
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  padding: "0.25rem 0.5rem",
+                                  backgroundColor: "#e9ecef",
+                                  borderRadius: "0.25rem",
+                                  marginBottom: "0.5rem"
+                                }}>
+                                  <strong>Role: {parsed.role || 'Unknown'}</strong>
+                                  <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>
+                                    {createdTime}
+                                  </span>
+                                </div>
+                                
+                                <div style={{ 
+                                  backgroundColor: "#fff", 
+                                  padding: "0.75rem",
+                                  borderRadius: "0.25rem",
+                                  border: "1px solid #dee2e6"
+                                }}>
+                                  <For each={parsed.parts}>
+                                    {(part, index) => (
+                                      <div style={{ marginBottom: index() < parsed.parts!.length - 1 ? "0.75rem" : "0" }}>
+                                        {part.type === "text" ? (
+                                          <pre style={{ 
+                                            whiteSpace: "pre-wrap", 
+                                            wordBreak: "break-word",
+                                            fontFamily: "inherit",
+                                            margin: 0,
+                                            padding: 0,
+                                            backgroundColor: "transparent",
+                                            border: "none",
+                                            fontSize: "inherit",
+                                            overflow: "visible"
+                                          }}>
+                                            {part.text}
+                                          </pre>
+                                        ) : (
+                                          <div>
+                                            <div style={{ 
+                                              fontSize: "0.85rem", 
+                                              fontWeight: "bold",
+                                              marginBottom: "0.25rem",
+                                              color: "#495057"
+                                            }}>
+                                              Part type: {part.type}
+                                            </div>
+                                            <pre
+                                              style={{
+                                                backgroundColor: "#f8f9fa",
+                                                padding: "0.5rem",
+                                                borderRadius: "0.25rem",
+                                                overflow: "auto",
+                                                maxHeight: "200px",
+                                                whiteSpace: "pre-wrap",
+                                                wordBreak: "break-word",
+                                                fontSize: "0.85rem",
+                                                margin: 0
+                                              }}
+                                            >
+                                              {JSON.stringify(part, null, 2)}
+                                            </pre>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </For>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      } catch (e) {
+                        return (
+                          <div>
+                            <strong>Content:</strong>
+                            <pre
+                              style={{
+                                backgroundColor: "#f0f0f0",
+                                padding: "0.5rem",
+                                borderRadius: "0.25rem",
+                                overflow: "auto",
+                                maxHeight: "200px",
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              {msg.content}
+                            </pre>
+                          </div>
+                        );
+                      }
+                    })()}
                   </li>
                 )}
               </For>
