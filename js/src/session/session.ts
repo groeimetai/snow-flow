@@ -6,6 +6,7 @@ import { Storage } from "../storage/storage";
 import { Log } from "../util/log";
 import {
   convertToModelMessages,
+  stepCountIs,
   streamText,
   type TextUIPart,
   type ToolInvocationUIPart,
@@ -169,7 +170,7 @@ export namespace Session {
 
     const model = await LLM.findModel("claude-sonnet-4-20250514");
     const result = streamText({
-      maxSteps: 1000,
+      stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),
       temperature: 0,
       tools,

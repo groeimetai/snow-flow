@@ -1,0 +1,66 @@
+// Bun Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`tool.ls basic 1`] = `
+"- /home/thdxr/dev/projects/sst/opencode/js/
+  - home/
+    - thdxr/
+      - dev/
+        - projects/
+          - sst/
+            - opencode/
+              - js/
+                - package.json
+                - schema.json
+                - tsconfig.json
+                - test/
+                  - tool/
+                    - tool.test.ts
+                - example/
+                  - ink.tsx
+                  - cli.ts
+                - scrap.ts
+                - README.md
+                - bun.lock
+                - src/
+                  - lsp/
+                    - client.ts
+                    - index.ts
+                    - language.ts
+                  - server/
+                    - server.ts
+                  - storage/
+                    - storage.ts
+                  - app/
+                    - index.ts
+                    - path.ts
+                    - config.ts
+                  - share/
+                    - share.ts
+                  - tool/
+                    - bash.ts
+                    - glob.ts
+                    - tool.ts
+                    - ls.ts
+                    - util/
+                      - file-times.ts
+                    - view.ts
+                    - index.ts
+                    - edit.ts
+                  - llm/
+                    - llm.ts
+                  - util/
+                    - context.ts
+                    - scrap.ts
+                    - event.ts
+                    - log.ts
+                  - index.ts
+                  - id/
+                    - id.ts
+                  - bus/
+                    - index.ts
+                  - session/
+                    - session.ts
+                    - prompt/
+                      - anthropic.txt
+"
+`;

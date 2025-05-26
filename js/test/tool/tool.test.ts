@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { App } from "../../src/app";
 import { glob } from "../../src/tool/glob";
+import { ls } from "../../src/tool/ls";
 
 describe("tool.glob", () => {
   test("truncate", async () => {
@@ -33,5 +34,22 @@ describe("tool.glob", () => {
         count: 3,
       });
     });
+  });
+});
+
+describe("tool.ls", () => {
+  test("basic", async () => {
+    const result = await App.provide({ directory: process.cwd() }, async () => {
+      return await ls.execute(
+        {
+          path: ".",
+        },
+        {
+          toolCallId: "test",
+          messages: [],
+        },
+      );
+    });
+    expect(result.output).toMatchSnapshot();
   });
 });

@@ -3,7 +3,6 @@ import { AppPath } from "./path";
 import { Log } from "../util/log";
 import { Context } from "../util/context";
 import { Config } from "./config";
-import { Share } from "../share/share";
 
 export namespace App {
   const log = Log.create({ service: "app" });
@@ -35,7 +34,6 @@ export namespace App {
       get root() {
         return input.directory;
       },
-      service<T extends (app: any) => any>(service: any, init: T) {},
     };
 
     return result;

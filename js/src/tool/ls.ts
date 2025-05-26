@@ -65,9 +65,8 @@ export const ls = Tool.define({
       searchPath = path.join(app.root, searchPath);
     }
 
-    try {
-      await fs.promises.stat(searchPath);
-    } catch (err) {
+    const stat = await fs.promises.stat(searchPath).catch(() => null);
+    if (!stat) {
       return {
         metadata: {},
         output: `Path does not exist: ${searchPath}`,
@@ -88,7 +87,7 @@ export const ls = Tool.define({
 
     return {
       metadata: {
-        numberOfFiles: files.length,
+        count: files.length,
         truncated,
       },
       output,
@@ -110,40 +109,38 @@ async function listDirectory(
       return;
     }
 
-    try {
-      const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+    const entries = await fs.promises
+      .readdir(dir, { withFileTypes: true })
+      .catch(() => []);
 
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
 
-        if (shouldSkip(fullPath, ignorePatterns)) {
-          continue;
+      if (shouldSkip(fullPath, ignorePatterns)) {
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        if (fullPath !== initialPath) {
+          results.push(fullPath + path.sep);
         }
 
-        if (entry.isDirectory()) {
-          if (fullPath !== initialPath) {
-            results.push(fullPath + path.sep);
-          }
+        if (results.length < limit) {
+          await walk(fullPath);
+        } else {
+          truncated = true;
+          return;
+        }
+      } else if (entry.isFile()) {
+        if (fullPath !== initialPath) {
+          results.push(fullPath);
+        }
 
-          if (results.length < limit) {
-            await walk(fullPath);
-          } else {
-            truncated = true;
-            return;
-          }
-        } else if (entry.isFile()) {
-          if (fullPath !== initialPath) {
-            results.push(fullPath);
-          }
-
-          if (results.length >= limit) {
-            truncated = true;
-            return;
-          }
+        if (results.length >= limit) {
+          truncated = true;
+          return;
         }
       }
-    } catch (err) {
-      // Skip directories we don't have permission to access
     }
   }
 
@@ -200,13 +197,9 @@ function shouldSkip(filePath: string, ignorePatterns: string[]): boolean {
   }
 
   for (const pattern of ignorePatterns) {
-    try {
-      const glob = new Bun.Glob(pattern);
-      if (glob.match(base)) {
-        return true;
-      }
-    } catch (err) {
-      // Skip invalid patterns
+    const glob = new Bun.Glob(pattern);
+    if (glob.match(base)) {
+      return true;
     }
   }
 
@@ -272,7 +265,7 @@ function printTree(tree: TreeNode[], rootPath: string): string {
   let result = `- ${rootPath}${path.sep}\n`;
 
   for (const node of tree) {
-    printNode(node, 1, result);
+    result = printNode(node, 1, result);
   }
 
   return result;
@@ -296,4 +289,3 @@ function printNode(node: TreeNode, level: number, result: string): string {
 
   return result;
 }
-
