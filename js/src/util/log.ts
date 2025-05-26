@@ -1,5 +1,6 @@
 import path from "node:path";
 import { AppPath } from "../app/path";
+import fs from "fs/promises";
 export namespace Log {
   const write = {
     out: (msg: string) => {
@@ -11,12 +12,12 @@ export namespace Log {
   };
 
   export async function file(directory: string) {
-    const out = Bun.file(
-      path.join(AppPath.data(directory), "opencode.out.log"),
-    );
-    const err = Bun.file(
-      path.join(AppPath.data(directory), "opencode.err.log"),
-    );
+    const outPath = path.join(AppPath.data(directory), "opencode.out.log");
+    const errPath = path.join(AppPath.data(directory), "opencode.err.log");
+    await fs.truncate(outPath);
+    await fs.truncate(errPath);
+    const out = Bun.file(outPath);
+    const err = Bun.file(errPath);
     const outWriter = out.writer();
     const errWriter = err.writer();
     write["out"] = (msg) => {

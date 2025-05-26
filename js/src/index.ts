@@ -62,8 +62,6 @@ cli
           );
         }
       }
-
-      process.exit(0);
     });
   });
 

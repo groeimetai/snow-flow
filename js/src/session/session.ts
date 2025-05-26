@@ -100,15 +100,9 @@ export namespace Session {
       return match;
     }
     const result = [] as Message[];
-    const list = await Storage.list("session/message/" + sessionID)
-      .then((x) => x.toArray())
-      .catch(() => {});
-    if (!list) return result;
-    for (const item of list) {
-      const messageID = path.basename(item.path, ".json");
-      const read = await Storage.readJSON<Message>(
-        "session/message/" + sessionID + "/" + messageID,
-      );
+    const list = Storage.list("session/message/" + sessionID);
+    for await (const p of list) {
+      const read = await Storage.readJSON<Message>(p);
       result.push(read);
     }
     state().messages.set(sessionID, result);
@@ -116,13 +110,8 @@ export namespace Session {
   }
 
   export async function* list() {
-    try {
-      const result = await Storage.list("session/info");
-      for await (const item of result) {
-        yield path.basename(item.path, ".json");
-      }
-    } catch {
-      return;
+    for await (const item of Storage.list("session/info")) {
+      yield path.basename(item, ".json");
     }
   }
 
@@ -272,6 +261,7 @@ export namespace Session {
     session.tokens.input += usage.inputTokens || 0;
     session.tokens.output += usage.outputTokens || 0;
     session.tokens.reasoning += usage.reasoningTokens || 0;
+    console.log(session);
     await update(session);
     return next;
   }

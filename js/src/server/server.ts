@@ -83,11 +83,7 @@ export namespace Server {
               description: "Successfully created session",
               content: {
                 "application/json": {
-                  schema: resolver(
-                    Session.Info.openapi({
-                      ref: "Session.Info",
-                    }),
-                  ),
+                  schema: resolver(z.custom<Session.Message[]>()),
                 },
               },
             },

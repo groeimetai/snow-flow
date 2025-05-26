@@ -22,6 +22,11 @@ export namespace Share {
           key: payload.properties.key,
           content: JSON.stringify(payload.properties.content),
         }),
+      }).then((x) => {
+        log.info("synced", {
+          key: payload.properties.key,
+          status: x.status,
+        });
       });
     });
   });

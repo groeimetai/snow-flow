@@ -28,31 +28,28 @@ export namespace Storage {
     };
   });
 
-  function expose<T extends keyof FileStorage>(key: T) {
-    const fn = FileStorage.prototype[key];
-    return async (
-      ...args: Parameters<typeof fn>
-    ): Promise<ReturnType<typeof fn>> => {
-      const { storage } = await state();
-      const match = storage[key];
-      // @ts-ignore
-      return match.call(storage, ...args);
-    };
-  }
-
-  export const write = expose("write");
-  export const read = expose("read");
-  export const list = expose("list");
-  export const readToString = expose("readToString");
-
   export async function readJSON<T>(key: string) {
-    const data = await readToString(key + ".json");
+    const storage = await state().then((x) => x.storage);
+    const data = await storage.readToString(key + ".json");
     return JSON.parse(data) as T;
   }
 
   export async function writeJSON<T>(key: string, content: T) {
+    const storage = await state().then((x) => x.storage);
     const json = JSON.stringify(content);
-    await write(key + ".json", json);
+    await storage.write(key + ".json", json);
     Bus.publish(Event.Write, { key, content });
+  }
+
+  export async function* list(prefix: string) {
+    try {
+      const storage = await state().then((x) => x.storage);
+      const list = storage.list(prefix);
+      for await (const item of list) {
+        yield item.path.slice(0, -5);
+      }
+    } catch {
+      return;
+    }
   }
 }
