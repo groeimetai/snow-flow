@@ -22,7 +22,13 @@ export namespace App {
 
     log.info("created", { path: dataDir });
 
-    const services = new Map<any, any>();
+    const services = new Map<
+      any,
+      {
+        state: any;
+        shutdown?: (input: any) => Promise<void>;
+      }
+    >();
 
     const result = {
       get services() {
@@ -39,15 +45,22 @@ export namespace App {
     return result;
   }
 
-  export function state<T extends (app: Info) => any>(key: any, init: T) {
+  export function state<State>(
+    key: any,
+    init: (app: Info) => State,
+    shutdown?: (state: Awaited<State>) => Promise<void>,
+  ) {
     return () => {
       const app = ctx.use();
       const services = app.services;
       if (!services.has(key)) {
         log.info("registering service", { name: key });
-        services.set(key, init(app));
+        services.set(key, {
+          state: init(app),
+          shutdown: shutdown,
+        });
       }
-      return services.get(key) as ReturnType<T>;
+      return services.get(key)?.state as State;
     };
   }
 
@@ -62,7 +75,12 @@ export namespace App {
     const app = await create(input);
 
     return ctx.provide(app, async () => {
-      return cb(app);
+      const result = await cb(app);
+      for (const [key, entry] of app.services.entries()) {
+        log.info("shutdown", { name: key });
+        await entry.shutdown?.(await entry.state);
+      }
+      return result;
     });
   }
 }

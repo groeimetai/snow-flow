@@ -178,6 +178,11 @@ export namespace LSPClient {
           }),
         ]);
       },
+      async shutdown() {
+        log.info("shutting down");
+        connection.end();
+        connection.dispose();
+      },
     };
 
     return result;

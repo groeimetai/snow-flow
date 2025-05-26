@@ -30,11 +30,20 @@ export namespace Identifier {
     descending: boolean,
     given?: string,
   ): string {
-    if (given) {
-      if (given.startsWith(prefixes[prefix])) return given;
+    if (!given) {
+      return generateNewID(prefix, descending);
+    }
+    
+    if (!given.startsWith(prefixes[prefix])) {
       throw new Error(`ID ${given} does not start with ${prefixes[prefix]}`);
     }
+    return given;
+  }
 
+  function generateNewID(
+    prefix: keyof typeof prefixes,
+    descending: boolean,
+  ): string {
     const currentTimestamp = Date.now();
 
     if (currentTimestamp !== lastTimestamp) {
@@ -45,9 +54,7 @@ export namespace Identifier {
 
     let now = BigInt(currentTimestamp) * BigInt(0x1000) + BigInt(counter);
 
-    if (descending) {
-      now = ~now;
-    }
+    now = descending ? ~now : now;
 
     const timeBytes = Buffer.alloc(6);
     for (let i = 0; i < 6; i++) {

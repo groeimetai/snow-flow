@@ -1,4 +1,4 @@
-export const LANGUAGE_EXTENSIONS = {
+export const LANGUAGE_EXTENSIONS: Record<string, string> = {
   ".abap": "abap",
   ".bat": "bat",
   ".bib": "bibtex",
