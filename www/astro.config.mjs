@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import solidJs from "@astrojs/solid-js";
 import theme from "toolbeam-docs-theme";
 import { rehypeHeadingIds } from "@astrojs/markdown-remark";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
@@ -20,6 +21,7 @@ export default defineConfig({
 		],
 	},
 	integrations: [
+		solidJs(),
 		starlight({
 			title: "OpenCode",
 			social: [
@@ -49,6 +51,7 @@ export default defineConfig({
 			],
 			components: {
 				Hero: "./src/components/Hero.astro",
+				Header: "./src/components/Header.astro",
 			},
 			plugins: [theme({
 				// Optionally, add your own header links

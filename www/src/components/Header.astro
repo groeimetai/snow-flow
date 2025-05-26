@@ -1,0 +1,57 @@
+---
+import config from 'virtual:starlight/user-config';
+import { Icon } from '@astrojs/starlight/components';
+import { HeaderLinks } from 'toolbeam-docs-theme/components';
+import Default from 'toolbeam-docs-theme/overrides/Header.astro';
+import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
+
+const path = Astro.url.pathname;
+
+const links = config.social || [];
+---
+
+{ path.startsWith("/share/")
+  ? <div class="header sl-flex">
+      <div class="title-wrapper sl-flex">
+        <SiteTitle {...Astro.props} />
+      </div>
+      <div class="middle-group sl-flex">
+        <HeaderLinks {...Astro.props} />
+      </div>
+    </div>
+  : <Default {...Astro.props}><slot /></Default>
+}
+
+<style>
+	.header {
+		justify-content: space-between;
+		align-items: center;
+		height: 100%;
+	}
+
+	.title-wrapper {
+		/* Prevent long titles overflowing and covering the search and menu buttons on narrow viewports. */
+		overflow: clip;
+		/* Avoid clipping focus ring around link inside title wrapper. */
+    padding: calc(0.25rem + 2px) 0.25rem calc(0.25rem - 2px);
+		margin: -0.25rem;
+	}
+
+	.middle-group {
+		justify-content: flex-end;
+		gap: var(--sl-nav-gap);
+	}
+	@media (max-width: 50rem) {
+		:global(:root[data-has-sidebar]) {
+			.middle-group {
+				display: none;
+			}
+		}
+	}
+	@media (min-width: 50rem) {
+		.middle-group {
+			display: flex;
+		}
+	}
+</style>
+
