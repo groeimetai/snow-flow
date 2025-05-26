@@ -3,7 +3,7 @@ import { Log } from "../util/log";
 
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { LanguageModel, Provider } from "ai";
-import { generateText, NoSuchModelError } from "ai";
+import { NoSuchModelError } from "ai";
 
 export namespace LLM {
   const log = Log.create({ service: "llm" });

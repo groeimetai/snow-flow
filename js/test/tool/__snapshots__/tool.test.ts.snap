@@ -11,6 +11,7 @@ exports[`tool.ls basic 1`] = `
               - js/
                 - example/
                   - ink.tsx
+                  - broken.ts
                   - cli.ts
 "
 `;
