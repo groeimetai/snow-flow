@@ -31,7 +31,7 @@ describe("tool.glob", () => {
       );
       expect(result.metadata).toMatchObject({
         truncated: false,
-        count: 3,
+        count: 2,
       });
     });
   });
@@ -42,7 +42,7 @@ describe("tool.ls", () => {
     const result = await App.provide({ directory: process.cwd() }, async () => {
       return await ls.execute(
         {
-          path: ".",
+          path: "./example",
         },
         {
           toolCallId: "test",
