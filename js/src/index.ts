@@ -24,11 +24,11 @@ cli.command("generate", "Generate OpenAPI and event specs").action(async () => {
   await fs.mkdir(dir, { recursive: true });
   await Bun.write(
     path.join(dir, "openapi.json"),
-    JSON.stringify(specs, null, 2),
+    JSON.stringify(specs, null, 2)
   );
   await Bun.write(
     path.join(dir, "event.json"),
-    JSON.stringify(Bus.specs(), null, 2),
+    JSON.stringify(Bus.specs(), null, 2)
   );
 });
 
@@ -41,7 +41,7 @@ cli
       const session = await Session.create();
       const shareID = await Session.share(session.id);
       if (shareID)
-        console.log("Share ID: https://dev.opencode.ai/share/" + shareID);
+        console.log("Share ID: https://dev.opencode.ai/share?id=" + session.id);
       const result = await Session.chat(session.id, {
         type: "text",
         text: message.join(" "),
@@ -58,7 +58,7 @@ cli
             part.toolInvocation.args,
             part.toolInvocation.state === "result"
               ? part.toolInvocation.result
-              : "",
+              : ""
           );
         }
       }

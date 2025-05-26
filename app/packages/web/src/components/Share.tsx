@@ -16,7 +16,7 @@ type SessionInfo = {
 
 export default function Share(props: { api: string }) {
   let params = new URLSearchParams(document.location.search)
-  const shareId = params.get("id")
+  const sessionId = params.get("id")
 
   const [connectionStatus, setConnectionStatus] = createSignal("Disconnected")
   const [sessionInfo, setSessionInfo] = createSignal<SessionInfo | null>(null)
@@ -27,12 +27,12 @@ export default function Share(props: { api: string }) {
   onMount(() => {
     const apiUrl = props.api
 
-    console.log("Mounting Share component with ID:", shareId)
+    console.log("Mounting Share component with ID:", sessionId)
     console.log("API URL:", apiUrl)
 
-    if (!shareId) {
-      console.error("Share ID not found in environment variables")
-      setConnectionStatus("Error: Share ID not found")
+    if (!sessionId) {
+      console.error("Session ID not found in environment variables")
+      setConnectionStatus("Error: Session ID not found")
       return
     }
 
@@ -56,7 +56,7 @@ export default function Share(props: { api: string }) {
 
       // Always use secure WebSocket protocol (wss)
       const wsBaseUrl = apiUrl.replace(/^https?:\/\//, "wss://")
-      const wsUrl = `${wsBaseUrl}/share_poll?shareID=${shareId}`
+      const wsUrl = `${wsBaseUrl}/share_poll?id=${sessionId}`
       console.log("Connecting to WebSocket URL:", wsUrl)
 
       // Create WebSocket connection
@@ -144,7 +144,7 @@ export default function Share(props: { api: string }) {
 
   return (
     <main>
-      <h1>Share: {shareId}</h1>
+      <h1>Share: {sessionId}</h1>
 
       <div style={{ margin: "2rem 0" }}>
         <h2>WebSocket Connection</h2>
@@ -300,8 +300,8 @@ export default function Share(props: { api: string }) {
                         const parsed = JSON.parse(msg.content) as UIMessage
                         const createdTime = parsed.metadata?.time?.created
                           ? new Date(
-                            parsed.metadata.time.created,
-                          ).toLocaleString()
+                              parsed.metadata.time.created,
+                            ).toLocaleString()
                           : "Unknown time"
 
                         return (

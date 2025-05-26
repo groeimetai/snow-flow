@@ -7,16 +7,6 @@ type Bindings = {
 }
 
 export class SyncServer extends DurableObject {
-  private files: Map<string, string> = new Map()
-  private shareID?: string
-
-  constructor(ctx: DurableObjectState, env: Bindings) {
-    super(ctx, env)
-    this.ctx.blockConcurrencyWhile(async () => {
-      this.files = await this.ctx.storage.list()
-    })
-  }
-
   async fetch(req: Request) {
     console.log("SyncServer subscribe")
 
@@ -25,10 +15,12 @@ export class SyncServer extends DurableObject {
 
     this.ctx.acceptWebSocket(server)
 
-    setTimeout(() => {
-      this.files.forEach((content, key) =>
-        server.send(JSON.stringify({ key, content })),
-      )
+    setTimeout(async () => {
+      const data = await this.ctx.storage.list()
+      data.forEach((content, key) => {
+        if (key === "shareID") return
+        server.send(JSON.stringify({ key, content }))
+      })
     }, 0)
 
     return new Response(null, {
@@ -44,7 +36,6 @@ export class SyncServer extends DurableObject {
   }
 
   async publish(key: string, content: string) {
-    this.files.set(key, content)
     await this.ctx.storage.put(key, content)
 
     const clients = this.ctx.getWebSockets()
@@ -53,16 +44,15 @@ export class SyncServer extends DurableObject {
   }
 
   async setShareID(shareID: string) {
-    this.shareID = shareID
+    await this.ctx.storage.put("shareID", shareID)
   }
 
   async getShareID() {
-    return this.shareID
+    return this.ctx.storage.get("shareID")
   }
 
   async clear() {
     await this.ctx.storage.deleteAll()
-    this.files.clear()
   }
 }
 
@@ -82,14 +72,11 @@ export default {
       // Get existing shareID
       const id = env.SYNC_SERVER.idFromName(sessionID)
       const stub = env.SYNC_SERVER.get(id)
-      let shareID = await stub.getShareID()
-      if (!shareID) {
-        shareID = randomUUID()
-        await stub.setShareID(shareID)
-      }
+      if (await stub.getShareID())
+        return new Response("Error: Session already shared", { status: 400 })
 
-      // Store session ID
-      await Resource.Bucket.put(`${shareID}/session/id`, sessionID)
+      const shareID = randomUUID()
+      await stub.setShareID(shareID)
 
       return new Response(JSON.stringify({ shareID }), {
         headers: { "Content-Type": "application/json" },
@@ -100,12 +87,16 @@ export default {
       const sessionID = body.sessionID
       const shareID = body.shareID
 
-      // Delete from bucket
-      await Resource.Bucket.delete(`${shareID}/session/id`)
+      // validate shareID
+      if (!shareID)
+        return new Response("Error: Share ID is required", { status: 400 })
 
       // Delete from durable object
       const id = env.SYNC_SERVER.idFromName(sessionID)
       const stub = env.SYNC_SERVER.get(id)
+      if ((await stub.getShareID()) !== shareID)
+        return new Response("Error: Share ID does not match", { status: 400 })
+
       await stub.clear()
 
       return new Response(JSON.stringify({}), {
@@ -119,6 +110,8 @@ export default {
       const key = body.key
       const content = body.content
 
+      console.log("share_sync", sessionID, shareID, key, content)
+
       // validate key
       if (
         !key.startsWith(`session/info/${sessionID}`) &&
@@ -126,13 +119,16 @@ export default {
       )
         return new Response("Error: Invalid key", { status: 400 })
 
-      const ret = await Resource.Bucket.get(`${shareID}/session/id`)
-      if (!ret)
-        return new Response("Error: Session not shared", { status: 400 })
+      // validate shareID
+      if (!shareID)
+        return new Response("Error: Share ID is required", { status: 400 })
 
       // send message to server
       const id = env.SYNC_SERVER.idFromName(sessionID)
       const stub = env.SYNC_SERVER.get(id)
+      if ((await stub.getShareID()) !== shareID)
+        return new Response("Error: Share ID does not match", { status: 400 })
+
       await stub.publish(key, content)
 
       // store message
@@ -153,21 +149,16 @@ export default {
       }
 
       // get query parameters
-      const shareID = url.searchParams.get("shareID")
-      if (!shareID)
-        return new Response("Error: Share ID is required", { status: 400 })
-
-      // Get session ID
-      const sessionID = await Resource.Bucket.get(`${shareID}/session/id`).then(
-        (res) => res?.text(),
-      )
-      console.log("sessionID", sessionID)
+      const sessionID = url.searchParams.get("id")
       if (!sessionID)
-        return new Response("Error: Session not shared", { status: 400 })
+        return new Response("Error: Share ID is required", { status: 400 })
 
       // subscribe to server
       const id = env.SYNC_SERVER.idFromName(sessionID)
       const stub = env.SYNC_SERVER.get(id)
+      if (!(await stub.getShareID()))
+        return new Response("Error: Session not shared", { status: 400 })
+
       return stub.fetch(request)
     }
   },
