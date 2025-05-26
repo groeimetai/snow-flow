@@ -5,9 +5,38 @@ package client
 import "encoding/json"
 import "fmt"
 
+type EventLspClientDiagnostics struct {
+	// Path corresponds to the JSON schema field "path".
+	Path string `json:"path" yaml:"path" mapstructure:"path"`
+
+	// ServerID corresponds to the JSON schema field "serverID".
+	ServerID string `json:"serverID" yaml:"serverID" mapstructure:"serverID"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *EventLspClientDiagnostics) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["path"]; raw != nil && !ok {
+		return fmt.Errorf("field path in EventLspClientDiagnostics: required")
+	}
+	if _, ok := raw["serverID"]; raw != nil && !ok {
+		return fmt.Errorf("field serverID in EventLspClientDiagnostics: required")
+	}
+	type Plain EventLspClientDiagnostics
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = EventLspClientDiagnostics(plain)
+	return nil
+}
+
 type EventStorageWrite struct {
-	// Body corresponds to the JSON schema field "body".
-	Body interface{} `json:"body" yaml:"body" mapstructure:"body"`
+	// Content corresponds to the JSON schema field "content".
+	Content interface{} `json:"content" yaml:"content" mapstructure:"content"`
 
 	// Key corresponds to the JSON schema field "key".
 	Key string `json:"key" yaml:"key" mapstructure:"key"`
@@ -19,8 +48,8 @@ func (j *EventStorageWrite) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["body"]; raw != nil && !ok {
-		return fmt.Errorf("field body in EventStorageWrite: required")
+	if _, ok := raw["content"]; raw != nil && !ok {
+		return fmt.Errorf("field content in EventStorageWrite: required")
 	}
 	if _, ok := raw["key"]; raw != nil && !ok {
 		return fmt.Errorf("field key in EventStorageWrite: required")

@@ -16,9 +16,10 @@ import (
 
 // SessionInfo defines model for Session.Info.
 type SessionInfo struct {
-	Id     string `json:"id"`
-	Title  string `json:"title"`
-	Tokens struct {
+	Id      string  `json:"id"`
+	ShareID *string `json:"shareID,omitempty"`
+	Title   string  `json:"title"`
+	Tokens  struct {
 		Input     float32 `json:"input"`
 		Output    float32 `json:"output"`
 		Reasoning float32 `json:"reasoning"`
@@ -31,8 +32,24 @@ type PostSessionChatJSONBody struct {
 	SessionID string       `json:"sessionID"`
 }
 
+// PostSessionMessagesJSONBody defines parameters for PostSessionMessages.
+type PostSessionMessagesJSONBody struct {
+	SessionID string `json:"sessionID"`
+}
+
+// PostSessionShareJSONBody defines parameters for PostSessionShare.
+type PostSessionShareJSONBody struct {
+	SessionID string `json:"sessionID"`
+}
+
 // PostSessionChatJSONRequestBody defines body for PostSessionChat for application/json ContentType.
 type PostSessionChatJSONRequestBody PostSessionChatJSONBody
+
+// PostSessionMessagesJSONRequestBody defines body for PostSessionMessages for application/json ContentType.
+type PostSessionMessagesJSONRequestBody PostSessionMessagesJSONBody
+
+// PostSessionShareJSONRequestBody defines body for PostSessionShare for application/json ContentType.
+type PostSessionShareJSONRequestBody PostSessionShareJSONBody
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -114,6 +131,16 @@ type ClientInterface interface {
 
 	// PostSessionCreate request
 	PostSessionCreate(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostSessionMessagesWithBody request with any body
+	PostSessionMessagesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostSessionMessages(ctx context.Context, body PostSessionMessagesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostSessionShareWithBody request with any body
+	PostSessionShareWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostSessionShare(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) PostSessionChatWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -142,6 +169,54 @@ func (c *Client) PostSessionChat(ctx context.Context, body PostSessionChatJSONRe
 
 func (c *Client) PostSessionCreate(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostSessionCreateRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSessionMessagesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionMessagesRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSessionMessages(ctx context.Context, body PostSessionMessagesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionMessagesRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSessionShareWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionShareRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSessionShare(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionShareRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -219,6 +294,86 @@ func NewPostSessionCreateRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewPostSessionMessagesRequest calls the generic PostSessionMessages builder with application/json body
+func NewPostSessionMessagesRequest(server string, body PostSessionMessagesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostSessionMessagesRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostSessionMessagesRequestWithBody generates requests for PostSessionMessages with any type of body
+func NewPostSessionMessagesRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/session_messages")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostSessionShareRequest calls the generic PostSessionShare builder with application/json body
+func NewPostSessionShareRequest(server string, body PostSessionShareJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostSessionShareRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostSessionShareRequestWithBody generates requests for PostSessionShare with any type of body
+func NewPostSessionShareRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/session_share")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -269,6 +424,16 @@ type ClientWithResponsesInterface interface {
 
 	// PostSessionCreateWithResponse request
 	PostSessionCreateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostSessionCreateResponse, error)
+
+	// PostSessionMessagesWithBodyWithResponse request with any body
+	PostSessionMessagesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionMessagesResponse, error)
+
+	PostSessionMessagesWithResponse(ctx context.Context, body PostSessionMessagesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionMessagesResponse, error)
+
+	// PostSessionShareWithBodyWithResponse request with any body
+	PostSessionShareWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionShareResponse, error)
+
+	PostSessionShareWithResponse(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionShareResponse, error)
 }
 
 type PostSessionChatResponse struct {
@@ -314,6 +479,50 @@ func (r PostSessionCreateResponse) StatusCode() int {
 	return 0
 }
 
+type PostSessionMessagesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r PostSessionMessagesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostSessionMessagesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostSessionShareResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SessionInfo
+}
+
+// Status returns HTTPResponse.Status
+func (r PostSessionShareResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostSessionShareResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // PostSessionChatWithBodyWithResponse request with arbitrary body returning *PostSessionChatResponse
 func (c *ClientWithResponses) PostSessionChatWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionChatResponse, error) {
 	rsp, err := c.PostSessionChatWithBody(ctx, contentType, body, reqEditors...)
@@ -338,6 +547,40 @@ func (c *ClientWithResponses) PostSessionCreateWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParsePostSessionCreateResponse(rsp)
+}
+
+// PostSessionMessagesWithBodyWithResponse request with arbitrary body returning *PostSessionMessagesResponse
+func (c *ClientWithResponses) PostSessionMessagesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionMessagesResponse, error) {
+	rsp, err := c.PostSessionMessagesWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionMessagesResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostSessionMessagesWithResponse(ctx context.Context, body PostSessionMessagesJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionMessagesResponse, error) {
+	rsp, err := c.PostSessionMessages(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionMessagesResponse(rsp)
+}
+
+// PostSessionShareWithBodyWithResponse request with arbitrary body returning *PostSessionShareResponse
+func (c *ClientWithResponses) PostSessionShareWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionShareResponse, error) {
+	rsp, err := c.PostSessionShareWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionShareResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostSessionShareWithResponse(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionShareResponse, error) {
+	rsp, err := c.PostSessionShare(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionShareResponse(rsp)
 }
 
 // ParsePostSessionChatResponse parses an HTTP response from a PostSessionChatWithResponse call
@@ -365,6 +608,58 @@ func ParsePostSessionCreateResponse(rsp *http.Response) (*PostSessionCreateRespo
 	}
 
 	response := &PostSessionCreateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SessionInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostSessionMessagesResponse parses an HTTP response from a PostSessionMessagesWithResponse call
+func ParsePostSessionMessagesResponse(rsp *http.Response) (*PostSessionMessagesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostSessionMessagesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostSessionShareResponse parses an HTTP response from a PostSessionShareWithResponse call
+func ParsePostSessionShareResponse(rsp *http.Response) (*PostSessionShareResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostSessionShareResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

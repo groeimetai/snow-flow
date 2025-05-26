@@ -25,6 +25,76 @@
         "description": "Create a new session"
       }
     },
+    "/session_share": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successfully shared session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session.Info"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postSession_share",
+        "parameters": [],
+        "description": "Share the session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessionID": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "sessionID"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/session_messages": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successfully created session",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "operationId": "postSession_messages",
+        "parameters": [],
+        "description": "Get messages for a session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessionID": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "sessionID"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/session_chat": {
       "post": {
         "responses": {},
@@ -59,6 +129,9 @@
           "id": {
             "type": "string",
             "pattern": "^ses"
+          },
+          "shareID": {
+            "type": "string"
           },
           "title": {
             "type": "string"

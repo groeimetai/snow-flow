@@ -8,11 +8,26 @@
         "key": {
           "type": "string"
         },
-        "body": {}
+        "content": {}
       },
       "required": [
         "key",
-        "body"
+        "content"
+      ]
+    },
+    "event.lsp.client.diagnostics": {
+      "type": "object",
+      "properties": {
+        "serverID": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "serverID",
+        "path"
       ]
     }
   }
