@@ -1,5 +1,4 @@
 import { createSignal, onCleanup, onMount, Show, For } from "solid-js"
-import { useParams } from "@solidjs/router"
 import { type UIMessage } from "ai"
 
 type Message = {
@@ -15,8 +14,10 @@ type SessionInfo = {
   }
 }
 
-export default function App() {
-  const params = useParams<{ id: string }>()
+export default function Share(props: { api: string }) {
+  let params = new URLSearchParams(document.location.search)
+  const shareId = params.get("id")
+
   const [connectionStatus, setConnectionStatus] = createSignal("Disconnected")
   const [sessionInfo, setSessionInfo] = createSignal<SessionInfo | null>(null)
   const [systemMessage, setSystemMessage] = createSignal<Message | null>(null)
@@ -24,9 +25,7 @@ export default function App() {
   const [expandedSystemMessage, setExpandedSystemMessage] = createSignal(false)
 
   onMount(() => {
-    // Get the API URL from environment
-    const apiUrl = import.meta.env.VITE_API_URL
-    const shareId = params.id
+    const apiUrl = props.api
 
     console.log("Mounting Share component with ID:", shareId)
     console.log("API URL:", apiUrl)
@@ -145,7 +144,7 @@ export default function App() {
 
   return (
     <main>
-      <h1>Share: {params.id}</h1>
+      <h1>Share: {shareId}</h1>
 
       <div style={{ margin: "2rem 0" }}>
         <h2>WebSocket Connection</h2>
@@ -301,8 +300,8 @@ export default function App() {
                         const parsed = JSON.parse(msg.content) as UIMessage
                         const createdTime = parsed.metadata?.time?.created
                           ? new Date(
-                              parsed.metadata.time.created,
-                            ).toLocaleString()
+                            parsed.metadata.time.created,
+                          ).toLocaleString()
                           : "Unknown time"
 
                         return (

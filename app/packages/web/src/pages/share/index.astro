@@ -4,13 +4,17 @@ import config from "virtual:starlight/user-config";
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import Share from "../../components/Share.tsx";
 
-export const prerender = false;
-
-// TODO: Replace with API URL from environment
+// export const prerender = false;
 
 const { id } = Astro.params;
-console.log(Astro.url.pathname);
-//console.log(config);
+console.log(Astro.url);
+console.log(import.meta.env.VITE_API_URL);
+
+//export function getStaticPaths() {
+//  return [
+//    { params: { slug: undefined }}
+//  ];
+//}
 ---
 
 <StarlightPage
@@ -22,7 +26,7 @@ console.log(Astro.url.pathname);
     tableOfContents: false,
   }}
 >
-  <Share id={id} api="https://api.dev.opencode.ai" client:only="solid" />
+  <Share id={id} api={import.meta.env.VITE_API_URL} client:only="solid" />
 </StarlightPage>
 
 <style is:global>

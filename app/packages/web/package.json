@@ -1,23 +1,24 @@
 {
-  "name": "vite-template-solid",
-  "version": "0.0.0",
-  "description": "",
+  "name": "web",
   "type": "module",
+  "version": "0.0.1",
   "scripts": {
-    "start": "vite",
-    "dev": "vite",
-    "build": "vite build",
-    "serve": "vite preview"
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "ai": "^5.0.0-alpha.2",
-    "typescript": "5.8.2",
-    "vite": "6.2.2",
-    "vite-plugin-solid": "2.11.6"
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
   },
   "dependencies": {
-    "@solidjs/router": "0.15.3",
-    "solid-js": "1.9.5"
+    "@astrojs/markdown-remark": "^6.3.1",
+    "@astrojs/solid-js": "^5.1.0",
+    "@astrojs/starlight": "^0.34.3",
+    "@fontsource/ibm-plex-mono": "^5.2.5",
+    "ai": "^5.0.0-alpha.2",
+    "astro": "^5.7.13",
+    "rehype-autolink-headings": "^7.1.0",
+    "sharp": "^0.32.5",
+    "solid-js": "^1.9.7",
+    "toolbeam-docs-theme": "^0.2.4"
   }
 }
