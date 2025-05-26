@@ -1,4 +1,5 @@
 import { createSignal, onCleanup, onMount, Show, For } from "solid-js"
+import styles from "./share.module.css"
 import { type UIMessage } from "ai"
 
 type Message = {
@@ -144,15 +145,15 @@ export default function Share(props: { api: string }) {
 
   return (
     <main>
-      <h1>Share: {sessionId}</h1>
+      <div class={styles.header}>
+        <h1>Untitled conversation</h1>
+        <p>
+          <span>&#9679;</span>
+          <span>{connectionStatus()}</span>
+        </p>
+      </div>
 
       <div style={{ margin: "2rem 0" }}>
-        <h2>WebSocket Connection</h2>
-        <p>
-          Status: <strong>{connectionStatus()}</strong>
-        </p>
-
-        <h3>Live Updates</h3>
 
         <Show when={sessionInfo()}>
           <div
@@ -300,8 +301,8 @@ export default function Share(props: { api: string }) {
                         const parsed = JSON.parse(msg.content) as UIMessage
                         const createdTime = parsed.metadata?.time?.created
                           ? new Date(
-                              parsed.metadata.time.created,
-                            ).toLocaleString()
+                            parsed.metadata.time.created,
+                          ).toLocaleString()
                           : "Unknown time"
 
                         return (
