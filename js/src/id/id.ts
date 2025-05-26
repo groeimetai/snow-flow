@@ -13,6 +13,10 @@ export namespace Identifier {
 
   const LENGTH = 26;
 
+  // State for monotonic ID generation
+  let lastTimestamp = 0;
+  let counter = 0;
+
   export function ascending(prefix: keyof typeof prefixes, given?: string) {
     return generateID(prefix, false, given);
   }
@@ -31,7 +35,15 @@ export namespace Identifier {
       throw new Error(`ID ${given} does not start with ${prefixes[prefix]}`);
     }
 
-    let now = BigInt(Date.now());
+    const currentTimestamp = Date.now();
+
+    if (currentTimestamp !== lastTimestamp) {
+      lastTimestamp = currentTimestamp;
+      counter = 0;
+    }
+    counter++;
+
+    let now = BigInt(currentTimestamp) * BigInt(0x1000) + BigInt(counter);
 
     if (descending) {
       now = ~now;
