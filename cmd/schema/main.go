@@ -108,6 +108,7 @@ func generateSchema() map[string]any {
 				"default":     "opencode",
 				"enum": []string{
 					"opencode",
+					"ayu",
 					"catppuccin",
 					"dracula",
 					"flexoki",
