@@ -1,0 +1,22 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h1 {
+    font-size: 1.125rem;
+    font-weight: 500;
+  }
+  p {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+
+    span:first-child {
+      &.connected { color: var(--sl-color-green); }
+      &.connecting { color: var(--sl-color-orange); }
+      &.disconnected { color: var(--sl-color-hairline); }
+    }
+  }
+}
+

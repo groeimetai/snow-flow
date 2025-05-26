@@ -4,17 +4,7 @@ import config from "virtual:starlight/user-config";
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import Share from "../../components/Share.tsx";
 
-// export const prerender = false;
-
 const { id } = Astro.params;
-console.log(Astro.url);
-console.log(import.meta.env.VITE_API_URL);
-
-//export function getStaticPaths() {
-//  return [
-//    { params: { slug: undefined }}
-//  ];
-//}
 ---
 
 <StarlightPage
@@ -34,6 +24,6 @@ body > .page > .main-frame .main-pane > main > .content-panel:first-of-type {
   display: none;
 }
 body > .page > .main-frame .main-pane > main > .content-panel + .content-panel {
-  border-top: none;
+  border-top: none !important;
 }
 </style>
