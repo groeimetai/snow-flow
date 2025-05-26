@@ -117,9 +117,17 @@ export namespace Server {
             },
           },
         }),
+        zValidator(
+          "json",
+          z.object({
+            sessionID: z.string(),
+          }),
+        ),
         async (c) => {
-          const session = await Session.create();
-          return c.json(session);
+          const messages = await Session.messages(
+            c.req.valid("json").sessionID,
+          );
+          return c.json(messages);
         },
       )
       .post(
