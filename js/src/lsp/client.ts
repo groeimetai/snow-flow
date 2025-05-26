@@ -5,6 +5,7 @@ import {
   StreamMessageReader,
   StreamMessageWriter,
 } from "vscode-jsonrpc/node";
+import type { Diagnostic as VSCodeDiagnostic } from "vscode-languageserver-types";
 import { App } from "../app";
 import { Log } from "../util/log";
 import { LANGUAGE_EXTENSIONS } from "./language";
@@ -16,16 +17,19 @@ export namespace LSPClient {
 
   export type Info = Awaited<ReturnType<typeof create>>;
 
+  export type Diagnostic = VSCodeDiagnostic;
+
   export const Event = {
     Diagnostics: Bus.event(
       "lsp.client.diagnostics",
       z.object({
+        serverID: z.string(),
         path: z.string(),
       }),
     ),
   };
 
-  export async function create(input: { cmd: string[] }) {
+  export async function create(input: { cmd: string[]; serverID: string }) {
     log.info("starting client", input);
     let version = 0;
 
@@ -41,14 +45,14 @@ export namespace LSPClient {
       new StreamMessageWriter(server.stdin),
     );
 
-    const diagnostics = new Map<string, any>();
+    const diagnostics = new Map<string, Diagnostic[]>();
     connection.onNotification("textDocument/publishDiagnostics", (params) => {
       const path = new URL(params.uri).pathname;
       log.info("textDocument/publishDiagnostics", {
         path,
       });
       diagnostics.set(path, params.diagnostics);
-      Bus.publish(Event.Diagnostics, { path });
+      Bus.publish(Event.Diagnostics, { path, serverID: input.serverID });
     });
     connection.listen();
 
@@ -114,34 +118,43 @@ export namespace LSPClient {
     await connection.sendNotification("initialized", {});
     log.info("initialized");
 
+    const files = new Set<string>();
+
     const result = {
+      get clientID() {
+        return input.serverID;
+      },
       get connection() {
         return connection;
       },
       notify: {
         async open(input: { path: string }) {
-          log.info("textDocument/didOpen", input);
-          diagnostics.delete(input.path);
           const text = await Bun.file(input.path).text();
-          const languageId = LANGUAGE_EXTENSIONS[path.extname(input.path)];
-          await connection.sendNotification("textDocument/didOpen", {
-            textDocument: {
-              uri: `file://` + input.path,
-              languageId,
-              version: 1,
-              text: text,
-            },
-          });
-        },
-        async change(input: { path: string }) {
+          const opened = files.has(input.path);
+          if (!opened) {
+            log.info("textDocument/didOpen", input);
+            diagnostics.delete(input.path);
+            const extension = path.extname(input.path);
+            const languageId = LANGUAGE_EXTENSIONS[extension] ?? "plaintext";
+            await connection.sendNotification("textDocument/didOpen", {
+              textDocument: {
+                uri: `file://` + input.path,
+                languageId,
+                version: 1,
+                text: text,
+              },
+            });
+            files.add(input.path);
+            return;
+          }
+
           log.info("textDocument/didChange", input);
           diagnostics.delete(input.path);
-          const text = await Bun.file(input.path).text();
           version++;
           await connection.sendNotification("textDocument/didChange", {
             textDocument: {
               uri: `file://` + input.path,
-              version: Date.now(),
+              version,
             },
             contentChanges: [
               {
@@ -154,21 +167,24 @@ export namespace LSPClient {
       get diagnostics() {
         return diagnostics;
       },
-      async refreshDiagnostics(input: { path: string }) {
+      async waitForDiagnostics(input: { path: string }) {
         log.info("refreshing diagnostics", input);
         let unsub: () => void;
         let timeout: NodeJS.Timeout;
         return await Promise.race([
           new Promise<void>(async (resolve) => {
             unsub = Bus.subscribe(Event.Diagnostics, (event) => {
-              if (event.properties.path === input.path) {
+              if (
+                event.properties.path === input.path &&
+                event.properties.serverID === result.clientID
+              ) {
                 log.info("refreshed diagnostics", input);
                 clearTimeout(timeout);
                 unsub?.();
                 resolve();
               }
             });
-            await result.notify.change(input);
+            await result.notify.open(input);
           }),
           new Promise<void>((resolve) => {
             timeout = setTimeout(() => {

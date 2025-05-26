@@ -1,27 +1,21 @@
-import { hc } from "hono/client";
-import type { Server } from "../src/server/server";
+import { App } from "../src/app";
+import path from "path";
+import { edit } from "../src/tool";
+import { FileTimes } from "../src/tool/util/file-times";
 
-const message = process.argv.slice(2).join(" ");
-console.log(message);
-
-const client = hc<Server.App>(`http://localhost:16713`);
-const session = await client.session_create.$post().then((res) => res.json());
-const result = await client.session_chat
-  .$post({
-    json: {
-      sessionID: session.id,
-      parts: [
-        {
-          type: "text",
-          text: message,
-        },
-      ],
+await App.provide({ directory: process.cwd() }, async () => {
+  const file = path.join(process.cwd(), "example/broken.ts");
+  FileTimes.read(file);
+  const tool = await edit.execute(
+    {
+      file_path: file,
+      old_string: "x:",
+      new_string: "x:",
     },
-  })
-  .then((res) => res.json());
-
-for (const part of result.parts) {
-  if (part.type === "text") {
-    console.log(part.text);
-  }
-}
+    {
+      toolCallId: "test",
+      messages: [],
+    },
+  );
+  console.log(tool.output);
+});

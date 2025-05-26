@@ -115,7 +115,8 @@ export const view = Tool.define({
     }
     output += "\n</file>";
 
-    await LSP.run((client) => client.notify.open({ path: filePath }));
+    // just warms the lsp client
+    LSP.file(filePath);
     FileTimes.read(filePath);
 
     return {

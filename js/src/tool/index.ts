@@ -5,3 +5,4 @@ export * from "./glob";
 export * from "./grep";
 export * from "./view";
 export * from "./ls";
+export * from "./diagnostics";

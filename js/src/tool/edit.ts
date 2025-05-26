@@ -118,17 +118,15 @@ export const edit = Tool.define({
     FileTimes.read(filePath);
 
     let output = "";
-    await LSP.run((client) => client.refreshDiagnostics({ path: filePath }));
-    const diagnostics = await LSP.run(async (client) => client.diagnostics);
-    for (const diagnostic of diagnostics) {
-      for (const [file, params] of diagnostic.entries()) {
-        if (params.length === 0) continue;
-        if (file === filePath) {
-          output += `\nThis file has errors, please fix\n<file_diagnostics>\n${JSON.stringify(params)}\n</file_diagnostics>\n`;
-          continue;
-        }
-        output += `\n<project_diagnostics>\n${JSON.stringify(params)}\n</project_diagnostics>\n`;
+    await LSP.file(filePath);
+    const diagnostics = await LSP.diagnostics();
+    for (const [file, issues] of Object.entries(diagnostics)) {
+      if (issues.length === 0) continue;
+      if (file === filePath) {
+        output += `\nThis file has errors, please fix\n<file_diagnostics>\n${issues.map(LSP.Diagnostic.pretty).join("\n")}\n</file_diagnostics>\n`;
+        continue;
       }
+      output += `\n<project_diagnostics>\n${issues.map(LSP.Diagnostic.pretty).join("\n")}\n</project_diagnostics>\n`;
     }
 
     return {
