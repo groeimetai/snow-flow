@@ -1,4 +1,4 @@
-export const LANGUAGE_EXTENSIONS: Record<string, string> = {
+export const LANGUAGE_EXTENSIONS = {
   ".abap": "abap",
   ".bat": "bat",
   ".bib": "bibtex",
@@ -80,4 +80,4 @@ export const LANGUAGE_EXTENSIONS: Record<string, string> = {
   ".xsl": "xsl",
   ".yaml": "yaml",
   ".yml": "yaml",
-};
+} as const;

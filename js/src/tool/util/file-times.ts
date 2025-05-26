@@ -1,7 +1,7 @@
 import { App } from "../../app";
 
 export namespace FileTimes {
-  export const state = App.state("tool.edit", () => ({
+  export const state = App.state("tool.filetimes", () => ({
     read: new Map<string, Date>(),
     write: new Map<string, Date>(),
   }));

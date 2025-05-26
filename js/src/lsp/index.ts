@@ -8,6 +8,7 @@ export namespace LSP {
   const state = App.state("lsp", async () => {
     const clients = new Map<string, LSPClient.Info>();
 
+    // QUESTION: how lazy should lsp auto discovery be? should it not initialize until a file is opened?
     clients.set(
       "typescript",
       await LSPClient.create({
@@ -28,4 +29,30 @@ export namespace LSP {
     const tasks = clients.map((x) => input(x));
     return Promise.all(tasks);
   }
+
+  const AUTO: {
+    command: string[];
+    extensions: string[];
+    install?: () => Promise<void>;
+  }[] = [
+    {
+      command: ["bun", "x", "typescript-language-server", "--stdio"],
+      extensions: [
+        "ts",
+        "tsx",
+        "js",
+        "jsx",
+        "mjs",
+        "cjs",
+        "mts",
+        "cts",
+        "mtsx",
+        "ctsx",
+      ],
+    },
+    {
+      command: ["gopls"],
+      extensions: ["go"],
+    },
+  ];
 }
