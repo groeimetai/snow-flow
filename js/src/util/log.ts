@@ -14,8 +14,8 @@ export namespace Log {
   export async function file(directory: string) {
     const outPath = path.join(AppPath.data(directory), "opencode.out.log");
     const errPath = path.join(AppPath.data(directory), "opencode.err.log");
-    await fs.truncate(outPath);
-    await fs.truncate(errPath);
+    await fs.truncate(outPath).catch(() => {});
+    await fs.truncate(errPath).catch(() => {});
     const out = Bun.file(outPath);
     const err = Bun.file(errPath);
     const outWriter = out.writer();

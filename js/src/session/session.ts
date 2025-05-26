@@ -167,7 +167,7 @@ export namespace Session {
     msgs.push(msg);
     await write(msg);
 
-    const model = await LLM.findModel("claude-3-7-sonnet-20250219");
+    const model = await LLM.findModel("claude-sonnet-4-20250514");
     const result = streamText({
       maxSteps: 1000,
       messages: convertToModelMessages(msgs),
