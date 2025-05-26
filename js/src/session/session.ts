@@ -87,7 +87,7 @@ export namespace Session {
     if (!shareID) return;
     session.shareID = shareID;
     await update(session);
-    return shareID;
+    return shareID as string;
   }
 
   export async function update(session: Info) {

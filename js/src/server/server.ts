@@ -8,6 +8,10 @@ import { resolver, validator as zValidator } from "hono-openapi/zod";
 import { z } from "zod";
 import "zod-openapi/extend";
 
+const SessionInfo = Session.Info.openapi({
+  ref: "Session.Info",
+});
+
 export namespace Server {
   const log = Log.create({ service: "server" });
   const PORT = 16713;
@@ -59,11 +63,7 @@ export namespace Server {
               description: "Successfully created session",
               content: {
                 "application/json": {
-                  schema: resolver(
-                    Session.Info.openapi({
-                      ref: "Session.Info",
-                    }),
-                  ),
+                  schema: resolver(SessionInfo),
                 },
               },
             },
@@ -71,6 +71,34 @@ export namespace Server {
         }),
         async (c) => {
           const session = await Session.create();
+          return c.json(session);
+        },
+      )
+      .post(
+        "/session_share",
+        describeRoute({
+          description: "Share the session",
+          responses: {
+            200: {
+              description: "Successfully shared session",
+              content: {
+                "application/json": {
+                  schema: resolver(SessionInfo),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "json",
+          z.object({
+            sessionID: z.string(),
+          }),
+        ),
+        async (c) => {
+          const body = c.req.valid("json");
+          await Session.share(body.sessionID);
+          const session = await Session.get(body.sessionID);
           return c.json(session);
         },
       )
