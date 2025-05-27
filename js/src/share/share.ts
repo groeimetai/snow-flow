@@ -33,7 +33,7 @@ export namespace Share {
               sessionID: sessionID,
               shareID: session.shareID,
               key: key,
-              content: JSON.stringify(content),
+              content,
             }),
           });
         })

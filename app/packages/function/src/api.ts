@@ -35,7 +35,7 @@ export class SyncServer extends DurableObject {
     ws.close(code, "Durable Object is closing WebSocket")
   }
 
-  async publish(key: string, content: string) {
+  async publish(key: string, content: any) {
     await this.ctx.storage.put(key, content)
 
     const clients = this.ctx.getWebSockets()
