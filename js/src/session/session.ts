@@ -96,11 +96,11 @@ export namespace Session {
 
   export async function update(id: string, editor: (session: Info) => void) {
     const { sessions } = state();
-    const session = sessions.get(id);
+    const session = await get(id);
     if (!session) return;
     editor(session);
-    await Storage.writeJSON("session/info/" + id, session);
     sessions.set(id, session);
+    await Storage.writeJSON("session/info/" + id, session);
     return session;
   }
 
