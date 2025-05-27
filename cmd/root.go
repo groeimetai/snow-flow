@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
 	"log/slog"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/go-viper/mapstructure/v2"
 	zone "github.com/lrstanley/bubblezone"
 	"github.com/spf13/cobra"
 	"github.com/sst/opencode/internal/app"
@@ -25,7 +23,6 @@ import (
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/tui"
 	"github.com/sst/opencode/internal/version"
-	"github.com/sst/opencode/pkg/client"
 )
 
 type SessionIDHandler struct {
@@ -95,7 +92,7 @@ to assist developers in writing, debugging, and understanding code directly from
 
 		// Check if we're in non-interactive mode
 		prompt, _ := cmd.Flags().GetString("prompt")
-		
+
 		// Check for piped input if no prompt was provided via flag
 		if prompt == "" {
 			pipedInput, hasPipedInput := checkStdinPipe()
@@ -103,7 +100,7 @@ to assist developers in writing, debugging, and understanding code directly from
 				prompt = pipedInput
 			}
 		}
-		
+
 		// If we have a prompt (either from flag or piped input), run in non-interactive mode
 		if prompt != "" {
 			outputFormatStr, _ := cmd.Flags().GetString("output-format")
@@ -347,7 +344,7 @@ func checkStdinPipe() (string, bool) {
 		if err != nil {
 			return "", false
 		}
-		
+
 		// If we got data, return it
 		if len(data) > 0 {
 			return string(data), true
