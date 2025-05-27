@@ -139,7 +139,7 @@ export namespace Server {
               description: "List of sessions",
               content: {
                 "application/json": {
-                  schema: resolver(z.custom<Session.Info[]>()),
+                  schema: resolver(Session.Info.array()),
                 },
               },
             },
