@@ -4,19 +4,18 @@ import config from "virtual:starlight/user-config";
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import Share from "../../components/Share.tsx";
 
-const { id } = Astro.params;
 ---
 
 <StarlightPage
   hasSidebar={false}
   frontmatter={{
     title: "Share",
-    pageFind: false,
+    pagefind: false,
     template: "splash",
     tableOfContents: false,
   }}
 >
-  <Share id={id} api={import.meta.env.VITE_API_URL} client:only="solid" />
+  <Share api={import.meta.env.VITE_API_URL} client:only="solid" />
 </StarlightPage>
 
 <style is:global>
