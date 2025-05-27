@@ -19,7 +19,7 @@ export class SyncServer extends DurableObject {
       const data = await this.ctx.storage.list()
       data.forEach((content: any, key) => {
         if (key === "shareID") return
-        server.send(JSON.stringify({ key, content: JSON.parse(content) }))
+        server.send(JSON.stringify({ key, content: content }))
       })
     }, 0)
 
