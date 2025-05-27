@@ -51,8 +51,10 @@ export namespace LSPClient {
       log.info("textDocument/publishDiagnostics", {
         path,
       });
-      console.log(path, params);
+      const exists = diagnostics.has(path);
       diagnostics.set(path, params.diagnostics);
+      // servers seem to send one blank publishDiagnostics event before the first real one
+      if (!exists && !params.diagnostics.length) return;
       Bus.publish(Event.Diagnostics, { path, serverID: input.serverID });
     });
     connection.listen();
@@ -131,7 +133,6 @@ export namespace LSPClient {
       notify: {
         async open(input: { path: string }) {
           const file = Bun.file(input.path);
-          if (!file.exists()) return;
           const text = await file.text();
           const opened = files.has(input.path);
           if (!opened) {

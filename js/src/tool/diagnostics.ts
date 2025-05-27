@@ -40,7 +40,6 @@ TIPS:
       : path.join(app.root, args.path);
     await LSP.file(normalized);
     const diagnostics = await LSP.diagnostics();
-    console.log(diagnostics, "diagnostics");
     const file = diagnostics[normalized];
     return {
       metadata: {
