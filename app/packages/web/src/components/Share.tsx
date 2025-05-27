@@ -22,6 +22,7 @@ type SessionMessage = UIMessage<{
 }>
 
 type SessionInfo = {
+  title: string
   tokens?: {
     input?: number
     output?: number
@@ -154,7 +155,7 @@ export default function Share(props: { api: string }) {
     <main class={`${styles.root} not-content`}>
       <div class={styles.header}>
         <div data-section="title">
-          <h1>Untitled conversation</h1>
+          <h1>{store.info?.title}</h1>
           <p>
             <span data-status={connectionStatus()[0]}>&#9679;</span>
             <span>{getStatusText(connectionStatus())}</span>
