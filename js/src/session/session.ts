@@ -162,13 +162,6 @@ export namespace Session {
       msgs.push(system);
       state().messages.set(sessionID, msgs);
       generateText({
-        onStepFinish: (step) => {
-          update(sessionID, (draft) => {
-            draft.tokens.input += step.usage.inputTokens || 0;
-            draft.tokens.output += step.usage.outputTokens || 0;
-            draft.tokens.reasoning += step.usage.reasoningTokens || 0;
-          });
-        },
         messages: convertToModelMessages([
           {
             role: "system",
@@ -208,6 +201,13 @@ export namespace Session {
     await write(msg);
 
     const result = streamText({
+      onStepFinish: (step) => {
+        update(sessionID, (draft) => {
+          draft.tokens.input += step.usage.inputTokens || 0;
+          draft.tokens.output += step.usage.outputTokens || 0;
+          draft.tokens.reasoning += step.usage.reasoningTokens || 0;
+        });
+      },
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),
       temperature: 0,
@@ -296,10 +296,6 @@ export namespace Session {
       }
       await write(next);
     }
-    const usage = await result.totalUsage;
-    session.tokens.input += usage.inputTokens || 0;
-    session.tokens.output += usage.outputTokens || 0;
-    session.tokens.reasoning += usage.reasoningTokens || 0;
     return next;
   }
 }
