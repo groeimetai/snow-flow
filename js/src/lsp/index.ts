@@ -102,11 +102,13 @@ export namespace LSP {
         ".ctsx",
       ],
     },
+    /*
     {
       id: "golang",
       command: ["gopls"],
       extensions: [".go"],
     },
+    */
   ];
 
   export namespace Diagnostic {

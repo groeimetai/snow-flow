@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto"
 import { Resource } from "sst"
 
 type Bindings = {
-  SYNC_SERVER: DurableObjectNamespace
+  SYNC_SERVER: DurableObjectNamespace<SyncServer>
 }
 
 export class SyncServer extends DurableObject {
@@ -17,9 +17,9 @@ export class SyncServer extends DurableObject {
 
     setTimeout(async () => {
       const data = await this.ctx.storage.list()
-      data.forEach((content, key) => {
+      data.forEach((content: any, key) => {
         if (key === "shareID") return
-        server.send(JSON.stringify({ key, content }))
+        server.send(JSON.stringify({ key, content: JSON.parse(content) }))
       })
     }, 0)
 
@@ -48,7 +48,7 @@ export class SyncServer extends DurableObject {
   }
 
   async getShareID() {
-    return this.ctx.storage.get("shareID")
+    return this.ctx.storage.get<string>("shareID")
   }
 
   async clear() {
@@ -59,14 +59,17 @@ export class SyncServer extends DurableObject {
 export default {
   async fetch(request: Request, env: Bindings, ctx: ExecutionContext) {
     const url = new URL(request.url)
+    const splits = url.pathname.split("/")
+    const method = splits[1]
 
-    if (request.method === "GET" && url.pathname === "/") {
+    if (request.method === "GET" && method === "") {
       return new Response("Hello, world!", {
         headers: { "Content-Type": "text/plain" },
       })
     }
-    if (request.method === "POST" && url.pathname.endsWith("/share_create")) {
-      const body = await request.json()
+
+    if (request.method === "POST" && method === "share_create") {
+      const body = await request.json<any>()
       const sessionID = body.sessionID
 
       // Get existing shareID
@@ -82,8 +85,9 @@ export default {
         headers: { "Content-Type": "application/json" },
       })
     }
-    if (request.method === "POST" && url.pathname.endsWith("/share_delete")) {
-      const body = await request.json()
+
+    if (request.method === "POST" && method === "share_delete") {
+      const body = await request.json<any>()
       const sessionID = body.sessionID
       const shareID = body.shareID
 
@@ -103,8 +107,9 @@ export default {
         headers: { "Content-Type": "application/json" },
       })
     }
-    if (request.method === "POST" && url.pathname.endsWith("/share_sync")) {
-      const body = await request.json()
+
+    if (request.method === "POST" && method === "share_sync") {
+      const body = await request.json<any>()
       const sessionID = body.sessionID
       const shareID = body.shareID
       const key = body.key
@@ -132,13 +137,17 @@ export default {
       await stub.publish(key, content)
 
       // store message
-      await Resource.Bucket.put(`${shareID}/${key}.json`, content)
+      await Resource.Bucket.put(
+        `${shareID}/${key}.json`,
+        JSON.stringify(content),
+      )
 
       return new Response(JSON.stringify({}), {
         headers: { "Content-Type": "application/json" },
       })
     }
-    if (request.method === "GET" && url.pathname.endsWith("/share_poll")) {
+
+    if (request.method === "GET" && method === "share_poll") {
       // Expect to receive a WebSocket Upgrade request.
       // If there is one, accept the request and return a WebSocket Response.
       const upgradeHeader = request.headers.get("Upgrade")

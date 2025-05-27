@@ -52,7 +52,7 @@ export namespace Share {
     await state();
   }
 
-  const URL = "https://api.dev.opencode.ai";
+  const URL = process.env["OPENCODE_API"] ?? "https://api.dev.opencode.ai";
   export async function create(sessionID: string) {
     return fetch(`${URL}/share_create`, {
       method: "POST",
