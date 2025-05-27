@@ -54,6 +54,24 @@ export namespace LSP {
     return results;
   }
 
+  export async function hover(input: {
+    file: string;
+    line: number;
+    character: number;
+  }) {
+    return run((client) => {
+      return client.connection.sendRequest("textDocument/hover", {
+        textDocument: {
+          uri: `file://${input.file}`,
+        },
+        position: {
+          line: input.line,
+          character: input.character,
+        },
+      });
+    });
+  }
+
   async function run<T>(
     input: (client: LSPClient.Info) => Promise<T>,
   ): Promise<T[]> {

@@ -6,6 +6,7 @@ import { Bus } from "./bus";
 import { Session } from "./session/session";
 import cac from "cac";
 import { Share } from "./share/share";
+import { Storage } from "./storage/storage";
 
 const cli = cac("opencode");
 
@@ -41,6 +42,52 @@ cli
       const shareID = await Session.share(session.id);
       if (shareID)
         console.log("Share ID: https://dev.opencode.ai/share?id=" + session.id);
+
+      let index = 0;
+      Bus.subscribe(Storage.Event.Write, async (payload) => {
+        const [root, , type, messageID] = payload.properties.key.split("/");
+        if (root !== "session" && type !== "message") return;
+        const message = await Session.messages(session.id).then((x) =>
+          x.find((x) => x.id === messageID),
+        );
+        if (!message) return;
+
+        for (; index < message.parts.length; index++) {
+          const part = message.parts[index];
+          if (part.type === "text") continue;
+          if (part.type === "step-start") continue;
+          if (
+            part.type === "tool-invocation" &&
+            part.toolInvocation.state !== "result"
+          )
+            break;
+
+          if (part.type === "tool-invocation") {
+            console.log(`🔧 ${part.toolInvocation.toolName}`);
+            if (
+              part.toolInvocation.state === "result" &&
+              "result" in part.toolInvocation
+            ) {
+              const result = part.toolInvocation.result;
+              if (typeof result === "string") {
+                const lines = result.split("\n");
+                const truncated = lines.slice(0, 4);
+                if (lines.length > 4) truncated.push("...");
+                console.log(truncated.join("\n"));
+              } else if (result && typeof result === "object") {
+                const jsonStr = JSON.stringify(result, null, 2);
+                const lines = jsonStr.split("\n");
+                const truncated = lines.slice(0, 4);
+                if (lines.length > 4) truncated.push("...");
+                console.log(truncated.join("\n"));
+              }
+            }
+            continue;
+          }
+          console.log(part);
+        }
+      });
+
       const result = await Session.chat(session.id, {
         type: "text",
         text: message.join(" "),
@@ -49,16 +96,6 @@ cli
       for (const part of result.parts) {
         if (part.type === "text") {
           console.log("opencode:", part.text);
-        }
-        if (part.type === "tool-invocation") {
-          console.log(
-            "tool:",
-            part.toolInvocation.toolName,
-            part.toolInvocation.args,
-            part.toolInvocation.state === "result"
-              ? part.toolInvocation.result
-              : "",
-          );
         }
       }
     });

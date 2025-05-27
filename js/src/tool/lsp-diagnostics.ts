@@ -4,7 +4,7 @@ import path from "node:path";
 import { LSP } from "../lsp";
 import { App } from "../app";
 
-export const DiagnosticsTool = Tool.define({
+export const LspDiagnosticTool = Tool.define({
   name: "diagnostics",
   description: `Get diagnostics for a file and/or project.
 

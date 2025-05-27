@@ -5,4 +5,5 @@ export * from "./glob";
 export * from "./grep";
 export * from "./view";
 export * from "./ls";
-export * from "./diagnostics";
+export * from "./lsp-diagnostics";
+export * from "./lsp-hover";

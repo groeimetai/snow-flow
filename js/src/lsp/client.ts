@@ -144,7 +144,7 @@ export namespace LSPClient {
               textDocument: {
                 uri: `file://` + input.path,
                 languageId,
-                version: ++version,
+                version: Date.now(),
                 text,
               },
             });
@@ -157,7 +157,7 @@ export namespace LSPClient {
           await connection.sendNotification("textDocument/didChange", {
             textDocument: {
               uri: `file://` + input.path,
-              version: ++version,
+              version: Date.now(),
             },
             contentChanges: [
               {
@@ -181,7 +181,7 @@ export namespace LSPClient {
                 event.properties.path === input.path &&
                 event.properties.serverID === result.clientID
               ) {
-                log.info("refreshed diagnostics", input);
+                log.info("got diagnostics", input);
                 clearTimeout(timeout);
                 unsub?.();
                 resolve();
@@ -190,6 +190,7 @@ export namespace LSPClient {
           }),
           new Promise<void>((resolve) => {
             timeout = setTimeout(() => {
+              log.info("timed out refreshing diagnostics", input);
               unsub?.();
               resolve();
             }, 5000);

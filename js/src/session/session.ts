@@ -42,6 +42,7 @@ export namespace Session {
   export type Message = UIMessage<{
     time: {
       created: number;
+      completed?: number;
     };
     sessionID: string;
     tool: Record<string, Tool.Metadata>;
@@ -305,6 +306,8 @@ export namespace Session {
       }
       await write(next);
     }
+    next.metadata!.time.completed = Date.now();
+    await write(next);
     return next;
   }
 }
