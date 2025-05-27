@@ -95,6 +95,64 @@
         }
       }
     },
+    "/session_list": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "List of sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^ses"
+                      },
+                      "shareID": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "tokens": {
+                        "type": "object",
+                        "properties": {
+                          "input": {
+                            "type": "number"
+                          },
+                          "output": {
+                            "type": "number"
+                          },
+                          "reasoning": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "input",
+                          "output",
+                          "reasoning"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "tokens"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postSession_list",
+        "parameters": [],
+        "description": "List all sessions"
+      }
+    },
     "/session_chat": {
       "post": {
         "responses": {},

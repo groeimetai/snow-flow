@@ -132,6 +132,9 @@ type ClientInterface interface {
 	// PostSessionCreate request
 	PostSessionCreate(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostSessionList request
+	PostSessionList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostSessionMessagesWithBody request with any body
 	PostSessionMessagesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -169,6 +172,18 @@ func (c *Client) PostSessionChat(ctx context.Context, body PostSessionChatJSONRe
 
 func (c *Client) PostSessionCreate(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostSessionCreateRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSessionList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionListRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -277,6 +292,33 @@ func NewPostSessionCreateRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/session_create")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostSessionListRequest generates requests for PostSessionList
+func NewPostSessionListRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/session_list")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -425,6 +467,9 @@ type ClientWithResponsesInterface interface {
 	// PostSessionCreateWithResponse request
 	PostSessionCreateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostSessionCreateResponse, error)
 
+	// PostSessionListWithResponse request
+	PostSessionListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostSessionListResponse, error)
+
 	// PostSessionMessagesWithBodyWithResponse request with any body
 	PostSessionMessagesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionMessagesResponse, error)
 
@@ -473,6 +518,37 @@ func (r PostSessionCreateResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PostSessionCreateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostSessionListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]struct {
+		Id      string  `json:"id"`
+		ShareID *string `json:"shareID,omitempty"`
+		Title   string  `json:"title"`
+		Tokens  struct {
+			Input     float32 `json:"input"`
+			Output    float32 `json:"output"`
+			Reasoning float32 `json:"reasoning"`
+		} `json:"tokens"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r PostSessionListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostSessionListResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -549,6 +625,15 @@ func (c *ClientWithResponses) PostSessionCreateWithResponse(ctx context.Context,
 	return ParsePostSessionCreateResponse(rsp)
 }
 
+// PostSessionListWithResponse request returning *PostSessionListResponse
+func (c *ClientWithResponses) PostSessionListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostSessionListResponse, error) {
+	rsp, err := c.PostSessionList(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionListResponse(rsp)
+}
+
 // PostSessionMessagesWithBodyWithResponse request with arbitrary body returning *PostSessionMessagesResponse
 func (c *ClientWithResponses) PostSessionMessagesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionMessagesResponse, error) {
 	rsp, err := c.PostSessionMessagesWithBody(ctx, contentType, body, reqEditors...)
@@ -615,6 +700,41 @@ func ParsePostSessionCreateResponse(rsp *http.Response) (*PostSessionCreateRespo
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest SessionInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostSessionListResponse parses an HTTP response from a PostSessionListWithResponse call
+func ParsePostSessionListResponse(rsp *http.Response) (*PostSessionListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostSessionListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []struct {
+			Id      string  `json:"id"`
+			ShareID *string `json:"shareID,omitempty"`
+			Title   string  `json:"title"`
+			Tokens  struct {
+				Input     float32 `json:"input"`
+				Output    float32 `json:"output"`
+				Reasoning float32 `json:"reasoning"`
+			} `json:"tokens"`
+		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
