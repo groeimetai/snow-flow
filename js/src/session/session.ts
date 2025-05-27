@@ -122,7 +122,8 @@ export namespace Session {
 
   export async function* list() {
     for await (const item of Storage.list("session/info")) {
-      yield path.basename(item, ".json");
+      const sessionID = path.basename(item, ".json");
+      yield get(sessionID);
     }
   }
 

@@ -131,6 +131,26 @@ export namespace Server {
         },
       )
       .post(
+        "/session_list",
+        describeRoute({
+          description: "List all sessions",
+          responses: {
+            200: {
+              description: "List of sessions",
+              content: {
+                "application/json": {
+                  schema: resolver(z.custom<Session.Info[]>()),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          const sessions = await Array.fromAsync(Session.list());
+          return c.json(sessions);
+        },
+      )
+      .post(
         "/session_chat",
         zValidator(
           "json",
