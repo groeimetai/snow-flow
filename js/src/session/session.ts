@@ -6,6 +6,7 @@ import { Storage } from "../storage/storage";
 import { Log } from "../util/log";
 import {
   convertToModelMessages,
+  generateText,
   stepCountIs,
   streamText,
   type TextUIPart,
@@ -17,7 +18,9 @@ import {
 import { z } from "zod";
 import * as tools from "../tool";
 
-import ANTHROPIC_PROMPT from "./prompt/anthropic.txt";
+import PROMPT_ANTHROPIC from "./prompt/anthropic.txt";
+import PROMPT_TITLE from "./prompt/title.txt";
+
 import type { Tool } from "../tool/tool";
 import { Share } from "../share/share";
 
@@ -120,6 +123,7 @@ export namespace Session {
     sessionID: string,
     ...parts: UIMessagePart<UIDataTypes>[]
   ) {
+    const model = await LLM.findModel("claude-sonnet-4-20250514");
     const session = await get(sessionID);
     const l = log.clone().tag("session", sessionID);
     l.info("chatting");
@@ -138,7 +142,7 @@ export namespace Session {
         parts: [
           {
             type: "text",
-            text: ANTHROPIC_PROMPT,
+            text: PROMPT_ANTHROPIC,
           },
         ],
         metadata: {
@@ -151,6 +155,28 @@ export namespace Session {
       };
       msgs.push(system);
       state().messages.set(sessionID, msgs);
+      generateText({
+        messages: convertToModelMessages([
+          {
+            role: "system",
+            parts: [
+              {
+                type: "text",
+                text: PROMPT_TITLE,
+              },
+            ],
+          },
+          {
+            role: "user",
+            parts,
+          },
+        ]),
+        model,
+      }).then(async (result) => {
+        const session = await Session.get(sessionID);
+        session.title = result.text;
+        return Session.update(session);
+      });
       await write(system);
     }
     const msg: Message = {
@@ -168,7 +194,6 @@ export namespace Session {
     msgs.push(msg);
     await write(msg);
 
-    const model = await LLM.findModel("claude-sonnet-4-20250514");
     const result = streamText({
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),
