@@ -2,6 +2,8 @@ import { createSignal, onCleanup, onMount, Show, For } from "solid-js"
 import styles from "./share.module.css"
 import { type UIMessage } from "ai"
 
+type Status = "disconnected" | "connecting" | "connected" | "error" | "reconnecting"
+
 type Message = {
   key: string
   content: string
@@ -15,11 +17,22 @@ type SessionInfo = {
   }
 }
 
+function getStatusText(status: [Status, string?]): string {
+  switch (status[0]) {
+    case "connected": return "Connected"
+    case "connecting": return "Connecting..."
+    case "disconnected": return "Disconnected"
+    case "reconnecting": return "Reconnecting..."
+    case "error": return status[1] || "Error"
+    default: return "Unknown"
+  }
+}
+
 export default function Share(props: { api: string }) {
   let params = new URLSearchParams(document.location.search)
   const sessionId = params.get("id")
 
-  const [connectionStatus, setConnectionStatus] = createSignal("Disconnected")
+  const [connectionStatus, setConnectionStatus] = createSignal<[Status, string?]>(["disconnected", "Disconnected"])
   const [sessionInfo, setSessionInfo] = createSignal<SessionInfo | null>(null)
   const [systemMessage, setSystemMessage] = createSignal<Message | null>(null)
   const [messages, setMessages] = createSignal<Message[]>([])
@@ -33,13 +46,13 @@ export default function Share(props: { api: string }) {
 
     if (!sessionId) {
       console.error("Session ID not found in environment variables")
-      setConnectionStatus("Error: Session ID not found")
+      setConnectionStatus(["error", "Session ID not found"])
       return
     }
 
     if (!apiUrl) {
       console.error("API URL not found in environment variables")
-      setConnectionStatus("Error: API URL not found")
+      setConnectionStatus(["error", "API URL not found"])
       return
     }
 
@@ -53,7 +66,7 @@ export default function Share(props: { api: string }) {
         socket.close()
       }
 
-      setConnectionStatus("Connecting...")
+      setConnectionStatus(["connecting"])
 
       // Always use secure WebSocket protocol (wss)
       const wsBaseUrl = apiUrl.replace(/^https?:\/\//, "wss://")
@@ -65,7 +78,7 @@ export default function Share(props: { api: string }) {
 
       // Handle connection opening
       socket.onopen = () => {
-        setConnectionStatus("Connected")
+        setConnectionStatus(["connected"])
         console.log("WebSocket connection established")
       }
 
@@ -113,13 +126,13 @@ export default function Share(props: { api: string }) {
       // Handle errors
       socket.onerror = (error) => {
         console.error("WebSocket error:", error)
-        setConnectionStatus("Error: Connection failed")
+        setConnectionStatus(["error", "Connection failed"])
       }
 
       // Handle connection close and reconnection
       socket.onclose = (event) => {
         console.log(`WebSocket closed: ${event.code} ${event.reason}`)
-        setConnectionStatus("Disconnected, reconnecting...")
+        setConnectionStatus(["reconnecting"])
 
         // Try to reconnect after 2 seconds
         clearTimeout(reconnectTimer)
@@ -144,42 +157,57 @@ export default function Share(props: { api: string }) {
   })
 
   return (
-    <main>
+    <main class={`${styles.root} not-content`}>
       <div class={styles.header}>
-        <h1>Untitled conversation</h1>
-        <p>
-          <span>&#9679;</span>
-          <span>{connectionStatus()}</span>
-        </p>
+        <div data-section="title">
+          <h1>Untitled conversation</h1>
+          <p>
+            <span data-status={connectionStatus()[0]}>&#9679;</span>
+            <span>{getStatusText(connectionStatus())}</span>
+          </p>
+        </div>
+        <div data-section="row">
+          <ul class={styles.stats}>
+            <li>
+              <span>Cost</span>
+              {sessionInfo()?.cost ?
+                <span>{sessionInfo()?.cost}</span>
+                :
+                <span data-placeholder>&mdash;</span>
+              }
+            </li>
+            <li>
+              <span>Input Tokens</span>
+              {sessionInfo()?.tokens?.input ?
+                <span>{sessionInfo()?.tokens?.input}</span>
+                :
+                <span data-placeholder>&mdash;</span>
+              }
+            </li>
+            <li>
+              <span>Output Tokens</span>
+              {sessionInfo()?.tokens?.output ?
+                <span>{sessionInfo()?.tokens?.output}</span>
+                :
+                <span data-placeholder>&mdash;</span>
+              }
+            </li>
+            <li>
+              <span>Reasoning Tokens</span>
+              {sessionInfo()?.tokens?.reasoning ?
+                <span>{sessionInfo()?.tokens?.reasoning}</span>
+                :
+                <span data-placeholder>&mdash;</span>
+              }
+            </li>
+          </ul>
+          <div class={styles.context}>
+            <button>View Context &gt;</button>
+          </div>
+        </div>
       </div>
 
       <div style={{ margin: "2rem 0" }}>
-
-        <Show when={sessionInfo()}>
-          <div
-            style={{
-              padding: "1rem",
-              marginBottom: "1rem",
-              border: "1px solid #dee2e6",
-            }}
-          >
-            <h4 style={{ margin: "0 0 0.75rem 0" }}>Session Information</h4>
-            <div style={{ display: "flex", gap: "1.5rem" }}>
-              <div>
-                <strong>Input Tokens:</strong>{" "}
-                {sessionInfo()?.tokens?.input || 0}
-              </div>
-              <div>
-                <strong>Output Tokens:</strong>{" "}
-                {sessionInfo()?.tokens?.output || 0}
-              </div>
-              <div>
-                <strong>Reasoning Tokens:</strong>{" "}
-                {sessionInfo()?.tokens?.reasoning || 0}
-              </div>
-            </div>
-          </div>
-        </Show>
 
         {/* Display system message as context in the Session Information block */}
         <Show when={systemMessage()}>
@@ -687,6 +715,6 @@ export default function Share(props: { api: string }) {
           </Show>
         </div>
       </div>
-    </main>
+    </main >
   )
 }
