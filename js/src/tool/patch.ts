@@ -34,7 +34,7 @@ CRITICAL REQUIREMENTS FOR USING THIS TOOL:
 The tool will apply all changes in a single atomic operation.`;
 
 const PatchParams = z.object({
-  patch_text: z
+  patchText: z
     .string()
     .describe("The full patch text that describes all changes to be made"),
 });
@@ -269,13 +269,13 @@ export const patch = Tool.define({
   name: "patch",
   description: DESCRIPTION,
   parameters: PatchParams,
-  execute: async ({ patch_text }) => {
-    if (!patch_text) {
-      throw new Error("patch_text is required");
+  execute: async (params) => {
+    if (!params.patchText) {
+      throw new Error("patchText is required");
     }
 
     // Identify all files needed for the patch and verify they've been read
-    const filesToRead = identifyFilesNeeded(patch_text);
+    const filesToRead = identifyFilesNeeded(params.patchText);
     for (const filePath of filesToRead) {
       let absPath = filePath;
       if (!path.isAbsolute(absPath)) {
@@ -309,7 +309,7 @@ export const patch = Tool.define({
     }
 
     // Check for new files to ensure they don't already exist
-    const filesToAdd = identifyFilesAdded(patch_text);
+    const filesToAdd = identifyFilesAdded(params.patchText);
     for (const filePath of filesToAdd) {
       let absPath = filePath;
       if (!path.isAbsolute(absPath)) {
@@ -343,7 +343,7 @@ export const patch = Tool.define({
     }
 
     // Process the patch
-    const [patch, fuzz] = textToPatch(patch_text, currentFiles);
+    const [patch, fuzz] = textToPatch(params.patchText, currentFiles);
     if (fuzz > 3) {
       throw new Error(
         `patch contains fuzzy matches (fuzz level: ${fuzz}). Please make your context lines more precise`,

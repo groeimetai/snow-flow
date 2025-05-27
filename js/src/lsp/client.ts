@@ -51,6 +51,7 @@ export namespace LSPClient {
       log.info("textDocument/publishDiagnostics", {
         path,
       });
+      console.log(path, params);
       diagnostics.set(path, params.diagnostics);
       Bus.publish(Event.Diagnostics, { path, serverID: input.serverID });
     });
@@ -129,7 +130,9 @@ export namespace LSPClient {
       },
       notify: {
         async open(input: { path: string }) {
-          const text = await Bun.file(input.path).text();
+          const file = Bun.file(input.path);
+          if (!file.exists()) return;
+          const text = await file.text();
           const opened = files.has(input.path);
           if (!opened) {
             log.info("textDocument/didOpen", input);
@@ -140,8 +143,8 @@ export namespace LSPClient {
               textDocument: {
                 uri: `file://` + input.path,
                 languageId,
-                version: 1,
-                text: text,
+                version: ++version,
+                text,
               },
             });
             files.add(input.path);
@@ -150,11 +153,10 @@ export namespace LSPClient {
 
           log.info("textDocument/didChange", input);
           diagnostics.delete(input.path);
-          version++;
           await connection.sendNotification("textDocument/didChange", {
             textDocument: {
               uri: `file://` + input.path,
-              version,
+              version: ++version,
             },
             contentChanges: [
               {
@@ -168,7 +170,7 @@ export namespace LSPClient {
         return diagnostics;
       },
       async waitForDiagnostics(input: { path: string }) {
-        log.info("refreshing diagnostics", input);
+        log.info("waiting for diagnostics", input);
         let unsub: () => void;
         let timeout: NodeJS.Timeout;
         return await Promise.race([
@@ -184,7 +186,6 @@ export namespace LSPClient {
                 resolve();
               }
             });
-            await result.notify.open(input);
           }),
           new Promise<void>((resolve) => {
             timeout = setTimeout(() => {

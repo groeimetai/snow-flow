@@ -59,23 +59,23 @@ export const edit = Tool.define({
   name: "edit",
   description: DESCRIPTION,
   parameters: z.object({
-    file_path: z.string().describe("The absolute path to the file to modify"),
-    old_string: z.string().describe("The text to replace"),
-    new_string: z.string().describe("The text to replace it with"),
+    filePath: z.string().describe("The absolute path to the file to modify"),
+    oldString: z.string().describe("The text to replace"),
+    newString: z.string().describe("The text to replace it with"),
   }),
   async execute(params) {
-    if (!params.file_path) {
-      throw new Error("file_path is required");
+    if (!params.filePath) {
+      throw new Error("filePath is required");
     }
 
-    let filePath = params.file_path;
+    let filePath = params.filePath;
     if (!path.isAbsolute(filePath)) {
       filePath = path.join(process.cwd(), filePath);
     }
 
     await (async () => {
-      if (params.old_string === "") {
-        await Bun.write(filePath, params.new_string);
+      if (params.oldString === "") {
+        await Bun.write(filePath, params.newString);
         return;
       }
 
@@ -95,21 +95,21 @@ export const edit = Tool.define({
         );
 
       const content = await file.text();
-      const index = content.indexOf(params.old_string);
+      const index = content.indexOf(params.oldString);
       if (index === -1)
         throw new Error(
-          `old_string not found in file. Make sure it matches exactly, including whitespace and line breaks`,
+          `oldString not found in file. Make sure it matches exactly, including whitespace and line breaks`,
         );
-      const lastIndex = content.lastIndexOf(params.old_string);
+      const lastIndex = content.lastIndexOf(params.oldString);
       if (index !== lastIndex)
         throw new Error(
-          `old_string appears multiple times in the file. Please provide more context to ensure a unique match`,
+          `oldString appears multiple times in the file. Please provide more context to ensure a unique match`,
         );
 
       const newContent =
         content.substring(0, index) +
-        params.new_string +
-        content.substring(index + params.old_string.length);
+        params.newString +
+        content.substring(index + params.oldString.length);
 
       await file.write(newContent);
     })();

@@ -44,7 +44,7 @@ export const view = Tool.define({
   name: "view",
   description: DESCRIPTION,
   parameters: z.object({
-    file_path: z.string().describe("The path to the file to read"),
+    filePath: z.string().describe("The path to the file to read"),
     offset: z
       .number()
       .describe("The line number to start reading from (0-based)")
@@ -55,7 +55,7 @@ export const view = Tool.define({
       .optional(),
   }),
   async execute(params) {
-    let filePath = params.file_path;
+    let filePath = params.filePath;
     if (!path.isAbsolute(filePath)) {
       filePath = path.join(process.cwd(), filePath);
     }

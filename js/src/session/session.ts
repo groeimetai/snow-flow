@@ -162,6 +162,13 @@ export namespace Session {
       msgs.push(system);
       state().messages.set(sessionID, msgs);
       generateText({
+        onStepFinish: (step) => {
+          update(sessionID, (draft) => {
+            draft.tokens.input += step.usage.inputTokens || 0;
+            draft.tokens.output += step.usage.outputTokens || 0;
+            draft.tokens.reasoning += step.usage.reasoningTokens || 0;
+          });
+        },
         messages: convertToModelMessages([
           {
             role: "system",
@@ -293,11 +300,6 @@ export namespace Session {
     session.tokens.input += usage.inputTokens || 0;
     session.tokens.output += usage.outputTokens || 0;
     session.tokens.reasoning += usage.reasoningTokens || 0;
-    await update(sessionID, (draft) => {
-      draft.tokens.input += usage.inputTokens || 0;
-      draft.tokens.output += usage.outputTokens || 0;
-      draft.tokens.reasoning += usage.reasoningTokens || 0;
-    });
     return next;
   }
 }

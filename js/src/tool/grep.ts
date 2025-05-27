@@ -274,7 +274,7 @@ export const grep = Tool.define({
         'File pattern to include in the search (e.g. "*.js", "*.{ts,tsx}")',
       )
       .optional(),
-    literal_text: z
+    literalText: z
       .boolean()
       .describe(
         "If true, the pattern will be treated as literal text with special regex characters escaped. Default is false.",
@@ -289,8 +289,8 @@ export const grep = Tool.define({
     const app = await App.use();
     const searchPath = params.path || app.root;
 
-    // If literal_text is true, escape the pattern
-    const searchPattern = params.literal_text
+    // If literalText is true, escape the pattern
+    const searchPattern = params.literalText
       ? escapeRegexPattern(params.pattern)
       : params.pattern;
 
