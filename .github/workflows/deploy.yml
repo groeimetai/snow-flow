@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - dontlook
-    paths:
-      - "app/**"
   workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
