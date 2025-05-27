@@ -125,12 +125,11 @@ async function listDirectory(
           results.push(fullPath + path.sep);
         }
 
-        if (results.length < limit) {
-          await walk(fullPath);
-        } else {
+        if (results.length >= limit) {
           truncated = true;
           return;
         }
+        await walk(fullPath);
       } else if (entry.isFile()) {
         if (fullPath !== initialPath) {
           results.push(fullPath);

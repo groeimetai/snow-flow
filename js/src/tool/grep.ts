@@ -81,7 +81,7 @@ function globToRegex(glob: string): string {
   regexPattern = regexPattern.replaceAll("?", ".");
 
   // Handle {a,b,c} patterns
-  regexPattern = regexPattern.replace(/\{([^}]+)\}/g, (match, inner) => {
+  regexPattern = regexPattern.replace(/\{([^}]+)\}/g, (_, inner) => {
     return "(" + inner.replace(/,/g, "|") + ")";
   });
 
@@ -301,36 +301,36 @@ export const grep = Tool.define({
       100,
     );
 
-    let output: string;
     if (matches.length === 0) {
-      output = "No files found";
-    } else {
-      const lines = [`Found ${matches.length} matches`];
+      return {
+        metadata: { matches: 0, truncated },
+        output: "No files found"
+      };
+    }
 
-      let currentFile = "";
-      for (const match of matches) {
-        if (currentFile !== match.path) {
-          if (currentFile !== "") {
-            lines.push("");
-          }
-          currentFile = match.path;
-          lines.push(`${match.path}:`);
+    const lines = [`Found ${matches.length} matches`];
+
+    let currentFile = "";
+    for (const match of matches) {
+      if (currentFile !== match.path) {
+        if (currentFile !== "") {
+          lines.push("");
         }
-        if (match.lineNum > 0) {
-          lines.push(`  Line ${match.lineNum}: ${match.lineText}`);
-        } else {
-          lines.push(`  ${match.path}`);
-        }
+        currentFile = match.path;
+        lines.push(`${match.path}:`);
       }
-
-      if (truncated) {
-        lines.push("");
-        lines.push(
-          "(Results are truncated. Consider using a more specific path or pattern.)",
-        );
+      if (match.lineNum > 0) {
+        lines.push(`  Line ${match.lineNum}: ${match.lineText}`);
+      } else {
+        lines.push(`  ${match.path}`);
       }
+    }
 
-      output = lines.join("\n");
+    if (truncated) {
+      lines.push("");
+      lines.push(
+        "(Results are truncated. Consider using a more specific path or pattern.)",
+      );
     }
 
     return {
@@ -338,7 +338,7 @@ export const grep = Tool.define({
         matches: matches.length,
         truncated,
       },
-      output,
+      output: lines.join("\n"),
     };
   },
 });
