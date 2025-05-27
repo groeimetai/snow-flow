@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Tool } from "./tool";
-import path from "path";
+import path from "node:path";
 import { LSP } from "../lsp";
 import { App } from "../app";
 

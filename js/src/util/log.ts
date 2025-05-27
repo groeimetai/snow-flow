@@ -1,6 +1,6 @@
 import path from "node:path";
 import { AppPath } from "../app/path";
-import fs from "fs/promises";
+import fs from "node:fs/promises";
 export namespace Log {
   const write = {
     out: (msg: string) => {

@@ -1,6 +1,6 @@
 import { FileStorage } from "@flystorage/file-storage";
 import { LocalStorageAdapter } from "@flystorage/local-fs";
-import fs from "fs/promises";
+import fs from "node:fs/promises";
 import { Log } from "../util/log";
 import { App } from "../app";
 import { AppPath } from "../app/path";

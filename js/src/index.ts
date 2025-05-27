@@ -1,7 +1,7 @@
 import { App } from "./app";
 import { Server } from "./server/server";
-import fs from "fs/promises";
-import path from "path";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { Bus } from "./bus";
 import { Session } from "./session/session";
 import cac from "cac";

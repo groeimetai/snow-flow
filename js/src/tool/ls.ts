@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { Tool } from "./tool";
 import { App } from "../app";
-import * as path from "path";
-import * as fs from "fs";
+import * as path from "node:path";
+import * as fs from "node:fs";
 
 const DESCRIPTION = `Directory listing tool that shows files and subdirectories in a tree structure, helping you explore and understand the project organization.
 

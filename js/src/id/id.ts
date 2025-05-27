@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { randomBytes } from "crypto";
+import { randomBytes } from "node:crypto";
 
 export namespace Identifier {
   const prefixes = {

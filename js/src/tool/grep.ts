@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { Tool } from "./tool";
 import { App } from "../app";
-import { spawn } from "child_process";
-import { promises as fs } from "fs";
-import path from "path";
+import { spawn } from "node:child_process";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 
 const DESCRIPTION = `Fast content search tool that finds files containing specific text or patterns, returning matching file paths sorted by modification time (newest first).
 
