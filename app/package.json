@@ -32,6 +32,7 @@
   },
   "trustedDependencies": [
     "esbuild",
-    "protobufjs"
+    "protobufjs",
+    "sharp"
   ]
 }
