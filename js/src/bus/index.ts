@@ -52,7 +52,6 @@ export namespace Bus {
     };
     log.info("publishing", {
       type: def.type,
-      ...properties,
     });
     for (const key of [def.type, "*"]) {
       const match = state().subscriptions.get(key);

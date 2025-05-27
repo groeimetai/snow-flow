@@ -88,8 +88,8 @@ export namespace Session {
     if (session.shareID) return session.shareID;
     const shareID = await Share.create(id);
     if (!shareID) return;
-    await update(id, () => {
-      session.shareID = shareID;
+    await update(id, (draft) => {
+      draft.shareID = shareID;
     });
     return shareID as string;
   }
@@ -179,8 +179,8 @@ export namespace Session {
         ]),
         model,
       }).then((result) => {
-        return Session.update(sessionID, (session) => {
-          session.title = result.text;
+        return Session.update(sessionID, (draft) => {
+          draft.title = result.text;
         });
       });
       await write(system);
@@ -293,10 +293,10 @@ export namespace Session {
     session.tokens.input += usage.inputTokens || 0;
     session.tokens.output += usage.outputTokens || 0;
     session.tokens.reasoning += usage.reasoningTokens || 0;
-    await update(sessionID, (session) => {
-      session.tokens.input += usage.inputTokens || 0;
-      session.tokens.output += usage.outputTokens || 0;
-      session.tokens.reasoning += usage.reasoningTokens || 0;
+    await update(sessionID, (draft) => {
+      draft.tokens.input += usage.inputTokens || 0;
+      draft.tokens.output += usage.outputTokens || 0;
+      draft.tokens.reasoning += usage.reasoningTokens || 0;
     });
     return next;
   }

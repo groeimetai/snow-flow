@@ -5,7 +5,6 @@ import path from "path";
 import { Bus } from "./bus";
 import { Session } from "./session/session";
 import cac from "cac";
-import { Storage } from "./storage/storage";
 import { Share } from "./share/share";
 
 const cli = cac("opencode");
@@ -24,11 +23,11 @@ cli.command("generate", "Generate OpenAPI and event specs").action(async () => {
   await fs.mkdir(dir, { recursive: true });
   await Bun.write(
     path.join(dir, "openapi.json"),
-    JSON.stringify(specs, null, 2)
+    JSON.stringify(specs, null, 2),
   );
   await Bun.write(
     path.join(dir, "event.json"),
-    JSON.stringify(Bus.specs(), null, 2)
+    JSON.stringify(Bus.specs(), null, 2),
   );
 });
 
@@ -58,7 +57,7 @@ cli
             part.toolInvocation.args,
             part.toolInvocation.state === "result"
               ? part.toolInvocation.result
-              : ""
+              : "",
           );
         }
       }
