@@ -88,14 +88,20 @@ export namespace Session {
     if (session.shareID) return session.shareID;
     const shareID = await Share.create(id);
     if (!shareID) return;
-    session.shareID = shareID;
-    await update(session);
+    await update(id, () => {
+      session.shareID = shareID;
+    });
     return shareID as string;
   }
 
-  export async function update(session: Info) {
-    state().sessions.set(session.id, session);
-    await Storage.writeJSON("session/info/" + session.id, session);
+  export async function update(id: string, editor: (session: Info) => void) {
+    const { sessions } = state();
+    const session = sessions.get(id);
+    if (!session) return;
+    editor(session);
+    await Storage.writeJSON("session/info/" + id, session);
+    sessions.set(id, session);
+    return session;
   }
 
   export async function messages(sessionID: string) {
@@ -172,10 +178,10 @@ export namespace Session {
           },
         ]),
         model,
-      }).then(async (result) => {
-        const session = await Session.get(sessionID);
-        session.title = result.text;
-        return Session.update(session);
+      }).then((result) => {
+        return Session.update(sessionID, (session) => {
+          session.title = result.text;
+        });
       });
       await write(system);
     }
@@ -287,8 +293,11 @@ export namespace Session {
     session.tokens.input += usage.inputTokens || 0;
     session.tokens.output += usage.outputTokens || 0;
     session.tokens.reasoning += usage.reasoningTokens || 0;
-    console.log(session);
-    await update(session);
+    await update(sessionID, (session) => {
+      session.tokens.input += usage.inputTokens || 0;
+      session.tokens.output += usage.outputTokens || 0;
+      session.tokens.reasoning += usage.reasoningTokens || 0;
+    });
     return next;
   }
 }
