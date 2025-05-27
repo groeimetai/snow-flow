@@ -8,6 +8,7 @@ export namespace Share {
   const log = Log.create({ service: "share" });
 
   let queue: Promise<void> = Promise.resolve();
+  const pending = new Map<string, any>();
 
   const state = App.state("share", async () => {
     Bus.subscribe(Storage.Event.Write, async (payload) => {
@@ -17,23 +18,32 @@ export namespace Share {
       const session = await Session.get(sessionID);
       if (!session.shareID) return;
 
+      const key = payload.properties.key;
+      pending.set(key, payload.properties.content);
+
       queue = queue
-        .then(() =>
-          fetch(`${URL}/share_sync`, {
+        .then(async () => {
+          const content = pending.get(key);
+          if (content === undefined) return;
+          pending.delete(key);
+
+          return fetch(`${URL}/share_sync`, {
             method: "POST",
             body: JSON.stringify({
               sessionID: sessionID,
               shareID: session.shareID,
-              key: payload.properties.key,
-              content: JSON.stringify(payload.properties.content),
+              key: key,
+              content: JSON.stringify(content),
             }),
-          }),
-        )
-        .then((x) => {
-          log.info("synced", {
-            key: payload.properties.key,
-            status: x.status,
           });
+        })
+        .then((x) => {
+          if (x) {
+            log.info("synced", {
+              key: key,
+              status: x.status,
+            });
+          }
         });
     });
   });

@@ -1,6 +1,7 @@
 # OpenCode Context
 
 ## Build/Test Commands
+
 - `bun install` - Install dependencies
 - `bun run index.ts` - Run the application
 - `bun build src/index.ts --compile --outfile ./dist/opencode` - Build executable
@@ -9,6 +10,7 @@
 - `bun test --test-name-pattern <regex>` - Run tests matching pattern
 
 ## Code Style & Conventions
+
 - TypeScript with Bun runtime
 - ES modules (`"type": "module"`)
 - Namespace-based organization (e.g., `Tool.define`, `App.provide`)
@@ -22,3 +24,4 @@
 - File organization: group by feature in `src/` with index files for exports
 - Test files: co-located in `test/` directory, use Bun's built-in test runner
 - Naming: camelCase for variables/functions, PascalCase for namespaces/types
+

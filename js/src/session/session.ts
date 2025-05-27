@@ -141,6 +141,7 @@ export namespace Session {
         msg,
       );
     }
+    const app = await App.use();
     if (msgs.length === 0) {
       const system: Message = {
         id: Identifier.ascending("message"),
@@ -159,6 +160,14 @@ export namespace Session {
           tool: {},
         },
       };
+      const contextFile = Bun.file(path.join(app.root, "CONTEXT.md"));
+      if (await contextFile.exists()) {
+        const context = await contextFile.text();
+        system.parts.push({
+          type: "text",
+          text: context,
+        });
+      }
       msgs.push(system);
       state().messages.set(sessionID, msgs);
       generateText({
