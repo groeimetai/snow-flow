@@ -7,27 +7,34 @@ import { Log } from "../util/log";
 export namespace Share {
   const log = Log.create({ service: "share" });
 
+  let queue: Promise<void> = Promise.resolve();
+
   const state = App.state("share", async () => {
     Bus.subscribe(Storage.Event.Write, async (payload) => {
       const [root, ...splits] = payload.properties.key.split("/");
       if (root !== "session") return;
-      const [type, sessionID] = splits;
+      const [, sessionID] = splits;
       const session = await Session.get(sessionID);
       if (!session.shareID) return;
-      await fetch(`${URL}/share_sync`, {
-        method: "POST",
-        body: JSON.stringify({
-          sessionID: sessionID,
-          shareID: session.shareID,
-          key: payload.properties.key,
-          content: JSON.stringify(payload.properties.content),
-        }),
-      }).then((x) => {
-        log.info("synced", {
-          key: payload.properties.key,
-          status: x.status,
+
+      queue = queue
+        .then(() =>
+          fetch(`${URL}/share_sync`, {
+            method: "POST",
+            body: JSON.stringify({
+              sessionID: sessionID,
+              shareID: session.shareID,
+              key: payload.properties.key,
+              content: JSON.stringify(payload.properties.content),
+            }),
+          }),
+        )
+        .then((x) => {
+          log.info("synced", {
+            key: payload.properties.key,
+            status: x.status,
+          });
         });
-      });
     });
   });
 
