@@ -1,14 +1,25 @@
 import { createSignal, onCleanup, onMount, Show, For, createMemo } from "solid-js"
 import styles from "./share.module.css"
 import { type UIMessage } from "ai"
-import { createStore } from "solid-js/store"
+import { createStore, reconcile } from "solid-js/store"
 
 type Status = "disconnected" | "connecting" | "connected" | "error" | "reconnecting"
 
-type Message = {
-  key: string
-  content: any
-}
+
+type SessionMessage = UIMessage<{
+  time: {
+    created: number;
+    completed?: number;
+  };
+  sessionID: string;
+  tool: Record<string, {
+    properties: Record<string, any>;
+    time: {
+      start: number;
+      end: number;
+    };
+  }>;
+}>
 
 type SessionInfo = {
   tokens?: {
@@ -35,20 +46,7 @@ export default function Share(props: { api: string }) {
 
   const [store, setStore] = createStore<{
     info?: SessionInfo
-    messages: Record<string, UIMessage<{
-      time: {
-        created: number;
-        completed?: number;
-      };
-      sessionID: string;
-      tool: Record<string, {
-        properties: Record<string, any>;
-        time: {
-          start: number;
-          end: number;
-        };
-      }>;
-    }>>
+    messages: Record<string, SessionMessage>
   }>({
     messages: {},
   })
@@ -103,20 +101,17 @@ export default function Share(props: { api: string }) {
       socket.onmessage = (event) => {
         console.log("WebSocket message received")
         try {
-          const data = JSON.parse(event.data) as Message
+          const data = JSON.parse(event.data)
           const [root, type, ...splits] = data.key.split("/")
           if (root !== "session") return
-
           if (type === "info") {
-            setStore("info", data.content)
+            setStore("info", reconcile(data.content))
             return
           }
-
           if (type === "message") {
             const [, messageID] = splits
-            setStore("messages", messageID, data.content)
+            setStore("messages", messageID, reconcile(data.content))
           }
-
         } catch (error) {
           console.error("Error parsing WebSocket message:", error)
         }
