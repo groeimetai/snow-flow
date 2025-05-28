@@ -34,6 +34,7 @@ type SessionMessage = UIMessage<{
 
 type SessionInfo = {
   title: string
+  cost?: number
   tokens?: {
     input?: number
     output?: number
