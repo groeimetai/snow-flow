@@ -38,7 +38,6 @@ function App() {
   const [state, setState] = useState(initial)
   const [input, setInput] = useState("")
 
-
   useEffect(() => {
     fetch("http://localhost:16713/event")
       .then(stream => {

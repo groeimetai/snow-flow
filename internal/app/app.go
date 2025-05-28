@@ -18,14 +18,17 @@ import (
 )
 
 type App struct {
+	State map[string]any
+
 	CurrentSession *session.Session
-	Logs           interface{} // TODO: Define LogService interface when needed
+	Logs           any // TODO: Define LogService interface when needed
 	Sessions       SessionService
 	Messages       MessageService
-	History        interface{} // TODO: Define HistoryService interface when needed
-	Permissions    interface{} // TODO: Define PermissionService interface when needed
+	History        any // TODO: Define HistoryService interface when needed
+	Permissions    any // TODO: Define PermissionService interface when needed
 	Status         status.Service
-	Client         *client.Client
+	Client         *client.ClientWithResponses
+	Events         *client.Client
 
 	PrimaryAgent AgentService
 
@@ -36,9 +39,9 @@ type App struct {
 	watcherCancelFuncs []context.CancelFunc
 	cancelFuncsMutex   sync.Mutex
 	watcherWG          sync.WaitGroup
-	
+
 	// UI state
-	filepickerOpen bool
+	filepickerOpen       bool
 	completionDialogOpen bool
 }
 
@@ -49,14 +52,20 @@ func New(ctx context.Context) (*App, error) {
 		slog.Error("Failed to initialize status service", "error", err)
 		return nil, err
 	}
-	
+
 	// Initialize file utilities
 	fileutil.Init()
 
 	// Create HTTP client
-	httpClient, err := client.NewClient("http://localhost:16713")
+	url := "http://localhost:16713"
+	httpClient, err := client.NewClientWithResponses(url)
 	if err != nil {
 		slog.Error("Failed to create client", "error", err)
+		return nil, err
+	}
+	eventClient, err := client.NewClient(url)
+	if err != nil {
+		slog.Error("Failed to create event client", "error", err)
 		return nil, err
 	}
 
@@ -66,18 +75,20 @@ func New(ctx context.Context) (*App, error) {
 	agentBridge := NewAgentServiceBridge(httpClient)
 
 	app := &App{
+		State:          make(map[string]any),
 		Client:         httpClient,
+		Events:         eventClient,
 		CurrentSession: &session.Session{},
 		Sessions:       sessionBridge,
 		Messages:       messageBridge,
 		PrimaryAgent:   agentBridge,
 		Status:         status.GetService(),
 		LSPClients:     make(map[string]*lsp.Client),
-		
+
 		// TODO: These services need API endpoints:
-		Logs:           nil, // logging.GetService(),
-		History:        nil, // history.GetService(),
-		Permissions:    nil, // permission.GetService(),
+		Logs:        nil, // logging.GetService(),
+		History:     nil, // history.GetService(),
+		Permissions: nil, // permission.GetService(),
 	}
 
 	// Initialize theme based on configuration

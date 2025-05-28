@@ -125,7 +125,7 @@ var cfg *Config
 // Load initializes the configuration from environment variables and config files.
 // If debug is true, debug mode is enabled and log level is set to debug.
 // It returns an error if configuration loading fails.
-func Load(workingDir string, debug bool, lvl *slog.LevelVar) (*Config, error) {
+func Load(workingDir string, debug bool) (*Config, error) {
 	if cfg != nil {
 		return cfg, nil
 	}
@@ -161,7 +161,6 @@ func Load(workingDir string, debug bool, lvl *slog.LevelVar) (*Config, error) {
 	if cfg.Debug {
 		defaultLevel = slog.LevelDebug
 	}
-	lvl.Set(defaultLevel)
 	slog.SetLogLoggerLevel(defaultLevel)
 
 	// Validate configuration

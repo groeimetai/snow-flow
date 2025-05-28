@@ -60,10 +60,12 @@ to assist developers in writing, debugging, and understanding code directly from
 		}
 
 		// Setup logging
-		lvl := new(slog.LevelVar)
-		textHandler := slog.NewTextHandler(logging.NewSlogWriter(), &slog.HandlerOptions{Level: lvl})
-		sessionAwareHandler := &SessionIDHandler{Handler: textHandler}
-		logger := slog.New(sessionAwareHandler)
+		file, err := os.OpenFile("app.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+		logger := slog.New(slog.NewTextHandler(file, &slog.HandlerOptions{Level: slog.LevelDebug}))
 		slog.SetDefault(logger)
 
 		// Load the config
@@ -82,7 +84,7 @@ to assist developers in writing, debugging, and understanding code directly from
 			}
 			cwd = c
 		}
-		_, err := config.Load(cwd, debug, lvl)
+		_, err = config.Load(cwd, debug)
 		if err != nil {
 			return err
 		}
@@ -102,7 +104,6 @@ to assist developers in writing, debugging, and understanding code directly from
 			slog.Error("Failed to create app", "error", err)
 			return err
 		}
-		sessionAwareHandler.WithApp(app)
 
 		// Set up the TUI
 		zone.NewGlobal()
@@ -141,7 +142,7 @@ to assist developers in writing, debugging, and understanding code directly from
 			}
 		}()
 
-		evts, err := app.Client.Event(ctx)
+		evts, err := app.Events.Event(ctx)
 		if err != nil {
 			slog.Error("Failed to subscribe to events", "error", err)
 			return err

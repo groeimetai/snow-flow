@@ -201,6 +201,7 @@ func (p *chatPage) sendMessage(text string, attachments []message.Attachment) te
 		status.Error(err.Error())
 		return nil
 	}
+
 	return tea.Batch(cmds...)
 }
 

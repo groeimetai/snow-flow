@@ -14,11 +14,11 @@ import (
 
 // SessionServiceBridge adapts the HTTP API to the old session.Service interface
 type SessionServiceBridge struct {
-	client *client.Client
+	client *client.ClientWithResponses
 }
 
 // NewSessionServiceBridge creates a new session service bridge
-func NewSessionServiceBridge(client *client.Client) *SessionServiceBridge {
+func NewSessionServiceBridge(client *client.ClientWithResponses) *SessionServiceBridge {
 	return &SessionServiceBridge{client: client}
 }
 
@@ -107,11 +107,11 @@ func (s *SessionServiceBridge) Delete(ctx context.Context, id string) error {
 
 // AgentServiceBridge provides a minimal agent service that sends messages to the API
 type AgentServiceBridge struct {
-	client *client.Client
+	client *client.ClientWithResponses
 }
 
 // NewAgentServiceBridge creates a new agent service bridge
-func NewAgentServiceBridge(client *client.Client) *AgentServiceBridge {
+func NewAgentServiceBridge(client *client.ClientWithResponses) *AgentServiceBridge {
 	return &AgentServiceBridge{client: client}
 }
 
@@ -123,7 +123,7 @@ func (a *AgentServiceBridge) Run(ctx context.Context, sessionID string, text str
 		// return "", fmt.Errorf("attachments not supported yet")
 	}
 
-	parts := interface{}([]map[string]interface{}{
+	parts := any([]map[string]any{
 		{
 			"type": "text",
 			"text": text,
@@ -170,12 +170,12 @@ func (a *AgentServiceBridge) CompactSession(ctx context.Context, sessionID strin
 
 // MessageServiceBridge provides a minimal message service that fetches from the API
 type MessageServiceBridge struct {
-	client *client.Client
+	client *client.ClientWithResponses
 	broker *pubsub.Broker[message.Message]
 }
 
 // NewMessageServiceBridge creates a new message service bridge
-func NewMessageServiceBridge(client *client.Client) *MessageServiceBridge {
+func NewMessageServiceBridge(client *client.ClientWithResponses) *MessageServiceBridge {
 	return &MessageServiceBridge{
 		client: client,
 		broker: pubsub.NewBroker[message.Message](),
@@ -198,7 +198,7 @@ func (m *MessageServiceBridge) List(ctx context.Context, sessionID string) ([]me
 	defer resp.Body.Close()
 
 	// The API returns a different format, we'll need to adapt it
-	var rawMessages interface{}
+	var rawMessages any
 	if err := json.NewDecoder(resp.Body).Decode(&rawMessages); err != nil {
 		return nil, err
 	}
@@ -248,3 +248,4 @@ func (m *MessageServiceBridge) ListAfter(ctx context.Context, sessionID string, 
 func (m *MessageServiceBridge) Subscribe(ctx context.Context) <-chan pubsub.Event[message.Message] {
 	return m.broker.Subscribe(ctx)
 }
+

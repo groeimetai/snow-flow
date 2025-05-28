@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"encoding/json"
 	// "fmt"
 	"log/slog"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/config"
+
 	// "github.com/sst/opencode/internal/llm/agent"
 	"github.com/sst/opencode/internal/logging"
 	"github.com/sst/opencode/internal/message"
@@ -251,6 +253,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case pubsub.Event[permission.PermissionRequest]:
 		a.showPermissions = true
 		return a, a.permissions.SetPermissions(msg.Payload)
+
 	case dialog.PermissionResponseMsg:
 		// TODO: Permissions service not implemented in API yet
 		// var cmd tea.Cmd
@@ -282,25 +285,44 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.app.CurrentSession = &msg.Payload
 			}
 		}
-		
+
 	// Handle SSE events from the TypeScript backend
 	case *client.EventStorageWrite:
-		// Process storage write events
-		processedMsg := app.ProcessSSEEvent(msg)
-		if storageMsg, ok := processedMsg.(app.StorageWriteMsg); ok {
-			// Forward to the appropriate page/component based on key
-			keyParts := strings.Split(storageMsg.Key, "/")
-			if len(keyParts) >= 3 && keyParts[0] == "session" {
-				if keyParts[1] == "message" {
-					// This is a message update, forward to the chat page
-					return a.updateAllPages(storageMsg)
-				} else if keyParts[1] == "info" {
-					// This is a session info update
-					return a.updateAllPages(storageMsg)
+		slog.Debug("Received SSE event", "key", msg.Key, "content", msg.Content)
+
+		// Create a deep copy of the state to avoid mutation issues
+		newState := deepCopyState(a.app.State)
+
+		// Split the key and traverse/create the nested structure
+		splits := strings.Split(msg.Key, "/")
+		current := newState
+
+		for i, part := range splits {
+			if i == len(splits)-1 {
+				// Last part - set the value
+				current[part] = msg.Content
+			} else {
+				// Intermediate parts - ensure map exists
+				if _, exists := current[part]; !exists {
+					current[part] = make(map[string]any)
 				}
+
+				// Navigate to the next level
+				nextLevel, ok := current[part].(map[string]any)
+				if !ok {
+					// If it's not a map, replace it with a new map
+					current[part] = make(map[string]any)
+					nextLevel = current[part].(map[string]any)
+				}
+				current = nextLevel
 			}
 		}
-		return a, nil
+
+		// Update the app state
+		a.app.State = newState
+
+		// Trigger UI update by updating all pages with the new state
+		return a.updateAllPages(state.StateUpdatedMsg{State: newState})
 
 	case dialog.CloseQuitMsg:
 		a.showQuit = false
@@ -733,22 +755,22 @@ func getAvailableToolNames(app *app.App) []string {
 	// TODO: Tools not implemented in API yet
 	return []string{"Tools not available in API mode"}
 	/*
-	// Get primary agent tools (which already include MCP tools)
-	allTools := agent.PrimaryAgentTools(
-		app.Permissions,
-		app.Sessions,
-		app.Messages,
-		app.History,
-		app.LSPClients,
-	)
+		// Get primary agent tools (which already include MCP tools)
+		allTools := agent.PrimaryAgentTools(
+			app.Permissions,
+			app.Sessions,
+			app.Messages,
+			app.History,
+			app.LSPClients,
+		)
 
-	// Extract tool names
-	var toolNames []string
-	for _, tool := range allTools {
-		toolNames = append(toolNames, tool.Info().Name)
-	}
+		// Extract tool names
+		var toolNames []string
+		for _, tool := range allTools {
+			toolNames = append(toolNames, tool.Info().Name)
+		}
 
-	return toolNames
+		return toolNames
 	*/
 }
 
@@ -974,6 +996,27 @@ func (a appModel) View() string {
 	}
 
 	return appView
+}
+
+// deepCopyState creates a deep copy of a map[string]any
+func deepCopyState(src map[string]any) map[string]any {
+	if src == nil {
+		return nil
+	}
+
+	dst := make(map[string]any, len(src))
+	for k, v := range src {
+		switch val := v.(type) {
+		case map[string]any:
+			// Recursively copy nested maps
+			dst[k] = deepCopyState(val)
+		default:
+			// For other types, just copy the value
+			// Note: This is still a shallow copy for slices/arrays
+			dst[k] = v
+		}
+	}
+	return dst
 }
 
 func New(app *app.App) tea.Model {
