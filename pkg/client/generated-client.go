@@ -26,7 +26,7 @@ const (
 
 // ProviderInfo defines model for Provider.Info.
 type ProviderInfo struct {
-	Models *map[string]struct {
+	Models map[string]struct {
 		Attachment    bool    `json:"attachment"`
 		ContextWindow float32 `json:"contextWindow"`
 		Cost          struct {
@@ -37,15 +37,16 @@ type ProviderInfo struct {
 		} `json:"cost"`
 		MaxTokens float32 `json:"maxTokens"`
 		Name      *string `json:"name,omitempty"`
-	} `json:"models,omitempty"`
+	} `json:"models"`
 	Options *map[string]interface{} `json:"options,omitempty"`
 }
 
 // SessionInfo defines model for Session.Info.
 type SessionInfo struct {
-	Id      string  `json:"id"`
-	ShareID *string `json:"shareID,omitempty"`
-	Title   string  `json:"title"`
+	Cost    *float32 `json:"cost,omitempty"`
+	Id      string   `json:"id"`
+	ShareID *string  `json:"shareID,omitempty"`
+	Title   string   `json:"title"`
 	Tokens  struct {
 		Input     float32 `json:"input"`
 		Output    float32 `json:"output"`
@@ -1049,9 +1050,10 @@ type PostSessionListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]struct {
-		Id      string  `json:"id"`
-		ShareID *string `json:"shareID,omitempty"`
-		Title   string  `json:"title"`
+		Cost    *float32 `json:"cost,omitempty"`
+		Id      string   `json:"id"`
+		ShareID *string  `json:"shareID,omitempty"`
+		Title   string   `json:"title"`
 		Tokens  struct {
 			Input     float32 `json:"input"`
 			Output    float32 `json:"output"`
@@ -1282,9 +1284,10 @@ func ParsePostSessionListResponse(rsp *http.Response) (*PostSessionListResponse,
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []struct {
-			Id      string  `json:"id"`
-			ShareID *string `json:"shareID,omitempty"`
-			Title   string  `json:"title"`
+			Cost    *float32 `json:"cost,omitempty"`
+			Id      string   `json:"id"`
+			ShareID *string  `json:"shareID,omitempty"`
+			Title   string   `json:"title"`
 			Tokens  struct {
 				Input     float32 `json:"input"`
 				Output    float32 `json:"output"`

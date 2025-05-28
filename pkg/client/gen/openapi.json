@@ -122,6 +122,9 @@
                       "title": {
                         "type": "string"
                       },
+                      "cost": {
+                        "type": "number"
+                      },
                       "tokens": {
                         "type": "object",
                         "properties": {
@@ -234,6 +237,9 @@
           },
           "title": {
             "type": "string"
+          },
+          "cost": {
+            "type": "number"
           },
           "tokens": {
             "type": "object",
@@ -632,7 +638,10 @@
               ]
             }
           }
-        }
+        },
+        "required": [
+          "models"
+        ]
       }
     }
   }
