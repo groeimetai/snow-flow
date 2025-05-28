@@ -78,11 +78,26 @@
       gap: 0.5rem;
       font-size: 0.875rem;
 
-      span:last-child {
-        &[data-placeholder] {
+      span[data-placeholder] {
           color: var(--sl-color-text-dimmed);
-        }
       }
+    }
+  }
+
+  [data-section="stats"][data-section-models] {
+    gap: 0.5rem;
+
+    [data-stat-model-icon] {
+      flex: 0 0 auto;
+      color: var(--sl-color-text-dimmed);
+      opacity: 0.85;
+      svg {
+        display: block;
+      }
+    }
+
+    span[data-stat-model] {
+      color: var(sl-color-text);
     }
   }
 
@@ -139,15 +154,20 @@
     flex-direction: column;
     gap: 0.5rem;
 
-    span:first-child {
+    span[data-part-title] {
       padding-top: 2px;
       font-size: 0.75rem;
     }
 
-    span:last-child {
+    span[data-part-footer] {
       align-self: flex-start;
       font-size: 0.75rem;
       color: var(--sl-color-text-dimmed);
+    }
+
+    span[data-part-model] {
+      line-height: 1.5;
+      font-weight: 500;
     }
   }
 }

@@ -10,7 +10,17 @@ import {
   createSignal,
 } from "solid-js"
 import { DateTime } from "luxon"
-import { IconCpuChip, IconSparkles, IconUserCircle, IconWrenchScrewdriver } from "./icons"
+import {
+  IconOpenAI,
+  IconGemini,
+  IconAnthropic,
+} from "./icons/custom"
+import {
+  IconCpuChip,
+  IconSparkles,
+  IconUserCircle,
+  IconWrenchScrewdriver,
+} from "./icons"
 import styles from "./share.module.css"
 import { type UIMessage } from "ai"
 import { createStore, reconcile } from "solid-js/store"
@@ -48,14 +58,23 @@ type SessionInfo = {
   cost?: number
 }
 
-function getPartTitle(role: string, type: string): string | undefined {
-  return role === "system"
-    ? role
-    : role === "user"
-      ? undefined
-      : type === "text"
-        ? undefined
-        : type
+function ProviderIcon(props: { provider: string, size?: number }) {
+  const size = props.size || 16
+  return (
+    <Switch fallback={
+      <IconSparkles width={size} height={size} />
+    }>
+      <Match when={props.provider === "openai"}>
+        <IconOpenAI width={size} height={size} />
+      </Match>
+      <Match when={props.provider === "anthropic"}>
+        <IconAnthropic width={size} height={size} />
+      </Match>
+      <Match when={props.provider === "gemini"}>
+        <IconGemini width={size} height={size} />
+      </Match>
+    </Switch>
+  )
 }
 
 function getStatusText(status: [Status, string?]): string {
@@ -118,9 +137,14 @@ function TextPart(
 
 function PartFooter(props: { time: number }) {
   return (
-    <span title={
-      DateTime.fromMillis(props.time).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)
-    }>
+    <span
+      data-part-footer
+      title={
+        DateTime.fromMillis(props.time).toLocaleString(
+          DateTime.DATETIME_FULL_WITH_SECONDS
+        )
+      }
+    >
       {DateTime.fromMillis(props.time).toLocaleString(DateTime.TIME_WITH_SECONDS)}
     </span>
   )
@@ -236,6 +260,16 @@ export default function Share(props: { api: string }) {
     })
   })
 
+  const models = createMemo(() => {
+    const result: string[][] = []
+    for (const msg of messages()) {
+      if (msg.role === "assistant" && msg.metadata?.assistant) {
+        result.push([msg.metadata.assistant.providerID, msg.metadata.assistant.modelID])
+      }
+    }
+    return result
+  })
+
   const metrics = createMemo(() => {
     const result = {
       cost: 0,
@@ -301,6 +335,25 @@ export default function Share(props: { api: string }) {
               }
             </li>
           </ul>
+          <ul data-section="stats" data-section-models>
+            {models().length > 0 ?
+              <For each={Array.from(models())}>
+                {([provider, model]) => (
+                  <li>
+                    <div data-stat-model-icon title={provider}>
+                      <ProviderIcon provider={provider} />
+                    </div>
+                    <span data-stat-model>{model}</span>
+                  </li>
+                )}
+              </For>
+              :
+              <li>
+                <span data-element-label>Models</span>
+                <span data-placeholder>&mdash;</span>
+              </li>
+            }
+          </ul>
           <div data-section="date">
             {messages().length > 0 && messages()[0].metadata?.time.created ?
               <span title={
@@ -329,6 +382,8 @@ export default function Share(props: { api: string }) {
               {(msg, msgIndex) => (
                 <For each={msg.parts}>
                   {(part, partIndex) => {
+                    if (part.type === "step-start" && (partIndex() > 0 || !msg.metadata?.assistant)) return null
+
                     const isLastPart = createMemo(() =>
                       (messages().length === msgIndex() + 1)
                       && (msg.parts.length === partIndex() + 1)
@@ -388,6 +443,34 @@ export default function Share(props: { api: string }) {
                               </>
                             }
                           </Match>
+                          { /* AI model */}
+                          <Match when={
+                            msg.role === "assistant"
+                            && part.type === "step-start"
+                            && msg.metadata?.assistant
+                          }>
+                            {assistant =>
+                              <>
+                                <div data-section="decoration">
+                                  <div>
+                                    <ProviderIcon
+                                      size={18}
+                                      provider={assistant().providerID}
+                                    />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <span data-element-label data-part-title>
+                                    {assistant().providerID}
+                                  </span>
+                                  <span data-part-model>
+                                    {assistant().modelID}
+                                  </span>
+                                </div>
+                              </>
+                            }
+                          </Match>
                           { /* System text */}
                           <Match when={
                             msg.role === "system"
@@ -403,7 +486,9 @@ export default function Share(props: { api: string }) {
                                   <div></div>
                                 </div>
                                 <div data-section="content">
-                                  <span data-element-label>System</span>
+                                  <span data-element-label data-part-title>
+                                    System
+                                  </span>
                                   <TextPart
                                     text={part().text}
                                     expand={isLastPart()}
@@ -413,8 +498,6 @@ export default function Share(props: { api: string }) {
                               </>
                             }
                           </Match>
-                          { /* Step start */}
-                          <Match when={part.type === "step-start"}>{null}</Match>
                           { /* Fallback */}
                           <Match when={true}>
                             <div data-section="decoration">
@@ -436,7 +519,9 @@ export default function Share(props: { api: string }) {
                               <div></div>
                             </div>
                             <div data-section="content">
-                              <span data-element-label>{part.type}</span>
+                              <span data-element-label data-part-title>
+                                {part.type}
+                              </span>
                               <TextPart text={JSON.stringify(part, null, 2)} />
                               <PartFooter time={time} />
                             </div>
