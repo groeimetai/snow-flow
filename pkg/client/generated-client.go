@@ -14,6 +14,23 @@ import (
 	"strings"
 )
 
+// ProviderInfo defines model for Provider.Info.
+type ProviderInfo struct {
+	Models *map[string]struct {
+		Attachment    bool    `json:"attachment"`
+		ContextWindow float32 `json:"contextWindow"`
+		Cost          struct {
+			Input        float32 `json:"input"`
+			InputCached  float32 `json:"inputCached"`
+			Output       float32 `json:"output"`
+			OutputCached float32 `json:"outputCached"`
+		} `json:"cost"`
+		MaxTokens float32 `json:"maxTokens"`
+		Name      *string `json:"name,omitempty"`
+	} `json:"models,omitempty"`
+	Options *map[string]interface{} `json:"options,omitempty"`
+}
+
 // SessionInfo defines model for Session.Info.
 type SessionInfo struct {
 	Id      string  `json:"id"`
@@ -28,8 +45,10 @@ type SessionInfo struct {
 
 // PostSessionChatJSONBody defines parameters for PostSessionChat.
 type PostSessionChatJSONBody struct {
-	Parts     *interface{} `json:"parts,omitempty"`
-	SessionID string       `json:"sessionID"`
+	ModelID    string       `json:"modelID"`
+	Parts      *interface{} `json:"parts,omitempty"`
+	ProviderID string       `json:"providerID"`
+	SessionID  string       `json:"sessionID"`
 }
 
 // PostSessionMessagesJSONBody defines parameters for PostSessionMessages.
@@ -124,6 +143,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// PostProviderList request
+	PostProviderList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostSessionChatWithBody request with any body
 	PostSessionChatWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -144,6 +166,18 @@ type ClientInterface interface {
 	PostSessionShareWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PostSessionShare(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) PostProviderList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostProviderListRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) PostSessionChatWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -240,6 +274,33 @@ func (c *Client) PostSessionShare(ctx context.Context, body PostSessionShareJSON
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewPostProviderListRequest generates requests for PostProviderList
+func NewPostProviderListRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/provider_list")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewPostSessionChatRequest calls the generic PostSessionChat builder with application/json body
@@ -459,6 +520,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// PostProviderListWithResponse request
+	PostProviderListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostProviderListResponse, error)
+
 	// PostSessionChatWithBodyWithResponse request with any body
 	PostSessionChatWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionChatResponse, error)
 
@@ -479,6 +543,28 @@ type ClientWithResponsesInterface interface {
 	PostSessionShareWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionShareResponse, error)
 
 	PostSessionShareWithResponse(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionShareResponse, error)
+}
+
+type PostProviderListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]ProviderInfo
+}
+
+// Status returns HTTPResponse.Status
+func (r PostProviderListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostProviderListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type PostSessionChatResponse struct {
@@ -599,6 +685,15 @@ func (r PostSessionShareResponse) StatusCode() int {
 	return 0
 }
 
+// PostProviderListWithResponse request returning *PostProviderListResponse
+func (c *ClientWithResponses) PostProviderListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostProviderListResponse, error) {
+	rsp, err := c.PostProviderList(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostProviderListResponse(rsp)
+}
+
 // PostSessionChatWithBodyWithResponse request with arbitrary body returning *PostSessionChatResponse
 func (c *ClientWithResponses) PostSessionChatWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionChatResponse, error) {
 	rsp, err := c.PostSessionChatWithBody(ctx, contentType, body, reqEditors...)
@@ -666,6 +761,32 @@ func (c *ClientWithResponses) PostSessionShareWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParsePostSessionShareResponse(rsp)
+}
+
+// ParsePostProviderListResponse parses an HTTP response from a PostProviderListWithResponse call
+func ParsePostProviderListResponse(rsp *http.Response) (*PostProviderListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostProviderListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]ProviderInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParsePostSessionChatResponse parses an HTTP response from a PostSessionChatWithResponse call

@@ -7,6 +7,7 @@ import { Session } from "./session/session";
 import cac from "cac";
 import { Share } from "./share/share";
 import { Storage } from "./storage/storage";
+import { LLM } from "./llm/llm";
 
 const cli = cac("opencode");
 
@@ -90,9 +91,19 @@ cli
         }
       });
 
-      const result = await Session.chat(session.id, {
-        type: "text",
-        text: message.join(" "),
+      const providers = await LLM.providers();
+      const providerID = Object.keys(providers)[0];
+      const modelID = Object.keys(providers[providerID].info.models!)[0];
+      const result = await Session.chat({
+        sessionID: session.id,
+        providerID,
+        modelID,
+        parts: [
+          {
+            type: "text",
+            text: message.join(" "),
+          },
+        ],
       });
 
       for (const part of result.parts) {

@@ -1,25 +1,34 @@
 import path from "node:path";
 import { Log } from "../util/log";
 import { z } from "zod";
+import { LLM } from "../llm/llm";
 
 export namespace Config {
   const log = Log.create({ service: "config" });
 
+  export const Model = z.object({
+    name: z.string().optional(),
+    cost: z.object({
+      input: z.number(),
+      inputCached: z.number(),
+      output: z.number(),
+      outputCached: z.number(),
+    }),
+    contextWindow: z.number(),
+    maxTokens: z.number(),
+    attachment: z.boolean(),
+  });
+  export type Model = z.output<typeof Model>;
+
+  export const Provider = z.object({
+    options: z.record(z.string(), z.any()).optional(),
+    models: z.record(z.string(), Model).optional(),
+  });
+  export type Provider = z.output<typeof Provider>;
+
   export const Info = z
     .object({
-      providers: z
-        .object({
-          anthropic: z
-            .object({
-              apiKey: z.string().optional(),
-              headers: z.record(z.string(), z.string()).optional(),
-              baseURL: z.string().optional(),
-            })
-            .strict()
-            .optional(),
-        })
-        .strict()
-        .optional(),
+      providers: z.record(z.string(), Provider).optional(),
     })
     .strict();
 

@@ -167,15 +167,45 @@
                   "sessionID": {
                     "type": "string"
                   },
+                  "providerID": {
+                    "type": "string"
+                  },
+                  "modelID": {
+                    "type": "string"
+                  },
                   "parts": {}
                 },
                 "required": [
-                  "sessionID"
+                  "sessionID",
+                  "providerID",
+                  "modelID"
                 ]
               }
             }
           }
         }
+      }
+    },
+    "/provider_list": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "List of providers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/Provider.Info"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postProvider_list",
+        "parameters": [],
+        "description": "List all providers"
       }
     }
   },
@@ -219,6 +249,64 @@
           "title",
           "tokens"
         ]
+      },
+      "Provider.Info": {
+        "type": "object",
+        "properties": {
+          "options": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "models": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "cost": {
+                  "type": "object",
+                  "properties": {
+                    "input": {
+                      "type": "number"
+                    },
+                    "inputCached": {
+                      "type": "number"
+                    },
+                    "output": {
+                      "type": "number"
+                    },
+                    "outputCached": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "input",
+                    "inputCached",
+                    "output",
+                    "outputCached"
+                  ]
+                },
+                "contextWindow": {
+                  "type": "number"
+                },
+                "maxTokens": {
+                  "type": "number"
+                },
+                "attachment": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "cost",
+                "contextWindow",
+                "maxTokens",
+                "attachment"
+              ]
+            }
+          }
+        }
       }
     }
   }

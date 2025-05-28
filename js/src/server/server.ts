@@ -7,10 +7,17 @@ import { Session } from "../session/session";
 import { resolver, validator as zValidator } from "hono-openapi/zod";
 import { z } from "zod";
 import "zod-openapi/extend";
+import { Config } from "../app/config";
+import { LLM } from "../llm/llm";
 
 const SessionInfo = Session.Info.openapi({
   ref: "Session.Info",
 });
+
+const ProviderInfo = Config.Provider.openapi({
+  ref: "Provider.Info",
+});
+type ProviderInfo = z.output<typeof ProviderInfo>;
 
 export namespace Server {
   const log = Log.create({ service: "server" });
@@ -156,13 +163,39 @@ export namespace Server {
           "json",
           z.object({
             sessionID: z.string(),
+            providerID: z.string(),
+            modelID: z.string(),
             parts: z.custom<Session.Message["parts"]>(),
           }),
         ),
         async (c) => {
           const body = c.req.valid("json");
-          const msg = await Session.chat(body.sessionID, ...body.parts);
+          const msg = await Session.chat(body);
           return c.json(msg);
+        },
+      )
+      .post(
+        "/provider_list",
+        describeRoute({
+          description: "List all providers",
+          responses: {
+            200: {
+              description: "List of providers",
+              content: {
+                "application/json": {
+                  schema: resolver(z.record(z.string(), ProviderInfo)),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          const providers = await LLM.providers();
+          const result: Record<string, ProviderInfo> = {};
+          for (const [providerID, provider] of Object.entries(providers)) {
+            result[providerID] = provider.info;
+          }
+          return c.json(result);
         },
       );
 

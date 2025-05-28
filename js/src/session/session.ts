@@ -127,19 +127,19 @@ export namespace Session {
     }
   }
 
-  export async function chat(
-    sessionID: string,
-    ...parts: UIMessagePart<UIDataTypes>[]
-  ) {
-    const model = await LLM.findModel("claude-sonnet-4-20250514");
-    const session = await get(sessionID);
-    const l = log.clone().tag("session", sessionID);
+  export async function chat(input: {
+    sessionID: string;
+    providerID: string;
+    modelID: string;
+    parts: UIMessagePart<UIDataTypes>[];
+  }) {
+    const l = log.clone().tag("session", input.sessionID);
     l.info("chatting");
-
-    const msgs = await messages(sessionID);
+    const model = await LLM.findModel(input.providerID, input.modelID);
+    const msgs = await messages(input.sessionID);
     async function write(msg: Message) {
       return Storage.writeJSON(
-        "session/message/" + sessionID + "/" + msg.id,
+        "session/message/" + input.sessionID + "/" + msg.id,
         msg,
       );
     }
@@ -155,7 +155,7 @@ export namespace Session {
           },
         ],
         metadata: {
-          sessionID,
+          sessionID: input.sessionID,
           time: {
             created: Date.now(),
           },
@@ -171,7 +171,7 @@ export namespace Session {
         });
       }
       msgs.push(system);
-      state().messages.set(sessionID, msgs);
+      state().messages.set(input.sessionID, msgs);
       generateText({
         messages: convertToModelMessages([
           {
@@ -185,12 +185,12 @@ export namespace Session {
           },
           {
             role: "user",
-            parts,
+            parts: input.parts,
           },
         ]),
         model,
       }).then((result) => {
-        return Session.update(sessionID, (draft) => {
+        return Session.update(input.sessionID, (draft) => {
           draft.title = result.text;
         });
       });
@@ -199,21 +199,33 @@ export namespace Session {
     const msg: Message = {
       role: "user",
       id: Identifier.ascending("message"),
-      parts,
+      parts: input.parts,
       metadata: {
         time: {
           created: Date.now(),
         },
-        sessionID,
+        sessionID: input.sessionID,
         tool: {},
       },
     };
     msgs.push(msg);
     await write(msg);
 
+    const next: Message = {
+      id: Identifier.ascending("message"),
+      role: "assistant",
+      parts: [],
+      metadata: {
+        time: {
+          created: Date.now(),
+        },
+        sessionID: input.sessionID,
+        tool: {},
+      },
+    };
     const result = streamText({
       onStepFinish: (step) => {
-        update(sessionID, (draft) => {
+        update(input.sessionID, (draft) => {
           draft.tokens.input += step.usage.inputTokens || 0;
           draft.tokens.output += step.usage.outputTokens || 0;
           draft.tokens.reasoning += step.usage.reasoningTokens || 0;
@@ -225,18 +237,6 @@ export namespace Session {
       tools,
       model,
     });
-    const next: Message = {
-      id: Identifier.ascending("message"),
-      role: "assistant",
-      parts: [],
-      metadata: {
-        time: {
-          created: Date.now(),
-        },
-        sessionID,
-        tool: {},
-      },
-    };
 
     msgs.push(next);
     let text: TextUIPart | undefined;
