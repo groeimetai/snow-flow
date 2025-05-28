@@ -10,10 +10,9 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/config"
+	"github.com/sst/opencode/internal/tui/app"
 
-	"github.com/sst/opencode/internal/logging"
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/permission"
 	"github.com/sst/opencode/internal/pubsub"
@@ -22,7 +21,6 @@ import (
 	"github.com/sst/opencode/internal/tui/components/chat"
 	"github.com/sst/opencode/internal/tui/components/core"
 	"github.com/sst/opencode/internal/tui/components/dialog"
-	"github.com/sst/opencode/internal/tui/components/logs"
 	"github.com/sst/opencode/internal/tui/layout"
 	"github.com/sst/opencode/internal/tui/page"
 	"github.com/sst/opencode/internal/tui/state"
@@ -31,7 +29,6 @@ import (
 )
 
 type keyMap struct {
-	Logs          key.Binding
 	Quit          key.Binding
 	Help          key.Binding
 	SwitchSession key.Binding
@@ -47,11 +44,6 @@ const (
 )
 
 var keys = keyMap{
-	Logs: key.NewBinding(
-		key.WithKeys("ctrl+l"),
-		key.WithHelp("ctrl+l", "logs"),
-	),
-
 	Quit: key.NewBinding(
 		key.WithKeys("ctrl+c"),
 		key.WithHelp("ctrl+c", "quit"),
@@ -98,11 +90,6 @@ var helpEsc = key.NewBinding(
 var returnKey = key.NewBinding(
 	key.WithKeys("esc"),
 	key.WithHelp("esc", "close"),
-)
-
-var logsKeyReturnKey = key.NewBinding(
-	key.WithKeys("esc", "backspace", quitKey),
-	key.WithHelp("esc/q", "go back"),
 )
 
 type appModel struct {
@@ -267,10 +254,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case page.PageChangeMsg:
 		return a, a.moveToPage(msg.ID)
-
-	case logs.LogsLoadedMsg:
-		a.pages[page.LogsPage], cmd = a.pages[page.LogsPage].Update(msg)
-		cmds = append(cmds, cmd)
 
 	case state.SessionSelectedMsg:
 		a.app.CurrentSession = msg
@@ -553,11 +536,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return a, nil
 		case key.Matches(msg, returnKey) || key.Matches(msg):
-			if msg.String() == quitKey {
-				if a.currentPage == page.LogsPage {
-					return a, a.moveToPage(page.ChatPage)
-				}
-			} else if !a.filepicker.IsCWDFocused() {
+			if !a.filepicker.IsCWDFocused() {
 				if a.showToolsDialog {
 					a.showToolsDialog = false
 					return a, nil
@@ -585,13 +564,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					a.app.SetFilepickerOpen(a.showFilepicker)
 					return a, nil
 				}
-				if a.currentPage == page.LogsPage {
-					// Always allow returning from logs page, even when agent is busy
-					return a, a.moveToPageUnconditional(page.ChatPage)
-				}
 			}
-		case key.Matches(msg, keys.Logs):
-			return a, a.moveToPage(page.LogsPage)
 		case key.Matches(msg, keys.Help):
 			if a.showQuit {
 				return a, nil
@@ -626,11 +599,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return a, nil
 		}
-
-	case pubsub.Event[logging.Log]:
-		a.pages[page.LogsPage], cmd = a.pages[page.LogsPage].Update(msg)
-		cmds = append(cmds, cmd)
-		return a, tea.Batch(cmds...)
 
 	case pubsub.Event[message.Message]:
 		a.pages[page.ChatPage], cmd = a.pages[page.ChatPage].Update(msg)
@@ -772,18 +740,6 @@ func getAvailableToolNames(app *app.App) []string {
 }
 
 func (a *appModel) moveToPage(pageID page.PageID) tea.Cmd {
-	// Allow navigating to logs page even when agent is busy
-	if a.app.PrimaryAgent.IsBusy() && pageID != page.LogsPage {
-		// Don't move to other pages if the agent is busy
-		status.Warn("Agent is busy, please wait...")
-		return nil
-	}
-
-	return a.moveToPageUnconditional(pageID)
-}
-
-// moveToPageUnconditional is like moveToPage but doesn't check if the agent is busy
-func (a *appModel) moveToPageUnconditional(pageID page.PageID) tea.Cmd {
 	var cmds []tea.Cmd
 	if _, ok := a.loadedPages[pageID]; !ok {
 		cmd := a.pages[pageID].Init()
@@ -853,9 +809,6 @@ func (a appModel) View() string {
 		}
 		if a.showPermissions {
 			bindings = append(bindings, a.permissions.BindingKeys()...)
-		}
-		if a.currentPage == page.LogsPage {
-			bindings = append(bindings, logsKeyReturnKey)
 		}
 		if !a.app.PrimaryAgent.IsBusy() {
 			bindings = append(bindings, helpEsc)
@@ -1035,7 +988,6 @@ func New(app *app.App) tea.Model {
 		commands:      []dialog.Command{},
 		pages: map[page.PageID]tea.Model{
 			page.ChatPage: page.NewChatPage(app),
-			page.LogsPage: page.NewLogsPage(app),
 		},
 		filepicker: dialog.NewFilepickerCmp(app),
 	}

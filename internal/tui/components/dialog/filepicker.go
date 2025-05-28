@@ -17,10 +17,10 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/status"
+	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/image"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -42,7 +42,7 @@ type FilePrickerKeyMap struct {
 	OpenFilePicker key.Binding
 	Esc            key.Binding
 	InsertCWD      key.Binding
-	Paste 		   key.Binding
+	Paste          key.Binding
 }
 
 var filePickerKeyMap = FilePrickerKeyMap{

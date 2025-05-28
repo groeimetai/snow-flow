@@ -13,34 +13,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	zone "github.com/lrstanley/bubblezone"
 	"github.com/spf13/cobra"
-	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/logging"
 	"github.com/sst/opencode/internal/lsp/discovery"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/tui"
+	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/version"
 )
-
-type SessionIDHandler struct {
-	slog.Handler
-	app *app.App
-}
-
-func (h *SessionIDHandler) Handle(ctx context.Context, r slog.Record) error {
-	if h.app != nil {
-		sessionID := h.app.CurrentSession.ID
-		if sessionID != "" {
-			r.AddAttrs(slog.String("session_id", sessionID))
-		}
-	}
-	return h.Handler.Handle(ctx, r)
-}
-
-func (h *SessionIDHandler) WithApp(app *app.App) *SessionIDHandler {
-	h.app = app
-	return h
-}
 
 var rootCmd = &cobra.Command{
 	Use:   "OpenCode",
@@ -244,10 +224,6 @@ func setupSubscriptions(app *app.App, parentCtx context.Context) (chan tea.Msg, 
 	wg := sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(parentCtx) // Inherit from parent context
 
-	// setupSubscriber(ctx, &wg, "logging", app.Logs.Subscribe, ch)
-	// setupSubscriber(ctx, &wg, "sessions", app.Sessions.Subscribe, ch)
-	// setupSubscriber(ctx, &wg, "messages", app.Messages.Subscribe, ch)
-	// setupSubscriber(ctx, &wg, "permissions", app.Permissions.Subscribe, ch)
 	setupSubscriber(ctx, &wg, "status", app.Status.Subscribe, ch)
 
 	cleanupFunc := func() {

@@ -94,9 +94,6 @@ func New(ctx context.Context) (*App, error) {
 	// Initialize theme based on configuration
 	app.initTheme()
 
-	// Initialize LSP clients in the background
-	go app.initLSPClients(ctx)
-
 	// TODO: Remove this once agent is fully replaced by API
 	// app.PrimaryAgent, err = agent.NewAgent(
 	// 	config.AgentPrimary,

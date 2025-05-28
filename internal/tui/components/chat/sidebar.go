@@ -8,8 +8,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/config"
+	"github.com/sst/opencode/internal/tui/app"
 	// "github.com/sst/opencode/internal/diff"
 	"github.com/sst/opencode/internal/history"
 	"github.com/sst/opencode/internal/pubsub"
@@ -216,17 +216,17 @@ func (m *sidebarCmp) loadModifiedFiles(ctx context.Context) {
 	// TODO: History service not implemented in API yet
 	return
 	/*
-	// Get all latest files for this session
-	latestFiles, err := m.app.History.ListLatestSessionFiles(ctx, m.app.CurrentSession.ID)
-	if err != nil {
-		return
-	}
+		// Get all latest files for this session
+		latestFiles, err := m.app.History.ListLatestSessionFiles(ctx, m.app.CurrentSession.ID)
+		if err != nil {
+			return
+		}
 
-	// Get all files for this session (to find initial versions)
-	allFiles, err := m.app.History.ListBySession(ctx, m.app.CurrentSession.ID)
-	if err != nil {
-		return
-	}
+		// Get all files for this session (to find initial versions)
+		allFiles, err := m.app.History.ListBySession(ctx, m.app.CurrentSession.ID)
+		if err != nil {
+			return
+		}
 	*/
 
 	// Clear the existing map to rebuild it
@@ -236,50 +236,50 @@ func (m *sidebarCmp) loadModifiedFiles(ctx context.Context) {
 	})
 
 	/*
-	// Process each latest file
-	for _, file := range latestFiles {
-		// Skip if this is the initial version (no changes to show)
-		if file.Version == history.InitialVersion {
-			continue
-		}
+		// Process each latest file
+		for _, file := range latestFiles {
+			// Skip if this is the initial version (no changes to show)
+			if file.Version == history.InitialVersion {
+				continue
+			}
 
-		// Find the initial version for this specific file
-		var initialVersion history.File
-		for _, v := range allFiles {
-			if v.Path == file.Path && v.Version == history.InitialVersion {
-				initialVersion = v
-				break
+			// Find the initial version for this specific file
+			var initialVersion history.File
+			for _, v := range allFiles {
+				if v.Path == file.Path && v.Version == history.InitialVersion {
+					initialVersion = v
+					break
+				}
+			}
+
+			// Skip if we can't find the initial version
+			if initialVersion.ID == "" {
+				continue
+			}
+			if initialVersion.Content == file.Content {
+				continue
+			}
+
+			// Calculate diff between initial and latest version
+			_, additions, removals := diff.GenerateDiff(initialVersion.Content, file.Content, file.Path)
+
+			// Only add to modified files if there are changes
+			if additions > 0 || removals > 0 {
+				// Remove working directory prefix from file path
+				displayPath := file.Path
+				workingDir := config.WorkingDirectory()
+				displayPath = strings.TrimPrefix(displayPath, workingDir)
+				displayPath = strings.TrimPrefix(displayPath, "/")
+
+				m.modFiles[displayPath] = struct {
+					additions int
+					removals  int
+				}{
+					additions: additions,
+					removals:  removals,
+				}
 			}
 		}
-
-		// Skip if we can't find the initial version
-		if initialVersion.ID == "" {
-			continue
-		}
-		if initialVersion.Content == file.Content {
-			continue
-		}
-
-		// Calculate diff between initial and latest version
-		_, additions, removals := diff.GenerateDiff(initialVersion.Content, file.Content, file.Path)
-
-		// Only add to modified files if there are changes
-		if additions > 0 || removals > 0 {
-			// Remove working directory prefix from file path
-			displayPath := file.Path
-			workingDir := config.WorkingDirectory()
-			displayPath = strings.TrimPrefix(displayPath, workingDir)
-			displayPath = strings.TrimPrefix(displayPath, "/")
-
-			m.modFiles[displayPath] = struct {
-				additions int
-				removals  int
-			}{
-				additions: additions,
-				removals:  removals,
-			}
-		}
-	}
 	*/
 }
 
@@ -287,44 +287,44 @@ func (m *sidebarCmp) processFileChanges(ctx context.Context, file history.File) 
 	// TODO: History service not implemented in API yet
 	return
 	/*
-	// Skip if this is the initial version (no changes to show)
-	if file.Version == history.InitialVersion {
-		return
-	}
-
-	// Find the initial version for this file
-	initialVersion, err := m.findInitialVersion(ctx, file.Path)
-	if err != nil || initialVersion.ID == "" {
-		return
-	}
-
-	// Skip if content hasn't changed
-	if initialVersion.Content == file.Content {
-		// If this file was previously modified but now matches the initial version,
-		// remove it from the modified files list
-		displayPath := getDisplayPath(file.Path)
-		delete(m.modFiles, displayPath)
-		return
-	}
-
-	// Calculate diff between initial and latest version
-	_, additions, removals := diff.GenerateDiff(initialVersion.Content, file.Content, file.Path)
-
-	// Only add to modified files if there are changes
-	if additions > 0 || removals > 0 {
-		displayPath := getDisplayPath(file.Path)
-		m.modFiles[displayPath] = struct {
-			additions int
-			removals  int
-		}{
-			additions: additions,
-			removals:  removals,
+		// Skip if this is the initial version (no changes to show)
+		if file.Version == history.InitialVersion {
+			return
 		}
-	} else {
-		// If no changes, remove from modified files
-		displayPath := getDisplayPath(file.Path)
-		delete(m.modFiles, displayPath)
-	}
+
+		// Find the initial version for this file
+		initialVersion, err := m.findInitialVersion(ctx, file.Path)
+		if err != nil || initialVersion.ID == "" {
+			return
+		}
+
+		// Skip if content hasn't changed
+		if initialVersion.Content == file.Content {
+			// If this file was previously modified but now matches the initial version,
+			// remove it from the modified files list
+			displayPath := getDisplayPath(file.Path)
+			delete(m.modFiles, displayPath)
+			return
+		}
+
+		// Calculate diff between initial and latest version
+		_, additions, removals := diff.GenerateDiff(initialVersion.Content, file.Content, file.Path)
+
+		// Only add to modified files if there are changes
+		if additions > 0 || removals > 0 {
+			displayPath := getDisplayPath(file.Path)
+			m.modFiles[displayPath] = struct {
+				additions int
+				removals  int
+			}{
+				additions: additions,
+				removals:  removals,
+			}
+		} else {
+			// If no changes, remove from modified files
+			displayPath := getDisplayPath(file.Path)
+			delete(m.modFiles, displayPath)
+		}
 	*/
 }
 
@@ -333,22 +333,22 @@ func (m *sidebarCmp) findInitialVersion(ctx context.Context, path string) (histo
 	// TODO: History service not implemented in API yet
 	return history.File{}, fmt.Errorf("history service not implemented")
 	/*
-	// Get all versions of this file for the session
-	fileVersions, err := m.app.History.ListBySession(ctx, m.app.CurrentSession.ID)
-	if err != nil {
-		return history.File{}, err
-	}
+		// Get all versions of this file for the session
+		fileVersions, err := m.app.History.ListBySession(ctx, m.app.CurrentSession.ID)
+		if err != nil {
+			return history.File{}, err
+		}
 	*/
 
 	/*
-	// Find the initial version
-	for _, v := range fileVersions {
-		if v.Path == path && v.Version == history.InitialVersion {
-			return v, nil
+		// Find the initial version
+		for _, v := range fileVersions {
+			if v.Path == path && v.Version == history.InitialVersion {
+				return v, nil
+			}
 		}
-	}
 
-	return history.File{}, fmt.Errorf("initial version not found")
+		return history.File{}, fmt.Errorf("initial version not found")
 	*/
 }
 

@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"time"
-	
+
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/session"
@@ -21,7 +21,7 @@ type SessionService interface {
 // MessageService defines the interface for message operations
 type MessageService interface {
 	pubsub.Subscriber[message.Message]
-	
+
 	GetBySession(ctx context.Context, sessionID string) ([]message.Message, error)
 	List(ctx context.Context, sessionID string) ([]message.Message, error)
 	Create(ctx context.Context, sessionID string, params message.CreateMessageParams) (message.Message, error)

@@ -29,7 +29,7 @@ func (s *SessionServiceBridge) Create(ctx context.Context, title string) (sessio
 		return session.Session{}, err
 	}
 	if resp.StatusCode() != 200 {
-		return session.Session{}, fmt.Errorf("failed to create session: %d", resp.StatusCode)
+		return session.Session{}, fmt.Errorf("failed to create session: %d", resp.StatusCode())
 	}
 	info := resp.JSON200
 
@@ -121,16 +121,18 @@ func (a *AgentServiceBridge) Run(ctx context.Context, sessionID string, text str
 		// return "", fmt.Errorf("attachments not supported yet")
 	}
 
-	parts := any([]map[string]any{
-		{
-			"type": "text",
-			"text": text,
-		},
+	part := client.SessionMessagePart{}
+	part.FromSessionMessagePartText(client.SessionMessagePartText{
+		Type: "text",
+		Text: text,
 	})
+	parts := []client.SessionMessagePart{part}
 
 	go a.client.PostSessionChatWithResponse(ctx, client.PostSessionChatJSONRequestBody{
-		SessionID: sessionID,
-		Parts:     &parts,
+		SessionID:  sessionID,
+		Parts:      parts,
+		ProviderID: "anthropic",
+		ModelID:    "claude-sonnet-4-20250514",
 	})
 
 	// The actual response will come through SSE
@@ -242,4 +244,3 @@ func (m *MessageServiceBridge) ListAfter(ctx context.Context, sessionID string, 
 func (m *MessageServiceBridge) Subscribe(ctx context.Context) <-chan pubsub.Event[message.Message] {
 	return m.broker.Subscribe(ctx)
 }
-
