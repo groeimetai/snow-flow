@@ -1,5 +1,5 @@
 import { App } from "../src/app";
-import path from "node:path";
+import path from "path";
 import { edit } from "../src/tool";
 import { FileTimes } from "../src/tool/util/file-times";
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import * as path from "node:path";
+import * as path from "path";
 import { Log } from "../util/log";
 import { Tool } from "./tool";
 import { FileTimes } from "./util/file-times";

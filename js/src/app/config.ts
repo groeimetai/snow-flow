@@ -1,4 +1,4 @@
-import path from "node:path";
+import path from "path";
 import { Log } from "../util/log";
 import { z } from "zod";
 import { LLM } from "../llm/llm";

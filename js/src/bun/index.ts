@@ -1,4 +1,4 @@
-import path from "node:path";
+import path from "path";
 import { Log } from "../util/log";
 export namespace BunProc {
   const log = Log.create({ service: "bun" });

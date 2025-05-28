@@ -193,9 +193,7 @@ export const bash = Tool.define({
       timeout: timeout,
     });
     return {
-      output: {
-        content: process.stdout.toString("utf-8"),
-      },
+      output: process.stdout.toString("utf-8"),
     };
   },
 });

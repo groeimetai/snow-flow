@@ -1,7 +1,7 @@
 import { App } from "../app";
 import { Log } from "../util/log";
 import { LSPClient } from "./client";
-import path from "node:path";
+import path from "path";
 
 export namespace LSP {
   const log = Log.create({ service: "lsp" });

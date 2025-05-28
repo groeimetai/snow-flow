@@ -1,7 +1,7 @@
 import { App } from "../app";
 import { Log } from "../util/log";
 import { mergeDeep } from "remeda";
-import path from "node:path";
+import path from "path";
 
 import type { LanguageModel, Provider } from "ai";
 import { NoSuchModelError } from "ai";

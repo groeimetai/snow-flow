@@ -1,4 +1,4 @@
-import path from "node:path";
+import path from "path";
 import { App } from "../app/";
 import { Identifier } from "../id/id";
 import { LLM } from "../llm/llm";
@@ -6,6 +6,7 @@ import { Storage } from "../storage/storage";
 import { Log } from "../util/log";
 import {
   convertToModelMessages,
+  generateText,
   stepCountIs,
   streamText,
   type TextUIPart,
@@ -181,7 +182,6 @@ export namespace Session {
       }
       msgs.push(system);
       state().messages.set(input.sessionID, msgs);
-      /*
       generateText({
         messages: convertToModelMessages([
           {
@@ -204,7 +204,6 @@ export namespace Session {
           draft.title = result.text;
         });
       });
-      */
       await write(system);
     }
     const msg: Message = {

@@ -1,4 +1,4 @@
-import fs from "node:fs/promises";
+import fs from "fs/promises";
 import { AppPath } from "./path";
 import { Log } from "../util/log";
 import { Context } from "../util/context";
