@@ -321,7 +321,7 @@
         ]
       },
       "Session.Message.Part": {
-        "anyOf": [
+        "oneOf": [
           {
             "$ref": "#/components/schemas/Session.Message.Part.Text"
           },
@@ -339,11 +339,19 @@
           },
           {
             "$ref": "#/components/schemas/Session.Message.Part.StepStart"
-          },
-          {
-            "$ref": "#/components/schemas/Session.Message.Part.Data"
           }
-        ]
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "text": "#/components/schemas/Session.Message.Part.Text",
+            "reasoning": "#/components/schemas/Session.Message.Part.Reasoning",
+            "tool-invocation": "#/components/schemas/Session.Message.Part.ToolInvocation",
+            "source-url": "#/components/schemas/Session.Message.Part.SourceUrl",
+            "file": "#/components/schemas/Session.Message.Part.File",
+            "step-start": "#/components/schemas/Session.Message.Part.StepStart"
+          }
+        }
       },
       "Session.Message.Part.Text": {
         "type": "object",
@@ -398,7 +406,7 @@
         ]
       },
       "Session.Message.ToolInvocation": {
-        "anyOf": [
+        "oneOf": [
           {
             "$ref": "#/components/schemas/Session.Message.ToolInvocation.ToolCall"
           },
@@ -408,7 +416,15 @@
           {
             "$ref": "#/components/schemas/Session.Message.ToolInvocation.ToolResult"
           }
-        ]
+        ],
+        "discriminator": {
+          "propertyName": "state",
+          "mapping": {
+            "call": "#/components/schemas/Session.Message.ToolInvocation.ToolCall",
+            "partial-call": "#/components/schemas/Session.Message.ToolInvocation.ToolPartialCall",
+            "result": "#/components/schemas/Session.Message.ToolInvocation.ToolResult"
+          }
+        }
       },
       "Session.Message.ToolInvocation.ToolCall": {
         "type": "object",
@@ -559,16 +575,6 @@
         "required": [
           "type"
         ]
-      },
-      "Session.Message.Part.Data": {
-        "type": "object",
-        "properties": {
-          "type": {},
-          "id": {
-            "type": "string"
-          },
-          "data": {}
-        }
       },
       "Provider.Info": {
         "type": "object",

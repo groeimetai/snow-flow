@@ -38,7 +38,7 @@ const ToolResult = z
   });
 
 const ToolInvocation = z
-  .union([ToolCall, ToolPartialCall, ToolResult])
+  .discriminatedUnion("state", [ToolCall, ToolPartialCall, ToolResult])
   .openapi({
     ref: "Session.Message.ToolInvocation",
   });
@@ -103,25 +103,14 @@ const StepStartPart = z
     ref: "Session.Message.Part.StepStart",
   });
 
-const DataPart = z
-  .object({
-    type: z.custom<`data-${string}`>(),
-    id: z.string().optional(),
-    data: z.unknown(),
-  })
-  .openapi({
-    ref: "Session.Message.Part.Data",
-  });
-
 const Part = z
-  .union([
+  .discriminatedUnion("type", [
     TextPart,
     ReasoningPart,
     ToolInvocationPart,
     SourceUrlPart,
     FilePart,
     StepStartPart,
-    DataPart,
   ])
   .openapi({
     ref: "Session.Message.Part",
