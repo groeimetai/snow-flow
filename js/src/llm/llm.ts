@@ -24,10 +24,10 @@ export namespace LLM {
         "claude-sonnet-4-20250514": {
           name: "Claude 4 Sonnet",
           cost: {
-            input: 3.0,
-            inputCached: 3.75,
-            output: 15.0,
-            outputCached: 0.3,
+            input: 3.0 / 1_000_000,
+            inputCached: 3.75 / 1_000_000,
+            output: 15.0 / 1_000_000,
+            outputCached: 0.3 / 1_000_000,
           },
           contextWindow: 200000,
           maxTokens: 50000,
@@ -49,6 +49,10 @@ export namespace LLM {
         instance: Provider;
       }
     > = {};
+    const models = new Map<
+      string,
+      { info: Config.Model; instance: LanguageModel }
+    >();
 
     const list = mergeDeep(NATIVE_PROVIDERS, app.config.providers ?? {});
 
@@ -82,7 +86,7 @@ export namespace LLM {
     }
 
     return {
-      models: new Map<string, LanguageModel>(),
+      models,
       providers,
     };
   });
@@ -101,11 +105,19 @@ export namespace LLM {
       providerID,
       modelID,
     });
+    const info = provider.info.models[modelID];
+    if (!info) throw new ModelNotFoundError(modelID);
     try {
       const match = provider.instance.languageModel(modelID);
       log.info("found", { providerID, modelID });
-      s.models.set(key, match);
-      return match;
+      s.models.set(key, {
+        info,
+        instance: match,
+      });
+      return {
+        info,
+        instance: match,
+      };
     } catch (e) {
       if (e instanceof NoSuchModelError) throw new ModelNotFoundError(modelID);
       throw e;

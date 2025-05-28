@@ -17,6 +17,7 @@ import {
 } from "ai";
 import { z } from "zod";
 import * as tools from "../tool";
+import { Decimal } from "decimal.js";
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt";
 import PROMPT_TITLE from "./prompt/title.txt";
@@ -31,6 +32,7 @@ export namespace Session {
     id: Identifier.schema("session"),
     shareID: z.string().optional(),
     title: z.string(),
+    cost: z.number().optional(),
     tokens: z.object({
       input: z.number(),
       output: z.number(),
@@ -188,7 +190,7 @@ export namespace Session {
             parts: input.parts,
           },
         ]),
-        model,
+        model: model.instance,
       }).then((result) => {
         return Session.update(input.sessionID, (draft) => {
           draft.title = result.text;
@@ -226,16 +228,23 @@ export namespace Session {
     const result = streamText({
       onStepFinish: (step) => {
         update(input.sessionID, (draft) => {
-          draft.tokens.input += step.usage.inputTokens || 0;
-          draft.tokens.output += step.usage.outputTokens || 0;
-          draft.tokens.reasoning += step.usage.reasoningTokens || 0;
+          const input = step.usage.inputTokens ?? 0;
+          const output = step.usage.outputTokens ?? 0;
+          const reasoning = step.usage.reasoningTokens ?? 0;
+          draft.tokens.input += input;
+          draft.tokens.output += output;
+          draft.tokens.reasoning += reasoning;
+          draft.cost = new Decimal(draft.cost ?? 0)
+            .add(new Decimal(input).mul(model.info.cost.input))
+            .add(new Decimal(output).mul(model.info.cost.output))
+            .toNumber();
         });
       },
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),
       temperature: 0,
       tools,
-      model,
+      model: model.instance,
     });
 
     msgs.push(next);

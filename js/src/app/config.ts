@@ -22,7 +22,7 @@ export namespace Config {
 
   export const Provider = z.object({
     options: z.record(z.string(), z.any()).optional(),
-    models: z.record(z.string(), Model).optional(),
+    models: z.record(z.string(), Model),
   });
   export type Provider = z.output<typeof Provider>;
 
