@@ -18,6 +18,7 @@ const SessionInfo = Session.Info.openapi({
 const ProviderInfo = Config.Provider.openapi({
   ref: "Provider.Info",
 });
+
 type ProviderInfo = z.output<typeof ProviderInfo>;
 
 export namespace Server {
@@ -210,7 +211,7 @@ export namespace Server {
         ),
         async (c) => {
           const body = c.req.valid("json");
-          const msg = await Session.chat(body as any);
+          const msg = await Session.chat(body);
           return c.json(msg);
         },
       )

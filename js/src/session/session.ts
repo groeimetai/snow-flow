@@ -6,7 +6,6 @@ import { Storage } from "../storage/storage";
 import { Log } from "../util/log";
 import {
   convertToModelMessages,
-  generateText,
   stepCountIs,
   streamText,
   type TextUIPart,
@@ -20,7 +19,6 @@ import * as tools from "../tool";
 import { Decimal } from "decimal.js";
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt";
-import PROMPT_TITLE from "./prompt/title.txt";
 
 import type { Tool } from "../tool/tool";
 import { Share } from "../share/share";
@@ -42,6 +40,16 @@ export namespace Session {
   export type Info = z.output<typeof Info>;
 
   export type Message = UIMessage<{
+    assistant?: {
+      modelID: string;
+      providerID: string;
+      cost: number;
+      tokens: {
+        input: number;
+        output: number;
+        reasoning: number;
+      };
+    };
     time: {
       created: number;
       completed?: number;
@@ -71,8 +79,8 @@ export namespace Session {
       },
     };
     log.info("created", result);
-    await Storage.writeJSON("session/info/" + result.id, result);
     state().sessions.set(result.id, result);
+    await Storage.writeJSON("session/info/" + result.id, result);
     return result;
   }
 
@@ -184,6 +192,7 @@ export namespace Session {
       }
       msgs.push(system);
       state().messages.set(input.sessionID, msgs);
+      /*
       generateText({
         messages: convertToModelMessages([
           {
@@ -206,6 +215,7 @@ export namespace Session {
           draft.title = result.text;
         });
       });
+      */
       await write(system);
     }
     const msg: Message = {
@@ -228,6 +238,16 @@ export namespace Session {
       role: "assistant",
       parts: [],
       metadata: {
+        assistant: {
+          cost: 0,
+          tokens: {
+            input: 0,
+            output: 0,
+            reasoning: 0,
+          },
+          modelID: input.modelID,
+          providerID: input.providerID,
+        },
         time: {
           created: Date.now(),
         },
@@ -238,19 +258,16 @@ export namespace Session {
     const controller = new AbortController();
     pending.set(input.sessionID, controller);
     const result = streamText({
-      onStepFinish: (step) => {
-        update(input.sessionID, (draft) => {
-          const input = step.usage.inputTokens ?? 0;
-          const output = step.usage.outputTokens ?? 0;
-          const reasoning = step.usage.reasoningTokens ?? 0;
-          draft.tokens.input += input;
-          draft.tokens.output += output;
-          draft.tokens.reasoning += reasoning;
-          draft.cost = new Decimal(draft.cost ?? 0)
-            .add(new Decimal(input).mul(model.info.cost.input))
-            .add(new Decimal(output).mul(model.info.cost.output))
-            .toNumber();
-        });
+      onStepFinish: async (step) => {
+        const assistant = next.metadata!.assistant!;
+        assistant.tokens.input = step.usage.inputTokens ?? 0;
+        assistant.tokens.output = step.usage.outputTokens ?? 0;
+        assistant.tokens.reasoning = step.usage.reasoningTokens ?? 0;
+        assistant.cost = new Decimal(0)
+          .add(new Decimal(assistant.tokens.input).mul(model.info.cost.input))
+          .add(new Decimal(assistant.tokens.output).mul(model.info.cost.output))
+          .toNumber();
+        await write(next);
       },
       abortSignal: controller.signal,
       maxRetries: 6,

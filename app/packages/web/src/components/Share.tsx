@@ -23,6 +23,16 @@ type SessionMessage = UIMessage<{
     created: number
     completed?: number
   }
+  assistant?: {
+    modelID: string;
+    providerID: string;
+    cost: number;
+    tokens: {
+      input: number;
+      output: number;
+      reasoning: number;
+    };
+  };
   sessionID: string
   tool: Record<string, {
     properties: Record<string, any>
@@ -36,11 +46,6 @@ type SessionMessage = UIMessage<{
 type SessionInfo = {
   title: string
   cost?: number
-  tokens?: {
-    input?: number
-    output?: number
-    reasoning?: number
-  }
 }
 
 function getPartTitle(role: string, type: string): string | undefined {
@@ -229,6 +234,26 @@ export default function Share(props: { api: string }) {
     )
   }
 
+  const metrics = createMemo(() => {
+    const result = {
+      cost: 0,
+      tokens: {
+        input: 0,
+        output: 0,
+        reasoning: 0,
+      }
+    }
+    for (const msg of messages()) {
+      const assistant = msg.metadata?.assistant
+      if (!assistant) continue
+      result.cost += assistant.cost
+      result.tokens.input += assistant.tokens.input
+      result.tokens.output += assistant.tokens.output
+      result.tokens.reasoning += assistant.tokens.reasoning
+    }
+    return result
+  })
+
   return (
     <main class={`${styles.root} not-content`}>
       <div class={styles.header}>
@@ -242,25 +267,33 @@ export default function Share(props: { api: string }) {
         <div data-section="row">
           <ul data-section="stats">
             <li>
+              <span data-element-label>Cost</span>
+              {metrics().cost ?
+                <span>{metrics().cost}</span>
+                :
+                <span data-placeholder>&mdash;</span>
+              }
+            </li>
+            <li>
               <span data-element-label>Input Tokens</span>
-              {store.info?.tokens?.input ?
-                <span>{store.info?.tokens?.input}</span>
+              {metrics().tokens.input ?
+                <span>{metrics().tokens.input}</span>
                 :
                 <span data-placeholder>&mdash;</span>
               }
             </li>
             <li>
               <span data-element-label>Output Tokens</span>
-              {store.info?.tokens?.output ?
-                <span>{store.info?.tokens?.output}</span>
+              {metrics().tokens.output ?
+                <span>{metrics().tokens.output}</span>
                 :
                 <span data-placeholder>&mdash;</span>
               }
             </li>
             <li>
               <span data-element-label>Reasoning Tokens</span>
-              {store.info?.tokens?.reasoning ?
-                <span>{store.info?.tokens?.reasoning}</span>
+              {metrics().tokens.reasoning ?
+                <span>{metrics().tokens.reasoning}</span>
                 :
                 <span data-placeholder>&mdash;</span>
               }
