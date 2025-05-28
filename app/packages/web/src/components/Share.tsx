@@ -54,7 +54,7 @@ function getPartTitle(role: string, type: string): string | undefined {
     : role === "user"
       ? undefined
       : type === "text"
-        ? "AI"
+        ? undefined
         : type
 }
 
@@ -69,36 +69,38 @@ function getStatusText(status: [Status, string?]): string {
   }
 }
 
-function TextPart(props: { text: string, highlight?: boolean }) {
+function TextPart(
+  props: { text: string, expand?: boolean, highlight?: boolean }
+) {
   const [expanded, setExpanded] = createSignal(false)
-  const [overflowed, setOverflowed] = createSignal(false);
-  let preEl: HTMLPreElement | undefined;
+  const [overflowed, setOverflowed] = createSignal(false)
+  let preEl: HTMLPreElement | undefined
 
-  const checkOverflow = () => {
-    if (preEl) {
-      setOverflowed(preEl.scrollHeight > preEl.clientHeight + 1);
+  function checkOverflow() {
+    if (preEl && !props.expand) {
+      setOverflowed(preEl.scrollHeight > preEl.clientHeight + 1)
     }
-  };
+  }
 
   onMount(() => {
-    checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-  });
+    checkOverflow()
+    window.addEventListener("resize", checkOverflow)
+  })
 
   createEffect(() => {
-    props.text;
-    setTimeout(checkOverflow, 0);
-  });
+    props.text
+    setTimeout(checkOverflow, 0)
+  })
 
   onCleanup(() => {
-    window.removeEventListener('resize', checkOverflow);
-  });
+    window.removeEventListener("resize", checkOverflow)
+  })
 
   return (
     <div
       data-element-message-text
-      data-expanded={expanded()}
       data-highlight={props.highlight}
+      data-expanded={expanded() || props.expand === true}
     >
       <pre ref={el => (preEl = el)}>{props.text}</pre>
       {overflowed() &&
@@ -111,6 +113,16 @@ function TextPart(props: { text: string, highlight?: boolean }) {
         </button>
       }
     </div>
+  )
+}
+
+function PartFooter(props: { time: number }) {
+  return (
+    <span title={
+      DateTime.fromMillis(props.time).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)
+    }>
+      {DateTime.fromMillis(props.time).toLocaleString(DateTime.TIME_WITH_SECONDS)}
+    </span>
   )
 }
 
@@ -224,16 +236,6 @@ export default function Share(props: { api: string }) {
     })
   })
 
-  function renderTime(time: number) {
-    return (
-      <span title={
-        DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)
-      }>
-        {DateTime.fromMillis(time).toLocaleString(DateTime.TIME_WITH_SECONDS)}
-      </span>
-    )
-  }
-
   const metrics = createMemo(() => {
     const result = {
       cost: 0,
@@ -268,8 +270,8 @@ export default function Share(props: { api: string }) {
           <ul data-section="stats">
             <li>
               <span data-element-label>Cost</span>
-              {metrics().cost ?
-                <span>{metrics().cost}</span>
+              {metrics().cost !== undefined ?
+                <span>${metrics().cost.toFixed(2)}</span>
                 :
                 <span data-placeholder>&mdash;</span>
               }
@@ -324,54 +326,125 @@ export default function Share(props: { api: string }) {
         >
           <div class={styles.parts}>
             <For each={messages()}>
-              {(msg) => (
+              {(msg, msgIndex) => (
                 <For each={msg.parts}>
-                  {(part) => (
-                    <div
-                      data-section="part"
-                      data-message-role={msg.role}
-                      data-part-type={part.type}
-                    >
-                      <div data-section="decoration">
-                        <div>
-                          <Switch fallback={
-                            <IconWrenchScrewdriver width={16} height={16} />
+                  {(part, partIndex) => {
+                    const isLastPart = createMemo(() =>
+                      (messages().length === msgIndex() + 1)
+                      && (msg.parts.length === partIndex() + 1)
+                    )
+                    const time = msg.metadata?.time.completed
+                      || msg.metadata?.time.created
+                      || 0
+                    return (
+                      <div
+                        data-section="part"
+                        data-part-type={part.type}
+                        data-message-role={msg.role}
+                      >
+                        <Switch>
+                          { /* User text */}
+                          <Match when={
+                            msg.role === "user" && part.type === "text" && part
                           }>
-                            <Match when={msg.role === "assistant" && (part.type === "text" || part.type === "step-start")}>
-                              <IconSparkles width={18} height={18} />
-                            </Match>
-                            <Match when={msg.role === "system"}>
-                              <IconCpuChip width={18} height={18} />
-                            </Match>
-                            <Match when={msg.role === "user"}>
-                              <IconUserCircle width={18} height={18} />
-                            </Match>
-                          </Switch>
-                        </div>
-                        <div></div>
+                            {part =>
+                              <>
+                                <div data-section="decoration">
+                                  <div>
+                                    <IconUserCircle width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <TextPart
+                                    highlight
+                                    text={part().text}
+                                    expand={isLastPart()}
+                                  />
+                                  <PartFooter time={time} />
+                                </div>
+                              </>
+                            }
+                          </Match>
+                          { /* AI text */}
+                          <Match when={
+                            msg.role === "assistant"
+                            && part.type === "text"
+                            && part
+                          }>
+                            {part =>
+                              <>
+                                <div data-section="decoration">
+                                  <div><IconSparkles width={18} height={18} /></div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <TextPart
+                                    text={part().text}
+                                    expand={isLastPart()}
+                                  />
+                                  <PartFooter time={time} />
+                                </div>
+                              </>
+                            }
+                          </Match>
+                          { /* System text */}
+                          <Match when={
+                            msg.role === "system"
+                            && part.type === "text"
+                            && part
+                          }>
+                            {part =>
+                              <>
+                                <div data-section="decoration">
+                                  <div>
+                                    <IconCpuChip width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <span data-element-label>System</span>
+                                  <TextPart
+                                    text={part().text}
+                                    expand={isLastPart()}
+                                  />
+                                  <PartFooter time={time} />
+                                </div>
+                              </>
+                            }
+                          </Match>
+                          { /* Step start */}
+                          <Match when={part.type === "step-start"}>{null}</Match>
+                          { /* Fallback */}
+                          <Match when={true}>
+                            <div data-section="decoration">
+                              <div>
+                                <Switch fallback={
+                                  <IconWrenchScrewdriver width={16} height={16} />
+                                }>
+                                  <Match when={msg.role === "assistant" && part.type !== "tool-invocation"}>
+                                    <IconSparkles width={18} height={18} />
+                                  </Match>
+                                  <Match when={msg.role === "system"}>
+                                    <IconCpuChip width={18} height={18} />
+                                  </Match>
+                                  <Match when={msg.role === "user"}>
+                                    <IconUserCircle width={18} height={18} />
+                                  </Match>
+                                </Switch>
+                              </div>
+                              <div></div>
+                            </div>
+                            <div data-section="content">
+                              <span data-element-label>{part.type}</span>
+                              <TextPart text={JSON.stringify(part, null, 2)} />
+                              <PartFooter time={time} />
+                            </div>
+                          </Match>
+                        </Switch>
                       </div>
-                      <div data-section="content">
-                        {getPartTitle(msg.role, part.type)
-                          ? <span data-element-label>
-                            {getPartTitle(msg.role, part.type)}
-                          </span>
-                          : null
-                        }
-                        {part.type === "text"
-                          ? <TextPart
-                            text={part.text}
-                            highlight={msg.role === "user"}
-                          />
-                          : <TextPart text={JSON.stringify(part, null, 2)} />
-                        }
-                        {renderTime(
-                          msg.metadata?.time.completed
-                          || msg.metadata?.time.created
-                          || 0
-                        )}
-                      </div>
-                    </div>
-                  )}
+                    )
+                  }}
                 </For>
               )}
             </For>
