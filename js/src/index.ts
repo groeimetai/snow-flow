@@ -94,6 +94,7 @@ cli
       const providers = await LLM.providers();
       const providerID = Object.keys(providers)[0];
       const modelID = Object.keys(providers[providerID].info.models!)[0];
+      console.log("using", providerID, modelID);
       const result = await Session.chat({
         sessionID: session.id,
         providerID,

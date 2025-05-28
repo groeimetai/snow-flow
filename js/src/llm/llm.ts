@@ -35,10 +35,45 @@ export namespace LLM {
         },
       },
     },
+    openai: {
+      models: {
+        "codex-mini-latest": {
+          name: "Codex Mini",
+          cost: {
+            input: 1.5 / 1_000_000,
+            inputCached: 0.375 / 1_000_000,
+            output: 6.0 / 1_000_000,
+            outputCached: 0.0 / 1_000_000,
+          },
+          contextWindow: 200000,
+          maxTokens: 100000,
+          attachment: true,
+          reasoning: true,
+        },
+      },
+    },
+    google: {
+      models: {
+        "gemini-2.5-pro-preview-03-25": {
+          name: "Gemini 2.5 Pro",
+          cost: {
+            input: 1.25 / 1_000_000,
+            inputCached: 0 / 1_000_000,
+            output: 10 / 1_000_000,
+            outputCached: 0 / 1_000_000,
+          },
+          contextWindow: 1000000,
+          maxTokens: 50000,
+          attachment: true,
+        },
+      },
+    },
   };
 
   const AUTODETECT: Record<string, string[]> = {
     anthropic: ["ANTHROPIC_API_KEY"],
+    openai: ["OPENAI_API_KEY"],
+    google: ["GOOGLE_GENERATIVE_AI_API_KEY"],
   };
 
   const state = App.state("llm", async (app) => {

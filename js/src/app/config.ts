@@ -15,8 +15,9 @@ export namespace Config {
       outputCached: z.number(),
     }),
     contextWindow: z.number(),
-    maxTokens: z.number(),
+    maxTokens: z.number().optional(),
     attachment: z.boolean(),
+    reasoning: z.boolean().optional(),
   });
   export type Model = z.output<typeof Model>;
 
