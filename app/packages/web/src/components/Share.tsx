@@ -1,4 +1,15 @@
-import { createSignal, onCleanup, onMount, Show, For, createMemo } from "solid-js"
+import {
+  For,
+  Show,
+  Match,
+  Switch,
+  onMount,
+  onCleanup,
+  createMemo,
+  createSignal,
+} from "solid-js"
+import { DateTime } from "luxon"
+import { IconCpuChip, IconSparkles, IconUserCircle, IconWrenchScrewdriver } from "./icons"
 import styles from "./share.module.css"
 import { type UIMessage } from "ai"
 import { createStore, reconcile } from "solid-js/store"
@@ -8,17 +19,17 @@ type Status = "disconnected" | "connecting" | "connected" | "error" | "reconnect
 
 type SessionMessage = UIMessage<{
   time: {
-    created: number;
-    completed?: number;
-  };
-  sessionID: string;
+    created: number
+    completed?: number
+  }
+  sessionID: string
   tool: Record<string, {
-    properties: Record<string, any>;
+    properties: Record<string, any>
     time: {
-      start: number;
-      end: number;
-    };
-  }>;
+      start: number
+      end: number
+    }
+  }>
 }>
 
 type SessionInfo = {
@@ -39,6 +50,14 @@ function getStatusText(status: [Status, string?]): string {
     case "error": return status[1] || "Error"
     default: return "Unknown"
   }
+}
+
+function TextPart(props: { text: string }) {
+  return (
+    <div data-element-message-text>
+      <pre>{props.text}</pre>
+    </div>
+  )
 }
 
 export default function Share(props: { api: string }) {
@@ -151,6 +170,16 @@ export default function Share(props: { api: string }) {
     })
   })
 
+  function renderTime(time: number) {
+    return (
+      <span title={
+        DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)
+      }>
+        {DateTime.fromMillis(time).toLocaleString(DateTime.TIME_WITH_SECONDS)}
+      </span>
+    )
+  }
+
   return (
     <main class={`${styles.root} not-content`}>
       <div class={styles.header}>
@@ -158,13 +187,13 @@ export default function Share(props: { api: string }) {
           <h1>{store.info?.title}</h1>
           <p>
             <span data-status={connectionStatus()[0]}>&#9679;</span>
-            <span>{getStatusText(connectionStatus())}</span>
+            <span data-element-label>{getStatusText(connectionStatus())}</span>
           </p>
         </div>
         <div data-section="row">
-          <ul class={styles.stats}>
+          <ul data-section="stats">
             <li>
-              <span>Input Tokens</span>
+              <span data-element-label>Input Tokens</span>
               {store.info?.tokens?.input ?
                 <span>{store.info?.tokens?.input}</span>
                 :
@@ -172,7 +201,7 @@ export default function Share(props: { api: string }) {
               }
             </li>
             <li>
-              <span>Output Tokens</span>
+              <span data-element-label>Output Tokens</span>
               {store.info?.tokens?.output ?
                 <span>{store.info?.tokens?.output}</span>
                 :
@@ -180,7 +209,7 @@ export default function Share(props: { api: string }) {
               }
             </li>
             <li>
-              <span>Reasoning Tokens</span>
+              <span data-element-label>Reasoning Tokens</span>
               {store.info?.tokens?.reasoning ?
                 <span>{store.info?.tokens?.reasoning}</span>
                 :
@@ -188,10 +217,72 @@ export default function Share(props: { api: string }) {
               }
             </li>
           </ul>
-          <div class={styles.context}>
-            <button>View Context &gt;</button>
+          <div data-section="date">
+            {messages().length > 0 && messages()[0].metadata?.time.created ?
+              <span title={
+                DateTime.fromMillis(
+                  messages()[0].metadata?.time.created || 0
+                ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)
+              }>
+                {DateTime.fromMillis(
+                  messages()[0].metadata?.time.created || 0
+                ).toLocaleString(DateTime.DATE_MED)}
+              </span>
+              :
+              <span data-element-label data-placeholder>Started at &mdash;</span>
+            }
           </div>
         </div>
+      </div>
+
+      <div>
+        <Show
+          when={messages().length > 0}
+          fallback={<p>Waiting for messages...</p>}
+        >
+          <div class={styles.parts}>
+            <For each={messages()}>
+              {(msg) => (
+                <For each={msg.parts}>
+                  {(part) => (
+                    <div
+                      data-section="part"
+                      data-message-role={msg.role}
+                      data-part-type={part.type}
+                    >
+                      <div data-section="decoration">
+                        <div>
+                          <Switch fallback={
+                            <IconWrenchScrewdriver width={16} height={16} />
+                          }>
+                            <Match when={msg.role === "assistant" && (part.type === "text" || part.type === "step-start")}>
+                              <IconSparkles width={18} height={18} />
+                            </Match>
+                            <Match when={msg.role === "system"}>
+                              <IconCpuChip width={18} height={18} />
+                            </Match>
+                            <Match when={msg.role === "user"}>
+                              <IconUserCircle width={18} height={18} />
+                            </Match>
+                          </Switch>
+                        </div>
+                        <div></div>
+                      </div>
+                      <div data-section="content">
+                        <TextPart text={JSON.stringify(part, null, 2)} />
+                        {renderTime(
+                          msg.metadata?.time.completed
+                          || msg.metadata?.time.created
+                          || 0
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </For>
+              )}
+            </For>
+          </div>
+        </Show>
       </div>
 
       <div style={{ margin: "2rem 0" }}>
