@@ -30,12 +30,6 @@ export namespace Session {
     id: Identifier.schema("session"),
     shareID: z.string().optional(),
     title: z.string(),
-    cost: z.number().optional(),
-    tokens: z.object({
-      input: z.number(),
-      output: z.number(),
-      reasoning: z.number(),
-    }),
   });
   export type Info = z.output<typeof Info>;
 
@@ -72,11 +66,6 @@ export namespace Session {
     const result: Info = {
       id: Identifier.descending("session"),
       title: "New Session - " + new Date().toISOString(),
-      tokens: {
-        input: 0,
-        output: 0,
-        reasoning: 0,
-      },
     };
     log.info("created", result);
     state().sessions.set(result.id, result);

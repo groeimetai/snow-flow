@@ -44,15 +44,9 @@ type ProviderInfo struct {
 
 // SessionInfo defines model for Session.Info.
 type SessionInfo struct {
-	Cost    *float32 `json:"cost,omitempty"`
-	Id      string   `json:"id"`
-	ShareID *string  `json:"shareID,omitempty"`
-	Title   string   `json:"title"`
-	Tokens  struct {
-		Input     float32 `json:"input"`
-		Output    float32 `json:"output"`
-		Reasoning float32 `json:"reasoning"`
-	} `json:"tokens"`
+	Id      string  `json:"id"`
+	ShareID *string `json:"shareID,omitempty"`
+	Title   string  `json:"title"`
 }
 
 // SessionMessage defines model for Session.Message.
@@ -1156,15 +1150,9 @@ type PostSessionListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]struct {
-		Cost    *float32 `json:"cost,omitempty"`
-		Id      string   `json:"id"`
-		ShareID *string  `json:"shareID,omitempty"`
-		Title   string   `json:"title"`
-		Tokens  struct {
-			Input     float32 `json:"input"`
-			Output    float32 `json:"output"`
-			Reasoning float32 `json:"reasoning"`
-		} `json:"tokens"`
+		Id      string  `json:"id"`
+		ShareID *string `json:"shareID,omitempty"`
+		Title   string  `json:"title"`
 	}
 }
 
@@ -1443,15 +1431,9 @@ func ParsePostSessionListResponse(rsp *http.Response) (*PostSessionListResponse,
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []struct {
-			Cost    *float32 `json:"cost,omitempty"`
-			Id      string   `json:"id"`
-			ShareID *string  `json:"shareID,omitempty"`
-			Title   string   `json:"title"`
-			Tokens  struct {
-				Input     float32 `json:"input"`
-				Output    float32 `json:"output"`
-				Reasoning float32 `json:"reasoning"`
-			} `json:"tokens"`
+			Id      string  `json:"id"`
+			ShareID *string `json:"shareID,omitempty"`
+			Title   string  `json:"title"`
 		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err

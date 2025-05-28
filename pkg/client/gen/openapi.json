@@ -121,34 +121,11 @@
                       },
                       "title": {
                         "type": "string"
-                      },
-                      "cost": {
-                        "type": "number"
-                      },
-                      "tokens": {
-                        "type": "object",
-                        "properties": {
-                          "input": {
-                            "type": "number"
-                          },
-                          "output": {
-                            "type": "number"
-                          },
-                          "reasoning": {
-                            "type": "number"
-                          }
-                        },
-                        "required": [
-                          "input",
-                          "output",
-                          "reasoning"
-                        ]
                       }
                     },
                     "required": [
                       "id",
-                      "title",
-                      "tokens"
+                      "title"
                     ]
                   }
                 }
@@ -285,34 +262,11 @@
           },
           "title": {
             "type": "string"
-          },
-          "cost": {
-            "type": "number"
-          },
-          "tokens": {
-            "type": "object",
-            "properties": {
-              "input": {
-                "type": "number"
-              },
-              "output": {
-                "type": "number"
-              },
-              "reasoning": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "input",
-              "output",
-              "reasoning"
-            ]
           }
         },
         "required": [
           "id",
-          "title",
-          "tokens"
+          "title"
         ]
       },
       "Session.Message": {
