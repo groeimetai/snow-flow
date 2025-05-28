@@ -6,6 +6,7 @@ import {
   onMount,
   onCleanup,
   createMemo,
+  createEffect,
   createSignal,
 } from "solid-js"
 import { DateTime } from "luxon"
@@ -42,6 +43,16 @@ type SessionInfo = {
   }
 }
 
+function getPartTitle(role: string, type: string): string | undefined {
+  return role === "system"
+    ? role
+    : role === "user"
+      ? undefined
+      : type === "text"
+        ? "AI"
+        : type
+}
+
 function getStatusText(status: [Status, string?]): string {
   switch (status[0]) {
     case "connected": return "Connected"
@@ -53,10 +64,47 @@ function getStatusText(status: [Status, string?]): string {
   }
 }
 
-function TextPart(props: { text: string }) {
+function TextPart(props: { text: string, highlight?: boolean }) {
+  const [expanded, setExpanded] = createSignal(false)
+  const [overflowed, setOverflowed] = createSignal(false);
+  let preEl: HTMLPreElement | undefined;
+
+  const checkOverflow = () => {
+    if (preEl) {
+      setOverflowed(preEl.scrollHeight > preEl.clientHeight + 1);
+    }
+  };
+
+  onMount(() => {
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+  });
+
+  createEffect(() => {
+    props.text;
+    setTimeout(checkOverflow, 0);
+  });
+
+  onCleanup(() => {
+    window.removeEventListener('resize', checkOverflow);
+  });
+
   return (
-    <div data-element-message-text>
-      <pre>{props.text}</pre>
+    <div
+      data-element-message-text
+      data-expanded={expanded()}
+      data-highlight={props.highlight}
+    >
+      <pre ref={el => (preEl = el)}>{props.text}</pre>
+      {overflowed() &&
+        <button
+          type="button"
+          data-element-button-text
+          onClick={() => setExpanded(e => !e)}
+        >
+          {expanded() ? "Show less" : "Show more"}
+        </button>
+      }
     </div>
   )
 }
@@ -270,7 +318,19 @@ export default function Share(props: { api: string }) {
                         <div></div>
                       </div>
                       <div data-section="content">
-                        <TextPart text={JSON.stringify(part, null, 2)} />
+                        {getPartTitle(msg.role, part.type)
+                          ? <span data-element-label>
+                            {getPartTitle(msg.role, part.type)}
+                          </span>
+                          : null
+                        }
+                        {part.type === "text"
+                          ? <TextPart
+                            text={part.text}
+                            highlight={msg.role === "user"}
+                          />
+                          : <TextPart text={JSON.stringify(part, null, 2)} />
+                        }
                         {renderTime(
                           msg.metadata?.time.completed
                           || msg.metadata?.time.created

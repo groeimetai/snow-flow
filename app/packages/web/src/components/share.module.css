@@ -6,6 +6,19 @@
   line-height: 1;
 }
 
+[data-element-button-text] {
+  cursor: pointer;
+  appearance: none;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  color: var(--sl-color-text-secondary);
+
+  &:hover {
+    color: var(--sl-color-text);
+  }
+}
+
 [data-element-label] {
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -39,11 +52,11 @@
     font-size: 0.75rem;
 
     span:first-child {
-      color: var(--sl-color-gray-5);
+      color: var(--sl-color-divider);
 
       &[data-status="connected"] { color: var(--sl-color-green); }
       &[data-status="connecting"] { color: var(--sl-color-orange); }
-      &[data-status="disconnected"] { color: var(--sl-color-gray-5); }
+      &[data-status="disconnected"] { color: var(--sl-color-divider); }
       &[data-status="reconnecting"] { color: var(--sl-color-orange); }
       &[data-status="error"] { color: var(--sl-color-red); }
     }
@@ -118,11 +131,14 @@
   }
 
   [data-section="content"] {
-    flex: 1 1 auto;
-    padding: 0.125rem 0 0.375rem;
+    padding: 3px 0 0.375rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+
+    span:first-child {
+      font-size: 0.75rem;
+    }
 
     span:last-child {
       font-size: 0.75rem;
@@ -132,13 +148,53 @@
 }
 
 [data-element-message-text] {
+  background-color: var(--sl-color-bg-surface);
+  padding: 0.5rem calc(0.5rem + 3px);
+  border-radius: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  color: var(--sl-color-text);
+  gap: 1rem;
+
   pre {
+    line-height: 1.5;
     font-size: 0.875rem;
-    color: var(--sl-color-text);
-    background-color: var(--sl-color-bg-nav);
-    padding: 0.5rem;
-    border-radius: 0.5rem;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+  }
+
+  button {
+    flex: 0 0 auto;
+    padding: 2px 0;
+    font-size: 0.75rem;
+  }
+
+  &[data-highlight="true"] {
+    background-color: var(--sl-color-blue-high);
+    color: var(--sl-color-text-invert);
+
+    button {
+      opacity: 0.85;
+      color: var(--sl-color-text-invert);
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  &[data-expanded="true"] {
+    pre {
+      display: block;
+    }
+  }
+  &[data-expanded="false"] {
+    pre {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
+    }
   }
 }
