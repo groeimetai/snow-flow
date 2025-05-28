@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -151,6 +152,55 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(m.messages) > 0 {
 				if (msg.Type == message.EventMessageCreated) ||
 					(msg.Type == message.EventMessageUpdated && msg.Payload.ID == m.messages[len(m.messages)-1].ID) {
+					m.viewport.GotoBottom()
+				}
+			}
+		}
+	case app.StorageWriteMsg:
+		// Handle storage write events from the TypeScript backend
+		keyParts := strings.Split(msg.Key, "/")
+		if len(keyParts) >= 4 && keyParts[0] == "session" && keyParts[1] == "message" {
+			sessionID := keyParts[2]
+			if sessionID == m.app.CurrentSession.ID {
+				// Convert storage message to internal format
+				convertedMsg, err := app.ConvertStorageMessage(msg.Content, sessionID)
+				if err != nil {
+					status.Error("Failed to convert message: " + err.Error())
+					return m, nil
+				}
+				
+				// Check if message exists
+				messageExists := false
+				messageIndex := -1
+				for i, v := range m.messages {
+					if v.ID == convertedMsg.ID {
+						messageExists = true
+						messageIndex = i
+						break
+					}
+				}
+				
+				needsRerender := false
+				if messageExists {
+					// Update existing message
+					m.messages[messageIndex] = *convertedMsg
+					delete(m.cachedContent, convertedMsg.ID)
+					needsRerender = true
+				} else {
+					// Add new message
+					if len(m.messages) > 0 {
+						lastMsgID := m.messages[len(m.messages)-1].ID
+						delete(m.cachedContent, lastMsgID)
+					}
+					
+					m.messages = append(m.messages, *convertedMsg)
+					delete(m.cachedContent, m.currentMsgID)
+					m.currentMsgID = convertedMsg.ID
+					needsRerender = true
+				}
+				
+				if needsRerender {
+					m.renderView()
 					m.viewport.GotoBottom()
 				}
 			}

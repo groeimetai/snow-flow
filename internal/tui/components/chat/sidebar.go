@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/diff"
+	// "github.com/sst/opencode/internal/diff"
 	"github.com/sst/opencode/internal/history"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/tui/state"
@@ -28,39 +28,28 @@ type sidebarCmp struct {
 }
 
 func (m *sidebarCmp) Init() tea.Cmd {
-	if m.app.History != nil {
-		ctx := context.Background()
-		// Subscribe to file events
-		filesCh := m.app.History.Subscribe(ctx)
-
-		// Initialize the modified files map
-		m.modFiles = make(map[string]struct {
-			additions int
-			removals  int
-		})
-
-		// Load initial files and calculate diffs
-		m.loadModifiedFiles(ctx)
-
-		// Return a command that will send file events to the Update method
-		return func() tea.Msg {
-			return <-filesCh
-		}
-	}
+	// TODO: History service not implemented in API yet
+	// Initialize the modified files map
+	m.modFiles = make(map[string]struct {
+		additions int
+		removals  int
+	})
 	return nil
 }
 
 func (m *sidebarCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
+	switch msg.(type) {
 	case state.SessionSelectedMsg:
-		ctx := context.Background()
-		m.loadModifiedFiles(ctx)
+		// TODO: History service not implemented in API yet
+		// ctx := context.Background()
+		// m.loadModifiedFiles(ctx)
 	case pubsub.Event[history.File]:
-		if msg.Payload.SessionID == m.app.CurrentSession.ID {
-			// Process the individual file change instead of reloading all files
-			ctx := context.Background()
-			m.processFileChanges(ctx, msg.Payload)
-		}
+		// TODO: History service not implemented in API yet
+		// if msg.Payload.SessionID == m.app.CurrentSession.ID {
+		// 	// Process the individual file change instead of reloading all files
+		// 	ctx := context.Background()
+		// 	m.processFileChanges(ctx, msg.Payload)
+		// }
 	}
 	return m, nil
 }
@@ -224,6 +213,9 @@ func (m *sidebarCmp) loadModifiedFiles(ctx context.Context) {
 		return
 	}
 
+	// TODO: History service not implemented in API yet
+	return
+	/*
 	// Get all latest files for this session
 	latestFiles, err := m.app.History.ListLatestSessionFiles(ctx, m.app.CurrentSession.ID)
 	if err != nil {
@@ -235,6 +227,7 @@ func (m *sidebarCmp) loadModifiedFiles(ctx context.Context) {
 	if err != nil {
 		return
 	}
+	*/
 
 	// Clear the existing map to rebuild it
 	m.modFiles = make(map[string]struct {
@@ -242,6 +235,7 @@ func (m *sidebarCmp) loadModifiedFiles(ctx context.Context) {
 		removals  int
 	})
 
+	/*
 	// Process each latest file
 	for _, file := range latestFiles {
 		// Skip if this is the initial version (no changes to show)
@@ -286,9 +280,13 @@ func (m *sidebarCmp) loadModifiedFiles(ctx context.Context) {
 			}
 		}
 	}
+	*/
 }
 
 func (m *sidebarCmp) processFileChanges(ctx context.Context, file history.File) {
+	// TODO: History service not implemented in API yet
+	return
+	/*
 	// Skip if this is the initial version (no changes to show)
 	if file.Version == history.InitialVersion {
 		return
@@ -327,16 +325,22 @@ func (m *sidebarCmp) processFileChanges(ctx context.Context, file history.File) 
 		displayPath := getDisplayPath(file.Path)
 		delete(m.modFiles, displayPath)
 	}
+	*/
 }
 
 // Helper function to find the initial version of a file
 func (m *sidebarCmp) findInitialVersion(ctx context.Context, path string) (history.File, error) {
+	// TODO: History service not implemented in API yet
+	return history.File{}, fmt.Errorf("history service not implemented")
+	/*
 	// Get all versions of this file for the session
 	fileVersions, err := m.app.History.ListBySession(ctx, m.app.CurrentSession.ID)
 	if err != nil {
 		return history.File{}, err
 	}
+	*/
 
+	/*
 	// Find the initial version
 	for _, v := range fileVersions {
 		if v.Path == path && v.Version == history.InitialVersion {
@@ -345,6 +349,7 @@ func (m *sidebarCmp) findInitialVersion(ctx context.Context, path string) (histo
 	}
 
 	return history.File{}, fmt.Errorf("initial version not found")
+	*/
 }
 
 // Helper function to get the display path for a file

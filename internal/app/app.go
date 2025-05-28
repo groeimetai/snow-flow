@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"maps"
 	"sync"
 	"time"
@@ -11,12 +10,7 @@ import (
 
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/fileutil"
-	"github.com/sst/opencode/internal/history"
-	"github.com/sst/opencode/internal/llm/agent"
-	"github.com/sst/opencode/internal/logging"
 	"github.com/sst/opencode/internal/lsp"
-	"github.com/sst/opencode/internal/message"
-	"github.com/sst/opencode/internal/permission"
 	"github.com/sst/opencode/internal/session"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -25,15 +19,15 @@ import (
 
 type App struct {
 	CurrentSession *session.Session
-	Logs           logging.Service
-	Sessions       session.Service
-	Messages       message.Service
-	History        history.Service
-	Permissions    permission.Service
+	Logs           interface{} // TODO: Define LogService interface when needed
+	Sessions       SessionService
+	Messages       MessageService
+	History        interface{} // TODO: Define HistoryService interface when needed
+	Permissions    interface{} // TODO: Define PermissionService interface when needed
 	Status         status.Service
 	Client         *client.Client
 
-	PrimaryAgent agent.Service
+	PrimaryAgent AgentService
 
 	LSPClients map[string]*lsp.Client
 
@@ -48,55 +42,42 @@ type App struct {
 	completionDialogOpen bool
 }
 
-func New(ctx context.Context, conn *sql.DB) (*App, error) {
-	err := logging.InitService(conn)
-	if err != nil {
-		slog.Error("Failed to initialize logging service", "error", err)
-		return nil, err
-	}
-	err = session.InitService(conn)
-	if err != nil {
-		slog.Error("Failed to initialize session service", "error", err)
-		return nil, err
-	}
-	err = message.InitService(conn)
-	if err != nil {
-		slog.Error("Failed to initialize message service", "error", err)
-		return nil, err
-	}
-	err = history.InitService(conn)
-	if err != nil {
-		slog.Error("Failed to initialize history service", "error", err)
-		return nil, err
-	}
-	err = permission.InitService()
-	if err != nil {
-		slog.Error("Failed to initialize permission service", "error", err)
-		return nil, err
-	}
-	err = status.InitService()
+func New(ctx context.Context) (*App, error) {
+	// Initialize status service (still needed for UI notifications)
+	err := status.InitService()
 	if err != nil {
 		slog.Error("Failed to initialize status service", "error", err)
 		return nil, err
 	}
+	
+	// Initialize file utilities
 	fileutil.Init()
 
-	client, err := client.NewClient("http://localhost:16713")
+	// Create HTTP client
+	httpClient, err := client.NewClient("http://localhost:16713")
 	if err != nil {
 		slog.Error("Failed to create client", "error", err)
 		return nil, err
 	}
 
+	// Create service bridges
+	sessionBridge := NewSessionServiceBridge(httpClient)
+	messageBridge := NewMessageServiceBridge(httpClient)
+	agentBridge := NewAgentServiceBridge(httpClient)
+
 	app := &App{
-		Client:         client,
+		Client:         httpClient,
 		CurrentSession: &session.Session{},
-		Logs:           logging.GetService(),
-		Sessions:       session.GetService(),
-		Messages:       message.GetService(),
-		History:        history.GetService(),
-		Permissions:    permission.GetService(),
+		Sessions:       sessionBridge,
+		Messages:       messageBridge,
+		PrimaryAgent:   agentBridge,
 		Status:         status.GetService(),
 		LSPClients:     make(map[string]*lsp.Client),
+		
+		// TODO: These services need API endpoints:
+		Logs:           nil, // logging.GetService(),
+		History:        nil, // history.GetService(),
+		Permissions:    nil, // permission.GetService(),
 	}
 
 	// Initialize theme based on configuration
@@ -105,22 +86,23 @@ func New(ctx context.Context, conn *sql.DB) (*App, error) {
 	// Initialize LSP clients in the background
 	go app.initLSPClients(ctx)
 
-	app.PrimaryAgent, err = agent.NewAgent(
-		config.AgentPrimary,
-		app.Sessions,
-		app.Messages,
-		agent.PrimaryAgentTools(
-			app.Permissions,
-			app.Sessions,
-			app.Messages,
-			app.History,
-			app.LSPClients,
-		),
-	)
-	if err != nil {
-		slog.Error("Failed to create primary agent", "error", err)
-		return nil, err
-	}
+	// TODO: Remove this once agent is fully replaced by API
+	// app.PrimaryAgent, err = agent.NewAgent(
+	// 	config.AgentPrimary,
+	// 	app.Sessions,
+	// 	app.Messages,
+	// 	agent.PrimaryAgentTools(
+	// 		app.Permissions,
+	// 		app.Sessions,
+	// 		app.Messages,
+	// 		app.History,
+	// 		app.LSPClients,
+	// 	),
+	// )
+	// if err != nil {
+	// 	slog.Error("Failed to create primary agent", "error", err)
+	// 	return nil, err
+	// }
 
 	return app, nil
 }

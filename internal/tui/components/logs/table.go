@@ -1,7 +1,8 @@
 package logs
 
 import (
-	"context"
+	// "context"
+	"fmt"
 	"log/slog"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -41,18 +42,16 @@ func (i *tableCmp) Init() tea.Cmd {
 
 func (i *tableCmp) fetchLogs() tea.Cmd {
 	return func() tea.Msg {
-		ctx := context.Background()
+		// ctx := context.Background()
 
 		var logs []logging.Log
 		var err error
 
 		// Limit the number of logs to improve performance
 		const logLimit = 100
-		if i.app.CurrentSession.ID == "" {
-			logs, err = i.app.Logs.ListAll(ctx, logLimit)
-		} else {
-			logs, err = i.app.Logs.ListBySession(ctx, i.app.CurrentSession.ID)
-		}
+		// TODO: Logs service not implemented in API yet
+		logs = []logging.Log{}
+		err = fmt.Errorf("logs service not implemented")
 
 		if err != nil {
 			slog.Error("Failed to fetch logs", "error", err)

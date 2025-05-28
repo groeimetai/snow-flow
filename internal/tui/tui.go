@@ -2,7 +2,7 @@ package tui
 
 import (
 	"context"
-	"fmt"
+	// "fmt"
 	"log/slog"
 	"strings"
 
@@ -13,7 +13,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/llm/agent"
+	// "github.com/sst/opencode/internal/llm/agent"
 	"github.com/sst/opencode/internal/logging"
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/permission"
@@ -28,6 +28,7 @@ import (
 	"github.com/sst/opencode/internal/tui/page"
 	"github.com/sst/opencode/internal/tui/state"
 	"github.com/sst/opencode/internal/tui/util"
+	"github.com/sst/opencode/pkg/client"
 )
 
 type keyMap struct {
@@ -251,17 +252,18 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.showPermissions = true
 		return a, a.permissions.SetPermissions(msg.Payload)
 	case dialog.PermissionResponseMsg:
-		var cmd tea.Cmd
-		switch msg.Action {
-		case dialog.PermissionAllow:
-			a.app.Permissions.Grant(context.Background(), msg.Permission)
-		case dialog.PermissionAllowForSession:
-			a.app.Permissions.GrantPersistant(context.Background(), msg.Permission)
-		case dialog.PermissionDeny:
-			a.app.Permissions.Deny(context.Background(), msg.Permission)
-		}
+		// TODO: Permissions service not implemented in API yet
+		// var cmd tea.Cmd
+		// switch msg.Action {
+		// case dialog.PermissionAllow:
+		// 	a.app.Permissions.Grant(context.Background(), msg.Permission)
+		// case dialog.PermissionAllowForSession:
+		// 	a.app.Permissions.GrantPersistant(context.Background(), msg.Permission)
+		// case dialog.PermissionDeny:
+		// 	a.app.Permissions.Deny(context.Background(), msg.Permission)
+		// }
 		a.showPermissions = false
-		return a, cmd
+		return a, nil
 
 	case page.PageChangeMsg:
 		return a, a.moveToPage(msg.ID)
@@ -280,6 +282,25 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.app.CurrentSession = &msg.Payload
 			}
 		}
+		
+	// Handle SSE events from the TypeScript backend
+	case *client.EventStorageWrite:
+		// Process storage write events
+		processedMsg := app.ProcessSSEEvent(msg)
+		if storageMsg, ok := processedMsg.(app.StorageWriteMsg); ok {
+			// Forward to the appropriate page/component based on key
+			keyParts := strings.Split(storageMsg.Key, "/")
+			if len(keyParts) >= 3 && keyParts[0] == "session" {
+				if keyParts[1] == "message" {
+					// This is a message update, forward to the chat page
+					return a.updateAllPages(storageMsg)
+				} else if keyParts[1] == "info" {
+					// This is a session info update
+					return a.updateAllPages(storageMsg)
+				}
+			}
+		}
+		return a, nil
 
 	case dialog.CloseQuitMsg:
 		a.showQuit = false
@@ -321,13 +342,15 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dialog.ModelSelectedMsg:
 		a.showModelDialog = false
 
-		model, err := a.app.PrimaryAgent.Update(config.AgentPrimary, msg.Model.ID)
-		if err != nil {
-			status.Error(err.Error())
-			return a, nil
-		}
+		// TODO: Agent model update not implemented in API yet
+		// model, err := a.app.PrimaryAgent.Update(config.AgentPrimary, msg.Model.ID)
+		// if err != nil {
+		// 	status.Error(err.Error())
+		// 	return a, nil
+		// }
 
-		status.Info(fmt.Sprintf("Model changed to %s", model.Name))
+		// status.Info(fmt.Sprintf("Model changed to %s", model.Name))
+		status.Info("Model selection not implemented in API yet")
 		return a, nil
 
 	case dialog.ShowInitDialogMsg:
@@ -707,6 +730,9 @@ func (a *appModel) RegisterCommand(cmd dialog.Command) {
 
 // getAvailableToolNames returns a list of all available tool names
 func getAvailableToolNames(app *app.App) []string {
+	// TODO: Tools not implemented in API yet
+	return []string{"Tools not available in API mode"}
+	/*
 	// Get primary agent tools (which already include MCP tools)
 	allTools := agent.PrimaryAgentTools(
 		app.Permissions,
@@ -723,6 +749,7 @@ func getAvailableToolNames(app *app.App) []string {
 	}
 
 	return toolNames
+	*/
 }
 
 func (a *appModel) moveToPage(pageID page.PageID) tea.Cmd {
