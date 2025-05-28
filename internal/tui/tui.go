@@ -2,8 +2,6 @@ package tui
 
 import (
 	"context"
-	"encoding/json"
-	// "fmt"
 	"log/slog"
 	"strings"
 
@@ -15,7 +13,6 @@ import (
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/config"
 
-	// "github.com/sst/opencode/internal/llm/agent"
 	"github.com/sst/opencode/internal/logging"
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/permission"
@@ -288,7 +285,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Handle SSE events from the TypeScript backend
 	case *client.EventStorageWrite:
-		slog.Debug("Received SSE event", "key", msg.Key, "content", msg.Content)
+		slog.Debug("Received SSE event", "key", msg.Key)
 
 		// Create a deep copy of the state to avoid mutation issues
 		newState := deepCopyState(a.app.State)

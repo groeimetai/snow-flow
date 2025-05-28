@@ -104,6 +104,10 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case renderFinishedMsg:
 		m.rendering = false
 		m.viewport.GotoBottom()
+	case state.StateUpdatedMsg:
+		m.renderView()
+		m.viewport.GotoBottom()
+
 	case pubsub.Event[message.Message]:
 		needsRerender := false
 		if msg.Type == message.EventMessageCreated {

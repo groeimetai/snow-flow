@@ -24,20 +24,14 @@ func NewSessionServiceBridge(client *client.ClientWithResponses) *SessionService
 
 // Create creates a new session
 func (s *SessionServiceBridge) Create(ctx context.Context, title string) (session.Session, error) {
-	resp, err := s.client.PostSessionCreate(ctx)
+	resp, err := s.client.PostSessionCreateWithResponse(ctx)
 	if err != nil {
 		return session.Session{}, err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
+	if resp.StatusCode() != 200 {
 		return session.Session{}, fmt.Errorf("failed to create session: %d", resp.StatusCode)
 	}
-
-	var info client.SessionInfo
-	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
-		return session.Session{}, err
-	}
+	info := resp.JSON200
 
 	// Convert to old session type
 	return session.Session{
@@ -68,16 +62,20 @@ func (s *SessionServiceBridge) Get(ctx context.Context, id string) (session.Sess
 
 // List retrieves all sessions
 func (s *SessionServiceBridge) List(ctx context.Context) ([]session.Session, error) {
-	resp, err := s.client.PostSessionList(ctx)
+	resp, err := s.client.PostSessionListWithResponse(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	var infos []client.SessionInfo
-	if err := json.NewDecoder(resp.Body).Decode(&infos); err != nil {
-		return nil, err
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("failed to list sessions: %d", resp.StatusCode())
 	}
+
+	if resp.JSON200 == nil {
+		return []session.Session{}, nil
+	}
+
+	infos := *resp.JSON200
 
 	// Convert to old session type
 	sessions := make([]session.Session, len(infos))
@@ -130,14 +128,10 @@ func (a *AgentServiceBridge) Run(ctx context.Context, sessionID string, text str
 		},
 	})
 
-	resp, err := a.client.PostSessionChat(ctx, client.PostSessionChatJSONRequestBody{
+	go a.client.PostSessionChatWithResponse(ctx, client.PostSessionChatJSONRequestBody{
 		SessionID: sessionID,
 		Parts:     &parts,
 	})
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
 
 	// The actual response will come through SSE
 	// For now, just return success
