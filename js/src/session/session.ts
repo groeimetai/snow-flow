@@ -72,6 +72,7 @@ export namespace Session {
     log.info("created", result);
     state().sessions.set(result.id, result);
     await Storage.writeJSON("session/info/" + result.id, result);
+    await share(result.id);
     return result;
   }
 

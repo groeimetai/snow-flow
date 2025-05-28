@@ -40,11 +40,9 @@ cli
       console.log("Thinking...");
       await Share.init();
       const session = await Session.create();
-      const shareID = await Session.share(session.id);
-      if (shareID)
-        console.log(
-          `Share ID: ${Share.URL.replace("api.", "")}/share?id=${session.id}`,
-        );
+      console.log(
+        `Share ID: ${Share.URL.replace("api.", "")}/share?id=${session.id}`,
+      );
 
       let index = 0;
       Bus.subscribe(Storage.Event.Write, async (payload) => {
