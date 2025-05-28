@@ -20,6 +20,7 @@ import * as tools from "../tool";
 import { Decimal } from "decimal.js";
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt";
+import PROMPT_TITLE from "./prompt/title.txt";
 
 import type { Tool } from "../tool/tool";
 import { Share } from "../share/share";
