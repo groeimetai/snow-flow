@@ -9,6 +9,7 @@ import { z } from "zod";
 import "zod-openapi/extend";
 import { Config } from "../app/config";
 import { LLM } from "../llm/llm";
+import { SessionMessage } from "./message";
 
 const SessionInfo = Session.Info.openapi({
   ref: "Session.Info",
@@ -118,7 +119,7 @@ export namespace Server {
               description: "Successfully created session",
               content: {
                 "application/json": {
-                  schema: resolver(z.custom<Session.Message[]>()),
+                  schema: resolver(SessionMessage.array()),
                 },
               },
             },
@@ -165,12 +166,12 @@ export namespace Server {
             sessionID: z.string(),
             providerID: z.string(),
             modelID: z.string(),
-            parts: z.custom<Session.Message["parts"]>(),
+            parts: SessionMessage.shape.parts,
           }),
         ),
         async (c) => {
           const body = c.req.valid("json");
-          const msg = await Session.chat(body);
+          const msg = await Session.chat(body as any);
           return c.json(msg);
         },
       )

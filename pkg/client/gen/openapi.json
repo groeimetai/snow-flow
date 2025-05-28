@@ -68,7 +68,12 @@
             "description": "Successfully created session",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Session.Message"
+                  }
+                }
               }
             }
           }
@@ -173,12 +178,18 @@
                   "modelID": {
                     "type": "string"
                   },
-                  "parts": {}
+                  "parts": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Session.Message.Part"
+                    }
+                  }
                 },
                 "required": [
                   "sessionID",
                   "providerID",
-                  "modelID"
+                  "modelID",
+                  "parts"
                 ]
               }
             }
@@ -249,6 +260,315 @@
           "title",
           "tokens"
         ]
+      },
+      "Session.Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "system",
+              "user",
+              "assistant"
+            ]
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Session.Message.Part"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "time": {
+                "type": "object",
+                "properties": {
+                  "created": {
+                    "type": "number"
+                  },
+                  "completed": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "created"
+                ]
+              },
+              "sessionID": {
+                "type": "string"
+              },
+              "tool": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "time",
+              "sessionID",
+              "tool"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "parts",
+          "metadata"
+        ]
+      },
+      "Session.Message.Part": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/Session.Message.Part.Text"
+          },
+          {
+            "$ref": "#/components/schemas/Session.Message.Part.Reasoning"
+          },
+          {
+            "$ref": "#/components/schemas/Session.Message.Part.ToolInvocation"
+          },
+          {
+            "$ref": "#/components/schemas/Session.Message.Part.SourceUrl"
+          },
+          {
+            "$ref": "#/components/schemas/Session.Message.Part.File"
+          },
+          {
+            "$ref": "#/components/schemas/Session.Message.Part.StepStart"
+          },
+          {
+            "$ref": "#/components/schemas/Session.Message.Part.Data"
+          }
+        ]
+      },
+      "Session.Message.Part.Text": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "text"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ]
+      },
+      "Session.Message.Part.Reasoning": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "reasoning"
+          },
+          "text": {
+            "type": "string"
+          },
+          "providerMetadata": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ]
+      },
+      "Session.Message.Part.ToolInvocation": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "tool-invocation"
+          },
+          "toolInvocation": {
+            "$ref": "#/components/schemas/Session.Message.ToolInvocation"
+          }
+        },
+        "required": [
+          "type",
+          "toolInvocation"
+        ]
+      },
+      "Session.Message.ToolInvocation": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/Session.Message.ToolInvocation.ToolCall"
+          },
+          {
+            "$ref": "#/components/schemas/Session.Message.ToolInvocation.ToolPartialCall"
+          },
+          {
+            "$ref": "#/components/schemas/Session.Message.ToolInvocation.ToolResult"
+          }
+        ]
+      },
+      "Session.Message.ToolInvocation.ToolCall": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "const": "call"
+          },
+          "step": {
+            "type": "number"
+          },
+          "toolCallId": {
+            "type": "string"
+          },
+          "toolName": {
+            "type": "string"
+          },
+          "args": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "state",
+          "toolCallId",
+          "toolName",
+          "args"
+        ]
+      },
+      "Session.Message.ToolInvocation.ToolPartialCall": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "const": "partial-call"
+          },
+          "step": {
+            "type": "number"
+          },
+          "toolCallId": {
+            "type": "string"
+          },
+          "toolName": {
+            "type": "string"
+          },
+          "args": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "state",
+          "toolCallId",
+          "toolName",
+          "args"
+        ]
+      },
+      "Session.Message.ToolInvocation.ToolResult": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "const": "result"
+          },
+          "step": {
+            "type": "number"
+          },
+          "toolCallId": {
+            "type": "string"
+          },
+          "toolName": {
+            "type": "string"
+          },
+          "args": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "toolCallId",
+          "toolName",
+          "args",
+          "result"
+        ]
+      },
+      "Session.Message.Part.SourceUrl": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "source-url"
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "providerMetadata": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "type",
+          "sourceId",
+          "url"
+        ]
+      },
+      "Session.Message.Part.File": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "file"
+          },
+          "mediaType": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "mediaType",
+          "url"
+        ]
+      },
+      "Session.Message.Part.StepStart": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "step-start"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "Session.Message.Part.Data": {
+        "type": "object",
+        "properties": {
+          "type": {},
+          "id": {
+            "type": "string"
+          },
+          "data": {}
+        }
       },
       "Provider.Info": {
         "type": "object",
