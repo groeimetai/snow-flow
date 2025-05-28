@@ -48,7 +48,12 @@ export namespace Tool {
           log.error("error", {
             msg: e.toString(),
           });
-          return "An error occurred: " + e.toString();
+          return {
+            metadata: {
+              error: true,
+            },
+            output: "An error occurred: " + e.toString(),
+          };
         }
       },
     });
