@@ -161,11 +161,59 @@
         "description": "List all sessions"
       }
     },
+    "/session_abort": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Aborted session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postSession_abort",
+        "parameters": [],
+        "description": "Abort a session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessionID": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "sessionID"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/session_chat": {
       "post": {
-        "responses": {},
+        "responses": {
+          "200": {
+            "description": "Chat with a model",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session.Message"
+                }
+              }
+            }
+          }
+        },
         "operationId": "postSession_chat",
         "parameters": [],
+        "description": "Chat with a model",
         "requestBody": {
           "content": {
             "application/json": {
@@ -628,12 +676,14 @@
                 },
                 "attachment": {
                   "type": "boolean"
+                },
+                "reasoning": {
+                  "type": "boolean"
                 }
               },
               "required": [
                 "cost",
                 "contextWindow",
-                "maxTokens",
                 "attachment"
               ]
             }

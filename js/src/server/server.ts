@@ -159,7 +159,46 @@ export namespace Server {
         },
       )
       .post(
+        "/session_abort",
+        describeRoute({
+          description: "Abort a session",
+          responses: {
+            200: {
+              description: "Aborted session",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "json",
+          z.object({
+            sessionID: z.string(),
+          }),
+        ),
+        async (c) => {
+          const body = c.req.valid("json");
+          return c.json(Session.abort(body.sessionID));
+        },
+      )
+      .post(
         "/session_chat",
+        describeRoute({
+          description: "Chat with a model",
+          responses: {
+            200: {
+              description: "Chat with a model",
+              content: {
+                "application/json": {
+                  schema: resolver(SessionMessage),
+                },
+              },
+            },
+          },
+        }),
         zValidator(
           "json",
           z.object({

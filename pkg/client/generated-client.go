@@ -35,8 +35,9 @@ type ProviderInfo struct {
 			Output       float32 `json:"output"`
 			OutputCached float32 `json:"outputCached"`
 		} `json:"cost"`
-		MaxTokens float32 `json:"maxTokens"`
-		Name      *string `json:"name,omitempty"`
+		MaxTokens *float32 `json:"maxTokens,omitempty"`
+		Name      *string  `json:"name,omitempty"`
+		Reasoning *bool    `json:"reasoning,omitempty"`
 	} `json:"models"`
 	Options *map[string]interface{} `json:"options,omitempty"`
 }
@@ -151,6 +152,11 @@ type SessionMessageToolInvocationToolResult struct {
 	ToolName   string                 `json:"toolName"`
 }
 
+// PostSessionAbortJSONBody defines parameters for PostSessionAbort.
+type PostSessionAbortJSONBody struct {
+	SessionID string `json:"sessionID"`
+}
+
 // PostSessionChatJSONBody defines parameters for PostSessionChat.
 type PostSessionChatJSONBody struct {
 	ModelID    string               `json:"modelID"`
@@ -168,6 +174,9 @@ type PostSessionMessagesJSONBody struct {
 type PostSessionShareJSONBody struct {
 	SessionID string `json:"sessionID"`
 }
+
+// PostSessionAbortJSONRequestBody defines body for PostSessionAbort for application/json ContentType.
+type PostSessionAbortJSONRequestBody PostSessionAbortJSONBody
 
 // PostSessionChatJSONRequestBody defines body for PostSessionChat for application/json ContentType.
 type PostSessionChatJSONRequestBody PostSessionChatJSONBody
@@ -582,6 +591,11 @@ type ClientInterface interface {
 	// PostProviderList request
 	PostProviderList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostSessionAbortWithBody request with any body
+	PostSessionAbortWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostSessionAbort(ctx context.Context, body PostSessionAbortJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostSessionChatWithBody request with any body
 	PostSessionChatWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -606,6 +620,30 @@ type ClientInterface interface {
 
 func (c *Client) PostProviderList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostProviderListRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSessionAbortWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionAbortRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSessionAbort(ctx context.Context, body PostSessionAbortJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionAbortRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -735,6 +773,46 @@ func NewPostProviderListRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewPostSessionAbortRequest calls the generic PostSessionAbort builder with application/json body
+func NewPostSessionAbortRequest(server string, body PostSessionAbortJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostSessionAbortRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostSessionAbortRequestWithBody generates requests for PostSessionAbort with any type of body
+func NewPostSessionAbortRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/session_abort")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -959,6 +1037,11 @@ type ClientWithResponsesInterface interface {
 	// PostProviderListWithResponse request
 	PostProviderListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostProviderListResponse, error)
 
+	// PostSessionAbortWithBodyWithResponse request with any body
+	PostSessionAbortWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionAbortResponse, error)
+
+	PostSessionAbortWithResponse(ctx context.Context, body PostSessionAbortJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionAbortResponse, error)
+
 	// PostSessionChatWithBodyWithResponse request with any body
 	PostSessionChatWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionChatResponse, error)
 
@@ -1003,9 +1086,32 @@ func (r PostProviderListResponse) StatusCode() int {
 	return 0
 }
 
+type PostSessionAbortResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *bool
+}
+
+// Status returns HTTPResponse.Status
+func (r PostSessionAbortResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostSessionAbortResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PostSessionChatResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *SessionMessage
 }
 
 // Status returns HTTPResponse.Status
@@ -1131,6 +1237,23 @@ func (c *ClientWithResponses) PostProviderListWithResponse(ctx context.Context, 
 	return ParsePostProviderListResponse(rsp)
 }
 
+// PostSessionAbortWithBodyWithResponse request with arbitrary body returning *PostSessionAbortResponse
+func (c *ClientWithResponses) PostSessionAbortWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionAbortResponse, error) {
+	rsp, err := c.PostSessionAbortWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionAbortResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostSessionAbortWithResponse(ctx context.Context, body PostSessionAbortJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionAbortResponse, error) {
+	rsp, err := c.PostSessionAbort(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionAbortResponse(rsp)
+}
+
 // PostSessionChatWithBodyWithResponse request with arbitrary body returning *PostSessionChatResponse
 func (c *ClientWithResponses) PostSessionChatWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionChatResponse, error) {
 	rsp, err := c.PostSessionChatWithBody(ctx, contentType, body, reqEditors...)
@@ -1226,6 +1349,32 @@ func ParsePostProviderListResponse(rsp *http.Response) (*PostProviderListRespons
 	return response, nil
 }
 
+// ParsePostSessionAbortResponse parses an HTTP response from a PostSessionAbortWithResponse call
+func ParsePostSessionAbortResponse(rsp *http.Response) (*PostSessionAbortResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostSessionAbortResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest bool
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParsePostSessionChatResponse parses an HTTP response from a PostSessionChatWithResponse call
 func ParsePostSessionChatResponse(rsp *http.Response) (*PostSessionChatResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1237,6 +1386,16 @@ func ParsePostSessionChatResponse(rsp *http.Response) (*PostSessionChatResponse,
 	response := &PostSessionChatResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SessionMessage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

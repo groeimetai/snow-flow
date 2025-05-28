@@ -129,6 +129,16 @@ export namespace Session {
     }
   }
 
+  const pending = new Map<string, AbortController>();
+
+  export function abort(sessionID: string) {
+    const controller = pending.get(sessionID);
+    if (!controller) return false;
+    controller.abort();
+    pending.delete(sessionID);
+    return true;
+  }
+
   export async function chat(input: {
     sessionID: string;
     providerID: string;
@@ -225,6 +235,8 @@ export namespace Session {
         tool: {},
       },
     };
+    const controller = new AbortController();
+    pending.set(input.sessionID, controller);
     const result = streamText({
       onStepFinish: (step) => {
         update(input.sessionID, (draft) => {
@@ -240,6 +252,8 @@ export namespace Session {
             .toNumber();
         });
       },
+      abortSignal: controller.signal,
+      maxRetries: 6,
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),
       temperature: 0,
@@ -251,7 +265,14 @@ export namespace Session {
     let text: TextUIPart | undefined;
     const reader = result.toUIMessageStream().getReader();
     while (true) {
-      const { done, value } = await reader.read();
+      const result = await reader.read().catch((e) => {
+        if (e instanceof DOMException && e.name === "AbortError") {
+          return;
+        }
+        throw e;
+      });
+      if (!result) break;
+      const { done, value } = result;
       if (done) break;
       l.info("part", {
         type: value.type,
@@ -316,6 +337,7 @@ export namespace Session {
       }
       await write(next);
     }
+    pending.delete(input.sessionID);
     next.metadata!.time.completed = Date.now();
     await write(next);
     return next;
