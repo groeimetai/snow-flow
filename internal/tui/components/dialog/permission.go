@@ -7,8 +7,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/diff"
-	"github.com/sst/opencode/internal/llm/tools"
 	"github.com/sst/opencode/internal/permission"
 	"github.com/sst/opencode/internal/tui/layout"
 	"github.com/sst/opencode/internal/tui/styles"
@@ -206,7 +204,7 @@ func (p *permissionDialogCmp) renderHeader() string {
 		Render(fmt.Sprintf(": %s", p.permission.ToolName))
 
 	pathKey := baseStyle.Foreground(t.TextMuted()).Bold(true).Render("Path")
-	
+
 	// Get the current working directory to display relative path
 	relativePath := p.permission.Path
 	if filepath.IsAbs(relativePath) {
@@ -214,7 +212,7 @@ func (p *permissionDialogCmp) renderHeader() string {
 			relativePath = cwd
 		}
 	}
-	
+
 	pathValue := baseStyle.
 		Foreground(t.Text()).
 		Width(p.width - lipgloss.Width(pathKey)).
@@ -237,13 +235,13 @@ func (p *permissionDialogCmp) renderHeader() string {
 
 	// Add tool-specific header information
 	switch p.permission.ToolName {
-	case tools.BashToolName:
+	case "bash":
 		headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("Command"))
-	case tools.EditToolName:
+	case "edit":
 		headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("Diff"))
-	case tools.WriteToolName:
+	case "write":
 		headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("Diff"))
-	case tools.FetchToolName:
+	case "fetch":
 		headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("URL"))
 	}
 
@@ -251,110 +249,110 @@ func (p *permissionDialogCmp) renderHeader() string {
 }
 
 func (p *permissionDialogCmp) renderBashContent() string {
-	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
-
-	if pr, ok := p.permission.Params.(tools.BashPermissionsParams); ok {
-		content := fmt.Sprintf("```bash\n%s\n```", pr.Command)
-
-		// Use the cache for markdown rendering
-		renderedContent := p.GetOrSetMarkdown(p.permission.ID, func() (string, error) {
-			r := styles.GetMarkdownRenderer(p.width - 10)
-			s, err := r.Render(content)
-			return styles.ForceReplaceBackgroundWithLipgloss(s, t.Background()), err
-		})
-
-		finalContent := baseStyle.
-			Width(p.contentViewPort.Width).
-			Render(renderedContent)
-		p.contentViewPort.SetContent(finalContent)
-		return p.styleViewport()
-	}
+	// t := theme.CurrentTheme()
+	// baseStyle := styles.BaseStyle()
+	//
+	// if pr, ok := p.permission.Params.(tools.BashPermissionsParams); ok {
+	// 	content := fmt.Sprintf("```bash\n%s\n```", pr.Command)
+	//
+	// 	// Use the cache for markdown rendering
+	// 	renderedContent := p.GetOrSetMarkdown(p.permission.ID, func() (string, error) {
+	// 		r := styles.GetMarkdownRenderer(p.width - 10)
+	// 		s, err := r.Render(content)
+	// 		return styles.ForceReplaceBackgroundWithLipgloss(s, t.Background()), err
+	// 	})
+	//
+	// 	finalContent := baseStyle.
+	// 		Width(p.contentViewPort.Width).
+	// 		Render(renderedContent)
+	// 	p.contentViewPort.SetContent(finalContent)
+	// 	return p.styleViewport()
+	// }
 	return ""
 }
 
 func (p *permissionDialogCmp) renderEditContent() string {
-	if pr, ok := p.permission.Params.(tools.EditPermissionsParams); ok {
-		diff := p.GetOrSetDiff(p.permission.ID, func() (string, error) {
-			return diff.FormatDiff(pr.Diff, diff.WithTotalWidth(p.contentViewPort.Width))
-		})
-
-		p.contentViewPort.SetContent(diff)
-		return p.styleViewport()
-	}
+	// if pr, ok := p.permission.Params.(tools.EditPermissionsParams); ok {
+	// 	diff := p.GetOrSetDiff(p.permission.ID, func() (string, error) {
+	// 		return diff.FormatDiff(pr.Diff, diff.WithTotalWidth(p.contentViewPort.Width))
+	// 	})
+	//
+	// 	p.contentViewPort.SetContent(diff)
+	// 	return p.styleViewport()
+	// }
 	return ""
 }
 
 func (p *permissionDialogCmp) renderPatchContent() string {
-	if pr, ok := p.permission.Params.(tools.EditPermissionsParams); ok {
-		diff := p.GetOrSetDiff(p.permission.ID, func() (string, error) {
-			return diff.FormatDiff(pr.Diff, diff.WithTotalWidth(p.contentViewPort.Width))
-		})
-
-		p.contentViewPort.SetContent(diff)
-		return p.styleViewport()
-	}
+	// if pr, ok := p.permission.Params.(tools.EditPermissionsParams); ok {
+	// 	diff := p.GetOrSetDiff(p.permission.ID, func() (string, error) {
+	// 		return diff.FormatDiff(pr.Diff, diff.WithTotalWidth(p.contentViewPort.Width))
+	// 	})
+	//
+	// 	p.contentViewPort.SetContent(diff)
+	// 	return p.styleViewport()
+	// }
 	return ""
 }
 
 func (p *permissionDialogCmp) renderWriteContent() string {
-	if pr, ok := p.permission.Params.(tools.WritePermissionsParams); ok {
-		// Use the cache for diff rendering
-		diff := p.GetOrSetDiff(p.permission.ID, func() (string, error) {
-			return diff.FormatDiff(pr.Diff, diff.WithTotalWidth(p.contentViewPort.Width))
-		})
-
-		p.contentViewPort.SetContent(diff)
-		return p.styleViewport()
-	}
+	// if pr, ok := p.permission.Params.(tools.WritePermissionsParams); ok {
+	// 	// Use the cache for diff rendering
+	// 	diff := p.GetOrSetDiff(p.permission.ID, func() (string, error) {
+	// 		return diff.FormatDiff(pr.Diff, diff.WithTotalWidth(p.contentViewPort.Width))
+	// 	})
+	//
+	// 	p.contentViewPort.SetContent(diff)
+	// 	return p.styleViewport()
+	// }
 	return ""
 }
 
 func (p *permissionDialogCmp) renderFetchContent() string {
-	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
-
-	if pr, ok := p.permission.Params.(tools.FetchPermissionsParams); ok {
-		content := fmt.Sprintf("```bash\n%s\n```", pr.URL)
-
-		// Use the cache for markdown rendering
-		renderedContent := p.GetOrSetMarkdown(p.permission.ID, func() (string, error) {
-			r := styles.GetMarkdownRenderer(p.width - 10)
-			s, err := r.Render(content)
-			return styles.ForceReplaceBackgroundWithLipgloss(s, t.Background()), err
-		})
-
-		finalContent := baseStyle.
-			Width(p.contentViewPort.Width).
-			Render(renderedContent)
-		p.contentViewPort.SetContent(finalContent)
-		return p.styleViewport()
-	}
+	// 	t := theme.CurrentTheme()
+	// 	baseStyle := styles.BaseStyle()
+	//
+	// 	if pr, ok := p.permission.Params.(tools.FetchPermissionsParams); ok {
+	// 		content := fmt.Sprintf("```bash\n%s\n```", pr.URL)
+	//
+	// 		// Use the cache for markdown rendering
+	// 		renderedContent := p.GetOrSetMarkdown(p.permission.ID, func() (string, error) {
+	// 			r := styles.GetMarkdownRenderer(p.width - 10)
+	// 			s, err := r.Render(content)
+	// 			return styles.ForceReplaceBackgroundWithLipgloss(s, t.Background()), err
+	// 		})
+	//
+	// 		finalContent := baseStyle.
+	// 			Width(p.contentViewPort.Width).
+	// 			Render(renderedContent)
+	// 		p.contentViewPort.SetContent(finalContent)
+	// 		return p.styleViewport()
+	// 	}
 	return ""
 }
 
 func (p *permissionDialogCmp) renderDefaultContent() string {
-	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
-
-	content := p.permission.Description
-
-	// Use the cache for markdown rendering
-	renderedContent := p.GetOrSetMarkdown(p.permission.ID, func() (string, error) {
-		r := styles.GetMarkdownRenderer(p.width - 10)
-		s, err := r.Render(content)
-		return styles.ForceReplaceBackgroundWithLipgloss(s, t.Background()), err
-	})
-
-	finalContent := baseStyle.
-		Width(p.contentViewPort.Width).
-		Render(renderedContent)
-	p.contentViewPort.SetContent(finalContent)
-
-	if renderedContent == "" {
-		return ""
-	}
-
+	// 	t := theme.CurrentTheme()
+	// 	baseStyle := styles.BaseStyle()
+	//
+	// 	content := p.permission.Description
+	//
+	// 	// Use the cache for markdown rendering
+	// 	renderedContent := p.GetOrSetMarkdown(p.permission.ID, func() (string, error) {
+	// 		r := styles.GetMarkdownRenderer(p.width - 10)
+	// 		s, err := r.Render(content)
+	// 		return styles.ForceReplaceBackgroundWithLipgloss(s, t.Background()), err
+	// 	})
+	//
+	// 	finalContent := baseStyle.
+	// 		Width(p.contentViewPort.Width).
+	// 		Render(renderedContent)
+	// 	p.contentViewPort.SetContent(finalContent)
+	//
+	// 	if renderedContent == "" {
+	// 		return ""
+	// 	}
+	//
 	return p.styleViewport()
 }
 
@@ -387,15 +385,15 @@ func (p *permissionDialogCmp) render() string {
 	// Render content based on tool type
 	var contentFinal string
 	switch p.permission.ToolName {
-	case tools.BashToolName:
+	case "bash":
 		contentFinal = p.renderBashContent()
-	case tools.EditToolName:
+	case "edit":
 		contentFinal = p.renderEditContent()
-	case tools.PatchToolName:
+	case "patch":
 		contentFinal = p.renderPatchContent()
-	case tools.WriteToolName:
+	case "write":
 		contentFinal = p.renderWriteContent()
-	case tools.FetchToolName:
+	case "fetch":
 		contentFinal = p.renderFetchContent()
 	default:
 		contentFinal = p.renderDefaultContent()
@@ -436,16 +434,16 @@ func (p *permissionDialogCmp) SetSize() tea.Cmd {
 		return nil
 	}
 	switch p.permission.ToolName {
-	case tools.BashToolName:
+	case "bash":
 		p.width = int(float64(p.windowSize.Width) * 0.4)
 		p.height = int(float64(p.windowSize.Height) * 0.3)
-	case tools.EditToolName:
+	case "edit":
 		p.width = int(float64(p.windowSize.Width) * 0.8)
 		p.height = int(float64(p.windowSize.Height) * 0.8)
-	case tools.WriteToolName:
+	case "write":
 		p.width = int(float64(p.windowSize.Width) * 0.8)
 		p.height = int(float64(p.windowSize.Height) * 0.8)
-	case tools.FetchToolName:
+	case "fetch":
 		p.width = int(float64(p.windowSize.Width) * 0.4)
 		p.height = int(float64(p.windowSize.Height) * 0.3)
 	default:

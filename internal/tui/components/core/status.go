@@ -7,9 +7,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/llm/models"
-	"github.com/sst/opencode/internal/lsp/protocol"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/app"
@@ -148,20 +145,20 @@ func formatTokensAndCost(tokens int64, contextWindow int64, cost float64) string
 
 func (m statusCmp) View() string {
 	t := theme.CurrentTheme()
-	modelID := config.Get().Agents[config.AgentPrimary].Model
-	model := models.SupportedModels[modelID]
+	// modelID := config.Get().Agents[config.AgentPrimary].Model
+	// model := models.SupportedModels[modelID]
 
 	// Initialize the help widget
 	status := getHelpWidget("")
 
-	if m.app.CurrentSessionOLD.ID != "" {
-		tokens := formatTokensAndCost(m.app.CurrentSessionOLD.PromptTokens+m.app.CurrentSessionOLD.CompletionTokens, model.ContextWindow, m.app.CurrentSessionOLD.Cost)
-		tokensStyle := styles.Padded().
-			Background(t.Text()).
-			Foreground(t.BackgroundSecondary()).
-			Render(tokens)
-		status += tokensStyle
-	}
+	// if m.app.CurrentSessionOLD.ID != "" {
+	// 	tokens := formatTokensAndCost(m.app.CurrentSessionOLD.PromptTokens+m.app.CurrentSessionOLD.CompletionTokens, model.ContextWindow, m.app.CurrentSessionOLD.Cost)
+	// 	tokensStyle := styles.Padded().
+	// 		Background(t.Text()).
+	// 		Foreground(t.BackgroundSecondary()).
+	// 		Render(tokens)
+	// 	status += tokensStyle
+	// }
 
 	diagnostics := styles.Padded().Background(t.BackgroundDarker()).Render(m.projectDiagnostics())
 
@@ -258,10 +255,10 @@ func (m *statusCmp) projectDiagnostics() string {
 			Render(fmt.Sprintf("%s Initializing LSP...", styles.SpinnerIcon))
 	}
 
-	errorDiagnostics := []protocol.Diagnostic{}
-	warnDiagnostics := []protocol.Diagnostic{}
-	hintDiagnostics := []protocol.Diagnostic{}
-	infoDiagnostics := []protocol.Diagnostic{}
+	// errorDiagnostics := []protocol.Diagnostic{}
+	// warnDiagnostics := []protocol.Diagnostic{}
+	// hintDiagnostics := []protocol.Diagnostic{}
+	// infoDiagnostics := []protocol.Diagnostic{}
 	// for _, client := range m.app.LSPClients {
 	// 	for _, d := range client.GetDiagnostics() {
 	// 		for _, diag := range d {
@@ -278,64 +275,61 @@ func (m *statusCmp) projectDiagnostics() string {
 	// 		}
 	// 	}
 	// }
-
-	if len(errorDiagnostics) == 0 &&
-		len(warnDiagnostics) == 0 &&
-		len(infoDiagnostics) == 0 &&
-		len(hintDiagnostics) == 0 {
-		return styles.ForceReplaceBackgroundWithLipgloss(
-			styles.Padded().Render("No diagnostics"),
-			t.BackgroundDarker(),
-		)
-	}
-
-	diagnostics := []string{}
-
-	errStr := lipgloss.NewStyle().
-		Background(t.BackgroundDarker()).
-		Foreground(t.Error()).
-		Render(fmt.Sprintf("%s %d", styles.ErrorIcon, len(errorDiagnostics)))
-	diagnostics = append(diagnostics, errStr)
-
-	warnStr := lipgloss.NewStyle().
-		Background(t.BackgroundDarker()).
-		Foreground(t.Warning()).
-		Render(fmt.Sprintf("%s %d", styles.WarningIcon, len(warnDiagnostics)))
-	diagnostics = append(diagnostics, warnStr)
-
-	infoStr := lipgloss.NewStyle().
-		Background(t.BackgroundDarker()).
-		Foreground(t.Info()).
-		Render(fmt.Sprintf("%s %d", styles.InfoIcon, len(infoDiagnostics)))
-	diagnostics = append(diagnostics, infoStr)
-
-	hintStr := lipgloss.NewStyle().
-		Background(t.BackgroundDarker()).
-		Foreground(t.Text()).
-		Render(fmt.Sprintf("%s %d", styles.HintIcon, len(hintDiagnostics)))
-	diagnostics = append(diagnostics, hintStr)
-
 	return styles.ForceReplaceBackgroundWithLipgloss(
-		styles.Padded().Render(strings.Join(diagnostics, " ")),
+		styles.Padded().Render("No diagnostics"),
 		t.BackgroundDarker(),
 	)
+
+	// if len(errorDiagnostics) == 0 &&
+	// 	len(warnDiagnostics) == 0 &&
+	// 	len(infoDiagnostics) == 0 &&
+	// 	len(hintDiagnostics) == 0 {
+	// 	return styles.ForceReplaceBackgroundWithLipgloss(
+	// 		styles.Padded().Render("No diagnostics"),
+	// 		t.BackgroundDarker(),
+	// 	)
+	// }
+
+	// diagnostics := []string{}
+	//
+	// errStr := lipgloss.NewStyle().
+	// 	Background(t.BackgroundDarker()).
+	// 	Foreground(t.Error()).
+	// 	Render(fmt.Sprintf("%s %d", styles.ErrorIcon, len(errorDiagnostics)))
+	// diagnostics = append(diagnostics, errStr)
+	//
+	// warnStr := lipgloss.NewStyle().
+	// 	Background(t.BackgroundDarker()).
+	// 	Foreground(t.Warning()).
+	// 	Render(fmt.Sprintf("%s %d", styles.WarningIcon, len(warnDiagnostics)))
+	// diagnostics = append(diagnostics, warnStr)
+	//
+	// infoStr := lipgloss.NewStyle().
+	// 	Background(t.BackgroundDarker()).
+	// 	Foreground(t.Info()).
+	// 	Render(fmt.Sprintf("%s %d", styles.InfoIcon, len(infoDiagnostics)))
+	// diagnostics = append(diagnostics, infoStr)
+	//
+	// hintStr := lipgloss.NewStyle().
+	// 	Background(t.BackgroundDarker()).
+	// 	Foreground(t.Text()).
+	// 	Render(fmt.Sprintf("%s %d", styles.HintIcon, len(hintDiagnostics)))
+	// diagnostics = append(diagnostics, hintStr)
+	//
+	// return styles.ForceReplaceBackgroundWithLipgloss(
+	// 	styles.Padded().Render(strings.Join(diagnostics, " ")),
+	// 	t.BackgroundDarker(),
+	// )
 }
 
 func (m statusCmp) model() string {
 	t := theme.CurrentTheme()
-
-	cfg := config.Get()
-
-	coder, ok := cfg.Agents[config.AgentPrimary]
-	if !ok {
-		return "Unknown"
-	}
-	model := models.SupportedModels[coder.Model]
+	model := "Claude Sonnet 4" // models.SupportedModels[coder.Model]
 
 	return styles.Padded().
 		Background(t.Secondary()).
 		Foreground(t.Background()).
-		Render(model.Name)
+		Render(model)
 }
 
 func (m statusCmp) SetHelpWidgetMsg(s string) {

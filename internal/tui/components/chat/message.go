@@ -1,17 +1,13 @@
 package chat
 
 import (
-	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/diff"
-	"github.com/sst/opencode/internal/llm/tools"
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -274,25 +270,25 @@ func renderToolAction(name string) string {
 	switch name {
 	// case agent.AgentToolName:
 	// 	return "Preparing prompt..."
-	case tools.BashToolName:
+	case "bash":
 		return "Building command..."
-	case tools.EditToolName:
+	case "edit":
 		return "Preparing edit..."
-	case tools.FetchToolName:
+	case "fetch":
 		return "Writing fetch..."
-	case tools.GlobToolName:
+	case "glob":
 		return "Finding files..."
-	case tools.GrepToolName:
+	case "grep":
 		return "Searching content..."
-	case tools.LSToolName:
+	case "ls":
 		return "Listing directory..."
-	case tools.ViewToolName:
+	case "view":
 		return "Reading file..."
-	case tools.WriteToolName:
+	case "write":
 		return "Preparing write..."
-	case tools.PatchToolName:
+	case "patch":
 		return "Preparing patch..."
-	case tools.BatchToolName:
+	case "batch":
 		return "Running batch operations..."
 	}
 	return "Working..."
@@ -361,94 +357,94 @@ func removeWorkingDirPrefix(path string) string {
 func renderToolParams(paramWidth int, toolCall message.ToolCall) string {
 	params := ""
 	switch toolCall.Name {
-	// case agent.AgentToolName:
-	// 	var params agent.AgentParams
+	// // case agent.AgentToolName:
+	// // 	var params agent.AgentParams
+	// // 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// // 	prompt := strings.ReplaceAll(params.Prompt, "\n", " ")
+	// // 	return renderParams(paramWidth, prompt)
+	// case "bash":
+	// 	var params tools.BashParams
 	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	prompt := strings.ReplaceAll(params.Prompt, "\n", " ")
-	// 	return renderParams(paramWidth, prompt)
-	case tools.BashToolName:
-		var params tools.BashParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		command := strings.ReplaceAll(params.Command, "\n", " ")
-		return renderParams(paramWidth, command)
-	case tools.EditToolName:
-		var params tools.EditParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		filePath := removeWorkingDirPrefix(params.FilePath)
-		return renderParams(paramWidth, filePath)
-	case tools.FetchToolName:
-		var params tools.FetchParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		url := params.URL
-		toolParams := []string{
-			url,
-		}
-		if params.Format != "" {
-			toolParams = append(toolParams, "format", params.Format)
-		}
-		if params.Timeout != 0 {
-			toolParams = append(toolParams, "timeout", (time.Duration(params.Timeout) * time.Second).String())
-		}
-		return renderParams(paramWidth, toolParams...)
-	case tools.GlobToolName:
-		var params tools.GlobParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		pattern := params.Pattern
-		toolParams := []string{
-			pattern,
-		}
-		if params.Path != "" {
-			toolParams = append(toolParams, "path", params.Path)
-		}
-		return renderParams(paramWidth, toolParams...)
-	case tools.GrepToolName:
-		var params tools.GrepParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		pattern := params.Pattern
-		toolParams := []string{
-			pattern,
-		}
-		if params.Path != "" {
-			toolParams = append(toolParams, "path", params.Path)
-		}
-		if params.Include != "" {
-			toolParams = append(toolParams, "include", params.Include)
-		}
-		if params.LiteralText {
-			toolParams = append(toolParams, "literal", "true")
-		}
-		return renderParams(paramWidth, toolParams...)
-	case tools.LSToolName:
-		var params tools.LSParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		path := params.Path
-		if path == "" {
-			path = "."
-		}
-		return renderParams(paramWidth, path)
-	case tools.ViewToolName:
-		var params tools.ViewParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		filePath := removeWorkingDirPrefix(params.FilePath)
-		toolParams := []string{
-			filePath,
-		}
-		if params.Limit != 0 {
-			toolParams = append(toolParams, "limit", fmt.Sprintf("%d", params.Limit))
-		}
-		if params.Offset != 0 {
-			toolParams = append(toolParams, "offset", fmt.Sprintf("%d", params.Offset))
-		}
-		return renderParams(paramWidth, toolParams...)
-	case tools.WriteToolName:
-		var params tools.WriteParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		filePath := removeWorkingDirPrefix(params.FilePath)
-		return renderParams(paramWidth, filePath)
-	case tools.BatchToolName:
-		var params tools.BatchParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		return renderParams(paramWidth, fmt.Sprintf("%d parallel calls", len(params.Calls)))
+	// 	command := strings.ReplaceAll(params.Command, "\n", " ")
+	// 	return renderParams(paramWidth, command)
+	// case "edit":
+	// 	var params tools.EditParams
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	filePath := removeWorkingDirPrefix(params.FilePath)
+	// 	return renderParams(paramWidth, filePath)
+	// case "fetch":
+	// 	var params tools.FetchParams
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	url := params.URL
+	// 	toolParams := []string{
+	// 		url,
+	// 	}
+	// 	if params.Format != "" {
+	// 		toolParams = append(toolParams, "format", params.Format)
+	// 	}
+	// 	if params.Timeout != 0 {
+	// 		toolParams = append(toolParams, "timeout", (time.Duration(params.Timeout) * time.Second).String())
+	// 	}
+	// 	return renderParams(paramWidth, toolParams...)
+	// case tools.GlobToolName:
+	// 	var params tools.GlobParams
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	pattern := params.Pattern
+	// 	toolParams := []string{
+	// 		pattern,
+	// 	}
+	// 	if params.Path != "" {
+	// 		toolParams = append(toolParams, "path", params.Path)
+	// 	}
+	// 	return renderParams(paramWidth, toolParams...)
+	// case tools.GrepToolName:
+	// 	var params tools.GrepParams
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	pattern := params.Pattern
+	// 	toolParams := []string{
+	// 		pattern,
+	// 	}
+	// 	if params.Path != "" {
+	// 		toolParams = append(toolParams, "path", params.Path)
+	// 	}
+	// 	if params.Include != "" {
+	// 		toolParams = append(toolParams, "include", params.Include)
+	// 	}
+	// 	if params.LiteralText {
+	// 		toolParams = append(toolParams, "literal", "true")
+	// 	}
+	// 	return renderParams(paramWidth, toolParams...)
+	// case tools.LSToolName:
+	// 	var params tools.LSParams
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	path := params.Path
+	// 	if path == "" {
+	// 		path = "."
+	// 	}
+	// 	return renderParams(paramWidth, path)
+	// case tools.ViewToolName:
+	// 	var params tools.ViewParams
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	filePath := removeWorkingDirPrefix(params.FilePath)
+	// 	toolParams := []string{
+	// 		filePath,
+	// 	}
+	// 	if params.Limit != 0 {
+	// 		toolParams = append(toolParams, "limit", fmt.Sprintf("%d", params.Limit))
+	// 	}
+	// 	if params.Offset != 0 {
+	// 		toolParams = append(toolParams, "offset", fmt.Sprintf("%d", params.Offset))
+	// 	}
+	// 	return renderParams(paramWidth, toolParams...)
+	// case tools.WriteToolName:
+	// 	var params tools.WriteParams
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	filePath := removeWorkingDirPrefix(params.FilePath)
+	// 	return renderParams(paramWidth, filePath)
+	// case tools.BatchToolName:
+	// 	var params tools.BatchParams
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	return renderParams(paramWidth, fmt.Sprintf("%d parallel calls", len(params.Calls)))
 	default:
 		input := strings.ReplaceAll(toolCall.Input, "\n", " ")
 		params = renderParams(paramWidth, input)
@@ -484,100 +480,100 @@ func renderToolResponse(toolCall message.ToolCall, response message.ToolResult, 
 	// 		toMarkdown(resultContent, false, width),
 	// 		t.Background(),
 	// 	)
-	case tools.BashToolName:
-		resultContent = fmt.Sprintf("```bash\n%s\n```", resultContent)
-		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, width),
-			t.Background(),
-		)
-	case tools.EditToolName:
-		metadata := tools.EditResponseMetadata{}
-		json.Unmarshal([]byte(response.Metadata), &metadata)
-		formattedDiff, _ := diff.FormatDiff(metadata.Diff, diff.WithTotalWidth(width))
-		return formattedDiff
-	case tools.FetchToolName:
-		var params tools.FetchParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		mdFormat := "markdown"
-		switch params.Format {
-		case "text":
-			mdFormat = "text"
-		case "html":
-			mdFormat = "html"
-		}
-		resultContent = fmt.Sprintf("```%s\n%s\n```", mdFormat, resultContent)
-		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, width),
-			t.Background(),
-		)
-	case tools.GlobToolName:
-		return baseStyle.Width(width).Foreground(t.TextMuted()).Render(resultContent)
-	case tools.GrepToolName:
-		return baseStyle.Width(width).Foreground(t.TextMuted()).Render(resultContent)
-	case tools.LSToolName:
-		return baseStyle.Width(width).Foreground(t.TextMuted()).Render(resultContent)
-	case tools.ViewToolName:
-		metadata := tools.ViewResponseMetadata{}
-		json.Unmarshal([]byte(response.Metadata), &metadata)
-		ext := filepath.Ext(metadata.FilePath)
-		if ext == "" {
-			ext = ""
-		} else {
-			ext = strings.ToLower(ext[1:])
-		}
-		resultContent = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(metadata.Content, maxResultHeight))
-		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, width),
-			t.Background(),
-		)
-	case tools.WriteToolName:
-		params := tools.WriteParams{}
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		metadata := tools.WriteResponseMetadata{}
-		json.Unmarshal([]byte(response.Metadata), &metadata)
-		ext := filepath.Ext(params.FilePath)
-		if ext == "" {
-			ext = ""
-		} else {
-			ext = strings.ToLower(ext[1:])
-		}
-		resultContent = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(params.Content, maxResultHeight))
-		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, width),
-			t.Background(),
-		)
-	case tools.BatchToolName:
-		var batchResult tools.BatchResult
-		if err := json.Unmarshal([]byte(resultContent), &batchResult); err != nil {
-			return baseStyle.Width(width).Foreground(t.Error()).Render(fmt.Sprintf("Error parsing batch result: %s", err))
-		}
-
-		var toolCalls []string
-		for i, result := range batchResult.Results {
-			toolName := renderToolName(result.ToolName)
-
-			// Format the tool input as a string
-			inputStr := string(result.ToolInput)
-
-			// Format the result
-			var resultStr string
-			if result.Error != "" {
-				resultStr = fmt.Sprintf("Error: %s", result.Error)
-			} else {
-				var toolResponse tools.ToolResponse
-				if err := json.Unmarshal(result.Result, &toolResponse); err != nil {
-					resultStr = "Error parsing tool response"
-				} else {
-					resultStr = truncateHeight(toolResponse.Content, 3)
-				}
-			}
-
-			// Format the tool call
-			toolCall := fmt.Sprintf("%d. %s: %s\n   %s", i+1, toolName, inputStr, resultStr)
-			toolCalls = append(toolCalls, toolCall)
-		}
-
-		return baseStyle.Width(width).Foreground(t.TextMuted()).Render(strings.Join(toolCalls, "\n\n"))
+	// case tools.BashToolName:
+	// 	resultContent = fmt.Sprintf("```bash\n%s\n```", resultContent)
+	// 	return styles.ForceReplaceBackgroundWithLipgloss(
+	// 		toMarkdown(resultContent, width),
+	// 		t.Background(),
+	// 	)
+	// case tools.EditToolName:
+	// 	metadata := tools.EditResponseMetadata{}
+	// 	json.Unmarshal([]byte(response.Metadata), &metadata)
+	// 	formattedDiff, _ := diff.FormatDiff(metadata.Diff, diff.WithTotalWidth(width))
+	// 	return formattedDiff
+	// case tools.FetchToolName:
+	// 	var params tools.FetchParams
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	mdFormat := "markdown"
+	// 	switch params.Format {
+	// 	case "text":
+	// 		mdFormat = "text"
+	// 	case "html":
+	// 		mdFormat = "html"
+	// 	}
+	// 	resultContent = fmt.Sprintf("```%s\n%s\n```", mdFormat, resultContent)
+	// 	return styles.ForceReplaceBackgroundWithLipgloss(
+	// 		toMarkdown(resultContent, width),
+	// 		t.Background(),
+	// 	)
+	// case tools.GlobToolName:
+	// 	return baseStyle.Width(width).Foreground(t.TextMuted()).Render(resultContent)
+	// case tools.GrepToolName:
+	// 	return baseStyle.Width(width).Foreground(t.TextMuted()).Render(resultContent)
+	// case tools.LSToolName:
+	// 	return baseStyle.Width(width).Foreground(t.TextMuted()).Render(resultContent)
+	// case tools.ViewToolName:
+	// 	metadata := tools.ViewResponseMetadata{}
+	// 	json.Unmarshal([]byte(response.Metadata), &metadata)
+	// 	ext := filepath.Ext(metadata.FilePath)
+	// 	if ext == "" {
+	// 		ext = ""
+	// 	} else {
+	// 		ext = strings.ToLower(ext[1:])
+	// 	}
+	// 	resultContent = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(metadata.Content, maxResultHeight))
+	// 	return styles.ForceReplaceBackgroundWithLipgloss(
+	// 		toMarkdown(resultContent, width),
+	// 		t.Background(),
+	// 	)
+	// case tools.WriteToolName:
+	// 	params := tools.WriteParams{}
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	metadata := tools.WriteResponseMetadata{}
+	// 	json.Unmarshal([]byte(response.Metadata), &metadata)
+	// 	ext := filepath.Ext(params.FilePath)
+	// 	if ext == "" {
+	// 		ext = ""
+	// 	} else {
+	// 		ext = strings.ToLower(ext[1:])
+	// 	}
+	// 	resultContent = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(params.Content, maxResultHeight))
+	// 	return styles.ForceReplaceBackgroundWithLipgloss(
+	// 		toMarkdown(resultContent, width),
+	// 		t.Background(),
+	// 	)
+	// case tools.BatchToolName:
+	// 	var batchResult tools.BatchResult
+	// 	if err := json.Unmarshal([]byte(resultContent), &batchResult); err != nil {
+	// 		return baseStyle.Width(width).Foreground(t.Error()).Render(fmt.Sprintf("Error parsing batch result: %s", err))
+	// 	}
+	//
+	// 	var toolCalls []string
+	// 	for i, result := range batchResult.Results {
+	// 		toolName := renderToolName(result.ToolName)
+	//
+	// 		// Format the tool input as a string
+	// 		inputStr := string(result.ToolInput)
+	//
+	// 		// Format the result
+	// 		var resultStr string
+	// 		if result.Error != "" {
+	// 			resultStr = fmt.Sprintf("Error: %s", result.Error)
+	// 		} else {
+	// 			var toolResponse tools.ToolResponse
+	// 			if err := json.Unmarshal(result.Result, &toolResponse); err != nil {
+	// 				resultStr = "Error parsing tool response"
+	// 			} else {
+	// 				resultStr = truncateHeight(toolResponse.Content, 3)
+	// 			}
+	// 		}
+	//
+	// 		// Format the tool call
+	// 		toolCall := fmt.Sprintf("%d. %s: %s\n   %s", i+1, toolName, inputStr, resultStr)
+	// 		toolCalls = append(toolCalls, toolCall)
+	// 	}
+	//
+	// 	return baseStyle.Width(width).Foreground(t.TextMuted()).Render(strings.Join(toolCalls, "\n\n"))
 	default:
 		resultContent = fmt.Sprintf("```text\n%s\n```", resultContent)
 		return styles.ForceReplaceBackgroundWithLipgloss(
