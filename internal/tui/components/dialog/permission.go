@@ -6,13 +6,10 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/permission"
 	"github.com/sst/opencode/internal/tui/layout"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
 	"github.com/sst/opencode/internal/tui/util"
-	"path/filepath"
 	"strings"
 )
 
@@ -27,15 +24,15 @@ const (
 
 // PermissionResponseMsg represents the user's response to a permission request
 type PermissionResponseMsg struct {
-	Permission permission.PermissionRequest
-	Action     PermissionAction
+	// Permission permission.PermissionRequest
+	Action PermissionAction
 }
 
 // PermissionDialogCmp interface for permission dialog component
 type PermissionDialogCmp interface {
 	tea.Model
 	layout.Bindings
-	SetPermissions(permission permission.PermissionRequest) tea.Cmd
+	// SetPermissions(permission permission.PermissionRequest) tea.Cmd
 }
 
 type permissionsMapping struct {
@@ -81,9 +78,9 @@ var permissionsKeys = permissionsMapping{
 
 // permissionDialogCmp is the implementation of PermissionDialog
 type permissionDialogCmp struct {
-	width           int
-	height          int
-	permission      permission.PermissionRequest
+	width  int
+	height int
+	// permission      permission.PermissionRequest
 	windowSize      tea.WindowSizeMsg
 	contentViewPort viewport.Model
 	selectedOption  int // 0: Allow, 1: Allow for session, 2: Deny
@@ -106,27 +103,27 @@ func (p *permissionDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 		p.markdownCache = make(map[string]string)
 		p.diffCache = make(map[string]string)
-	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, permissionsKeys.Right) || key.Matches(msg, permissionsKeys.Tab):
-			p.selectedOption = (p.selectedOption + 1) % 3
-			return p, nil
-		case key.Matches(msg, permissionsKeys.Left):
-			p.selectedOption = (p.selectedOption + 2) % 3
-		case key.Matches(msg, permissionsKeys.EnterSpace):
-			return p, p.selectCurrentOption()
-		case key.Matches(msg, permissionsKeys.Allow):
-			return p, util.CmdHandler(PermissionResponseMsg{Action: PermissionAllow, Permission: p.permission})
-		case key.Matches(msg, permissionsKeys.AllowSession):
-			return p, util.CmdHandler(PermissionResponseMsg{Action: PermissionAllowForSession, Permission: p.permission})
-		case key.Matches(msg, permissionsKeys.Deny):
-			return p, util.CmdHandler(PermissionResponseMsg{Action: PermissionDeny, Permission: p.permission})
-		default:
-			// Pass other keys to viewport
-			viewPort, cmd := p.contentViewPort.Update(msg)
-			p.contentViewPort = viewPort
-			cmds = append(cmds, cmd)
-		}
+		// case tea.KeyMsg:
+		// 	switch {
+		// 	case key.Matches(msg, permissionsKeys.Right) || key.Matches(msg, permissionsKeys.Tab):
+		// 		p.selectedOption = (p.selectedOption + 1) % 3
+		// 		return p, nil
+		// 	case key.Matches(msg, permissionsKeys.Left):
+		// 		p.selectedOption = (p.selectedOption + 2) % 3
+		// 	case key.Matches(msg, permissionsKeys.EnterSpace):
+		// 		return p, p.selectCurrentOption()
+		// 	case key.Matches(msg, permissionsKeys.Allow):
+		// 		return p, util.CmdHandler(PermissionResponseMsg{Action: PermissionAllow, Permission: p.permission})
+		// 	case key.Matches(msg, permissionsKeys.AllowSession):
+		// 		return p, util.CmdHandler(PermissionResponseMsg{Action: PermissionAllowForSession, Permission: p.permission})
+		// 	case key.Matches(msg, permissionsKeys.Deny):
+		// 		return p, util.CmdHandler(PermissionResponseMsg{Action: PermissionDeny, Permission: p.permission})
+		// 	default:
+		// 		// Pass other keys to viewport
+		// 		viewPort, cmd := p.contentViewPort.Update(msg)
+		// 		p.contentViewPort = viewPort
+		// 		cmds = append(cmds, cmd)
+		// 	}
 	}
 
 	return p, tea.Batch(cmds...)
@@ -144,7 +141,7 @@ func (p *permissionDialogCmp) selectCurrentOption() tea.Cmd {
 		action = PermissionDeny
 	}
 
-	return util.CmdHandler(PermissionResponseMsg{Action: action, Permission: p.permission})
+	return util.CmdHandler(PermissionResponseMsg{Action: action}) // , Permission: p.permission})
 }
 
 func (p *permissionDialogCmp) renderButtons() string {
@@ -194,58 +191,59 @@ func (p *permissionDialogCmp) renderButtons() string {
 }
 
 func (p *permissionDialogCmp) renderHeader() string {
-	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
-
-	toolKey := baseStyle.Foreground(t.TextMuted()).Bold(true).Render("Tool")
-	toolValue := baseStyle.
-		Foreground(t.Text()).
-		Width(p.width - lipgloss.Width(toolKey)).
-		Render(fmt.Sprintf(": %s", p.permission.ToolName))
-
-	pathKey := baseStyle.Foreground(t.TextMuted()).Bold(true).Render("Path")
-
-	// Get the current working directory to display relative path
-	relativePath := p.permission.Path
-	if filepath.IsAbs(relativePath) {
-		if cwd, err := filepath.Rel(config.WorkingDirectory(), relativePath); err == nil {
-			relativePath = cwd
-		}
-	}
-
-	pathValue := baseStyle.
-		Foreground(t.Text()).
-		Width(p.width - lipgloss.Width(pathKey)).
-		Render(fmt.Sprintf(": %s", relativePath))
-
-	headerParts := []string{
-		lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			toolKey,
-			toolValue,
-		),
-		baseStyle.Render(strings.Repeat(" ", p.width)),
-		lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			pathKey,
-			pathValue,
-		),
-		baseStyle.Render(strings.Repeat(" ", p.width)),
-	}
-
-	// Add tool-specific header information
-	switch p.permission.ToolName {
-	case "bash":
-		headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("Command"))
-	case "edit":
-		headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("Diff"))
-	case "write":
-		headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("Diff"))
-	case "fetch":
-		headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("URL"))
-	}
-
-	return lipgloss.NewStyle().Background(t.Background()).Render(lipgloss.JoinVertical(lipgloss.Left, headerParts...))
+	return "NOT IMPLEMENTED"
+	// t := theme.CurrentTheme()
+	// baseStyle := styles.BaseStyle()
+	//
+	// toolKey := baseStyle.Foreground(t.TextMuted()).Bold(true).Render("Tool")
+	// toolValue := baseStyle.
+	// 	Foreground(t.Text()).
+	// 	Width(p.width - lipgloss.Width(toolKey)).
+	// 	Render(fmt.Sprintf(": %s", p.permission.ToolName))
+	//
+	// pathKey := baseStyle.Foreground(t.TextMuted()).Bold(true).Render("Path")
+	//
+	// // Get the current working directory to display relative path
+	// relativePath := p.permission.Path
+	// if filepath.IsAbs(relativePath) {
+	// 	if cwd, err := filepath.Rel(config.WorkingDirectory(), relativePath); err == nil {
+	// 		relativePath = cwd
+	// 	}
+	// }
+	//
+	// pathValue := baseStyle.
+	// 	Foreground(t.Text()).
+	// 	Width(p.width - lipgloss.Width(pathKey)).
+	// 	Render(fmt.Sprintf(": %s", relativePath))
+	//
+	// headerParts := []string{
+	// 	lipgloss.JoinHorizontal(
+	// 		lipgloss.Left,
+	// 		toolKey,
+	// 		toolValue,
+	// 	),
+	// 	baseStyle.Render(strings.Repeat(" ", p.width)),
+	// 	lipgloss.JoinHorizontal(
+	// 		lipgloss.Left,
+	// 		pathKey,
+	// 		pathValue,
+	// 	),
+	// 	baseStyle.Render(strings.Repeat(" ", p.width)),
+	// }
+	//
+	// // Add tool-specific header information
+	// switch p.permission.ToolName {
+	// case "bash":
+	// 	headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("Command"))
+	// case "edit":
+	// 	headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("Diff"))
+	// case "write":
+	// 	headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("Diff"))
+	// case "fetch":
+	// 	headerParts = append(headerParts, baseStyle.Foreground(t.TextMuted()).Width(p.width).Bold(true).Render("URL"))
+	// }
+	//
+	// return lipgloss.NewStyle().Background(t.Background()).Render(lipgloss.JoinVertical(lipgloss.Left, headerParts...))
 }
 
 func (p *permissionDialogCmp) renderBashContent() string {
@@ -365,60 +363,61 @@ func (p *permissionDialogCmp) styleViewport() string {
 }
 
 func (p *permissionDialogCmp) render() string {
-	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
-
-	title := baseStyle.
-		Bold(true).
-		Width(p.width - 4).
-		Foreground(t.Primary()).
-		Render("Permission Required")
-	// Render header
-	headerContent := p.renderHeader()
-	// Render buttons
-	buttons := p.renderButtons()
-
-	// Calculate content height dynamically based on window size
-	p.contentViewPort.Height = p.height - lipgloss.Height(headerContent) - lipgloss.Height(buttons) - 2 - lipgloss.Height(title)
-	p.contentViewPort.Width = p.width - 4
-
-	// Render content based on tool type
-	var contentFinal string
-	switch p.permission.ToolName {
-	case "bash":
-		contentFinal = p.renderBashContent()
-	case "edit":
-		contentFinal = p.renderEditContent()
-	case "patch":
-		contentFinal = p.renderPatchContent()
-	case "write":
-		contentFinal = p.renderWriteContent()
-	case "fetch":
-		contentFinal = p.renderFetchContent()
-	default:
-		contentFinal = p.renderDefaultContent()
-	}
-
-	content := lipgloss.JoinVertical(
-		lipgloss.Top,
-		title,
-		baseStyle.Render(strings.Repeat(" ", lipgloss.Width(title))),
-		headerContent,
-		contentFinal,
-		buttons,
-		baseStyle.Render(strings.Repeat(" ", p.width-4)),
-	)
-
-	return baseStyle.
-		Padding(1, 0, 0, 1).
-		Border(lipgloss.RoundedBorder()).
-		BorderBackground(t.Background()).
-		BorderForeground(t.TextMuted()).
-		Width(p.width).
-		Height(p.height).
-		Render(
-			content,
-		)
+	return "NOT IMPLEMENTED"
+	// t := theme.CurrentTheme()
+	// baseStyle := styles.BaseStyle()
+	//
+	// title := baseStyle.
+	// 	Bold(true).
+	// 	Width(p.width - 4).
+	// 	Foreground(t.Primary()).
+	// 	Render("Permission Required")
+	// // Render header
+	// headerContent := p.renderHeader()
+	// // Render buttons
+	// buttons := p.renderButtons()
+	//
+	// // Calculate content height dynamically based on window size
+	// p.contentViewPort.Height = p.height - lipgloss.Height(headerContent) - lipgloss.Height(buttons) - 2 - lipgloss.Height(title)
+	// p.contentViewPort.Width = p.width - 4
+	//
+	// // Render content based on tool type
+	// var contentFinal string
+	// switch p.permission.ToolName {
+	// case "bash":
+	// 	contentFinal = p.renderBashContent()
+	// case "edit":
+	// 	contentFinal = p.renderEditContent()
+	// case "patch":
+	// 	contentFinal = p.renderPatchContent()
+	// case "write":
+	// 	contentFinal = p.renderWriteContent()
+	// case "fetch":
+	// 	contentFinal = p.renderFetchContent()
+	// default:
+	// 	contentFinal = p.renderDefaultContent()
+	// }
+	//
+	// content := lipgloss.JoinVertical(
+	// 	lipgloss.Top,
+	// 	title,
+	// 	baseStyle.Render(strings.Repeat(" ", lipgloss.Width(title))),
+	// 	headerContent,
+	// 	contentFinal,
+	// 	buttons,
+	// 	baseStyle.Render(strings.Repeat(" ", p.width-4)),
+	// )
+	//
+	// return baseStyle.
+	// 	Padding(1, 0, 0, 1).
+	// 	Border(lipgloss.RoundedBorder()).
+	// 	BorderBackground(t.Background()).
+	// 	BorderForeground(t.TextMuted()).
+	// 	Width(p.width).
+	// 	Height(p.height).
+	// 	Render(
+	// 		content,
+	// 	)
 }
 
 func (p *permissionDialogCmp) View() string {
@@ -430,33 +429,33 @@ func (p *permissionDialogCmp) BindingKeys() []key.Binding {
 }
 
 func (p *permissionDialogCmp) SetSize() tea.Cmd {
-	if p.permission.ID == "" {
-		return nil
-	}
-	switch p.permission.ToolName {
-	case "bash":
-		p.width = int(float64(p.windowSize.Width) * 0.4)
-		p.height = int(float64(p.windowSize.Height) * 0.3)
-	case "edit":
-		p.width = int(float64(p.windowSize.Width) * 0.8)
-		p.height = int(float64(p.windowSize.Height) * 0.8)
-	case "write":
-		p.width = int(float64(p.windowSize.Width) * 0.8)
-		p.height = int(float64(p.windowSize.Height) * 0.8)
-	case "fetch":
-		p.width = int(float64(p.windowSize.Width) * 0.4)
-		p.height = int(float64(p.windowSize.Height) * 0.3)
-	default:
-		p.width = int(float64(p.windowSize.Width) * 0.7)
-		p.height = int(float64(p.windowSize.Height) * 0.5)
-	}
+	// if p.permission.ID == "" {
+	// 	return nil
+	// }
+	// switch p.permission.ToolName {
+	// case "bash":
+	// 	p.width = int(float64(p.windowSize.Width) * 0.4)
+	// 	p.height = int(float64(p.windowSize.Height) * 0.3)
+	// case "edit":
+	// 	p.width = int(float64(p.windowSize.Width) * 0.8)
+	// 	p.height = int(float64(p.windowSize.Height) * 0.8)
+	// case "write":
+	// 	p.width = int(float64(p.windowSize.Width) * 0.8)
+	// 	p.height = int(float64(p.windowSize.Height) * 0.8)
+	// case "fetch":
+	// 	p.width = int(float64(p.windowSize.Width) * 0.4)
+	// 	p.height = int(float64(p.windowSize.Height) * 0.3)
+	// default:
+	// 	p.width = int(float64(p.windowSize.Width) * 0.7)
+	// 	p.height = int(float64(p.windowSize.Height) * 0.5)
+	// }
 	return nil
 }
 
-func (p *permissionDialogCmp) SetPermissions(permission permission.PermissionRequest) tea.Cmd {
-	p.permission = permission
-	return p.SetSize()
-}
+// func (p *permissionDialogCmp) SetPermissions(permission permission.PermissionRequest) tea.Cmd {
+// 	p.permission = permission
+// 	return p.SetSize()
+// }
 
 // Helper to get or set cached diff content
 func (c *permissionDialogCmp) GetOrSetDiff(key string, generator func() (string, error)) string {

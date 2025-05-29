@@ -13,8 +13,6 @@ import (
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/tui/app"
 
-	"github.com/sst/opencode/internal/permission"
-	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/components/chat"
 	"github.com/sst/opencode/internal/tui/components/core"
@@ -252,9 +250,9 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return a, tea.Batch(cmds...)
 
-	case pubsub.Event[permission.PermissionRequest]:
-		a.showPermissions = true
-		return a, a.permissions.SetPermissions(msg.Payload)
+	// case pubsub.Event[permission.PermissionRequest]:
+	// 	a.showPermissions = true
+	// 	return a, a.permissions.SetPermissions(msg.Payload)
 
 	case dialog.PermissionResponseMsg:
 		// TODO: Permissions service not implemented in API yet
