@@ -238,7 +238,12 @@ func (m *messagesCmp) working() string {
 		t := theme.CurrentTheme()
 		baseStyle := styles.BaseStyle()
 
-		task := "Working..."
+		task := ""
+
+		lastMessage := m.app.Messages[len(m.app.Messages)-1]
+		if lastMessage.Metadata.Time.Completed == nil {
+			task = "Working..."
+		}
 		// lastMessage := m.app.Messages[len(m.app.Messages)-1]
 		// if hasToolsWithoutResponse(m.app.Messages) {
 		// 	task = "Waiting for tool response..."
