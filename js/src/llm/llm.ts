@@ -5,7 +5,7 @@ import path from "path";
 
 import type { LanguageModel, Provider } from "ai";
 import { NoSuchModelError } from "ai";
-import type { Config } from "../app/config";
+import { Config } from "../app/config";
 import { BunProc } from "../bun";
 import { Global } from "../global";
 
@@ -25,8 +25,8 @@ export namespace LLM {
           name: "Claude 4 Sonnet",
           cost: {
             input: 3.0 / 1_000_000,
-            inputCached: 3.75 / 1_000_000,
             output: 15.0 / 1_000_000,
+            inputCached: 3.75 / 1_000_000,
             outputCached: 0.3 / 1_000_000,
           },
           contextWindow: 200000,
@@ -77,6 +77,7 @@ export namespace LLM {
   };
 
   const state = App.state("llm", async (app) => {
+    const config = await Config.get();
     const providers: Record<
       string,
       {
@@ -89,11 +90,11 @@ export namespace LLM {
       { info: Config.Model; instance: LanguageModel }
     >();
 
-    const list = mergeDeep(NATIVE_PROVIDERS, app.config.providers ?? {});
+    const list = mergeDeep(NATIVE_PROVIDERS, config.providers ?? {});
 
     for (const [providerID, providerInfo] of Object.entries(list)) {
       if (
-        !app.config.providers?.[providerID] &&
+        !config.providers?.[providerID] &&
         !AUTODETECT[providerID]?.some((env) => process.env[env])
       )
         continue;

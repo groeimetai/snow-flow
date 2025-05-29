@@ -1,10 +1,15 @@
 import path from "path";
 import { Log } from "../util/log";
 import { z } from "zod";
-import { LLM } from "../llm/llm";
+import { App } from ".";
 
 export namespace Config {
   const log = Log.create({ service: "config" });
+
+  export const state = App.state("config", async (app) => {
+    const result = await load(app.root);
+    return result;
+  });
 
   export const Model = z.object({
     name: z.string().optional(),
@@ -35,7 +40,11 @@ export namespace Config {
 
   export type Info = z.output<typeof Info>;
 
-  export async function load(directory: string) {
+  export function get() {
+    return state();
+  }
+
+  async function load(directory: string) {
     let result: Info = {};
     for (const file of ["opencode.jsonc", "opencode.json"]) {
       const resolved = path.join(directory, file);

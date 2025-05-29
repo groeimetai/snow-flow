@@ -1,5 +1,5 @@
 package client
 
 //go:generate bun run ../../js/src/index.ts generate
-//go:generate go tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --package=client --generate=types,client -o generated-client.go ./gen/openapi.json
+//go:generate go tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --package=client --generate=types,client,models -o generated-client.go ./gen/openapi.json
 //go:generate go tool github.com/atombender/go-jsonschema -p client -o generated-event.go ./gen/event.json

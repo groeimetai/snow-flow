@@ -9,11 +9,6 @@ import {
   generateText,
   stepCountIs,
   streamText,
-  type TextUIPart,
-  type ToolInvocationUIPart,
-  type UIDataTypes,
-  type UIMessage,
-  type UIMessagePart,
 } from "ai";
 import { z } from "zod";
 import * as tools from "../tool";
@@ -22,8 +17,8 @@ import { Decimal } from "decimal.js";
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt";
 import PROMPT_TITLE from "./prompt/title.txt";
 
-import type { Tool } from "../tool/tool";
 import { Share } from "../share/share";
+import type { Message } from "./message";
 
 export namespace Session {
   const log = Log.create({ service: "session" });
@@ -35,28 +30,9 @@ export namespace Session {
   });
   export type Info = z.output<typeof Info>;
 
-  export type Message = UIMessage<{
-    assistant?: {
-      modelID: string;
-      providerID: string;
-      cost: number;
-      tokens: {
-        input: number;
-        output: number;
-        reasoning: number;
-      };
-    };
-    time: {
-      created: number;
-      completed?: number;
-    };
-    sessionID: string;
-    tool: Record<string, Tool.Metadata>;
-  }>;
-
   const state = App.state("session", () => {
     const sessions = new Map<string, Info>();
-    const messages = new Map<string, Message[]>();
+    const messages = new Map<string, Message.Info[]>();
 
     return {
       sessions,
@@ -112,10 +88,10 @@ export namespace Session {
     if (match) {
       return match;
     }
-    const result = [] as Message[];
+    const result = [] as Message.Info[];
     const list = Storage.list("session/message/" + sessionID);
     for await (const p of list) {
-      const read = await Storage.readJSON<Message>(p);
+      const read = await Storage.readJSON<Message.Info>(p);
       result.push(read);
     }
     state().messages.set(sessionID, result);
@@ -143,13 +119,13 @@ export namespace Session {
     sessionID: string;
     providerID: string;
     modelID: string;
-    parts: UIMessagePart<UIDataTypes>[];
+    parts: Message.Part[];
   }) {
     const l = log.clone().tag("session", input.sessionID);
     l.info("chatting");
     const model = await LLM.findModel(input.providerID, input.modelID);
     const msgs = await messages(input.sessionID);
-    async function write(msg: Message) {
+    async function write(msg: Message.Info) {
       return Storage.writeJSON(
         "session/message/" + input.sessionID + "/" + msg.id,
         msg,
@@ -157,7 +133,7 @@ export namespace Session {
     }
     const app = await App.use();
     if (msgs.length === 0) {
-      const system: Message = {
+      const system: Message.Info = {
         id: Identifier.ascending("message"),
         role: "system",
         parts: [
@@ -208,7 +184,7 @@ export namespace Session {
       });
       await write(system);
     }
-    const msg: Message = {
+    const msg: Message.Info = {
       role: "user",
       id: Identifier.ascending("message"),
       parts: input.parts,
@@ -223,7 +199,7 @@ export namespace Session {
     msgs.push(msg);
     await write(msg);
 
-    const next: Message = {
+    const next: Message.Info = {
       id: Identifier.ascending("message"),
       role: "assistant",
       parts: [],
@@ -269,7 +245,7 @@ export namespace Session {
     });
 
     msgs.push(next);
-    let text: TextUIPart | undefined;
+    let text: Message.TextPart | undefined;
     const reader = result.toUIMessageStream().getReader();
     while (true) {
       const result = await reader.read().catch((e) => {
@@ -308,6 +284,8 @@ export namespace Session {
             toolInvocation: {
               state: "call",
               ...value,
+              // hack until zod v4
+              args: value.args as any,
             },
           });
           break;
@@ -317,8 +295,8 @@ export namespace Session {
             (p) =>
               p.type === "tool-invocation" &&
               p.toolInvocation.toolCallId === value.toolCallId,
-          ) as ToolInvocationUIPart | undefined;
-          if (match) {
+          );
+          if (match && match.type === "tool-invocation") {
             const { output, metadata } = value.result as any;
             next.metadata!.tool[value.toolCallId] = metadata;
             match.toolInvocation = {

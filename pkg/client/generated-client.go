@@ -17,12 +17,119 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
-// Defines values for SessionMessageRole.
+// Defines values for MessageInfoRole.
 const (
-	Assistant SessionMessageRole = "assistant"
-	System    SessionMessageRole = "system"
-	User      SessionMessageRole = "user"
+	Assistant MessageInfoRole = "assistant"
+	System    MessageInfoRole = "system"
+	User      MessageInfoRole = "user"
 )
+
+// MessageInfo defines model for Message.Info.
+type MessageInfo struct {
+	Id       string `json:"id"`
+	Metadata struct {
+		Assistant *struct {
+			Cost       float32 `json:"cost"`
+			ModelID    string  `json:"modelID"`
+			ProviderID string  `json:"providerID"`
+			Tokens     struct {
+				Input     float32 `json:"input"`
+				Output    float32 `json:"output"`
+				Reasoning float32 `json:"reasoning"`
+			} `json:"tokens"`
+		} `json:"assistant,omitempty"`
+		SessionID string `json:"sessionID"`
+		Time      struct {
+			Completed *float32 `json:"completed,omitempty"`
+			Created   float32  `json:"created"`
+		} `json:"time"`
+		Tool map[string]interface{} `json:"tool"`
+	} `json:"metadata"`
+	Parts []MessagePart   `json:"parts"`
+	Role  MessageInfoRole `json:"role"`
+}
+
+// MessageInfoRole defines model for MessageInfo.Role.
+type MessageInfoRole string
+
+// MessagePart defines model for Message.Part.
+type MessagePart struct {
+	union json.RawMessage
+}
+
+// MessagePartFile defines model for Message.Part.File.
+type MessagePartFile struct {
+	Filename  *string `json:"filename,omitempty"`
+	MediaType string  `json:"mediaType"`
+	Type      string  `json:"type"`
+	Url       string  `json:"url"`
+}
+
+// MessagePartReasoning defines model for Message.Part.Reasoning.
+type MessagePartReasoning struct {
+	ProviderMetadata *map[string]interface{} `json:"providerMetadata,omitempty"`
+	Text             string                  `json:"text"`
+	Type             string                  `json:"type"`
+}
+
+// MessagePartSourceUrl defines model for Message.Part.SourceUrl.
+type MessagePartSourceUrl struct {
+	ProviderMetadata *map[string]interface{} `json:"providerMetadata,omitempty"`
+	SourceId         string                  `json:"sourceId"`
+	Title            *string                 `json:"title,omitempty"`
+	Type             string                  `json:"type"`
+	Url              string                  `json:"url"`
+}
+
+// MessagePartStepStart defines model for Message.Part.StepStart.
+type MessagePartStepStart struct {
+	Type string `json:"type"`
+}
+
+// MessagePartText defines model for Message.Part.Text.
+type MessagePartText struct {
+	Text string `json:"text"`
+	Type string `json:"type"`
+}
+
+// MessagePartToolInvocation defines model for Message.Part.ToolInvocation.
+type MessagePartToolInvocation struct {
+	ToolInvocation MessageToolInvocation `json:"toolInvocation"`
+	Type           string                `json:"type"`
+}
+
+// MessageToolInvocation defines model for Message.ToolInvocation.
+type MessageToolInvocation struct {
+	union json.RawMessage
+}
+
+// MessageToolInvocationToolCall defines model for Message.ToolInvocation.ToolCall.
+type MessageToolInvocationToolCall struct {
+	Args       *interface{} `json:"args,omitempty"`
+	State      string       `json:"state"`
+	Step       *float32     `json:"step,omitempty"`
+	ToolCallId string       `json:"toolCallId"`
+	ToolName   string       `json:"toolName"`
+}
+
+// MessageToolInvocationToolPartialCall defines model for Message.ToolInvocation.ToolPartialCall.
+type MessageToolInvocationToolPartialCall struct {
+	Args       *interface{} `json:"args,omitempty"`
+	State      string       `json:"state"`
+	Step       *float32     `json:"step,omitempty"`
+	ToolCallId string       `json:"toolCallId"`
+	ToolName   string       `json:"toolName"`
+}
+
+// MessageToolInvocationToolResult defines model for Message.ToolInvocation.ToolResult.
+type MessageToolInvocationToolResult struct {
+	Args       *interface{} `json:"args,omitempty"`
+	Result     string       `json:"result"`
+	State      string       `json:"state"`
+	Step       *float32     `json:"step,omitempty"`
+	ToolCallId string       `json:"toolCallId"`
+	ToolName   string       `json:"toolName"`
+}
 
 // ProviderInfo defines model for Provider.Info.
 type ProviderInfo struct {
@@ -49,103 +156,6 @@ type SessionInfo struct {
 	Title   string  `json:"title"`
 }
 
-// SessionMessage defines model for Session.Message.
-type SessionMessage struct {
-	Id       string `json:"id"`
-	Metadata struct {
-		SessionID string `json:"sessionID"`
-		Time      struct {
-			Completed *float32 `json:"completed,omitempty"`
-			Created   float32  `json:"created"`
-		} `json:"time"`
-		Tool map[string]interface{} `json:"tool"`
-	} `json:"metadata"`
-	Parts []SessionMessagePart `json:"parts"`
-	Role  SessionMessageRole   `json:"role"`
-}
-
-// SessionMessageRole defines model for SessionMessage.Role.
-type SessionMessageRole string
-
-// SessionMessagePart defines model for Session.Message.Part.
-type SessionMessagePart struct {
-	union json.RawMessage
-}
-
-// SessionMessagePartFile defines model for Session.Message.Part.File.
-type SessionMessagePartFile struct {
-	Filename  *string `json:"filename,omitempty"`
-	MediaType string  `json:"mediaType"`
-	Type      string  `json:"type"`
-	Url       string  `json:"url"`
-}
-
-// SessionMessagePartReasoning defines model for Session.Message.Part.Reasoning.
-type SessionMessagePartReasoning struct {
-	ProviderMetadata *map[string]interface{} `json:"providerMetadata,omitempty"`
-	Text             string                  `json:"text"`
-	Type             string                  `json:"type"`
-}
-
-// SessionMessagePartSourceUrl defines model for Session.Message.Part.SourceUrl.
-type SessionMessagePartSourceUrl struct {
-	ProviderMetadata *map[string]interface{} `json:"providerMetadata,omitempty"`
-	SourceId         string                  `json:"sourceId"`
-	Title            *string                 `json:"title,omitempty"`
-	Type             string                  `json:"type"`
-	Url              string                  `json:"url"`
-}
-
-// SessionMessagePartStepStart defines model for Session.Message.Part.StepStart.
-type SessionMessagePartStepStart struct {
-	Type string `json:"type"`
-}
-
-// SessionMessagePartText defines model for Session.Message.Part.Text.
-type SessionMessagePartText struct {
-	Text string `json:"text"`
-	Type string `json:"type"`
-}
-
-// SessionMessagePartToolInvocation defines model for Session.Message.Part.ToolInvocation.
-type SessionMessagePartToolInvocation struct {
-	ToolInvocation SessionMessageToolInvocation `json:"toolInvocation"`
-	Type           string                       `json:"type"`
-}
-
-// SessionMessageToolInvocation defines model for Session.Message.ToolInvocation.
-type SessionMessageToolInvocation struct {
-	union json.RawMessage
-}
-
-// SessionMessageToolInvocationToolCall defines model for Session.Message.ToolInvocation.ToolCall.
-type SessionMessageToolInvocationToolCall struct {
-	Args       map[string]interface{} `json:"args"`
-	State      string                 `json:"state"`
-	Step       *float32               `json:"step,omitempty"`
-	ToolCallId string                 `json:"toolCallId"`
-	ToolName   string                 `json:"toolName"`
-}
-
-// SessionMessageToolInvocationToolPartialCall defines model for Session.Message.ToolInvocation.ToolPartialCall.
-type SessionMessageToolInvocationToolPartialCall struct {
-	Args       map[string]interface{} `json:"args"`
-	State      string                 `json:"state"`
-	Step       *float32               `json:"step,omitempty"`
-	ToolCallId string                 `json:"toolCallId"`
-	ToolName   string                 `json:"toolName"`
-}
-
-// SessionMessageToolInvocationToolResult defines model for Session.Message.ToolInvocation.ToolResult.
-type SessionMessageToolInvocationToolResult struct {
-	Args       map[string]interface{} `json:"args"`
-	Result     string                 `json:"result"`
-	State      string                 `json:"state"`
-	Step       *float32               `json:"step,omitempty"`
-	ToolCallId string                 `json:"toolCallId"`
-	ToolName   string                 `json:"toolName"`
-}
-
 // PostSessionAbortJSONBody defines parameters for PostSessionAbort.
 type PostSessionAbortJSONBody struct {
 	SessionID string `json:"sessionID"`
@@ -153,10 +163,10 @@ type PostSessionAbortJSONBody struct {
 
 // PostSessionChatJSONBody defines parameters for PostSessionChat.
 type PostSessionChatJSONBody struct {
-	ModelID    string               `json:"modelID"`
-	Parts      []SessionMessagePart `json:"parts"`
-	ProviderID string               `json:"providerID"`
-	SessionID  string               `json:"sessionID"`
+	ModelID    string        `json:"modelID"`
+	Parts      []MessagePart `json:"parts"`
+	ProviderID string        `json:"providerID"`
+	SessionID  string        `json:"sessionID"`
 }
 
 // PostSessionMessagesJSONBody defines parameters for PostSessionMessages.
@@ -181,23 +191,23 @@ type PostSessionMessagesJSONRequestBody PostSessionMessagesJSONBody
 // PostSessionShareJSONRequestBody defines body for PostSessionShare for application/json ContentType.
 type PostSessionShareJSONRequestBody PostSessionShareJSONBody
 
-// AsSessionMessagePartText returns the union data inside the SessionMessagePart as a SessionMessagePartText
-func (t SessionMessagePart) AsSessionMessagePartText() (SessionMessagePartText, error) {
-	var body SessionMessagePartText
+// AsMessagePartText returns the union data inside the MessagePart as a MessagePartText
+func (t MessagePart) AsMessagePartText() (MessagePartText, error) {
+	var body MessagePartText
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromSessionMessagePartText overwrites any union data inside the SessionMessagePart as the provided SessionMessagePartText
-func (t *SessionMessagePart) FromSessionMessagePartText(v SessionMessagePartText) error {
+// FromMessagePartText overwrites any union data inside the MessagePart as the provided MessagePartText
+func (t *MessagePart) FromMessagePartText(v MessagePartText) error {
 	v.Type = "text"
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeSessionMessagePartText performs a merge with any union data inside the SessionMessagePart, using the provided SessionMessagePartText
-func (t *SessionMessagePart) MergeSessionMessagePartText(v SessionMessagePartText) error {
+// MergeMessagePartText performs a merge with any union data inside the MessagePart, using the provided MessagePartText
+func (t *MessagePart) MergeMessagePartText(v MessagePartText) error {
 	v.Type = "text"
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -209,23 +219,23 @@ func (t *SessionMessagePart) MergeSessionMessagePartText(v SessionMessagePartTex
 	return err
 }
 
-// AsSessionMessagePartReasoning returns the union data inside the SessionMessagePart as a SessionMessagePartReasoning
-func (t SessionMessagePart) AsSessionMessagePartReasoning() (SessionMessagePartReasoning, error) {
-	var body SessionMessagePartReasoning
+// AsMessagePartReasoning returns the union data inside the MessagePart as a MessagePartReasoning
+func (t MessagePart) AsMessagePartReasoning() (MessagePartReasoning, error) {
+	var body MessagePartReasoning
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromSessionMessagePartReasoning overwrites any union data inside the SessionMessagePart as the provided SessionMessagePartReasoning
-func (t *SessionMessagePart) FromSessionMessagePartReasoning(v SessionMessagePartReasoning) error {
+// FromMessagePartReasoning overwrites any union data inside the MessagePart as the provided MessagePartReasoning
+func (t *MessagePart) FromMessagePartReasoning(v MessagePartReasoning) error {
 	v.Type = "reasoning"
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeSessionMessagePartReasoning performs a merge with any union data inside the SessionMessagePart, using the provided SessionMessagePartReasoning
-func (t *SessionMessagePart) MergeSessionMessagePartReasoning(v SessionMessagePartReasoning) error {
+// MergeMessagePartReasoning performs a merge with any union data inside the MessagePart, using the provided MessagePartReasoning
+func (t *MessagePart) MergeMessagePartReasoning(v MessagePartReasoning) error {
 	v.Type = "reasoning"
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -237,23 +247,23 @@ func (t *SessionMessagePart) MergeSessionMessagePartReasoning(v SessionMessagePa
 	return err
 }
 
-// AsSessionMessagePartToolInvocation returns the union data inside the SessionMessagePart as a SessionMessagePartToolInvocation
-func (t SessionMessagePart) AsSessionMessagePartToolInvocation() (SessionMessagePartToolInvocation, error) {
-	var body SessionMessagePartToolInvocation
+// AsMessagePartToolInvocation returns the union data inside the MessagePart as a MessagePartToolInvocation
+func (t MessagePart) AsMessagePartToolInvocation() (MessagePartToolInvocation, error) {
+	var body MessagePartToolInvocation
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromSessionMessagePartToolInvocation overwrites any union data inside the SessionMessagePart as the provided SessionMessagePartToolInvocation
-func (t *SessionMessagePart) FromSessionMessagePartToolInvocation(v SessionMessagePartToolInvocation) error {
+// FromMessagePartToolInvocation overwrites any union data inside the MessagePart as the provided MessagePartToolInvocation
+func (t *MessagePart) FromMessagePartToolInvocation(v MessagePartToolInvocation) error {
 	v.Type = "tool-invocation"
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeSessionMessagePartToolInvocation performs a merge with any union data inside the SessionMessagePart, using the provided SessionMessagePartToolInvocation
-func (t *SessionMessagePart) MergeSessionMessagePartToolInvocation(v SessionMessagePartToolInvocation) error {
+// MergeMessagePartToolInvocation performs a merge with any union data inside the MessagePart, using the provided MessagePartToolInvocation
+func (t *MessagePart) MergeMessagePartToolInvocation(v MessagePartToolInvocation) error {
 	v.Type = "tool-invocation"
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -265,23 +275,23 @@ func (t *SessionMessagePart) MergeSessionMessagePartToolInvocation(v SessionMess
 	return err
 }
 
-// AsSessionMessagePartSourceUrl returns the union data inside the SessionMessagePart as a SessionMessagePartSourceUrl
-func (t SessionMessagePart) AsSessionMessagePartSourceUrl() (SessionMessagePartSourceUrl, error) {
-	var body SessionMessagePartSourceUrl
+// AsMessagePartSourceUrl returns the union data inside the MessagePart as a MessagePartSourceUrl
+func (t MessagePart) AsMessagePartSourceUrl() (MessagePartSourceUrl, error) {
+	var body MessagePartSourceUrl
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromSessionMessagePartSourceUrl overwrites any union data inside the SessionMessagePart as the provided SessionMessagePartSourceUrl
-func (t *SessionMessagePart) FromSessionMessagePartSourceUrl(v SessionMessagePartSourceUrl) error {
+// FromMessagePartSourceUrl overwrites any union data inside the MessagePart as the provided MessagePartSourceUrl
+func (t *MessagePart) FromMessagePartSourceUrl(v MessagePartSourceUrl) error {
 	v.Type = "source-url"
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeSessionMessagePartSourceUrl performs a merge with any union data inside the SessionMessagePart, using the provided SessionMessagePartSourceUrl
-func (t *SessionMessagePart) MergeSessionMessagePartSourceUrl(v SessionMessagePartSourceUrl) error {
+// MergeMessagePartSourceUrl performs a merge with any union data inside the MessagePart, using the provided MessagePartSourceUrl
+func (t *MessagePart) MergeMessagePartSourceUrl(v MessagePartSourceUrl) error {
 	v.Type = "source-url"
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -293,23 +303,23 @@ func (t *SessionMessagePart) MergeSessionMessagePartSourceUrl(v SessionMessagePa
 	return err
 }
 
-// AsSessionMessagePartFile returns the union data inside the SessionMessagePart as a SessionMessagePartFile
-func (t SessionMessagePart) AsSessionMessagePartFile() (SessionMessagePartFile, error) {
-	var body SessionMessagePartFile
+// AsMessagePartFile returns the union data inside the MessagePart as a MessagePartFile
+func (t MessagePart) AsMessagePartFile() (MessagePartFile, error) {
+	var body MessagePartFile
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromSessionMessagePartFile overwrites any union data inside the SessionMessagePart as the provided SessionMessagePartFile
-func (t *SessionMessagePart) FromSessionMessagePartFile(v SessionMessagePartFile) error {
+// FromMessagePartFile overwrites any union data inside the MessagePart as the provided MessagePartFile
+func (t *MessagePart) FromMessagePartFile(v MessagePartFile) error {
 	v.Type = "file"
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeSessionMessagePartFile performs a merge with any union data inside the SessionMessagePart, using the provided SessionMessagePartFile
-func (t *SessionMessagePart) MergeSessionMessagePartFile(v SessionMessagePartFile) error {
+// MergeMessagePartFile performs a merge with any union data inside the MessagePart, using the provided MessagePartFile
+func (t *MessagePart) MergeMessagePartFile(v MessagePartFile) error {
 	v.Type = "file"
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -321,23 +331,23 @@ func (t *SessionMessagePart) MergeSessionMessagePartFile(v SessionMessagePartFil
 	return err
 }
 
-// AsSessionMessagePartStepStart returns the union data inside the SessionMessagePart as a SessionMessagePartStepStart
-func (t SessionMessagePart) AsSessionMessagePartStepStart() (SessionMessagePartStepStart, error) {
-	var body SessionMessagePartStepStart
+// AsMessagePartStepStart returns the union data inside the MessagePart as a MessagePartStepStart
+func (t MessagePart) AsMessagePartStepStart() (MessagePartStepStart, error) {
+	var body MessagePartStepStart
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromSessionMessagePartStepStart overwrites any union data inside the SessionMessagePart as the provided SessionMessagePartStepStart
-func (t *SessionMessagePart) FromSessionMessagePartStepStart(v SessionMessagePartStepStart) error {
+// FromMessagePartStepStart overwrites any union data inside the MessagePart as the provided MessagePartStepStart
+func (t *MessagePart) FromMessagePartStepStart(v MessagePartStepStart) error {
 	v.Type = "step-start"
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeSessionMessagePartStepStart performs a merge with any union data inside the SessionMessagePart, using the provided SessionMessagePartStepStart
-func (t *SessionMessagePart) MergeSessionMessagePartStepStart(v SessionMessagePartStepStart) error {
+// MergeMessagePartStepStart performs a merge with any union data inside the MessagePart, using the provided MessagePartStepStart
+func (t *MessagePart) MergeMessagePartStepStart(v MessagePartStepStart) error {
 	v.Type = "step-start"
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -349,7 +359,7 @@ func (t *SessionMessagePart) MergeSessionMessagePartStepStart(v SessionMessagePa
 	return err
 }
 
-func (t SessionMessagePart) Discriminator() (string, error) {
+func (t MessagePart) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"type"`
 	}
@@ -357,56 +367,56 @@ func (t SessionMessagePart) Discriminator() (string, error) {
 	return discriminator.Discriminator, err
 }
 
-func (t SessionMessagePart) ValueByDiscriminator() (interface{}, error) {
+func (t MessagePart) ValueByDiscriminator() (interface{}, error) {
 	discriminator, err := t.Discriminator()
 	if err != nil {
 		return nil, err
 	}
 	switch discriminator {
 	case "file":
-		return t.AsSessionMessagePartFile()
+		return t.AsMessagePartFile()
 	case "reasoning":
-		return t.AsSessionMessagePartReasoning()
+		return t.AsMessagePartReasoning()
 	case "source-url":
-		return t.AsSessionMessagePartSourceUrl()
+		return t.AsMessagePartSourceUrl()
 	case "step-start":
-		return t.AsSessionMessagePartStepStart()
+		return t.AsMessagePartStepStart()
 	case "text":
-		return t.AsSessionMessagePartText()
+		return t.AsMessagePartText()
 	case "tool-invocation":
-		return t.AsSessionMessagePartToolInvocation()
+		return t.AsMessagePartToolInvocation()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}
 }
 
-func (t SessionMessagePart) MarshalJSON() ([]byte, error) {
+func (t MessagePart) MarshalJSON() ([]byte, error) {
 	b, err := t.union.MarshalJSON()
 	return b, err
 }
 
-func (t *SessionMessagePart) UnmarshalJSON(b []byte) error {
+func (t *MessagePart) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
 
-// AsSessionMessageToolInvocationToolCall returns the union data inside the SessionMessageToolInvocation as a SessionMessageToolInvocationToolCall
-func (t SessionMessageToolInvocation) AsSessionMessageToolInvocationToolCall() (SessionMessageToolInvocationToolCall, error) {
-	var body SessionMessageToolInvocationToolCall
+// AsMessageToolInvocationToolCall returns the union data inside the MessageToolInvocation as a MessageToolInvocationToolCall
+func (t MessageToolInvocation) AsMessageToolInvocationToolCall() (MessageToolInvocationToolCall, error) {
+	var body MessageToolInvocationToolCall
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromSessionMessageToolInvocationToolCall overwrites any union data inside the SessionMessageToolInvocation as the provided SessionMessageToolInvocationToolCall
-func (t *SessionMessageToolInvocation) FromSessionMessageToolInvocationToolCall(v SessionMessageToolInvocationToolCall) error {
+// FromMessageToolInvocationToolCall overwrites any union data inside the MessageToolInvocation as the provided MessageToolInvocationToolCall
+func (t *MessageToolInvocation) FromMessageToolInvocationToolCall(v MessageToolInvocationToolCall) error {
 	v.State = "call"
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeSessionMessageToolInvocationToolCall performs a merge with any union data inside the SessionMessageToolInvocation, using the provided SessionMessageToolInvocationToolCall
-func (t *SessionMessageToolInvocation) MergeSessionMessageToolInvocationToolCall(v SessionMessageToolInvocationToolCall) error {
+// MergeMessageToolInvocationToolCall performs a merge with any union data inside the MessageToolInvocation, using the provided MessageToolInvocationToolCall
+func (t *MessageToolInvocation) MergeMessageToolInvocationToolCall(v MessageToolInvocationToolCall) error {
 	v.State = "call"
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -418,23 +428,23 @@ func (t *SessionMessageToolInvocation) MergeSessionMessageToolInvocationToolCall
 	return err
 }
 
-// AsSessionMessageToolInvocationToolPartialCall returns the union data inside the SessionMessageToolInvocation as a SessionMessageToolInvocationToolPartialCall
-func (t SessionMessageToolInvocation) AsSessionMessageToolInvocationToolPartialCall() (SessionMessageToolInvocationToolPartialCall, error) {
-	var body SessionMessageToolInvocationToolPartialCall
+// AsMessageToolInvocationToolPartialCall returns the union data inside the MessageToolInvocation as a MessageToolInvocationToolPartialCall
+func (t MessageToolInvocation) AsMessageToolInvocationToolPartialCall() (MessageToolInvocationToolPartialCall, error) {
+	var body MessageToolInvocationToolPartialCall
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromSessionMessageToolInvocationToolPartialCall overwrites any union data inside the SessionMessageToolInvocation as the provided SessionMessageToolInvocationToolPartialCall
-func (t *SessionMessageToolInvocation) FromSessionMessageToolInvocationToolPartialCall(v SessionMessageToolInvocationToolPartialCall) error {
+// FromMessageToolInvocationToolPartialCall overwrites any union data inside the MessageToolInvocation as the provided MessageToolInvocationToolPartialCall
+func (t *MessageToolInvocation) FromMessageToolInvocationToolPartialCall(v MessageToolInvocationToolPartialCall) error {
 	v.State = "partial-call"
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeSessionMessageToolInvocationToolPartialCall performs a merge with any union data inside the SessionMessageToolInvocation, using the provided SessionMessageToolInvocationToolPartialCall
-func (t *SessionMessageToolInvocation) MergeSessionMessageToolInvocationToolPartialCall(v SessionMessageToolInvocationToolPartialCall) error {
+// MergeMessageToolInvocationToolPartialCall performs a merge with any union data inside the MessageToolInvocation, using the provided MessageToolInvocationToolPartialCall
+func (t *MessageToolInvocation) MergeMessageToolInvocationToolPartialCall(v MessageToolInvocationToolPartialCall) error {
 	v.State = "partial-call"
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -446,23 +456,23 @@ func (t *SessionMessageToolInvocation) MergeSessionMessageToolInvocationToolPart
 	return err
 }
 
-// AsSessionMessageToolInvocationToolResult returns the union data inside the SessionMessageToolInvocation as a SessionMessageToolInvocationToolResult
-func (t SessionMessageToolInvocation) AsSessionMessageToolInvocationToolResult() (SessionMessageToolInvocationToolResult, error) {
-	var body SessionMessageToolInvocationToolResult
+// AsMessageToolInvocationToolResult returns the union data inside the MessageToolInvocation as a MessageToolInvocationToolResult
+func (t MessageToolInvocation) AsMessageToolInvocationToolResult() (MessageToolInvocationToolResult, error) {
+	var body MessageToolInvocationToolResult
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromSessionMessageToolInvocationToolResult overwrites any union data inside the SessionMessageToolInvocation as the provided SessionMessageToolInvocationToolResult
-func (t *SessionMessageToolInvocation) FromSessionMessageToolInvocationToolResult(v SessionMessageToolInvocationToolResult) error {
+// FromMessageToolInvocationToolResult overwrites any union data inside the MessageToolInvocation as the provided MessageToolInvocationToolResult
+func (t *MessageToolInvocation) FromMessageToolInvocationToolResult(v MessageToolInvocationToolResult) error {
 	v.State = "result"
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeSessionMessageToolInvocationToolResult performs a merge with any union data inside the SessionMessageToolInvocation, using the provided SessionMessageToolInvocationToolResult
-func (t *SessionMessageToolInvocation) MergeSessionMessageToolInvocationToolResult(v SessionMessageToolInvocationToolResult) error {
+// MergeMessageToolInvocationToolResult performs a merge with any union data inside the MessageToolInvocation, using the provided MessageToolInvocationToolResult
+func (t *MessageToolInvocation) MergeMessageToolInvocationToolResult(v MessageToolInvocationToolResult) error {
 	v.State = "result"
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -474,7 +484,7 @@ func (t *SessionMessageToolInvocation) MergeSessionMessageToolInvocationToolResu
 	return err
 }
 
-func (t SessionMessageToolInvocation) Discriminator() (string, error) {
+func (t MessageToolInvocation) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"state"`
 	}
@@ -482,29 +492,29 @@ func (t SessionMessageToolInvocation) Discriminator() (string, error) {
 	return discriminator.Discriminator, err
 }
 
-func (t SessionMessageToolInvocation) ValueByDiscriminator() (interface{}, error) {
+func (t MessageToolInvocation) ValueByDiscriminator() (interface{}, error) {
 	discriminator, err := t.Discriminator()
 	if err != nil {
 		return nil, err
 	}
 	switch discriminator {
 	case "call":
-		return t.AsSessionMessageToolInvocationToolCall()
+		return t.AsMessageToolInvocationToolCall()
 	case "partial-call":
-		return t.AsSessionMessageToolInvocationToolPartialCall()
+		return t.AsMessageToolInvocationToolPartialCall()
 	case "result":
-		return t.AsSessionMessageToolInvocationToolResult()
+		return t.AsMessageToolInvocationToolResult()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}
 }
 
-func (t SessionMessageToolInvocation) MarshalJSON() ([]byte, error) {
+func (t MessageToolInvocation) MarshalJSON() ([]byte, error) {
 	b, err := t.union.MarshalJSON()
 	return b, err
 }
 
-func (t *SessionMessageToolInvocation) UnmarshalJSON(b []byte) error {
+func (t *MessageToolInvocation) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -1105,7 +1115,7 @@ func (r PostSessionAbortResponse) StatusCode() int {
 type PostSessionChatResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *SessionMessage
+	JSON200      *MessageInfo
 }
 
 // Status returns HTTPResponse.Status
@@ -1175,7 +1185,7 @@ func (r PostSessionListResponse) StatusCode() int {
 type PostSessionMessagesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]SessionMessage
+	JSON200      *[]MessageInfo
 }
 
 // Status returns HTTPResponse.Status
@@ -1378,7 +1388,7 @@ func ParsePostSessionChatResponse(rsp *http.Response) (*PostSessionChatResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest SessionMessage
+		var dest MessageInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1460,7 +1470,7 @@ func ParsePostSessionMessagesResponse(rsp *http.Response) (*PostSessionMessagesR
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []SessionMessage
+		var dest []MessageInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

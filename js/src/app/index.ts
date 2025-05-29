@@ -2,7 +2,6 @@ import fs from "fs/promises";
 import { AppPath } from "./path";
 import { Log } from "../util/log";
 import { Context } from "../util/context";
-import { Config } from "./config";
 
 export namespace App {
   const log = Log.create({ service: "app" });
@@ -15,10 +14,6 @@ export namespace App {
     const dataDir = AppPath.data(input.directory);
     await fs.mkdir(dataDir, { recursive: true });
     await Log.file(input.directory);
-
-    log.info("creating");
-
-    const config = await Config.load(input.directory);
 
     log.info("created", { path: dataDir });
 
@@ -33,9 +28,6 @@ export namespace App {
     const result = {
       get services() {
         return services;
-      },
-      get config() {
-        return config;
       },
       get root() {
         return input.directory;

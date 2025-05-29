@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.0",
+  "openapi": "3.0.0",
   "info": {
     "title": "opencode",
     "description": "opencode api",
@@ -71,7 +71,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Session.Message"
+                    "$ref": "#/components/schemas/Message.Info"
                   }
                 }
               }
@@ -182,7 +182,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Session.Message"
+                  "$ref": "#/components/schemas/Message.Info"
                 }
               }
             }
@@ -209,7 +209,7 @@
                   "parts": {
                     "type": "array",
                     "items": {
-                      "$ref": "#/components/schemas/Session.Message.Part"
+                      "$ref": "#/components/schemas/Message.Part"
                     }
                   }
                 },
@@ -269,7 +269,7 @@
           "title"
         ]
       },
-      "Session.Message": {
+      "Message.Info": {
         "type": "object",
         "properties": {
           "id": {
@@ -286,7 +286,7 @@
           "parts": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Session.Message.Part"
+              "$ref": "#/components/schemas/Message.Part"
             }
           },
           "metadata": {
@@ -312,6 +312,45 @@
               "tool": {
                 "type": "object",
                 "additionalProperties": {}
+              },
+              "assistant": {
+                "type": "object",
+                "properties": {
+                  "modelID": {
+                    "type": "string"
+                  },
+                  "providerID": {
+                    "type": "string"
+                  },
+                  "cost": {
+                    "type": "number"
+                  },
+                  "tokens": {
+                    "type": "object",
+                    "properties": {
+                      "input": {
+                        "type": "number"
+                      },
+                      "output": {
+                        "type": "number"
+                      },
+                      "reasoning": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "input",
+                      "output",
+                      "reasoning"
+                    ]
+                  }
+                },
+                "required": [
+                  "modelID",
+                  "providerID",
+                  "cost",
+                  "tokens"
+                ]
               }
             },
             "required": [
@@ -328,40 +367,40 @@
           "metadata"
         ]
       },
-      "Session.Message.Part": {
+      "Message.Part": {
         "oneOf": [
           {
-            "$ref": "#/components/schemas/Session.Message.Part.Text"
+            "$ref": "#/components/schemas/Message.Part.Text"
           },
           {
-            "$ref": "#/components/schemas/Session.Message.Part.Reasoning"
+            "$ref": "#/components/schemas/Message.Part.Reasoning"
           },
           {
-            "$ref": "#/components/schemas/Session.Message.Part.ToolInvocation"
+            "$ref": "#/components/schemas/Message.Part.ToolInvocation"
           },
           {
-            "$ref": "#/components/schemas/Session.Message.Part.SourceUrl"
+            "$ref": "#/components/schemas/Message.Part.SourceUrl"
           },
           {
-            "$ref": "#/components/schemas/Session.Message.Part.File"
+            "$ref": "#/components/schemas/Message.Part.File"
           },
           {
-            "$ref": "#/components/schemas/Session.Message.Part.StepStart"
+            "$ref": "#/components/schemas/Message.Part.StepStart"
           }
         ],
         "discriminator": {
           "propertyName": "type",
           "mapping": {
-            "text": "#/components/schemas/Session.Message.Part.Text",
-            "reasoning": "#/components/schemas/Session.Message.Part.Reasoning",
-            "tool-invocation": "#/components/schemas/Session.Message.Part.ToolInvocation",
-            "source-url": "#/components/schemas/Session.Message.Part.SourceUrl",
-            "file": "#/components/schemas/Session.Message.Part.File",
-            "step-start": "#/components/schemas/Session.Message.Part.StepStart"
+            "text": "#/components/schemas/Message.Part.Text",
+            "reasoning": "#/components/schemas/Message.Part.Reasoning",
+            "tool-invocation": "#/components/schemas/Message.Part.ToolInvocation",
+            "source-url": "#/components/schemas/Message.Part.SourceUrl",
+            "file": "#/components/schemas/Message.Part.File",
+            "step-start": "#/components/schemas/Message.Part.StepStart"
           }
         }
       },
-      "Session.Message.Part.Text": {
+      "Message.Part.Text": {
         "type": "object",
         "properties": {
           "type": {
@@ -377,7 +416,7 @@
           "text"
         ]
       },
-      "Session.Message.Part.Reasoning": {
+      "Message.Part.Reasoning": {
         "type": "object",
         "properties": {
           "type": {
@@ -397,7 +436,7 @@
           "text"
         ]
       },
-      "Session.Message.Part.ToolInvocation": {
+      "Message.Part.ToolInvocation": {
         "type": "object",
         "properties": {
           "type": {
@@ -405,7 +444,7 @@
             "const": "tool-invocation"
           },
           "toolInvocation": {
-            "$ref": "#/components/schemas/Session.Message.ToolInvocation"
+            "$ref": "#/components/schemas/Message.ToolInvocation"
           }
         },
         "required": [
@@ -413,28 +452,28 @@
           "toolInvocation"
         ]
       },
-      "Session.Message.ToolInvocation": {
+      "Message.ToolInvocation": {
         "oneOf": [
           {
-            "$ref": "#/components/schemas/Session.Message.ToolInvocation.ToolCall"
+            "$ref": "#/components/schemas/Message.ToolInvocation.ToolCall"
           },
           {
-            "$ref": "#/components/schemas/Session.Message.ToolInvocation.ToolPartialCall"
+            "$ref": "#/components/schemas/Message.ToolInvocation.ToolPartialCall"
           },
           {
-            "$ref": "#/components/schemas/Session.Message.ToolInvocation.ToolResult"
+            "$ref": "#/components/schemas/Message.ToolInvocation.ToolResult"
           }
         ],
         "discriminator": {
           "propertyName": "state",
           "mapping": {
-            "call": "#/components/schemas/Session.Message.ToolInvocation.ToolCall",
-            "partial-call": "#/components/schemas/Session.Message.ToolInvocation.ToolPartialCall",
-            "result": "#/components/schemas/Session.Message.ToolInvocation.ToolResult"
+            "call": "#/components/schemas/Message.ToolInvocation.ToolCall",
+            "partial-call": "#/components/schemas/Message.ToolInvocation.ToolPartialCall",
+            "result": "#/components/schemas/Message.ToolInvocation.ToolResult"
           }
         }
       },
-      "Session.Message.ToolInvocation.ToolCall": {
+      "Message.ToolInvocation.ToolCall": {
         "type": "object",
         "properties": {
           "state": {
@@ -450,19 +489,15 @@
           "toolName": {
             "type": "string"
           },
-          "args": {
-            "type": "object",
-            "additionalProperties": {}
-          }
+          "args": {}
         },
         "required": [
           "state",
           "toolCallId",
-          "toolName",
-          "args"
+          "toolName"
         ]
       },
-      "Session.Message.ToolInvocation.ToolPartialCall": {
+      "Message.ToolInvocation.ToolPartialCall": {
         "type": "object",
         "properties": {
           "state": {
@@ -478,19 +513,15 @@
           "toolName": {
             "type": "string"
           },
-          "args": {
-            "type": "object",
-            "additionalProperties": {}
-          }
+          "args": {}
         },
         "required": [
           "state",
           "toolCallId",
-          "toolName",
-          "args"
+          "toolName"
         ]
       },
-      "Session.Message.ToolInvocation.ToolResult": {
+      "Message.ToolInvocation.ToolResult": {
         "type": "object",
         "properties": {
           "state": {
@@ -506,10 +537,7 @@
           "toolName": {
             "type": "string"
           },
-          "args": {
-            "type": "object",
-            "additionalProperties": {}
-          },
+          "args": {},
           "result": {
             "type": "string"
           }
@@ -518,11 +546,10 @@
           "state",
           "toolCallId",
           "toolName",
-          "args",
           "result"
         ]
       },
-      "Session.Message.Part.SourceUrl": {
+      "Message.Part.SourceUrl": {
         "type": "object",
         "properties": {
           "type": {
@@ -549,7 +576,7 @@
           "url"
         ]
       },
-      "Session.Message.Part.File": {
+      "Message.Part.File": {
         "type": "object",
         "properties": {
           "type": {
@@ -572,7 +599,7 @@
           "url"
         ]
       },
-      "Session.Message.Part.StepStart": {
+      "Message.Part.StepStart": {
         "type": "object",
         "properties": {
           "type": {
