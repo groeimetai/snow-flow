@@ -145,6 +145,7 @@ export namespace Message {
             modelID: z.string(),
             providerID: z.string(),
             cost: z.number(),
+            summary: z.boolean().optional(),
             tokens: z.object({
               input: z.number(),
               output: z.number(),

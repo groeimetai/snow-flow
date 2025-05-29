@@ -9,6 +9,7 @@ import {
   generateText,
   stepCountIs,
   streamText,
+  type LanguageModelUsage,
 } from "ai";
 import { z } from "zod";
 import * as tools from "../tool";
@@ -16,10 +17,12 @@ import { Decimal } from "decimal.js";
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt";
 import PROMPT_TITLE from "./prompt/title.txt";
+import PROMPT_SUMMARIZE from "./prompt/summarize.txt";
 
 import { Share } from "../share/share";
 import { Message } from "./message";
 import { Bus } from "../bus";
+import type { Provider } from "../provider/provider";
 
 export namespace Session {
   const log = Log.create({ service: "session" });
@@ -104,17 +107,13 @@ export namespace Session {
   }
 
   export async function messages(sessionID: string) {
-    const match = state().messages.get(sessionID);
-    if (match) {
-      return match;
-    }
     const result = [] as Message.Info[];
     const list = Storage.list("session/message/" + sessionID);
     for await (const p of list) {
       const read = await Storage.readJSON<Message.Info>(p);
       result.push(read);
     }
-    state().messages.set(sessionID, result);
+    result.sort((a, b) => (a.id > b.id ? 1 : -1));
     return result;
   }
 
@@ -125,8 +124,6 @@ export namespace Session {
     }
   }
 
-  const pending = new Map<string, AbortController>();
-
   export function abort(sessionID: string) {
     const controller = pending.get(sessionID);
     if (!controller) return false;
@@ -135,25 +132,35 @@ export namespace Session {
     return true;
   }
 
+  async function updateMessage(msg: Message.Info) {
+    await Storage.writeJSON(
+      "session/message/" + msg.metadata.sessionID + "/" + msg.id,
+      msg,
+    );
+    Bus.publish(Message.Event.Updated, {
+      info: msg,
+    });
+  }
+
   export async function chat(input: {
     sessionID: string;
     providerID: string;
     modelID: string;
     parts: Message.Part[];
   }) {
+    using abort = lock(input.sessionID);
     const l = log.clone().tag("session", input.sessionID);
     l.info("chatting");
     const model = await LLM.findModel(input.providerID, input.modelID);
-    const msgs = await messages(input.sessionID);
-    async function write(msg: Message.Info) {
-      await Storage.writeJSON(
-        "session/message/" + input.sessionID + "/" + msg.id,
-        msg,
+    let msgs = await messages(input.sessionID);
+    const lastSummary = msgs.findLast(
+      (msg) => msg.metadata.assistant?.summary === true,
+    );
+    if (lastSummary)
+      msgs = msgs.filter(
+        (msg) => msg.role === "system" || msg.id >= lastSummary.id,
       );
-      Bus.publish(Message.Event.Updated, {
-        info: msg,
-      });
-    }
+
     const app = await App.use();
     if (msgs.length === 0) {
       const system: Message.Info = {
@@ -182,7 +189,6 @@ export namespace Session {
         });
       }
       msgs.push(system);
-      state().messages.set(input.sessionID, msgs);
       generateText({
         messages: convertToModelMessages([
           {
@@ -205,7 +211,7 @@ export namespace Session {
           draft.title = result.text;
         });
       });
-      await write(system);
+      await updateMessage(system);
     }
     const msg: Message.Info = {
       role: "user",
@@ -220,7 +226,7 @@ export namespace Session {
       },
     };
     msgs.push(msg);
-    await write(msg);
+    await updateMessage(msg);
 
     const next: Message.Info = {
       id: Identifier.ascending("message"),
@@ -244,21 +250,15 @@ export namespace Session {
         tool: {},
       },
     };
-    const controller = new AbortController();
-    pending.set(input.sessionID, controller);
     const result = streamText({
       onStepFinish: async (step) => {
         const assistant = next.metadata!.assistant!;
-        assistant.tokens.input = step.usage.inputTokens ?? 0;
-        assistant.tokens.output = step.usage.outputTokens ?? 0;
-        assistant.tokens.reasoning = step.usage.reasoningTokens ?? 0;
-        assistant.cost = new Decimal(0)
-          .add(new Decimal(assistant.tokens.input).mul(model.info.cost.input))
-          .add(new Decimal(assistant.tokens.output).mul(model.info.cost.output))
-          .toNumber();
-        await write(next);
+        const usage = getUsage(step.usage, model.info);
+        assistant.cost = usage.cost;
+        assistant.tokens = usage.tokens;
+        await updateMessage(next);
       },
-      abortSignal: controller.signal,
+      abortSignal: abort.signal,
       maxRetries: 6,
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),
@@ -343,11 +343,120 @@ export namespace Session {
             type: value.type,
           });
       }
-      await write(next);
+      await updateMessage(next);
     }
-    pending.delete(input.sessionID);
     next.metadata!.time.completed = Date.now();
-    await write(next);
+    await updateMessage(next);
     return next;
+  }
+
+  export async function summarize(input: {
+    sessionID: string;
+    providerID: string;
+    modelID: string;
+  }) {
+    using abort = lock(input.sessionID);
+    const msgs = await messages(input.sessionID);
+    const lastSummary = msgs.findLast(
+      (msg) => msg.metadata.assistant?.summary === true,
+    )?.id;
+    const filtered = msgs.filter(
+      (msg) => msg.role !== "system" && (!lastSummary || msg.id >= lastSummary),
+    );
+    const model = await LLM.findModel(input.providerID, input.modelID);
+    const next: Message.Info = {
+      id: Identifier.ascending("message"),
+      role: "assistant",
+      parts: [],
+      metadata: {
+        tool: {},
+        sessionID: input.sessionID,
+        assistant: {
+          summary: true,
+          cost: 0,
+          modelID: input.modelID,
+          providerID: input.providerID,
+          tokens: {
+            input: 0,
+            output: 0,
+            reasoning: 0,
+          },
+        },
+        time: {
+          created: Date.now(),
+        },
+      },
+    };
+    await updateMessage(next);
+    const result = await generateText({
+      abortSignal: abort.signal,
+      model: model.instance,
+      messages: convertToModelMessages([
+        {
+          role: "system",
+          parts: [
+            {
+              type: "text",
+              text: PROMPT_SUMMARIZE,
+            },
+          ],
+        },
+        ...filtered,
+        {
+          role: "user",
+          parts: [
+            {
+              type: "text",
+              text: "Provide a detailed but concise summary of our conversation above. Focus on information that would be helpful for continuing the conversation, including what we did, what we're doing, which files we're working on, and what we're going to do next.",
+            },
+          ],
+        },
+      ]),
+    });
+    next.parts.push({
+      type: "text",
+      text: result.text,
+    });
+    const assistant = next.metadata!.assistant!;
+    const usage = getUsage(result.usage, model.info);
+    assistant.cost = usage.cost;
+    assistant.tokens = usage.tokens;
+    await updateMessage(next);
+  }
+
+  const pending = new Map<string, AbortController>();
+  function lock(sessionID: string) {
+    log.info("locking", { sessionID });
+    if (pending.has(sessionID)) throw new BusyError(sessionID);
+    const controller = new AbortController();
+    pending.set(sessionID, controller);
+    return {
+      signal: controller.signal,
+      [Symbol.dispose]() {
+        log.info("unlocking", { sessionID });
+        pending.delete(sessionID);
+      },
+    };
+  }
+
+  function getUsage(usage: LanguageModelUsage, model: Provider.Model) {
+    const tokens = {
+      input: usage.inputTokens ?? 0,
+      output: usage.outputTokens ?? 0,
+      reasoning: usage.reasoningTokens ?? 0,
+    };
+    return {
+      cost: new Decimal(0)
+        .add(new Decimal(tokens.input).mul(model.cost.input))
+        .add(new Decimal(tokens.output).mul(model.cost.output))
+        .toNumber(),
+      tokens,
+    };
+  }
+
+  export class BusyError extends Error {
+    constructor(public readonly sessionID: string) {
+      super(`Session ${sessionID} is busy`);
+    }
   }
 }
