@@ -10,9 +10,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/tui/app"
-	// "github.com/sst/opencode/internal/diff"
-	"github.com/sst/opencode/internal/history"
-	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/tui/state"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -43,7 +40,7 @@ func (m *sidebarCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// TODO: History service not implemented in API yet
 		// ctx := context.Background()
 		// m.loadModifiedFiles(ctx)
-	case pubsub.Event[history.File]:
+		// case pubsub.Event[history.File]:
 		// TODO: History service not implemented in API yet
 		// if msg.Payload.SessionID == m.app.CurrentSession.ID {
 		// 	// Process the individual file change instead of reloading all files
@@ -280,75 +277,6 @@ func (m *sidebarCmp) loadModifiedFiles(ctx context.Context) {
 				}
 			}
 		}
-	*/
-}
-
-func (m *sidebarCmp) processFileChanges(ctx context.Context, file history.File) {
-	// TODO: History service not implemented in API yet
-	return
-	/*
-		// Skip if this is the initial version (no changes to show)
-		if file.Version == history.InitialVersion {
-			return
-		}
-
-		// Find the initial version for this file
-		initialVersion, err := m.findInitialVersion(ctx, file.Path)
-		if err != nil || initialVersion.ID == "" {
-			return
-		}
-
-		// Skip if content hasn't changed
-		if initialVersion.Content == file.Content {
-			// If this file was previously modified but now matches the initial version,
-			// remove it from the modified files list
-			displayPath := getDisplayPath(file.Path)
-			delete(m.modFiles, displayPath)
-			return
-		}
-
-		// Calculate diff between initial and latest version
-		_, additions, removals := diff.GenerateDiff(initialVersion.Content, file.Content, file.Path)
-
-		// Only add to modified files if there are changes
-		if additions > 0 || removals > 0 {
-			displayPath := getDisplayPath(file.Path)
-			m.modFiles[displayPath] = struct {
-				additions int
-				removals  int
-			}{
-				additions: additions,
-				removals:  removals,
-			}
-		} else {
-			// If no changes, remove from modified files
-			displayPath := getDisplayPath(file.Path)
-			delete(m.modFiles, displayPath)
-		}
-	*/
-}
-
-// Helper function to find the initial version of a file
-func (m *sidebarCmp) findInitialVersion(ctx context.Context, path string) (history.File, error) {
-	// TODO: History service not implemented in API yet
-	return history.File{}, fmt.Errorf("history service not implemented")
-	/*
-		// Get all versions of this file for the session
-		fileVersions, err := m.app.History.ListBySession(ctx, m.app.CurrentSession.ID)
-		if err != nil {
-			return history.File{}, err
-		}
-	*/
-
-	/*
-		// Find the initial version
-		for _, v := range fileVersions {
-			if v.Path == path && v.Version == history.InitialVersion {
-				return v, nil
-			}
-		}
-
-		return history.File{}, fmt.Errorf("initial version not found")
 	*/
 }
 

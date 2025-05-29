@@ -13,7 +13,6 @@ import (
 	zone "github.com/lrstanley/bubblezone"
 	"github.com/spf13/cobra"
 	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/logging"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/tui"
 	"github.com/sst/opencode/internal/tui/app"
@@ -107,9 +106,9 @@ to assist developers in writing, debugging, and understanding code directly from
 		// Set up message handling for the TUI
 		go func() {
 			defer tuiWg.Done()
-			defer logging.RecoverPanic("TUI-message-handler", func() {
-				attemptTUIRecovery(program)
-			})
+			// defer logging.RecoverPanic("TUI-message-handler", func() {
+			// 	attemptTUIRecovery(program)
+			// })
 
 			for {
 				select {
@@ -157,15 +156,6 @@ to assist developers in writing, debugging, and understanding code directly from
 	},
 }
 
-// attemptTUIRecovery tries to recover the TUI after a panic
-func attemptTUIRecovery(program *tea.Program) {
-	slog.Info("Attempting to recover TUI after panic")
-
-	// We could try to restart the TUI or gracefully exit
-	// For now, we'll just quit the program to avoid further issues
-	program.Quit()
-}
-
 func setupSubscriber[T any](
 	ctx context.Context,
 	wg *sync.WaitGroup,
@@ -176,7 +166,7 @@ func setupSubscriber[T any](
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer logging.RecoverPanic(fmt.Sprintf("subscription-%s", name), nil)
+		// defer logging.RecoverPanic(fmt.Sprintf("subscription-%s", name), nil)
 
 		subCh := subscriber(ctx)
 		if subCh == nil {
@@ -224,7 +214,7 @@ func setupSubscriptions(app *app.App, parentCtx context.Context) (chan tea.Msg, 
 
 		waitCh := make(chan struct{})
 		go func() {
-			defer logging.RecoverPanic("subscription-cleanup", nil)
+			// defer logging.RecoverPanic("subscription-cleanup", nil)
 			wg.Wait()
 			close(waitCh)
 		}()
