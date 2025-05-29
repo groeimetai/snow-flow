@@ -24,71 +24,20 @@ func NewSessionServiceBridge(client *client.ClientWithResponses) *SessionService
 
 // Create creates a new session
 func (s *SessionServiceBridge) Create(ctx context.Context, title string) (session.Session, error) {
-	resp, err := s.client.PostSessionCreateWithResponse(ctx)
-	if err != nil {
-		return session.Session{}, err
-	}
-	if resp.StatusCode() != 200 {
-		return session.Session{}, fmt.Errorf("failed to create session: %d", resp.StatusCode())
-	}
-	info := resp.JSON200
-
-	// Convert to old session type
-	return session.Session{
-		ID:        info.Id,
-		Title:     info.Title,
-		CreatedAt: time.Now(), // API doesn't provide this yet
-		UpdatedAt: time.Now(), // API doesn't provide this yet
-	}, nil
+	// Moved to app.CreateSession
+	return session.Session{}, fmt.Errorf("don't use this")
 }
 
 // Get retrieves a session by ID
 func (s *SessionServiceBridge) Get(ctx context.Context, id string) (session.Session, error) {
-	// TODO: API doesn't have a get by ID endpoint yet
-	// For now, list all and find the one we want
-	sessions, err := s.List(ctx)
-	if err != nil {
-		return session.Session{}, err
-	}
-
-	for _, sess := range sessions {
-		if sess.ID == id {
-			return sess, nil
-		}
-	}
-
-	return session.Session{}, fmt.Errorf("session not found: %s", id)
+	// Moved to app.GetSession
+	return session.Session{}, fmt.Errorf("don't use this")
 }
 
 // List retrieves all sessions
 func (s *SessionServiceBridge) List(ctx context.Context) ([]session.Session, error) {
-	resp, err := s.client.PostSessionListWithResponse(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("failed to list sessions: %d", resp.StatusCode())
-	}
-
-	if resp.JSON200 == nil {
-		return []session.Session{}, nil
-	}
-
-	infos := *resp.JSON200
-
-	// Convert to old session type
-	sessions := make([]session.Session, len(infos))
-	for i, info := range infos {
-		sessions[i] = session.Session{
-			ID:        info.Id,
-			Title:     info.Title,
-			CreatedAt: time.Now(), // API doesn't provide this yet
-			UpdatedAt: time.Now(), // API doesn't provide this yet
-		}
-	}
-
-	return sessions, nil
+	// Moved to app.ListSessions
+	return []session.Session{}, fmt.Errorf("don't use this")
 }
 
 // Update updates a session - NOT IMPLEMENTED IN API YET

@@ -463,7 +463,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.showFilepicker = false
 
 				// Load sessions and show the dialog
-				sessions, err := a.app.Sessions.List(context.Background())
+				sessions, err := a.app.ListSessions(context.Background())
 				if err != nil {
 					status.Error(err.Error())
 					return a, nil

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"sync"
 	"time"
@@ -156,6 +157,36 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []me
 	// For now, just return success
 
 	return tea.Batch(cmds...)
+}
+
+func (a *App) ListSessions(ctx context.Context) ([]session.Session, error) {
+	resp, err := a.Client.PostSessionListWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("failed to list sessions: %d", resp.StatusCode())
+	}
+
+	if resp.JSON200 == nil {
+		return []session.Session{}, nil
+	}
+
+	infos := *resp.JSON200
+
+	// Convert to old session type
+	sessions := make([]session.Session, len(infos))
+	for i, info := range infos {
+		sessions[i] = session.Session{
+			ID:        info.Id,
+			Title:     info.Title,
+			CreatedAt: time.Now(), // API doesn't provide this yet
+			UpdatedAt: time.Now(), // API doesn't provide this yet
+		}
+	}
+
+	return sessions, nil
 }
 
 // initTheme sets the application theme based on the configuration
