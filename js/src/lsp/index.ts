@@ -1,4 +1,4 @@
-import { App } from "../app";
+import { App } from "../app/app";
 import { Log } from "../util/log";
 import { LSPClient } from "./client";
 import path from "path";
@@ -9,6 +9,7 @@ export namespace LSP {
   const state = App.state(
     "lsp",
     async () => {
+      log.info("initializing");
       const clients = new Map<string, LSPClient.Info>();
 
       return {

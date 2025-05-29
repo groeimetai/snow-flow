@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Tool } from "./tool";
 import path from "path";
 import { LSP } from "../lsp";
-import { App } from "../app";
+import { App } from "../app/app";
 
 export const LspHoverTool = Tool.define({
   name: "lsp.hover",

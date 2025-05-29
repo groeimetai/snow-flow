@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Tool } from "./tool";
-import { App } from "../app";
+import { App } from "../app/app";
 import * as path from "path";
 import * as fs from "fs";
 

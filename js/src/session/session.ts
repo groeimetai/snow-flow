@@ -1,5 +1,5 @@
 import path from "path";
-import { App } from "../app/";
+import { App } from "../app/app";
 import { Identifier } from "../id/id";
 import { LLM } from "../llm/llm";
 import { Storage } from "../storage/storage";

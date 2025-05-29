@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Tool } from "./tool";
-import { App } from "../app";
+import { App } from "../app/app";
 
 const DESCRIPTION = `Fast file pattern matching tool that finds files by name and pattern, returning matching paths sorted by modification time (newest first).
 

@@ -238,7 +238,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": {
-                    "$ref": "#/components/schemas/provider"
+                    "$ref": "#/components/schemas/Provider.Info"
                   }
                 }
               }
@@ -740,7 +740,7 @@
           "title"
         ]
       },
-      "provider": {
+      "Provider.Info": {
         "type": "object",
         "properties": {
           "options": {
@@ -750,7 +750,7 @@
           "models": {
             "type": "object",
             "additionalProperties": {
-              "$ref": "#/components/schemas/model"
+              "$ref": "#/components/schemas/Provider.Model"
             }
           }
         },
@@ -758,7 +758,7 @@
           "models"
         ]
       },
-      "model": {
+      "Provider.Model": {
         "type": "object",
         "properties": {
           "name": {

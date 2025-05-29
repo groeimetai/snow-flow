@@ -6,9 +6,9 @@ import { streamSSE } from "hono/streaming";
 import { Session } from "../session/session";
 import { resolver, validator as zValidator } from "hono-openapi/zod";
 import { z } from "zod";
-import { Config } from "../app/config";
 import { LLM } from "../llm/llm";
 import { Message } from "../session/message";
+import { Provider } from "../provider/provider";
 
 export namespace Server {
   const log = Log.create({ service: "server" });
@@ -234,7 +234,7 @@ export namespace Server {
               description: "List of providers",
               content: {
                 "application/json": {
-                  schema: resolver(z.record(z.string(), Config.Provider)),
+                  schema: resolver(z.record(z.string(), Provider.Info)),
                 },
               },
             },
@@ -242,7 +242,7 @@ export namespace Server {
         }),
         async (c) => {
           const providers = await LLM.providers();
-          const result: Record<string, Config.Provider> = {};
+          const result: Record<string, Provider.Info> = {};
           for (const [providerID, provider] of Object.entries(providers)) {
             result[providerID] = provider.info;
           }

@@ -1,5 +1,5 @@
 import { z, type ZodType } from "zod";
-import { App } from "../app";
+import { App } from "../app/app";
 import { Log } from "../util/log";
 
 export namespace Bus {

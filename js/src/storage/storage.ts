@@ -2,7 +2,7 @@ import { FileStorage } from "@flystorage/file-storage";
 import { LocalStorageAdapter } from "@flystorage/local-fs";
 import fs from "fs/promises";
 import { Log } from "../util/log";
-import { App } from "../app";
+import { App } from "../app/app";
 import { AppPath } from "../app/path";
 import { Bus } from "../bus";
 import z from "zod";

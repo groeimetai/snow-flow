@@ -1,5 +1,5 @@
 import "zod-openapi/extend";
-import { App } from "./app";
+import { App } from "./app/app";
 import { Server } from "./server/server";
 import fs from "fs/promises";
 import path from "path";

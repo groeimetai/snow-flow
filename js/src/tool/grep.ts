@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Tool } from "./tool";
-import { App } from "../app";
+import { App } from "../app/app";
 import { spawn } from "child_process";
 import { promises as fs } from "fs";
 import path from "path";

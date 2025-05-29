@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { App } from "../../src/app";
+import { App } from "../../src/app/app";
 import { glob } from "../../src/tool/glob";
 import { ls } from "../../src/tool/ls";
 

@@ -1,4 +1,4 @@
-import { App } from "../../app";
+import { App } from "../../app/app";
 
 export namespace FileTimes {
   export const state = App.state("tool.filetimes", () => ({

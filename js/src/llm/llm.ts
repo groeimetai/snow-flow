@@ -1,11 +1,12 @@
-import { App } from "../app";
+import { App } from "../app/app";
 import { Log } from "../util/log";
 import { mergeDeep } from "remeda";
 import path from "path";
+import { Provider } from "../provider/provider";
 
-import type { LanguageModel, Provider } from "ai";
+import type { LanguageModel, Provider as ProviderInstance } from "ai";
 import { NoSuchModelError } from "ai";
-import { Config } from "../app/config";
+import { Config } from "../config/config";
 import { BunProc } from "../bun";
 import { Global } from "../global";
 
@@ -18,7 +19,7 @@ export namespace LLM {
     }
   }
 
-  const NATIVE_PROVIDERS: Record<string, Config.Provider> = {
+  const NATIVE_PROVIDERS: Record<string, Provider.Info> = {
     anthropic: {
       models: {
         "claude-sonnet-4-20250514": {
@@ -76,18 +77,18 @@ export namespace LLM {
     google: ["GOOGLE_GENERATIVE_AI_API_KEY"],
   };
 
-  const state = App.state("llm", async (app) => {
+  const state = App.state("llm", async () => {
     const config = await Config.get();
     const providers: Record<
       string,
       {
-        info: Config.Provider;
-        instance: Provider;
+        info: Provider.Info;
+        instance: ProviderInstance;
       }
     > = {};
     const models = new Map<
       string,
-      { info: Config.Model; instance: LanguageModel }
+      { info: Provider.Model; instance: LanguageModel }
     >();
 
     const list = mergeDeep(NATIVE_PROVIDERS, config.providers ?? {});

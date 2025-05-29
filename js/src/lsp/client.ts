@@ -6,7 +6,7 @@ import {
   StreamMessageWriter,
 } from "vscode-jsonrpc/node";
 import type { Diagnostic as VSCodeDiagnostic } from "vscode-languageserver-types";
-import { App } from "../app";
+import { App } from "../app/app";
 import { Log } from "../util/log";
 import { LANGUAGE_EXTENSIONS } from "./language";
 import { Bus } from "../bus";
@@ -31,7 +31,6 @@ export namespace LSPClient {
 
   export async function create(input: { cmd: string[]; serverID: string }) {
     log.info("starting client", input);
-    let version = 0;
 
     const app = await App.use();
     const [command, ...args] = input.cmd;
