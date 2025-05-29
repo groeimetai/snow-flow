@@ -65,7 +65,11 @@ export namespace Session {
     log.info("created", result);
     state().sessions.set(result.id, result);
     await Storage.writeJSON("session/info/" + result.id, result);
-    await share(result.id);
+    share(result.id).then((shareID) => {
+      update(result.id, (draft) => {
+        draft.shareID = shareID;
+      });
+    });
     Bus.publish(Event.Updated, {
       info: result,
     });
