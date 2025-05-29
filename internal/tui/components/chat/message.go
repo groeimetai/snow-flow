@@ -16,9 +16,9 @@ import (
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
 	"github.com/sst/opencode/pkg/client"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
-
-type uiMessageType int
 
 const (
 	maxResultHeight = 10
@@ -149,7 +149,8 @@ func renderAssistantMessage(
 			switch toolInvocation.(type) {
 			case client.MessageToolInvocationToolCall:
 				toolCall := toolInvocation.(client.MessageToolInvocationToolCall)
-				toolName := toolName(toolCall.ToolName)
+				toolName := renderToolName(toolCall.ToolName)
+
 				var toolArgs []string
 				toolMap, _ := convertToMap(toolCall.Args)
 				for _, arg := range toolMap {
@@ -166,7 +167,7 @@ func renderAssistantMessage(
 
 			case client.MessageToolInvocationToolResult:
 				toolInvocationResult := toolInvocation.(client.MessageToolInvocationToolResult)
-				toolName := toolName(toolInvocationResult.ToolName)
+				toolName := renderToolName(toolInvocationResult.ToolName)
 				var toolArgs []string
 				toolMap, _ := convertToMap(toolInvocationResult.Args)
 				for _, arg := range toolMap {
@@ -258,35 +259,18 @@ func findToolResponse(toolCallID string, futureMessages []message.Message) *mess
 	return nil
 }
 
-func toolName(name string) string {
+func renderToolName(name string) string {
 	switch name {
 	// case agent.AgentToolName:
 	// 	return "Task"
-	case tools.BashToolName:
-		return "Bash"
-	case tools.EditToolName:
-		return "Edit"
-	case tools.FetchToolName:
-		return "Fetch"
-	case tools.GlobToolName:
-		return "Glob"
-	case tools.GrepToolName:
-		return "Grep"
-	case tools.LSToolName:
+	case "ls":
 		return "List"
-	case tools.ViewToolName:
-		return "View"
-	case tools.WriteToolName:
-		return "Write"
-	case tools.PatchToolName:
-		return "Patch"
-	case tools.BatchToolName:
-		return "Batch"
+	default:
+		return cases.Title(language.English).String(name)
 	}
-	return name
 }
 
-func getToolAction(name string) string {
+func renderToolAction(name string) string {
 	switch name {
 	// case agent.AgentToolName:
 	// 	return "Preparing prompt..."
@@ -570,7 +554,7 @@ func renderToolResponse(toolCall message.ToolCall, response message.ToolResult, 
 
 		var toolCalls []string
 		for i, result := range batchResult.Results {
-			toolName := toolName(result.ToolName)
+			toolName := renderToolName(result.ToolName)
 
 			// Format the tool input as a string
 			inputStr := string(result.ToolInput)
@@ -628,11 +612,11 @@ func renderToolMessage(
 
 	response := findToolResponse(toolCall.ID, allMessages)
 	toolNameText := baseStyle.Foreground(t.TextMuted()).
-		Render(fmt.Sprintf("%s: ", toolName(toolCall.Name)))
+		Render(fmt.Sprintf("%s: ", renderToolName(toolCall.Name)))
 
 	if !toolCall.Finished {
 		// Get a brief description of what the tool is doing
-		toolAction := getToolAction(toolCall.Name)
+		toolAction := renderToolAction(toolCall.Name)
 
 		progressText := baseStyle.
 			Width(width - 2 - lipgloss.Width(toolNameText)).

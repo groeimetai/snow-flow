@@ -23,7 +23,6 @@ type messagesCmp struct {
 	app              *app.App
 	width, height    int
 	viewport         viewport.Model
-	currentMsgID     string
 	spinner          spinner.Model
 	rendering        bool
 	attachments      viewport.Model
@@ -63,8 +62,6 @@ func (m *messagesCmp) Init() tea.Cmd {
 }
 
 func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// m.renderView()
-
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case dialog.ThemeChangedMsg:
@@ -72,16 +69,12 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case ToggleToolMessagesMsg:
 		m.showToolMessages = !m.showToolMessages
-		// Clear the cache to force re-rendering of all messages
-		// m.cachedContent = make(map[string]cacheItem)
 		m.renderView()
 		return m, nil
 	case state.SessionSelectedMsg:
 		cmd := m.Reload(msg)
 		return m, cmd
 	case state.SessionClearedMsg:
-		// m.messages = make([]message.Message, 0)
-		m.currentMsgID = ""
 		m.rendering = false
 		return m, nil
 	case tea.KeyMsg:
@@ -119,17 +112,10 @@ func (m *messagesCmp) renderView() {
 	for _, msg := range m.app.Messages {
 		switch msg.Role {
 		case client.User:
-			content := renderUserMessage(
-				msg,
-				m.width,
-			)
+			content := renderUserMessage(msg, m.width)
 			messages = append(messages, content+"\n")
 		case client.Assistant:
-			content := renderAssistantMessage(
-				msg,
-				m.width,
-				m.showToolMessages,
-			)
+			content := renderAssistantMessage(msg, m.width, m.showToolMessages)
 			messages = append(messages, content+"\n")
 		}
 	}
@@ -328,18 +314,6 @@ func (m *messagesCmp) GetSize() (int, int) {
 }
 
 func (m *messagesCmp) Reload(session *session.Session) tea.Cmd {
-	// messages := m.app.Messages
-	// messages, err := m.app.MessagesOLD.List(context.Background(), session.ID)
-	// if err != nil {
-	// 	status.Error(err.Error())
-	// 	return nil
-	// }
-	// m.messages = messages
-
-	if len(m.app.Messages) > 0 {
-		m.currentMsgID = m.app.Messages[len(m.app.Messages)-1].Id
-	}
-	// delete(m.cachedContent, m.currentMsgID)
 	m.rendering = true
 	return func() tea.Msg {
 		m.renderView()
