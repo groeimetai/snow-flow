@@ -43,26 +43,46 @@ export namespace Server {
           },
         }),
       )
-      .get("/event", async (c) => {
-        log.info("event connected");
-        return streamSSE(c, async (stream) => {
-          stream.writeSSE({
-            data: JSON.stringify({}),
-          });
-          const unsub = Bus.subscribeAll(async (event) => {
-            await stream.writeSSE({
-              data: JSON.stringify(event),
+      .get(
+        "/event",
+        describeRoute({
+          description: "Get events",
+          responses: {
+            200: {
+              description: "Event stream",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    Bus.payloads().openapi({
+                      ref: "Event",
+                    }),
+                  ),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          log.info("event connected");
+          return streamSSE(c, async (stream) => {
+            stream.writeSSE({
+              data: JSON.stringify({}),
+            });
+            const unsub = Bus.subscribeAll(async (event) => {
+              await stream.writeSSE({
+                data: JSON.stringify(event),
+              });
+            });
+            await new Promise<void>((resolve) => {
+              stream.onAbort(() => {
+                unsub();
+                resolve();
+                log.info("event disconnected");
+              });
             });
           });
-          await new Promise<void>((resolve) => {
-            stream.onAbort(() => {
-              unsub();
-              resolve();
-              log.info("event disconnected");
-            });
-          });
-        });
-      })
+        },
+      )
       .post(
         "/session_create",
         describeRoute({

@@ -10,7 +10,7 @@ import { App } from "../app";
 import { Log } from "../util/log";
 import { LANGUAGE_EXTENSIONS } from "./language";
 import { Bus } from "../bus";
-import z from "zod/v4";
+import z from "zod";
 
 export namespace LSPClient {
   const log = Log.create({ service: "lsp.client" });

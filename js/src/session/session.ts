@@ -11,7 +11,6 @@ import {
   streamText,
 } from "ai";
 import { z } from "zod";
-import { z as zv4 } from "zod/v4";
 import * as tools from "../tool";
 import { Decimal } from "decimal.js";
 
@@ -35,8 +34,8 @@ export namespace Session {
   export const Event = {
     Updated: Bus.event(
       "session.updated",
-      zv4.object({
-        sessionID: zv4.string(),
+      z.object({
+        sessionID: z.string(),
       }),
     ),
   };

@@ -28,10 +28,6 @@ cli.command("generate", "Generate OpenAPI and event specs").action(async () => {
     path.join(dir, "openapi.json"),
     JSON.stringify(specs, null, 2),
   );
-  await Bun.write(
-    path.join(dir, "event.json"),
-    JSON.stringify(Bus.specs(), null, 2),
-  );
 });
 
 cli

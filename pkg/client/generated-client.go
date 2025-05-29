@@ -24,6 +24,46 @@ const (
 	User      MessageInfoRole = "user"
 )
 
+// Event defines model for Event.
+type Event struct {
+	union json.RawMessage
+}
+
+// EventLspClientDiagnostics defines model for Event.lsp.client.diagnostics.
+type EventLspClientDiagnostics struct {
+	Properties struct {
+		Path     string `json:"path"`
+		ServerID string `json:"serverID"`
+	} `json:"properties"`
+	Type string `json:"type"`
+}
+
+// EventMessageUpdated defines model for Event.message.updated.
+type EventMessageUpdated struct {
+	Properties struct {
+		MessageID string `json:"messageID"`
+		SessionID string `json:"sessionID"`
+	} `json:"properties"`
+	Type string `json:"type"`
+}
+
+// EventSessionUpdated defines model for Event.session.updated.
+type EventSessionUpdated struct {
+	Properties struct {
+		SessionID string `json:"sessionID"`
+	} `json:"properties"`
+	Type string `json:"type"`
+}
+
+// EventStorageWrite defines model for Event.storage.write.
+type EventStorageWrite struct {
+	Properties struct {
+		Content *interface{} `json:"content,omitempty"`
+		Key     string       `json:"key"`
+	} `json:"properties"`
+	Type string `json:"type"`
+}
+
 // MessageInfo defines model for Message.Info.
 type MessageInfo struct {
 	Id       string `json:"id"`
@@ -190,6 +230,155 @@ type PostSessionMessagesJSONRequestBody PostSessionMessagesJSONBody
 
 // PostSessionShareJSONRequestBody defines body for PostSessionShare for application/json ContentType.
 type PostSessionShareJSONRequestBody PostSessionShareJSONBody
+
+// AsEventStorageWrite returns the union data inside the Event as a EventStorageWrite
+func (t Event) AsEventStorageWrite() (EventStorageWrite, error) {
+	var body EventStorageWrite
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventStorageWrite overwrites any union data inside the Event as the provided EventStorageWrite
+func (t *Event) FromEventStorageWrite(v EventStorageWrite) error {
+	v.Type = "storage.write"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventStorageWrite performs a merge with any union data inside the Event, using the provided EventStorageWrite
+func (t *Event) MergeEventStorageWrite(v EventStorageWrite) error {
+	v.Type = "storage.write"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEventLspClientDiagnostics returns the union data inside the Event as a EventLspClientDiagnostics
+func (t Event) AsEventLspClientDiagnostics() (EventLspClientDiagnostics, error) {
+	var body EventLspClientDiagnostics
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventLspClientDiagnostics overwrites any union data inside the Event as the provided EventLspClientDiagnostics
+func (t *Event) FromEventLspClientDiagnostics(v EventLspClientDiagnostics) error {
+	v.Type = "lsp.client.diagnostics"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventLspClientDiagnostics performs a merge with any union data inside the Event, using the provided EventLspClientDiagnostics
+func (t *Event) MergeEventLspClientDiagnostics(v EventLspClientDiagnostics) error {
+	v.Type = "lsp.client.diagnostics"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEventMessageUpdated returns the union data inside the Event as a EventMessageUpdated
+func (t Event) AsEventMessageUpdated() (EventMessageUpdated, error) {
+	var body EventMessageUpdated
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventMessageUpdated overwrites any union data inside the Event as the provided EventMessageUpdated
+func (t *Event) FromEventMessageUpdated(v EventMessageUpdated) error {
+	v.Type = "message.updated"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventMessageUpdated performs a merge with any union data inside the Event, using the provided EventMessageUpdated
+func (t *Event) MergeEventMessageUpdated(v EventMessageUpdated) error {
+	v.Type = "message.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEventSessionUpdated returns the union data inside the Event as a EventSessionUpdated
+func (t Event) AsEventSessionUpdated() (EventSessionUpdated, error) {
+	var body EventSessionUpdated
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventSessionUpdated overwrites any union data inside the Event as the provided EventSessionUpdated
+func (t *Event) FromEventSessionUpdated(v EventSessionUpdated) error {
+	v.Type = "session.updated"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventSessionUpdated performs a merge with any union data inside the Event, using the provided EventSessionUpdated
+func (t *Event) MergeEventSessionUpdated(v EventSessionUpdated) error {
+	v.Type = "session.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t Event) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t Event) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "lsp.client.diagnostics":
+		return t.AsEventLspClientDiagnostics()
+	case "message.updated":
+		return t.AsEventMessageUpdated()
+	case "session.updated":
+		return t.AsEventSessionUpdated()
+	case "storage.write":
+		return t.AsEventStorageWrite()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t Event) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *Event) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // AsMessagePartText returns the union data inside the MessagePart as a MessagePartText
 func (t MessagePart) AsMessagePartText() (MessagePartText, error) {
@@ -592,6 +781,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetEvent request
+	GetEvent(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostProviderList request
 	PostProviderList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -620,6 +812,18 @@ type ClientInterface interface {
 	PostSessionShareWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PostSessionShare(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetEvent(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEventRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) PostProviderList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -752,6 +956,33 @@ func (c *Client) PostSessionShare(ctx context.Context, body PostSessionShareJSON
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewGetEventRequest generates requests for GetEvent
+func NewGetEventRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/event")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewPostProviderListRequest generates requests for PostProviderList
@@ -1038,6 +1269,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetEventWithResponse request
+	GetEventWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventResponse, error)
+
 	// PostProviderListWithResponse request
 	PostProviderListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostProviderListResponse, error)
 
@@ -1066,6 +1300,28 @@ type ClientWithResponsesInterface interface {
 	PostSessionShareWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionShareResponse, error)
 
 	PostSessionShareWithResponse(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionShareResponse, error)
+}
+
+type GetEventResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Event
+}
+
+// Status returns HTTPResponse.Status
+func (r GetEventResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetEventResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type PostProviderListResponse struct {
@@ -1226,6 +1482,15 @@ func (r PostSessionShareResponse) StatusCode() int {
 	return 0
 }
 
+// GetEventWithResponse request returning *GetEventResponse
+func (c *ClientWithResponses) GetEventWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventResponse, error) {
+	rsp, err := c.GetEvent(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetEventResponse(rsp)
+}
+
 // PostProviderListWithResponse request returning *PostProviderListResponse
 func (c *ClientWithResponses) PostProviderListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostProviderListResponse, error) {
 	rsp, err := c.PostProviderList(ctx, reqEditors...)
@@ -1319,6 +1584,32 @@ func (c *ClientWithResponses) PostSessionShareWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParsePostSessionShareResponse(rsp)
+}
+
+// ParseGetEventResponse parses an HTTP response from a GetEventWithResponse call
+func ParseGetEventResponse(rsp *http.Response) (*GetEventResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetEventResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Event
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParsePostProviderListResponse parses an HTTP response from a PostProviderListWithResponse call

@@ -267,15 +267,15 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	// Handle SSE events from the TypeScript backend
-	case *client.EventStorageWrite:
-		slog.Debug("Received SSE event", "key", msg.Key)
+	case client.EventStorageWrite:
+		slog.Debug("Received SSE event", "key", msg.Properties.Key)
 
-		splits := strings.Split(msg.Key, "/")
+		splits := strings.Split(msg.Properties.Key, "/")
 		current := a.app.State
 
 		for i, part := range splits {
 			if i == len(splits)-1 {
-				current[part] = msg.Content
+				current[part] = msg.Properties.Content
 			} else {
 				if _, exists := current[part]; !exists {
 					current[part] = make(map[string]any)

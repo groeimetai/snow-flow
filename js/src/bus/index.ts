@@ -1,4 +1,4 @@
-import { z, type ZodType } from "zod/v4";
+import { z, type ZodType } from "zod";
 import { App } from "../app";
 import { Log } from "../util/log";
 
@@ -30,16 +30,23 @@ export namespace Bus {
     return result;
   }
 
-  export function specs() {
-    const children = {} as any;
-    for (const [type, def] of registry.entries()) {
-      children["event." + def.type] = def.properties;
-    }
-    const result = z.toJSONSchema(z.object(children)) as any;
-    result.definitions = result.properties;
-    delete result.properties;
-    delete result.required;
-    return result;
+  export function payloads() {
+    return z.discriminatedUnion(
+      "type",
+      registry
+        .entries()
+        .map(([type, def]) =>
+          z
+            .object({
+              type: z.literal(type),
+              properties: def.properties,
+            })
+            .openapi({
+              ref: "Event" + "." + def.type,
+            }),
+        )
+        .toArray() as any,
+    );
   }
 
   export function publish<Definition extends EventDefinition>(

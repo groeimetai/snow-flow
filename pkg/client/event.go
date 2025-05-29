@@ -5,20 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"reflect"
 	"strings"
 )
-
-var EventMap = map[string]any{
-	"storage.write":   EventStorageWrite{},
-	"session.updated": EventSessionUpdated{},
-	"message.updated": EventMessageUpdated{},
-}
-
-type EventMessage struct {
-	Type       string          `json:"type"`
-	Properties json.RawMessage `json:"properties"`
-}
 
 func (c *Client) Event(ctx context.Context) (<-chan any, error) {
 	events := make(chan any)
@@ -42,24 +30,18 @@ func (c *Client) Event(ctx context.Context) (<-chan any, error) {
 			if strings.HasPrefix(line, "data: ") {
 				data := strings.TrimPrefix(line, "data: ")
 
-				var eventMsg EventMessage
-				if err := json.Unmarshal([]byte(data), &eventMsg); err != nil {
+				var event Event
+				if err := json.Unmarshal([]byte(data), &event); err != nil {
 					continue
 				}
 
-				eventTemplate, exists := EventMap[eventMsg.Type]
-				if !exists {
-					continue
-				}
-
-				eventValue := reflect.New(reflect.TypeOf(eventTemplate)).Interface()
-
-				if err := json.Unmarshal(eventMsg.Properties, eventValue); err != nil {
+				val, err := event.ValueByDiscriminator()
+				if err != nil {
 					continue
 				}
 
 				select {
-				case events <- eventValue:
+				case events <- val:
 				case <-ctx.Done():
 					return
 				}
