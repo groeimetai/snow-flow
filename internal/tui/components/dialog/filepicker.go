@@ -17,7 +17,6 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/image"
@@ -116,7 +115,7 @@ func (s stack) Pop() (stack, int) {
 }
 
 type AttachmentAddedMsg struct {
-	Attachment message.Attachment
+	Attachment app.Attachment
 }
 
 func (f *filepickerCmp) Init() tea.Cmd {
@@ -269,7 +268,7 @@ func (f *filepickerCmp) addAttachmentToMessage() (tea.Model, tea.Cmd) {
 	mimeBufferSize := min(512, len(content))
 	mimeType := http.DetectContentType(content[:mimeBufferSize])
 	fileName := filepath.Base(selectedFilePath)
-	attachment := message.Attachment{FilePath: selectedFilePath, FileName: fileName, MimeType: mimeType, Content: content}
+	attachment := app.Attachment{FilePath: selectedFilePath, FileName: fileName, MimeType: mimeType, Content: content}
 	f.selectedFile = ""
 	return f, util.CmdHandler(AttachmentAddedMsg{attachment})
 }

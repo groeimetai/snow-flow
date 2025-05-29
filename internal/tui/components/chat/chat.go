@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/message"
+	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
 	"github.com/sst/opencode/internal/version"
@@ -15,7 +15,7 @@ import (
 
 type SendMsg struct {
 	Text        string
-	Attachments []message.Attachment
+	Attachments []app.Attachment
 }
 
 func header(width int) string {

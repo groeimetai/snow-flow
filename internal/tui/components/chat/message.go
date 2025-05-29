@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
 	"github.com/sst/opencode/pkg/client"
@@ -244,17 +243,6 @@ func renderAssistantMessage(
 	return strings.Join(messages, "\n\n")
 }
 
-func findToolResponse(toolCallID string, futureMessages []message.Message) *message.ToolResult {
-	for _, msg := range futureMessages {
-		for _, result := range msg.ToolResults() {
-			if result.ToolCallID == toolCallID {
-				return &result
-			}
-		}
-	}
-	return nil
-}
-
 func renderToolName(name string) string {
 	switch name {
 	// case agent.AgentToolName:
@@ -354,9 +342,9 @@ func removeWorkingDirPrefix(path string) string {
 	return path
 }
 
-func renderToolParams(paramWidth int, toolCall message.ToolCall) string {
+func renderToolParams(paramWidth int, toolCall any) string {
 	params := ""
-	switch toolCall.Name {
+	switch toolCall {
 	// // case agent.AgentToolName:
 	// // 	var params agent.AgentParams
 	// // 	json.Unmarshal([]byte(toolCall.Input), &params)
@@ -445,9 +433,9 @@ func renderToolParams(paramWidth int, toolCall message.ToolCall) string {
 	// 	var params tools.BatchParams
 	// 	json.Unmarshal([]byte(toolCall.Input), &params)
 	// 	return renderParams(paramWidth, fmt.Sprintf("%d parallel calls", len(params.Calls)))
-	default:
-		input := strings.ReplaceAll(toolCall.Input, "\n", " ")
-		params = renderParams(paramWidth, input)
+	// default:
+	// 	input := strings.ReplaceAll(toolCall, "\n", " ")
+	// 	params = renderParams(paramWidth, input)
 	}
 	return params
 }
@@ -460,21 +448,22 @@ func truncateHeight(content string, height int) string {
 	return content
 }
 
-func renderToolResponse(toolCall message.ToolCall, response message.ToolResult, width int) string {
-	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
-
-	if response.IsError {
-		errContent := fmt.Sprintf("Error: %s", strings.ReplaceAll(response.Content, "\n", " "))
-		errContent = ansi.Truncate(errContent, width-1, "...")
-		return baseStyle.
-			Width(width).
-			Foreground(t.Error()).
-			Render(errContent)
-	}
-
-	resultContent := truncateHeight(response.Content, maxResultHeight)
-	switch toolCall.Name {
+func renderToolResponse(toolCall any, response any, width int) string {
+	return ""
+	// t := theme.CurrentTheme()
+	// baseStyle := styles.BaseStyle()
+	//
+	// if response.IsError {
+	// 	errContent := fmt.Sprintf("Error: %s", strings.ReplaceAll(response.Content, "\n", " "))
+	// 	errContent = ansi.Truncate(errContent, width-1, "...")
+	// 	return baseStyle.
+	// 		Width(width).
+	// 		Foreground(t.Error()).
+	// 		Render(errContent)
+	// }
+	//
+	// resultContent := truncateHeight(response.Content, maxResultHeight)
+	// switch toolCall.Name {
 	// case agent.AgentToolName:
 	// 	return styles.ForceReplaceBackgroundWithLipgloss(
 	// 		toMarkdown(resultContent, false, width),
@@ -574,113 +563,113 @@ func renderToolResponse(toolCall message.ToolCall, response message.ToolResult, 
 	// 	}
 	//
 	// 	return baseStyle.Width(width).Foreground(t.TextMuted()).Render(strings.Join(toolCalls, "\n\n"))
-	default:
-		resultContent = fmt.Sprintf("```text\n%s\n```", resultContent)
-		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, width),
-			t.Background(),
-		)
-	}
-}
-
-func renderToolMessage(
-	toolCall message.ToolCall,
-	allMessages []message.Message,
-	messagesService message.Service,
-	focusedUIMessageId string,
-	nested bool,
-	width int,
-	position int,
-) string {
-	if nested {
-		width = width - 3
-	}
-
-	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
-
-	style := baseStyle.
-		Width(width - 1).
-		BorderLeft(true).
-		BorderStyle(lipgloss.ThickBorder()).
-		PaddingLeft(1).
-		BorderForeground(t.TextMuted())
-
-	response := findToolResponse(toolCall.ID, allMessages)
-	toolNameText := baseStyle.Foreground(t.TextMuted()).
-		Render(fmt.Sprintf("%s: ", renderToolName(toolCall.Name)))
-
-	if !toolCall.Finished {
-		// Get a brief description of what the tool is doing
-		toolAction := renderToolAction(toolCall.Name)
-
-		progressText := baseStyle.
-			Width(width - 2 - lipgloss.Width(toolNameText)).
-			Foreground(t.TextMuted()).
-			Render(fmt.Sprintf("%s", toolAction))
-
-		content := style.Render(lipgloss.JoinHorizontal(lipgloss.Left, toolNameText, progressText))
-		return content
-	}
-
-	params := renderToolParams(width-1-lipgloss.Width(toolNameText), toolCall)
-	responseContent := ""
-	if response != nil {
-		responseContent = renderToolResponse(toolCall, *response, width-2)
-		responseContent = strings.TrimSuffix(responseContent, "\n")
-	} else {
-		responseContent = baseStyle.
-			Italic(true).
-			Width(width - 2).
-			Foreground(t.TextMuted()).
-			Render("Waiting for response...")
-	}
-
-	parts := []string{}
-	if !nested {
-		formattedParams := baseStyle.
-			Width(width - 2 - lipgloss.Width(toolNameText)).
-			Foreground(t.TextMuted()).
-			Render(params)
-
-		parts = append(parts, lipgloss.JoinHorizontal(lipgloss.Left, toolNameText, formattedParams))
-	} else {
-		prefix := baseStyle.
-			Foreground(t.TextMuted()).
-			Render(" └ ")
-		formattedParams := baseStyle.
-			Width(width - 2 - lipgloss.Width(toolNameText)).
-			Foreground(t.TextMuted()).
-			Render(params)
-		parts = append(parts, lipgloss.JoinHorizontal(lipgloss.Left, prefix, toolNameText, formattedParams))
-	}
-
-	// if toolCall.Name == agent.AgentToolName {
-	// 	taskMessages, _ := messagesService.List(context.Background(), toolCall.ID)
-	// 	toolCalls := []message.ToolCall{}
-	// 	for _, v := range taskMessages {
-	// 		toolCalls = append(toolCalls, v.ToolCalls()...)
-	// 	}
-	// 	for _, call := range toolCalls {
-	// 		rendered := renderToolMessage(call, []message.Message{}, messagesService, focusedUIMessageId, true, width, 0)
-	// 		parts = append(parts, rendered.content)
-	// 	}
+	// default:
+	// 	resultContent = fmt.Sprintf("```text\n%s\n```", resultContent)
+	// 	return styles.ForceReplaceBackgroundWithLipgloss(
+	// 		toMarkdown(resultContent, width),
+	// 		t.Background(),
+	// 	)
 	// }
-	if responseContent != "" && !nested {
-		parts = append(parts, responseContent)
-	}
-
-	content := style.Render(
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			parts...,
-		),
-	)
-	if nested {
-		content = lipgloss.JoinVertical(
-			lipgloss.Left,
-			parts...,
-		)
-	}
-	return content
 }
+
+// func renderToolMessage(
+// 	toolCall message.ToolCall,
+// 	allMessages []message.Message,
+// 	messagesService message.Service,
+// 	focusedUIMessageId string,
+// 	nested bool,
+// 	width int,
+// 	position int,
+// ) string {
+// 	if nested {
+// 		width = width - 3
+// 	}
+//
+// 	t := theme.CurrentTheme()
+// 	baseStyle := styles.BaseStyle()
+//
+// 	style := baseStyle.
+// 		Width(width - 1).
+// 		BorderLeft(true).
+// 		BorderStyle(lipgloss.ThickBorder()).
+// 		PaddingLeft(1).
+// 		BorderForeground(t.TextMuted())
+//
+// 	response := findToolResponse(toolCall.ID, allMessages)
+// 	toolNameText := baseStyle.Foreground(t.TextMuted()).
+// 		Render(fmt.Sprintf("%s: ", renderToolName(toolCall.Name)))
+//
+// 	if !toolCall.Finished {
+// 		// Get a brief description of what the tool is doing
+// 		toolAction := renderToolAction(toolCall.Name)
+//
+// 		progressText := baseStyle.
+// 			Width(width - 2 - lipgloss.Width(toolNameText)).
+// 			Foreground(t.TextMuted()).
+// 			Render(fmt.Sprintf("%s", toolAction))
+//
+// 		content := style.Render(lipgloss.JoinHorizontal(lipgloss.Left, toolNameText, progressText))
+// 		return content
+// 	}
+//
+// 	params := renderToolParams(width-1-lipgloss.Width(toolNameText), toolCall)
+// 	responseContent := ""
+// 	if response != nil {
+// 		responseContent = renderToolResponse(toolCall, *response, width-2)
+// 		responseContent = strings.TrimSuffix(responseContent, "\n")
+// 	} else {
+// 		responseContent = baseStyle.
+// 			Italic(true).
+// 			Width(width - 2).
+// 			Foreground(t.TextMuted()).
+// 			Render("Waiting for response...")
+// 	}
+//
+// 	parts := []string{}
+// 	if !nested {
+// 		formattedParams := baseStyle.
+// 			Width(width - 2 - lipgloss.Width(toolNameText)).
+// 			Foreground(t.TextMuted()).
+// 			Render(params)
+//
+// 		parts = append(parts, lipgloss.JoinHorizontal(lipgloss.Left, toolNameText, formattedParams))
+// 	} else {
+// 		prefix := baseStyle.
+// 			Foreground(t.TextMuted()).
+// 			Render(" └ ")
+// 		formattedParams := baseStyle.
+// 			Width(width - 2 - lipgloss.Width(toolNameText)).
+// 			Foreground(t.TextMuted()).
+// 			Render(params)
+// 		parts = append(parts, lipgloss.JoinHorizontal(lipgloss.Left, prefix, toolNameText, formattedParams))
+// 	}
+//
+// 	// if toolCall.Name == agent.AgentToolName {
+// 	// 	taskMessages, _ := messagesService.List(context.Background(), toolCall.ID)
+// 	// 	toolCalls := []message.ToolCall{}
+// 	// 	for _, v := range taskMessages {
+// 	// 		toolCalls = append(toolCalls, v.ToolCalls()...)
+// 	// 	}
+// 	// 	for _, call := range toolCalls {
+// 	// 		rendered := renderToolMessage(call, []message.Message{}, messagesService, focusedUIMessageId, true, width, 0)
+// 	// 		parts = append(parts, rendered.content)
+// 	// 	}
+// 	// }
+// 	if responseContent != "" && !nested {
+// 		parts = append(parts, responseContent)
+// 	}
+//
+// 	content := style.Render(
+// 		lipgloss.JoinVertical(
+// 			lipgloss.Left,
+// 			parts...,
+// 		),
+// 	)
+// 	if nested {
+// 		content = lipgloss.JoinVertical(
+// 			lipgloss.Left,
+// 			parts...,
+// 		)
+// 	}
+// 	return content
+// }

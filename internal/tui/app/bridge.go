@@ -2,12 +2,8 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"time"
 
-	"github.com/sst/opencode/internal/message"
-	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/pkg/client"
 )
 
@@ -22,7 +18,7 @@ func NewAgentServiceBridge(client *client.ClientWithResponses) *AgentServiceBrid
 }
 
 // Run sends a message to the chat API
-func (a *AgentServiceBridge) Run(ctx context.Context, sessionID string, text string, attachments ...message.Attachment) (string, error) {
+func (a *AgentServiceBridge) Run(ctx context.Context, sessionID string, text string, attachments ...Attachment) (string, error) {
 	// TODO: Handle attachments when API supports them
 	if len(attachments) > 0 {
 		// For now, ignore attachments
@@ -70,85 +66,4 @@ func (a *AgentServiceBridge) IsSessionBusy(sessionID string) bool {
 func (a *AgentServiceBridge) CompactSession(ctx context.Context, sessionID string, force bool) error {
 	// TODO: Not implemented in TypeScript API yet
 	return fmt.Errorf("session compaction not implemented in API")
-}
-
-// MessageServiceBridge provides a minimal message service that fetches from the API
-type MessageServiceBridge struct {
-	client *client.ClientWithResponses
-	broker *pubsub.Broker[message.Message]
-}
-
-// NewMessageServiceBridge creates a new message service bridge
-func NewMessageServiceBridge(client *client.ClientWithResponses) *MessageServiceBridge {
-	return &MessageServiceBridge{
-		client: client,
-		broker: pubsub.NewBroker[message.Message](),
-	}
-}
-
-// GetBySession retrieves messages for a session
-func (m *MessageServiceBridge) GetBySession(ctx context.Context, sessionID string) ([]message.Message, error) {
-	return m.List(ctx, sessionID)
-}
-
-// List retrieves messages for a session
-func (m *MessageServiceBridge) List(ctx context.Context, sessionID string) ([]message.Message, error) {
-	resp, err := m.client.PostSessionMessages(ctx, client.PostSessionMessagesJSONRequestBody{
-		SessionID: sessionID,
-	})
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	// The API returns a different format, we'll need to adapt it
-	var rawMessages any
-	if err := json.NewDecoder(resp.Body).Decode(&rawMessages); err != nil {
-		return nil, err
-	}
-
-	// TODO: Convert the API message format to our internal format
-	// For now, return empty to avoid compilation errors
-	return []message.Message{}, nil
-}
-
-// Create creates a new message - NOT NEEDED, handled by chat API
-func (m *MessageServiceBridge) Create(ctx context.Context, sessionID string, params message.CreateMessageParams) (message.Message, error) {
-	// Messages are created through the chat API
-	return message.Message{}, fmt.Errorf("use chat API to send messages")
-}
-
-// Update updates a message - NOT IMPLEMENTED IN API YET
-func (m *MessageServiceBridge) Update(ctx context.Context, msg message.Message) (message.Message, error) {
-	// TODO: Not implemented in TypeScript API yet
-	return message.Message{}, fmt.Errorf("message update not implemented in API")
-}
-
-// Delete deletes a message - NOT IMPLEMENTED IN API YET
-func (m *MessageServiceBridge) Delete(ctx context.Context, id string) error {
-	// TODO: Not implemented in TypeScript API yet
-	return fmt.Errorf("message delete not implemented in API")
-}
-
-// DeleteSessionMessages deletes all messages for a session - NOT IMPLEMENTED IN API YET
-func (m *MessageServiceBridge) DeleteSessionMessages(ctx context.Context, sessionID string) error {
-	// TODO: Not implemented in TypeScript API yet
-	return fmt.Errorf("delete session messages not implemented in API")
-}
-
-// Get retrieves a message by ID - NOT IMPLEMENTED IN API YET
-func (m *MessageServiceBridge) Get(ctx context.Context, id string) (message.Message, error) {
-	// TODO: Not implemented in TypeScript API yet
-	return message.Message{}, fmt.Errorf("get message by ID not implemented in API")
-}
-
-// ListAfter retrieves messages after a timestamp - NOT IMPLEMENTED IN API YET
-func (m *MessageServiceBridge) ListAfter(ctx context.Context, sessionID string, timestamp time.Time) ([]message.Message, error) {
-	// TODO: Not implemented in TypeScript API yet
-	return []message.Message{}, fmt.Errorf("list messages after timestamp not implemented in API")
-}
-
-// Subscribe subscribes to message events
-func (m *MessageServiceBridge) Subscribe(ctx context.Context) <-chan pubsub.Event[message.Message] {
-	return m.broker.Subscribe(ctx)
 }

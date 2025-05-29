@@ -10,7 +10,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/fileutil"
-	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/state"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -24,7 +23,6 @@ type App struct {
 	Session  *client.SessionInfo
 	Messages []client.MessageInfo
 
-	MessagesOLD    MessageService
 	LogsOLD        any // TODO: Define LogService interface when needed
 	HistoryOLD     any // TODO: Define HistoryService interface when needed
 	PermissionsOLD any // TODO: Define PermissionService interface when needed
@@ -66,14 +64,12 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	// Create service bridges
-	messageBridge := NewMessageServiceBridge(httpClient)
 	agentBridge := NewAgentServiceBridge(httpClient)
 
 	app := &App{
 		Client:          httpClient,
 		Events:          eventClient,
 		Session:         &client.SessionInfo{},
-		MessagesOLD:     messageBridge,
 		PrimaryAgentOLD: agentBridge,
 		Status:          status.GetService(),
 
@@ -89,8 +85,15 @@ func New(ctx context.Context) (*App, error) {
 	return app, nil
 }
 
+type Attachment struct {
+	FilePath string
+	FileName string
+	MimeType string
+	Content  []byte
+}
+
 // Create creates a new session
-func (a *App) SendChatMessage(ctx context.Context, text string, attachments []message.Attachment) tea.Cmd {
+func (a *App) SendChatMessage(ctx context.Context, text string, attachments []Attachment) tea.Cmd {
 	var cmds []tea.Cmd
 	if a.Session.Id == "" {
 		resp, err := a.Client.PostSessionCreateWithResponse(ctx)

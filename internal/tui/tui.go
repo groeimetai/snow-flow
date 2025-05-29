@@ -13,7 +13,6 @@ import (
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/tui/app"
 
-	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/permission"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/status"
@@ -573,11 +572,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return a, nil
 		}
-
-	case pubsub.Event[message.Message]:
-		a.pages[page.ChatPage], cmd = a.pages[page.ChatPage].Update(msg)
-		cmds = append(cmds, cmd)
-		return a, tea.Batch(cmds...)
 
 	default:
 		f, filepickerCmd := a.filepicker.Update(msg)

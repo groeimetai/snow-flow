@@ -13,7 +13,6 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/components/dialog"
@@ -29,7 +28,7 @@ type editorCmp struct {
 	height         int
 	app            *app.App
 	textarea       textarea.Model
-	attachments    []message.Attachment
+	attachments    []app.Attachment
 	deleteMode     bool
 	history        []string
 	historyIndex   int
@@ -233,7 +232,7 @@ func (m *editorCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			if len(imageBytes) != 0 {
 				attachmentName := fmt.Sprintf("clipboard-image-%d", len(m.attachments))
-				attachment := message.Attachment{FilePath: attachmentName, FileName: attachmentName, Content: imageBytes, MimeType: "image/png"}
+				attachment := app.Attachment{FilePath: attachmentName, FileName: attachmentName, Content: imageBytes, MimeType: "image/png"}
 				m.attachments = append(m.attachments, attachment)
 			} else {
 				m.textarea.SetValue(m.textarea.Value() + text)

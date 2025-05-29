@@ -8,7 +8,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/completions"
-	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/components/chat"
@@ -161,7 +160,7 @@ func (p *chatPage) clearSidebar() tea.Cmd {
 	return p.layout.ClearRightPanel()
 }
 
-func (p *chatPage) sendMessage(text string, attachments []message.Attachment) tea.Cmd {
+func (p *chatPage) sendMessage(text string, attachments []app.Attachment) tea.Cmd {
 	var cmds []tea.Cmd
 	cmd := p.app.SendChatMessage(context.Background(), text, attachments)
 	cmds = append(cmds, cmd)

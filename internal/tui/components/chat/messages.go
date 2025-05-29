@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/components/dialog"
 	"github.com/sst/opencode/internal/tui/state"
@@ -177,41 +176,41 @@ func (m *messagesCmp) View() string {
 		)
 }
 
-func hasToolsWithoutResponse(messages []message.Message) bool {
-	toolCalls := make([]message.ToolCall, 0)
-	toolResults := make([]message.ToolResult, 0)
-	for _, m := range messages {
-		toolCalls = append(toolCalls, m.ToolCalls()...)
-		toolResults = append(toolResults, m.ToolResults()...)
-	}
+// func hasToolsWithoutResponse(messages []message.Message) bool {
+// 	toolCalls := make([]message.ToolCall, 0)
+// 	toolResults := make([]message.ToolResult, 0)
+// 	for _, m := range messages {
+// 		toolCalls = append(toolCalls, m.ToolCalls()...)
+// 		toolResults = append(toolResults, m.ToolResults()...)
+// 	}
+//
+// 	for _, v := range toolCalls {
+// 		found := false
+// 		for _, r := range toolResults {
+// 			if v.ID == r.ToolCallID {
+// 				found = true
+// 				break
+// 			}
+// 		}
+// 		if !found && v.Finished {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
-	for _, v := range toolCalls {
-		found := false
-		for _, r := range toolResults {
-			if v.ID == r.ToolCallID {
-				found = true
-				break
-			}
-		}
-		if !found && v.Finished {
-			return true
-		}
-	}
-	return false
-}
-
-func hasUnfinishedToolCalls(messages []message.Message) bool {
-	toolCalls := make([]message.ToolCall, 0)
-	for _, m := range messages {
-		toolCalls = append(toolCalls, m.ToolCalls()...)
-	}
-	for _, v := range toolCalls {
-		if !v.Finished {
-			return true
-		}
-	}
-	return false
-}
+// func hasUnfinishedToolCalls(messages []message.Message) bool {
+// 	toolCalls := make([]message.ToolCall, 0)
+// 	for _, m := range messages {
+// 		toolCalls = append(toolCalls, m.ToolCalls()...)
+// 	}
+// 	for _, v := range toolCalls {
+// 		if !v.Finished {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 func (m *messagesCmp) working() string {
 	text := ""
