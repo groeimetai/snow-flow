@@ -1,8 +1,6 @@
 package chat
 
 import (
-	"fmt"
-	"math"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -20,18 +18,11 @@ import (
 	"github.com/sst/opencode/pkg/client"
 )
 
-type cacheItem struct {
-	width   int
-	content []uiMessage
-}
-
 type messagesCmp struct {
 	app              *app.App
 	width, height    int
 	viewport         viewport.Model
-	uiMessages       []uiMessage
 	currentMsgID     string
-	cachedContent    map[string]cacheItem
 	spinner          spinner.Model
 	rendering        bool
 	attachments      viewport.Model
@@ -71,17 +62,17 @@ func (m *messagesCmp) Init() tea.Cmd {
 }
 
 func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	m.renderView()
+	// m.renderView()
 
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case dialog.ThemeChangedMsg:
-		m.rerender()
+		m.renderView()
 		return m, nil
 	case ToggleToolMessagesMsg:
 		m.showToolMessages = !m.showToolMessages
 		// Clear the cache to force re-rendering of all messages
-		m.cachedContent = make(map[string]cacheItem)
+		// m.cachedContent = make(map[string]cacheItem)
 		m.renderView()
 		return m, nil
 	case state.SessionSelectedMsg:
@@ -171,93 +162,43 @@ func (m *messagesCmp) IsAgentWorking() bool {
 	return m.app.PrimaryAgentOLD.IsSessionBusy(m.app.CurrentSessionOLD.ID)
 }
 
-func formatTimeDifference(unixTime1, unixTime2 int64) string {
-	diffSeconds := float64(math.Abs(float64(unixTime2 - unixTime1)))
-
-	if diffSeconds < 60 {
-		return fmt.Sprintf("%.1fs", diffSeconds)
-	}
-
-	minutes := int(diffSeconds / 60)
-	seconds := int(diffSeconds) % 60
-	return fmt.Sprintf("%dm%ds", minutes, seconds)
-}
-
 func (m *messagesCmp) renderView() {
-	m.uiMessages = make([]uiMessage, 0)
-	baseStyle := styles.BaseStyle()
-
 	if m.width == 0 {
 		return
 	}
 
+	t := theme.CurrentTheme()
+	messages := make([]string, 0)
 	for _, msg := range m.app.Messages {
 		switch msg.Role {
 		case client.User:
-			if cache, ok := m.cachedContent[msg.Id]; ok && cache.width == m.width {
-				m.uiMessages = append(m.uiMessages, cache.content...)
-				continue
-			}
-			userMsg := renderUserMessage(
+			content := renderUserMessage(
 				msg,
-				msg.Id == m.currentMsgID,
 				m.width,
 			)
-			m.uiMessages = append(m.uiMessages, userMsg)
-			m.cachedContent[msg.Id] = cacheItem{
-				width:   m.width,
-				content: []uiMessage{userMsg},
-			}
-			// pos += userMsg.height + 1 // + 1 for spacing
+			messages = append(messages, content+"\n")
 		case client.Assistant:
-			if cache, ok := m.cachedContent[msg.Id]; ok && cache.width == m.width {
-				m.uiMessages = append(m.uiMessages, cache.content...)
-				continue
-			}
-			// assistantMessages := renderAssistantMessage(
-			// 	msg,
-			// 	inx,
-			// 	m.app.Messages,
-			// 	m.app.MessagesOLD,
-			// 	m.currentMsgID,
-			// 	m.width,
-			// 	pos,
-			// 	m.showToolMessages,
-			// )
-			// for _, msg := range assistantMessages {
-			// 	m.uiMessages = append(m.uiMessages, msg)
-			// 	// pos += msg.height + 1 // + 1 for spacing
-			// }
-			// m.cachedContent[msg.Id] = cacheItem{
-			// 	width:   m.width,
-			// 	content: assistantMessages,
-			// }
+			content := renderAssistantMessage(
+				msg,
+				m.width,
+				m.showToolMessages,
+			)
+			messages = append(messages, content+"\n")
 		}
 	}
 
-	messages := make([]string, 0)
-	for _, v := range m.uiMessages {
-		messages = append(messages, lipgloss.JoinVertical(lipgloss.Left, v.content),
-			baseStyle.
+	m.viewport.SetContent(
+		styles.ForceReplaceBackgroundWithLipgloss(
+			styles.BaseStyle().
 				Width(m.width).
 				Render(
-					"",
+					lipgloss.JoinVertical(
+						lipgloss.Top,
+						messages...,
+					),
 				),
-		)
-	}
-
-	// temp, _ := json.MarshalIndent(m.app.State, "", "    ")
-
-	m.viewport.SetContent(
-		baseStyle.
-			Width(m.width).
-			Render(
-				// string(temp),
-				lipgloss.JoinVertical(
-					lipgloss.Top,
-					messages...,
-				),
-			),
+			t.Background(),
+		),
 	)
 }
 
@@ -416,13 +357,6 @@ func (m *messagesCmp) initialScreen() string {
 	)
 }
 
-func (m *messagesCmp) rerender() {
-	for _, msg := range m.app.Messages {
-		delete(m.cachedContent, msg.Id)
-	}
-	m.renderView()
-}
-
 func (m *messagesCmp) SetSize(width, height int) tea.Cmd {
 	if m.width == width && m.height == height {
 		return nil
@@ -433,7 +367,7 @@ func (m *messagesCmp) SetSize(width, height int) tea.Cmd {
 	m.viewport.Height = height - 2
 	m.attachments.Width = width + 40
 	m.attachments.Height = 3
-	m.rerender()
+	m.renderView()
 	return nil
 }
 
@@ -453,7 +387,7 @@ func (m *messagesCmp) Reload(session *session.Session) tea.Cmd {
 	if len(m.app.Messages) > 0 {
 		m.currentMsgID = m.app.Messages[len(m.app.Messages)-1].Id
 	}
-	delete(m.cachedContent, m.currentMsgID)
+	// delete(m.cachedContent, m.currentMsgID)
 	m.rendering = true
 	return func() tea.Msg {
 		m.renderView()
@@ -476,18 +410,19 @@ func NewMessagesCmp(app *app.App) tea.Model {
 		FPS:    time.Second / 3,
 	}
 	s := spinner.New(spinner.WithSpinner(customSpinner))
+
 	vp := viewport.New(0, 0)
-	attachmets := viewport.New(0, 0)
+	attachments := viewport.New(0, 0)
 	vp.KeyMap.PageUp = messageKeys.PageUp
 	vp.KeyMap.PageDown = messageKeys.PageDown
 	vp.KeyMap.HalfPageUp = messageKeys.HalfPageUp
 	vp.KeyMap.HalfPageDown = messageKeys.HalfPageDown
+
 	return &messagesCmp{
 		app:              app,
-		cachedContent:    make(map[string]cacheItem),
 		viewport:         vp,
 		spinner:          s,
-		attachments:      attachmets,
+		attachments:      attachments,
 		showToolMessages: true,
 	}
 }

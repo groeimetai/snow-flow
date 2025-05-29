@@ -11,7 +11,6 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/diff"
-	"github.com/sst/opencode/internal/llm/models"
 	"github.com/sst/opencode/internal/llm/tools"
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/tui/styles"
@@ -22,64 +21,25 @@ import (
 type uiMessageType int
 
 const (
-	userMessageType uiMessageType = iota
-	assistantMessageType
-	toolMessageType
-
 	maxResultHeight = 10
 )
 
-type uiMessage struct {
-	ID          string
-	messageType uiMessageType
-	content     string
-}
-
-func toMarkdown(content string, focused bool, width int) string {
+func toMarkdown(content string, width int) string {
 	r := styles.GetMarkdownRenderer(width)
 	rendered, _ := r.Render(content)
-	return rendered
+	return strings.TrimSuffix(rendered, "\n")
 }
 
-func renderMessage(msg string, isUser bool, isFocused bool, width int, info ...string) string {
+func renderUserMessage(msg client.MessageInfo, width int) string {
 	t := theme.CurrentTheme()
-
 	style := styles.BaseStyle().
-		// Width(width - 1).
 		BorderLeft(true).
 		Foreground(t.TextMuted()).
-		BorderForeground(t.Primary()).
+		BorderForeground(t.Secondary()).
 		BorderStyle(lipgloss.ThickBorder())
 
-	if isUser {
-		style = style.BorderForeground(t.Secondary())
-	}
-
-	// Apply markdown formatting and handle background color
-	parts := []string{
-		styles.ForceReplaceBackgroundWithLipgloss(toMarkdown(msg, isFocused, width), t.Background()),
-	}
-
-	// Remove newline at the end
-	parts[0] = strings.TrimSuffix(parts[0], "\n")
-	if len(info) > 0 {
-		parts = append(parts, info...)
-	}
-
-	rendered := style.Render(
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			parts...,
-		),
-	)
-
-	return rendered
-}
-
-func renderUserMessage(msg client.MessageInfo, isFocused bool, width int) uiMessage {
-	// var styledAttachments []string
-	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
+	// var styledAttachments []string
 	// attachmentStyles := baseStyle.
 	// 	MarginLeft(1).
 	// 	Background(t.TextMuted()).
@@ -95,16 +55,12 @@ func renderUserMessage(msg client.MessageInfo, isFocused bool, width int) uiMess
 	// 	styledAttachments = append(styledAttachments, attachmentStyles.Render(filename))
 	// }
 
-	info := []string{}
-
 	// Add timestamp info
 	timestamp := time.UnixMilli(int64(msg.Metadata.Time.Created)).Local().Format("02 Jan 2006 03:04 PM")
 	username, _ := config.GetUsername()
-	info = append(info, baseStyle.
-		Width(width-1).
+	info := baseStyle.
 		Foreground(t.TextMuted()).
-		Render(fmt.Sprintf(" %s (%s)", username, timestamp)),
-	)
+		Render(fmt.Sprintf(" %s (%s)", username, timestamp))
 
 	content := ""
 	// if len(styledAttachments) > 0 {
@@ -120,125 +76,175 @@ func renderUserMessage(msg client.MessageInfo, isFocused bool, width int) uiMess
 		switch part.(type) {
 		case client.MessagePartText:
 			textPart := part.(client.MessagePartText)
-			content = renderMessage(textPart.Text, true, isFocused, width, info...)
+			text := toMarkdown(textPart.Text, width)
+			content = style.Render(lipgloss.JoinVertical(lipgloss.Left, text, info))
 		}
 	}
-	// content = renderMessage(msg.Parts, true, isFocused, width, info...)
 
-	userMsg := uiMessage{
-		ID:          msg.Id,
-		messageType: userMessageType,
-		content:     content,
-	}
-	return userMsg
+	return content
 }
 
-// Returns multiple uiMessages because of the tool calls
+func convertToMap(input *any) (map[string]any, bool) {
+	if input == nil {
+		return nil, false // Handle nil pointer
+	}
+	value := *input                 // Dereference the pointer to get the interface value
+	m, ok := value.(map[string]any) // Type assertion
+	return m, ok
+}
+
 func renderAssistantMessage(
-	msg message.Message,
-	msgIndex int,
-	allMessages []message.Message, // we need this to get tool results and the user message
-	messagesService message.Service, // We need this to get the task tool messages
-	focusedUIMessageId string,
+	msg client.MessageInfo,
 	width int,
-	position int,
 	showToolMessages bool,
-) []uiMessage {
-	messages := []uiMessage{}
-	content := strings.TrimSpace(msg.Content().String())
-	thinking := msg.IsThinking()
-	thinkingContent := msg.ReasoningContent().Thinking
-	finished := msg.IsFinished()
-	finishData := msg.FinishPart()
-	info := []string{}
-
+) string {
 	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
-
-	// Always add timestamp info
-	timestamp := msg.CreatedAt.Local().Format("02 Jan 2006 03:04 PM")
-	modelName := "Assistant"
-	if msg.Model != "" {
-		modelName = models.SupportedModels[msg.Model].Name
-	}
-
-	info = append(info, baseStyle.
-		Width(width-1).
+	style := styles.BaseStyle().
+		BorderLeft(true).
 		Foreground(t.TextMuted()).
-		Render(fmt.Sprintf(" %s (%s)", modelName, timestamp)),
-	)
+		BorderForeground(t.Primary()).
+		BorderStyle(lipgloss.ThickBorder())
+	toolStyle := styles.BaseStyle().
+		BorderLeft(true).
+		Foreground(t.TextMuted()).
+		BorderForeground(t.TextMuted()).
+		BorderStyle(lipgloss.ThickBorder())
 
-	if finished {
-		// Add finish info if available
-		switch finishData.Reason {
-		case message.FinishReasonCanceled:
-			info = append(info, baseStyle.
-				Width(width-1).
-				Foreground(t.Warning()).
-				Render("(canceled)"),
-			)
-		case message.FinishReasonError:
-			info = append(info, baseStyle.
-				Width(width-1).
-				Foreground(t.Error()).
-				Render("(error)"),
-			)
-		case message.FinishReasonPermissionDenied:
-			info = append(info, baseStyle.
-				Width(width-1).
-				Foreground(t.Info()).
-				Render("(permission denied)"),
-			)
+	baseStyle := styles.BaseStyle()
+	messages := []string{}
+
+	// content := strings.TrimSpace(msg.Content().String())
+	// thinking := msg.IsThinking()
+	// thinkingContent := msg.ReasoningContent().Thinking
+	// finished := msg.IsFinished()
+	// finishData := msg.FinishPart()
+
+	// Add timestamp info
+	timestamp := time.UnixMilli(int64(msg.Metadata.Time.Created)).Local().Format("02 Jan 2006 03:04 PM")
+	modelName := msg.Metadata.Assistant.ModelID
+	info := baseStyle.
+		Foreground(t.TextMuted()).
+		Render(fmt.Sprintf(" %s (%s)", modelName, timestamp))
+
+	for _, p := range msg.Parts {
+		part, err := p.ValueByDiscriminator()
+		if err != nil {
+			continue //TODO: handle error?
+		}
+
+		switch part.(type) {
+		case client.MessagePartText:
+			textPart := part.(client.MessagePartText)
+			text := toMarkdown(textPart.Text, width)
+			content := style.Render(lipgloss.JoinVertical(lipgloss.Left, text, info))
+			messages = append(messages, content)
+
+		case client.MessagePartToolInvocation:
+			if !showToolMessages {
+				continue
+			}
+
+			toolInvocationPart := part.(client.MessagePartToolInvocation)
+			toolInvocation, _ := toolInvocationPart.ToolInvocation.ValueByDiscriminator()
+			switch toolInvocation.(type) {
+			case client.MessageToolInvocationToolCall:
+				toolCall := toolInvocation.(client.MessageToolInvocationToolCall)
+				toolName := toolName(toolCall.ToolName)
+				var toolArgs []string
+				toolMap, _ := convertToMap(toolCall.Args)
+				for _, arg := range toolMap {
+					toolArgs = append(toolArgs, fmt.Sprintf("%v", arg))
+				}
+				params := renderParams(width-lipgloss.Width(toolName)-1, toolArgs...)
+				title := styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, params))
+
+				content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
+					title,
+					" In progress...",
+				))
+				messages = append(messages, content)
+
+			case client.MessageToolInvocationToolResult:
+				toolInvocationResult := toolInvocation.(client.MessageToolInvocationToolResult)
+				toolName := toolName(toolInvocationResult.ToolName)
+				var toolArgs []string
+				toolMap, _ := convertToMap(toolInvocationResult.Args)
+				for _, arg := range toolMap {
+					toolArgs = append(toolArgs, fmt.Sprintf("%v", arg))
+				}
+				result := truncateHeight(strings.TrimSpace(toolInvocationResult.Result), 10)
+				params := renderParams(width-lipgloss.Width(toolName)-1, toolArgs...)
+				title := styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, params))
+
+				markdown := toMarkdown(result, width)
+
+				content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
+					title,
+					markdown,
+				))
+				messages = append(messages, content)
+			}
 		}
 	}
 
-	if content != "" || (finished && finishData.Reason == message.FinishReasonEndTurn) {
-		if content == "" {
-			content = "*Finished without output*"
-		}
+	// if finished {
+	// 	// Add finish info if available
+	// 	switch finishData.Reason {
+	// 	case message.FinishReasonCanceled:
+	// 		info = append(info, baseStyle.
+	// 			Width(width-1).
+	// 			Foreground(t.Warning()).
+	// 			Render("(canceled)"),
+	// 		)
+	// 	case message.FinishReasonError:
+	// 		info = append(info, baseStyle.
+	// 			Width(width-1).
+	// 			Foreground(t.Error()).
+	// 			Render("(error)"),
+	// 		)
+	// 	case message.FinishReasonPermissionDenied:
+	// 		info = append(info, baseStyle.
+	// 			Width(width-1).
+	// 			Foreground(t.Info()).
+	// 			Render("(permission denied)"),
+	// 		)
+	// 	}
+	// }
 
-		content = renderMessage(content, false, true, width, info...)
-		messages = append(messages, uiMessage{
-			ID:          msg.ID,
-			messageType: assistantMessageType,
-			// position:    position,
-			// height:  lipgloss.Height(content),
-			content: content,
-		})
-		// position += messages[0].height
-		position++ // for the space
-	} else if thinking && thinkingContent != "" {
-		// Render the thinking content with timestamp
-		content = renderMessage(thinkingContent, false, msg.ID == focusedUIMessageId, width, info...)
-		messages = append(messages, uiMessage{
-			ID:          msg.ID,
-			messageType: assistantMessageType,
-			// position:    position,
-			// height:  lipgloss.Height(content),
-			content: content,
-		})
-		position += lipgloss.Height(content)
-		position++ // for the space
-	}
+	// if content != "" || (finished && finishData.Reason == message.FinishReasonEndTurn) {
+	// 	if content == "" {
+	// 		content = "*Finished without output*"
+	// 	}
+	//
+	// 	content = renderMessage(content, false, width, info...)
+	// 	messages = append(messages, content)
+	// 	// position += messages[0].height
+	// 	position++ // for the space
+	// } else if thinking && thinkingContent != "" {
+	// 	// Render the thinking content with timestamp
+	// 	content = renderMessage(thinkingContent, false, width, info...)
+	// 	messages = append(messages, content)
+	// 	position += lipgloss.Height(content)
+	// 	position++ // for the space
+	// }
 
 	// Only render tool messages if they should be shown
 	if showToolMessages {
-		for i, toolCall := range msg.ToolCalls() {
-			toolCallContent := renderToolMessage(
-				toolCall,
-				allMessages,
-				messagesService,
-				focusedUIMessageId,
-				false,
-				width,
-				i+1,
-			)
-			messages = append(messages, toolCallContent)
-			// position += toolCallContent.height
-			position++ // for the space
-		}
+		// for i, toolCall := range msg.ToolCalls() {
+		// 	toolCallContent := renderToolMessage(
+		// 		toolCall,
+		// 		allMessages,
+		// 		messagesService,
+		// 		focusedUIMessageId,
+		// 		false,
+		// 		width,
+		// 		i+1,
+		// 	)
+		// 	messages = append(messages, toolCallContent)
+		// }
 	}
-	return messages
+
+	return strings.Join(messages, "\n\n")
 }
 
 func findToolResponse(toolCallID string, futureMessages []message.Message) *message.ToolResult {
@@ -497,7 +503,7 @@ func renderToolResponse(toolCall message.ToolCall, response message.ToolResult, 
 	case tools.BashToolName:
 		resultContent = fmt.Sprintf("```bash\n%s\n```", resultContent)
 		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, true, width),
+			toMarkdown(resultContent, width),
 			t.Background(),
 		)
 	case tools.EditToolName:
@@ -517,7 +523,7 @@ func renderToolResponse(toolCall message.ToolCall, response message.ToolResult, 
 		}
 		resultContent = fmt.Sprintf("```%s\n%s\n```", mdFormat, resultContent)
 		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, true, width),
+			toMarkdown(resultContent, width),
 			t.Background(),
 		)
 	case tools.GlobToolName:
@@ -537,7 +543,7 @@ func renderToolResponse(toolCall message.ToolCall, response message.ToolResult, 
 		}
 		resultContent = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(metadata.Content, maxResultHeight))
 		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, true, width),
+			toMarkdown(resultContent, width),
 			t.Background(),
 		)
 	case tools.WriteToolName:
@@ -553,7 +559,7 @@ func renderToolResponse(toolCall message.ToolCall, response message.ToolResult, 
 		}
 		resultContent = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(params.Content, maxResultHeight))
 		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, true, width),
+			toMarkdown(resultContent, width),
 			t.Background(),
 		)
 	case tools.BatchToolName:
@@ -591,7 +597,7 @@ func renderToolResponse(toolCall message.ToolCall, response message.ToolResult, 
 	default:
 		resultContent = fmt.Sprintf("```text\n%s\n```", resultContent)
 		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, true, width),
+			toMarkdown(resultContent, width),
 			t.Background(),
 		)
 	}
@@ -605,7 +611,7 @@ func renderToolMessage(
 	nested bool,
 	width int,
 	position int,
-) uiMessage {
+) string {
 	if nested {
 		width = width - 3
 	}
@@ -634,13 +640,7 @@ func renderToolMessage(
 			Render(fmt.Sprintf("%s", toolAction))
 
 		content := style.Render(lipgloss.JoinHorizontal(lipgloss.Left, toolNameText, progressText))
-		toolMsg := uiMessage{
-			messageType: toolMessageType,
-			// position:    position,
-			// height:  lipgloss.Height(content),
-			content: content,
-		}
-		return toolMsg
+		return content
 	}
 
 	params := renderToolParams(width-1-lipgloss.Width(toolNameText), toolCall)
@@ -702,11 +702,5 @@ func renderToolMessage(
 			parts...,
 		)
 	}
-	toolMsg := uiMessage{
-		messageType: toolMessageType,
-		// position:    position,
-		// height:  lipgloss.Height(content),
-		content: content,
-	}
-	return toolMsg
+	return content
 }

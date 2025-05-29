@@ -285,7 +285,8 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				a.app.Session = &sessionInfo
 			}
-			return a, nil
+
+			return a.updateAllPages(state.StateUpdatedMsg{State: a.app.State})
 		}
 
 		if parts[0] == "session" && parts[1] == "message" {
@@ -303,7 +304,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if m.Id == messageId {
 						a.app.Messages[i] = message
 						slog.Debug("Updated message", "message", message)
-						return a, nil
+						return a.updateAllPages(state.StateUpdatedMsg{State: a.app.State})
 					}
 				}
 
@@ -316,7 +317,8 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// a.app.CurrentSession.Cost += message.Cost
 				// a.app.CurrentSession.UpdatedAt = message.CreatedAt
 			}
-			return a, nil
+
+			return a.updateAllPages(state.StateUpdatedMsg{State: a.app.State})
 		}
 
 		// log key and content
