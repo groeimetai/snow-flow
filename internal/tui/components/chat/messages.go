@@ -185,12 +185,12 @@ func formatTimeDifference(unixTime1, unixTime2 int64) string {
 
 func (m *messagesCmp) renderView() {
 	m.uiMessages = make([]uiMessage, 0)
-	pos := 0
 	baseStyle := styles.BaseStyle()
 
 	if m.width == 0 {
 		return
 	}
+
 	for _, msg := range m.app.Messages {
 		switch msg.Role {
 		case client.User:
@@ -202,7 +202,6 @@ func (m *messagesCmp) renderView() {
 				msg,
 				msg.Id == m.currentMsgID,
 				m.width,
-				pos,
 			)
 			m.uiMessages = append(m.uiMessages, userMsg)
 			m.cachedContent[msg.Id] = cacheItem{

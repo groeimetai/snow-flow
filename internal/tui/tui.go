@@ -292,7 +292,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			sessionId := parts[2]
 			if sessionId == a.app.Session.Id {
 				messageId := parts[3]
-				var message client.SessionMessage
+				var message client.MessageInfo
 				bytes, _ := json.Marshal(msg.Content)
 				if err := json.Unmarshal(bytes, &message); err != nil {
 					status.Error(err.Error())

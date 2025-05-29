@@ -70,12 +70,12 @@ func (a *AgentServiceBridge) Run(ctx context.Context, sessionID string, text str
 		// return "", fmt.Errorf("attachments not supported yet")
 	}
 
-	part := client.SessionMessagePart{}
-	part.FromSessionMessagePartText(client.SessionMessagePartText{
+	part := client.MessagePart{}
+	part.FromMessagePartText(client.MessagePartText{
 		Type: "text",
 		Text: text,
 	})
-	parts := []client.SessionMessagePart{part}
+	parts := []client.MessagePart{part}
 
 	go a.client.PostSessionChatWithResponse(ctx, client.PostSessionChatJSONRequestBody{
 		SessionID:  sessionID,

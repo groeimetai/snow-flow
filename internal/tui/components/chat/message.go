@@ -76,7 +76,7 @@ func renderMessage(msg string, isUser bool, isFocused bool, width int, info ...s
 	return rendered
 }
 
-func renderUserMessage(msg client.SessionMessage, isFocused bool, width int, position int) uiMessage {
+func renderUserMessage(msg client.MessageInfo, isFocused bool, width int) uiMessage {
 	// var styledAttachments []string
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
@@ -118,8 +118,8 @@ func renderUserMessage(msg client.SessionMessage, isFocused bool, width int, pos
 		}
 
 		switch part.(type) {
-		case client.SessionMessagePartText:
-			textPart := part.(client.SessionMessagePartText)
+		case client.MessagePartText:
+			textPart := part.(client.MessagePartText)
 			content = renderMessage(textPart.Text, true, isFocused, width, info...)
 		}
 	}
