@@ -11,6 +11,7 @@ import {
   streamText,
 } from "ai";
 import { z } from "zod";
+import { z as zv4 } from "zod/v4";
 import * as tools from "../tool";
 import { Decimal } from "decimal.js";
 
@@ -18,7 +19,8 @@ import PROMPT_ANTHROPIC from "./prompt/anthropic.txt";
 import PROMPT_TITLE from "./prompt/title.txt";
 
 import { Share } from "../share/share";
-import type { Message } from "./message";
+import { Message } from "./message";
+import { Bus } from "../bus";
 
 export namespace Session {
   const log = Log.create({ service: "session" });
@@ -29,6 +31,15 @@ export namespace Session {
     title: z.string(),
   });
   export type Info = z.output<typeof Info>;
+
+  export const Event = {
+    Updated: Bus.event(
+      "session.updated",
+      zv4.object({
+        sessionID: zv4.string(),
+      }),
+    ),
+  };
 
   const state = App.state("session", () => {
     const sessions = new Map<string, Info>();
@@ -49,6 +60,9 @@ export namespace Session {
     state().sessions.set(result.id, result);
     await Storage.writeJSON("session/info/" + result.id, result);
     await share(result.id);
+    Bus.publish(Event.Updated, {
+      sessionID: result.id,
+    });
     return result;
   }
 
@@ -80,6 +94,9 @@ export namespace Session {
     editor(session);
     sessions.set(id, session);
     await Storage.writeJSON("session/info/" + id, session);
+    Bus.publish(Event.Updated, {
+      sessionID: id,
+    });
     return session;
   }
 
@@ -126,10 +143,14 @@ export namespace Session {
     const model = await LLM.findModel(input.providerID, input.modelID);
     const msgs = await messages(input.sessionID);
     async function write(msg: Message.Info) {
-      return Storage.writeJSON(
+      await Storage.writeJSON(
         "session/message/" + input.sessionID + "/" + msg.id,
         msg,
       );
+      Bus.publish(Message.Event.Updated, {
+        sessionID: input.sessionID,
+        messageID: msg.id,
+      });
     }
     const app = await App.use();
     if (msgs.length === 0) {

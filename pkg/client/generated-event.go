@@ -34,6 +34,58 @@ func (j *EventLspClientDiagnostics) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+type EventMessageUpdated struct {
+	// MessageID corresponds to the JSON schema field "messageID".
+	MessageID string `json:"messageID" yaml:"messageID" mapstructure:"messageID"`
+
+	// SessionID corresponds to the JSON schema field "sessionID".
+	SessionID string `json:"sessionID" yaml:"sessionID" mapstructure:"sessionID"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *EventMessageUpdated) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["messageID"]; raw != nil && !ok {
+		return fmt.Errorf("field messageID in EventMessageUpdated: required")
+	}
+	if _, ok := raw["sessionID"]; raw != nil && !ok {
+		return fmt.Errorf("field sessionID in EventMessageUpdated: required")
+	}
+	type Plain EventMessageUpdated
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = EventMessageUpdated(plain)
+	return nil
+}
+
+type EventSessionUpdated struct {
+	// SessionID corresponds to the JSON schema field "sessionID".
+	SessionID string `json:"sessionID" yaml:"sessionID" mapstructure:"sessionID"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *EventSessionUpdated) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["sessionID"]; raw != nil && !ok {
+		return fmt.Errorf("field sessionID in EventSessionUpdated: required")
+	}
+	type Plain EventSessionUpdated
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = EventSessionUpdated(plain)
+	return nil
+}
+
 type EventStorageWrite struct {
 	// Content corresponds to the JSON schema field "content".
 	Content interface{} `json:"content" yaml:"content" mapstructure:"content"`

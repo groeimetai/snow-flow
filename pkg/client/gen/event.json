@@ -29,6 +29,32 @@
         "serverID",
         "path"
       ]
+    },
+    "event.message.updated": {
+      "type": "object",
+      "properties": {
+        "sessionID": {
+          "type": "string"
+        },
+        "messageID": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sessionID",
+        "messageID"
+      ]
+    },
+    "event.session.updated": {
+      "type": "object",
+      "properties": {
+        "sessionID": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sessionID"
+      ]
     }
   }
 }

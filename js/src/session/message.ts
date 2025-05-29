@@ -1,6 +1,17 @@
 import z from "zod";
+import { z as zv4 } from "zod/v4";
+import { Bus } from "../bus";
 
 export namespace Message {
+  export const Event = {
+    Updated: Bus.event(
+      "message.updated",
+      zv4.object({
+        sessionID: zv4.string(),
+        messageID: zv4.string(),
+      }),
+    ),
+  };
   export const ToolCall = z
     .object({
       state: z.literal("call"),

@@ -1,3 +1,4 @@
+import "zod-openapi/extend";
 import { App } from "./app";
 import { Server } from "./server/server";
 import fs from "fs/promises";
@@ -15,13 +16,6 @@ cli.command("", "Start the opencode in interactive mode").action(async () => {
   await App.provide({ directory: process.cwd() }, async () => {
     await Share.init();
     Server.listen();
-
-    Bun.spawnSync({
-      stderr: "inherit",
-      stdout: "inherit",
-      stdin: "inherit",
-      cmd: ["go", "run", "cmd/main.go"],
-    });
   });
 });
 

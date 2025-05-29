@@ -30,17 +30,6 @@ export namespace Bus {
     return result;
   }
 
-  export function payloads() {
-    return registry
-      .entries()
-      .map(([type, def]) =>
-        z.object({
-          type: z.string("hey"),
-        }),
-      )
-      .toArray();
-  }
-
   export function specs() {
     const children = {} as any;
     for (const [type, def] of registry.entries()) {
