@@ -16,7 +16,6 @@ import (
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/permission"
 	"github.com/sst/opencode/internal/pubsub"
-	"github.com/sst/opencode/internal/session"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/components/chat"
 	"github.com/sst/opencode/internal/tui/components/core"
@@ -194,6 +193,26 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case spinner.TickMsg:
 		return a.updateAllPages(msg)
 
+	case client.EventSessionUpdated:
+		if msg.Properties.Info.Id == a.app.Session.Id {
+			a.app.Session = &msg.Properties.Info
+			return a.updateAllPages(state.StateUpdatedMsg{State: nil})
+		}
+
+	case client.EventMessageUpdated:
+		if msg.Properties.Info.Metadata.SessionID == a.app.Session.Id {
+			for i, m := range a.app.Messages {
+				if m.Id == msg.Properties.Info.Id {
+					a.app.Messages[i] = msg.Properties.Info
+					slog.Debug("Updated message", "message", msg.Properties.Info)
+					return a.updateAllPages(state.StateUpdatedMsg{State: nil})
+				}
+			}
+			a.app.Messages = append(a.app.Messages, msg.Properties.Info)
+			slog.Debug("Appended message", "message", msg.Properties.Info)
+			return a.updateAllPages(state.StateUpdatedMsg{State: nil})
+		}
+
 	case tea.WindowSizeMsg:
 		msg.Height -= 2 // Make space for the status bar
 		a.width, a.height = msg.Width, msg.Height
@@ -258,34 +277,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case state.SessionSelectedMsg:
 		a.app.CurrentSessionOLD = msg
 		return a.updateAllPages(msg)
-
-	case pubsub.Event[session.Session]:
-		if msg.Type == session.EventSessionUpdated {
-			if a.app.CurrentSessionOLD.ID == msg.Payload.ID {
-				a.app.CurrentSessionOLD = &msg.Payload
-			}
-		}
-
-	case client.EventMessageUpdated:
-		if msg.Properties.Info.Metadata.SessionID == a.app.Session.Id {
-			for i, m := range a.app.Messages {
-				if m.Id == msg.Properties.Info.Id {
-					a.app.Messages[i] = msg.Properties.Info
-					slog.Debug("Updated message", "message", msg.Properties.Info)
-					return a.updateAllPages(state.StateUpdatedMsg{State: nil})
-				}
-			}
-
-			a.app.Messages = append(a.app.Messages, msg.Properties.Info)
-			slog.Debug("Appended message", "message", msg.Properties.Info)
-			return a.updateAllPages(state.StateUpdatedMsg{State: nil})
-		}
-
-	case client.EventSessionUpdated:
-		if msg.Properties.Info.Id == a.app.Session.Id {
-			a.app.Session = &msg.Properties.Info
-			return a.updateAllPages(state.StateUpdatedMsg{State: nil})
-		}
 
 	case dialog.CloseQuitMsg:
 		a.showQuit = false

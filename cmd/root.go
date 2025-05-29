@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"sync"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/logging"
-	"github.com/sst/opencode/internal/lsp/discovery"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/tui"
 	"github.com/sst/opencode/internal/tui/app"
@@ -69,12 +67,6 @@ to assist developers in writing, debugging, and understanding code directly from
 			return err
 		}
 
-		// Run LSP auto-discovery
-		if err := discovery.IntegrateLSPServers(cwd); err != nil {
-			slog.Warn("Failed to auto-discover LSP servers", "error", err)
-			// Continue anyway, this is not a fatal error
-		}
-
 		// Create main context for the application
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -91,6 +83,18 @@ to assist developers in writing, debugging, and understanding code directly from
 			tui.New(app),
 			tea.WithAltScreen(),
 		)
+
+		evts, err := app.Events.Event(ctx)
+		if err != nil {
+			slog.Error("Failed to subscribe to events", "error", err)
+			return err
+		}
+
+		go func() {
+			for item := range evts {
+				program.Send(item)
+			}
+		}()
 
 		// Setup the subscriptions, this will send services events to the TUI
 		ch, cancelSubs := setupSubscriptions(app, ctx)
@@ -119,18 +123,6 @@ to assist developers in writing, debugging, and understanding code directly from
 					}
 					program.Send(msg)
 				}
-			}
-		}()
-
-		evts, err := app.Events.Event(ctx)
-		if err != nil {
-			slog.Error("Failed to subscribe to events", "error", err)
-			return err
-		}
-
-		go func() {
-			for item := range evts {
-				program.Send(item)
 			}
 		}()
 
@@ -254,25 +246,6 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
-}
-
-// checkStdinPipe checks if there's data being piped into stdin
-func checkStdinPipe() (string, bool) {
-	// Check if stdin is not a terminal (i.e., it's being piped)
-	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		// Read all data from stdin
-		data, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			return "", false
-		}
-
-		// If we got data, return it
-		if len(data) > 0 {
-			return string(data), true
-		}
-	}
-	return "", false
 }
 
 func init() {
