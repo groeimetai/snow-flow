@@ -101,22 +101,6 @@ cli
           },
         ],
       });
-      await Session.summarize({
-        sessionID: session.id,
-        providerID,
-        modelID,
-      });
-      await Session.chat({
-        sessionID: session.id,
-        providerID,
-        modelID,
-        parts: [
-          {
-            type: "text",
-            text: "This is a test message",
-          },
-        ],
-      });
 
       for (const part of result.parts) {
         if (part.type === "text") {

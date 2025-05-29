@@ -110,7 +110,8 @@ export namespace Session {
     const result = [] as Message.Info[];
     const list = Storage.list("session/message/" + sessionID);
     for await (const p of list) {
-      const read = await Storage.readJSON<Message.Info>(p);
+      const read = await Storage.readJSON<Message.Info>(p).catch(() => {});
+      if (!read) continue;
       result.push(read);
     }
     result.sort((a, b) => (a.id > b.id ? 1 : -1));
@@ -250,6 +251,7 @@ export namespace Session {
         tool: {},
       },
     };
+    await updateMessage(next);
     const result = streamText({
       onStepFinish: async (step) => {
         const assistant = next.metadata!.assistant!;
@@ -266,8 +268,6 @@ export namespace Session {
       tools,
       model: model.instance,
     });
-
-    msgs.push(next);
     let text: Message.TextPart | undefined;
     const reader = result.toUIMessageStream().getReader();
     while (true) {
