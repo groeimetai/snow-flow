@@ -33,7 +33,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Session.Info"
+                  "$ref": "#/components/schemas/session.info"
                 }
               }
             }
@@ -52,7 +52,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Session.Info"
+                  "$ref": "#/components/schemas/session.info"
                 }
               }
             }
@@ -129,23 +129,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "pattern": "^ses"
-                      },
-                      "shareID": {
-                        "type": "string"
-                      },
-                      "title": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "id",
-                      "title"
-                    ]
+                    "$ref": "#/components/schemas/session.info"
                   }
                 }
               }
@@ -254,7 +238,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": {
-                    "$ref": "#/components/schemas/Provider.Info"
+                    "$ref": "#/components/schemas/provider"
                   }
                 }
               }
@@ -724,23 +708,7 @@
             "type": "object",
             "properties": {
               "info": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "pattern": "^ses"
-                  },
-                  "shareID": {
-                    "type": "string"
-                  },
-                  "title": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "id",
-                  "title"
-                ]
+                "$ref": "#/components/schemas/session.info"
               }
             },
             "required": [
@@ -753,7 +721,7 @@
           "properties"
         ]
       },
-      "Session.Info": {
+      "session.info": {
         "type": "object",
         "properties": {
           "id": {
@@ -772,7 +740,7 @@
           "title"
         ]
       },
-      "Provider.Info": {
+      "provider": {
         "type": "object",
         "properties": {
           "options": {
@@ -782,57 +750,60 @@
           "models": {
             "type": "object",
             "additionalProperties": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string"
-                },
-                "cost": {
-                  "type": "object",
-                  "properties": {
-                    "input": {
-                      "type": "number"
-                    },
-                    "inputCached": {
-                      "type": "number"
-                    },
-                    "output": {
-                      "type": "number"
-                    },
-                    "outputCached": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "input",
-                    "inputCached",
-                    "output",
-                    "outputCached"
-                  ]
-                },
-                "contextWindow": {
-                  "type": "number"
-                },
-                "maxTokens": {
-                  "type": "number"
-                },
-                "attachment": {
-                  "type": "boolean"
-                },
-                "reasoning": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "cost",
-                "contextWindow",
-                "attachment"
-              ]
+              "$ref": "#/components/schemas/model"
             }
           }
         },
         "required": [
           "models"
+        ]
+      },
+      "model": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "cost": {
+            "type": "object",
+            "properties": {
+              "input": {
+                "type": "number"
+              },
+              "inputCached": {
+                "type": "number"
+              },
+              "output": {
+                "type": "number"
+              },
+              "outputCached": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "input",
+              "inputCached",
+              "output",
+              "outputCached"
+            ]
+          },
+          "contextWindow": {
+            "type": "number"
+          },
+          "maxTokens": {
+            "type": "number"
+          },
+          "attachment": {
+            "type": "boolean"
+          },
+          "reasoning": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cost",
+          "contextWindow",
+          "attachment"
         ]
       }
     }

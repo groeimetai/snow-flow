@@ -24,11 +24,15 @@ import { Bus } from "../bus";
 export namespace Session {
   const log = Log.create({ service: "session" });
 
-  export const Info = z.object({
-    id: Identifier.schema("session"),
-    shareID: z.string().optional(),
-    title: z.string(),
-  });
+  export const Info = z
+    .object({
+      id: Identifier.schema("session"),
+      shareID: z.string().optional(),
+      title: z.string(),
+    })
+    .openapi({
+      ref: "session.info",
+    });
   export type Info = z.output<typeof Info>;
 
   export const Event = {

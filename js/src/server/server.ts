@@ -10,16 +10,6 @@ import { Config } from "../app/config";
 import { LLM } from "../llm/llm";
 import { Message } from "../session/message";
 
-const SessionInfo = Session.Info.openapi({
-  ref: "Session.Info",
-});
-
-const ProviderInfo = Config.Provider.openapi({
-  ref: "Provider.Info",
-});
-
-type ProviderInfo = z.output<typeof ProviderInfo>;
-
 export namespace Server {
   const log = Log.create({ service: "server" });
   const PORT = 16713;
@@ -92,7 +82,7 @@ export namespace Server {
               description: "Successfully created session",
               content: {
                 "application/json": {
-                  schema: resolver(SessionInfo),
+                  schema: resolver(Session.Info),
                 },
               },
             },
@@ -112,7 +102,7 @@ export namespace Server {
               description: "Successfully shared session",
               content: {
                 "application/json": {
-                  schema: resolver(SessionInfo),
+                  schema: resolver(Session.Info),
                 },
               },
             },
@@ -244,7 +234,7 @@ export namespace Server {
               description: "List of providers",
               content: {
                 "application/json": {
-                  schema: resolver(z.record(z.string(), ProviderInfo)),
+                  schema: resolver(z.record(z.string(), Config.Provider)),
                 },
               },
             },
@@ -252,7 +242,7 @@ export namespace Server {
         }),
         async (c) => {
           const providers = await LLM.providers();
-          const result: Record<string, ProviderInfo> = {};
+          const result: Record<string, Config.Provider> = {};
           for (const [providerID, provider] of Object.entries(providers)) {
             result[providerID] = provider.info;
           }

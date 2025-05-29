@@ -49,11 +49,7 @@ type EventMessageUpdated struct {
 // EventSessionUpdated defines model for Event.session.updated.
 type EventSessionUpdated struct {
 	Properties struct {
-		Info struct {
-			Id      string  `json:"id"`
-			ShareID *string `json:"shareID,omitempty"`
-			Title   string  `json:"title"`
-		} `json:"info"`
+		Info SessionInfo `json:"info"`
 	} `json:"properties"`
 	Type string `json:"type"`
 }
@@ -174,25 +170,28 @@ type MessageToolInvocationToolResult struct {
 	ToolName   string       `json:"toolName"`
 }
 
-// ProviderInfo defines model for Provider.Info.
-type ProviderInfo struct {
-	Models map[string]struct {
-		Attachment    bool    `json:"attachment"`
-		ContextWindow float32 `json:"contextWindow"`
-		Cost          struct {
-			Input        float32 `json:"input"`
-			InputCached  float32 `json:"inputCached"`
-			Output       float32 `json:"output"`
-			OutputCached float32 `json:"outputCached"`
-		} `json:"cost"`
-		MaxTokens *float32 `json:"maxTokens,omitempty"`
-		Name      *string  `json:"name,omitempty"`
-		Reasoning *bool    `json:"reasoning,omitempty"`
-	} `json:"models"`
+// Model defines model for model.
+type Model struct {
+	Attachment    bool    `json:"attachment"`
+	ContextWindow float32 `json:"contextWindow"`
+	Cost          struct {
+		Input        float32 `json:"input"`
+		InputCached  float32 `json:"inputCached"`
+		Output       float32 `json:"output"`
+		OutputCached float32 `json:"outputCached"`
+	} `json:"cost"`
+	MaxTokens *float32 `json:"maxTokens,omitempty"`
+	Name      *string  `json:"name,omitempty"`
+	Reasoning *bool    `json:"reasoning,omitempty"`
+}
+
+// Provider defines model for provider.
+type Provider struct {
+	Models  map[string]Model        `json:"models"`
 	Options *map[string]interface{} `json:"options,omitempty"`
 }
 
-// SessionInfo defines model for Session.Info.
+// SessionInfo defines model for session.info.
 type SessionInfo struct {
 	Id      string  `json:"id"`
 	ShareID *string `json:"shareID,omitempty"`
@@ -1330,7 +1329,7 @@ func (r GetEventResponse) StatusCode() int {
 type PostProviderListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *map[string]ProviderInfo
+	JSON200      *map[string]Provider
 }
 
 // Status returns HTTPResponse.Status
@@ -1418,11 +1417,7 @@ func (r PostSessionCreateResponse) StatusCode() int {
 type PostSessionListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]struct {
-		Id      string  `json:"id"`
-		ShareID *string `json:"shareID,omitempty"`
-		Title   string  `json:"title"`
-	}
+	JSON200      *[]SessionInfo
 }
 
 // Status returns HTTPResponse.Status
@@ -1630,7 +1625,7 @@ func ParsePostProviderListResponse(rsp *http.Response) (*PostProviderListRespons
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]ProviderInfo
+		var dest map[string]Provider
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1734,11 +1729,7 @@ func ParsePostSessionListResponse(rsp *http.Response) (*PostSessionListResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []struct {
-			Id      string  `json:"id"`
-			ShareID *string `json:"shareID,omitempty"`
-			Title   string  `json:"title"`
-		}
+		var dest []SessionInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

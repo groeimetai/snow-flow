@@ -11,25 +11,33 @@ export namespace Config {
     return result;
   });
 
-  export const Model = z.object({
-    name: z.string().optional(),
-    cost: z.object({
-      input: z.number(),
-      inputCached: z.number(),
-      output: z.number(),
-      outputCached: z.number(),
-    }),
-    contextWindow: z.number(),
-    maxTokens: z.number().optional(),
-    attachment: z.boolean(),
-    reasoning: z.boolean().optional(),
-  });
+  export const Model = z
+    .object({
+      name: z.string().optional(),
+      cost: z.object({
+        input: z.number(),
+        inputCached: z.number(),
+        output: z.number(),
+        outputCached: z.number(),
+      }),
+      contextWindow: z.number(),
+      maxTokens: z.number().optional(),
+      attachment: z.boolean(),
+      reasoning: z.boolean().optional(),
+    })
+    .openapi({
+      ref: "model",
+    });
   export type Model = z.output<typeof Model>;
 
-  export const Provider = z.object({
-    options: z.record(z.string(), z.any()).optional(),
-    models: z.record(z.string(), Model),
-  });
+  export const Provider = z
+    .object({
+      options: z.record(z.string(), z.any()).optional(),
+      models: z.record(z.string(), Model),
+    })
+    .openapi({
+      ref: "provider",
+    });
   export type Provider = z.output<typeof Provider>;
 
   export const Info = z
