@@ -1,3 +1,4 @@
+import { type JSX } from "solid-js"
 import {
   For,
   Show,
@@ -58,6 +59,39 @@ type SessionInfo = {
   cost?: number
 }
 
+// Converts `{a:{b:{c:1}}` to `[['a.b.c', 1]]`
+function flattenToolArgs(obj: any, prefix: string = ""): Array<[string, any]> {
+  const entries: Array<[string, any]> = [];
+
+  for (const [key, value] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+
+    if (
+      value !== null &&
+      typeof value === "object" &&
+      !Array.isArray(value)
+    ) {
+      entries.push(...flattenToolArgs(value, path));
+    }
+    else {
+      entries.push([path, value]);
+    }
+  }
+
+  return entries;
+}
+
+function getStatusText(status: [Status, string?]): string {
+  switch (status[0]) {
+    case "connected": return "Connected"
+    case "connecting": return "Connecting..."
+    case "disconnected": return "Disconnected"
+    case "reconnecting": return "Reconnecting..."
+    case "error": return status[1] || "Error"
+    default: return "Unknown"
+  }
+}
+
 function ProviderIcon(props: { provider: string, size?: number }) {
   const size = props.size || 16
   return (
@@ -77,26 +111,18 @@ function ProviderIcon(props: { provider: string, size?: number }) {
   )
 }
 
-function getStatusText(status: [Status, string?]): string {
-  switch (status[0]) {
-    case "connected": return "Connected"
-    case "connecting": return "Connecting..."
-    case "disconnected": return "Disconnected"
-    case "reconnecting": return "Reconnecting..."
-    case "error": return status[1] || "Error"
-    default: return "Unknown"
-  }
+interface TextPartProps extends JSX.HTMLAttributes<HTMLDivElement> {
+  text: string
+  expand?: boolean
+  highlight?: boolean
 }
-
-function TextPart(
-  props: { text: string, expand?: boolean, highlight?: boolean }
-) {
+function TextPart({ text, expand, highlight, ...props }: TextPartProps) {
   const [expanded, setExpanded] = createSignal(false)
   const [overflowed, setOverflowed] = createSignal(false)
   let preEl: HTMLPreElement | undefined
 
   function checkOverflow() {
-    if (preEl && !props.expand) {
+    if (preEl && !expand) {
       setOverflowed(preEl.scrollHeight > preEl.clientHeight + 1)
     }
   }
@@ -107,7 +133,7 @@ function TextPart(
   })
 
   createEffect(() => {
-    props.text
+    text
     setTimeout(checkOverflow, 0)
   })
 
@@ -118,10 +144,11 @@ function TextPart(
   return (
     <div
       data-element-message-text
-      data-highlight={props.highlight}
-      data-expanded={expanded() || props.expand === true}
+      data-highlight={highlight}
+      data-expanded={expanded() || expand === true}
+      {...props}
     >
-      <pre ref={el => (preEl = el)}>{props.text}</pre>
+      <pre ref={el => (preEl = el)}>{text}</pre>
       {overflowed() &&
         <button
           type="button"
@@ -461,7 +488,11 @@ export default function Share(props: { api: string }) {
                                   <div></div>
                                 </div>
                                 <div data-section="content">
-                                  <span data-element-label data-part-title>
+                                  <span
+                                    data-size="md"
+                                    data-part-title
+                                    data-element-label
+                                  >
                                     {assistant().providerID}
                                   </span>
                                   <span data-part-model>
@@ -490,9 +521,68 @@ export default function Share(props: { api: string }) {
                                     System
                                   </span>
                                   <TextPart
+                                    data-size="sm"
                                     text={part().text}
-                                    expand={isLastPart()}
+                                    data-color="dimmed"
                                   />
+                                  <PartFooter time={time} />
+                                </div>
+                              </>
+                            }
+                          </Match>
+                          { /* Tool call */}
+                          <Match when={
+                            msg.role === "assistant"
+                            && part.type === "tool-invocation"
+                            && part
+                          }>
+                            {part =>
+                              <>
+                                <div data-section="decoration">
+                                  <div>
+                                    <IconWrenchScrewdriver width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <span data-part-title data-size="md">
+                                    {part().toolInvocation.toolName}
+                                  </span>
+                                  <div data-part-tool-args>
+                                    <For each={
+                                      flattenToolArgs(part().toolInvocation.args)
+                                    }>
+                                      {([name, value]) =>
+                                        <>
+                                          <div></div>
+                                          <div>{name}</div>
+                                          <div>{value}</div>
+                                        </>
+                                      }
+                                    </For>
+                                  </div>
+                                  <Switch>
+                                    <Match when={
+                                      part().toolInvocation.state === "result"
+                                      && part().toolInvocation.result
+                                    }>
+                                      <TextPart
+                                        data-size="sm"
+                                        data-color="dimmed"
+                                        text={part().toolInvocation.result}
+                                        expand={isLastPart()}
+                                      />
+                                    </Match>
+                                    <Match when={
+                                      part().toolInvocation.state === "call"
+                                    }>
+                                      <TextPart
+                                        data-size="sm"
+                                        data-color="dimmed"
+                                        text="Calling..."
+                                      />
+                                    </Match>
+                                  </Switch>
                                   <PartFooter time={time} />
                                 </div>
                               </>
