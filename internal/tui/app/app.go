@@ -23,7 +23,6 @@ import (
 type App struct {
 	Client   *client.ClientWithResponses
 	Events   *client.Client
-	State    map[string]any
 	Session  *client.SessionInfo
 	Messages []client.MessageInfo
 
@@ -76,7 +75,6 @@ func New(ctx context.Context) (*App, error) {
 	agentBridge := NewAgentServiceBridge(httpClient)
 
 	app := &App{
-		State:             make(map[string]any),
 		Client:            httpClient,
 		Events:            eventClient,
 		Session:           &client.SessionInfo{},

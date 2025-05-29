@@ -2,7 +2,6 @@ package tui
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"strings"
 
@@ -267,84 +266,26 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	case client.EventStorageWrite:
-		parts := strings.Split(msg.Key, "/")
-		if len(parts) < 3 {
-			return a, nil
-		}
-
-		if parts[0] == "session" && parts[1] == "info" {
-			sessionId := parts[2]
-			if sessionId == a.app.Session.Id {
-				var sessionInfo client.SessionInfo
-				bytes, _ := json.Marshal(msg.Content)
-				if err := json.Unmarshal(bytes, &sessionInfo); err != nil {
-					status.Error(err.Error())
-					return a, nil
+	case client.EventMessageUpdated:
+		if msg.Properties.Info.Metadata.SessionID == a.app.Session.Id {
+			for i, m := range a.app.Messages {
+				if m.Id == msg.Properties.Info.Id {
+					a.app.Messages[i] = msg.Properties.Info
+					slog.Debug("Updated message", "message", msg.Properties.Info)
+					return a.updateAllPages(state.StateUpdatedMsg{State: nil})
 				}
-
-				a.app.Session = &sessionInfo
 			}
 
-			return a.updateAllPages(state.StateUpdatedMsg{State: a.app.State})
+			a.app.Messages = append(a.app.Messages, msg.Properties.Info)
+			slog.Debug("Appended message", "message", msg.Properties.Info)
+			return a.updateAllPages(state.StateUpdatedMsg{State: nil})
 		}
 
-		if parts[0] == "session" && parts[1] == "message" {
-			sessionId := parts[2]
-			if sessionId == a.app.Session.Id {
-				messageId := parts[3]
-				var message client.MessageInfo
-				bytes, _ := json.Marshal(msg.Content)
-				if err := json.Unmarshal(bytes, &message); err != nil {
-					status.Error(err.Error())
-					return a, nil
-				}
-
-				for i, m := range a.app.Messages {
-					if m.Id == messageId {
-						a.app.Messages[i] = message
-						slog.Debug("Updated message", "message", message)
-						return a.updateAllPages(state.StateUpdatedMsg{State: a.app.State})
-					}
-				}
-
-				a.app.Messages = append(a.app.Messages, message)
-				slog.Debug("Appended message", "message", message)
-
-				// a.app.CurrentSession.MessageCount++
-				// a.app.CurrentSession.PromptTokens += message.PromptTokens
-				// a.app.CurrentSession.CompletionTokens += message.CompletionTokens
-				// a.app.CurrentSession.Cost += message.Cost
-				// a.app.CurrentSession.UpdatedAt = message.CreatedAt
-			}
-
-			return a.updateAllPages(state.StateUpdatedMsg{State: a.app.State})
+	case client.EventSessionUpdated:
+		if msg.Properties.Info.Id == a.app.Session.Id {
+			a.app.Session = &msg.Properties.Info
+			return a.updateAllPages(state.StateUpdatedMsg{State: nil})
 		}
-
-		// log key and content
-		slog.Debug("Received SSE event", "key", msg.Key, "content", msg.Content)
-
-		current := a.app.State
-
-		for i, part := range parts {
-			if i == len(parts)-1 {
-				current[part] = msg.Content
-			} else {
-				if _, exists := current[part]; !exists {
-					current[part] = make(map[string]any)
-				}
-
-				nextLevel, ok := current[part].(map[string]any)
-				if !ok {
-					current[part] = make(map[string]any)
-					nextLevel = current[part].(map[string]any)
-				}
-				current = nextLevel
-			}
-		}
-
-		// Trigger UI update by updating all pages with the new state
-		return a.updateAllPages(state.StateUpdatedMsg{State: a.app.State})
 
 	case dialog.CloseQuitMsg:
 		a.showQuit = false

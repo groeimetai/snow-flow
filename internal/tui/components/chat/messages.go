@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -93,63 +94,9 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case renderFinishedMsg:
 		m.rendering = false
 		m.viewport.GotoBottom()
-
 	case state.StateUpdatedMsg:
 		m.renderView()
 		m.viewport.GotoBottom()
-
-		// case pubsub.Event[message.Message]:
-		// 	needsRerender := false
-		// 	if msg.Type == message.EventMessageCreated {
-		// 		if msg.Payload.SessionID == m.app.CurrentSessionOLD.ID {
-		// 			messageExists := false
-		// 			for _, v := range m.messages {
-		// 				if v.ID == msg.Payload.ID {
-		// 					messageExists = true
-		// 					break
-		// 				}
-		// 			}
-		//
-		// 			if !messageExists {
-		// 				if len(m.messages) > 0 {
-		// 					lastMsgID := m.messages[len(m.messages)-1].ID
-		// 					delete(m.cachedContent, lastMsgID)
-		// 				}
-		//
-		// 				m.messages = append(m.messages, msg.Payload)
-		// 				delete(m.cachedContent, m.currentMsgID)
-		// 				m.currentMsgID = msg.Payload.ID
-		// 				needsRerender = true
-		// 			}
-		// 		}
-		// 		// There are tool calls from the child task
-		// 		for _, v := range m.messages {
-		// 			for _, c := range v.ToolCalls() {
-		// 				if c.ID == msg.Payload.SessionID {
-		// 					delete(m.cachedContent, v.ID)
-		// 					needsRerender = true
-		// 				}
-		// 			}
-		// 		}
-		// 	} else if msg.Type == message.EventMessageUpdated && msg.Payload.SessionID == m.app.CurrentSessionOLD.ID {
-		// 		for i, v := range m.messages {
-		// 			if v.ID == msg.Payload.ID {
-		// 				m.messages[i] = msg.Payload
-		// 				delete(m.cachedContent, msg.Payload.ID)
-		// 				needsRerender = true
-		// 				break
-		// 			}
-		// 		}
-		// 	}
-		// 	if needsRerender {
-		// 		m.renderView()
-		// 		if len(m.messages) > 0 {
-		// 			if (msg.Type == message.EventMessageCreated) ||
-		// 				(msg.Type == message.EventMessageUpdated && msg.Payload.ID == m.messages[len(m.messages)-1].ID) {
-		// 				m.viewport.GotoBottom()
-		// 			}
-		// 		}
-		// 	}
 	}
 
 	spinner, cmd := m.spinner.Update(msg)
@@ -190,7 +137,6 @@ func (m *messagesCmp) renderView() {
 	m.viewport.SetContent(
 		styles.ForceReplaceBackgroundWithLipgloss(
 			styles.BaseStyle().
-				Width(m.width).
 				Render(
 					lipgloss.JoinVertical(
 						lipgloss.Top,
@@ -212,11 +158,12 @@ func (m *messagesCmp) View() string {
 				lipgloss.JoinVertical(
 					lipgloss.Top,
 					"Loading...",
-					// m.working(),
+					m.working(),
 					m.help(),
 				),
 			)
 	}
+
 	if len(m.app.Messages) == 0 {
 		content := baseStyle.
 			Width(m.width).
@@ -243,7 +190,7 @@ func (m *messagesCmp) View() string {
 			lipgloss.JoinVertical(
 				lipgloss.Top,
 				m.viewport.View(),
-				// m.working(),
+				m.working(),
 				m.help(),
 			),
 		)
@@ -285,31 +232,31 @@ func hasUnfinishedToolCalls(messages []message.Message) bool {
 	return false
 }
 
-// func (m *messagesCmp) working() string {
-// 	text := ""
-// 	if m.IsAgentWorking() && len(m.app.Messages) > 0 {
-// 		t := theme.CurrentTheme()
-// 		baseStyle := styles.BaseStyle()
-//
-// 		task := "Thinking..."
-// 		lastMessage := m.app.Messages[len(m.app.Messages)-1]
-// 		if hasToolsWithoutResponse(m.app.Messages) {
-// 			task = "Waiting for tool response..."
-// 		} else if hasUnfinishedToolCalls(m.app.Messages) {
-// 			task = "Building tool call..."
-// 		} else if !lastMessage.IsFinished() {
-// 			task = "Generating..."
-// 		}
-// 		if task != "" {
-// 			text += baseStyle.
-// 				Width(m.width).
-// 				Foreground(t.Primary()).
-// 				Bold(true).
-// 				Render(fmt.Sprintf("%s %s ", m.spinner.View(), task))
-// 		}
-// 	}
-// 	return text
-// }
+func (m *messagesCmp) working() string {
+	text := ""
+	if len(m.app.Messages) > 0 {
+		t := theme.CurrentTheme()
+		baseStyle := styles.BaseStyle()
+
+		task := "Working..."
+		// lastMessage := m.app.Messages[len(m.app.Messages)-1]
+		// if hasToolsWithoutResponse(m.app.Messages) {
+		// 	task = "Waiting for tool response..."
+		// } else if hasUnfinishedToolCalls(m.app.Messages) {
+		// 	task = "Building tool call..."
+		// } else if !lastMessage.IsFinished() {
+		// 	task = "Generating..."
+		// }
+		if task != "" {
+			text += baseStyle.
+				Width(m.width).
+				Foreground(t.Primary()).
+				Bold(true).
+				Render(fmt.Sprintf("%s %s ", m.spinner.View(), task))
+		}
+	}
+	return text
+}
 
 func (m *messagesCmp) help() string {
 	t := theme.CurrentTheme()

@@ -86,7 +86,7 @@ func (m *sidebarCmp) sessionSection() string {
 
 	sessionValue := baseStyle.
 		Foreground(t.Text()).
-		Render(fmt.Sprintf(": %s", m.app.CurrentSessionOLD.Title))
+		Render(fmt.Sprintf(": %s", m.app.Session.Title))
 
 	return sessionKey + sessionValue
 }

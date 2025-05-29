@@ -71,6 +71,7 @@ type MessageInfo struct {
 			Cost       float32 `json:"cost"`
 			ModelID    string  `json:"modelID"`
 			ProviderID string  `json:"providerID"`
+			Summary    *bool   `json:"summary,omitempty"`
 			Tokens     struct {
 				Input     float32 `json:"input"`
 				Output    float32 `json:"output"`
@@ -221,6 +222,13 @@ type PostSessionShareJSONBody struct {
 	SessionID string `json:"sessionID"`
 }
 
+// PostSessionSummarizeJSONBody defines parameters for PostSessionSummarize.
+type PostSessionSummarizeJSONBody struct {
+	ModelID    string `json:"modelID"`
+	ProviderID string `json:"providerID"`
+	SessionID  string `json:"sessionID"`
+}
+
 // PostSessionAbortJSONRequestBody defines body for PostSessionAbort for application/json ContentType.
 type PostSessionAbortJSONRequestBody PostSessionAbortJSONBody
 
@@ -232,6 +240,9 @@ type PostSessionMessagesJSONRequestBody PostSessionMessagesJSONBody
 
 // PostSessionShareJSONRequestBody defines body for PostSessionShare for application/json ContentType.
 type PostSessionShareJSONRequestBody PostSessionShareJSONBody
+
+// PostSessionSummarizeJSONRequestBody defines body for PostSessionSummarize for application/json ContentType.
+type PostSessionSummarizeJSONRequestBody PostSessionSummarizeJSONBody
 
 // AsEventStorageWrite returns the union data inside the Event as a EventStorageWrite
 func (t Event) AsEventStorageWrite() (EventStorageWrite, error) {
@@ -814,6 +825,11 @@ type ClientInterface interface {
 	PostSessionShareWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PostSessionShare(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostSessionSummarizeWithBody request with any body
+	PostSessionSummarizeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostSessionSummarize(ctx context.Context, body PostSessionSummarizeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetEvent(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -950,6 +966,30 @@ func (c *Client) PostSessionShareWithBody(ctx context.Context, contentType strin
 
 func (c *Client) PostSessionShare(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostSessionShareRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSessionSummarizeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionSummarizeRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSessionSummarize(ctx context.Context, body PostSessionSummarizeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionSummarizeRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1228,6 +1268,46 @@ func NewPostSessionShareRequestWithBody(server string, contentType string, body 
 	return req, nil
 }
 
+// NewPostSessionSummarizeRequest calls the generic PostSessionSummarize builder with application/json body
+func NewPostSessionSummarizeRequest(server string, body PostSessionSummarizeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostSessionSummarizeRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostSessionSummarizeRequestWithBody generates requests for PostSessionSummarize with any type of body
+func NewPostSessionSummarizeRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/session_summarize")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -1302,6 +1382,11 @@ type ClientWithResponsesInterface interface {
 	PostSessionShareWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionShareResponse, error)
 
 	PostSessionShareWithResponse(ctx context.Context, body PostSessionShareJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionShareResponse, error)
+
+	// PostSessionSummarizeWithBodyWithResponse request with any body
+	PostSessionSummarizeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionSummarizeResponse, error)
+
+	PostSessionSummarizeWithResponse(ctx context.Context, body PostSessionSummarizeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionSummarizeResponse, error)
 }
 
 type GetEventResponse struct {
@@ -1480,6 +1565,28 @@ func (r PostSessionShareResponse) StatusCode() int {
 	return 0
 }
 
+type PostSessionSummarizeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *bool
+}
+
+// Status returns HTTPResponse.Status
+func (r PostSessionSummarizeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostSessionSummarizeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // GetEventWithResponse request returning *GetEventResponse
 func (c *ClientWithResponses) GetEventWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventResponse, error) {
 	rsp, err := c.GetEvent(ctx, reqEditors...)
@@ -1582,6 +1689,23 @@ func (c *ClientWithResponses) PostSessionShareWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParsePostSessionShareResponse(rsp)
+}
+
+// PostSessionSummarizeWithBodyWithResponse request with arbitrary body returning *PostSessionSummarizeResponse
+func (c *ClientWithResponses) PostSessionSummarizeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionSummarizeResponse, error) {
+	rsp, err := c.PostSessionSummarizeWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionSummarizeResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostSessionSummarizeWithResponse(ctx context.Context, body PostSessionSummarizeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionSummarizeResponse, error) {
+	rsp, err := c.PostSessionSummarize(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionSummarizeResponse(rsp)
 }
 
 // ParseGetEventResponse parses an HTTP response from a GetEventWithResponse call
@@ -1782,6 +1906,32 @@ func ParsePostSessionShareResponse(rsp *http.Response) (*PostSessionShareRespons
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest SessionInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostSessionSummarizeResponse parses an HTTP response from a PostSessionSummarizeWithResponse call
+func ParsePostSessionSummarizeResponse(rsp *http.Response) (*PostSessionSummarizeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostSessionSummarizeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest bool
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
