@@ -158,7 +158,6 @@ export namespace Session {
       const tokens =
         previous.metadata.assistant.tokens.input +
         previous.metadata.assistant.tokens.output;
-      console.log(tokens);
       if (
         tokens >
         (model.info.contextWindow - (model.info.maxOutputTokens ?? 0)) * 0.9

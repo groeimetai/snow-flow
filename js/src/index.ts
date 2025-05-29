@@ -33,13 +33,17 @@ cli.command("generate", "Generate OpenAPI and event specs").action(async () => {
 
 cli
   .command("run [...message]", "Run a chat message")
-  .action(async (message: string[]) => {
+  .option("--session <id>", "Session ID")
+  .action(async (message: string[], options) => {
+    console.log(options);
     await App.provide({ directory: process.cwd() }, async () => {
-      console.log("Thinking...");
       await Share.init();
-      const session = await Session.create();
+      const session = options.session
+        ? await Session.get(options.session)
+        : await Session.create();
+      console.log("Session:", session.id);
       console.log(
-        `Share ID: ${Share.URL.replace("api.", "")}/share?id=${session.id}`,
+        `Share: ${Share.URL.replace("api.", "")}/share?id=${session.id}`,
       );
 
       Bus.subscribe(Message.Event.Updated, async (message) => {
