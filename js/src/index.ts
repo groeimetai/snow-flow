@@ -35,7 +35,6 @@ cli
   .command("run [...message]", "Run a chat message")
   .option("--session <id>", "Session ID")
   .action(async (message: string[], options) => {
-    console.log(options);
     await App.provide({ directory: process.cwd() }, async () => {
       await Share.init();
       const session = options.session
