@@ -17,7 +17,6 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/app"
@@ -239,11 +238,11 @@ func (f *filepickerCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (f *filepickerCmp) addAttachmentToMessage() (tea.Model, tea.Cmd) {
-	modeInfo := GetSelectedModel(config.Get())
-	if !modeInfo.SupportsAttachments {
-		status.Error(fmt.Sprintf("Model %s doesn't support attachments", modeInfo.Name))
-		return f, nil
-	}
+	// modeInfo := GetSelectedModel(config.Get())
+	// if !modeInfo.SupportsAttachments {
+	// 	status.Error(fmt.Sprintf("Model %s doesn't support attachments", modeInfo.Name))
+	// 	return f, nil
+	// }
 
 	selectedFilePath := f.selectedFile
 	if !isExtSupported(selectedFilePath) {

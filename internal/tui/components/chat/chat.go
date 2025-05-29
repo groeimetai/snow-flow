@@ -29,7 +29,7 @@ func header(width int) string {
 }
 
 func lspsConfigured(width int) string {
-	cfg := config.Get()
+	// cfg := config.Get()
 	title := "LSP Servers"
 	title = ansi.Truncate(title, width, "…")
 
@@ -44,37 +44,37 @@ func lspsConfigured(width int) string {
 
 	// Get LSP names and sort them for consistent ordering
 	var lspNames []string
-	for name := range cfg.LSP {
-		lspNames = append(lspNames, name)
-	}
+	// for name := range cfg.LSP {
+	// 	lspNames = append(lspNames, name)
+	// }
 	sort.Strings(lspNames)
 
 	var lspViews []string
-	for _, name := range lspNames {
-		lsp := cfg.LSP[name]
-		lspName := baseStyle.
-			Foreground(t.Text()).
-			Render(fmt.Sprintf("• %s", name))
+	// for _, name := range lspNames {
+	// lsp := cfg.LSP[name]
+	// lspName := baseStyle.
+	// 	Foreground(t.Text()).
+	// 	Render(fmt.Sprintf("• %s", name))
 
-		cmd := lsp.Command
-		cmd = ansi.Truncate(cmd, width-lipgloss.Width(lspName)-3, "…")
+	// cmd := lsp.Command
+	// cmd = ansi.Truncate(cmd, width-lipgloss.Width(lspName)-3, "…")
 
-		lspPath := baseStyle.
-			Foreground(t.TextMuted()).
-			Render(fmt.Sprintf(" (%s)", cmd))
+	// lspPath := baseStyle.
+	// 	Foreground(t.TextMuted()).
+	// 	Render(fmt.Sprintf(" (%s)", cmd))
 
-		lspViews = append(lspViews,
-			baseStyle.
-				Width(width).
-				Render(
-					lipgloss.JoinHorizontal(
-						lipgloss.Left,
-						lspName,
-						lspPath,
-					),
-				),
-		)
-	}
+	// lspViews = append(lspViews,
+	// 	baseStyle.
+	// 		Width(width).
+	// 		Render(
+	// 			lipgloss.JoinHorizontal(
+	// 				lipgloss.Left,
+	// 				lspName,
+	// 				lspPath,
+	// 			),
+	// 		),
+	// )
+	// }
 
 	return baseStyle.
 		Width(width).

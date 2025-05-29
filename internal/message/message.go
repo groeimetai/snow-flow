@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sst/opencode/internal/db"
-	"github.com/sst/opencode/internal/llm/models"
 	"github.com/sst/opencode/internal/pubsub"
 )
 
@@ -21,7 +20,6 @@ type Message struct {
 	Role      MessageRole
 	SessionID string
 	Parts     []ContentPart
-	Model     models.ModelID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -35,7 +33,6 @@ const (
 type CreateMessageParams struct {
 	Role  MessageRole
 	Parts []ContentPart
-	Model models.ModelID
 }
 
 type Service interface {
@@ -104,7 +101,6 @@ func (s *service) Create(ctx context.Context, sessionID string, params CreateMes
 		SessionID: sessionID,
 		Role:      string(params.Role),
 		Parts:     string(partsJSON),
-		Model:     sql.NullString{String: string(params.Model), Valid: params.Model != ""},
 	}
 
 	dbMessage, err := s.db.CreateMessage(ctx, dbMsgParams)
@@ -312,7 +308,6 @@ func (s *service) fromDBItem(item db.Message) (Message, error) {
 		SessionID: item.SessionID,
 		Role:      MessageRole(item.Role),
 		Parts:     parts,
-		Model:     models.ModelID(item.Model.String),
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
 	}

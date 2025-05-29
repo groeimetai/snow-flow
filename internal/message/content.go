@@ -4,8 +4,6 @@ import (
 	"encoding/base64"
 	"slices"
 	"time"
-
-	"github.com/sst/opencode/internal/llm/models"
 )
 
 type MessageRole string
@@ -74,11 +72,11 @@ type BinaryContent struct {
 	Data     []byte
 }
 
-func (bc BinaryContent) String(provider models.ModelProvider) string {
+func (bc BinaryContent) String(provider string) string {
 	base64Encoded := base64.StdEncoding.EncodeToString(bc.Data)
-	if provider == models.ProviderOpenAI {
-		return "data:" + bc.MIMEType + ";base64," + base64Encoded
-	}
+	// if provider == models.ProviderOpenAI {
+	// 	return "data:" + bc.MIMEType + ";base64," + base64Encoded
+	// }
 	return base64Encoded
 }
 
