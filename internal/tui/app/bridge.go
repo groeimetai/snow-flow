@@ -8,49 +8,8 @@ import (
 
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/pubsub"
-	"github.com/sst/opencode/internal/session"
 	"github.com/sst/opencode/pkg/client"
 )
-
-// SessionServiceBridge adapts the HTTP API to the old session.Service interface
-type SessionServiceBridge struct {
-	client *client.ClientWithResponses
-}
-
-// NewSessionServiceBridge creates a new session service bridge
-func NewSessionServiceBridge(client *client.ClientWithResponses) *SessionServiceBridge {
-	return &SessionServiceBridge{client: client}
-}
-
-// Create creates a new session
-func (s *SessionServiceBridge) Create(ctx context.Context, title string) (session.Session, error) {
-	// Moved to app.CreateSession
-	return session.Session{}, fmt.Errorf("don't use this")
-}
-
-// Get retrieves a session by ID
-func (s *SessionServiceBridge) Get(ctx context.Context, id string) (session.Session, error) {
-	// Moved to app.GetSession
-	return session.Session{}, fmt.Errorf("don't use this")
-}
-
-// List retrieves all sessions
-func (s *SessionServiceBridge) List(ctx context.Context) ([]session.Session, error) {
-	// Moved to app.ListSessions
-	return []session.Session{}, fmt.Errorf("don't use this")
-}
-
-// Update updates a session - NOT IMPLEMENTED IN API YET
-func (s *SessionServiceBridge) Update(ctx context.Context, id, title string) error {
-	// TODO: Not implemented in TypeScript API yet
-	return fmt.Errorf("session update not implemented in API")
-}
-
-// Delete deletes a session - NOT IMPLEMENTED IN API YET
-func (s *SessionServiceBridge) Delete(ctx context.Context, id string) error {
-	// TODO: Not implemented in TypeScript API yet
-	return fmt.Errorf("session delete not implemented in API")
-}
 
 // AgentServiceBridge provides a minimal agent service that sends messages to the API
 type AgentServiceBridge struct {

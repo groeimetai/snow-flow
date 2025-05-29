@@ -1,8 +1,10 @@
 package state
 
-import "github.com/sst/opencode/internal/session"
+import (
+	"github.com/sst/opencode/pkg/client"
+)
 
-type SessionSelectedMsg = *session.Session
+type SessionSelectedMsg = *client.SessionInfo
 type SessionClearedMsg struct{}
 type CompactSessionMsg struct{}
 type StateUpdatedMsg struct {

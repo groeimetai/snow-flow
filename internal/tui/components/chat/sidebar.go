@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -203,81 +202,6 @@ func NewSidebarCmp(app *app.App) tea.Model {
 	return &sidebarCmp{
 		app: app,
 	}
-}
-
-func (m *sidebarCmp) loadModifiedFiles(ctx context.Context) {
-	if m.app.CurrentSessionOLD.ID == "" {
-		return
-	}
-
-	// TODO: History service not implemented in API yet
-	return
-	/*
-		// Get all latest files for this session
-		latestFiles, err := m.app.History.ListLatestSessionFiles(ctx, m.app.CurrentSession.ID)
-		if err != nil {
-			return
-		}
-
-		// Get all files for this session (to find initial versions)
-		allFiles, err := m.app.History.ListBySession(ctx, m.app.CurrentSession.ID)
-		if err != nil {
-			return
-		}
-	*/
-
-	// Clear the existing map to rebuild it
-	m.modFiles = make(map[string]struct {
-		additions int
-		removals  int
-	})
-
-	/*
-		// Process each latest file
-		for _, file := range latestFiles {
-			// Skip if this is the initial version (no changes to show)
-			if file.Version == history.InitialVersion {
-				continue
-			}
-
-			// Find the initial version for this specific file
-			var initialVersion history.File
-			for _, v := range allFiles {
-				if v.Path == file.Path && v.Version == history.InitialVersion {
-					initialVersion = v
-					break
-				}
-			}
-
-			// Skip if we can't find the initial version
-			if initialVersion.ID == "" {
-				continue
-			}
-			if initialVersion.Content == file.Content {
-				continue
-			}
-
-			// Calculate diff between initial and latest version
-			_, additions, removals := diff.GenerateDiff(initialVersion.Content, file.Content, file.Path)
-
-			// Only add to modified files if there are changes
-			if additions > 0 || removals > 0 {
-				// Remove working directory prefix from file path
-				displayPath := file.Path
-				workingDir := config.WorkingDirectory()
-				displayPath = strings.TrimPrefix(displayPath, workingDir)
-				displayPath = strings.TrimPrefix(displayPath, "/")
-
-				m.modFiles[displayPath] = struct {
-					additions int
-					removals  int
-				}{
-					additions: additions,
-					removals:  removals,
-				}
-			}
-		}
-	*/
 }
 
 // Helper function to get the display path for a file

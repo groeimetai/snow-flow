@@ -6,17 +6,7 @@ import (
 
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/pubsub"
-	"github.com/sst/opencode/internal/session"
 )
-
-// SessionService defines the interface for session operations
-type SessionService interface {
-	Create(ctx context.Context, title string) (session.Session, error)
-	Get(ctx context.Context, id string) (session.Session, error)
-	List(ctx context.Context) ([]session.Session, error)
-	Update(ctx context.Context, id, title string) error
-	Delete(ctx context.Context, id string) error
-}
 
 // MessageService defines the interface for message operations
 type MessageService interface {

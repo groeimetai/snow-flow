@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"log/slog"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/fileutil"
 	"github.com/sst/opencode/internal/message"
-	"github.com/sst/opencode/internal/session"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/state"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -26,13 +24,11 @@ type App struct {
 	Session  *client.SessionInfo
 	Messages []client.MessageInfo
 
-	CurrentSessionOLD *session.Session
-	SessionsOLD       SessionService
-	MessagesOLD       MessageService
-	LogsOLD           any // TODO: Define LogService interface when needed
-	HistoryOLD        any // TODO: Define HistoryService interface when needed
-	PermissionsOLD    any // TODO: Define PermissionService interface when needed
-	Status            status.Service
+	MessagesOLD    MessageService
+	LogsOLD        any // TODO: Define LogService interface when needed
+	HistoryOLD     any // TODO: Define HistoryService interface when needed
+	PermissionsOLD any // TODO: Define PermissionService interface when needed
+	Status         status.Service
 
 	PrimaryAgentOLD AgentService
 
@@ -70,19 +66,16 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	// Create service bridges
-	sessionBridge := NewSessionServiceBridge(httpClient)
 	messageBridge := NewMessageServiceBridge(httpClient)
 	agentBridge := NewAgentServiceBridge(httpClient)
 
 	app := &App{
-		Client:            httpClient,
-		Events:            eventClient,
-		Session:           &client.SessionInfo{},
-		CurrentSessionOLD: &session.Session{},
-		SessionsOLD:       sessionBridge,
-		MessagesOLD:       messageBridge,
-		PrimaryAgentOLD:   agentBridge,
-		Status:            status.GetService(),
+		Client:          httpClient,
+		Events:          eventClient,
+		Session:         &client.SessionInfo{},
+		MessagesOLD:     messageBridge,
+		PrimaryAgentOLD: agentBridge,
+		Status:          status.GetService(),
 
 		// TODO: These services need API endpoints:
 		LogsOLD:        nil, // logging.GetService(),
@@ -113,16 +106,7 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []me
 		info := resp.JSON200
 		a.Session = info
 
-		// Convert to old session type for backwards compatibility
-		newSession := session.Session{
-			ID:        info.Id,
-			Title:     info.Title,
-			CreatedAt: time.Now(), // API doesn't provide this yet
-			UpdatedAt: time.Now(), // API doesn't provide this yet
-		}
-		a.CurrentSessionOLD = &newSession
-
-		cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(&newSession)))
+		cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(info)))
 	}
 
 	// TODO: Handle attachments when API supports them
@@ -151,7 +135,7 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []me
 	return tea.Batch(cmds...)
 }
 
-func (a *App) ListSessions(ctx context.Context) ([]session.Session, error) {
+func (a *App) ListSessions(ctx context.Context) ([]client.SessionInfo, error) {
 	resp, err := a.Client.PostSessionListWithResponse(ctx)
 	if err != nil {
 		return nil, err
@@ -162,19 +146,16 @@ func (a *App) ListSessions(ctx context.Context) ([]session.Session, error) {
 	}
 
 	if resp.JSON200 == nil {
-		return []session.Session{}, nil
+		return []client.SessionInfo{}, nil
 	}
 
 	infos := *resp.JSON200
 
-	// Convert to old session type
-	sessions := make([]session.Session, len(infos))
+	sessions := make([]client.SessionInfo, len(infos))
 	for i, info := range infos {
-		sessions[i] = session.Session{
-			ID:        info.Id,
-			Title:     info.Title,
-			CreatedAt: time.Now(), // API doesn't provide this yet
-			UpdatedAt: time.Now(), // API doesn't provide this yet
+		sessions[i] = client.SessionInfo{
+			Id:    info.Id,
+			Title: info.Title,
 		}
 	}
 

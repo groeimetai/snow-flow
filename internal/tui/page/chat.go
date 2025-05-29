@@ -2,7 +2,6 @@ package page
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -10,7 +9,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/completions"
 	"github.com/sst/opencode/internal/message"
-	"github.com/sst/opencode/internal/session"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/components/chat"
@@ -18,6 +16,7 @@ import (
 	"github.com/sst/opencode/internal/tui/layout"
 	"github.com/sst/opencode/internal/tui/state"
 	"github.com/sst/opencode/internal/tui/util"
+	"github.com/sst/opencode/pkg/client"
 )
 
 var ChatPage PageID = "chat"
@@ -104,23 +103,7 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case state.SessionClearedMsg:
 		cmd := p.setSidebar()
 		cmds = append(cmds, cmd)
-	case state.CompactSessionMsg:
-		if p.app.CurrentSessionOLD.ID == "" {
-			status.Warn("No active session to compact.")
-			return p, nil
-		}
 
-		// Run compaction in background
-		go func(sessionID string) {
-			err := p.app.PrimaryAgentOLD.CompactSession(context.Background(), sessionID, false)
-			if err != nil {
-				status.Error(fmt.Sprintf("Compaction failed: %v", err))
-			} else {
-				status.Info("Conversation compacted successfully.")
-			}
-		}(p.app.CurrentSessionOLD.ID)
-
-		return p, nil
 	case dialog.CompletionDialogCloseMsg:
 		p.showCompletionDialog = false
 		p.app.SetCompletionDialogOpen(false)
@@ -131,16 +114,16 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p.app.SetCompletionDialogOpen(true)
 			// Continue sending keys to layout->chat
 		case key.Matches(msg, keyMap.NewSession):
-			p.app.CurrentSessionOLD = &session.Session{}
+			p.app.Session = &client.SessionInfo{}
 			return p, tea.Batch(
 				p.clearSidebar(),
 				util.CmdHandler(state.SessionClearedMsg{}),
 			)
 		case key.Matches(msg, keyMap.Cancel):
-			if p.app.CurrentSessionOLD.ID != "" {
+			if p.app.Session.Id != "" {
 				// Cancel the current session's generation process
 				// This allows users to interrupt long-running operations
-				p.app.PrimaryAgentOLD.Cancel(p.app.CurrentSessionOLD.ID)
+				// p.app.PrimaryAgentOLD.Cancel(p.app.CurrentSessionOLD.ID)
 				return p, nil
 			}
 		case key.Matches(msg, keyMap.ToggleTools):

@@ -10,7 +10,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/message"
-	"github.com/sst/opencode/internal/session"
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/components/dialog"
 	"github.com/sst/opencode/internal/tui/state"
@@ -72,7 +71,7 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.renderView()
 		return m, nil
 	case state.SessionSelectedMsg:
-		cmd := m.Reload(msg)
+		cmd := m.Reload()
 		return m, cmd
 	case state.SessionClearedMsg:
 		m.rendering = false
@@ -96,10 +95,6 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.spinner = spinner
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
-}
-
-func (m *messagesCmp) IsAgentWorking() bool {
-	return m.app.PrimaryAgentOLD.IsSessionBusy(m.app.CurrentSessionOLD.ID)
 }
 
 func (m *messagesCmp) renderView() {
@@ -313,7 +308,7 @@ func (m *messagesCmp) GetSize() (int, int) {
 	return m.width, m.height
 }
 
-func (m *messagesCmp) Reload(session *session.Session) tea.Cmd {
+func (m *messagesCmp) Reload() tea.Cmd {
 	m.rendering = true
 	return func() tea.Msg {
 		m.renderView()

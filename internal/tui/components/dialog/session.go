@@ -4,28 +4,28 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/session"
 	"github.com/sst/opencode/internal/tui/layout"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
 	"github.com/sst/opencode/internal/tui/util"
+	"github.com/sst/opencode/pkg/client"
 )
 
 // CloseSessionDialogMsg is sent when the session dialog is closed
 type CloseSessionDialogMsg struct {
-	Session *session.Session
+	Session *client.SessionInfo
 }
 
 // SessionDialog interface for the session switching dialog
 type SessionDialog interface {
 	tea.Model
 	layout.Bindings
-	SetSessions(sessions []session.Session)
+	SetSessions(sessions []client.SessionInfo)
 	SetSelectedSession(sessionID string)
 }
 
 type sessionDialogCmp struct {
-	sessions          []session.Session
+	sessions          []client.SessionInfo
 	selectedIdx       int
 	width             int
 	height            int
@@ -89,7 +89,7 @@ func (s *sessionDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, sessionKeys.Enter):
 			if len(s.sessions) > 0 {
 				selectedSession := s.sessions[s.selectedIdx]
-				s.selectedSessionID = selectedSession.ID
+				s.selectedSessionID = selectedSession.Id
 
 				return s, util.CmdHandler(CloseSessionDialogMsg{
 					Session: &selectedSession,
@@ -189,13 +189,13 @@ func (s *sessionDialogCmp) BindingKeys() []key.Binding {
 	return layout.KeyMapToSlice(sessionKeys)
 }
 
-func (s *sessionDialogCmp) SetSessions(sessions []session.Session) {
+func (s *sessionDialogCmp) SetSessions(sessions []client.SessionInfo) {
 	s.sessions = sessions
 
 	// If we have a selected session ID, find its index
 	if s.selectedSessionID != "" {
 		for i, sess := range sessions {
-			if sess.ID == s.selectedSessionID {
+			if sess.Id == s.selectedSessionID {
 				s.selectedIdx = i
 				return
 			}
@@ -212,7 +212,7 @@ func (s *sessionDialogCmp) SetSelectedSession(sessionID string) {
 	// Update the selected index if sessions are already loaded
 	if len(s.sessions) > 0 {
 		for i, sess := range s.sessions {
-			if sess.ID == sessionID {
+			if sess.Id == sessionID {
 				s.selectedIdx = i
 				return
 			}
@@ -223,7 +223,7 @@ func (s *sessionDialogCmp) SetSelectedSession(sessionID string) {
 // NewSessionDialogCmp creates a new session switching dialog
 func NewSessionDialogCmp() SessionDialog {
 	return &sessionDialogCmp{
-		sessions:          []session.Session{},
+		sessions:          []client.SessionInfo{},
 		selectedIdx:       0,
 		selectedSessionID: "",
 	}

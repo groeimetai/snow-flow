@@ -275,7 +275,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, a.moveToPage(msg.ID)
 
 	case state.SessionSelectedMsg:
-		a.app.CurrentSessionOLD = msg
+		a.app.Session = msg
 		return a.updateAllPages(msg)
 
 	case dialog.CloseQuitMsg:
