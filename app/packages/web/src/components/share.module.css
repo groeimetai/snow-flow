@@ -85,19 +85,21 @@
   }
 
   [data-section="stats"][data-section-models] {
-    gap: 0.5rem;
+    li {
+      gap: 0.3125rem;
 
-    [data-stat-model-icon] {
-      flex: 0 0 auto;
-      color: var(--sl-color-text-dimmed);
-      opacity: 0.85;
-      svg {
-        display: block;
+      [data-stat-model-icon] {
+        flex: 0 0 auto;
+        color: var(--sl-color-text-dimmed);
+        opacity: 0.85;
+        svg {
+          display: block;
+        }
       }
-    }
 
-    span[data-stat-model] {
-      color: var(sl-color-text);
+      span[data-stat-model] {
+        color: var(sl-color-text);
+      }
     }
   }
 
@@ -167,7 +169,6 @@
 
     span[data-part-model] {
       line-height: 1.5;
-      font-weight: 500;
     }
   }
 }
