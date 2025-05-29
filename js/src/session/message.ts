@@ -2,15 +2,6 @@ import z from "zod";
 import { Bus } from "../bus";
 
 export namespace Message {
-  export const Event = {
-    Updated: Bus.event(
-      "message.updated",
-      z.object({
-        sessionID: z.string(),
-        messageID: z.string(),
-      }),
-    ),
-  };
   export const ToolCall = z
     .object({
       state: z.literal("call"),
@@ -167,4 +158,13 @@ export namespace Message {
       ref: "Message.Info",
     });
   export type Info = z.infer<typeof Info>;
+
+  export const Event = {
+    Updated: Bus.event(
+      "message.updated",
+      z.object({
+        info: Info,
+      }),
+    ),
+  };
 }

@@ -357,65 +357,18 @@
           "properties": {
             "type": "object",
             "properties": {
-              "sessionID": {
-                "type": "string"
-              },
-              "messageID": {
-                "type": "string"
+              "info": {
+                "$ref": "#/components/schemas/Message.Info"
               }
             },
             "required": [
-              "sessionID",
-              "messageID"
+              "info"
             ]
           }
         },
         "required": [
           "type",
           "properties"
-        ]
-      },
-      "Event.session.updated": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "session.updated"
-          },
-          "properties": {
-            "type": "object",
-            "properties": {
-              "sessionID": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "sessionID"
-            ]
-          }
-        },
-        "required": [
-          "type",
-          "properties"
-        ]
-      },
-      "Session.Info": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^ses"
-          },
-          "shareID": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "title"
         ]
       },
       "Message.Info": {
@@ -758,6 +711,65 @@
         },
         "required": [
           "type"
+        ]
+      },
+      "Event.session.updated": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "session.updated"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "info": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^ses"
+                  },
+                  "shareID": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "title"
+                ]
+              }
+            },
+            "required": [
+              "info"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "properties"
+        ]
+      },
+      "Session.Info": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^ses"
+          },
+          "shareID": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
         ]
       },
       "Provider.Info": {

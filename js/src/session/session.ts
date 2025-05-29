@@ -35,7 +35,7 @@ export namespace Session {
     Updated: Bus.event(
       "session.updated",
       z.object({
-        sessionID: z.string(),
+        info: Info,
       }),
     ),
   };
@@ -60,7 +60,7 @@ export namespace Session {
     await Storage.writeJSON("session/info/" + result.id, result);
     await share(result.id);
     Bus.publish(Event.Updated, {
-      sessionID: result.id,
+      info: result,
     });
     return result;
   }
@@ -94,7 +94,7 @@ export namespace Session {
     sessions.set(id, session);
     await Storage.writeJSON("session/info/" + id, session);
     Bus.publish(Event.Updated, {
-      sessionID: id,
+      info: session,
     });
     return session;
   }
@@ -147,8 +147,7 @@ export namespace Session {
         msg,
       );
       Bus.publish(Message.Event.Updated, {
-        sessionID: input.sessionID,
-        messageID: msg.id,
+        info: msg,
       });
     }
     const app = await App.use();

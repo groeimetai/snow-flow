@@ -41,8 +41,7 @@ type EventLspClientDiagnostics struct {
 // EventMessageUpdated defines model for Event.message.updated.
 type EventMessageUpdated struct {
 	Properties struct {
-		MessageID string `json:"messageID"`
-		SessionID string `json:"sessionID"`
+		Info MessageInfo `json:"info"`
 	} `json:"properties"`
 	Type string `json:"type"`
 }
@@ -50,7 +49,11 @@ type EventMessageUpdated struct {
 // EventSessionUpdated defines model for Event.session.updated.
 type EventSessionUpdated struct {
 	Properties struct {
-		SessionID string `json:"sessionID"`
+		Info struct {
+			Id      string  `json:"id"`
+			ShareID *string `json:"shareID,omitempty"`
+			Title   string  `json:"title"`
+		} `json:"info"`
 	} `json:"properties"`
 	Type string `json:"type"`
 }
