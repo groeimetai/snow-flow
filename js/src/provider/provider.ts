@@ -11,7 +11,7 @@ export namespace Provider {
         outputCached: z.number(),
       }),
       contextWindow: z.number(),
-      maxTokens: z.number().optional(),
+      maxOutputTokens: z.number().optional(),
       attachment: z.boolean(),
       reasoning: z.boolean().optional(),
     })

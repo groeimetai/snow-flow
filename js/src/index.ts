@@ -9,6 +9,7 @@ import cac from "cac";
 import { Share } from "./share/share";
 import { Storage } from "./storage/storage";
 import { LLM } from "./llm/llm";
+import { Message } from "./session/message";
 
 const cli = cac("opencode");
 
@@ -41,49 +42,8 @@ cli
         `Share ID: ${Share.URL.replace("api.", "")}/share?id=${session.id}`,
       );
 
-      let index = 0;
-      Bus.subscribe(Storage.Event.Write, async (payload) => {
-        const [root, , type, messageID] = payload.properties.key.split("/");
-        if (root !== "session" && type !== "message") return;
-        const message = await Session.messages(session.id).then((x) =>
-          x.find((x) => x.id === messageID),
-        );
-        if (!message) return;
-
-        for (; index < message.parts.length; index++) {
-          const part = message.parts[index];
-          if (part.type === "text") continue;
-          if (part.type === "step-start") continue;
-          if (
-            part.type === "tool-invocation" &&
-            part.toolInvocation.state !== "result"
-          )
-            break;
-
-          if (part.type === "tool-invocation") {
-            console.log(`🔧 ${part.toolInvocation.toolName}`);
-            if (
-              part.toolInvocation.state === "result" &&
-              "result" in part.toolInvocation
-            ) {
-              const result = part.toolInvocation.result;
-              if (typeof result === "string") {
-                const lines = result.split("\n");
-                const truncated = lines.slice(0, 4);
-                if (lines.length > 4) truncated.push("...");
-                console.log(truncated.join("\n"));
-              } else if (result && typeof result === "object") {
-                const jsonStr = JSON.stringify(result, null, 2);
-                const lines = jsonStr.split("\n");
-                const truncated = lines.slice(0, 4);
-                if (lines.length > 4) truncated.push("...");
-                console.log(truncated.join("\n"));
-              }
-            }
-            continue;
-          }
-          console.log(part);
-        }
+      Bus.subscribe(Message.Event.Updated, async (message) => {
+        console.log("Thinking...");
       });
 
       const providers = await LLM.providers();
@@ -107,6 +67,10 @@ cli
           console.log("opencode:", part.text);
         }
       }
+      console.log({
+        cost: result.metadata.assistant?.cost,
+        tokens: result.metadata.assistant?.tokens,
+      });
     });
   });
 

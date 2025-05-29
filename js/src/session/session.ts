@@ -149,11 +149,31 @@ export namespace Session {
     modelID: string;
     parts: Message.Part[];
   }) {
-    using abort = lock(input.sessionID);
     const l = log.clone().tag("session", input.sessionID);
     l.info("chatting");
     const model = await LLM.findModel(input.providerID, input.modelID);
     let msgs = await messages(input.sessionID);
+    const previous = msgs.at(-1);
+    if (previous?.metadata.assistant) {
+      const tokens =
+        previous.metadata.assistant.tokens.input +
+        previous.metadata.assistant.tokens.output;
+      console.log(tokens);
+      if (
+        tokens >
+        (model.info.contextWindow - (model.info.maxOutputTokens ?? 0)) * 0.9
+      ) {
+        await summarize({
+          sessionID: input.sessionID,
+          providerID: input.providerID,
+          modelID: input.modelID,
+        });
+        return chat(input);
+      }
+    }
+
+    using abort = lock(input.sessionID);
+
     const lastSummary = msgs.findLast(
       (msg) => msg.metadata.assistant?.summary === true,
     );
