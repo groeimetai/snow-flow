@@ -1,8 +1,6 @@
 package chat
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -13,14 +11,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/message"
-	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/session"
-	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/components/dialog"
 	"github.com/sst/opencode/internal/tui/state"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
+	"github.com/sst/opencode/pkg/client"
 )
 
 type cacheItem struct {
@@ -32,7 +29,6 @@ type messagesCmp struct {
 	app              *app.App
 	width, height    int
 	viewport         viewport.Model
-	messages         []message.Message
 	uiMessages       []uiMessage
 	currentMsgID     string
 	cachedContent    map[string]cacheItem
@@ -75,6 +71,8 @@ func (m *messagesCmp) Init() tea.Cmd {
 }
 
 func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m.renderView()
+
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case dialog.ThemeChangedMsg:
@@ -90,7 +88,7 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := m.Reload(msg)
 		return m, cmd
 	case state.SessionClearedMsg:
-		m.messages = make([]message.Message, 0)
+		// m.messages = make([]message.Message, 0)
 		m.currentMsgID = ""
 		m.rendering = false
 		return m, nil
@@ -104,62 +102,63 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case renderFinishedMsg:
 		m.rendering = false
 		m.viewport.GotoBottom()
+
 	case state.StateUpdatedMsg:
 		m.renderView()
 		m.viewport.GotoBottom()
 
-	case pubsub.Event[message.Message]:
-		needsRerender := false
-		if msg.Type == message.EventMessageCreated {
-			if msg.Payload.SessionID == m.app.CurrentSession.ID {
-				messageExists := false
-				for _, v := range m.messages {
-					if v.ID == msg.Payload.ID {
-						messageExists = true
-						break
-					}
-				}
-
-				if !messageExists {
-					if len(m.messages) > 0 {
-						lastMsgID := m.messages[len(m.messages)-1].ID
-						delete(m.cachedContent, lastMsgID)
-					}
-
-					m.messages = append(m.messages, msg.Payload)
-					delete(m.cachedContent, m.currentMsgID)
-					m.currentMsgID = msg.Payload.ID
-					needsRerender = true
-				}
-			}
-			// There are tool calls from the child task
-			for _, v := range m.messages {
-				for _, c := range v.ToolCalls() {
-					if c.ID == msg.Payload.SessionID {
-						delete(m.cachedContent, v.ID)
-						needsRerender = true
-					}
-				}
-			}
-		} else if msg.Type == message.EventMessageUpdated && msg.Payload.SessionID == m.app.CurrentSession.ID {
-			for i, v := range m.messages {
-				if v.ID == msg.Payload.ID {
-					m.messages[i] = msg.Payload
-					delete(m.cachedContent, msg.Payload.ID)
-					needsRerender = true
-					break
-				}
-			}
-		}
-		if needsRerender {
-			m.renderView()
-			if len(m.messages) > 0 {
-				if (msg.Type == message.EventMessageCreated) ||
-					(msg.Type == message.EventMessageUpdated && msg.Payload.ID == m.messages[len(m.messages)-1].ID) {
-					m.viewport.GotoBottom()
-				}
-			}
-		}
+		// case pubsub.Event[message.Message]:
+		// 	needsRerender := false
+		// 	if msg.Type == message.EventMessageCreated {
+		// 		if msg.Payload.SessionID == m.app.CurrentSessionOLD.ID {
+		// 			messageExists := false
+		// 			for _, v := range m.messages {
+		// 				if v.ID == msg.Payload.ID {
+		// 					messageExists = true
+		// 					break
+		// 				}
+		// 			}
+		//
+		// 			if !messageExists {
+		// 				if len(m.messages) > 0 {
+		// 					lastMsgID := m.messages[len(m.messages)-1].ID
+		// 					delete(m.cachedContent, lastMsgID)
+		// 				}
+		//
+		// 				m.messages = append(m.messages, msg.Payload)
+		// 				delete(m.cachedContent, m.currentMsgID)
+		// 				m.currentMsgID = msg.Payload.ID
+		// 				needsRerender = true
+		// 			}
+		// 		}
+		// 		// There are tool calls from the child task
+		// 		for _, v := range m.messages {
+		// 			for _, c := range v.ToolCalls() {
+		// 				if c.ID == msg.Payload.SessionID {
+		// 					delete(m.cachedContent, v.ID)
+		// 					needsRerender = true
+		// 				}
+		// 			}
+		// 		}
+		// 	} else if msg.Type == message.EventMessageUpdated && msg.Payload.SessionID == m.app.CurrentSessionOLD.ID {
+		// 		for i, v := range m.messages {
+		// 			if v.ID == msg.Payload.ID {
+		// 				m.messages[i] = msg.Payload
+		// 				delete(m.cachedContent, msg.Payload.ID)
+		// 				needsRerender = true
+		// 				break
+		// 			}
+		// 		}
+		// 	}
+		// 	if needsRerender {
+		// 		m.renderView()
+		// 		if len(m.messages) > 0 {
+		// 			if (msg.Type == message.EventMessageCreated) ||
+		// 				(msg.Type == message.EventMessageUpdated && msg.Payload.ID == m.messages[len(m.messages)-1].ID) {
+		// 				m.viewport.GotoBottom()
+		// 			}
+		// 		}
+		// 	}
 	}
 
 	spinner, cmd := m.spinner.Update(msg)
@@ -169,7 +168,7 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *messagesCmp) IsAgentWorking() bool {
-	return m.app.PrimaryAgent.IsSessionBusy(m.app.CurrentSession.ID)
+	return m.app.PrimaryAgentOLD.IsSessionBusy(m.app.CurrentSessionOLD.ID)
 }
 
 func formatTimeDifference(unixTime1, unixTime2 int64) string {
@@ -192,48 +191,48 @@ func (m *messagesCmp) renderView() {
 	if m.width == 0 {
 		return
 	}
-	for inx, msg := range m.messages {
+	for _, msg := range m.app.Messages {
 		switch msg.Role {
-		case message.User:
-			if cache, ok := m.cachedContent[msg.ID]; ok && cache.width == m.width {
+		case client.User:
+			if cache, ok := m.cachedContent[msg.Id]; ok && cache.width == m.width {
 				m.uiMessages = append(m.uiMessages, cache.content...)
 				continue
 			}
 			userMsg := renderUserMessage(
 				msg,
-				msg.ID == m.currentMsgID,
+				msg.Id == m.currentMsgID,
 				m.width,
 				pos,
 			)
 			m.uiMessages = append(m.uiMessages, userMsg)
-			m.cachedContent[msg.ID] = cacheItem{
+			m.cachedContent[msg.Id] = cacheItem{
 				width:   m.width,
 				content: []uiMessage{userMsg},
 			}
-			pos += userMsg.height + 1 // + 1 for spacing
-		case message.Assistant:
-			if cache, ok := m.cachedContent[msg.ID]; ok && cache.width == m.width {
+			// pos += userMsg.height + 1 // + 1 for spacing
+		case client.Assistant:
+			if cache, ok := m.cachedContent[msg.Id]; ok && cache.width == m.width {
 				m.uiMessages = append(m.uiMessages, cache.content...)
 				continue
 			}
-			assistantMessages := renderAssistantMessage(
-				msg,
-				inx,
-				m.messages,
-				m.app.Messages,
-				m.currentMsgID,
-				m.width,
-				pos,
-				m.showToolMessages,
-			)
-			for _, msg := range assistantMessages {
-				m.uiMessages = append(m.uiMessages, msg)
-				pos += msg.height + 1 // + 1 for spacing
-			}
-			m.cachedContent[msg.ID] = cacheItem{
-				width:   m.width,
-				content: assistantMessages,
-			}
+			// assistantMessages := renderAssistantMessage(
+			// 	msg,
+			// 	inx,
+			// 	m.app.Messages,
+			// 	m.app.MessagesOLD,
+			// 	m.currentMsgID,
+			// 	m.width,
+			// 	pos,
+			// 	m.showToolMessages,
+			// )
+			// for _, msg := range assistantMessages {
+			// 	m.uiMessages = append(m.uiMessages, msg)
+			// 	// pos += msg.height + 1 // + 1 for spacing
+			// }
+			// m.cachedContent[msg.Id] = cacheItem{
+			// 	width:   m.width,
+			// 	content: assistantMessages,
+			// }
 		}
 	}
 
@@ -248,33 +247,23 @@ func (m *messagesCmp) renderView() {
 		)
 	}
 
-	temp, _ := json.MarshalIndent(m.app.State, "", "    ")
+	// temp, _ := json.MarshalIndent(m.app.State, "", "    ")
 
 	m.viewport.SetContent(
 		baseStyle.
 			Width(m.width).
 			Render(
-				string(temp),
-				// lipgloss.JoinVertical(
-				// 	lipgloss.Top,
-				// 	messages...,
-				// ),
+				// string(temp),
+				lipgloss.JoinVertical(
+					lipgloss.Top,
+					messages...,
+				),
 			),
 	)
 }
 
 func (m *messagesCmp) View() string {
 	baseStyle := styles.BaseStyle()
-	return baseStyle.
-		Width(m.width).
-		Render(
-			lipgloss.JoinVertical(
-				lipgloss.Top,
-				m.viewport.View(),
-				m.working(),
-				m.help(),
-			),
-		)
 
 	if m.rendering {
 		return baseStyle.
@@ -283,12 +272,12 @@ func (m *messagesCmp) View() string {
 				lipgloss.JoinVertical(
 					lipgloss.Top,
 					"Loading...",
-					m.working(),
+					// m.working(),
 					m.help(),
 				),
 			)
 	}
-	if len(m.messages) == 0 {
+	if len(m.app.Messages) == 0 {
 		content := baseStyle.
 			Width(m.width).
 			Height(m.height - 1).
@@ -314,7 +303,7 @@ func (m *messagesCmp) View() string {
 			lipgloss.JoinVertical(
 				lipgloss.Top,
 				m.viewport.View(),
-				m.working(),
+				// m.working(),
 				m.help(),
 			),
 		)
@@ -356,31 +345,31 @@ func hasUnfinishedToolCalls(messages []message.Message) bool {
 	return false
 }
 
-func (m *messagesCmp) working() string {
-	text := ""
-	if m.IsAgentWorking() && len(m.messages) > 0 {
-		t := theme.CurrentTheme()
-		baseStyle := styles.BaseStyle()
-
-		task := "Thinking..."
-		lastMessage := m.messages[len(m.messages)-1]
-		if hasToolsWithoutResponse(m.messages) {
-			task = "Waiting for tool response..."
-		} else if hasUnfinishedToolCalls(m.messages) {
-			task = "Building tool call..."
-		} else if !lastMessage.IsFinished() {
-			task = "Generating..."
-		}
-		if task != "" {
-			text += baseStyle.
-				Width(m.width).
-				Foreground(t.Primary()).
-				Bold(true).
-				Render(fmt.Sprintf("%s %s ", m.spinner.View(), task))
-		}
-	}
-	return text
-}
+// func (m *messagesCmp) working() string {
+// 	text := ""
+// 	if m.IsAgentWorking() && len(m.app.Messages) > 0 {
+// 		t := theme.CurrentTheme()
+// 		baseStyle := styles.BaseStyle()
+//
+// 		task := "Thinking..."
+// 		lastMessage := m.app.Messages[len(m.app.Messages)-1]
+// 		if hasToolsWithoutResponse(m.app.Messages) {
+// 			task = "Waiting for tool response..."
+// 		} else if hasUnfinishedToolCalls(m.app.Messages) {
+// 			task = "Building tool call..."
+// 		} else if !lastMessage.IsFinished() {
+// 			task = "Generating..."
+// 		}
+// 		if task != "" {
+// 			text += baseStyle.
+// 				Width(m.width).
+// 				Foreground(t.Primary()).
+// 				Bold(true).
+// 				Render(fmt.Sprintf("%s %s ", m.spinner.View(), task))
+// 		}
+// 	}
+// 	return text
+// }
 
 func (m *messagesCmp) help() string {
 	t := theme.CurrentTheme()
@@ -388,7 +377,7 @@ func (m *messagesCmp) help() string {
 
 	text := ""
 
-	if m.app.PrimaryAgent.IsBusy() {
+	if m.app.PrimaryAgentOLD.IsBusy() {
 		text += lipgloss.JoinHorizontal(
 			lipgloss.Left,
 			baseStyle.Foreground(t.TextMuted()).Bold(true).Render("press "),
@@ -429,8 +418,8 @@ func (m *messagesCmp) initialScreen() string {
 }
 
 func (m *messagesCmp) rerender() {
-	for _, msg := range m.messages {
-		delete(m.cachedContent, msg.ID)
+	for _, msg := range m.app.Messages {
+		delete(m.cachedContent, msg.Id)
 	}
 	m.renderView()
 }
@@ -454,14 +443,16 @@ func (m *messagesCmp) GetSize() (int, int) {
 }
 
 func (m *messagesCmp) Reload(session *session.Session) tea.Cmd {
-	messages, err := m.app.Messages.List(context.Background(), session.ID)
-	if err != nil {
-		status.Error(err.Error())
-		return nil
-	}
-	m.messages = messages
-	if len(m.messages) > 0 {
-		m.currentMsgID = m.messages[len(m.messages)-1].ID
+	// messages := m.app.Messages
+	// messages, err := m.app.MessagesOLD.List(context.Background(), session.ID)
+	// if err != nil {
+	// 	status.Error(err.Error())
+	// 	return nil
+	// }
+	// m.messages = messages
+
+	if len(m.app.Messages) > 0 {
+		m.currentMsgID = m.app.Messages[len(m.app.Messages)-1].Id
 	}
 	delete(m.cachedContent, m.currentMsgID)
 	m.rendering = true

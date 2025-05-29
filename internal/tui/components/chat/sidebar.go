@@ -86,7 +86,7 @@ func (m *sidebarCmp) sessionSection() string {
 
 	sessionValue := baseStyle.
 		Foreground(t.Text()).
-		Render(fmt.Sprintf(": %s", m.app.CurrentSession.Title))
+		Render(fmt.Sprintf(": %s", m.app.CurrentSessionOLD.Title))
 
 	return sessionKey + sessionValue
 }
@@ -209,7 +209,7 @@ func NewSidebarCmp(app *app.App) tea.Model {
 }
 
 func (m *sidebarCmp) loadModifiedFiles(ctx context.Context) {
-	if m.app.CurrentSession.ID == "" {
+	if m.app.CurrentSessionOLD.ID == "" {
 		return
 	}
 

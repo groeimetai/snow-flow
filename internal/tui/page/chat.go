@@ -78,7 +78,7 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case dialog.CommandRunCustomMsg:
 		// Check if the agent is busy before executing custom commands
-		if p.app.PrimaryAgent.IsBusy() {
+		if p.app.PrimaryAgentOLD.IsBusy() {
 			status.Warn("Agent is busy, please wait before executing a command...")
 			return p, nil
 		}
@@ -105,20 +105,20 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := p.setSidebar()
 		cmds = append(cmds, cmd)
 	case state.CompactSessionMsg:
-		if p.app.CurrentSession.ID == "" {
+		if p.app.CurrentSessionOLD.ID == "" {
 			status.Warn("No active session to compact.")
 			return p, nil
 		}
 
 		// Run compaction in background
 		go func(sessionID string) {
-			err := p.app.PrimaryAgent.CompactSession(context.Background(), sessionID, false)
+			err := p.app.PrimaryAgentOLD.CompactSession(context.Background(), sessionID, false)
 			if err != nil {
 				status.Error(fmt.Sprintf("Compaction failed: %v", err))
 			} else {
 				status.Info("Conversation compacted successfully.")
 			}
-		}(p.app.CurrentSession.ID)
+		}(p.app.CurrentSessionOLD.ID)
 
 		return p, nil
 	case dialog.CompletionDialogCloseMsg:
@@ -131,16 +131,16 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p.app.SetCompletionDialogOpen(true)
 			// Continue sending keys to layout->chat
 		case key.Matches(msg, keyMap.NewSession):
-			p.app.CurrentSession = &session.Session{}
+			p.app.CurrentSessionOLD = &session.Session{}
 			return p, tea.Batch(
 				p.clearSidebar(),
 				util.CmdHandler(state.SessionClearedMsg{}),
 			)
 		case key.Matches(msg, keyMap.Cancel):
-			if p.app.CurrentSession.ID != "" {
+			if p.app.CurrentSessionOLD.ID != "" {
 				// Cancel the current session's generation process
 				// This allows users to interrupt long-running operations
-				p.app.PrimaryAgent.Cancel(p.app.CurrentSession.ID)
+				p.app.PrimaryAgentOLD.Cancel(p.app.CurrentSessionOLD.ID)
 				return p, nil
 			}
 		case key.Matches(msg, keyMap.ToggleTools):

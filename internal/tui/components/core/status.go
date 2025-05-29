@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/llm/models"
-	"github.com/sst/opencode/internal/lsp"
 	"github.com/sst/opencode/internal/lsp/protocol"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/status"
@@ -155,8 +154,8 @@ func (m statusCmp) View() string {
 	// Initialize the help widget
 	status := getHelpWidget("")
 
-	if m.app.CurrentSession.ID != "" {
-		tokens := formatTokensAndCost(m.app.CurrentSession.PromptTokens+m.app.CurrentSession.CompletionTokens, model.ContextWindow, m.app.CurrentSession.Cost)
+	if m.app.CurrentSessionOLD.ID != "" {
+		tokens := formatTokensAndCost(m.app.CurrentSessionOLD.PromptTokens+m.app.CurrentSessionOLD.CompletionTokens, model.ContextWindow, m.app.CurrentSessionOLD.Cost)
 		tokensStyle := styles.Padded().
 			Background(t.Text()).
 			Foreground(t.BackgroundSecondary()).
@@ -245,12 +244,12 @@ func (m *statusCmp) projectDiagnostics() string {
 
 	// Check if any LSP server is still initializing
 	initializing := false
-	for _, client := range m.app.LSPClients {
-		if client.GetServerState() == lsp.StateStarting {
-			initializing = true
-			break
-		}
-	}
+	// for _, client := range m.app.LSPClients {
+	// 	if client.GetServerState() == lsp.StateStarting {
+	// 		initializing = true
+	// 		break
+	// 	}
+	// }
 
 	// If any server is initializing, show that status
 	if initializing {
@@ -263,22 +262,22 @@ func (m *statusCmp) projectDiagnostics() string {
 	warnDiagnostics := []protocol.Diagnostic{}
 	hintDiagnostics := []protocol.Diagnostic{}
 	infoDiagnostics := []protocol.Diagnostic{}
-	for _, client := range m.app.LSPClients {
-		for _, d := range client.GetDiagnostics() {
-			for _, diag := range d {
-				switch diag.Severity {
-				case protocol.SeverityError:
-					errorDiagnostics = append(errorDiagnostics, diag)
-				case protocol.SeverityWarning:
-					warnDiagnostics = append(warnDiagnostics, diag)
-				case protocol.SeverityHint:
-					hintDiagnostics = append(hintDiagnostics, diag)
-				case protocol.SeverityInformation:
-					infoDiagnostics = append(infoDiagnostics, diag)
-				}
-			}
-		}
-	}
+	// for _, client := range m.app.LSPClients {
+	// 	for _, d := range client.GetDiagnostics() {
+	// 		for _, diag := range d {
+	// 			switch diag.Severity {
+	// 			case protocol.SeverityError:
+	// 				errorDiagnostics = append(errorDiagnostics, diag)
+	// 			case protocol.SeverityWarning:
+	// 				warnDiagnostics = append(warnDiagnostics, diag)
+	// 			case protocol.SeverityHint:
+	// 				hintDiagnostics = append(hintDiagnostics, diag)
+	// 			case protocol.SeverityInformation:
+	// 				infoDiagnostics = append(infoDiagnostics, diag)
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	if len(errorDiagnostics) == 0 &&
 		len(warnDiagnostics) == 0 &&

@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"strings"
 
@@ -178,7 +179,7 @@ func (a appModel) Init() tea.Cmd {
 func (a appModel) updateAllPages(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
-	for id, _ := range a.pages {
+	for id := range a.pages {
 		a.pages[id], cmd = a.pages[id].Update(msg)
 		cmds = append(cmds, cmd)
 	}
@@ -256,26 +257,76 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, a.moveToPage(msg.ID)
 
 	case state.SessionSelectedMsg:
-		a.app.CurrentSession = msg
+		a.app.CurrentSessionOLD = msg
 		return a.updateAllPages(msg)
 
 	case pubsub.Event[session.Session]:
 		if msg.Type == session.EventSessionUpdated {
-			if a.app.CurrentSession.ID == msg.Payload.ID {
-				a.app.CurrentSession = &msg.Payload
+			if a.app.CurrentSessionOLD.ID == msg.Payload.ID {
+				a.app.CurrentSessionOLD = &msg.Payload
 			}
 		}
 
-	// Handle SSE events from the TypeScript backend
 	case client.EventStorageWrite:
-		slog.Debug("Received SSE event", "key", msg.Properties.Key)
+		parts := strings.Split(msg.Key, "/")
+		if len(parts) < 3 {
+			return a, nil
+		}
 
-		splits := strings.Split(msg.Properties.Key, "/")
+		if parts[0] == "session" && parts[1] == "info" {
+			sessionId := parts[2]
+			if sessionId == a.app.Session.Id {
+				var sessionInfo client.SessionInfo
+				bytes, _ := json.Marshal(msg.Content)
+				if err := json.Unmarshal(bytes, &sessionInfo); err != nil {
+					status.Error(err.Error())
+					return a, nil
+				}
+
+				a.app.Session = &sessionInfo
+			}
+			return a, nil
+		}
+
+		if parts[0] == "session" && parts[1] == "message" {
+			sessionId := parts[2]
+			if sessionId == a.app.Session.Id {
+				messageId := parts[3]
+				var message client.SessionMessage
+				bytes, _ := json.Marshal(msg.Content)
+				if err := json.Unmarshal(bytes, &message); err != nil {
+					status.Error(err.Error())
+					return a, nil
+				}
+
+				for i, m := range a.app.Messages {
+					if m.Id == messageId {
+						a.app.Messages[i] = message
+						slog.Debug("Updated message", "message", message)
+						return a, nil
+					}
+				}
+
+				a.app.Messages = append(a.app.Messages, message)
+				slog.Debug("Appended message", "message", message)
+
+				// a.app.CurrentSession.MessageCount++
+				// a.app.CurrentSession.PromptTokens += message.PromptTokens
+				// a.app.CurrentSession.CompletionTokens += message.CompletionTokens
+				// a.app.CurrentSession.Cost += message.Cost
+				// a.app.CurrentSession.UpdatedAt = message.CreatedAt
+			}
+			return a, nil
+		}
+
+		// log key and content
+		slog.Debug("Received SSE event", "key", msg.Key, "content", msg.Content)
+
 		current := a.app.State
 
-		for i, part := range splits {
-			if i == len(splits)-1 {
-				current[part] = msg.Properties.Content
+		for i, part := range parts {
+			if i == len(parts)-1 {
+				current[part] = msg.Content
 			} else {
 				if _, exists := current[part]; !exists {
 					current[part] = make(map[string]any)
@@ -566,7 +617,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return a, nil
 		case key.Matches(msg, helpEsc):
-			if a.app.PrimaryAgent.IsBusy() {
+			if a.app.PrimaryAgentOLD.IsBusy() {
 				if a.showQuit {
 					return a, nil
 				}
@@ -705,27 +756,9 @@ func (a *appModel) RegisterCommand(cmd dialog.Command) {
 }
 
 // getAvailableToolNames returns a list of all available tool names
-func getAvailableToolNames(app *app.App) []string {
+func getAvailableToolNames(_ *app.App) []string {
 	// TODO: Tools not implemented in API yet
 	return []string{"Tools not available in API mode"}
-	/*
-		// Get primary agent tools (which already include MCP tools)
-		allTools := agent.PrimaryAgentTools(
-			app.Permissions,
-			app.Sessions,
-			app.Messages,
-			app.History,
-			app.LSPClients,
-		)
-
-		// Extract tool names
-		var toolNames []string
-		for _, tool := range allTools {
-			toolNames = append(toolNames, tool.Info().Name)
-		}
-
-		return toolNames
-	*/
 }
 
 func (a *appModel) moveToPage(pageID page.PageID) tea.Cmd {
@@ -785,7 +818,7 @@ func (a appModel) View() string {
 
 	}
 
-	if !a.app.PrimaryAgent.IsBusy() {
+	if !a.app.PrimaryAgentOLD.IsBusy() {
 		a.status.SetHelpWidgetMsg("ctrl+? help")
 	} else {
 		a.status.SetHelpWidgetMsg("? help")
@@ -799,7 +832,7 @@ func (a appModel) View() string {
 		if a.showPermissions {
 			bindings = append(bindings, a.permissions.BindingKeys()...)
 		}
-		if !a.app.PrimaryAgent.IsBusy() {
+		if !a.app.PrimaryAgentOLD.IsBusy() {
 			bindings = append(bindings, helpEsc)
 		}
 		a.help.SetBindings(bindings)

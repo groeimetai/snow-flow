@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"maps"
 	"sync"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/fileutil"
-	"github.com/sst/opencode/internal/lsp"
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/session"
 	"github.com/sst/opencode/internal/status"
@@ -23,23 +21,21 @@ import (
 )
 
 type App struct {
-	State map[string]any
+	Client   *client.ClientWithResponses
+	Events   *client.Client
+	State    map[string]any
+	Session  *client.SessionInfo
+	Messages []client.SessionMessage
 
-	CurrentSession *session.Session
-	Logs           any // TODO: Define LogService interface when needed
-	Sessions       SessionService
-	Messages       MessageService
-	History        any // TODO: Define HistoryService interface when needed
-	Permissions    any // TODO: Define PermissionService interface when needed
-	Status         status.Service
-	Client         *client.ClientWithResponses
-	Events         *client.Client
+	CurrentSessionOLD *session.Session
+	SessionsOLD       SessionService
+	MessagesOLD       MessageService
+	LogsOLD           any // TODO: Define LogService interface when needed
+	HistoryOLD        any // TODO: Define HistoryService interface when needed
+	PermissionsOLD    any // TODO: Define PermissionService interface when needed
+	Status            status.Service
 
-	PrimaryAgent AgentService
-
-	LSPClients map[string]*lsp.Client
-
-	clientsMutex sync.RWMutex
+	PrimaryAgentOLD AgentService
 
 	watcherCancelFuncs []context.CancelFunc
 	cancelFuncsMutex   sync.Mutex
@@ -80,20 +76,20 @@ func New(ctx context.Context) (*App, error) {
 	agentBridge := NewAgentServiceBridge(httpClient)
 
 	app := &App{
-		State:          make(map[string]any),
-		Client:         httpClient,
-		Events:         eventClient,
-		CurrentSession: &session.Session{},
-		Sessions:       sessionBridge,
-		Messages:       messageBridge,
-		PrimaryAgent:   agentBridge,
-		Status:         status.GetService(),
-		LSPClients:     make(map[string]*lsp.Client),
+		State:             make(map[string]any),
+		Client:            httpClient,
+		Events:            eventClient,
+		Session:           &client.SessionInfo{},
+		CurrentSessionOLD: &session.Session{},
+		SessionsOLD:       sessionBridge,
+		MessagesOLD:       messageBridge,
+		PrimaryAgentOLD:   agentBridge,
+		Status:            status.GetService(),
 
 		// TODO: These services need API endpoints:
-		Logs:        nil, // logging.GetService(),
-		History:     nil, // history.GetService(),
-		Permissions: nil, // permission.GetService(),
+		LogsOLD:        nil, // logging.GetService(),
+		HistoryOLD:     nil, // history.GetService(),
+		PermissionsOLD: nil, // permission.GetService(),
 	}
 
 	// Initialize theme based on configuration
@@ -105,30 +101,28 @@ func New(ctx context.Context) (*App, error) {
 // Create creates a new session
 func (a *App) SendChatMessage(ctx context.Context, text string, attachments []message.Attachment) tea.Cmd {
 	var cmds []tea.Cmd
-	if a.CurrentSession.ID == "" {
+	if a.Session.Id == "" {
 		resp, err := a.Client.PostSessionCreateWithResponse(ctx)
 		if err != nil {
-			// return session.Session{}, err
+			status.Error(err.Error())
+			return nil
 		}
 		if resp.StatusCode() != 200 {
-			// return session.Session{}, fmt.Errorf("failed to create session: %d", resp.StatusCode())
+			status.Error(fmt.Sprintf("failed to create session: %d", resp.StatusCode()))
+			return nil
 		}
-		info := resp.JSON200
 
-		// Convert to old session type
+		info := resp.JSON200
+		a.Session = info
+
+		// Convert to old session type for backwards compatibility
 		newSession := session.Session{
 			ID:        info.Id,
 			Title:     info.Title,
 			CreatedAt: time.Now(), // API doesn't provide this yet
 			UpdatedAt: time.Now(), // API doesn't provide this yet
 		}
-
-		if err != nil {
-			status.Error(err.Error())
-			return nil
-		}
-
-		a.CurrentSession = &newSession
+		a.CurrentSessionOLD = &newSession
 
 		cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(&newSession)))
 	}
@@ -147,7 +141,7 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []me
 	parts := []client.SessionMessagePart{part}
 
 	go a.Client.PostSessionChatWithResponse(ctx, client.PostSessionChatJSONRequestBody{
-		SessionID:  a.CurrentSession.ID,
+		SessionID:  a.Session.Id,
 		Parts:      parts,
 		ProviderID: "anthropic",
 		ModelID:    "claude-sonnet-4-20250514",
@@ -234,18 +228,4 @@ func (app *App) Shutdown() {
 	}
 	app.cancelFuncsMutex.Unlock()
 	app.watcherWG.Wait()
-
-	// Perform additional cleanup for LSP clients
-	app.clientsMutex.RLock()
-	clients := make(map[string]*lsp.Client, len(app.LSPClients))
-	maps.Copy(clients, app.LSPClients)
-	app.clientsMutex.RUnlock()
-
-	for name, client := range clients {
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		if err := client.Shutdown(shutdownCtx); err != nil {
-			slog.Error("Failed to shutdown LSP client", "name", name, "error", err)
-		}
-		cancel()
-	}
 }

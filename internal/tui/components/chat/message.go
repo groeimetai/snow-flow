@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -12,12 +11,12 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/diff"
-	"github.com/sst/opencode/internal/llm/agent"
 	"github.com/sst/opencode/internal/llm/models"
 	"github.com/sst/opencode/internal/llm/tools"
 	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
+	"github.com/sst/opencode/pkg/client"
 )
 
 type uiMessageType int
@@ -33,8 +32,6 @@ const (
 type uiMessage struct {
 	ID          string
 	messageType uiMessageType
-	position    int
-	height      int
 	content     string
 }
 
@@ -48,7 +45,7 @@ func renderMessage(msg string, isUser bool, isFocused bool, width int, info ...s
 	t := theme.CurrentTheme()
 
 	style := styles.BaseStyle().
-		Width(width - 1).
+		// Width(width - 1).
 		BorderLeft(true).
 		Foreground(t.TextMuted()).
 		BorderForeground(t.Primary()).
@@ -79,28 +76,29 @@ func renderMessage(msg string, isUser bool, isFocused bool, width int, info ...s
 	return rendered
 }
 
-func renderUserMessage(msg message.Message, isFocused bool, width int, position int) uiMessage {
-	var styledAttachments []string
+func renderUserMessage(msg client.SessionMessage, isFocused bool, width int, position int) uiMessage {
+	// var styledAttachments []string
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
-	attachmentStyles := baseStyle.
-		MarginLeft(1).
-		Background(t.TextMuted()).
-		Foreground(t.Text())
-	for _, attachment := range msg.BinaryContent() {
-		file := filepath.Base(attachment.Path)
-		var filename string
-		if len(file) > 10 {
-			filename = fmt.Sprintf(" %s %s...", styles.DocumentIcon, file[0:7])
-		} else {
-			filename = fmt.Sprintf(" %s %s", styles.DocumentIcon, file)
-		}
-		styledAttachments = append(styledAttachments, attachmentStyles.Render(filename))
-	}
+	// attachmentStyles := baseStyle.
+	// 	MarginLeft(1).
+	// 	Background(t.TextMuted()).
+	// 	Foreground(t.Text())
+	// for _, attachment := range msg.BinaryContent() {
+	// 	file := filepath.Base(attachment.Path)
+	// 	var filename string
+	// 	if len(file) > 10 {
+	// 		filename = fmt.Sprintf(" %s %s...", styles.DocumentIcon, file[0:7])
+	// 	} else {
+	// 		filename = fmt.Sprintf(" %s %s", styles.DocumentIcon, file)
+	// 	}
+	// 	styledAttachments = append(styledAttachments, attachmentStyles.Render(filename))
+	// }
+
+	info := []string{}
 
 	// Add timestamp info
-	info := []string{}
-	timestamp := msg.CreatedAt.Local().Format("02 Jan 2006 03:04 PM")
+	timestamp := time.UnixMilli(int64(msg.Metadata.Time.Created)).Local().Format("02 Jan 2006 03:04 PM")
 	username, _ := config.GetUsername()
 	info = append(info, baseStyle.
 		Width(width-1).
@@ -109,17 +107,27 @@ func renderUserMessage(msg message.Message, isFocused bool, width int, position 
 	)
 
 	content := ""
-	if len(styledAttachments) > 0 {
-		attachmentContent := baseStyle.Width(width).Render(lipgloss.JoinHorizontal(lipgloss.Left, styledAttachments...))
-		content = renderMessage(msg.Content().String(), true, isFocused, width, append(info, attachmentContent)...)
-	} else {
-		content = renderMessage(msg.Content().String(), true, isFocused, width, info...)
+	// if len(styledAttachments) > 0 {
+	// 	attachmentContent := baseStyle.Width(width).Render(lipgloss.JoinHorizontal(lipgloss.Left, styledAttachments...))
+	// 	content = renderMessage(msg.Content().String(), true, isFocused, width, append(info, attachmentContent)...)
+	// } else {
+	for _, p := range msg.Parts {
+		part, err := p.ValueByDiscriminator()
+		if err != nil {
+			continue //TODO: handle error?
+		}
+
+		switch part.(type) {
+		case client.SessionMessagePartText:
+			textPart := part.(client.SessionMessagePartText)
+			content = renderMessage(textPart.Text, true, isFocused, width, info...)
+		}
 	}
+	// content = renderMessage(msg.Parts, true, isFocused, width, info...)
+
 	userMsg := uiMessage{
-		ID:          msg.ID,
+		ID:          msg.Id,
 		messageType: userMessageType,
-		position:    position,
-		height:      lipgloss.Height(content),
 		content:     content,
 	}
 	return userMsg
@@ -193,11 +201,11 @@ func renderAssistantMessage(
 		messages = append(messages, uiMessage{
 			ID:          msg.ID,
 			messageType: assistantMessageType,
-			position:    position,
-			height:      lipgloss.Height(content),
-			content:     content,
+			// position:    position,
+			// height:  lipgloss.Height(content),
+			content: content,
 		})
-		position += messages[0].height
+		// position += messages[0].height
 		position++ // for the space
 	} else if thinking && thinkingContent != "" {
 		// Render the thinking content with timestamp
@@ -205,9 +213,9 @@ func renderAssistantMessage(
 		messages = append(messages, uiMessage{
 			ID:          msg.ID,
 			messageType: assistantMessageType,
-			position:    position,
-			height:      lipgloss.Height(content),
-			content:     content,
+			// position:    position,
+			// height:  lipgloss.Height(content),
+			content: content,
 		})
 		position += lipgloss.Height(content)
 		position++ // for the space
@@ -226,7 +234,7 @@ func renderAssistantMessage(
 				i+1,
 			)
 			messages = append(messages, toolCallContent)
-			position += toolCallContent.height
+			// position += toolCallContent.height
 			position++ // for the space
 		}
 	}
@@ -246,8 +254,8 @@ func findToolResponse(toolCallID string, futureMessages []message.Message) *mess
 
 func toolName(name string) string {
 	switch name {
-	case agent.AgentToolName:
-		return "Task"
+	// case agent.AgentToolName:
+	// 	return "Task"
 	case tools.BashToolName:
 		return "Bash"
 	case tools.EditToolName:
@@ -274,8 +282,8 @@ func toolName(name string) string {
 
 func getToolAction(name string) string {
 	switch name {
-	case agent.AgentToolName:
-		return "Preparing prompt..."
+	// case agent.AgentToolName:
+	// 	return "Preparing prompt..."
 	case tools.BashToolName:
 		return "Building command..."
 	case tools.EditToolName:
@@ -363,11 +371,11 @@ func removeWorkingDirPrefix(path string) string {
 func renderToolParams(paramWidth int, toolCall message.ToolCall) string {
 	params := ""
 	switch toolCall.Name {
-	case agent.AgentToolName:
-		var params agent.AgentParams
-		json.Unmarshal([]byte(toolCall.Input), &params)
-		prompt := strings.ReplaceAll(params.Prompt, "\n", " ")
-		return renderParams(paramWidth, prompt)
+	// case agent.AgentToolName:
+	// 	var params agent.AgentParams
+	// 	json.Unmarshal([]byte(toolCall.Input), &params)
+	// 	prompt := strings.ReplaceAll(params.Prompt, "\n", " ")
+	// 	return renderParams(paramWidth, prompt)
 	case tools.BashToolName:
 		var params tools.BashParams
 		json.Unmarshal([]byte(toolCall.Input), &params)
@@ -481,11 +489,11 @@ func renderToolResponse(toolCall message.ToolCall, response message.ToolResult, 
 
 	resultContent := truncateHeight(response.Content, maxResultHeight)
 	switch toolCall.Name {
-	case agent.AgentToolName:
-		return styles.ForceReplaceBackgroundWithLipgloss(
-			toMarkdown(resultContent, false, width),
-			t.Background(),
-		)
+	// case agent.AgentToolName:
+	// 	return styles.ForceReplaceBackgroundWithLipgloss(
+	// 		toMarkdown(resultContent, false, width),
+	// 		t.Background(),
+	// 	)
 	case tools.BashToolName:
 		resultContent = fmt.Sprintf("```bash\n%s\n```", resultContent)
 		return styles.ForceReplaceBackgroundWithLipgloss(
@@ -628,9 +636,9 @@ func renderToolMessage(
 		content := style.Render(lipgloss.JoinHorizontal(lipgloss.Left, toolNameText, progressText))
 		toolMsg := uiMessage{
 			messageType: toolMessageType,
-			position:    position,
-			height:      lipgloss.Height(content),
-			content:     content,
+			// position:    position,
+			// height:  lipgloss.Height(content),
+			content: content,
 		}
 		return toolMsg
 	}
@@ -667,17 +675,17 @@ func renderToolMessage(
 		parts = append(parts, lipgloss.JoinHorizontal(lipgloss.Left, prefix, toolNameText, formattedParams))
 	}
 
-	if toolCall.Name == agent.AgentToolName {
-		taskMessages, _ := messagesService.List(context.Background(), toolCall.ID)
-		toolCalls := []message.ToolCall{}
-		for _, v := range taskMessages {
-			toolCalls = append(toolCalls, v.ToolCalls()...)
-		}
-		for _, call := range toolCalls {
-			rendered := renderToolMessage(call, []message.Message{}, messagesService, focusedUIMessageId, true, width, 0)
-			parts = append(parts, rendered.content)
-		}
-	}
+	// if toolCall.Name == agent.AgentToolName {
+	// 	taskMessages, _ := messagesService.List(context.Background(), toolCall.ID)
+	// 	toolCalls := []message.ToolCall{}
+	// 	for _, v := range taskMessages {
+	// 		toolCalls = append(toolCalls, v.ToolCalls()...)
+	// 	}
+	// 	for _, call := range toolCalls {
+	// 		rendered := renderToolMessage(call, []message.Message{}, messagesService, focusedUIMessageId, true, width, 0)
+	// 		parts = append(parts, rendered.content)
+	// 	}
+	// }
 	if responseContent != "" && !nested {
 		parts = append(parts, responseContent)
 	}
@@ -696,9 +704,9 @@ func renderToolMessage(
 	}
 	toolMsg := uiMessage{
 		messageType: toolMessageType,
-		position:    position,
-		height:      lipgloss.Height(content),
-		content:     content,
+		// position:    position,
+		// height:  lipgloss.Height(content),
+		content: content,
 	}
 	return toolMsg
 }
