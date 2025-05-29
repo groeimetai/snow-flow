@@ -180,28 +180,12 @@ func (p *chatPage) clearSidebar() tea.Cmd {
 
 func (p *chatPage) sendMessage(text string, attachments []message.Attachment) tea.Cmd {
 	var cmds []tea.Cmd
-	if p.app.CurrentSession.ID == "" {
-		newSession, err := p.app.Sessions.Create(context.Background(), "New Session")
-		if err != nil {
-			status.Error(err.Error())
-			return nil
-		}
-
-		p.app.CurrentSession = &newSession
-
-		cmd := p.setSidebar()
-		if cmd != nil {
-			cmds = append(cmds, cmd)
-		}
-		cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(&newSession)))
+	cmd := p.app.SendChatMessage(context.Background(), text, attachments)
+	cmds = append(cmds, cmd)
+	cmd = p.setSidebar()
+	if cmd != nil {
+		cmds = append(cmds, cmd)
 	}
-
-	_, err := p.app.PrimaryAgent.Run(context.Background(), p.app.CurrentSession.ID, text, attachments...)
-	if err != nil {
-		status.Error(err.Error())
-		return nil
-	}
-
 	return tea.Batch(cmds...)
 }
 

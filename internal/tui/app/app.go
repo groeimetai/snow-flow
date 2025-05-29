@@ -8,12 +8,16 @@ import (
 
 	"log/slog"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/fileutil"
 	"github.com/sst/opencode/internal/lsp"
+	"github.com/sst/opencode/internal/message"
 	"github.com/sst/opencode/internal/session"
 	"github.com/sst/opencode/internal/status"
+	"github.com/sst/opencode/internal/tui/state"
 	"github.com/sst/opencode/internal/tui/theme"
+	"github.com/sst/opencode/internal/tui/util"
 	"github.com/sst/opencode/pkg/client"
 )
 
@@ -94,25 +98,64 @@ func New(ctx context.Context) (*App, error) {
 	// Initialize theme based on configuration
 	app.initTheme()
 
-	// TODO: Remove this once agent is fully replaced by API
-	// app.PrimaryAgent, err = agent.NewAgent(
-	// 	config.AgentPrimary,
-	// 	app.Sessions,
-	// 	app.Messages,
-	// 	agent.PrimaryAgentTools(
-	// 		app.Permissions,
-	// 		app.Sessions,
-	// 		app.Messages,
-	// 		app.History,
-	// 		app.LSPClients,
-	// 	),
-	// )
-	// if err != nil {
-	// 	slog.Error("Failed to create primary agent", "error", err)
-	// 	return nil, err
-	// }
-
 	return app, nil
+}
+
+// Create creates a new session
+func (a *App) SendChatMessage(ctx context.Context, text string, attachments []message.Attachment) tea.Cmd {
+	var cmds []tea.Cmd
+	if a.CurrentSession.ID == "" {
+		resp, err := a.Client.PostSessionCreateWithResponse(ctx)
+		if err != nil {
+			// return session.Session{}, err
+		}
+		if resp.StatusCode() != 200 {
+			// return session.Session{}, fmt.Errorf("failed to create session: %d", resp.StatusCode())
+		}
+		info := resp.JSON200
+
+		// Convert to old session type
+		newSession := session.Session{
+			ID:        info.Id,
+			Title:     info.Title,
+			CreatedAt: time.Now(), // API doesn't provide this yet
+			UpdatedAt: time.Now(), // API doesn't provide this yet
+		}
+
+		if err != nil {
+			status.Error(err.Error())
+			return nil
+		}
+
+		a.CurrentSession = &newSession
+
+		cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(&newSession)))
+	}
+
+	// TODO: Handle attachments when API supports them
+	if len(attachments) > 0 {
+		// For now, ignore attachments
+		// return "", fmt.Errorf("attachments not supported yet")
+	}
+
+	part := client.SessionMessagePart{}
+	part.FromSessionMessagePartText(client.SessionMessagePartText{
+		Type: "text",
+		Text: text,
+	})
+	parts := []client.SessionMessagePart{part}
+
+	go a.Client.PostSessionChatWithResponse(ctx, client.PostSessionChatJSONRequestBody{
+		SessionID:  a.CurrentSession.ID,
+		Parts:      parts,
+		ProviderID: "anthropic",
+		ModelID:    "claude-sonnet-4-20250514",
+	})
+
+	// The actual response will come through SSE
+	// For now, just return success
+
+	return tea.Batch(cmds...)
 }
 
 // initTheme sets the application theme based on the configuration
