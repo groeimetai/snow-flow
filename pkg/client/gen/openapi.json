@@ -837,7 +837,7 @@
           "contextWindow": {
             "type": "number"
           },
-          "maxTokens": {
+          "maxOutputTokens": {
             "type": "number"
           },
           "attachment": {

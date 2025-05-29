@@ -187,9 +187,9 @@ type ProviderModel struct {
 		Output       float32 `json:"output"`
 		OutputCached float32 `json:"outputCached"`
 	} `json:"cost"`
-	MaxTokens *float32 `json:"maxTokens,omitempty"`
-	Name      *string  `json:"name,omitempty"`
-	Reasoning *bool    `json:"reasoning,omitempty"`
+	MaxOutputTokens *float32 `json:"maxOutputTokens,omitempty"`
+	Name            *string  `json:"name,omitempty"`
+	Reasoning       *bool    `json:"reasoning,omitempty"`
 }
 
 // SessionInfo defines model for session.info.
