@@ -77,7 +77,7 @@ func renderUserMessage(msg client.MessageInfo, width int) string {
 		}
 	}
 
-	return content
+	return styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
 }
 
 func convertToMap(input *any) (map[string]any, bool) {
@@ -133,7 +133,8 @@ func renderAssistantMessage(
 			textPart := part.(client.MessagePartText)
 			text := toMarkdown(textPart.Text, width)
 			content := style.Render(lipgloss.JoinVertical(lipgloss.Left, text, info))
-			messages = append(messages, content)
+			message := styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
+			messages = append(messages, message)
 
 		case client.MessagePartToolInvocation:
 			if !showToolMessages {
@@ -172,27 +173,28 @@ func renderAssistantMessage(
 				params := renderParams(width-lipgloss.Width(toolName)-1, toolArgs...)
 				title := styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, params))
 
-				var markdown string
+				var trimmedDiff string
 				if toolInvocationResult.ToolName == "edit" {
 					filename := toolMap["filePath"].(string)
 					oldString := toolMap["oldString"].(string)
 					newString := toolMap["newString"].(string)
 					patch, _, _ := diff.GenerateDiff(oldString, newString, filename)
 					formattedDiff, _ := diff.FormatDiff(patch, diff.WithTotalWidth(width))
-					markdown = truncateHeight(strings.TrimSpace(formattedDiff), 10)
-					content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
+					trimmedDiff = strings.TrimSpace(formattedDiff)
+					message := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
 						toolName,
-						markdown,
+						trimmedDiff,
 					))
-					messages = append(messages, content)
+					messages = append(messages, message)
 				} else {
 					result := truncateHeight(strings.TrimSpace(toolInvocationResult.Result), 10)
-					markdown = toMarkdown(result, width)
+					trimmedDiff = toMarkdown(result, width)
 					content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
 						title,
-						markdown,
+						trimmedDiff,
 					))
-					messages = append(messages, content)
+					message := styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
+					messages = append(messages, message)
 				}
 			}
 		}
@@ -265,7 +267,7 @@ func renderToolName(name string) string {
 	case "ls":
 		return "List"
 	default:
-		return cases.Title(language.English).String(name)
+		return cases.Title(language.Und).String(name)
 	}
 }
 

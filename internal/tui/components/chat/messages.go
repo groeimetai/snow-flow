@@ -101,7 +101,6 @@ func (m *messagesCmp) renderView() {
 		return
 	}
 
-	t := theme.CurrentTheme()
 	messages := make([]string, 0)
 	for _, msg := range m.app.Messages {
 		switch msg.Role {
@@ -115,16 +114,13 @@ func (m *messagesCmp) renderView() {
 	}
 
 	m.viewport.SetContent(
-		styles.ForceReplaceBackgroundWithLipgloss(
-			styles.BaseStyle().
-				Render(
-					lipgloss.JoinVertical(
-						lipgloss.Top,
-						messages...,
-					),
+		styles.BaseStyle().
+			Render(
+				lipgloss.JoinVertical(
+					lipgloss.Top,
+					messages...,
 				),
-			t.Background(),
-		),
+			),
 	)
 }
 
