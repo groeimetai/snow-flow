@@ -29,8 +29,7 @@
   position: relative;
   flex: none;
   width: max-content;
-  padding-left: 1.5ch;
-  padding: 0.1875rem 0.5rem 0.1875rem 1.5ch;
+  padding: 0.1875rem 0.5rem 0.1875rem 1.8ch;
   margin: 0;
 
   pre {
@@ -48,6 +47,7 @@
 
 [data-diff-type="removed"] {
   background-color: var(--sl-color-red-low);
+  min-width: 100%;
 
   pre {
     background-color: var(--sl-color-red-low) !important;
@@ -64,6 +64,7 @@
 
 [data-diff-type="added"] {
   background-color: var(--sl-color-green-low);
+  min-width: 100%;
 
   pre {
     background-color: var(--sl-color-green-low) !important;
