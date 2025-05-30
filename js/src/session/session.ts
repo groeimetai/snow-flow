@@ -30,8 +30,17 @@ export namespace Session {
   export const Info = z
     .object({
       id: Identifier.schema("session"),
-      shareID: z.string().optional(),
+      share: z
+        .object({
+          secret: z.string(),
+          url: z.string(),
+        })
+        .optional(),
       title: z.string(),
+      time: z.object({
+        created: z.number(),
+        updated: z.number(),
+      }),
     })
     .openapi({
       ref: "session.info",
@@ -61,13 +70,17 @@ export namespace Session {
     const result: Info = {
       id: Identifier.descending("session"),
       title: "New Session - " + new Date().toISOString(),
+      time: {
+        created: Date.now(),
+        updated: Date.now(),
+      },
     };
     log.info("created", result);
     state().sessions.set(result.id, result);
     await Storage.writeJSON("session/info/" + result.id, result);
-    share(result.id).then((shareID) => {
+    share(result.id).then((share) => {
       update(result.id, (draft) => {
-        draft.shareID = shareID;
+        draft.share = share;
       });
     });
     Bus.publish(Event.Updated, {
@@ -88,13 +101,13 @@ export namespace Session {
 
   export async function share(id: string) {
     const session = await get(id);
-    if (session.shareID) return session.shareID;
-    const shareID = await Share.create(id);
-    if (!shareID) return;
+    if (session.share) return session.share;
+    const share = await Share.create(id);
+    console.log("share", share);
     await update(id, (draft) => {
-      draft.shareID = shareID;
+      draft.share = share;
     });
-    return shareID as string;
+    return share;
   }
 
   export async function update(id: string, editor: (session: Info) => void) {
@@ -102,6 +115,7 @@ export namespace Session {
     const session = await get(id);
     if (!session) return;
     editor(session);
+    session.time.updated = Date.now();
     sessions.set(id, session);
     await Storage.writeJSON("session/info/" + id, session);
     Bus.publish(Event.Updated, {

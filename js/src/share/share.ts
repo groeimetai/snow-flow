@@ -16,7 +16,8 @@ export namespace Share {
       if (root !== "session") return;
       const [, sessionID] = splits;
       const session = await Session.get(sessionID);
-      if (!session.shareID) return;
+      if (!session.share) return;
+      const { secret } = session.share;
 
       const key = payload.properties.key;
       pending.set(key, payload.properties.content);
@@ -31,7 +32,7 @@ export namespace Share {
             method: "POST",
             body: JSON.stringify({
               sessionID: sessionID,
-              shareID: session.shareID,
+              secret,
               key: key,
               content,
             }),
@@ -61,6 +62,6 @@ export namespace Share {
       body: JSON.stringify({ sessionID: sessionID }),
     })
       .then((x) => x.json())
-      .then((x) => x.shareID);
+      .then((x) => x as { url: string; secret: string });
   }
 }

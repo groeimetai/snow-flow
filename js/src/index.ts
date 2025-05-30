@@ -41,9 +41,7 @@ cli
         ? await Session.get(options.session)
         : await Session.create();
       console.log("Session:", session.id);
-      console.log(
-        `Share: ${Share.URL.replace("api.", "")}/share?id=${session.id}`,
-      );
+      console.log(`Share: ${Share.URL.replace("api.", "")}/s?id=${session.id}`);
 
       Bus.subscribe(Message.Event.Updated, async (message) => {
         console.log("Thinking...");
