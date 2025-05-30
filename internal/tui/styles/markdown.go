@@ -163,7 +163,6 @@ func generateMarkdownStyleConfig() ansi.StyleConfig {
 					Prefix: " ",
 					Color:  stringPtr(adaptiveColorToString(t.MarkdownCodeBlock())),
 				},
-				Margin: uintPtr(defaultMargin),
 			},
 			Chroma: &ansi.Chroma{
 				Text: ansi.StylePrimitive{

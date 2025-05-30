@@ -2,6 +2,7 @@ package chat
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -160,7 +161,8 @@ func renderAssistantMessage(
 					title,
 					" In progress...",
 				))
-				messages = append(messages, content)
+				message := styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
+				messages = append(messages, message)
 
 			case client.MessageToolInvocationToolResult:
 				toolInvocationResult := toolInvocation.(client.MessageToolInvocationToolResult)
@@ -172,26 +174,48 @@ func renderAssistantMessage(
 				}
 				params := renderParams(width-lipgloss.Width(toolName)-1, toolArgs...)
 				title := styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, params))
+				metadata := msg.Metadata.Tool[toolInvocationResult.ToolCallId].(map[string]any)
 
-				var trimmedDiff string
+				var markdown string
 				if toolInvocationResult.ToolName == "edit" {
 					filename := toolMap["filePath"].(string)
+					title = styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, filename))
 					oldString := toolMap["oldString"].(string)
 					newString := toolMap["newString"].(string)
 					patch, _, _ := diff.GenerateDiff(oldString, newString, filename)
 					formattedDiff, _ := diff.FormatDiff(patch, diff.WithTotalWidth(width))
-					trimmedDiff = strings.TrimSpace(formattedDiff)
+					markdown = strings.TrimSpace(formattedDiff)
 					message := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-						toolName,
-						trimmedDiff,
+						title,
+						markdown,
 					))
+					messages = append(messages, message)
+				} else if toolInvocationResult.ToolName == "view" {
+					result := toolInvocationResult.Result
+					if metadata["preview"] != nil {
+						result = metadata["preview"].(string)
+					}
+					filename := toolMap["filePath"].(string)
+					ext := filepath.Ext(filename)
+					if ext == "" {
+						ext = ""
+					} else {
+						ext = strings.ToLower(ext[1:])
+					}
+					result = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(result, 10))
+					markdown = toMarkdown(result, width)
+					content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
+						title,
+						markdown,
+					))
+					message := styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
 					messages = append(messages, message)
 				} else {
 					result := truncateHeight(strings.TrimSpace(toolInvocationResult.Result), 10)
-					trimmedDiff = toMarkdown(result, width)
+					markdown = toMarkdown(result, width)
 					content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
 						title,
-						trimmedDiff,
+						markdown,
 					))
 					message := styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
 					messages = append(messages, message)
