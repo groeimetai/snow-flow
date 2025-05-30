@@ -36,9 +36,5 @@
     "esbuild",
     "protobufjs",
     "sharp"
-  ],
-  "dependencies": {
-    "@types/luxon": "^3.6.2",
-    "luxon": "^3.6.1"
-  }
+  ]
 }

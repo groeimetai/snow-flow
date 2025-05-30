@@ -6,6 +6,7 @@ import {
   Switch,
   onMount,
   onCleanup,
+  splitProps,
   createMemo,
   createEffect,
   createSignal,
@@ -20,8 +21,13 @@ import {
   IconCpuChip,
   IconSparkles,
   IconUserCircle,
+  IconChevronDown,
+  IconChevronRight,
+  IconPencilSquare,
   IconWrenchScrewdriver,
 } from "./icons"
+import CodeBlock from "./CodeBlock"
+import DiffView from "./DiffView"
 import styles from "./share.module.css"
 import { type UIMessage } from "ai"
 import { createStore, reconcile } from "solid-js/store"
@@ -57,6 +63,10 @@ type SessionMessage = UIMessage<{
 type SessionInfo = {
   title: string
   cost?: number
+}
+
+function getFileType(path: string) {
+  return path.split('.').pop()
 }
 
 // Converts `{a:{b:{c:1}}` to `[['a.b.c', 1]]`
@@ -111,18 +121,48 @@ function ProviderIcon(props: { provider: string, size?: number }) {
   )
 }
 
+interface ResultsButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
+  results: boolean
+}
+function ResultsButton(props: ResultsButtonProps) {
+  const [local, rest] = splitProps(props, ["results"])
+  return (
+    <button
+      type="button"
+      data-element-button-text
+      data-element-button-more
+      {...rest}
+    >
+      <span>
+        {local.results ? "Hide results" : "Show results"}
+      </span>
+      <span data-button-icon>
+        <Show
+          when={local.results}
+          fallback={
+            <IconChevronRight width={10} height={10} />
+          }
+        >
+          <IconChevronDown width={10} height={10} />
+        </Show>
+      </span>
+    </button>
+  )
+}
+
 interface TextPartProps extends JSX.HTMLAttributes<HTMLDivElement> {
   text: string
   expand?: boolean
   highlight?: boolean
 }
-function TextPart({ text, expand, highlight, ...props }: TextPartProps) {
+function TextPart(props: TextPartProps) {
+  const [local, rest] = splitProps(props, ["text", "expand", "highlight"])
   const [expanded, setExpanded] = createSignal(false)
   const [overflowed, setOverflowed] = createSignal(false)
   let preEl: HTMLPreElement | undefined
 
   function checkOverflow() {
-    if (preEl && !expand) {
+    if (preEl && !local.expand) {
       setOverflowed(preEl.scrollHeight > preEl.clientHeight + 1)
     }
   }
@@ -133,7 +173,7 @@ function TextPart({ text, expand, highlight, ...props }: TextPartProps) {
   })
 
   createEffect(() => {
-    text
+    local.text
     setTimeout(checkOverflow, 0)
   })
 
@@ -144,11 +184,11 @@ function TextPart({ text, expand, highlight, ...props }: TextPartProps) {
   return (
     <div
       data-element-message-text
-      data-highlight={highlight}
-      data-expanded={expanded() || expand === true}
-      {...props}
+      data-highlight={local.highlight}
+      data-expanded={expanded() || local.expand === true}
+      {...rest}
     >
-      <pre ref={el => (preEl = el)}>{text}</pre>
+      <pre ref={el => (preEl = el)}>{local.text}</pre>
       {overflowed() &&
         <button
           type="button"
@@ -411,6 +451,7 @@ export default function Share(props: { api: string }) {
                   {(part, partIndex) => {
                     if (part.type === "step-start" && (partIndex() > 0 || !msg.metadata?.assistant)) return null
 
+                    const [results, showResults] = createSignal(false)
                     const isLastPart = createMemo(() =>
                       (messages().length === msgIndex() + 1)
                       && (msg.parts.length === partIndex() + 1)
@@ -488,16 +529,18 @@ export default function Share(props: { api: string }) {
                                   <div></div>
                                 </div>
                                 <div data-section="content">
-                                  <span
-                                    data-size="md"
-                                    data-part-title
-                                    data-element-label
-                                  >
-                                    {assistant().providerID}
-                                  </span>
-                                  <span data-part-model>
-                                    {assistant().modelID}
-                                  </span>
+                                  <div data-part-tool-body>
+                                    <span
+                                      data-size="md"
+                                      data-part-title
+                                      data-element-label
+                                    >
+                                      {assistant().providerID}
+                                    </span>
+                                    <span data-part-model>
+                                      {assistant().modelID}
+                                    </span>
+                                  </div>
                                 </div>
                               </>
                             }
@@ -517,18 +560,58 @@ export default function Share(props: { api: string }) {
                                   <div></div>
                                 </div>
                                 <div data-section="content">
-                                  <span data-element-label data-part-title>
-                                    System
-                                  </span>
-                                  <TextPart
-                                    data-size="sm"
-                                    text={part().text}
-                                    data-color="dimmed"
-                                  />
+                                  <div data-part-tool-body>
+                                    <span data-element-label data-part-title>
+                                      System
+                                    </span>
+                                    <TextPart
+                                      data-size="sm"
+                                      text={part().text}
+                                      data-color="dimmed"
+                                    />
+                                  </div>
                                   <PartFooter time={time} />
                                 </div>
                               </>
                             }
+                          </Match>
+                          { /* Edit tool */}
+                          <Match when={
+                            msg.role === "assistant"
+                            && part.type === "tool-invocation"
+                            && part.toolInvocation.toolName === "edit"
+                            && part
+                          }>
+                            {part => {
+                              const args = part().toolInvocation.args
+                              const filePath = args.filePath
+                              return (
+                                <>
+                                  <div data-section="decoration">
+                                    <div>
+                                      <IconPencilSquare width={18} height={18} />
+                                    </div>
+                                    <div></div>
+                                  </div>
+                                  <div data-section="content">
+                                    <div data-part-tool-body>
+                                      <span data-part-title data-size="md">
+                                        Edit {filePath}
+                                      </span>
+                                      <div data-part-tool-edit>
+                                        <DiffView
+                                          class={styles["code-block"]}
+                                          oldCode={args.oldString}
+                                          newCode={args.newString}
+                                          lang={getFileType(filePath)}
+                                        />
+                                      </div>
+                                    </div>
+                                    <PartFooter time={time} />
+                                  </div>
+                                </>
+                              )
+                            }}
                           </Match>
                           { /* Tool call */}
                           <Match when={
@@ -545,44 +628,54 @@ export default function Share(props: { api: string }) {
                                   <div></div>
                                 </div>
                                 <div data-section="content">
-                                  <span data-part-title data-size="md">
-                                    {part().toolInvocation.toolName}
-                                  </span>
-                                  <div data-part-tool-args>
-                                    <For each={
-                                      flattenToolArgs(part().toolInvocation.args)
-                                    }>
-                                      {([name, value]) =>
-                                        <>
-                                          <div></div>
-                                          <div>{name}</div>
-                                          <div>{value}</div>
-                                        </>
-                                      }
-                                    </For>
+                                  <div data-part-tool-body>
+                                    <span data-part-title data-size="md">
+                                      {part().toolInvocation.toolName}
+                                    </span>
+                                    <div data-part-tool-args>
+                                      <For each={
+                                        flattenToolArgs(part().toolInvocation.args)
+                                      }>
+                                        {([name, value]) =>
+                                          <>
+                                            <div></div>
+                                            <div>{name}</div>
+                                            <div>{value}</div>
+                                          </>
+                                        }
+                                      </For>
+                                    </div>
+                                    <Switch>
+                                      <Match when={
+                                        part().toolInvocation.state === "result"
+                                        && part().toolInvocation.result
+                                      }>
+                                        <div data-part-tool-result>
+                                          <ResultsButton
+                                            results={results()}
+                                            onClick={() => showResults(e => !e)}
+                                          />
+                                          <Show when={results()}>
+                                            <TextPart
+                                              expand
+                                              data-size="sm"
+                                              data-color="dimmed"
+                                              text={part().toolInvocation.result}
+                                            />
+                                          </Show>
+                                        </div>
+                                      </Match>
+                                      <Match when={
+                                        part().toolInvocation.state === "call"
+                                      }>
+                                        <TextPart
+                                          data-size="sm"
+                                          data-color="dimmed"
+                                          text="Calling..."
+                                        />
+                                      </Match>
+                                    </Switch>
                                   </div>
-                                  <Switch>
-                                    <Match when={
-                                      part().toolInvocation.state === "result"
-                                      && part().toolInvocation.result
-                                    }>
-                                      <TextPart
-                                        data-size="sm"
-                                        data-color="dimmed"
-                                        text={part().toolInvocation.result}
-                                        expand={isLastPart()}
-                                      />
-                                    </Match>
-                                    <Match when={
-                                      part().toolInvocation.state === "call"
-                                    }>
-                                      <TextPart
-                                        data-size="sm"
-                                        data-color="dimmed"
-                                        text="Calling..."
-                                      />
-                                    </Match>
-                                  </Switch>
                                   <PartFooter time={time} />
                                 </div>
                               </>
@@ -609,10 +702,12 @@ export default function Share(props: { api: string }) {
                               <div></div>
                             </div>
                             <div data-section="content">
-                              <span data-element-label data-part-title>
-                                {part.type}
-                              </span>
-                              <TextPart text={JSON.stringify(part, null, 2)} />
+                              <div data-part-tool-body>
+                                <span data-element-label data-part-title>
+                                  {part.type}
+                                </span>
+                                <TextPart text={JSON.stringify(part, null, 2)} />
+                              </div>
                               <PartFooter time={time} />
                             </div>
                           </Match>
