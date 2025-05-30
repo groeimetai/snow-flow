@@ -1,7 +1,7 @@
 import { type Component, createSignal, onMount } from "solid-js"
 import { diffLines, type Change } from "diff"
 import CodeBlock from "./CodeBlock"
-import styles from "./diffView.module.css"
+import styles from "./diffview.module.css"
 
 type DiffRow = {
   left: string
