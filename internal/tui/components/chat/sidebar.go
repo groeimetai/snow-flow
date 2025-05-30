@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/tui/app"
+	"github.com/sst/opencode/internal/tui/components/qr"
 	"github.com/sst/opencode/internal/tui/state"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -52,6 +53,11 @@ func (m *sidebarCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *sidebarCmp) View() string {
 	baseStyle := styles.BaseStyle()
+	qrcode := ""
+	if m.app.Session.ShareID != nil {
+		url := "https://dev.opencode.ai/share?id="
+		qrcode, _, _ = qr.Generate(url + m.app.Session.Id)
+	}
 
 	return baseStyle.
 		Width(m.width).
@@ -64,9 +70,7 @@ func (m *sidebarCmp) View() string {
 				" ",
 				m.sessionSection(),
 				" ",
-				lspsConfigured(m.width),
-				" ",
-				m.modifiedFiles(),
+				qrcode,
 			),
 		)
 }
