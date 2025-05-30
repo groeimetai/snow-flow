@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode/internal/config"
+	"github.com/sst/opencode/internal/diff"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
 	"github.com/sst/opencode/pkg/client"
@@ -168,17 +169,31 @@ func renderAssistantMessage(
 				for _, arg := range toolMap {
 					toolArgs = append(toolArgs, fmt.Sprintf("%v", arg))
 				}
-				result := truncateHeight(strings.TrimSpace(toolInvocationResult.Result), 10)
 				params := renderParams(width-lipgloss.Width(toolName)-1, toolArgs...)
 				title := styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, params))
 
-				markdown := toMarkdown(result, width)
-
-				content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-					title,
-					markdown,
-				))
-				messages = append(messages, content)
+				var markdown string
+				if toolInvocationResult.ToolName == "edit" {
+					filename := toolMap["filePath"].(string)
+					oldString := toolMap["oldString"].(string)
+					newString := toolMap["newString"].(string)
+					patch, _, _ := diff.GenerateDiff(oldString, newString, filename)
+					formattedDiff, _ := diff.FormatDiff(patch, diff.WithTotalWidth(width))
+					markdown = truncateHeight(strings.TrimSpace(formattedDiff), 10)
+					content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
+						toolName,
+						markdown,
+					))
+					messages = append(messages, content)
+				} else {
+					result := truncateHeight(strings.TrimSpace(toolInvocationResult.Result), 10)
+					markdown = toMarkdown(result, width)
+					content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
+						title,
+						markdown,
+					))
+					messages = append(messages, content)
+				}
 			}
 		}
 	}
