@@ -115,7 +115,7 @@ func getHelpWidget(helpText string) string {
 		Render(helpText)
 }
 
-func formatTokensAndCost(tokens int64, contextWindow int64, cost float64) string {
+func formatTokensAndCost(tokens float32, contextWindow float32, cost float32) string {
 	// Format tokens in human-readable format (e.g., 110K, 1.2M)
 	var formattedTokens string
 	switch {
@@ -124,7 +124,7 @@ func formatTokensAndCost(tokens int64, contextWindow int64, cost float64) string
 	case tokens >= 1_000:
 		formattedTokens = fmt.Sprintf("%.1fK", float64(tokens)/1_000)
 	default:
-		formattedTokens = fmt.Sprintf("%d", tokens)
+		formattedTokens = fmt.Sprintf("%d", int(tokens))
 	}
 
 	// Remove .0 suffix if present
@@ -151,14 +151,25 @@ func (m statusCmp) View() string {
 	// Initialize the help widget
 	status := getHelpWidget("")
 
-	// if m.app.CurrentSessionOLD.ID != "" {
-	// 	tokens := formatTokensAndCost(m.app.CurrentSessionOLD.PromptTokens+m.app.CurrentSessionOLD.CompletionTokens, model.ContextWindow, m.app.CurrentSessionOLD.Cost)
-	// 	tokensStyle := styles.Padded().
-	// 		Background(t.Text()).
-	// 		Foreground(t.BackgroundSecondary()).
-	// 		Render(tokens)
-	// 	status += tokensStyle
-	// }
+	if m.app.Session.Id != "" {
+		tokens := float32(0)
+		cost := float32(0)
+		contextWindow := float32(200_000) // TODO: Get context window from model
+
+		for _, message := range m.app.Messages {
+			if message.Metadata.Assistant != nil {
+				cost += message.Metadata.Assistant.Cost
+				usage := message.Metadata.Assistant.Tokens
+				tokens += (usage.Input + usage.Output + usage.Reasoning)
+			}
+		}
+
+		tokensInfo := styles.Padded().
+			Background(t.Text()).
+			Foreground(t.BackgroundSecondary()).
+			Render(formatTokensAndCost(tokens, contextWindow, cost))
+		status += tokensInfo
+	}
 
 	diagnostics := styles.Padded().Background(t.BackgroundDarker()).Render(m.projectDiagnostics())
 
