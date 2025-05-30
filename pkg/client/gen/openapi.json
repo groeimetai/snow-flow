@@ -280,8 +280,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
+                  "type": "array",
+                  "items": {
                     "$ref": "#/components/schemas/Provider.Info"
                   }
                 }
@@ -818,24 +818,35 @@
       "Provider.Info": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
           "options": {
             "type": "object",
             "additionalProperties": {}
           },
           "models": {
-            "type": "object",
-            "additionalProperties": {
+            "type": "array",
+            "items": {
               "$ref": "#/components/schemas/Provider.Model"
             }
           }
         },
         "required": [
+          "id",
+          "name",
           "models"
         ]
       },
       "Provider.Model": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string"
+          },
           "name": {
             "type": "string"
           },
@@ -876,6 +887,7 @@
           }
         },
         "required": [
+          "id",
           "cost",
           "contextWindow",
           "attachment"

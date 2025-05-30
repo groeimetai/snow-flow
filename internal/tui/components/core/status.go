@@ -335,7 +335,10 @@ func (m *statusCmp) projectDiagnostics() string {
 
 func (m statusCmp) model() string {
 	t := theme.CurrentTheme()
-	model := "Claude Sonnet 4" // models.SupportedModels[coder.Model]
+	model := "None"
+	if m.app.Model != nil {
+		model = *m.app.Model.Name
+	}
 
 	return styles.Padded().
 		Background(t.Secondary()).

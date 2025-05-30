@@ -263,7 +263,7 @@ export namespace Server {
               description: "List of providers",
               content: {
                 "application/json": {
-                  schema: resolver(z.record(z.string(), Provider.Info)),
+                  schema: resolver(Provider.Info.array()),
                 },
               },
             },
@@ -271,9 +271,9 @@ export namespace Server {
         }),
         async (c) => {
           const providers = await LLM.providers();
-          const result: Record<string, Provider.Info> = {};
-          for (const [providerID, provider] of Object.entries(providers)) {
-            result[providerID] = provider.info;
+          const result = [] as (Provider.Info & { key: string })[];
+          for (const [key, provider] of Object.entries(providers)) {
+            result.push({ ...provider.info, key });
           }
           return c.json(result);
         },

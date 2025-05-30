@@ -3,6 +3,7 @@ import z from "zod";
 export namespace Provider {
   export const Model = z
     .object({
+      id: z.string(),
       name: z.string().optional(),
       cost: z.object({
         input: z.number(),
@@ -22,8 +23,10 @@ export namespace Provider {
 
   export const Info = z
     .object({
+      id: z.string(),
+      name: z.string(),
       options: z.record(z.string(), z.any()).optional(),
-      models: z.record(z.string(), Model),
+      models: Model.array(),
     })
     .openapi({
       ref: "Provider.Info",

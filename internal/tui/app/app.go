@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"log/slog"
 
@@ -20,19 +19,13 @@ import (
 type App struct {
 	Client   *client.ClientWithResponses
 	Events   *client.Client
+	Provider *client.ProviderInfo
+	Model    *client.ProviderModel
 	Session  *client.SessionInfo
 	Messages []client.MessageInfo
-
-	LogsOLD        any // TODO: Define LogService interface when needed
-	HistoryOLD     any // TODO: Define HistoryService interface when needed
-	PermissionsOLD any // TODO: Define PermissionService interface when needed
-	Status         status.Service
+	Status   status.Service
 
 	PrimaryAgentOLD AgentService
-
-	watcherCancelFuncs []context.CancelFunc
-	cancelFuncsMutex   sync.Mutex
-	watcherWG          sync.WaitGroup
 
 	// UI state
 	filepickerOpen       bool
@@ -70,13 +63,9 @@ func New(ctx context.Context) (*App, error) {
 		Client:          httpClient,
 		Events:          eventClient,
 		Session:         &client.SessionInfo{},
+		Messages:        []client.MessageInfo{},
 		PrimaryAgentOLD: agentBridge,
 		Status:          status.GetService(),
-
-		// TODO: These services need API endpoints:
-		LogsOLD:        nil, // logging.GetService(),
-		HistoryOLD:     nil, // history.GetService(),
-		PermissionsOLD: nil, // permission.GetService(),
 	}
 
 	// Initialize theme based on configuration
@@ -128,13 +117,12 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []At
 	go a.Client.PostSessionChatWithResponse(ctx, client.PostSessionChatJSONRequestBody{
 		SessionID:  a.Session.Id,
 		Parts:      parts,
-		ProviderID: "anthropic",
-		ModelID:    "claude-sonnet-4-20250514",
+		ProviderID: a.Provider.Id,
+		ModelID:    a.Model.Id,
 	})
 
 	// The actual response will come through SSE
 	// For now, just return success
-
 	return tea.Batch(cmds...)
 }
 
@@ -167,6 +155,22 @@ func (a *App) ListMessages(ctx context.Context, sessionId string) ([]client.Mess
 	}
 	messages := *resp.JSON200
 	return messages, nil
+}
+
+func (a *App) ListProviders(ctx context.Context) ([]client.ProviderInfo, error) {
+	resp, err := a.Client.PostProviderListWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("failed to list sessions: %d", resp.StatusCode())
+	}
+	if resp.JSON200 == nil {
+		return []client.ProviderInfo{}, nil
+	}
+
+	providers := *resp.JSON200
+	return providers, nil
 }
 
 // initTheme sets the application theme based on the configuration
@@ -207,11 +211,5 @@ func (app *App) SetCompletionDialogOpen(open bool) {
 
 // Shutdown performs a clean shutdown of the application
 func (app *App) Shutdown() {
-	// Cancel all watcher goroutines
-	app.cancelFuncsMutex.Lock()
-	for _, cancel := range app.watcherCancelFuncs {
-		cancel()
-	}
-	app.cancelFuncsMutex.Unlock()
-	app.watcherWG.Wait()
+	// TODO: cleanup?
 }

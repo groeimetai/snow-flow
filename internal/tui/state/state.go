@@ -5,8 +5,15 @@ import (
 )
 
 type SessionSelectedMsg = *client.SessionInfo
+type ModelSelectedMsg struct {
+	Provider client.ProviderInfo
+	Model    client.ProviderModel
+}
+
 type SessionClearedMsg struct{}
 type CompactSessionMsg struct{}
+
+// TODO: remove
 type StateUpdatedMsg struct {
 	State map[string]any
 }

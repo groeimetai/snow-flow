@@ -168,16 +168,27 @@ func (a appModel) Init() tea.Cmd {
 		return dialog.ShowInitDialogMsg{Show: shouldShow}
 	})
 
+	cmds = append(cmds, func() tea.Msg {
+		providers, _ := a.app.ListProviders(context.Background())
+		return state.ModelSelectedMsg{Provider: providers[0], Model: providers[0].Models[0]}
+	})
+
 	return tea.Batch(cmds...)
 }
 
 func (a appModel) updateAllPages(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
+
 	for id := range a.pages {
 		a.pages[id], cmd = a.pages[id].Update(msg)
 		cmds = append(cmds, cmd)
 	}
+
+	s, cmd := a.status.Update(msg)
+	cmds = append(cmds, cmd)
+	a.status = s.(core.StatusCmp)
+
 	return a, tea.Batch(cmds...)
 }
 
@@ -201,12 +212,10 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for i, m := range a.app.Messages {
 				if m.Id == msg.Properties.Info.Id {
 					a.app.Messages[i] = msg.Properties.Info
-					slog.Debug("Updated message", "message", msg.Properties.Info)
 					return a.updateAllPages(state.StateUpdatedMsg{State: nil})
 				}
 			}
 			a.app.Messages = append(a.app.Messages, msg.Properties.Info)
-			slog.Debug("Appended message", "message", msg.Properties.Info)
 			return a.updateAllPages(state.StateUpdatedMsg{State: nil})
 		}
 
@@ -287,6 +296,19 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.app.Messages, _ = a.app.ListMessages(context.Background(), msg.Id)
 		return a.updateAllPages(msg)
 
+	case dialog.CloseModelDialogMsg:
+		a.showModelDialog = false
+		slog.Debug("closing model dialog", "msg", msg)
+		if msg.Provider != nil && msg.Model != nil {
+			return a, util.CmdHandler(state.ModelSelectedMsg{Provider: *msg.Provider, Model: *msg.Model})
+		}
+		return a, nil
+
+	case state.ModelSelectedMsg:
+		a.app.Provider = &msg.Provider
+		a.app.Model = &msg.Model
+		return a.updateAllPages(msg)
+
 	case dialog.CloseCommandDialogMsg:
 		a.showCommandDialog = false
 		return a, nil
@@ -308,24 +330,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.showThemeDialog = false
 		status.Info("Theme changed to: " + msg.ThemeName)
 		return a, cmd
-
-	case dialog.CloseModelDialogMsg:
-		a.showModelDialog = false
-		return a, nil
-
-	case dialog.ModelSelectedMsg:
-		a.showModelDialog = false
-
-		// TODO: Agent model update not implemented in API yet
-		// model, err := a.app.PrimaryAgent.Update(config.AgentPrimary, msg.Model.ID)
-		// if err != nil {
-		// 	status.Error(err.Error())
-		// 	return a, nil
-		// }
-
-		// status.Info(fmt.Sprintf("Model changed to %s", model.Name))
-		status.Info("Model selection not implemented in API yet")
-		return a, nil
 
 	case dialog.ShowInitDialogMsg:
 		a.showInitDialog = msg.Show
@@ -475,6 +479,18 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.showToolsDialog = false
 				a.showThemeDialog = false
 				a.showFilepicker = false
+
+				// Load providers and show the dialog
+				providers, err := a.app.ListProviders(context.Background())
+				if err != nil {
+					status.Error(err.Error())
+					return a, nil
+				}
+				if len(providers) == 0 {
+					status.Warn("No providers available")
+					return a, nil
+				}
+				a.modelDialog.SetProviders(providers)
 
 				a.showModelDialog = true
 				return a, nil
@@ -907,7 +923,7 @@ func New(app *app.App) tea.Model {
 		quit:          dialog.NewQuitCmp(),
 		sessionDialog: dialog.NewSessionDialogCmp(),
 		commandDialog: dialog.NewCommandDialogCmp(),
-		modelDialog:   dialog.NewModelDialogCmp(),
+		modelDialog:   dialog.NewModelDialogCmp(app),
 		permissions:   dialog.NewPermissionDialogCmp(),
 		initDialog:    dialog.NewInitDialogCmp(),
 		themeDialog:   dialog.NewThemeDialogCmp(),

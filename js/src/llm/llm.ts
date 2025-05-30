@@ -1,6 +1,6 @@
 import { App } from "../app/app";
 import { Log } from "../util/log";
-import { mergeDeep } from "remeda";
+import { concat } from "remeda";
 import path from "path";
 import { Provider } from "../provider/provider";
 
@@ -19,26 +19,32 @@ export namespace LLM {
     }
   }
 
-  const NATIVE_PROVIDERS: Record<string, Provider.Info> = {
-    anthropic: {
-      models: {
-        "claude-sonnet-4-20250514": {
-          name: "Claude 4 Sonnet",
+  const NATIVE_PROVIDERS: Provider.Info[] = [
+    {
+      id: "anthropic",
+      name: "Anthropic",
+      models: [
+        {
+          id: "claude-sonnet-4-20250514",
+          name: "Claude Sonnet 4",
           cost: {
             input: 3.0 / 1_000_000,
             output: 15.0 / 1_000_000,
             inputCached: 3.75 / 1_000_000,
             outputCached: 0.3 / 1_000_000,
           },
-          contextWindow: 200000,
-          maxTokens: 50000,
+          contextWindow: 200_000,
+          maxOutputTokens: 50_000,
           attachment: true,
         },
-      },
+      ],
     },
-    openai: {
-      models: {
-        "codex-mini-latest": {
+    {
+      id: "openai",
+      name: "OpenAI",
+      models: [
+        {
+          id: "codex-mini-latest",
           name: "Codex Mini",
           cost: {
             input: 1.5 / 1_000_000,
@@ -46,16 +52,19 @@ export namespace LLM {
             output: 6.0 / 1_000_000,
             outputCached: 0.0 / 1_000_000,
           },
-          contextWindow: 200000,
-          maxTokens: 100000,
+          contextWindow: 200_000,
+          maxOutputTokens: 100_000,
           attachment: true,
           reasoning: true,
         },
-      },
+      ],
     },
-    google: {
-      models: {
-        "gemini-2.5-pro-preview-03-25": {
+    {
+      id: "google",
+      name: "Google",
+      models: [
+        {
+          id: "gemini-2.5-pro-preview-03-25",
           name: "Gemini 2.5 Pro",
           cost: {
             input: 1.25 / 1_000_000,
@@ -63,18 +72,18 @@ export namespace LLM {
             output: 10 / 1_000_000,
             outputCached: 0 / 1_000_000,
           },
-          contextWindow: 1000000,
-          maxTokens: 50000,
+          contextWindow: 1_000_000,
+          maxOutputTokens: 50_000,
           attachment: true,
         },
-      },
+      ],
     },
-  };
+  ];
 
   const AUTODETECT: Record<string, string[]> = {
     anthropic: ["ANTHROPIC_API_KEY"],
     openai: ["OPENAI_API_KEY"],
-    google: ["GOOGLE_GENERATIVE_AI_API_KEY"],
+    google: ["GOOGLE_GENERATIVE_AI_API_KEY", "GEMINI_API_KEY"],
   };
 
   const state = App.state("llm", async () => {
@@ -91,33 +100,33 @@ export namespace LLM {
       { info: Provider.Model; instance: LanguageModel }
     >();
 
-    const list = mergeDeep(NATIVE_PROVIDERS, config.providers ?? {});
+    const list = concat(NATIVE_PROVIDERS, config.providers ?? []);
 
-    for (const [providerID, providerInfo] of Object.entries(list)) {
+    for (const provider of list) {
       if (
-        !config.providers?.[providerID] &&
-        !AUTODETECT[providerID]?.some((env) => process.env[env])
+        !config.providers?.find((p) => p.id === provider.id) &&
+        !AUTODETECT[provider.id]?.some((env) => process.env[env])
       )
         continue;
       const dir = path.join(
         Global.cache(),
         `node_modules`,
         `@ai-sdk`,
-        providerID,
+        provider.id,
       );
       if (!(await Bun.file(path.join(dir, "package.json")).exists())) {
-        BunProc.run(["add", "--exact", `@ai-sdk/${providerID}@alpha`], {
+        BunProc.run(["add", "--exact", `@ai-sdk/${provider.id}@alpha`], {
           cwd: Global.cache(),
         });
       }
       const mod = await import(
-        path.join(Global.cache(), `node_modules`, `@ai-sdk`, providerID)
+        path.join(Global.cache(), `node_modules`, `@ai-sdk`, provider.id)
       );
       const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!];
-      const loaded = fn(providerInfo.options);
-      log.info("loaded", { provider: providerID });
-      providers[providerID] = {
-        info: providerInfo,
+      const loaded = fn(provider.options);
+      log.info("loaded", { provider: provider.id });
+      providers[provider.id] = {
+        info: provider,
         instance: loaded,
       };
     }
@@ -142,7 +151,7 @@ export namespace LLM {
       providerID,
       modelID,
     });
-    const info = provider.info.models[modelID];
+    const info = provider.info.models.find((m) => m.id === modelID);
     if (!info) throw new ModelNotFoundError(modelID);
     try {
       const match = provider.instance.languageModel(modelID);

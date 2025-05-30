@@ -173,8 +173,10 @@ type MessageToolInvocationToolResult struct {
 
 // ProviderInfo defines model for Provider.Info.
 type ProviderInfo struct {
-	Models  map[string]ProviderModel `json:"models"`
-	Options *map[string]interface{}  `json:"options,omitempty"`
+	Id      string                  `json:"id"`
+	Models  []ProviderModel         `json:"models"`
+	Name    string                  `json:"name"`
+	Options *map[string]interface{} `json:"options,omitempty"`
 }
 
 // ProviderModel defines model for Provider.Model.
@@ -187,6 +189,7 @@ type ProviderModel struct {
 		Output       float32 `json:"output"`
 		OutputCached float32 `json:"outputCached"`
 	} `json:"cost"`
+	Id              string   `json:"id"`
 	MaxOutputTokens *float32 `json:"maxOutputTokens,omitempty"`
 	Name            *string  `json:"name,omitempty"`
 	Reasoning       *bool    `json:"reasoning,omitempty"`
@@ -1421,7 +1424,7 @@ func (r GetEventResponse) StatusCode() int {
 type PostProviderListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *map[string]ProviderInfo
+	JSON200      *[]ProviderInfo
 }
 
 // Status returns HTTPResponse.Status
@@ -1756,7 +1759,7 @@ func ParsePostProviderListResponse(rsp *http.Response) (*PostProviderListRespons
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest map[string]ProviderInfo
+		var dest []ProviderInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
