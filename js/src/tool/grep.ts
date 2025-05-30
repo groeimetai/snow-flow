@@ -256,7 +256,7 @@ async function searchFiles(
 }
 
 export const grep = Tool.define({
-  name: "grep",
+  name: "opencode.grep",
   description: DESCRIPTION,
   parameters: z.object({
     pattern: z

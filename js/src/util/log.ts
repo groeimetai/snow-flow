@@ -38,9 +38,10 @@ export namespace Log {
         ...tags,
         ...extra,
       })
+        .filter(([_, value]) => value !== undefined && value !== null)
         .map(([key, value]) => `${key}=${value}`)
         .join(" ");
-      return [new Date().toISOString(), prefix, message].join(" ") + "\n";
+      return [new Date().toISOString(), prefix, message].filter(Boolean).join(" ") + "\n";
     }
     const result = {
       info(message?: any, extra?: Record<string, any>) {

@@ -38,7 +38,7 @@ TIPS:
 - Always check if results are truncated and refine your search pattern if needed`;
 
 export const glob = Tool.define({
-  name: "glob",
+  name: "opencode.glob",
   description: DESCRIPTION,
   parameters: z.object({
     pattern: z.string().describe("The glob pattern to match files against"),

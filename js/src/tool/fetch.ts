@@ -38,7 +38,7 @@ TIPS:
 - Set appropriate timeouts for potentially slow websites`;
 
 export const Fetch = Tool.define({
-  name: "fetch",
+  name: "opencode.fetch",
   description: DESCRIPTION,
   parameters: z.object({
     url: z.string().describe("The URL to fetch content from"),

@@ -41,7 +41,7 @@ TIPS:
 - When viewing large files, use the offset parameter to read specific sections`;
 
 export const view = Tool.define({
-  name: "view",
+  name: "opencode.view",
   description: DESCRIPTION,
   parameters: z.object({
     filePath: z.string().describe("The path to the file to read"),

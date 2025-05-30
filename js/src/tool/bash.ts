@@ -171,7 +171,7 @@ Important:
 - Never update git config`;
 
 export const bash = Tool.define({
-  name: "bash",
+  name: "opencode.bash",
   description: DESCRIPTION,
   parameters: z.object({
     command: z.string(),
