@@ -114,6 +114,7 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Continue sending keys to layout->chat
 		case key.Matches(msg, keyMap.NewSession):
 			p.app.Session = &client.SessionInfo{}
+			p.app.Messages = []client.MessageInfo{}
 			return p, tea.Batch(
 				p.clearSidebar(),
 				util.CmdHandler(state.SessionClearedMsg{}),

@@ -74,6 +74,9 @@ func (s *sessionDialogCmp) Init() tea.Cmd {
 
 func (s *sessionDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		s.width = msg.Width
+		s.height = msg.Height
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, sessionKeys.Up) || key.Matches(msg, sessionKeys.K):
@@ -98,9 +101,6 @@ func (s *sessionDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, sessionKeys.Escape):
 			return s, util.CmdHandler(CloseSessionDialogMsg{})
 		}
-	case tea.WindowSizeMsg:
-		s.width = msg.Width
-		s.height = msg.Height
 	}
 	return s, nil
 }

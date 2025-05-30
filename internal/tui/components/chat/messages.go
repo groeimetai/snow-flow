@@ -73,8 +73,8 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := m.Reload()
 		return m, cmd
 	case state.SessionClearedMsg:
-		m.rendering = false
-		return m, nil
+		cmd := m.Reload()
+		return m, cmd
 	case tea.KeyMsg:
 		if key.Matches(msg, messageKeys.PageUp) || key.Matches(msg, messageKeys.PageDown) ||
 			key.Matches(msg, messageKeys.HalfPageUp) || key.Matches(msg, messageKeys.HalfPageDown) {

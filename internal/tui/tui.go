@@ -271,10 +271,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case page.PageChangeMsg:
 		return a, a.moveToPage(msg.ID)
 
-	case state.SessionSelectedMsg:
-		a.app.Session = msg
-		return a.updateAllPages(msg)
-
 	case dialog.CloseQuitMsg:
 		a.showQuit = false
 		return a, nil
@@ -285,6 +281,11 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, util.CmdHandler(state.SessionSelectedMsg(msg.Session))
 		}
 		return a, nil
+
+	case state.SessionSelectedMsg:
+		a.app.Session = msg
+		a.app.Messages, _ = a.app.ListMessages(context.Background(), msg.Id)
+		return a.updateAllPages(msg)
 
 	case dialog.CloseCommandDialogMsg:
 		a.showCommandDialog = false

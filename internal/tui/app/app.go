@@ -143,26 +143,30 @@ func (a *App) ListSessions(ctx context.Context) ([]client.SessionInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	if resp.StatusCode() != 200 {
 		return nil, fmt.Errorf("failed to list sessions: %d", resp.StatusCode())
 	}
-
 	if resp.JSON200 == nil {
 		return []client.SessionInfo{}, nil
 	}
 
-	infos := *resp.JSON200
-
-	sessions := make([]client.SessionInfo, len(infos))
-	for i, info := range infos {
-		sessions[i] = client.SessionInfo{
-			Id:    info.Id,
-			Title: info.Title,
-		}
-	}
-
+	sessions := *resp.JSON200
 	return sessions, nil
+}
+
+func (a *App) ListMessages(ctx context.Context, sessionId string) ([]client.MessageInfo, error) {
+	resp, err := a.Client.PostSessionMessagesWithResponse(ctx, client.PostSessionMessagesJSONRequestBody{SessionID: sessionId})
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("failed to list messages: %d", resp.StatusCode())
+	}
+	if resp.JSON200 == nil {
+		return []client.MessageInfo{}, nil
+	}
+	messages := *resp.JSON200
+	return messages, nil
 }
 
 // initTheme sets the application theme based on the configuration
