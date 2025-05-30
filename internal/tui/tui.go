@@ -168,6 +168,7 @@ func (a appModel) Init() tea.Cmd {
 		return dialog.ShowInitDialogMsg{Show: shouldShow}
 	})
 
+	// TODO: store last selected model somewhere
 	cmds = append(cmds, func() tea.Msg {
 		providers, _ := a.app.ListProviders(context.Background())
 		return state.ModelSelectedMsg{Provider: providers[0], Model: providers[0].Models[0]}
