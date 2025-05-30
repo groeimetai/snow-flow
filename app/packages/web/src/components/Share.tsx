@@ -460,229 +460,246 @@ export default function Share(props: { api: string }) {
                       || msg.metadata?.time.created
                       || 0
                     return (
-                      <div
-                        data-section="part"
-                        data-part-type={part.type}
-                        data-message-role={msg.role}
-                      >
-                        <Switch>
-                          { /* User text */}
-                          <Match when={
-                            msg.role === "user" && part.type === "text" && part
-                          }>
-                            {part =>
-                              <>
-                                <div data-section="decoration">
-                                  <div>
-                                    <IconUserCircle width={18} height={18} />
-                                  </div>
-                                  <div></div>
+                      <Switch>
+                        { /* User text */}
+                        <Match when={
+                          msg.role === "user" && part.type === "text" && part
+                        }>
+                          {part =>
+                            <div
+                              data-section="part"
+                              data-part-type="user-text"
+                            >
+                              <div data-section="decoration">
+                                <div>
+                                  <IconUserCircle width={18} height={18} />
                                 </div>
-                                <div data-section="content">
-                                  <TextPart
-                                    highlight
-                                    text={part().text}
-                                    expand={isLastPart()}
+                                <div></div>
+                              </div>
+                              <div data-section="content">
+                                <TextPart
+                                  highlight
+                                  text={part().text}
+                                  expand={isLastPart()}
+                                />
+                                <PartFooter time={time} />
+                              </div>
+                            </div>
+                          }
+                        </Match>
+                        { /* AI text */}
+                        <Match when={
+                          msg.role === "assistant"
+                          && part.type === "text"
+                          && part
+                        }>
+                          {part =>
+                            <div
+                              data-section="part"
+                              data-part-type="ai-text"
+                            >
+                              <div data-section="decoration">
+                                <div><IconSparkles width={18} height={18} /></div>
+                                <div></div>
+                              </div>
+                              <div data-section="content">
+                                <TextPart
+                                  text={part().text}
+                                  expand={isLastPart()}
+                                />
+                                <PartFooter time={time} />
+                              </div>
+                            </div>
+                          }
+                        </Match>
+                        { /* AI model */}
+                        <Match when={
+                          msg.role === "assistant"
+                          && part.type === "step-start"
+                          && msg.metadata?.assistant
+                        }>
+                          {assistant =>
+                            <div
+                              data-section="part"
+                              data-part-type="ai-model"
+                            >
+                              <div data-section="decoration">
+                                <div>
+                                  <ProviderIcon
+                                    size={18}
+                                    provider={assistant().providerID}
                                   />
-                                  <PartFooter time={time} />
                                 </div>
-                              </>
-                            }
-                          </Match>
-                          { /* AI text */}
-                          <Match when={
-                            msg.role === "assistant"
-                            && part.type === "text"
-                            && part
-                          }>
-                            {part =>
-                              <>
-                                <div data-section="decoration">
-                                  <div><IconSparkles width={18} height={18} /></div>
-                                  <div></div>
+                                <div></div>
+                              </div>
+                              <div data-section="content">
+                                <div data-part-tool-body>
+                                  <span
+                                    data-size="md"
+                                    data-part-title
+                                    data-element-label
+                                  >
+                                    {assistant().providerID}
+                                  </span>
+                                  <span data-part-model>
+                                    {assistant().modelID}
+                                  </span>
                                 </div>
-                                <div data-section="content">
+                              </div>
+                            </div>
+                          }
+                        </Match>
+                        { /* System text */}
+                        <Match when={
+                          msg.role === "system"
+                          && part.type === "text"
+                          && part
+                        }>
+                          {part =>
+                            <div
+                              data-section="part"
+                              data-part-type="system-text"
+                            >
+                              <div data-section="decoration">
+                                <div>
+                                  <IconCpuChip width={18} height={18} />
+                                </div>
+                                <div></div>
+                              </div>
+                              <div data-section="content">
+                                <div data-part-tool-body>
+                                  <span data-element-label data-part-title>
+                                    System
+                                  </span>
                                   <TextPart
+                                    data-size="sm"
                                     text={part().text}
-                                    expand={isLastPart()}
+                                    data-color="dimmed"
                                   />
-                                  <PartFooter time={time} />
                                 </div>
-                              </>
-                            }
-                          </Match>
-                          { /* AI model */}
-                          <Match when={
-                            msg.role === "assistant"
-                            && part.type === "step-start"
-                            && msg.metadata?.assistant
-                          }>
-                            {assistant =>
-                              <>
+                                <PartFooter time={time} />
+                              </div>
+                            </div>
+                          }
+                        </Match>
+                        { /* Edit tool */}
+                        <Match when={
+                          msg.role === "assistant"
+                          && part.type === "tool-invocation"
+                          && part.toolInvocation.toolName === "edit"
+                          && part
+                        }>
+                          {part => {
+                            const args = part().toolInvocation.args
+                            const filePath = args.filePath
+                            return (
+                              <div
+                                data-section="part"
+                                data-part-type="tool-edit"
+                              >
                                 <div data-section="decoration">
                                   <div>
-                                    <ProviderIcon
-                                      size={18}
-                                      provider={assistant().providerID}
-                                    />
-                                  </div>
-                                  <div></div>
-                                </div>
-                                <div data-section="content">
-                                  <div data-part-tool-body>
-                                    <span
-                                      data-size="md"
-                                      data-part-title
-                                      data-element-label
-                                    >
-                                      {assistant().providerID}
-                                    </span>
-                                    <span data-part-model>
-                                      {assistant().modelID}
-                                    </span>
-                                  </div>
-                                </div>
-                              </>
-                            }
-                          </Match>
-                          { /* System text */}
-                          <Match when={
-                            msg.role === "system"
-                            && part.type === "text"
-                            && part
-                          }>
-                            {part =>
-                              <>
-                                <div data-section="decoration">
-                                  <div>
-                                    <IconCpuChip width={18} height={18} />
-                                  </div>
-                                  <div></div>
-                                </div>
-                                <div data-section="content">
-                                  <div data-part-tool-body>
-                                    <span data-element-label data-part-title>
-                                      System
-                                    </span>
-                                    <TextPart
-                                      data-size="sm"
-                                      text={part().text}
-                                      data-color="dimmed"
-                                    />
-                                  </div>
-                                  <PartFooter time={time} />
-                                </div>
-                              </>
-                            }
-                          </Match>
-                          { /* Edit tool */}
-                          <Match when={
-                            msg.role === "assistant"
-                            && part.type === "tool-invocation"
-                            && part.toolInvocation.toolName === "edit"
-                            && part
-                          }>
-                            {part => {
-                              const args = part().toolInvocation.args
-                              const filePath = args.filePath
-                              return (
-                                <>
-                                  <div data-section="decoration">
-                                    <div>
-                                      <IconPencilSquare width={18} height={18} />
-                                    </div>
-                                    <div></div>
-                                  </div>
-                                  <div data-section="content">
-                                    <div data-part-tool-body>
-                                      <span data-part-title data-size="md">
-                                        Edit {filePath}
-                                      </span>
-                                      <div data-part-tool-edit>
-                                        <DiffView
-                                          class={styles["code-block"]}
-                                          oldCode={args.oldString}
-                                          newCode={args.newString}
-                                          lang={getFileType(filePath)}
-                                        />
-                                      </div>
-                                    </div>
-                                    <PartFooter time={time} />
-                                  </div>
-                                </>
-                              )
-                            }}
-                          </Match>
-                          { /* Tool call */}
-                          <Match when={
-                            msg.role === "assistant"
-                            && part.type === "tool-invocation"
-                            && part
-                          }>
-                            {part =>
-                              <>
-                                <div data-section="decoration">
-                                  <div>
-                                    <IconWrenchScrewdriver width={18} height={18} />
+                                    <IconPencilSquare width={18} height={18} />
                                   </div>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
                                   <div data-part-tool-body>
                                     <span data-part-title data-size="md">
-                                      {part().toolInvocation.toolName}
+                                      Edit {filePath}
                                     </span>
-                                    <div data-part-tool-args>
-                                      <For each={
-                                        flattenToolArgs(part().toolInvocation.args)
-                                      }>
-                                        {([name, value]) =>
-                                          <>
-                                            <div></div>
-                                            <div>{name}</div>
-                                            <div>{value}</div>
-                                          </>
-                                        }
-                                      </For>
+                                    <div data-part-tool-edit>
+                                      <DiffView
+                                        class={styles["code-block"]}
+                                        oldCode={args.oldString}
+                                        newCode={args.newString}
+                                        lang={getFileType(filePath)}
+                                      />
                                     </div>
-                                    <Switch>
-                                      <Match when={
-                                        part().toolInvocation.state === "result"
-                                        && part().toolInvocation.result
-                                      }>
-                                        <div data-part-tool-result>
-                                          <ResultsButton
-                                            results={results()}
-                                            onClick={() => showResults(e => !e)}
-                                          />
-                                          <Show when={results()}>
-                                            <TextPart
-                                              expand
-                                              data-size="sm"
-                                              data-color="dimmed"
-                                              text={part().toolInvocation.result}
-                                            />
-                                          </Show>
-                                        </div>
-                                      </Match>
-                                      <Match when={
-                                        part().toolInvocation.state === "call"
-                                      }>
-                                        <TextPart
-                                          data-size="sm"
-                                          data-color="dimmed"
-                                          text="Calling..."
-                                        />
-                                      </Match>
-                                    </Switch>
                                   </div>
                                   <PartFooter time={time} />
                                 </div>
-                              </>
-                            }
-                          </Match>
-                          { /* Fallback */}
-                          <Match when={true}>
+                              </div>
+                            )
+                          }}
+                        </Match>
+                        { /* Tool call */}
+                        <Match when={
+                          msg.role === "assistant"
+                          && part.type === "tool-invocation"
+                          && part
+                        }>
+                          {part =>
+                            <div
+                              data-section="part"
+                              data-part-type="tool-fallback"
+                            >
+                              <div data-section="decoration">
+                                <div>
+                                  <IconWrenchScrewdriver width={18} height={18} />
+                                </div>
+                                <div></div>
+                              </div>
+                              <div data-section="content">
+                                <div data-part-tool-body>
+                                  <span data-part-title data-size="md">
+                                    {part().toolInvocation.toolName}
+                                  </span>
+                                  <div data-part-tool-args>
+                                    <For each={
+                                      flattenToolArgs(part().toolInvocation.args)
+                                    }>
+                                      {([name, value]) =>
+                                        <>
+                                          <div></div>
+                                          <div>{name}</div>
+                                          <div>{value}</div>
+                                        </>
+                                      }
+                                    </For>
+                                  </div>
+                                  <Switch>
+                                    <Match when={
+                                      part().toolInvocation.state === "result"
+                                      && part().toolInvocation.result
+                                    }>
+                                      <div data-part-tool-result>
+                                        <ResultsButton
+                                          results={results()}
+                                          onClick={() => showResults(e => !e)}
+                                        />
+                                        <Show when={results()}>
+                                          <TextPart
+                                            expand
+                                            data-size="sm"
+                                            data-color="dimmed"
+                                            text={part().toolInvocation.result}
+                                          />
+                                        </Show>
+                                      </div>
+                                    </Match>
+                                    <Match when={
+                                      part().toolInvocation.state === "call"
+                                    }>
+                                      <TextPart
+                                        data-size="sm"
+                                        data-color="dimmed"
+                                        text="Calling..."
+                                      />
+                                    </Match>
+                                  </Switch>
+                                </div>
+                                <PartFooter time={time} />
+                              </div>
+                            </div>
+                          }
+                        </Match>
+                        { /* Fallback */}
+                        <Match when={true}>
+                          <div
+                            data-section="part"
+                            data-part-type="fallback"
+                          >
                             <div data-section="decoration">
                               <div>
                                 <Switch fallback={
@@ -710,9 +727,9 @@ export default function Share(props: { api: string }) {
                               </div>
                               <PartFooter time={time} />
                             </div>
-                          </Match>
-                        </Switch>
-                      </div>
+                          </div>
+                        </Match>
+                      </Switch>
                     )
                   }}
                 </For>
