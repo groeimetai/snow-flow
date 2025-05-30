@@ -194,9 +194,16 @@ type ProviderModel struct {
 
 // SessionInfo defines model for session.info.
 type SessionInfo struct {
-	Id      string  `json:"id"`
-	ShareID *string `json:"shareID,omitempty"`
-	Title   string  `json:"title"`
+	Id    string `json:"id"`
+	Share *struct {
+		Secret string `json:"secret"`
+		Url    string `json:"url"`
+	} `json:"share,omitempty"`
+	Time struct {
+		Created float32 `json:"created"`
+		Updated float32 `json:"updated"`
+	} `json:"time"`
+	Title string `json:"title"`
 }
 
 // PostSessionAbortJSONBody defines parameters for PostSessionAbort.

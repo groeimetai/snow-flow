@@ -26,7 +26,6 @@ import {
   IconPencilSquare,
   IconWrenchScrewdriver,
 } from "./icons"
-import CodeBlock from "./CodeBlock"
 import DiffView from "./DiffView"
 import styles from "./share.module.css"
 import { type UIMessage } from "ai"
@@ -219,7 +218,7 @@ function PartFooter(props: { time: number }) {
 
 export default function Share(props: { api: string }) {
   let params = new URLSearchParams(document.location.search)
-  const sessionId = params.get("id")
+  const id = params.get("id")
 
   const [store, setStore] = createStore<{
     info?: SessionInfo
@@ -233,12 +232,8 @@ export default function Share(props: { api: string }) {
   onMount(() => {
     const apiUrl = props.api
 
-    console.log("Mounting Share component with ID:", sessionId)
-    console.log("API URL:", apiUrl)
-
-    if (!sessionId) {
-      console.error("Session ID not found in environment variables")
-      setConnectionStatus(["error", "Session ID not found"])
+    if (!id) {
+      setConnectionStatus(["error", "id not found"])
       return
     }
 
@@ -262,7 +257,7 @@ export default function Share(props: { api: string }) {
 
       // Always use secure WebSocket protocol (wss)
       const wsBaseUrl = apiUrl.replace(/^https?:\/\//, "wss://")
-      const wsUrl = `${wsBaseUrl}/share_poll?id=${sessionId}`
+      const wsUrl = `${wsBaseUrl}/share_poll?id=${id}`
       console.log("Connecting to WebSocket URL:", wsUrl)
 
       // Create WebSocket connection

@@ -775,16 +775,44 @@
             "type": "string",
             "pattern": "^ses"
           },
-          "shareID": {
-            "type": "string"
+          "share": {
+            "type": "object",
+            "properties": {
+              "secret": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "secret",
+              "url"
+            ]
           },
           "title": {
             "type": "string"
+          },
+          "time": {
+            "type": "object",
+            "properties": {
+              "created": {
+                "type": "number"
+              },
+              "updated": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "created",
+              "updated"
+            ]
           }
         },
         "required": [
           "id",
-          "title"
+          "title",
+          "time"
         ]
       },
       "Provider.Info": {

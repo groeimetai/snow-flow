@@ -13,6 +13,7 @@ export const api = new sst.cloudflare.Worker("Api", {
   link: [bucket],
   transform: {
     worker: (args) => {
+      args.logpush = true
       args.bindings = $resolve(args.bindings).apply((bindings) => [
         ...bindings,
         {

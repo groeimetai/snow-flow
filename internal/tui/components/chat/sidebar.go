@@ -53,7 +53,10 @@ func (m *sidebarCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *sidebarCmp) View() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
-	shareUrl := baseStyle.Foreground(t.TextMuted()).Render("https://dev.opencode.ai/share?id=" + m.app.Session.Id)
+	shareUrl := ""
+	if m.app.Session.Share != nil {
+		shareUrl = baseStyle.Foreground(t.TextMuted()).Render(m.app.Session.Share.Url)
+	}
 
 	// qrcode := ""
 	// if m.app.Session.ShareID != nil {

@@ -2,12 +2,13 @@ import { DurableObject } from "cloudflare:workers"
 import { randomUUID } from "node:crypto"
 import { Resource } from "sst"
 
-type Bindings = {
+type Env = {
   SYNC_SERVER: DurableObjectNamespace<SyncServer>
+  Bucket: R2Bucket
 }
 
-export class SyncServer extends DurableObject {
-  constructor(ctx: DurableObjectState, env: Bindings) {
+export class SyncServer extends DurableObject<Env> {
+  constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env)
   }
   async fetch() {
@@ -18,14 +19,10 @@ export class SyncServer extends DurableObject {
 
     this.ctx.acceptWebSocket(server)
 
-    setTimeout(async () => {
-      const data = await this.ctx.storage.list({
-        prefix: "data/",
-      })
-      for (const [key, content] of Object.entries(data)) {
-        server.send(JSON.stringify({ key, content }))
-      }
-    }, 0)
+    const data = await this.ctx.storage.list()
+    for (const [key, content] of data.entries()) {
+      server.send(JSON.stringify({ key, content }))
+    }
 
     return new Response(null, {
       status: 101,
@@ -49,11 +46,17 @@ export class SyncServer extends DurableObject {
       return new Response("Error: Invalid key", { status: 400 })
 
     // store message
-    await Resource.Bucket.put(`${key}.json`, JSON.stringify(content))
-    await this.ctx.storage.put("data/" + key, content)
+    await this.env.Bucket.put(`share/${key}.json`, JSON.stringify(content), {
+      httpMetadata: {
+        contentType: "application/json",
+      },
+    })
+    await this.ctx.storage.put(key, content)
     const clients = this.ctx.getWebSockets()
     console.log("SyncServer publish", key, "to", clients.length, "subscribers")
-    clients.forEach((client) => client.send(JSON.stringify({ key, content })))
+    for (const client of clients) {
+      client.send(JSON.stringify({ key, content }))
+    }
   }
 
   public async share(sessionID: string) {
@@ -90,7 +93,7 @@ export class SyncServer extends DurableObject {
 }
 
 export default {
-  async fetch(request: Request, env: Bindings, ctx: ExecutionContext) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url)
     const splits = url.pathname.split("/")
     const method = splits[1]
@@ -155,6 +158,7 @@ export default {
         })
       }
       const id = url.searchParams.get("id")
+      console.log("share_poll", id)
       if (!id)
         return new Response("Error: Share ID is required", { status: 400 })
       const stub = env.SYNC_SERVER.get(env.SYNC_SERVER.idFromName(id))
