@@ -103,7 +103,6 @@ export namespace Session {
     const session = await get(id);
     if (session.share) return session.share;
     const share = await Share.create(id);
-    console.log("share", share);
     await update(id, (draft) => {
       draft.share = share;
     });

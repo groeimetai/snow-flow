@@ -41,10 +41,15 @@ cli
         ? await Session.get(options.session)
         : await Session.create();
       console.log("Session:", session.id);
-      console.log(`Share: ${Share.URL.replace("api.", "")}/s?id=${session.id}`);
 
       Bus.subscribe(Message.Event.Updated, async (message) => {
         console.log("Thinking...");
+      });
+
+      const unsub = Bus.subscribe(Session.Event.Updated, async (message) => {
+        if (message.properties.info.share?.url)
+          console.log("Share:", message.properties.info.share.url);
+        unsub();
       });
 
       const providers = await LLM.providers();
