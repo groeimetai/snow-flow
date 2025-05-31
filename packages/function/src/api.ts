@@ -1,6 +1,5 @@
 import { DurableObject } from "cloudflare:workers"
 import { randomUUID } from "node:crypto"
-import { Resource } from "sst"
 
 type Env = {
   SYNC_SERVER: DurableObjectNamespace<SyncServer>
