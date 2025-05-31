@@ -7,6 +7,17 @@ import { Log } from "../util/log"
 import path from "path"
 import { Global } from "../global"
 import { BunProc } from "../bun"
+import { BashTool } from "../tool/bash"
+import { EditTool } from "../tool/edit"
+import { FetchTool } from "../tool/fetch"
+import { GlobTool } from "../tool/glob"
+import { GrepTool } from "../tool/grep"
+import { ListTool } from "../tool/ls"
+import { LspDiagnosticTool } from "../tool/lsp-diagnostics"
+import { LspHoverTool } from "../tool/lsp-hover"
+import { PatchTool } from "../tool/patch"
+import { ViewTool } from "../tool/view"
+import type { Tool } from "../tool/tool"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -128,6 +139,33 @@ export namespace Provider {
       if (e instanceof NoSuchModelError) throw new ModelNotFoundError(modelID)
       throw e
     }
+  }
+
+  const TOOLS = [
+    BashTool,
+    EditTool,
+    FetchTool,
+    GlobTool,
+    GrepTool,
+    ListTool,
+    LspDiagnosticTool,
+    LspHoverTool,
+    PatchTool,
+    ViewTool,
+    EditTool,
+  ]
+  const TOOL_MAPPING: Record<string, Tool.Info[]> = {
+    anthropic: TOOLS,
+    openai: TOOLS,
+    google: TOOLS,
+  }
+  export async function tools(providerID: string) {
+    const cfg = await Config.get()
+    if (cfg.tool?.provider?.[providerID])
+      return cfg.tool.provider[providerID].map(
+        (id) => TOOLS.find((t) => t.id === id)!,
+      )
+    return TOOL_MAPPING[providerID] ?? TOOLS
   }
 
   class ModelNotFoundError extends Error {

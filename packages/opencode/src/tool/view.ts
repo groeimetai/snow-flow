@@ -40,8 +40,8 @@ TIPS:
 - For code exploration, first use Grep to find relevant files, then View to examine them
 - When viewing large files, use the offset parameter to read specific sections`
 
-export const view = Tool.define({
-  name: "opencode.view",
+export const ViewTool = Tool.define({
+  id: "opencode.view",
   description: DESCRIPTION,
   parameters: z.object({
     filePath: z.string().describe("The path to the file to read"),

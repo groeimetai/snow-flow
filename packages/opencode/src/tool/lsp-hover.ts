@@ -5,7 +5,7 @@ import { LSP } from "../lsp"
 import { App } from "../app/app"
 
 export const LspHoverTool = Tool.define({
-  name: "opencode.lsp_hover",
+  id: "opencode.lsp_hover",
   description: `
   Looks up hover information for a given position in a source file using the Language Server Protocol (LSP). 
   This includes type information, documentation, or symbol details at the specified line and character. 

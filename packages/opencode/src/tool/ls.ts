@@ -17,8 +17,8 @@ const IGNORE_PATTERNS = [
   ".vscode/",
 ]
 
-export const ls = Tool.define({
-  name: "opencode.ls",
+export const ListTool = Tool.define({
+  id: "opencode.list",
   description: "List directory contents",
   parameters: z.object({
     path: z.string().optional(),

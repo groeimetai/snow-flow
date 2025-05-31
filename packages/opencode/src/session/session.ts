@@ -8,10 +8,11 @@ import {
   generateText,
   stepCountIs,
   streamText,
+  tool,
+  type Tool as AITool,
   type LanguageModelUsage,
 } from "ai"
-import { z } from "zod"
-import * as tools from "../tool"
+import { z, ZodSchema } from "zod"
 import { Decimal } from "decimal.js"
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
@@ -290,6 +291,38 @@ export namespace Session {
       },
     }
     await updateMessage(next)
+    const tools: Record<string, AITool> = {}
+    for (const item of await Provider.tools(input.providerID)) {
+      tools[item.id.replaceAll(".", "_")] = tool({
+        id: item.id as any,
+        description: item.description,
+        parameters: item.parameters as ZodSchema,
+        async execute(args, opts) {
+          const start = Date.now()
+          try {
+            const result = await item.execute(args)
+            next.metadata!.tool![opts.toolCallId] = {
+              ...result.metadata,
+              time: {
+                start,
+                end: Date.now(),
+              },
+            }
+            return result.output
+          } catch (e: any) {
+            next.metadata!.tool![opts.toolCallId] = {
+              error: true,
+              message: e.toString(),
+              time: {
+                start,
+                end: Date.now(),
+              },
+            }
+            return e.toString()
+          }
+        },
+      })
+    }
     const result = streamText({
       onStepFinish: async (step) => {
         const assistant = next.metadata!.assistant!
@@ -358,12 +391,12 @@ export namespace Session {
               p.toolInvocation.toolCallId === value.toolCallId,
           )
           if (match && match.type === "tool-invocation") {
-            const { output, metadata } = value.result as any
-            next.metadata!.tool[value.toolCallId] = metadata
             match.toolInvocation = {
-              ...match.toolInvocation,
+              args: match.toolInvocation.args,
+              toolCallId: match.toolInvocation.toolCallId,
+              toolName: match.toolInvocation.toolName,
               state: "result",
-              result: output,
+              result: value.result as string,
             }
           }
           break

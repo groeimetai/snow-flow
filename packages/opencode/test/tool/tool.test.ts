@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import { App } from "../../src/app/app"
-import { glob } from "../../src/tool/glob"
+import { GlobTool } from "../../src/tool/glob"
 import { ls } from "../../src/tool/ls"
 
 describe("tool.glob", () => {
   test("truncate", async () => {
     await App.provide({ directory: process.cwd() }, async () => {
-      let result = await glob.execute(
+      let result = await GlobTool.execute(
         {
           pattern: "./node_modules/**/*",
         },
@@ -20,7 +20,7 @@ describe("tool.glob", () => {
   })
   test("basic", async () => {
     await App.provide({ directory: process.cwd() }, async () => {
-      let result = await glob.execute(
+      let result = await GlobTool.execute(
         {
           pattern: "*.json",
         },

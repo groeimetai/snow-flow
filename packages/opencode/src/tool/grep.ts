@@ -255,8 +255,8 @@ async function searchFiles(
   return { matches, truncated }
 }
 
-export const grep = Tool.define({
-  name: "opencode.grep",
+export const GrepTool = Tool.define({
+  id: "opencode.grep",
   description: DESCRIPTION,
   parameters: z.object({
     pattern: z

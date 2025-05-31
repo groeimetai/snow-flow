@@ -5,7 +5,7 @@ import { LSP } from "../lsp"
 import { App } from "../app/app"
 
 export const LspDiagnosticTool = Tool.define({
-  name: "opencode.lsp_diagnostic",
+  id: "opencode.lsp_diagnostics",
   description: `Get diagnostics for a file and/or project.
 
 WHEN TO USE THIS TOOL:

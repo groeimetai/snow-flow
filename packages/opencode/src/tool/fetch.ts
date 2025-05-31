@@ -36,8 +36,8 @@ TIPS:
 - Use html format when you need the raw HTML structure
 - Set appropriate timeouts for potentially slow websites`
 
-export const Fetch = Tool.define({
-  name: "opencode.fetch",
+export const FetchTool = Tool.define({
+  id: "opencode.fetch",
   description: DESCRIPTION,
   parameters: z.object({
     url: z.string().describe("The URL to fetch content from"),
@@ -53,7 +53,7 @@ export const Fetch = Tool.define({
       .describe("Optional timeout in seconds (max 120)")
       .optional(),
   }),
-  async execute(params, opts) {
+  async execute(param) {
     // Validate URL
     if (
       !params.url.startsWith("http://") &&
@@ -69,9 +69,6 @@ export const Fetch = Tool.define({
 
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
-    if (opts?.abortSignal) {
-      opts.abortSignal.addEventListener("abort", () => controller.abort())
-    }
 
     const response = await fetch(params.url, {
       signal: controller.signal,
@@ -104,22 +101,22 @@ export const Fetch = Tool.define({
       case "text":
         if (contentType.includes("text/html")) {
           const text = extractTextFromHTML(content)
-          return { output: text }
+          return { output: text, metadata: {} }
         }
-        return { output: content }
+        return { output: content, metadata: {} }
 
       case "markdown":
         if (contentType.includes("text/html")) {
           const markdown = convertHTMLToMarkdown(content)
-          return { output: markdown }
+          return { output: markdown, metadata: {} }
         }
         return { output: "```\n" + content + "\n```" }
 
       case "html":
-        return { output: content }
+        return { output: content, metadata: {} }
 
       default:
-        return { output: content }
+        return { output: content, metadata: {} }
     }
   },
 })

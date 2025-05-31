@@ -170,8 +170,8 @@ Important:
 - Return an empty response - the user will see the gh output directly
 - Never update git config`
 
-export const bash = Tool.define({
-  name: "opencode.bash",
+export const BashTool = Tool.define({
+  id: "opencode.bash",
   description: DESCRIPTION,
   parameters: z.object({
     command: z.string(),
@@ -193,6 +193,7 @@ export const bash = Tool.define({
       timeout: timeout,
     })
     return {
+      metadata: {},
       output: process.stdout.toString("utf-8"),
     }
   },

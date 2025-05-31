@@ -37,8 +37,8 @@ TIPS:
 - When doing iterative exploration that may require multiple rounds of searching, consider using the Agent tool instead
 - Always check if results are truncated and refine your search pattern if needed`
 
-export const glob = Tool.define({
-  name: "opencode.glob",
+export const GlobTool = Tool.define({
+  id: "opencode.glob",
   description: DESCRIPTION,
   parameters: z.object({
     pattern: z.string().describe("The glob pattern to match files against"),

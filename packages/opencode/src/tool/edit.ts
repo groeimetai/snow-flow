@@ -52,8 +52,8 @@ When making edits:
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.`
 
-export const edit = Tool.define({
-  name: "opencode.edit",
+export const EditTool = Tool.define({
+  id: "opencode.edit",
   description: DESCRIPTION,
   parameters: z.object({
     filePath: z.string().describe("The absolute path to the file to modify"),

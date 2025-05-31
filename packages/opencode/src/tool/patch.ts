@@ -265,8 +265,8 @@ async function applyCommit(
   }
 }
 
-export const patch = Tool.define({
-  name: "opencode.patch",
+export const PatchTool = Tool.define({
+  id: "opencode.patch",
   description: DESCRIPTION,
   parameters: PatchParams,
   execute: async (params) => {
