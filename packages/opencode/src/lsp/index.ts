@@ -1,64 +1,64 @@
-import { App } from "../app/app";
-import { Log } from "../util/log";
-import { LSPClient } from "./client";
-import path from "path";
+import { App } from "../app/app"
+import { Log } from "../util/log"
+import { LSPClient } from "./client"
+import path from "path"
 
 export namespace LSP {
-  const log = Log.create({ service: "lsp" });
+  const log = Log.create({ service: "lsp" })
 
   const state = App.state(
     "lsp",
     async () => {
-      log.info("initializing");
-      const clients = new Map<string, LSPClient.Info>();
+      log.info("initializing")
+      const clients = new Map<string, LSPClient.Info>()
 
       return {
         clients,
-      };
+      }
     },
     async (state) => {
       for (const client of state.clients.values()) {
-        await client.shutdown();
+        await client.shutdown()
       }
     },
-  );
+  )
 
   export async function file(input: string) {
-    const extension = path.parse(input).ext;
-    const s = await state();
-    const matches = AUTO.filter((x) => x.extensions.includes(extension));
+    const extension = path.parse(input).ext
+    const s = await state()
+    const matches = AUTO.filter((x) => x.extensions.includes(extension))
     for (const match of matches) {
-      const existing = s.clients.get(match.id);
-      if (existing) continue;
+      const existing = s.clients.get(match.id)
+      if (existing) continue
       const client = await LSPClient.create({
         cmd: match.command,
         serverID: match.id,
-      });
-      s.clients.set(match.id, client);
+      })
+      s.clients.set(match.id, client)
     }
     await run(async (client) => {
-      const wait = client.waitForDiagnostics({ path: input });
-      await client.notify.open({ path: input });
-      return wait;
-    });
+      const wait = client.waitForDiagnostics({ path: input })
+      await client.notify.open({ path: input })
+      return wait
+    })
   }
 
   export async function diagnostics() {
-    const results: Record<string, LSPClient.Diagnostic[]> = {};
+    const results: Record<string, LSPClient.Diagnostic[]> = {}
     for (const result of await run(async (client) => client.diagnostics)) {
       for (const [path, diagnostics] of result.entries()) {
-        const arr = results[path] || [];
-        arr.push(...diagnostics);
-        results[path] = arr;
+        const arr = results[path] || []
+        arr.push(...diagnostics)
+        results[path] = arr
       }
     }
-    return results;
+    return results
   }
 
   export async function hover(input: {
-    file: string;
-    line: number;
-    character: number;
+    file: string
+    line: number
+    character: number
   }) {
     return run((client) => {
       return client.connection.sendRequest("textDocument/hover", {
@@ -69,23 +69,23 @@ export namespace LSP {
           line: input.line,
           character: input.character,
         },
-      });
-    });
+      })
+    })
   }
 
   async function run<T>(
     input: (client: LSPClient.Info) => Promise<T>,
   ): Promise<T[]> {
-    const clients = await state().then((x) => [...x.clients.values()]);
-    const tasks = clients.map((x) => input(x));
-    return Promise.all(tasks);
+    const clients = await state().then((x) => [...x.clients.values()])
+    const tasks = clients.map((x) => input(x))
+    return Promise.all(tasks)
   }
 
   const AUTO: {
-    id: string;
-    command: string[];
-    extensions: string[];
-    install?: () => Promise<void>;
+    id: string
+    command: string[]
+    extensions: string[]
+    install?: () => Promise<void>
   }[] = [
     {
       id: "typescript",
@@ -110,7 +110,7 @@ export namespace LSP {
       extensions: [".go"],
     },
     */
-  ];
+  ]
 
   export namespace Diagnostic {
     export function pretty(diagnostic: LSPClient.Diagnostic) {
@@ -119,13 +119,13 @@ export namespace LSP {
         2: "WARN",
         3: "INFO",
         4: "HINT",
-      };
+      }
 
-      const severity = severityMap[diagnostic.severity || 1];
-      const line = diagnostic.range.start.line + 1;
-      const col = diagnostic.range.start.character + 1;
+      const severity = severityMap[diagnostic.severity || 1]
+      const line = diagnostic.range.start.line + 1
+      const col = diagnostic.range.start.character + 1
 
-      return `${severity} [${line}:${col}] ${diagnostic.message}`;
+      return `${severity} [${line}:${col}] ${diagnostic.message}`
     }
   }
 }

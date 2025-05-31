@@ -1,7 +1,7 @@
-import { z } from "zod";
-import { Tool } from "./tool";
-import { App } from "../app/app";
-import * as path from "path";
+import { z } from "zod"
+import { Tool } from "./tool"
+import { App } from "../app/app"
+import * as path from "path"
 
 const IGNORE_PATTERNS = [
   "node_modules/",
@@ -15,7 +15,7 @@ const IGNORE_PATTERNS = [
   "obj/",
   ".idea/",
   ".vscode/",
-];
+]
 
 export const ls = Tool.define({
   name: "opencode.ls",
@@ -25,72 +25,72 @@ export const ls = Tool.define({
     ignore: z.array(z.string()).optional(),
   }),
   async execute(params) {
-    const app = await App.use();
-    const searchPath = path.resolve(app.root, params.path || ".");
+    const app = await App.use()
+    const searchPath = path.resolve(app.root, params.path || ".")
 
-    const glob = new Bun.Glob("**/*");
-    const files = [];
+    const glob = new Bun.Glob("**/*")
+    const files = []
 
     for await (const file of glob.scan({ cwd: searchPath })) {
       if (file.startsWith(".") || IGNORE_PATTERNS.some((p) => file.includes(p)))
-        continue;
+        continue
       if (params.ignore?.some((pattern) => new Bun.Glob(pattern).match(file)))
-        continue;
-      files.push(file);
-      if (files.length >= 1000) break;
+        continue
+      files.push(file)
+      if (files.length >= 1000) break
     }
 
     // Build directory structure
-    const dirs = new Set<string>();
-    const filesByDir = new Map<string, string[]>();
+    const dirs = new Set<string>()
+    const filesByDir = new Map<string, string[]>()
 
     for (const file of files) {
-      const dir = path.dirname(file);
-      const parts = dir === "." ? [] : dir.split("/");
+      const dir = path.dirname(file)
+      const parts = dir === "." ? [] : dir.split("/")
 
       // Add all parent directories
       for (let i = 0; i <= parts.length; i++) {
-        const dirPath = i === 0 ? "." : parts.slice(0, i).join("/");
-        dirs.add(dirPath);
+        const dirPath = i === 0 ? "." : parts.slice(0, i).join("/")
+        dirs.add(dirPath)
       }
 
       // Add file to its directory
-      if (!filesByDir.has(dir)) filesByDir.set(dir, []);
-      filesByDir.get(dir)!.push(path.basename(file));
+      if (!filesByDir.has(dir)) filesByDir.set(dir, [])
+      filesByDir.get(dir)!.push(path.basename(file))
     }
 
     function renderDir(dirPath: string, depth: number): string {
-      const indent = "  ".repeat(depth);
-      let output = "";
+      const indent = "  ".repeat(depth)
+      let output = ""
 
       if (depth > 0) {
-        output += `${indent}${path.basename(dirPath)}/\n`;
+        output += `${indent}${path.basename(dirPath)}/\n`
       }
 
-      const childIndent = "  ".repeat(depth + 1);
+      const childIndent = "  ".repeat(depth + 1)
       const children = Array.from(dirs)
         .filter((d) => path.dirname(d) === dirPath && d !== dirPath)
-        .sort();
+        .sort()
 
       // Render subdirectories first
       for (const child of children) {
-        output += renderDir(child, depth + 1);
+        output += renderDir(child, depth + 1)
       }
 
       // Render files
-      const files = filesByDir.get(dirPath) || [];
+      const files = filesByDir.get(dirPath) || []
       for (const file of files.sort()) {
-        output += `${childIndent}${file}\n`;
+        output += `${childIndent}${file}\n`
       }
 
-      return output;
+      return output
     }
 
-    const output = `${searchPath}/\n` + renderDir(".", 0);
+    const output = `${searchPath}/\n` + renderDir(".", 0)
 
     return {
       metadata: { count: files.length, truncated: files.length >= 1000 },
       output,
-    };
+    }
   },
-});
+})

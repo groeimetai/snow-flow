@@ -1,8 +1,8 @@
-import { z } from "zod";
-import * as path from "path";
-import { Tool } from "./tool";
-import { FileTimes } from "./util/file-times";
-import { LSP } from "../lsp";
+import { z } from "zod"
+import * as path from "path"
+import { Tool } from "./tool"
+import { FileTimes } from "./util/file-times"
+import { LSP } from "../lsp"
 
 const DESCRIPTION = `Edits files by replacing text, creating new files, or deleting content. For moving or renaming files, use the Bash tool with the 'mv' command instead. For larger file edits, use the FileWrite tool to overwrite files.
 
@@ -50,7 +50,7 @@ When making edits:
    - Do not leave the code in a broken state
    - Always use relative file paths 
 
-Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.`;
+Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.`
 
 export const edit = Tool.define({
   name: "opencode.edit",
@@ -62,68 +62,68 @@ export const edit = Tool.define({
   }),
   async execute(params) {
     if (!params.filePath) {
-      throw new Error("filePath is required");
+      throw new Error("filePath is required")
     }
 
-    let filePath = params.filePath;
+    let filePath = params.filePath
     if (!path.isAbsolute(filePath)) {
-      filePath = path.join(process.cwd(), filePath);
+      filePath = path.join(process.cwd(), filePath)
     }
 
     await (async () => {
       if (params.oldString === "") {
-        await Bun.write(filePath, params.newString);
-        return;
+        await Bun.write(filePath, params.newString)
+        return
       }
 
-      const read = FileTimes.get(filePath);
+      const read = FileTimes.get(filePath)
       if (!read)
         throw new Error(
           `You must read the file ${filePath} before editing it. Use the View tool first`,
-        );
-      const file = Bun.file(filePath);
-      if (!(await file.exists())) throw new Error(`File ${filePath} not found`);
-      const stats = await file.stat();
+        )
+      const file = Bun.file(filePath)
+      if (!(await file.exists())) throw new Error(`File ${filePath} not found`)
+      const stats = await file.stat()
       if (stats.isDirectory())
-        throw new Error(`Path is a directory, not a file: ${filePath}`);
+        throw new Error(`Path is a directory, not a file: ${filePath}`)
       if (stats.mtime.getTime() > read.getTime())
         throw new Error(
           `File ${filePath} has been modified since it was last read.\nLast modification: ${read.toISOString()}\nLast read: ${stats.mtime.toISOString()}\n\nPlease read the file again before modifying it.`,
-        );
+        )
 
-      const content = await file.text();
-      const index = content.indexOf(params.oldString);
+      const content = await file.text()
+      const index = content.indexOf(params.oldString)
       if (index === -1)
         throw new Error(
           `oldString not found in file. Make sure it matches exactly, including whitespace and line breaks`,
-        );
-      const lastIndex = content.lastIndexOf(params.oldString);
+        )
+      const lastIndex = content.lastIndexOf(params.oldString)
       if (index !== lastIndex)
         throw new Error(
           `oldString appears multiple times in the file. Please provide more context to ensure a unique match`,
-        );
+        )
 
       const newContent =
         content.substring(0, index) +
         params.newString +
-        content.substring(index + params.oldString.length);
+        content.substring(index + params.oldString.length)
 
-      await file.write(newContent);
-    })();
+      await file.write(newContent)
+    })()
 
-    FileTimes.write(filePath);
-    FileTimes.read(filePath);
+    FileTimes.write(filePath)
+    FileTimes.read(filePath)
 
-    let output = "";
-    await LSP.file(filePath);
-    const diagnostics = await LSP.diagnostics();
+    let output = ""
+    await LSP.file(filePath)
+    const diagnostics = await LSP.diagnostics()
     for (const [file, issues] of Object.entries(diagnostics)) {
-      if (issues.length === 0) continue;
+      if (issues.length === 0) continue
       if (file === filePath) {
-        output += `\nThis file has errors, please fix\n<file_diagnostics>\n${issues.map(LSP.Diagnostic.pretty).join("\n")}\n</file_diagnostics>\n`;
-        continue;
+        output += `\nThis file has errors, please fix\n<file_diagnostics>\n${issues.map(LSP.Diagnostic.pretty).join("\n")}\n</file_diagnostics>\n`
+        continue
       }
-      output += `\n<project_diagnostics>\n${file}\n${issues.map(LSP.Diagnostic.pretty).join("\n")}\n</project_diagnostics>\n`;
+      output += `\n<project_diagnostics>\n${file}\n${issues.map(LSP.Diagnostic.pretty).join("\n")}\n</project_diagnostics>\n`
     }
 
     return {
@@ -131,6 +131,6 @@ export const edit = Tool.define({
         diagnostics,
       },
       output,
-    };
+    }
   },
-});
+})

@@ -1,13 +1,13 @@
-import { z } from "zod";
-import * as fs from "fs";
-import * as path from "path";
-import { Tool } from "./tool";
-import { LSP } from "../lsp";
-import { FileTimes } from "./util/file-times";
+import { z } from "zod"
+import * as fs from "fs"
+import * as path from "path"
+import { Tool } from "./tool"
+import { LSP } from "../lsp"
+import { FileTimes } from "./util/file-times"
 
-const MAX_READ_SIZE = 250 * 1024;
-const DEFAULT_READ_LIMIT = 2000;
-const MAX_LINE_LENGTH = 2000;
+const MAX_READ_SIZE = 250 * 1024
+const DEFAULT_READ_LIMIT = 2000
+const MAX_LINE_LENGTH = 2000
 
 const DESCRIPTION = `File viewing tool that reads and displays the contents of files with line numbers, allowing you to examine code, logs, or text data.
 
@@ -38,7 +38,7 @@ LIMITATIONS:
 TIPS:
 - Use with Glob tool to first find files you want to view
 - For code exploration, first use Grep to find relevant files, then View to examine them
-- When viewing large files, use the offset parameter to read specific sections`;
+- When viewing large files, use the offset parameter to read specific sections`
 
 export const view = Tool.define({
   name: "opencode.view",
@@ -55,17 +55,17 @@ export const view = Tool.define({
       .optional(),
   }),
   async execute(params) {
-    let filePath = params.filePath;
+    let filePath = params.filePath
     if (!path.isAbsolute(filePath)) {
-      filePath = path.join(process.cwd(), filePath);
+      filePath = path.join(process.cwd(), filePath)
     }
 
-    const file = Bun.file(filePath);
+    const file = Bun.file(filePath)
     if (!(await file.exists())) {
-      const dir = path.dirname(filePath);
-      const base = path.basename(filePath);
+      const dir = path.dirname(filePath)
+      const base = path.basename(filePath)
 
-      const dirEntries = fs.readdirSync(dir);
+      const dirEntries = fs.readdirSync(dir)
       const suggestions = dirEntries
         .filter(
           (entry) =>
@@ -73,80 +73,80 @@ export const view = Tool.define({
             base.toLowerCase().includes(entry.toLowerCase()),
         )
         .map((entry) => path.join(dir, entry))
-        .slice(0, 3);
+        .slice(0, 3)
 
       if (suggestions.length > 0) {
         throw new Error(
           `File not found: ${filePath}\n\nDid you mean one of these?\n${suggestions.join("\n")}`,
-        );
+        )
       }
 
-      throw new Error(`File not found: ${filePath}`);
+      throw new Error(`File not found: ${filePath}`)
     }
-    const stats = await file.stat();
+    const stats = await file.stat()
 
     if (stats.size > MAX_READ_SIZE)
       throw new Error(
         `File is too large (${stats.size} bytes). Maximum size is ${MAX_READ_SIZE} bytes`,
-      );
-    const limit = params.limit ?? DEFAULT_READ_LIMIT;
-    const offset = params.offset || 0;
-    const isImage = isImageFile(filePath);
+      )
+    const limit = params.limit ?? DEFAULT_READ_LIMIT
+    const offset = params.offset || 0
+    const isImage = isImageFile(filePath)
     if (isImage)
       throw new Error(
         `This is an image file of type: ${isImage}\nUse a different tool to process images`,
-      );
-    const lines = await file.text().then((text) => text.split("\n"));
+      )
+    const lines = await file.text().then((text) => text.split("\n"))
     const raw = lines.slice(offset, offset + limit).map((line) => {
       return line.length > MAX_LINE_LENGTH
         ? line.substring(0, MAX_LINE_LENGTH) + "..."
-        : line;
-    });
+        : line
+    })
     const content = raw.map((line, index) => {
-      return `${(index + offset + 1).toString().padStart(5, "0")}| ${line}`;
-    });
-    const preview = raw.slice(0, 20).join("\n");
+      return `${(index + offset + 1).toString().padStart(5, "0")}| ${line}`
+    })
+    const preview = raw.slice(0, 20).join("\n")
 
-    let output = "<file>\n";
-    output += content.join("\n");
+    let output = "<file>\n"
+    output += content.join("\n")
 
     if (lines.length > offset + content.length) {
       output += `\n\n(File has more lines. Use 'offset' parameter to read beyond line ${
         offset + content.length
-      })`;
+      })`
     }
-    output += "\n</file>";
+    output += "\n</file>"
 
     // just warms the lsp client
-    LSP.file(filePath);
-    FileTimes.read(filePath);
+    LSP.file(filePath)
+    FileTimes.read(filePath)
 
     return {
       output,
       metadata: {
         preview,
       },
-    };
+    }
   },
-});
+})
 
 function isImageFile(filePath: string): string | false {
-  const ext = path.extname(filePath).toLowerCase();
+  const ext = path.extname(filePath).toLowerCase()
   switch (ext) {
     case ".jpg":
     case ".jpeg":
-      return "JPEG";
+      return "JPEG"
     case ".png":
-      return "PNG";
+      return "PNG"
     case ".gif":
-      return "GIF";
+      return "GIF"
     case ".bmp":
-      return "BMP";
+      return "BMP"
     case ".svg":
-      return "SVG";
+      return "SVG"
     case ".webp":
-      return "WebP";
+      return "WebP"
     default:
-      return false;
+      return false
   }
 }

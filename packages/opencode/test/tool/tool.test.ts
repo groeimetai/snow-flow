@@ -1,7 +1,7 @@
-import { describe, expect, test } from "bun:test";
-import { App } from "../../src/app/app";
-import { glob } from "../../src/tool/glob";
-import { ls } from "../../src/tool/ls";
+import { describe, expect, test } from "bun:test"
+import { App } from "../../src/app/app"
+import { glob } from "../../src/tool/glob"
+import { ls } from "../../src/tool/ls"
 
 describe("tool.glob", () => {
   test("truncate", async () => {
@@ -14,10 +14,10 @@ describe("tool.glob", () => {
           toolCallId: "test",
           messages: [],
         },
-      );
-      expect(result.metadata.truncated).toBe(true);
-    });
-  });
+      )
+      expect(result.metadata.truncated).toBe(true)
+    })
+  })
   test("basic", async () => {
     await App.provide({ directory: process.cwd() }, async () => {
       let result = await glob.execute(
@@ -28,14 +28,14 @@ describe("tool.glob", () => {
           toolCallId: "test",
           messages: [],
         },
-      );
+      )
       expect(result.metadata).toMatchObject({
         truncated: false,
         count: 2,
-      });
-    });
-  });
-});
+      })
+    })
+  })
+})
 
 describe("tool.ls", () => {
   test("basic", async () => {
@@ -48,8 +48,8 @@ describe("tool.ls", () => {
           toolCallId: "test",
           messages: [],
         },
-      );
-    });
-    expect(result.output).toMatchSnapshot();
-  });
-});
+      )
+    })
+    expect(result.output).toMatchSnapshot()
+  })
+})

@@ -6,7 +6,7 @@ import {
   createResource,
 } from "solid-js"
 import { codeToHtml } from "shiki"
-import { transformerNotationDiff } from '@shikijs/transformers'
+import { transformerNotationDiff } from "@shikijs/transformers"
 
 interface CodeBlockProps extends JSX.HTMLAttributes<HTMLDivElement> {
   code: string
@@ -20,12 +20,10 @@ function CodeBlock(props: CodeBlockProps) {
     return (await codeToHtml(local.code, {
       lang: local.lang || "text",
       themes: {
-        light: 'github-light',
-        dark: 'github-dark',
+        light: "github-light",
+        dark: "github-dark",
       },
-      transformers: [
-        transformerNotationDiff(),
-      ],
+      transformers: [transformerNotationDiff()],
     })) as string
   })
 
@@ -39,9 +37,7 @@ function CodeBlock(props: CodeBlockProps) {
     }
   })
 
-  return (
-    <div ref={containerRef} {...rest}></div>
-  )
+  return <div ref={containerRef} {...rest}></div>
 }
 
 export default CodeBlock

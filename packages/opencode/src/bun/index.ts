@@ -1,7 +1,7 @@
-import path from "path";
-import { Log } from "../util/log";
+import path from "path"
+import { Log } from "../util/log"
 export namespace BunProc {
-  const log = Log.create({ service: "bun" });
+  const log = Log.create({ service: "bun" })
 
   export function run(
     cmd: string[],
@@ -10,11 +10,11 @@ export namespace BunProc {
     const root =
       process.argv0 !== "bun"
         ? path.resolve(process.cwd(), process.argv0)
-        : process.argv0;
+        : process.argv0
     log.info("running", {
       cmd: [root, ...cmd],
       options,
-    });
+    })
     const result = Bun.spawnSync([root, ...cmd], {
       ...options,
       argv0: "bun",
@@ -22,7 +22,11 @@ export namespace BunProc {
         ...process.env,
         ...options?.env,
       },
-    });
-    return result;
+    })
+    if (result.exitCode !== 0) {
+      console.error(result.stderr?.toString("utf8") ?? "")
+      throw new Error(`Command failed with exit code ${result.exitCode}`)
+    }
+    return result
   }
 }

@@ -1,4 +1,4 @@
-import z from "zod";
+import z from "zod"
 
 export namespace Provider {
   export const Model = z
@@ -18,8 +18,8 @@ export namespace Provider {
     })
     .openapi({
       ref: "Provider.Model",
-    });
-  export type Model = z.output<typeof Model>;
+    })
+  export type Model = z.output<typeof Model>
 
   export const Info = z
     .object({
@@ -30,6 +30,6 @@ export namespace Provider {
     })
     .openapi({
       ref: "Provider.Info",
-    });
-  export type Info = z.output<typeof Info>;
+    })
+  export type Info = z.output<typeof Info>
 }

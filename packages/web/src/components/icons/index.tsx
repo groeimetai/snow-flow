@@ -21,7 +21,7 @@ export function IconAcademicCap(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconAdjustmentsHorizontal(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -42,7 +42,7 @@ export function IconAdjustmentsHorizontal(
   )
 }
 export function IconAdjustmentsVertical(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -63,7 +63,7 @@ export function IconAdjustmentsVertical(
   )
 }
 export function IconArchiveBoxArrowDown(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -84,7 +84,7 @@ export function IconArchiveBoxArrowDown(
   )
 }
 export function IconArchiveBoxXMark(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -124,7 +124,7 @@ export function IconArchiveBox(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconArrowDownCircle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -164,7 +164,7 @@ export function IconArrowDownLeft(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconArrowDownOnSquareStack(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -185,7 +185,7 @@ export function IconArrowDownOnSquareStack(
   )
 }
 export function IconArrowDownOnSquare(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -263,7 +263,7 @@ export function IconArrowDown(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconArrowLeftCircle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -284,7 +284,7 @@ export function IconArrowLeftCircle(
   )
 }
 export function IconArrowLeftOnRectangle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -400,7 +400,7 @@ export function IconArrowLongUp(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconArrowPathRoundedSquare(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -440,7 +440,7 @@ export function IconArrowPath(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconArrowRightCircle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -461,7 +461,7 @@ export function IconArrowRightCircle(
   )
 }
 export function IconArrowRightOnRectangle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -539,7 +539,7 @@ export function IconArrowSmallLeft(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconArrowSmallRight(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -579,7 +579,7 @@ export function IconArrowSmallUp(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconArrowTopRightOnSquare(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -600,7 +600,7 @@ export function IconArrowTopRightOnSquare(
   )
 }
 export function IconArrowTrendingDown(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -621,7 +621,7 @@ export function IconArrowTrendingDown(
   )
 }
 export function IconArrowTrendingUp(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -680,7 +680,7 @@ export function IconArrowUpLeft(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconArrowUpOnSquareStack(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -701,7 +701,7 @@ export function IconArrowUpOnSquareStack(
   )
 }
 export function IconArrowUpOnSquare(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -817,7 +817,7 @@ export function IconArrowUturnLeft(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconArrowUturnRight(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -857,7 +857,7 @@ export function IconArrowUturnUp(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconArrowsPointingIn(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -878,7 +878,7 @@ export function IconArrowsPointingIn(
   )
 }
 export function IconArrowsPointingOut(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -899,7 +899,7 @@ export function IconArrowsPointingOut(
   )
 }
 export function IconArrowsRightLeft(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1040,7 +1040,7 @@ export function IconBars2(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconBars3BottomLeft(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1061,7 +1061,7 @@ export function IconBars3BottomLeft(
   )
 }
 export function IconBars3BottomRight(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1082,7 +1082,7 @@ export function IconBars3BottomRight(
   )
 }
 export function IconBars3CenterLeft(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1507,7 +1507,7 @@ export function IconBugAnt(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconBuildingLibrary(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1528,7 +1528,7 @@ export function IconBuildingLibrary(
   )
 }
 export function IconBuildingOffice2(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1568,7 +1568,7 @@ export function IconBuildingOffice(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconBuildingStorefront(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1776,7 +1776,7 @@ export function IconChartPie(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconChatBubbleBottomCenterText(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1797,7 +1797,7 @@ export function IconChatBubbleBottomCenterText(
   )
 }
 export function IconChatBubbleBottomCenter(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1818,7 +1818,7 @@ export function IconChatBubbleBottomCenter(
   )
 }
 export function IconChatBubbleLeftEllipsis(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1839,7 +1839,7 @@ export function IconChatBubbleLeftEllipsis(
   )
 }
 export function IconChatBubbleLeftRight(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1879,7 +1879,7 @@ export function IconChatBubbleLeft(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconChatBubbleOvalLeftEllipsis(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1900,7 +1900,7 @@ export function IconChatBubbleOvalLeftEllipsis(
   )
 }
 export function IconChatBubbleOvalLeft(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1978,7 +1978,7 @@ export function IconCheck(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconChevronDoubleDown(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -1999,7 +1999,7 @@ export function IconChevronDoubleDown(
   )
 }
 export function IconChevronDoubleLeft(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2020,7 +2020,7 @@ export function IconChevronDoubleLeft(
   )
 }
 export function IconChevronDoubleRight(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2041,7 +2041,7 @@ export function IconChevronDoubleRight(
   )
 }
 export function IconChevronDoubleUp(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2176,7 +2176,7 @@ export function IconCircleStack(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconClipboardDocumentCheck(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2197,7 +2197,7 @@ export function IconClipboardDocumentCheck(
   )
 }
 export function IconClipboardDocumentList(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2218,7 +2218,7 @@ export function IconClipboardDocumentList(
   )
 }
 export function IconClipboardDocument(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2334,7 +2334,7 @@ export function IconCloud(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconCodeBracketSquare(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2464,7 +2464,7 @@ export function IconCommandLine(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconComputerDesktop(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2523,7 +2523,7 @@ export function IconCreditCard(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconCubeTransparent(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2563,7 +2563,7 @@ export function IconCube(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconCurrencyBangladeshi(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2679,7 +2679,7 @@ export function IconCurrencyYen(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconCursorArrowRays(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2700,7 +2700,7 @@ export function IconCursorArrowRays(
   )
 }
 export function IconCursorArrowRipple(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2721,7 +2721,7 @@ export function IconCursorArrowRipple(
   )
 }
 export function IconDevicePhoneMobile(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2761,7 +2761,7 @@ export function IconDeviceTablet(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconDocumentArrowDown(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2782,7 +2782,7 @@ export function IconDocumentArrowDown(
   )
 }
 export function IconDocumentArrowUp(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2803,7 +2803,7 @@ export function IconDocumentArrowUp(
   )
 }
 export function IconDocumentChartBar(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2843,7 +2843,7 @@ export function IconDocumentCheck(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconDocumentDuplicate(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2864,7 +2864,7 @@ export function IconDocumentDuplicate(
   )
 }
 export function IconDocumentMagnifyingGlass(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2961,7 +2961,7 @@ export function IconDocument(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconEllipsisHorizontalCircle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -2982,7 +2982,7 @@ export function IconEllipsisHorizontalCircle(
   )
 }
 export function IconEllipsisHorizontal(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -3017,7 +3017,7 @@ export function IconEllipsisHorizontal(
   )
 }
 export function IconEllipsisVertical(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -3103,7 +3103,7 @@ export function IconEnvelopeSolid(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconExclamationCircle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -3124,7 +3124,7 @@ export function IconExclamationCircle(
   )
 }
 export function IconExclamationTriangle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -3330,7 +3330,7 @@ export function IconFlag(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconFolderArrowDown(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -3567,7 +3567,7 @@ export function IconGlobeAmericas(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconGlobeAsiaAustralia(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -3588,7 +3588,7 @@ export function IconGlobeAsiaAustralia(
   )
 }
 export function IconGlobeEuropeAfrica(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -3818,7 +3818,7 @@ export function IconInbox(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconInformationCircle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -3991,7 +3991,7 @@ export function IconLockOpen(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconMagnifyingGlassCircle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -4012,7 +4012,7 @@ export function IconMagnifyingGlassCircle(
   )
 }
 export function IconMagnifyingGlassMinus(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -4033,7 +4033,7 @@ export function IconMagnifyingGlassMinus(
   )
 }
 export function IconMagnifyingGlassPlus(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -4054,7 +4054,7 @@ export function IconMagnifyingGlassPlus(
   )
 }
 export function IconMagnifyingGlass(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -4424,7 +4424,7 @@ export function IconPencil(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconPhoneArrowDownLeft(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -4445,7 +4445,7 @@ export function IconPhoneArrowDownLeft(
   )
 }
 export function IconPhoneArrowUpRight(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -4663,7 +4663,7 @@ export function IconPower(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconPresentationChartBar(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -4684,7 +4684,7 @@ export function IconPresentationChartBar(
   )
 }
 export function IconPresentationChartLine(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -4832,7 +4832,7 @@ export function IconQrCode(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconQuestionMarkCircle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -5133,7 +5133,7 @@ export function IconShieldCheck(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconShieldExclamation(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -5780,7 +5780,7 @@ export function IconVariable(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconVideoCameraSlash(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -5838,7 +5838,7 @@ export function IconViewColumns(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconViewfinderCircle(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -5916,7 +5916,7 @@ export function IconWindow(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 export function IconWrenchScrewdriver(
-  props: JSX.SvgSVGAttributes<SVGSVGElement>
+  props: JSX.SvgSVGAttributes<SVGSVGElement>,
 ) {
   return (
     <svg

@@ -1,23 +1,23 @@
-import { Log } from "../util/log";
-import { Bus } from "../bus";
-import { describeRoute, generateSpecs, openAPISpecs } from "hono-openapi";
-import { Hono } from "hono";
-import { streamSSE } from "hono/streaming";
-import { Session } from "../session/session";
-import { resolver, validator as zValidator } from "hono-openapi/zod";
-import { z } from "zod";
-import { LLM } from "../llm/llm";
-import { Message } from "../session/message";
-import { Provider } from "../provider/provider";
+import { Log } from "../util/log"
+import { Bus } from "../bus"
+import { describeRoute, generateSpecs, openAPISpecs } from "hono-openapi"
+import { Hono } from "hono"
+import { streamSSE } from "hono/streaming"
+import { Session } from "../session/session"
+import { resolver, validator as zValidator } from "hono-openapi/zod"
+import { z } from "zod"
+import { LLM } from "../llm/llm"
+import { Message } from "../session/message"
+import { Provider } from "../provider/provider"
 
 export namespace Server {
-  const log = Log.create({ service: "server" });
-  const PORT = 16713;
+  const log = Log.create({ service: "server" })
+  const PORT = 16713
 
-  export type App = ReturnType<typeof app>;
+  export type App = ReturnType<typeof app>
 
   function app() {
-    const app = new Hono();
+    const app = new Hono()
 
     const result = app
       .get(
@@ -53,24 +53,24 @@ export namespace Server {
           },
         }),
         async (c) => {
-          log.info("event connected");
+          log.info("event connected")
           return streamSSE(c, async (stream) => {
             stream.writeSSE({
               data: JSON.stringify({}),
-            });
+            })
             const unsub = Bus.subscribeAll(async (event) => {
               await stream.writeSSE({
                 data: JSON.stringify(event),
-              });
-            });
+              })
+            })
             await new Promise<void>((resolve) => {
               stream.onAbort(() => {
-                unsub();
-                resolve();
-                log.info("event disconnected");
-              });
-            });
-          });
+                unsub()
+                resolve()
+                log.info("event disconnected")
+              })
+            })
+          })
         },
       )
       .post(
@@ -89,8 +89,8 @@ export namespace Server {
           },
         }),
         async (c) => {
-          const session = await Session.create();
-          return c.json(session);
+          const session = await Session.create()
+          return c.json(session)
         },
       )
       .post(
@@ -115,10 +115,10 @@ export namespace Server {
           }),
         ),
         async (c) => {
-          const body = c.req.valid("json");
-          await Session.share(body.sessionID);
-          const session = await Session.get(body.sessionID);
-          return c.json(session);
+          const body = c.req.valid("json")
+          await Session.share(body.sessionID)
+          const session = await Session.get(body.sessionID)
+          return c.json(session)
         },
       )
       .post(
@@ -143,10 +143,8 @@ export namespace Server {
           }),
         ),
         async (c) => {
-          const messages = await Session.messages(
-            c.req.valid("json").sessionID,
-          );
-          return c.json(messages);
+          const messages = await Session.messages(c.req.valid("json").sessionID)
+          return c.json(messages)
         },
       )
       .post(
@@ -165,8 +163,8 @@ export namespace Server {
           },
         }),
         async (c) => {
-          const sessions = await Array.fromAsync(Session.list());
-          return c.json(sessions);
+          const sessions = await Array.fromAsync(Session.list())
+          return c.json(sessions)
         },
       )
       .post(
@@ -191,8 +189,8 @@ export namespace Server {
           }),
         ),
         async (c) => {
-          const body = c.req.valid("json");
-          return c.json(Session.abort(body.sessionID));
+          const body = c.req.valid("json")
+          return c.json(Session.abort(body.sessionID))
         },
       )
       .post(
@@ -219,9 +217,9 @@ export namespace Server {
           }),
         ),
         async (c) => {
-          const body = c.req.valid("json");
-          await Session.summarize(body);
-          return c.json(true);
+          const body = c.req.valid("json")
+          await Session.summarize(body)
+          return c.json(true)
         },
       )
       .post(
@@ -249,9 +247,9 @@ export namespace Server {
           }),
         ),
         async (c) => {
-          const body = c.req.valid("json");
-          const msg = await Session.chat(body);
-          return c.json(msg);
+          const body = c.req.valid("json")
+          const msg = await Session.chat(body)
+          return c.json(msg)
         },
       )
       .post(
@@ -270,20 +268,20 @@ export namespace Server {
           },
         }),
         async (c) => {
-          const providers = await LLM.providers();
-          const result = [] as (Provider.Info & { key: string })[];
+          const providers = await LLM.providers()
+          const result = [] as (Provider.Info & { key: string })[]
           for (const [key, provider] of Object.entries(providers)) {
-            result.push({ ...provider.info, key });
+            result.push({ ...provider.info, key })
           }
-          return c.json(result);
+          return c.json(result)
         },
-      );
+      )
 
-    return result;
+    return result
   }
 
   export async function openapi() {
-    const a = app();
+    const a = app()
     const result = await generateSpecs(a, {
       documentation: {
         info: {
@@ -293,8 +291,8 @@ export namespace Server {
         },
         openapi: "3.0.0",
       },
-    });
-    return result;
+    })
+    return result
   }
 
   export function listen() {
@@ -303,7 +301,7 @@ export namespace Server {
       hostname: "0.0.0.0",
       idleTimeout: 0,
       fetch: app().fetch,
-    });
-    return server;
+    })
+    return server
   }
 }

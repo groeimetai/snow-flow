@@ -1,9 +1,9 @@
-import { z } from "zod";
-import { Tool } from "./tool";
-import { App } from "../app/app";
-import { spawn } from "child_process";
-import { promises as fs } from "fs";
-import path from "path";
+import { z } from "zod"
+import { Tool } from "./tool"
+import { App } from "../app/app"
+import { spawn } from "child_process"
+import { promises as fs } from "fs"
+import path from "path"
 
 const DESCRIPTION = `Fast content search tool that finds files containing specific text or patterns, returning matching file paths sorted by modification time (newest first).
 
@@ -40,13 +40,13 @@ TIPS:
 - For faster, more targeted searches, first use Glob to find relevant files, then use Grep
 - When doing iterative exploration that may require multiple rounds of searching, consider using the Agent tool instead
 - Always check if results are truncated and refine your search pattern if needed
-- Use literal_text=true when searching for exact text containing special characters like dots, parentheses, etc.`;
+- Use literal_text=true when searching for exact text containing special characters like dots, parentheses, etc.`
 
 interface GrepMatch {
-  path: string;
-  modTime: number;
-  lineNum: number;
-  lineText: string;
+  path: string
+  modTime: number
+  lineNum: number
+  lineText: string
 }
 
 function escapeRegexPattern(pattern: string): string {
@@ -65,27 +65,27 @@ function escapeRegexPattern(pattern: string): string {
     "^",
     "$",
     "|",
-  ];
-  let escaped = pattern;
+  ]
+  let escaped = pattern
 
   for (const char of specialChars) {
-    escaped = escaped.replaceAll(char, "\\" + char);
+    escaped = escaped.replaceAll(char, "\\" + char)
   }
 
-  return escaped;
+  return escaped
 }
 
 function globToRegex(glob: string): string {
-  let regexPattern = glob.replaceAll(".", "\\.");
-  regexPattern = regexPattern.replaceAll("*", ".*");
-  regexPattern = regexPattern.replaceAll("?", ".");
+  let regexPattern = glob.replaceAll(".", "\\.")
+  regexPattern = regexPattern.replaceAll("*", ".*")
+  regexPattern = regexPattern.replaceAll("?", ".")
 
   // Handle {a,b,c} patterns
   regexPattern = regexPattern.replace(/\{([^}]+)\}/g, (_, inner) => {
-    return "(" + inner.replace(/,/g, "|") + ")";
-  });
+    return "(" + inner.replace(/,/g, "|") + ")"
+  })
 
-  return regexPattern;
+  return regexPattern
 }
 
 async function searchWithRipgrep(
@@ -94,71 +94,71 @@ async function searchWithRipgrep(
   include?: string,
 ): Promise<GrepMatch[]> {
   return new Promise((resolve, reject) => {
-    const args = ["-n", pattern];
+    const args = ["-n", pattern]
     if (include) {
-      args.push("--glob", include);
+      args.push("--glob", include)
     }
-    args.push(searchPath);
+    args.push(searchPath)
 
-    const rg = spawn("rg", args);
-    let output = "";
-    let errorOutput = "";
+    const rg = spawn("rg", args)
+    let output = ""
+    let errorOutput = ""
 
     rg.stdout.on("data", (data) => {
-      output += data.toString();
-    });
+      output += data.toString()
+    })
 
     rg.stderr.on("data", (data) => {
-      errorOutput += data.toString();
-    });
+      errorOutput += data.toString()
+    })
 
     rg.on("close", async (code) => {
       if (code === 1) {
         // No matches found
-        resolve([]);
-        return;
+        resolve([])
+        return
       }
 
       if (code !== 0) {
-        reject(new Error(`ripgrep failed: ${errorOutput}`));
-        return;
+        reject(new Error(`ripgrep failed: ${errorOutput}`))
+        return
       }
 
-      const lines = output.trim().split("\n");
-      const matches: GrepMatch[] = [];
+      const lines = output.trim().split("\n")
+      const matches: GrepMatch[] = []
 
       for (const line of lines) {
-        if (!line) continue;
+        if (!line) continue
 
         // Parse ripgrep output format: file:line:content
-        const parts = line.split(":", 3);
-        if (parts.length < 3) continue;
+        const parts = line.split(":", 3)
+        if (parts.length < 3) continue
 
-        const filePath = parts[0];
-        const lineNum = parseInt(parts[1], 10);
-        const lineText = parts[2];
+        const filePath = parts[0]
+        const lineNum = parseInt(parts[1], 10)
+        const lineText = parts[2]
 
         try {
-          const stats = await fs.stat(filePath);
+          const stats = await fs.stat(filePath)
           matches.push({
             path: filePath,
             modTime: stats.mtime.getTime(),
             lineNum,
             lineText,
-          });
+          })
         } catch {
           // Skip files we can't access
-          continue;
+          continue
         }
       }
 
-      resolve(matches);
-    });
+      resolve(matches)
+    })
 
     rg.on("error", (err) => {
-      reject(err);
-    });
-  });
+      reject(err)
+    })
+  })
 }
 
 async function searchFilesWithRegex(
@@ -166,68 +166,68 @@ async function searchFilesWithRegex(
   rootPath: string,
   include?: string,
 ): Promise<GrepMatch[]> {
-  const matches: GrepMatch[] = [];
-  const regex = new RegExp(pattern);
+  const matches: GrepMatch[] = []
+  const regex = new RegExp(pattern)
 
-  let includePattern: RegExp | undefined;
+  let includePattern: RegExp | undefined
   if (include) {
-    const regexPattern = globToRegex(include);
-    includePattern = new RegExp(regexPattern);
+    const regexPattern = globToRegex(include)
+    includePattern = new RegExp(regexPattern)
   }
 
   async function walkDir(dir: string) {
-    if (matches.length >= 200) return;
+    if (matches.length >= 200) return
 
     try {
-      const entries = await fs.readdir(dir, { withFileTypes: true });
+      const entries = await fs.readdir(dir, { withFileTypes: true })
 
       for (const entry of entries) {
-        if (matches.length >= 200) break;
+        if (matches.length >= 200) break
 
-        const fullPath = path.join(dir, entry.name);
+        const fullPath = path.join(dir, entry.name)
 
         if (entry.isDirectory()) {
           // Skip hidden directories
-          if (entry.name.startsWith(".")) continue;
-          await walkDir(fullPath);
+          if (entry.name.startsWith(".")) continue
+          await walkDir(fullPath)
         } else if (entry.isFile()) {
           // Skip hidden files
-          if (entry.name.startsWith(".")) continue;
+          if (entry.name.startsWith(".")) continue
 
           if (includePattern && !includePattern.test(fullPath)) {
-            continue;
+            continue
           }
 
           try {
-            const content = await fs.readFile(fullPath, "utf-8");
-            const lines = content.split("\n");
+            const content = await fs.readFile(fullPath, "utf-8")
+            const lines = content.split("\n")
 
             for (let i = 0; i < lines.length; i++) {
               if (regex.test(lines[i])) {
-                const stats = await fs.stat(fullPath);
+                const stats = await fs.stat(fullPath)
                 matches.push({
                   path: fullPath,
                   modTime: stats.mtime.getTime(),
                   lineNum: i + 1,
                   lineText: lines[i],
-                });
-                break; // Only first match per file
+                })
+                break // Only first match per file
               }
             }
           } catch {
             // Skip files we can't read
-            continue;
+            continue
           }
         }
       }
     } catch {
       // Skip directories we can't read
-      return;
+      return
     }
   }
 
-  await walkDir(rootPath);
-  return matches;
+  await walkDir(rootPath)
+  return matches
 }
 
 async function searchFiles(
@@ -236,23 +236,23 @@ async function searchFiles(
   include?: string,
   limit: number = 100,
 ): Promise<{ matches: GrepMatch[]; truncated: boolean }> {
-  let matches: GrepMatch[];
+  let matches: GrepMatch[]
 
   try {
-    matches = await searchWithRipgrep(pattern, rootPath, include);
+    matches = await searchWithRipgrep(pattern, rootPath, include)
   } catch {
-    matches = await searchFilesWithRegex(pattern, rootPath, include);
+    matches = await searchFilesWithRegex(pattern, rootPath, include)
   }
 
   // Sort by modification time (newest first)
-  matches.sort((a, b) => b.modTime - a.modTime);
+  matches.sort((a, b) => b.modTime - a.modTime)
 
-  const truncated = matches.length > limit;
+  const truncated = matches.length > limit
   if (truncated) {
-    matches = matches.slice(0, limit);
+    matches = matches.slice(0, limit)
   }
 
-  return { matches, truncated };
+  return { matches, truncated }
 }
 
 export const grep = Tool.define({
@@ -283,54 +283,54 @@ export const grep = Tool.define({
   }),
   async execute(params) {
     if (!params.pattern) {
-      throw new Error("pattern is required");
+      throw new Error("pattern is required")
     }
 
-    const app = await App.use();
-    const searchPath = params.path || app.root;
+    const app = await App.use()
+    const searchPath = params.path || app.root
 
     // If literalText is true, escape the pattern
     const searchPattern = params.literalText
       ? escapeRegexPattern(params.pattern)
-      : params.pattern;
+      : params.pattern
 
     const { matches, truncated } = await searchFiles(
       searchPattern,
       searchPath,
       params.include,
       100,
-    );
+    )
 
     if (matches.length === 0) {
       return {
         metadata: { matches: 0, truncated },
-        output: "No files found"
-      };
+        output: "No files found",
+      }
     }
 
-    const lines = [`Found ${matches.length} matches`];
+    const lines = [`Found ${matches.length} matches`]
 
-    let currentFile = "";
+    let currentFile = ""
     for (const match of matches) {
       if (currentFile !== match.path) {
         if (currentFile !== "") {
-          lines.push("");
+          lines.push("")
         }
-        currentFile = match.path;
-        lines.push(`${match.path}:`);
+        currentFile = match.path
+        lines.push(`${match.path}:`)
       }
       if (match.lineNum > 0) {
-        lines.push(`  Line ${match.lineNum}: ${match.lineText}`);
+        lines.push(`  Line ${match.lineNum}: ${match.lineText}`)
       } else {
-        lines.push(`  ${match.path}`);
+        lines.push(`  ${match.path}`)
       }
     }
 
     if (truncated) {
-      lines.push("");
+      lines.push("")
       lines.push(
         "(Results are truncated. Consider using a more specific path or pattern.)",
-      );
+      )
     }
 
     return {
@@ -339,7 +339,6 @@ export const grep = Tool.define({
         truncated,
       },
       output: lines.join("\n"),
-    };
+    }
   },
-});
-
+})

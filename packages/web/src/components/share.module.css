@@ -84,11 +84,21 @@
     span:first-child {
       color: var(--sl-color-divider);
 
-      &[data-status="connected"] { color: var(--sl-color-green); }
-      &[data-status="connecting"] { color: var(--sl-color-orange); }
-      &[data-status="disconnected"] { color: var(--sl-color-divider); }
-      &[data-status="reconnecting"] { color: var(--sl-color-orange); }
-      &[data-status="error"] { color: var(--sl-color-red); }
+      &[data-status="connected"] {
+        color: var(--sl-color-green);
+      }
+      &[data-status="connecting"] {
+        color: var(--sl-color-orange);
+      }
+      &[data-status="disconnected"] {
+        color: var(--sl-color-divider);
+      }
+      &[data-status="reconnecting"] {
+        color: var(--sl-color-orange);
+      }
+      &[data-status="error"] {
+        color: var(--sl-color-red);
+      }
     }
   }
 
@@ -106,7 +116,7 @@
       font-size: 0.875rem;
 
       span[data-placeholder] {
-          color: var(--sl-color-text-dimmed);
+        color: var(--sl-color-text-dimmed);
       }
     }
   }
@@ -215,16 +225,15 @@
       max-width: 100%;
       gap: 0.25rem 0.375rem;
 
-
-      & > div:nth-child(3n+1) {
+      & > div:nth-child(3n + 1) {
         width: 8px;
         height: 2px;
         border-radius: 1px;
         background: var(--sl-color-divider);
       }
 
-      & > div:nth-child(3n+2),
-      & > div:nth-child(3n+3) {
+      & > div:nth-child(3n + 2),
+      & > div:nth-child(3n + 3) {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -232,7 +241,7 @@
         line-height: 1.5;
       }
 
-      & > div:nth-child(3n+3) {
+      & > div:nth-child(3n + 3) {
         padding-left: 0.125rem;
         color: var(--sl-color-text-dimmed);
       }

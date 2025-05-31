@@ -1,7 +1,7 @@
-import { z } from "zod";
-import { Tool } from "./tool";
+import { z } from "zod"
+import { Tool } from "./tool"
 
-const MAX_OUTPUT_LENGTH = 30000;
+const MAX_OUTPUT_LENGTH = 30000
 const BANNED_COMMANDS = [
   "alias",
   "curl",
@@ -20,9 +20,9 @@ const BANNED_COMMANDS = [
   "chrome",
   "firefox",
   "safari",
-];
-const DEFAULT_TIMEOUT = 1 * 60 * 1000;
-const MAX_TIMEOUT = 10 * 60 * 1000;
+]
+const DEFAULT_TIMEOUT = 1 * 60 * 1000
+const MAX_TIMEOUT = 10 * 60 * 1000
 
 const DESCRIPTION = `Executes a given bash command in a persistent shell session with optional timeout, ensuring proper handling and security measures.
 
@@ -168,7 +168,7 @@ EOF
 
 Important:
 - Return an empty response - the user will see the gh output directly
-- Never update git config`;
+- Never update git config`
 
 export const bash = Tool.define({
   name: "opencode.bash",
@@ -183,17 +183,17 @@ export const bash = Tool.define({
       .optional(),
   }),
   async execute(params) {
-    const timeout = Math.min(params.timeout ?? DEFAULT_TIMEOUT, MAX_TIMEOUT);
+    const timeout = Math.min(params.timeout ?? DEFAULT_TIMEOUT, MAX_TIMEOUT)
     if (BANNED_COMMANDS.some((item) => params.command.startsWith(item)))
-      throw new Error(`Command '${params.command}' is not allowed`);
+      throw new Error(`Command '${params.command}' is not allowed`)
 
     const process = Bun.spawnSync({
       cmd: ["bash", "-c", params.command],
       maxBuffer: MAX_OUTPUT_LENGTH,
       timeout: timeout,
-    });
+    })
     return {
       output: process.stdout.toString("utf-8"),
-    };
+    }
   },
-});
+})

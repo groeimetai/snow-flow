@@ -14,7 +14,6 @@
   "devDependencies": {
     "@tsconfig/bun": "1.0.7",
     "@types/bun": "latest",
-    "@types/jsdom": "21.1.7",
     "@types/turndown": "5.0.5",
     "typescript": "catalog:"
   },
@@ -28,7 +27,6 @@
     "env-paths": "3.0.0",
     "hono": "4.7.10",
     "hono-openapi": "0.4.8",
-    "jsdom": "26.1.0",
     "remeda": "2.22.3",
     "ts-lsp-client": "1.0.3",
     "turndown": "7.2.0",

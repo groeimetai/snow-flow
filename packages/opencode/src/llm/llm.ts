@@ -115,7 +115,7 @@ export namespace LLM {
         provider.id,
       )
       if (!(await Bun.file(path.join(dir, "package.json")).exists())) {
-        BunProc.run(["add", "--exact", `@ai-sdk/${provider.id}@alpha`], {
+        BunProc.run(["add", `@ai-sdk/${provider.id}@alpha`], {
           cwd: Global.cache(),
         })
       }

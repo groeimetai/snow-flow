@@ -1,40 +1,40 @@
-import fs from "fs/promises";
-import { AppPath } from "./path";
-import { Log } from "../util/log";
-import { Context } from "../util/context";
+import fs from "fs/promises"
+import { AppPath } from "./path"
+import { Log } from "../util/log"
+import { Context } from "../util/context"
 
 export namespace App {
-  const log = Log.create({ service: "app" });
+  const log = Log.create({ service: "app" })
 
-  export type Info = Awaited<ReturnType<typeof create>>;
+  export type Info = Awaited<ReturnType<typeof create>>
 
-  const ctx = Context.create<Info>("app");
+  const ctx = Context.create<Info>("app")
 
   async function create(input: { directory: string }) {
-    const dataDir = AppPath.data(input.directory);
-    await fs.mkdir(dataDir, { recursive: true });
-    await Log.file(input.directory);
+    const dataDir = AppPath.data(input.directory)
+    await fs.mkdir(dataDir, { recursive: true })
+    await Log.file(input.directory)
 
-    log.info("created", { path: dataDir });
+    log.info("created", { path: dataDir })
 
     const services = new Map<
       any,
       {
-        state: any;
-        shutdown?: (input: any) => Promise<void>;
+        state: any
+        shutdown?: (input: any) => Promise<void>
       }
-    >();
+    >()
 
     const result = {
       get services() {
-        return services;
+        return services
       },
       get root() {
-        return input.directory;
+        return input.directory
       },
-    };
+    }
 
-    return result;
+    return result
   }
 
   export function state<State>(
@@ -43,36 +43,36 @@ export namespace App {
     shutdown?: (state: Awaited<State>) => Promise<void>,
   ) {
     return () => {
-      const app = ctx.use();
-      const services = app.services;
+      const app = ctx.use()
+      const services = app.services
       if (!services.has(key)) {
-        log.info("registering service", { name: key });
+        log.info("registering service", { name: key })
         services.set(key, {
           state: init(app),
           shutdown: shutdown,
-        });
+        })
       }
-      return services.get(key)?.state as State;
-    };
+      return services.get(key)?.state as State
+    }
   }
 
   export async function use() {
-    return ctx.use();
+    return ctx.use()
   }
 
   export async function provide<T extends (app: Info) => any>(
     input: { directory: string },
     cb: T,
   ) {
-    const app = await create(input);
+    const app = await create(input)
 
     return ctx.provide(app, async () => {
-      const result = await cb(app);
+      const result = await cb(app)
       for (const [key, entry] of app.services.entries()) {
-        log.info("shutdown", { name: key });
-        await entry.shutdown?.(await entry.state);
+        log.info("shutdown", { name: key })
+        await entry.shutdown?.(await entry.state)
       }
-      return result;
-    });
+      return result
+    })
   }
 }

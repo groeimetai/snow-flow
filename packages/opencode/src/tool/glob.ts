@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { Tool } from "./tool";
-import { App } from "../app/app";
+import { z } from "zod"
+import { Tool } from "./tool"
+import { App } from "../app/app"
 
 const DESCRIPTION = `Fast file pattern matching tool that finds files by name and pattern, returning matching paths sorted by modification time (newest first).
 
@@ -35,7 +35,7 @@ LIMITATIONS:
 TIPS:
 - For the most useful results, combine with the Grep tool: first find files with Glob, then search their contents with Grep
 - When doing iterative exploration that may require multiple rounds of searching, consider using the Agent tool instead
-- Always check if results are truncated and refine your search pattern if needed`;
+- Always check if results are truncated and refine your search pattern if needed`
 
 export const glob = Tool.define({
   name: "opencode.glob",
@@ -50,37 +50,37 @@ export const glob = Tool.define({
       .optional(),
   }),
   async execute(params) {
-    const app = await App.use();
-    const search = params.path || app.root;
-    const limit = 100;
-    const glob = new Bun.Glob(params.pattern);
-    const files = [];
-    let truncated = false;
+    const app = await App.use()
+    const search = params.path || app.root
+    const limit = 100
+    const glob = new Bun.Glob(params.pattern)
+    const files = []
+    let truncated = false
     for await (const file of glob.scan({ cwd: search })) {
       if (files.length >= limit) {
-        truncated = true;
-        break;
+        truncated = true
+        break
       }
       const stats = await Bun.file(file)
         .stat()
         .then((x) => x.mtime.getTime())
-        .catch(() => 0);
+        .catch(() => 0)
       files.push({
         path: file,
         mtime: stats,
-      });
+      })
     }
-    files.sort((a, b) => b.mtime - a.mtime);
+    files.sort((a, b) => b.mtime - a.mtime)
 
-    const output = [];
-    if (files.length === 0) output.push("No files found");
+    const output = []
+    if (files.length === 0) output.push("No files found")
     if (files.length > 0) {
-      output.push(...files.map((f) => f.path));
+      output.push(...files.map((f) => f.path))
       if (truncated) {
-        output.push("");
+        output.push("")
         output.push(
           "(Results are truncated. Consider using a more specific path or pattern.)",
-        );
+        )
       }
     }
 
@@ -90,7 +90,6 @@ export const glob = Tool.define({
         truncated,
       },
       output: output.join("\n"),
-    };
+    }
   },
-});
-
+})

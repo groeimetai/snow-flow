@@ -12,11 +12,7 @@ import {
   createSignal,
 } from "solid-js"
 import { DateTime } from "luxon"
-import {
-  IconOpenAI,
-  IconGemini,
-  IconAnthropic,
-} from "./icons/custom"
+import { IconOpenAI, IconGemini, IconAnthropic } from "./icons/custom"
 import {
   IconCpuChip,
   IconSparkles,
@@ -31,8 +27,12 @@ import styles from "./share.module.css"
 import { type UIMessage } from "ai"
 import { createStore, reconcile } from "solid-js/store"
 
-type Status = "disconnected" | "connecting" | "connected" | "error" | "reconnecting"
-
+type Status =
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "error"
+  | "reconnecting"
 
 type SessionMessage = UIMessage<{
   time: {
@@ -40,23 +40,26 @@ type SessionMessage = UIMessage<{
     completed?: number
   }
   assistant?: {
-    modelID: string;
-    providerID: string;
-    cost: number;
+    modelID: string
+    providerID: string
+    cost: number
     tokens: {
-      input: number;
-      output: number;
-      reasoning: number;
-    };
-  };
-  sessionID: string
-  tool: Record<string, {
-    properties: Record<string, any>
-    time: {
-      start: number
-      end: number
+      input: number
+      output: number
+      reasoning: number
     }
-  }>
+  }
+  sessionID: string
+  tool: Record<
+    string,
+    {
+      properties: Record<string, any>
+      time: {
+        start: number
+        end: number
+      }
+    }
+  >
 }>
 
 type SessionInfo = {
@@ -65,48 +68,47 @@ type SessionInfo = {
 }
 
 function getFileType(path: string) {
-  return path.split('.').pop()
+  return path.split(".").pop()
 }
 
 // Converts `{a:{b:{c:1}}` to `[['a.b.c', 1]]`
 function flattenToolArgs(obj: any, prefix: string = ""): Array<[string, any]> {
-  const entries: Array<[string, any]> = [];
+  const entries: Array<[string, any]> = []
 
   for (const [key, value] of Object.entries(obj)) {
-    const path = prefix ? `${prefix}.${key}` : key;
+    const path = prefix ? `${prefix}.${key}` : key
 
-    if (
-      value !== null &&
-      typeof value === "object" &&
-      !Array.isArray(value)
-    ) {
-      entries.push(...flattenToolArgs(value, path));
-    }
-    else {
-      entries.push([path, value]);
+    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+      entries.push(...flattenToolArgs(value, path))
+    } else {
+      entries.push([path, value])
     }
   }
 
-  return entries;
+  return entries
 }
 
 function getStatusText(status: [Status, string?]): string {
   switch (status[0]) {
-    case "connected": return "Connected"
-    case "connecting": return "Connecting..."
-    case "disconnected": return "Disconnected"
-    case "reconnecting": return "Reconnecting..."
-    case "error": return status[1] || "Error"
-    default: return "Unknown"
+    case "connected":
+      return "Connected"
+    case "connecting":
+      return "Connecting..."
+    case "disconnected":
+      return "Disconnected"
+    case "reconnecting":
+      return "Reconnecting..."
+    case "error":
+      return status[1] || "Error"
+    default:
+      return "Unknown"
   }
 }
 
-function ProviderIcon(props: { provider: string, size?: number }) {
+function ProviderIcon(props: { provider: string; size?: number }) {
   const size = props.size || 16
   return (
-    <Switch fallback={
-      <IconSparkles width={size} height={size} />
-    }>
+    <Switch fallback={<IconSparkles width={size} height={size} />}>
       <Match when={props.provider === "openai"}>
         <IconOpenAI width={size} height={size} />
       </Match>
@@ -132,15 +134,11 @@ function ResultsButton(props: ResultsButtonProps) {
       data-element-button-more
       {...rest}
     >
-      <span>
-        {local.results ? "Hide results" : "Show results"}
-      </span>
+      <span>{local.results ? "Hide results" : "Show results"}</span>
       <span data-button-icon>
         <Show
           when={local.results}
-          fallback={
-            <IconChevronRight width={10} height={10} />
-          }
+          fallback={<IconChevronRight width={10} height={10} />}
         >
           <IconChevronDown width={10} height={10} />
         </Show>
@@ -187,16 +185,16 @@ function TextPart(props: TextPartProps) {
       data-expanded={expanded() || local.expand === true}
       {...rest}
     >
-      <pre ref={el => (preEl = el)}>{local.text}</pre>
-      {overflowed() &&
+      <pre ref={(el) => (preEl = el)}>{local.text}</pre>
+      {overflowed() && (
         <button
           type="button"
           data-element-button-text
-          onClick={() => setExpanded(e => !e)}
+          onClick={() => setExpanded((e) => !e)}
         >
           {expanded() ? "Show less" : "Show more"}
         </button>
-      }
+      )}
     </div>
   )
 }
@@ -205,13 +203,13 @@ function PartFooter(props: { time: number }) {
   return (
     <span
       data-part-footer
-      title={
-        DateTime.fromMillis(props.time).toLocaleString(
-          DateTime.DATETIME_FULL_WITH_SECONDS
-        )
-      }
+      title={DateTime.fromMillis(props.time).toLocaleString(
+        DateTime.DATETIME_FULL_WITH_SECONDS,
+      )}
     >
-      {DateTime.fromMillis(props.time).toLocaleString(DateTime.TIME_WITH_SECONDS)}
+      {DateTime.fromMillis(props.time).toLocaleString(
+        DateTime.TIME_WITH_SECONDS,
+      )}
     </span>
   )
 }
@@ -226,8 +224,12 @@ export default function Share(props: { api: string }) {
   }>({
     messages: {},
   })
-  const messages = createMemo(() => Object.values(store.messages).toSorted((a, b) => a.id?.localeCompare(b.id)))
-  const [connectionStatus, setConnectionStatus] = createSignal<[Status, string?]>(["disconnected", "Disconnected"])
+  const messages = createMemo(() =>
+    Object.values(store.messages).toSorted((a, b) => a.id?.localeCompare(b.id)),
+  )
+  const [connectionStatus, setConnectionStatus] = createSignal<
+    [Status, string?]
+  >(["disconnected", "Disconnected"])
 
   onMount(() => {
     const apiUrl = props.api
@@ -326,7 +328,10 @@ export default function Share(props: { api: string }) {
     const result: string[][] = []
     for (const msg of messages()) {
       if (msg.role === "assistant" && msg.metadata?.assistant) {
-        result.push([msg.metadata.assistant.providerID, msg.metadata.assistant.modelID])
+        result.push([
+          msg.metadata.assistant.providerID,
+          msg.metadata.assistant.modelID,
+        ])
       }
     }
     return result
@@ -339,7 +344,7 @@ export default function Share(props: { api: string }) {
         input: 0,
         output: 0,
         reasoning: 0,
-      }
+      },
     }
     for (const msg of messages()) {
       const assistant = msg.metadata?.assistant
@@ -366,39 +371,39 @@ export default function Share(props: { api: string }) {
           <ul data-section="stats">
             <li>
               <span data-element-label>Cost</span>
-              {metrics().cost !== undefined ?
+              {metrics().cost !== undefined ? (
                 <span>${metrics().cost.toFixed(2)}</span>
-                :
+              ) : (
                 <span data-placeholder>&mdash;</span>
-              }
+              )}
             </li>
             <li>
               <span data-element-label>Input Tokens</span>
-              {metrics().tokens.input ?
+              {metrics().tokens.input ? (
                 <span>{metrics().tokens.input}</span>
-                :
+              ) : (
                 <span data-placeholder>&mdash;</span>
-              }
+              )}
             </li>
             <li>
               <span data-element-label>Output Tokens</span>
-              {metrics().tokens.output ?
+              {metrics().tokens.output ? (
                 <span>{metrics().tokens.output}</span>
-                :
+              ) : (
                 <span data-placeholder>&mdash;</span>
-              }
+              )}
             </li>
             <li>
               <span data-element-label>Reasoning Tokens</span>
-              {metrics().tokens.reasoning ?
+              {metrics().tokens.reasoning ? (
                 <span>{metrics().tokens.reasoning}</span>
-                :
+              ) : (
                 <span data-placeholder>&mdash;</span>
-              }
+              )}
             </li>
           </ul>
           <ul data-section="stats" data-section-models>
-            {models().length > 0 ?
+            {models().length > 0 ? (
               <For each={Array.from(models())}>
                 {([provider, model]) => (
                   <li>
@@ -409,27 +414,29 @@ export default function Share(props: { api: string }) {
                   </li>
                 )}
               </For>
-              :
+            ) : (
               <li>
                 <span data-element-label>Models</span>
                 <span data-placeholder>&mdash;</span>
               </li>
-            }
+            )}
           </ul>
           <div data-section="date">
-            {messages().length > 0 && messages()[0].metadata?.time.created ?
-              <span title={
-                DateTime.fromMillis(
-                  messages()[0].metadata?.time.created || 0
-                ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)
-              }>
+            {messages().length > 0 && messages()[0].metadata?.time.created ? (
+              <span
+                title={DateTime.fromMillis(
+                  messages()[0].metadata?.time.created || 0,
+                ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}
+              >
                 {DateTime.fromMillis(
-                  messages()[0].metadata?.time.created || 0
+                  messages()[0].metadata?.time.created || 0,
                 ).toLocaleString(DateTime.DATE_MED)}
               </span>
-              :
-              <span data-element-label data-placeholder>Started at &mdash;</span>
-            }
+            ) : (
+              <span data-element-label data-placeholder>
+                Started at &mdash;
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -444,27 +451,32 @@ export default function Share(props: { api: string }) {
               {(msg, msgIndex) => (
                 <For each={msg.parts}>
                   {(part, partIndex) => {
-                    if (part.type === "step-start" && (partIndex() > 0 || !msg.metadata?.assistant)) return null
+                    if (
+                      part.type === "step-start" &&
+                      (partIndex() > 0 || !msg.metadata?.assistant)
+                    )
+                      return null
 
                     const [results, showResults] = createSignal(false)
-                    const isLastPart = createMemo(() =>
-                      (messages().length === msgIndex() + 1)
-                      && (msg.parts.length === partIndex() + 1)
+                    const isLastPart = createMemo(
+                      () =>
+                        messages().length === msgIndex() + 1 &&
+                        msg.parts.length === partIndex() + 1,
                     )
-                    const time = msg.metadata?.time.completed
-                      || msg.metadata?.time.created
-                      || 0
+                    const time =
+                      msg.metadata?.time.completed ||
+                      msg.metadata?.time.created ||
+                      0
                     return (
                       <Switch>
-                        { /* User text */}
-                        <Match when={
-                          msg.role === "user" && part.type === "text" && part
-                        }>
-                          {part =>
-                            <div
-                              data-section="part"
-                              data-part-type="user-text"
-                            >
+                        {/* User text */}
+                        <Match
+                          when={
+                            msg.role === "user" && part.type === "text" && part
+                          }
+                        >
+                          {(part) => (
+                            <div data-section="part" data-part-type="user-text">
                               <div data-section="decoration">
                                 <div>
                                   <IconUserCircle width={18} height={18} />
@@ -480,21 +492,22 @@ export default function Share(props: { api: string }) {
                                 <PartFooter time={time} />
                               </div>
                             </div>
-                          }
+                          )}
                         </Match>
-                        { /* AI text */}
-                        <Match when={
-                          msg.role === "assistant"
-                          && part.type === "text"
-                          && part
-                        }>
-                          {part =>
-                            <div
-                              data-section="part"
-                              data-part-type="ai-text"
-                            >
+                        {/* AI text */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "text" &&
+                            part
+                          }
+                        >
+                          {(part) => (
+                            <div data-section="part" data-part-type="ai-text">
                               <div data-section="decoration">
-                                <div><IconSparkles width={18} height={18} /></div>
+                                <div>
+                                  <IconSparkles width={18} height={18} />
+                                </div>
                                 <div></div>
                               </div>
                               <div data-section="content">
@@ -505,19 +518,18 @@ export default function Share(props: { api: string }) {
                                 <PartFooter time={time} />
                               </div>
                             </div>
-                          }
+                          )}
                         </Match>
-                        { /* AI model */}
-                        <Match when={
-                          msg.role === "assistant"
-                          && part.type === "step-start"
-                          && msg.metadata?.assistant
-                        }>
-                          {assistant =>
-                            <div
-                              data-section="part"
-                              data-part-type="ai-model"
-                            >
+                        {/* AI model */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "step-start" &&
+                            msg.metadata?.assistant
+                          }
+                        >
+                          {(assistant) => (
+                            <div data-section="part" data-part-type="ai-model">
                               <div data-section="decoration">
                                 <div>
                                   <ProviderIcon
@@ -542,15 +554,17 @@ export default function Share(props: { api: string }) {
                                 </div>
                               </div>
                             </div>
-                          }
+                          )}
                         </Match>
-                        { /* System text */}
-                        <Match when={
-                          msg.role === "system"
-                          && part.type === "text"
-                          && part
-                        }>
-                          {part =>
+                        {/* System text */}
+                        <Match
+                          when={
+                            msg.role === "system" &&
+                            part.type === "text" &&
+                            part
+                          }
+                        >
+                          {(part) => (
                             <div
                               data-section="part"
                               data-part-type="system-text"
@@ -575,16 +589,18 @@ export default function Share(props: { api: string }) {
                                 <PartFooter time={time} />
                               </div>
                             </div>
-                          }
+                          )}
                         </Match>
-                        { /* Edit tool */}
-                        <Match when={
-                          msg.role === "assistant"
-                          && part.type === "tool-invocation"
-                          && part.toolInvocation.toolName === "edit"
-                          && part
-                        }>
-                          {part => {
+                        {/* Edit tool */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "tool-invocation" &&
+                            part.toolInvocation.toolName === "edit" &&
+                            part
+                          }
+                        >
+                          {(part) => {
                             const args = part().toolInvocation.args
                             const filePath = args.filePath
                             return (
@@ -618,20 +634,25 @@ export default function Share(props: { api: string }) {
                             )
                           }}
                         </Match>
-                        { /* Tool call */}
-                        <Match when={
-                          msg.role === "assistant"
-                          && part.type === "tool-invocation"
-                          && part
-                        }>
-                          {part =>
+                        {/* Tool call */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "tool-invocation" &&
+                            part
+                          }
+                        >
+                          {(part) => (
                             <div
                               data-section="part"
                               data-part-type="tool-fallback"
                             >
                               <div data-section="decoration">
                                 <div>
-                                  <IconWrenchScrewdriver width={18} height={18} />
+                                  <IconWrenchScrewdriver
+                                    width={18}
+                                    height={18}
+                                  />
                                 </div>
                                 <div></div>
                               </div>
@@ -641,27 +662,32 @@ export default function Share(props: { api: string }) {
                                     {part().toolInvocation.toolName}
                                   </span>
                                   <div data-part-tool-args>
-                                    <For each={
-                                      flattenToolArgs(part().toolInvocation.args)
-                                    }>
-                                      {([name, value]) =>
+                                    <For
+                                      each={flattenToolArgs(
+                                        part().toolInvocation.args,
+                                      )}
+                                    >
+                                      {([name, value]) => (
                                         <>
                                           <div></div>
                                           <div>{name}</div>
                                           <div>{value}</div>
                                         </>
-                                      }
+                                      )}
                                     </For>
                                   </div>
                                   <Switch>
-                                    <Match when={
-                                      part().toolInvocation.state === "result"
-                                      && part().toolInvocation.result
-                                    }>
+                                    <Match
+                                      when={
+                                        part().toolInvocation.state ===
+                                          "result" &&
+                                        part().toolInvocation.result
+                                      }
+                                    >
                                       <div data-part-tool-result>
                                         <ResultsButton
                                           results={results()}
-                                          onClick={() => showResults(e => !e)}
+                                          onClick={() => showResults((e) => !e)}
                                         />
                                         <Show when={results()}>
                                           <TextPart
@@ -673,9 +699,11 @@ export default function Share(props: { api: string }) {
                                         </Show>
                                       </div>
                                     </Match>
-                                    <Match when={
-                                      part().toolInvocation.state === "call"
-                                    }>
+                                    <Match
+                                      when={
+                                        part().toolInvocation.state === "call"
+                                      }
+                                    >
                                       <TextPart
                                         data-size="sm"
                                         data-color="dimmed"
@@ -687,20 +715,27 @@ export default function Share(props: { api: string }) {
                                 <PartFooter time={time} />
                               </div>
                             </div>
-                          }
+                          )}
                         </Match>
-                        { /* Fallback */}
+                        {/* Fallback */}
                         <Match when={true}>
-                          <div
-                            data-section="part"
-                            data-part-type="fallback"
-                          >
+                          <div data-section="part" data-part-type="fallback">
                             <div data-section="decoration">
                               <div>
-                                <Switch fallback={
-                                  <IconWrenchScrewdriver width={16} height={16} />
-                                }>
-                                  <Match when={msg.role === "assistant" && part.type !== "tool-invocation"}>
+                                <Switch
+                                  fallback={
+                                    <IconWrenchScrewdriver
+                                      width={16}
+                                      height={16}
+                                    />
+                                  }
+                                >
+                                  <Match
+                                    when={
+                                      msg.role === "assistant" &&
+                                      part.type !== "tool-invocation"
+                                    }
+                                  >
                                     <IconSparkles width={18} height={18} />
                                   </Match>
                                   <Match when={msg.role === "system"}>
@@ -718,7 +753,9 @@ export default function Share(props: { api: string }) {
                                 <span data-element-label data-part-title>
                                   {part.type}
                                 </span>
-                                <TextPart text={JSON.stringify(part, null, 2)} />
+                                <TextPart
+                                  text={JSON.stringify(part, null, 2)}
+                                />
                               </div>
                               <PartFooter time={time} />
                             </div>
@@ -767,6 +804,6 @@ export default function Share(props: { api: string }) {
           </Show>
         </div>
       </div>
-    </main >
+    </main>
   )
 }

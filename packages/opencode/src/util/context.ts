@@ -1,25 +1,25 @@
-import { AsyncLocalStorage } from "async_hooks";
+import { AsyncLocalStorage } from "async_hooks"
 
 export namespace Context {
   export class NotFound extends Error {
     constructor(public readonly name: string) {
-      super(`No context found for ${name}`);
+      super(`No context found for ${name}`)
     }
   }
 
   export function create<T>(name: string) {
-    const storage = new AsyncLocalStorage<T>();
+    const storage = new AsyncLocalStorage<T>()
     return {
       use() {
-        const result = storage.getStore();
+        const result = storage.getStore()
         if (!result) {
-          throw new NotFound(name);
+          throw new NotFound(name)
         }
-        return result;
+        return result
       },
       provide<R>(value: T, fn: () => R) {
-        return storage.run<R>(value, fn);
+        return storage.run<R>(value, fn)
       },
-    };
+    }
   }
 }

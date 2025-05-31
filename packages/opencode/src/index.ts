@@ -27,6 +27,7 @@ cli.command("", "Start the opencode in interactive mode").action(async () => {
       if (!(await file.exists())) {
         console.log("installing tui binary...")
         await Bun.write(file, blob, { mode: 0o755 })
+        await fs.chmod(binary, 0o755)
       }
       cwd = process.cwd()
       cmd = [binary]

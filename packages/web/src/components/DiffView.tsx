@@ -31,11 +31,7 @@ const DiffView: Component<DiffViewProps> = (props) => {
         diffRows.push({
           left: chunk.removed ? line : chunk.added ? "" : line,
           right: chunk.added ? line : chunk.removed ? "" : line,
-          type: chunk.added
-            ? "added"
-            : chunk.removed
-              ? "removed"
-              : "unchanged",
+          type: chunk.added ? "added" : chunk.removed ? "removed" : "unchanged",
         })
       }
     }

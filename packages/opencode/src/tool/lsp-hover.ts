@@ -1,8 +1,8 @@
-import { z } from "zod";
-import { Tool } from "./tool";
-import path from "path";
-import { LSP } from "../lsp";
-import { App } from "../app/app";
+import { z } from "zod"
+import { Tool } from "./tool"
+import path from "path"
+import { LSP } from "../lsp"
+import { App } from "../app/app"
 
 export const LspHoverTool = Tool.define({
   name: "opencode.lsp_hover",
@@ -17,22 +17,22 @@ export const LspHoverTool = Tool.define({
     character: z.number().describe("The character number to get diagnostics."),
   }),
   execute: async (args) => {
-    console.log(args);
-    const app = await App.use();
+    console.log(args)
+    const app = await App.use()
     const file = path.isAbsolute(args.file)
       ? args.file
-      : path.join(app.root, args.file);
-    await LSP.file(file);
+      : path.join(app.root, args.file)
+    await LSP.file(file)
     const result = await LSP.hover({
       ...args,
       file,
-    });
-    console.log(result);
+    })
+    console.log(result)
     return {
       metadata: {
         result,
       },
       output: JSON.stringify(result, null, 2),
-    };
+    }
   },
-});
+})

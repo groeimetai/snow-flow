@@ -1,5 +1,5 @@
-import z from "zod";
-import { Bus } from "../bus";
+import z from "zod"
+import { Bus } from "../bus"
 
 export namespace Message {
   export const ToolCall = z
@@ -12,8 +12,8 @@ export namespace Message {
     })
     .openapi({
       ref: "Message.ToolInvocation.ToolCall",
-    });
-  export type ToolCall = z.infer<typeof ToolCall>;
+    })
+  export type ToolCall = z.infer<typeof ToolCall>
 
   export const ToolPartialCall = z
     .object({
@@ -25,8 +25,8 @@ export namespace Message {
     })
     .openapi({
       ref: "Message.ToolInvocation.ToolPartialCall",
-    });
-  export type ToolPartialCall = z.infer<typeof ToolPartialCall>;
+    })
+  export type ToolPartialCall = z.infer<typeof ToolPartialCall>
 
   export const ToolResult = z
     .object({
@@ -39,15 +39,15 @@ export namespace Message {
     })
     .openapi({
       ref: "Message.ToolInvocation.ToolResult",
-    });
-  export type ToolResult = z.infer<typeof ToolResult>;
+    })
+  export type ToolResult = z.infer<typeof ToolResult>
 
   export const ToolInvocation = z
     .discriminatedUnion("state", [ToolCall, ToolPartialCall, ToolResult])
     .openapi({
       ref: "Message.ToolInvocation",
-    });
-  export type ToolInvocation = z.infer<typeof ToolInvocation>;
+    })
+  export type ToolInvocation = z.infer<typeof ToolInvocation>
 
   export const TextPart = z
     .object({
@@ -56,8 +56,8 @@ export namespace Message {
     })
     .openapi({
       ref: "Message.Part.Text",
-    });
-  export type TextPart = z.infer<typeof TextPart>;
+    })
+  export type TextPart = z.infer<typeof TextPart>
 
   export const ReasoningPart = z
     .object({
@@ -67,8 +67,8 @@ export namespace Message {
     })
     .openapi({
       ref: "Message.Part.Reasoning",
-    });
-  export type ReasoningPart = z.infer<typeof ReasoningPart>;
+    })
+  export type ReasoningPart = z.infer<typeof ReasoningPart>
 
   export const ToolInvocationPart = z
     .object({
@@ -77,8 +77,8 @@ export namespace Message {
     })
     .openapi({
       ref: "Message.Part.ToolInvocation",
-    });
-  export type ToolInvocationPart = z.infer<typeof ToolInvocationPart>;
+    })
+  export type ToolInvocationPart = z.infer<typeof ToolInvocationPart>
 
   export const SourceUrlPart = z
     .object({
@@ -90,8 +90,8 @@ export namespace Message {
     })
     .openapi({
       ref: "Message.Part.SourceUrl",
-    });
-  export type SourceUrlPart = z.infer<typeof SourceUrlPart>;
+    })
+  export type SourceUrlPart = z.infer<typeof SourceUrlPart>
 
   export const FilePart = z
     .object({
@@ -102,8 +102,8 @@ export namespace Message {
     })
     .openapi({
       ref: "Message.Part.File",
-    });
-  export type FilePart = z.infer<typeof FilePart>;
+    })
+  export type FilePart = z.infer<typeof FilePart>
 
   export const StepStartPart = z
     .object({
@@ -111,8 +111,8 @@ export namespace Message {
     })
     .openapi({
       ref: "Message.Part.StepStart",
-    });
-  export type StepStartPart = z.infer<typeof StepStartPart>;
+    })
+  export type StepStartPart = z.infer<typeof StepStartPart>
 
   export const Part = z
     .discriminatedUnion("type", [
@@ -125,8 +125,8 @@ export namespace Message {
     ])
     .openapi({
       ref: "Message.Part",
-    });
-  export type Part = z.infer<typeof Part>;
+    })
+  export type Part = z.infer<typeof Part>
 
   export const Info = z
     .object({
@@ -157,8 +157,8 @@ export namespace Message {
     })
     .openapi({
       ref: "Message.Info",
-    });
-  export type Info = z.infer<typeof Info>;
+    })
+  export type Info = z.infer<typeof Info>
 
   export const Event = {
     Updated: Bus.event(
@@ -167,5 +167,5 @@ export namespace Message {
         info: Info,
       }),
     ),
-  };
+  }
 }
