@@ -3,6 +3,7 @@ import * as path from "path"
 import { Tool } from "./tool"
 import { FileTimes } from "./util/file-times"
 import { LSP } from "../lsp"
+import { diffLines } from "diff"
 
 const DESCRIPTION = `Edits files by replacing text, creating new files, or deleting content. For moving or renaming files, use the Bash tool with the 'mv' command instead. For larger file edits, use the FileWrite tool to overwrite files.
 
@@ -70,8 +71,11 @@ export const EditTool = Tool.define({
       filePath = path.join(process.cwd(), filePath)
     }
 
+    let contentOld = ""
+    let contentNew = ""
     await (async () => {
       if (params.oldString === "") {
+        contentNew = params.newString
         await Bun.write(filePath, params.newString)
         return
       }
@@ -91,25 +95,27 @@ export const EditTool = Tool.define({
           `File ${filePath} has been modified since it was last read.\nLast modification: ${read.toISOString()}\nLast read: ${stats.mtime.toISOString()}\n\nPlease read the file again before modifying it.`,
         )
 
-      const content = await file.text()
-      const index = content.indexOf(params.oldString)
+      contentOld = await file.text()
+      const index = contentOld.indexOf(params.oldString)
       if (index === -1)
         throw new Error(
           `oldString not found in file. Make sure it matches exactly, including whitespace and line breaks`,
         )
-      const lastIndex = content.lastIndexOf(params.oldString)
+      const lastIndex = contentOld.lastIndexOf(params.oldString)
       if (index !== lastIndex)
         throw new Error(
           `oldString appears multiple times in the file. Please provide more context to ensure a unique match`,
         )
 
-      const newContent =
-        content.substring(0, index) +
+      contentNew =
+        contentOld.substring(0, index) +
         params.newString +
-        content.substring(index + params.oldString.length)
+        contentOld.substring(index + params.oldString.length)
 
-      await file.write(newContent)
+      await file.write(contentNew)
     })()
+
+    const changes = diffLines(contentOld, contentNew)
 
     FileTimes.write(filePath)
     FileTimes.read(filePath)
@@ -129,6 +135,7 @@ export const EditTool = Tool.define({
     return {
       metadata: {
         diagnostics,
+        changes,
       },
       output,
     }

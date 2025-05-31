@@ -53,6 +53,9 @@ export namespace Log {
       error(message?: any, extra?: Record<string, any>) {
         write.err(build(message, extra))
       },
+      warn(message?: any, extra?: Record<string, any>) {
+        write.err(build(message, extra))
+      },
       tag(key: string, value: string) {
         if (tags) tags[key] = value
         return result

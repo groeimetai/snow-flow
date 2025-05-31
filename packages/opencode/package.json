@@ -25,6 +25,7 @@
     "ai": "catalog:",
     "cac": "6.7.14",
     "decimal.js": "10.5.0",
+    "diff": "8.0.2",
     "env-paths": "3.0.0",
     "hono": "4.7.10",
     "hono-openapi": "0.4.8",

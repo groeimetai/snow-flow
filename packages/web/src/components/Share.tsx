@@ -53,7 +53,7 @@ type SessionMessage = UIMessage<{
   tool: Record<
     string,
     {
-      properties: Record<string, any>
+      [key: string]: any
       time: {
         start: number
         end: number
@@ -596,11 +596,12 @@ export default function Share(props: { api: string }) {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "edit" &&
+                            part.toolInvocation.toolName === "opencode_edit" &&
                             part
                           }
                         >
                           {(part) => {
+                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
                             const args = part().toolInvocation.args
                             const filePath = args.filePath
                             return (
@@ -622,8 +623,7 @@ export default function Share(props: { api: string }) {
                                     <div data-part-tool-edit>
                                       <DiffView
                                         class={styles["code-block"]}
-                                        oldCode={args.oldString}
-                                        newCode={args.newString}
+                                        changes={metadata()?.changes || []}
                                         lang={getFileType(filePath)}
                                       />
                                     </div>
@@ -680,7 +680,7 @@ export default function Share(props: { api: string }) {
                                     <Match
                                       when={
                                         part().toolInvocation.state ===
-                                          "result" &&
+                                        "result" &&
                                         part().toolInvocation.result
                                       }
                                     >

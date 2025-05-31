@@ -1,5 +1,5 @@
-import { type Component, createSignal, onMount } from "solid-js"
-import { diffLines } from "diff"
+import { type Component, createMemo, createSignal, onMount } from "solid-js"
+import { diffLines, type ChangeObject } from "diff"
 import CodeBlock from "./CodeBlock"
 import styles from "./diffview.module.css"
 
@@ -10,33 +10,29 @@ type DiffRow = {
 }
 
 interface DiffViewProps {
-  oldCode: string
-  newCode: string
+  changes: ChangeObject<string>[]
   lang?: string
   class?: string
 }
 
 const DiffView: Component<DiffViewProps> = (props) => {
-  const [rows, setRows] = createSignal<DiffRow[]>([])
-
-  onMount(() => {
-    const chunks = diffLines(props.oldCode, props.newCode)
+  const rows = createMemo(() => {
     const diffRows: DiffRow[] = []
 
-    for (const chunk of chunks) {
-      const lines = chunk.value.split(/\r?\n/)
+    for (const item of props.changes) {
+      const lines = item.value.split(/\r?\n/)
       if (lines.at(-1) === "") lines.pop()
 
       for (const line of lines) {
         diffRows.push({
-          left: chunk.removed ? line : chunk.added ? "" : line,
-          right: chunk.added ? line : chunk.removed ? "" : line,
-          type: chunk.added ? "added" : chunk.removed ? "removed" : "unchanged",
+          left: item.removed ? line : item.added ? "" : line,
+          right: item.added ? line : item.removed ? "" : line,
+          type: item.added ? "added" : item.removed ? "removed" : "unchanged",
         })
       }
     }
 
-    setRows(diffRows)
+    return diffRows
   })
 
   return (
