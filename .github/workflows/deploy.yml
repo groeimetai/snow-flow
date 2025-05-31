@@ -19,9 +19,7 @@ jobs:
           bun-version: latest
 
       - run: bun install
-        working-directory: app
 
       - run: bun sst deploy --stage=dev
-        working-directory: app
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
