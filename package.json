@@ -12,8 +12,8 @@
   ],
   "devDependencies": {
     "@tsconfig/node22": "22.0.0",
-    "@types/node": "^22.13.9",
-    "prettier": "^3.5.3",
+    "@types/node": "22.13.9",
+    "prettier": "3.5.3",
     "sst": "3.16.0",
     "typescript": "5.8.2"
   },
@@ -31,6 +31,12 @@
   },
   "overrides": {
     "zod": "3.24.2"
+  },
+  "catalog": {
+    "typescript": "5.8.2",
+    "@types/node": "22.13.9",
+    "zod": "3.24.2",
+    "ai": "5.0.0-alpha.7"
   },
   "trustedDependencies": [
     "esbuild",

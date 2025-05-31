@@ -5,6 +5,8 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250522.0"
+    "@cloudflare/workers-types": "4.20250522.0",
+    "typescript": "catalog:",
+    "@types/node": "catalog:"
   }
 }
