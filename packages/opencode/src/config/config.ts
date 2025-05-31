@@ -14,7 +14,12 @@ export namespace Config {
 
   export const Info = z
     .object({
-      providers: Provider.Info.array().optional(),
+      provider: Provider.Info.array().optional(),
+      tool: z
+        .object({
+          provider: z.record(z.string(), z.string().array()).optional(),
+        })
+        .optional(),
     })
     .strict()
 

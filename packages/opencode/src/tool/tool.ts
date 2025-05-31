@@ -1,9 +1,10 @@
 import { tool, type Tool as AITool } from "ai"
 import { Log } from "../util/log"
-
-const log = Log.create({ service: "tool" })
+import { Config } from "../config/config"
 
 export namespace Tool {
+  const log = Log.create({ service: "tool" })
+
   export interface Metadata<
     Properties extends Record<string, any> = Record<string, any>,
   > {
@@ -13,6 +14,15 @@ export namespace Tool {
       end: number
     }
   }
+
+  const TOOL_MAPPING: Record<string, string[]> = {
+    anthropic: [],
+  }
+  export async function forProvider(providerID: string) {
+    const config = await Config.get()
+    const match = config.tool?.provider?.[providerID] ?? []
+  }
+
   export function define<
     Params,
     Output extends { metadata?: any; output: any },
@@ -51,6 +61,7 @@ export namespace Tool {
           return {
             metadata: {
               error: true,
+              message: e.toString(),
             },
             output: "An error occurred: " + e.toString(),
           }

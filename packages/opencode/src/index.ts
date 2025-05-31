@@ -10,6 +10,7 @@ import { Share } from "./share/share"
 import { LLM } from "./llm/llm"
 import { Message } from "./session/message"
 import { Global } from "./global"
+import { Provider } from "./provider/provider"
 
 const cli = cac("opencode")
 
@@ -79,14 +80,17 @@ cli
         unsub()
       })
 
-      const providers = await LLM.providers()
-      const providerID = Object.keys(providers)[0]
-      const modelID = providers[providerID].info.models[0].id
-      console.log("using", providerID, modelID)
+      const [provider] = await Provider.active().then((val) =>
+        val.values().toArray(),
+      )
+      if (!provider) throw new Error("no providers found")
+      const model = provider.models[0]
+      if (!model) throw new Error("no models found")
+      console.log("using", provider.id, model.id)
       const result = await Session.chat({
         sessionID: session.id,
-        providerID,
-        modelID,
+        providerID: provider.id,
+        modelID: model.id,
         parts: [
           {
             type: "text",

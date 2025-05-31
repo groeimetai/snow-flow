@@ -1,7 +1,6 @@
 import path from "path"
 import { App } from "../app/app"
 import { Identifier } from "../id/id"
-import { LLM } from "../llm/llm"
 import { Storage } from "../storage/storage"
 import { Log } from "../util/log"
 import {
@@ -22,7 +21,7 @@ import PROMPT_SUMMARIZE from "./prompt/summarize.txt"
 import { Share } from "../share/share"
 import { Message } from "./message"
 import { Bus } from "../bus"
-import type { Provider } from "../provider/provider"
+import { Provider } from "../provider/provider"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -171,7 +170,7 @@ export namespace Session {
   }) {
     const l = log.clone().tag("session", input.sessionID)
     l.info("chatting")
-    const model = await LLM.findModel(input.providerID, input.modelID)
+    const model = await Provider.getModel(input.providerID, input.modelID)
     let msgs = await messages(input.sessionID)
     const previous = msgs.at(-1)
     if (previous?.metadata.assistant) {
@@ -245,7 +244,7 @@ export namespace Session {
             parts: input.parts,
           },
         ]),
-        model: model.instance,
+        model: model.language,
       }).then((result) => {
         return Session.update(input.sessionID, (draft) => {
           draft.title = result.text
@@ -305,7 +304,7 @@ export namespace Session {
       messages: convertToModelMessages(msgs),
       temperature: 0,
       tools,
-      model: model.instance,
+      model: model.language,
     })
     let text: Message.TextPart | undefined
     const reader = result.toUIMessageStream().getReader()
@@ -402,7 +401,7 @@ export namespace Session {
     const filtered = msgs.filter(
       (msg) => msg.role !== "system" && (!lastSummary || msg.id >= lastSummary),
     )
-    const model = await LLM.findModel(input.providerID, input.modelID)
+    const model = await Provider.getModel(input.providerID, input.modelID)
     const next: Message.Info = {
       id: Identifier.ascending("message"),
       role: "assistant",
@@ -429,7 +428,7 @@ export namespace Session {
     await updateMessage(next)
     const result = await generateText({
       abortSignal: abort.signal,
-      model: model.instance,
+      model: model.language,
       messages: convertToModelMessages([
         {
           role: "system",

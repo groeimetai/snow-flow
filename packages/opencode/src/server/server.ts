@@ -268,12 +268,8 @@ export namespace Server {
           },
         }),
         async (c) => {
-          const providers = await LLM.providers()
-          const result = [] as (Provider.Info & { key: string })[]
-          for (const [key, provider] of Object.entries(providers)) {
-            result.push({ ...provider.info, key })
-          }
-          return c.json(result)
+          const providers = await Provider.active()
+          return c.json(providers.values().toArray())
         },
       )
 
