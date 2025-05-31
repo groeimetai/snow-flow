@@ -7,10 +7,13 @@ import { Bus } from "./bus"
 import { Session } from "./session/session"
 import cac from "cac"
 import { Share } from "./share/share"
-import { LLM } from "./llm/llm"
 import { Message } from "./session/message"
 import { Global } from "./global"
 import { Provider } from "./provider/provider"
+
+declare global {
+  const OPENCODE_VERSION: string
+}
 
 const cli = cac("opencode")
 
@@ -111,6 +114,6 @@ cli
     })
   })
 
+cli.version(typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : "dev")
 cli.help()
-cli.version("1.0.0")
 cli.parse()
