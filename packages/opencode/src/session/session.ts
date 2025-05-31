@@ -1,31 +1,31 @@
-import path from "path";
-import { App } from "../app/app";
-import { Identifier } from "../id/id";
-import { LLM } from "../llm/llm";
-import { Storage } from "../storage/storage";
-import { Log } from "../util/log";
+import path from "path"
+import { App } from "../app/app"
+import { Identifier } from "../id/id"
+import { LLM } from "../llm/llm"
+import { Storage } from "../storage/storage"
+import { Log } from "../util/log"
 import {
   convertToModelMessages,
   generateText,
   stepCountIs,
   streamText,
   type LanguageModelUsage,
-} from "ai";
-import { z } from "zod";
-import * as tools from "../tool";
-import { Decimal } from "decimal.js";
+} from "ai"
+import { z } from "zod"
+import * as tools from "../tool"
+import { Decimal } from "decimal.js"
 
-import PROMPT_ANTHROPIC from "./prompt/anthropic.txt";
-import PROMPT_TITLE from "./prompt/title.txt";
-import PROMPT_SUMMARIZE from "./prompt/summarize.txt";
+import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
+import PROMPT_TITLE from "./prompt/title.txt"
+import PROMPT_SUMMARIZE from "./prompt/summarize.txt"
 
-import { Share } from "../share/share";
-import { Message } from "./message";
-import { Bus } from "../bus";
-import type { Provider } from "../provider/provider";
+import { Share } from "../share/share"
+import { Message } from "./message"
+import { Bus } from "../bus"
+import type { Provider } from "../provider/provider"
 
 export namespace Session {
-  const log = Log.create({ service: "session" });
+  const log = Log.create({ service: "session" })
 
   export const Info = z
     .object({
@@ -44,8 +44,8 @@ export namespace Session {
     })
     .openapi({
       ref: "session.info",
-    });
-  export type Info = z.output<typeof Info>;
+    })
+  export type Info = z.output<typeof Info>
 
   export const Event = {
     Updated: Bus.event(
@@ -54,17 +54,17 @@ export namespace Session {
         info: Info,
       }),
     ),
-  };
+  }
 
   const state = App.state("session", () => {
-    const sessions = new Map<string, Info>();
-    const messages = new Map<string, Message.Info[]>();
+    const sessions = new Map<string, Info>()
+    const messages = new Map<string, Message.Info[]>()
 
     return {
       sessions,
       messages,
-    };
-  });
+    }
+  })
 
   export async function create() {
     const result: Info = {
@@ -74,107 +74,110 @@ export namespace Session {
         created: Date.now(),
         updated: Date.now(),
       },
-    };
-    log.info("created", result);
-    state().sessions.set(result.id, result);
-    await Storage.writeJSON("session/info/" + result.id, result);
+    }
+    log.info("created", result)
+    state().sessions.set(result.id, result)
+    await Storage.writeJSON("session/info/" + result.id, result)
     share(result.id).then((share) => {
       update(result.id, (draft) => {
-        draft.share = share;
-      });
-    });
+        draft.share = share
+      })
+    })
     Bus.publish(Event.Updated, {
       info: result,
-    });
-    return result;
+    })
+    return result
   }
 
   export async function get(id: string) {
-    const result = state().sessions.get(id);
+    const result = state().sessions.get(id)
     if (result) {
-      return result;
+      return result
     }
-    const read = await Storage.readJSON<Info>("session/info/" + id);
-    state().sessions.set(id, read);
-    return read as Info;
+    const read = await Storage.readJSON<Info>("session/info/" + id)
+    state().sessions.set(id, read)
+    return read as Info
   }
 
   export async function share(id: string) {
-    const session = await get(id);
-    if (session.share) return session.share;
-    const share = await Share.create(id);
+    const session = await get(id)
+    if (session.share) return session.share
+    const share = await Share.create(id)
     await update(id, (draft) => {
-      draft.share = share;
-    });
-    return share;
+      draft.share = share
+    })
+    for (const msg of await messages(id)) {
+      await Share.sync("session/message/" + id + "/" + msg.id, msg)
+    }
+    return share
   }
 
   export async function update(id: string, editor: (session: Info) => void) {
-    const { sessions } = state();
-    const session = await get(id);
-    if (!session) return;
-    editor(session);
-    session.time.updated = Date.now();
-    sessions.set(id, session);
-    await Storage.writeJSON("session/info/" + id, session);
+    const { sessions } = state()
+    const session = await get(id)
+    if (!session) return
+    editor(session)
+    session.time.updated = Date.now()
+    sessions.set(id, session)
+    await Storage.writeJSON("session/info/" + id, session)
     Bus.publish(Event.Updated, {
       info: session,
-    });
-    return session;
+    })
+    return session
   }
 
   export async function messages(sessionID: string) {
-    const result = [] as Message.Info[];
-    const list = Storage.list("session/message/" + sessionID);
+    const result = [] as Message.Info[]
+    const list = Storage.list("session/message/" + sessionID)
     for await (const p of list) {
-      const read = await Storage.readJSON<Message.Info>(p).catch(() => {});
-      if (!read) continue;
-      result.push(read);
+      const read = await Storage.readJSON<Message.Info>(p).catch(() => {})
+      if (!read) continue
+      result.push(read)
     }
-    result.sort((a, b) => (a.id > b.id ? 1 : -1));
-    return result;
+    result.sort((a, b) => (a.id > b.id ? 1 : -1))
+    return result
   }
 
   export async function* list() {
     for await (const item of Storage.list("session/info")) {
-      const sessionID = path.basename(item, ".json");
-      yield get(sessionID);
+      const sessionID = path.basename(item, ".json")
+      yield get(sessionID)
     }
   }
 
   export function abort(sessionID: string) {
-    const controller = pending.get(sessionID);
-    if (!controller) return false;
-    controller.abort();
-    pending.delete(sessionID);
-    return true;
+    const controller = pending.get(sessionID)
+    if (!controller) return false
+    controller.abort()
+    pending.delete(sessionID)
+    return true
   }
 
   async function updateMessage(msg: Message.Info) {
     await Storage.writeJSON(
       "session/message/" + msg.metadata.sessionID + "/" + msg.id,
       msg,
-    );
+    )
     Bus.publish(Message.Event.Updated, {
       info: msg,
-    });
+    })
   }
 
   export async function chat(input: {
-    sessionID: string;
-    providerID: string;
-    modelID: string;
-    parts: Message.Part[];
+    sessionID: string
+    providerID: string
+    modelID: string
+    parts: Message.Part[]
   }) {
-    const l = log.clone().tag("session", input.sessionID);
-    l.info("chatting");
-    const model = await LLM.findModel(input.providerID, input.modelID);
-    let msgs = await messages(input.sessionID);
-    const previous = msgs.at(-1);
+    const l = log.clone().tag("session", input.sessionID)
+    l.info("chatting")
+    const model = await LLM.findModel(input.providerID, input.modelID)
+    let msgs = await messages(input.sessionID)
+    const previous = msgs.at(-1)
     if (previous?.metadata.assistant) {
       const tokens =
         previous.metadata.assistant.tokens.input +
-        previous.metadata.assistant.tokens.output;
+        previous.metadata.assistant.tokens.output
       if (
         tokens >
         (model.info.contextWindow - (model.info.maxOutputTokens ?? 0)) * 0.9
@@ -183,22 +186,22 @@ export namespace Session {
           sessionID: input.sessionID,
           providerID: input.providerID,
           modelID: input.modelID,
-        });
-        return chat(input);
+        })
+        return chat(input)
       }
     }
 
-    using abort = lock(input.sessionID);
+    using abort = lock(input.sessionID)
 
     const lastSummary = msgs.findLast(
       (msg) => msg.metadata.assistant?.summary === true,
-    );
+    )
     if (lastSummary)
       msgs = msgs.filter(
         (msg) => msg.role === "system" || msg.id >= lastSummary.id,
-      );
+      )
 
-    const app = await App.use();
+    const app = await App.use()
     if (msgs.length === 0) {
       const system: Message.Info = {
         id: Identifier.ascending("message"),
@@ -216,16 +219,16 @@ export namespace Session {
           },
           tool: {},
         },
-      };
-      const contextFile = Bun.file(path.join(app.root, "CONTEXT.md"));
+      }
+      const contextFile = Bun.file(path.join(app.root, "CONTEXT.md"))
       if (await contextFile.exists()) {
-        const context = await contextFile.text();
+        const context = await contextFile.text()
         system.parts.push({
           type: "text",
           text: context,
-        });
+        })
       }
-      msgs.push(system);
+      msgs.push(system)
       generateText({
         messages: convertToModelMessages([
           {
@@ -245,10 +248,10 @@ export namespace Session {
         model: model.instance,
       }).then((result) => {
         return Session.update(input.sessionID, (draft) => {
-          draft.title = result.text;
-        });
-      });
-      await updateMessage(system);
+          draft.title = result.text
+        })
+      })
+      await updateMessage(system)
     }
     const msg: Message.Info = {
       role: "user",
@@ -261,9 +264,9 @@ export namespace Session {
         sessionID: input.sessionID,
         tool: {},
       },
-    };
-    msgs.push(msg);
-    await updateMessage(msg);
+    }
+    await updateMessage(msg)
+    msgs.push(msg)
 
     const next: Message.Info = {
       id: Identifier.ascending("message"),
@@ -286,15 +289,15 @@ export namespace Session {
         sessionID: input.sessionID,
         tool: {},
       },
-    };
-    await updateMessage(next);
+    }
+    await updateMessage(next)
     const result = streamText({
       onStepFinish: async (step) => {
-        const assistant = next.metadata!.assistant!;
-        const usage = getUsage(step.usage, model.info);
-        assistant.cost = usage.cost;
-        assistant.tokens = usage.tokens;
-        await updateMessage(next);
+        const assistant = next.metadata!.assistant!
+        const usage = getUsage(step.usage, model.info)
+        assistant.cost = usage.cost
+        assistant.tokens = usage.tokens
+        await updateMessage(next)
       },
       abortSignal: abort.signal,
       maxRetries: 6,
@@ -303,39 +306,39 @@ export namespace Session {
       temperature: 0,
       tools,
       model: model.instance,
-    });
-    let text: Message.TextPart | undefined;
-    const reader = result.toUIMessageStream().getReader();
+    })
+    let text: Message.TextPart | undefined
+    const reader = result.toUIMessageStream().getReader()
     while (true) {
       const result = await reader.read().catch((e) => {
         if (e instanceof DOMException && e.name === "AbortError") {
-          return;
+          return
         }
-        throw e;
-      });
-      if (!result) break;
-      const { done, value } = result;
-      if (done) break;
+        throw e
+      })
+      if (!result) break
+      const { done, value } = result
+      if (done) break
       l.info("part", {
         type: value.type,
-      });
+      })
       switch (value.type) {
         case "start":
-          break;
+          break
         case "start-step":
-          text = undefined;
+          text = undefined
           next.parts.push({
             type: "step-start",
-          });
-          break;
+          })
+          break
         case "text":
           if (!text) {
-            text = value;
-            next.parts.push(value);
-            break;
+            text = value
+            next.parts.push(value)
+            break
           }
-          text.text += value.text;
-          break;
+          text.text += value.text
+          break
 
         case "tool-call":
           next.parts.push({
@@ -346,60 +349,60 @@ export namespace Session {
               // hack until zod v4
               args: value.args as any,
             },
-          });
-          break;
+          })
+          break
 
         case "tool-result":
           const match = next.parts.find(
             (p) =>
               p.type === "tool-invocation" &&
               p.toolInvocation.toolCallId === value.toolCallId,
-          );
+          )
           if (match && match.type === "tool-invocation") {
-            const { output, metadata } = value.result as any;
-            next.metadata!.tool[value.toolCallId] = metadata;
+            const { output, metadata } = value.result as any
+            next.metadata!.tool[value.toolCallId] = metadata
             match.toolInvocation = {
               ...match.toolInvocation,
               state: "result",
               result: output,
-            };
+            }
           }
-          break;
+          break
 
         case "finish":
-          break;
+          break
         case "finish-step":
-          break;
+          break
         case "error":
-          log.error("error", value);
-          break;
+          log.error("error", value)
+          break
 
         default:
           l.info("unhandled", {
             type: value.type,
-          });
+          })
       }
-      await updateMessage(next);
+      await updateMessage(next)
     }
-    next.metadata!.time.completed = Date.now();
-    await updateMessage(next);
-    return next;
+    next.metadata!.time.completed = Date.now()
+    await updateMessage(next)
+    return next
   }
 
   export async function summarize(input: {
-    sessionID: string;
-    providerID: string;
-    modelID: string;
+    sessionID: string
+    providerID: string
+    modelID: string
   }) {
-    using abort = lock(input.sessionID);
-    const msgs = await messages(input.sessionID);
+    using abort = lock(input.sessionID)
+    const msgs = await messages(input.sessionID)
     const lastSummary = msgs.findLast(
       (msg) => msg.metadata.assistant?.summary === true,
-    )?.id;
+    )?.id
     const filtered = msgs.filter(
       (msg) => msg.role !== "system" && (!lastSummary || msg.id >= lastSummary),
-    );
-    const model = await LLM.findModel(input.providerID, input.modelID);
+    )
+    const model = await LLM.findModel(input.providerID, input.modelID)
     const next: Message.Info = {
       id: Identifier.ascending("message"),
       role: "assistant",
@@ -422,8 +425,8 @@ export namespace Session {
           created: Date.now(),
         },
       },
-    };
-    await updateMessage(next);
+    }
+    await updateMessage(next)
     const result = await generateText({
       abortSignal: abort.signal,
       model: model.instance,
@@ -448,31 +451,31 @@ export namespace Session {
           ],
         },
       ]),
-    });
+    })
     next.parts.push({
       type: "text",
       text: result.text,
-    });
-    const assistant = next.metadata!.assistant!;
-    const usage = getUsage(result.usage, model.info);
-    assistant.cost = usage.cost;
-    assistant.tokens = usage.tokens;
-    await updateMessage(next);
+    })
+    const assistant = next.metadata!.assistant!
+    const usage = getUsage(result.usage, model.info)
+    assistant.cost = usage.cost
+    assistant.tokens = usage.tokens
+    await updateMessage(next)
   }
 
-  const pending = new Map<string, AbortController>();
+  const pending = new Map<string, AbortController>()
   function lock(sessionID: string) {
-    log.info("locking", { sessionID });
-    if (pending.has(sessionID)) throw new BusyError(sessionID);
-    const controller = new AbortController();
-    pending.set(sessionID, controller);
+    log.info("locking", { sessionID })
+    if (pending.has(sessionID)) throw new BusyError(sessionID)
+    const controller = new AbortController()
+    pending.set(sessionID, controller)
     return {
       signal: controller.signal,
       [Symbol.dispose]() {
-        log.info("unlocking", { sessionID });
-        pending.delete(sessionID);
+        log.info("unlocking", { sessionID })
+        pending.delete(sessionID)
       },
-    };
+    }
   }
 
   function getUsage(usage: LanguageModelUsage, model: Provider.Model) {
@@ -480,19 +483,19 @@ export namespace Session {
       input: usage.inputTokens ?? 0,
       output: usage.outputTokens ?? 0,
       reasoning: usage.reasoningTokens ?? 0,
-    };
+    }
     return {
       cost: new Decimal(0)
         .add(new Decimal(tokens.input).mul(model.cost.input))
         .add(new Decimal(tokens.output).mul(model.cost.output))
         .toNumber(),
       tokens,
-    };
+    }
   }
 
   export class BusyError extends Error {
     constructor(public readonly sessionID: string) {
-      super(`Session ${sessionID} is busy`);
+      super(`Session ${sessionID} is busy`)
     }
   }
 }

@@ -16,8 +16,7 @@
     "@types/bun": "latest",
     "@types/jsdom": "21.1.7",
     "@types/turndown": "5.0.5",
-    "typescript": "catalog:",
-    "@types/node": "catalog:"
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@flystorage/file-storage": "1.1.0",
