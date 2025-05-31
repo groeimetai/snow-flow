@@ -7,16 +7,42 @@ import { Bus } from "./bus"
 import { Session } from "./session/session"
 import cac from "cac"
 import { Share } from "./share/share"
-import { Storage } from "./storage/storage"
 import { LLM } from "./llm/llm"
 import { Message } from "./session/message"
+import { Global } from "./global"
 
 const cli = cac("opencode")
 
 cli.command("", "Start the opencode in interactive mode").action(async () => {
   await App.provide({ directory: process.cwd() }, async () => {
     await Share.init()
-    Server.listen()
+    const server = Server.listen()
+
+    let cmd = ["go", "run", "./main.go"]
+    let cwd = "../tui"
+    if (Bun.embeddedFiles.length > 0) {
+      const blob = Bun.embeddedFiles[0] as File
+      const binary = path.join(Global.cache(), "tui", blob.name)
+      const file = Bun.file(binary)
+      if (!(await file.exists())) {
+        console.log("installing tui binary...")
+        await Bun.write(file, blob, { mode: 0o755 })
+      }
+      cwd = process.cwd()
+      cmd = [binary]
+    }
+    const proc = Bun.spawn({
+      cmd,
+      cwd,
+      stdout: "inherit",
+      stderr: "inherit",
+      stdin: "inherit",
+      onExit: () => {
+        server.stop()
+      },
+    })
+    await proc.exited
+    await server.stop()
   })
 })
 
