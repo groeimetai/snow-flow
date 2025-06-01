@@ -51,7 +51,7 @@ export const GlobTool = Tool.define({
   }),
   async execute(params) {
     const app = await App.use()
-    const search = params.path || app.root
+    const search = params.path || app.path.cwd
     const limit = 100
     const glob = new Bun.Glob(params.pattern)
     const files = []

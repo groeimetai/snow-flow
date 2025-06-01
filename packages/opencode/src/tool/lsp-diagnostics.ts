@@ -37,7 +37,7 @@ TIPS:
     const app = await App.use()
     const normalized = path.isAbsolute(args.path)
       ? args.path
-      : path.join(app.root, args.path)
+      : path.join(app.path.cwd, args.path)
     await LSP.file(normalized)
     const diagnostics = await LSP.diagnostics()
     const file = diagnostics[normalized]

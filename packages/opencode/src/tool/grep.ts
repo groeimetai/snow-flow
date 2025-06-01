@@ -287,7 +287,7 @@ export const GrepTool = Tool.define({
     }
 
     const app = await App.use()
-    const searchPath = params.path || app.root
+    const searchPath = params.path || app.path.cwd
 
     // If literalText is true, escape the pattern
     const searchPattern = params.literalText

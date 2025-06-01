@@ -16,9 +16,10 @@ declare global {
 }
 
 const cli = cac("opencode")
+const version = typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : "dev"
 
 cli.command("", "Start the opencode in interactive mode").action(async () => {
-  await App.provide({ directory: process.cwd() }, async () => {
+  await App.provide({ cwd: process.cwd(), version }, async () => {
     await Share.init()
     const server = Server.listen()
 
@@ -66,14 +67,14 @@ cli
   .command("run [...message]", "Run a chat message")
   .option("--session <id>", "Session ID")
   .action(async (message: string[], options) => {
-    await App.provide({ directory: process.cwd() }, async () => {
+    await App.provide({ cwd: process.cwd(), version }, async () => {
       await Share.init()
       const session = options.session
         ? await Session.get(options.session)
         : await Session.create()
       console.log("Session:", session.id)
 
-      Bus.subscribe(Message.Event.Updated, async (message) => {
+      Bus.subscribe(Message.Event.Updated, async () => {
         console.log("Thinking...")
       })
 

@@ -3,8 +3,8 @@ import { LocalStorageAdapter } from "@flystorage/local-fs"
 import fs from "fs/promises"
 import { Log } from "../util/log"
 import { App } from "../app/app"
-import { AppPath } from "../app/path"
 import { Bus } from "../bus"
+import path from "path"
 import z from "zod"
 
 export namespace Storage {
@@ -19,7 +19,7 @@ export namespace Storage {
 
   const state = App.state("storage", async () => {
     const app = await App.use()
-    const storageDir = AppPath.storage(app.root)
+    const storageDir = path.join(app.path.data, "storage")
     await fs.mkdir(storageDir, { recursive: true })
     const storage = new FileStorage(new LocalStorageAdapter(storageDir))
     log.info("created", { path: storageDir })

@@ -220,7 +220,7 @@ export namespace Session {
           tool: {},
         },
       }
-      const contextFile = Bun.file(path.join(app.root, "CONTEXT.md"))
+      const contextFile = Bun.file(path.join(app.path.root, "CONTEXT.md"))
       if (await contextFile.exists()) {
         const context = await contextFile.text()
         system.parts.push({

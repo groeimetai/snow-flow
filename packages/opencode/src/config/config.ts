@@ -8,7 +8,7 @@ export namespace Config {
   const log = Log.create({ service: "config" })
 
   export const state = App.state("config", async (app) => {
-    const result = await load(app.root)
+    const result = await load(app.path.root)
     return result
   })
 

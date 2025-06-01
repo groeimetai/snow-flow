@@ -26,7 +26,7 @@ export const ListTool = Tool.define({
   }),
   async execute(params) {
     const app = await App.use()
-    const searchPath = path.resolve(app.root, params.path || ".")
+    const searchPath = path.resolve(app.path.cwd, params.path || ".")
 
     const glob = new Bun.Glob("**/*")
     const files = []

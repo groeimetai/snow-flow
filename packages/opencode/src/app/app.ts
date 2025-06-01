@@ -1,7 +1,9 @@
 import fs from "fs/promises"
-import { AppPath } from "./path"
 import { Log } from "../util/log"
 import { Context } from "../util/context"
+import { Filesystem } from "../util/filesystem"
+import { Global } from "../global"
+import path from "path"
 
 export namespace App {
   const log = Log.create({ service: "app" })
@@ -10,12 +12,13 @@ export namespace App {
 
   const ctx = Context.create<Info>("app")
 
-  async function create(input: { directory: string }) {
-    const dataDir = AppPath.data(input.directory)
-    await fs.mkdir(dataDir, { recursive: true })
-    await Log.file(input.directory)
+  async function create(input: { cwd: string; version: string }) {
+    let root = await Filesystem.findUp(".git", input.cwd).then((x) =>
+      x ? path.dirname(x) : input.cwd,
+    )
 
-    log.info("created", { path: dataDir })
+    const data = path.join(Global.data(), root)
+    await Bun.write(path.join(data, "version"), input.version)
 
     const services = new Map<
       any,
@@ -25,14 +28,16 @@ export namespace App {
       }
     >()
 
-    const result = {
-      get services() {
-        return services
+    await Log.file(path.join(data, "log"))
+
+    const result = Object.freeze({
+      services,
+      path: {
+        data,
+        root,
+        cwd: input.cwd,
       },
-      get root() {
-        return input.directory
-      },
-    }
+    })
 
     return result
   }
@@ -61,7 +66,7 @@ export namespace App {
   }
 
   export async function provide<T extends (app: Info) => any>(
-    input: { directory: string },
+    input: { cwd: string; version: string },
     cb: T,
   ) {
     const app = await create(input)

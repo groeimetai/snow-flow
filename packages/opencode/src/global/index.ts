@@ -17,4 +17,8 @@ export namespace Global {
   export function cache() {
     return paths.cache
   }
+
+  export function data() {
+    return paths.data
+  }
 }

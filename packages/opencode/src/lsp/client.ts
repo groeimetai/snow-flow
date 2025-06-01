@@ -36,7 +36,7 @@ export namespace LSPClient {
     const [command, ...args] = input.cmd
     const server = spawn(command, args, {
       stdio: ["pipe", "pipe", "pipe"],
-      cwd: app.root,
+      cwd: app.path.cwd,
     })
 
     const connection = createMessageConnection(
@@ -64,7 +64,7 @@ export namespace LSPClient {
         workspaceFolders: [
           {
             name: "workspace",
-            uri: "file://" + app.root,
+            uri: "file://" + app.path.cwd,
           },
         ],
         tsserver: {

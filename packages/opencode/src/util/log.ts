@@ -1,5 +1,4 @@
 import path from "path"
-import { AppPath } from "../app/path"
 import fs from "fs/promises"
 export namespace Log {
   const write = {
@@ -12,8 +11,9 @@ export namespace Log {
   }
 
   export async function file(directory: string) {
-    const outPath = path.join(AppPath.data(directory), "opencode.out.log")
-    const errPath = path.join(AppPath.data(directory), "opencode.err.log")
+    await fs.mkdir(directory, { recursive: true })
+    const outPath = path.join(directory, "opencode.out.log")
+    const errPath = path.join(directory, "opencode.err.log")
     await fs.truncate(outPath).catch(() => {})
     await fs.truncate(errPath).catch(() => {})
     const out = Bun.file(outPath)
