@@ -27,11 +27,14 @@ describe("tool.glob", () => {
 
 describe("tool.ls", () => {
   test("basic", async () => {
-    const result = await App.provide({ cwd: process.cwd(), version: "test" }, async () => {
-      return await ListTool.execute({
-        path: "./example",
-      })
-    })
+    const result = await App.provide(
+      { cwd: process.cwd(), version: "test" },
+      async () => {
+        return await ListTool.execute({
+          path: "./example",
+        })
+      },
+    )
     expect(result.output).toMatchSnapshot()
   })
 })

@@ -8,6 +8,8 @@ import { resolver, validator as zValidator } from "hono-openapi/zod"
 import { z } from "zod"
 import { Message } from "../session/message"
 import { Provider } from "../provider/provider"
+import { App } from "../app/app"
+import { Global } from "../global"
 
 export namespace Server {
   const log = Log.create({ service: "server" })
@@ -69,6 +71,38 @@ export namespace Server {
                 log.info("event disconnected")
               })
             })
+          })
+        },
+      )
+      .post(
+        "/path_get",
+        describeRoute({
+          description: "Get paths",
+          responses: {
+            200: {
+              description: "200",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    z.object({
+                      root: z.string(),
+                      data: z.string(),
+                      cwd: z.string(),
+                      config: z.string(),
+                    }),
+                  ),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          const app = await App.use()
+          return c.json({
+            root: app.path.root,
+            data: app.path.data,
+            cwd: app.path.cwd,
+            config: Global.config(),
           })
         },
       )
