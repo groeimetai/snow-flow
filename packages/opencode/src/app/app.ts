@@ -1,4 +1,3 @@
-import fs from "fs/promises"
 import { Log } from "../util/log"
 import { Context } from "../util/context"
 import { Filesystem } from "../util/filesystem"

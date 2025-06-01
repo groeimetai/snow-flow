@@ -53,7 +53,7 @@ export const FetchTool = Tool.define({
       .describe("Optional timeout in seconds (max 120)")
       .optional(),
   }),
-  async execute(param) {
+  async execute(params) {
     // Validate URL
     if (
       !params.url.startsWith("http://") &&
@@ -110,7 +110,7 @@ export const FetchTool = Tool.define({
           const markdown = convertHTMLToMarkdown(content)
           return { output: markdown, metadata: {} }
         }
-        return { output: "```\n" + content + "\n```" }
+        return { output: "```\n" + content + "\n```", metadata: {} }
 
       case "html":
         return { output: content, metadata: {} }

@@ -8,7 +8,7 @@ export const ExampleTool = Tool.define({
     foo: z.string().describe("The foo parameter"),
     bar: z.number().describe("The bar parameter"),
   }),
-  async execute(params) {
+  async execute() {
     return {
       metadata: {
         lol: "hey",

@@ -5,6 +5,7 @@
   "type": "module",
   "packageManager": "bun@1.2.14",
   "scripts": {
+    "typecheck": "bun run typecheck --filter='*'",
     "dev": "sst dev"
   },
   "workspaces": {

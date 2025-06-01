@@ -6,7 +6,6 @@ import { streamSSE } from "hono/streaming"
 import { Session } from "../session/session"
 import { resolver, validator as zValidator } from "hono-openapi/zod"
 import { z } from "zod"
-import { LLM } from "../llm/llm"
 import { Message } from "../session/message"
 import { Provider } from "../provider/provider"
 
