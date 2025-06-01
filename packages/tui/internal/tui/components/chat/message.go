@@ -177,7 +177,7 @@ func renderAssistantMessage(
 				metadata := msg.Metadata.Tool[toolInvocationResult.ToolCallId].(map[string]any)
 
 				var markdown string
-				if toolInvocationResult.ToolName == "edit" {
+				if toolInvocationResult.ToolName == "opencode_edit" {
 					filename := toolMap["filePath"].(string)
 					title = styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, filename))
 					oldString := toolMap["oldString"].(string)
@@ -299,25 +299,25 @@ func renderToolAction(name string) string {
 	switch name {
 	// case agent.AgentToolName:
 	// 	return "Preparing prompt..."
-	case "bash":
+	case "opencode_bash":
 		return "Building command..."
-	case "edit":
+	case "opencode_edit":
 		return "Preparing edit..."
-	case "fetch":
+	case "opencode_fetch":
 		return "Writing fetch..."
-	case "glob":
+	case "opencode_glob":
 		return "Finding files..."
-	case "grep":
+	case "opencode_grep":
 		return "Searching content..."
-	case "ls":
+	case "opencode_ls":
 		return "Listing directory..."
-	case "view":
+	case "opencode_view":
 		return "Reading file..."
-	case "write":
+	case "opencode_write":
 		return "Preparing write..."
-	case "patch":
+	case "opencode_patch":
 		return "Preparing patch..."
-	case "batch":
+	case "opencode_batch":
 		return "Running batch operations..."
 	}
 	return "Working..."
