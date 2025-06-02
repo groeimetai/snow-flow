@@ -18,6 +18,12 @@ import (
 )
 
 type App struct {
+	Paths *struct {
+		Config string `json:"config"`
+		Cwd    string `json:"cwd"`
+		Data   string `json:"data"`
+		Root   string `json:"root"`
+	}
 	Client   *client.ClientWithResponses
 	Events   *client.Client
 	Provider *client.ProviderInfo
@@ -57,10 +63,13 @@ func New(ctx context.Context) (*App, error) {
 		return nil, err
 	}
 
+	paths, _ := httpClient.PostPathGetWithResponse(context.Background())
+
 	// Create service bridges
 	agentBridge := NewAgentServiceBridge(httpClient)
 
 	app := &App{
+		Paths:           paths.JSON200,
 		Client:          httpClient,
 		Events:          eventClient,
 		Session:         &client.SessionInfo{},

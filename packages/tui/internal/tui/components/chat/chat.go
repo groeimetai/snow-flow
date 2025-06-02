@@ -6,7 +6,6 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -17,13 +16,13 @@ type SendMsg struct {
 	Attachments []app.Attachment
 }
 
-func header(width int) string {
+func header(app *app.App, width int) string {
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
 		logo(width),
 		repo(width),
 		"",
-		cwd(width),
+		cwd(app, width),
 	)
 }
 
@@ -121,8 +120,8 @@ func repo(width int) string {
 		Render(repo)
 }
 
-func cwd(width int) string {
-	cwd := fmt.Sprintf("cwd: %s", config.WorkingDirectory())
+func cwd(app *app.App, width int) string {
+	cwd := fmt.Sprintf("cwd: %s", app.Paths.Cwd)
 	t := theme.CurrentTheme()
 
 	return styles.BaseStyle().

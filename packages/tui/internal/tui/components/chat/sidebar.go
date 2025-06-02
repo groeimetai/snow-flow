@@ -71,7 +71,7 @@ func (m *sidebarCmp) View() string {
 		Render(
 			lipgloss.JoinVertical(
 				lipgloss.Top,
-				header(m.width),
+				header(m.app, m.width),
 				" ",
 				m.sessionSection(),
 				shareUrl,
