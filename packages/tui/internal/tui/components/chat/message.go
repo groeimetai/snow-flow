@@ -35,7 +35,6 @@ func renderUserMessage(msg client.MessageInfo, width int) string {
 		BorderForeground(t.Secondary()).
 		BorderStyle(lipgloss.ThickBorder())
 
-	baseStyle := styles.BaseStyle()
 	// var styledAttachments []string
 	// attachmentStyles := baseStyle.
 	// 	MarginLeft(1).
@@ -52,12 +51,14 @@ func renderUserMessage(msg client.MessageInfo, width int) string {
 	// 	styledAttachments = append(styledAttachments, attachmentStyles.Render(filename))
 	// }
 
-	// Add timestamp info
 	timestamp := time.UnixMilli(int64(msg.Metadata.Time.Created)).Local().Format("02 Jan 2006 03:04 PM")
+	if time.Now().Format("02 Jan 2006") == timestamp[:11] {
+		timestamp = timestamp[12:]
+	}
 	username, _ := config.GetUsername()
-	info := baseStyle.
+	info := styles.Padded().
 		Foreground(t.TextMuted()).
-		Render(fmt.Sprintf(" %s (%s)", username, timestamp))
+		Render(fmt.Sprintf("%s (%s)", username, timestamp))
 
 	content := ""
 	// if len(styledAttachments) > 0 {
@@ -101,27 +102,16 @@ func renderAssistantMessage(
 		Foreground(t.TextMuted()).
 		BorderForeground(t.Primary()).
 		BorderStyle(lipgloss.ThickBorder())
-	toolStyle := styles.BaseStyle().
-		BorderLeft(true).
-		Foreground(t.TextMuted()).
-		BorderForeground(t.TextMuted()).
-		BorderStyle(lipgloss.ThickBorder())
-
-	baseStyle := styles.BaseStyle()
 	messages := []string{}
 
-	// content := strings.TrimSpace(msg.Content().String())
-	// thinking := msg.IsThinking()
-	// thinkingContent := msg.ReasoningContent().Thinking
-	// finished := msg.IsFinished()
-	// finishData := msg.FinishPart()
-
-	// Add timestamp info
 	timestamp := time.UnixMilli(int64(msg.Metadata.Time.Created)).Local().Format("02 Jan 2006 03:04 PM")
+	if time.Now().Format("02 Jan 2006") == timestamp[:11] {
+		timestamp = timestamp[12:]
+	}
 	modelName := msg.Metadata.Assistant.ModelID
-	info := baseStyle.
+	info := styles.Padded().
 		Foreground(t.TextMuted()).
-		Render(fmt.Sprintf(" %s (%s)", modelName, timestamp))
+		Render(fmt.Sprintf("%s (%s)", modelName, timestamp))
 
 	for _, p := range msg.Parts {
 		part, err := p.ValueByDiscriminator()
@@ -130,6 +120,9 @@ func renderAssistantMessage(
 		}
 
 		switch part.(type) {
+		// case client.MessagePartReasoning:
+		// 	reasoningPart := part.(client.MessagePartReasoning)
+
 		case client.MessagePartText:
 			textPart := part.(client.MessagePartText)
 			text := toMarkdown(textPart.Text, width)
@@ -143,155 +136,106 @@ func renderAssistantMessage(
 			}
 
 			toolInvocationPart := part.(client.MessagePartToolInvocation)
-			toolInvocation, _ := toolInvocationPart.ToolInvocation.ValueByDiscriminator()
-			switch toolInvocation.(type) {
-			case client.MessageToolInvocationToolCall:
-				toolCall := toolInvocation.(client.MessageToolInvocationToolCall)
-				toolName := renderToolName(toolCall.ToolName)
-
-				var toolArgs []string
-				toolMap, _ := convertToMap(toolCall.Args)
-				for _, arg := range toolMap {
-					toolArgs = append(toolArgs, fmt.Sprintf("%v", arg))
-				}
-				params := renderParams(width-lipgloss.Width(toolName)-1, toolArgs...)
-				title := styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, params))
-
-				content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-					title,
-					" In progress...",
-				))
-				message := styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
-				messages = append(messages, message)
-
-			case client.MessageToolInvocationToolResult:
-				toolInvocationResult := toolInvocation.(client.MessageToolInvocationToolResult)
-				toolName := renderToolName(toolInvocationResult.ToolName)
-				var toolArgs []string
-				toolMap, _ := convertToMap(toolInvocationResult.Args)
-				for _, arg := range toolMap {
-					toolArgs = append(toolArgs, fmt.Sprintf("%v", arg))
-				}
-				params := renderParams(width-lipgloss.Width(toolName)-1, toolArgs...)
-				title := styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, params))
-				metadata := msg.Metadata.Tool[toolInvocationResult.ToolCallId].(map[string]any)
-
-				var markdown string
-				if toolInvocationResult.ToolName == "opencode_edit" {
-					filename := toolMap["filePath"].(string)
-					title = styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, filename))
-					oldString := toolMap["oldString"].(string)
-					newString := toolMap["newString"].(string)
-					patch, _, _ := diff.GenerateDiff(oldString, newString, filename)
-					formattedDiff, _ := diff.FormatDiff(patch, diff.WithTotalWidth(width))
-					markdown = strings.TrimSpace(formattedDiff)
-					message := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-						title,
-						markdown,
-					))
-					messages = append(messages, message)
-				} else if toolInvocationResult.ToolName == "view" {
-					result := toolInvocationResult.Result
-					if metadata["preview"] != nil {
-						result = metadata["preview"].(string)
-					}
-					filename := toolMap["filePath"].(string)
-					ext := filepath.Ext(filename)
-					if ext == "" {
-						ext = ""
-					} else {
-						ext = strings.ToLower(ext[1:])
-					}
-					result = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(result, 10))
-					markdown = toMarkdown(result, width)
-					content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-						title,
-						markdown,
-					))
-					message := styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
-					messages = append(messages, message)
-				} else {
-					result := truncateHeight(strings.TrimSpace(toolInvocationResult.Result), 10)
-					markdown = toMarkdown(result, width)
-					content := toolStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-						title,
-						markdown,
-					))
-					message := styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
-					messages = append(messages, message)
-				}
+			toolCall, _ := toolInvocationPart.ToolInvocation.AsMessageToolInvocationToolCall()
+			var result *string
+			resultPart, resultError := toolInvocationPart.ToolInvocation.AsMessageToolInvocationToolResult()
+			if resultError == nil {
+				result = &resultPart.Result
 			}
+			metadata := map[string]any{}
+			if _, ok := msg.Metadata.Tool[toolCall.ToolCallId]; ok {
+				metadata = msg.Metadata.Tool[toolCall.ToolCallId].(map[string]any)
+			}
+			message := renderToolInvocation(toolCall, result, metadata, width)
+			messages = append(messages, message)
 		}
 	}
 
-	// if finished {
-	// 	// Add finish info if available
-	// 	switch finishData.Reason {
-	// 	case message.FinishReasonCanceled:
-	// 		info = append(info, baseStyle.
-	// 			Width(width-1).
-	// 			Foreground(t.Warning()).
-	// 			Render("(canceled)"),
-	// 		)
-	// 	case message.FinishReasonError:
-	// 		info = append(info, baseStyle.
-	// 			Width(width-1).
-	// 			Foreground(t.Error()).
-	// 			Render("(error)"),
-	// 		)
-	// 	case message.FinishReasonPermissionDenied:
-	// 		info = append(info, baseStyle.
-	// 			Width(width-1).
-	// 			Foreground(t.Info()).
-	// 			Render("(permission denied)"),
-	// 		)
-	// 	}
-	// }
+	return strings.Join(messages, "\n\n")
+}
 
-	// if content != "" || (finished && finishData.Reason == message.FinishReasonEndTurn) {
-	// 	if content == "" {
-	// 		content = "*Finished without output*"
-	// 	}
-	//
-	// 	content = renderMessage(content, false, width, info...)
-	// 	messages = append(messages, content)
-	// 	// position += messages[0].height
-	// 	position++ // for the space
-	// } else if thinking && thinkingContent != "" {
-	// 	// Render the thinking content with timestamp
-	// 	content = renderMessage(thinkingContent, false, width, info...)
-	// 	messages = append(messages, content)
-	// 	position += lipgloss.Height(content)
-	// 	position++ // for the space
-	// }
+func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result *string, metadata map[string]any, width int) string {
+	t := theme.CurrentTheme()
+	style := styles.BaseStyle().
+		BorderLeft(true).
+		Foreground(t.TextMuted()).
+		BorderForeground(t.TextMuted()).
+		BorderStyle(lipgloss.ThickBorder())
 
-	// Only render tool messages if they should be shown
-	if showToolMessages {
-		// for i, toolCall := range msg.ToolCalls() {
-		// 	toolCallContent := renderToolMessage(
-		// 		toolCall,
-		// 		allMessages,
-		// 		messagesService,
-		// 		focusedUIMessageId,
-		// 		false,
-		// 		width,
-		// 		i+1,
-		// 	)
-		// 	messages = append(messages, toolCallContent)
-		// }
+	toolName := renderToolName(toolCall.ToolName)
+	var toolArgs []string
+	toolMap, _ := convertToMap(toolCall.Args)
+	for _, arg := range toolMap {
+		toolArgs = append(toolArgs, fmt.Sprintf("%v", arg))
+	}
+	params := renderParams(width-lipgloss.Width(toolName)-1, toolArgs...)
+	title := styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, params))
+	finished := result != nil
+	body := styles.Padded().Render("In progress...")
+	if finished {
+		body = *result
 	}
 
-	return strings.Join(messages, "\n\n")
+	var markdown string
+	if toolCall.ToolName == "opencode_edit" {
+		filename := toolMap["filePath"].(string)
+		title = styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, filename))
+		oldString := toolMap["oldString"].(string)
+		newString := toolMap["newString"].(string)
+		patch, _, _ := diff.GenerateDiff(oldString, newString, filename)
+		formattedDiff, _ := diff.FormatDiff(patch, diff.WithTotalWidth(width))
+		markdown = strings.TrimSpace(formattedDiff)
+		return style.Render(lipgloss.JoinVertical(lipgloss.Left,
+			title,
+			markdown,
+		))
+	} else if toolCall.ToolName == "opencode_view" {
+		filename := toolMap["filePath"].(string)
+		ext := filepath.Ext(filename)
+		if ext == "" {
+			ext = ""
+		} else {
+			ext = strings.ToLower(ext[1:])
+		}
+		if finished {
+			if metadata["preview"] != nil {
+				body = metadata["preview"].(string)
+			}
+			body = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(body, 10))
+			body = toMarkdown(body, width)
+		}
+		content := style.Render(lipgloss.JoinVertical(lipgloss.Left,
+			title,
+			body,
+		))
+		return styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
+	}
+
+	// Default rendering
+	if finished {
+		body = truncateHeight(strings.TrimSpace(body), 10)
+		markdown = toMarkdown(body, width)
+	}
+	content := style.Render(lipgloss.JoinVertical(lipgloss.Left,
+		title,
+		body,
+	))
+	return styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
 }
 
 func renderToolName(name string) string {
 	switch name {
 	// case agent.AgentToolName:
 	// 	return "Task"
-	case "ls":
+	case "opencode_ls":
 		return "List"
 	default:
-		return cases.Title(language.Und).String(name)
+		normalizedName := name
+		if strings.HasPrefix(name, "opencode_") {
+			normalizedName = strings.TrimPrefix(name, "opencode_")
+		}
+
+		return cases.Title(language.Und).String(normalizedName)
 	}
 }
 

@@ -37,13 +37,13 @@ to assist developers in writing, debugging, and understanding code directly from
 		}
 
 		// Setup logging
-		file, err := os.OpenFile("app.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
-		logger := slog.New(slog.NewTextHandler(file, &slog.HandlerOptions{Level: slog.LevelDebug}))
-		slog.SetDefault(logger)
+		// file, err := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// defer file.Close()
+		// logger := slog.New(slog.NewTextHandler(file, &slog.HandlerOptions{Level: slog.LevelDebug}))
+		// slog.SetDefault(logger)
 
 		// Load the config
 		debug, _ := cmd.Flags().GetBool("debug")
