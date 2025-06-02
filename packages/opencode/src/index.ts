@@ -24,7 +24,7 @@ cli.command("", "Start the opencode in interactive mode").action(async () => {
     const server = Server.listen()
 
     let cmd = ["go", "run", "./main.go"]
-    let cwd = "../tui"
+    let cwd = new URL("../../tui", import.meta.url).pathname
     if (Bun.embeddedFiles.length > 0) {
       const blob = Bun.embeddedFiles[0] as File
       const binary = path.join(Global.cache(), "tui", blob.name)
