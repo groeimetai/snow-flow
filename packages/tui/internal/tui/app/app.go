@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"log/slog"
 
@@ -137,8 +138,13 @@ func (a *App) ListSessions(ctx context.Context) ([]client.SessionInfo, error) {
 	if resp.JSON200 == nil {
 		return []client.SessionInfo{}, nil
 	}
-
 	sessions := *resp.JSON200
+
+	// sort sessions by last message time
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].Time.Created-sessions[j].Time.Created > 0
+	})
+
 	return sessions, nil
 }
 
