@@ -154,7 +154,7 @@ func (m statusCmp) View() string {
 	if m.app.Session.Id != "" {
 		tokens := float32(0)
 		cost := float32(0)
-		contextWindow := float32(200_000) // TODO: Get context window from model
+		contextWindow := m.app.Model.ContextWindow
 
 		for _, message := range m.app.Messages {
 			if message.Metadata.Assistant != nil {

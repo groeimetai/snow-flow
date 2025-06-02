@@ -213,7 +213,7 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 
 	// Default rendering
 	if finished {
-		body = truncateHeight(strings.TrimSpace(body), 10)
+		body = styles.Padded().Render(truncateHeight(strings.TrimSpace(body), 10))
 		markdown = toMarkdown(body, width)
 	}
 	content := style.Render(lipgloss.JoinVertical(lipgloss.Left,

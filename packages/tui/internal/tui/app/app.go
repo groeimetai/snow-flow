@@ -140,7 +140,6 @@ func (a *App) ListSessions(ctx context.Context) ([]client.SessionInfo, error) {
 	}
 	sessions := *resp.JSON200
 
-	// sort sessions by last message time
 	sort.Slice(sessions, func(i, j int) bool {
 		return sessions[i].Time.Created-sessions[j].Time.Created > 0
 	})
