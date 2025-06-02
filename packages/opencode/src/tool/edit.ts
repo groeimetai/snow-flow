@@ -4,6 +4,7 @@ import { Tool } from "./tool"
 import { FileTimes } from "./util/file-times"
 import { LSP } from "../lsp"
 import { diffLines } from "diff"
+import { Permission } from "../permission"
 
 const DESCRIPTION = `Edits files by replacing text, creating new files, or deleting content. For moving or renaming files, use the Bash tool with the 'mv' command instead. For larger file edits, use the FileWrite tool to overwrite files.
 
@@ -61,7 +62,7 @@ export const EditTool = Tool.define({
     oldString: z.string().describe("The text to replace"),
     newString: z.string().describe("The text to replace it with"),
   }),
-  async execute(params) {
+  async execute(params, ctx) {
     if (!params.filePath) {
       throw new Error("filePath is required")
     }
@@ -70,6 +71,17 @@ export const EditTool = Tool.define({
     if (!path.isAbsolute(filePath)) {
       filePath = path.join(process.cwd(), filePath)
     }
+
+    await Permission.ask({
+      id: "opencode.edit",
+      sessionID: ctx.sessionID,
+      title: "Edit this file: " + filePath,
+      metadata: {
+        filePath,
+        oldString: params.oldString,
+        newString: params.newString,
+      },
+    })
 
     let contentOld = ""
     let contentNew = ""

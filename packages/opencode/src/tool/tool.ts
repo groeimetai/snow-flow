@@ -1,6 +1,9 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec"
 
 export namespace Tool {
+  export type Context = {
+    sessionID: string
+  }
   export interface Info<
     Parameters extends StandardSchemaV1 = StandardSchemaV1,
     Metadata extends Record<string, any> = Record<string, any>,
@@ -8,7 +11,10 @@ export namespace Tool {
     id: string
     description: string
     parameters: Parameters
-    execute(args: StandardSchemaV1.InferOutput<Parameters>): Promise<{
+    execute(
+      args: StandardSchemaV1.InferOutput<Parameters>,
+      ctx: Context,
+    ): Promise<{
       metadata: Metadata
       output: string
     }>

@@ -300,7 +300,9 @@ export namespace Session {
         async execute(args, opts) {
           const start = Date.now()
           try {
-            const result = await item.execute(args)
+            const result = await item.execute(args, {
+              sessionID: input.sessionID,
+            })
             next.metadata!.tool![opts.toolCallId] = {
               ...result.metadata,
               time: {
