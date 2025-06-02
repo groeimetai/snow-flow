@@ -10,7 +10,6 @@ import (
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
-	"github.com/sst/opencode/internal/version"
 )
 
 type SendMsg struct {
@@ -97,7 +96,7 @@ func logo(width int) string {
 
 	versionText := baseStyle.
 		Foreground(t.TextMuted()).
-		Render(version.Version)
+		Render("v0.0.1") // TODO: get version from server
 
 	return baseStyle.
 		Bold(true).

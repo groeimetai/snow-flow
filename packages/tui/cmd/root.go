@@ -16,7 +16,6 @@ import (
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/tui"
 	"github.com/sst/opencode/internal/tui/app"
-	"github.com/sst/opencode/internal/version"
 )
 
 var rootCmd = &cobra.Command{
@@ -26,16 +25,6 @@ var rootCmd = &cobra.Command{
 It provides an interactive chat interface with AI capabilities, code analysis, and LSP integration
 to assist developers in writing, debugging, and understanding code directly from the terminal.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// If the help flag is set, show the help message
-		if cmd.Flag("help").Changed {
-			cmd.Help()
-			return nil
-		}
-		if cmd.Flag("version").Changed {
-			fmt.Println(version.Version)
-			return nil
-		}
-
 		// Setup logging
 		// file, err := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 		// if err != nil {

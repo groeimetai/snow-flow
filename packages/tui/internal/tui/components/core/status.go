@@ -145,9 +145,6 @@ func formatTokensAndCost(tokens float32, contextWindow float32, cost float32) st
 
 func (m statusCmp) View() string {
 	t := theme.CurrentTheme()
-	// modelID := config.Get().Agents[config.AgentPrimary].Model
-	// model := models.SupportedModels[modelID]
-
 	// Initialize the help widget
 	status := getHelpWidget("")
 
