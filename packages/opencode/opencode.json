@@ -1,0 +1,8 @@
+{
+  "mcp": {
+    "planetscale": {
+      "type": "local",
+      "command": ["pscale", "mcp", "server"]
+    }
+  }
+}

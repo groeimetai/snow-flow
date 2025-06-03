@@ -26,6 +26,7 @@ import { Bus } from "../bus"
 import { Provider } from "../provider/provider"
 import { SessionContext } from "./context"
 import { ListTool } from "../tool/ls"
+import { MCP } from "../mcp"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -342,6 +343,38 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
         },
       })
     }
+    for (const [key, item] of Object.entries(await MCP.tools())) {
+      const execute = item.execute
+      if (!execute) continue
+      item.execute = async (args, opts) => {
+        const start = Date.now()
+        try {
+          const result = await execute(args, opts)
+          next.metadata!.tool![opts.toolCallId] = {
+            ...result.metadata,
+            time: {
+              start,
+              end: Date.now(),
+            },
+          }
+          return result.content
+            .filter((x: any) => x.type === "text")
+            .map((x: any) => x.text)
+            .join("\n\n")
+        } catch (e: any) {
+          next.metadata!.tool![opts.toolCallId] = {
+            error: true,
+            message: e.toString(),
+            time: {
+              start,
+              end: Date.now(),
+            },
+          }
+          return e.toString()
+        }
+      }
+      tools[key] = item
+    }
     const result = streamText({
       onStepFinish: async (step) => {
         const assistant = next.metadata!.assistant!
@@ -356,7 +389,10 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),
       temperature: 0,
-      tools,
+      tools: {
+        ...(await MCP.tools()),
+        ...tools,
+      },
       model: model.language,
     })
     let text: Message.TextPart | undefined
