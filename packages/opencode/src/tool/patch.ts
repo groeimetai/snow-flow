@@ -269,7 +269,7 @@ export const PatchTool = Tool.define({
   id: "opencode.patch",
   description: DESCRIPTION,
   parameters: PatchParams,
-  execute: async (params) => {
+  execute: async (params, ctx) => {
     if (!params.patchText) {
       throw new Error("patchText is required")
     }
@@ -282,7 +282,7 @@ export const PatchTool = Tool.define({
         absPath = path.resolve(process.cwd(), absPath)
       }
 
-      if (!FileTimes.get(absPath)) {
+      if (!FileTimes.get(ctx.sessionID, absPath)) {
         throw new Error(
           `you must read the file ${filePath} before patching it. Use the FileRead tool first`,
         )
@@ -294,7 +294,7 @@ export const PatchTool = Tool.define({
           throw new Error(`path is a directory, not a file: ${absPath}`)
         }
 
-        const lastRead = FileTimes.get(absPath)
+        const lastRead = FileTimes.get(ctx.sessionID, absPath)
         if (lastRead && stats.mtime > lastRead) {
           throw new Error(
             `file ${absPath} has been modified since it was last read (mod time: ${stats.mtime.toISOString()}, last read: ${lastRead.toISOString()})`,
@@ -400,9 +400,7 @@ export const PatchTool = Tool.define({
       totalAdditions += additions
       totalRemovals += removals
 
-      // Record file operations
-      FileTimes.write(absPath)
-      FileTimes.read(absPath)
+      FileTimes.read(ctx.sessionID, absPath)
     }
 
     const result = `Patch applied successfully. ${changedFiles.length} files changed, ${totalAdditions} additions, ${totalRemovals} removals`

@@ -92,7 +92,7 @@ export const EditTool = Tool.define({
         return
       }
 
-      const read = FileTimes.get(filePath)
+      const read = FileTimes.get(ctx.sessionID, filePath)
       if (!read)
         throw new Error(
           `You must read the file ${filePath} before editing it. Use the View tool first`,
@@ -129,8 +129,7 @@ export const EditTool = Tool.define({
 
     const changes = diffLines(contentOld, contentNew)
 
-    FileTimes.write(filePath)
-    FileTimes.read(filePath)
+    FileTimes.read(ctx.sessionID, filePath)
 
     let output = ""
     await LSP.file(filePath)

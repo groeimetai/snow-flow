@@ -54,7 +54,7 @@ export const ViewTool = Tool.define({
       .describe("The number of lines to read (defaults to 2000)")
       .optional(),
   }),
-  async execute(params) {
+  async execute(params, ctx) {
     let filePath = params.filePath
     if (!path.isAbsolute(filePath)) {
       filePath = path.join(process.cwd(), filePath)
@@ -119,7 +119,7 @@ export const ViewTool = Tool.define({
 
     // just warms the lsp client
     LSP.file(filePath)
-    FileTimes.read(filePath)
+    FileTimes.read(ctx.sessionID, filePath)
 
     return {
       output,

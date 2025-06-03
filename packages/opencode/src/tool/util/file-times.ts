@@ -1,20 +1,24 @@
 import { App } from "../../app/app"
 
 export namespace FileTimes {
-  export const state = App.state("tool.filetimes", () => ({
-    read: new Map<string, Date>(),
-    write: new Map<string, Date>(),
-  }))
+  export const state = App.state("tool.filetimes", () => {
+    const read: {
+      [sessionID: string]: {
+        [path: string]: Date | undefined
+      }
+    } = {}
+    return {
+      read,
+    }
+  })
 
-  export function read(filePath: string) {
-    state().read.set(filePath, new Date())
+  export function read(sessionID: string, file: string) {
+    const { read } = state()
+    read[sessionID] = read[sessionID] || {}
+    read[sessionID][file] = new Date()
   }
 
-  export function write(filePath: string) {
-    state().write.set(filePath, new Date())
-  }
-
-  export function get(filePath: string): Date | null {
-    return state().read.get(filePath) || null
+  export function get(sessionID: string, file: string) {
+    return state().read[sessionID]?.[file]
   }
 }
