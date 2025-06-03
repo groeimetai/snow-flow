@@ -224,7 +224,7 @@ Platform: ${process.platform}
 Today's date: ${new Date().toISOString()}
 </env>
 <project>
-${await ListTool.execute({ path: app.path.cwd }, { sessionID: input.sessionID }).then((x) => x.output)}
+${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.sessionID }).then((x) => x.output) : ""}
 </project>
             `,
           },
