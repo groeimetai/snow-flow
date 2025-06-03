@@ -25,6 +25,25 @@
         "description": "Get events"
       }
     },
+    "/app_info": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/App.Info"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postApp_info",
+        "parameters": [],
+        "description": "Get app info"
+      }
+    },
     "/path_get": {
       "post": {
         "responses": {
@@ -908,6 +927,42 @@
           "id",
           "title",
           "time"
+        ]
+      },
+      "App.Info": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "object",
+            "properties": {
+              "initialized": {
+                "type": "number"
+              }
+            }
+          },
+          "path": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "string"
+              },
+              "root": {
+                "type": "string"
+              },
+              "cwd": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "data",
+              "root",
+              "cwd"
+            ]
+          }
+        },
+        "required": [
+          "time",
+          "path"
         ]
       },
       "Provider.Info": {

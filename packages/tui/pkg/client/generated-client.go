@@ -24,6 +24,18 @@ const (
 	User      MessageInfoRole = "user"
 )
 
+// AppInfo defines model for App.Info.
+type AppInfo struct {
+	Path struct {
+		Cwd  string `json:"cwd"`
+		Data string `json:"data"`
+		Root string `json:"root"`
+	} `json:"path"`
+	Time struct {
+		Initialized *float32 `json:"initialized,omitempty"`
+	} `json:"time"`
+}
+
 // Event defines model for Event.
 type Event struct {
 	union json.RawMessage
@@ -851,6 +863,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// PostAppInfo request
+	PostAppInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetEvent request
 	GetEvent(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -890,6 +905,18 @@ type ClientInterface interface {
 	PostSessionSummarizeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PostSessionSummarize(ctx context.Context, body PostSessionSummarizeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) PostAppInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostAppInfoRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetEvent(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -1070,6 +1097,33 @@ func (c *Client) PostSessionSummarize(ctx context.Context, body PostSessionSumma
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewPostAppInfoRequest generates requests for PostAppInfo
+func NewPostAppInfoRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/app_info")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewGetEventRequest generates requests for GetEvent
@@ -1450,6 +1504,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// PostAppInfoWithResponse request
+	PostAppInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostAppInfoResponse, error)
+
 	// GetEventWithResponse request
 	GetEventWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventResponse, error)
 
@@ -1489,6 +1546,28 @@ type ClientWithResponsesInterface interface {
 	PostSessionSummarizeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionSummarizeResponse, error)
 
 	PostSessionSummarizeWithResponse(ctx context.Context, body PostSessionSummarizeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionSummarizeResponse, error)
+}
+
+type PostAppInfoResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AppInfo
+}
+
+// Status returns HTTPResponse.Status
+func (r PostAppInfoResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostAppInfoResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetEventResponse struct {
@@ -1716,6 +1795,15 @@ func (r PostSessionSummarizeResponse) StatusCode() int {
 	return 0
 }
 
+// PostAppInfoWithResponse request returning *PostAppInfoResponse
+func (c *ClientWithResponses) PostAppInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostAppInfoResponse, error) {
+	rsp, err := c.PostAppInfo(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostAppInfoResponse(rsp)
+}
+
 // GetEventWithResponse request returning *GetEventResponse
 func (c *ClientWithResponses) GetEventWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventResponse, error) {
 	rsp, err := c.GetEvent(ctx, reqEditors...)
@@ -1844,6 +1932,32 @@ func (c *ClientWithResponses) PostSessionSummarizeWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParsePostSessionSummarizeResponse(rsp)
+}
+
+// ParsePostAppInfoResponse parses an HTTP response from a PostAppInfoWithResponse call
+func ParsePostAppInfoResponse(rsp *http.Response) (*PostAppInfoResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostAppInfoResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AppInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetEventResponse parses an HTTP response from a GetEventWithResponse call
