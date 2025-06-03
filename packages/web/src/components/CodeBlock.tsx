@@ -6,6 +6,7 @@ import {
   createResource,
 } from "solid-js"
 import { codeToHtml } from "shiki"
+import styles from "./codeblock.module.css"
 import { transformerNotationDiff } from "@shikijs/transformers"
 
 interface CodeBlockProps extends JSX.HTMLAttributes<HTMLDivElement> {
@@ -37,7 +38,7 @@ function CodeBlock(props: CodeBlockProps) {
     }
   })
 
-  return <div ref={containerRef} {...rest}></div>
+  return <div ref={containerRef} class={styles.codeblock} {...rest}></div>
 }
 
 export default CodeBlock

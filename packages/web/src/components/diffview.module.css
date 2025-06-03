@@ -9,9 +9,10 @@
 .column {
   display: flex;
   flex-direction: column;
-  overflow-x: auto;
+
+  overflow-x: visible;
   min-width: 0;
-  align-items: flex-start;
+  align-items: stretch;
 
   &:first-child {
     border-right: 1px solid var(--sl-color-divider);
@@ -28,13 +29,17 @@
 [data-section="cell"] {
   position: relative;
   flex: none;
-  width: max-content;
+
+  width: 100%;
   padding: 0.1875rem 0.5rem 0.1875rem 1.8ch;
   margin: 0;
 
   pre {
+    --shiki-dark-bg: var(--sl-color-bg-surface) !important;
     background-color: var(--sl-color-bg-surface) !important;
-    white-space: pre;
+
+    white-space: pre-wrap;
+    word-break: break-word;
 
     code > span:empty::before {
       content: "\00a0";
@@ -47,9 +52,9 @@
 
 [data-diff-type="removed"] {
   background-color: var(--sl-color-red-low);
-  min-width: 100%;
 
   pre {
+    --shiki-dark-bg: var(--sl-color-red-low) !important;
     background-color: var(--sl-color-red-low) !important;
   }
 
@@ -64,9 +69,9 @@
 
 [data-diff-type="added"] {
   background-color: var(--sl-color-green-low);
-  min-width: 100%;
 
   pre {
+    --shiki-dark-bg: var(--sl-color-green-low) !important;
     background-color: var(--sl-color-green-low) !important;
   }
 

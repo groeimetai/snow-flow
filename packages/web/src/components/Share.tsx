@@ -18,11 +18,13 @@ import {
   IconSparkles,
   IconUserCircle,
   IconChevronDown,
+  IconCommandLine,
   IconChevronRight,
   IconPencilSquare,
   IconWrenchScrewdriver,
 } from "./icons"
 import DiffView from "./DiffView"
+import CodeBlock from "./CodeBlock"
 import styles from "./share.module.css"
 import { type UIMessage } from "ai"
 import { createStore, reconcile } from "solid-js/store"
@@ -186,6 +188,70 @@ function TextPart(props: TextPartProps) {
       {...rest}
     >
       <pre ref={(el) => (preEl = el)}>{local.text}</pre>
+      {overflowed() && (
+        <button
+          type="button"
+          data-element-button-text
+          onClick={() => setExpanded((e) => !e)}
+        >
+          {expanded() ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  )
+}
+
+interface TerminalPartProps extends JSX.HTMLAttributes<HTMLDivElement> {
+  text: string
+  expand?: boolean
+}
+function TerminalPart(props: TerminalPartProps) {
+  const [local, rest] = splitProps(props, ["text", "expand"])
+  const [expanded, setExpanded] = createSignal(false)
+  const [overflowed, setOverflowed] = createSignal(false)
+  let preEl: HTMLElement | undefined
+
+  function checkOverflow() {
+    if (!preEl) return
+
+    const code = preEl.getElementsByTagName("code")[0]
+
+    if (code && !local.expand) {
+      console.log(preEl.clientHeight, code.offsetHeight)
+      setOverflowed(preEl.clientHeight < code.offsetHeight)
+    }
+  }
+
+  onMount(() => {
+    checkOverflow()
+    window.addEventListener("resize", checkOverflow)
+  })
+
+  createEffect(() => {
+    local.text
+    setTimeout(checkOverflow, 0)
+  })
+
+  onCleanup(() => {
+    window.removeEventListener("resize", checkOverflow)
+  })
+
+  return (
+    <div
+      data-element-message-terminal
+      data-expanded={expanded() || local.expand === true}
+      {...rest}
+    >
+      <div data-section="body">
+        <div data-section="header"></div>
+        <div data-section="content">
+          <CodeBlock
+            lang="ansi"
+            ref={(el) => (preEl = el)}
+            code={`\x1b[90m>\x1b[0m ${local.text}`}
+          />
+        </div>
+      </div>
       {overflowed() && (
         <button
           type="button"
@@ -478,7 +544,7 @@ export default function Share(props: { api: string }) {
                           {(part) => (
                             <div data-section="part" data-part-type="user-text">
                               <div data-section="decoration">
-                                <div>
+                                <div title="Message">
                                   <IconUserCircle width={18} height={18} />
                                 </div>
                                 <div></div>
@@ -505,7 +571,7 @@ export default function Share(props: { api: string }) {
                           {(part) => (
                             <div data-section="part" data-part-type="ai-text">
                               <div data-section="decoration">
-                                <div>
+                                <div title="AI response">
                                   <IconSparkles width={18} height={18} />
                                 </div>
                                 <div></div>
@@ -570,7 +636,7 @@ export default function Share(props: { api: string }) {
                               data-part-type="system-text"
                             >
                               <div data-section="decoration">
-                                <div>
+                                <div title="System message">
                                   <IconCpuChip width={18} height={18} />
                                 </div>
                                 <div></div>
@@ -610,7 +676,7 @@ export default function Share(props: { api: string }) {
                                 data-part-type="tool-edit"
                               >
                                 <div data-section="decoration">
-                                  <div>
+                                  <div title="Edit file">
                                     <IconPencilSquare width={18} height={18} />
                                   </div>
                                   <div></div>
@@ -618,15 +684,54 @@ export default function Share(props: { api: string }) {
                                 <div data-section="content">
                                   <div data-part-tool-body>
                                     <span data-part-title data-size="md">
-                                      Edit {filePath}
+                                      <span data-element-label>Edit</span>
+                                      <b>{filePath}</b>
                                     </span>
                                     <div data-part-tool-edit>
                                       <DiffView
-                                        class={styles["code-block"]}
+                                        class={styles["diff-code-block"]}
                                         changes={metadata()?.changes || []}
                                         lang={getFileType(filePath)}
                                       />
                                     </div>
+                                  </div>
+                                  <PartFooter time={time} />
+                                </div>
+                              </div>
+                            )
+                          }}
+                        </Match>
+                        {/* Bash tool */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "tool-invocation" &&
+                            part.toolInvocation.toolName === "opencode_bash" &&
+                            part
+                          }
+                        >
+                          {(part) => {
+                            const id = part().toolInvocation.toolCallId
+                            const command = part().toolInvocation.args.command
+                            const stdout = msg.metadata?.tool[id]?.stdout
+                            const result = stdout || (part().toolInvocation.state === "result" && part().toolInvocation.result)
+                            return (
+                              <div
+                                data-section="part"
+                                data-part-type="tool-edit"
+                              >
+                                <div data-section="decoration">
+                                  <div title="Bash command">
+                                    <IconCommandLine width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <div data-part-tool-body>
+                                    <TerminalPart
+                                      data-size="sm"
+                                      text={command + (result ? `\n${result}` : "")}
+                                    />
                                   </div>
                                   <PartFooter time={time} />
                                 </div>
@@ -648,7 +753,7 @@ export default function Share(props: { api: string }) {
                               data-part-type="tool-fallback"
                             >
                               <div data-section="decoration">
-                                <div>
+                                <div title="Tool call">
                                   <IconWrenchScrewdriver
                                     width={18}
                                     height={18}
