@@ -64,13 +64,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-
-    h1 {
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      overflow: hidden;
-    }
   }
 
   [data-section="row"] {
@@ -82,8 +75,12 @@
   h1 {
     font-size: 1.75rem;
     font-weight: 500;
-    line-height: 1.125;
+    line-height: 1.25;
     letter-spacing: -0.05em;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
   }
   p {
     flex: 0 0 auto;
