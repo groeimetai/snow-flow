@@ -25,6 +25,7 @@ import { Message } from "./message"
 import { Bus } from "../bus"
 import { Provider } from "../provider/provider"
 import { SessionContext } from "./context"
+import { ListTool } from "../tool/ls"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -204,6 +205,7 @@ export namespace Session {
       )
 
     if (msgs.length === 0) {
+      const app = App.info()
       const system: Message.Info = {
         id: Identifier.ascending("message"),
         role: "system",
@@ -211,6 +213,20 @@ export namespace Session {
           {
             type: "text",
             text: PROMPT_ANTHROPIC,
+          },
+          {
+            type: "text",
+            text: `Here is some useful information about the environment you are running in:
+<env>
+Working directory: ${app.path.cwd}
+Is directory a git repo: ${app.git ? "yes" : "no"}
+Platform: ${process.platform}
+Today's date: ${new Date().toISOString()}
+</env>
+<project>
+${await ListTool.execute({ path: app.path.cwd }, { sessionID: input.sessionID }).then((x) => x.output)}
+</project>
+            `,
           },
         ],
         metadata: {

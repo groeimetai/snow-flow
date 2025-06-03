@@ -13,6 +13,7 @@ export namespace App {
       time: z.object({
         initialized: z.number().optional(),
       }),
+      git: z.boolean(),
       path: z.object({
         data: z.string(),
         root: z.string(),
@@ -58,6 +59,7 @@ export namespace App {
       time: {
         initialized: state.initialized,
       },
+      git: git !== undefined,
       path: {
         data,
         root: git ?? input.cwd,
