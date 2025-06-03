@@ -177,7 +177,7 @@ export namespace Server {
             root: app.path.root,
             data: app.path.data,
             cwd: app.path.cwd,
-            config: Global.config(),
+            config: Global.Path.data,
           })
         },
       )

@@ -36,6 +36,7 @@
     "turndown": "7.2.0",
     "vscode-jsonrpc": "8.2.1",
     "vscode-languageclient": "8",
+    "xdg-basedir": "5.1.0",
     "zod": "catalog:",
     "zod-openapi": "4.2.4"
   }

@@ -27,7 +27,7 @@ cli.command("", "Start the opencode in interactive mode").action(async () => {
     let cwd = new URL("../../tui/cmd/opencode", import.meta.url).pathname
     if (Bun.embeddedFiles.length > 0) {
       const blob = Bun.embeddedFiles[0] as File
-      const binary = path.join(Global.cache(), "tui", blob.name)
+      const binary = path.join(Global.Path.cache, "tui", blob.name)
       const file = Bun.file(binary)
       if (!(await file.exists())) {
         console.log("installing tui binary...")

@@ -95,13 +95,18 @@ export namespace Provider {
     const s = await state()
     if (s.sdk.has(providerID)) return s.sdk.get(providerID)!
 
-    const dir = path.join(Global.cache(), `node_modules`, `@ai-sdk`, providerID)
+    const dir = path.join(
+      Global.Path.cache,
+      `node_modules`,
+      `@ai-sdk`,
+      providerID,
+    )
     if (!(await Bun.file(path.join(dir, "package.json")).exists())) {
       log.info("installing", {
         providerID,
       })
       BunProc.run(["add", `@ai-sdk/${providerID}@alpha`], {
-        cwd: Global.cache(),
+        cwd: Global.Path.cache,
       })
     }
     const mod = await import(path.join(dir))
