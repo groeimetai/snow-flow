@@ -101,6 +101,26 @@ export namespace Server {
         },
       )
       .post(
+        "/app_initialize",
+        describeRoute({
+          description: "Initialize the app",
+          responses: {
+            200: {
+              description: "Initialize the app",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          await App.initialize()
+          return c.json(true)
+        },
+      )
+      .post(
         "/session_initialize",
         describeRoute({
           description: "Analyze the app and create an AGENTS.md file",

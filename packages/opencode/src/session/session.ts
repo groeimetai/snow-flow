@@ -350,6 +350,7 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
         assistant.tokens = usage.tokens
         await updateMessage(next)
       },
+      toolCallStreaming: false,
       abortSignal: abort.signal,
       maxRetries: 6,
       stopWhen: stepCountIs(1000),
@@ -401,6 +402,21 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
               args: value.args as any,
             },
           })
+          break
+
+        case "tool-call-streaming-start":
+          next.parts.push({
+            type: "tool-invocation",
+            toolInvocation: {
+              state: "call",
+              toolName: value.toolName,
+              toolCallId: value.toolCallId,
+              args: {},
+            },
+          })
+          break
+
+        case "tool-call-delta":
           break
 
         case "tool-result":
@@ -566,5 +582,6 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
         },
       ],
     })
+    await App.initialize()
   }
 }

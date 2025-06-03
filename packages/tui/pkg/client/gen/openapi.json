@@ -44,6 +44,69 @@
         "description": "Get app info"
       }
     },
+    "/app_initialize": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Initialize the app",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postApp_initialize",
+        "parameters": [],
+        "description": "Initialize the app"
+      }
+    },
+    "/session_initialize": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postSession_initialize",
+        "parameters": [],
+        "description": "Analyze the app and create an AGENTS.md file",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessionID": {
+                    "type": "string"
+                  },
+                  "providerID": {
+                    "type": "string"
+                  },
+                  "modelID": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "sessionID",
+                  "providerID",
+                  "modelID"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/path_get": {
       "post": {
         "responses": {
@@ -932,13 +995,8 @@
       "App.Info": {
         "type": "object",
         "properties": {
-          "time": {
-            "type": "object",
-            "properties": {
-              "initialized": {
-                "type": "number"
-              }
-            }
+          "git": {
+            "type": "boolean"
           },
           "path": {
             "type": "object",
@@ -958,11 +1016,20 @@
               "root",
               "cwd"
             ]
+          },
+          "time": {
+            "type": "object",
+            "properties": {
+              "initialized": {
+                "type": "number"
+              }
+            }
           }
         },
         "required": [
-          "time",
-          "path"
+          "git",
+          "path",
+          "time"
         ]
       },
       "Provider.Info": {

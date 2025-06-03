@@ -26,6 +26,7 @@ const (
 
 // AppInfo defines model for App.Info.
 type AppInfo struct {
+	Git  bool `json:"git"`
 	Path struct {
 		Cwd  string `json:"cwd"`
 		Data string `json:"data"`
@@ -251,6 +252,13 @@ type PostSessionChatJSONBody struct {
 	SessionID  string        `json:"sessionID"`
 }
 
+// PostSessionInitializeJSONBody defines parameters for PostSessionInitialize.
+type PostSessionInitializeJSONBody struct {
+	ModelID    string `json:"modelID"`
+	ProviderID string `json:"providerID"`
+	SessionID  string `json:"sessionID"`
+}
+
 // PostSessionMessagesJSONBody defines parameters for PostSessionMessages.
 type PostSessionMessagesJSONBody struct {
 	SessionID string `json:"sessionID"`
@@ -273,6 +281,9 @@ type PostSessionAbortJSONRequestBody PostSessionAbortJSONBody
 
 // PostSessionChatJSONRequestBody defines body for PostSessionChat for application/json ContentType.
 type PostSessionChatJSONRequestBody PostSessionChatJSONBody
+
+// PostSessionInitializeJSONRequestBody defines body for PostSessionInitialize for application/json ContentType.
+type PostSessionInitializeJSONRequestBody PostSessionInitializeJSONBody
 
 // PostSessionMessagesJSONRequestBody defines body for PostSessionMessages for application/json ContentType.
 type PostSessionMessagesJSONRequestBody PostSessionMessagesJSONBody
@@ -866,6 +877,9 @@ type ClientInterface interface {
 	// PostAppInfo request
 	PostAppInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostAppInitialize request
+	PostAppInitialize(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetEvent request
 	GetEvent(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -888,6 +902,11 @@ type ClientInterface interface {
 	// PostSessionCreate request
 	PostSessionCreate(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostSessionInitializeWithBody request with any body
+	PostSessionInitializeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostSessionInitialize(ctx context.Context, body PostSessionInitializeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostSessionList request
 	PostSessionList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -909,6 +928,18 @@ type ClientInterface interface {
 
 func (c *Client) PostAppInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostAppInfoRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostAppInitialize(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostAppInitializeRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -1015,6 +1046,30 @@ func (c *Client) PostSessionCreate(ctx context.Context, reqEditors ...RequestEdi
 	return c.Client.Do(req)
 }
 
+func (c *Client) PostSessionInitializeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionInitializeRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostSessionInitialize(ctx context.Context, body PostSessionInitializeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostSessionInitializeRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) PostSessionList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostSessionListRequest(c.Server)
 	if err != nil {
@@ -1109,6 +1164,33 @@ func NewPostAppInfoRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/app_info")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostAppInitializeRequest generates requests for PostAppInitialize
+func NewPostAppInitializeRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/app_initialize")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1314,6 +1396,46 @@ func NewPostSessionCreateRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewPostSessionInitializeRequest calls the generic PostSessionInitialize builder with application/json body
+func NewPostSessionInitializeRequest(server string, body PostSessionInitializeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostSessionInitializeRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostSessionInitializeRequestWithBody generates requests for PostSessionInitialize with any type of body
+func NewPostSessionInitializeRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/session_initialize")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewPostSessionListRequest generates requests for PostSessionList
 func NewPostSessionListRequest(server string) (*http.Request, error) {
 	var err error
@@ -1507,6 +1629,9 @@ type ClientWithResponsesInterface interface {
 	// PostAppInfoWithResponse request
 	PostAppInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostAppInfoResponse, error)
 
+	// PostAppInitializeWithResponse request
+	PostAppInitializeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostAppInitializeResponse, error)
+
 	// GetEventWithResponse request
 	GetEventWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventResponse, error)
 
@@ -1528,6 +1653,11 @@ type ClientWithResponsesInterface interface {
 
 	// PostSessionCreateWithResponse request
 	PostSessionCreateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostSessionCreateResponse, error)
+
+	// PostSessionInitializeWithBodyWithResponse request with any body
+	PostSessionInitializeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionInitializeResponse, error)
+
+	PostSessionInitializeWithResponse(ctx context.Context, body PostSessionInitializeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionInitializeResponse, error)
 
 	// PostSessionListWithResponse request
 	PostSessionListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostSessionListResponse, error)
@@ -1564,6 +1694,28 @@ func (r PostAppInfoResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PostAppInfoResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostAppInitializeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *bool
+}
+
+// Status returns HTTPResponse.Status
+func (r PostAppInitializeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostAppInitializeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1707,6 +1859,28 @@ func (r PostSessionCreateResponse) StatusCode() int {
 	return 0
 }
 
+type PostSessionInitializeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *bool
+}
+
+// Status returns HTTPResponse.Status
+func (r PostSessionInitializeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostSessionInitializeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PostSessionListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1804,6 +1978,15 @@ func (c *ClientWithResponses) PostAppInfoWithResponse(ctx context.Context, reqEd
 	return ParsePostAppInfoResponse(rsp)
 }
 
+// PostAppInitializeWithResponse request returning *PostAppInitializeResponse
+func (c *ClientWithResponses) PostAppInitializeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostAppInitializeResponse, error) {
+	rsp, err := c.PostAppInitialize(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostAppInitializeResponse(rsp)
+}
+
 // GetEventWithResponse request returning *GetEventResponse
 func (c *ClientWithResponses) GetEventWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventResponse, error) {
 	rsp, err := c.GetEvent(ctx, reqEditors...)
@@ -1872,6 +2055,23 @@ func (c *ClientWithResponses) PostSessionCreateWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParsePostSessionCreateResponse(rsp)
+}
+
+// PostSessionInitializeWithBodyWithResponse request with arbitrary body returning *PostSessionInitializeResponse
+func (c *ClientWithResponses) PostSessionInitializeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSessionInitializeResponse, error) {
+	rsp, err := c.PostSessionInitializeWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionInitializeResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostSessionInitializeWithResponse(ctx context.Context, body PostSessionInitializeJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSessionInitializeResponse, error) {
+	rsp, err := c.PostSessionInitialize(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostSessionInitializeResponse(rsp)
 }
 
 // PostSessionListWithResponse request returning *PostSessionListResponse
@@ -1950,6 +2150,32 @@ func ParsePostAppInfoResponse(rsp *http.Response) (*PostAppInfoResponse, error) 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest AppInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostAppInitializeResponse parses an HTTP response from a PostAppInitializeWithResponse call
+func ParsePostAppInitializeResponse(rsp *http.Response) (*PostAppInitializeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostAppInitializeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest bool
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2111,6 +2337,32 @@ func ParsePostSessionCreateResponse(rsp *http.Response) (*PostSessionCreateRespo
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest SessionInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostSessionInitializeResponse parses an HTTP response from a PostSessionInitializeWithResponse call
+func ParsePostSessionInitializeResponse(rsp *http.Response) (*PostSessionInitializeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostSessionInitializeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest bool
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

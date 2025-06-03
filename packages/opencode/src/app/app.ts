@@ -10,14 +10,14 @@ export namespace App {
 
   export const Info = z
     .object({
-      time: z.object({
-        initialized: z.number().optional(),
-      }),
       git: z.boolean(),
       path: z.object({
         data: z.string(),
         root: z.string(),
         cwd: z.string(),
+      }),
+      time: z.object({
+        initialized: z.number().optional(),
       }),
     })
     .openapi({
@@ -33,16 +33,12 @@ export namespace App {
     )
 
     const data = path.join(Global.data(), git ?? "global")
-    await Bun.write(path.join(data, "version"), input.version)
     const stateFile = Bun.file(path.join(data, "state"))
-    const state = (
-      (await stateFile.exists()) ? await stateFile.json() : {}
-    ) as {
+    const state = (await stateFile.json().catch(() => ({}))) as {
       initialized: number
       version: string
     }
     state.version = input.version
-    if (!git) state.initialized = Date.now()
     await stateFile.write(JSON.stringify(state))
 
     const services = new Map<
@@ -67,6 +63,7 @@ export namespace App {
       },
     }
     const result = {
+      version: input.version,
       services,
       info,
     }
@@ -102,7 +99,6 @@ export namespace App {
     cb: T,
   ) {
     const app = await create(input)
-
     return ctx.provide(app, async () => {
       const result = await cb(app.info)
       for (const [key, entry] of app.services.entries()) {
@@ -111,5 +107,17 @@ export namespace App {
       }
       return result
     })
+  }
+
+  export async function initialize() {
+    const { info, version } = ctx.use()
+    info.time.initialized = Date.now()
+    await Bun.write(
+      path.join(info.path.data, "state"),
+      JSON.stringify({
+        version,
+        initialized: Date.now(),
+      }),
+    )
   }
 }
