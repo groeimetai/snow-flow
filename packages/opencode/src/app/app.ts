@@ -27,13 +27,15 @@ export namespace App {
 
   const ctx = Context.create<Awaited<ReturnType<typeof create>>>("app")
 
+  const APP_JSON = "app.json"
+
   async function create(input: { cwd: string; version: string }) {
     const git = await Filesystem.findUp(".git", input.cwd).then((x) =>
       x ? path.dirname(x) : undefined,
     )
 
     const data = path.join(Global.data(), git ?? "global")
-    const stateFile = Bun.file(path.join(data, "state.json"))
+    const stateFile = Bun.file(path.join(data, APP_JSON))
     const state = (await stateFile.json().catch(() => ({}))) as {
       initialized: number
       version: string
@@ -113,7 +115,7 @@ export namespace App {
     const { info, version } = ctx.use()
     info.time.initialized = Date.now()
     await Bun.write(
-      path.join(info.path.data, "state.json"),
+      path.join(info.path.data, APP_JSON),
       JSON.stringify({
         version,
         initialized: Date.now(),
