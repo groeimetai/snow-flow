@@ -191,12 +191,12 @@ export const BashTool = Tool.define({
       cmd: ["bash", "-c", params.command],
       maxBuffer: MAX_OUTPUT_LENGTH,
       timeout: timeout,
+      stdout: "pipe",
+      stderr: "pipe",
     })
     await process.exited
     const stdout = await new Response(process.stdout).text()
-    const stderr = process.stderr
-      ? await new Response(process.stderr).text()
-      : undefined
+    const stderr = await new Response(process.stderr).text()
 
     return {
       metadata: {
