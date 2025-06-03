@@ -246,6 +246,7 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
       }
       msgs.push(system)
       generateText({
+        maxOutputTokens: 80,
         messages: convertToModelMessages([
           {
             role: "system",
