@@ -12,9 +12,10 @@ import { transformerNotationDiff } from "@shikijs/transformers"
 interface CodeBlockProps extends JSX.HTMLAttributes<HTMLDivElement> {
   code: string
   lang?: string
+  onRendered?: () => void
 }
 function CodeBlock(props: CodeBlockProps) {
-  const [local, rest] = splitProps(props, ["code", "lang"])
+  const [local, rest] = splitProps(props, ["code", "lang", "onRendered"])
   let containerRef!: HTMLDivElement
 
   const [html] = createResource(async () => {
@@ -35,6 +36,8 @@ function CodeBlock(props: CodeBlockProps) {
   createEffect(() => {
     if (html() && containerRef) {
       containerRef.innerHTML = html() as string
+
+      local.onRendered?.()
     }
   })
 

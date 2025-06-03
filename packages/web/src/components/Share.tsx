@@ -188,7 +188,7 @@ function TextPart(props: TextPartProps) {
       {...rest}
     >
       <pre ref={(el) => (preEl = el)}>{local.text}</pre>
-      {overflowed() && (
+      {((!local.expand && overflowed()) || expanded()) && (
         <button
           type="button"
           data-element-button-text
@@ -223,13 +223,7 @@ function TerminalPart(props: TerminalPartProps) {
   }
 
   onMount(() => {
-    checkOverflow()
     window.addEventListener("resize", checkOverflow)
-  })
-
-  createEffect(() => {
-    local.text
-    setTimeout(checkOverflow, 0)
   })
 
   onCleanup(() => {
@@ -247,12 +241,13 @@ function TerminalPart(props: TerminalPartProps) {
         <div data-section="content">
           <CodeBlock
             lang="ansi"
+            onRendered={checkOverflow}
             ref={(el) => (preEl = el)}
             code={`\x1b[90m>\x1b[0m ${local.text}`}
           />
         </div>
       </div>
-      {overflowed() && (
+      {((!local.expand && overflowed()) || expanded()) && (
         <button
           type="button"
           data-element-button-text
