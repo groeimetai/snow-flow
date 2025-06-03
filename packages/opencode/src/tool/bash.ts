@@ -187,14 +187,23 @@ export const BashTool = Tool.define({
     if (BANNED_COMMANDS.some((item) => params.command.startsWith(item)))
       throw new Error(`Command '${params.command}' is not allowed`)
 
-    const process = Bun.spawnSync({
+    const process = Bun.spawn({
       cmd: ["bash", "-c", params.command],
       maxBuffer: MAX_OUTPUT_LENGTH,
       timeout: timeout,
     })
+    await process.exited
+    const stdout = await new Response(process.stdout).text()
+    const stderr = process.stderr
+      ? await new Response(process.stderr).text()
+      : undefined
+
     return {
-      metadata: {},
-      output: process.stdout.toString("utf-8"),
+      metadata: {
+        stderr,
+        stdout,
+      },
+      output: stdout.replaceAll(/\x1b\[[0-9;]*m/g, ""),
     }
   },
 })
