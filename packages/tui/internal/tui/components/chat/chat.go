@@ -121,7 +121,7 @@ func repo(width int) string {
 }
 
 func cwd(app *app.App, width int) string {
-	cwd := fmt.Sprintf("cwd: %s", app.Paths.Cwd)
+	cwd := fmt.Sprintf("cwd: %s", app.Info.Path.Cwd)
 	t := theme.CurrentTheme()
 
 	return styles.BaseStyle().

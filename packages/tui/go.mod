@@ -18,9 +18,6 @@ require (
 	github.com/muesli/termenv v0.16.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
-	github.com/spf13/cobra v1.9.1
-	github.com/spf13/viper v1.20.0
-	github.com/stretchr/testify v1.10.0
 	rsc.io/qr v0.2.0
 )
 
@@ -28,6 +25,7 @@ require golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
+	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/atombender/go-jsonschema v0.20.0 // indirect
 	github.com/dprotaso/go-yit v0.0.0-20220510233725-9ba8df137936 // indirect

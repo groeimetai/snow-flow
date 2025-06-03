@@ -995,12 +995,18 @@
       "App.Info": {
         "type": "object",
         "properties": {
+          "user": {
+            "type": "string"
+          },
           "git": {
             "type": "boolean"
           },
           "path": {
             "type": "object",
             "properties": {
+              "config": {
+                "type": "string"
+              },
               "data": {
                 "type": "string"
               },
@@ -1012,6 +1018,7 @@
               }
             },
             "required": [
+              "config",
               "data",
               "root",
               "cwd"
@@ -1027,6 +1034,7 @@
           }
         },
         "required": [
+          "user",
           "git",
           "path",
           "time"

@@ -8,7 +8,6 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/tui/components/diff"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
@@ -27,7 +26,7 @@ func toMarkdown(content string, width int) string {
 	return strings.TrimSuffix(rendered, "\n")
 }
 
-func renderUserMessage(msg client.MessageInfo, width int) string {
+func renderUserMessage(user string, msg client.MessageInfo, width int) string {
 	t := theme.CurrentTheme()
 	style := styles.BaseStyle().
 		BorderLeft(true).
@@ -55,10 +54,9 @@ func renderUserMessage(msg client.MessageInfo, width int) string {
 	if time.Now().Format("02 Jan 2006") == timestamp[:11] {
 		timestamp = timestamp[12:]
 	}
-	username, _ := config.GetUsername()
 	info := styles.Padded().
 		Foreground(t.TextMuted()).
-		Render(fmt.Sprintf("%s (%s)", username, timestamp))
+		Render(fmt.Sprintf("%s (%s)", user, timestamp))
 
 	content := ""
 	// if len(styledAttachments) > 0 {
@@ -310,23 +308,6 @@ func renderParams(paramsWidth int, params ...string) string {
 	}
 
 	return ansi.Truncate(mainParam, paramsWidth, "...")
-}
-
-func removeWorkingDirPrefix(path string) string {
-	wd := config.WorkingDirectory()
-	if strings.HasPrefix(path, wd) {
-		path = strings.TrimPrefix(path, wd)
-	}
-	if strings.HasPrefix(path, "/") {
-		path = strings.TrimPrefix(path, "/")
-	}
-	if strings.HasPrefix(path, "./") {
-		path = strings.TrimPrefix(path, "./")
-	}
-	if strings.HasPrefix(path, "../") {
-		path = strings.TrimPrefix(path, "../")
-	}
-	return path
 }
 
 func renderToolParams(paramWidth int, toolCall any) string {

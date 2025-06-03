@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/sst/opencode/internal/config"
+	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/util"
 )
 
@@ -22,50 +22,19 @@ const (
 var namedArgPattern = regexp.MustCompile(`\$([A-Z][A-Z0-9_]*)`)
 
 // LoadCustomCommands loads custom commands from both XDG_CONFIG_HOME and project data directory
-func LoadCustomCommands() ([]Command, error) {
-	cfg := config.Get()
-	if cfg == nil {
-		return nil, fmt.Errorf("config not loaded")
-	}
-
+func LoadCustomCommands(app *app.App) ([]Command, error) {
 	var commands []Command
 
-	// Load user commands from XDG_CONFIG_HOME/opencode/commands
-	xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
-	if xdgConfigHome == "" {
-		// Default to ~/.config if XDG_CONFIG_HOME is not set
-		home, err := os.UserHomeDir()
-		if err == nil {
-			xdgConfigHome = filepath.Join(home, ".config")
-		}
+	homeCommandsDir := filepath.Join(app.Info.Path.Config, "commands")
+	homeCommands, err := loadCommandsFromDir(homeCommandsDir, UserCommandPrefix)
+	if err != nil {
+		// Log error but continue - we'll still try to load other commands
+		fmt.Printf("Warning: failed to load home commands: %v\n", err)
+	} else {
+		commands = append(commands, homeCommands...)
 	}
 
-	if xdgConfigHome != "" {
-		userCommandsDir := filepath.Join(xdgConfigHome, "opencode", "commands")
-		userCommands, err := loadCommandsFromDir(userCommandsDir, UserCommandPrefix)
-		if err != nil {
-			// Log error but continue - we'll still try to load other commands
-			fmt.Printf("Warning: failed to load user commands from XDG_CONFIG_HOME: %v\n", err)
-		} else {
-			commands = append(commands, userCommands...)
-		}
-	}
-
-	// Load commands from $HOME/.opencode/commands
-	home, err := os.UserHomeDir()
-	if err == nil {
-		homeCommandsDir := filepath.Join(home, ".opencode", "commands")
-		homeCommands, err := loadCommandsFromDir(homeCommandsDir, UserCommandPrefix)
-		if err != nil {
-			// Log error but continue - we'll still try to load other commands
-			fmt.Printf("Warning: failed to load home commands: %v\n", err)
-		} else {
-			commands = append(commands, homeCommands...)
-		}
-	}
-
-	// Load project commands from data directory
-	projectCommandsDir := filepath.Join(cfg.Data.Directory, "commands")
+	projectCommandsDir := filepath.Join(app.Info.Path.Root, "commands")
 	projectCommands, err := loadCommandsFromDir(projectCommandsDir, ProjectCommandPrefix)
 	if err != nil {
 		// Log error but return what we have so far

@@ -17,3 +17,5 @@ type CompactSessionMsg struct{}
 type StateUpdatedMsg struct {
 	State map[string]any
 }
+
+// TODO: store in CONFIG/tui.yaml

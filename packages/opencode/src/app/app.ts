@@ -3,6 +3,7 @@ import { Context } from "../util/context"
 import { Filesystem } from "../util/filesystem"
 import { Global } from "../global"
 import path from "path"
+import os from "os"
 import { z } from "zod"
 
 export namespace App {
@@ -10,8 +11,10 @@ export namespace App {
 
   export const Info = z
     .object({
+      user: z.string(),
       git: z.boolean(),
       path: z.object({
+        config: z.string(),
         data: z.string(),
         root: z.string(),
         cwd: z.string(),
@@ -54,11 +57,13 @@ export namespace App {
     await Log.file(path.join(data, "log"))
 
     const info: Info = {
+      user: os.userInfo().username,
       time: {
         initialized: state.initialized,
       },
       git: git !== undefined,
       path: {
+        config: Global.Path.config,
         data,
         root: git ?? input.cwd,
         cwd: input.cwd,

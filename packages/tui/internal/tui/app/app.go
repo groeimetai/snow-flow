@@ -3,14 +3,15 @@ package app
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"sort"
 
 	"log/slog"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/fileutil"
 	"github.com/sst/opencode/internal/status"
+	"github.com/sst/opencode/internal/tui/config"
 	"github.com/sst/opencode/internal/tui/state"
 	"github.com/sst/opencode/internal/tui/theme"
 	"github.com/sst/opencode/internal/tui/util"
@@ -18,20 +19,15 @@ import (
 )
 
 type App struct {
-	Paths *struct {
-		Config string `json:"config"`
-		Cwd    string `json:"cwd"`
-		Data   string `json:"data"`
-		Root   string `json:"root"`
-	}
-	Client   *client.ClientWithResponses
-	Provider *client.ProviderInfo
-	Model    *client.ProviderModel
-	Session  *client.SessionInfo
-	Messages []client.MessageInfo
-	Status   status.Service
-
-	PrimaryAgentOLD AgentService
+	ConfigPath string
+	Config     *config.Config
+	Info       *client.AppInfo
+	Client     *client.ClientWithResponses
+	Provider   *client.ProviderInfo
+	Model      *client.ProviderModel
+	Session    *client.SessionInfo
+	Messages   []client.MessageInfo
+	Status     status.Service
 
 	// UI state
 	filepickerOpen       bool
@@ -45,23 +41,71 @@ func New(ctx context.Context, httpClient *client.ClientWithResponses) (*App, err
 		return nil, err
 	}
 
-	fileutil.Init()
+	appInfoResponse, _ := httpClient.PostAppInfoWithResponse(ctx)
+	appInfo := appInfoResponse.JSON200
+	providersResponse, _ := httpClient.PostProviderListWithResponse(ctx)
+	providers := []client.ProviderInfo{}
+	var defaultProvider *client.ProviderInfo
+	var defaultModel *client.ProviderModel
 
-	paths, _ := httpClient.PostPathGetWithResponse(context.Background())
+	for _, provider := range *providersResponse.JSON200 {
+		if provider.Id == "anthropic" {
+			defaultProvider = &provider
 
-	agentBridge := NewAgentServiceBridge(httpClient)
-
-	app := &App{
-		Paths:           paths.JSON200,
-		Client:          httpClient,
-		Session:         &client.SessionInfo{},
-		Messages:        []client.MessageInfo{},
-		PrimaryAgentOLD: agentBridge,
-		Status:          status.GetService(),
+			for _, model := range provider.Models {
+				if model.Id == "claude-sonnet-4-20250514" {
+					defaultModel = &model
+				}
+			}
+		}
+		providers = append(providers, provider)
+	}
+	if len(providers) == 0 {
+		return nil, fmt.Errorf("no providers found")
+	}
+	if defaultProvider == nil {
+		defaultProvider = &providers[0]
+	}
+	if defaultModel == nil {
+		defaultModel = &defaultProvider.Models[0]
 	}
 
-	// Initialize theme based on configuration
-	app.initTheme()
+	appConfigPath := filepath.Join(appInfo.Path.Config, "tui.toml")
+	appConfig, err := config.LoadConfig(appConfigPath)
+	if err != nil {
+		slog.Info("No TUI config found, using default values", "error", err)
+		appConfig = config.NewConfig("opencode", defaultProvider.Id, defaultModel.Id)
+		config.SaveConfig(appConfigPath, appConfig)
+	}
+
+	var currentProvider *client.ProviderInfo
+	var currentModel *client.ProviderModel
+	for _, provider := range providers {
+		if provider.Id == appConfig.Provider {
+			currentProvider = &provider
+
+			for _, model := range provider.Models {
+				if model.Id == appConfig.Model {
+					currentModel = &model
+				}
+			}
+		}
+	}
+
+	app := &App{
+		ConfigPath: appConfigPath,
+		Config:     appConfig,
+		Info:       appInfo,
+		Client:     httpClient,
+		Provider:   currentProvider,
+		Model:      currentModel,
+		Session:    &client.SessionInfo{},
+		Messages:   []client.MessageInfo{},
+		Status:     status.GetService(),
+	}
+
+	theme.SetTheme(appConfig.Theme)
+	fileutil.Init()
 
 	return app, nil
 }
@@ -71,6 +115,10 @@ type Attachment struct {
 	FileName string
 	MimeType string
 	Content  []byte
+}
+
+func (a *App) SaveConfig() {
+	config.SaveConfig(a.ConfigPath, a.Config)
 }
 
 // Create creates a new session
@@ -167,22 +215,6 @@ func (a *App) ListProviders(ctx context.Context) ([]client.ProviderInfo, error) 
 
 	providers := *resp.JSON200
 	return providers, nil
-}
-
-// initTheme sets the application theme based on the configuration
-func (app *App) initTheme() {
-	cfg := config.Get()
-	if cfg == nil || cfg.TUI.Theme == "" {
-		return // Use default theme
-	}
-
-	// Try to set the theme from config
-	err := theme.SetTheme(cfg.TUI.Theme)
-	if err != nil {
-		slog.Warn("Failed to set theme from config, using default theme", "theme", cfg.TUI.Theme, "error", err)
-	} else {
-		slog.Debug("Set theme from config", "theme", cfg.TUI.Theme)
-	}
 }
 
 // IsFilepickerOpen returns whether the filepicker is currently open

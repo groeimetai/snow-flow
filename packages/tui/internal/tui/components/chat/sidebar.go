@@ -7,7 +7,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/state"
 	"github.com/sst/opencode/internal/tui/styles"
@@ -210,11 +209,4 @@ func NewSidebarCmp(app *app.App) tea.Model {
 	return &sidebarCmp{
 		app: app,
 	}
-}
-
-// Helper function to get the display path for a file
-func getDisplayPath(path string) string {
-	workingDir := config.WorkingDirectory()
-	displayPath := strings.TrimPrefix(path, workingDir)
-	return strings.TrimPrefix(displayPath, "/")
 }

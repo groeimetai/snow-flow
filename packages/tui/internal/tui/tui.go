@@ -10,11 +10,9 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/tui/app"
 
 	"github.com/sst/opencode/internal/status"
-	"github.com/sst/opencode/internal/tui/components/chat"
 	"github.com/sst/opencode/internal/tui/components/core"
 	"github.com/sst/opencode/internal/tui/components/dialog"
 	"github.com/sst/opencode/internal/tui/layout"
@@ -160,18 +158,8 @@ func (a appModel) Init() tea.Cmd {
 
 	// Check if we should show the init dialog
 	cmds = append(cmds, func() tea.Msg {
-		shouldShow, err := config.ShouldShowInitDialog()
-		if err != nil {
-			status.Error("Failed to check init status: " + err.Error())
-			return nil
-		}
+		shouldShow := a.app.Info.Time.Initialized == nil
 		return dialog.ShowInitDialogMsg{Show: shouldShow}
-	})
-
-	// TODO: store last selected model somewhere
-	cmds = append(cmds, func() tea.Msg {
-		providers, _ := a.app.ListProviders(context.Background())
-		return state.ModelSelectedMsg{Provider: providers[0], Model: providers[0].Models[0]}
 	})
 
 	return tea.Batch(cmds...)
@@ -308,6 +296,9 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case state.ModelSelectedMsg:
 		a.app.Provider = &msg.Provider
 		a.app.Model = &msg.Model
+		a.app.Config.Provider = msg.Provider.Id
+		a.app.Config.Model = msg.Model.Id
+		a.app.SaveConfig()
 		return a.updateAllPages(msg)
 
 	case dialog.CloseCommandDialogMsg:
@@ -327,6 +318,9 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case dialog.ThemeChangedMsg:
+		a.app.Config.Theme = msg.ThemeName
+		a.app.SaveConfig()
+
 		a.pages[a.currentPage], cmd = a.pages[a.currentPage].Update(msg)
 		a.showThemeDialog = false
 		status.Info("Theme changed to: " + msg.ThemeName)
@@ -342,21 +336,18 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Run the initialization command
 			for _, cmd := range a.commands {
 				if cmd.ID == "init" {
-					// Mark the project as initialized
-					if err := config.MarkProjectInitialized(); err != nil {
-						status.Error(err.Error())
-						return a, nil
-					}
 					return a, cmd.Handler(cmd)
 				}
 			}
-		} else {
-			// Mark the project as initialized without running the command
-			if err := config.MarkProjectInitialized(); err != nil {
-				status.Error(err.Error())
-				return a, nil
-			}
 		}
+		// TODO: should we not ask again?
+		// else {
+		// 	// Mark the project as initialized without running the command
+		// 	if err := config.MarkProjectInitialized(); err != nil {
+		// 		status.Error(err.Error())
+		// 		return a, nil
+		// 	}
+		// }
 		return a, nil
 
 	case dialog.CommandSelectedMsg:
@@ -540,11 +531,12 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				if a.showInitDialog {
 					a.showInitDialog = false
+					// TODO: should we not ask again?
 					// Mark the project as initialized without running the command
-					if err := config.MarkProjectInitialized(); err != nil {
-						status.Error(err.Error())
-						return a, nil
-					}
+					// if err := config.MarkProjectInitialized(); err != nil {
+					// 	status.Error(err.Error())
+					// 	return a, nil
+					// }
 					return a, nil
 				}
 				if a.showFilepicker {
@@ -566,13 +558,13 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return a, nil
 		case key.Matches(msg, helpEsc):
-			if a.app.PrimaryAgentOLD.IsBusy() {
-				if a.showQuit {
-					return a, nil
-				}
-				a.showHelp = !a.showHelp
+			// if a.app.PrimaryAgentOLD.IsBusy() {
+			if a.showQuit {
 				return a, nil
 			}
+			a.showHelp = !a.showHelp
+			return a, nil
+			// }
 		case key.Matches(msg, keys.Filepicker):
 			// Toggle filepicker
 			a.showFilepicker = !a.showFilepicker
@@ -762,12 +754,6 @@ func (a appModel) View() string {
 
 	}
 
-	if !a.app.PrimaryAgentOLD.IsBusy() {
-		a.status.SetHelpWidgetMsg("ctrl+? help")
-	} else {
-		a.status.SetHelpWidgetMsg("? help")
-	}
-
 	if a.showHelp {
 		bindings := layout.KeyMapToSlice(keys)
 		if p, ok := a.pages[a.currentPage].(layout.Bindings); ok {
@@ -776,9 +762,9 @@ func (a appModel) View() string {
 		if a.showPermissions {
 			bindings = append(bindings, a.permissions.BindingKeys()...)
 		}
-		if !a.app.PrimaryAgentOLD.IsBusy() {
-			bindings = append(bindings, helpEsc)
-		}
+		// if !a.app.PrimaryAgentOLD.IsBusy() {
+		bindings = append(bindings, helpEsc)
+		// }
 		a.help.SetBindings(bindings)
 
 		overlay := a.help.View()
@@ -940,20 +926,12 @@ func New(app *app.App) tea.Model {
 	model.RegisterCommand(dialog.Command{
 		ID:          "init",
 		Title:       "Initialize Project",
-		Description: "Create/Update the CONTEXT.md memory file",
+		Description: "Create/Update the AGENTS.md memory file",
 		Handler: func(cmd dialog.Command) tea.Cmd {
-			prompt := `Please analyze this codebase and create a CONTEXT.md file containing:
-1. Build/lint/test commands - especially for running a single test
-2. Code style guidelines including imports, formatting, types, naming conventions, error handling, etc.
-
-The file you create will be given to agentic coding agents (such as yourself) that operate in this repository. Make it about 20 lines long.
-If there's already a CONTEXT.md, improve it.
-If there are Cursor rules (in .cursor/rules/ or .cursorrules) or Copilot rules (in .github/copilot-instructions.md), make sure to include them.`
-			return tea.Batch(
-				util.CmdHandler(chat.SendMsg{
-					Text: prompt,
-				}),
-			)
+			model.app.Client.PostSessionInitialize(context.Background(), client.PostSessionInitializeJSONRequestBody{
+				SessionID: model.app.Session.Id,
+			})
+			return nil
 		},
 	})
 
@@ -975,7 +953,7 @@ If there are Cursor rules (in .cursor/rules/ or .cursorrules) or Copilot rules (
 	})
 
 	// Load custom commands
-	customCommands, err := dialog.LoadCustomCommands()
+	customCommands, err := dialog.LoadCustomCommands(app)
 	if err != nil {
 		slog.Warn("Failed to load custom commands", "error", err)
 	} else {

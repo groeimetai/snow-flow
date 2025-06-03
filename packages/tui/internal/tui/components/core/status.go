@@ -16,7 +16,6 @@ import (
 
 type StatusCmp interface {
 	tea.Model
-	SetHelpWidgetMsg(string)
 }
 
 type statusCmp struct {
@@ -99,14 +98,10 @@ func (m statusCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-var helpWidget = ""
-
 // getHelpWidget returns the help widget with current theme colors
-func getHelpWidget(helpText string) string {
+func getHelpWidget() string {
 	t := theme.CurrentTheme()
-	if helpText == "" {
-		helpText = "ctrl+? help"
-	}
+	helpText := "ctrl+? help"
 
 	return styles.Padded().
 		Background(t.TextMuted()).
@@ -145,8 +140,7 @@ func formatTokensAndCost(tokens float32, contextWindow float32, cost float32) st
 
 func (m statusCmp) View() string {
 	t := theme.CurrentTheme()
-	// Initialize the help widget
-	status := getHelpWidget("")
+	status := getHelpWidget()
 
 	if m.app.Session.Id != "" {
 		tokens := float32(0)
@@ -343,15 +337,7 @@ func (m statusCmp) model() string {
 		Render(model)
 }
 
-func (m statusCmp) SetHelpWidgetMsg(s string) {
-	// Update the help widget text using the getHelpWidget function
-	helpWidget = getHelpWidget(s)
-}
-
 func NewStatusCmp(app *app.App) StatusCmp {
-	// Initialize the help widget with default text
-	helpWidget = getHelpWidget("")
-
 	statusComponent := &statusCmp{
 		app:         app,
 		queue:       []status.StatusMessage{},

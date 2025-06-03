@@ -8,7 +8,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/completions"
-	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/internal/tui/components/chat"
 	"github.com/sst/opencode/internal/tui/components/dialog"
@@ -76,10 +75,10 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case dialog.CommandRunCustomMsg:
 		// Check if the agent is busy before executing custom commands
-		if p.app.PrimaryAgentOLD.IsBusy() {
-			status.Warn("Agent is busy, please wait before executing a command...")
-			return p, nil
-		}
+		// if p.app.PrimaryAgentOLD.IsBusy() {
+		// 	status.Warn("Agent is busy, please wait before executing a command...")
+		// 	return p, nil
+		// }
 
 		// Process the command content with arguments if any
 		content := msg.Content

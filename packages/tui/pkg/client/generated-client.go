@@ -28,13 +28,15 @@ const (
 type AppInfo struct {
 	Git  bool `json:"git"`
 	Path struct {
-		Cwd  string `json:"cwd"`
-		Data string `json:"data"`
-		Root string `json:"root"`
+		Config string `json:"config"`
+		Cwd    string `json:"cwd"`
+		Data   string `json:"data"`
+		Root   string `json:"root"`
 	} `json:"path"`
 	Time struct {
 		Initialized *float32 `json:"initialized,omitempty"`
 	} `json:"time"`
+	User string `json:"user"`
 }
 
 // Event defines model for Event.

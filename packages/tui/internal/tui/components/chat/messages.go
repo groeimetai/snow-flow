@@ -105,7 +105,7 @@ func (m *messagesCmp) renderView() {
 	for _, msg := range m.app.Messages {
 		switch msg.Role {
 		case client.User:
-			content := renderUserMessage(msg, m.width)
+			content := renderUserMessage(m.app.Info.User, msg, m.width)
 			messages = append(messages, content+"\n")
 		case client.Assistant:
 			content := renderAssistantMessage(msg, m.width, m.showToolMessages)
@@ -245,28 +245,28 @@ func (m *messagesCmp) help() string {
 
 	text := ""
 
-	if m.app.PrimaryAgentOLD.IsBusy() {
-		text += lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render("press "),
-			baseStyle.Foreground(t.Text()).Bold(true).Render("esc"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" to interrupt"),
-		)
-	} else {
-		text += lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			baseStyle.Foreground(t.Text()).Bold(true).Render("enter"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" to send,"),
-			baseStyle.Foreground(t.Text()).Bold(true).Render(" \\"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render("+"),
-			baseStyle.Foreground(t.Text()).Bold(true).Render("enter"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" for newline,"),
-			baseStyle.Foreground(t.Text()).Bold(true).Render(" ↑↓"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" for history,"),
-			baseStyle.Foreground(t.Text()).Bold(true).Render(" ctrl+h"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" to toggle tool messages"),
-		)
-	}
+	// if m.app.PrimaryAgentOLD.IsBusy() {
+	// 	text += lipgloss.JoinHorizontal(
+	// 		lipgloss.Left,
+	// 		baseStyle.Foreground(t.TextMuted()).Bold(true).Render("press "),
+	// 		baseStyle.Foreground(t.Text()).Bold(true).Render("esc"),
+	// 		baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" to interrupt"),
+	// 	)
+	// } else {
+	text += lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		baseStyle.Foreground(t.Text()).Bold(true).Render("enter"),
+		baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" to send,"),
+		baseStyle.Foreground(t.Text()).Bold(true).Render(" \\"),
+		baseStyle.Foreground(t.TextMuted()).Bold(true).Render("+"),
+		baseStyle.Foreground(t.Text()).Bold(true).Render("enter"),
+		baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" for newline,"),
+		baseStyle.Foreground(t.Text()).Bold(true).Render(" ↑↓"),
+		baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" for history,"),
+		baseStyle.Foreground(t.Text()).Bold(true).Render(" ctrl+h"),
+		baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" to toggle tool messages"),
+	)
+	// }
 	return baseStyle.
 		Width(m.width).
 		Render(text)
