@@ -23,6 +23,7 @@ import { Share } from "../share/share"
 import { Message } from "./message"
 import { Bus } from "../bus"
 import { Provider } from "../provider/provider"
+import { SessionContext } from "./context"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -201,7 +202,6 @@ export namespace Session {
         (msg) => msg.role === "system" || msg.id >= lastSummary.id,
       )
 
-    const app = await App.use()
     if (msgs.length === 0) {
       const system: Message.Info = {
         id: Identifier.ascending("message"),
@@ -220,9 +220,8 @@ export namespace Session {
           tool: {},
         },
       }
-      const contextFile = Bun.file(path.join(app.path.root, "CONTEXT.md"))
-      if (await contextFile.exists()) {
-        const context = await contextFile.text()
+      const context = await SessionContext.find()
+      if (context) {
         system.parts.push({
           type: "text",
           text: context,

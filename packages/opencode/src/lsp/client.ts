@@ -32,7 +32,7 @@ export namespace LSPClient {
   export async function create(input: { cmd: string[]; serverID: string }) {
     log.info("starting client", input)
 
-    const app = await App.use()
+    const app = App.info()
     const [command, ...args] = input.cmd
     const server = spawn(command, args, {
       stdio: ["pipe", "pipe", "pipe"],

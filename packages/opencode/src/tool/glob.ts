@@ -50,7 +50,7 @@ export const GlobTool = Tool.define({
       .optional(),
   }),
   async execute(params) {
-    const app = await App.use()
+    const app = App.info()
     const search = params.path || app.path.cwd
     const limit = 100
     const glob = new Bun.Glob(params.pattern)

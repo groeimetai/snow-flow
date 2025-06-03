@@ -6,17 +6,19 @@ import { ListTool } from "../../src/tool/ls"
 describe("tool.glob", () => {
   test("truncate", async () => {
     await App.provide({ cwd: process.cwd(), version: "test" }, async () => {
-      let result = await GlobTool.execute({
-        pattern: "./node_modules/**/*",
-      })
+      let result = await GlobTool.execute(
+        { pattern: "./node_modules/**/*" },
+        { sessionID: "test" },
+      )
       expect(result.metadata.truncated).toBe(true)
     })
   })
   test("basic", async () => {
     await App.provide({ cwd: process.cwd(), version: "test" }, async () => {
-      let result = await GlobTool.execute({
-        pattern: "*.json",
-      })
+      let result = await GlobTool.execute(
+        { pattern: "*.json" },
+        { sessionID: "test" },
+      )
       expect(result.metadata).toMatchObject({
         truncated: false,
         count: 2,
@@ -30,9 +32,10 @@ describe("tool.ls", () => {
     const result = await App.provide(
       { cwd: process.cwd(), version: "test" },
       async () => {
-        return await ListTool.execute({
-          path: "./example",
-        })
+        return await ListTool.execute(
+          { path: "./example" },
+          { sessionID: "test" },
+        )
       },
     )
     expect(result.output).toMatchSnapshot()

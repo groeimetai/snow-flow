@@ -34,7 +34,7 @@ TIPS:
     path: z.string().describe("The path to the file to get diagnostics."),
   }),
   execute: async (args) => {
-    const app = await App.use()
+    const app = App.info()
     const normalized = path.isAbsolute(args.path)
       ? args.path
       : path.join(app.path.cwd, args.path)

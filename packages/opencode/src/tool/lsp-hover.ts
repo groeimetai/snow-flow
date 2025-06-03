@@ -17,8 +17,7 @@ export const LspHoverTool = Tool.define({
     character: z.number().describe("The character number to get diagnostics."),
   }),
   execute: async (args) => {
-    console.log(args)
-    const app = await App.use()
+    const app = App.info()
     const file = path.isAbsolute(args.file)
       ? args.file
       : path.join(app.path.cwd, args.file)

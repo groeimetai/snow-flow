@@ -3,21 +3,44 @@ import { Context } from "../util/context"
 import { Filesystem } from "../util/filesystem"
 import { Global } from "../global"
 import path from "path"
+import { z } from "zod"
 
 export namespace App {
   const log = Log.create({ service: "app" })
 
-  export type Info = Awaited<ReturnType<typeof create>>
+  export const Info = z
+    .object({
+      time: z.object({
+        initialized: z.number().optional(),
+      }),
+      path: z.object({
+        data: z.string(),
+        root: z.string(),
+        cwd: z.string(),
+      }),
+    })
+    .openapi({
+      ref: "App.Info",
+    })
+  export type Info = z.infer<typeof Info>
 
-  const ctx = Context.create<Info>("app")
+  const ctx = Context.create<Awaited<ReturnType<typeof create>>>("app")
 
   async function create(input: { cwd: string; version: string }) {
-    let root = await Filesystem.findUp(".git", input.cwd).then((x) =>
-      x ? path.dirname(x) : input.cwd,
+    const git = await Filesystem.findUp(".git", input.cwd).then((x) =>
+      x ? path.dirname(x) : undefined,
     )
 
-    const data = path.join(Global.data(), root)
+    const data = path.join(Global.data(), git ?? "global")
     await Bun.write(path.join(data, "version"), input.version)
+    const stateFile = Bun.file(path.join(data, "state"))
+    const state = ((await stateFile.exists()) ? stateFile.json() : {}) as {
+      initialized: number
+      version: string
+    }
+    state.version = input.version
+    if (!git) state.initialized = Date.now()
+    await stateFile.write(JSON.stringify(state))
 
     const services = new Map<
       any,
@@ -29,14 +52,20 @@ export namespace App {
 
     await Log.file(path.join(data, "log"))
 
-    const result = Object.freeze({
-      services,
+    const info: Info = {
+      time: {
+        initialized: state.initialized,
+      },
       path: {
         data,
-        root,
+        root: git ?? input.cwd,
         cwd: input.cwd,
       },
-    })
+    }
+    const result = {
+      services,
+      info,
+    }
 
     return result
   }
@@ -52,7 +81,7 @@ export namespace App {
       if (!services.has(key)) {
         log.info("registering service", { name: key })
         services.set(key, {
-          state: init(app),
+          state: init(app.info),
           shutdown: shutdown,
         })
       }
@@ -60,8 +89,8 @@ export namespace App {
     }
   }
 
-  export async function use() {
-    return ctx.use()
+  export function info() {
+    return ctx.use().info
   }
 
   export async function provide<T extends (app: Info) => any>(
@@ -71,7 +100,7 @@ export namespace App {
     const app = await create(input)
 
     return ctx.provide(app, async () => {
-      const result = await cb(app)
+      const result = await cb(app.info)
       for (const [key, entry] of app.services.entries()) {
         log.info("shutdown", { name: key })
         await entry.shutdown?.(await entry.state)

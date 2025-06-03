@@ -18,7 +18,7 @@ export namespace Storage {
   }
 
   const state = App.state("storage", async () => {
-    const app = await App.use()
+    const app = App.info()
     const storageDir = path.join(app.path.data, "storage")
     await fs.mkdir(storageDir, { recursive: true })
     const storage = new FileStorage(new LocalStorageAdapter(storageDir))

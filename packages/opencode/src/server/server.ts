@@ -15,7 +15,7 @@ export namespace Server {
   const log = Log.create({ service: "server" })
   const PORT = 16713
 
-  export type App = ReturnType<typeof app>
+  export type Routes = ReturnType<typeof app>
 
   function app() {
     const app = new Hono()
@@ -75,6 +75,25 @@ export namespace Server {
         },
       )
       .post(
+        "/app_info",
+        describeRoute({
+          description: "Get app info",
+          responses: {
+            200: {
+              description: "200",
+              content: {
+                "application/json": {
+                  schema: resolver(App.Info),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          return c.json(App.info())
+        },
+      )
+      .post(
         "/path_get",
         describeRoute({
           description: "Get paths",
@@ -97,7 +116,7 @@ export namespace Server {
           },
         }),
         async (c) => {
-          const app = await App.use()
+          const app = App.info()
           return c.json({
             root: app.path.root,
             data: app.path.data,

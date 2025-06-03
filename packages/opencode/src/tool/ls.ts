@@ -25,7 +25,7 @@ export const ListTool = Tool.define({
     ignore: z.array(z.string()).optional(),
   }),
   async execute(params) {
-    const app = await App.use()
+    const app = App.info()
     const searchPath = path.resolve(app.path.cwd, params.path || ".")
 
     const glob = new Bun.Glob("**/*")
