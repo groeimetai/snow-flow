@@ -33,7 +33,7 @@ export namespace App {
     )
 
     const data = path.join(Global.data(), git ?? "global")
-    const stateFile = Bun.file(path.join(data, "state"))
+    const stateFile = Bun.file(path.join(data, "state.json"))
     const state = (await stateFile.json().catch(() => ({}))) as {
       initialized: number
       version: string
@@ -113,7 +113,7 @@ export namespace App {
     const { info, version } = ctx.use()
     info.time.initialized = Date.now()
     await Bun.write(
-      path.join(info.path.data, "state"),
+      path.join(info.path.data, "state.json"),
       JSON.stringify({
         version,
         initialized: Date.now(),
