@@ -18,6 +18,7 @@ import { Decimal } from "decimal.js"
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 import PROMPT_SUMMARIZE from "./prompt/summarize.txt"
+import PROMPT_INITIALIZE from "../session/prompt/initialize.txt"
 
 import { Share } from "../share/share"
 import { Message } from "./message"
@@ -530,5 +531,23 @@ export namespace Session {
     constructor(public readonly sessionID: string) {
       super(`Session ${sessionID} is busy`)
     }
+  }
+
+  export async function initialize(input: {
+    sessionID: string
+    modelID: string
+    providerID: string
+  }) {
+    await Session.chat({
+      sessionID: input.sessionID,
+      providerID: input.providerID,
+      modelID: input.modelID,
+      parts: [
+        {
+          type: "text",
+          text: PROMPT_INITIALIZE,
+        },
+      ],
+    })
   }
 }

@@ -141,6 +141,17 @@ export namespace Provider {
     }
   }
 
+  export async function defaultModel() {
+    const [provider] = await active().then((val) => val.values().toArray())
+    if (!provider) throw new Error("no providers found")
+    const model = provider.models[0]
+    if (!model) throw new Error("no models found")
+    return {
+      providerID: provider.id,
+      modelID: model.id,
+    }
+  }
+
   const TOOLS = [
     BashTool,
     EditTool,

@@ -94,6 +94,35 @@ export namespace Server {
         },
       )
       .post(
+        "/session_initialize",
+        describeRoute({
+          description: "Analyze the app and create an AGENTS.md file",
+          responses: {
+            200: {
+              description: "200",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "json",
+          z.object({
+            sessionID: z.string(),
+            providerID: z.string(),
+            modelID: z.string(),
+          }),
+        ),
+        async (c) => {
+          const body = c.req.valid("json")
+          await Session.initialize(body)
+          return c.json(true)
+        },
+      )
+      .post(
         "/path_get",
         describeRoute({
           description: "Get paths",

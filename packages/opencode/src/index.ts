@@ -84,17 +84,11 @@ cli
         unsub()
       })
 
-      const [provider] = await Provider.active().then((val) =>
-        val.values().toArray(),
-      )
-      if (!provider) throw new Error("no providers found")
-      const model = provider.models[0]
-      if (!model) throw new Error("no models found")
-      console.log("using", provider.id, model.id)
+      const { providerID, modelID } = await Provider.defaultModel()
       const result = await Session.chat({
         sessionID: session.id,
-        providerID: provider.id,
-        modelID: model.id,
+        providerID,
+        modelID,
         parts: [
           {
             type: "text",
@@ -114,6 +108,27 @@ cli
       })
     })
   })
+
+cli.command("init", "Run a chat message").action(async () => {
+  await App.provide({ cwd: process.cwd(), version }, async () => {
+    const { modelID, providerID } = await Provider.defaultModel()
+    console.log("Initializing...")
+
+    const session = await Session.create()
+
+    const unsub = Bus.subscribe(Session.Event.Updated, async (message) => {
+      if (message.properties.info.share?.url)
+        console.log("Share:", message.properties.info.share.url)
+      unsub()
+    })
+
+    await Session.initialize({
+      sessionID: session.id,
+      modelID,
+      providerID,
+    })
+  })
+})
 
 cli.version(typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : "dev")
 cli.help()
