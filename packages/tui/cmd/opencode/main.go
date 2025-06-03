@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	url := "http://localhost:16713"
+	url := os.Getenv("OPENCODE_SERVER")
 	httpClient, err := client.NewClientWithResponses(url)
 	if err != nil {
 		slog.Error("Failed to create client", "error", err)

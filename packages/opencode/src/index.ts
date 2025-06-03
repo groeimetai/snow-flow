@@ -43,6 +43,10 @@ cli.command("", "Start the opencode in interactive mode").action(async () => {
       stdout: "inherit",
       stderr: "inherit",
       stdin: "inherit",
+      env: {
+        ...process.env,
+        OPENCODE_SERVER: server.url.toString(),
+      },
       onExit: () => {
         server.stop()
       },

@@ -13,7 +13,6 @@ import { Global } from "../global"
 
 export namespace Server {
   const log = Log.create({ service: "server" })
-  const PORT = 16713
 
   export type Routes = ReturnType<typeof app>
 
@@ -401,7 +400,7 @@ export namespace Server {
 
   export function listen() {
     const server = Bun.serve({
-      port: PORT,
+      port: 0,
       hostname: "0.0.0.0",
       idleTimeout: 0,
       fetch: app().fetch,
