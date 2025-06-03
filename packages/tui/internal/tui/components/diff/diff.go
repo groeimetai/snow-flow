@@ -12,11 +12,9 @@ import (
 	"github.com/alecthomas/chroma/v2/formatters"
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
-	"github.com/aymanbagabas/go-udiff"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/tui/theme"
 )
 
@@ -67,27 +65,6 @@ type DiffResult struct {
 type linePair struct {
 	left  *DiffLine
 	right *DiffLine
-}
-
-// -------------------------------------------------------------------------
-// Parse Configuration
-// -------------------------------------------------------------------------
-
-// ParseConfig configures the behavior of diff parsing
-type ParseConfig struct {
-	ContextSize int // Number of context lines to include
-}
-
-// ParseOption modifies a ParseConfig
-type ParseOption func(*ParseConfig)
-
-// WithContextSize sets the number of context lines to include
-func WithContextSize(size int) ParseOption {
-	return func(p *ParseConfig) {
-		if size >= 0 {
-			p.ContextSize = size
-		}
-	}
 }
 
 // -------------------------------------------------------------------------
@@ -838,32 +815,4 @@ func FormatDiff(diffText string, opts ...SideBySideOption) (string, error) {
 	}
 
 	return sb.String(), nil
-}
-
-// GenerateDiff creates a unified diff from two file contents
-func GenerateDiff(beforeContent, afterContent, fileName string) (string, int, int) {
-	// remove the cwd prefix and ensure consistent path format
-	// this prevents issues with absolute paths in different environments
-	cwd := config.WorkingDirectory()
-	fileName = strings.TrimPrefix(fileName, cwd)
-	fileName = strings.TrimPrefix(fileName, "/")
-
-	edits := udiff.Strings(beforeContent, afterContent)
-	unified, _ := udiff.ToUnified("a/"+fileName, "b/"+fileName, beforeContent, edits, 8)
-
-	var (
-		additions = 0
-		removals  = 0
-	)
-
-	lines := strings.SplitSeq(unified, "\n")
-	for line := range lines {
-		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
-			additions++
-		} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
-			removals++
-		}
-	}
-
-	return unified, additions, removals
 }

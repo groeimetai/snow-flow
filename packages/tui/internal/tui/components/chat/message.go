@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/diff"
+	"github.com/sst/opencode/internal/tui/components/diff"
 	"github.com/sst/opencode/internal/tui/styles"
 	"github.com/sst/opencode/internal/tui/theme"
 	"github.com/sst/opencode/pkg/client"
@@ -176,18 +176,20 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 		body = *result
 	}
 
-	var markdown string
 	if toolCall.ToolName == "opencode_edit" {
 		filename := toolMap["filePath"].(string)
 		title = styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, filename))
-		oldString := toolMap["oldString"].(string)
-		newString := toolMap["newString"].(string)
-		patch, _, _ := diff.GenerateDiff(oldString, newString, filename)
-		formattedDiff, _ := diff.FormatDiff(patch, diff.WithTotalWidth(width))
-		markdown = strings.TrimSpace(formattedDiff)
+		// oldString := toolMap["oldString"].(string)
+		// newString := toolMap["newString"].(string)
+		if finished {
+			patch := metadata["diff"].(string)
+			formattedDiff, _ := diff.FormatDiff(patch, diff.WithTotalWidth(width))
+			body = strings.TrimSpace(formattedDiff)
+		}
+
 		return style.Render(lipgloss.JoinVertical(lipgloss.Left,
 			title,
-			markdown,
+			body,
 		))
 	} else if toolCall.ToolName == "opencode_view" {
 		filename := toolMap["filePath"].(string)
@@ -214,7 +216,7 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 	// Default rendering
 	if finished {
 		body = styles.Padded().Render(truncateHeight(strings.TrimSpace(body), 10))
-		markdown = toMarkdown(body, width)
+		body = toMarkdown(body, width)
 	}
 	content := style.Render(lipgloss.JoinVertical(lipgloss.Left,
 		title,

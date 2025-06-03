@@ -4,7 +4,6 @@ go 1.24.0
 
 require (
 	github.com/alecthomas/chroma/v2 v2.15.0
-	github.com/aymanbagabas/go-udiff v0.2.0
 	github.com/bmatcuk/doublestar/v4 v4.8.1
 	github.com/catppuccin/go v0.3.0
 	github.com/charmbracelet/bubbles v0.21.0

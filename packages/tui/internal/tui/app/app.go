@@ -25,7 +25,6 @@ type App struct {
 		Root   string `json:"root"`
 	}
 	Client   *client.ClientWithResponses
-	Events   *client.Client
 	Provider *client.ProviderInfo
 	Model    *client.ProviderModel
 	Session  *client.SessionInfo
@@ -39,39 +38,22 @@ type App struct {
 	completionDialogOpen bool
 }
 
-func New(ctx context.Context) (*App, error) {
-	// Initialize status service (still needed for UI notifications)
+func New(ctx context.Context, httpClient *client.ClientWithResponses) (*App, error) {
 	err := status.InitService()
 	if err != nil {
 		slog.Error("Failed to initialize status service", "error", err)
 		return nil, err
 	}
 
-	// Initialize file utilities
 	fileutil.Init()
-
-	// Create HTTP client
-	url := "http://localhost:16713"
-	httpClient, err := client.NewClientWithResponses(url)
-	if err != nil {
-		slog.Error("Failed to create client", "error", err)
-		return nil, err
-	}
-	eventClient, err := client.NewClient(url)
-	if err != nil {
-		slog.Error("Failed to create event client", "error", err)
-		return nil, err
-	}
 
 	paths, _ := httpClient.PostPathGetWithResponse(context.Background())
 
-	// Create service bridges
 	agentBridge := NewAgentServiceBridge(httpClient)
 
 	app := &App{
 		Paths:           paths.JSON200,
 		Client:          httpClient,
-		Events:          eventClient,
 		Session:         &client.SessionInfo{},
 		Messages:        []client.MessageInfo{},
 		PrimaryAgentOLD: agentBridge,

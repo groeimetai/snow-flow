@@ -3,7 +3,7 @@ import * as path from "path"
 import { Tool } from "./tool"
 import { FileTimes } from "./util/file-times"
 import { LSP } from "../lsp"
-import { diffLines } from "diff"
+import { createTwoFilesPatch, diffLines } from "diff"
 import { Permission } from "../permission"
 
 const DESCRIPTION = `Edits files by replacing text, creating new files, or deleting content. For moving or renaming files, use the Bash tool with the 'mv' command instead. For larger file edits, use the FileWrite tool to overwrite files.
@@ -128,6 +128,7 @@ export const EditTool = Tool.define({
     })()
 
     const changes = diffLines(contentOld, contentNew)
+    const diff = createTwoFilesPatch(filePath, filePath, contentOld, contentNew)
 
     FileTimes.read(ctx.sessionID, filePath)
 
@@ -147,6 +148,7 @@ export const EditTool = Tool.define({
       metadata: {
         diagnostics,
         changes,
+        diff,
       },
       output,
     }
