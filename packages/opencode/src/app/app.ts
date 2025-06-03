@@ -34,7 +34,9 @@ export namespace App {
     const data = path.join(Global.data(), git ?? "global")
     await Bun.write(path.join(data, "version"), input.version)
     const stateFile = Bun.file(path.join(data, "state"))
-    const state = ((await stateFile.exists()) ? stateFile.json() : {}) as {
+    const state = (
+      (await stateFile.exists()) ? await stateFile.json() : {}
+    ) as {
       initialized: number
       version: string
     }

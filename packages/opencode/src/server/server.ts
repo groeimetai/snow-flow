@@ -21,6 +21,13 @@ export namespace Server {
     const app = new Hono()
 
     const result = app
+      .use((c, next) => {
+        log.info("request", {
+          method: c.req.method,
+          path: c.req.path,
+        })
+        return next()
+      })
       .get(
         "/openapi",
         openAPISpecs(app, {

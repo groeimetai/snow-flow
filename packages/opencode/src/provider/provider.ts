@@ -61,17 +61,22 @@ export namespace Provider {
   }
 
   const state = App.state("provider", async () => {
+    log.info("loading config")
     const config = await Config.get()
+    log.info("loading providers")
     const providers = new Map<string, Info>()
     const models = new Map<string, { info: Model; language: LanguageModel }>()
     const sdk = new Map<string, SDK>()
 
+    log.info("loading")
     for (const item of PROVIDER_DATABASE) {
       if (!AUTODETECT[item.id].some((env) => process.env[env])) continue
+      log.info("found", { providerID: item.id })
       providers.set(item.id, item)
     }
 
     for (const item of config.provider ?? []) {
+      log.info("found", { providerID: item.id })
       providers.set(item.id, item)
     }
 
