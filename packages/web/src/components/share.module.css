@@ -272,6 +272,17 @@
     }
   }
 
+  /* Part types */
+  [data-part-type="user-text"],
+  [data-part-type="ai-text"],
+  [data-part-type="ai-model"],
+  [data-part-type="system-text"],
+  [data-part-type="fallback"] {
+    & > [data-section="content"] {
+      padding-bottom: 1rem;
+    }
+  }
+
   [data-part-type="tool-edit"] {
     [data-part-tool-body] {
       gap: 0.5rem;

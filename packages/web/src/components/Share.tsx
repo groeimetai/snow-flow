@@ -29,6 +29,8 @@ import styles from "./share.module.css"
 import { type UIMessage } from "ai"
 import { createStore, reconcile } from "solid-js/store"
 
+const MIN_DURATION = 2
+
 type Status =
   | "disconnected"
   | "connecting"
@@ -71,6 +73,23 @@ type SessionInfo = {
 
 function getFileType(path: string) {
   return path.split(".").pop()
+}
+
+function formatDuration(ms: number): string {
+  const ONE_SECOND = 1000
+  const ONE_MINUTE = 60 * ONE_SECOND
+
+  if (ms >= ONE_MINUTE) {
+    const minutes = Math.floor(ms / ONE_MINUTE)
+    return minutes === 1 ? `1min` : `${minutes}mins`
+  }
+
+  if (ms >= ONE_SECOND) {
+    const seconds = Math.floor(ms / ONE_SECOND)
+    return `${seconds}s`
+  }
+
+  return `${ms}ms`
 }
 
 // Converts `{a:{b:{c:1}}` to `[['a.b.c', 1]]`
@@ -260,18 +279,13 @@ function TerminalPart(props: TerminalPartProps) {
   )
 }
 
-function PartFooter(props: { time: number }) {
+function ToolFooter(props: { time: number }) {
   return (
-    <span
-      data-part-footer
-      title={DateTime.fromMillis(props.time).toLocaleString(
-        DateTime.DATETIME_FULL_WITH_SECONDS,
-      )}
-    >
-      {DateTime.fromMillis(props.time).toLocaleString(
-        DateTime.TIME_WITH_SECONDS,
-      )}
-    </span>
+    props.time > MIN_DURATION
+      ? <span data-part-footer title={`${props.time}ms`}>
+        {formatDuration(props.time)}
+      </span>
+      : <div data-part-footer="spacer"></div>
   )
 }
 
@@ -550,7 +564,6 @@ export default function Share(props: { api: string }) {
                                   text={part().text}
                                   expand={isLastPart()}
                                 />
-                                <PartFooter time={time} />
                               </div>
                             </div>
                           )}
@@ -576,7 +589,6 @@ export default function Share(props: { api: string }) {
                                   text={part().text}
                                   expand={isLastPart()}
                                 />
-                                <PartFooter time={time} />
                               </div>
                             </div>
                           )}
@@ -647,7 +659,6 @@ export default function Share(props: { api: string }) {
                                     data-color="dimmed"
                                   />
                                 </div>
-                                <PartFooter time={time} />
                               </div>
                             </div>
                           )}
@@ -665,6 +676,13 @@ export default function Share(props: { api: string }) {
                             const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
                             const args = part().toolInvocation.args
                             const filePath = args.filePath
+
+                            const duration = createMemo(() =>
+                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
+                                DateTime.fromMillis(metadata()?.time.start || 0),
+                              ).toMillis(),
+                            )
+
                             return (
                               <div
                                 data-section="part"
@@ -690,7 +708,7 @@ export default function Share(props: { api: string }) {
                                       />
                                     </div>
                                   </div>
-                                  <PartFooter time={time} />
+                                  <ToolFooter time={duration()} />
                                 </div>
                               </div>
                             )
@@ -706,14 +724,23 @@ export default function Share(props: { api: string }) {
                           }
                         >
                           {(part) => {
+                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+
                             const id = part().toolInvocation.toolCallId
                             const command = part().toolInvocation.args.command
-                            const stdout = msg.metadata?.tool[id]?.stdout
+                            const stdout = metadata()?.stdout
                             const result = stdout || (part().toolInvocation.state === "result" && part().toolInvocation.result)
+
+                            const duration = createMemo(() =>
+                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
+                                DateTime.fromMillis(metadata()?.time.start || 0),
+                              ).toMillis(),
+                            )
+
                             return (
                               <div
                                 data-section="part"
-                                data-part-type="tool-edit"
+                                data-part-type="tool-bash"
                               >
                                 <div data-section="decoration">
                                   <div title="Bash command">
@@ -728,7 +755,7 @@ export default function Share(props: { api: string }) {
                                       text={command + (result ? `\n${result}` : "")}
                                     />
                                   </div>
-                                  <PartFooter time={time} />
+                                  <ToolFooter time={duration()} />
                                 </div>
                               </div>
                             )
@@ -742,80 +769,90 @@ export default function Share(props: { api: string }) {
                             part
                           }
                         >
-                          {(part) => (
-                            <div
-                              data-section="part"
-                              data-part-type="tool-fallback"
-                            >
-                              <div data-section="decoration">
-                                <div title="Tool call">
-                                  <IconWrenchScrewdriver
-                                    width={18}
-                                    height={18}
-                                  />
-                                </div>
-                                <div></div>
-                              </div>
-                              <div data-section="content">
-                                <div data-part-tool-body>
-                                  <span data-part-title data-size="md">
-                                    {part().toolInvocation.toolName}
-                                  </span>
-                                  <div data-part-tool-args>
-                                    <For
-                                      each={flattenToolArgs(
-                                        part().toolInvocation.args,
-                                      )}
-                                    >
-                                      {([name, value]) => (
-                                        <>
-                                          <div></div>
-                                          <div>{name}</div>
-                                          <div>{value}</div>
-                                        </>
-                                      )}
-                                    </For>
+                          {(part) => {
+                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+
+                            const duration = createMemo(() =>
+                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
+                                DateTime.fromMillis(metadata()?.time.start || 0),
+                              ).toMillis(),
+                            )
+
+                            return (
+                              <div
+                                data-section="part"
+                                data-part-type="tool-fallback"
+                              >
+                                <div data-section="decoration">
+                                  <div title="Tool call">
+                                    <IconWrenchScrewdriver
+                                      width={18}
+                                      height={18}
+                                    />
                                   </div>
-                                  <Switch>
-                                    <Match
-                                      when={
-                                        part().toolInvocation.state ===
-                                        "result" &&
-                                        part().toolInvocation.result
-                                      }
-                                    >
-                                      <div data-part-tool-result>
-                                        <ResultsButton
-                                          results={results()}
-                                          onClick={() => showResults((e) => !e)}
-                                        />
-                                        <Show when={results()}>
-                                          <TextPart
-                                            expand
-                                            data-size="sm"
-                                            data-color="dimmed"
-                                            text={part().toolInvocation.result}
-                                          />
-                                        </Show>
-                                      </div>
-                                    </Match>
-                                    <Match
-                                      when={
-                                        part().toolInvocation.state === "call"
-                                      }
-                                    >
-                                      <TextPart
-                                        data-size="sm"
-                                        data-color="dimmed"
-                                        text="Calling..."
-                                      />
-                                    </Match>
-                                  </Switch>
+                                  <div></div>
                                 </div>
-                                <PartFooter time={time} />
+                                <div data-section="content">
+                                  <div data-part-tool-body>
+                                    <span data-part-title data-size="md">
+                                      {part().toolInvocation.toolName}
+                                    </span>
+                                    <div data-part-tool-args>
+                                      <For
+                                        each={flattenToolArgs(
+                                          part().toolInvocation.args,
+                                        )}
+                                      >
+                                        {([name, value]) => (
+                                          <>
+                                            <div></div>
+                                            <div>{name}</div>
+                                            <div>{value}</div>
+                                          </>
+                                        )}
+                                      </For>
+                                    </div>
+                                    <Switch>
+                                      <Match
+                                        when={
+                                          part().toolInvocation.state ===
+                                          "result" &&
+                                          part().toolInvocation.result
+                                        }
+                                      >
+                                        <div data-part-tool-result>
+                                          <ResultsButton
+                                            results={results()}
+                                            onClick={() => showResults((e) => !e)}
+                                          />
+                                          <Show when={results()}>
+                                            <TextPart
+                                              expand
+                                              data-size="sm"
+                                              data-color="dimmed"
+                                              text={part().toolInvocation.result}
+                                            />
+                                          </Show>
+                                        </div>
+                                      </Match>
+                                      <Match
+                                        when={
+                                          part().toolInvocation.state === "call"
+                                        }
+                                      >
+                                        <TextPart
+                                          data-size="sm"
+                                          data-color="dimmed"
+                                          text="Calling..."
+                                        />
+                                      </Match>
+                                    </Switch>
+                                  </div>
+                                  <ToolFooter time={duration()} />
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )
+                          }}
                         </Match>
                         {/* Fallback */}
                         <Match when={true}>
@@ -857,7 +894,6 @@ export default function Share(props: { api: string }) {
                                   text={JSON.stringify(part, null, 2)}
                                 />
                               </div>
-                              <PartFooter time={time} />
                             </div>
                           </div>
                         </Match>
