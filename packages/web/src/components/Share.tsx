@@ -766,7 +766,7 @@ export default function Share(props: { api: string }) {
                                     <div data-part-tool-edit>
                                       <DiffView
                                         class={styles["diff-code-block"]}
-                                        changes={metadata()?.changes || []}
+                                        diff={metadata()?.diff}
                                         lang={getFileType(filePath)}
                                       />
                                     </div>

@@ -3,7 +3,7 @@ import * as path from "path"
 import { Tool } from "./tool"
 import { FileTimes } from "./util/file-times"
 import { LSP } from "../lsp"
-import { createTwoFilesPatch, diffLines } from "diff"
+import { createTwoFilesPatch } from "diff"
 import { Permission } from "../permission"
 import DESCRIPTION from "./edit.txt"
 
@@ -85,7 +85,6 @@ export const EditTool = Tool.define({
       await file.write(contentNew)
     })()
 
-    const changes = diffLines(contentOld, contentNew)
     const diff = createTwoFilesPatch(filepath, filepath, contentOld, contentNew)
 
     FileTimes.read(ctx.sessionID, filepath)
@@ -105,7 +104,6 @@ export const EditTool = Tool.define({
     return {
       metadata: {
         diagnostics,
-        changes,
         diff,
       },
       output,
