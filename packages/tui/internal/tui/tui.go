@@ -333,21 +333,14 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dialog.CloseInitDialogMsg:
 		a.showInitDialog = false
 		if msg.Initialize {
-			// Run the initialization command
-			for _, cmd := range a.commands {
-				if cmd.ID == "init" {
-					return a, cmd.Handler(cmd)
-				}
+			return a, a.app.InitializeProject(context.Background())
+		} else {
+			// Mark the project as initialized without running the command
+			if err := a.app.MarkProjectInitialized(context.Background()); err != nil {
+				status.Error(err.Error())
+				return a, nil
 			}
 		}
-		// TODO: should we not ask again?
-		// else {
-		// 	// Mark the project as initialized without running the command
-		// 	if err := config.MarkProjectInitialized(); err != nil {
-		// 		status.Error(err.Error())
-		// 		return a, nil
-		// 	}
-		// }
 		return a, nil
 
 	case dialog.CommandSelectedMsg:
@@ -928,10 +921,7 @@ func NewModel(app *app.App) tea.Model {
 		Title:       "Initialize Project",
 		Description: "Create/Update the AGENTS.md memory file",
 		Handler: func(cmd dialog.Command) tea.Cmd {
-			model.app.Client.PostSessionInitialize(context.Background(), client.PostSessionInitializeJSONRequestBody{
-				SessionID: model.app.Session.Id,
-			})
-			return nil
+			return app.InitializeProject(context.Background())
 		},
 	})
 

@@ -121,24 +121,79 @@ func (a *App) SaveConfig() {
 	config.SaveConfig(a.ConfigPath, a.Config)
 }
 
-// Create creates a new session
+func (a *App) InitializeProject(ctx context.Context) tea.Cmd {
+	cmds := []tea.Cmd{}
+
+	session, err := a.CreateSession(ctx)
+	if err != nil {
+		status.Error(err.Error())
+		return nil
+	}
+
+	a.Session = session
+	cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(session)))
+
+	go func() {
+		// TODO: Handle no provider or model setup, yet
+		response, err := a.Client.PostSessionInitialize(ctx, client.PostSessionInitializeJSONRequestBody{
+			SessionID:  a.Session.Id,
+			ProviderID: a.Provider.Id,
+			ModelID:    a.Model.Id,
+		})
+		if err != nil {
+			status.Error(err.Error())
+		}
+		if response.StatusCode != 200 {
+			status.Error(fmt.Sprintf("failed to initialize project: %d", response.StatusCode))
+		}
+	}()
+
+	return tea.Batch(cmds...)
+}
+
+func (a *App) MarkProjectInitialized(ctx context.Context) error {
+	response, err := a.Client.PostAppInitialize(ctx)
+	if err != nil {
+		slog.Error("Failed to mark project as initialized", "error", err)
+		return err
+	}
+	if response.StatusCode != 200 {
+		return fmt.Errorf("failed to initialize project: %d", response.StatusCode)
+	}
+	return nil
+}
+
+func (a *App) IsBusy() bool {
+	for _, message := range a.Messages {
+		if message.Metadata.Time.Completed == nil {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *App) CreateSession(ctx context.Context) (*client.SessionInfo, error) {
+	resp, err := a.Client.PostSessionCreateWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("failed to create session: %d", resp.StatusCode())
+	}
+	session := resp.JSON200
+	return session, nil
+}
+
 func (a *App) SendChatMessage(ctx context.Context, text string, attachments []Attachment) tea.Cmd {
 	var cmds []tea.Cmd
 	if a.Session.Id == "" {
-		resp, err := a.Client.PostSessionCreateWithResponse(ctx)
+		session, err := a.CreateSession(ctx)
 		if err != nil {
 			status.Error(err.Error())
 			return nil
 		}
-		if resp.StatusCode() != 200 {
-			status.Error(fmt.Sprintf("failed to create session: %d", resp.StatusCode()))
-			return nil
-		}
-
-		info := resp.JSON200
-		a.Session = info
-
-		cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(info)))
+		a.Session = session
+		cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(session)))
 	}
 
 	// TODO: Handle attachments when API supports them
@@ -154,12 +209,17 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []At
 	})
 	parts := []client.MessagePart{part}
 
-	go a.Client.PostSessionChatWithResponse(ctx, client.PostSessionChatJSONRequestBody{
-		SessionID:  a.Session.Id,
-		Parts:      parts,
-		ProviderID: a.Provider.Id,
-		ModelID:    a.Model.Id,
-	})
+	go func() {
+		_, err := a.Client.PostSessionChat(ctx, client.PostSessionChatJSONRequestBody{
+			SessionID:  a.Session.Id,
+			Parts:      parts,
+			ProviderID: a.Provider.Id,
+			ModelID:    a.Model.Id,
+		})
+		if err != nil {
+			status.Error(err.Error())
+		}
+	}()
 
 	// The actual response will come through SSE
 	// For now, just return success
