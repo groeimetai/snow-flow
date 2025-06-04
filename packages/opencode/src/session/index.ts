@@ -375,6 +375,8 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
       }
       tools[key] = item
     }
+
+    let text: Message.TextPart | undefined
     const result = streamText({
       onStepFinish: async (step) => {
         const assistant = next.metadata!.assistant!
@@ -382,6 +384,78 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
         assistant.cost = usage.cost
         assistant.tokens = usage.tokens
         await updateMessage(next)
+        text = undefined
+      },
+      async onChunk(input) {
+        const value = input.chunk
+        l.info("part", {
+          type: value.type,
+        })
+        switch (value.type) {
+          case "text":
+            if (!text) {
+              text = value
+              next.parts.push(value)
+              break
+            }
+            text.text += value.text
+            break
+
+          case "tool-call":
+            next.parts.push({
+              type: "tool-invocation",
+              toolInvocation: {
+                state: "call",
+                ...value,
+                // hack until zod v4
+                args: value.args as any,
+              },
+            })
+            break
+
+          case "tool-call-streaming-start":
+            next.parts.push({
+              type: "tool-invocation",
+              toolInvocation: {
+                state: "partial-call",
+                toolName: value.toolName,
+                toolCallId: value.toolCallId,
+                args: {},
+              },
+            })
+            break
+
+          case "tool-call-delta":
+            break
+
+          case "tool-result":
+            const match = next.parts.find(
+              (p) =>
+                p.type === "tool-invocation" &&
+                p.toolInvocation.toolCallId === value.toolCallId,
+            )
+            if (match && match.type === "tool-invocation") {
+              match.toolInvocation = {
+                args: match.toolInvocation.args,
+                toolCallId: match.toolInvocation.toolCallId,
+                toolName: match.toolInvocation.toolName,
+                state: "result",
+                result: value.result as string,
+              }
+            }
+            break
+
+          default:
+            l.info("unhandled", {
+              type: value.type,
+            })
+        }
+        await updateMessage(next)
+      },
+      onError(input) {
+        if (input.error instanceof Error) {
+          next.metadata.error = input.error.toString()
+        }
       },
       toolCallStreaming: false,
       abortSignal: abort.signal,
@@ -395,96 +469,7 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
       },
       model: model.language,
     })
-    let text: Message.TextPart | undefined
-    const reader = result.toUIMessageStream().getReader()
-    while (true) {
-      const result = await reader.read().catch(async (e) => {
-        console.log(e)
-        next.metadata.error = e.name
-      })
-      if (!result) break
-      const { done, value } = result
-      if (done) break
-      l.info("part", {
-        type: value.type,
-      })
-      switch (value.type) {
-        case "start":
-          break
-        case "start-step":
-          text = undefined
-          next.parts.push({
-            type: "step-start",
-          })
-          break
-        case "text":
-          if (!text) {
-            text = value
-            next.parts.push(value)
-            break
-          }
-          text.text += value.text
-          break
-
-        case "tool-call":
-          next.parts.push({
-            type: "tool-invocation",
-            toolInvocation: {
-              state: "call",
-              ...value,
-              // hack until zod v4
-              args: value.args as any,
-            },
-          })
-          break
-
-        case "tool-call-streaming-start":
-          next.parts.push({
-            type: "tool-invocation",
-            toolInvocation: {
-              state: "partial-call",
-              toolName: value.toolName,
-              toolCallId: value.toolCallId,
-              args: {},
-            },
-          })
-          break
-
-        case "tool-call-delta":
-          break
-
-        case "tool-result":
-          const match = next.parts.find(
-            (p) =>
-              p.type === "tool-invocation" &&
-              p.toolInvocation.toolCallId === value.toolCallId,
-          )
-          if (match && match.type === "tool-invocation") {
-            match.toolInvocation = {
-              args: match.toolInvocation.args,
-              toolCallId: match.toolInvocation.toolCallId,
-              toolName: match.toolInvocation.toolName,
-              state: "result",
-              result: value.result as string,
-            }
-          }
-          break
-
-        case "finish":
-          break
-        case "finish-step":
-          break
-        case "error":
-          log.error("error", value)
-          break
-
-        default:
-          l.info("unhandled", {
-            type: value.type,
-          })
-      }
-      await updateMessage(next)
-    }
+    await result.consumeStream()
     next.metadata!.time.completed = Date.now()
     await updateMessage(next)
     return next
