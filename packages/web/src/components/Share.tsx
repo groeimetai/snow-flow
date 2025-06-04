@@ -399,21 +399,12 @@ export default function Share(props: { api: string }) {
     })
   })
 
-  const models = createMemo(() => {
-    const result: string[][] = []
-    for (const msg of messages()) {
-      if (msg.role === "assistant" && msg.metadata?.assistant) {
-        result.push([
-          msg.metadata.assistant.providerID,
-          msg.metadata.assistant.modelID,
-        ])
-      }
-    }
-    return result
-  })
-
-  const metrics = createMemo(() => {
+  const data = createMemo(() => {
     const result = {
+      created: undefined as number | undefined,
+      system: [] as string[],
+      messages: [] as SessionMessage[],
+      models: [] as string[][],
       cost: 0,
       tokens: {
         input: 0,
@@ -421,16 +412,39 @@ export default function Share(props: { api: string }) {
         reasoning: 0,
       },
     }
-    for (const msg of messages()) {
+    for (let i = 0; i < messages().length; i++) {
+      const msg = messages()[i]
+
+      const system = i === 0 && msg.role === "system"
       const assistant = msg.metadata?.assistant
-      if (!assistant) continue
-      result.cost += assistant.cost
-      result.tokens.input += assistant.tokens.input
-      result.tokens.output += assistant.tokens.output
-      result.tokens.reasoning += assistant.tokens.reasoning
+
+      if (system) {
+        for (const part of msg.parts) {
+          if (part.type === "text") {
+            result.system.push(part.text)
+          }
+        }
+        result.created = msg.metadata?.time.created
+        continue
+      }
+
+      result.messages.push(msg)
+
+      if (assistant) {
+        result.cost += assistant.cost
+        result.tokens.input += assistant.tokens.input
+        result.tokens.output += assistant.tokens.output
+        result.tokens.reasoning += assistant.tokens.reasoning
+
+        result.models.push([
+          assistant.providerID,
+          assistant.modelID,
+        ])
+      }
     }
     return result
   })
+  const [showingSystemPrompt, showSystemPrompt] = createSignal(false)
 
   return (
     <main class={`${styles.root} not-content`}>
@@ -439,14 +453,14 @@ export default function Share(props: { api: string }) {
           <h1>{store.info?.title}</h1>
           <div>
             <div data-section="date">
-              {messages().length > 0 && messages()[0].metadata?.time.created ? (
+              {data().created ? (
                 <span
                   title={DateTime.fromMillis(
-                    messages()[0].metadata?.time.created || 0,
+                    data().created || 0,
                   ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}
                 >
                   {DateTime.fromMillis(
-                    messages()[0].metadata?.time.created || 0,
+                    data().created || 0,
                   ).toLocaleString(DateTime.DATE_MED)}
                 </span>
               ) : (
@@ -465,40 +479,40 @@ export default function Share(props: { api: string }) {
           <ul data-section="stats">
             <li>
               <span data-element-label>Cost</span>
-              {metrics().cost !== undefined ? (
-                <span>${metrics().cost.toFixed(2)}</span>
+              {data().cost !== undefined ? (
+                <span>${data().cost.toFixed(2)}</span>
               ) : (
                 <span data-placeholder>&mdash;</span>
               )}
             </li>
             <li>
               <span data-element-label>Input Tokens</span>
-              {metrics().tokens.input ? (
-                <span>{metrics().tokens.input}</span>
+              {data().tokens.input ? (
+                <span>{data().tokens.input}</span>
               ) : (
                 <span data-placeholder>&mdash;</span>
               )}
             </li>
             <li>
               <span data-element-label>Output Tokens</span>
-              {metrics().tokens.output ? (
-                <span>{metrics().tokens.output}</span>
+              {data().tokens.output ? (
+                <span>{data().tokens.output}</span>
               ) : (
                 <span data-placeholder>&mdash;</span>
               )}
             </li>
             <li>
               <span data-element-label>Reasoning Tokens</span>
-              {metrics().tokens.reasoning ? (
-                <span>{metrics().tokens.reasoning}</span>
+              {data().tokens.reasoning ? (
+                <span>{data().tokens.reasoning}</span>
               ) : (
                 <span data-placeholder>&mdash;</span>
               )}
             </li>
           </ul>
           <ul data-section="stats" data-section-models>
-            {models().length > 0 ? (
-              <For each={Array.from(models())}>
+            {data().models.length > 0 ? (
+              <For each={Array.from(data().models)}>
                 {([provider, model]) => (
                   <li>
                     <div data-stat-model-icon title={provider}>
@@ -515,16 +529,44 @@ export default function Share(props: { api: string }) {
               </li>
             )}
           </ul>
+          <div data-section="system-prompt">
+            <div data-section="icon">
+              <IconCpuChip width={16} height={16} />
+            </div>
+            <div data-section="content">
+              <button
+                type="button"
+                data-element-button-text
+                data-element-button-more
+                onClick={() => showSystemPrompt((e) => !e)}
+              >
+                <span>
+                  {showingSystemPrompt() ? "Hide system prompt" : "Show system prompt"}
+                </span>
+                <span data-button-icon>
+                  <Show
+                    when={showingSystemPrompt()}
+                    fallback={<IconChevronRight width={12} height={12} />}
+                  >
+                    <IconChevronDown width={12} height={12} />
+                  </Show>
+                </span>
+              </button>
+              <Show when={showingSystemPrompt()}>
+                <TextPart data-size="sm" expand text={data().system.join("\n")} />
+              </Show>
+            </div>
+          </div>
         </div>
       </div>
 
       <div>
         <Show
-          when={messages().length > 0}
+          when={data().messages.length > 0}
           fallback={<p>Waiting for messages...</p>}
         >
           <div class={styles.parts}>
-            <For each={messages()}>
+            <For each={data().messages}>
               {(msg, msgIndex) => (
                 <For each={msg.parts}>
                   {(part, partIndex) => {
@@ -537,13 +579,9 @@ export default function Share(props: { api: string }) {
                     const [results, showResults] = createSignal(false)
                     const isLastPart = createMemo(
                       () =>
-                        messages().length === msgIndex() + 1 &&
+                        data().messages.length === msgIndex() + 1 &&
                         msg.parts.length === partIndex() + 1,
                     )
-                    const time =
-                      msg.metadata?.time.completed ||
-                      msg.metadata?.time.created ||
-                      0
                     return (
                       <Switch>
                         {/* User text */}
@@ -918,11 +956,11 @@ export default function Share(props: { api: string }) {
           }}
         >
           <Show
-            when={messages().length > 0}
+            when={data().messages.length > 0}
             fallback={<p>Waiting for messages...</p>}
           >
             <ul style={{ "list-style-type": "none", padding: 0 }}>
-              <For each={messages()}>
+              <For each={data().messages}>
                 {(msg) => (
                   <li
                     style={{
