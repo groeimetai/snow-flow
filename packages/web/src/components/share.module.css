@@ -315,6 +315,7 @@
   }
 
   [data-part-type="tool-list"],
+  [data-part-type="tool-glob"],
   [data-part-type="tool-read"] {
     & > [data-section="content"] > [data-part-tool-body] {
       gap: 0.5rem;

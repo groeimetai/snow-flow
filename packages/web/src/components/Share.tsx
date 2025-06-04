@@ -22,6 +22,7 @@ import {
   IconChevronRight,
   IconPencilSquare,
   IconRectangleStack,
+  IconMagnifyingGlass,
   IconWrenchScrewdriver,
   IconDocumentArrowDown,
 } from "./icons"
@@ -733,6 +734,83 @@ export default function Share(props: { api: string }) {
                               </div>
                             </div>
                           )}
+                        </Match>
+                        {/* Glob tool */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "tool-invocation" &&
+                            part.toolInvocation.toolName === "opencode_glob" &&
+                            part
+                          }
+                        >
+                          {(part) => {
+                            const metadata = createMemo(() =>
+                              msg.metadata?.tool[part().toolInvocation.toolCallId]
+                            )
+                            const args = part().toolInvocation.args
+                            const result = part().toolInvocation.state === "result" && part().toolInvocation.result
+                            const count = metadata()?.count
+                            const pattern = args.pattern
+
+                            const duration = createMemo(() =>
+                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
+                                DateTime.fromMillis(metadata()?.time.start || 0),
+                              ).toMillis(),
+                            )
+
+                            return (
+                              <div data-section="part" data-part-type="tool-glob">
+                                <div data-section="decoration">
+                                  <div title="List files">
+                                    <IconMagnifyingGlass width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <div data-part-tool-body>
+                                    <span data-part-title data-size="md">
+                                      <span data-element-label>Glob</span>
+                                      <b>&ldquo;{pattern}&rdquo;</b>
+                                    </span>
+                                    <Switch>
+                                      <Match when={count > 0}>
+                                        <div data-part-tool-result>
+                                          <ResultsButton
+                                            showCopy={count === 1
+                                              ? "1 result"
+                                              : `${count} results`
+                                            }
+                                            results={results()}
+                                            onClick={() => showResults((e) => !e)}
+                                          />
+                                          <Show when={results()}>
+                                            <TextPart
+                                              expand
+                                              text={result}
+                                              data-size="sm"
+                                              data-color="dimmed"
+                                            />
+                                          </Show>
+                                        </div>
+                                      </Match>
+                                      <Match when={result}>
+                                        <div data-part-tool-result>
+                                          <TextPart
+                                            expand
+                                            text={result}
+                                            data-size="sm"
+                                            data-color="dimmed"
+                                          />
+                                        </div>
+                                      </Match>
+                                    </Switch>
+                                  </div>
+                                  <ToolFooter time={duration()} />
+                                </div>
+                              </div>
+                            )
+                          }}
                         </Match>
                         {/* LS tool */}
                         <Match
