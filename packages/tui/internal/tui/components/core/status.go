@@ -151,7 +151,9 @@ func (m statusCmp) View() string {
 			if message.Metadata.Assistant != nil {
 				cost += message.Metadata.Assistant.Cost
 				usage := message.Metadata.Assistant.Tokens
-				tokens = (usage.Input + usage.Output + usage.Reasoning)
+				if usage.Output > 0 {
+					tokens = (usage.Input + usage.Output + usage.Reasoning)
+				}
 			}
 		}
 
