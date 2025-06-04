@@ -92,16 +92,30 @@ function formatDuration(ms: number): string {
   return `${ms}ms`
 }
 
-// Converts `{a:{b:{c:1}}` to `[['a.b.c', 1]]`
+// Converts nested objects/arrays into [path, value] pairs.
+// E.g. {a:{b:{c:1}}, d:[{e:2}, 3]} => [["a.b.c",1], ["d[0].e",2], ["d[1]",3]]
 function flattenToolArgs(obj: any, prefix: string = ""): Array<[string, any]> {
   const entries: Array<[string, any]> = []
 
   for (const [key, value] of Object.entries(obj)) {
     const path = prefix ? `${prefix}.${key}` : key
 
-    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-      entries.push(...flattenToolArgs(value, path))
-    } else {
+    if (value !== null && typeof value === "object") {
+      if (Array.isArray(value)) {
+        value.forEach((item, index) => {
+          const arrayPath = `${path}[${index}]`
+          if (item !== null && typeof item === "object") {
+            entries.push(...flattenToolArgs(item, arrayPath))
+          } else {
+            entries.push([arrayPath, item])
+          }
+        })
+      }
+      else {
+        entries.push(...flattenToolArgs(value, path))
+      }
+    }
+    else {
       entries.push([path, value])
     }
   }
