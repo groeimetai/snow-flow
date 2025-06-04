@@ -457,6 +457,13 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
           next.metadata.error = input.error.toString()
         }
       },
+      async prepareStep(step) {
+        next.parts.push({
+          type: "step-start",
+        })
+        await updateMessage(next)
+        return step
+      },
       toolCallStreaming: false,
       abortSignal: abort.signal,
       maxRetries: 6,

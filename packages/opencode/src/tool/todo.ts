@@ -43,7 +43,7 @@ export const TodoWriteTool = Tool.define({
 export const TodoReadTool = Tool.define({
   id: "opencode.todoread",
   description: "Use this tool to read your todo list",
-  parameters: z.void({}),
+  parameters: z.object({}),
   async execute(params, opts) {
     const todos = state()[opts.sessionID] ?? []
     return {
