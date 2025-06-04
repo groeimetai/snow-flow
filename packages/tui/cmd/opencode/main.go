@@ -10,9 +10,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	zone "github.com/lrstanley/bubblezone"
+	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/tui"
-	"github.com/sst/opencode/internal/tui/app"
 	"github.com/sst/opencode/pkg/client"
 )
 
@@ -46,7 +46,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	app, err := app.New(ctx, httpClient)
+	app_, err := app.New(ctx, httpClient)
 	if err != nil {
 		slog.Error("Failed to create app", "error", err)
 		// return err
@@ -55,7 +55,7 @@ func main() {
 	// Set up the TUI
 	zone.NewGlobal()
 	program := tea.NewProgram(
-		tui.New(app),
+		tui.NewModel(app_),
 		tea.WithAltScreen(),
 	)
 
@@ -78,7 +78,7 @@ func main() {
 	}()
 
 	// Setup the subscriptions, this will send services events to the TUI
-	ch, cancelSubs := setupSubscriptions(app, ctx)
+	ch, cancelSubs := setupSubscriptions(app_, ctx)
 
 	// Create a context for the TUI message handler
 	tuiCtx, tuiCancel := context.WithCancel(ctx)
@@ -113,7 +113,7 @@ func main() {
 		cancelSubs()
 
 		// Then shutdown the app
-		app.Shutdown()
+		app_.Shutdown()
 
 		// Then cancel TUI message handler
 		tuiCancel()

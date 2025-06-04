@@ -9,7 +9,7 @@ import (
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/sst/opencode/internal/fileutil"
 	"github.com/sst/opencode/internal/status"
-	"github.com/sst/opencode/internal/tui/components/dialog"
+	"github.com/sst/opencode/internal/components/dialog"
 )
 
 type filesAndFoldersContextGroup struct {

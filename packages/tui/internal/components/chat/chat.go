@@ -1,0 +1,131 @@
+package chat
+
+import (
+	"fmt"
+	"sort"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/styles"
+	"github.com/sst/opencode/internal/theme"
+)
+
+type SendMsg struct {
+	Text        string
+	Attachments []app.Attachment
+}
+
+func header(app *app.App, width int) string {
+	return lipgloss.JoinVertical(
+		lipgloss.Top,
+		logo(width),
+		repo(width),
+		"",
+		cwd(app, width),
+	)
+}
+
+func lspsConfigured(width int) string {
+	// cfg := config.Get()
+	title := "LSP Servers"
+	title = ansi.Truncate(title, width, "…")
+
+	t := theme.CurrentTheme()
+	baseStyle := styles.BaseStyle()
+
+	lsps := baseStyle.
+		Width(width).
+		Foreground(t.Primary()).
+		Bold(true).
+		Render(title)
+
+	// Get LSP names and sort them for consistent ordering
+	var lspNames []string
+	// for name := range cfg.LSP {
+	// 	lspNames = append(lspNames, name)
+	// }
+	sort.Strings(lspNames)
+
+	var lspViews []string
+	// for _, name := range lspNames {
+	// lsp := cfg.LSP[name]
+	// lspName := baseStyle.
+	// 	Foreground(t.Text()).
+	// 	Render(fmt.Sprintf("• %s", name))
+
+	// cmd := lsp.Command
+	// cmd = ansi.Truncate(cmd, width-lipgloss.Width(lspName)-3, "…")
+
+	// lspPath := baseStyle.
+	// 	Foreground(t.TextMuted()).
+	// 	Render(fmt.Sprintf(" (%s)", cmd))
+
+	// lspViews = append(lspViews,
+	// 	baseStyle.
+	// 		Width(width).
+	// 		Render(
+	// 			lipgloss.JoinHorizontal(
+	// 				lipgloss.Left,
+	// 				lspName,
+	// 				lspPath,
+	// 			),
+	// 		),
+	// )
+	// }
+
+	return baseStyle.
+		Width(width).
+		Render(
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				lsps,
+				lipgloss.JoinVertical(
+					lipgloss.Left,
+					lspViews...,
+				),
+			),
+		)
+}
+
+func logo(width int) string {
+	logo := fmt.Sprintf("%s %s", styles.OpenCodeIcon, "OpenCode")
+	t := theme.CurrentTheme()
+	baseStyle := styles.BaseStyle()
+
+	versionText := baseStyle.
+		Foreground(t.TextMuted()).
+		Render("v0.0.1") // TODO: get version from server
+
+	return baseStyle.
+		Bold(true).
+		Width(width).
+		Render(
+			lipgloss.JoinHorizontal(
+				lipgloss.Left,
+				logo,
+				" ",
+				versionText,
+			),
+		)
+}
+
+func repo(width int) string {
+	repo := "github.com/sst/opencode"
+	t := theme.CurrentTheme()
+
+	return styles.BaseStyle().
+		Foreground(t.TextMuted()).
+		Width(width).
+		Render(repo)
+}
+
+func cwd(app *app.App, width int) string {
+	cwd := fmt.Sprintf("cwd: %s", app.Info.Path.Cwd)
+	t := theme.CurrentTheme()
+
+	return styles.BaseStyle().
+		Foreground(t.TextMuted()).
+		Width(width).
+		Render(cwd)
+}

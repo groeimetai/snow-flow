@@ -10,15 +10,15 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/tui/app"
 
+	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/components/core"
+	"github.com/sst/opencode/internal/components/dialog"
+	"github.com/sst/opencode/internal/layout"
+	"github.com/sst/opencode/internal/page"
+	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/status"
-	"github.com/sst/opencode/internal/tui/components/core"
-	"github.com/sst/opencode/internal/tui/components/dialog"
-	"github.com/sst/opencode/internal/tui/layout"
-	"github.com/sst/opencode/internal/tui/page"
-	"github.com/sst/opencode/internal/tui/state"
-	"github.com/sst/opencode/internal/tui/util"
+	"github.com/sst/opencode/internal/util"
 	"github.com/sst/opencode/pkg/client"
 )
 
@@ -158,7 +158,7 @@ func (a appModel) Init() tea.Cmd {
 
 	// Check if we should show the init dialog
 	cmds = append(cmds, func() tea.Msg {
-		shouldShow := a.app.Info.Time.Initialized == nil
+		shouldShow := a.app.Info.Git && a.app.Info.Time.Initialized == nil
 		return dialog.ShowInitDialogMsg{Show: shouldShow}
 	})
 
@@ -900,7 +900,7 @@ func (a appModel) View() string {
 	return appView
 }
 
-func New(app *app.App) tea.Model {
+func NewModel(app *app.App) tea.Model {
 	startPage := page.ChatPage
 	model := &appModel{
 		currentPage:   startPage,
