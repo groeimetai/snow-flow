@@ -20,6 +20,7 @@ import { ReadTool } from "../tool/read"
 import type { Tool } from "../tool/tool"
 import { MultiEditTool } from "../tool/multiedit"
 import { WriteTool } from "../tool/write"
+import { TodoReadTool, TodoWriteTool } from "../tool/todo"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -178,6 +179,8 @@ export namespace Provider {
     EditTool,
     MultiEditTool,
     WriteTool,
+    TodoWriteTool,
+    TodoReadTool,
   ]
   const TOOL_MAPPING: Record<string, Tool.Info[]> = {
     anthropic: TOOLS.filter((t) => t.id !== "opencode.patch"),
