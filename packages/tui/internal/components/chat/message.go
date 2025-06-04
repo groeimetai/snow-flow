@@ -177,9 +177,7 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 	if toolCall.ToolName == "opencode_edit" {
 		filename := toolMap["filePath"].(string)
 		title = styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, filename))
-		// oldString := toolMap["oldString"].(string)
-		// newString := toolMap["newString"].(string)
-		if finished {
+		if finished && metadata["diff"] != nil {
 			patch := metadata["diff"].(string)
 			formattedDiff, _ := diff.FormatDiff(patch, diff.WithTotalWidth(width))
 			body = strings.TrimSpace(formattedDiff)
