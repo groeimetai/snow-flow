@@ -201,7 +201,7 @@ function TextPart(props: TextPartProps) {
 
   return (
     <div
-      data-element-message-text
+      class={styles["message-text"]}
       data-highlight={local.highlight}
       data-expanded={expanded() || local.expand === true}
       {...rest}
@@ -222,10 +222,11 @@ function TextPart(props: TextPartProps) {
 
 interface TerminalPartProps extends JSX.HTMLAttributes<HTMLDivElement> {
   text: string
+  desc?: string
   expand?: boolean
 }
 function TerminalPart(props: TerminalPartProps) {
-  const [local, rest] = splitProps(props, ["text", "expand"])
+  const [local, rest] = splitProps(props, ["text", "desc", "expand"])
   const [expanded, setExpanded] = createSignal(false)
   const [overflowed, setOverflowed] = createSignal(false)
   let preEl: HTMLElement | undefined
@@ -251,12 +252,12 @@ function TerminalPart(props: TerminalPartProps) {
 
   return (
     <div
-      data-element-message-terminal
+      class={styles["message-terminal"]}
       data-expanded={expanded() || local.expand === true}
       {...rest}
     >
       <div data-section="body">
-        <div data-section="header"></div>
+        <div data-section="header"><span>{local.desc}</span></div>
         <div data-section="content">
           <CodeBlock
             lang="ansi"
@@ -541,7 +542,11 @@ export default function Share(props: { api: string }) {
                 onClick={() => showSystemPrompt((e) => !e)}
               >
                 <span>
-                  {showingSystemPrompt() ? "Hide system prompt" : "Show system prompt"}
+                  {
+                    showingSystemPrompt()
+                      ? "Hide system prompt"
+                      : "Show system prompt"
+                  }
                 </span>
                 <span data-button-icon>
                   <Show
@@ -553,7 +558,11 @@ export default function Share(props: { api: string }) {
                 </span>
               </button>
               <Show when={showingSystemPrompt()}>
-                <TextPart data-size="sm" expand text={data().system.join("\n")} />
+                <TextPart
+                  expand
+                  data-size="sm"
+                  text={data().system.join("\n").trim()}
+                />
               </Show>
             </div>
           </div>
@@ -766,8 +775,8 @@ export default function Share(props: { api: string }) {
                           {(part) => {
                             const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
 
-                            const id = part().toolInvocation.toolCallId
                             const command = part().toolInvocation.args.command
+                            const desc = part().toolInvocation.args.description
                             const stdout = metadata()?.stdout
                             const result = stdout || (part().toolInvocation.state === "result" && part().toolInvocation.result)
 
@@ -791,6 +800,7 @@ export default function Share(props: { api: string }) {
                                 <div data-section="content">
                                   <div data-part-tool-body>
                                     <TerminalPart
+                                      desc={desc}
                                       data-size="sm"
                                       text={command + (result ? `\n${result}` : "")}
                                     />
