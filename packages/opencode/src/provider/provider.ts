@@ -9,14 +9,14 @@ import { Global } from "../global"
 import { BunProc } from "../bun"
 import { BashTool } from "../tool/bash"
 import { EditTool } from "../tool/edit"
-import { FetchTool } from "../tool/fetch"
+import { WebFetchTool } from "../tool/webfetch"
 import { GlobTool } from "../tool/glob"
 import { GrepTool } from "../tool/grep"
 import { ListTool } from "../tool/ls"
 import { LspDiagnosticTool } from "../tool/lsp-diagnostics"
 import { LspHoverTool } from "../tool/lsp-hover"
 import { PatchTool } from "../tool/patch"
-import { ViewTool } from "../tool/view"
+import { ReadTool } from "../tool/read"
 import type { Tool } from "../tool/tool"
 
 export namespace Provider {
@@ -165,18 +165,18 @@ export namespace Provider {
   const TOOLS = [
     BashTool,
     EditTool,
-    FetchTool,
+    WebFetchTool,
     GlobTool,
     GrepTool,
     ListTool,
     LspDiagnosticTool,
     LspHoverTool,
     PatchTool,
-    ViewTool,
+    ReadTool,
     EditTool,
   ]
   const TOOL_MAPPING: Record<string, Tool.Info[]> = {
-    anthropic: TOOLS,
+    anthropic: TOOLS.filter((t) => t.id !== "opencode.patch"),
     openai: TOOLS,
     google: TOOLS,
   }

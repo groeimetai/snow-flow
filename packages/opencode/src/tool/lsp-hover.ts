@@ -3,14 +3,11 @@ import { Tool } from "./tool"
 import path from "path"
 import { LSP } from "../lsp"
 import { App } from "../app/app"
+import DESCRIPTION from "./lsp-hover.txt"
 
 export const LspHoverTool = Tool.define({
   id: "opencode.lsp_hover",
-  description: `
-  Looks up hover information for a given position in a source file using the Language Server Protocol (LSP). 
-  This includes type information, documentation, or symbol details at the specified line and character. 
-  Useful for providing code insights, explanations, or context-aware assistance based on the user's current cursor location.
-  `,
+  description: DESCRIPTION,
   parameters: z.object({
     file: z.string().describe("The path to the file to get diagnostics."),
     line: z.number().describe("The line number to get diagnostics."),

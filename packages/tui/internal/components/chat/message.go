@@ -187,7 +187,7 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 			title,
 			body,
 		))
-	} else if toolCall.ToolName == "opencode_view" {
+	} else if toolCall.ToolName == "opencode_read" {
 		filename := toolMap["filePath"].(string)
 		ext := filepath.Ext(filename)
 		if ext == "" {
@@ -253,7 +253,7 @@ func renderToolAction(name string) string {
 		return "Searching content..."
 	case "opencode_ls":
 		return "Listing directory..."
-	case "opencode_view":
+	case "opencode_read":
 		return "Reading file..."
 	case "opencode_write":
 		return "Preparing write..."

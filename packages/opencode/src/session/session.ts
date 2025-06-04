@@ -444,7 +444,7 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
           next.parts.push({
             type: "tool-invocation",
             toolInvocation: {
-              state: "call",
+              state: "partial-call",
               toolName: value.toolName,
               toolCallId: value.toolCallId,
               args: {},

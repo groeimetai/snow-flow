@@ -1,41 +1,8 @@
 import { z } from "zod"
+import path from "path"
 import { Tool } from "./tool"
 import { App } from "../app/app"
-
-const DESCRIPTION = `Fast file pattern matching tool that finds files by name and pattern, returning matching paths sorted by modification time (newest first).
-
-WHEN TO USE THIS TOOL:
-- Use when you need to find files by name patterns or extensions
-- Great for finding specific file types across a directory structure
-- Useful for discovering files that match certain naming conventions
-
-HOW TO USE:
-- Provide a glob pattern to match against file paths
-- Optionally specify a starting directory (defaults to current working directory)
-- Results are sorted with most recently modified files first
-
-GLOB PATTERN SYNTAX:
-- '*' matches any sequence of non-separator characters
-- '**' matches any sequence of characters, including separators
-- '?' matches any single non-separator character
-- '[...]' matches any character in the brackets
-- '[!...]' matches any character not in the brackets
-
-COMMON PATTERN EXAMPLES:
-- '*.js' - Find all JavaScript files in the current directory
-- '**/*.js' - Find all JavaScript files in any subdirectory
-- 'src/**/*.{ts,tsx}' - Find all TypeScript files in the src directory
-- '*.{html,css,js}' - Find all HTML, CSS, and JS files
-
-LIMITATIONS:
-- Results are limited to 100 files (newest first)
-- Does not search file contents (use Grep tool for that)
-- Hidden files (starting with '.') are skipped
-
-TIPS:
-- For the most useful results, combine with the Grep tool: first find files with Glob, then search their contents with Grep
-- When doing iterative exploration that may require multiple rounds of searching, consider using the Agent tool instead
-- Always check if results are truncated and refine your search pattern if needed`
+import DESCRIPTION from "./glob.txt"
 
 export const GlobTool = Tool.define({
   id: "opencode.glob",
@@ -45,13 +12,17 @@ export const GlobTool = Tool.define({
     path: z
       .string()
       .describe(
-        "The directory to search in. Defaults to the current working directory.",
+        `The directory to search in. If not specified, the current working directory will be used. IMPORTANT: Omit this field to use the default directory. DO NOT enter "undefined" or "null" - simply omit it for the default behavior. Must be a valid directory path if provided.`,
       )
       .optional(),
   }),
   async execute(params) {
     const app = App.info()
-    const search = params.path || app.path.cwd
+    let search = params.path ?? app.path.cwd
+    search = path.isAbsolute(search)
+      ? search
+      : path.resolve(app.path.cwd, search)
+
     const limit = 100
     const glob = new Bun.Glob(params.pattern)
     const files = []
@@ -61,12 +32,13 @@ export const GlobTool = Tool.define({
         truncated = true
         break
       }
-      const stats = await Bun.file(file)
+      const full = path.resolve(search, file)
+      const stats = await Bun.file(full)
         .stat()
         .then((x) => x.mtime.getTime())
         .catch(() => 0)
       files.push({
-        path: file,
+        path: full,
         mtime: stats,
       })
     }

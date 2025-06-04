@@ -25,6 +25,7 @@ func (c *Client) Event(ctx context.Context) (<-chan any, error) {
 		defer resp.Body.Close()
 
 		scanner := bufio.NewScanner(resp.Body)
+		scanner.Buffer(make([]byte, 1024*1024), 10*1024*1024)
 		for scanner.Scan() {
 			line := scanner.Text()
 			if strings.HasPrefix(line, "data: ") {

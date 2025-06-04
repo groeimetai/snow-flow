@@ -2,6 +2,7 @@ import { z } from "zod"
 import { Tool } from "./tool"
 import { App } from "../app/app"
 import * as path from "path"
+import DESCRIPTION from "./ls.txt"
 
 const IGNORE_PATTERNS = [
   "node_modules/",
@@ -19,7 +20,7 @@ const IGNORE_PATTERNS = [
 
 export const ListTool = Tool.define({
   id: "opencode.list",
-  description: "List directory contents",
+  description: DESCRIPTION,
   parameters: z.object({
     path: z.string().optional(),
     ignore: z.array(z.string()).optional(),

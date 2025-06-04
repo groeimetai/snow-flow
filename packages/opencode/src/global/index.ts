@@ -17,6 +17,7 @@ await Promise.all([
 export namespace Global {
   export const Path = {
     data,
+    bin: path.join(data, "bin"),
     cache,
     config,
   } as const

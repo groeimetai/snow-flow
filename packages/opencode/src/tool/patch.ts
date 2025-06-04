@@ -3,35 +3,7 @@ import * as path from "path"
 import * as fs from "fs/promises"
 import { Tool } from "./tool"
 import { FileTimes } from "./util/file-times"
-
-const DESCRIPTION = `Applies a patch to multiple files in one operation. This tool is useful for making coordinated changes across multiple files.
-
-The patch text must follow this format:
-*** Begin Patch
-*** Update File: /path/to/file
-@@ Context line (unique within the file)
- Line to keep
--Line to remove
-+Line to add
- Line to keep
-*** Add File: /path/to/new/file
-+Content of the new file
-+More content
-*** Delete File: /path/to/file/to/delete
-*** End Patch
-
-Before using this tool:
-1. Use the FileRead tool to understand the files' contents and context
-2. Verify all file paths are correct (use the LS tool)
-
-CRITICAL REQUIREMENTS FOR USING THIS TOOL:
-
-1. UNIQUENESS: Context lines MUST uniquely identify the specific sections you want to change
-2. PRECISION: All whitespace, indentation, and surrounding code must match exactly
-3. VALIDATION: Ensure edits result in idiomatic, correct code
-4. PATHS: Always use absolute file paths (starting with /)
-
-The tool will apply all changes in a single atomic operation.`
+import DESCRIPTION from "./patch.txt"
 
 const PatchParams = z.object({
   patchText: z
