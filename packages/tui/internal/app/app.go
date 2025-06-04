@@ -117,6 +117,15 @@ type Attachment struct {
 	Content  []byte
 }
 
+func (a *App) IsBusy() bool {
+	for _, message := range a.Messages {
+		if message.Metadata.Time.Completed == nil {
+			return true
+		}
+	}
+	return false
+}
+
 func (a *App) SaveConfig() {
 	config.SaveConfig(a.ConfigPath, a.Config)
 }
@@ -143,7 +152,7 @@ func (a *App) InitializeProject(ctx context.Context) tea.Cmd {
 		if err != nil {
 			status.Error(err.Error())
 		}
-		if response.StatusCode != 200 {
+		if response != nil && response.StatusCode != 200 {
 			status.Error(fmt.Sprintf("failed to initialize project: %d", response.StatusCode))
 		}
 	}()
@@ -157,19 +166,10 @@ func (a *App) MarkProjectInitialized(ctx context.Context) error {
 		slog.Error("Failed to mark project as initialized", "error", err)
 		return err
 	}
-	if response.StatusCode != 200 {
+	if response != nil && response.StatusCode != 200 {
 		return fmt.Errorf("failed to initialize project: %d", response.StatusCode)
 	}
 	return nil
-}
-
-func (a *App) IsBusy() bool {
-	for _, message := range a.Messages {
-		if message.Metadata.Time.Completed == nil {
-			return true
-		}
-	}
-	return false
 }
 
 func (a *App) CreateSession(ctx context.Context) (*client.SessionInfo, error) {
@@ -177,7 +177,7 @@ func (a *App) CreateSession(ctx context.Context) (*client.SessionInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode() != 200 {
+	if resp != nil && resp.StatusCode() != 200 {
 		return nil, fmt.Errorf("failed to create session: %d", resp.StatusCode())
 	}
 	session := resp.JSON200
@@ -210,14 +210,19 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []At
 	parts := []client.MessagePart{part}
 
 	go func() {
-		_, err := a.Client.PostSessionChat(ctx, client.PostSessionChatJSONRequestBody{
+		response, err := a.Client.PostSessionChat(ctx, client.PostSessionChatJSONRequestBody{
 			SessionID:  a.Session.Id,
 			Parts:      parts,
 			ProviderID: a.Provider.Id,
 			ModelID:    a.Model.Id,
 		})
 		if err != nil {
+			slog.Error("Failed to send message", "error", err)
 			status.Error(err.Error())
+		}
+		if response != nil && response.StatusCode != 200 {
+			slog.Error("Failed to send message", "error", fmt.Sprintf("failed to send message: %d", response.StatusCode))
+			status.Error(fmt.Sprintf("failed to send message: %d", response.StatusCode))
 		}
 	}()
 

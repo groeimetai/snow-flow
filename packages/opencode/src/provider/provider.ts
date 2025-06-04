@@ -59,7 +59,7 @@ export namespace Provider {
   const AUTODETECT: Record<string, string[]> = {
     anthropic: ["ANTHROPIC_API_KEY"],
     openai: ["OPENAI_API_KEY"],
-    google: ["GOOGLE_GENERATIVE_AI_API_KEY", "GEMINI_API_KEY"],
+    google: ["GOOGLE_GENERATIVE_AI_API_KEY"], // TODO: support GEMINI_API_KEY?
   }
 
   const state = App.state("provider", async () => {
