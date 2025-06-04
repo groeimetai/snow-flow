@@ -64,6 +64,52 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+
+    & > div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+
+      [data-section="date"] {
+        span {
+          font-size: 0.875rem;
+          color: var(--sl-color-text-secondary);
+
+          &[data-placeholder] {
+            color: var(--sl-color-text-dimmed);
+          }
+        }
+      }
+
+      p[data-section="status"] {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 0.375rem;
+        font-size: 0.75rem;
+
+        span:first-child {
+          color: var(--sl-color-divider);
+
+          &[data-status="connected"] {
+            color: var(--sl-color-green);
+          }
+          &[data-status="connecting"] {
+            color: var(--sl-color-orange);
+          }
+          &[data-status="disconnected"] {
+            color: var(--sl-color-divider);
+          }
+          &[data-status="reconnecting"] {
+            color: var(--sl-color-orange);
+          }
+          &[data-status="error"] {
+            color: var(--sl-color-red);
+          }
+        }
+      }
+
+    }
   }
 
   [data-section="row"] {
@@ -81,32 +127,6 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
-  }
-  p {
-    flex: 0 0 auto;
-    display: flex;
-    gap: 0.375rem;
-    font-size: 0.75rem;
-
-    span:first-child {
-      color: var(--sl-color-divider);
-
-      &[data-status="connected"] {
-        color: var(--sl-color-green);
-      }
-      &[data-status="connecting"] {
-        color: var(--sl-color-orange);
-      }
-      &[data-status="disconnected"] {
-        color: var(--sl-color-divider);
-      }
-      &[data-status="reconnecting"] {
-        color: var(--sl-color-orange);
-      }
-      &[data-status="error"] {
-        color: var(--sl-color-red);
-      }
-    }
   }
 
   [data-section="stats"] {
@@ -144,17 +164,6 @@
 
       span[data-stat-model] {
         color: var(sl-color-text);
-      }
-    }
-  }
-
-  [data-section="date"] {
-    span {
-      font-size: 0.875rem;
-      color: var(--sl-color-text);
-
-      &[data-placeholder] {
-        color: var(--sl-color-text-dimmed);
       }
     }
   }

@@ -437,10 +437,29 @@ export default function Share(props: { api: string }) {
       <div class={styles.header}>
         <div data-section="title">
           <h1>{store.info?.title}</h1>
-          <p>
-            <span data-status={connectionStatus()[0]}>&#9679;</span>
-            <span data-element-label>{getStatusText(connectionStatus())}</span>
-          </p>
+          <div>
+            <div data-section="date">
+              {messages().length > 0 && messages()[0].metadata?.time.created ? (
+                <span
+                  title={DateTime.fromMillis(
+                    messages()[0].metadata?.time.created || 0,
+                  ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}
+                >
+                  {DateTime.fromMillis(
+                    messages()[0].metadata?.time.created || 0,
+                  ).toLocaleString(DateTime.DATE_MED)}
+                </span>
+              ) : (
+                <span data-element-label data-placeholder>
+                  Started at &mdash;
+                </span>
+              )}
+            </div>
+            <p data-section="status">
+              <span data-status={connectionStatus()[0]}>&#9679;</span>
+              <span data-element-label>{getStatusText(connectionStatus())}</span>
+            </p>
+          </div>
         </div>
         <div data-section="row">
           <ul data-section="stats">
@@ -496,23 +515,6 @@ export default function Share(props: { api: string }) {
               </li>
             )}
           </ul>
-          <div data-section="date">
-            {messages().length > 0 && messages()[0].metadata?.time.created ? (
-              <span
-                title={DateTime.fromMillis(
-                  messages()[0].metadata?.time.created || 0,
-                ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}
-              >
-                {DateTime.fromMillis(
-                  messages()[0].metadata?.time.created || 0,
-                ).toLocaleString(DateTime.DATE_MED)}
-              </span>
-            ) : (
-              <span data-element-label data-placeholder>
-                Started at &mdash;
-              </span>
-            )}
-          </div>
         </div>
       </div>
 
