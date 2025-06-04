@@ -314,8 +314,40 @@
     }
   }
 
+  [data-part-type="tool-list"],
+  [data-part-type="tool-read"] {
+    & > [data-section="content"] > [data-part-tool-body] {
+      gap: 0.5rem;
+    }
+    [data-part-title] {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+
+      b {
+        color: var(--sl-color-text);
+        word-break: break-all;
+      }
+    }
+  }
+
+  [data-part-type="tool-read"] {
+    [data-part-tool-result] {
+      [data-part-tool-code] {
+        border: 1px solid var(--sl-color-divider);
+        border-radius: 0.25rem;
+        padding: 0.5rem calc(0.5rem + 3px);
+
+        pre {
+          line-height: 1.6;
+          font-size: 0.75rem;
+        }
+      }
+    }
+  }
+
   [data-part-type="tool-edit"] {
-    [data-part-tool-body] {
+    & > [data-section="content"] > [data-part-tool-body] {
       gap: 0.5rem;
     }
     [data-part-title] {

@@ -21,7 +21,9 @@ import {
   IconCommandLine,
   IconChevronRight,
   IconPencilSquare,
+  IconRectangleStack,
   IconWrenchScrewdriver,
+  IconDocumentArrowDown,
 } from "./icons"
 import DiffView from "./DiffView"
 import CodeBlock from "./CodeBlock"
@@ -158,10 +160,12 @@ function ProviderIcon(props: { provider: string; size?: number }) {
 }
 
 interface ResultsButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
+  showCopy?: string
+  hideCopy?: string
   results: boolean
 }
 function ResultsButton(props: ResultsButtonProps) {
-  const [local, rest] = splitProps(props, ["results"])
+  const [local, rest] = splitProps(props, ["results", "showCopy", "hideCopy"])
   return (
     <button
       type="button"
@@ -169,7 +173,11 @@ function ResultsButton(props: ResultsButtonProps) {
       data-element-button-more
       {...rest}
     >
-      <span>{local.results ? "Hide results" : "Show results"}</span>
+      <span>
+        {local.results
+          ? local.hideCopy || "Hide results"
+          : local.showCopy || "Show results"}
+      </span>
       <span data-button-icon>
         <Show
           when={local.results}
@@ -725,6 +733,163 @@ export default function Share(props: { api: string }) {
                               </div>
                             </div>
                           )}
+                        </Match>
+                        {/* LS tool */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "tool-invocation" &&
+                            part.toolInvocation.toolName === "opencode_list" &&
+                            part
+                          }
+                        >
+                          {(part) => {
+                            const metadata = createMemo(() =>
+                              msg.metadata?.tool[part().toolInvocation.toolCallId]
+                            )
+                            const args = part().toolInvocation.args
+                            const path = args.path
+
+                            const duration = createMemo(() =>
+                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
+                                DateTime.fromMillis(metadata()?.time.start || 0),
+                              ).toMillis(),
+                            )
+
+                            return (
+                              <div data-section="part" data-part-type="tool-list">
+                                <div data-section="decoration">
+                                  <div title="List files">
+                                    <IconRectangleStack width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <div data-part-tool-body>
+                                    <span data-part-title data-size="md">
+                                      <span data-element-label>LS</span>
+                                      <b>{path}</b>
+                                    </span>
+                                    <Switch>
+                                      <Match
+                                        when={
+                                          part().toolInvocation.state ===
+                                          "result" &&
+                                          part().toolInvocation.result
+                                        }
+                                      >
+                                        <div data-part-tool-result>
+                                          <ResultsButton
+                                            results={results()}
+                                            onClick={() => showResults((e) => !e)}
+                                          />
+                                          <Show when={results()}>
+                                            <TextPart
+                                              expand
+                                              data-size="sm"
+                                              data-color="dimmed"
+                                              text={part().toolInvocation.result}
+                                            />
+                                          </Show>
+                                        </div>
+                                      </Match>
+                                    </Switch>
+                                  </div>
+                                  <ToolFooter time={duration()} />
+                                </div>
+                              </div>
+                            )
+                          }}
+                        </Match>
+                        {/* Read tool */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "tool-invocation" &&
+                            part.toolInvocation.toolName === "opencode_read" &&
+                            part
+                          }
+                        >
+                          {(part) => {
+                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const args = part().toolInvocation.args
+                            const filePath = args.filePath
+                            const hasError = metadata()?.error
+                            const preview = metadata()?.preview
+                            const result = part().toolInvocation.state === "result" && part().toolInvocation.result
+
+                            const duration = createMemo(() =>
+                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
+                                DateTime.fromMillis(metadata()?.time.start || 0),
+                              ).toMillis(),
+                            )
+
+                            return (
+                              <div data-section="part" data-part-type="tool-read">
+                                <div data-section="decoration">
+                                  <div title="Read file">
+                                    <IconDocumentArrowDown width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <div data-part-tool-body>
+                                    <span data-part-title data-size="md">
+                                      <span data-element-label>Read</span>
+                                      <b>{filePath}</b>
+                                    </span>
+                                    <Switch>
+                                      <Match when={hasError}>
+                                        <div data-part-tool-result>
+                                          <TextPart
+                                            expand
+                                            text={result}
+                                            data-size="sm"
+                                            data-color="dimmed"
+                                          />
+                                        </div>
+                                      </Match>
+                                      <Match when={preview}>
+                                        <div data-part-tool-result>
+                                          <ResultsButton
+                                            showCopy="Show preview"
+                                            hideCopy="Hide preview"
+                                            results={results()}
+                                            onClick={() => showResults((e) => !e)}
+                                          />
+                                          <Show when={results()}>
+                                            <div data-part-tool-code>
+                                              <CodeBlock
+                                                lang={getFileType(filePath)}
+                                                code={preview}
+                                              />
+                                            </div>
+                                          </Show>
+                                        </div>
+                                      </Match>
+                                      <Match when={result}>
+                                        <div data-part-tool-result>
+                                          <ResultsButton
+                                            results={results()}
+                                            onClick={() => showResults((e) => !e)}
+                                          />
+                                          <Show when={results()}>
+                                            <TextPart
+                                              expand
+                                              text={result}
+                                              data-size="sm"
+                                              data-color="dimmed"
+                                            />
+                                          </Show>
+                                        </div>
+                                      </Match>
+                                    </Switch>
+                                  </div>
+                                  <ToolFooter time={duration()} />
+                                </div>
+                              </div>
+                            )
+                          }}
                         </Match>
                         {/* Edit tool */}
                         <Match
