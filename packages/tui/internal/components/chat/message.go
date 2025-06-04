@@ -93,6 +93,7 @@ func renderAssistantMessage(
 	msg client.MessageInfo,
 	width int,
 	showToolMessages bool,
+	appInfo client.AppInfo,
 ) string {
 	t := theme.CurrentTheme()
 	style := styles.BaseStyle().
@@ -144,7 +145,7 @@ func renderAssistantMessage(
 			if _, ok := msg.Metadata.Tool[toolCall.ToolCallId]; ok {
 				metadata = msg.Metadata.Tool[toolCall.ToolCallId].(map[string]any)
 			}
-			message := renderToolInvocation(toolCall, result, metadata, width)
+			message := renderToolInvocation(toolCall, result, metadata, appInfo, width)
 			messages = append(messages, message)
 		}
 	}
@@ -152,7 +153,7 @@ func renderAssistantMessage(
 	return strings.Join(messages, "\n\n")
 }
 
-func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result *string, metadata map[string]any, width int) string {
+func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result *string, metadata map[string]any, appInfo client.AppInfo, width int) string {
 	t := theme.CurrentTheme()
 	style := styles.BaseStyle().
 		BorderLeft(true).
@@ -176,6 +177,7 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 
 	if toolCall.ToolName == "opencode_edit" {
 		filename := toolMap["filePath"].(string)
+		filename = strings.TrimPrefix(filename, appInfo.Path.Root+"/")
 		title = styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, filename))
 		if finished && metadata["diff"] != nil {
 			patch := metadata["diff"].(string)
@@ -189,6 +191,8 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 		))
 	} else if toolCall.ToolName == "opencode_read" {
 		filename := toolMap["filePath"].(string)
+		filename = strings.TrimPrefix(filename, appInfo.Path.Root+"/")
+		title = styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, filename))
 		ext := filepath.Ext(filename)
 		if ext == "" {
 			ext = ""

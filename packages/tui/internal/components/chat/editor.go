@@ -211,10 +211,10 @@ func (m *editorCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if key.Matches(msg, editorMaps.OpenEditor) {
-			// if m.app.PrimaryAgentOLD.IsSessionBusy(m.app.CurrentSessionOLD.ID) {
-			// 	status.Warn("Agent is working, please wait...")
-			// 	return m, nil
-			// }
+			if m.app.IsBusy() {
+				status.Warn("Agent is working, please wait...")
+				return m, nil
+			}
 			value := m.textarea.Value()
 			m.textarea.Reset()
 			return m, m.openEditor(value)

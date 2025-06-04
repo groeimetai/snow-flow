@@ -118,12 +118,12 @@ type Attachment struct {
 }
 
 func (a *App) IsBusy() bool {
-	for _, message := range a.Messages {
-		if message.Metadata.Time.Completed == nil {
-			return true
-		}
+	if len(a.Messages) == 0 {
+		return false
 	}
-	return false
+
+	lastMessage := a.Messages[len(a.Messages)-1]
+	return lastMessage.Metadata.Time.Completed == nil
 }
 
 func (a *App) SaveConfig() {
@@ -229,6 +229,23 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []At
 	// The actual response will come through SSE
 	// For now, just return success
 	return tea.Batch(cmds...)
+}
+
+func (a *App) Cancel(ctx context.Context, sessionID string) error {
+	response, err := a.Client.PostSessionAbort(ctx, client.PostSessionAbortJSONRequestBody{
+		SessionID: sessionID,
+	})
+	if err != nil {
+		slog.Error("Failed to cancel session", "error", err)
+		status.Error(err.Error())
+		return err
+	}
+	if response != nil && response.StatusCode != 200 {
+		slog.Error("Failed to cancel session", "error", fmt.Sprintf("failed to cancel session: %d", response.StatusCode))
+		status.Error(fmt.Sprintf("failed to cancel session: %d", response.StatusCode))
+		return fmt.Errorf("failed to cancel session: %d", response.StatusCode)
+	}
+	return nil
 }
 
 func (a *App) ListSessions(ctx context.Context) ([]client.SessionInfo, error) {

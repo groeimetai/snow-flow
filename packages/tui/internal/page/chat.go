@@ -13,6 +13,7 @@ import (
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/state"
+	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/util"
 	"github.com/sst/opencode/pkg/client"
 )
@@ -75,10 +76,10 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case dialog.CommandRunCustomMsg:
 		// Check if the agent is busy before executing custom commands
-		// if p.app.PrimaryAgentOLD.IsBusy() {
-		// 	status.Warn("Agent is busy, please wait before executing a command...")
-		// 	return p, nil
-		// }
+		if p.app.IsBusy() {
+			status.Warn("Agent is busy, please wait before executing a command...")
+			return p, nil
+		}
 
 		// Process the command content with arguments if any
 		content := msg.Content
@@ -122,7 +123,7 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if p.app.Session.Id != "" {
 				// Cancel the current session's generation process
 				// This allows users to interrupt long-running operations
-				// p.app.PrimaryAgentOLD.Cancel(p.app.CurrentSessionOLD.ID)
+				p.app.Cancel(context.Background(), p.app.Session.Id)
 				return p, nil
 			}
 		case key.Matches(msg, keyMap.ToggleTools):

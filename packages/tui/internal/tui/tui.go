@@ -551,13 +551,13 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return a, nil
 		case key.Matches(msg, helpEsc):
-			// if a.app.PrimaryAgentOLD.IsBusy() {
-			if a.showQuit {
+			if a.app.IsBusy() {
+				if a.showQuit {
+					return a, nil
+				}
+				a.showHelp = !a.showHelp
 				return a, nil
 			}
-			a.showHelp = !a.showHelp
-			return a, nil
-			// }
 		case key.Matches(msg, keys.Filepicker):
 			// Toggle filepicker
 			a.showFilepicker = !a.showFilepicker
@@ -755,9 +755,9 @@ func (a appModel) View() string {
 		if a.showPermissions {
 			bindings = append(bindings, a.permissions.BindingKeys()...)
 		}
-		// if !a.app.PrimaryAgentOLD.IsBusy() {
-		bindings = append(bindings, helpEsc)
-		// }
+		if !a.app.IsBusy() {
+			bindings = append(bindings, helpEsc)
+		}
 		a.help.SetBindings(bindings)
 
 		overlay := a.help.View()
