@@ -398,11 +398,9 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
     let text: Message.TextPart | undefined
     const reader = result.toUIMessageStream().getReader()
     while (true) {
-      const result = await reader.read().catch((e) => {
-        if (e instanceof DOMException && e.name === "AbortError") {
-          return
-        }
-        throw e
+      const result = await reader.read().catch(async (e) => {
+        console.log(e)
+        next.metadata.error = e.name
       })
       if (!result) break
       const { done, value } = result

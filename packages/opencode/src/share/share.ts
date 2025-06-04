@@ -1,6 +1,6 @@
 import { App } from "../app/app"
 import { Bus } from "../bus"
-import { Session } from "../session/session"
+import { Session } from "../session"
 import { Storage } from "../storage/storage"
 import { Log } from "../util/log"
 

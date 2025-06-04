@@ -138,6 +138,7 @@ export namespace Message {
           created: z.number(),
           completed: z.number().optional(),
         }),
+        error: z.string().optional(),
         sessionID: z.string(),
         tool: z.record(z.string(), z.any()),
         assistant: z
