@@ -254,23 +254,12 @@ export const PatchTool = Tool.define({
         absPath = path.resolve(process.cwd(), absPath)
       }
 
-      if (!FileTimes.get(ctx.sessionID, absPath)) {
-        throw new Error(
-          `you must read the file ${filePath} before patching it. Use the FileRead tool first`,
-        )
-      }
+      await FileTimes.assert(ctx.sessionID, absPath)
 
       try {
         const stats = await fs.stat(absPath)
         if (stats.isDirectory()) {
           throw new Error(`path is a directory, not a file: ${absPath}`)
-        }
-
-        const lastRead = FileTimes.get(ctx.sessionID, absPath)
-        if (lastRead && stats.mtime > lastRead) {
-          throw new Error(
-            `file ${absPath} has been modified since it was last read (mod time: ${stats.mtime.toISOString()}, last read: ${lastRead.toISOString()})`,
-          )
         }
       } catch (error: any) {
         if (error.code === "ENOENT") {

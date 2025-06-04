@@ -18,6 +18,8 @@ import { LspHoverTool } from "../tool/lsp-hover"
 import { PatchTool } from "../tool/patch"
 import { ReadTool } from "../tool/read"
 import type { Tool } from "../tool/tool"
+import { MultiEditTool } from "../tool/multiedit"
+import { WriteTool } from "../tool/write"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -174,6 +176,8 @@ export namespace Provider {
     PatchTool,
     ReadTool,
     EditTool,
+    MultiEditTool,
+    WriteTool,
   ]
   const TOOL_MAPPING: Record<string, Tool.Info[]> = {
     anthropic: TOOLS.filter((t) => t.id !== "opencode.patch"),

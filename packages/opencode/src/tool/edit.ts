@@ -52,21 +52,12 @@ export const EditTool = Tool.define({
         return
       }
 
-      const read = FileTimes.get(ctx.sessionID, filepath)
-      if (!read)
-        throw new Error(
-          `You must read the file ${filepath} before editing it. Use the View tool first`,
-        )
       const file = Bun.file(filepath)
       if (!(await file.exists())) throw new Error(`File ${filepath} not found`)
       const stats = await file.stat()
       if (stats.isDirectory())
         throw new Error(`Path is a directory, not a file: ${filepath}`)
-      if (stats.mtime.getTime() > read.getTime())
-        throw new Error(
-          `File ${filepath} has been modified since it was last read.\nLast modification: ${read.toISOString()}\nLast read: ${stats.mtime.toISOString()}\n\nPlease read the file again before modifying it.`,
-        )
-
+      await FileTimes.assert(ctx.sessionID, filepath)
       contentOld = await file.text()
       const index = contentOld.indexOf(params.oldString)
       if (index === -1)
