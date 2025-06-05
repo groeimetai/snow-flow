@@ -379,9 +379,12 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
     let text: Message.TextPart | undefined
     const result = streamText({
       onStepFinish: async (step) => {
+        log.info("step finish", {
+          finishReason: step.finishReason,
+        })
         const assistant = next.metadata!.assistant!
         const usage = getUsage(step.usage, model.info)
-        assistant.cost = usage.cost
+        assistant.cost += usage.cost
         assistant.tokens = usage.tokens
         await updateMessage(next)
         if (text) {
@@ -463,6 +466,12 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
               type: value.type,
             })
         }
+        await updateMessage(next)
+      },
+      async onFinish(input) {
+        const assistant = next.metadata!.assistant!
+        const usage = getUsage(input.totalUsage, model.info)
+        assistant.cost = usage.cost
         await updateMessage(next)
       },
       onError(input) {
