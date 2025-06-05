@@ -332,6 +332,23 @@
     }
   }
 
+  [data-part-type="tool-grep"] {
+    &:not(:has([data-part-tool-args]))
+      > [data-section="content"] > [data-part-tool-body] {
+      gap: 0.5rem;
+    }
+    [data-part-title] {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+
+      b {
+        color: var(--sl-color-text);
+        word-break: break-all;
+      }
+    }
+  }
+
   [data-part-type="tool-read"] {
     [data-part-tool-result] {
       [data-part-tool-code] {
