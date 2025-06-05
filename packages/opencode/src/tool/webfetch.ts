@@ -99,6 +99,13 @@ function extractTextFromHTML(html: string): string {
 }
 
 function convertHTMLToMarkdown(html: string): string {
-  const turndownService = new TurndownService()
+  const turndownService = new TurndownService({
+    headingStyle: "atx",
+    hr: "---",
+    bulletListMarker: "-",
+    codeBlockStyle: "fenced",
+    emDelimiter: "*",
+  })
+  turndownService.remove(["script", "style", "meta", "link"])
   return turndownService.turndown(html)
 }

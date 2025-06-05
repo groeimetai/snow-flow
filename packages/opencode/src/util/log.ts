@@ -51,10 +51,10 @@ export namespace Log {
         write.out(build(message, extra))
       },
       error(message?: any, extra?: Record<string, any>) {
-        write.err(build(message, extra))
+        write.out(build(message, extra))
       },
       warn(message?: any, extra?: Record<string, any>) {
-        write.err(build(message, extra))
+        write.out(build(message, extra))
       },
       tag(key: string, value: string) {
         if (tags) tags[key] = value

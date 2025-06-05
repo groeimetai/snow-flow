@@ -185,7 +185,7 @@ export namespace Session {
         previous.metadata.assistant.tokens.output
       if (
         tokens >
-        (model.info.contextWindow - (model.info.maxOutputTokens ?? 0)) * 0.9
+        (model.info.limit.context - (model.info.limit.output ?? 0)) * 0.9
       ) {
         await summarize({
           sessionID: input.sessionID,
@@ -507,6 +507,7 @@ export namespace Session {
         await updateMessage(next)
       },
       onError(input) {
+        log.error("error", input)
         if (input.error instanceof Error) {
           next.metadata.error = input.error.toString()
         }
@@ -520,7 +521,6 @@ export namespace Session {
       },
       toolCallStreaming: false,
       abortSignal: abort.signal,
-      maxRetries: 6,
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),
       temperature: 0,
@@ -530,7 +530,13 @@ export namespace Session {
       },
       model: model.language,
     })
-    await result.consumeStream()
+    await result.consumeStream({
+      onError: (err) => {
+        log.error("error", {
+          err,
+        })
+      },
+    })
     next.metadata!.time.completed = Date.now()
     await updateMessage(next)
     return next
