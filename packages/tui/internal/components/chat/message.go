@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode/internal/components/diff"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -29,6 +28,7 @@ func toMarkdown(content string, width int) string {
 func renderUserMessage(user string, msg client.MessageInfo, width int) string {
 	t := theme.CurrentTheme()
 	style := styles.BaseStyle().
+		PaddingLeft(1).
 		BorderLeft(true).
 		Foreground(t.TextMuted()).
 		BorderForeground(t.Secondary()).
@@ -54,7 +54,7 @@ func renderUserMessage(user string, msg client.MessageInfo, width int) string {
 	if time.Now().Format("02 Jan 2006") == timestamp[:11] {
 		timestamp = timestamp[12:]
 	}
-	info := styles.Padded().
+	info := styles.BaseStyle().
 		Foreground(t.TextMuted()).
 		Render(fmt.Sprintf("%s (%s)", user, timestamp))
 
@@ -80,15 +80,6 @@ func renderUserMessage(user string, msg client.MessageInfo, width int) string {
 	return styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
 }
 
-func convertToMap(input *any) (map[string]any, bool) {
-	if input == nil {
-		return nil, false // Handle nil pointer
-	}
-	value := *input                 // Dereference the pointer to get the interface value
-	m, ok := value.(map[string]any) // Type assertion
-	return m, ok
-}
-
 func renderAssistantMessage(
 	msg client.MessageInfo,
 	width int,
@@ -97,6 +88,7 @@ func renderAssistantMessage(
 ) string {
 	t := theme.CurrentTheme()
 	style := styles.BaseStyle().
+		PaddingLeft(1).
 		BorderLeft(true).
 		Foreground(t.TextMuted()).
 		BorderForeground(t.Primary()).
@@ -108,7 +100,7 @@ func renderAssistantMessage(
 		timestamp = timestamp[12:]
 	}
 	modelName := msg.Metadata.Assistant.ModelID
-	info := styles.Padded().
+	info := styles.BaseStyle().
 		Foreground(t.TextMuted()).
 		Render(fmt.Sprintf("%s (%s)", modelName, timestamp))
 
@@ -157,42 +149,67 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 	t := theme.CurrentTheme()
 	style := styles.BaseStyle().
 		BorderLeft(true).
+		PaddingLeft(1).
 		Foreground(t.TextMuted()).
 		BorderForeground(t.TextMuted()).
 		BorderStyle(lipgloss.ThickBorder())
 
 	toolName := renderToolName(toolCall.ToolName)
-	var toolArgs []string
-	toolMap, _ := convertToMap(toolCall.Args)
-	for _, arg := range toolMap {
-		toolArgs = append(toolArgs, fmt.Sprintf("%v", arg))
+	toolArgs := ""
+	toolArgsMap := make(map[string]any)
+	if toolCall.Args != nil {
+		value := *toolCall.Args
+		m, ok := value.(map[string]any)
+		if ok {
+			toolArgsMap = m
+			firstKey := ""
+			for key := range toolArgsMap {
+				firstKey = key
+				break
+			}
+			toolArgs = renderArgs(&toolArgsMap, appInfo, firstKey)
+		}
 	}
-	params := renderParams(width-lipgloss.Width(toolName)-1, toolArgs...)
-	title := styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, params))
+
+	title := fmt.Sprintf("%s: %s", toolName, toolArgs)
 	finished := result != nil
-	body := styles.Padded().Render("In progress...")
+	body := styles.BaseStyle().Render("In progress...")
 	if finished {
 		body = *result
 	}
+	footer := ""
+	if metadata["time"] != nil {
+		timeMap := metadata["time"].(map[string]any)
+		start := timeMap["start"].(float64)
+		end := timeMap["end"].(float64)
+		durationMs := end - start
+		duration := time.Duration(durationMs * float64(time.Millisecond))
+		roundedDuration := time.Duration(duration.Round(time.Millisecond))
+		if durationMs > 1000 {
+			roundedDuration = time.Duration(duration.Round(time.Second))
+		}
+		footer = styles.Muted().Render(fmt.Sprintf("%s", roundedDuration))
+	}
 
-	if toolCall.ToolName == "opencode_edit" {
-		filename := toolMap["filePath"].(string)
+	switch toolCall.ToolName {
+	case "opencode_edit":
+		filename := toolArgsMap["filePath"].(string)
 		filename = strings.TrimPrefix(filename, appInfo.Path.Root+"/")
-		title = styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, filename))
+		title = fmt.Sprintf("%s: %s", toolName, filename)
 		if finished && metadata["diff"] != nil {
 			patch := metadata["diff"].(string)
 			formattedDiff, _ := diff.FormatDiff(patch, diff.WithTotalWidth(width))
 			body = strings.TrimSpace(formattedDiff)
+			return style.Render(lipgloss.JoinVertical(lipgloss.Left,
+				title,
+				body,
+				footer,
+			))
 		}
-
-		return style.Render(lipgloss.JoinVertical(lipgloss.Left,
-			title,
-			body,
-		))
-	} else if toolCall.ToolName == "opencode_read" {
-		filename := toolMap["filePath"].(string)
-		filename = strings.TrimPrefix(filename, appInfo.Path.Root+"/")
-		title = styles.Padded().Render(fmt.Sprintf("%s: %s", toolName, filename))
+	case "opencode_read":
+		toolArgs = renderArgs(&toolArgsMap, appInfo, "filePath")
+		title = fmt.Sprintf("%s: %s", toolName, toolArgs)
+		filename := toolArgsMap["filePath"].(string)
 		ext := filepath.Ext(filename)
 		if ext == "" {
 			ext = ""
@@ -206,21 +223,47 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 			body = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(body, 10))
 			body = toMarkdown(body, width)
 		}
-		content := style.Render(lipgloss.JoinVertical(lipgloss.Left,
-			title,
-			body,
-		))
-		return styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
-	}
-
-	// Default rendering
-	if finished {
-		body = styles.Padded().Render(truncateHeight(strings.TrimSpace(body), 10))
+	case "opencode_bash":
+		if finished && metadata["stdout"] != nil {
+			description := toolArgsMap["description"].(string)
+			title = fmt.Sprintf("%s: %s", toolName, description)
+			command := toolArgsMap["command"].(string)
+			stdout := metadata["stdout"].(string)
+			body = fmt.Sprintf("```console\n$ %s\n%s```", command, stdout)
+			body = toMarkdown(body, width)
+		}
+	case "opencode_todowrite":
+		title = fmt.Sprintf("%s", toolName)
+		if finished && metadata["todos"] != nil {
+			body = ""
+			todos := metadata["todos"].([]any)
+			for _, todo := range todos {
+				t := todo.(map[string]any)
+				content := t["content"].(string)
+				switch t["status"].(string) {
+				case "completed":
+					body += fmt.Sprintf("- [x] %s\n", content)
+				// case "in-progress":
+				// 	body += fmt.Sprintf("- [ ] _%s_\n", content)
+				default:
+					body += fmt.Sprintf("- [ ] %s\n", content)
+				}
+			}
+			body = toMarkdown(body, width)
+		}
+	default:
+		body = fmt.Sprintf("```txt\n%s\n```", truncateHeight(body, 10))
 		body = toMarkdown(body, width)
 	}
+
+	if metadata["error"] != nil && metadata["message"] != nil {
+		body = styles.BaseStyle().Foreground(t.Error()).Render(metadata["message"].(string))
+	}
+
 	content := style.Render(lipgloss.JoinVertical(lipgloss.Left,
 		title,
 		body,
+		footer,
 	))
 	return styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
 }
@@ -231,12 +274,13 @@ func renderToolName(name string) string {
 	// 	return "Task"
 	case "opencode_ls":
 		return "List"
+	case "opencode_todowrite":
+		return "Update TODOs"
 	default:
 		normalizedName := name
 		if strings.HasPrefix(name, "opencode_") {
 			normalizedName = strings.TrimPrefix(name, "opencode_")
 		}
-
 		return cases.Title(language.Und).String(normalizedName)
 	}
 }
@@ -269,145 +313,26 @@ func renderToolAction(name string) string {
 	return "Working..."
 }
 
-// renders params, params[0] (params[1]=params[2] ....)
-func renderParams(paramsWidth int, params ...string) string {
-	if len(params) == 0 {
+func renderArgs(args *map[string]any, appInfo client.AppInfo, titleKey string) string {
+	if args == nil || len(*args) == 0 {
 		return ""
 	}
-	mainParam := params[0]
-	if len(mainParam) > paramsWidth {
-		mainParam = mainParam[:paramsWidth-3] + "..."
-	}
-
-	if len(params) == 1 {
-		return mainParam
-	}
-	otherParams := params[1:]
-	// create pairs of key/value
-	// if odd number of params, the last one is a key without value
-	if len(otherParams)%2 != 0 {
-		otherParams = append(otherParams, "")
-	}
-	parts := make([]string, 0, len(otherParams)/2)
-	for i := 0; i < len(otherParams); i += 2 {
-		key := otherParams[i]
-		value := otherParams[i+1]
-		if value == "" {
+	title := ""
+	parts := []string{}
+	for key, value := range *args {
+		if key == "filePath" {
+			value = strings.TrimPrefix(value.(string), appInfo.Path.Root+"/")
+		}
+		if key == titleKey {
+			title = fmt.Sprintf("%s", value)
 			continue
 		}
-		parts = append(parts, fmt.Sprintf("%s=%s", key, value))
+		parts = append(parts, fmt.Sprintf("%s=%v", key, value))
 	}
-
-	partsRendered := strings.Join(parts, ", ")
-	remainingWidth := paramsWidth - lipgloss.Width(partsRendered) - 5 // for the space
-	if remainingWidth < 30 {
-		// No space for the params, just show the main
-		return mainParam
+	if len(parts) == 0 {
+		return title
 	}
-
-	if len(parts) > 0 {
-		mainParam = fmt.Sprintf("%s (%s)", mainParam, strings.Join(parts, ", "))
-	}
-
-	return ansi.Truncate(mainParam, paramsWidth, "...")
-}
-
-func renderToolParams(paramWidth int, toolCall any) string {
-	params := ""
-	switch toolCall {
-	// // case agent.AgentToolName:
-	// // 	var params agent.AgentParams
-	// // 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// // 	prompt := strings.ReplaceAll(params.Prompt, "\n", " ")
-	// // 	return renderParams(paramWidth, prompt)
-	// case "bash":
-	// 	var params tools.BashParams
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	command := strings.ReplaceAll(params.Command, "\n", " ")
-	// 	return renderParams(paramWidth, command)
-	// case "edit":
-	// 	var params tools.EditParams
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	filePath := removeWorkingDirPrefix(params.FilePath)
-	// 	return renderParams(paramWidth, filePath)
-	// case "fetch":
-	// 	var params tools.FetchParams
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	url := params.URL
-	// 	toolParams := []string{
-	// 		url,
-	// 	}
-	// 	if params.Format != "" {
-	// 		toolParams = append(toolParams, "format", params.Format)
-	// 	}
-	// 	if params.Timeout != 0 {
-	// 		toolParams = append(toolParams, "timeout", (time.Duration(params.Timeout) * time.Second).String())
-	// 	}
-	// 	return renderParams(paramWidth, toolParams...)
-	// case tools.GlobToolName:
-	// 	var params tools.GlobParams
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	pattern := params.Pattern
-	// 	toolParams := []string{
-	// 		pattern,
-	// 	}
-	// 	if params.Path != "" {
-	// 		toolParams = append(toolParams, "path", params.Path)
-	// 	}
-	// 	return renderParams(paramWidth, toolParams...)
-	// case tools.GrepToolName:
-	// 	var params tools.GrepParams
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	pattern := params.Pattern
-	// 	toolParams := []string{
-	// 		pattern,
-	// 	}
-	// 	if params.Path != "" {
-	// 		toolParams = append(toolParams, "path", params.Path)
-	// 	}
-	// 	if params.Include != "" {
-	// 		toolParams = append(toolParams, "include", params.Include)
-	// 	}
-	// 	if params.LiteralText {
-	// 		toolParams = append(toolParams, "literal", "true")
-	// 	}
-	// 	return renderParams(paramWidth, toolParams...)
-	// case tools.LSToolName:
-	// 	var params tools.LSParams
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	path := params.Path
-	// 	if path == "" {
-	// 		path = "."
-	// 	}
-	// 	return renderParams(paramWidth, path)
-	// case tools.ViewToolName:
-	// 	var params tools.ViewParams
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	filePath := removeWorkingDirPrefix(params.FilePath)
-	// 	toolParams := []string{
-	// 		filePath,
-	// 	}
-	// 	if params.Limit != 0 {
-	// 		toolParams = append(toolParams, "limit", fmt.Sprintf("%d", params.Limit))
-	// 	}
-	// 	if params.Offset != 0 {
-	// 		toolParams = append(toolParams, "offset", fmt.Sprintf("%d", params.Offset))
-	// 	}
-	// 	return renderParams(paramWidth, toolParams...)
-	// case tools.WriteToolName:
-	// 	var params tools.WriteParams
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	filePath := removeWorkingDirPrefix(params.FilePath)
-	// 	return renderParams(paramWidth, filePath)
-	// case tools.BatchToolName:
-	// 	var params tools.BatchParams
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	return renderParams(paramWidth, fmt.Sprintf("%d parallel calls", len(params.Calls)))
-	// default:
-	// 	input := strings.ReplaceAll(toolCall, "\n", " ")
-	// 	params = renderParams(paramWidth, input)
-	}
-	return params
+	return fmt.Sprintf("%s (%s)", title, strings.Join(parts, ", "))
 }
 
 func truncateHeight(content string, height int) string {
@@ -417,229 +342,3 @@ func truncateHeight(content string, height int) string {
 	}
 	return content
 }
-
-func renderToolResponse(toolCall any, response any, width int) string {
-	return ""
-	// t := theme.CurrentTheme()
-	// baseStyle := styles.BaseStyle()
-	//
-	// if response.IsError {
-	// 	errContent := fmt.Sprintf("Error: %s", strings.ReplaceAll(response.Content, "\n", " "))
-	// 	errContent = ansi.Truncate(errContent, width-1, "...")
-	// 	return baseStyle.
-	// 		Width(width).
-	// 		Foreground(t.Error()).
-	// 		Render(errContent)
-	// }
-	//
-	// resultContent := truncateHeight(response.Content, maxResultHeight)
-	// switch toolCall.Name {
-	// case agent.AgentToolName:
-	// 	return styles.ForceReplaceBackgroundWithLipgloss(
-	// 		toMarkdown(resultContent, false, width),
-	// 		t.Background(),
-	// 	)
-	// case tools.BashToolName:
-	// 	resultContent = fmt.Sprintf("```bash\n%s\n```", resultContent)
-	// 	return styles.ForceReplaceBackgroundWithLipgloss(
-	// 		toMarkdown(resultContent, width),
-	// 		t.Background(),
-	// 	)
-	// case tools.EditToolName:
-	// 	metadata := tools.EditResponseMetadata{}
-	// 	json.Unmarshal([]byte(response.Metadata), &metadata)
-	// 	formattedDiff, _ := diff.FormatDiff(metadata.Diff, diff.WithTotalWidth(width))
-	// 	return formattedDiff
-	// case tools.FetchToolName:
-	// 	var params tools.FetchParams
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	mdFormat := "markdown"
-	// 	switch params.Format {
-	// 	case "text":
-	// 		mdFormat = "text"
-	// 	case "html":
-	// 		mdFormat = "html"
-	// 	}
-	// 	resultContent = fmt.Sprintf("```%s\n%s\n```", mdFormat, resultContent)
-	// 	return styles.ForceReplaceBackgroundWithLipgloss(
-	// 		toMarkdown(resultContent, width),
-	// 		t.Background(),
-	// 	)
-	// case tools.GlobToolName:
-	// 	return baseStyle.Width(width).Foreground(t.TextMuted()).Render(resultContent)
-	// case tools.GrepToolName:
-	// 	return baseStyle.Width(width).Foreground(t.TextMuted()).Render(resultContent)
-	// case tools.LSToolName:
-	// 	return baseStyle.Width(width).Foreground(t.TextMuted()).Render(resultContent)
-	// case tools.ViewToolName:
-	// 	metadata := tools.ViewResponseMetadata{}
-	// 	json.Unmarshal([]byte(response.Metadata), &metadata)
-	// 	ext := filepath.Ext(metadata.FilePath)
-	// 	if ext == "" {
-	// 		ext = ""
-	// 	} else {
-	// 		ext = strings.ToLower(ext[1:])
-	// 	}
-	// 	resultContent = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(metadata.Content, maxResultHeight))
-	// 	return styles.ForceReplaceBackgroundWithLipgloss(
-	// 		toMarkdown(resultContent, width),
-	// 		t.Background(),
-	// 	)
-	// case tools.WriteToolName:
-	// 	params := tools.WriteParams{}
-	// 	json.Unmarshal([]byte(toolCall.Input), &params)
-	// 	metadata := tools.WriteResponseMetadata{}
-	// 	json.Unmarshal([]byte(response.Metadata), &metadata)
-	// 	ext := filepath.Ext(params.FilePath)
-	// 	if ext == "" {
-	// 		ext = ""
-	// 	} else {
-	// 		ext = strings.ToLower(ext[1:])
-	// 	}
-	// 	resultContent = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(params.Content, maxResultHeight))
-	// 	return styles.ForceReplaceBackgroundWithLipgloss(
-	// 		toMarkdown(resultContent, width),
-	// 		t.Background(),
-	// 	)
-	// case tools.BatchToolName:
-	// 	var batchResult tools.BatchResult
-	// 	if err := json.Unmarshal([]byte(resultContent), &batchResult); err != nil {
-	// 		return baseStyle.Width(width).Foreground(t.Error()).Render(fmt.Sprintf("Error parsing batch result: %s", err))
-	// 	}
-	//
-	// 	var toolCalls []string
-	// 	for i, result := range batchResult.Results {
-	// 		toolName := renderToolName(result.ToolName)
-	//
-	// 		// Format the tool input as a string
-	// 		inputStr := string(result.ToolInput)
-	//
-	// 		// Format the result
-	// 		var resultStr string
-	// 		if result.Error != "" {
-	// 			resultStr = fmt.Sprintf("Error: %s", result.Error)
-	// 		} else {
-	// 			var toolResponse tools.ToolResponse
-	// 			if err := json.Unmarshal(result.Result, &toolResponse); err != nil {
-	// 				resultStr = "Error parsing tool response"
-	// 			} else {
-	// 				resultStr = truncateHeight(toolResponse.Content, 3)
-	// 			}
-	// 		}
-	//
-	// 		// Format the tool call
-	// 		toolCall := fmt.Sprintf("%d. %s: %s\n   %s", i+1, toolName, inputStr, resultStr)
-	// 		toolCalls = append(toolCalls, toolCall)
-	// 	}
-	//
-	// 	return baseStyle.Width(width).Foreground(t.TextMuted()).Render(strings.Join(toolCalls, "\n\n"))
-	// default:
-	// 	resultContent = fmt.Sprintf("```text\n%s\n```", resultContent)
-	// 	return styles.ForceReplaceBackgroundWithLipgloss(
-	// 		toMarkdown(resultContent, width),
-	// 		t.Background(),
-	// 	)
-	// }
-}
-
-// func renderToolMessage(
-// 	toolCall message.ToolCall,
-// 	allMessages []message.Message,
-// 	messagesService message.Service,
-// 	focusedUIMessageId string,
-// 	nested bool,
-// 	width int,
-// 	position int,
-// ) string {
-// 	if nested {
-// 		width = width - 3
-// 	}
-//
-// 	t := theme.CurrentTheme()
-// 	baseStyle := styles.BaseStyle()
-//
-// 	style := baseStyle.
-// 		Width(width - 1).
-// 		BorderLeft(true).
-// 		BorderStyle(lipgloss.ThickBorder()).
-// 		PaddingLeft(1).
-// 		BorderForeground(t.TextMuted())
-//
-// 	response := findToolResponse(toolCall.ID, allMessages)
-// 	toolNameText := baseStyle.Foreground(t.TextMuted()).
-// 		Render(fmt.Sprintf("%s: ", renderToolName(toolCall.Name)))
-//
-// 	if !toolCall.Finished {
-// 		// Get a brief description of what the tool is doing
-// 		toolAction := renderToolAction(toolCall.Name)
-//
-// 		progressText := baseStyle.
-// 			Width(width - 2 - lipgloss.Width(toolNameText)).
-// 			Foreground(t.TextMuted()).
-// 			Render(fmt.Sprintf("%s", toolAction))
-//
-// 		content := style.Render(lipgloss.JoinHorizontal(lipgloss.Left, toolNameText, progressText))
-// 		return content
-// 	}
-//
-// 	params := renderToolParams(width-1-lipgloss.Width(toolNameText), toolCall)
-// 	responseContent := ""
-// 	if response != nil {
-// 		responseContent = renderToolResponse(toolCall, *response, width-2)
-// 		responseContent = strings.TrimSuffix(responseContent, "\n")
-// 	} else {
-// 		responseContent = baseStyle.
-// 			Italic(true).
-// 			Width(width - 2).
-// 			Foreground(t.TextMuted()).
-// 			Render("Waiting for response...")
-// 	}
-//
-// 	parts := []string{}
-// 	if !nested {
-// 		formattedParams := baseStyle.
-// 			Width(width - 2 - lipgloss.Width(toolNameText)).
-// 			Foreground(t.TextMuted()).
-// 			Render(params)
-//
-// 		parts = append(parts, lipgloss.JoinHorizontal(lipgloss.Left, toolNameText, formattedParams))
-// 	} else {
-// 		prefix := baseStyle.
-// 			Foreground(t.TextMuted()).
-// 			Render(" └ ")
-// 		formattedParams := baseStyle.
-// 			Width(width - 2 - lipgloss.Width(toolNameText)).
-// 			Foreground(t.TextMuted()).
-// 			Render(params)
-// 		parts = append(parts, lipgloss.JoinHorizontal(lipgloss.Left, prefix, toolNameText, formattedParams))
-// 	}
-//
-// 	// if toolCall.Name == agent.AgentToolName {
-// 	// 	taskMessages, _ := messagesService.List(context.Background(), toolCall.ID)
-// 	// 	toolCalls := []message.ToolCall{}
-// 	// 	for _, v := range taskMessages {
-// 	// 		toolCalls = append(toolCalls, v.ToolCalls()...)
-// 	// 	}
-// 	// 	for _, call := range toolCalls {
-// 	// 		rendered := renderToolMessage(call, []message.Message{}, messagesService, focusedUIMessageId, true, width, 0)
-// 	// 		parts = append(parts, rendered.content)
-// 	// 	}
-// 	// }
-// 	if responseContent != "" && !nested {
-// 		parts = append(parts, responseContent)
-// 	}
-//
-// 	content := style.Render(
-// 		lipgloss.JoinVertical(
-// 			lipgloss.Left,
-// 			parts...,
-// 		),
-// 	)
-// 	if nested {
-// 		content = lipgloss.JoinVertical(
-// 			lipgloss.Left,
-// 			parts...,
-// 		)
-// 	}
-// 	return content
-// }
