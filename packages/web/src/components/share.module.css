@@ -316,7 +316,8 @@
 
   [data-part-type="tool-list"],
   [data-part-type="tool-glob"],
-  [data-part-type="tool-read"] {
+  [data-part-type="tool-read"],
+  [data-part-type="tool-fetch"] {
     & > [data-section="content"] > [data-part-tool-body] {
       gap: 0.5rem;
     }
@@ -349,7 +350,8 @@
     }
   }
 
-  [data-part-type="tool-read"] {
+  [data-part-type="tool-read"],
+  [data-part-type="tool-fetch"] {
     [data-part-tool-result] {
       [data-part-tool-code] {
         border: 1px solid var(--sl-color-divider);
@@ -359,6 +361,8 @@
         pre {
           line-height: 1.6;
           font-size: 0.75rem;
+          white-space: pre-wrap;
+          word-break: break-word;
         }
       }
     }

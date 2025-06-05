@@ -16,6 +16,7 @@ import { IconOpenAI, IconGemini, IconAnthropic } from "./icons/custom"
 import {
   IconCpuChip,
   IconSparkles,
+  IconGlobeAlt,
   IconQueueList,
   IconUserCircle,
   IconChevronDown,
@@ -1276,6 +1277,78 @@ export default function Share(props: { api: string }) {
                                         </For>
                                       </ul>
                                     </Show>
+                                  </div>
+                                  <ToolFooter time={duration()} />
+                                </div>
+                              </div>
+                            )
+                          }}
+                        </Match>
+                        {/* Fetch tool */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "tool-invocation" &&
+                            part.toolInvocation.toolName === "opencode_webfetch" &&
+                            part
+                          }
+                        >
+                          {(part) => {
+                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const args = part().toolInvocation.args
+                            const url = args.url
+                            const format = args.format
+                            const hasError = metadata()?.error
+                            const result = part().toolInvocation.state === "result" && part().toolInvocation.result
+
+                            const duration = createMemo(() =>
+                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
+                                DateTime.fromMillis(metadata()?.time.start || 0),
+                              ).toMillis(),
+                            )
+
+                            return (
+                              <div data-section="part" data-part-type="tool-fetch">
+                                <div data-section="decoration">
+                                  <div title="Web fetch">
+                                    <IconGlobeAlt width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <div data-part-tool-body>
+                                    <span data-part-title data-size="md">
+                                      <span data-element-label>Fetch</span>
+                                      <b>{url}</b>
+                                    </span>
+                                    <Switch>
+                                      <Match when={hasError}>
+                                        <div data-part-tool-result>
+                                          <TextPart
+                                            expand
+                                            text={result}
+                                            data-size="sm"
+                                            data-color="dimmed"
+                                          />
+                                        </div>
+                                      </Match>
+                                      <Match when={result}>
+                                        <div data-part-tool-result>
+                                          <ResultsButton
+                                            results={results()}
+                                            onClick={() => showResults((e) => !e)}
+                                          />
+                                          <Show when={results()}>
+                                            <div data-part-tool-code>
+                                              <CodeBlock
+                                                lang={format || "text"}
+                                                code={result}
+                                              />
+                                            </div>
+                                          </Show>
+                                        </div>
+                                      </Match>
+                                    </Switch>
                                   </div>
                                   <ToolFooter time={duration()} />
                                 </div>
