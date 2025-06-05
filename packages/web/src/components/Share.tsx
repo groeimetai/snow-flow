@@ -463,7 +463,7 @@ export default function Share(props: { api: string }) {
     for (let i = 0; i < messages().length; i++) {
       const msg = messages()[i]
 
-      const system = i === 0 && msg.role === "system"
+      const system = result.messages.length === 0 && msg.role === "system"
       const assistant = msg.metadata?.assistant
 
       if (system) {
@@ -608,7 +608,7 @@ export default function Share(props: { api: string }) {
                 <TextPart
                   expand
                   data-size="sm"
-                  text={data().system.join("\n").trim()}
+                  text={data().system.join("\n\n").trim()}
                 />
               </Show>
             </div>
@@ -1242,6 +1242,7 @@ export default function Share(props: { api: string }) {
                             const todos = createMemo(() => sortTodosByStatus(
                               part().toolInvocation.args.todos
                             ))
+                            const finished = todos().every(t => t.status === "completed")
 
                             const duration = createMemo(() =>
                               DateTime.fromMillis(metadata()?.time.end || 0).diff(
@@ -1263,7 +1264,12 @@ export default function Share(props: { api: string }) {
                                 <div data-section="content">
                                   <div data-part-tool-body>
                                     <span data-part-title data-size="sm">
-                                      Planning&hellip;
+                                      <Show
+                                        when={finished}
+                                        fallback="Planning&hellip;"
+                                      >
+                                        Completing&hellip;
+                                      </Show>
                                     </span>
                                     <Show when={todos().length > 0}>
                                       <ul class={styles.todos}>
