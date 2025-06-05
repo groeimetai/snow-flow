@@ -12,6 +12,7 @@ import {
   createSignal,
 } from "solid-js"
 import { DateTime } from "luxon"
+import { createStore, reconcile } from "solid-js/store"
 import { IconOpenAI, IconGemini, IconAnthropic } from "./icons/custom"
 import {
   IconCpuChip,
@@ -32,9 +33,9 @@ import {
 } from "./icons"
 import DiffView from "./DiffView"
 import CodeBlock from "./CodeBlock"
+import MarkdownView from "./MarkdownView"
 import styles from "./share.module.css"
 import { type UIMessage } from "ai"
-import { createStore, reconcile } from "solid-js/store"
 
 const MIN_DURATION = 2
 
@@ -255,6 +256,60 @@ function TextPart(props: TextPartProps) {
       {...rest}
     >
       <pre ref={(el) => (preEl = el)}>{local.text}</pre>
+      {((!local.expand && overflowed()) || expanded()) && (
+        <button
+          type="button"
+          data-element-button-text
+          onClick={() => setExpanded((e) => !e)}
+        >
+          {expanded() ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  )
+}
+
+interface MarkdownPartProps extends JSX.HTMLAttributes<HTMLDivElement> {
+  text: string
+  expand?: boolean
+}
+function MarkdownPart(props: MarkdownPartProps) {
+  const [local, rest] = splitProps(props, ["text", "expand"])
+  const [expanded, setExpanded] = createSignal(false)
+  const [overflowed, setOverflowed] = createSignal(false)
+  let divEl: HTMLDivElement | undefined
+
+  function checkOverflow() {
+    if (divEl && !local.expand) {
+      setOverflowed(divEl.scrollHeight > divEl.clientHeight + 1)
+    }
+  }
+
+  onMount(() => {
+    checkOverflow()
+    window.addEventListener("resize", checkOverflow)
+  })
+
+  createEffect(() => {
+    local.text
+    setTimeout(checkOverflow, 0)
+  })
+
+  onCleanup(() => {
+    window.removeEventListener("resize", checkOverflow)
+  })
+
+  return (
+    <div
+      class={styles["message-markdown"]}
+      data-expanded={expanded() || local.expand === true}
+      {...rest}
+    >
+      <MarkdownView
+        data-elment-markdown
+        markdown={local.text}
+        ref={(el) => (divEl = el)}
+      />
       {((!local.expand && overflowed()) || expanded()) && (
         <button
           type="button"
@@ -682,7 +737,7 @@ export default function Share(props: { api: string }) {
                                 <div></div>
                               </div>
                               <div data-section="content">
-                                <TextPart
+                                <MarkdownPart
                                   text={part().text}
                                   expand={isLastPart()}
                                 />

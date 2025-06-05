@@ -1,0 +1,40 @@
+.markdown-body {
+  font-size: 0.875rem;
+  line-height: 1.5;
+
+  p,
+  blockquote,
+  ul,
+  ol,
+  dl,
+  table,
+  pre {
+    margin-bottom: 1rem;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-bottom: 0.5rem;
+  }
+
+  & > *:last-child {
+    margin-bottom: 0;
+  }
+
+  code {
+    font-weight: 500;
+
+    &::before {
+      content: "`";
+      font-weight: 600;
+    }
+    &::after {
+      content: "`";
+      font-weight: 600;
+    }
+  }
+}
