@@ -57,7 +57,6 @@ export namespace Config {
         })
         .optional(),
       mcp: z.record(z.string(), Mcp).optional(),
-      models: z.record(z.string(), Provider.Model.array()).optional(),
     })
     .strict()
 
