@@ -110,6 +110,12 @@ cli
       empty()
       stderr(styles.TEXT_NORMAL_BOLD + "> ", message.join(" "))
       empty()
+      stderr(
+        styles.TEXT_INFO_BOLD +
+          "~  https://dev.opencode.ai/s?id=" +
+          session.id.slice(-8),
+      )
+      empty()
 
       function printEvent(color: string, type: string, title: string) {
         stderr(
