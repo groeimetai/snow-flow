@@ -168,5 +168,6 @@ export namespace Message {
         info: Info,
       }),
     ),
+    PartUpdated: Bus.event("message.part.updated", z.object({ part: Part })),
   }
 }

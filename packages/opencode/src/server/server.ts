@@ -20,6 +20,17 @@ export namespace Server {
     const app = new Hono()
 
     const result = app
+      .onError((err, c) => {
+        log.error("error", err)
+        return c.json(
+          {
+            error: err.toString(),
+          },
+          {
+            status: 500,
+          },
+        )
+      })
       .use((c, next) => {
         log.info("request", {
           method: c.req.method,

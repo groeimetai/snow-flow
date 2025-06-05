@@ -384,6 +384,11 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
         assistant.cost = usage.cost
         assistant.tokens = usage.tokens
         await updateMessage(next)
+        if (text) {
+          Bus.publish(Message.Event.PartUpdated, {
+            part: text,
+          })
+        }
         text = undefined
       },
       async onChunk(input) {
@@ -397,8 +402,7 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
               text = value
               next.parts.push(value)
               break
-            }
-            text.text += value.text
+            } else text.text += value.text
             break
 
           case "tool-call":
@@ -411,6 +415,9 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
                 args: value.args as any,
               },
             })
+            Bus.publish(Message.Event.PartUpdated, {
+              part: next.parts[next.parts.length - 1],
+            })
             break
 
           case "tool-call-streaming-start":
@@ -422,6 +429,9 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
                 toolCallId: value.toolCallId,
                 args: {},
               },
+            })
+            Bus.publish(Message.Event.PartUpdated, {
+              part: next.parts[next.parts.length - 1],
             })
             break
 
@@ -442,6 +452,9 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
                 state: "result",
                 result: value.result as string,
               }
+              Bus.publish(Message.Event.PartUpdated, {
+                part: match,
+              })
             }
             break
 
