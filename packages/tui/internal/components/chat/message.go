@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode/internal/components/diff"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -22,7 +23,24 @@ const (
 func toMarkdown(content string, width int) string {
 	r := styles.GetMarkdownRenderer(width)
 	rendered, _ := r.Render(content)
-	return strings.TrimSuffix(rendered, "\n")
+	lines := strings.Split(rendered, "\n")
+	if len(lines) > 0 {
+		firstLine := lines[0]
+		cleaned := ansi.Strip(firstLine)
+		nospace := strings.ReplaceAll(cleaned, " ", "")
+		if nospace == "" {
+			lines = lines[1:]
+		}
+		if len(lines) > 0 {
+			lastLine := lines[len(lines)-1]
+			cleaned = ansi.Strip(lastLine)
+			nospace = strings.ReplaceAll(cleaned, " ", "")
+			if nospace == "" {
+				lines = lines[:len(lines)-1]
+			}
+		}
+	}
+	return strings.TrimSuffix(strings.Join(lines, "\n"), "\n")
 }
 
 func renderUserMessage(user string, msg client.MessageInfo, width int) string {
@@ -203,7 +221,7 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 			return style.Render(lipgloss.JoinVertical(lipgloss.Left,
 				title,
 				body,
-				footer,
+				styles.ForceReplaceBackgroundWithLipgloss(footer, t.Background()),
 			))
 		}
 	case "opencode_read":
@@ -223,6 +241,19 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 			body = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(body, 10))
 			body = toMarkdown(body, width)
 		}
+	case "opencode_write":
+		filename := toolArgsMap["filePath"].(string)
+		filename = strings.TrimPrefix(filename, appInfo.Path.Root+"/")
+		title = fmt.Sprintf("%s: %s", toolName, filename)
+		ext := filepath.Ext(filename)
+		if ext == "" {
+			ext = ""
+		} else {
+			ext = strings.ToLower(ext[1:])
+		}
+		content := toolArgsMap["content"].(string)
+		body = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(content, 10))
+		body = toMarkdown(body, width)
 	case "opencode_bash":
 		if finished && metadata["stdout"] != nil {
 			description := toolArgsMap["description"].(string)
@@ -230,6 +261,25 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 			command := toolArgsMap["command"].(string)
 			stdout := metadata["stdout"].(string)
 			body = fmt.Sprintf("```console\n$ %s\n%s```", command, stdout)
+			body = toMarkdown(body, width)
+		}
+	case "opencode_todoread":
+		title = fmt.Sprintf("%s", toolName)
+		if finished && metadata["todos"] != nil {
+			body = ""
+			todos := metadata["todos"].([]any)
+			for _, todo := range todos {
+				t := todo.(map[string]any)
+				content := t["content"].(string)
+				switch t["status"].(string) {
+				case "completed":
+					body += fmt.Sprintf("- [x] %s\n", content)
+				// case "in-progress":
+				// 	body += fmt.Sprintf("- [ ] _%s_\n", content)
+				default:
+					body += fmt.Sprintf("- [ ] %s\n", content)
+				}
+			}
 			body = toMarkdown(body, width)
 		}
 	case "opencode_todowrite":
@@ -274,6 +324,10 @@ func renderToolName(name string) string {
 	// 	return "Task"
 	case "opencode_ls":
 		return "List"
+	case "opencode_webfetch":
+		return "Fetch"
+	case "opencode_todoread":
+		return "Read TODOs"
 	case "opencode_todowrite":
 		return "Update TODOs"
 	default:
@@ -320,7 +374,7 @@ func renderArgs(args *map[string]any, appInfo client.AppInfo, titleKey string) s
 	title := ""
 	parts := []string{}
 	for key, value := range *args {
-		if key == "filePath" {
+		if key == "filePath" || key == "path" {
 			value = strings.TrimPrefix(value.(string), appInfo.Path.Root+"/")
 		}
 		if key == titleKey {

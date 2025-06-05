@@ -35,7 +35,6 @@ func generateMarkdownStyleConfig() ansi.StyleConfig {
 				BlockSuffix: "",
 				Color:       stringPtr(adaptiveColorToString(t.MarkdownText())),
 			},
-			// Margin: uintPtr(defaultMargin),
 		},
 		BlockQuote: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
