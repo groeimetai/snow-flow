@@ -16,6 +16,7 @@ import { IconOpenAI, IconGemini, IconAnthropic } from "./icons/custom"
 import {
   IconCpuChip,
   IconSparkles,
+  IconQueueList,
   IconUserCircle,
   IconChevronDown,
   IconCommandLine,
@@ -73,6 +74,27 @@ type SessionMessage = UIMessage<{
 type SessionInfo = {
   title: string
   cost?: number
+}
+
+type TodoStatus = "pending" | "in_progress" | "completed"
+
+interface Todo {
+  id: string
+  content: string
+  status: TodoStatus
+  priority: "low" | "medium" | "high"
+}
+
+function sortTodosByStatus(todos: Todo[]) {
+  const statusPriority: Record<TodoStatus, number> = {
+    in_progress: 0,
+    pending: 1,
+    completed: 2,
+  }
+
+  return todos
+    .slice()
+    .sort((a, b) => statusPriority[a.status] - statusPriority[b.status])
 }
 
 function getFileType(path: string) {
@@ -1156,6 +1178,104 @@ export default function Share(props: { api: string }) {
                                       data-size="sm"
                                       text={command + (result ? `\n${result}` : "")}
                                     />
+                                  </div>
+                                  <ToolFooter time={duration()} />
+                                </div>
+                              </div>
+                            )
+                          }}
+                        </Match>
+                        {/* Todo read */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "tool-invocation" &&
+                            part.toolInvocation.toolName === "opencode_todoread" &&
+                            part
+                          }
+                        >
+                          {(part) => {
+                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+
+                            const duration = createMemo(() =>
+                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
+                                DateTime.fromMillis(metadata()?.time.start || 0),
+                              ).toMillis(),
+                            )
+
+                            return (
+                              <div
+                                data-section="part"
+                                data-part-type="tool-fallback"
+                              >
+                                <div data-section="decoration">
+                                  <div title="Plan">
+                                    <IconQueueList width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <div data-part-tool-body>
+                                    <span data-part-title data-size="sm">
+                                      Checking plan&hellip;
+                                    </span>
+                                  </div>
+                                  <ToolFooter time={duration()} />
+                                </div>
+                              </div>
+                            )
+                          }}
+                        </Match>
+                        {/* Todo write */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "tool-invocation" &&
+                            part.toolInvocation.toolName === "opencode_todowrite" &&
+                            part
+                          }
+                        >
+                          {(part) => {
+                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+
+                            const todos = createMemo(() => sortTodosByStatus(
+                              part().toolInvocation.args.todos
+                            ))
+
+                            const duration = createMemo(() =>
+                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
+                                DateTime.fromMillis(metadata()?.time.start || 0),
+                              ).toMillis(),
+                            )
+
+                            return (
+                              <div
+                                data-section="part"
+                                data-part-type="tool-fallback"
+                              >
+                                <div data-section="decoration">
+                                  <div title="Plan">
+                                    <IconQueueList width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <div data-part-tool-body>
+                                    <span data-part-title data-size="sm">
+                                      Planning&hellip;
+                                    </span>
+                                    <Show when={todos().length > 0}>
+                                      <ul class={styles.todos}>
+                                        <For each={todos()}>
+                                          {({ status, content }) =>
+                                            <li data-status={status}>
+                                              <span></span>
+                                              {content}
+                                            </li>
+                                          }
+                                        </For>
+                                      </ul>
+                                    </Show>
                                   </div>
                                   <ToolFooter time={duration()} />
                                 </div>
