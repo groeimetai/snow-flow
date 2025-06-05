@@ -203,26 +203,27 @@ type MessageToolInvocationToolResult struct {
 
 // ProviderInfo defines model for Provider.Info.
 type ProviderInfo struct {
-	Id      string                  `json:"id"`
-	Models  []ProviderModel         `json:"models"`
-	Name    string                  `json:"name"`
-	Options *map[string]interface{} `json:"options,omitempty"`
+	Id     string                   `json:"id"`
+	Models map[string]ProviderModel `json:"models"`
+	Name   string                   `json:"name"`
 }
 
 // ProviderModel defines model for Provider.Model.
 type ProviderModel struct {
-	Attachment    bool    `json:"attachment"`
-	ContextWindow float32 `json:"contextWindow"`
-	Cost          struct {
+	Attachment bool `json:"attachment"`
+	Cost       struct {
 		Input        float32 `json:"input"`
 		InputCached  float32 `json:"inputCached"`
 		Output       float32 `json:"output"`
 		OutputCached float32 `json:"outputCached"`
 	} `json:"cost"`
-	Id              string   `json:"id"`
-	MaxOutputTokens *float32 `json:"maxOutputTokens,omitempty"`
-	Name            *string  `json:"name,omitempty"`
-	Reasoning       *bool    `json:"reasoning,omitempty"`
+	Id    string `json:"id"`
+	Limit struct {
+		Context float32 `json:"context"`
+		Output  float32 `json:"output"`
+	} `json:"limit"`
+	Name      *string `json:"name,omitempty"`
+	Reasoning *bool   `json:"reasoning,omitempty"`
 }
 
 // PermissionInfo defines model for permission.info.
@@ -1815,7 +1816,10 @@ func (r PostPathGetResponse) StatusCode() int {
 type PostProviderListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]ProviderInfo
+	JSON200      *struct {
+		Default   map[string]string `json:"default"`
+		Providers []ProviderInfo    `json:"providers"`
+	}
 }
 
 // Status returns HTTPResponse.Status
@@ -2299,7 +2303,10 @@ func ParsePostProviderListResponse(rsp *http.Response) (*PostProviderListRespons
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []ProviderInfo
+		var dest struct {
+			Default   map[string]string `json:"default"`
+			Providers []ProviderInfo    `json:"providers"`
+		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

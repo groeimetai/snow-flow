@@ -3,6 +3,9 @@ package dialog
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -38,7 +41,6 @@ type modelDialogCmp struct {
 	app                *app.App
 	availableProviders []client.ProviderInfo
 	provider           client.ProviderInfo
-	model              *client.ProviderModel
 
 	selectedIdx     int
 	width           int
@@ -144,7 +146,8 @@ func (m *modelDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.switchProvider(1)
 			}
 		case key.Matches(msg, modelKeys.Enter):
-			return m, util.CmdHandler(CloseModelDialogMsg{Provider: &m.provider, Model: &m.provider.Models[m.selectedIdx]})
+			models := m.models()
+			return m, util.CmdHandler(CloseModelDialogMsg{Provider: &m.provider, Model: &models[m.selectedIdx]})
 		case key.Matches(msg, modelKeys.Escape):
 			return m, util.CmdHandler(CloseModelDialogMsg{})
 		}
@@ -154,6 +157,13 @@ func (m *modelDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+func (m *modelDialogCmp) models() []client.ProviderModel {
+	models := slices.SortedFunc(maps.Values(m.provider.Models), func(a, b client.ProviderModel) int {
+		return strings.Compare(*a.Name, *b.Name)
+	})
+	return models
 }
 
 // moveSelectionUp moves the selection up or wraps to bottom
@@ -218,13 +228,14 @@ func (m *modelDialogCmp) View() string {
 	endIdx := min(m.scrollOffset+numVisibleModels, len(m.provider.Models))
 	modelItems := make([]string, 0, endIdx-m.scrollOffset)
 
+	models := m.models()
 	for i := m.scrollOffset; i < endIdx; i++ {
 		itemStyle := baseStyle.Width(maxDialogWidth)
 		if i == m.selectedIdx {
 			itemStyle = itemStyle.Background(t.Primary()).
 				Foreground(t.Background()).Bold(true)
 		}
-		modelItems = append(modelItems, itemStyle.Render(*m.provider.Models[i].Name))
+		modelItems = append(modelItems, itemStyle.Render(*models[i].Name))
 	}
 
 	scrollIndicator := m.getScrollIndicators(maxDialogWidth)

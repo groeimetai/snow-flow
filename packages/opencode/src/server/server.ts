@@ -10,6 +10,7 @@ import { Message } from "../session/message"
 import { Provider } from "../provider/provider"
 import { App } from "../app/app"
 import { Global } from "../global"
+import { mapValues } from "remeda"
 
 export namespace Server {
   const log = Log.create({ service: "server" })
@@ -379,7 +380,12 @@ export namespace Server {
               description: "List of providers",
               content: {
                 "application/json": {
-                  schema: resolver(Provider.Info.array()),
+                  schema: resolver(
+                    z.object({
+                      providers: Provider.Info.array(),
+                      default: z.record(z.string(), z.string()),
+                    }),
+                  ),
                 },
               },
             },
@@ -387,7 +393,13 @@ export namespace Server {
         }),
         async (c) => {
           const providers = await Provider.active()
-          return c.json(providers.values().toArray())
+          return c.json({
+            providers: Object.values(providers),
+            defaults: mapValues(
+              providers,
+              (item) => Provider.sort(Object.values(item.models))[0].id,
+            ),
+          })
         },
       )
 

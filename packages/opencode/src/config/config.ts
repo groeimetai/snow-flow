@@ -50,7 +50,7 @@ export namespace Config {
 
   export const Info = z
     .object({
-      provider: z.lazy(() => Provider.Info.array().optional()),
+      provider: z.record(z.string(), z.record(z.string(), z.any())).optional(),
       tool: z
         .object({
           provider: z.record(z.string(), z.string().array()).optional(),

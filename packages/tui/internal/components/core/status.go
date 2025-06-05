@@ -7,9 +7,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/status"
-	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 )
@@ -145,7 +145,7 @@ func (m statusCmp) View() string {
 	if m.app.Session.Id != "" {
 		tokens := float32(0)
 		cost := float32(0)
-		contextWindow := m.app.Model.ContextWindow
+		contextWindow := m.app.Model.Limit.Context
 
 		for _, message := range m.app.Messages {
 			if message.Metadata.Assistant != nil {

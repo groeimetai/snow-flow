@@ -23,7 +23,10 @@ func main() {
 		slog.Error("Failed to create client", "error", err)
 		os.Exit(1)
 	}
-	paths, _ := httpClient.PostPathGetWithResponse(context.Background())
+	paths, err := httpClient.PostPathGetWithResponse(context.Background())
+	if err != nil {
+		panic(err)
+	}
 	logfile := filepath.Join(paths.JSON200.Data, "log", "tui.log")
 
 	if _, err := os.Stat(filepath.Dir(logfile)); os.IsNotExist(err) {
@@ -48,8 +51,7 @@ func main() {
 
 	app_, err := app.New(ctx, httpClient)
 	if err != nil {
-		slog.Error("Failed to create app", "error", err)
-		// return err
+		panic(err)
 	}
 
 	// Set up the TUI

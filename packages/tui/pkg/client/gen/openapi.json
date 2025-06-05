@@ -401,10 +401,25 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Provider.Info"
-                  }
+                  "type": "object",
+                  "properties": {
+                    "providers": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Provider.Info"
+                      }
+                    },
+                    "default": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "providers",
+                    "default"
+                  ]
                 }
               }
             }
@@ -1080,13 +1095,9 @@
           "name": {
             "type": "string"
           },
-          "options": {
-            "type": "object",
-            "additionalProperties": {}
-          },
           "models": {
-            "type": "array",
-            "items": {
+            "type": "object",
+            "additionalProperties": {
               "$ref": "#/components/schemas/Provider.Model"
             }
           }
@@ -1105,6 +1116,12 @@
           },
           "name": {
             "type": "string"
+          },
+          "attachment": {
+            "type": "boolean"
+          },
+          "reasoning": {
+            "type": "boolean"
           },
           "cost": {
             "type": "object",
@@ -1129,24 +1146,27 @@
               "outputCached"
             ]
           },
-          "contextWindow": {
-            "type": "number"
-          },
-          "maxOutputTokens": {
-            "type": "number"
-          },
-          "attachment": {
-            "type": "boolean"
-          },
-          "reasoning": {
-            "type": "boolean"
+          "limit": {
+            "type": "object",
+            "properties": {
+              "context": {
+                "type": "number"
+              },
+              "output": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "context",
+              "output"
+            ]
           }
         },
         "required": [
           "id",
+          "attachment",
           "cost",
-          "contextWindow",
-          "attachment"
+          "limit"
         ]
       }
     }

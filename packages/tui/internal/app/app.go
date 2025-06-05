@@ -43,18 +43,24 @@ func New(ctx context.Context, httpClient *client.ClientWithResponses) (*App, err
 
 	appInfoResponse, _ := httpClient.PostAppInfoWithResponse(ctx)
 	appInfo := appInfoResponse.JSON200
-	providersResponse, _ := httpClient.PostProviderListWithResponse(ctx)
+	providersResponse, err := httpClient.PostProviderListWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
 	providers := []client.ProviderInfo{}
 	var defaultProvider *client.ProviderInfo
 	var defaultModel *client.ProviderModel
 
-	for _, provider := range *providersResponse.JSON200 {
-		if provider.Id == "anthropic" {
-			defaultProvider = &provider
-
-			for _, model := range provider.Models {
-				if model.Id == "claude-sonnet-4-20250514" {
+	for i, provider := range providersResponse.JSON200.Providers {
+		if i == 0 || provider.Id == "anthropic" {
+			defaultProvider = &providersResponse.JSON200.Providers[i]
+			if match, ok := providersResponse.JSON200.Default[provider.Id]; ok {
+				model := defaultProvider.Models[match]
+				defaultModel = &model
+			} else {
+				for _, model := range provider.Models {
 					defaultModel = &model
+					break
 				}
 			}
 		}
@@ -62,12 +68,6 @@ func New(ctx context.Context, httpClient *client.ClientWithResponses) (*App, err
 	}
 	if len(providers) == 0 {
 		return nil, fmt.Errorf("no providers found")
-	}
-	if defaultProvider == nil {
-		defaultProvider = &providers[0]
-	}
-	if defaultModel == nil {
-		defaultModel = &defaultProvider.Models[0]
 	}
 
 	appConfigPath := filepath.Join(appInfo.Path.Config, "tui.toml")
@@ -296,7 +296,7 @@ func (a *App) ListProviders(ctx context.Context) ([]client.ProviderInfo, error) 
 	}
 
 	providers := *resp.JSON200
-	return providers, nil
+	return providers.Providers, nil
 }
 
 // IsFilepickerOpen returns whether the filepicker is currently open
