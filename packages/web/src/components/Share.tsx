@@ -22,6 +22,7 @@ import {
   IconChevronDown,
   IconCommandLine,
   IconChevronRight,
+  IconDocumentPlus,
   IconPencilSquare,
   IconRectangleStack,
   IconMagnifyingGlass,
@@ -1076,6 +1077,80 @@ export default function Share(props: { api: string }) {
                                               data-size="sm"
                                               data-color="dimmed"
                                             />
+                                          </Show>
+                                        </div>
+                                      </Match>
+                                    </Switch>
+                                  </div>
+                                  <ToolFooter time={duration()} />
+                                </div>
+                              </div>
+                            )
+                          }}
+                        </Match>
+                        {/* Write tool */}
+                        <Match
+                          when={
+                            msg.role === "assistant" &&
+                            part.type === "tool-invocation" &&
+                            part.toolInvocation.toolName === "opencode_write" &&
+                            part
+                          }
+                        >
+                          {(part) => {
+                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const args = part().toolInvocation.args
+                            const filePath = args.filePath
+                            const content = args.content
+                            const hasError = metadata()?.error
+                            const result = part().toolInvocation.state === "result" && part().toolInvocation.result
+
+                            const duration = createMemo(() =>
+                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
+                                DateTime.fromMillis(metadata()?.time.start || 0),
+                              ).toMillis(),
+                            )
+
+                            return (
+                              <div data-section="part" data-part-type="tool-write">
+                                <div data-section="decoration">
+                                  <div title="Write file">
+                                    <IconDocumentPlus width={18} height={18} />
+                                  </div>
+                                  <div></div>
+                                </div>
+                                <div data-section="content">
+                                  <div data-part-tool-body>
+                                    <span data-part-title data-size="md">
+                                      <span data-element-label>Write</span>
+                                      <b>{filePath}</b>
+                                    </span>
+                                    <Switch>
+                                      <Match when={hasError}>
+                                        <div data-part-tool-result>
+                                          <TextPart
+                                            expand
+                                            text={result}
+                                            data-size="sm"
+                                            data-color="dimmed"
+                                          />
+                                        </div>
+                                      </Match>
+                                      <Match when={content}>
+                                        <div data-part-tool-result>
+                                          <ResultsButton
+                                            showCopy="Show contents"
+                                            hideCopy="Hide contents"
+                                            results={results()}
+                                            onClick={() => showResults((e) => !e)}
+                                          />
+                                          <Show when={results()}>
+                                            <div data-part-tool-code>
+                                              <CodeBlock
+                                                lang={getFileType(filePath)}
+                                                code={content}
+                                              />
+                                            </div>
                                           </Show>
                                         </div>
                                       </Match>
