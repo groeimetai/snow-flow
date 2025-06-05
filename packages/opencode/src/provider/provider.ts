@@ -21,6 +21,7 @@ import type { Tool } from "../tool/tool"
 import { MultiEditTool } from "../tool/multiedit"
 import { WriteTool } from "../tool/write"
 import { TodoReadTool, TodoWriteTool } from "../tool/todo"
+import { AuthAnthropic } from "../auth/anthropic"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -63,6 +64,25 @@ export namespace Provider {
     google: ["GOOGLE_GENERATIVE_AI_API_KEY"], // TODO: support GEMINI_API_KEY?
   }
 
+  const AUTODETECT2: Record<
+    string,
+    () => Promise<Record<string, any> | false>
+  > = {
+    anthropic: async () => {
+      const result = await AuthAnthropic.load()
+      if (result)
+        return {
+          apiKey: "",
+          headers: {
+            authorization: `Bearer ${result.accessToken}`,
+            "anthropic-beta": "oauth-2025-04-20",
+          },
+        }
+      if (process.env["ANTHROPIC_API_KEY"]) return {}
+      return false
+    },
+  }
+
   const state = App.state("provider", async () => {
     log.info("loading config")
     const config = await Config.get()
@@ -72,6 +92,21 @@ export namespace Provider {
     const sdk = new Map<string, SDK>()
 
     log.info("loading")
+
+    for (const [providerID, fn] of Object.entries(AUTODETECT2)) {
+      const provider = PROVIDER_DATABASE.find((x) => x.id === providerID)
+      if (!provider) continue
+      const result = await fn()
+      if (!result) continue
+      providers.set(providerID, {
+        ...provider,
+        options: {
+          ...provider.options,
+          ...result,
+        },
+      })
+    }
+
     for (const item of PROVIDER_DATABASE) {
       if (!AUTODETECT[item.id].some((env) => process.env[env])) continue
       log.info("found", { providerID: item.id })
@@ -177,7 +212,7 @@ export namespace Provider {
     PatchTool,
     ReadTool,
     EditTool,
-    MultiEditTool,
+    // MultiEditTool,
     WriteTool,
     TodoWriteTool,
     TodoReadTool,

@@ -16,6 +16,7 @@ import { z, ZodSchema } from "zod"
 import { Decimal } from "decimal.js"
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
+import PROMPT_ANTHROPIC_SPOOF from "./prompt/anthropic_spoof.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 import PROMPT_SUMMARIZE from "./prompt/summarize.txt"
 import PROMPT_INITIALIZE from "../session/prompt/initialize.txt"
@@ -207,6 +208,24 @@ export namespace Session {
 
     if (msgs.length === 0) {
       const app = App.info()
+      if (input.providerID === "anthropic")
+        msgs.push({
+          id: Identifier.ascending("message"),
+          role: "system",
+          parts: [
+            {
+              type: "text",
+              text: PROMPT_ANTHROPIC_SPOOF.trim(),
+            },
+          ],
+          metadata: {
+            sessionID: input.sessionID,
+            time: {
+              created: Date.now(),
+            },
+            tool: {},
+          },
+        })
       const system: Message.Info = {
         id: Identifier.ascending("message"),
         role: "system",
@@ -249,6 +268,15 @@ ${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.se
       generateText({
         maxOutputTokens: 80,
         messages: convertToModelMessages([
+          {
+            role: "system",
+            parts: [
+              {
+                type: "text",
+                text: PROMPT_ANTHROPIC_SPOOF.trim(),
+              },
+            ],
+          },
           {
             role: "system",
             parts: [

@@ -37,7 +37,11 @@ export namespace App {
       x ? path.dirname(x) : undefined,
     )
 
-    const data = path.join(Global.Path.data, git ?? "global")
+    const data = path.join(
+      Global.Path.data,
+      "project",
+      git ? git.split(path.sep).join("-") : "global",
+    )
     const stateFile = Bun.file(path.join(data, APP_JSON))
     const state = (await stateFile.json().catch(() => ({}))) as {
       initialized: number
