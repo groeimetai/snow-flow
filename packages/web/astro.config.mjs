@@ -1,4 +1,5 @@
 // @ts-check
+import aws from "astro-sst"
 import { defineConfig } from "astro/config"
 import starlight from "@astrojs/starlight"
 import solidJs from "@astrojs/solid-js"
@@ -11,6 +12,8 @@ const github = "https://github.com/sst/opencode"
 
 // https://astro.build/config
 export default defineConfig({
+  output: "server",
+  adapter: aws(),
   devToolbar: {
     enabled: false,
   },

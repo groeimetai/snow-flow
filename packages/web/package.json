@@ -18,6 +18,7 @@
     "@types/luxon": "3.6.2",
     "ai": "catalog:",
     "astro": "5.7.13",
+    "astro-sst": "3.1.4",
     "diff": "8.0.2",
     "luxon": "3.6.1",
     "rehype-autolink-headings": "7.1.0",

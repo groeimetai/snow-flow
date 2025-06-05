@@ -31,14 +31,21 @@ export const api = new sst.cloudflare.Worker("Api", {
   },
 })
 
-new sst.cloudflare.StaticSite("Web", {
-  path: "packages/web",
+// new sst.cloudflare.StaticSite("Web", {
+//   path: "packages/web",
+//   domain,
+//   environment: {
+//     VITE_API_URL: api.url,
+//   },
+//   build: {
+//     command: "bun run build",
+//     output: "dist",
+//   },
+// })
+new sst.cloudflare.Astro("Web", {
   domain,
+  path: "packages/web",
   environment: {
     VITE_API_URL: api.url,
-  },
-  build: {
-    command: "bun run build",
-    output: "dist",
   },
 })
