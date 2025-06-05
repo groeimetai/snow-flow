@@ -30,6 +30,9 @@ export namespace LSP {
     for (const match of matches) {
       const existing = s.clients.get(match.id)
       if (existing) continue
+      const [binary] = match.command
+      const bin = Bun.which(binary)
+      if (!bin) continue
       const client = await LSPClient.create({
         cmd: match.command,
         serverID: match.id,
@@ -103,13 +106,11 @@ export namespace LSP {
         ".ctsx",
       ],
     },
-    /*
     {
       id: "golang",
       command: ["gopls"],
       extensions: [".go"],
     },
-    */
   ]
 
   export namespace Diagnostic {
