@@ -18,7 +18,7 @@ import { LspHoverTool } from "../tool/lsp-hover"
 import { PatchTool } from "../tool/patch"
 import { ReadTool } from "../tool/read"
 import type { Tool } from "../tool/tool"
-import { MultiEditTool } from "../tool/multiedit"
+
 import { WriteTool } from "../tool/write"
 import { TodoReadTool, TodoWriteTool } from "../tool/todo"
 import { AuthAnthropic } from "../auth/anthropic"

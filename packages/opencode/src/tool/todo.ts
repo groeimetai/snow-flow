@@ -44,7 +44,7 @@ export const TodoReadTool = Tool.define({
   id: "opencode.todoread",
   description: "Use this tool to read your todo list",
   parameters: z.object({}),
-  async execute(params, opts) {
+  async execute(_params, opts) {
     const todos = state()[opts.sessionID] ?? []
     return {
       metadata: {
