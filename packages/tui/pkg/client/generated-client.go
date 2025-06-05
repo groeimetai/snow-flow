@@ -53,6 +53,14 @@ type EventLspClientDiagnostics struct {
 	Type string `json:"type"`
 }
 
+// EventMessagePartUpdated defines model for Event.message.part.updated.
+type EventMessagePartUpdated struct {
+	Properties struct {
+		Part MessagePart `json:"part"`
+	} `json:"properties"`
+	Type string `json:"type"`
+}
+
 // EventMessageUpdated defines model for Event.message.updated.
 type EventMessageUpdated struct {
 	Properties struct {
@@ -99,7 +107,8 @@ type MessageInfo struct {
 				Reasoning float32 `json:"reasoning"`
 			} `json:"tokens"`
 		} `json:"assistant,omitempty"`
-		SessionID string `json:"sessionID"`
+		Error     *string `json:"error,omitempty"`
+		SessionID string  `json:"sessionID"`
 		Time      struct {
 			Completed *float32 `json:"completed,omitempty"`
 			Created   float32  `json:"created"`
@@ -352,6 +361,34 @@ func (t *Event) MergeEventMessageUpdated(v EventMessageUpdated) error {
 	return err
 }
 
+// AsEventMessagePartUpdated returns the union data inside the Event as a EventMessagePartUpdated
+func (t Event) AsEventMessagePartUpdated() (EventMessagePartUpdated, error) {
+	var body EventMessagePartUpdated
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventMessagePartUpdated overwrites any union data inside the Event as the provided EventMessagePartUpdated
+func (t *Event) FromEventMessagePartUpdated(v EventMessagePartUpdated) error {
+	v.Type = "message.part.updated"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventMessagePartUpdated performs a merge with any union data inside the Event, using the provided EventMessagePartUpdated
+func (t *Event) MergeEventMessagePartUpdated(v EventMessagePartUpdated) error {
+	v.Type = "message.part.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsEventLspClientDiagnostics returns the union data inside the Event as a EventLspClientDiagnostics
 func (t Event) AsEventLspClientDiagnostics() (EventLspClientDiagnostics, error) {
 	var body EventLspClientDiagnostics
@@ -452,6 +489,8 @@ func (t Event) ValueByDiscriminator() (interface{}, error) {
 	switch discriminator {
 	case "lsp.client.diagnostics":
 		return t.AsEventLspClientDiagnostics()
+	case "message.part.updated":
+		return t.AsEventMessagePartUpdated()
 	case "message.updated":
 		return t.AsEventMessageUpdated()
 	case "permission.updated":
