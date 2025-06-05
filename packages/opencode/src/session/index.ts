@@ -208,8 +208,8 @@ export namespace Session {
 
     if (msgs.length === 0) {
       const app = App.info()
-      if (input.providerID === "anthropic")
-        msgs.push({
+      if (input.providerID === "anthropic") {
+        const claude: Message.Info = {
           id: Identifier.ascending("message"),
           role: "system",
           parts: [
@@ -225,7 +225,10 @@ export namespace Session {
             },
             tool: {},
           },
-        })
+        }
+        await updateMessage(claude)
+        msgs.push(claude)
+      }
       const system: Message.Info = {
         id: Identifier.ascending("message"),
         role: "system",
