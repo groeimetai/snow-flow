@@ -98,16 +98,16 @@ func (m statusCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// getHelpWidget returns the help widget with current theme colors
-func getHelpWidget() string {
+func logo() string {
 	t := theme.CurrentTheme()
-	helpText := "ctrl+? help"
-
-	return styles.Padded().
-		Background(t.TextMuted()).
-		Foreground(t.BackgroundDarker()).
-		Bold(true).
-		Render(helpText)
+	mark := styles.Bold().Foreground(t.Primary()).Render("◧ ")
+	open := styles.Muted().Render("open")
+	code := styles.BaseStyle().Bold(true).Render("code")
+	version := styles.Muted().Render(app.Info.Version)
+	return styles.ForceReplaceBackgroundWithLipgloss(
+		styles.Padded().Render(mark+open+code+" "+version),
+		t.BackgroundElement(),
+	)
 }
 
 func formatTokensAndCost(tokens float32, contextWindow float32, cost float32) string {
@@ -132,16 +132,28 @@ func formatTokensAndCost(tokens float32, contextWindow float32, cost float32) st
 
 	// Format cost with $ symbol and 2 decimal places
 	formattedCost := fmt.Sprintf("$%.2f", cost)
-
 	percentage := (float64(tokens) / float64(contextWindow)) * 100
 
 	return fmt.Sprintf("Tokens: %s (%d%%), Cost: %s", formattedTokens, int(percentage), formattedCost)
 }
 
 func (m statusCmp) View() string {
-	t := theme.CurrentTheme()
-	status := getHelpWidget()
+	if m.app.Session.Id == "" {
+		return styles.BaseStyle().
+			Width(m.width).
+			Height(2).
+			Render("")
+	}
 
+	t := theme.CurrentTheme()
+	logo := logo()
+
+	cwd := styles.Padded().
+		Foreground(t.TextMuted()).
+		Background(t.BackgroundSubtle()).
+		Render(app.Info.Path.Cwd)
+
+	sessionInfo := ""
 	if m.app.Session.Id != "" {
 		tokens := float32(0)
 		cost := float32(0)
@@ -157,87 +169,85 @@ func (m statusCmp) View() string {
 			}
 		}
 
-		tokensInfo := styles.Padded().
-			Background(t.Text()).
-			Foreground(t.BackgroundSecondary()).
+		sessionInfo = styles.Padded().
+			Background(t.BackgroundElement()).
+			Foreground(t.TextMuted()).
 			Render(formatTokensAndCost(tokens, contextWindow, cost))
-		status += tokensInfo
 	}
 
-	diagnostics := styles.Padded().Background(t.BackgroundDarker()).Render(m.projectDiagnostics())
+	// diagnostics := styles.Padded().Background(t.BackgroundElement()).Render(m.projectDiagnostics())
 
-	modelName := m.model()
-
-	statusWidth := max(
+	space := max(
 		0,
-		m.width-
-			lipgloss.Width(status)-
-			lipgloss.Width(modelName)-
-			lipgloss.Width(diagnostics),
+		m.width-lipgloss.Width(logo)-lipgloss.Width(cwd)-lipgloss.Width(sessionInfo),
 	)
+	spacer := lipgloss.NewStyle().Background(t.BackgroundSubtle()).Width(space).Render("")
 
-	const minInlineWidth = 30
+	status := logo + cwd + spacer + sessionInfo
+
+	blank := styles.BaseStyle().Background(t.Background()).Width(m.width).Render("")
+	return blank + "\n" + status
 
 	// Display the first status message if available
-	var statusMessage string
-	if len(m.queue) > 0 {
-		sm := m.queue[0]
-		infoStyle := styles.Padded().
-			Foreground(t.Background())
+	// var statusMessage string
+	// if len(m.queue) > 0 {
+	// 	sm := m.queue[0]
+	// 	infoStyle := styles.Padded().
+	// 		Foreground(t.Background())
+	//
+	// 	switch sm.Level {
+	// 	case "info":
+	// 		infoStyle = infoStyle.Background(t.Info())
+	// 	case "warn":
+	// 		infoStyle = infoStyle.Background(t.Warning())
+	// 	case "error":
+	// 		infoStyle = infoStyle.Background(t.Error())
+	// 	case "debug":
+	// 		infoStyle = infoStyle.Background(t.TextMuted())
+	// 	}
+	//
+	// 	// Truncate message if it's longer than available width
+	// 	msg := sm.Message
+	// 	availWidth := statusWidth - 10
+	//
+	// 	// If we have enough space, show inline
+	// 	if availWidth >= minInlineWidth {
+	// 		if len(msg) > availWidth && availWidth > 0 {
+	// 			msg = msg[:availWidth] + "..."
+	// 		}
+	// 		status += infoStyle.Width(statusWidth).Render(msg)
+	// 	} else {
+	// 		// Otherwise, prepare a full-width message to show above
+	// 		if len(msg) > m.width-10 && m.width > 10 {
+	// 			msg = msg[:m.width-10] + "..."
+	// 		}
+	// 		statusMessage = infoStyle.Width(m.width).Render(msg)
+	//
+	// 		// Add empty space in the status bar
+	// 		status += styles.Padded().
+	// 			Foreground(t.Text()).
+	// 			Background(t.BackgroundSubtle()).
+	// 			Width(statusWidth).
+	// 			Render("")
+	// 	}
+	// } else {
+	// 	status += styles.Padded().
+	// 		Foreground(t.Text()).
+	// 		Background(t.BackgroundSubtle()).
+	// 		Width(statusWidth).
+	// 		Render("")
+	// }
 
-		switch sm.Level {
-		case "info":
-			infoStyle = infoStyle.Background(t.Info())
-		case "warn":
-			infoStyle = infoStyle.Background(t.Warning())
-		case "error":
-			infoStyle = infoStyle.Background(t.Error())
-		case "debug":
-			infoStyle = infoStyle.Background(t.TextMuted())
-		}
-
-		// Truncate message if it's longer than available width
-		msg := sm.Message
-		availWidth := statusWidth - 10
-
-		// If we have enough space, show inline
-		if availWidth >= minInlineWidth {
-			if len(msg) > availWidth && availWidth > 0 {
-				msg = msg[:availWidth] + "..."
-			}
-			status += infoStyle.Width(statusWidth).Render(msg)
-		} else {
-			// Otherwise, prepare a full-width message to show above
-			if len(msg) > m.width-10 && m.width > 10 {
-				msg = msg[:m.width-10] + "..."
-			}
-			statusMessage = infoStyle.Width(m.width).Render(msg)
-
-			// Add empty space in the status bar
-			status += styles.Padded().
-				Foreground(t.Text()).
-				Background(t.BackgroundSecondary()).
-				Width(statusWidth).
-				Render("")
-		}
-	} else {
-		status += styles.Padded().
-			Foreground(t.Text()).
-			Background(t.BackgroundSecondary()).
-			Width(statusWidth).
-			Render("")
-	}
-
-	status += diagnostics
-	status += modelName
+	// status += diagnostics
+	// status += modelName
 
 	// If we have a separate status message, prepend it
-	if statusMessage != "" {
-		return statusMessage + "\n" + status
-	} else {
-		blank := styles.BaseStyle().Background(t.Background()).Width(m.width).Render("")
-		return blank + "\n" + status
-	}
+	// if statusMessage != "" {
+	// 	return statusMessage + "\n" + status
+	// } else {
+	// blank := styles.BaseStyle().Background(t.Background()).Width(m.width).Render("")
+	// return blank + "\n" + status
+	// }
 }
 
 func (m *statusCmp) projectDiagnostics() string {
@@ -281,7 +291,7 @@ func (m *statusCmp) projectDiagnostics() string {
 	// }
 	return styles.ForceReplaceBackgroundWithLipgloss(
 		styles.Padded().Render("No diagnostics"),
-		t.BackgroundDarker(),
+		t.BackgroundElement(),
 	)
 
 	// if len(errorDiagnostics) == 0 &&

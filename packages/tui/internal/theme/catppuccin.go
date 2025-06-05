@@ -60,35 +60,31 @@ func NewCatppuccinTheme() *CatppuccinTheme {
 		Dark:  mocha.Subtext0().Hex,
 		Light: latte.Subtext0().Hex,
 	}
-	theme.TextEmphasizedColor = lipgloss.AdaptiveColor{
-		Dark:  mocha.Lavender().Hex,
-		Light: latte.Lavender().Hex,
-	}
 
 	// Background colors
 	theme.BackgroundColor = lipgloss.AdaptiveColor{
 		Dark:  "#212121", // From existing styles
 		Light: "#EEEEEE", // Light equivalent
 	}
-	theme.BackgroundSecondaryColor = lipgloss.AdaptiveColor{
+	theme.BackgroundSubtleColor = lipgloss.AdaptiveColor{
 		Dark:  "#2c2c2c", // From existing styles
 		Light: "#E0E0E0", // Light equivalent
 	}
-	theme.BackgroundDarkerColor = lipgloss.AdaptiveColor{
+	theme.BackgroundElementColor = lipgloss.AdaptiveColor{
 		Dark:  "#181818", // From existing styles
 		Light: "#F5F5F5", // Light equivalent
 	}
 
 	// Border colors
-	theme.BorderNormalColor = lipgloss.AdaptiveColor{
+	theme.BorderColor = lipgloss.AdaptiveColor{
 		Dark:  "#4b4c5c", // From existing styles
 		Light: "#BDBDBD", // Light equivalent
 	}
-	theme.BorderFocusedColor = lipgloss.AdaptiveColor{
+	theme.BorderActiveColor = lipgloss.AdaptiveColor{
 		Dark:  mocha.Blue().Hex,
 		Light: latte.Blue().Hex,
 	}
-	theme.BorderDimColor = lipgloss.AdaptiveColor{
+	theme.BorderSubtleColor = lipgloss.AdaptiveColor{
 		Dark:  mocha.Surface0().Hex,
 		Light: latte.Surface0().Hex,
 	}

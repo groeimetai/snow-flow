@@ -24,7 +24,7 @@ type chatPage struct {
 	app                  *app.App
 	editor               layout.Container
 	messages             layout.Container
-	layout               layout.SplitPaneLayout
+	layout               layout.FlexLayout
 	completionDialog     dialog.CompletionDialog
 	showCompletionDialog bool
 }
@@ -96,12 +96,6 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if cmd != nil {
 			return p, cmd
 		}
-	case state.SessionSelectedMsg:
-		cmd := p.setSidebar()
-		cmds = append(cmds, cmd)
-	case state.SessionClearedMsg:
-		cmd := p.setSidebar()
-		cmds = append(cmds, cmd)
 
 	case dialog.CompletionDialogCloseMsg:
 		p.showCompletionDialog = false
@@ -116,7 +110,6 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p.app.Session = &client.SessionInfo{}
 			p.app.Messages = []client.MessageInfo{}
 			return p, tea.Batch(
-				p.clearSidebar(),
 				util.CmdHandler(state.SessionClearedMsg{}),
 			)
 		case key.Matches(msg, keyMap.Cancel):
@@ -145,30 +138,14 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	u, cmd := p.layout.Update(msg)
 	cmds = append(cmds, cmd)
-	p.layout = u.(layout.SplitPaneLayout)
+	p.layout = u.(layout.FlexLayout)
 	return p, tea.Batch(cmds...)
-}
-
-func (p *chatPage) setSidebar() tea.Cmd {
-	sidebarContainer := layout.NewContainer(
-		chat.NewSidebarCmp(p.app),
-		layout.WithPadding(1, 1, 1, 1),
-	)
-	return tea.Batch(p.layout.SetRightPanel(sidebarContainer), sidebarContainer.Init())
-}
-
-func (p *chatPage) clearSidebar() tea.Cmd {
-	return p.layout.ClearRightPanel()
 }
 
 func (p *chatPage) sendMessage(text string, attachments []app.Attachment) tea.Cmd {
 	var cmds []tea.Cmd
 	cmd := p.app.SendChatMessage(context.Background(), text, attachments)
 	cmds = append(cmds, cmd)
-	cmd = p.setSidebar()
-	if cmd != nil {
-		cmds = append(cmds, cmd)
-	}
 	return tea.Batch(cmds...)
 }
 
@@ -183,6 +160,7 @@ func (p *chatPage) GetSize() (int, int) {
 func (p *chatPage) View() string {
 	layoutView := p.layout.View()
 
+	// TODO: Fix this with our new layout
 	if p.showCompletionDialog {
 		_, layoutHeight := p.layout.GetSize()
 		editorWidth, editorHeight := p.editor.GetSize()
@@ -213,21 +191,25 @@ func NewChatPage(app *app.App) tea.Model {
 	cg := completions.NewFileAndFolderContextGroup()
 	completionDialog := dialog.NewCompletionDialogCmp(cg)
 	messagesContainer := layout.NewContainer(
-		chat.NewMessagesCmp(app),
-		layout.WithPadding(1, 1, 0, 1),
+		chat.NewMessagesComponent(app),
 	)
 	editorContainer := layout.NewContainer(
-		chat.NewEditorCmp(app),
-		layout.WithBorder(true, false, false, false),
+		chat.NewEditorComponent(app),
+		layout.WithMaxWidth(layout.Current.Container.Width),
+		layout.WithAlignCenter(),
 	)
 	return &chatPage{
 		app:              app,
 		editor:           editorContainer,
 		messages:         messagesContainer,
 		completionDialog: completionDialog,
-		layout: layout.NewSplitPane(
-			layout.WithLeftPanel(messagesContainer),
-			layout.WithBottomPanel(editorContainer),
+		layout: layout.NewFlexLayout(
+			layout.WithPanes(messagesContainer, editorContainer),
+			layout.WithDirection(layout.FlexDirectionVertical),
+			layout.WithPaneSizes(
+				layout.FlexPaneSizeGrow,
+				layout.FlexPaneSizeFixed(6),
+			),
 		),
 	}
 }

@@ -13,23 +13,33 @@ func BaseStyle() lipgloss.Style {
 		Foreground(t.Text())
 }
 
+func Panel() lipgloss.Style {
+	t := theme.CurrentTheme()
+	return lipgloss.NewStyle().
+		Background(t.BackgroundSubtle()).
+		Border(lipgloss.NormalBorder(), true, false, true, false).
+		BorderForeground(t.BorderSubtle()).
+		Foreground(t.Text())
+}
+
 // Regular returns a basic unstyled lipgloss.Style
 func Regular() lipgloss.Style {
 	return lipgloss.NewStyle()
 }
 
 func Muted() lipgloss.Style {
-	return lipgloss.NewStyle().Foreground(theme.CurrentTheme().TextMuted())
+	t := theme.CurrentTheme()
+	return lipgloss.NewStyle().Background(t.Background()).Foreground(t.TextMuted())
 }
 
 // Bold returns a bold style
 func Bold() lipgloss.Style {
-	return Regular().Bold(true)
+	return BaseStyle().Bold(true)
 }
 
 // Padded returns a style with horizontal padding
 func Padded() lipgloss.Style {
-	return Regular().Padding(0, 1)
+	return BaseStyle().Padding(0, 1)
 }
 
 // Border returns a style with a normal border
@@ -37,7 +47,7 @@ func Border() lipgloss.Style {
 	t := theme.CurrentTheme()
 	return Regular().
 		Border(lipgloss.NormalBorder()).
-		BorderForeground(t.BorderNormal())
+		BorderForeground(t.Border())
 }
 
 // ThickBorder returns a style with a thick border
@@ -45,7 +55,7 @@ func ThickBorder() lipgloss.Style {
 	t := theme.CurrentTheme()
 	return Regular().
 		Border(lipgloss.ThickBorder()).
-		BorderForeground(t.BorderNormal())
+		BorderForeground(t.Border())
 }
 
 // DoubleBorder returns a style with a double border
@@ -53,7 +63,7 @@ func DoubleBorder() lipgloss.Style {
 	t := theme.CurrentTheme()
 	return Regular().
 		Border(lipgloss.DoubleBorder()).
-		BorderForeground(t.BorderNormal())
+		BorderForeground(t.Border())
 }
 
 // FocusedBorder returns a style with a border using the focused border color
@@ -61,7 +71,7 @@ func FocusedBorder() lipgloss.Style {
 	t := theme.CurrentTheme()
 	return Regular().
 		Border(lipgloss.NormalBorder()).
-		BorderForeground(t.BorderFocused())
+		BorderForeground(t.BorderActive())
 }
 
 // DimBorder returns a style with a border using the dim border color
@@ -69,7 +79,7 @@ func DimBorder() lipgloss.Style {
 	t := theme.CurrentTheme()
 	return Regular().
 		Border(lipgloss.NormalBorder()).
-		BorderForeground(t.BorderDim())
+		BorderForeground(t.BorderSubtle())
 }
 
 // PrimaryColor returns the primary color from the current theme
@@ -117,37 +127,32 @@ func TextMutedColor() lipgloss.AdaptiveColor {
 	return theme.CurrentTheme().TextMuted()
 }
 
-// TextEmphasizedColor returns the emphasized text color from the current theme
-func TextEmphasizedColor() lipgloss.AdaptiveColor {
-	return theme.CurrentTheme().TextEmphasized()
-}
-
 // BackgroundColor returns the background color from the current theme
 func BackgroundColor() lipgloss.AdaptiveColor {
 	return theme.CurrentTheme().Background()
 }
 
-// BackgroundSecondaryColor returns the secondary background color from the current theme
-func BackgroundSecondaryColor() lipgloss.AdaptiveColor {
-	return theme.CurrentTheme().BackgroundSecondary()
+// BackgroundSubtleColor returns the subtle background color from the current theme
+func BackgroundSubtleColor() lipgloss.AdaptiveColor {
+	return theme.CurrentTheme().BackgroundSubtle()
 }
 
-// BackgroundDarkerColor returns the darker background color from the current theme
-func BackgroundDarkerColor() lipgloss.AdaptiveColor {
-	return theme.CurrentTheme().BackgroundDarker()
+// BackgroundElementColor returns the darker background color from the current theme
+func BackgroundElementColor() lipgloss.AdaptiveColor {
+	return theme.CurrentTheme().BackgroundElement()
 }
 
-// BorderNormalColor returns the normal border color from the current theme
-func BorderNormalColor() lipgloss.AdaptiveColor {
-	return theme.CurrentTheme().BorderNormal()
+// BorderColor returns the border color from the current theme
+func BorderColor() lipgloss.AdaptiveColor {
+	return theme.CurrentTheme().Border()
 }
 
-// BorderFocusedColor returns the focused border color from the current theme
-func BorderFocusedColor() lipgloss.AdaptiveColor {
-	return theme.CurrentTheme().BorderFocused()
+// BorderActiveColor returns the active border color from the current theme
+func BorderActiveColor() lipgloss.AdaptiveColor {
+	return theme.CurrentTheme().BorderActive()
 }
 
-// BorderDimColor returns the dim border color from the current theme
-func BorderDimColor() lipgloss.AdaptiveColor {
-	return theme.CurrentTheme().BorderDim()
+// BorderSubtleColor returns the subtle border color from the current theme
+func BorderSubtleColor() lipgloss.AdaptiveColor {
+	return theme.CurrentTheme().BorderSubtle()
 }

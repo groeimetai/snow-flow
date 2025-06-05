@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -23,7 +24,7 @@ import (
 	"github.com/sst/opencode/internal/util"
 )
 
-type editorCmp struct {
+type editorComponent struct {
 	width          int
 	height         int
 	app            *app.App
@@ -33,6 +34,7 @@ type editorCmp struct {
 	history        []string
 	historyIndex   int
 	currentMessage string
+	spinner        spinner.Model
 }
 
 type EditorKeyMaps struct {
@@ -96,86 +98,19 @@ const (
 	maxAttachments = 5
 )
 
-func (m *editorCmp) openEditor(value string) tea.Cmd {
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		editor = "nvim"
-	}
-
-	tmpfile, err := os.CreateTemp("", "msg_*.md")
-	tmpfile.WriteString(value)
-	if err != nil {
-		status.Error(err.Error())
-		return nil
-	}
-	tmpfile.Close()
-	c := exec.Command(editor, tmpfile.Name()) //nolint:gosec
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	return tea.ExecProcess(c, func(err error) tea.Msg {
-		if err != nil {
-			status.Error(err.Error())
-			return nil
-		}
-		content, err := os.ReadFile(tmpfile.Name())
-		if err != nil {
-			status.Error(err.Error())
-			return nil
-		}
-		if len(content) == 0 {
-			status.Warn("Message is empty")
-			return nil
-		}
-		os.Remove(tmpfile.Name())
-		attachments := m.attachments
-		m.attachments = nil
-		return SendMsg{
-			Text:        string(content),
-			Attachments: attachments,
-		}
-	})
+func (m *editorComponent) Init() tea.Cmd {
+	return tea.Batch(textarea.Blink, m.spinner.Tick)
 }
 
-func (m *editorCmp) Init() tea.Cmd {
-	return textarea.Blink
-}
-
-func (m *editorCmp) send() tea.Cmd {
-	value := m.textarea.Value()
-	m.textarea.Reset()
-	attachments := m.attachments
-
-	// Save to history if not empty and not a duplicate of the last entry
-	if value != "" {
-		if len(m.history) == 0 || m.history[len(m.history)-1] != value {
-			m.history = append(m.history, value)
-		}
-		m.historyIndex = len(m.history)
-		m.currentMessage = ""
-	}
-
-	m.attachments = nil
-	if value == "" {
-		return nil
-	}
-	return tea.Batch(
-		util.CmdHandler(SendMsg{
-			Text:        value,
-			Attachments: attachments,
-		}),
-	)
-}
-
-func (m *editorCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case dialog.ThemeChangedMsg:
-		m.textarea = CreateTextArea(&m.textarea)
+		m.textarea = createTextArea(&m.textarea)
 	case dialog.CompletionSelectedMsg:
 		existingValue := m.textarea.Value()
 		modifiedValue := strings.Replace(existingValue, msg.SearchString, msg.CompletionValue, 1)
-
 		m.textarea.SetValue(modifiedValue)
 		return m, nil
 	case dialog.AttachmentAddedMsg:
@@ -296,47 +231,160 @@ func (m *editorCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.send()
 			}
 		}
-
 	}
+
+	m.spinner, cmd = m.spinner.Update(msg)
+	cmds = append(cmds, cmd)
+
 	m.textarea, cmd = m.textarea.Update(msg)
-	return m, cmd
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
 }
 
-func (m *editorCmp) View() string {
+func (m *editorComponent) View() string {
 	t := theme.CurrentTheme()
-
-	// Style the prompt with theme colors
-	style := lipgloss.NewStyle().
+	base := styles.BaseStyle().Render
+	muted := styles.Muted().Render
+	promptStyle := lipgloss.NewStyle().
 		Padding(0, 0, 0, 1).
 		Bold(true).
 		Foreground(t.Primary())
+	prompt := promptStyle.Render(">")
 
-	if len(m.attachments) == 0 {
-		return lipgloss.JoinHorizontal(lipgloss.Top, style.Render(">"), m.textarea.View())
+	textarea := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		prompt,
+		m.textarea.View(),
+	)
+	textarea = styles.BaseStyle().
+		Width(m.width-2).
+		Border(lipgloss.NormalBorder(), true, true).
+		BorderForeground(t.Border()).
+		Render(textarea)
+
+	hint := base("enter") + muted(" send   ") + base("shift") + muted("+") + base("enter") + muted(" newline")
+	if m.app.IsBusy() {
+		hint = muted("working") + m.spinner.View() + muted("  ") + base("esc") + muted(" interrupt")
 	}
-	m.textarea.SetHeight(m.height - 1)
-	return lipgloss.JoinVertical(lipgloss.Top,
-		m.attachmentsContent(),
-		lipgloss.JoinHorizontal(lipgloss.Top, style.Render(">"),
-			m.textarea.View()),
+
+	model := ""
+	if m.app.Model != nil {
+		model = base(*m.app.Model.Name) + muted(" • /model")
+	}
+
+	space := m.width - 2 - lipgloss.Width(model) - lipgloss.Width(hint)
+	spacer := lipgloss.NewStyle().Width(space).Render("")
+
+	info := lipgloss.JoinHorizontal(lipgloss.Left, hint, spacer, model)
+	info = styles.Padded().Render(info)
+
+	content := lipgloss.JoinVertical(
+		lipgloss.Top,
+		// m.attachmentsContent(),
+		textarea,
+		info,
+	)
+
+	return styles.ForceReplaceBackgroundWithLipgloss(
+		content,
+		t.Background(),
 	)
 }
 
-func (m *editorCmp) SetSize(width, height int) tea.Cmd {
+func (m *editorComponent) SetSize(width, height int) tea.Cmd {
 	m.width = width
 	m.height = height
-	m.textarea.SetWidth(width - 3) // account for the prompt and padding right
-	m.textarea.SetHeight(height)
+	m.textarea.SetWidth(width - 5)   // account for the prompt and padding right
+	m.textarea.SetHeight(height - 3) // account for info underneath
 	return nil
 }
 
-func (m *editorCmp) GetSize() (int, int) {
-	return m.textarea.Width(), m.textarea.Height()
+func (m *editorComponent) GetSize() (int, int) {
+	return m.width, m.height
 }
 
-func (m *editorCmp) attachmentsContent() string {
-	var styledAttachments []string
+func (m *editorComponent) BindingKeys() []key.Binding {
+	bindings := []key.Binding{}
+	bindings = append(bindings, layout.KeyMapToSlice(editorMaps)...)
+	bindings = append(bindings, layout.KeyMapToSlice(DeleteKeyMaps)...)
+	return bindings
+}
+
+func (m *editorComponent) openEditor(value string) tea.Cmd {
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = "nvim"
+	}
+
+	tmpfile, err := os.CreateTemp("", "msg_*.md")
+	tmpfile.WriteString(value)
+	if err != nil {
+		status.Error(err.Error())
+		return nil
+	}
+	tmpfile.Close()
+	c := exec.Command(editor, tmpfile.Name()) //nolint:gosec
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	return tea.ExecProcess(c, func(err error) tea.Msg {
+		if err != nil {
+			status.Error(err.Error())
+			return nil
+		}
+		content, err := os.ReadFile(tmpfile.Name())
+		if err != nil {
+			status.Error(err.Error())
+			return nil
+		}
+		if len(content) == 0 {
+			status.Warn("Message is empty")
+			return nil
+		}
+		os.Remove(tmpfile.Name())
+		attachments := m.attachments
+		m.attachments = nil
+		return SendMsg{
+			Text:        string(content),
+			Attachments: attachments,
+		}
+	})
+}
+
+func (m *editorComponent) send() tea.Cmd {
+	value := m.textarea.Value()
+	m.textarea.Reset()
+	attachments := m.attachments
+
+	// Save to history if not empty and not a duplicate of the last entry
+	if value != "" {
+		if len(m.history) == 0 || m.history[len(m.history)-1] != value {
+			m.history = append(m.history, value)
+		}
+		m.historyIndex = len(m.history)
+		m.currentMessage = ""
+	}
+
+	m.attachments = nil
+	if value == "" {
+		return nil
+	}
+	return tea.Batch(
+		util.CmdHandler(SendMsg{
+			Text:        value,
+			Attachments: attachments,
+		}),
+	)
+}
+
+func (m *editorComponent) attachmentsContent() string {
+	if len(m.attachments) == 0 {
+		return ""
+	}
+
 	t := theme.CurrentTheme()
+	var styledAttachments []string
 	attachmentStyles := styles.BaseStyle().
 		MarginLeft(1).
 		Background(t.TextMuted()).
@@ -357,20 +405,15 @@ func (m *editorCmp) attachmentsContent() string {
 	return content
 }
 
-func (m *editorCmp) BindingKeys() []key.Binding {
-	bindings := []key.Binding{}
-	bindings = append(bindings, layout.KeyMapToSlice(editorMaps)...)
-	bindings = append(bindings, layout.KeyMapToSlice(DeleteKeyMaps)...)
-	return bindings
-}
-
-func CreateTextArea(existing *textarea.Model) textarea.Model {
+func createTextArea(existing *textarea.Model) textarea.Model {
 	t := theme.CurrentTheme()
 	bgColor := t.Background()
 	textColor := t.Text()
 	textMutedColor := t.TextMuted()
 
 	ta := textarea.New()
+	ta.Placeholder = "It's prompting time..."
+
 	ta.BlurredStyle.Base = styles.BaseStyle().Background(bgColor).Foreground(textColor)
 	ta.BlurredStyle.CursorLine = styles.BaseStyle().Background(bgColor)
 	ta.BlurredStyle.Placeholder = styles.BaseStyle().Background(bgColor).Foreground(textMutedColor)
@@ -394,13 +437,16 @@ func CreateTextArea(existing *textarea.Model) textarea.Model {
 	return ta
 }
 
-func NewEditorCmp(app *app.App) tea.Model {
-	ta := CreateTextArea(nil)
-	return &editorCmp{
+func NewEditorComponent(app *app.App) tea.Model {
+	s := spinner.New(spinner.WithSpinner(spinner.Ellipsis), spinner.WithStyle(styles.Muted().Width(3)))
+	ta := createTextArea(nil)
+
+	return &editorComponent{
 		app:            app,
 		textarea:       ta,
 		history:        []string{},
 		historyIndex:   0,
 		currentMessage: "",
+		spinner:        s,
 	}
 }

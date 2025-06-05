@@ -2,13 +2,18 @@ package chat
 
 import (
 	"fmt"
+	"log/slog"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/diff"
+	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/pkg/client"
@@ -16,14 +21,12 @@ import (
 	"golang.org/x/text/language"
 )
 
-const (
-	maxResultHeight = 10
-)
-
 func toMarkdown(content string, width int) string {
 	r := styles.GetMarkdownRenderer(width)
+	content = strings.ReplaceAll(content, app.Info.Path.Root+"/", "")
 	rendered, _ := r.Render(content)
 	lines := strings.Split(rendered, "\n")
+
 	if len(lines) > 0 {
 		firstLine := lines[0]
 		cleaned := ansi.Strip(firstLine)
@@ -40,139 +43,204 @@ func toMarkdown(content string, width int) string {
 			}
 		}
 	}
-	return strings.TrimSuffix(strings.Join(lines, "\n"), "\n")
+
+	content = strings.Join(lines, "\n")
+	return strings.TrimSuffix(content, "\n")
 }
 
-func renderUserMessage(user string, msg client.MessageInfo, width int) string {
+type markdownRenderer struct {
+	align         *lipgloss.Position
+	borderColor   *lipgloss.AdaptiveColor
+	fullWidth     bool
+	paddingTop    int
+	paddingBottom int
+}
+
+type markdownRenderingOption func(*markdownRenderer)
+
+func WithFullWidth() markdownRenderingOption {
+	return func(c *markdownRenderer) {
+		c.fullWidth = true
+	}
+}
+
+func WithAlign(align lipgloss.Position) markdownRenderingOption {
+	return func(c *markdownRenderer) {
+		c.align = &align
+	}
+}
+
+func WithBorderColor(color lipgloss.AdaptiveColor) markdownRenderingOption {
+	return func(c *markdownRenderer) {
+		c.borderColor = &color
+	}
+}
+
+func WithPaddingTop(padding int) markdownRenderingOption {
+	return func(c *markdownRenderer) {
+		c.paddingTop = padding
+	}
+}
+
+func WithPaddingBottom(padding int) markdownRenderingOption {
+	return func(c *markdownRenderer) {
+		c.paddingBottom = padding
+	}
+}
+
+func renderMarkdown(content string, options ...markdownRenderingOption) string {
 	t := theme.CurrentTheme()
+	renderer := &markdownRenderer{
+		fullWidth: false,
+	}
+	for _, option := range options {
+		option(renderer)
+	}
+
 	style := styles.BaseStyle().
-		PaddingLeft(1).
-		BorderLeft(true).
+		PaddingTop(1).
+		PaddingBottom(1).
+		PaddingLeft(2).
+		PaddingRight(2).
+		Background(t.BackgroundSubtle()).
 		Foreground(t.TextMuted()).
-		BorderForeground(t.Secondary()).
 		BorderStyle(lipgloss.ThickBorder())
 
-	// var styledAttachments []string
-	// attachmentStyles := baseStyle.
-	// 	MarginLeft(1).
-	// 	Background(t.TextMuted()).
-	// 	Foreground(t.Text())
-	// for _, attachment := range msg.BinaryContent() {
-	// 	file := filepath.Base(attachment.Path)
-	// 	var filename string
-	// 	if len(file) > 10 {
-	// 		filename = fmt.Sprintf(" %s %s...", styles.DocumentIcon, file[0:7])
-	// 	} else {
-	// 		filename = fmt.Sprintf(" %s %s", styles.DocumentIcon, file)
-	// 	}
-	// 	styledAttachments = append(styledAttachments, attachmentStyles.Render(filename))
-	// }
+	align := lipgloss.Left
+	if renderer.align != nil {
+		align = *renderer.align
+	}
 
-	timestamp := time.UnixMilli(int64(msg.Metadata.Time.Created)).Local().Format("02 Jan 2006 03:04 PM")
+	borderColor := t.BackgroundSubtle()
+	if renderer.borderColor != nil {
+		borderColor = *renderer.borderColor
+	}
+
+	switch align {
+	case lipgloss.Left:
+		style = style.
+			BorderLeft(true).
+			BorderRight(true).
+			AlignHorizontal(align).
+			BorderLeftForeground(borderColor).
+			BorderLeftBackground(t.Background()).
+			BorderRightForeground(t.BackgroundSubtle()).
+			BorderRightBackground(t.Background())
+	case lipgloss.Right:
+		style = style.
+			BorderRight(true).
+			BorderLeft(true).
+			AlignHorizontal(align).
+			BorderRightForeground(borderColor).
+			BorderRightBackground(t.Background()).
+			BorderLeftForeground(t.BackgroundSubtle()).
+			BorderLeftBackground(t.Background())
+	}
+
+	content = styles.ForceReplaceBackgroundWithLipgloss(content, t.BackgroundSubtle())
+	if renderer.fullWidth {
+		style = style.Width(layout.Current.Container.Width - 2)
+	}
+	content = style.Render(content)
+	if renderer.paddingTop > 0 {
+		content = strings.Repeat("\n", renderer.paddingTop) + content
+	}
+	if renderer.paddingBottom > 0 {
+		content = content + strings.Repeat("\n", renderer.paddingBottom)
+	}
+	content = lipgloss.PlaceHorizontal(
+		layout.Current.Container.Width,
+		align,
+		content,
+		lipgloss.WithWhitespaceBackground(t.Background()),
+	)
+	content = lipgloss.PlaceHorizontal(
+		layout.Current.Viewport.Width,
+		lipgloss.Center,
+		content,
+		lipgloss.WithWhitespaceBackground(t.Background()),
+	)
+	return content
+}
+
+func renderText(message client.MessageInfo, text string, author string) string {
+	t := theme.CurrentTheme()
+	width := layout.Current.Container.Width
+	padding := 0
+	switch layout.Current.Size {
+	case layout.LayoutSizeSmall:
+		padding = 5
+	case layout.LayoutSizeNormal:
+		padding = 10
+	case layout.LayoutSizeLarge:
+		padding = 15
+	}
+
+	timestamp := time.UnixMilli(int64(message.Metadata.Time.Created)).Local().Format("02 Jan 2006 03:04 PM")
 	if time.Now().Format("02 Jan 2006") == timestamp[:11] {
+		// don't show the date if it's today
 		timestamp = timestamp[12:]
 	}
 	info := styles.BaseStyle().
 		Foreground(t.TextMuted()).
-		Render(fmt.Sprintf("%s (%s)", user, timestamp))
+		Render(fmt.Sprintf("%s (%s)", author, timestamp))
 
-	content := ""
-	// if len(styledAttachments) > 0 {
-	// 	attachmentContent := baseStyle.Width(width).Render(lipgloss.JoinHorizontal(lipgloss.Left, styledAttachments...))
-	// 	content = renderMessage(msg.Content().String(), true, isFocused, width, append(info, attachmentContent)...)
-	// } else {
-	for _, p := range msg.Parts {
-		part, err := p.ValueByDiscriminator()
-		if err != nil {
-			continue //TODO: handle error?
-		}
-
-		switch part.(type) {
-		case client.MessagePartText:
-			textPart := part.(client.MessagePartText)
-			text := toMarkdown(textPart.Text, width)
-			content = style.Render(lipgloss.JoinVertical(lipgloss.Left, text, info))
-		}
+	align := lipgloss.Left
+	switch message.Role {
+	case client.User:
+		align = lipgloss.Right
+	case client.Assistant:
+		align = lipgloss.Left
 	}
 
-	return styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
+	textWidth := lipgloss.Width(text)
+	markdownWidth := min(textWidth, width-padding-4) // -4 for the border and padding
+	content := toMarkdown(text, markdownWidth)
+	content = lipgloss.JoinVertical(align, content, info)
+
+	switch message.Role {
+	case client.User:
+		return renderMarkdown(content,
+			WithAlign(lipgloss.Right),
+			WithBorderColor(t.Secondary()),
+		)
+	case client.Assistant:
+		return renderMarkdown(content,
+			WithAlign(lipgloss.Left),
+			WithBorderColor(t.Primary()),
+		)
+	}
+	return ""
 }
 
-func renderAssistantMessage(
-	msg client.MessageInfo,
-	width int,
-	showToolMessages bool,
-	appInfo client.AppInfo,
+func renderToolInvocation(
+	toolCall client.MessageToolInvocationToolCall,
+	result *string,
+	metadata map[string]any,
+	showResult bool,
 ) string {
-	t := theme.CurrentTheme()
-	style := styles.BaseStyle().
-		PaddingLeft(1).
-		BorderLeft(true).
-		Foreground(t.TextMuted()).
-		BorderForeground(t.Primary()).
-		BorderStyle(lipgloss.ThickBorder())
-	messages := []string{}
-
-	timestamp := time.UnixMilli(int64(msg.Metadata.Time.Created)).Local().Format("02 Jan 2006 03:04 PM")
-	if time.Now().Format("02 Jan 2006") == timestamp[:11] {
-		timestamp = timestamp[12:]
-	}
-	modelName := msg.Metadata.Assistant.ModelID
-	info := styles.BaseStyle().
-		Foreground(t.TextMuted()).
-		Render(fmt.Sprintf("%s (%s)", modelName, timestamp))
-
-	for _, p := range msg.Parts {
-		part, err := p.ValueByDiscriminator()
-		if err != nil {
-			continue //TODO: handle error?
-		}
-
-		switch part.(type) {
-		// case client.MessagePartReasoning:
-		// 	reasoningPart := part.(client.MessagePartReasoning)
-
-		case client.MessagePartText:
-			textPart := part.(client.MessagePartText)
-			text := toMarkdown(textPart.Text, width)
-			content := style.Render(lipgloss.JoinVertical(lipgloss.Left, text, info))
-			message := styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
-			messages = append(messages, message)
-
-		case client.MessagePartToolInvocation:
-			if !showToolMessages {
-				continue
-			}
-
-			toolInvocationPart := part.(client.MessagePartToolInvocation)
-			toolCall, _ := toolInvocationPart.ToolInvocation.AsMessageToolInvocationToolCall()
-			var result *string
-			resultPart, resultError := toolInvocationPart.ToolInvocation.AsMessageToolInvocationToolResult()
-			if resultError == nil {
-				result = &resultPart.Result
-			}
-			metadata := map[string]any{}
-			if _, ok := msg.Metadata.Tool[toolCall.ToolCallId]; ok {
-				metadata = msg.Metadata.Tool[toolCall.ToolCallId].(map[string]any)
-			}
-			message := renderToolInvocation(toolCall, result, metadata, appInfo, width)
-			messages = append(messages, message)
-		}
+	ignoredTools := []string{"opencode_todoread"}
+	if slices.Contains(ignoredTools, toolCall.ToolName) {
+		return ""
 	}
 
-	return strings.Join(messages, "\n\n")
-}
+	padding := 1
+	outerWidth := layout.Current.Container.Width - 1 // subtract 1 for the border
+	innerWidth := outerWidth - padding - 4           // -4 for the border and padding
 
-func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result *string, metadata map[string]any, appInfo client.AppInfo, width int) string {
 	t := theme.CurrentTheme()
-	style := styles.BaseStyle().
+	style := styles.Muted().
+		Width(outerWidth).
+		PaddingLeft(padding).
 		BorderLeft(true).
-		PaddingLeft(1).
-		Foreground(t.TextMuted()).
-		BorderForeground(t.TextMuted()).
+		BorderForeground(t.BorderSubtle()).
 		BorderStyle(lipgloss.ThickBorder())
 
-	toolName := renderToolName(toolCall.ToolName)
+	if toolCall.State == "partial-call" {
+		style = style.Foreground(t.TextMuted())
+		return style.Render(renderToolAction(toolCall.ToolName))
+	}
+
 	toolArgs := ""
 	toolArgsMap := make(map[string]any)
 	if toolCall.Args != nil {
@@ -185,17 +253,20 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 				firstKey = key
 				break
 			}
-			toolArgs = renderArgs(&toolArgsMap, appInfo, firstKey)
+			toolArgs = renderArgs(&toolArgsMap, firstKey)
 		}
 	}
 
-	title := fmt.Sprintf("%s: %s", toolName, toolArgs)
-	finished := result != nil
-	body := styles.BaseStyle().Render("In progress...")
+	if len(toolArgsMap) == 0 {
+		slog.Debug("no args")
+	}
+
+	body := ""
+	finished := result != nil && *result != ""
 	if finished {
 		body = *result
 	}
-	footer := ""
+	elapsed := ""
 	if metadata["time"] != nil {
 		timeMap := metadata["time"].(map[string]any)
 		start := timeMap["start"].(float64)
@@ -206,84 +277,54 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 		if durationMs > 1000 {
 			roundedDuration = time.Duration(duration.Round(time.Second))
 		}
-		footer = styles.Muted().Render(fmt.Sprintf("%s", roundedDuration))
+		elapsed = styles.Muted().Render(roundedDuration.String())
 	}
 
+	title := ""
 	switch toolCall.ToolName {
+	case "opencode_read":
+		toolArgs = renderArgs(&toolArgsMap, "filePath")
+		title = fmt.Sprintf("Read: %s   %s", toolArgs, elapsed)
+		body = ""
+		filename := toolArgsMap["filePath"].(string)
+		if metadata["preview"] != nil {
+			body = metadata["preview"].(string)
+			body = renderFile(filename, body, WithTruncate(6))
+		}
 	case "opencode_edit":
 		filename := toolArgsMap["filePath"].(string)
-		filename = strings.TrimPrefix(filename, appInfo.Path.Root+"/")
-		title = fmt.Sprintf("%s: %s", toolName, filename)
-		if finished && metadata["diff"] != nil {
+		title = fmt.Sprintf("Edit: %s   %s", relative(filename), elapsed)
+		if metadata["diff"] != nil {
 			patch := metadata["diff"].(string)
-			formattedDiff, _ := diff.FormatDiff(patch, diff.WithTotalWidth(width))
+			diffWidth := min(layout.Current.Viewport.Width, 120)
+			formattedDiff, _ := diff.FormatDiff(filename, patch, diff.WithTotalWidth(diffWidth))
 			body = strings.TrimSpace(formattedDiff)
-			return style.Render(lipgloss.JoinVertical(lipgloss.Left,
-				title,
+			body = lipgloss.Place(
+				layout.Current.Viewport.Width,
+				lipgloss.Height(body)+2,
+				lipgloss.Center,
+				lipgloss.Center,
 				body,
-				styles.ForceReplaceBackgroundWithLipgloss(footer, t.Background()),
-			))
-		}
-	case "opencode_read":
-		toolArgs = renderArgs(&toolArgsMap, appInfo, "filePath")
-		title = fmt.Sprintf("%s: %s", toolName, toolArgs)
-		filename := toolArgsMap["filePath"].(string)
-		ext := filepath.Ext(filename)
-		if ext == "" {
-			ext = ""
-		} else {
-			ext = strings.ToLower(ext[1:])
-		}
-		if finished {
-			if metadata["preview"] != nil {
-				body = metadata["preview"].(string)
-			}
-			body = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(body, 10))
-			body = toMarkdown(body, width)
+				lipgloss.WithWhitespaceBackground(t.Background()),
+			)
 		}
 	case "opencode_write":
 		filename := toolArgsMap["filePath"].(string)
-		filename = strings.TrimPrefix(filename, appInfo.Path.Root+"/")
-		title = fmt.Sprintf("%s: %s", toolName, filename)
-		ext := filepath.Ext(filename)
-		if ext == "" {
-			ext = ""
-		} else {
-			ext = strings.ToLower(ext[1:])
-		}
+		title = fmt.Sprintf("Write: %s   %s", relative(filename), elapsed)
 		content := toolArgsMap["content"].(string)
-		body = fmt.Sprintf("```%s\n%s\n```", ext, truncateHeight(content, 10))
-		body = toMarkdown(body, width)
+		body = renderFile(filename, content)
 	case "opencode_bash":
-		if finished && metadata["stdout"] != nil {
-			description := toolArgsMap["description"].(string)
-			title = fmt.Sprintf("%s: %s", toolName, description)
+		description := toolArgsMap["description"].(string)
+		title = fmt.Sprintf("Shell: %s   %s", description, elapsed)
+		if metadata["stdout"] != nil {
 			command := toolArgsMap["command"].(string)
 			stdout := metadata["stdout"].(string)
-			body = fmt.Sprintf("```console\n$ %s\n%s```", command, stdout)
-			body = toMarkdown(body, width)
-		}
-	case "opencode_todoread":
-		title = fmt.Sprintf("%s", toolName)
-		if finished && metadata["todos"] != nil {
-			body = ""
-			todos := metadata["todos"].([]any)
-			for _, todo := range todos {
-				t := todo.(map[string]any)
-				content := t["content"].(string)
-				switch t["status"].(string) {
-				case "completed":
-					body += fmt.Sprintf("- [x] %s\n", content)
-				// case "in-progress":
-				// 	body += fmt.Sprintf("- [ ] _%s_\n", content)
-				default:
-					body += fmt.Sprintf("- [ ] %s\n", content)
-				}
-			}
-			body = toMarkdown(body, width)
+			body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
+			body = toMarkdown(body, innerWidth)
+			body = renderMarkdown(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 		}
 	case "opencode_todowrite":
-		title = fmt.Sprintf("%s", toolName)
+		title = fmt.Sprintf("Planning...   %s", elapsed)
 		if finished && metadata["todos"] != nil {
 			body = ""
 			todos := metadata["todos"].([]any)
@@ -299,23 +340,35 @@ func renderToolInvocation(toolCall client.MessageToolInvocationToolCall, result 
 					body += fmt.Sprintf("- [ ] %s\n", content)
 				}
 			}
-			body = toMarkdown(body, width)
+			body = toMarkdown(body, innerWidth)
+			body = renderMarkdown(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 		}
 	default:
-		body = fmt.Sprintf("```txt\n%s\n```", truncateHeight(body, 10))
-		body = toMarkdown(body, width)
+		toolName := renderToolName(toolCall.ToolName)
+		title = style.Render(fmt.Sprintf("%s: %s %s", toolName, toolArgs, elapsed))
+		// return title
+
+		// toolName := renderToolName(toolCall.ToolName)
+		// title = fmt.Sprintf("%s: %s", toolName, toolArgs)
+		// body = fmt.Sprintf("```txt\n%s\n```", truncateHeight(body, 10))
+		// body = toMarkdown(body, contentWidth)
 	}
 
 	if metadata["error"] != nil && metadata["message"] != nil {
-		body = styles.BaseStyle().Foreground(t.Error()).Render(metadata["message"].(string))
+		body = styles.BaseStyle().
+			Width(outerWidth).
+			Foreground(t.Error()).
+			Render(metadata["message"].(string))
 	}
 
-	content := style.Render(lipgloss.JoinVertical(lipgloss.Left,
-		title,
-		body,
-		footer,
-	))
-	return styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
+	content := style.Render(title)
+	content = lipgloss.PlaceHorizontal(layout.Current.Viewport.Width, lipgloss.Center, content)
+	content = styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
+	if showResult && body != "" {
+		content += "\n" + body
+	}
+	return content
+	// return styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
 }
 
 func renderToolName(name string) string {
@@ -327,9 +380,9 @@ func renderToolName(name string) string {
 	case "opencode_webfetch":
 		return "Fetch"
 	case "opencode_todoread":
-		return "Read TODOs"
+		return "Planning"
 	case "opencode_todowrite":
-		return "Update TODOs"
+		return "Planning"
 	default:
 		normalizedName := name
 		if strings.HasPrefix(name, "opencode_") {
@@ -337,6 +390,59 @@ func renderToolName(name string) string {
 		}
 		return cases.Title(language.Und).String(normalizedName)
 	}
+}
+
+type fileRenderer struct {
+	filename string
+	content  string
+	height   int
+}
+
+type fileRenderingOption func(*fileRenderer)
+
+func WithTruncate(height int) fileRenderingOption {
+	return func(c *fileRenderer) {
+		c.height = height
+	}
+}
+
+func renderFile(filename string, content string, options ...fileRenderingOption) string {
+	renderer := &fileRenderer{
+		filename: filename,
+		content:  content,
+	}
+	for _, option := range options {
+		option(renderer)
+	}
+
+	// TODO: is this even needed?
+	lines := []string{}
+	for line := range strings.SplitSeq(content, "\n") {
+		line = strings.TrimRightFunc(line, unicode.IsSpace)
+		line = strings.ReplaceAll(line, "\t", "  ")
+		lines = append(lines, line)
+	}
+	content = strings.Join(lines, "\n")
+
+	width := layout.Current.Container.Width - 6
+	if renderer.height > 0 {
+		content = truncateHeight(content, renderer.height)
+	}
+	content = fmt.Sprintf("```%s\n%s\n```", extension(renderer.filename), content)
+	content = toMarkdown(content, width)
+
+	// ensure no line is wider than the width
+	// truncated := []string{}
+	// for line := range strings.SplitSeq(content, "\n") {
+	// 	line = strings.TrimRightFunc(line, unicode.IsSpace)
+	// 	// if lipgloss.Width(line) > width-3 {
+	// 	line = ansi.Truncate(line, width-3, "")
+	// 	// }
+	// 	truncated = append(truncated, line)
+	// }
+	// content = strings.Join(truncated, "\n")
+
+	return renderMarkdown(content, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 }
 
 func renderToolAction(name string) string {
@@ -367,7 +473,7 @@ func renderToolAction(name string) string {
 	return "Working..."
 }
 
-func renderArgs(args *map[string]any, appInfo client.AppInfo, titleKey string) string {
+func renderArgs(args *map[string]any, titleKey string) string {
 	if args == nil || len(*args) == 0 {
 		return ""
 	}
@@ -375,7 +481,7 @@ func renderArgs(args *map[string]any, appInfo client.AppInfo, titleKey string) s
 	parts := []string{}
 	for key, value := range *args {
 		if key == "filePath" || key == "path" {
-			value = strings.TrimPrefix(value.(string), appInfo.Path.Root+"/")
+			value = relative(value.(string))
 		}
 		if key == titleKey {
 			title = fmt.Sprintf("%s", value)
@@ -395,4 +501,18 @@ func truncateHeight(content string, height int) string {
 		return strings.Join(lines[:height], "\n")
 	}
 	return content
+}
+
+func relative(path string) string {
+	return strings.TrimPrefix(path, app.Info.Path.Root+"/")
+}
+
+func extension(path string) string {
+	ext := filepath.Ext(path)
+	if ext == "" {
+		ext = ""
+	} else {
+		ext = strings.ToLower(ext[1:])
+	}
+	return ext
 }

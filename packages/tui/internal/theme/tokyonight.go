@@ -12,36 +12,60 @@ type TokyoNightTheme struct {
 
 // NewTokyoNightTheme creates a new instance of the Tokyo Night theme.
 func NewTokyoNightTheme() *TokyoNightTheme {
-	// Tokyo Night color palette
-	// Dark mode colors
-	darkBackground := "#222436"
-	darkCurrentLine := "#1e2030"
-	darkSelection := "#2f334d"
-	darkForeground := "#c8d3f5"
-	darkComment := "#636da6"
+	// Tokyo Night color palette with Radix-inspired scale progression
+	// Dark mode colors - Tokyo Night Moon variant
+	darkStep1 := "#1a1b26"  // App background (bg)
+	darkStep2 := "#1e2030"  // Subtle background (bg_dark)
+	darkStep3 := "#222436"  // UI element background (bg_highlight)
+	darkStep4 := "#292e42"  // Hovered UI element background
+	darkStep5 := "#3b4261"  // Active/Selected UI element background (bg_visual)
+	darkStep6 := "#545c7e"  // Subtle borders and separators (dark3)
+	darkStep7 := "#737aa2"  // UI element border and focus rings (dark5)
+	darkStep8 := "#9099b2"  // Hovered UI element border
+	darkStep9 := "#82aaff"  // Solid backgrounds (blue)
+	darkStep10 := "#89b4fa" // Hovered solid backgrounds
+	darkStep11 := "#828bb8" // Low-contrast text (using fg_dark for better contrast)
+	darkStep12 := "#c8d3f5" // High-contrast text (fg)
+
+	// Dark mode accent colors
 	darkRed := "#ff757f"
 	darkOrange := "#ff966c"
 	darkYellow := "#ffc777"
 	darkGreen := "#c3e88d"
 	darkCyan := "#86e1fc"
-	darkBlue := "#82aaff"
+	darkBlue := darkStep9 // Using step 9 for primary
 	darkPurple := "#c099ff"
-	darkBorder := "#3b4261"
 
-	// Light mode colors (Tokyo Night Day)
-	lightBackground := "#e1e2e7"
-	lightCurrentLine := "#d5d6db"
-	lightSelection := "#c8c9ce"
-	lightForeground := "#3760bf"
-	lightComment := "#848cb5"
+	// Light mode colors - Tokyo Night Day variant
+	lightStep1 := "#e1e2e7"  // App background
+	lightStep2 := "#d5d6db"  // Subtle background
+	lightStep3 := "#c8c9ce"  // UI element background
+	lightStep4 := "#b9bac1"  // Hovered UI element background
+	lightStep5 := "#a8aecb"  // Active/Selected UI element background
+	lightStep6 := "#9699a8"  // Subtle borders and separators
+	lightStep7 := "#737a8c"  // UI element border and focus rings
+	lightStep8 := "#5a607d"  // Hovered UI element border
+	lightStep9 := "#2e7de9"  // Solid backgrounds (blue)
+	lightStep10 := "#1a6ce7" // Hovered solid backgrounds
+	lightStep11 := "#8990a3" // Low-contrast text (more muted)
+	lightStep12 := "#3760bf" // High-contrast text
+
+	// Light mode accent colors
 	lightRed := "#f52a65"
 	lightOrange := "#b15c00"
 	lightYellow := "#8c6c3e"
 	lightGreen := "#587539"
 	lightCyan := "#007197"
-	lightBlue := "#2e7de9"
+	lightBlue := lightStep9 // Using step 9 for primary
 	lightPurple := "#9854f1"
-	lightBorder := "#a8aecb"
+
+	// Unused variables to avoid compiler errors (these could be used for hover states)
+	_ = darkStep4
+	_ = darkStep5
+	_ = darkStep10
+	_ = lightStep4
+	_ = lightStep5
+	_ = lightStep10
 
 	theme := &TokyoNightTheme{}
 
@@ -79,44 +103,40 @@ func NewTokyoNightTheme() *TokyoNightTheme {
 
 	// Text colors
 	theme.TextColor = lipgloss.AdaptiveColor{
-		Dark:  darkForeground,
-		Light: lightForeground,
+		Dark:  darkStep12,
+		Light: lightStep12,
 	}
 	theme.TextMutedColor = lipgloss.AdaptiveColor{
-		Dark:  darkComment,
-		Light: lightComment,
-	}
-	theme.TextEmphasizedColor = lipgloss.AdaptiveColor{
-		Dark:  darkYellow,
-		Light: lightYellow,
+		Dark:  darkStep11,
+		Light: lightStep11,
 	}
 
 	// Background colors
 	theme.BackgroundColor = lipgloss.AdaptiveColor{
-		Dark:  darkBackground,
-		Light: lightBackground,
+		Dark:  darkStep1,
+		Light: lightStep1,
 	}
-	theme.BackgroundSecondaryColor = lipgloss.AdaptiveColor{
-		Dark:  darkCurrentLine,
-		Light: lightCurrentLine,
+	theme.BackgroundSubtleColor = lipgloss.AdaptiveColor{
+		Dark:  darkStep2,
+		Light: lightStep2,
 	}
-	theme.BackgroundDarkerColor = lipgloss.AdaptiveColor{
-		Dark:  "#191B29", // Darker background from palette
-		Light: "#f0f0f5", // Slightly lighter than background
+	theme.BackgroundElementColor = lipgloss.AdaptiveColor{
+		Dark:  darkStep3,
+		Light: lightStep3,
 	}
 
 	// Border colors
-	theme.BorderNormalColor = lipgloss.AdaptiveColor{
-		Dark:  darkBorder,
-		Light: lightBorder,
+	theme.BorderColor = lipgloss.AdaptiveColor{
+		Dark:  darkStep7,
+		Light: lightStep7,
 	}
-	theme.BorderFocusedColor = lipgloss.AdaptiveColor{
-		Dark:  darkBlue,
-		Light: lightBlue,
+	theme.BorderActiveColor = lipgloss.AdaptiveColor{
+		Dark:  darkStep8,
+		Light: lightStep8,
 	}
-	theme.BorderDimColor = lipgloss.AdaptiveColor{
-		Dark:  darkSelection,
-		Light: lightSelection,
+	theme.BorderSubtleColor = lipgloss.AdaptiveColor{
+		Dark:  darkStep6,
+		Light: lightStep6,
 	}
 
 	// Diff view colors
@@ -153,12 +173,12 @@ func NewTokyoNightTheme() *TokyoNightTheme {
 		Light: "#f7d8db",
 	}
 	theme.DiffContextBgColor = lipgloss.AdaptiveColor{
-		Dark:  darkBackground,
-		Light: lightBackground,
+		Dark:  darkStep2,
+		Light: lightStep2,
 	}
 	theme.DiffLineNumberColor = lipgloss.AdaptiveColor{
-		Dark:  "#545c7e", // dark3 from palette
-		Light: "#848cb5",
+		Dark:  darkStep3, // dark3 from palette
+		Light: lightStep3,
 	}
 	theme.DiffAddedLineNumberBgColor = lipgloss.AdaptiveColor{
 		Dark:  "#1b2b34",
@@ -171,8 +191,8 @@ func NewTokyoNightTheme() *TokyoNightTheme {
 
 	// Markdown colors
 	theme.MarkdownTextColor = lipgloss.AdaptiveColor{
-		Dark:  darkForeground,
-		Light: lightForeground,
+		Dark:  darkStep12,
+		Light: lightStep12,
 	}
 	theme.MarkdownHeadingColor = lipgloss.AdaptiveColor{
 		Dark:  darkPurple,
@@ -203,8 +223,8 @@ func NewTokyoNightTheme() *TokyoNightTheme {
 		Light: lightOrange,
 	}
 	theme.MarkdownHorizontalRuleColor = lipgloss.AdaptiveColor{
-		Dark:  darkComment,
-		Light: lightComment,
+		Dark:  darkStep11,
+		Light: lightStep11,
 	}
 	theme.MarkdownListItemColor = lipgloss.AdaptiveColor{
 		Dark:  darkBlue,
@@ -223,14 +243,14 @@ func NewTokyoNightTheme() *TokyoNightTheme {
 		Light: lightCyan,
 	}
 	theme.MarkdownCodeBlockColor = lipgloss.AdaptiveColor{
-		Dark:  darkForeground,
-		Light: lightForeground,
+		Dark:  darkStep12,
+		Light: lightStep12,
 	}
 
 	// Syntax highlighting colors
 	theme.SyntaxCommentColor = lipgloss.AdaptiveColor{
-		Dark:  darkComment,
-		Light: lightComment,
+		Dark:  darkStep11,
+		Light: lightStep11,
 	}
 	theme.SyntaxKeywordColor = lipgloss.AdaptiveColor{
 		Dark:  darkPurple,
@@ -261,8 +281,8 @@ func NewTokyoNightTheme() *TokyoNightTheme {
 		Light: lightCyan,
 	}
 	theme.SyntaxPunctuationColor = lipgloss.AdaptiveColor{
-		Dark:  darkForeground,
-		Light: lightForeground,
+		Dark:  darkStep12,
+		Light: lightStep12,
 	}
 
 	return theme

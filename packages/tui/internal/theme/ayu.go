@@ -92,35 +92,31 @@ func NewAyuDarkTheme() *AyuDarkTheme {
 		Dark:  darkComment,
 		Light: lightComment,
 	}
-	theme.TextEmphasizedColor = lipgloss.AdaptiveColor{
-		Dark:  darkPurple,
-		Light: lightPurple,
-	}
 
 	// Background colors
 	theme.BackgroundColor = lipgloss.AdaptiveColor{
 		Dark:  darkBackground,
 		Light: lightBackground,
 	}
-	theme.BackgroundSecondaryColor = lipgloss.AdaptiveColor{
+	theme.BackgroundSubtleColor = lipgloss.AdaptiveColor{
 		Dark:  darkCurrentLine,
 		Light: lightCurrentLine,
 	}
-	theme.BackgroundDarkerColor = lipgloss.AdaptiveColor{
+	theme.BackgroundElementColor = lipgloss.AdaptiveColor{
 		Dark:  "#0b0e14", // Darker than background
 		Light: "#ffffff", // Lighter than background
 	}
 
 	// Border colors
-	theme.BorderNormalColor = lipgloss.AdaptiveColor{
+	theme.BorderColor = lipgloss.AdaptiveColor{
 		Dark:  darkBorder,
 		Light: lightBorder,
 	}
-	theme.BorderFocusedColor = lipgloss.AdaptiveColor{
+	theme.BorderActiveColor = lipgloss.AdaptiveColor{
 		Dark:  darkBlue,
 		Light: lightBlue,
 	}
-	theme.BorderDimColor = lipgloss.AdaptiveColor{
+	theme.BorderSubtleColor = lipgloss.AdaptiveColor{
 		Dark:  darkSelection,
 		Light: lightSelection,
 	}

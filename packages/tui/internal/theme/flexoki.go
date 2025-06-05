@@ -94,35 +94,31 @@ func NewFlexokiTheme() *FlexokiTheme {
 		Dark:  flexokiBase700,
 		Light: flexokiBase500,
 	}
-	theme.TextEmphasizedColor = lipgloss.AdaptiveColor{
-		Dark:  flexokiYellow400,
-		Light: flexokiYellow600,
-	}
 
 	// Background colors
 	theme.BackgroundColor = lipgloss.AdaptiveColor{
 		Dark:  flexokiBlack,
 		Light: flexokiPaper,
 	}
-	theme.BackgroundSecondaryColor = lipgloss.AdaptiveColor{
+	theme.BackgroundSubtleColor = lipgloss.AdaptiveColor{
 		Dark:  flexokiBase950,
 		Light: flexokiBase50,
 	}
-	theme.BackgroundDarkerColor = lipgloss.AdaptiveColor{
+	theme.BackgroundElementColor = lipgloss.AdaptiveColor{
 		Dark:  flexokiBase900,
 		Light: flexokiBase100,
 	}
 
 	// Border colors
-	theme.BorderNormalColor = lipgloss.AdaptiveColor{
+	theme.BorderColor = lipgloss.AdaptiveColor{
 		Dark:  flexokiBase900,
 		Light: flexokiBase100,
 	}
-	theme.BorderFocusedColor = lipgloss.AdaptiveColor{
+	theme.BorderActiveColor = lipgloss.AdaptiveColor{
 		Dark:  flexokiBlue400,
 		Light: flexokiBlue600,
 	}
-	theme.BorderDimColor = lipgloss.AdaptiveColor{
+	theme.BorderSubtleColor = lipgloss.AdaptiveColor{
 		Dark:  flexokiBase850,
 		Light: flexokiBase150,
 	}

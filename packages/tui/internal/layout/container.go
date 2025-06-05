@@ -13,6 +13,8 @@ type Container interface {
 	Bindings
 	Focus()
 	Blur()
+	MaxWidth() int
+	Alignment() lipgloss.Position
 }
 
 type container struct {
@@ -32,6 +34,9 @@ type container struct {
 	borderLeft   bool
 	borderStyle  lipgloss.Border
 
+	maxWidth int
+	align    lipgloss.Position
+
 	focused bool
 }
 
@@ -50,6 +55,11 @@ func (c *container) View() string {
 	style := lipgloss.NewStyle()
 	width := c.width
 	height := c.height
+
+	// Apply max width constraint if set
+	if c.maxWidth > 0 && width > c.maxWidth {
+		width = c.maxWidth
+	}
 
 	style = style.Background(t.Background())
 
@@ -74,7 +84,7 @@ func (c *container) View() string {
 		if c.focused {
 			style = style.BorderBackground(t.Background()).BorderForeground(t.Primary())
 		} else {
-			style = style.BorderBackground(t.Background()).BorderForeground(t.BorderNormal())
+			style = style.BorderBackground(t.Background()).BorderForeground(t.Border())
 		}
 	}
 	style = style.
@@ -91,6 +101,12 @@ func (c *container) View() string {
 func (c *container) SetSize(width, height int) tea.Cmd {
 	c.width = width
 	c.height = height
+
+	// Apply max width constraint if set
+	effectiveWidth := width
+	if c.maxWidth > 0 && width > c.maxWidth {
+		effectiveWidth = c.maxWidth
+	}
 
 	// If the content implements Sizeable, adjust its size to account for padding and borders
 	if sizeable, ok := c.content.(Sizeable); ok {
@@ -113,7 +129,7 @@ func (c *container) SetSize(width, height int) tea.Cmd {
 		}
 
 		// Set content size with adjusted dimensions
-		contentWidth := max(0, width-horizontalSpace)
+		contentWidth := max(0, effectiveWidth-horizontalSpace)
 		contentHeight := max(0, height-verticalSpace)
 		return sizeable.SetSize(contentWidth, contentHeight)
 	}
@@ -122,6 +138,14 @@ func (c *container) SetSize(width, height int) tea.Cmd {
 
 func (c *container) GetSize() (int, int) {
 	return c.width, c.height
+}
+
+func (c *container) MaxWidth() int {
+	return c.maxWidth
+}
+
+func (c *container) Alignment() lipgloss.Position {
+	return c.align
 }
 
 func (c *container) BindingKeys() []key.Binding {
@@ -227,4 +251,28 @@ func WithThickBorder() ContainerOption {
 
 func WithDoubleBorder() ContainerOption {
 	return WithBorderStyle(lipgloss.DoubleBorder())
+}
+
+func WithMaxWidth(maxWidth int) ContainerOption {
+	return func(c *container) {
+		c.maxWidth = maxWidth
+	}
+}
+
+func WithAlign(align lipgloss.Position) ContainerOption {
+	return func(c *container) {
+		c.align = align
+	}
+}
+
+func WithAlignLeft() ContainerOption {
+	return WithAlign(lipgloss.Left)
+}
+
+func WithAlignCenter() ContainerOption {
+	return WithAlign(lipgloss.Center)
+}
+
+func WithAlignRight() ContainerOption {
+	return WithAlign(lipgloss.Right)
 }

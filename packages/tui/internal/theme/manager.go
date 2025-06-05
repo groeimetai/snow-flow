@@ -157,20 +157,18 @@ func LoadCustomTheme(customTheme map[string]any) (Theme, error) {
 			theme.TextColor = adaptiveColor
 		case "textmuted":
 			theme.TextMutedColor = adaptiveColor
-		case "textemphasized":
-			theme.TextEmphasizedColor = adaptiveColor
 		case "background":
 			theme.BackgroundColor = adaptiveColor
-		case "backgroundsecondary":
-			theme.BackgroundSecondaryColor = adaptiveColor
-		case "backgrounddarker":
-			theme.BackgroundDarkerColor = adaptiveColor
-		case "bordernormal":
-			theme.BorderNormalColor = adaptiveColor
-		case "borderfocused":
-			theme.BorderFocusedColor = adaptiveColor
-		case "borderdim":
-			theme.BorderDimColor = adaptiveColor
+		case "backgroundsubtle":
+			theme.BackgroundSubtleColor = adaptiveColor
+		case "backgroundelement":
+			theme.BackgroundElementColor = adaptiveColor
+		case "border":
+			theme.BorderColor = adaptiveColor
+		case "borderactive":
+			theme.BorderActiveColor = adaptiveColor
+		case "bordersubtle":
+			theme.BorderSubtleColor = adaptiveColor
 		case "diffadded":
 			theme.DiffAddedColor = adaptiveColor
 		case "diffremoved":

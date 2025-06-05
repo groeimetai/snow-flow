@@ -11,6 +11,7 @@ func CmdHandler(msg tea.Msg) tea.Cmd {
 }
 
 func Clamp(v, low, high int) int {
+	// Swap if needed to ensure low <= high
 	if high < low {
 		low, high = high, low
 	}

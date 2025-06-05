@@ -1,7 +1,7 @@
 package chat
 
 import (
-	"fmt"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -11,21 +11,23 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/dialog"
+	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/pkg/client"
 )
 
-type messagesCmp struct {
-	app              *app.App
-	width, height    int
-	viewport         viewport.Model
-	spinner          spinner.Model
-	rendering        bool
-	attachments      viewport.Model
-	showToolMessages bool
-	cache            *MessageCache
+type messagesComponent struct {
+	app             *app.App
+	width, height   int
+	viewport        viewport.Model
+	spinner         spinner.Model
+	rendering       bool
+	attachments     viewport.Model
+	showToolResults bool
+	cache           *MessageCache
+	tail            bool
 }
 type renderFinishedMsg struct{}
 type ToggleToolMessagesMsg struct{}
@@ -56,44 +58,54 @@ var messageKeys = MessageKeys{
 	),
 }
 
-func (m *messagesCmp) Init() tea.Cmd {
+func (m *messagesComponent) Init() tea.Cmd {
 	return tea.Batch(m.viewport.Init(), m.spinner.Tick)
 }
 
-func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
+	case SendMsg:
+		m.viewport.GotoBottom()
+		m.tail = true
+		return m, nil
 	case dialog.ThemeChangedMsg:
 		m.cache.Clear()
 		m.renderView()
 		return m, nil
 	case ToggleToolMessagesMsg:
-		m.showToolMessages = !m.showToolMessages
+		m.showToolResults = !m.showToolResults
 		m.renderView()
 		return m, nil
 	case state.SessionSelectedMsg:
-		// Clear cache when switching sessions
 		m.cache.Clear()
 		cmd := m.Reload()
+		m.viewport.GotoBottom()
 		return m, cmd
 	case state.SessionClearedMsg:
-		// Clear cache when session is cleared
 		m.cache.Clear()
 		cmd := m.Reload()
 		return m, cmd
 	case tea.KeyMsg:
-		if key.Matches(msg, messageKeys.PageUp) || key.Matches(msg, messageKeys.PageDown) ||
-			key.Matches(msg, messageKeys.HalfPageUp) || key.Matches(msg, messageKeys.HalfPageDown) {
+		if key.Matches(msg, messageKeys.PageUp) ||
+			key.Matches(msg, messageKeys.PageDown) ||
+			key.Matches(msg, messageKeys.HalfPageUp) ||
+			key.Matches(msg, messageKeys.HalfPageDown) {
 			u, cmd := m.viewport.Update(msg)
 			m.viewport = u
+			m.tail = m.viewport.AtBottom()
 			cmds = append(cmds, cmd)
 		}
 	case renderFinishedMsg:
 		m.rendering = false
-		m.viewport.GotoBottom()
+		if m.tail {
+			m.viewport.GotoBottom()
+		}
 	case state.StateUpdatedMsg:
 		m.renderView()
-		m.viewport.GotoBottom()
+		if m.tail {
+			m.viewport.GotoBottom()
+		}
 	}
 
 	spinner, cmd := m.spinner.Update(msg)
@@ -102,91 +114,159 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *messagesCmp) renderView() {
+type blockType int
+
+const (
+	none blockType = iota
+	systemTextBlock
+	userTextBlock
+	assistantTextBlock
+	toolInvocationBlock
+)
+
+func (m *messagesComponent) renderView() {
 	if m.width == 0 {
 		return
 	}
 
-	messages := make([]string, 0)
-	for _, msg := range m.app.Messages {
+	blocks := make([]string, 0)
+	previousBlockType := none
+	for _, message := range m.app.Messages {
+		if message.Role == client.System {
+			continue // ignoring system messages for now
+		}
+
 		var content string
 		var cached bool
 
-		switch msg.Role {
+		author := ""
+		switch message.Role {
 		case client.User:
-			content, cached = m.cache.Get(msg, m.width, m.showToolMessages, *m.app.Info)
-			if !cached {
-				content = renderUserMessage(m.app.Info.User, msg, m.width)
-				m.cache.Set(msg, m.width, m.showToolMessages, *m.app.Info, content)
-			}
-			messages = append(messages, content+"\n")
+			author = app.Info.User
 		case client.Assistant:
-			content, cached = m.cache.Get(msg, m.width, m.showToolMessages, *m.app.Info)
-			if !cached {
-				content = renderAssistantMessage(msg, m.width, m.showToolMessages, *m.app.Info)
-				m.cache.Set(msg, m.width, m.showToolMessages, *m.app.Info, content)
+			author = message.Metadata.Assistant.ModelID
+		}
+
+		for _, p := range message.Parts {
+			part, err := p.ValueByDiscriminator()
+			if err != nil {
+				continue //TODO: handle error?
 			}
-			messages = append(messages, content+"\n")
+
+			switch part.(type) {
+			// case client.MessagePartStepStart:
+			// 	messages = append(messages, "")
+			case client.MessagePartText:
+				text := part.(client.MessagePartText)
+				key := m.cache.GenerateKey(message.Id, text.Text, layout.Current.Viewport.Width)
+				content, cached = m.cache.Get(key)
+				if !cached {
+					content = renderText(message, text.Text, author)
+					m.cache.Set(key, content)
+				}
+				if previousBlockType != none {
+					blocks = append(blocks, "")
+				}
+				blocks = append(blocks, content)
+				if message.Role == client.User {
+					previousBlockType = userTextBlock
+				} else if message.Role == client.Assistant {
+					previousBlockType = assistantTextBlock
+				} else if message.Role == client.System {
+					previousBlockType = systemTextBlock
+				}
+			case client.MessagePartToolInvocation:
+				toolInvocationPart := part.(client.MessagePartToolInvocation)
+				toolCall, _ := toolInvocationPart.ToolInvocation.AsMessageToolInvocationToolCall()
+				metadata := map[string]any{}
+				if _, ok := message.Metadata.Tool[toolCall.ToolCallId]; ok {
+					metadata = message.Metadata.Tool[toolCall.ToolCallId].(map[string]any)
+				}
+				var result *string
+				resultPart, resultError := toolInvocationPart.ToolInvocation.AsMessageToolInvocationToolResult()
+				if resultError == nil {
+					result = &resultPart.Result
+				}
+
+				if toolCall.State == "result" {
+					key := m.cache.GenerateKey(message.Id,
+						toolCall.ToolCallId,
+						m.showToolResults,
+						layout.Current.Viewport.Width,
+					)
+					content, cached = m.cache.Get(key)
+					if !cached {
+						content = renderToolInvocation(toolCall, result, metadata, m.showToolResults)
+						m.cache.Set(key, content)
+					}
+				} else {
+					// if the tool call isn't finished, never cache
+					content = renderToolInvocation(toolCall, result, metadata, m.showToolResults)
+				}
+
+				if previousBlockType != toolInvocationBlock {
+					blocks = append(blocks, "")
+				}
+				blocks = append(blocks, content)
+				previousBlockType = toolInvocationBlock
+			}
 		}
 	}
 
-	m.viewport.SetContent(
-		styles.BaseStyle().
-			Render(
-				lipgloss.JoinVertical(
-					lipgloss.Top,
-					messages...,
-				),
-			),
-	)
+	t := theme.CurrentTheme()
+	centered := []string{}
+	for _, block := range blocks {
+		centered = append(centered, lipgloss.PlaceHorizontal(
+			m.width,
+			lipgloss.Center,
+			block,
+			lipgloss.WithWhitespaceBackground(t.Background()),
+		))
+	}
+
+	m.viewport.Height = m.height - lipgloss.Height(m.header())
+	m.viewport.SetContent(strings.Join(centered, "\n"))
 }
 
-func (m *messagesCmp) View() string {
-	baseStyle := styles.BaseStyle()
-
-	if m.rendering {
-		return baseStyle.
-			Width(m.width).
-			Render(
-				lipgloss.JoinVertical(
-					lipgloss.Top,
-					"Loading...",
-					m.working(),
-					m.help(),
-				),
-			)
+func (m *messagesComponent) header() string {
+	if m.app.Session.Id == "" {
+		return ""
 	}
 
-	if len(m.app.Messages) == 0 {
-		content := baseStyle.
-			Width(m.width).
-			Height(m.height - 1).
-			Render(
-				m.initialScreen(),
-			)
-
-		return baseStyle.
-			Width(m.width).
-			Render(
-				lipgloss.JoinVertical(
-					lipgloss.Top,
-					content,
-					"",
-					m.help(),
-				),
-			)
+	t := theme.CurrentTheme()
+	width := layout.Current.Container.Width
+	base := styles.BaseStyle().Render
+	muted := styles.Muted().Render
+	headerLines := []string{}
+	headerLines = append(headerLines, toMarkdown("# "+m.app.Session.Title, width))
+	if m.app.Session.Share != nil && m.app.Session.Share.Url != "" {
+		headerLines = append(headerLines, muted(m.app.Session.Share.Url))
+	} else {
+		headerLines = append(headerLines, base("/share")+muted(" to create a shareable link"))
 	}
+	header := strings.Join(headerLines, "\n")
 
-	return baseStyle.
-		Width(m.width).
-		Render(
-			lipgloss.JoinVertical(
-				lipgloss.Top,
-				m.viewport.View(),
-				m.working(),
-				m.help(),
-			),
-		)
+	header = styles.BaseStyle().
+		Width(width).
+		PaddingTop(1).
+		BorderBottom(true).
+		BorderForeground(t.BorderSubtle()).
+		BorderStyle(lipgloss.NormalBorder()).
+		Background(t.Background()).
+		Render(header)
+
+	return styles.ForceReplaceBackgroundWithLipgloss(header, t.Background())
+}
+
+func (m *messagesComponent) View() string {
+	if len(m.app.Messages) == 0 || m.rendering {
+		return m.home()
+	}
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		lipgloss.PlaceHorizontal(m.width, lipgloss.Center, m.header()),
+		m.viewport.View(),
+	)
 }
 
 // func hasToolsWithoutResponse(messages []message.Message) bool {
@@ -225,36 +305,7 @@ func (m *messagesCmp) View() string {
 // 	return false
 // }
 
-func (m *messagesCmp) working() string {
-	text := ""
-	if len(m.app.Messages) > 0 {
-		t := theme.CurrentTheme()
-		baseStyle := styles.BaseStyle()
-
-		task := ""
-		if m.app.IsBusy() {
-			task = "Working..."
-		}
-		// lastMessage := m.app.Messages[len(m.app.Messages)-1]
-		// if hasToolsWithoutResponse(m.app.Messages) {
-		// 	task = "Waiting for tool response..."
-		// } else if hasUnfinishedToolCalls(m.app.Messages) {
-		// 	task = "Building tool call..."
-		// } else if !lastMessage.IsFinished() {
-		// 	task = "Generating..."
-		// }
-		if task != "" {
-			text += baseStyle.
-				Width(m.width).
-				Foreground(t.Primary()).
-				Bold(true).
-				Render(fmt.Sprintf("%s %s ", m.spinner.View(), task))
-		}
-	}
-	return text
-}
-
-func (m *messagesCmp) help() string {
+func (m *messagesComponent) help() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
@@ -275,11 +326,7 @@ func (m *messagesCmp) help() string {
 			baseStyle.Foreground(t.Text()).Bold(true).Render(" \\"),
 			baseStyle.Foreground(t.TextMuted()).Bold(true).Render("+"),
 			baseStyle.Foreground(t.Text()).Bold(true).Render("enter"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" for newline,"),
-			baseStyle.Foreground(t.Text()).Bold(true).Render(" ↑↓"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" for history,"),
-			baseStyle.Foreground(t.Text()).Bold(true).Render(" ctrl+h"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" to toggle tool messages"),
+			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" for newline"),
 		)
 	}
 	return baseStyle.
@@ -287,20 +334,83 @@ func (m *messagesCmp) help() string {
 		Render(text)
 }
 
-func (m *messagesCmp) initialScreen() string {
+func (m *messagesComponent) home() string {
+	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
+	base := baseStyle.Render
+	muted := styles.Muted().Render
 
-	return baseStyle.Width(m.width).Render(
-		lipgloss.JoinVertical(
-			lipgloss.Top,
-			header(m.app, m.width),
-			"",
-			lspsConfigured(m.width),
-		),
+	// 	mark := `
+	// ███▀▀█
+	// ███  █
+	// ▀▀▀▀▀▀  `
+	open := `
+█▀▀█ █▀▀█ █▀▀ █▀▀▄ 
+█░░█ █░░█ █▀▀ █░░█ 
+▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ `
+	code := `
+█▀▀ █▀▀█ █▀▀▄ █▀▀
+█░░ █░░█ █░░█ █▀▀
+▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`
+
+	logo := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		// styles.BaseStyle().Foreground(t.Primary()).Render(mark),
+		styles.Muted().Render(open),
+		styles.BaseStyle().Render(code),
+	)
+	cwd := app.Info.Path.Cwd
+	config := app.Info.Path.Config
+
+	commands := [][]string{
+		{"/help", "show help"},
+		{"/sessions", "list sessions"},
+		{"/new", "start a new session"},
+		{"/model", "switch model"},
+		{"/share", "share the current session"},
+		{"/exit", "exit the app"},
+	}
+
+	commandLines := []string{}
+	for _, command := range commands {
+		commandLines = append(commandLines, (base(command[0]) + " " + muted(command[1])))
+	}
+
+	logoAndVersion := lipgloss.JoinVertical(
+		lipgloss.Right,
+		logo,
+		muted(app.Info.Version),
+	)
+
+	lines := []string{}
+	lines = append(lines, "")
+	lines = append(lines, "")
+	lines = append(lines, logoAndVersion)
+	lines = append(lines, "")
+	lines = append(lines, base("cwd ")+muted(cwd))
+	lines = append(lines, base("config ")+muted(config))
+	lines = append(lines, "")
+	lines = append(lines, commandLines...)
+	lines = append(lines, "")
+	if m.rendering {
+		lines = append(lines, styles.Muted().Render("Loading session..."))
+	} else {
+		lines = append(lines, "")
+	}
+
+	return styles.ForceReplaceBackgroundWithLipgloss(
+		lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
+			baseStyle.Width(lipgloss.Width(logoAndVersion)).Render(
+				lipgloss.JoinVertical(
+					lipgloss.Top,
+					lines...,
+				),
+			)),
+		t.Background(),
 	)
 }
 
-func (m *messagesCmp) SetSize(width, height int) tea.Cmd {
+func (m *messagesComponent) SetSize(width, height int) tea.Cmd {
 	if m.width == width && m.height == height {
 		return nil
 	}
@@ -311,18 +421,18 @@ func (m *messagesCmp) SetSize(width, height int) tea.Cmd {
 	m.width = width
 	m.height = height
 	m.viewport.Width = width
-	m.viewport.Height = height - 2
+	m.viewport.Height = height - lipgloss.Height(m.header())
 	m.attachments.Width = width + 40
 	m.attachments.Height = 3
 	m.renderView()
 	return nil
 }
 
-func (m *messagesCmp) GetSize() (int, int) {
+func (m *messagesComponent) GetSize() (int, int) {
 	return m.width, m.height
 }
 
-func (m *messagesCmp) Reload() tea.Cmd {
+func (m *messagesComponent) Reload() tea.Cmd {
 	m.rendering = true
 	return func() tea.Msg {
 		m.renderView()
@@ -330,7 +440,7 @@ func (m *messagesCmp) Reload() tea.Cmd {
 	}
 }
 
-func (m *messagesCmp) BindingKeys() []key.Binding {
+func (m *messagesComponent) BindingKeys() []key.Binding {
 	return []key.Binding{
 		m.viewport.KeyMap.PageDown,
 		m.viewport.KeyMap.PageUp,
@@ -339,7 +449,7 @@ func (m *messagesCmp) BindingKeys() []key.Binding {
 	}
 }
 
-func NewMessagesCmp(app *app.App) tea.Model {
+func NewMessagesComponent(app *app.App) tea.Model {
 	customSpinner := spinner.Spinner{
 		Frames: []string{" ", "┃", "┃"},
 		FPS:    time.Second / 3,
@@ -353,12 +463,13 @@ func NewMessagesCmp(app *app.App) tea.Model {
 	vp.KeyMap.HalfPageUp = messageKeys.HalfPageUp
 	vp.KeyMap.HalfPageDown = messageKeys.HalfPageDown
 
-	return &messagesCmp{
-		app:              app,
-		viewport:         vp,
-		spinner:          s,
-		attachments:      attachments,
-		showToolMessages: true,
-		cache:            NewMessageCache(),
+	return &messagesComponent{
+		app:             app,
+		viewport:        vp,
+		spinner:         s,
+		attachments:     attachments,
+		showToolResults: true,
+		cache:           NewMessageCache(),
+		tail:            true,
 	}
 }

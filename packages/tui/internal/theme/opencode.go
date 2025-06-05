@@ -12,14 +12,23 @@ type OpenCodeTheme struct {
 
 // NewOpenCodeTheme creates a new instance of the OpenCode theme.
 func NewOpenCodeTheme() *OpenCodeTheme {
-	// OpenCode color palette
-	// Dark mode colors
-	darkBackground := "#212121"
-	darkCurrentLine := "#252525"
-	darkSelection := "#303030"
-	darkForeground := "#e0e0e0"
-	darkComment := "#6a6a6a"
-	darkPrimary := "#fab283"   // Primary orange/gold
+	// OpenCode color palette with Radix-inspired scale progression
+	// Dark mode colors - using a neutral gray scale as base
+	darkStep1 := "#0a0a0a"  // App background
+	darkStep2 := "#141414"  // Subtle background
+	darkStep3 := "#1e1e1e"  // UI element background
+	darkStep4 := "#282828"  // Hovered UI element background
+	darkStep5 := "#323232"  // Active/Selected UI element background
+	darkStep6 := "#3c3c3c"  // Subtle borders and separators
+	darkStep7 := "#484848"  // UI element border and focus rings
+	darkStep8 := "#606060"  // Hovered UI element border
+	darkStep9 := "#fab283"  // Solid backgrounds (primary orange/gold)
+	darkStep10 := "#ffc09f" // Hovered solid backgrounds
+	darkStep11 := "#808080" // Low-contrast text (more muted)
+	darkStep12 := "#eeeeee" // High-contrast text
+
+	// Dark mode accent colors
+	darkPrimary := darkStep9   // Primary uses step 9 (solid background)
 	darkSecondary := "#5c9cf5" // Secondary blue
 	darkAccent := "#9d7cd8"    // Accent purple
 	darkRed := "#e06c75"       // Error red
@@ -27,15 +36,23 @@ func NewOpenCodeTheme() *OpenCodeTheme {
 	darkGreen := "#7fd88f"     // Success green
 	darkCyan := "#56b6c2"      // Info cyan
 	darkYellow := "#e5c07b"    // Emphasized text
-	darkBorder := "#4b4c5c"    // Border color
 
-	// Light mode colors
-	lightBackground := "#f8f8f8"
-	lightCurrentLine := "#f0f0f0"
-	lightSelection := "#e5e5e6"
-	lightForeground := "#2a2a2a"
-	lightComment := "#8a8a8a"
-	lightPrimary := "#3b7dd8"   // Primary blue
+	// Light mode colors - using a neutral gray scale as base
+	lightStep1 := "#ffffff"  // App background
+	lightStep2 := "#fafafa"  // Subtle background
+	lightStep3 := "#f5f5f5"  // UI element background
+	lightStep4 := "#ebebeb"  // Hovered UI element background
+	lightStep5 := "#e1e1e1"  // Active/Selected UI element background
+	lightStep6 := "#d4d4d4"  // Subtle borders and separators
+	lightStep7 := "#b8b8b8"  // UI element border and focus rings
+	lightStep8 := "#a0a0a0"  // Hovered UI element border
+	lightStep9 := "#3b7dd8"  // Solid backgrounds (primary blue)
+	lightStep10 := "#2968c3" // Hovered solid backgrounds
+	lightStep11 := "#8a8a8a" // Low-contrast text (more muted)
+	lightStep12 := "#1a1a1a" // High-contrast text
+
+	// Light mode accent colors
+	lightPrimary := lightStep9  // Primary uses step 9 (solid background)
 	lightSecondary := "#7b5bb6" // Secondary purple
 	lightAccent := "#d68c27"    // Accent orange/gold
 	lightRed := "#d1383d"       // Error red
@@ -43,7 +60,14 @@ func NewOpenCodeTheme() *OpenCodeTheme {
 	lightGreen := "#3d9a57"     // Success green
 	lightCyan := "#318795"      // Info cyan
 	lightYellow := "#b0851f"    // Emphasized text
-	lightBorder := "#d3d3d3"    // Border color
+
+	// Unused variables to avoid compiler errors (these could be used for hover states)
+	_ = darkStep4
+	_ = darkStep5
+	_ = darkStep10
+	_ = lightStep4
+	_ = lightStep5
+	_ = lightStep10
 
 	theme := &OpenCodeTheme{}
 
@@ -81,44 +105,40 @@ func NewOpenCodeTheme() *OpenCodeTheme {
 
 	// Text colors
 	theme.TextColor = lipgloss.AdaptiveColor{
-		Dark:  darkForeground,
-		Light: lightForeground,
+		Dark:  darkStep12,
+		Light: lightStep12,
 	}
 	theme.TextMutedColor = lipgloss.AdaptiveColor{
-		Dark:  darkComment,
-		Light: lightComment,
-	}
-	theme.TextEmphasizedColor = lipgloss.AdaptiveColor{
-		Dark:  darkYellow,
-		Light: lightYellow,
+		Dark:  darkStep11,
+		Light: lightStep11,
 	}
 
 	// Background colors
 	theme.BackgroundColor = lipgloss.AdaptiveColor{
-		Dark:  darkBackground,
-		Light: lightBackground,
+		Dark:  darkStep1,
+		Light: lightStep1,
 	}
-	theme.BackgroundSecondaryColor = lipgloss.AdaptiveColor{
-		Dark:  darkCurrentLine,
-		Light: lightCurrentLine,
+	theme.BackgroundSubtleColor = lipgloss.AdaptiveColor{
+		Dark:  darkStep2,
+		Light: lightStep2,
 	}
-	theme.BackgroundDarkerColor = lipgloss.AdaptiveColor{
-		Dark:  "#121212", // Slightly darker than background
-		Light: "#ffffff", // Slightly lighter than background
+	theme.BackgroundElementColor = lipgloss.AdaptiveColor{
+		Dark:  darkStep3,
+		Light: lightStep3,
 	}
 
 	// Border colors
-	theme.BorderNormalColor = lipgloss.AdaptiveColor{
-		Dark:  darkBorder,
-		Light: lightBorder,
+	theme.BorderColor = lipgloss.AdaptiveColor{
+		Dark:  darkStep7,
+		Light: lightStep7,
 	}
-	theme.BorderFocusedColor = lipgloss.AdaptiveColor{
-		Dark:  darkPrimary,
-		Light: lightPrimary,
+	theme.BorderActiveColor = lipgloss.AdaptiveColor{
+		Dark:  darkStep8,
+		Light: lightStep8,
 	}
-	theme.BorderDimColor = lipgloss.AdaptiveColor{
-		Dark:  darkSelection,
-		Light: lightSelection,
+	theme.BorderSubtleColor = lipgloss.AdaptiveColor{
+		Dark:  darkStep6,
+		Light: lightStep6,
 	}
 
 	// Diff view colors
@@ -155,12 +175,12 @@ func NewOpenCodeTheme() *OpenCodeTheme {
 		Light: "#FFEBEE",
 	}
 	theme.DiffContextBgColor = lipgloss.AdaptiveColor{
-		Dark:  darkBackground,
-		Light: lightBackground,
+		Dark:  darkStep2,
+		Light: lightStep2,
 	}
 	theme.DiffLineNumberColor = lipgloss.AdaptiveColor{
-		Dark:  "#888888",
-		Light: "#9E9E9E",
+		Dark:  darkStep3,
+		Light: lightStep3,
 	}
 	theme.DiffAddedLineNumberBgColor = lipgloss.AdaptiveColor{
 		Dark:  "#293229",
@@ -173,8 +193,8 @@ func NewOpenCodeTheme() *OpenCodeTheme {
 
 	// Markdown colors
 	theme.MarkdownTextColor = lipgloss.AdaptiveColor{
-		Dark:  darkForeground,
-		Light: lightForeground,
+		Dark:  darkStep12,
+		Light: lightStep12,
 	}
 	theme.MarkdownHeadingColor = lipgloss.AdaptiveColor{
 		Dark:  darkSecondary,
@@ -205,8 +225,8 @@ func NewOpenCodeTheme() *OpenCodeTheme {
 		Light: lightAccent,
 	}
 	theme.MarkdownHorizontalRuleColor = lipgloss.AdaptiveColor{
-		Dark:  darkComment,
-		Light: lightComment,
+		Dark:  darkStep11,
+		Light: lightStep11,
 	}
 	theme.MarkdownListItemColor = lipgloss.AdaptiveColor{
 		Dark:  darkPrimary,
@@ -225,14 +245,14 @@ func NewOpenCodeTheme() *OpenCodeTheme {
 		Light: lightCyan,
 	}
 	theme.MarkdownCodeBlockColor = lipgloss.AdaptiveColor{
-		Dark:  darkForeground,
-		Light: lightForeground,
+		Dark:  darkStep12,
+		Light: lightStep12,
 	}
 
 	// Syntax highlighting colors
 	theme.SyntaxCommentColor = lipgloss.AdaptiveColor{
-		Dark:  darkComment,
-		Light: lightComment,
+		Dark:  darkStep11,
+		Light: lightStep11,
 	}
 	theme.SyntaxKeywordColor = lipgloss.AdaptiveColor{
 		Dark:  darkSecondary,
@@ -263,8 +283,8 @@ func NewOpenCodeTheme() *OpenCodeTheme {
 		Light: lightCyan,
 	}
 	theme.SyntaxPunctuationColor = lipgloss.AdaptiveColor{
-		Dark:  darkForeground,
-		Light: lightForeground,
+		Dark:  darkStep12,
+		Light: lightStep12,
 	}
 
 	return theme

@@ -17,18 +17,15 @@ import (
 // https://github.com/charmbracelet/lipgloss/pull/102
 // as well as the lipgloss library, with some modification for what I needed.
 
-// Split a string into lines, additionally returning the size of the widest
-// line.
+// Split a string into lines, additionally returning the size of the widest line.
 func getLines(s string) (lines []string, widest int) {
 	lines = strings.Split(s, "\n")
-
 	for _, l := range lines {
 		w := ansi.PrintableRuneWidth(l)
 		if widest < w {
 			widest = w
 		}
 	}
-
 	return lines, widest
 }
 
@@ -49,7 +46,7 @@ func PlaceOverlay(
 
 		var shadowbg string = ""
 		shadowchar := lipgloss.NewStyle().
-			Background(t.BackgroundDarker()).
+			Background(t.BackgroundElement()).
 			Foreground(t.Background()).
 			Render("░")
 		bgchar := baseStyle.Render(" ")

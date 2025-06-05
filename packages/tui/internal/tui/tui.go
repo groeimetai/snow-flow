@@ -158,7 +158,7 @@ func (a appModel) Init() tea.Cmd {
 
 	// Check if we should show the init dialog
 	cmds = append(cmds, func() tea.Msg {
-		shouldShow := a.app.Info.Git && a.app.Info.Time.Initialized == nil
+		shouldShow := app.Info.Git && app.Info.Time.Initialized == nil
 		return dialog.ShowInitDialogMsg{Show: shouldShow}
 	})
 
@@ -211,6 +211,27 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		msg.Height -= 2 // Make space for the status bar
 		a.width, a.height = msg.Width, msg.Height
+
+		size := layout.LayoutSizeNormal
+		if a.width < 40 {
+			size = layout.LayoutSizeSmall
+		} else if a.width < 80 {
+			size = layout.LayoutSizeNormal
+		} else {
+			size = layout.LayoutSizeLarge
+		}
+
+		// TODO: move away from global state
+		layout.Current = &layout.LayoutInfo{
+			Size: size,
+			Viewport: layout.Dimensions{
+				Width:  a.width,
+				Height: a.height,
+			},
+			Container: layout.Dimensions{
+				Width: min(a.width, 80),
+			},
+		}
 
 		s, _ := a.status.Update(msg)
 		a.status = s.(core.StatusCmp)
@@ -711,7 +732,6 @@ func (a appModel) View() string {
 	components := []string{
 		a.pages[a.currentPage].View(),
 	}
-
 	components = append(components, a.status.View())
 
 	appView := lipgloss.JoinVertical(lipgloss.Top, components...)
@@ -943,7 +963,7 @@ func NewModel(app *app.App) tea.Model {
 	})
 
 	// Load custom commands
-	customCommands, err := dialog.LoadCustomCommands(app)
+	customCommands, err := dialog.LoadCustomCommands()
 	if err != nil {
 		slog.Warn("Failed to load custom commands", "error", err)
 	} else {

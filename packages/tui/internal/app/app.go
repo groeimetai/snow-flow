@@ -21,7 +21,6 @@ import (
 type App struct {
 	ConfigPath string
 	Config     *config.Config
-	Info       *client.AppInfo
 	Client     *client.ClientWithResponses
 	Provider   *client.ProviderInfo
 	Model      *client.ProviderModel
@@ -34,7 +33,14 @@ type App struct {
 	completionDialogOpen bool
 }
 
-func New(ctx context.Context, httpClient *client.ClientWithResponses) (*App, error) {
+type AppInfo struct {
+	client.AppInfo
+	Version string
+}
+
+var Info AppInfo
+
+func New(ctx context.Context, version string, httpClient *client.ClientWithResponses) (*App, error) {
 	err := status.InitService()
 	if err != nil {
 		slog.Error("Failed to initialize status service", "error", err)
@@ -43,6 +49,12 @@ func New(ctx context.Context, httpClient *client.ClientWithResponses) (*App, err
 
 	appInfoResponse, _ := httpClient.PostAppInfoWithResponse(ctx)
 	appInfo := appInfoResponse.JSON200
+	Info = AppInfo{Version: version}
+	Info.Git = appInfo.Git
+	Info.Path = appInfo.Path
+	Info.Time = appInfo.Time
+	Info.User = appInfo.User
+
 	providersResponse, err := httpClient.PostProviderListWithResponse(ctx)
 	if err != nil {
 		return nil, err
@@ -70,7 +82,7 @@ func New(ctx context.Context, httpClient *client.ClientWithResponses) (*App, err
 		return nil, fmt.Errorf("no providers found")
 	}
 
-	appConfigPath := filepath.Join(appInfo.Path.Config, "tui.toml")
+	appConfigPath := filepath.Join(Info.Path.Config, "tui.toml")
 	appConfig, err := config.LoadConfig(appConfigPath)
 	if err != nil {
 		slog.Info("No TUI config found, using default values", "error", err)
@@ -95,7 +107,6 @@ func New(ctx context.Context, httpClient *client.ClientWithResponses) (*App, err
 	app := &App{
 		ConfigPath: appConfigPath,
 		Config:     appConfig,
-		Info:       appInfo,
 		Client:     httpClient,
 		Provider:   currentProvider,
 		Model:      currentModel,

@@ -5,8 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sync"
-
-	"github.com/sst/opencode/pkg/client"
 )
 
 // MessageCache caches rendered messages to avoid re-rendering
@@ -23,51 +21,27 @@ func NewMessageCache() *MessageCache {
 }
 
 // generateKey creates a unique key for a message based on its content and rendering parameters
-func (c *MessageCache) generateKey(msg client.MessageInfo, width int, showToolMessages bool, appInfo client.AppInfo) string {
-	// Create a hash of the message content and rendering parameters
+func (c *MessageCache) GenerateKey(params ...any) string {
 	h := sha256.New()
-
-	// Include message ID and role
-	h.Write(fmt.Appendf(nil, "%s:%s", msg.Id, msg.Role))
-
-	// Include timestamp
-	h.Write(fmt.Appendf(nil, ":%f", msg.Metadata.Time.Created))
-
-	// Include width and showToolMessages flag
-	h.Write(fmt.Appendf(nil, ":%d:%t", width, showToolMessages))
-
-	// Include app path for relative path calculations
-	h.Write([]byte(appInfo.Path.Root))
-
-	// Include message parts
-	for _, part := range msg.Parts {
-		h.Write(fmt.Appendf(nil, ":%v", part))
+	for _, param := range params {
+		h.Write(fmt.Appendf(nil, ":%v", param))
 	}
-
-	// Include tool metadata if present
-	for toolID, metadata := range msg.Metadata.Tool {
-		h.Write(fmt.Appendf(nil, ":%s:%v", toolID, metadata))
-	}
-
 	return hex.EncodeToString(h.Sum(nil))
 }
 
 // Get retrieves a cached rendered message
-func (c *MessageCache) Get(msg client.MessageInfo, width int, showToolMessages bool, appInfo client.AppInfo) (string, bool) {
+func (c *MessageCache) Get(key string) (string, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	key := c.generateKey(msg, width, showToolMessages, appInfo)
 	content, exists := c.cache[key]
 	return content, exists
 }
 
 // Set stores a rendered message in the cache
-func (c *MessageCache) Set(msg client.MessageInfo, width int, showToolMessages bool, appInfo client.AppInfo, content string) {
+func (c *MessageCache) Set(key string, content string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	key := c.generateKey(msg, width, showToolMessages, appInfo)
 	c.cache[key] = content
 }
 

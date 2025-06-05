@@ -86,35 +86,31 @@ func NewDraculaTheme() *DraculaTheme {
 		Dark:  darkComment,
 		Light: lightComment,
 	}
-	theme.TextEmphasizedColor = lipgloss.AdaptiveColor{
-		Dark:  darkYellow,
-		Light: lightYellow,
-	}
 
 	// Background colors
-	theme.BackgroundColor = lipgloss.AdaptiveColor{
+	theme.BackgroundElementColor = lipgloss.AdaptiveColor{
 		Dark:  darkBackground,
 		Light: lightBackground,
 	}
-	theme.BackgroundSecondaryColor = lipgloss.AdaptiveColor{
+	theme.BackgroundSubtleColor = lipgloss.AdaptiveColor{
 		Dark:  darkCurrentLine,
 		Light: lightCurrentLine,
 	}
-	theme.BackgroundDarkerColor = lipgloss.AdaptiveColor{
+	theme.BackgroundColor = lipgloss.AdaptiveColor{
 		Dark:  "#21222c", // Slightly darker than background
 		Light: "#ffffff", // Slightly lighter than background
 	}
 
 	// Border colors
-	theme.BorderNormalColor = lipgloss.AdaptiveColor{
+	theme.BorderColor = lipgloss.AdaptiveColor{
 		Dark:  darkBorder,
 		Light: lightBorder,
 	}
-	theme.BorderFocusedColor = lipgloss.AdaptiveColor{
+	theme.BorderActiveColor = lipgloss.AdaptiveColor{
 		Dark:  darkPurple,
 		Light: lightPurple,
 	}
-	theme.BorderDimColor = lipgloss.AdaptiveColor{
+	theme.BorderSubtleColor = lipgloss.AdaptiveColor{
 		Dark:  darkSelection,
 		Light: lightSelection,
 	}
@@ -133,8 +129,8 @@ func NewDraculaTheme() *DraculaTheme {
 		Light: lightComment,
 	}
 	theme.DiffHunkHeaderColor = lipgloss.AdaptiveColor{
-		Dark:  darkPurple,
-		Light: lightPurple,
+		Dark:  darkCurrentLine,
+		Light: lightCurrentLine,
 	}
 	theme.DiffHighlightAddedColor = lipgloss.AdaptiveColor{
 		Dark:  "#50fa7b",

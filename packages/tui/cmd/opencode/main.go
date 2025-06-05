@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -51,7 +52,11 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	app_, err := app.New(ctx, httpClient)
+	version := Version
+	if version != "dev" && !strings.HasPrefix(Version, "v") {
+		version = "v" + Version
+	}
+	app_, err := app.New(ctx, version, httpClient)
 	if err != nil {
 		panic(err)
 	}

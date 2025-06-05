@@ -7,6 +7,35 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+var Current *LayoutInfo
+
+func init() {
+	Current = &LayoutInfo{
+		Size:      LayoutSizeNormal,
+		Viewport:  Dimensions{Width: 80, Height: 25},
+		Container: Dimensions{Width: 80, Height: 25},
+	}
+}
+
+type LayoutSize string
+
+const (
+	LayoutSizeSmall  LayoutSize = "small"
+	LayoutSizeNormal LayoutSize = "normal"
+	LayoutSizeLarge  LayoutSize = "large"
+)
+
+type Dimensions struct {
+	Width  int
+	Height int
+}
+
+type LayoutInfo struct {
+	Size      LayoutSize
+	Viewport  Dimensions
+	Container Dimensions
+}
+
 type Focusable interface {
 	Focus() tea.Cmd
 	Blur() tea.Cmd

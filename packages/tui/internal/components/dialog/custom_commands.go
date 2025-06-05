@@ -22,7 +22,7 @@ const (
 var namedArgPattern = regexp.MustCompile(`\$([A-Z][A-Z0-9_]*)`)
 
 // LoadCustomCommands loads custom commands from both XDG_CONFIG_HOME and project data directory
-func LoadCustomCommands(app *app.App) ([]Command, error) {
+func LoadCustomCommands() ([]Command, error) {
 	var commands []Command
 
 	homeCommandsDir := filepath.Join(app.Info.Path.Config, "commands")

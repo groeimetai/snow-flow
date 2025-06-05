@@ -114,35 +114,31 @@ func NewGruvboxTheme() *GruvboxTheme {
 		Dark:  gruvboxDarkFg4,
 		Light: gruvboxLightFg4,
 	}
-	theme.TextEmphasizedColor = lipgloss.AdaptiveColor{
-		Dark:  gruvboxDarkYellowBright,
-		Light: gruvboxLightYellowBright,
-	}
 
 	// Background colors
 	theme.BackgroundColor = lipgloss.AdaptiveColor{
 		Dark:  gruvboxDarkBg0,
 		Light: gruvboxLightBg0,
 	}
-	theme.BackgroundSecondaryColor = lipgloss.AdaptiveColor{
+	theme.BackgroundSubtleColor = lipgloss.AdaptiveColor{
 		Dark:  gruvboxDarkBg1,
 		Light: gruvboxLightBg1,
 	}
-	theme.BackgroundDarkerColor = lipgloss.AdaptiveColor{
+	theme.BackgroundElementColor = lipgloss.AdaptiveColor{
 		Dark:  gruvboxDarkBg0Soft,
 		Light: gruvboxLightBg0Soft,
 	}
 
 	// Border colors
-	theme.BorderNormalColor = lipgloss.AdaptiveColor{
+	theme.BorderColor = lipgloss.AdaptiveColor{
 		Dark:  gruvboxDarkBg2,
 		Light: gruvboxLightBg2,
 	}
-	theme.BorderFocusedColor = lipgloss.AdaptiveColor{
+	theme.BorderActiveColor = lipgloss.AdaptiveColor{
 		Dark:  gruvboxDarkBlueBright,
 		Light: gruvboxLightBlueBright,
 	}
-	theme.BorderDimColor = lipgloss.AdaptiveColor{
+	theme.BorderSubtleColor = lipgloss.AdaptiveColor{
 		Dark:  gruvboxDarkBg1,
 		Light: gruvboxLightBg1,
 	}

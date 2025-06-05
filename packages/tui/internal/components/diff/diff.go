@@ -404,10 +404,10 @@ func SyntaxHighlight(w io.Writer, source, fileName, formatter string, bg lipglos
 	<entry type="TextWhitespace" style="%s"/>
 </style>
 `,
-		getColor(t.Background()), // Background
-		getColor(t.Text()),       // Text
-		getColor(t.Text()),       // Other
-		getColor(t.Error()),      // Error
+		getColor(t.BackgroundSubtle()), // Background
+		getColor(t.Text()),             // Text
+		getColor(t.Text()),             // Other
+		getColor(t.Error()),            // Error
 
 		getColor(t.SyntaxKeyword()), // Keyword
 		getColor(t.SyntaxKeyword()), // KeywordConstant
@@ -531,8 +531,7 @@ func createStyles(t theme.Theme) (removedLineStyle, addedLineStyle, contextLineS
 	removedLineStyle = lipgloss.NewStyle().Background(t.DiffRemovedBg())
 	addedLineStyle = lipgloss.NewStyle().Background(t.DiffAddedBg())
 	contextLineStyle = lipgloss.NewStyle().Background(t.DiffContextBg())
-	lineNumberStyle = lipgloss.NewStyle().Foreground(t.DiffLineNumber())
-
+	lineNumberStyle = lipgloss.NewStyle().Background(t.DiffLineNumber()).Foreground(t.TextMuted())
 	return
 }
 
@@ -581,7 +580,7 @@ func applyHighlighting(content string, segments []Segment, segmentType LineType,
 
 	// Get the appropriate color based on terminal background
 	bgColor := lipgloss.Color(getColor(highlightBg))
-	fgColor := lipgloss.Color(getColor(theme.CurrentTheme().Background()))
+	fgColor := lipgloss.Color(getColor(theme.CurrentTheme().BackgroundSubtle()))
 
 	for i := 0; i < len(content); {
 		// Check if we're at an ANSI sequence
@@ -794,24 +793,24 @@ func RenderSideBySideHunk(fileName string, h Hunk, opts ...SideBySideOption) str
 }
 
 // FormatDiff creates a side-by-side formatted view of a diff
-func FormatDiff(diffText string, opts ...SideBySideOption) (string, error) {
-	t := theme.CurrentTheme()
+func FormatDiff(filename string, diffText string, opts ...SideBySideOption) (string, error) {
+	// t := theme.CurrentTheme()
 	diffResult, err := ParseUnifiedDiff(diffText)
 	if err != nil {
 		return "", err
 	}
 
 	var sb strings.Builder
-	config := NewSideBySideConfig(opts...)
+	// config := NewSideBySideConfig(opts...)
 	for _, h := range diffResult.Hunks {
-		sb.WriteString(
-			lipgloss.NewStyle().
-				Background(t.DiffHunkHeader()).
-				Foreground(t.Background()).
-				Width(config.TotalWidth).
-				Render(h.Header) + "\n",
-		)
-		sb.WriteString(RenderSideBySideHunk(diffResult.OldFile, h, opts...))
+		// sb.WriteString(
+		// 	lipgloss.NewStyle().
+		// 		Background(t.DiffHunkHeader()).
+		// 		Foreground(t.Background()).
+		// 		Width(config.TotalWidth).
+		// 		Render(h.Header) + "\n",
+		// )
+		sb.WriteString(RenderSideBySideHunk(filename, h, opts...))
 	}
 
 	return sb.String(), nil

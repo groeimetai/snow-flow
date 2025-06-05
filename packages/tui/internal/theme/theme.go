@@ -11,31 +11,30 @@ import (
 // All colors must be defined as lipgloss.AdaptiveColor to support
 // both light and dark terminal backgrounds.
 type Theme interface {
-	// Base colors
-	Primary() lipgloss.AdaptiveColor
+	// Background colors
+	Background() lipgloss.AdaptiveColor        // Radix 1
+	BackgroundSubtle() lipgloss.AdaptiveColor  // Radix 2
+	BackgroundElement() lipgloss.AdaptiveColor // Radix 3
+
+	// Border colors
+	BorderSubtle() lipgloss.AdaptiveColor // Radix 6
+	Border() lipgloss.AdaptiveColor       // Radix 7
+	BorderActive() lipgloss.AdaptiveColor // Radix 8
+
+	// Brand colors
+	Primary() lipgloss.AdaptiveColor // Radix 9
 	Secondary() lipgloss.AdaptiveColor
 	Accent() lipgloss.AdaptiveColor
+
+	// Text colors
+	TextMuted() lipgloss.AdaptiveColor // Radix 11
+	Text() lipgloss.AdaptiveColor      // Radix 12
 
 	// Status colors
 	Error() lipgloss.AdaptiveColor
 	Warning() lipgloss.AdaptiveColor
 	Success() lipgloss.AdaptiveColor
 	Info() lipgloss.AdaptiveColor
-
-	// Text colors
-	Text() lipgloss.AdaptiveColor
-	TextMuted() lipgloss.AdaptiveColor
-	TextEmphasized() lipgloss.AdaptiveColor
-
-	// Background colors
-	Background() lipgloss.AdaptiveColor
-	BackgroundSecondary() lipgloss.AdaptiveColor
-	BackgroundDarker() lipgloss.AdaptiveColor
-
-	// Border colors
-	BorderNormal() lipgloss.AdaptiveColor
-	BorderFocused() lipgloss.AdaptiveColor
-	BorderDim() lipgloss.AdaptiveColor
 
 	// Diff view colors
 	DiffAdded() lipgloss.AdaptiveColor
@@ -82,31 +81,30 @@ type Theme interface {
 // BaseTheme provides a default implementation of the Theme interface
 // that can be embedded in concrete theme implementations.
 type BaseTheme struct {
-	// Base colors
+	// Background colors
+	BackgroundColor        lipgloss.AdaptiveColor
+	BackgroundSubtleColor  lipgloss.AdaptiveColor
+	BackgroundElementColor lipgloss.AdaptiveColor
+
+	// Border colors
+	BorderSubtleColor lipgloss.AdaptiveColor
+	BorderColor       lipgloss.AdaptiveColor
+	BorderActiveColor lipgloss.AdaptiveColor
+
+	// Brand colors
 	PrimaryColor   lipgloss.AdaptiveColor
 	SecondaryColor lipgloss.AdaptiveColor
 	AccentColor    lipgloss.AdaptiveColor
+
+	// Text colors
+	TextMutedColor lipgloss.AdaptiveColor
+	TextColor      lipgloss.AdaptiveColor
 
 	// Status colors
 	ErrorColor   lipgloss.AdaptiveColor
 	WarningColor lipgloss.AdaptiveColor
 	SuccessColor lipgloss.AdaptiveColor
 	InfoColor    lipgloss.AdaptiveColor
-
-	// Text colors
-	TextColor           lipgloss.AdaptiveColor
-	TextMutedColor      lipgloss.AdaptiveColor
-	TextEmphasizedColor lipgloss.AdaptiveColor
-
-	// Background colors
-	BackgroundColor          lipgloss.AdaptiveColor
-	BackgroundSecondaryColor lipgloss.AdaptiveColor
-	BackgroundDarkerColor    lipgloss.AdaptiveColor
-
-	// Border colors
-	BorderNormalColor  lipgloss.AdaptiveColor
-	BorderFocusedColor lipgloss.AdaptiveColor
-	BorderDimColor     lipgloss.AdaptiveColor
 
 	// Diff view colors
 	DiffAddedColor               lipgloss.AdaptiveColor
@@ -160,17 +158,16 @@ func (t *BaseTheme) Warning() lipgloss.AdaptiveColor { return t.WarningColor }
 func (t *BaseTheme) Success() lipgloss.AdaptiveColor { return t.SuccessColor }
 func (t *BaseTheme) Info() lipgloss.AdaptiveColor    { return t.InfoColor }
 
-func (t *BaseTheme) Text() lipgloss.AdaptiveColor           { return t.TextColor }
-func (t *BaseTheme) TextMuted() lipgloss.AdaptiveColor      { return t.TextMutedColor }
-func (t *BaseTheme) TextEmphasized() lipgloss.AdaptiveColor { return t.TextEmphasizedColor }
+func (t *BaseTheme) Text() lipgloss.AdaptiveColor      { return t.TextColor }
+func (t *BaseTheme) TextMuted() lipgloss.AdaptiveColor { return t.TextMutedColor }
 
-func (t *BaseTheme) Background() lipgloss.AdaptiveColor          { return t.BackgroundColor }
-func (t *BaseTheme) BackgroundSecondary() lipgloss.AdaptiveColor { return t.BackgroundSecondaryColor }
-func (t *BaseTheme) BackgroundDarker() lipgloss.AdaptiveColor    { return t.BackgroundDarkerColor }
+func (t *BaseTheme) Background() lipgloss.AdaptiveColor        { return t.BackgroundColor }
+func (t *BaseTheme) BackgroundSubtle() lipgloss.AdaptiveColor  { return t.BackgroundSubtleColor }
+func (t *BaseTheme) BackgroundElement() lipgloss.AdaptiveColor { return t.BackgroundElementColor }
 
-func (t *BaseTheme) BorderNormal() lipgloss.AdaptiveColor  { return t.BorderNormalColor }
-func (t *BaseTheme) BorderFocused() lipgloss.AdaptiveColor { return t.BorderFocusedColor }
-func (t *BaseTheme) BorderDim() lipgloss.AdaptiveColor     { return t.BorderDimColor }
+func (t *BaseTheme) Border() lipgloss.AdaptiveColor       { return t.BorderColor }
+func (t *BaseTheme) BorderActive() lipgloss.AdaptiveColor { return t.BorderActiveColor }
+func (t *BaseTheme) BorderSubtle() lipgloss.AdaptiveColor { return t.BorderSubtleColor }
 
 func (t *BaseTheme) DiffAdded() lipgloss.AdaptiveColor            { return t.DiffAddedColor }
 func (t *BaseTheme) DiffRemoved() lipgloss.AdaptiveColor          { return t.DiffRemovedColor }
