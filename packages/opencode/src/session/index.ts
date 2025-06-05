@@ -239,17 +239,18 @@ export namespace Session {
           },
           {
             type: "text",
-            text: `Here is some useful information about the environment you are running in:
-<env>
-Working directory: ${app.path.cwd}
-Is directory a git repo: ${app.git ? "yes" : "no"}
-Platform: ${process.platform}
-Today's date: ${new Date().toISOString()}
-</env>
-<project>
-${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.sessionID }).then((x) => x.output) : ""}
-</project>
-            `,
+            text: [
+              `Here is some useful information about the environment you are running in:`,
+              `<env>`,
+              `Working directory: ${app.path.cwd}`,
+              `Is directory a git repo: ${app.git ? "yes" : "no"}`,
+              `Platform: ${process.platform}`,
+              `Today's date: ${new Date().toISOString()}`,
+              `</env>`,
+              `<project>`,
+              `${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.sessionID }).then((x) => x.output) : ""}`,
+              `</project>`,
+            ].join("\n"),
           },
         ],
         metadata: {
