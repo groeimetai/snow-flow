@@ -25,6 +25,7 @@ type messagesCmp struct {
 	rendering        bool
 	attachments      viewport.Model
 	showToolMessages bool
+	cache            *MessageCache
 }
 type renderFinishedMsg struct{}
 type ToggleToolMessagesMsg struct{}
@@ -63,6 +64,7 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case dialog.ThemeChangedMsg:
+		m.cache.Clear()
 		m.renderView()
 		return m, nil
 	case ToggleToolMessagesMsg:
@@ -70,9 +72,13 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.renderView()
 		return m, nil
 	case state.SessionSelectedMsg:
+		// Clear cache when switching sessions
+		m.cache.Clear()
 		cmd := m.Reload()
 		return m, cmd
 	case state.SessionClearedMsg:
+		// Clear cache when session is cleared
+		m.cache.Clear()
 		cmd := m.Reload()
 		return m, cmd
 	case tea.KeyMsg:
@@ -103,12 +109,23 @@ func (m *messagesCmp) renderView() {
 
 	messages := make([]string, 0)
 	for _, msg := range m.app.Messages {
+		var content string
+		var cached bool
+
 		switch msg.Role {
 		case client.User:
-			content := renderUserMessage(m.app.Info.User, msg, m.width)
+			content, cached = m.cache.Get(msg, m.width, m.showToolMessages, *m.app.Info)
+			if !cached {
+				content = renderUserMessage(m.app.Info.User, msg, m.width)
+				m.cache.Set(msg, m.width, m.showToolMessages, *m.app.Info, content)
+			}
 			messages = append(messages, content+"\n")
 		case client.Assistant:
-			content := renderAssistantMessage(msg, m.width, m.showToolMessages, *m.app.Info)
+			content, cached = m.cache.Get(msg, m.width, m.showToolMessages, *m.app.Info)
+			if !cached {
+				content = renderAssistantMessage(msg, m.width, m.showToolMessages, *m.app.Info)
+				m.cache.Set(msg, m.width, m.showToolMessages, *m.app.Info, content)
+			}
 			messages = append(messages, content+"\n")
 		}
 	}
@@ -287,6 +304,10 @@ func (m *messagesCmp) SetSize(width, height int) tea.Cmd {
 	if m.width == width && m.height == height {
 		return nil
 	}
+	// Clear cache on resize since width affects rendering
+	if m.width != width {
+		m.cache.Clear()
+	}
 	m.width = width
 	m.height = height
 	m.viewport.Width = width
@@ -338,5 +359,6 @@ func NewMessagesCmp(app *app.App) tea.Model {
 		spinner:          s,
 		attachments:      attachments,
 		showToolMessages: true,
+		cache:            NewMessageCache(),
 	}
 }
