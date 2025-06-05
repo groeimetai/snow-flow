@@ -633,8 +633,8 @@ export namespace Session {
     }
     return {
       cost: new Decimal(0)
-        .add(new Decimal(tokens.input).mul(model.cost.input))
-        .add(new Decimal(tokens.output).mul(model.cost.output))
+        .add(new Decimal(tokens.input).mul(model.cost.input).div(1_000_000))
+        .add(new Decimal(tokens.output).mul(model.cost.output).div(1_000_000))
         .toNumber(),
       tokens,
     }
