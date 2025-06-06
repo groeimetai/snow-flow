@@ -18,6 +18,7 @@ import {
   IconCpuChip,
   IconSparkles,
   IconGlobeAlt,
+  IconDocument,
   IconQueueList,
   IconUserCircle,
   IconChevronDown,
@@ -28,7 +29,6 @@ import {
   IconRectangleStack,
   IconMagnifyingGlass,
   IconWrenchScrewdriver,
-  IconDocumentArrowDown,
   IconDocumentMagnifyingGlass,
 } from "./icons"
 import DiffView from "./DiffView"
@@ -1080,7 +1080,7 @@ export default function Share(props: { api: string }) {
                               <div data-section="part" data-part-type="tool-read">
                                 <div data-section="decoration">
                                   <div title="Read file">
-                                    <IconDocumentArrowDown width={18} height={18} />
+                                    <IconDocument width={18} height={18} />
                                   </div>
                                   <div></div>
                                 </div>
@@ -1372,7 +1372,9 @@ export default function Share(props: { api: string }) {
                             const todos = createMemo(() => sortTodosByStatus(
                               part().toolInvocation.args.todos
                             ))
+                            const starting = todos().every(t => t.status === "pending")
                             const finished = todos().every(t => t.status === "completed")
+
 
                             const duration = createMemo(() =>
                               DateTime.fromMillis(metadata()?.time.end || 0).diff(
@@ -1394,12 +1396,14 @@ export default function Share(props: { api: string }) {
                                 <div data-section="content">
                                   <div data-part-tool-body>
                                     <span data-part-title data-size="sm">
-                                      <Show
-                                        when={finished}
-                                        fallback="Planning&hellip;"
-                                      >
-                                        Completing&hellip;
-                                      </Show>
+                                      <Switch fallback="Updating the plan">
+                                        <Match when={starting}>
+                                          Creating a plan
+                                        </Match>
+                                        <Match when={finished}>
+                                          Completing the plan
+                                        </Match>
+                                      </Switch>
                                     </span>
                                     <Show when={todos().length > 0}>
                                       <ul class={styles.todos}>
