@@ -16,7 +16,7 @@ export const LspDiagnosticTool = Tool.define({
     const normalized = path.isAbsolute(args.path)
       ? args.path
       : path.join(app.path.cwd, args.path)
-    await LSP.file(normalized)
+    await LSP.touchFile(normalized, true)
     const diagnostics = await LSP.diagnostics()
     const file = diagnostics[normalized]
     return {

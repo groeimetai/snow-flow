@@ -18,12 +18,12 @@ export const LspHoverTool = Tool.define({
     const file = path.isAbsolute(args.file)
       ? args.file
       : path.join(app.path.cwd, args.file)
-    await LSP.file(file)
+    await LSP.touchFile(file, true)
     const result = await LSP.hover({
       ...args,
       file,
     })
-    console.log(result)
+
     return {
       metadata: {
         result,

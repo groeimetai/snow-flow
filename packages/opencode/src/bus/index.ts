@@ -78,6 +78,18 @@ export namespace Bus {
     return raw(def.type, callback)
   }
 
+  export function once<Definition extends EventDefinition>(
+    def: Definition,
+    callback: (event: {
+      type: Definition["type"]
+      properties: z.infer<Definition["properties"]>
+    }) => "done" | undefined,
+  ) {
+    const unsub = subscribe(def, (event) => {
+      if (callback(event)) unsub()
+    })
+  }
+
   export function subscribeAll(callback: (event: any) => void) {
     return raw("*", callback)
   }

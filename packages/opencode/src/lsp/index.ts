@@ -23,7 +23,7 @@ export namespace LSP {
     },
   )
 
-  export async function file(input: string) {
+  export async function touchFile(input: string, waitForDiagnostics?: boolean) {
     const extension = path.parse(input).ext
     const s = await state()
     const matches = AUTO.filter((x) => x.extensions.includes(extension))
@@ -40,11 +40,13 @@ export namespace LSP {
       })
       s.clients.set(match.id, client)
     }
-    await run(async (client) => {
-      const wait = client.waitForDiagnostics({ path: input })
-      await client.notify.open({ path: input })
-      return wait
-    })
+    if (waitForDiagnostics) {
+      await run(async (client) => {
+        const wait = client.waitForDiagnostics({ path: input })
+        await client.notify.open({ path: input })
+        return wait
+      })
+    }
   }
 
   export async function diagnostics() {

@@ -90,7 +90,7 @@ export const EditTool = Tool.define({
     FileTimes.read(ctx.sessionID, filepath)
 
     let output = ""
-    await LSP.file(filepath)
+    await LSP.touchFile(filepath, true)
     const diagnostics = await LSP.diagnostics()
     for (const [file, issues] of Object.entries(diagnostics)) {
       if (issues.length === 0) continue

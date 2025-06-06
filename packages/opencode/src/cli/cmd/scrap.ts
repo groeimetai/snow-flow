@@ -12,9 +12,8 @@ export const ScrapCommand = cmd({
     await App.provide(
       { cwd: process.cwd(), version: VERSION, printLogs: true },
       async () => {
-        await LSP.file(args.file)
-        const diagnostics = await LSP.diagnostics()
-        console.log(diagnostics)
+        await LSP.touchFile(args.file, true)
+        await LSP.diagnostics()
       },
     )
   },

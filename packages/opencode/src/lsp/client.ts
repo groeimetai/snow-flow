@@ -117,6 +117,7 @@ export namespace LSPClient {
         textDocument: {
           synchronization: {
             didOpen: true,
+            didChange: true,
           },
           publishDiagnostics: {
             versionSupport: true,
@@ -127,7 +128,9 @@ export namespace LSPClient {
     await connection.sendNotification("initialized", {})
     log.info("initialized")
 
-    const files = new Set<string>()
+    const files: {
+      [path: string]: number
+    } = {}
 
     const result = {
       get clientID() {
@@ -143,8 +146,8 @@ export namespace LSPClient {
             : path.resolve(app.path.cwd, input.path)
           const file = Bun.file(input.path)
           const text = await file.text()
-          const opened = files.has(input.path)
-          if (!opened) {
+          const version = files[input.path]
+          if (version === undefined) {
             log.info("textDocument/didOpen", input)
             diagnostics.delete(input.path)
             const extension = path.extname(input.path)
@@ -153,11 +156,11 @@ export namespace LSPClient {
               textDocument: {
                 uri: `file://` + input.path,
                 languageId,
-                version: Date.now(),
+                version: 0,
                 text,
               },
             })
-            files.add(input.path)
+            files[input.path] = 0
             return
           }
 
@@ -166,7 +169,7 @@ export namespace LSPClient {
           await connection.sendNotification("textDocument/didChange", {
             textDocument: {
               uri: `file://` + input.path,
-              version: Date.now(),
+              version: ++files[input.path],
             },
             contentChanges: [
               {
@@ -213,6 +216,7 @@ export namespace LSPClient {
         log.info("shutting down")
         connection.end()
         connection.dispose()
+        server.kill()
       },
     }
 
