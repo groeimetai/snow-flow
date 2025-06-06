@@ -1,10 +1,10 @@
-// Example: https://claude.ai/oauth/authorize?code=true&client_id=9d1c250a-e61b-44d9-88ed-5944d1962f5e&response_type=code&redirect_uri=https%3A%2F%2Fconsole.anthropic.com%2Foauth%2Fcode%2Fcallback&scope=org%3Acreate_api_key+user%3Aprofile+user%3Ainference&code_challenge=MdFtFgFap23AWDSN0oa3-eaKjQRFE4CaEhXx8M9fHZg&code_challenge_method=S256&state=rKLtaDzm88GSwekyEqdi0wXX-YqIr13tSzYymSzpvfs
-
 import { generatePKCE } from "@openauthjs/openauth/pkce"
 import { Global } from "../global"
 import path from "path"
 
 export namespace AuthAnthropic {
+  const CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
+
   export async function authorize() {
     const pkce = await generatePKCE()
     const url = new URL("https://claude.ai/oauth/authorize", import.meta.url)
@@ -48,14 +48,30 @@ export namespace AuthAnthropic {
     await Bun.write(path.join(Global.Path.data, "anthropic.json"), result)
   }
 
-  export async function load() {
+  export async function access() {
     const file = Bun.file(path.join(Global.Path.data, "anthropic.json"))
     if (!(await file.exists())) return
     const result = await file.json()
-    return {
-      accessToken: result.access_token as string,
-      refreshToken: result.refresh_token as string,
-    }
+    const refresh = result.refresh_token
+    const now = Date.now()
+    const response = await fetch(
+      "https://console.anthropic.com/v1/oauth/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          grant_type: "refresh_token",
+          refresh_token: refresh,
+          client_id: CLIENT_ID,
+        }),
+      },
+    )
+    if (!response.ok) return
+    const json = await response.json()
+    await Bun.write(file, JSON.stringify(json))
+    return json.access_token as string
   }
 
   export class ExchangeFailed extends Error {

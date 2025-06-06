@@ -76,12 +76,12 @@ export namespace Provider {
     (provider: Info) => Promise<Record<string, any> | false>
   > = {
     anthropic: async () => {
-      const result = await AuthAnthropic.load()
-      if (result)
+      const access = await AuthAnthropic.access()
+      if (access)
         return {
           apiKey: "",
           headers: {
-            authorization: `Bearer ${result.accessToken}`,
+            authorization: `Bearer ${access}`,
             "anthropic-beta": "oauth-2025-04-20",
           },
         }
