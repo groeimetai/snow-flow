@@ -13,21 +13,17 @@ import { hideBin } from "yargs/helpers"
 import { RunCommand } from "./cli/cmd/run"
 import { LoginAnthropicCommand } from "./cli/cmd/login-anthropic"
 import { GenerateCommand } from "./cli/cmd/generate"
-
-declare global {
-  const OPENCODE_VERSION: string
-}
-
-const version = typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : "dev"
+import { VERSION } from "./cli/version"
+import { ScrapCommand } from "./cli/cmd/scrap"
 
 yargs(hideBin(process.argv))
   .scriptName("opencode")
-  .version(version)
+  .version(VERSION)
   .command({
     command: "$0",
     describe: "Start OpenCode TUI",
     handler: async () => {
-      await App.provide({ cwd: process.cwd(), version }, async () => {
+      await App.provide({ cwd: process.cwd(), version: VERSION }, async () => {
         await Share.init()
         const server = Server.listen()
 
@@ -66,6 +62,7 @@ yargs(hideBin(process.argv))
   })
   .command(RunCommand)
   .command(GenerateCommand)
+  .command(ScrapCommand)
   .command({
     command: "login",
     describe: "generate credentials for various providers",

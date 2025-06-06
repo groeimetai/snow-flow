@@ -36,6 +36,7 @@ export namespace LSP {
       const client = await LSPClient.create({
         cmd: match.command,
         serverID: match.id,
+        initialization: match.initialization,
       })
       s.clients.set(match.id, client)
     }
@@ -87,6 +88,7 @@ export namespace LSP {
   const AUTO: {
     id: string
     command: string[]
+    initialization?: any
     extensions: string[]
     install?: () => Promise<void>
   }[] = [
@@ -105,10 +107,15 @@ export namespace LSP {
         ".mtsx",
         ".ctsx",
       ],
+      initialization: {
+        tsserver: {
+          path: require.resolve("typescript/lib/tsserver.js"),
+        },
+      },
     },
     {
       id: "golang",
-      command: ["gopls"],
+      command: ["gopls" /*"-logfile", "gopls.log", "-rpc.trace", "-vv"*/],
       extensions: [".go"],
     },
   ]

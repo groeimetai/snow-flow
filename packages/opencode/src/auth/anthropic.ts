@@ -53,7 +53,6 @@ export namespace AuthAnthropic {
     if (!(await file.exists())) return
     const result = await file.json()
     const refresh = result.refresh_token
-    const now = Date.now()
     const response = await fetch(
       "https://console.anthropic.com/v1/oauth/token",
       {

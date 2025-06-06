@@ -1,12 +1,12 @@
 import type { Argv } from "yargs"
 import { App } from "../../app/app"
-import { version } from "bun"
 import { Bus } from "../../bus"
 import { Provider } from "../../provider/provider"
 import { Session } from "../../session"
 import { Share } from "../../share/share"
 import { Message } from "../../session/message"
 import { UI } from "../ui"
+import { VERSION } from "../version"
 
 export const RunCommand = {
   command: "run [message..]",
@@ -26,15 +26,13 @@ export const RunCommand = {
   },
   handler: async (args: { message: string[]; session?: string }) => {
     const message = args.message.join(" ")
-    await App.provide({ cwd: process.cwd(), version }, async () => {
+    await App.provide({ cwd: process.cwd(), version: "0.0.0" }, async () => {
       await Share.init()
       const session = args.session
         ? await Session.get(args.session)
         : await Session.create()
 
-
-
-      UI.print(UI.Style.TEXT_HIGHLIGHT_BOLD + "◍  OpenCode", version)
+      UI.print(UI.Style.TEXT_HIGHLIGHT_BOLD + "◍  OpenCode", VERSION)
       UI.empty()
       UI.print(UI.Style.TEXT_NORMAL_BOLD + "> ", message)
       UI.empty()

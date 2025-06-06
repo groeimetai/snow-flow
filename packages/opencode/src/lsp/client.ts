@@ -1,4 +1,4 @@
-import { spawn } from "child_process"
+import { Readable, Writable } from "stream"
 import path from "path"
 import {
   createMessageConnection,
@@ -29,19 +29,60 @@ export namespace LSPClient {
     ),
   }
 
-  export async function create(input: { cmd: string[]; serverID: string }) {
-    log.info("starting client", input)
-
+  export async function create(input: {
+    cmd: string[]
+    serverID: string
+    initialization?: any
+  }) {
     const app = App.info()
-    const [command, ...args] = input.cmd
-    const server = spawn(command, args, {
-      stdio: ["pipe", "pipe", "pipe"],
+    log.info("starting client", {
+      ...input,
       cwd: app.path.cwd,
     })
 
+    const server = Bun.spawn({
+      cmd: input.cmd,
+      stdin: "pipe",
+      stdout: "pipe",
+      stderr: "pipe",
+      cwd: app.path.cwd,
+    })
+
+    const stdout = new Readable({
+      read() {},
+      construct(callback) {
+        const reader = server.stdout.getReader()
+        const pump = async () => {
+          try {
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) {
+                this.push(null)
+                break
+              }
+              this.push(Buffer.from(value))
+            }
+          } catch (error) {
+            this.destroy(
+              error instanceof Error ? error : new Error(String(error)),
+            )
+          }
+        }
+        pump()
+        callback()
+      },
+    })
+
+    const stdin = new Writable({
+      write(chunk, _encoding, callback) {
+        server.stdin.write(chunk)
+        callback()
+      },
+    })
+
     const connection = createMessageConnection(
-      new StreamMessageReader(server.stdout),
-      new StreamMessageWriter(server.stdin),
+      new StreamMessageReader(stdout),
+      new StreamMessageWriter(stdin),
     )
 
     const diagnostics = new Map<string, Diagnostic[]>()
@@ -50,71 +91,37 @@ export namespace LSPClient {
       log.info("textDocument/publishDiagnostics", {
         path,
       })
-      const exists = diagnostics.has(path)
       diagnostics.set(path, params.diagnostics)
-      // servers seem to send one blank publishDiagnostics event before the first real one
-      if (!exists && !params.diagnostics.length) return
       Bus.publish(Event.Diagnostics, { path, serverID: input.serverID })
+    })
+    connection.onRequest("workspace/configuration", async () => {
+      return [{}]
     })
     connection.listen()
 
-    await connection.sendRequest("initialize", {
+    const response = await connection.sendRequest("initialize", {
       processId: server.pid,
-      initializationOptions: {
-        workspaceFolders: [
-          {
-            name: "workspace",
-            uri: "file://" + app.path.cwd,
-          },
-        ],
-        tsserver: {
-          path: require.resolve("typescript/lib/tsserver.js"),
+      workspaceFolders: [
+        {
+          name: "workspace",
+          uri: "file://" + app.path.cwd,
         },
+      ],
+      initializationOptions: {
+        ...input.initialization,
       },
       capabilities: {
         workspace: {
           configuration: true,
-          didChangeConfiguration: {
-            dynamicRegistration: true,
-          },
-          didChangeWatchedFiles: {
-            dynamicRegistration: true,
-            relativePatternSupport: true,
-          },
         },
         textDocument: {
           synchronization: {
-            dynamicRegistration: true,
-            didSave: true,
-          },
-          completion: {
-            completionItem: {},
-          },
-          codeLens: {
-            dynamicRegistration: true,
-          },
-          documentSymbol: {},
-          codeAction: {
-            codeActionLiteralSupport: {
-              codeActionKind: {
-                valueSet: [],
-              },
-            },
+            didOpen: true,
           },
           publishDiagnostics: {
             versionSupport: true,
           },
-          semanticTokens: {
-            requests: {
-              range: {},
-              full: {},
-            },
-            tokenTypes: [],
-            tokenModifiers: [],
-            formats: [],
-          },
         },
-        window: {},
       },
     })
     await connection.sendNotification("initialized", {})
@@ -131,6 +138,9 @@ export namespace LSPClient {
       },
       notify: {
         async open(input: { path: string }) {
+          input.path = path.isAbsolute(input.path)
+            ? input.path
+            : path.resolve(app.path.cwd, input.path)
           const file = Bun.file(input.path)
           const text = await file.text()
           const opened = files.has(input.path)
@@ -170,6 +180,9 @@ export namespace LSPClient {
         return diagnostics
       },
       async waitForDiagnostics(input: { path: string }) {
+        input.path = path.isAbsolute(input.path)
+          ? input.path
+          : path.resolve(app.path.cwd, input.path)
         log.info("waiting for diagnostics", input)
         let unsub: () => void
         let timeout: NodeJS.Timeout

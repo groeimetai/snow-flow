@@ -1,7 +1,6 @@
 import { Log } from "../util/log"
 import { z } from "zod"
 import { App } from "../app/app"
-import { Provider } from "../provider/provider"
 import { Filesystem } from "../util/filesystem"
 
 export namespace Config {
