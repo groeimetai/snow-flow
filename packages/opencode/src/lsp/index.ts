@@ -2,6 +2,7 @@ import { App } from "../app/app"
 import { Log } from "../util/log"
 import { LSPClient } from "./client"
 import path from "path"
+import { LSPServer } from "./server"
 
 export namespace LSP {
   const log = Log.create({ service: "lsp" })
@@ -26,18 +27,14 @@ export namespace LSP {
   export async function touchFile(input: string, waitForDiagnostics?: boolean) {
     const extension = path.parse(input).ext
     const s = await state()
-    const matches = AUTO.filter((x) => x.extensions.includes(extension))
+    const matches = LSPServer.All.filter((x) =>
+      x.extensions.includes(extension),
+    )
     for (const match of matches) {
       const existing = s.clients.get(match.id)
       if (existing) continue
-      const [binary] = match.command
-      const bin = Bun.which(binary)
-      if (!bin) continue
-      const client = await LSPClient.create({
-        cmd: match.command,
-        serverID: match.id,
-        initialization: match.initialization,
-      })
+      const client = await LSPClient.create(match)
+      if (!client) continue
       s.clients.set(match.id, client)
     }
     if (waitForDiagnostics) {
@@ -86,41 +83,6 @@ export namespace LSP {
     const tasks = clients.map((x) => input(x))
     return Promise.all(tasks)
   }
-
-  const AUTO: {
-    id: string
-    command: string[]
-    initialization?: any
-    extensions: string[]
-    install?: () => Promise<void>
-  }[] = [
-    {
-      id: "typescript",
-      command: ["bun", "x", "typescript-language-server", "--stdio"],
-      extensions: [
-        ".ts",
-        ".tsx",
-        ".js",
-        ".jsx",
-        ".mjs",
-        ".cjs",
-        ".mts",
-        ".cts",
-        ".mtsx",
-        ".ctsx",
-      ],
-      initialization: {
-        tsserver: {
-          path: require.resolve("typescript/lib/tsserver.js"),
-        },
-      },
-    },
-    {
-      id: "golang",
-      command: ["gopls" /*"-logfile", "gopls.log", "-rpc.trace", "-vv"*/],
-      extensions: [".go"],
-    },
-  ]
 
   export namespace Diagnostic {
     export function pretty(diagnostic: LSPClient.Diagnostic) {

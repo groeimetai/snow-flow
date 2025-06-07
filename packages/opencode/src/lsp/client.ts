@@ -1,4 +1,3 @@
-import { Readable, Writable } from "stream"
 import path from "path"
 import {
   createMessageConnection,
@@ -11,11 +10,12 @@ import { Log } from "../util/log"
 import { LANGUAGE_EXTENSIONS } from "./language"
 import { Bus } from "../bus"
 import z from "zod"
+import type { LSPServer } from "./server"
 
 export namespace LSPClient {
   const log = Log.create({ service: "lsp.client" })
 
-  export type Info = Awaited<ReturnType<typeof create>>
+  export type Info = NonNullable<Awaited<ReturnType<typeof create>>>
 
   export type Diagnostic = VSCodeDiagnostic
 
@@ -29,60 +29,18 @@ export namespace LSPClient {
     ),
   }
 
-  export async function create(input: {
-    cmd: string[]
-    serverID: string
-    initialization?: any
-  }) {
+  export async function create(input: LSPServer.Info) {
     const app = App.info()
     log.info("starting client", {
-      ...input,
-      cwd: app.path.cwd,
+      id: input.id,
     })
 
-    const server = Bun.spawn({
-      cmd: input.cmd,
-      stdin: "pipe",
-      stdout: "pipe",
-      stderr: "pipe",
-      cwd: app.path.cwd,
-    })
-
-    const stdout = new Readable({
-      read() {},
-      construct(callback) {
-        const reader = server.stdout.getReader()
-        const pump = async () => {
-          try {
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) {
-                this.push(null)
-                break
-              }
-              this.push(Buffer.from(value))
-            }
-          } catch (error) {
-            this.destroy(
-              error instanceof Error ? error : new Error(String(error)),
-            )
-          }
-        }
-        pump()
-        callback()
-      },
-    })
-
-    const stdin = new Writable({
-      write(chunk, _encoding, callback) {
-        server.stdin.write(chunk)
-        callback()
-      },
-    })
+    const server = await input.spawn(app)
+    if (!server) return
 
     const connection = createMessageConnection(
-      new StreamMessageReader(stdout),
-      new StreamMessageWriter(stdin),
+      new StreamMessageReader(server.stdout),
+      new StreamMessageWriter(server.stdin),
     )
 
     const diagnostics = new Map<string, Diagnostic[]>()
@@ -92,14 +50,14 @@ export namespace LSPClient {
         path,
       })
       diagnostics.set(path, params.diagnostics)
-      Bus.publish(Event.Diagnostics, { path, serverID: input.serverID })
+      Bus.publish(Event.Diagnostics, { path, serverID: input.id })
     })
     connection.onRequest("workspace/configuration", async () => {
       return [{}]
     })
     connection.listen()
 
-    const response = await connection.sendRequest("initialize", {
+    await connection.sendRequest("initialize", {
       processId: server.pid,
       workspaceFolders: [
         {
@@ -134,7 +92,7 @@ export namespace LSPClient {
 
     const result = {
       get clientID() {
-        return input.serverID
+        return input.id
       },
       get connection() {
         return connection
