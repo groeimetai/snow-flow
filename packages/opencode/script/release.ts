@@ -6,7 +6,7 @@ import pkg from "../package.json"
 
 const dry = process.argv.includes("--dry")
 
-const version = `0.0.0-${Date.now()}`
+const version = `0.0.0-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}`
 
 const GOARCH: Record<string, string> = {
   arm64: "arm64",

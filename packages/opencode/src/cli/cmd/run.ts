@@ -24,85 +24,98 @@ export const RunCommand = {
         type: "string",
       })
   },
-  handler: async (args: { message: string[]; session?: string }) => {
+  handler: async (args: {
+    message: string[]
+    session?: string
+    printLogs?: boolean
+  }) => {
     const message = args.message.join(" ")
-    await App.provide({ cwd: process.cwd(), version: "0.0.0" }, async () => {
-      await Share.init()
-      const session = args.session
-        ? await Session.get(args.session)
-        : await Session.create()
+    await App.provide(
+      {
+        cwd: process.cwd(),
+        version: "0.0.0",
+        printLogs: args.printLogs,
+      },
+      async () => {
+        await Share.init()
+        const session = args.session
+          ? await Session.get(args.session)
+          : await Session.create()
 
-      UI.print(UI.Style.TEXT_HIGHLIGHT_BOLD + "◍  OpenCode", VERSION)
-      UI.empty()
-      UI.print(UI.Style.TEXT_NORMAL_BOLD + "> ", message)
-      UI.empty()
-      UI.print(
-        UI.Style.TEXT_INFO_BOLD +
-          "~  https://dev.opencode.ai/s?id=" +
-          session.id.slice(-8),
-      )
-      UI.empty()
-
-      function printEvent(color: string, type: string, title: string) {
+        UI.print(UI.Style.TEXT_HIGHLIGHT_BOLD + "◍  OpenCode", VERSION)
+        UI.empty()
+        UI.print(UI.Style.TEXT_NORMAL_BOLD + "> ", message)
+        UI.empty()
         UI.print(
-          color + `|`,
-          UI.Style.TEXT_NORMAL + UI.Style.TEXT_DIM + ` ${type.padEnd(7, " ")}`,
-          "",
-          UI.Style.TEXT_NORMAL + title,
+          UI.Style.TEXT_INFO_BOLD +
+            "~  https://dev.opencode.ai/s?id=" +
+            session.id.slice(-8),
         )
-      }
+        UI.empty()
 
-      Bus.subscribe(Message.Event.PartUpdated, async (message) => {
-        const part = message.properties.part
-        if (
-          part.type === "tool-invocation" &&
-          part.toolInvocation.state === "result"
-        ) {
-          if (part.toolInvocation.toolName === "opencode_todowrite") return
-
-          const args = part.toolInvocation.args as any
-          const tool = part.toolInvocation.toolName
-
-          if (tool === "opencode_edit")
-            printEvent(UI.Style.TEXT_SUCCESS_BOLD, "Edit", args.filePath)
-          if (tool === "opencode_bash")
-            printEvent(UI.Style.TEXT_WARNING_BOLD, "Execute", args.command)
-          if (tool === "opencode_read")
-            printEvent(UI.Style.TEXT_INFO_BOLD, "Read", args.filePath)
-          if (tool === "opencode_write")
-            printEvent(UI.Style.TEXT_SUCCESS_BOLD, "Create", args.filePath)
-          if (tool === "opencode_glob")
-            printEvent(
-              UI.Style.TEXT_INFO_BOLD,
-              "Glob",
-              args.pattern + (args.path ? " in " + args.path : ""),
-            )
+        function printEvent(color: string, type: string, title: string) {
+          UI.print(
+            color + `|`,
+            UI.Style.TEXT_NORMAL +
+              UI.Style.TEXT_DIM +
+              ` ${type.padEnd(7, " ")}`,
+            "",
+            UI.Style.TEXT_NORMAL + title,
+          )
         }
 
-        if (part.type === "text") {
-          if (part.text.includes("\n")) {
-            UI.empty()
-            UI.print(part.text)
-            UI.empty()
-            return
+        Bus.subscribe(Message.Event.PartUpdated, async (message) => {
+          const part = message.properties.part
+          if (
+            part.type === "tool-invocation" &&
+            part.toolInvocation.state === "result"
+          ) {
+            if (part.toolInvocation.toolName === "opencode_todowrite") return
+
+            const args = part.toolInvocation.args as any
+            const tool = part.toolInvocation.toolName
+
+            if (tool === "opencode_edit")
+              printEvent(UI.Style.TEXT_SUCCESS_BOLD, "Edit", args.filePath)
+            if (tool === "opencode_bash")
+              printEvent(UI.Style.TEXT_WARNING_BOLD, "Execute", args.command)
+            if (tool === "opencode_read")
+              printEvent(UI.Style.TEXT_INFO_BOLD, "Read", args.filePath)
+            if (tool === "opencode_write")
+              printEvent(UI.Style.TEXT_SUCCESS_BOLD, "Create", args.filePath)
+            if (tool === "opencode_glob")
+              printEvent(
+                UI.Style.TEXT_INFO_BOLD,
+                "Glob",
+                args.pattern + (args.path ? " in " + args.path : ""),
+              )
           }
-          printEvent(UI.Style.TEXT_NORMAL_BOLD, "Text", part.text)
-        }
-      })
 
-      const { providerID, modelID } = await Provider.defaultModel()
-      await Session.chat({
-        sessionID: session.id,
-        providerID,
-        modelID,
-        parts: [
-          {
-            type: "text",
-            text: message,
-          },
-        ],
-      })
-      UI.empty()
-    })
+          if (part.type === "text") {
+            if (part.text.includes("\n")) {
+              UI.empty()
+              UI.print(part.text)
+              UI.empty()
+              return
+            }
+            printEvent(UI.Style.TEXT_NORMAL_BOLD, "Text", part.text)
+          }
+        })
+
+        const { providerID, modelID } = await Provider.defaultModel()
+        await Session.chat({
+          sessionID: session.id,
+          providerID,
+          modelID,
+          parts: [
+            {
+              type: "text",
+              text: message,
+            },
+          ],
+        })
+        UI.empty()
+      },
+    )
   },
 }
