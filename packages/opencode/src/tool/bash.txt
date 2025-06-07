@@ -128,7 +128,7 @@ gh pr create --title "the pr title" --body "$(cat <<'EOF'
 ## Test plan
 [Checklist of TODOs for testing the pull request...]
 
-🤖 Generated with [OpenCode](https://claude.ai/code)
+🤖 Generated with [OpenCode](https://opencode.ai)
 EOF
 )"
 </example>
