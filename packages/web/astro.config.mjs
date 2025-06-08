@@ -1,8 +1,8 @@
 // @ts-check
-import aws from "astro-sst"
 import { defineConfig } from "astro/config"
 import starlight from "@astrojs/starlight"
 import solidJs from "@astrojs/solid-js"
+import cloudflare from "@astrojs/cloudflare"
 import theme from "toolbeam-docs-theme"
 import { rehypeHeadingIds } from "@astrojs/markdown-remark"
 import rehypeAutolinkHeadings from "rehype-autolink-headings"
@@ -13,7 +13,9 @@ const github = "https://github.com/sst/opencode"
 // https://astro.build/config
 export default defineConfig({
   output: "server",
-  adapter: aws(),
+  adapter: cloudflare({
+    imageService: "passthrough",
+  }),
   devToolbar: {
     enabled: false,
   },

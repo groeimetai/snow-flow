@@ -42,7 +42,7 @@ export const api = new sst.cloudflare.Worker("Api", {
 //     output: "dist",
 //   },
 // })
-new sst.cloudflare.Astro("Web", {
+new sst.cloudflare.x.Astro("Web", {
   domain,
   path: "packages/web",
   environment: {

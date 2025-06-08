@@ -10,6 +10,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^12.5.4",
     "@astrojs/markdown-remark": "6.3.1",
     "@astrojs/solid-js": "5.1.0",
     "@astrojs/starlight": "0.34.3",
@@ -18,7 +19,6 @@
     "@types/luxon": "3.6.2",
     "ai": "catalog:",
     "astro": "5.7.13",
-    "astro-sst": "3.1.4",
     "diff": "8.0.2",
     "luxon": "3.6.1",
     "marked": "15.0.12",
@@ -29,7 +29,8 @@
     "toolbeam-docs-theme": "0.2.4"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "typescript": "catalog:",
-    "@types/node": "catalog:"
+    "wrangler": "4.19.1"
   }
 }

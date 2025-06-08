@@ -13,7 +13,7 @@ declare module "sst" {
       "type": "sst.cloudflare.Bucket"
     }
     "Web": {
-      "type": "sst.cloudflare.StaticSite"
+      "type": "sst.cloudflare.Astro"
       "url": string
     }
   }
