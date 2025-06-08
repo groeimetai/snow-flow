@@ -30,7 +30,6 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "typescript": "catalog:",
-    "wrangler": "4.19.1"
+    "typescript": "catalog:"
   }
 }
