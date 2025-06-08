@@ -139,12 +139,10 @@ function flattenToolArgs(obj: any, prefix: string = ""): Array<[string, any]> {
             entries.push([arrayPath, item])
           }
         })
-      }
-      else {
+      } else {
         entries.push(...flattenToolArgs(value, path))
       }
-    }
-    else {
+    } else {
       entries.push([path, value])
     }
   }
@@ -360,7 +358,9 @@ function TerminalPart(props: TerminalPartProps) {
       {...rest}
     >
       <div data-section="body">
-        <div data-section="header"><span>{local.desc}</span></div>
+        <div data-section="header">
+          <span>{local.desc}</span>
+        </div>
         <div data-section="content">
           <CodeBlock
             lang="ansi"
@@ -384,31 +384,45 @@ function TerminalPart(props: TerminalPartProps) {
 }
 
 function ToolFooter(props: { time: number }) {
-  return (
-    props.time > MIN_DURATION
-      ? <span data-part-footer title={`${props.time}ms`}>
-        {formatDuration(props.time)}
-      </span>
-      : <div data-part-footer="spacer"></div>
+  return props.time > MIN_DURATION ? (
+    <span data-part-footer title={`${props.time}ms`}>
+      {formatDuration(props.time)}
+    </span>
+  ) : (
+    <div data-part-footer="spacer"></div>
   )
 }
 
-export default function Share(props: { api: string }) {
+export default function Share(props: {
+  api: string
+  data: { key: string; content: SessionMessage | SessionInfo }[]
+}) {
   let params = new URLSearchParams(document.location.search)
   const id = params.get("id")
 
   const [store, setStore] = createStore<{
     info?: SessionInfo
     messages: Record<string, SessionMessage>
-  }>({
-    messages: {},
-  })
+  }>({ messages: {} })
   const messages = createMemo(() =>
     Object.values(store.messages).toSorted((a, b) => a.id?.localeCompare(b.id)),
   )
   const [connectionStatus, setConnectionStatus] = createSignal<
     [Status, string?]
   >(["disconnected", "Disconnected"])
+
+  const processDatum = (d: any) => {
+    const [root, type, ...splits] = d.key.split("/")
+    if (root !== "session") return
+    if (type === "info") {
+      setStore("info", reconcile(d.content))
+      return
+    }
+    if (type === "message") {
+      const [, messageID] = splits
+      setStore("messages", messageID, reconcile(d.content))
+    }
+  }
 
   onMount(() => {
     const apiUrl = props.api
@@ -422,6 +436,10 @@ export default function Share(props: { api: string }) {
       console.error("API URL not found in environment variables")
       setConnectionStatus(["error", "API URL not found"])
       return
+    }
+
+    for (const datum of props.data) {
+      processDatum(datum)
     }
 
     let reconnectTimer: number | undefined
@@ -454,17 +472,7 @@ export default function Share(props: { api: string }) {
       socket.onmessage = (event) => {
         console.log("WebSocket message received")
         try {
-          const data = JSON.parse(event.data)
-          const [root, type, ...splits] = data.key.split("/")
-          if (root !== "session") return
-          if (type === "info") {
-            setStore("info", reconcile(data.content))
-            return
-          }
-          if (type === "message") {
-            const [, messageID] = splits
-            setStore("messages", messageID, reconcile(data.content))
-          }
+          processDatum(JSON.parse(event.data))
         } catch (error) {
           console.error("Error parsing WebSocket message:", error)
         }
@@ -540,15 +548,14 @@ export default function Share(props: { api: string }) {
         result.tokens.output += assistant.tokens.output
         result.tokens.reasoning += assistant.tokens.reasoning
 
-        result.models.push([
-          assistant.providerID,
-          assistant.modelID,
-        ])
+        result.models.push([assistant.providerID, assistant.modelID])
       }
     }
     return result
   })
   const [showingSystemPrompt, showSystemPrompt] = createSignal(false)
+
+  console.log(data())
 
   return (
     <main class={`${styles.root} not-content`}>
@@ -563,9 +570,9 @@ export default function Share(props: { api: string }) {
                     data().created || 0,
                   ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}
                 >
-                  {DateTime.fromMillis(
-                    data().created || 0,
-                  ).toLocaleString(DateTime.DATE_MED)}
+                  {DateTime.fromMillis(data().created || 0).toLocaleString(
+                    DateTime.DATE_MED,
+                  )}
                 </span>
               ) : (
                 <span data-element-label data-placeholder>
@@ -575,7 +582,9 @@ export default function Share(props: { api: string }) {
             </div>
             <p data-section="status">
               <span data-status={connectionStatus()[0]}>&#9679;</span>
-              <span data-element-label>{getStatusText(connectionStatus())}</span>
+              <span data-element-label>
+                {getStatusText(connectionStatus())}
+              </span>
             </p>
           </div>
         </div>
@@ -645,11 +654,9 @@ export default function Share(props: { api: string }) {
                 onClick={() => showSystemPrompt((e) => !e)}
               >
                 <span>
-                  {
-                    showingSystemPrompt()
-                      ? "Hide system prompt"
-                      : "Show system prompt"
-                  }
+                  {showingSystemPrompt()
+                    ? "Hide system prompt"
+                    : "Show system prompt"}
                 </span>
                 <span data-button-icon>
                   <Show
@@ -825,27 +832,40 @@ export default function Share(props: { api: string }) {
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() =>
-                              msg.metadata?.tool[part().toolInvocation.toolCallId]
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
                             )
                             const args = part().toolInvocation.args
-                            const result = part().toolInvocation.state === "result" && part().toolInvocation.result
+                            const result =
+                              part().toolInvocation.state === "result" &&
+                              part().toolInvocation.result
                             const matches = metadata()?.matches
 
                             const { pattern, ...rest } = args
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
-                              <div data-section="part" data-part-type="tool-grep">
+                              <div
+                                data-section="part"
+                                data-part-type="tool-grep"
+                              >
                                 <div data-section="decoration">
                                   <div title="Grep files">
                                     <IconDocumentMagnifyingGlass
-                                      width={18} height={18}
+                                      width={18}
+                                      height={18}
                                     />
                                   </div>
                                   <div></div>
@@ -873,13 +893,16 @@ export default function Share(props: { api: string }) {
                                       <Match when={matches > 0}>
                                         <div data-part-tool-result>
                                           <ResultsButton
-                                            showCopy={matches === 1
-                                              ? "1 match"
-                                              : `${matches} matches`
+                                            showCopy={
+                                              matches === 1
+                                                ? "1 match"
+                                                : `${matches} matches`
                                             }
                                             hideCopy="Hide matches"
                                             results={results()}
-                                            onClick={() => showResults((e) => !e)}
+                                            onClick={() =>
+                                              showResults((e) => !e)
+                                            }
                                           />
                                           <Show when={results()}>
                                             <TextPart
@@ -919,25 +942,40 @@ export default function Share(props: { api: string }) {
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() =>
-                              msg.metadata?.tool[part().toolInvocation.toolCallId]
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
                             )
                             const args = part().toolInvocation.args
-                            const result = part().toolInvocation.state === "result" && part().toolInvocation.result
+                            const result =
+                              part().toolInvocation.state === "result" &&
+                              part().toolInvocation.result
                             const count = metadata()?.count
                             const pattern = args.pattern
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
-                              <div data-section="part" data-part-type="tool-glob">
+                              <div
+                                data-section="part"
+                                data-part-type="tool-glob"
+                              >
                                 <div data-section="decoration">
                                   <div title="Glob files">
-                                    <IconMagnifyingGlass width={18} height={18} />
+                                    <IconMagnifyingGlass
+                                      width={18}
+                                      height={18}
+                                    />
                                   </div>
                                   <div></div>
                                 </div>
@@ -951,12 +989,15 @@ export default function Share(props: { api: string }) {
                                       <Match when={count > 0}>
                                         <div data-part-tool-result>
                                           <ResultsButton
-                                            showCopy={count === 1
-                                              ? "1 result"
-                                              : `${count} results`
+                                            showCopy={
+                                              count === 1
+                                                ? "1 result"
+                                                : `${count} results`
                                             }
                                             results={results()}
-                                            onClick={() => showResults((e) => !e)}
+                                            onClick={() =>
+                                              showResults((e) => !e)
+                                            }
                                           />
                                           <Show when={results()}>
                                             <TextPart
@@ -996,23 +1037,36 @@ export default function Share(props: { api: string }) {
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() =>
-                              msg.metadata?.tool[part().toolInvocation.toolCallId]
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
                             )
                             const args = part().toolInvocation.args
                             const path = args.path
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
-                              <div data-section="part" data-part-type="tool-list">
+                              <div
+                                data-section="part"
+                                data-part-type="tool-list"
+                              >
                                 <div data-section="decoration">
                                   <div title="List files">
-                                    <IconRectangleStack width={18} height={18} />
+                                    <IconRectangleStack
+                                      width={18}
+                                      height={18}
+                                    />
                                   </div>
                                   <div></div>
                                 </div>
@@ -1026,21 +1080,25 @@ export default function Share(props: { api: string }) {
                                       <Match
                                         when={
                                           part().toolInvocation.state ===
-                                          "result" &&
+                                            "result" &&
                                           part().toolInvocation.result
                                         }
                                       >
                                         <div data-part-tool-result>
                                           <ResultsButton
                                             results={results()}
-                                            onClick={() => showResults((e) => !e)}
+                                            onClick={() =>
+                                              showResults((e) => !e)
+                                            }
                                           />
                                           <Show when={results()}>
                                             <TextPart
                                               expand
                                               data-size="sm"
                                               data-color="dimmed"
-                                              text={part().toolInvocation.result}
+                                              text={
+                                                part().toolInvocation.result
+                                              }
                                             />
                                           </Show>
                                         </div>
@@ -1063,21 +1121,35 @@ export default function Share(props: { api: string }) {
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
+                            )
                             const args = part().toolInvocation.args
                             const filePath = args.filePath
                             const hasError = metadata()?.error
                             const preview = metadata()?.preview
-                            const result = part().toolInvocation.state === "result" && part().toolInvocation.result
+                            const result =
+                              part().toolInvocation.state === "result" &&
+                              part().toolInvocation.result
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
-                              <div data-section="part" data-part-type="tool-read">
+                              <div
+                                data-section="part"
+                                data-part-type="tool-read"
+                              >
                                 <div data-section="decoration">
                                   <div title="Read file">
                                     <IconDocument width={18} height={18} />
@@ -1107,7 +1179,9 @@ export default function Share(props: { api: string }) {
                                             showCopy="Show preview"
                                             hideCopy="Hide preview"
                                             results={results()}
-                                            onClick={() => showResults((e) => !e)}
+                                            onClick={() =>
+                                              showResults((e) => !e)
+                                            }
                                           />
                                           <Show when={results()}>
                                             <div data-part-tool-code>
@@ -1123,7 +1197,9 @@ export default function Share(props: { api: string }) {
                                         <div data-part-tool-result>
                                           <ResultsButton
                                             results={results()}
-                                            onClick={() => showResults((e) => !e)}
+                                            onClick={() =>
+                                              showResults((e) => !e)
+                                            }
                                           />
                                           <Show when={results()}>
                                             <TextPart
@@ -1153,21 +1229,35 @@ export default function Share(props: { api: string }) {
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
+                            )
                             const args = part().toolInvocation.args
                             const filePath = args.filePath
                             const content = args.content
                             const hasError = metadata()?.error
-                            const result = part().toolInvocation.state === "result" && part().toolInvocation.result
+                            const result =
+                              part().toolInvocation.state === "result" &&
+                              part().toolInvocation.result
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
-                              <div data-section="part" data-part-type="tool-write">
+                              <div
+                                data-section="part"
+                                data-part-type="tool-write"
+                              >
                                 <div data-section="decoration">
                                   <div title="Write file">
                                     <IconDocumentPlus width={18} height={18} />
@@ -1197,7 +1287,9 @@ export default function Share(props: { api: string }) {
                                             showCopy="Show contents"
                                             hideCopy="Hide contents"
                                             results={results()}
-                                            onClick={() => showResults((e) => !e)}
+                                            onClick={() =>
+                                              showResults((e) => !e)
+                                            }
                                           />
                                           <Show when={results()}>
                                             <div data-part-tool-code>
@@ -1227,14 +1319,23 @@ export default function Share(props: { api: string }) {
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
+                            )
                             const args = part().toolInvocation.args
                             const filePath = args.filePath
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
@@ -1278,17 +1379,29 @@ export default function Share(props: { api: string }) {
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
+                            )
 
                             const command = part().toolInvocation.args.command
                             const desc = part().toolInvocation.args.description
                             const stdout = metadata()?.stdout
-                            const result = stdout || (part().toolInvocation.state === "result" && part().toolInvocation.result)
+                            const result =
+                              stdout ||
+                              (part().toolInvocation.state === "result" &&
+                                part().toolInvocation.result)
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
@@ -1307,7 +1420,9 @@ export default function Share(props: { api: string }) {
                                     <TerminalPart
                                       desc={desc}
                                       data-size="sm"
-                                      text={command + (result ? `\n${result}` : "")}
+                                      text={
+                                        command + (result ? `\n${result}` : "")
+                                      }
                                     />
                                   </div>
                                   <ToolFooter time={duration()} />
@@ -1321,17 +1436,27 @@ export default function Share(props: { api: string }) {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "opencode_todoread" &&
+                            part.toolInvocation.toolName ===
+                              "opencode_todoread" &&
                             part
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
+                            )
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
@@ -1362,24 +1487,39 @@ export default function Share(props: { api: string }) {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "opencode_todowrite" &&
+                            part.toolInvocation.toolName ===
+                              "opencode_todowrite" &&
                             part
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
+                            )
 
-                            const todos = createMemo(() => sortTodosByStatus(
-                              part().toolInvocation.args.todos
-                            ))
-                            const starting = todos().every(t => t.status === "pending")
-                            const finished = todos().every(t => t.status === "completed")
-
+                            const todos = createMemo(() =>
+                              sortTodosByStatus(
+                                part().toolInvocation.args.todos,
+                              ),
+                            )
+                            const starting = todos().every(
+                              (t) => t.status === "pending",
+                            )
+                            const finished = todos().every(
+                              (t) => t.status === "completed",
+                            )
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
@@ -1408,12 +1548,12 @@ export default function Share(props: { api: string }) {
                                     <Show when={todos().length > 0}>
                                       <ul class={styles.todos}>
                                         <For each={todos()}>
-                                          {({ status, content }) =>
+                                          {({ status, content }) => (
                                             <li data-status={status}>
                                               <span></span>
                                               {content}
                                             </li>
-                                          }
+                                          )}
                                         </For>
                                       </ul>
                                     </Show>
@@ -1429,26 +1569,41 @@ export default function Share(props: { api: string }) {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "opencode_webfetch" &&
+                            part.toolInvocation.toolName ===
+                              "opencode_webfetch" &&
                             part
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
+                            )
                             const args = part().toolInvocation.args
                             const url = args.url
                             const format = args.format
                             const hasError = metadata()?.error
-                            const result = part().toolInvocation.state === "result" && part().toolInvocation.result
+                            const result =
+                              part().toolInvocation.state === "result" &&
+                              part().toolInvocation.result
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
-                              <div data-section="part" data-part-type="tool-fetch">
+                              <div
+                                data-section="part"
+                                data-part-type="tool-fetch"
+                              >
                                 <div data-section="decoration">
                                   <div title="Web fetch">
                                     <IconGlobeAlt width={18} height={18} />
@@ -1476,7 +1631,9 @@ export default function Share(props: { api: string }) {
                                         <div data-part-tool-result>
                                           <ResultsButton
                                             results={results()}
-                                            onClick={() => showResults((e) => !e)}
+                                            onClick={() =>
+                                              showResults((e) => !e)
+                                            }
                                           />
                                           <Show when={results()}>
                                             <div data-part-tool-code>
@@ -1505,12 +1662,21 @@ export default function Share(props: { api: string }) {
                           }
                         >
                           {(part) => {
-                            const metadata = createMemo(() => msg.metadata?.tool[part().toolInvocation.toolCallId])
+                            const metadata = createMemo(
+                              () =>
+                                msg.metadata?.tool[
+                                  part().toolInvocation.toolCallId
+                                ],
+                            )
 
                             const duration = createMemo(() =>
-                              DateTime.fromMillis(metadata()?.time.end || 0).diff(
-                                DateTime.fromMillis(metadata()?.time.start || 0),
-                              ).toMillis(),
+                              DateTime.fromMillis(metadata()?.time.end || 0)
+                                .diff(
+                                  DateTime.fromMillis(
+                                    metadata()?.time.start || 0,
+                                  ),
+                                )
+                                .toMillis(),
                             )
 
                             return (
@@ -1551,21 +1717,25 @@ export default function Share(props: { api: string }) {
                                       <Match
                                         when={
                                           part().toolInvocation.state ===
-                                          "result" &&
+                                            "result" &&
                                           part().toolInvocation.result
                                         }
                                       >
                                         <div data-part-tool-result>
                                           <ResultsButton
                                             results={results()}
-                                            onClick={() => showResults((e) => !e)}
+                                            onClick={() =>
+                                              showResults((e) => !e)
+                                            }
                                           />
                                           <Show when={results()}>
                                             <TextPart
                                               expand
                                               data-size="sm"
                                               data-color="dimmed"
-                                              text={part().toolInvocation.result}
+                                              text={
+                                                part().toolInvocation.result
+                                              }
                                             />
                                           </Show>
                                         </div>

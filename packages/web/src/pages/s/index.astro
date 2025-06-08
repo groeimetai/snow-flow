@@ -4,6 +4,12 @@ import config from "virtual:starlight/user-config";
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import Share from "../../components/Share.tsx";
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
+const id = Astro.url.searchParams.get('id')
+const res = await fetch(`${apiUrl}/share_messages?id=${id}`);
+const data = await res.json();
+
 ---
 
 <StarlightPage
@@ -15,7 +21,7 @@ import Share from "../../components/Share.tsx";
     tableOfContents: false,
   }}
 >
-  <Share api={import.meta.env.VITE_API_URL} client:only="solid" />
+  <Share api={apiUrl} data={data.messages} client:only="solid" />
 </StarlightPage>
 
 <style is:global>
