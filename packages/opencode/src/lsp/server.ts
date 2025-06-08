@@ -27,6 +27,11 @@ export namespace LSPServer {
         ".mts",
         ".cts",
       ],
+      initialization: {
+        tsserver: {
+          path: require.resolve("typescript/lib/tsserver.js"),
+        },
+      },
       async spawn() {
         const root =
           process.argv0 !== "bun"
