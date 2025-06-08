@@ -32,8 +32,10 @@ export namespace LSPServer {
           process.argv0 !== "bun"
             ? path.resolve(process.cwd(), process.argv0)
             : process.argv0
-        return spawn(root + " x typescript-language-server --stdio", {
-          argv0: "bun",
+        return spawn(root, ["x", "typescript-language-server", "--stdio"], {
+          env: {
+            BUN_BE_BUN: "1",
+          },
         })
       },
     },
