@@ -161,7 +161,7 @@ export namespace Provider {
       log.info("installing", {
         providerID,
       })
-      BunProc.run(["add", `@ai-sdk/${providerID}@alpha`], {
+      await BunProc.run(["add", `@ai-sdk/${providerID}@alpha`], {
         cwd: Global.Path.cache,
       })
     }
