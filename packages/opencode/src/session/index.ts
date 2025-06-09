@@ -683,6 +683,7 @@ export namespace Session {
     modelID: string
     providerID: string
   }) {
+    const app = App.info()
     await Session.chat({
       sessionID: input.sessionID,
       providerID: input.providerID,
@@ -690,7 +691,7 @@ export namespace Session {
       parts: [
         {
           type: "text",
-          text: PROMPT_INITIALIZE,
+          text: PROMPT_INITIALIZE.replace("${path}", app.path.root),
         },
       ],
     })

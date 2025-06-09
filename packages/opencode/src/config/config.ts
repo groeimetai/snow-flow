@@ -9,7 +9,7 @@ export namespace Config {
   export const state = App.state("config", async (app) => {
     let result: Info = {}
     for (const file of ["opencode.jsonc", "opencode.json"]) {
-      const resolved = await Filesystem.findUp(
+      const [resolved] = await Filesystem.findUp(
         file,
         app.path.cwd,
         app.path.root,

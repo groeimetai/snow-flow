@@ -37,7 +37,7 @@ export namespace App {
       cwd: input.cwd,
       version: input.version,
     })
-    const git = await Filesystem.findUp(".git", input.cwd).then((x) =>
+    const git = await Filesystem.findUp(".git", input.cwd).then(([x]) =>
       x ? path.dirname(x) : undefined,
     )
     log.info("git", { git })

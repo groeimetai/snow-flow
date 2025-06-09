@@ -3,16 +3,16 @@ import { dirname, join } from "path"
 
 export namespace Filesystem {
   export async function findUp(target: string, start: string, stop?: string) {
-    let currentDir = start
+    let current = start
+    const result = []
     while (true) {
-      const targetPath = join(currentDir, target)
-      if (await exists(targetPath)) return targetPath
-      if (stop === currentDir) return
-      const parentDir = dirname(currentDir)
-      if (parentDir === currentDir) {
-        return
-      }
-      currentDir = parentDir
+      const search = join(current, target)
+      if (await exists(search)) result.push(search)
+      if (stop === current) break
+      const parent = dirname(current)
+      if (parent === current) break
+      current = parent
     }
+    return result
   }
 }
