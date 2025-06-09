@@ -140,10 +140,12 @@ export namespace Message {
           created: z.number(),
           completed: z.number().optional(),
         }),
-        error: z.discriminatedUnion("name", [
-          Provider.AuthError.Schema,
-          NamedError.Unknown.Schema,
-        ]),
+        error: z
+          .discriminatedUnion("name", [
+            Provider.AuthError.Schema,
+            NamedError.Unknown.Schema,
+          ])
+          .optional(),
         sessionID: z.string(),
         tool: z.record(z.string(), z.any()),
         assistant: z
