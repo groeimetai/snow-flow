@@ -6,6 +6,7 @@ import { Log } from "../util/log"
 import {
   convertToModelMessages,
   generateText,
+  LoadAPIKeyError,
   stepCountIs,
   streamText,
   tool,
@@ -28,6 +29,7 @@ import { Provider } from "../provider/provider"
 import { SessionContext } from "./context"
 import { ListTool } from "../tool/ls"
 import { MCP } from "../mcp"
+import { NamedError } from "../util/error"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -57,6 +59,12 @@ export namespace Session {
       "session.updated",
       z.object({
         info: Info,
+      }),
+    ),
+    Error: Bus.event(
+      "session.error",
+      z.object({
+        error: Message.Info.shape.metadata.shape.error,
       }),
     ),
   }
@@ -296,11 +304,13 @@ export namespace Session {
           },
         ]),
         model: model.language,
-      }).then((result) => {
-        return Session.update(input.sessionID, (draft) => {
-          draft.title = result.text
-        })
       })
+        .then((result) => {
+          return Session.update(input.sessionID, (draft) => {
+            draft.title = result.text
+          })
+        })
+        .catch(() => {})
       await updateMessage(system)
     }
     const msg: Message.Info = {
@@ -506,11 +516,27 @@ export namespace Session {
         assistant.cost = usage.cost
         await updateMessage(next)
       },
-      onError(input) {
-        log.error("error", input)
-        if (input.error instanceof Error) {
-          next.metadata.error = input.error.toString()
+      onError(err) {
+        log.error("error", err)
+        switch (true) {
+          case LoadAPIKeyError.isInstance(err.error):
+            next.metadata.error = new Provider.AuthError(
+              {
+                providerID: input.providerID,
+                message: err.error.message,
+              },
+              { cause: err.error },
+            ).toObject()
+            break
+          case err.error instanceof Error:
+            next.metadata.error = new NamedError.Unknown(
+              { message: err.error.toString() },
+              { cause: err.error },
+            ).toObject()
         }
+        Bus.publish(Event.Error, {
+          error: next.metadata.error,
+        })
       },
       async prepareStep(step) {
         next.parts.push({
@@ -532,7 +558,7 @@ export namespace Session {
     })
     await result.consumeStream({
       onError: (err) => {
-        log.error("error", {
+        log.error("stream error", {
           err,
         })
       },

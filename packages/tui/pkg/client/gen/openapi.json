@@ -158,6 +158,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "operationId": "postSession_create",
@@ -439,30 +449,34 @@
             "$ref": "#/components/schemas/Event.storage.write"
           },
           {
-            "$ref": "#/components/schemas/Event.message.updated"
-          },
-          {
-            "$ref": "#/components/schemas/Event.message.part.updated"
-          },
-          {
             "$ref": "#/components/schemas/Event.lsp.client.diagnostics"
           },
           {
             "$ref": "#/components/schemas/Event.permission.updated"
           },
           {
+            "$ref": "#/components/schemas/Event.message.updated"
+          },
+          {
+            "$ref": "#/components/schemas/Event.message.part.updated"
+          },
+          {
             "$ref": "#/components/schemas/Event.session.updated"
+          },
+          {
+            "$ref": "#/components/schemas/Event.session.error"
           }
         ],
         "discriminator": {
           "propertyName": "type",
           "mapping": {
             "storage.write": "#/components/schemas/Event.storage.write",
-            "message.updated": "#/components/schemas/Event.message.updated",
-            "message.part.updated": "#/components/schemas/Event.message.part.updated",
             "lsp.client.diagnostics": "#/components/schemas/Event.lsp.client.diagnostics",
             "permission.updated": "#/components/schemas/Event.permission.updated",
-            "session.updated": "#/components/schemas/Event.session.updated"
+            "message.updated": "#/components/schemas/Event.message.updated",
+            "message.part.updated": "#/components/schemas/Event.message.part.updated",
+            "session.updated": "#/components/schemas/Event.session.updated",
+            "session.error": "#/components/schemas/Event.session.error"
           }
         }
       },
@@ -489,6 +503,86 @@
         "required": [
           "type",
           "properties"
+        ]
+      },
+      "Event.lsp.client.diagnostics": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "lsp.client.diagnostics"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "serverID": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "serverID",
+              "path"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "properties"
+        ]
+      },
+      "Event.permission.updated": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "permission.updated"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/permission.info"
+          }
+        },
+        "required": [
+          "type",
+          "properties"
+        ]
+      },
+      "permission.info": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sessionID": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "time": {
+            "type": "object",
+            "properties": {
+              "created": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "created"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "sessionID",
+          "title",
+          "metadata",
+          "time"
         ]
       },
       "Event.message.updated": {
@@ -553,7 +647,21 @@
                 ]
               },
               "error": {
-                "type": "string"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ProviderAuthError"
+                  },
+                  {
+                    "$ref": "#/components/schemas/UnknownError"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "name",
+                  "mapping": {
+                    "ProviderAuthError": "#/components/schemas/ProviderAuthError",
+                    "UnknownError": "#/components/schemas/UnknownError"
+                  }
+                }
               },
               "sessionID": {
                 "type": "string"
@@ -607,6 +715,7 @@
             },
             "required": [
               "time",
+              "error",
               "sessionID",
               "tool"
             ]
@@ -863,6 +972,58 @@
           "type"
         ]
       },
+      "ProviderAuthError": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "ProviderAuthError"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "providerID": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "providerID",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "data"
+        ]
+      },
+      "UnknownError": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "const": "UnknownError"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "data"
+        ]
+      },
       "Event.message.part.updated": {
         "type": "object",
         "properties": {
@@ -885,86 +1046,6 @@
         "required": [
           "type",
           "properties"
-        ]
-      },
-      "Event.lsp.client.diagnostics": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "lsp.client.diagnostics"
-          },
-          "properties": {
-            "type": "object",
-            "properties": {
-              "serverID": {
-                "type": "string"
-              },
-              "path": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "serverID",
-              "path"
-            ]
-          }
-        },
-        "required": [
-          "type",
-          "properties"
-        ]
-      },
-      "Event.permission.updated": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "permission.updated"
-          },
-          "properties": {
-            "$ref": "#/components/schemas/permission.info"
-          }
-        },
-        "required": [
-          "type",
-          "properties"
-        ]
-      },
-      "permission.info": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sessionID": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "metadata": {
-            "type": "object",
-            "additionalProperties": {}
-          },
-          "time": {
-            "type": "object",
-            "properties": {
-              "created": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "created"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "sessionID",
-          "title",
-          "metadata",
-          "time"
         ]
       },
       "Event.session.updated": {
@@ -1038,6 +1119,44 @@
           "time"
         ]
       },
+      "Event.session.error": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "session.error"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ProviderAuthError"
+                  },
+                  {
+                    "$ref": "#/components/schemas/UnknownError"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "name",
+                  "mapping": {
+                    "ProviderAuthError": "#/components/schemas/ProviderAuthError",
+                    "UnknownError": "#/components/schemas/UnknownError"
+                  }
+                }
+              }
+            },
+            "required": [
+              "error"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "properties"
+        ]
+      },
       "App.Info": {
         "type": "object",
         "properties": {
@@ -1084,6 +1203,18 @@
           "git",
           "path",
           "time"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "Provider.Info": {

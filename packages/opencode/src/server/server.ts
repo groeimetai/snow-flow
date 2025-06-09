@@ -11,6 +11,26 @@ import { Provider } from "../provider/provider"
 import { App } from "../app/app"
 import { Global } from "../global"
 import { mapValues } from "remeda"
+import { NamedError } from "../util/error"
+
+const ERRORS = {
+  400: {
+    description: "Bad request",
+    content: {
+      "application/json": {
+        schema: resolver(
+          z
+            .object({
+              data: z.record(z.string(), z.any()),
+            })
+            .openapi({
+              ref: "Error",
+            }),
+        ),
+      },
+    },
+  },
+} as const
 
 export namespace Server {
   const log = Log.create({ service: "server" })
@@ -22,13 +42,15 @@ export namespace Server {
 
     const result = app
       .onError((err, c) => {
-        log.error("error", err)
+        if (err instanceof NamedError) {
+          return c.json(err.toObject(), {
+            status: 400,
+          })
+        }
         return c.json(
+          new NamedError.Unknown({ message: err.toString() }).toObject(),
           {
-            error: err.toString(),
-          },
-          {
-            status: 500,
+            status: 400,
           },
         )
       })
@@ -197,6 +219,7 @@ export namespace Server {
         describeRoute({
           description: "Create a new session",
           responses: {
+            ...ERRORS,
             200: {
               description: "Successfully created session",
               content: {

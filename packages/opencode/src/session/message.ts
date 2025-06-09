@@ -1,5 +1,7 @@
 import z from "zod"
 import { Bus } from "../bus"
+import { Provider } from "../provider/provider"
+import { NamedError } from "../util/error"
 
 export namespace Message {
   export const ToolCall = z
@@ -138,7 +140,10 @@ export namespace Message {
           created: z.number(),
           completed: z.number().optional(),
         }),
-        error: z.string().optional(),
+        error: z.discriminatedUnion("name", [
+          Provider.AuthError.Schema,
+          NamedError.Unknown.Schema,
+        ]),
         sessionID: z.string(),
         tool: z.record(z.string(), z.any()),
         assistant: z

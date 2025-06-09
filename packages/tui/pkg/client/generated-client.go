@@ -39,6 +39,11 @@ type AppInfo struct {
 	User string `json:"user"`
 }
 
+// Error defines model for Error.
+type Error struct {
+	Data map[string]interface{} `json:"data"`
+}
+
 // Event defines model for Event.
 type Event struct {
 	union json.RawMessage
@@ -75,6 +80,19 @@ type EventPermissionUpdated struct {
 	Type       string         `json:"type"`
 }
 
+// EventSessionError defines model for Event.session.error.
+type EventSessionError struct {
+	Properties struct {
+		Error EventSessionError_Properties_Error `json:"error"`
+	} `json:"properties"`
+	Type string `json:"type"`
+}
+
+// EventSessionError_Properties_Error defines model for EventSessionError.Properties.Error.
+type EventSessionError_Properties_Error struct {
+	union json.RawMessage
+}
+
 // EventSessionUpdated defines model for Event.session.updated.
 type EventSessionUpdated struct {
 	Properties struct {
@@ -107,8 +125,8 @@ type MessageInfo struct {
 				Reasoning float32 `json:"reasoning"`
 			} `json:"tokens"`
 		} `json:"assistant,omitempty"`
-		Error     *string `json:"error,omitempty"`
-		SessionID string  `json:"sessionID"`
+		Error     MessageInfo_Metadata_Error `json:"error"`
+		SessionID string                     `json:"sessionID"`
 		Time      struct {
 			Completed *float32 `json:"completed,omitempty"`
 			Created   float32  `json:"created"`
@@ -117,6 +135,11 @@ type MessageInfo struct {
 	} `json:"metadata"`
 	Parts []MessagePart   `json:"parts"`
 	Role  MessageInfoRole `json:"role"`
+}
+
+// MessageInfo_Metadata_Error defines model for MessageInfo.Metadata.Error.
+type MessageInfo_Metadata_Error struct {
+	union json.RawMessage
 }
 
 // MessageInfoRole defines model for MessageInfo.Role.
@@ -224,6 +247,23 @@ type ProviderModel struct {
 	} `json:"limit"`
 	Name      *string `json:"name,omitempty"`
 	Reasoning *bool   `json:"reasoning,omitempty"`
+}
+
+// ProviderAuthError defines model for ProviderAuthError.
+type ProviderAuthError struct {
+	Data struct {
+		Message    string `json:"message"`
+		ProviderID string `json:"providerID"`
+	} `json:"data"`
+	Name string `json:"name"`
+}
+
+// UnknownError defines model for UnknownError.
+type UnknownError struct {
+	Data struct {
+		Message string `json:"message"`
+	} `json:"data"`
+	Name string `json:"name"`
 }
 
 // PermissionInfo defines model for permission.info.
@@ -334,62 +374,6 @@ func (t *Event) MergeEventStorageWrite(v EventStorageWrite) error {
 	return err
 }
 
-// AsEventMessageUpdated returns the union data inside the Event as a EventMessageUpdated
-func (t Event) AsEventMessageUpdated() (EventMessageUpdated, error) {
-	var body EventMessageUpdated
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromEventMessageUpdated overwrites any union data inside the Event as the provided EventMessageUpdated
-func (t *Event) FromEventMessageUpdated(v EventMessageUpdated) error {
-	v.Type = "message.updated"
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeEventMessageUpdated performs a merge with any union data inside the Event, using the provided EventMessageUpdated
-func (t *Event) MergeEventMessageUpdated(v EventMessageUpdated) error {
-	v.Type = "message.updated"
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsEventMessagePartUpdated returns the union data inside the Event as a EventMessagePartUpdated
-func (t Event) AsEventMessagePartUpdated() (EventMessagePartUpdated, error) {
-	var body EventMessagePartUpdated
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromEventMessagePartUpdated overwrites any union data inside the Event as the provided EventMessagePartUpdated
-func (t *Event) FromEventMessagePartUpdated(v EventMessagePartUpdated) error {
-	v.Type = "message.part.updated"
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeEventMessagePartUpdated performs a merge with any union data inside the Event, using the provided EventMessagePartUpdated
-func (t *Event) MergeEventMessagePartUpdated(v EventMessagePartUpdated) error {
-	v.Type = "message.part.updated"
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
 // AsEventLspClientDiagnostics returns the union data inside the Event as a EventLspClientDiagnostics
 func (t Event) AsEventLspClientDiagnostics() (EventLspClientDiagnostics, error) {
 	var body EventLspClientDiagnostics
@@ -446,6 +430,62 @@ func (t *Event) MergeEventPermissionUpdated(v EventPermissionUpdated) error {
 	return err
 }
 
+// AsEventMessageUpdated returns the union data inside the Event as a EventMessageUpdated
+func (t Event) AsEventMessageUpdated() (EventMessageUpdated, error) {
+	var body EventMessageUpdated
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventMessageUpdated overwrites any union data inside the Event as the provided EventMessageUpdated
+func (t *Event) FromEventMessageUpdated(v EventMessageUpdated) error {
+	v.Type = "message.updated"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventMessageUpdated performs a merge with any union data inside the Event, using the provided EventMessageUpdated
+func (t *Event) MergeEventMessageUpdated(v EventMessageUpdated) error {
+	v.Type = "message.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEventMessagePartUpdated returns the union data inside the Event as a EventMessagePartUpdated
+func (t Event) AsEventMessagePartUpdated() (EventMessagePartUpdated, error) {
+	var body EventMessagePartUpdated
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventMessagePartUpdated overwrites any union data inside the Event as the provided EventMessagePartUpdated
+func (t *Event) FromEventMessagePartUpdated(v EventMessagePartUpdated) error {
+	v.Type = "message.part.updated"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventMessagePartUpdated performs a merge with any union data inside the Event, using the provided EventMessagePartUpdated
+func (t *Event) MergeEventMessagePartUpdated(v EventMessagePartUpdated) error {
+	v.Type = "message.part.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsEventSessionUpdated returns the union data inside the Event as a EventSessionUpdated
 func (t Event) AsEventSessionUpdated() (EventSessionUpdated, error) {
 	var body EventSessionUpdated
@@ -464,6 +504,34 @@ func (t *Event) FromEventSessionUpdated(v EventSessionUpdated) error {
 // MergeEventSessionUpdated performs a merge with any union data inside the Event, using the provided EventSessionUpdated
 func (t *Event) MergeEventSessionUpdated(v EventSessionUpdated) error {
 	v.Type = "session.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsEventSessionError returns the union data inside the Event as a EventSessionError
+func (t Event) AsEventSessionError() (EventSessionError, error) {
+	var body EventSessionError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventSessionError overwrites any union data inside the Event as the provided EventSessionError
+func (t *Event) FromEventSessionError(v EventSessionError) error {
+	v.Type = "session.error"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventSessionError performs a merge with any union data inside the Event, using the provided EventSessionError
+func (t *Event) MergeEventSessionError(v EventSessionError) error {
+	v.Type = "session.error"
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -496,6 +564,8 @@ func (t Event) ValueByDiscriminator() (interface{}, error) {
 		return t.AsEventMessageUpdated()
 	case "permission.updated":
 		return t.AsEventPermissionUpdated()
+	case "session.error":
+		return t.AsEventSessionError()
 	case "session.updated":
 		return t.AsEventSessionUpdated()
 	case "storage.write":
@@ -511,6 +581,184 @@ func (t Event) MarshalJSON() ([]byte, error) {
 }
 
 func (t *Event) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsProviderAuthError returns the union data inside the EventSessionError_Properties_Error as a ProviderAuthError
+func (t EventSessionError_Properties_Error) AsProviderAuthError() (ProviderAuthError, error) {
+	var body ProviderAuthError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProviderAuthError overwrites any union data inside the EventSessionError_Properties_Error as the provided ProviderAuthError
+func (t *EventSessionError_Properties_Error) FromProviderAuthError(v ProviderAuthError) error {
+	v.Name = "ProviderAuthError"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProviderAuthError performs a merge with any union data inside the EventSessionError_Properties_Error, using the provided ProviderAuthError
+func (t *EventSessionError_Properties_Error) MergeProviderAuthError(v ProviderAuthError) error {
+	v.Name = "ProviderAuthError"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsUnknownError returns the union data inside the EventSessionError_Properties_Error as a UnknownError
+func (t EventSessionError_Properties_Error) AsUnknownError() (UnknownError, error) {
+	var body UnknownError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromUnknownError overwrites any union data inside the EventSessionError_Properties_Error as the provided UnknownError
+func (t *EventSessionError_Properties_Error) FromUnknownError(v UnknownError) error {
+	v.Name = "UnknownError"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeUnknownError performs a merge with any union data inside the EventSessionError_Properties_Error, using the provided UnknownError
+func (t *EventSessionError_Properties_Error) MergeUnknownError(v UnknownError) error {
+	v.Name = "UnknownError"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t EventSessionError_Properties_Error) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"name"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t EventSessionError_Properties_Error) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "ProviderAuthError":
+		return t.AsProviderAuthError()
+	case "UnknownError":
+		return t.AsUnknownError()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t EventSessionError_Properties_Error) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *EventSessionError_Properties_Error) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsProviderAuthError returns the union data inside the MessageInfo_Metadata_Error as a ProviderAuthError
+func (t MessageInfo_Metadata_Error) AsProviderAuthError() (ProviderAuthError, error) {
+	var body ProviderAuthError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromProviderAuthError overwrites any union data inside the MessageInfo_Metadata_Error as the provided ProviderAuthError
+func (t *MessageInfo_Metadata_Error) FromProviderAuthError(v ProviderAuthError) error {
+	v.Name = "ProviderAuthError"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeProviderAuthError performs a merge with any union data inside the MessageInfo_Metadata_Error, using the provided ProviderAuthError
+func (t *MessageInfo_Metadata_Error) MergeProviderAuthError(v ProviderAuthError) error {
+	v.Name = "ProviderAuthError"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsUnknownError returns the union data inside the MessageInfo_Metadata_Error as a UnknownError
+func (t MessageInfo_Metadata_Error) AsUnknownError() (UnknownError, error) {
+	var body UnknownError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromUnknownError overwrites any union data inside the MessageInfo_Metadata_Error as the provided UnknownError
+func (t *MessageInfo_Metadata_Error) FromUnknownError(v UnknownError) error {
+	v.Name = "UnknownError"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeUnknownError performs a merge with any union data inside the MessageInfo_Metadata_Error, using the provided UnknownError
+func (t *MessageInfo_Metadata_Error) MergeUnknownError(v UnknownError) error {
+	v.Name = "UnknownError"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MessageInfo_Metadata_Error) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"name"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t MessageInfo_Metadata_Error) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "ProviderAuthError":
+		return t.AsProviderAuthError()
+	case "UnknownError":
+		return t.AsUnknownError()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t MessageInfo_Metadata_Error) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MessageInfo_Metadata_Error) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -1886,6 +2134,7 @@ type PostSessionCreateResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *SessionInfo
+	JSON400      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -2389,6 +2638,13 @@ func ParsePostSessionCreateResponse(rsp *http.Response) (*PostSessionCreateRespo
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	}
 
