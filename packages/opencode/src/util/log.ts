@@ -2,8 +2,16 @@ import path from "path"
 import fs from "fs/promises"
 import { Global } from "../global"
 export namespace Log {
+  const Default = create()
+
   export interface Options {
     print: boolean
+  }
+
+  let logpath = ""
+
+  export function file() {
+    return logpath
   }
 
   export async function init(options: Options) {
@@ -11,7 +19,7 @@ export namespace Log {
     await fs.mkdir(dir, { recursive: true })
     cleanup(dir)
     if (options.print) return
-    const logpath = path.join(dir, new Date().toISOString() + ".log")
+    logpath = path.join(dir, new Date().toISOString().split(".")[0] + ".log")
     const logfile = Bun.file(logpath)
     await fs.truncate(logpath).catch(() => {})
     const writer = logfile.writer()
@@ -20,6 +28,7 @@ export namespace Log {
       writer.flush()
       return true
     }
+    Default.info("initialized", { file: logpath })
   }
 
   async function cleanup(dir: string) {

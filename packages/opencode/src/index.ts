@@ -17,7 +17,7 @@ import { VERSION } from "./cli/version"
 import { ScrapCommand } from "./cli/cmd/scrap"
 import { Log } from "./util/log"
 
-await Log.init({ print: false })
+await Log.init({ print: process.argv.includes("--print-logs") })
 
 yargs(hideBin(process.argv))
   .scriptName("opencode")

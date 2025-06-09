@@ -33,9 +33,14 @@ export namespace App {
   const APP_JSON = "app.json"
 
   async function create(input: { cwd: string; version: string }) {
+    log.info("creating", {
+      cwd: input.cwd,
+      version: input.version,
+    })
     const git = await Filesystem.findUp(".git", input.cwd).then((x) =>
       x ? path.dirname(x) : undefined,
     )
+    log.info("git", { git })
 
     const data = path.join(
       Global.Path.data,
