@@ -32,11 +32,7 @@ export namespace App {
 
   const APP_JSON = "app.json"
 
-  async function create(input: {
-    cwd: string
-    version: string
-    printLogs?: boolean
-  }) {
+  async function create(input: { cwd: string; version: string }) {
     const git = await Filesystem.findUp(".git", input.cwd).then((x) =>
       x ? path.dirname(x) : undefined,
     )
@@ -61,8 +57,6 @@ export namespace App {
         shutdown?: (input: any) => Promise<void>
       }
     >()
-
-    if (!input.printLogs) await Log.file(path.join(data, "log"))
 
     const info: Info = {
       user: os.userInfo().username,
@@ -110,7 +104,7 @@ export namespace App {
   }
 
   export async function provide<T extends (app: Info) => any>(
-    input: { cwd: string; version: string; printLogs?: boolean },
+    input: { cwd: string; version: string },
     cb: T,
   ) {
     const app = await create(input)

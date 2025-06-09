@@ -34,7 +34,6 @@ export const RunCommand = {
       {
         cwd: process.cwd(),
         version: "0.0.0",
-        printLogs: args.printLogs,
       },
       async () => {
         await Share.init()

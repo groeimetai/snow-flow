@@ -1,33 +1,40 @@
 import path from "path"
 import fs from "fs/promises"
+import { Global } from "../global"
 export namespace Log {
-  const write = {
-    out: (msg: string) => {
-      process.stdout.write(msg)
-    },
-    err: (msg: string) => {
-      process.stderr.write(msg)
-    },
+  export interface Options {
+    print: boolean
   }
 
-  export async function file(directory: string) {
-    await fs.mkdir(directory, { recursive: true })
-    const outPath = path.join(directory, "opencode.out.log")
-    const errPath = path.join(directory, "opencode.err.log")
-    await fs.truncate(outPath).catch(() => {})
-    await fs.truncate(errPath).catch(() => {})
-    const out = Bun.file(outPath)
-    const err = Bun.file(errPath)
-    const outWriter = out.writer()
-    const errWriter = err.writer()
-    write["out"] = (msg) => {
-      outWriter.write(msg)
-      outWriter.flush()
+  export async function init(options: Options) {
+    const dir = path.join(Global.Path.data, "log")
+    await fs.mkdir(dir, { recursive: true })
+    cleanup(dir)
+    if (options.print) return
+    const logpath = path.join(dir, new Date().toISOString() + ".log")
+    const logfile = Bun.file(logpath)
+    await fs.truncate(logpath).catch(() => {})
+    const writer = logfile.writer()
+    process.stderr.write = (msg) => {
+      writer.write(msg)
+      writer.flush()
+      return true
     }
-    write["err"] = (msg) => {
-      errWriter.write(msg)
-      errWriter.flush()
-    }
+  }
+
+  async function cleanup(dir: string) {
+    const entries = await fs.readdir(dir, { withFileTypes: true })
+    const files = entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".log"))
+      .map((entry) => path.join(dir, entry.name))
+
+    if (files.length <= 10) return
+
+    const filesToDelete = files.slice(0, -10)
+
+    await Promise.all(
+      filesToDelete.map((file) => fs.unlink(file).catch(() => {})),
+    )
   }
 
   export function create(tags?: Record<string, any>) {
@@ -48,13 +55,13 @@ export namespace Log {
     }
     const result = {
       info(message?: any, extra?: Record<string, any>) {
-        write.out(build(message, extra))
+        process.stderr.write(build(message, extra))
       },
       error(message?: any, extra?: Record<string, any>) {
-        write.out(build(message, extra))
+        process.stderr.write(build(message, extra))
       },
       warn(message?: any, extra?: Record<string, any>) {
-        write.out(build(message, extra))
+        process.stderr.write(build(message, extra))
       },
       tag(key: string, value: string) {
         if (tags) tags[key] = value
