@@ -150,6 +150,12 @@ function flattenToolArgs(obj: any, prefix: string = ""): Array<[string, any]> {
   return entries
 }
 
+function stripEnclosingTag(text: string): string {
+  const wrappedRe = /^\s*<([A-Za-z]\w*)>\s*([\s\S]*?)\s*<\/\1>\s*$/
+  const match = text.match(wrappedRe)
+  return match ? match[2] : text
+}
+
 function getStatusText(status: [Status, string?]): string {
   switch (status[0]) {
     case "connected":
@@ -745,8 +751,8 @@ export default function Share(props: {
                               </div>
                               <div data-section="content">
                                 <MarkdownPart
-                                  text={part().text}
                                   expand={isLastPart()}
+                                  text={stripEnclosingTag(part().text)}
                                 />
                               </div>
                             </div>

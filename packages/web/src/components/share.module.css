@@ -243,6 +243,7 @@
         font-size: 0.75rem;
 
         b {
+          word-break: break-all;
           font-weight: 500;
         }
 
@@ -317,6 +318,7 @@
   [data-part-type="tool-list"],
   [data-part-type="tool-glob"],
   [data-part-type="tool-read"],
+  [data-part-type="tool-edit"],
   [data-part-type="tool-write"],
   [data-part-type="tool-fetch"] {
     & > [data-section="content"] > [data-part-tool-body] {
@@ -366,21 +368,6 @@
           white-space: pre-wrap;
           word-break: break-word;
         }
-      }
-    }
-  }
-
-  [data-part-type="tool-edit"] {
-    & > [data-section="content"] > [data-part-tool-body] {
-      gap: 0.5rem;
-    }
-    [data-part-title] {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-
-      b {
-        color: var(--sl-color-text);
       }
     }
   }
