@@ -586,8 +586,6 @@ export default function Share(props: {
   })
   const [showingSystemPrompt, showSystemPrompt] = createSignal(false)
 
-  console.log(data())
-
   return (
     <main class={`${styles.root} not-content`}>
       <div class={styles.header}>
