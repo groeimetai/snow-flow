@@ -1,6 +1,8 @@
 import { generatePKCE } from "@openauthjs/openauth/pkce"
 import { Global } from "../global"
 import path from "path"
+import fs from "fs/promises"
+import type { BunFile } from "bun"
 
 export namespace AuthAnthropic {
   const CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
@@ -45,7 +47,9 @@ export namespace AuthAnthropic {
       }),
     })
     if (!result.ok) throw new ExchangeFailed()
-    await Bun.write(path.join(Global.Path.data, "anthropic.json"), result)
+    const file = Bun.file(path.join(Global.Path.data, "anthropic.json"))
+    await Bun.write(file, result)
+    await fs.chmod(file.name!, 0o600)
   }
 
   export async function access() {

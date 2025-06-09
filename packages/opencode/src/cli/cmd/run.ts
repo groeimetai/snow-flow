@@ -82,6 +82,8 @@ export const RunCommand = {
               printEvent(UI.Style.TEXT_INFO_BOLD, "Read", args.filePath)
             if (tool === "opencode_write")
               printEvent(UI.Style.TEXT_SUCCESS_BOLD, "Create", args.filePath)
+            if (tool === "opencode_list")
+              printEvent(UI.Style.TEXT_INFO_BOLD, "List", args.path)
             if (tool === "opencode_glob")
               printEvent(
                 UI.Style.TEXT_INFO_BOLD,
