@@ -20,6 +20,7 @@
     "ai": "catalog:",
     "astro": "5.7.13",
     "diff": "8.0.2",
+    "js-base64": "3.7.7",
     "luxon": "3.6.1",
     "marked": "15.0.12",
     "rehype-autolink-headings": "7.1.0",
