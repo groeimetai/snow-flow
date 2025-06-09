@@ -516,7 +516,7 @@ export default function Share(props: {
       created: undefined as number | undefined,
       system: [] as string[],
       messages: [] as SessionMessage[],
-      models: [] as string[][],
+      models: {} as Record<string, string[]>,
       cost: 0,
       tokens: {
         input: 0,
@@ -548,7 +548,7 @@ export default function Share(props: {
         result.tokens.output += assistant.tokens.output
         result.tokens.reasoning += assistant.tokens.reasoning
 
-        result.models.push([assistant.providerID, assistant.modelID])
+        result.models[`${assistant.providerID} ${assistant.modelID}`] = [assistant.providerID, assistant.modelID]
       }
     }
     return result
@@ -624,8 +624,8 @@ export default function Share(props: {
             </li>
           </ul>
           <ul data-section="stats" data-section-models>
-            {data().models.length > 0 ? (
-              <For each={Array.from(data().models)}>
+            {Object.values(data().models).length > 0 ? (
+              <For each={Object.values(data().models)}>
                 {([provider, model]) => (
                   <li>
                     <div data-stat-model-icon title={provider}>
@@ -835,7 +835,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -945,7 +945,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1040,7 +1040,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1080,7 +1080,7 @@ export default function Share(props: {
                                       <Match
                                         when={
                                           part().toolInvocation.state ===
-                                            "result" &&
+                                          "result" &&
                                           part().toolInvocation.result
                                         }
                                       >
@@ -1124,7 +1124,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1232,7 +1232,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1322,7 +1322,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1382,7 +1382,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1437,7 +1437,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                              "opencode_todoread" &&
+                            "opencode_todoread" &&
                             part
                           }
                         >
@@ -1445,7 +1445,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1488,7 +1488,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                              "opencode_todowrite" &&
+                            "opencode_todowrite" &&
                             part
                           }
                         >
@@ -1496,7 +1496,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1570,7 +1570,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                              "opencode_webfetch" &&
+                            "opencode_webfetch" &&
                             part
                           }
                         >
@@ -1578,7 +1578,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1665,7 +1665,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1717,7 +1717,7 @@ export default function Share(props: {
                                       <Match
                                         when={
                                           part().toolInvocation.state ===
-                                            "result" &&
+                                          "result" &&
                                           part().toolInvocation.result
                                         }
                                       >
