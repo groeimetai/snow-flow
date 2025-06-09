@@ -13,6 +13,7 @@ import {
 } from "solid-js"
 import { DateTime } from "luxon"
 import { createStore, reconcile } from "solid-js/store"
+import type { Diagnostic } from "vscode-languageserver-types"
 import { IconOpenAI, IconGemini, IconAnthropic } from "./icons/custom"
 import {
   IconCpuChip,
@@ -148,6 +149,30 @@ function flattenToolArgs(obj: any, prefix: string = ""): Array<[string, any]> {
   }
 
   return entries
+}
+
+/**
+ * Return a flat array of error diagnostics, in the format:
+ *   "ERROR [65:20] Property 'x' does not exist on type 'Y'"
+ */
+export function getDiagnostics(
+  diagnosticsByFile: Record<string, Diagnostic[]>
+): string[] {
+  const result: string[] = [];
+
+  for (const diags of Object.values(diagnosticsByFile)) {
+    for (const d of diags) {
+      // Only keep diagnostics explicitly marked as Error (severity === 1)
+      if (d.severity !== 1) continue;
+
+      const line = d.range.start.line + 1;        // 1-based
+      const column = d.range.start.character + 1; // 1-based
+
+      result.push(`ERROR [${line}:${column}] ${d.message}`);
+    }
+  }
+
+  return result;
 }
 
 function stripEnclosingTag(text: string): string {
@@ -1248,6 +1273,9 @@ export default function Share(props: {
                             const result =
                               part().toolInvocation.state === "result" &&
                               part().toolInvocation.result
+                            const diagnostics = createMemo(() =>
+                              getDiagnostics(metadata()?.diagnostics)
+                            )
 
                             const duration = createMemo(() =>
                               DateTime.fromMillis(metadata()?.time.end || 0)
@@ -1276,6 +1304,10 @@ export default function Share(props: {
                                       <span data-element-label>Write</span>
                                       <b>{filePath}</b>
                                     </span>
+                                    <TextPart
+                                      data-size="sm"
+                                      text={diagnostics().join("\n\n")}
+                                    />
                                     <Switch>
                                       <Match when={hasError}>
                                         <div data-part-tool-result>
@@ -1333,6 +1365,9 @@ export default function Share(props: {
                             )
                             const args = part().toolInvocation.args
                             const filePath = args.filePath
+                            const diagnostics = createMemo(() =>
+                              getDiagnostics(metadata()?.diagnostics)
+                            )
 
                             const duration = createMemo(() =>
                               DateTime.fromMillis(metadata()?.time.end || 0)
@@ -1368,6 +1403,10 @@ export default function Share(props: {
                                         lang={getFileType(filePath)}
                                       />
                                     </div>
+                                    <TextPart
+                                      data-size="sm"
+                                      text={diagnostics().join("\n\n")}
+                                    />
                                   </div>
                                   <ToolFooter time={duration()} />
                                 </div>
