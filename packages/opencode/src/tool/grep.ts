@@ -11,19 +11,20 @@ export const GrepTool = Tool.define({
   parameters: z.object({
     pattern: z
       .string()
+      .nullable()
       .describe("The regex pattern to search for in file contents"),
     path: z
       .string()
+      .nullable()
       .describe(
         "The directory to search in. Defaults to the current working directory.",
-      )
-      .optional(),
+      ),
     include: z
       .string()
+      .nullable()
       .describe(
         'File pattern to include in the search (e.g. "*.js", "*.{ts,tsx}")',
-      )
-      .optional(),
+      ),
   }),
   async execute(params) {
     if (!params.pattern) {

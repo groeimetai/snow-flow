@@ -18,11 +18,11 @@ export const ReadTool = Tool.define({
     offset: z
       .number()
       .describe("The line number to start reading from (0-based)")
-      .optional(),
+      .nullable(),
     limit: z
       .number()
       .describe("The number of lines to read (defaults to 2000)")
-      .optional(),
+      .nullable(),
   }),
   async execute(params, ctx) {
     let filePath = params.filePath

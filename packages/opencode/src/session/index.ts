@@ -549,7 +549,7 @@ export namespace Session {
       abortSignal: abort.signal,
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),
-      temperature: 0,
+      temperature: model.info.id === "codex-mini-latest" ? undefined : 0,
       tools: {
         ...(await MCP.tools()),
         ...tools,

@@ -207,7 +207,9 @@ export namespace Provider {
     const sdk = await getSDK(providerID)
 
     try {
-      const language = sdk.languageModel(modelID)
+      const language =
+        // @ts-expect-error
+        "responses" in sdk ? sdk.responses(modelID) : sdk.languageModel(modelID)
       log.info("found", { providerID, modelID })
       s.models.set(key, {
         info,

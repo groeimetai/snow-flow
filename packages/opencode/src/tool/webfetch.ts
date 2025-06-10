@@ -22,7 +22,7 @@ export const WebFetchTool = Tool.define({
       .min(0)
       .max(MAX_TIMEOUT / 1000)
       .describe("Optional timeout in seconds (max 120)")
-      .optional(),
+      .nullable(),
   }),
   async execute(params) {
     // Validate URL
