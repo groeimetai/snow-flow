@@ -38,9 +38,9 @@ export namespace LSPServer {
         ).catch(() => {})
         if (!tsserver) return
         const root =
-          process.argv0 !== "bun"
+          process.argv0 !== "bun" && false
             ? path.resolve(process.cwd(), process.argv0)
-            : process.argv0
+            : "bun"
         const proc = spawn(
           root,
           ["x", "typescript-language-server", "--stdio"],

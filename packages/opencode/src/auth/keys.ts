@@ -3,9 +3,10 @@ import { Global } from "../global"
 import fs from "fs/promises"
 
 export namespace AuthKeys {
-  const file = Bun.file(path.join(Global.Path.data, "auth", "keys.json"))
+  const filepath = path.join(Global.Path.data, "auth", "keys.json")
 
   export async function get() {
+    const file = Bun.file(filepath)
     return file
       .json()
       .catch(() => ({}))
@@ -13,6 +14,7 @@ export namespace AuthKeys {
   }
 
   export async function set(key: string, value: string) {
+    const file = Bun.file(filepath)
     const env = await get()
     await Bun.write(file, JSON.stringify({ ...env, [key]: value }))
     await fs.chmod(file.name!, 0o600)

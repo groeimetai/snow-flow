@@ -36,9 +36,6 @@ yargs(hideBin(process.argv))
       await App.provide({ cwd: process.cwd(), version: VERSION }, async () => {
         const providers = await Provider.list()
         if (Object.keys(providers).length === 0) {
-          UI.empty()
-          UI.logo()
-          UI.empty()
           await ProviderAddCommand.handler(args)
           return
         }

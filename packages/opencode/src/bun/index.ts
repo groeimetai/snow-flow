@@ -8,9 +8,9 @@ export namespace BunProc {
     options?: Bun.SpawnOptions.OptionsObject<any, any, any>,
   ) {
     const root =
-      process.argv0 !== "bun"
+      process.argv0 !== "bun" && false
         ? path.resolve(process.cwd(), process.argv0)
-        : process.argv0
+        : "bun"
     log.info("running", {
       cmd: [root, ...cmd],
       options,
