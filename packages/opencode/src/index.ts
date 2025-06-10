@@ -32,6 +32,7 @@ yargs(hideBin(process.argv))
         type: "boolean",
       }),
     handler: async (args) => {
+      UI.logo()
       await App.provide({ cwd: process.cwd(), version: VERSION }, async () => {
         const providers = await Provider.list()
         if (Object.keys(providers).length === 0) {
@@ -52,7 +53,6 @@ yargs(hideBin(process.argv))
           const binary = path.join(Global.Path.cache, "tui", blob.name)
           const file = Bun.file(binary)
           if (!(await file.exists())) {
-            console.log("installing tui binary...")
             await Bun.write(file, blob, { mode: 0o755 })
             await fs.chmod(binary, 0o755)
           }
@@ -82,5 +82,4 @@ yargs(hideBin(process.argv))
   .command(GenerateCommand)
   .command(ScrapCommand)
   .command(ProviderCommand)
-  .help()
   .parse()

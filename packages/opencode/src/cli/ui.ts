@@ -1,3 +1,5 @@
+import { VERSION } from "./version"
+
 export namespace UI {
   const LOGO = [
     `█▀▀█ █▀▀█ █▀▀ █▀▀▄ █▀▀ █▀▀█ █▀▀▄ █▀▀`,
@@ -40,6 +42,7 @@ export namespace UI {
   }
 
   export function logo() {
+    empty()
     for (const row of LOGO) {
       print("   ")
       for (let i = 0; i < row.length; i++) {

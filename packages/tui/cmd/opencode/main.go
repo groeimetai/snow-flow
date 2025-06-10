@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -20,7 +19,6 @@ import (
 var Version = "dev"
 
 func main() {
-	fmt.Println(Version)
 	url := os.Getenv("OPENCODE_SERVER")
 	httpClient, err := client.NewClientWithResponses(url)
 	if err != nil {
