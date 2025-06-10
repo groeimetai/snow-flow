@@ -123,7 +123,7 @@ export default {
       return new Response(
         JSON.stringify({
           secret,
-          url: "https://dev.opencode.ai/s?id=" + short,
+          url: "https://dev.opencode.ai/s/" + short,
         }),
         {
           headers: { "Content-Type": "application/json" },
