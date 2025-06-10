@@ -57,6 +57,7 @@ export namespace LSPClient {
     })
     connection.listen()
 
+    const initialization = await input.initialization?.(app)
     await connection.sendRequest("initialize", {
       processId: server.pid,
       workspaceFolders: [
@@ -66,7 +67,7 @@ export namespace LSPClient {
         },
       ],
       initializationOptions: {
-        ...input.initialization,
+        ...initialization,
       },
       capabilities: {
         workspace: {

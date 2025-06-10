@@ -10,7 +10,7 @@ export namespace LSPServer {
   export interface Info {
     id: string
     extensions: string[]
-    initialization?: Record<string, any>
+    initialization?: (app: App.Info) => Promise<Record<string, any>>
     spawn(app: App.Info): Promise<ChildProcessWithoutNullStreams | undefined>
   }
 
@@ -27,10 +27,17 @@ export namespace LSPServer {
         ".mts",
         ".cts",
       ],
-      initialization: {
-        tsserver: {
-          path: require.resolve("typescript/lib/tsserver.js"),
-        },
+      async initialization(app) {
+        const path = Bun.resolve(
+          "typescript/lib/tsserver.js",
+          app.path.cwd,
+        ).catch(() => {})
+        if (!path) return {}
+        return {
+          tsserver: {
+            path,
+          },
+        }
       },
       async spawn() {
         const root =
