@@ -169,7 +169,7 @@ export namespace LSPClient {
         log.info("shutting down")
         connection.end()
         connection.dispose()
-        server.kill()
+        server.process.kill()
       },
     }
 
