@@ -62,21 +62,16 @@ export namespace Ripgrep {
       const archivePath = path.join(Global.Path.bin, filename)
       await Bun.write(archivePath, buffer)
       if (config.extension === "tar.gz") {
-        const proc = Bun.spawn(
-          [
-            "tar",
-            "-xzf",
-            archivePath,
-            "--strip-components=1",
-            "--wildcards",
-            "*/rg",
-          ],
-          {
-            cwd: Global.Path.bin,
-            stderr: "pipe",
-            stdout: "pipe",
-          },
-        )
+        const args = ["tar", "-xzf", archivePath, "--strip-components=1"]
+
+        if (process.platform === "darwin") args.push("--include=*/rg")
+        if (process.platform === "linux") args.push("--wildcards", "*/rg")
+
+        const proc = Bun.spawn(args, {
+          cwd: Global.Path.bin,
+          stderr: "pipe",
+          stdout: "pipe",
+        })
         await proc.exited
         if (proc.exitCode !== 0)
           throw new ExtractionFailedError({
@@ -89,7 +84,7 @@ export namespace Ripgrep {
           ["unzip", "-j", archivePath, "*/rg.exe", "-d", Global.Path.bin],
           {
             cwd: Global.Path.bin,
-            stderr: "ignore",
+            stderr: "pipe",
             stdout: "ignore",
           },
         )

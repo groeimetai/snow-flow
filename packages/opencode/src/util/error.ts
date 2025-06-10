@@ -1,4 +1,7 @@
 import { z, type ZodSchema } from "zod"
+import { Log } from "./log"
+
+const log = Log.create()
 
 export abstract class NamedError extends Error {
   abstract schema(): ZodSchema
@@ -24,6 +27,7 @@ export abstract class NamedError extends Error {
       ) {
         super(name, options)
         this.name = name
+        log.error(name, this.data)
       }
 
       static isInstance(input: any): input is InstanceType<typeof result> {
