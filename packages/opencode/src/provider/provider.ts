@@ -1,7 +1,7 @@
 import z from "zod"
 import { App } from "../app/app"
 import { Config } from "../config/config"
-import { mapValues, sortBy } from "remeda"
+import { mergeDeep, sortBy } from "remeda"
 import { NoSuchModelError, type LanguageModel, type Provider as SDK } from "ai"
 import { Log } from "../util/log"
 import path from "path"
@@ -150,10 +150,7 @@ export namespace Provider {
         }
         return
       }
-      provider.options = {
-        ...provider.options,
-        ...options,
-      }
+      provider.options = mergeDeep(provider.options, options)
       provider.source = source
     }
 
@@ -165,15 +162,8 @@ export namespace Provider {
       mergeProvider(providerID, result.options, result.source)
     }
 
-    const keys = await AuthKeys.get()
-    for (const [providerID, key] of Object.entries(keys)) {
-      mergeProvider(
-        providerID,
-        {
-          apiKey: key,
-        },
-        "global",
-      )
+    for (const [providerID, key] of Object.entries(await AuthKeys.get())) {
+      mergeProvider(providerID, { apiKey: key }, "global")
     }
 
     for (const [providerID, options] of Object.entries(config.provider ?? {})) {

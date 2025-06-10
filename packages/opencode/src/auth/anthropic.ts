@@ -52,6 +52,8 @@ export namespace AuthAnthropic {
     await fs.chmod(file.name!, 0o600)
   }
 
+  export const exists = file.exists
+
   export async function access() {
     if (!(await file.exists())) return
     const result = await file.json()
