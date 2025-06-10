@@ -156,23 +156,23 @@ function flattenToolArgs(obj: any, prefix: string = ""): Array<[string, any]> {
  *   "ERROR [65:20] Property 'x' does not exist on type 'Y'"
  */
 export function getDiagnostics(
-  diagnosticsByFile: Record<string, Diagnostic[]>
+  diagnosticsByFile: Record<string, Diagnostic[]>,
 ): string[] {
-  const result: string[] = [];
+  const result: string[] = []
 
   for (const diags of Object.values(diagnosticsByFile)) {
     for (const d of diags) {
       // Only keep diagnostics explicitly marked as Error (severity === 1)
-      if (d.severity !== 1) continue;
+      if (d.severity !== 1) continue
 
-      const line = d.range.start.line + 1;        // 1-based
-      const column = d.range.start.character + 1; // 1-based
+      const line = d.range.start.line + 1 // 1-based
+      const column = d.range.start.character + 1 // 1-based
 
-      result.push(`ERROR [${line}:${column}] ${d.message}`);
+      result.push(`ERROR [${line}:${column}] ${d.message}`)
     }
   }
 
-  return result;
+  return result
 }
 
 function stripEnclosingTag(text: string): string {
@@ -426,7 +426,8 @@ function ToolFooter(props: { time: number }) {
 
 export default function Share(props: {
   api: string
-  data: { key: string; content: SessionMessage | SessionInfo }[]
+  info: SessionInfo
+  messages: Record<string, SessionMessage>
 }) {
   let params = new URLSearchParams(document.location.search)
   const id = params.get("id")
@@ -434,26 +435,13 @@ export default function Share(props: {
   const [store, setStore] = createStore<{
     info?: SessionInfo
     messages: Record<string, SessionMessage>
-  }>({ messages: {} })
+  }>({ info: props.info, messages: props.messages })
   const messages = createMemo(() =>
     Object.values(store.messages).toSorted((a, b) => a.id?.localeCompare(b.id)),
   )
   const [connectionStatus, setConnectionStatus] = createSignal<
     [Status, string?]
   >(["disconnected", "Disconnected"])
-
-  const processDatum = (d: any) => {
-    const [root, type, ...splits] = d.key.split("/")
-    if (root !== "session") return
-    if (type === "info") {
-      setStore("info", reconcile(d.content))
-      return
-    }
-    if (type === "message") {
-      const [, messageID] = splits
-      setStore("messages", messageID, reconcile(d.content))
-    }
-  }
 
   onMount(() => {
     const apiUrl = props.api
@@ -467,10 +455,6 @@ export default function Share(props: {
       console.error("API URL not found in environment variables")
       setConnectionStatus(["error", "API URL not found"])
       return
-    }
-
-    for (const datum of props.data) {
-      processDatum(datum)
     }
 
     let reconnectTimer: number | undefined
@@ -503,7 +487,17 @@ export default function Share(props: {
       socket.onmessage = (event) => {
         console.log("WebSocket message received")
         try {
-          processDatum(JSON.parse(event.data))
+          const d = JSON.parse(event.data)
+          const [root, type, ...splits] = d.key.split("/")
+          if (root !== "session") return
+          if (type === "info") {
+            setStore("info", reconcile(d.content))
+            return
+          }
+          if (type === "message") {
+            const [, messageID] = splits
+            setStore("messages", messageID, reconcile(d.content))
+          }
         } catch (error) {
           console.error("Error parsing WebSocket message:", error)
         }
@@ -579,7 +573,10 @@ export default function Share(props: {
         result.tokens.output += assistant.tokens.output
         result.tokens.reasoning += assistant.tokens.reasoning
 
-        result.models[`${assistant.providerID} ${assistant.modelID}`] = [assistant.providerID, assistant.modelID]
+        result.models[`${assistant.providerID} ${assistant.modelID}`] = [
+          assistant.providerID,
+          assistant.modelID,
+        ]
       }
     }
     return result
@@ -864,7 +861,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -974,7 +971,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1069,7 +1066,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1109,7 +1106,7 @@ export default function Share(props: {
                                       <Match
                                         when={
                                           part().toolInvocation.state ===
-                                          "result" &&
+                                            "result" &&
                                           part().toolInvocation.result
                                         }
                                       >
@@ -1153,7 +1150,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1261,7 +1258,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1272,7 +1269,7 @@ export default function Share(props: {
                               part().toolInvocation.state === "result" &&
                               part().toolInvocation.result
                             const diagnostics = createMemo(() =>
-                              getDiagnostics(metadata()?.diagnostics)
+                              getDiagnostics(metadata()?.diagnostics),
                             )
 
                             const duration = createMemo(() =>
@@ -1358,13 +1355,13 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
                             const filePath = args.filePath
                             const diagnostics = createMemo(() =>
-                              getDiagnostics(metadata()?.diagnostics)
+                              getDiagnostics(metadata()?.diagnostics),
                             )
 
                             const duration = createMemo(() =>
@@ -1425,7 +1422,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1480,7 +1477,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                            "opencode_todoread" &&
+                              "opencode_todoread" &&
                             part
                           }
                         >
@@ -1488,7 +1485,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1531,7 +1528,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                            "opencode_todowrite" &&
+                              "opencode_todowrite" &&
                             part
                           }
                         >
@@ -1539,7 +1536,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1613,7 +1610,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                            "opencode_webfetch" &&
+                              "opencode_webfetch" &&
                             part
                           }
                         >
@@ -1621,7 +1618,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1708,7 +1705,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                part().toolInvocation.toolCallId
+                                  part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1760,7 +1757,7 @@ export default function Share(props: {
                                       <Match
                                         when={
                                           part().toolInvocation.state ===
-                                          "result" &&
+                                            "result" &&
                                           part().toolInvocation.result
                                         }
                                       >

@@ -69,7 +69,7 @@ export class SyncServer extends DurableObject<Env> {
     return secret
   }
 
-  public async messages() {
+  public async getData() {
     const data = await this.ctx.storage.list()
     const messages = []
     for (const [key, content] of data.entries()) {
@@ -173,14 +173,29 @@ export default {
       return stub.fetch(request)
     }
 
-    if (request.method === "GET" && method === "share_messages") {
+    if (request.method === "GET" && method === "share_data") {
       const id = url.searchParams.get("id")
-      console.log("share_messages", id)
+      console.log("share_data", id)
       if (!id)
         return new Response("Error: Share ID is required", { status: 400 })
       const stub = env.SYNC_SERVER.get(env.SYNC_SERVER.idFromName(id))
-      const messages = await stub.messages()
-      return new Response(JSON.stringify({ messages }), {
+      const data = await stub.getData()
+      let info
+      const messages = {}
+      data.forEach((d) => {
+        const [root, type, ...splits] = d.key.split("/")
+        if (root !== "session") return
+        if (type === "info") {
+          info = d.content
+          return
+        }
+        if (type === "message") {
+          const [, messageID] = splits
+          messages[messageID] = d.content
+        }
+      })
+
+      return new Response(JSON.stringify({ info, messages }), {
         headers: { "Content-Type": "application/json" },
       })
     }
