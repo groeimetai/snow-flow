@@ -861,7 +861,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -971,7 +971,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1066,7 +1066,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1106,7 +1106,7 @@ export default function Share(props: {
                                       <Match
                                         when={
                                           part().toolInvocation.state ===
-                                            "result" &&
+                                          "result" &&
                                           part().toolInvocation.result
                                         }
                                       >
@@ -1150,7 +1150,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1258,7 +1258,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1299,10 +1299,12 @@ export default function Share(props: {
                                       <span data-element-label>Write</span>
                                       <b>{filePath}</b>
                                     </span>
-                                    <TextPart
-                                      data-size="sm"
-                                      text={diagnostics().join("\n\n")}
-                                    />
+                                    <Show when={diagnostics().length > 0}>
+                                      <TextPart
+                                        data-size="sm"
+                                        text={diagnostics().join("\n\n")}
+                                      />
+                                    </Show>
                                     <Switch>
                                       <Match when={hasError}>
                                         <div data-part-tool-result>
@@ -1355,7 +1357,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1398,10 +1400,12 @@ export default function Share(props: {
                                         lang={getFileType(filePath)}
                                       />
                                     </div>
-                                    <TextPart
-                                      data-size="sm"
-                                      text={diagnostics().join("\n\n")}
-                                    />
+                                    <Show when={diagnostics().length > 0}>
+                                      <TextPart
+                                        data-size="sm"
+                                        text={diagnostics().join("\n\n")}
+                                      />
+                                    </Show>
                                   </div>
                                   <ToolFooter time={duration()} />
                                 </div>
@@ -1422,7 +1426,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1477,7 +1481,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                              "opencode_todoread" &&
+                            "opencode_todoread" &&
                             part
                           }
                         >
@@ -1485,7 +1489,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1528,7 +1532,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                              "opencode_todowrite" &&
+                            "opencode_todowrite" &&
                             part
                           }
                         >
@@ -1536,7 +1540,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1610,7 +1614,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                              "opencode_webfetch" &&
+                            "opencode_webfetch" &&
                             part
                           }
                         >
@@ -1618,7 +1622,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
                             const args = part().toolInvocation.args
@@ -1705,7 +1709,7 @@ export default function Share(props: {
                             const metadata = createMemo(
                               () =>
                                 msg.metadata?.tool[
-                                  part().toolInvocation.toolCallId
+                                part().toolInvocation.toolCallId
                                 ],
                             )
 
@@ -1757,7 +1761,7 @@ export default function Share(props: {
                                       <Match
                                         when={
                                           part().toolInvocation.state ===
-                                            "result" &&
+                                          "result" &&
                                           part().toolInvocation.result
                                         }
                                       >
