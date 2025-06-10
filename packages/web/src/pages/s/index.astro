@@ -1,5 +1,4 @@
 ---
-import { Base64 } from "js-base64";
 import config from "virtual:starlight/user-config";
 
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
@@ -12,23 +11,7 @@ const res = await fetch(`${apiUrl}/share_data?id=${id}`);
 const data = await res.json();
 
 const title = data.info.title;
-
-const encodedTitle = encodeURIComponent(
-  Base64.encode(
-    // Convert to ASCII
-    encodeURIComponent(
-      // Truncate to fit S3's max key size
-      title.substring(0, 700)
-    )
-  )
-)
-
-const cardService = "https://social-cards.sst.dev";
-const cost = "$0.12";
-const model = "claude-sonnet-4-20250514,claude-opus-4-20250514";
-const version = "v0.1.1";
-// ?cost=$0.12&model=claude-sonnet-4-20250514,claude-opus-4-20250514&version=v0.1.1&id=43120e6b
-const ogImageUrl = `${cardService}/opencode-share/${encodedTitle}.png?cost=${cost}&model=${model}&version=${version}&id=${id}`;
+const ogImage = data.ogImage;
 
 ---
 <StarlightPage
@@ -43,14 +26,14 @@ const ogImageUrl = `${cardService}/opencode-share/${encodedTitle}.png?cost=${cos
         tag: "meta",
         attrs: {
           property: "og:image",
-          content: ogImageUrl,
+          content: ogImage,
         },
       },
       {
         tag: "meta",
         attrs: {
           name: "twitter:image",
-          content: ogImageUrl,
+          content: ogImage,
         },
       },
     ],
