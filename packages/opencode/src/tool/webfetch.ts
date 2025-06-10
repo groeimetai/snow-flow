@@ -24,7 +24,7 @@ export const WebFetchTool = Tool.define({
       .describe("Optional timeout in seconds (max 120)")
       .nullable(),
   }),
-  async execute(params) {
+  async execute(params, ctx) {
     // Validate URL
     if (
       !params.url.startsWith("http://") &&
@@ -42,7 +42,7 @@ export const WebFetchTool = Tool.define({
     const timeoutId = setTimeout(() => controller.abort(), timeout)
 
     const response = await fetch(params.url, {
-      signal: controller.signal,
+      signal: AbortSignal.any([controller.signal, ctx.abort]),
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",

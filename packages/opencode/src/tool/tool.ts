@@ -3,6 +3,7 @@ import type { StandardSchemaV1 } from "@standard-schema/spec"
 export namespace Tool {
   export type Context = {
     sessionID: string
+    abort: AbortSignal
   }
   export interface Info<
     Parameters extends StandardSchemaV1 = StandardSchemaV1,

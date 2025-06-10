@@ -362,6 +362,7 @@ export namespace Session {
           try {
             const result = await item.execute(args, {
               sessionID: input.sessionID,
+              abort: abort.signal,
             })
             next.metadata!.tool![opts.toolCallId] = {
               ...result.metadata,

@@ -42,7 +42,7 @@ export const BashTool = Tool.define({
         "Clear, concise description of what this command does in 5-10 words. Examples:\nInput: ls\nOutput: Lists files in current directory\n\nInput: git status\nOutput: Shows working tree status\n\nInput: npm install\nOutput: Installs package dependencies\n\nInput: mkdir foo\nOutput: Creates directory 'foo'",
       ),
   }),
-  async execute(params) {
+  async execute(params, ctx) {
     const timeout = Math.min(params.timeout ?? DEFAULT_TIMEOUT, MAX_TIMEOUT)
     if (BANNED_COMMANDS.some((item) => params.command.startsWith(item)))
       throw new Error(`Command '${params.command}' is not allowed`)
@@ -50,6 +50,7 @@ export const BashTool = Tool.define({
     const process = Bun.spawn({
       cmd: ["bash", "-c", params.command],
       maxBuffer: MAX_OUTPUT_LENGTH,
+      signal: ctx.abort,
       timeout: timeout,
       stdout: "pipe",
       stderr: "pipe",
