@@ -97,7 +97,7 @@ export namespace App {
         log.info("registering service", { name: key })
         services.set(key, {
           state: init(app.info),
-          shutdown: shutdown,
+          shutdown,
         })
       }
       return services.get(key)?.state as State
@@ -108,14 +108,15 @@ export namespace App {
     return ctx.use().info
   }
 
-  export async function provide<T extends (app: Info) => any>(
+  export async function provide<T>(
     input: { cwd: string; version: string },
-    cb: T,
+    cb: (app: Info) => Promise<T>,
   ) {
     const app = await create(input)
     return ctx.provide(app, async () => {
       const result = await cb(app.info)
       for (const [key, entry] of app.services.entries()) {
+        if (!entry.shutdown) continue
         log.info("shutdown", { name: key })
         await entry.shutdown?.(await entry.state)
       }

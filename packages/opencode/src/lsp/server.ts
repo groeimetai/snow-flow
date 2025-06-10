@@ -32,7 +32,7 @@ export namespace LSPServer {
         ".cts",
       ],
       async spawn(app) {
-        const tsserver = Bun.resolve(
+        const tsserver = await Bun.resolve(
           "typescript/lib/tsserver.js",
           app.path.cwd,
         ).catch(() => {})

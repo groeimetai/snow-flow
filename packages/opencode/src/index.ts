@@ -21,62 +21,76 @@ import { UI } from "./cli/ui"
 
 await Log.init({ print: process.argv.includes("--print-logs") })
 
-yargs(hideBin(process.argv))
-  .scriptName("opencode")
-  .version(VERSION)
-  .command({
-    command: "$0",
-    describe: "Start OpenCode TUI",
-    builder: (yargs) =>
-      yargs.option("print-logs", {
-        type: "boolean",
-      }),
-    handler: async (args) => {
-      UI.logo()
-      await App.provide({ cwd: process.cwd(), version: VERSION }, async () => {
-        const providers = await Provider.list()
-        if (Object.keys(providers).length === 0) {
-          await ProviderAddCommand.handler(args)
-          return
-        }
+try {
+  await yargs(hideBin(process.argv))
+    .scriptName("opencode")
+    .version(VERSION)
+    .command({
+      command: "$0",
+      describe: "Start OpenCode TUI",
+      handler: async (args) => {
+        while (true) {
+          const result = await App.provide(
+            { cwd: process.cwd(), version: VERSION },
+            async () => {
+              const providers = await Provider.list()
+              if (Object.keys(providers).length === 0) {
+                return "needs_provider"
+              }
 
-        await Share.init()
-        const server = Server.listen()
+              await Share.init()
+              const server = Server.listen()
 
-        let cmd = ["go", "run", "./main.go"]
-        let cwd = new URL("../../tui/cmd/opencode", import.meta.url).pathname
-        if (Bun.embeddedFiles.length > 0) {
-          const blob = Bun.embeddedFiles[0] as File
-          const binary = path.join(Global.Path.cache, "tui", blob.name)
-          const file = Bun.file(binary)
-          if (!(await file.exists())) {
-            await Bun.write(file, blob, { mode: 0o755 })
-            await fs.chmod(binary, 0o755)
+              let cmd = ["go", "run", "./main.go"]
+              let cwd = new URL("../../tui/cmd/opencode", import.meta.url)
+                .pathname
+              if (Bun.embeddedFiles.length > 0) {
+                const blob = Bun.embeddedFiles[0] as File
+                const binary = path.join(Global.Path.cache, "tui", blob.name)
+                const file = Bun.file(binary)
+                if (!(await file.exists())) {
+                  await Bun.write(file, blob, { mode: 0o755 })
+                  await fs.chmod(binary, 0o755)
+                }
+                cwd = process.cwd()
+                cmd = [binary]
+              }
+              const proc = Bun.spawn({
+                cmd,
+                cwd,
+                stdout: "inherit",
+                stderr: "inherit",
+                stdin: "inherit",
+                env: {
+                  ...process.env,
+                  OPENCODE_SERVER: server.url.toString(),
+                },
+                onExit: () => {
+                  server.stop()
+                },
+              })
+              await proc.exited
+              await server.stop()
+
+              return "done"
+            },
+          )
+          if (result === "done") break
+          if (result === "needs_provider") {
+            UI.logo()
+            await ProviderAddCommand.handler(args)
           }
-          cwd = process.cwd()
-          cmd = [binary]
         }
-        const proc = Bun.spawn({
-          cmd,
-          cwd,
-          stdout: "inherit",
-          stderr: "inherit",
-          stdin: "inherit",
-          env: {
-            ...process.env,
-            OPENCODE_SERVER: server.url.toString(),
-          },
-          onExit: () => {
-            server.stop()
-          },
-        })
-        await proc.exited
-        await server.stop()
-      })
-    },
-  })
-  .command(RunCommand)
-  .command(GenerateCommand)
-  .command(ScrapCommand)
-  .command(ProviderCommand)
-  .parse()
+      },
+    })
+    .command(RunCommand)
+    .command(GenerateCommand)
+    .command(ScrapCommand)
+    .command(ProviderCommand)
+    .fail((msg, err) => {
+      Log.Default.error(msg)
+    })
+    .parse()
+} catch (e) {
+  Log.Default.error(e)
+}

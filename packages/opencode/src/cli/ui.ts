@@ -1,4 +1,5 @@
-import { VERSION } from "./version"
+import { z } from "zod"
+import { NamedError } from "../util/error"
 
 export namespace UI {
   const LOGO = [
@@ -6,6 +7,11 @@ export namespace UI {
     `█░░█ █░░█ █▀▀ █░░█ █░░ █░░█ █░░█ █▀▀`,
     `▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ ▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`,
   ]
+
+  export const CancelledError = NamedError.create(
+    "UICancelledError",
+    z.object({}),
+  )
 
   export const Style = {
     TEXT_HIGHLIGHT: "\x1b[96m",

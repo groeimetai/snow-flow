@@ -6,6 +6,7 @@ import * as prompts from "@clack/prompts"
 import open from "open"
 import { VERSION } from "../version"
 import { Provider } from "../../provider/provider"
+import { UI } from "../ui"
 
 export const ProviderCommand = cmd({
   command: "provider",
@@ -62,7 +63,7 @@ export const ProviderAddCommand = cmd({
           },
         ],
       })
-      if (prompts.isCancel(provider)) return
+      if (prompts.isCancel(provider)) throw new UI.CancelledError({})
 
       if (provider === "anthropic") {
         const method = await prompts.select({
@@ -78,7 +79,7 @@ export const ProviderAddCommand = cmd({
             },
           ],
         })
-        if (prompts.isCancel(method)) return
+        if (prompts.isCancel(method)) throw new UI.CancelledError({})
 
         if (method === "oauth") {
           // some weird bug where program exits without this
@@ -92,7 +93,8 @@ export const ProviderAddCommand = cmd({
             message: "Paste the authorization code here: ",
             validate: (x) => (x.length > 0 ? undefined : "Required"),
           })
-          if (prompts.isCancel(code)) return
+          if (prompts.isCancel(code)) throw new UI.CancelledError({})
+
           await AuthAnthropic.exchange(code, verifier)
             .then(() => {
               prompts.log.success("Login successful")
@@ -109,7 +111,7 @@ export const ProviderAddCommand = cmd({
         message: "Enter your API key",
         validate: (x) => (x.length > 0 ? undefined : "Required"),
       })
-      if (prompts.isCancel(key)) return
+      if (prompts.isCancel(key)) throw new UI.CancelledError({})
       await AuthKeys.set(provider, key)
 
       prompts.outro("Done")
