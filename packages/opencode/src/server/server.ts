@@ -415,7 +415,9 @@ export namespace Server {
           },
         }),
         async (c) => {
-          const providers = await Provider.active()
+          const providers = await Provider.list().then((x) =>
+            mapValues(x, (item) => item.info),
+          )
           return c.json({
             providers: Object.values(providers),
             defaults: mapValues(

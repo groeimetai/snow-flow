@@ -1,4 +1,10 @@
 export namespace UI {
+  const LOGO = [
+    `█▀▀█ █▀▀█ █▀▀ █▀▀▄ █▀▀ █▀▀█ █▀▀▄ █▀▀`,
+    `█░░█ █░░█ █▀▀ █░░█ █░░ █░░█ █░░█ █▀▀`,
+    `▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ ▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`,
+  ]
+
   export const Style = {
     TEXT_HIGHLIGHT: "\x1b[96m",
     TEXT_HIGHLIGHT_BOLD: "\x1b[96m\x1b[1m",
@@ -31,6 +37,20 @@ export namespace UI {
     if (blank) return
     println("" + Style.TEXT_NORMAL)
     blank = true
+  }
+
+  export function logo() {
+    for (const row of LOGO) {
+      print("   ")
+      for (let i = 0; i < row.length; i++) {
+        const color =
+          i > 18 ? Bun.color("white", "ansi") : Bun.color("gray", "ansi")
+        const char = row[i]
+        print(color + char)
+      }
+      println()
+    }
+    empty()
   }
 
   export async function input(prompt: string): Promise<string> {

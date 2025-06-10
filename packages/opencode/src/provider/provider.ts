@@ -23,6 +23,7 @@ import { TodoReadTool, TodoWriteTool } from "../tool/todo"
 import { AuthAnthropic } from "../auth/anthropic"
 import { ModelsDev } from "./models"
 import { NamedError } from "../util/error"
+import { AuthKeys } from "../auth/keys"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -60,21 +61,32 @@ export namespace Provider {
     })
   export type Info = z.output<typeof Info>
 
-  type Autodetector = (provider: Info) => Promise<Record<string, any> | false>
+  type Autodetector = (provider: Info) => Promise<
+    | {
+        source: Source
+        options: Record<string, any>
+      }
+    | false
+  >
 
-  function env(...keys: string[]): Autodetector {
-    return async () => {
+  function env(...keys: string[]) {
+    const result: Autodetector = async () => {
       for (const key of keys) {
-        if (process.env[key]) return {}
+        if (process.env[key])
+          return {
+            source: "env",
+            options: {},
+          }
       }
       return false
     }
+
+    return result
   }
 
-  const AUTODETECT: Record<
-    string,
-    (provider: Info) => Promise<Record<string, any> | false>
-  > = {
+  type Source = "oauth" | "env" | "config" | "global"
+
+  const AUTODETECT: Record<string, Autodetector> = {
     async anthropic(provider) {
       const access = await AuthAnthropic.access()
       if (access) {
@@ -88,10 +100,13 @@ export namespace Provider {
           }
         }
         return {
-          apiKey: "",
-          headers: {
-            authorization: `Bearer ${access}`,
-            "anthropic-beta": "oauth-2025-04-20",
+          source: "oauth",
+          options: {
+            apiKey: "",
+            headers: {
+              authorization: `Bearer ${access}`,
+              "anthropic-beta": "oauth-2025-04-20",
+            },
           },
         }
       }
@@ -107,6 +122,7 @@ export namespace Provider {
 
     const providers: {
       [providerID: string]: {
+        source: Source
         info: Provider.Info
         options: Record<string, any>
       }
@@ -116,30 +132,52 @@ export namespace Provider {
 
     log.info("loading")
 
+    function mergeProvider(
+      id: string,
+      options: Record<string, any>,
+      source: Source,
+    ) {
+      const provider = providers[id]
+      if (!provider) {
+        providers[id] = {
+          source,
+          info: database[id] ?? {
+            id,
+            name: id,
+            models: [],
+          },
+          options,
+        }
+        return
+      }
+      provider.options = {
+        ...provider.options,
+        ...options,
+      }
+      provider.source = source
+    }
+
     for (const [providerID, fn] of Object.entries(AUTODETECT)) {
       const provider = database[providerID]
       if (!provider) continue
-      const options = await fn(provider)
-      if (!options) continue
-      providers[providerID] = {
-        info: provider,
-        options,
-      }
+      const result = await fn(provider)
+      if (!result) continue
+      mergeProvider(providerID, result.options, result.source)
+    }
+
+    const keys = await AuthKeys.get()
+    for (const [providerID, key] of Object.entries(keys)) {
+      mergeProvider(
+        providerID,
+        {
+          apiKey: key,
+        },
+        "global",
+      )
     }
 
     for (const [providerID, options] of Object.entries(config.provider ?? {})) {
-      const existing = providers[providerID]
-      if (existing) {
-        existing.options = {
-          ...existing.options,
-          ...options,
-        }
-        continue
-      }
-      providers[providerID] = {
-        info: database[providerID],
-        options,
-      }
+      mergeProvider(providerID, options, "config")
     }
 
     for (const providerID of Object.keys(providers)) {
@@ -153,10 +191,8 @@ export namespace Provider {
     }
   })
 
-  export async function active() {
-    return state().then((state) =>
-      mapValues(state.providers, (item) => item.info),
-    )
+  export async function list() {
+    return state().then((state) => state.providers)
   }
 
   async function getSDK(providerID: string) {
@@ -242,12 +278,12 @@ export namespace Provider {
   }
 
   export async function defaultModel() {
-    const [provider] = await active().then((val) => Object.values(val))
+    const [provider] = await list().then((val) => Object.values(val))
     if (!provider) throw new Error("no providers found")
-    const [model] = sort(Object.values(provider.models))
+    const [model] = sort(Object.values(provider.info.models))
     if (!model) throw new Error("no models found")
     return {
-      providerID: provider.id,
+      providerID: provider.info.id,
       modelID: model.id,
     }
   }

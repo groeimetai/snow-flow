@@ -41,11 +41,11 @@ export const RunCommand = {
           ? await Session.get(args.session)
           : await Session.create()
 
-        UI.print(UI.Style.TEXT_HIGHLIGHT_BOLD + "◍  OpenCode", VERSION)
+        UI.println(UI.Style.TEXT_HIGHLIGHT_BOLD + "◍  OpenCode", VERSION)
         UI.empty()
-        UI.print(UI.Style.TEXT_NORMAL_BOLD + "> ", message)
+        UI.println(UI.Style.TEXT_NORMAL_BOLD + "> ", message)
         UI.empty()
-        UI.print(
+        UI.println(
           UI.Style.TEXT_INFO_BOLD +
             "~  https://dev.opencode.ai/s?id=" +
             session.id.slice(-8),
@@ -53,7 +53,7 @@ export const RunCommand = {
         UI.empty()
 
         function printEvent(color: string, type: string, title: string) {
-          UI.print(
+          UI.println(
             color + `|`,
             UI.Style.TEXT_NORMAL +
               UI.Style.TEXT_DIM +
@@ -95,7 +95,7 @@ export const RunCommand = {
           if (part.type === "text") {
             if (part.text.includes("\n")) {
               UI.empty()
-              UI.print(part.text)
+              UI.println(part.text)
               UI.empty()
               return
             }

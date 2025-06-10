@@ -15,7 +15,9 @@ import { GenerateCommand } from "./cli/cmd/generate"
 import { VERSION } from "./cli/version"
 import { ScrapCommand } from "./cli/cmd/scrap"
 import { Log } from "./util/log"
-import { ProviderCommand } from "./cli/cmd/provider"
+import { ProviderAddCommand, ProviderCommand } from "./cli/cmd/provider"
+import { Provider } from "./provider/provider"
+import { UI } from "./cli/ui"
 
 await Log.init({ print: process.argv.includes("--print-logs") })
 
@@ -31,6 +33,15 @@ yargs(hideBin(process.argv))
       }),
     handler: async (args) => {
       await App.provide({ cwd: process.cwd(), version: VERSION }, async () => {
+        const providers = await Provider.list()
+        if (Object.keys(providers).length === 0) {
+          UI.empty()
+          UI.logo()
+          UI.empty()
+          await ProviderAddCommand.handler(args)
+          return
+        }
+
         await Share.init()
         const server = Server.listen()
 

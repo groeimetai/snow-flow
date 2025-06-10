@@ -1,15 +1,11 @@
+import { App } from "../../app/app"
 import { AuthAnthropic } from "../../auth/anthropic"
 import { AuthKeys } from "../../auth/keys"
-import { UI } from "../ui"
 import { cmd } from "./cmd"
 import * as prompts from "@clack/prompts"
 import open from "open"
-
-const OPENCODE = [
-  `█▀▀█ █▀▀█ █▀▀ █▀▀▄ █▀▀ █▀▀█ █▀▀▄ █▀▀`,
-  `█░░█ █░░█ █▀▀ █░░█ █░░ █░░█ █░░█ █▀▀`,
-  `▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ ▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`,
-]
+import { VERSION } from "../version"
+import { Provider } from "../../provider/provider"
 
 export const ProviderCommand = cmd({
   command: "provider",
@@ -27,103 +23,96 @@ export const ProviderListCommand = cmd({
   aliases: ["ls"],
   describe: "list providers",
   async handler() {
-    prompts.intro("Configured Providers")
-    const keys = await AuthKeys.get()
-    for (const key of Object.keys(keys)) {
-      prompts.log.success(key)
-    }
-    prompts.outro("3 providers configured")
+    await App.provide({ cwd: process.cwd(), version: VERSION }, async () => {
+      prompts.intro("Providers")
+      const providers = await Provider.list().then((x) => Object.values(x))
+      for (const value of providers) {
+        prompts.log.success(value.info.name + " (" + value.source + ")")
+      }
+      prompts.outro(`${providers.length} configured`)
+    })
   },
 })
 
-const ProviderAddCommand = cmd({
+export const ProviderAddCommand = cmd({
   command: "add",
   describe: "add credentials for various providers",
   async handler() {
-    UI.empty()
-    for (const row of OPENCODE) {
-      UI.print("   ")
-      for (let i = 0; i < row.length; i++) {
-        const color =
-          i < 18 ? Bun.color("white", "ansi") : Bun.color("gray", "ansi")
-        const char = row[i]
-        UI.print(color + char)
-      }
-      UI.println()
-    }
-    UI.empty()
-
-    prompts.intro("Setup")
-    const keys = await AuthKeys.get()
-    const provider = await prompts.select({
-      message: "Configure a provider",
-      options: [
-        {
-          label: "Anthropic",
-          value: "anthropic",
-          hint: keys["anthropic"] ? "configured" : "",
-        },
-        {
-          label: "OpenAI",
-          value: "openai",
-          hint: keys["openai"] ? "configured" : "",
-        },
-        {
-          label: "Google",
-          value: "google",
-          hint: keys["google"] ? "configured" : "",
-        },
-      ],
-    })
-    if (prompts.isCancel(provider)) return
-
-    if (provider === "anthropic") {
-      const method = await prompts.select({
-        message: "Login method",
+    await App.provide({ cwd: process.cwd(), version: VERSION }, async () => {
+      const providers = await Provider.list()
+      prompts.intro("Add provider")
+      const provider = await prompts.select({
+        message: "Select",
+        maxItems: 2,
         options: [
           {
-            label: "Claude Pro/Max",
-            value: "oauth",
+            label: "Anthropic",
+            value: "anthropic",
+            hint: providers["anthropic"] ? "configured" : "",
           },
           {
-            label: "API Key",
-            value: "api",
+            label: "OpenAI",
+            value: "openai",
+            hint: providers["openai"] ? "configured" : "",
+          },
+          {
+            label: "Google",
+            value: "google",
+            hint: providers["google"] ? "configured" : "",
           },
         ],
       })
-      if (prompts.isCancel(method)) return
+      if (prompts.isCancel(provider)) return
 
-      if (method === "oauth") {
-        // some weird bug where program exits without this
-        await new Promise((resolve) => setTimeout(resolve, 10))
-        const { url, verifier } = await AuthAnthropic.authorize()
-        prompts.note("Opening browser...")
-        await open(url)
-        prompts.log.info(url)
-
-        const code = await prompts.text({
-          message: "Paste the authorization code here: ",
-          validate: (x) => (x.length > 0 ? undefined : "Required"),
+      if (provider === "anthropic") {
+        const method = await prompts.select({
+          message: "Login method",
+          options: [
+            {
+              label: "Claude Pro/Max",
+              value: "oauth",
+            },
+            {
+              label: "API Key",
+              value: "api",
+            },
+          ],
         })
-        if (prompts.isCancel(code)) return
-        await AuthAnthropic.exchange(code, verifier)
-          .then(() => {
-            prompts.log.success("Login successful")
+        if (prompts.isCancel(method)) return
+
+        if (method === "oauth") {
+          // some weird bug where program exits without this
+          await new Promise((resolve) => setTimeout(resolve, 10))
+          const { url, verifier } = await AuthAnthropic.authorize()
+          prompts.note("Opening browser...")
+          await open(url)
+          prompts.log.info(url)
+
+          const code = await prompts.text({
+            message: "Paste the authorization code here: ",
+            validate: (x) => (x.length > 0 ? undefined : "Required"),
           })
-          .catch(() => {
-            prompts.log.error("Invalid code")
-          })
-        prompts.outro("Done")
-        return
+          if (prompts.isCancel(code)) return
+          await AuthAnthropic.exchange(code, verifier)
+            .then(() => {
+              prompts.log.success("Login successful")
+            })
+            .catch(() => {
+              prompts.log.error("Invalid code")
+            })
+          prompts.outro("Done")
+          return
+        }
       }
-    }
 
-    const key = await prompts.password({
-      message: "Enter your API key",
+      const key = await prompts.password({
+        message: "Enter your API key",
+        validate: (x) => (x.length > 0 ? undefined : "Required"),
+      })
+      if (prompts.isCancel(key)) return
+      await AuthKeys.set(provider, key)
+
+      prompts.outro("Done")
     })
-    if (prompts.isCancel(key)) return
-    await AuthKeys.set(provider, key)
-
-    prompts.outro("Done")
   },
 })
