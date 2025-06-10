@@ -33,8 +33,9 @@ export namespace LSP {
     for (const match of matches) {
       const existing = s.clients.get(match.id)
       if (existing) continue
-      const client = await LSPClient.create(match)
-      if (!client) continue
+      const handle = await match.spawn(App.info())
+      if (!handle) continue
+      const client = await LSPClient.create(match.id, handle)
       s.clients.set(match.id, client)
     }
     if (waitForDiagnostics) {

@@ -7,11 +7,15 @@ import { Log } from "../util/log"
 export namespace LSPServer {
   const log = Log.create({ service: "lsp.server" })
 
+  export interface Handle {
+    process: ChildProcessWithoutNullStreams
+    initialization?: Record<string, any>
+  }
+
   export interface Info {
     id: string
     extensions: string[]
-    initialization?: (app: App.Info) => Promise<Record<string, any>>
-    spawn(app: App.Info): Promise<ChildProcessWithoutNullStreams | undefined>
+    spawn(app: App.Info): Promise<Handle | undefined>
   }
 
   export const All: Info[] = [
@@ -27,30 +31,35 @@ export namespace LSPServer {
         ".mts",
         ".cts",
       ],
-      async initialization(app) {
-        const path = Bun.resolve(
+      async spawn(app) {
+        const tsserver = Bun.resolve(
           "typescript/lib/tsserver.js",
           app.path.cwd,
         ).catch(() => {})
-        if (!path) return {}
-        return {
-          tsserver: {
-            path,
-          },
-        }
-      },
-      async spawn() {
+        if (!tsserver) return
         const root =
           process.argv0 !== "bun"
             ? path.resolve(process.cwd(), process.argv0)
             : process.argv0
-        return spawn(root, ["x", "typescript-language-server", "--stdio"], {
-          argv0: "bun",
-          env: {
-            ...process.env,
-            BUN_BE_BUN: "1",
+        const proc = spawn(
+          root,
+          ["x", "typescript-language-server", "--stdio"],
+          {
+            argv0: "bun",
+            env: {
+              ...process.env,
+              BUN_BE_BUN: "1",
+            },
           },
-        })
+        )
+        return {
+          process: proc,
+          initialization: {
+            tsserver: {
+              path: tsserver,
+            },
+          },
+        }
       },
     },
     {
@@ -79,7 +88,9 @@ export namespace LSPServer {
             bin,
           })
         }
-        return spawn(bin!)
+        return {
+          process: spawn(bin!),
+        }
       },
     },
   ]

@@ -29,18 +29,13 @@ export namespace LSPClient {
     ),
   }
 
-  export async function create(input: LSPServer.Info) {
+  export async function create(serverID: string, server: LSPServer.Handle) {
     const app = App.info()
-    log.info("starting client", {
-      id: input.id,
-    })
-
-    const server = await input.spawn(app)
-    if (!server) return
+    log.info("starting client", { id: serverID })
 
     const connection = createMessageConnection(
-      new StreamMessageReader(server.stdout),
-      new StreamMessageWriter(server.stdin),
+      new StreamMessageReader(server.process.stdout),
+      new StreamMessageWriter(server.process.stdin),
     )
 
     const diagnostics = new Map<string, Diagnostic[]>()
@@ -50,16 +45,15 @@ export namespace LSPClient {
         path,
       })
       diagnostics.set(path, params.diagnostics)
-      Bus.publish(Event.Diagnostics, { path, serverID: input.id })
+      Bus.publish(Event.Diagnostics, { path, serverID })
     })
     connection.onRequest("workspace/configuration", async () => {
       return [{}]
     })
     connection.listen()
 
-    const initialization = await input.initialization?.(app)
     await connection.sendRequest("initialize", {
-      processId: server.pid,
+      processId: server.process.pid,
       workspaceFolders: [
         {
           name: "workspace",
@@ -67,7 +61,7 @@ export namespace LSPClient {
         },
       ],
       initializationOptions: {
-        ...initialization,
+        ...server.initialization,
       },
       capabilities: {
         workspace: {
@@ -92,8 +86,8 @@ export namespace LSPClient {
     } = {}
 
     const result = {
-      get clientID() {
-        return input.id
+      get serverID() {
+        return serverID
       },
       get connection() {
         return connection
@@ -153,7 +147,7 @@ export namespace LSPClient {
             unsub = Bus.subscribe(Event.Diagnostics, (event) => {
               if (
                 event.properties.path === input.path &&
-                event.properties.serverID === result.clientID
+                event.properties.serverID === result.serverID
               ) {
                 log.info("got diagnostics", input)
                 clearTimeout(timeout)
