@@ -2,6 +2,8 @@ import { App } from "../app/app"
 import path from "path"
 import { Global } from "../global"
 import fs from "fs/promises"
+import { z } from "zod"
+import { NamedError } from "../util/error"
 
 export namespace Ripgrep {
   const PLATFORM = {
@@ -9,6 +11,29 @@ export namespace Ripgrep {
     linux: { platform: "unknown-linux-musl", extension: "tar.gz" },
     win32: { platform: "pc-windows-msvc", extension: "zip" },
   } as const
+
+  export const ExtractionFailedError = NamedError.create(
+    "RipgrepExtractionFailedError",
+    z.object({
+      filepath: z.string(),
+      stderr: z.string(),
+    }),
+  )
+
+  export const UnsupportedPlatformError = NamedError.create(
+    "RipgrepUnsupportedPlatformError",
+    z.object({
+      platform: z.string(),
+    }),
+  )
+
+  export const DownloadFailedError = NamedError.create(
+    "RipgrepDownloadFailedError",
+    z.object({
+      url: z.string(),
+      status: z.number(),
+    }),
+  )
 
   const state = App.state("ripgrep", async () => {
     const filepath = path.join(
@@ -22,7 +47,8 @@ export namespace Ripgrep {
       const arch = archMap[process.arch as keyof typeof archMap] ?? process.arch
 
       const config = PLATFORM[process.platform as keyof typeof PLATFORM]
-      if (!config) throw new Error(`Unsupported platform: ${process.platform}`)
+      if (!config)
+        throw new UnsupportedPlatformError({ platform: process.platform })
 
       const version = "14.1.1"
       const filename = `ripgrep-${version}-${arch}-${config.platform}.${config.extension}`
@@ -30,7 +56,7 @@ export namespace Ripgrep {
 
       const response = await fetch(url)
       if (!response.ok)
-        throw new Error(`Failed to download ripgrep: ${response.statusText}`)
+        throw new DownloadFailedError({ url, status: response.status })
 
       const buffer = await response.arrayBuffer()
       const archivePath = path.join(Global.Path.bin, filename)
@@ -52,6 +78,8 @@ export namespace Ripgrep {
           },
         )
         await proc.exited
+        if (proc.exitCode !== 0)
+          throw new ExtractionFailedError({ filepath, stderr: proc.stderr })
       }
       if (config.extension === "zip") {
         const proc = Bun.spawn(
@@ -63,10 +91,13 @@ export namespace Ripgrep {
           },
         )
         await proc.exited
+        if (proc.exitCode !== 0)
+          throw new ExtractionFailedError({
+            filepath: archivePath,
+            stderr: proc.stderr,
+          })
       }
-
       await fs.unlink(archivePath)
-
       if (process.platform !== "win32") await fs.chmod(filepath, 0o755)
     }
 
