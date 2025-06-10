@@ -425,12 +425,14 @@ function ToolFooter(props: { time: number }) {
 }
 
 export default function Share(props: {
+  id: string
   api: string
   info: SessionInfo
   messages: Record<string, SessionMessage>
 }) {
+  const id = props.id
+
   let params = new URLSearchParams(document.location.search)
-  const id = params.get("id")
 
   const [store, setStore] = createStore<{
     info?: SessionInfo

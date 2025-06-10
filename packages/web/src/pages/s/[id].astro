@@ -6,7 +6,7 @@ import Share from "../../components/Share.tsx";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
-const id = Astro.url.searchParams.get('id')
+const { id } = Astro.params;
 const res = await fetch(`${apiUrl}/share_data?id=${id}`);
 const data = await res.json();
 
@@ -39,7 +39,13 @@ const ogImage = data.ogImage;
     ],
   }}
 >
-  <Share api={apiUrl} info={data.info} messages={data.messages} client:only="solid" />
+  <Share
+    id={id}
+    api={apiUrl}
+    info={data.info}
+    messages={data.messages}
+    client:only="solid"
+  />
 </StarlightPage>
 
 <style is:global>
