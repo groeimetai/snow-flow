@@ -564,6 +564,18 @@ export namespace Session {
       },
     })
     next.metadata!.time.completed = Date.now()
+    for (const part of next.parts) {
+      if (
+        part.type === "tool-invocation" &&
+        part.toolInvocation.state !== "result"
+      ) {
+        part.toolInvocation = {
+          ...part.toolInvocation,
+          state: "result",
+          result: "request was aborted",
+        }
+      }
+    }
     await updateMessage(next)
     return next
   }
