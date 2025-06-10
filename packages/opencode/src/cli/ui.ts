@@ -16,24 +16,30 @@ export namespace UI {
     TEXT_INFO_BOLD: "\x1b[94m\x1b[1m",
   }
 
-
-
-  export function print(...message: string[]) {
-    Bun.stderr.write(message.join(" "))
+  export function println(...message: string[]) {
+    print(...message)
     Bun.stderr.write("\n")
   }
 
+  export function print(...message: string[]) {
+    blank = false
+    Bun.stderr.write(message.join(" "))
+  }
+
+  let blank = false
   export function empty() {
-    print("" + Style.TEXT_NORMAL)
+    if (blank) return
+    println("" + Style.TEXT_NORMAL)
+    blank = true
   }
 
   export async function input(prompt: string): Promise<string> {
-    const readline = require('readline')
+    const readline = require("readline")
     const rl = readline.createInterface({
       input: process.stdin,
-      output: process.stdout
+      output: process.stdout,
     })
-    
+
     return new Promise((resolve) => {
       rl.question(prompt, (answer: string) => {
         rl.close()

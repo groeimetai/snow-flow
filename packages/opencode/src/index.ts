@@ -11,11 +11,11 @@ import { Global } from "./global"
 import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
 import { RunCommand } from "./cli/cmd/run"
-import { LoginAnthropicCommand } from "./cli/cmd/login-anthropic"
 import { GenerateCommand } from "./cli/cmd/generate"
 import { VERSION } from "./cli/version"
 import { ScrapCommand } from "./cli/cmd/scrap"
 import { Log } from "./util/log"
+import { ProviderCommand } from "./cli/cmd/provider"
 
 await Log.init({ print: process.argv.includes("--print-logs") })
 
@@ -70,11 +70,6 @@ yargs(hideBin(process.argv))
   .command(RunCommand)
   .command(GenerateCommand)
   .command(ScrapCommand)
-  .command({
-    command: "login",
-    describe: "generate credentials for various providers",
-    builder: (yargs) => yargs.command(LoginAnthropicCommand).demandCommand(),
-    handler: () => {},
-  })
+  .command(ProviderCommand)
   .help()
   .parse()

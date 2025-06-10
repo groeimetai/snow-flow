@@ -4,13 +4,9 @@ import path from "path"
 
 export namespace ModelsDev {
   const log = Log.create({ service: "models.dev" })
-
-  function filepath() {
-    return path.join(Global.Path.data, "models.json")
-  }
+  const file = Bun.file(path.join(Global.Path.cache, "models.json"))
 
   export async function get() {
-    const file = Bun.file(filepath())
     if (await file.exists()) {
       refresh()
       return file.json()
@@ -24,6 +20,6 @@ export namespace ModelsDev {
     const result = await fetch("https://models.dev/api.json")
     if (!result.ok)
       throw new Error(`Failed to fetch models.dev: ${result.statusText}`)
-    await Bun.write(filepath(), result)
+    await Bun.write(file, result)
   }
 }
