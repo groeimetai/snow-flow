@@ -8,8 +8,8 @@ interface MarkdownViewProps extends JSX.HTMLAttributes<HTMLDivElement> {
 
 function MarkdownView(props: MarkdownViewProps) {
   const [local, rest] = splitProps(props, ["markdown"])
-  const [html] = createResource(async () => {
-    return marked.parse(local.markdown)
+  const [html] = createResource(() => local.markdown, async (markdown) => {
+    return marked.parse(markdown)
   })
 
   return (
