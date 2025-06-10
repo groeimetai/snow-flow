@@ -73,13 +73,16 @@ export namespace Ripgrep {
           ],
           {
             cwd: Global.Path.bin,
-            stderr: "ignore",
-            stdout: "ignore",
+            stderr: "pipe",
+            stdout: "pipe",
           },
         )
         await proc.exited
         if (proc.exitCode !== 0)
-          throw new ExtractionFailedError({ filepath, stderr: proc.stderr })
+          throw new ExtractionFailedError({
+            filepath,
+            stderr: await Bun.readableStreamToText(proc.stderr),
+          })
       }
       if (config.extension === "zip") {
         const proc = Bun.spawn(
@@ -94,7 +97,7 @@ export namespace Ripgrep {
         if (proc.exitCode !== 0)
           throw new ExtractionFailedError({
             filepath: archivePath,
-            stderr: proc.stderr,
+            stderr: await Bun.readableStreamToText(proc.stderr),
           })
       }
       await fs.unlink(archivePath)
