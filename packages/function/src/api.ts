@@ -1,6 +1,5 @@
 import { DurableObject } from "cloudflare:workers"
 import { randomUUID } from "node:crypto"
-import { Base64 } from "js-base64"
 
 type Env = {
   SYNC_SERVER: DurableObjectNamespace<SyncServer>
@@ -184,9 +183,6 @@ export default {
 
       let info
       const messages: Record<string, any> = {}
-      let cost = 0
-      const models: Set<string> = new Set()
-      const version = "v0.1.1"
       data.forEach((d) => {
         const [root, type, ...splits] = d.key.split("/")
         if (root !== "session") return
@@ -197,31 +193,13 @@ export default {
         if (type === "message") {
           const [, messageID] = splits
           messages[messageID] = d.content
-
-          const assistant = d.content.metadata?.assistant
-          if (assistant) {
-            cost += assistant.cost
-            models.add(assistant.modelID)
-          }
         }
       })
-
-      const encodedTitle = encodeURIComponent(
-        Base64.encode(
-          // Convert to ASCII
-          encodeURIComponent(
-            // Truncate to fit S3's max key size
-            info.title.substring(0, 700),
-          ),
-        ),
-      )
-      const encodedCost = encodeURIComponent(`$${cost.toFixed(2)}`)
 
       return new Response(
         JSON.stringify({
           info,
           messages,
-          ogImage: `https://social-cards.sst.dev/opencode-share/${encodedTitle}.png?cost=${encodedCost}&model=${Array.from(models).join(",")}&version=${version}&id=${id}`,
         }),
         {
           headers: { "Content-Type": "application/json" },

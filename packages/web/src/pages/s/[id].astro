@@ -1,4 +1,5 @@
 ---
+import { Base64 } from "js-base64";
 import config from "virtual:starlight/user-config";
 
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
@@ -10,14 +11,35 @@ const { id } = Astro.params;
 const res = await fetch(`${apiUrl}/share_data?id=${id}`);
 const data = await res.json();
 
-const title = data.info.title;
-const ogImage = data.ogImage;
+let cost = 0;
+const models: Set<string> = new Set();
+const version = "v0.1.1";
+Object.values(data.messages).forEach((d) => {
+  const assistant = d.metadata?.assistant;
+  if (assistant) {
+    cost += assistant.cost;
+    models.add(assistant.modelID);
+  }
+});
+
+const encodedTitle = encodeURIComponent(
+  Base64.encode(
+    // Convert to ASCII
+    encodeURIComponent(
+      // Truncate to fit S3's max key size
+      data.info.title.substring(0, 700),
+    )
+  )
+);
+const encodedCost = encodeURIComponent(`$${cost.toFixed(2)}`);
+
+const ogImage = `https://social-cards.sst.dev/opencode-share/${encodedTitle}.png?cost=${encodedCost}&model=${Array.from(models).join(",")}&version=${version}&id=${id}`;
 
 ---
 <StarlightPage
   hasSidebar={false}
   frontmatter={{
-    title: title,
+    title: data.info.title,
     pagefind: false,
     template: "splash",
     tableOfContents: false,
