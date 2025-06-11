@@ -552,7 +552,7 @@ export namespace Session {
         await updateMessage(next)
         return step
       },
-      toolCallStreaming: true,
+      toolCallStreaming: false,
       abortSignal: abort.signal,
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),

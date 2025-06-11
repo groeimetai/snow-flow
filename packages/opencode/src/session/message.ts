@@ -147,7 +147,18 @@ export namespace Message {
           ])
           .optional(),
         sessionID: z.string(),
-        tool: z.record(z.string(), z.any()),
+        tool: z.record(
+          z.string(),
+          z
+            .object({
+              title: z.string().optional(),
+              time: z.object({
+                start: z.number(),
+                end: z.number(),
+              }),
+            })
+            .catchall(z.any()),
+        ),
         assistant: z
           .object({
             modelID: z.string(),

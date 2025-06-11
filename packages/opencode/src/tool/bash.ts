@@ -64,6 +64,7 @@ export const BashTool = Tool.define({
         stderr,
         stdout,
         description: params.description,
+        title: params.command,
       },
       output: stdout.replaceAll(/\x1b\[[0-9;]*m/g, ""),
     }

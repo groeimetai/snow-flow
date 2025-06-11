@@ -72,26 +72,57 @@ export const WebFetchTool = Tool.define({
     const content = new TextDecoder().decode(arrayBuffer)
     const contentType = response.headers.get("content-type") || ""
 
+    const title = `${params.url} (${contentType})`
     switch (params.format) {
       case "text":
         if (contentType.includes("text/html")) {
           const text = extractTextFromHTML(content)
-          return { output: text, metadata: {} }
+          return {
+            output: text,
+            metadata: {
+              title,
+            },
+          }
         }
-        return { output: content, metadata: {} }
+        return {
+          output: content,
+          metadata: {
+            title,
+          },
+        }
 
       case "markdown":
         if (contentType.includes("text/html")) {
           const markdown = convertHTMLToMarkdown(content)
-          return { output: markdown, metadata: {} }
+          return {
+            output: markdown,
+            metadata: {
+              title,
+            },
+          }
         }
-        return { output: "```\n" + content + "\n```", metadata: {} }
+        return {
+          output: "```\n" + content + "\n```",
+          metadata: {
+            title,
+          },
+        }
 
       case "html":
-        return { output: content, metadata: {} }
+        return {
+          output: content,
+          metadata: {
+            title,
+          },
+        }
 
       default:
-        return { output: content, metadata: {} }
+        return {
+          output: content,
+          metadata: {
+            title,
+          },
+        }
     }
   },
 })

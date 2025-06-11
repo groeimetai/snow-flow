@@ -6,6 +6,7 @@ import { LSP } from "../lsp"
 import { createTwoFilesPatch } from "diff"
 import { Permission } from "../permission"
 import DESCRIPTION from "./edit.txt"
+import { App } from "../app/app"
 
 export const EditTool = Tool.define({
   id: "opencode.edit",
@@ -28,9 +29,10 @@ export const EditTool = Tool.define({
       throw new Error("filePath is required")
     }
 
+    const app = App.info()
     const filepath = path.isAbsolute(params.filePath)
       ? params.filePath
-      : path.join(process.cwd(), params.filePath)
+      : path.join(app.path.cwd, params.filePath)
 
     await Permission.ask({
       id: "opencode.edit",
@@ -105,6 +107,7 @@ export const EditTool = Tool.define({
       metadata: {
         diagnostics,
         diff,
+        title: `${path.relative(app.path.root, filepath)}`,
       },
       output,
     }
