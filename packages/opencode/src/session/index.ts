@@ -492,9 +492,9 @@ export namespace Session {
             )
             if (match && match.type === "tool-invocation") {
               match.toolInvocation = {
-                args: match.toolInvocation.args,
-                toolCallId: match.toolInvocation.toolCallId,
-                toolName: match.toolInvocation.toolName,
+                args: value.args,
+                toolCallId: value.toolCallId,
+                toolName: value.toolName,
                 state: "result",
                 result: value.result as string,
               }
