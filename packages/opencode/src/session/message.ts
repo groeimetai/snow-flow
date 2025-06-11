@@ -151,7 +151,7 @@ export namespace Message {
           z.string(),
           z
             .object({
-              title: z.string().optional(),
+              title: z.string(),
               time: z.object({
                 start: z.number(),
                 end: z.number(),
@@ -186,6 +186,9 @@ export namespace Message {
         info: Info,
       }),
     ),
-    PartUpdated: Bus.event("message.part.updated", z.object({ part: Part })),
+    PartUpdated: Bus.event(
+      "message.part.updated",
+      z.object({ part: Part, sessionID: z.string(), messageID: z.string() }),
+    ),
   }
 }

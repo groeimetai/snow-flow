@@ -11,7 +11,6 @@ export const GrepTool = Tool.define({
   parameters: z.object({
     pattern: z
       .string()
-      .nullable()
       .describe("The regex pattern to search for in file contents"),
     path: z
       .string()
@@ -52,7 +51,7 @@ export const GrepTool = Tool.define({
 
     if (exitCode === 1) {
       return {
-        metadata: { matches: 0, truncated: false },
+        metadata: { matches: 0, truncated: false, title: params.pattern },
         output: "No files found",
       }
     }
@@ -94,7 +93,7 @@ export const GrepTool = Tool.define({
 
     if (finalMatches.length === 0) {
       return {
-        metadata: { matches: 0, truncated: false },
+        metadata: { matches: 0, truncated: false, title: params.pattern },
         output: "No files found",
       }
     }

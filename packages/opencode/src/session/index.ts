@@ -143,12 +143,17 @@ export namespace Session {
     const result = [] as Message.Info[]
     const list = Storage.list("session/message/" + sessionID)
     for await (const p of list) {
-      const read = await Storage.readJSON<Message.Info>(p).catch(() => {})
-      if (!read) continue
+      const read = await Storage.readJSON<Message.Info>(p)
       result.push(read)
     }
     result.sort((a, b) => (a.id > b.id ? 1 : -1))
     return result
+  }
+
+  export async function getMessage(sessionID: string, messageID: string) {
+    return Storage.readJSON<Message.Info>(
+      "session/message/" + sessionID + "/" + messageID,
+    )
   }
 
   export async function* list() {
@@ -371,16 +376,19 @@ export namespace Session {
                 end: Date.now(),
               },
             }
+            await updateMessage(next)
             return result.output
           } catch (e: any) {
             next.metadata!.tool![opts.toolCallId] = {
               error: true,
               message: e.toString(),
+              title: e.toString(),
               time: {
                 start,
                 end: Date.now(),
               },
             }
+            await updateMessage(next)
             return e.toString()
           }
         },
@@ -400,6 +408,7 @@ export namespace Session {
               end: Date.now(),
             },
           }
+          await updateMessage(next)
           return result.content
             .filter((x: any) => x.type === "text")
             .map((x: any) => x.text)
@@ -408,11 +417,13 @@ export namespace Session {
           next.metadata!.tool![opts.toolCallId] = {
             error: true,
             message: e.toString(),
+            title: "mcp",
             time: {
               start,
               end: Date.now(),
             },
           }
+          await updateMessage(next)
           return e.toString()
         }
       }
@@ -433,6 +444,8 @@ export namespace Session {
         if (text) {
           Bus.publish(Message.Event.PartUpdated, {
             part: text,
+            messageID: next.id,
+            sessionID: next.metadata.sessionID,
           })
         }
         text = undefined
@@ -463,6 +476,8 @@ export namespace Session {
             })
             Bus.publish(Message.Event.PartUpdated, {
               part: next.parts[next.parts.length - 1],
+              messageID: next.id,
+              sessionID: next.metadata.sessionID,
             })
             break
 
@@ -478,6 +493,8 @@ export namespace Session {
             })
             Bus.publish(Message.Event.PartUpdated, {
               part: next.parts[next.parts.length - 1],
+              messageID: next.id,
+              sessionID: next.metadata.sessionID,
             })
             break
 
@@ -500,6 +517,8 @@ export namespace Session {
               }
               Bus.publish(Message.Event.PartUpdated, {
                 part: match,
+                messageID: next.id,
+                sessionID: next.metadata.sessionID,
               })
             }
             break

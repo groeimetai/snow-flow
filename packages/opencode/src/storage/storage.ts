@@ -1,11 +1,9 @@
-import { FileStorage } from "@flystorage/file-storage"
-import { LocalStorageAdapter } from "@flystorage/local-fs"
-import fs from "fs/promises"
 import { Log } from "../util/log"
 import { App } from "../app/app"
 import { Bus } from "../bus"
 import path from "path"
 import z from "zod"
+import fs from "fs/promises"
 
 export namespace Storage {
   const log = Log.create({ service: "storage" })
@@ -17,36 +15,39 @@ export namespace Storage {
     ),
   }
 
-  const state = App.state("storage", async () => {
+  const state = App.state("storage", () => {
     const app = App.info()
-    const storageDir = path.join(app.path.data, "storage")
-    await fs.mkdir(storageDir, { recursive: true })
-    const storage = new FileStorage(new LocalStorageAdapter(storageDir))
-    log.info("created", { path: storageDir })
+    const dir = path.join(app.path.data, "storage")
+    log.info("init", { path: dir })
     return {
-      storage,
+      dir,
     }
   })
 
+  const locks = new Map<string, Promise<void>>()
+
   export async function readJSON<T>(key: string) {
-    const storage = await state().then((x) => x.storage)
-    const data = await storage.readToString(key + ".json")
-    return JSON.parse(data) as T
+    return Bun.file(path.join(state().dir, key + ".json")).json() as Promise<T>
   }
 
   export async function writeJSON<T>(key: string, content: T) {
-    const storage = await state().then((x) => x.storage)
-    const json = JSON.stringify(content)
-    await storage.write(key + ".json", json)
+    const target = path.join(state().dir, key + ".json")
+    const tmp = target + Date.now() + ".tmp"
+    await Bun.write(tmp, JSON.stringify(content))
+    await fs.rename(tmp, target).catch(() => {})
+    await fs.unlink(tmp).catch(() => {})
     Bus.publish(Event.Write, { key, content })
   }
 
+  const glob = new Bun.Glob("**/*")
   export async function* list(prefix: string) {
     try {
-      const storage = await state().then((x) => x.storage)
-      const list = storage.list(prefix)
-      for await (const item of list) {
-        yield item.path.slice(0, -5)
+      for await (const item of glob.scan({
+        cwd: path.join(state().dir, prefix),
+        onlyFiles: true,
+      })) {
+        const result = path.join(prefix, item.slice(0, -5))
+        yield result
       }
     } catch {
       return

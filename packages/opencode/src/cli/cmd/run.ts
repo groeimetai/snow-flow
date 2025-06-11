@@ -8,6 +8,25 @@ import { Message } from "../../session/message"
 import { UI } from "../ui"
 import { VERSION } from "../version"
 
+const COLOR = [
+  UI.Style.TEXT_SUCCESS_BOLD,
+  UI.Style.TEXT_INFO_BOLD,
+  UI.Style.TEXT_HIGHLIGHT_BOLD,
+  UI.Style.TEXT_WARNING_BOLD,
+]
+
+const TOOL: Record<string, [string, string]> = {
+  opencode_todowrite: ["Todo", UI.Style.TEXT_WARNING_BOLD],
+  opencode_todoread: ["Todo", UI.Style.TEXT_WARNING_BOLD],
+  opencode_bash: ["Bash", UI.Style.TEXT_DANGER_BOLD],
+  opencode_edit: ["Edit", UI.Style.TEXT_SUCCESS_BOLD],
+  opencode_glob: ["Glob", UI.Style.TEXT_INFO_BOLD],
+  opencode_grep: ["Grep", UI.Style.TEXT_INFO_BOLD],
+  opencode_list: ["List", UI.Style.TEXT_INFO_BOLD],
+  opencode_read: ["Read", UI.Style.TEXT_HIGHLIGHT_BOLD],
+  opencode_write: ["Write", UI.Style.TEXT_SUCCESS_BOLD],
+}
+
 export const RunCommand = {
   command: "run [message..]",
   describe: "Run OpenCode with a message",
@@ -63,33 +82,24 @@ export const RunCommand = {
           )
         }
 
-        Bus.subscribe(Message.Event.PartUpdated, async (message) => {
-          const part = message.properties.part
+        Bus.subscribe(Message.Event.PartUpdated, async (evt) => {
+          const part = evt.properties.part
+          const message = await Session.getMessage(
+            evt.properties.sessionID,
+            evt.properties.messageID,
+          )
+
           if (
             part.type === "tool-invocation" &&
             part.toolInvocation.state === "result"
           ) {
-            if (part.toolInvocation.toolName === "opencode_todowrite") return
-
-            const args = part.toolInvocation.args as any
-            const tool = part.toolInvocation.toolName
-
-            if (tool === "opencode_edit")
-              printEvent(UI.Style.TEXT_SUCCESS_BOLD, "Edit", args.filePath)
-            if (tool === "opencode_bash")
-              printEvent(UI.Style.TEXT_WARNING_BOLD, "Execute", args.command)
-            if (tool === "opencode_read")
-              printEvent(UI.Style.TEXT_INFO_BOLD, "Read", args.filePath)
-            if (tool === "opencode_write")
-              printEvent(UI.Style.TEXT_SUCCESS_BOLD, "Create", args.filePath)
-            if (tool === "opencode_list")
-              printEvent(UI.Style.TEXT_INFO_BOLD, "List", args.path)
-            if (tool === "opencode_glob")
-              printEvent(
-                UI.Style.TEXT_INFO_BOLD,
-                "Glob",
-                args.pattern + (args.path ? " in " + args.path : ""),
-              )
+            const metadata =
+              message.metadata.tool[part.toolInvocation.toolCallId]
+            const [tool, color] = TOOL[part.toolInvocation.toolName] ?? [
+              part.toolInvocation.toolName,
+              UI.Style.TEXT_INFO_BOLD,
+            ]
+            printEvent(color, tool, metadata.title)
           }
 
           if (part.type === "text") {

@@ -36,7 +36,7 @@ export namespace Log {
       .filter((entry) => entry.isFile() && entry.name.endsWith(".log"))
       .map((entry) => path.join(dir, entry.name))
 
-    if (files.length <= 10) return
+    if (files.length <= 5) return
 
     const filesToDelete = files.slice(0, -10)
 
