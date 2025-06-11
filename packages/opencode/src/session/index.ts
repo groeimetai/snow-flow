@@ -308,6 +308,7 @@ export namespace Session {
             parts: input.parts,
           },
         ]),
+        temperature: 0,
         model: model.language,
       })
         .then((result) => {
