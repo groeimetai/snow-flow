@@ -29,7 +29,7 @@ export const AuthListCommand = cmd({
 
     for (const [providerID, result] of results) {
       const name = database[providerID]?.name || providerID
-      prompts.log.info(`${name} ${Bun.color("gray", "ansi")}(${result.type})`)
+      prompts.log.info(`${name} ${UI.Style.TEXT_DIM}(${result.type})`)
     }
 
     prompts.outro(`${results.length} credentials`)
@@ -133,7 +133,12 @@ export const AuthLogoutCommand = cmd({
     const providerID = await prompts.select({
       message: "Select provider",
       options: credentials.map(([key, value]) => ({
-        label: database[key]?.name || key,
+        label:
+          (database[key]?.name || key) +
+          UI.Style.TEXT_DIM +
+          " (" +
+          value.type +
+          ")",
         value: key,
       })),
     })
