@@ -1434,11 +1434,10 @@ export default function Share(props: {
 
                             const command = part().toolInvocation.args.command
                             const desc = part().toolInvocation.args.description
-                            const stdout = metadata()?.stdout
-                            const result =
-                              stdout ||
-                              (part().toolInvocation.state === "result" &&
-                                part().toolInvocation.result)
+                            const result = createMemo(() => {
+                              const invocation = part().toolInvocation
+                              return metadata()?.stdout || (invocation.state === "result" && invocation.result)
+                            })
 
                             const duration = createMemo(() =>
                               DateTime.fromMillis(metadata()?.time.end || 0)
@@ -1467,7 +1466,7 @@ export default function Share(props: {
                                       desc={desc}
                                       data-size="sm"
                                       text={
-                                        command + (result ? `\n${result}` : "")
+                                        command + (result() ? `\n${result}` : "")
                                       }
                                     />
                                   </div>
@@ -1631,9 +1630,10 @@ export default function Share(props: {
                             const url = args.url
                             const format = args.format
                             const hasError = metadata()?.error
-                            const result =
-                              part().toolInvocation.state === "result" &&
-                              part().toolInvocation.result
+                            const result = createMemo(() => {
+                              const invocation = part().toolInvocation
+                              return invocation.state === "result" && invocation.result
+                            })
 
                             const duration = createMemo(() =>
                               DateTime.fromMillis(metadata()?.time.end || 0)
@@ -1667,7 +1667,7 @@ export default function Share(props: {
                                         <div data-part-tool-result>
                                           <TextPart
                                             expand
-                                            text={result}
+                                            text={result()}
                                             data-size="sm"
                                             data-color="dimmed"
                                           />
@@ -1685,7 +1685,7 @@ export default function Share(props: {
                                             <div data-part-tool-code>
                                               <CodeBlock
                                                 lang={format || "text"}
-                                                code={result}
+                                                code={result()}
                                               />
                                             </div>
                                           </Show>
