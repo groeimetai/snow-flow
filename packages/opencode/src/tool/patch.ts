@@ -4,18 +4,13 @@ import * as fs from "fs/promises"
 import { Tool } from "./tool"
 import { FileTimes } from "./util/file-times"
 import DESCRIPTION from "./patch.txt"
+import { App } from "../app/app"
 
 const PatchParams = z.object({
   patchText: z
     .string()
     .describe("The full patch text that describes all changes to be made"),
 })
-
-interface PatchResponseMetadata {
-  changed: string[]
-  additions: number
-  removals: number
-}
 
 interface Change {
   type: "add" | "update" | "delete"
@@ -242,10 +237,6 @@ export const PatchTool = Tool.define({
   description: DESCRIPTION,
   parameters: PatchParams,
   execute: async (params, ctx) => {
-    if (!params.patchText) {
-      throw new Error("patchText is required")
-    }
-
     // Identify all files needed for the patch and verify they've been read
     const filesToRead = identifyFilesNeeded(params.patchText)
     for (const filePath of filesToRead) {
@@ -372,7 +363,8 @@ export const PatchTool = Tool.define({
         changed: changedFiles,
         additions: totalAdditions,
         removals: totalRemovals,
-      } satisfies PatchResponseMetadata,
+        title: `${filesToRead.length} files`,
+      },
       output,
     }
   },

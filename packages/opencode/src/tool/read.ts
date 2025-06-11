@@ -5,6 +5,7 @@ import { Tool } from "./tool"
 import { LSP } from "../lsp"
 import { FileTimes } from "./util/file-times"
 import DESCRIPTION from "./read.txt"
+import { App } from "../app/app"
 
 const MAX_READ_SIZE = 250 * 1024
 const DEFAULT_READ_LIMIT = 2000
@@ -95,6 +96,7 @@ export const ReadTool = Tool.define({
       output,
       metadata: {
         preview,
+        title: path.relative(App.info().path.root, filePath),
       },
     }
   },

@@ -5,6 +5,7 @@ import { FileTimes } from "./util/file-times"
 import { LSP } from "../lsp"
 import { Permission } from "../permission"
 import DESCRIPTION from "./write.txt"
+import { App } from "../app/app"
 
 export const WriteTool = Tool.define({
   id: "opencode.write",
@@ -18,9 +19,10 @@ export const WriteTool = Tool.define({
     content: z.string().describe("The content to write to the file"),
   }),
   async execute(params, ctx) {
+    const app = App.info()
     const filepath = path.isAbsolute(params.filePath)
       ? params.filePath
-      : path.join(process.cwd(), params.filePath)
+      : path.join(app.path.cwd, params.filePath)
 
     const file = Bun.file(filepath)
     const exists = await file.exists()
@@ -59,6 +61,7 @@ export const WriteTool = Tool.define({
         diagnostics,
         filepath,
         exists: exists,
+        title: path.relative(app.path.root, filepath),
       },
       output,
     }

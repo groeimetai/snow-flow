@@ -124,6 +124,7 @@ export const GrepTool = Tool.define({
       metadata: {
         matches: finalMatches.length,
         truncated,
+        title: params.pattern,
       },
       output: outputLines.join("\n"),
     }

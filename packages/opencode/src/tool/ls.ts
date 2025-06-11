@@ -98,7 +98,11 @@ export const ListTool = Tool.define({
     const output = `${searchPath}/\n` + renderDir(".", 0)
 
     return {
-      metadata: { count: files.length, truncated: files.length >= 1000 },
+      metadata: {
+        count: files.length,
+        truncated: files.length >= 1000,
+        title: path.relative(app.path.root, searchPath),
+      },
       output,
     }
   },

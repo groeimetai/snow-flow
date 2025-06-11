@@ -2,6 +2,8 @@ import { z } from "zod"
 import { Tool } from "./tool"
 import { EditTool } from "./edit"
 import DESCRIPTION from "./multiedit.txt"
+import path from "path"
+import { App } from "../app/app"
 
 export const MultiEditTool = Tool.define({
   id: "opencode.multiedit",
@@ -26,10 +28,11 @@ export const MultiEditTool = Tool.define({
       )
       results.push(result)
     }
-
+    const app = App.info()
     return {
       metadata: {
         results: results.map((r) => r.metadata),
+        title: path.relative(app.path.root, params.filePath),
       },
       output: results.at(-1)!.output,
     }

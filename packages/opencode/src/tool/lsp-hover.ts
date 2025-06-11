@@ -27,6 +27,12 @@ export const LspHoverTool = Tool.define({
     return {
       metadata: {
         result,
+        title:
+          path.relative(app.path.root, file) +
+          ":" +
+          args.line +
+          ":" +
+          args.character,
       },
       output: JSON.stringify(result, null, 2),
     }

@@ -34,6 +34,7 @@ export const TodoWriteTool = Tool.define({
     return {
       output: JSON.stringify(params.todos, null, 2),
       metadata: {
+        title: `${params.todos.length} todos`,
         todos: params.todos,
       },
     }
@@ -49,6 +50,7 @@ export const TodoReadTool = Tool.define({
     return {
       metadata: {
         todos,
+        title: ``,
       },
       output: JSON.stringify(todos, null, 2),
     }
