@@ -256,7 +256,7 @@ export namespace Session {
               `Today's date: ${new Date().toISOString()}`,
               `</env>`,
               `<project>`,
-              `${app.git ? await ListTool.execute({ path: app.path.cwd }, { sessionID: input.sessionID }).then((x) => x.output) : ""}`,
+              `${app.git ? await ListTool.execute({ path: app.path.cwd, ignore: [] }, { sessionID: input.sessionID, abort: abort.signal }).then((x) => x.output) : ""}`,
               `</project>`,
             ].join("\n"),
           },
@@ -546,7 +546,7 @@ export namespace Session {
         await updateMessage(next)
         return step
       },
-      toolCallStreaming: false,
+      toolCallStreaming: true,
       abortSignal: abort.signal,
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),
