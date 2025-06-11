@@ -131,7 +131,7 @@ export const AuthLogoutCommand = cmd({
     }
     const database = await ModelsDev.get()
     const providerID = await prompts.select({
-      message: "Select credential",
+      message: "Select provider",
       options: credentials.map(([key, value]) => ({
         label: database[key]?.name || key,
         value: key,
