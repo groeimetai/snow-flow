@@ -1,4 +1,4 @@
-# ◍OpenCode
+◧ opencode
 
 ![OpenCode Terminal UI](screenshot.png)
 
