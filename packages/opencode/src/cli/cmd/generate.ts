@@ -5,7 +5,6 @@ import type { CommandModule } from "yargs"
 
 export const GenerateCommand = {
   command: "generate",
-  describe: "Generate OpenAPI and event specs",
   handler: async () => {
     const specs = await Server.openapi()
     const dir = "gen"
@@ -17,4 +16,3 @@ export const GenerateCommand = {
     )
   },
 } satisfies CommandModule
-

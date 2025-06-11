@@ -8,12 +8,12 @@ import { ModelsDev } from "../../provider/models"
 
 export const AuthCommand = cmd({
   command: "auth",
+  describe: "manage credentials",
   builder: (yargs) =>
     yargs
       .command(AuthLoginCommand)
       .command(AuthLogoutCommand)
-      .command(AuthListCommand)
-      .demandCommand(),
+      .command(AuthListCommand),
   async handler(args) {},
 })
 
