@@ -48,7 +48,7 @@ func toMarkdown(content string, width int) string {
 	return strings.TrimSuffix(content, "\n")
 }
 
-type markdownRenderer struct {
+type blockRenderer struct {
 	align         *lipgloss.Position
 	borderColor   *lipgloss.AdaptiveColor
 	fullWidth     bool
@@ -56,41 +56,41 @@ type markdownRenderer struct {
 	paddingBottom int
 }
 
-type markdownRenderingOption func(*markdownRenderer)
+type renderingOption func(*blockRenderer)
 
-func WithFullWidth() markdownRenderingOption {
-	return func(c *markdownRenderer) {
+func WithFullWidth() renderingOption {
+	return func(c *blockRenderer) {
 		c.fullWidth = true
 	}
 }
 
-func WithAlign(align lipgloss.Position) markdownRenderingOption {
-	return func(c *markdownRenderer) {
+func WithAlign(align lipgloss.Position) renderingOption {
+	return func(c *blockRenderer) {
 		c.align = &align
 	}
 }
 
-func WithBorderColor(color lipgloss.AdaptiveColor) markdownRenderingOption {
-	return func(c *markdownRenderer) {
+func WithBorderColor(color lipgloss.AdaptiveColor) renderingOption {
+	return func(c *blockRenderer) {
 		c.borderColor = &color
 	}
 }
 
-func WithPaddingTop(padding int) markdownRenderingOption {
-	return func(c *markdownRenderer) {
+func WithPaddingTop(padding int) renderingOption {
+	return func(c *blockRenderer) {
 		c.paddingTop = padding
 	}
 }
 
-func WithPaddingBottom(padding int) markdownRenderingOption {
-	return func(c *markdownRenderer) {
+func WithPaddingBottom(padding int) renderingOption {
+	return func(c *blockRenderer) {
 		c.paddingBottom = padding
 	}
 }
 
-func renderMarkdown(content string, options ...markdownRenderingOption) string {
+func renderContentBlock(content string, options ...renderingOption) string {
 	t := theme.CurrentTheme()
-	renderer := &markdownRenderer{
+	renderer := &blockRenderer{
 		fullWidth: false,
 	}
 	for _, option := range options {
@@ -200,12 +200,12 @@ func renderText(message client.MessageInfo, text string, author string) string {
 
 	switch message.Role {
 	case client.User:
-		return renderMarkdown(content,
+		return renderContentBlock(content,
 			WithAlign(lipgloss.Right),
 			WithBorderColor(t.Secondary()),
 		)
 	case client.Assistant:
-		return renderMarkdown(content,
+		return renderContentBlock(content,
 			WithAlign(lipgloss.Left),
 			WithBorderColor(t.Primary()),
 		)
@@ -329,8 +329,16 @@ func renderToolInvocation(
 			stdout := metadata["stdout"].(string)
 			body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
 			body = toMarkdown(body, innerWidth)
-			body = renderMarkdown(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+			body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 		}
+	case "opencode_webfetch":
+		title = fmt.Sprintf("Fetching: %s   %s", toolArgs, elapsed)
+		format := toolArgsMap["format"].(string)
+		body = truncateHeight(body, 10)
+		if format == "html" || format == "markdown" {
+			body = toMarkdown(body, innerWidth)
+		}
+		body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 	case "opencode_todowrite":
 		title = fmt.Sprintf("Planning...   %s", elapsed)
 		if finished && metadata["todos"] != nil {
@@ -349,13 +357,13 @@ func renderToolInvocation(
 				}
 			}
 			body = toMarkdown(body, innerWidth)
-			body = renderMarkdown(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+			body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 		}
 	default:
 		toolName := renderToolName(toolCall.ToolName)
 		title = fmt.Sprintf("%s: %s   %s", toolName, toolArgs, elapsed)
 		body = truncateHeight(body, 10)
-		body = renderMarkdown(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+		body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 	}
 
 	content := style.Render(title)
@@ -438,7 +446,7 @@ func renderFile(filename string, content string, options ...fileRenderingOption)
 	// }
 	// content = strings.Join(truncated, "\n")
 
-	return renderMarkdown(content, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+	return renderContentBlock(content, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 }
 
 func renderToolAction(name string) string {
