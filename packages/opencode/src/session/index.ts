@@ -534,6 +534,12 @@ export namespace Session {
               { message: err.error.toString() },
               { cause: err.error },
             ).toObject()
+            break
+          default:
+            next.metadata.error = new NamedError.Unknown(
+              { message: JSON.stringify(err.error) },
+              { cause: err.error },
+            )
         }
         Bus.publish(Event.Error, {
           error: next.metadata.error,
