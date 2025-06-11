@@ -33,7 +33,7 @@ export const RunCommand = {
     await App.provide(
       {
         cwd: process.cwd(),
-        version: "0.0.0",
+        version: VERSION,
       },
       async () => {
         await Share.init()
@@ -47,7 +47,7 @@ export const RunCommand = {
         UI.empty()
         UI.println(
           UI.Style.TEXT_INFO_BOLD +
-            "~  https://dev.opencode.ai/s?id=" +
+            "~  https://dev.opencode.ai/s/" +
             session.id.slice(-8),
         )
         UI.empty()

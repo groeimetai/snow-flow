@@ -1,12 +1,9 @@
 import { generatePKCE } from "@openauthjs/openauth/pkce"
-import { Global } from "../global"
-import path from "path"
 import fs from "fs/promises"
+import { Auth } from "./index"
 
 export namespace AuthAnthropic {
   const CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
-
-  const filepath = path.join(Global.Path.data, "auth", "anthropic.json")
 
   export async function authorize() {
     const pkce = await generatePKCE()
@@ -48,16 +45,17 @@ export namespace AuthAnthropic {
       }),
     })
     if (!result.ok) throw new ExchangeFailed()
-    const file = Bun.file(filepath)
-    await Bun.write(file, result)
-    await fs.chmod(file.name!, 0o600)
+    const json = await result.json()
+    await Auth.set("anthropic", {
+      type: "oauth",
+      refresh: json.refresh_token as string,
+      expires: Date.now() + json.expires_in * 1000,
+    })
   }
 
   export async function access() {
-    const file = Bun.file(filepath)
-    const result = await file.json().catch(() => ({}))
-    if (!result) return
-    const refresh = result.refresh_token
+    const info = await Auth.get("anthropic")
+    if (!info || info.type !== "oauth") return
     const response = await fetch(
       "https://console.anthropic.com/v1/oauth/token",
       {
@@ -67,14 +65,18 @@ export namespace AuthAnthropic {
         },
         body: JSON.stringify({
           grant_type: "refresh_token",
-          refresh_token: refresh,
+          refresh_token: info.refresh,
           client_id: CLIENT_ID,
         }),
       },
     )
     if (!response.ok) return
     const json = await response.json()
-    await Bun.write(file, JSON.stringify(json))
+    await Auth.set("anthropic", {
+      type: "oauth",
+      refresh: json.refresh_token as string,
+      expires: Date.now() + json.expires_in * 1000,
+    })
     return json.access_token as string
   }
 

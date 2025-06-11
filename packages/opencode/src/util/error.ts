@@ -21,6 +21,8 @@ export abstract class NamedError extends Error {
           ref: name,
         })
 
+      public readonly name = name as Name
+
       constructor(
         public readonly data: z.input<Data>,
         options?: ErrorOptions,
@@ -35,7 +37,7 @@ export abstract class NamedError extends Error {
       }
 
       schema() {
-        return data
+        return result.Schema
       }
 
       toObject() {
@@ -45,6 +47,7 @@ export abstract class NamedError extends Error {
         }
       }
     }
+    Object.defineProperty(result, "name", { value: name })
     return result
   }
 

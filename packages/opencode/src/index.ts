@@ -15,82 +15,101 @@ import { GenerateCommand } from "./cli/cmd/generate"
 import { VERSION } from "./cli/version"
 import { ScrapCommand } from "./cli/cmd/scrap"
 import { Log } from "./util/log"
-import { ProviderAddCommand, ProviderCommand } from "./cli/cmd/provider"
+import { AuthCommand, AuthLoginCommand } from "./cli/cmd/auth"
 import { Provider } from "./provider/provider"
 import { UI } from "./cli/ui"
 
-await Log.init({ print: process.argv.includes("--print-logs") })
+const cli = yargs(hideBin(process.argv))
+  .scriptName("opencode")
+  .version(VERSION)
+  .option("print-logs", {
+    describe: "Print logs to stderr",
+    type: "boolean",
+  })
+  .middleware(async (args) => {
+    await Log.init({ print: process.argv.includes("--print-logs") })
+    Log.Default.info("opencode", {
+      version: VERSION,
+      args: process.argv.slice(2),
+    })
+  })
+  .command({
+    command: "$0",
+    describe: "Start OpenCode TUI",
+    handler: async (args) => {
+      while (true) {
+        const result = await App.provide(
+          { cwd: process.cwd(), version: VERSION },
+          async () => {
+            const providers = await Provider.list()
+            if (Object.keys(providers).length === 0) {
+              return "needs_provider"
+            }
+
+            await Share.init()
+            const server = Server.listen()
+
+            let cmd = ["go", "run", "./main.go"]
+            let cwd = new URL("../../tui/cmd/opencode", import.meta.url)
+              .pathname
+            if (Bun.embeddedFiles.length > 0) {
+              const blob = Bun.embeddedFiles[0] as File
+              const binary = path.join(Global.Path.cache, "tui", blob.name)
+              const file = Bun.file(binary)
+              if (!(await file.exists())) {
+                await Bun.write(file, blob, { mode: 0o755 })
+                await fs.chmod(binary, 0o755)
+              }
+              cwd = process.cwd()
+              cmd = [binary]
+            }
+            const proc = Bun.spawn({
+              cmd,
+              cwd,
+              stdout: "inherit",
+              stderr: "inherit",
+              stdin: "inherit",
+              env: {
+                ...process.env,
+                OPENCODE_SERVER: server.url.toString(),
+              },
+              onExit: () => {
+                server.stop()
+              },
+            })
+            await proc.exited
+            await server.stop()
+
+            return "done"
+          },
+        )
+        if (result === "done") break
+        if (result === "needs_provider") {
+          UI.logo()
+          await AuthLoginCommand.handler(args)
+        }
+      }
+    },
+  })
+  .command(RunCommand)
+  .command(GenerateCommand)
+  .command(ScrapCommand)
+  .command(AuthCommand)
+  .fail((msg, err) => {
+    if (
+      msg.startsWith("Unknown argument") ||
+      msg.startsWith("Not enough non-option arguments")
+    ) {
+      cli.showHelp("log")
+    }
+    Log.Default.error(msg, {
+      err,
+    })
+  })
+  .strict()
 
 try {
-  await yargs(hideBin(process.argv))
-    .scriptName("opencode")
-    .version(VERSION)
-    .command({
-      command: "$0",
-      describe: "Start OpenCode TUI",
-      handler: async (args) => {
-        while (true) {
-          const result = await App.provide(
-            { cwd: process.cwd(), version: VERSION },
-            async () => {
-              const providers = await Provider.list()
-              if (Object.keys(providers).length === 0) {
-                return "needs_provider"
-              }
-
-              await Share.init()
-              const server = Server.listen()
-
-              let cmd = ["go", "run", "./main.go"]
-              let cwd = new URL("../../tui/cmd/opencode", import.meta.url)
-                .pathname
-              if (Bun.embeddedFiles.length > 0) {
-                const blob = Bun.embeddedFiles[0] as File
-                const binary = path.join(Global.Path.cache, "tui", blob.name)
-                const file = Bun.file(binary)
-                if (!(await file.exists())) {
-                  await Bun.write(file, blob, { mode: 0o755 })
-                  await fs.chmod(binary, 0o755)
-                }
-                cwd = process.cwd()
-                cmd = [binary]
-              }
-              const proc = Bun.spawn({
-                cmd,
-                cwd,
-                stdout: "inherit",
-                stderr: "inherit",
-                stdin: "inherit",
-                env: {
-                  ...process.env,
-                  OPENCODE_SERVER: server.url.toString(),
-                },
-                onExit: () => {
-                  server.stop()
-                },
-              })
-              await proc.exited
-              await server.stop()
-
-              return "done"
-            },
-          )
-          if (result === "done") break
-          if (result === "needs_provider") {
-            UI.logo()
-            await ProviderAddCommand.handler(args)
-          }
-        }
-      },
-    })
-    .command(RunCommand)
-    .command(GenerateCommand)
-    .command(ScrapCommand)
-    .command(ProviderCommand)
-    .fail((msg, err) => {
-      Log.Default.error(msg)
-    })
-    .parse()
+  await cli.parse()
 } catch (e) {
   Log.Default.error(e)
 }

@@ -23,7 +23,7 @@ import { TodoReadTool, TodoWriteTool } from "../tool/todo"
 import { AuthAnthropic } from "../auth/anthropic"
 import { ModelsDev } from "./models"
 import { NamedError } from "../util/error"
-import { AuthKeys } from "../auth/keys"
+import { Auth } from "../auth"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -84,7 +84,7 @@ export namespace Provider {
     return result
   }
 
-  type Source = "oauth" | "env" | "config" | "global"
+  type Source = "oauth" | "env" | "config" | "api"
 
   const AUTODETECT: Record<string, Autodetector> = {
     async anthropic(provider) {
@@ -162,8 +162,10 @@ export namespace Provider {
       mergeProvider(providerID, result.options, result.source)
     }
 
-    for (const [providerID, key] of Object.entries(await AuthKeys.get())) {
-      mergeProvider(providerID, { apiKey: key }, "global")
+    for (const [providerID, info] of Object.entries(await Auth.all())) {
+      if (info.type === "api") {
+        mergeProvider(providerID, { apiKey: info.key }, "api")
+      }
     }
 
     for (const [providerID, options] of Object.entries(config.provider ?? {})) {

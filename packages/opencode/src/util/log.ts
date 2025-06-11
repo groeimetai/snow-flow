@@ -28,7 +28,6 @@ export namespace Log {
       writer.flush()
       return true
     }
-    Default.info("initialized", { file: logpath })
   }
 
   async function cleanup(dir: string) {

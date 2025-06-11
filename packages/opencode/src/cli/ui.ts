@@ -8,10 +8,7 @@ export namespace UI {
     `▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ ▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`,
   ]
 
-  export const CancelledError = NamedError.create(
-    "UICancelledError",
-    z.object({}),
-  )
+  export const CancelledError = NamedError.create("UICancelledError", z.void())
 
   export const Style = {
     TEXT_HIGHLIGHT: "\x1b[96m",
