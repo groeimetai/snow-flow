@@ -101,6 +101,13 @@ function sortTodosByStatus(todos: Todo[]) {
     .sort((a, b) => statusPriority[a.status] - statusPriority[b.status])
 }
 
+function scrollToAnchor(id: string) {
+  const el = document.getElementById(id)
+  if (!el) return
+
+  el.scrollIntoView({ behavior: "smooth" })
+}
+
 function getFileType(path: string) {
   return path.split(".").pop()
 }
@@ -369,7 +376,6 @@ function TerminalPart(props: TerminalPartProps) {
     const code = preEl.getElementsByTagName("code")[0]
 
     if (code && !local.expand) {
-      console.log(preEl.clientHeight, code.offsetHeight)
       setOverflowed(preEl.clientHeight < code.offsetHeight)
     }
   }
@@ -432,7 +438,11 @@ export default function Share(props: {
 }) {
   const id = props.id
 
-  let params = new URLSearchParams(document.location.search)
+  const anchorId = createMemo<number | null>(() => {
+    const raw = window.location.hash.slice(1)
+    const [id] = raw.split("-")
+    return id
+  })
 
   const [store, setStore] = createStore<{
     info?: SessionInfo
@@ -499,6 +509,10 @@ export default function Share(props: {
           if (type === "message") {
             const [, messageID] = splits
             setStore("messages", messageID, reconcile(d.content))
+
+            if (messageID === anchorId()) {
+              scrollToAnchor(window.location.hash.slice(1))
+            }
           }
         } catch (error) {
           console.error("Error parsing WebSocket message:", error)
@@ -723,6 +737,7 @@ export default function Share(props: {
                     )
                       return null
 
+                    const anchor = createMemo(() => `${msg.id}-${partIndex()}`)
                     const [results, showResults] = createSignal(false)
                     const isLastPart = createMemo(
                       () =>
@@ -738,11 +753,15 @@ export default function Share(props: {
                           }
                         >
                           {(part) => (
-                            <div data-section="part" data-part-type="user-text">
+                            <div
+                              id={anchor()}
+                              data-section="part"
+                              data-part-type="user-text"
+                            >
                               <div data-section="decoration">
-                                <div title="Message">
+                                <a href={`#${anchor()}`} title="Message">
                                   <IconUserCircle width={18} height={18} />
-                                </div>
+                                </a>
                                 <div></div>
                               </div>
                               <div data-section="content">
@@ -764,11 +783,15 @@ export default function Share(props: {
                           }
                         >
                           {(part) => (
-                            <div data-section="part" data-part-type="ai-text">
+                            <div
+                              id={anchor()}
+                              data-section="part"
+                              data-part-type="ai-text"
+                            >
                               <div data-section="decoration">
-                                <div title="AI response">
+                                <a href={`#${anchor()}`} title="AI response">
                                   <IconSparkles width={18} height={18} />
-                                </div>
+                                </a>
                                 <div></div>
                               </div>
                               <div data-section="content">
@@ -789,14 +812,18 @@ export default function Share(props: {
                           }
                         >
                           {(assistant) => (
-                            <div data-section="part" data-part-type="ai-model">
+                            <div
+                              id={anchor()}
+                              data-section="part"
+                              data-part-type="ai-model"
+                            >
                               <div data-section="decoration">
-                                <div>
+                                <a href={`#${anchor()}`} title="Model">
                                   <ProviderIcon
                                     size={18}
                                     provider={assistant().providerID}
                                   />
-                                </div>
+                                </a>
                                 <div></div>
                               </div>
                               <div data-section="content">
@@ -826,13 +853,14 @@ export default function Share(props: {
                         >
                           {(part) => (
                             <div
+                              id={anchor()}
                               data-section="part"
                               data-part-type="system-text"
                             >
                               <div data-section="decoration">
-                                <div title="System message">
+                                <a href={`#${anchor()}`} title="System message">
                                   <IconCpuChip width={18} height={18} />
-                                </div>
+                                </a>
                                 <div></div>
                               </div>
                               <div data-section="content">
@@ -886,16 +914,17 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-grep"
                               >
                                 <div data-section="decoration">
-                                  <div title="Grep files">
+                                  <a href={`#${anchor()}`} title="Grep files">
                                     <IconDocumentMagnifyingGlass
                                       width={18}
                                       height={18}
                                     />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -995,16 +1024,17 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-glob"
                               >
                                 <div data-section="decoration">
-                                  <div title="Glob files">
+                                  <a href={`#${anchor()}`} title="Glob files">
                                     <IconMagnifyingGlass
                                       width={18}
                                       height={18}
                                     />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1086,16 +1116,17 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-list"
                               >
                                 <div data-section="decoration">
-                                  <div title="List files">
+                                  <a href={`#${anchor()}`} title="List files">
                                     <IconRectangleStack
                                       width={18}
                                       height={18}
                                     />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1175,13 +1206,14 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-read"
                               >
                                 <div data-section="decoration">
-                                  <div title="Read file">
+                                  <a href={`#${anchor()}`} title="Read file">
                                     <IconDocument width={18} height={18} />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1286,13 +1318,14 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-write"
                               >
                                 <div data-section="decoration">
-                                  <div title="Write file">
+                                  <a href={`#${anchor()}`} title="Write file">
                                     <IconDocumentPlus width={18} height={18} />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1380,13 +1413,14 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-edit"
                               >
                                 <div data-section="decoration">
-                                  <div title="Edit file">
+                                  <a href={`#${anchor()}`} title="Edit file">
                                     <IconPencilSquare width={18} height={18} />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1451,13 +1485,14 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-bash"
                               >
                                 <div data-section="decoration">
-                                  <div title="Bash command">
+                                  <a href={`#${anchor()}`} title="Bash command">
                                     <IconCommandLine width={18} height={18} />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1506,13 +1541,14 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-fallback"
                               >
                                 <div data-section="decoration">
-                                  <div title="Plan">
+                                  <a href={`#${anchor()}`} title="Plan">
                                     <IconQueueList width={18} height={18} />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1569,13 +1605,14 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-fallback"
                               >
                                 <div data-section="decoration">
-                                  <div title="Plan">
+                                  <a href={`#${anchor()}`} title="Plan">
                                     <IconQueueList width={18} height={18} />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1647,13 +1684,14 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-fetch"
                               >
                                 <div data-section="decoration">
-                                  <div title="Web fetch">
+                                  <a href={`#${anchor()}`} title="Web fetch">
                                     <IconGlobeAlt width={18} height={18} />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1727,16 +1765,17 @@ export default function Share(props: {
 
                             return (
                               <div
+                                id={anchor()}
                                 data-section="part"
                                 data-part-type="tool-fallback"
                               >
                                 <div data-section="decoration">
-                                  <div title="Tool call">
+                                  <a href={`#${anchor()}`} title="Tool call">
                                     <IconWrenchScrewdriver
                                       width={18}
                                       height={18}
                                     />
-                                  </div>
+                                  </a>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1807,9 +1846,13 @@ export default function Share(props: {
                         </Match>
                         {/* Fallback */}
                         <Match when={true}>
-                          <div data-section="part" data-part-type="fallback">
+                          <div
+                            id={anchor()}
+                            data-section="part"
+                            data-part-type="fallback"
+                          >
                             <div data-section="decoration">
-                              <div>
+                              <a href={`#${anchor()}`}>
                                 <Switch
                                   fallback={
                                     <IconWrenchScrewdriver
@@ -1833,7 +1876,7 @@ export default function Share(props: {
                                     <IconUserCircle width={18} height={18} />
                                   </Match>
                                 </Switch>
-                              </div>
+                              </a>
                               <div></div>
                             </div>
                             <div data-section="content">
