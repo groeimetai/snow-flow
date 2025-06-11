@@ -44,19 +44,19 @@ export namespace UI {
     blank = true
   }
 
-  export function logo() {
-    empty()
+  export function logo(pad?: string) {
+    const result = []
     for (const row of LOGO) {
-      print("   ")
+      if (pad) result.push(pad)
       for (let i = 0; i < row.length; i++) {
         const color =
           i > 18 ? Bun.color("white", "ansi") : Bun.color("gray", "ansi")
         const char = row[i]
-        print(color + char)
+        result.push(color + char)
       }
-      println()
+      result.push("\n")
     }
-    empty()
+    return result.join("").trimEnd()
   }
 
   export async function input(prompt: string): Promise<string> {

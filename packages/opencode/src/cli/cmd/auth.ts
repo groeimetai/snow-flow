@@ -13,7 +13,8 @@ export const AuthCommand = cmd({
     yargs
       .command(AuthLoginCommand)
       .command(AuthLogoutCommand)
-      .command(AuthListCommand),
+      .command(AuthListCommand)
+      .demandCommand(),
   async handler(args) {},
 })
 

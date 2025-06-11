@@ -33,6 +33,7 @@ const cli = yargs(hideBin(process.argv))
       args: process.argv.slice(2),
     })
   })
+  .usage("\n" + UI.logo())
   .command({
     command: "$0",
     describe: "Start OpenCode TUI",
@@ -85,7 +86,9 @@ const cli = yargs(hideBin(process.argv))
         )
         if (result === "done") break
         if (result === "needs_provider") {
-          UI.logo()
+          UI.empty()
+          UI.println(UI.logo("   "))
+          UI.empty()
           await AuthLoginCommand.handler(args)
         }
       }
