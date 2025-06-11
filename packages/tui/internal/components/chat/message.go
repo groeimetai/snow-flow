@@ -266,6 +266,14 @@ func renderToolInvocation(
 	if finished {
 		body = *result
 	}
+
+	if metadata["error"] != nil && metadata["message"] != nil {
+		body = styles.BaseStyle().
+			Width(outerWidth).
+			Foreground(t.Error()).
+			Render(metadata["message"].(string))
+	}
+
 	elapsed := ""
 	if metadata["time"] != nil {
 		timeMap := metadata["time"].(map[string]any)
@@ -345,20 +353,9 @@ func renderToolInvocation(
 		}
 	default:
 		toolName := renderToolName(toolCall.ToolName)
-		title = style.Render(fmt.Sprintf("%s: %s %s", toolName, toolArgs, elapsed))
-		// return title
-
-		// toolName := renderToolName(toolCall.ToolName)
-		// title = fmt.Sprintf("%s: %s", toolName, toolArgs)
-		// body = fmt.Sprintf("```txt\n%s\n```", truncateHeight(body, 10))
-		// body = toMarkdown(body, contentWidth)
-	}
-
-	if metadata["error"] != nil && metadata["message"] != nil {
-		body = styles.BaseStyle().
-			Width(outerWidth).
-			Foreground(t.Error()).
-			Render(metadata["message"].(string))
+		title = fmt.Sprintf("%s: %s   %s", toolName, toolArgs, elapsed)
+		body = truncateHeight(body, 10)
+		body = renderMarkdown(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 	}
 
 	content := style.Render(title)
@@ -368,7 +365,6 @@ func renderToolInvocation(
 		content += "\n" + body
 	}
 	return content
-	// return styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
 }
 
 func renderToolName(name string) string {
