@@ -138,11 +138,7 @@ func (s *sessionDialogComponent) View() string {
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
 		title,
-		// baseStyle.Width(width).Render(""),
-		"",
 		s.list.View(),
-		"",
-		// baseStyle.Width(width).Render(""),
 	)
 
 	style := styles.BaseStyle().
@@ -157,16 +153,12 @@ func (s *sessionDialogComponent) View() string {
 	style = style.
 		BorderLeft(true).
 		BorderRight(true).
-		// AlignHorizontal(align).
 		BorderLeftForeground(t.BackgroundSubtle()).
 		BorderLeftBackground(t.Background()).
 		BorderRightForeground(t.BackgroundSubtle()).
 		BorderRightBackground(t.Background())
 
 	return style.
-		// Border(lipgloss.ThickBorder()).
-		// BorderBackground(t.BackgroundElement()).
-		// BorderForeground(t.BorderSubtle()).
 		Width(outerWidth).
 		Render(content)
 }
