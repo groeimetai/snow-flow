@@ -1,12 +1,24 @@
 #!/usr/bin/env bun
 
 import { $ } from "bun"
+import { Glob } from "bun"
 
 import pkg from "../package.json"
 
 const dry = process.argv.includes("--dry")
+const snapshot = process.argv.includes("--snapshot")
 
-const version = `0.0.0-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}`
+const version = snapshot
+  ? `0.0.0-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}`
+  : await $`git describe --tags --exact-match HEAD`
+      .text()
+      .then((x) => x.substring(1).trim())
+      .catch(() => {
+        console.error("tag not found")
+        process.exit(1)
+      })
+
+console.log(`publishing ${version}`)
 
 const GOARCH: Record<string, string> = {
   arm64: "arm64",
@@ -24,6 +36,7 @@ const targets = [
 await $`rm -rf dist`
 
 const optionalDependencies: Record<string, string> = {}
+const npmTag = snapshot ? "snapshot" : "latest"
 for (const [os, arch] of targets) {
   console.log(`building ${os}-${arch}`)
   const name = `${pkg.name}-${os}-${arch}`
@@ -45,7 +58,8 @@ for (const [os, arch] of targets) {
       2,
     ),
   )
-  if (!dry) await $`cd dist/${name} && npm publish --access public --tag latest`
+  if (!dry)
+    await $`cd dist/${name} && npm publish --access public --tag ${npmTag}`
   optionalDependencies[name] = version
 }
 
@@ -70,4 +84,14 @@ await Bun.file(`./dist/${pkg.name}/package.json`).write(
   ),
 )
 if (!dry)
-  await $`cd ./dist/${pkg.name} && npm publish --access public --tag latest`
+  await $`cd ./dist/${pkg.name} && npm publish --access public --tag ${npmTag}`
+
+for (const key of Object.keys(optionalDependencies)) {
+  await $`cd dist/${key}/bin && zip -r ../../${key}.zip *`
+}
+
+// Upload to GitHub releases
+const files = Object.keys(optionalDependencies)
+  .map((key) => `dist/${key}.zip`)
+  .join(" ")
+await $`gh release create v${version} ${files} --title "Release v${version}" --generate-notes`

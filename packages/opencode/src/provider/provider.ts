@@ -259,11 +259,14 @@ export namespace Provider {
     }
   }
 
-  const priority = ["claude-sonnet-4", "gemini-2.5-pro-preview", "codex-mini"]
+  const priority = ["gemini-2.5-pro-preview", "codex-mini", "claude-sonnet-4"]
   export function sort(models: Model[]) {
     return sortBy(
       models,
-      [(model) => priority.indexOf(model.id), "desc"],
+      [
+        (model) => priority.findIndex((filter) => model.id.includes(filter)),
+        "desc",
+      ],
       [(model) => (model.id.includes("latest") ? 0 : 1), "asc"],
       [(model) => model.id, "desc"],
     )

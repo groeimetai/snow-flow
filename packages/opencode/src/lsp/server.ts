@@ -3,6 +3,7 @@ import type { App } from "../app/app"
 import path from "path"
 import { Global } from "../global"
 import { Log } from "../util/log"
+import { BunProc } from "../bun"
 
 export namespace LSPServer {
   const log = Log.create({ service: "lsp.server" })
@@ -37,15 +38,10 @@ export namespace LSPServer {
           app.path.cwd,
         ).catch(() => {})
         if (!tsserver) return
-        const root =
-          process.argv0 !== "bun" && false
-            ? path.resolve(process.cwd(), process.argv0)
-            : "bun"
         const proc = spawn(
-          root,
+          BunProc.which(),
           ["x", "typescript-language-server", "--stdio"],
           {
-            argv0: "bun",
             env: {
               ...process.env,
               BUN_BE_BUN: "1",

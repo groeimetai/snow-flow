@@ -7,17 +7,12 @@ export namespace BunProc {
     cmd: string[],
     options?: Bun.SpawnOptions.OptionsObject<any, any, any>,
   ) {
-    const root =
-      process.argv0 !== "bun" && false
-        ? path.resolve(process.cwd(), process.argv0)
-        : "bun"
     log.info("running", {
-      cmd: [root, ...cmd],
+      cmd: [which(), ...cmd],
       options,
     })
-    const result = Bun.spawn([root, ...cmd], {
+    const result = Bun.spawn([which(), ...cmd], {
       ...options,
-      argv0: "bun",
       env: {
         ...process.env,
         ...options?.env,
@@ -30,5 +25,11 @@ export namespace BunProc {
       throw new Error(`Command failed with exit code ${result.exitCode}`)
     }
     return result
+  }
+
+  export function which() {
+    return process.argv0 !== "bun"
+      ? path.resolve(process.cwd(), process.argv0)
+      : "bun"
   }
 }

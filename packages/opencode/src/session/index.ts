@@ -283,7 +283,7 @@ export namespace Session {
       }
       msgs.push(system)
       generateText({
-        maxOutputTokens: 80,
+        maxOutputTokens: 20,
         messages: convertToModelMessages([
           {
             role: "system",
