@@ -1443,7 +1443,7 @@ export default function Share(props: {
                                           />
                                         </div>
                                       </Match>
-                                      <Match when={false}>
+                                      <Match when={metadata()?.diff}>
                                         <div data-part-tool-edit>
                                           <DiffView
                                             class={styles["diff-code-block"]}
