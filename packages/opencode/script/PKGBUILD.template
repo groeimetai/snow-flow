@@ -1,0 +1,23 @@
+# Maintainer: dax
+# Maintainer: adam
+
+pkgname='opencode-bin'
+pkgver={{VERSION}}
+pkgrel=1
+pkgdesc='The AI coding agent built for the terminal.'
+url='https://github.com/sst/opencode'
+arch=('aarch64' 'x86_64')
+license=('MIT')
+provides=('opencode')
+conflicts=('opencode')
+depends=('fzf' 'ripgrep')
+
+source_aarch64=("${pkgname}_${pkgver}_aarch64.zip::{{ARM64_URL}}")
+sha256sums_aarch64=('{{ARM64_SHA}}')
+
+source_x86_64=("${pkgname}_${pkgver}_x86_64.zip::{{X64_URL}}")
+sha256sums_x86_64=('{{X64_SHA}}')
+
+package() {
+  install -Dm755 ./opencode "${pkgdir}/usr/bin/opencode"
+}

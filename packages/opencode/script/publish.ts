@@ -86,6 +86,7 @@ if (!dry)
   await $`cd ./dist/${pkg.name} && npm publish --access public --tag ${npmTag}`
 
 if (!snapshot) {
+  // Github Release
   for (const key of Object.keys(optionalDependencies)) {
     await $`cd dist/${key}/bin && zip -r ../../${key}.zip *`
   }
@@ -116,4 +117,45 @@ if (!snapshot) {
 
   if (!dry)
     await $`gh release create v${version} --title "v${version}" --notes ${notes} ./dist/*.zip`
+
+  // AUR package
+  const pkgbuildTemplate = await Bun.file("./script/PKGBUILD.template").text()
+  const pkgbuild = pkgbuildTemplate
+    .replace("{{VERSION}}", version.split("-")[0])
+    .replace(
+      "{{ARM64_URL}}",
+      `https://github.com/sst/opencode/releases/download/v${version}/opencode-linux-arm64.zip`,
+    )
+    .replace(
+      "{{ARM64_SHA}}",
+      await $`sha256sum ./dist/opencode-linux-arm64.zip | cut -d' ' -f1`
+        .text()
+        .then((x) => x.trim()),
+    )
+    .replace(
+      "{{X64_URL}}",
+      `https://github.com/sst/opencode/releases/download/v${version}/opencode-linux-x64.zip`,
+    )
+    .replace(
+      "{{X64_SHA}}",
+      await $`sha256sum ./dist/opencode-linux-x64.zip | cut -d' ' -f1`
+        .text()
+        .then((x) => x.trim()),
+    )
+
+  await $`rm -rf ./dist/aur-opencode-bin`
+  const gitEnv: Record<string, string> = process.env["AUR_KEY"]
+    ? { GIT_SSH_COMMAND: `ssh -i ${process.env["AUR_KEY"]}` }
+    : {}
+
+  await $`git clone ssh://aur@aur.archlinux.org/opencode-bin.git ./dist/aur-opencode-bin`.env(
+    gitEnv,
+  )
+  await Bun.file("./dist/aur-opencode-bin/PKGBUILD").write(pkgbuild)
+  await $`cd ./dist/aur-opencode-bin && makepkg --printsrcinfo > .SRCINFO`
+  await $`cd ./dist/aur-opencode-bin && git add PKGBUILD .SRCINFO`.env(gitEnv)
+  await $`cd ./dist/aur-opencode-bin && git commit -m "Update to v${version}"`.env(
+    gitEnv,
+  )
+  if (!dry) await $`cd ./dist/aur-opencode-bin && git push`.env(gitEnv)
 }
