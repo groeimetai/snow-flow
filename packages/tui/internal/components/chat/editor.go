@@ -256,7 +256,7 @@ func (m *editorComponent) View() string {
 		m.textarea.View(),
 	)
 	textarea = styles.BaseStyle().
-		Width(m.width). // -2).
+		Width(m.width).
 		Border(lipgloss.NormalBorder(), true, true).
 		BorderForeground(t.Border()).
 		Render(textarea)

@@ -22,7 +22,7 @@ type SimpleList[T SimpleListItem] interface {
 	GetItems() []T
 }
 
-type simpleListCmp[T SimpleListItem] struct {
+type simpleListComponent[T SimpleListItem] struct {
 	fallbackMsg         string
 	items               []T
 	selectedIdx         int
@@ -59,11 +59,11 @@ var simpleListKeys = simpleListKeyMap{
 	),
 }
 
-func (c *simpleListCmp[T]) Init() tea.Cmd {
+func (c *simpleListComponent[T]) Init() tea.Cmd {
 	return nil
 }
 
-func (c *simpleListCmp[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (c *simpleListComponent[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -83,11 +83,11 @@ func (c *simpleListCmp[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, nil
 }
 
-func (c *simpleListCmp[T]) BindingKeys() []key.Binding {
+func (c *simpleListComponent[T]) BindingKeys() []key.Binding {
 	return layout.KeyMapToSlice(simpleListKeys)
 }
 
-func (c *simpleListCmp[T]) GetSelectedItem() (T, int) {
+func (c *simpleListComponent[T]) GetSelectedItem() (T, int) {
 	if len(c.items) > 0 {
 		return c.items[c.selectedIdx], c.selectedIdx
 	}
@@ -96,20 +96,20 @@ func (c *simpleListCmp[T]) GetSelectedItem() (T, int) {
 	return zero, -1
 }
 
-func (c *simpleListCmp[T]) SetItems(items []T) {
+func (c *simpleListComponent[T]) SetItems(items []T) {
 	c.selectedIdx = 0
 	c.items = items
 }
 
-func (c *simpleListCmp[T]) GetItems() []T {
+func (c *simpleListComponent[T]) GetItems() []T {
 	return c.items
 }
 
-func (c *simpleListCmp[T]) SetMaxWidth(width int) {
+func (c *simpleListComponent[T]) SetMaxWidth(width int) {
 	c.maxWidth = width
 }
 
-func (c *simpleListCmp[T]) View() string {
+func (c *simpleListComponent[T]) View() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
@@ -149,7 +149,7 @@ func (c *simpleListCmp[T]) View() string {
 }
 
 func NewSimpleList[T SimpleListItem](items []T, maxVisibleItems int, fallbackMsg string, useAlphaNumericKeys bool) SimpleList[T] {
-	return &simpleListCmp[T]{
+	return &simpleListComponent[T]{
 		fallbackMsg:         fallbackMsg,
 		items:               items,
 		maxVisibleItems:     maxVisibleItems,

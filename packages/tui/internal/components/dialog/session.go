@@ -122,7 +122,7 @@ func (s *sessionDialogComponent) View() string {
 	maxWidth := 40 // Minimum width
 	for _, sess := range s.sessions {
 		if len(sess.Title) > maxWidth-4 { // Account for padding
-			maxWidth = len(sess.Title) + 4
+			maxWidth = len(sess.Title) + 0
 		}
 	}
 
@@ -173,7 +173,7 @@ func (s *sessionDialogComponent) View() string {
 		lipgloss.Left,
 		title,
 		baseStyle.Width(maxWidth).Render(""),
-		baseStyle.Width(maxWidth).Render(lipgloss.JoinVertical(lipgloss.Left, sessionItems...)),
+		baseStyle.Width(maxWidth-2).Render(lipgloss.JoinVertical(lipgloss.Left, sessionItems...)),
 		baseStyle.Width(maxWidth).Render(""),
 	)
 

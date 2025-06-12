@@ -82,7 +82,7 @@ type CompletionDialog interface {
 	SetWidth(width int)
 }
 
-type completionDialogCmp struct {
+type completionDialogComponent struct {
 	query                string
 	completionProvider   CompletionProvider
 	width                int
@@ -105,11 +105,11 @@ var completionDialogKeys = completionDialogKeyMap{
 	),
 }
 
-func (c *completionDialogCmp) Init() tea.Cmd {
+func (c *completionDialogComponent) Init() tea.Cmd {
 	return nil
 }
 
-func (c *completionDialogCmp) complete(item CompletionItemI) tea.Cmd {
+func (c *completionDialogComponent) complete(item CompletionItemI) tea.Cmd {
 	value := c.pseudoSearchTextArea.Value()
 
 	if value == "" {
@@ -125,7 +125,7 @@ func (c *completionDialogCmp) complete(item CompletionItemI) tea.Cmd {
 	)
 }
 
-func (c *completionDialogCmp) close() tea.Cmd {
+func (c *completionDialogComponent) close() tea.Cmd {
 	c.listView.SetItems([]CompletionItemI{})
 	c.pseudoSearchTextArea.Reset()
 	c.pseudoSearchTextArea.Blur()
@@ -133,7 +133,7 @@ func (c *completionDialogCmp) close() tea.Cmd {
 	return util.CmdHandler(CompletionDialogCloseMsg{})
 }
 
-func (c *completionDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -203,7 +203,7 @@ func (c *completionDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, tea.Batch(cmds...)
 }
 
-func (c *completionDialogCmp) View() string {
+func (c *completionDialogComponent) View() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
@@ -231,15 +231,15 @@ func (c *completionDialogCmp) View() string {
 		Render(c.listView.View())
 }
 
-func (c *completionDialogCmp) SetWidth(width int) {
+func (c *completionDialogComponent) SetWidth(width int) {
 	c.width = width
 }
 
-func (c *completionDialogCmp) BindingKeys() []key.Binding {
+func (c *completionDialogComponent) BindingKeys() []key.Binding {
 	return layout.KeyMapToSlice(completionDialogKeys)
 }
 
-func NewCompletionDialogCmp(completionProvider CompletionProvider) CompletionDialog {
+func NewCompletionDialogComponent(completionProvider CompletionProvider) CompletionDialog {
 	ti := textarea.New()
 
 	items, err := completionProvider.GetChildEntries("")
@@ -254,7 +254,7 @@ func NewCompletionDialogCmp(completionProvider CompletionProvider) CompletionDia
 		false,
 	)
 
-	return &completionDialogCmp{
+	return &completionDialogComponent{
 		query:                "",
 		completionProvider:   completionProvider,
 		pseudoSearchTextArea: ti,

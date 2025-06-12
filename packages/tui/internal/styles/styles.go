@@ -9,9 +9,7 @@ import (
 // BaseStyle returns the base style with background and foreground colors
 func BaseStyle() lipgloss.Style {
 	t := theme.CurrentTheme()
-	return lipgloss.NewStyle().
-		Background(t.Background()).
-		Foreground(t.Text())
+	return lipgloss.NewStyle().Foreground(t.Text())
 }
 
 func Panel() lipgloss.Style {
@@ -30,7 +28,7 @@ func Regular() lipgloss.Style {
 
 func Muted() lipgloss.Style {
 	t := theme.CurrentTheme()
-	return lipgloss.NewStyle().Background(t.Background()).Foreground(t.TextMuted())
+	return lipgloss.NewStyle().Foreground(t.TextMuted())
 }
 
 // Bold returns a bold style

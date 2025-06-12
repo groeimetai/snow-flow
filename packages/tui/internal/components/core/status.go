@@ -101,13 +101,15 @@ func (m statusComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func logo() string {
 	t := theme.CurrentTheme()
-	mark := styles.Bold().Foreground(t.Primary()).Render("◧ ")
-	open := styles.Muted().Render("open")
-	code := styles.BaseStyle().Bold(true).Render("code")
-	version := styles.Muted().Render(app.Info.Version)
+	base := lipgloss.NewStyle().Background(t.BackgroundElement()).Foreground(t.TextMuted()).Render
+	emphasis := lipgloss.NewStyle().Bold(true).Background(t.BackgroundElement()).Foreground(t.Text()).Render
+
+	open := base("open")
+	code := emphasis("code ")
+	version := base(app.Info.Version)
 	return styles.Padded().
 		Background(t.BackgroundElement()).
-		Render(mark + open + code + " " + version)
+		Render(open + code + version)
 }
 
 func formatTokensAndCost(tokens float32, contextWindow float32, cost float32) string {

@@ -189,7 +189,7 @@ func (p *chatPage) BindingKeys() []key.Binding {
 
 func NewChatPage(app *app.App) layout.ModelWithView {
 	cg := completions.NewFileAndFolderContextGroup()
-	completionDialog := dialog.NewCompletionDialogCmp(cg)
+	completionDialog := dialog.NewCompletionDialogComponent(cg)
 	messagesContainer := layout.NewContainer(
 		chat.NewMessagesComponent(app),
 	)
