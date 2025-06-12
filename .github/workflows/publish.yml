@@ -32,6 +32,11 @@ jobs:
         with:
           bun-version: 1.2.16
 
+      - name: Test npm auth
+        run: npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - run: |
           bun install
           ./script/publish.ts

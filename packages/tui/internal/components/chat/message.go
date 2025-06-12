@@ -484,6 +484,9 @@ func renderArgs(args *map[string]any, titleKey string) string {
 	title := ""
 	parts := []string{}
 	for key, value := range *args {
+		if value == nil {
+			continue
+		}
 		if key == "filePath" || key == "path" {
 			value = relative(value.(string))
 		}
