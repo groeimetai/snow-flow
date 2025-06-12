@@ -1,4 +1,4 @@
-name: release
+name: publish
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ permissions:
   packages: write
 
 jobs:
-  goreleaser:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
