@@ -86,12 +86,13 @@ await Bun.file(`./dist/${pkg.name}/package.json`).write(
 if (!dry)
   await $`cd ./dist/${pkg.name} && npm publish --access public --tag ${npmTag}`
 
-for (const key of Object.keys(optionalDependencies)) {
-  await $`cd dist/${key}/bin && zip -r ../../${key}.zip *`
-}
+if (!snapshot) {
+  for (const key of Object.keys(optionalDependencies)) {
+    await $`cd dist/${key}/bin && zip -r ../../${key}.zip *`
+  }
 
-// Upload to GitHub releases
-const files = Object.keys(optionalDependencies)
-  .map((key) => `dist/${key}.zip`)
-  .join(" ")
-await $`gh release create v${version} ${files} --title "Release v${version}" --generate-notes`
+  const files = Object.keys(optionalDependencies)
+    .map((key) => `dist/${key}.zip`)
+    .join(" ")
+  await $`gh release create v${version} --title "Release v${version}" --generate-notes ./dist/*.zip`
+}
