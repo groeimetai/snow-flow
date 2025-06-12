@@ -35,7 +35,7 @@ const cli = yargs(hideBin(process.argv))
   })
   .usage("\n" + UI.logo())
   .command({
-    command: "$0 <project>",
+    command: "$0 [project]",
     describe: "Start OpenCode TUI",
     builder: (yargs) =>
       yargs.positional("project", {
