@@ -22,7 +22,6 @@ export namespace BunProc {
     })
     const code = await result.exited
     if (code !== 0) {
-      console.error(result.stderr?.toString("utf8") ?? "")
       throw new Error(`Command failed with exit code ${result.exitCode}`)
     }
     return result
