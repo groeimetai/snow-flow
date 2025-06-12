@@ -40,6 +40,8 @@ func PlaceOverlay(
 	bgHeight := len(bgLines)
 	fgHeight := len(fgLines)
 
+	shadow = false
+
 	if shadow {
 		t := theme.CurrentTheme()
 		baseStyle := styles.BaseStyle()

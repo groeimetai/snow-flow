@@ -33,12 +33,12 @@ func (s sessionItem) Render(selected bool, width int) string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle().
 		Width(width - 2).
-		Background(t.Background())
+		Background(t.BackgroundElement())
 
 	if selected {
 		baseStyle = baseStyle.
 			Background(t.Primary()).
-			Foreground(t.Background()).
+			Foreground(t.BackgroundElement()).
 			Bold(true)
 	} else {
 		baseStyle = baseStyle.
@@ -112,8 +112,9 @@ func (s *sessionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (s *sessionDialogComponent) View() string {
 	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle().Background(t.Background())
-	width := layout.Current.Container.Width - 4
+	baseStyle := styles.BaseStyle().Background(t.BackgroundElement())
+	outerWidth := layout.Current.Container.Width - 8
+	width := outerWidth - 4
 
 	if len(s.sessions) == 0 {
 		return baseStyle.Padding(1, 2).
@@ -144,11 +145,29 @@ func (s *sessionDialogComponent) View() string {
 		// baseStyle.Width(width).Render(""),
 	)
 
-	return baseStyle.Padding(1, 2).
-		Border(lipgloss.RoundedBorder()).
-		BorderBackground(t.Background()).
-		BorderForeground(t.TextMuted()).
-		Width(layout.Current.Container.Width).
+	style := styles.BaseStyle().
+		PaddingTop(1).
+		PaddingBottom(1).
+		PaddingLeft(2).
+		PaddingRight(2).
+		Background(t.BackgroundElement()).
+		Foreground(t.TextMuted()).
+		BorderStyle(lipgloss.ThickBorder())
+
+	style = style.
+		BorderLeft(true).
+		BorderRight(true).
+		// AlignHorizontal(align).
+		BorderLeftForeground(t.BackgroundSubtle()).
+		BorderLeftBackground(t.Background()).
+		BorderRightForeground(t.BackgroundSubtle()).
+		BorderRightBackground(t.Background())
+
+	return style.
+		// Border(lipgloss.ThickBorder()).
+		// BorderBackground(t.BackgroundElement()).
+		// BorderForeground(t.BorderSubtle()).
+		Width(outerWidth).
 		Render(content)
 }
 
