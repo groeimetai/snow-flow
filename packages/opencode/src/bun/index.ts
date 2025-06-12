@@ -29,7 +29,7 @@ export namespace BunProc {
 
   export function which() {
     return process.argv0 !== "bun"
-      ? path.resolve(process.cwd(), process.argv0)
+      ? path.resolve(process.cwd(), process.argv[0])
       : "bun"
   }
 }
