@@ -271,8 +271,6 @@ func (m *editorComponent) View() string {
 	)
 	textarea = styles.BaseStyle().
 		Width(m.width).
-		PaddingTop(1).
-		PaddingBottom(1).
 		Background(t.BackgroundElement()).
 		Border(lipgloss.ThickBorder(), false, true).
 		BorderForeground(t.BorderActive()).
@@ -310,7 +308,7 @@ func (m *editorComponent) SetSize(width, height int) tea.Cmd {
 	m.width = width
 	m.height = height
 	m.textarea.SetWidth(width - 5)   // account for the prompt and padding right
-	m.textarea.SetHeight(height - 3) // account for info underneath
+	m.textarea.SetHeight(height - 2) // account for info underneath
 	return nil
 }
 
