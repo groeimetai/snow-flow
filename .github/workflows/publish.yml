@@ -43,7 +43,7 @@ jobs:
       - name: Publish
         run: |
           bun install
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          if [ "${{ startsWith(github.ref, 'refs/tags/') }}" = "true" ]; then
             ./script/publish.ts
           else
             ./script/publish.ts --snapshot
