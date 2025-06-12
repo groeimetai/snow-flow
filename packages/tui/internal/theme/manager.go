@@ -6,8 +6,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
-
-	"github.com/alecthomas/chroma/v2/styles"
+	// "github.com/alecthomas/chroma/v2/styles"
 )
 
 // Manager handles theme registration, selection, and retrieval.
@@ -46,7 +45,7 @@ func RegisterTheme(name string, theme Theme) {
 func SetTheme(name string) error {
 	globalManager.mu.Lock()
 	defer globalManager.mu.Unlock()
-	delete(styles.Registry, "charm")
+	// delete(styles.Registry, "charm")
 
 	// Handle custom theme
 	// if name == "custom" {

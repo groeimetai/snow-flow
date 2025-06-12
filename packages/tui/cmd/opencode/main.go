@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea/v2"
 	zone "github.com/lrstanley/bubblezone"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/pubsub"
@@ -65,6 +65,8 @@ func main() {
 	zone.NewGlobal()
 	program := tea.NewProgram(
 		tui.NewModel(app_),
+		// tea.WithMouseCellMotion(),
+		tea.WithKeyboardEnhancements(),
 		tea.WithAltScreen(),
 	)
 

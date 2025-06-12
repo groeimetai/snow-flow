@@ -4,11 +4,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	"github.com/charmbracelet/bubbles/v2/spinner"
+	"github.com/charmbracelet/bubbles/v2/viewport"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/layout"
@@ -220,11 +220,11 @@ func (m *messagesComponent) renderView() {
 			m.width,
 			lipgloss.Center,
 			block,
-			lipgloss.WithWhitespaceBackground(t.Background()),
+			lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 		))
 	}
 
-	m.viewport.Height = m.height - lipgloss.Height(m.header())
+	m.viewport.SetHeight(m.height - lipgloss.Height(m.header()))
 	m.viewport.SetContent(strings.Join(centered, "\n"))
 }
 
@@ -238,7 +238,7 @@ func (m *messagesComponent) header() string {
 	base := styles.BaseStyle().Render
 	muted := styles.Muted().Render
 	headerLines := []string{}
-	headerLines = append(headerLines, toMarkdown("# "+m.app.Session.Title, width))
+	headerLines = append(headerLines, toMarkdown("# "+m.app.Session.Title, width, t.Background()))
 	if m.app.Session.Share != nil && m.app.Session.Share.Url != "" {
 		headerLines = append(headerLines, muted(m.app.Session.Share.Url))
 	} else {
@@ -255,7 +255,7 @@ func (m *messagesComponent) header() string {
 		Background(t.Background()).
 		Render(header)
 
-	return styles.ForceReplaceBackgroundWithLipgloss(header, t.Background())
+	return header
 }
 
 func (m *messagesComponent) View() string {
@@ -269,73 +269,8 @@ func (m *messagesComponent) View() string {
 	)
 }
 
-// func hasToolsWithoutResponse(messages []message.Message) bool {
-// 	toolCalls := make([]message.ToolCall, 0)
-// 	toolResults := make([]message.ToolResult, 0)
-// 	for _, m := range messages {
-// 		toolCalls = append(toolCalls, m.ToolCalls()...)
-// 		toolResults = append(toolResults, m.ToolResults()...)
-// 	}
-//
-// 	for _, v := range toolCalls {
-// 		found := false
-// 		for _, r := range toolResults {
-// 			if v.ID == r.ToolCallID {
-// 				found = true
-// 				break
-// 			}
-// 		}
-// 		if !found && v.Finished {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
-// func hasUnfinishedToolCalls(messages []message.Message) bool {
-// 	toolCalls := make([]message.ToolCall, 0)
-// 	for _, m := range messages {
-// 		toolCalls = append(toolCalls, m.ToolCalls()...)
-// 	}
-// 	for _, v := range toolCalls {
-// 		if !v.Finished {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
-func (m *messagesComponent) help() string {
-	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
-
-	text := ""
-
-	if m.app.IsBusy() {
-		text += lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render("press "),
-			baseStyle.Foreground(t.Text()).Bold(true).Render("esc"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" to interrupt"),
-		)
-	} else {
-		text += lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			baseStyle.Foreground(t.Text()).Bold(true).Render("enter"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" to send,"),
-			baseStyle.Foreground(t.Text()).Bold(true).Render(" \\"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render("+"),
-			baseStyle.Foreground(t.Text()).Bold(true).Render("enter"),
-			baseStyle.Foreground(t.TextMuted()).Bold(true).Render(" for newline"),
-		)
-	}
-	return baseStyle.
-		Width(m.width).
-		Render(text)
-}
-
 func (m *messagesComponent) home() string {
-	t := theme.CurrentTheme()
+	// t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 	base := baseStyle.Render
 	muted := styles.Muted().Render
@@ -398,16 +333,13 @@ func (m *messagesComponent) home() string {
 		lines = append(lines, "")
 	}
 
-	return styles.ForceReplaceBackgroundWithLipgloss(
-		lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
-			baseStyle.Width(lipgloss.Width(logoAndVersion)).Render(
-				lipgloss.JoinVertical(
-					lipgloss.Top,
-					lines...,
-				),
-			)),
-		t.Background(),
-	)
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
+		baseStyle.Width(lipgloss.Width(logoAndVersion)).Render(
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				lines...,
+			),
+		))
 }
 
 func (m *messagesComponent) SetSize(width, height int) tea.Cmd {
@@ -420,10 +352,10 @@ func (m *messagesComponent) SetSize(width, height int) tea.Cmd {
 	}
 	m.width = width
 	m.height = height
-	m.viewport.Width = width
-	m.viewport.Height = height - lipgloss.Height(m.header())
-	m.attachments.Width = width + 40
-	m.attachments.Height = 3
+	m.viewport.SetWidth(width)
+	m.viewport.SetHeight(height - lipgloss.Height(m.header()))
+	m.attachments.SetWidth(width + 40)
+	m.attachments.SetHeight(3)
 	m.renderView()
 	return nil
 }
@@ -449,15 +381,15 @@ func (m *messagesComponent) BindingKeys() []key.Binding {
 	}
 }
 
-func NewMessagesComponent(app *app.App) tea.Model {
+func NewMessagesComponent(app *app.App) layout.ModelWithView {
 	customSpinner := spinner.Spinner{
 		Frames: []string{" ", "┃", "┃"},
 		FPS:    time.Second / 3,
 	}
 	s := spinner.New(spinner.WithSpinner(customSpinner))
 
-	vp := viewport.New(0, 0)
-	attachments := viewport.New(0, 0)
+	vp := viewport.New()          //(0, 0)
+	attachments := viewport.New() //(0, 0)
 	vp.KeyMap.PageUp = messageKeys.PageUp
 	vp.KeyMap.PageDown = messageKeys.PageDown
 	vp.KeyMap.HalfPageUp = messageKeys.HalfPageUp

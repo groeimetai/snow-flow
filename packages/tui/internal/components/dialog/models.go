@@ -7,9 +7,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
@@ -31,13 +31,13 @@ type CloseModelDialogMsg struct {
 
 // ModelDialog interface for the model selection dialog
 type ModelDialog interface {
-	tea.Model
+	layout.ModelWithView
 	layout.Bindings
 
 	SetProviders(providers []client.ProviderInfo)
 }
 
-type modelDialogCmp struct {
+type modelDialogComponent struct {
 	app                *app.App
 	availableProviders []client.ProviderInfo
 	provider           client.ProviderInfo
@@ -106,7 +106,7 @@ var modelKeys = modelKeyMap{
 	),
 }
 
-func (m *modelDialogCmp) Init() tea.Cmd {
+func (m *modelDialogComponent) Init() tea.Cmd {
 	// cfg := config.Get()
 	// modelInfo := GetSelectedModel(cfg)
 	// m.availableProviders = getEnabledProviders(cfg)
@@ -125,11 +125,11 @@ func (m *modelDialogCmp) Init() tea.Cmd {
 	return nil
 }
 
-func (m *modelDialogCmp) SetProviders(providers []client.ProviderInfo) {
+func (m *modelDialogComponent) SetProviders(providers []client.ProviderInfo) {
 	m.availableProviders = providers
 }
 
-func (m *modelDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *modelDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -159,7 +159,7 @@ func (m *modelDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *modelDialogCmp) models() []client.ProviderModel {
+func (m *modelDialogComponent) models() []client.ProviderModel {
 	models := slices.SortedFunc(maps.Values(m.provider.Models), func(a, b client.ProviderModel) int {
 		return strings.Compare(*a.Name, *b.Name)
 	})
@@ -167,7 +167,7 @@ func (m *modelDialogCmp) models() []client.ProviderModel {
 }
 
 // moveSelectionUp moves the selection up or wraps to bottom
-func (m *modelDialogCmp) moveSelectionUp() {
+func (m *modelDialogComponent) moveSelectionUp() {
 	if m.selectedIdx > 0 {
 		m.selectedIdx--
 	} else {
@@ -182,7 +182,7 @@ func (m *modelDialogCmp) moveSelectionUp() {
 }
 
 // moveSelectionDown moves the selection down or wraps to top
-func (m *modelDialogCmp) moveSelectionDown() {
+func (m *modelDialogComponent) moveSelectionDown() {
 	if m.selectedIdx < len(m.provider.Models)-1 {
 		m.selectedIdx++
 	} else {
@@ -196,7 +196,7 @@ func (m *modelDialogCmp) moveSelectionDown() {
 	}
 }
 
-func (m *modelDialogCmp) switchProvider(offset int) {
+func (m *modelDialogComponent) switchProvider(offset int) {
 	newOffset := m.hScrollOffset + offset
 
 	// Ensure we stay within bounds
@@ -212,7 +212,7 @@ func (m *modelDialogCmp) switchProvider(offset int) {
 	m.setupModelsForProvider(m.provider.Id)
 }
 
-func (m *modelDialogCmp) View() string {
+func (m *modelDialogComponent) View() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
@@ -255,7 +255,7 @@ func (m *modelDialogCmp) View() string {
 		Render(content)
 }
 
-func (m *modelDialogCmp) getScrollIndicators(maxWidth int) string {
+func (m *modelDialogComponent) getScrollIndicators(maxWidth int) string {
 	var indicator string
 
 	if len(m.provider.Models) > numVisibleModels {
@@ -291,7 +291,7 @@ func (m *modelDialogCmp) getScrollIndicators(maxWidth int) string {
 		Render(indicator)
 }
 
-func (m *modelDialogCmp) BindingKeys() []key.Binding {
+func (m *modelDialogComponent) BindingKeys() []key.Binding {
 	return layout.KeyMapToSlice(modelKeys)
 }
 
@@ -305,7 +305,7 @@ func (m *modelDialogCmp) BindingKeys() []key.Binding {
 // 	return -1
 // }
 
-func (m *modelDialogCmp) setupModelsForProvider(_ string) {
+func (m *modelDialogComponent) setupModelsForProvider(_ string) {
 	m.selectedIdx = 0
 	m.scrollOffset = 0
 
@@ -332,7 +332,7 @@ func (m *modelDialogCmp) setupModelsForProvider(_ string) {
 }
 
 func NewModelDialogCmp(app *app.App) ModelDialog {
-	return &modelDialogCmp{
+	return &modelDialogComponent{
 		app: app,
 	}
 }

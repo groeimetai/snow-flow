@@ -1,10 +1,9 @@
 package layout
 
 import (
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/sst/opencode/internal/theme"
+	"github.com/charmbracelet/bubbles/v2/key"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 )
 
 type FlexDirection int
@@ -26,7 +25,7 @@ func FlexPaneSizeFixed(size int) FlexPaneSize {
 }
 
 type FlexLayout interface {
-	tea.Model
+	ModelWithView
 	Sizeable
 	Bindings
 	SetPanes(panes []Container) tea.Cmd
@@ -75,8 +74,6 @@ func (f *flexLayout) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (f *flexLayout) View() string {
-	t := theme.CurrentTheme()
-
 	if len(f.panes) == 0 {
 		return ""
 	}
@@ -94,7 +91,6 @@ func (f *flexLayout) View() string {
 				paneWidth,
 				pane.Alignment(),
 				pane.View(),
-				lipgloss.WithWhitespaceBackground(t.Background()),
 			)
 			views = append(views, view)
 		} else {
@@ -105,7 +101,6 @@ func (f *flexLayout) View() string {
 				lipgloss.Center,
 				pane.Alignment(),
 				pane.View(),
-				lipgloss.WithWhitespaceBackground(t.Background()),
 			)
 			views = append(views, view)
 		}
@@ -245,4 +240,3 @@ func WithPaneSizes(sizes ...FlexPaneSize) FlexLayoutOption {
 		f.sizes = sizes
 	}
 }
-

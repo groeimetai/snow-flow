@@ -5,11 +5,11 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/cursor"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/cursor"
+	"github.com/charmbracelet/bubbles/v2/key"
+	"github.com/charmbracelet/bubbles/v2/spinner"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/core"
@@ -18,6 +18,8 @@ import (
 	"github.com/sst/opencode/internal/page"
 	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/status"
+	"github.com/sst/opencode/internal/styles"
+	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
 	"github.com/sst/opencode/pkg/client"
 )
@@ -90,16 +92,16 @@ type appModel struct {
 	width, height int
 	currentPage   page.PageID
 	previousPage  page.PageID
-	pages         map[page.PageID]tea.Model
+	pages         map[page.PageID]layout.ModelWithView
 	loadedPages   map[page.PageID]bool
-	status        core.StatusCmp
+	status        core.StatusComponent
 	app           *app.App
 
 	showPermissions bool
-	permissions     dialog.PermissionDialogCmp
+	permissions     dialog.PermissionDialogComponent
 
 	showHelp bool
-	help     dialog.HelpCmp
+	help     dialog.HelpComponent
 
 	showQuit bool
 	quit     dialog.QuitDialog
@@ -118,7 +120,7 @@ type appModel struct {
 	initDialog     dialog.InitDialogCmp
 
 	showFilepicker bool
-	filepicker     dialog.FilepickerCmp
+	filepicker     dialog.FilepickerComponent
 
 	showThemeDialog bool
 	themeDialog     dialog.ThemeDialog
@@ -131,7 +133,12 @@ type appModel struct {
 }
 
 func (a appModel) Init() tea.Cmd {
+	t := theme.CurrentTheme()
 	var cmds []tea.Cmd
+	cmds = append(cmds, tea.SetBackgroundColor(t.Background()))
+	// cmds = append(cmds, tea.SetForegroundColor(t.Background()))
+	cmds = append(cmds, tea.RequestBackgroundColor)
+
 	cmd := a.pages[a.currentPage].Init()
 	a.loadedPages[a.currentPage] = true
 	cmds = append(cmds, cmd)
@@ -170,13 +177,14 @@ func (a appModel) updateAllPages(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	for id := range a.pages {
-		a.pages[id], cmd = a.pages[id].Update(msg)
+		updated, cmd := a.pages[id].Update(msg)
+		a.pages[id] = updated.(layout.ModelWithView)
 		cmds = append(cmds, cmd)
 	}
 
 	s, cmd := a.status.Update(msg)
 	cmds = append(cmds, cmd)
-	a.status = s.(core.StatusCmp)
+	a.status = s.(core.StatusComponent)
 
 	return a, tea.Batch(cmds...)
 }
@@ -185,6 +193,10 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
+	case tea.BackgroundColorMsg:
+		styles.Terminal = &styles.TerminalInfo{
+			BackgroundIsDark: msg.IsDark(),
+		}
 	case cursor.BlinkMsg:
 		return a.updateAllPages(msg)
 	case spinner.TickMsg:
@@ -234,16 +246,17 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		s, _ := a.status.Update(msg)
-		a.status = s.(core.StatusCmp)
-		a.pages[a.currentPage], cmd = a.pages[a.currentPage].Update(msg)
+		a.status = s.(core.StatusComponent)
+		updated, cmd := a.pages[a.currentPage].Update(msg)
+		a.pages[a.currentPage] = updated.(layout.ModelWithView)
 		cmds = append(cmds, cmd)
 
 		prm, permCmd := a.permissions.Update(msg)
-		a.permissions = prm.(dialog.PermissionDialogCmp)
+		a.permissions = prm.(dialog.PermissionDialogComponent)
 		cmds = append(cmds, permCmd)
 
 		help, helpCmd := a.help.Update(msg)
-		a.help = help.(dialog.HelpCmp)
+		a.help = help.(dialog.HelpComponent)
 		cmds = append(cmds, helpCmd)
 
 		session, sessionCmd := a.sessionDialog.Update(msg)
@@ -255,7 +268,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, commandCmd)
 
 		filepicker, filepickerCmd := a.filepicker.Update(msg)
-		a.filepicker = filepicker.(dialog.FilepickerCmp)
+		a.filepicker = filepicker.(dialog.FilepickerComponent)
 		cmds = append(cmds, filepickerCmd)
 
 		a.initDialog.SetSize(msg.Width, msg.Height)
@@ -342,10 +355,19 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.app.Config.Theme = msg.ThemeName
 		a.app.SaveConfig()
 
-		a.pages[a.currentPage], cmd = a.pages[a.currentPage].Update(msg)
+		updated, cmd := a.pages[a.currentPage].Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
+		t := theme.CurrentTheme()
+		cmds = append(cmds, tea.SetBackgroundColor(t.Background()))
+		// cmds = append(cmds, tea.RequestBackgroundColor)
+
+		a.pages[a.currentPage] = updated.(layout.ModelWithView)
 		a.showThemeDialog = false
 		status.Info("Theme changed to: " + msg.ThemeName)
-		return a, cmd
+		return a, tea.Batch(cmds...)
 
 	case dialog.ShowInitDialogMsg:
 		a.showInitDialog = msg.Show
@@ -597,13 +619,13 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	default:
 		f, filepickerCmd := a.filepicker.Update(msg)
-		a.filepicker = f.(dialog.FilepickerCmp)
+		a.filepicker = f.(dialog.FilepickerComponent)
 		cmds = append(cmds, filepickerCmd)
 	}
 
 	if a.showFilepicker {
 		f, filepickerCmd := a.filepicker.Update(msg)
-		a.filepicker = f.(dialog.FilepickerCmp)
+		a.filepicker = f.(dialog.FilepickerComponent)
 		cmds = append(cmds, filepickerCmd)
 		// Only block key messages send all other messages down
 		if _, ok := msg.(tea.KeyMsg); ok {
@@ -623,7 +645,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if a.showPermissions {
 		d, permissionsCmd := a.permissions.Update(msg)
-		a.permissions = d.(dialog.PermissionDialogCmp)
+		a.permissions = d.(dialog.PermissionDialogComponent)
 		cmds = append(cmds, permissionsCmd)
 		// Only block key messages send all other messages down
 		if _, ok := msg.(tea.KeyMsg); ok {
@@ -693,9 +715,10 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	s, cmd := a.status.Update(msg)
 	cmds = append(cmds, cmd)
-	a.status = s.(core.StatusCmp)
+	a.status = s.(core.StatusComponent)
 
-	a.pages[a.currentPage], cmd = a.pages[a.currentPage].Update(msg)
+	updated, cmd := a.pages[a.currentPage].Update(msg)
+	a.pages[a.currentPage] = updated.(layout.ModelWithView)
 	cmds = append(cmds, cmd)
 	return a, tea.Batch(cmds...)
 }
@@ -930,7 +953,7 @@ func NewModel(app *app.App) tea.Model {
 		toolsDialog:   dialog.NewToolsDialogCmp(),
 		app:           app,
 		commands:      []dialog.Command{},
-		pages: map[page.PageID]tea.Model{
+		pages: map[page.PageID]layout.ModelWithView{
 			page.ChatPage: page.NewChatPage(app),
 		},
 		filepicker: dialog.NewFilepickerCmp(app),

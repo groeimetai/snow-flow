@@ -1,9 +1,9 @@
 package dialog
 
 import (
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/styles"
@@ -21,11 +21,11 @@ type CloseThemeDialogMsg struct{}
 
 // ThemeDialog interface for the theme switching dialog
 type ThemeDialog interface {
-	tea.Model
+	layout.ModelWithView
 	layout.Bindings
 }
 
-type themeDialogCmp struct {
+type themeDialogComponent struct {
 	themes       []string
 	selectedIdx  int
 	width        int
@@ -69,7 +69,7 @@ var themeKeys = themeKeyMap{
 	),
 }
 
-func (t *themeDialogCmp) Init() tea.Cmd {
+func (t *themeDialogComponent) Init() tea.Cmd {
 	// Load available themes and update selectedIdx based on current theme
 	t.themes = theme.AvailableThemes()
 	t.currentTheme = theme.CurrentThemeName()
@@ -85,7 +85,7 @@ func (t *themeDialogCmp) Init() tea.Cmd {
 	return nil
 }
 
-func (t *themeDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (t *themeDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -124,7 +124,7 @@ func (t *themeDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return t, nil
 }
 
-func (t *themeDialogCmp) View() string {
+func (t *themeDialogComponent) View() string {
 	currentTheme := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
@@ -185,13 +185,13 @@ func (t *themeDialogCmp) View() string {
 		Render(content)
 }
 
-func (t *themeDialogCmp) BindingKeys() []key.Binding {
+func (t *themeDialogComponent) BindingKeys() []key.Binding {
 	return layout.KeyMapToSlice(themeKeys)
 }
 
 // NewThemeDialogCmp creates a new theme switching dialog
 func NewThemeDialogCmp() ThemeDialog {
-	return &themeDialogCmp{
+	return &themeDialogComponent{
 		themes:       []string{},
 		selectedIdx:  0,
 		currentTheme: "",

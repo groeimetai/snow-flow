@@ -5,20 +5,21 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/pubsub"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 )
 
-type StatusCmp interface {
-	tea.Model
+type StatusComponent interface {
+	layout.ModelWithView
 }
 
-type statusCmp struct {
+type statusComponent struct {
 	app         *app.App
 	queue       []status.StatusMessage
 	width       int
@@ -27,7 +28,7 @@ type statusCmp struct {
 }
 
 // clearMessageCmd is a command that clears status messages after a timeout
-func (m statusCmp) clearMessageCmd() tea.Cmd {
+func (m statusComponent) clearMessageCmd() tea.Cmd {
 	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
 		return statusCleanupMsg{time: t}
 	})
@@ -38,11 +39,11 @@ type statusCleanupMsg struct {
 	time time.Time
 }
 
-func (m statusCmp) Init() tea.Cmd {
+func (m statusComponent) Init() tea.Cmd {
 	return m.clearMessageCmd()
 }
 
-func (m statusCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m statusComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -104,10 +105,9 @@ func logo() string {
 	open := styles.Muted().Render("open")
 	code := styles.BaseStyle().Bold(true).Render("code")
 	version := styles.Muted().Render(app.Info.Version)
-	return styles.ForceReplaceBackgroundWithLipgloss(
-		styles.Padded().Render(mark+open+code+" "+version),
-		t.BackgroundElement(),
-	)
+	return styles.Padded().
+		Background(t.BackgroundElement()).
+		Render(mark + open + code + " " + version)
 }
 
 func formatTokensAndCost(tokens float32, contextWindow float32, cost float32) string {
@@ -137,7 +137,7 @@ func formatTokensAndCost(tokens float32, contextWindow float32, cost float32) st
 	return fmt.Sprintf("Tokens: %s (%d%%), Cost: %s", formattedTokens, int(percentage), formattedCost)
 }
 
-func (m statusCmp) View() string {
+func (m statusComponent) View() string {
 	if m.app.Session.Id == "" {
 		return styles.BaseStyle().
 			Width(m.width).
@@ -250,107 +250,8 @@ func (m statusCmp) View() string {
 	// }
 }
 
-func (m *statusCmp) projectDiagnostics() string {
-	t := theme.CurrentTheme()
-
-	// Check if any LSP server is still initializing
-	initializing := false
-	// for _, client := range m.app.LSPClients {
-	// 	if client.GetServerState() == lsp.StateStarting {
-	// 		initializing = true
-	// 		break
-	// 	}
-	// }
-
-	// If any server is initializing, show that status
-	if initializing {
-		return lipgloss.NewStyle().
-			Foreground(t.Warning()).
-			Render(fmt.Sprintf("%s Initializing LSP...", styles.SpinnerIcon))
-	}
-
-	// errorDiagnostics := []protocol.Diagnostic{}
-	// warnDiagnostics := []protocol.Diagnostic{}
-	// hintDiagnostics := []protocol.Diagnostic{}
-	// infoDiagnostics := []protocol.Diagnostic{}
-	// for _, client := range m.app.LSPClients {
-	// 	for _, d := range client.GetDiagnostics() {
-	// 		for _, diag := range d {
-	// 			switch diag.Severity {
-	// 			case protocol.SeverityError:
-	// 				errorDiagnostics = append(errorDiagnostics, diag)
-	// 			case protocol.SeverityWarning:
-	// 				warnDiagnostics = append(warnDiagnostics, diag)
-	// 			case protocol.SeverityHint:
-	// 				hintDiagnostics = append(hintDiagnostics, diag)
-	// 			case protocol.SeverityInformation:
-	// 				infoDiagnostics = append(infoDiagnostics, diag)
-	// 			}
-	// 		}
-	// 	}
-	// }
-	return styles.ForceReplaceBackgroundWithLipgloss(
-		styles.Padded().Render("No diagnostics"),
-		t.BackgroundElement(),
-	)
-
-	// if len(errorDiagnostics) == 0 &&
-	// 	len(warnDiagnostics) == 0 &&
-	// 	len(infoDiagnostics) == 0 &&
-	// 	len(hintDiagnostics) == 0 {
-	// 	return styles.ForceReplaceBackgroundWithLipgloss(
-	// 		styles.Padded().Render("No diagnostics"),
-	// 		t.BackgroundDarker(),
-	// 	)
-	// }
-
-	// diagnostics := []string{}
-	//
-	// errStr := lipgloss.NewStyle().
-	// 	Background(t.BackgroundDarker()).
-	// 	Foreground(t.Error()).
-	// 	Render(fmt.Sprintf("%s %d", styles.ErrorIcon, len(errorDiagnostics)))
-	// diagnostics = append(diagnostics, errStr)
-	//
-	// warnStr := lipgloss.NewStyle().
-	// 	Background(t.BackgroundDarker()).
-	// 	Foreground(t.Warning()).
-	// 	Render(fmt.Sprintf("%s %d", styles.WarningIcon, len(warnDiagnostics)))
-	// diagnostics = append(diagnostics, warnStr)
-	//
-	// infoStr := lipgloss.NewStyle().
-	// 	Background(t.BackgroundDarker()).
-	// 	Foreground(t.Info()).
-	// 	Render(fmt.Sprintf("%s %d", styles.InfoIcon, len(infoDiagnostics)))
-	// diagnostics = append(diagnostics, infoStr)
-	//
-	// hintStr := lipgloss.NewStyle().
-	// 	Background(t.BackgroundDarker()).
-	// 	Foreground(t.Text()).
-	// 	Render(fmt.Sprintf("%s %d", styles.HintIcon, len(hintDiagnostics)))
-	// diagnostics = append(diagnostics, hintStr)
-	//
-	// return styles.ForceReplaceBackgroundWithLipgloss(
-	// 	styles.Padded().Render(strings.Join(diagnostics, " ")),
-	// 	t.BackgroundDarker(),
-	// )
-}
-
-func (m statusCmp) model() string {
-	t := theme.CurrentTheme()
-	model := "None"
-	if m.app.Model != nil {
-		model = *m.app.Model.Name
-	}
-
-	return styles.Padded().
-		Background(t.Secondary()).
-		Foreground(t.Background()).
-		Render(model)
-}
-
-func NewStatusCmp(app *app.App) StatusCmp {
-	statusComponent := &statusCmp{
+func NewStatusCmp(app *app.App) StatusComponent {
+	statusComponent := &statusComponent{
 		app:         app,
 		queue:       []status.StatusMessage{},
 		messageTTL:  4 * time.Second,

@@ -1,9 +1,9 @@
 package dialog
 
 import (
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	utilComponents "github.com/sst/opencode/internal/components/util"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
@@ -56,12 +56,12 @@ type CloseCommandDialogMsg struct{}
 
 // CommandDialog interface for the command selection dialog
 type CommandDialog interface {
-	tea.Model
+	layout.ModelWithView
 	layout.Bindings
 	SetCommands(commands []Command)
 }
 
-type commandDialogCmp struct {
+type commandDialogComponent struct {
 	listView utilComponents.SimpleList[Command]
 	width    int
 	height   int
@@ -83,11 +83,11 @@ var commandKeys = commandKeyMap{
 	),
 }
 
-func (c *commandDialogCmp) Init() tea.Cmd {
+func (c *commandDialogComponent) Init() tea.Cmd {
 	return c.listView.Init()
 }
 
-func (c *commandDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (c *commandDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -114,7 +114,7 @@ func (c *commandDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, tea.Batch(cmds...)
 }
 
-func (c *commandDialogCmp) View() string {
+func (c *commandDialogComponent) View() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
@@ -158,11 +158,11 @@ func (c *commandDialogCmp) View() string {
 		Render(content)
 }
 
-func (c *commandDialogCmp) BindingKeys() []key.Binding {
+func (c *commandDialogComponent) BindingKeys() []key.Binding {
 	return layout.KeyMapToSlice(commandKeys)
 }
 
-func (c *commandDialogCmp) SetCommands(commands []Command) {
+func (c *commandDialogComponent) SetCommands(commands []Command) {
 	c.listView.SetItems(commands)
 }
 
@@ -174,7 +174,7 @@ func NewCommandDialogCmp() CommandDialog {
 		"No commands available",
 		true,
 	)
-	return &commandDialogCmp{
+	return &commandDialogComponent{
 		listView: listView,
 	}
 }

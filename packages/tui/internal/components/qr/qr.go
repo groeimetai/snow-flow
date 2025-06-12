@@ -3,7 +3,7 @@ package qr
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/theme"
 	"rsc.io/qr"
 )

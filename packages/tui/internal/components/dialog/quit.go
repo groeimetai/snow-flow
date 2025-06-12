@@ -3,9 +3,9 @@ package dialog
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -17,11 +17,11 @@ const question = "Are you sure you want to quit?"
 type CloseQuitMsg struct{}
 
 type QuitDialog interface {
-	tea.Model
+	layout.ModelWithView
 	layout.Bindings
 }
 
-type quitDialogCmp struct {
+type quitDialogComponent struct {
 	selectedNo bool
 }
 
@@ -56,11 +56,11 @@ var helpKeys = helpMapping{
 	),
 }
 
-func (q *quitDialogCmp) Init() tea.Cmd {
+func (q *quitDialogComponent) Init() tea.Cmd {
 	return nil
 }
 
-func (q *quitDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (q *quitDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -81,7 +81,7 @@ func (q *quitDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return q, nil
 }
 
-func (q *quitDialogCmp) View() string {
+func (q *quitDialogComponent) View() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
@@ -125,12 +125,12 @@ func (q *quitDialogCmp) View() string {
 		Render(content)
 }
 
-func (q *quitDialogCmp) BindingKeys() []key.Binding {
+func (q *quitDialogComponent) BindingKeys() []key.Binding {
 	return layout.KeyMapToSlice(helpKeys)
 }
 
 func NewQuitCmp() QuitDialog {
-	return &quitDialogCmp{
+	return &quitDialogComponent{
 		selectedNo: true,
 	}
 }

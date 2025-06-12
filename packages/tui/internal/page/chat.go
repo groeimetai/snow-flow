@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/completions"
 	"github.com/sst/opencode/internal/components/chat"
@@ -187,7 +187,7 @@ func (p *chatPage) BindingKeys() []key.Binding {
 	return bindings
 }
 
-func NewChatPage(app *app.App) tea.Model {
+func NewChatPage(app *app.App) layout.ModelWithView {
 	cg := completions.NewFileAndFolderContextGroup()
 	completionDialog := dialog.NewCompletionDialogCmp(cg)
 	messagesContainer := layout.NewContainer(

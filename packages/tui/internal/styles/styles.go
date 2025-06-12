@@ -1,7 +1,8 @@
 package styles
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/charmbracelet/lipgloss/v2/compat"
 	"github.com/sst/opencode/internal/theme"
 )
 
@@ -83,76 +84,76 @@ func DimBorder() lipgloss.Style {
 }
 
 // PrimaryColor returns the primary color from the current theme
-func PrimaryColor() lipgloss.AdaptiveColor {
+func PrimaryColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Primary()
 }
 
 // SecondaryColor returns the secondary color from the current theme
-func SecondaryColor() lipgloss.AdaptiveColor {
+func SecondaryColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Secondary()
 }
 
 // AccentColor returns the accent color from the current theme
-func AccentColor() lipgloss.AdaptiveColor {
+func AccentColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Accent()
 }
 
 // ErrorColor returns the error color from the current theme
-func ErrorColor() lipgloss.AdaptiveColor {
+func ErrorColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Error()
 }
 
 // WarningColor returns the warning color from the current theme
-func WarningColor() lipgloss.AdaptiveColor {
+func WarningColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Warning()
 }
 
 // SuccessColor returns the success color from the current theme
-func SuccessColor() lipgloss.AdaptiveColor {
+func SuccessColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Success()
 }
 
 // InfoColor returns the info color from the current theme
-func InfoColor() lipgloss.AdaptiveColor {
+func InfoColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Info()
 }
 
 // TextColor returns the text color from the current theme
-func TextColor() lipgloss.AdaptiveColor {
+func TextColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Text()
 }
 
 // TextMutedColor returns the muted text color from the current theme
-func TextMutedColor() lipgloss.AdaptiveColor {
+func TextMutedColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().TextMuted()
 }
 
 // BackgroundColor returns the background color from the current theme
-func BackgroundColor() lipgloss.AdaptiveColor {
+func BackgroundColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Background()
 }
 
 // BackgroundSubtleColor returns the subtle background color from the current theme
-func BackgroundSubtleColor() lipgloss.AdaptiveColor {
+func BackgroundSubtleColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().BackgroundSubtle()
 }
 
 // BackgroundElementColor returns the darker background color from the current theme
-func BackgroundElementColor() lipgloss.AdaptiveColor {
+func BackgroundElementColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().BackgroundElement()
 }
 
 // BorderColor returns the border color from the current theme
-func BorderColor() lipgloss.AdaptiveColor {
+func BorderColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Border()
 }
 
 // BorderActiveColor returns the active border color from the current theme
-func BorderActiveColor() lipgloss.AdaptiveColor {
+func BorderActiveColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().BorderActive()
 }
 
 // BorderSubtleColor returns the subtle border color from the current theme
-func BorderSubtleColor() lipgloss.AdaptiveColor {
+func BorderSubtleColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().BorderSubtle()
 }

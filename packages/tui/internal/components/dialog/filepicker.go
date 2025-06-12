@@ -12,13 +12,14 @@ import (
 	"log/slog"
 
 	"github.com/atotto/clipboard"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	"github.com/charmbracelet/bubbles/v2/textinput"
+	"github.com/charmbracelet/bubbles/v2/viewport"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/image"
+	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -82,7 +83,7 @@ var filePickerKeyMap = FilePrickerKeyMap{
 	),
 }
 
-type filepickerCmp struct {
+type filepickerComponent struct {
 	basePath       string
 	width          int
 	height         int
@@ -118,18 +119,18 @@ type AttachmentAddedMsg struct {
 	Attachment app.Attachment
 }
 
-func (f *filepickerCmp) Init() tea.Cmd {
+func (f *filepickerComponent) Init() tea.Cmd {
 	return nil
 }
 
-func (f *filepickerCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (f *filepickerComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		f.width = 60
 		f.height = 20
-		f.viewport.Width = 80
-		f.viewport.Height = 22
+		f.viewport.SetWidth(80)
+		f.viewport.SetHeight(22)
 		f.cursor = 0
 		f.getCurrentFileBelowCursor()
 	case tea.KeyMsg:
@@ -236,7 +237,7 @@ func (f *filepickerCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return f, cmd
 }
 
-func (f *filepickerCmp) addAttachmentToMessage() (tea.Model, tea.Cmd) {
+func (f *filepickerComponent) addAttachmentToMessage() (tea.Model, tea.Cmd) {
 	// modeInfo := GetSelectedModel(config.Get())
 	// if !modeInfo.SupportsAttachments {
 	// 	status.Error(fmt.Sprintf("Model %s doesn't support attachments", modeInfo.Name))
@@ -273,7 +274,7 @@ func (f *filepickerCmp) addAttachmentToMessage() (tea.Model, tea.Cmd) {
 	return f, util.CmdHandler(AttachmentAddedMsg{attachment})
 }
 
-func (f *filepickerCmp) View() string {
+func (f *filepickerComponent) View() string {
 	t := theme.CurrentTheme()
 	const maxVisibleDirs = 20
 	const maxWidth = 80
@@ -333,7 +334,7 @@ func (f *filepickerCmp) View() string {
 		Render(f.cwd.View())
 
 	viewportstyle := lipgloss.NewStyle().
-		Width(f.viewport.Width).
+		Width(f.viewport.Width()).
 		Background(t.Background()).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(t.TextMuted()).
@@ -366,21 +367,21 @@ func (f *filepickerCmp) View() string {
 	return lipgloss.JoinHorizontal(lipgloss.Center, contentStyle.Render(content), viewportstyle)
 }
 
-type FilepickerCmp interface {
-	tea.Model
+type FilepickerComponent interface {
+	layout.ModelWithView
 	ToggleFilepicker(showFilepicker bool)
 	IsCWDFocused() bool
 }
 
-func (f *filepickerCmp) ToggleFilepicker(showFilepicker bool) {
+func (f *filepickerComponent) ToggleFilepicker(showFilepicker bool) {
 	f.ShowFilePicker = showFilepicker
 }
 
-func (f *filepickerCmp) IsCWDFocused() bool {
+func (f *filepickerComponent) IsCWDFocused() bool {
 	return f.cwd.Focused()
 }
 
-func NewFilepickerCmp(app *app.App) FilepickerCmp {
+func NewFilepickerCmp(app *app.App) FilepickerComponent {
 	homepath, err := os.UserHomeDir()
 	if err != nil {
 		slog.Error("error loading user files")
@@ -388,16 +389,16 @@ func NewFilepickerCmp(app *app.App) FilepickerCmp {
 	}
 	baseDir := DirNode{parent: nil, directory: homepath}
 	dirs := readDir(homepath, false)
-	viewport := viewport.New(0, 0)
+	viewport := viewport.New() // viewport.New(0, 0)
 	currentDirectory := textinput.New()
 	currentDirectory.CharLimit = 200
-	currentDirectory.Width = 44
-	currentDirectory.Cursor.Blink = true
+	currentDirectory.SetWidth(44)
+	// currentDirectory.Cursor.Blink = true
 	currentDirectory.SetValue(baseDir.directory)
-	return &filepickerCmp{cwdDetails: &baseDir, dirs: dirs, cursorChain: make(stack, 0), viewport: viewport, cwd: currentDirectory, app: app}
+	return &filepickerComponent{cwdDetails: &baseDir, dirs: dirs, cursorChain: make(stack, 0), viewport: viewport, cwd: currentDirectory, app: app}
 }
 
-func (f *filepickerCmp) getCurrentFileBelowCursor() {
+func (f *filepickerComponent) getCurrentFileBelowCursor() {
 	if len(f.dirs) == 0 || f.cursor < 0 || f.cursor >= len(f.dirs) {
 		slog.Error(fmt.Sprintf("Invalid cursor position. Dirs length: %d, Cursor: %d", len(f.dirs), f.cursor))
 		f.viewport.SetContent("Preview unavailable")
@@ -410,7 +411,7 @@ func (f *filepickerCmp) getCurrentFileBelowCursor() {
 		fullPath := f.cwdDetails.directory + "/" + dir.Name()
 
 		go func() {
-			imageString, err := image.ImagePreview(f.viewport.Width-4, fullPath)
+			imageString, err := image.ImagePreview(f.viewport.Width()-4, fullPath)
 			if err != nil {
 				slog.Error(err.Error())
 				f.viewport.SetContent("Preview unavailable")

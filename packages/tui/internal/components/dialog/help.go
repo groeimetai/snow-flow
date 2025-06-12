@@ -3,28 +3,29 @@ package dialog
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 )
 
-type helpCmp struct {
+type helpComponent struct {
 	width  int
 	height int
 	keys   []key.Binding
 }
 
-func (h *helpCmp) Init() tea.Cmd {
+func (h *helpComponent) Init() tea.Cmd {
 	return nil
 }
 
-func (h *helpCmp) SetBindings(k []key.Binding) {
+func (h *helpComponent) SetBindings(k []key.Binding) {
 	h.keys = k
 }
 
-func (h *helpCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (h *helpComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h.width = 90
@@ -53,7 +54,7 @@ func removeDuplicateBindings(bindings []key.Binding) []key.Binding {
 	return result
 }
 
-func (h *helpCmp) render() string {
+func (h *helpComponent) render() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
@@ -134,7 +135,7 @@ func (h *helpCmp) render() string {
 		pairs = append(pairs, pair)
 	}
 
-	// https://github.com/charmbracelet/lipgloss/issues/209
+	// https://github.com/charmbracelet/lipgloss/v2/issues/209
 	if len(pairs) > 1 {
 		prefix := pairs[:len(pairs)-1]
 		lastPair := pairs[len(pairs)-1]
@@ -144,7 +145,7 @@ func (h *helpCmp) render() string {
 			lipgloss.Left,              // x
 			lipgloss.Top,               // y
 			lastPair,                   // content
-			lipgloss.WithWhitespaceBackground(t.Background()),
+			// lipgloss.WithWhitespaceBackground(t.Background()),
 		))
 		content := baseStyle.Width(h.width).Render(
 			lipgloss.JoinHorizontal(
@@ -165,7 +166,7 @@ func (h *helpCmp) render() string {
 	return content
 }
 
-func (h *helpCmp) View() string {
+func (h *helpComponent) View() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
@@ -190,11 +191,11 @@ func (h *helpCmp) View() string {
 		)
 }
 
-type HelpCmp interface {
-	tea.Model
+type HelpComponent interface {
+	layout.ModelWithView
 	SetBindings([]key.Binding)
 }
 
-func NewHelpCmp() HelpCmp {
-	return &helpCmp{}
+func NewHelpCmp() HelpComponent {
+	return &helpComponent{}
 }

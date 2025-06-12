@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"image/color"
 	"image/png"
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/disintegration/imaging"
 	"github.com/lucasb-eyer/go-colorful"
 	_ "golang.org/x/image/webp"
@@ -39,7 +40,7 @@ func ToString(width int, img image.Image) string {
 			c1, _ := colorful.MakeColor(img.At(x, heightCounter))
 			color1 := lipgloss.Color(c1.Hex())
 
-			var color2 lipgloss.Color
+			var color2 color.Color
 			if heightCounter+1 < h {
 				c2, _ := colorful.MakeColor(img.At(x, heightCounter+1))
 				color2 = lipgloss.Color(c2.Hex())
@@ -76,10 +77,10 @@ func ImagePreview(width int, filename string) (string, error) {
 
 func ImageToBytes(image image.Image) ([]byte, error) {
 	buf := new(bytes.Buffer)
-    err := png.Encode(buf, image)
-    if err != nil {
-        return nil, err
-    }
-    
-    return buf.Bytes(), nil
+	err := png.Encode(buf, image)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }

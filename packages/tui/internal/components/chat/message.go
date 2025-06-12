@@ -9,7 +9,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/charmbracelet/lipgloss/v2/compat"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/diff"
@@ -21,8 +22,8 @@ import (
 	"golang.org/x/text/language"
 )
 
-func toMarkdown(content string, width int) string {
-	r := styles.GetMarkdownRenderer(width)
+func toMarkdown(content string, width int, backgroundColor compat.AdaptiveColor) string {
+	r := styles.GetMarkdownRenderer(width, backgroundColor)
 	content = strings.ReplaceAll(content, app.Info.Path.Root+"/", "")
 	rendered, _ := r.Render(content)
 	lines := strings.Split(rendered, "\n")
@@ -50,7 +51,7 @@ func toMarkdown(content string, width int) string {
 
 type blockRenderer struct {
 	align         *lipgloss.Position
-	borderColor   *lipgloss.AdaptiveColor
+	borderColor   *compat.AdaptiveColor
 	fullWidth     bool
 	paddingTop    int
 	paddingBottom int
@@ -70,7 +71,7 @@ func WithAlign(align lipgloss.Position) renderingOption {
 	}
 }
 
-func WithBorderColor(color lipgloss.AdaptiveColor) renderingOption {
+func WithBorderColor(color compat.AdaptiveColor) renderingOption {
 	return func(c *blockRenderer) {
 		c.borderColor = &color
 	}
@@ -137,9 +138,8 @@ func renderContentBlock(content string, options ...renderingOption) string {
 			BorderLeftBackground(t.Background())
 	}
 
-	content = styles.ForceReplaceBackgroundWithLipgloss(content, t.BackgroundSubtle())
 	if renderer.fullWidth {
-		style = style.Width(layout.Current.Container.Width - 2)
+		style = style.Width(layout.Current.Container.Width)
 	}
 	content = style.Render(content)
 	if renderer.paddingTop > 0 {
@@ -152,13 +152,11 @@ func renderContentBlock(content string, options ...renderingOption) string {
 		layout.Current.Container.Width,
 		align,
 		content,
-		lipgloss.WithWhitespaceBackground(t.Background()),
 	)
 	content = lipgloss.PlaceHorizontal(
 		layout.Current.Viewport.Width,
 		lipgloss.Center,
 		content,
-		lipgloss.WithWhitespaceBackground(t.Background()),
 	)
 	return content
 }
@@ -181,9 +179,7 @@ func renderText(message client.MessageInfo, text string, author string) string {
 		// don't show the date if it's today
 		timestamp = timestamp[12:]
 	}
-	info := styles.BaseStyle().
-		Foreground(t.TextMuted()).
-		Render(fmt.Sprintf("%s (%s)", author, timestamp))
+	info := fmt.Sprintf("%s (%s)", author, timestamp)
 
 	align := lipgloss.Left
 	switch message.Role {
@@ -195,7 +191,7 @@ func renderText(message client.MessageInfo, text string, author string) string {
 
 	textWidth := lipgloss.Width(text)
 	markdownWidth := min(textWidth, width-padding-4) // -4 for the border and padding
-	content := toMarkdown(text, markdownWidth)
+	content := toMarkdown(text, markdownWidth, t.BackgroundSubtle())
 	content = lipgloss.JoinVertical(align, content, info)
 
 	switch message.Role {
@@ -313,7 +309,7 @@ func renderToolInvocation(
 				lipgloss.Center,
 				lipgloss.Center,
 				body,
-				lipgloss.WithWhitespaceBackground(t.Background()),
+				lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 			)
 		}
 	case "opencode_write":
@@ -328,7 +324,7 @@ func renderToolInvocation(
 			command := toolArgsMap["command"].(string)
 			stdout := metadata["stdout"].(string)
 			body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
-			body = toMarkdown(body, innerWidth)
+			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
 			body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 		}
 	case "opencode_webfetch":
@@ -336,7 +332,7 @@ func renderToolInvocation(
 		format := toolArgsMap["format"].(string)
 		body = truncateHeight(body, 10)
 		if format == "html" || format == "markdown" {
-			body = toMarkdown(body, innerWidth)
+			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
 		}
 		body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 	case "opencode_todowrite":
@@ -356,7 +352,7 @@ func renderToolInvocation(
 					body += fmt.Sprintf("- [ ] %s\n", content)
 				}
 			}
-			body = toMarkdown(body, innerWidth)
+			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
 			body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 		}
 	default:
@@ -368,7 +364,7 @@ func renderToolInvocation(
 
 	content := style.Render(title)
 	content = lipgloss.PlaceHorizontal(layout.Current.Viewport.Width, lipgloss.Center, content)
-	content = styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
+	// content = styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
 	if showResult && body != "" {
 		content += "\n" + body
 	}
@@ -411,6 +407,7 @@ func WithTruncate(height int) fileRenderingOption {
 }
 
 func renderFile(filename string, content string, options ...fileRenderingOption) string {
+	t := theme.CurrentTheme()
 	renderer := &fileRenderer{
 		filename: filename,
 		content:  content,
@@ -419,7 +416,6 @@ func renderFile(filename string, content string, options ...fileRenderingOption)
 		option(renderer)
 	}
 
-	// TODO: is this even needed?
 	lines := []string{}
 	for line := range strings.SplitSeq(content, "\n") {
 		line = strings.TrimRightFunc(line, unicode.IsSpace)
@@ -428,23 +424,12 @@ func renderFile(filename string, content string, options ...fileRenderingOption)
 	}
 	content = strings.Join(lines, "\n")
 
-	width := layout.Current.Container.Width - 6
+	width := layout.Current.Container.Width - 8
 	if renderer.height > 0 {
 		content = truncateHeight(content, renderer.height)
 	}
 	content = fmt.Sprintf("```%s\n%s\n```", extension(renderer.filename), content)
-	content = toMarkdown(content, width)
-
-	// ensure no line is wider than the width
-	// truncated := []string{}
-	// for line := range strings.SplitSeq(content, "\n") {
-	// 	line = strings.TrimRightFunc(line, unicode.IsSpace)
-	// 	// if lipgloss.Width(line) > width-3 {
-	// 	line = ansi.Truncate(line, width-3, "")
-	// 	// }
-	// 	truncated = append(truncated, line)
-	// }
-	// content = strings.Join(truncated, "\n")
+	content = toMarkdown(content, width, t.BackgroundSubtle())
 
 	return renderContentBlock(content, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 }

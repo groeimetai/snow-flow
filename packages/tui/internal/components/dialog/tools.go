@@ -1,9 +1,9 @@
 package dialog
 
 import (
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	utilComponents "github.com/sst/opencode/internal/components/util"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
@@ -17,7 +17,7 @@ const (
 
 // ToolsDialog interface for the tools list dialog
 type ToolsDialog interface {
-	tea.Model
+	layout.ModelWithView
 	layout.Bindings
 	SetTools(tools []string)
 }
@@ -39,7 +39,7 @@ func (t toolItem) Render(selected bool, width int) string {
 	baseStyle := styles.BaseStyle().
 		Width(width).
 		Background(th.Background())
-	
+
 	if selected {
 		baseStyle = baseStyle.
 			Background(th.Primary()).
@@ -49,15 +49,15 @@ func (t toolItem) Render(selected bool, width int) string {
 		baseStyle = baseStyle.
 			Foreground(th.Text())
 	}
-	
+
 	return baseStyle.Render(t.name)
 }
 
-type toolsDialogCmp struct {
-	tools       []toolItem
-	width       int
-	height      int
-	list        utilComponents.SimpleList[toolItem]
+type toolsDialogComponent struct {
+	tools  []toolItem
+	width  int
+	height int
+	list   utilComponents.SimpleList[toolItem]
 }
 
 type toolsKeyMap struct {
@@ -91,21 +91,21 @@ var toolsKeys = toolsKeyMap{
 	),
 }
 
-func (m *toolsDialogCmp) Init() tea.Cmd {
+func (m *toolsDialogComponent) Init() tea.Cmd {
 	return nil
 }
 
-func (m *toolsDialogCmp) SetTools(tools []string) {
+func (m *toolsDialogComponent) SetTools(tools []string) {
 	var toolItems []toolItem
 	for _, name := range tools {
 		toolItems = append(toolItems, toolItem{name: name})
 	}
-	
+
 	m.tools = toolItems
 	m.list.SetItems(toolItems)
 }
 
-func (m *toolsDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *toolsDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -130,7 +130,7 @@ func (m *toolsDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *toolsDialogCmp) View() string {
+func (m *toolsDialogComponent) View() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle().Background(t.Background())
 
@@ -144,7 +144,7 @@ func (m *toolsDialogCmp) View() string {
 	// Calculate dialog width based on content
 	dialogWidth := min(maxToolsDialogWidth, m.width/2)
 	m.list.SetMaxWidth(dialogWidth)
-	
+
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
 		title,
@@ -160,7 +160,7 @@ func (m *toolsDialogCmp) View() string {
 		Render(content)
 }
 
-func (m *toolsDialogCmp) BindingKeys() []key.Binding {
+func (m *toolsDialogComponent) BindingKeys() []key.Binding {
 	return layout.KeyMapToSlice(toolsKeys)
 }
 
@@ -171,8 +171,8 @@ func NewToolsDialogCmp() ToolsDialog {
 		"No tools available",
 		true,
 	)
-	
-	return &toolsDialogCmp{
+
+	return &toolsDialogComponent{
 		list: list,
 	}
 }

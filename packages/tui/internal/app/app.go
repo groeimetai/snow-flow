@@ -8,7 +8,7 @@ import (
 
 	"log/slog"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/fileutil"
 	"github.com/sst/opencode/internal/state"

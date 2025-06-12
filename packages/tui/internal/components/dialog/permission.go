@@ -2,10 +2,10 @@ package dialog
 
 import (
 	"fmt"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	"github.com/charmbracelet/bubbles/v2/viewport"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -28,9 +28,9 @@ type PermissionResponseMsg struct {
 	Action PermissionAction
 }
 
-// PermissionDialogCmp interface for permission dialog component
-type PermissionDialogCmp interface {
-	tea.Model
+// PermissionDialogComponent interface for permission dialog component
+type PermissionDialogComponent interface {
+	layout.ModelWithView
 	layout.Bindings
 	// SetPermissions(permission permission.PermissionRequest) tea.Cmd
 }
@@ -76,8 +76,8 @@ var permissionsKeys = permissionsMapping{
 	),
 }
 
-// permissionDialogCmp is the implementation of PermissionDialog
-type permissionDialogCmp struct {
+// permissionDialogComponent is the implementation of PermissionDialog
+type permissionDialogComponent struct {
 	width  int
 	height int
 	// permission      permission.PermissionRequest
@@ -89,11 +89,11 @@ type permissionDialogCmp struct {
 	markdownCache map[string]string
 }
 
-func (p *permissionDialogCmp) Init() tea.Cmd {
+func (p *permissionDialogComponent) Init() tea.Cmd {
 	return p.contentViewPort.Init()
 }
 
-func (p *permissionDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (p *permissionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
@@ -129,7 +129,7 @@ func (p *permissionDialogCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, tea.Batch(cmds...)
 }
 
-func (p *permissionDialogCmp) selectCurrentOption() tea.Cmd {
+func (p *permissionDialogComponent) selectCurrentOption() tea.Cmd {
 	var action PermissionAction
 
 	switch p.selectedOption {
@@ -144,7 +144,7 @@ func (p *permissionDialogCmp) selectCurrentOption() tea.Cmd {
 	return util.CmdHandler(PermissionResponseMsg{Action: action}) // , Permission: p.permission})
 }
 
-func (p *permissionDialogCmp) renderButtons() string {
+func (p *permissionDialogComponent) renderButtons() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
@@ -190,7 +190,7 @@ func (p *permissionDialogCmp) renderButtons() string {
 	return content
 }
 
-func (p *permissionDialogCmp) renderHeader() string {
+func (p *permissionDialogComponent) renderHeader() string {
 	return "NOT IMPLEMENTED"
 	// t := theme.CurrentTheme()
 	// baseStyle := styles.BaseStyle()
@@ -246,7 +246,7 @@ func (p *permissionDialogCmp) renderHeader() string {
 	// return lipgloss.NewStyle().Background(t.Background()).Render(lipgloss.JoinVertical(lipgloss.Left, headerParts...))
 }
 
-func (p *permissionDialogCmp) renderBashContent() string {
+func (p *permissionDialogComponent) renderBashContent() string {
 	// t := theme.CurrentTheme()
 	// baseStyle := styles.BaseStyle()
 	//
@@ -269,7 +269,7 @@ func (p *permissionDialogCmp) renderBashContent() string {
 	return ""
 }
 
-func (p *permissionDialogCmp) renderEditContent() string {
+func (p *permissionDialogComponent) renderEditContent() string {
 	// if pr, ok := p.permission.Params.(tools.EditPermissionsParams); ok {
 	// 	diff := p.GetOrSetDiff(p.permission.ID, func() (string, error) {
 	// 		return diff.FormatDiff(pr.Diff, diff.WithTotalWidth(p.contentViewPort.Width))
@@ -281,7 +281,7 @@ func (p *permissionDialogCmp) renderEditContent() string {
 	return ""
 }
 
-func (p *permissionDialogCmp) renderPatchContent() string {
+func (p *permissionDialogComponent) renderPatchContent() string {
 	// if pr, ok := p.permission.Params.(tools.EditPermissionsParams); ok {
 	// 	diff := p.GetOrSetDiff(p.permission.ID, func() (string, error) {
 	// 		return diff.FormatDiff(pr.Diff, diff.WithTotalWidth(p.contentViewPort.Width))
@@ -293,7 +293,7 @@ func (p *permissionDialogCmp) renderPatchContent() string {
 	return ""
 }
 
-func (p *permissionDialogCmp) renderWriteContent() string {
+func (p *permissionDialogComponent) renderWriteContent() string {
 	// if pr, ok := p.permission.Params.(tools.WritePermissionsParams); ok {
 	// 	// Use the cache for diff rendering
 	// 	diff := p.GetOrSetDiff(p.permission.ID, func() (string, error) {
@@ -306,7 +306,7 @@ func (p *permissionDialogCmp) renderWriteContent() string {
 	return ""
 }
 
-func (p *permissionDialogCmp) renderFetchContent() string {
+func (p *permissionDialogComponent) renderFetchContent() string {
 	// 	t := theme.CurrentTheme()
 	// 	baseStyle := styles.BaseStyle()
 	//
@@ -329,7 +329,7 @@ func (p *permissionDialogCmp) renderFetchContent() string {
 	return ""
 }
 
-func (p *permissionDialogCmp) renderDefaultContent() string {
+func (p *permissionDialogComponent) renderDefaultContent() string {
 	// 	t := theme.CurrentTheme()
 	// 	baseStyle := styles.BaseStyle()
 	//
@@ -354,7 +354,7 @@ func (p *permissionDialogCmp) renderDefaultContent() string {
 	return p.styleViewport()
 }
 
-func (p *permissionDialogCmp) styleViewport() string {
+func (p *permissionDialogComponent) styleViewport() string {
 	t := theme.CurrentTheme()
 	contentStyle := lipgloss.NewStyle().
 		Background(t.Background())
@@ -362,7 +362,7 @@ func (p *permissionDialogCmp) styleViewport() string {
 	return contentStyle.Render(p.contentViewPort.View())
 }
 
-func (p *permissionDialogCmp) render() string {
+func (p *permissionDialogComponent) render() string {
 	return "NOT IMPLEMENTED"
 	// t := theme.CurrentTheme()
 	// baseStyle := styles.BaseStyle()
@@ -420,15 +420,15 @@ func (p *permissionDialogCmp) render() string {
 	// 	)
 }
 
-func (p *permissionDialogCmp) View() string {
+func (p *permissionDialogComponent) View() string {
 	return p.render()
 }
 
-func (p *permissionDialogCmp) BindingKeys() []key.Binding {
+func (p *permissionDialogComponent) BindingKeys() []key.Binding {
 	return layout.KeyMapToSlice(permissionsKeys)
 }
 
-func (p *permissionDialogCmp) SetSize() tea.Cmd {
+func (p *permissionDialogComponent) SetSize() tea.Cmd {
 	// if p.permission.ID == "" {
 	// 	return nil
 	// }
@@ -458,7 +458,7 @@ func (p *permissionDialogCmp) SetSize() tea.Cmd {
 // }
 
 // Helper to get or set cached diff content
-func (c *permissionDialogCmp) GetOrSetDiff(key string, generator func() (string, error)) string {
+func (c *permissionDialogComponent) GetOrSetDiff(key string, generator func() (string, error)) string {
 	if cached, ok := c.diffCache[key]; ok {
 		return cached
 	}
@@ -474,7 +474,7 @@ func (c *permissionDialogCmp) GetOrSetDiff(key string, generator func() (string,
 }
 
 // Helper to get or set cached markdown content
-func (c *permissionDialogCmp) GetOrSetMarkdown(key string, generator func() (string, error)) string {
+func (c *permissionDialogComponent) GetOrSetMarkdown(key string, generator func() (string, error)) string {
 	if cached, ok := c.markdownCache[key]; ok {
 		return cached
 	}
@@ -489,11 +489,11 @@ func (c *permissionDialogCmp) GetOrSetMarkdown(key string, generator func() (str
 	return content
 }
 
-func NewPermissionDialogCmp() PermissionDialogCmp {
+func NewPermissionDialogCmp() PermissionDialogComponent {
 	// Create viewport for content
-	contentViewport := viewport.New(0, 0)
+	contentViewport := viewport.New() // (0, 0)
 
-	return &permissionDialogCmp{
+	return &permissionDialogComponent{
 		contentViewPort: contentViewport,
 		selectedOption:  0, // Default to "Allow"
 		diffCache:       make(map[string]string),

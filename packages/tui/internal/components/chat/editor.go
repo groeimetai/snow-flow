@@ -5,15 +5,13 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
-	"slices"
 	"strings"
-	"unicode"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/textarea"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/v2/key"
+	"github.com/charmbracelet/bubbles/v2/spinner"
+	"github.com/charmbracelet/bubbles/v2/textarea"
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/image"
@@ -129,18 +127,18 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.attachments = nil
 			return m, nil
 		}
-		if m.deleteMode && len(msg.Runes) > 0 && unicode.IsDigit(msg.Runes[0]) {
-			num := int(msg.Runes[0] - '0')
-			m.deleteMode = false
-			if num < 10 && len(m.attachments) > num {
-				if num == 0 {
-					m.attachments = m.attachments[num+1:]
-				} else {
-					m.attachments = slices.Delete(m.attachments, num, num+1)
-				}
-				return m, nil
-			}
-		}
+		// if m.deleteMode && len(msg.Runes) > 0 && unicode.IsDigit(msg.Runes[0]) {
+		// 	num := int(msg.Runes[0] - '0')
+		// 	m.deleteMode = false
+		// 	if num < 10 && len(m.attachments) > num {
+		// 		if num == 0 {
+		// 			m.attachments = m.attachments[num+1:]
+		// 		} else {
+		// 			m.attachments = slices.Delete(m.attachments, num, num+1)
+		// 		}
+		// 		return m, nil
+		// 	}
+		// }
 		if key.Matches(msg, messageKeys.PageUp) || key.Matches(msg, messageKeys.PageDown) ||
 			key.Matches(msg, messageKeys.HalfPageUp) || key.Matches(msg, messageKeys.HalfPageDown) {
 			return m, nil
@@ -258,7 +256,7 @@ func (m *editorComponent) View() string {
 		m.textarea.View(),
 	)
 	textarea = styles.BaseStyle().
-		Width(m.width-2).
+		Width(m.width). // -2).
 		Border(lipgloss.NormalBorder(), true, true).
 		BorderForeground(t.Border()).
 		Render(textarea)
@@ -286,10 +284,7 @@ func (m *editorComponent) View() string {
 		info,
 	)
 
-	return styles.ForceReplaceBackgroundWithLipgloss(
-		content,
-		t.Background(),
-	)
+	return content
 }
 
 func (m *editorComponent) SetSize(width, height int) tea.Cmd {
@@ -414,14 +409,14 @@ func createTextArea(existing *textarea.Model) textarea.Model {
 	ta := textarea.New()
 	ta.Placeholder = "It's prompting time..."
 
-	ta.BlurredStyle.Base = styles.BaseStyle().Background(bgColor).Foreground(textColor)
-	ta.BlurredStyle.CursorLine = styles.BaseStyle().Background(bgColor)
-	ta.BlurredStyle.Placeholder = styles.BaseStyle().Background(bgColor).Foreground(textMutedColor)
-	ta.BlurredStyle.Text = styles.BaseStyle().Background(bgColor).Foreground(textColor)
-	ta.FocusedStyle.Base = styles.BaseStyle().Background(bgColor).Foreground(textColor)
-	ta.FocusedStyle.CursorLine = styles.BaseStyle().Background(bgColor)
-	ta.FocusedStyle.Placeholder = styles.BaseStyle().Background(bgColor).Foreground(textMutedColor)
-	ta.FocusedStyle.Text = styles.BaseStyle().Background(bgColor).Foreground(textColor)
+	ta.Styles.Blurred.Base = styles.BaseStyle().Background(bgColor).Foreground(textColor)
+	ta.Styles.Blurred.CursorLine = styles.BaseStyle().Background(bgColor)
+	ta.Styles.Blurred.Placeholder = styles.BaseStyle().Background(bgColor).Foreground(textMutedColor)
+	ta.Styles.Blurred.Text = styles.BaseStyle().Background(bgColor).Foreground(textColor)
+	ta.Styles.Focused.Base = styles.BaseStyle().Background(bgColor).Foreground(textColor)
+	ta.Styles.Focused.CursorLine = styles.BaseStyle().Background(bgColor)
+	ta.Styles.Focused.Placeholder = styles.BaseStyle().Background(bgColor).Foreground(textMutedColor)
+	ta.Styles.Focused.Text = styles.BaseStyle().Background(bgColor).Foreground(textColor)
 
 	ta.Prompt = " "
 	ta.ShowLineNumbers = false
@@ -437,7 +432,7 @@ func createTextArea(existing *textarea.Model) textarea.Model {
 	return ta
 }
 
-func NewEditorComponent(app *app.App) tea.Model {
+func NewEditorComponent(app *app.App) layout.ModelWithView {
 	s := spinner.New(spinner.WithSpinner(spinner.Ellipsis), spinner.WithStyle(styles.Muted().Width(3)))
 	ta := createTextArea(nil)
 
