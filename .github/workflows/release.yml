@@ -39,3 +39,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN }}
           AUR_KEY: ${{ secrets.AUR_KEY }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
