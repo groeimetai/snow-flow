@@ -20,6 +20,7 @@ type SimpleList[T SimpleListItem] interface {
 	GetSelectedItem() (item T, idx int)
 	SetItems(items []T)
 	GetItems() []T
+	SetSelectedIndex(idx int)
 }
 
 type simpleListComponent[T SimpleListItem] struct {
@@ -107,6 +108,12 @@ func (c *simpleListComponent[T]) GetItems() []T {
 
 func (c *simpleListComponent[T]) SetMaxWidth(width int) {
 	c.maxWidth = width
+}
+
+func (c *simpleListComponent[T]) SetSelectedIndex(idx int) {
+	if idx >= 0 && idx < len(c.items) {
+		c.selectedIdx = idx
+	}
 }
 
 func (c *simpleListComponent[T]) View() string {

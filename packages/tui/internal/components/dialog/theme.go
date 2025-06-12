@@ -1,9 +1,9 @@
 package dialog
 
 import (
-	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
-	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/sst/opencode/internal/components/modal"
+	components "github.com/sst/opencode/internal/components/util"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/styles"
@@ -16,184 +16,113 @@ type ThemeChangedMsg struct {
 	ThemeName string
 }
 
-// CloseThemeDialogMsg is sent when the theme dialog is closed
-type CloseThemeDialogMsg struct{}
-
 // ThemeDialog interface for the theme switching dialog
 type ThemeDialog interface {
-	layout.ModelWithView
-	layout.Bindings
+	layout.Modal
 }
 
-type themeDialogComponent struct {
-	themes       []string
-	selectedIdx  int
-	width        int
-	height       int
-	currentTheme string
+type themeItem struct {
+	name string
 }
 
-type themeKeyMap struct {
-	Up     key.Binding
-	Down   key.Binding
-	Enter  key.Binding
-	Escape key.Binding
-	J      key.Binding
-	K      key.Binding
-}
+func (t themeItem) Render(selected bool, width int) string {
+	th := theme.CurrentTheme()
+	baseStyle := styles.BaseStyle().
+		Width(width - 2).
+		Background(th.BackgroundElement())
 
-var themeKeys = themeKeyMap{
-	Up: key.NewBinding(
-		key.WithKeys("up"),
-		key.WithHelp("↑", "previous theme"),
-	),
-	Down: key.NewBinding(
-		key.WithKeys("down"),
-		key.WithHelp("↓", "next theme"),
-	),
-	Enter: key.NewBinding(
-		key.WithKeys("enter"),
-		key.WithHelp("enter", "select theme"),
-	),
-	Escape: key.NewBinding(
-		key.WithKeys("esc"),
-		key.WithHelp("esc", "close"),
-	),
-	J: key.NewBinding(
-		key.WithKeys("j"),
-		key.WithHelp("j", "next theme"),
-	),
-	K: key.NewBinding(
-		key.WithKeys("k"),
-		key.WithHelp("k", "previous theme"),
-	),
-}
-
-func (t *themeDialogComponent) Init() tea.Cmd {
-	// Load available themes and update selectedIdx based on current theme
-	t.themes = theme.AvailableThemes()
-	t.currentTheme = theme.CurrentThemeName()
-
-	// Find the current theme in the list
-	for i, name := range t.themes {
-		if name == t.currentTheme {
-			t.selectedIdx = i
-			break
-		}
+	if selected {
+		baseStyle = baseStyle.
+			Background(th.Primary()).
+			Foreground(th.BackgroundElement()).
+			Bold(true)
+	} else {
+		baseStyle = baseStyle.
+			Foreground(th.Text())
 	}
 
+	return baseStyle.Padding(0, 1).Render(t.name)
+}
+
+type themeDialog struct {
+	width  int
+	height int
+
+	modal *modal.Modal
+	list  components.SimpleList[themeItem]
+}
+
+func (t *themeDialog) Init() tea.Cmd {
 	return nil
 }
 
-func (t *themeDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (t *themeDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		t.width = msg.Width
+		t.height = msg.Height
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, themeKeys.Up) || key.Matches(msg, themeKeys.K):
-			if t.selectedIdx > 0 {
-				t.selectedIdx--
-			}
-			return t, nil
-		case key.Matches(msg, themeKeys.Down) || key.Matches(msg, themeKeys.J):
-			if t.selectedIdx < len(t.themes)-1 {
-				t.selectedIdx++
-			}
-			return t, nil
-		case key.Matches(msg, themeKeys.Enter):
-			if len(t.themes) > 0 {
+		switch msg.String() {
+		case "enter":
+			if item, idx := t.list.GetSelectedItem(); idx >= 0 {
 				previousTheme := theme.CurrentThemeName()
-				selectedTheme := t.themes[t.selectedIdx]
+				selectedTheme := item.name
 				if previousTheme == selectedTheme {
-					return t, util.CmdHandler(CloseThemeDialogMsg{})
+					return t, util.CmdHandler(modal.CloseModalMsg{})
 				}
 				if err := theme.SetTheme(selectedTheme); err != nil {
 					status.Error(err.Error())
 					return t, nil
 				}
-				return t, util.CmdHandler(ThemeChangedMsg{
-					ThemeName: selectedTheme,
-				})
+				return t, tea.Batch(
+					util.CmdHandler(ThemeChangedMsg{ThemeName: selectedTheme}),
+					util.CmdHandler(modal.CloseModalMsg{}),
+				)
 			}
-		case key.Matches(msg, themeKeys.Escape):
-			return t, util.CmdHandler(CloseThemeDialogMsg{})
 		}
-	case tea.WindowSizeMsg:
-		t.width = msg.Width
-		t.height = msg.Height
 	}
-	return t, nil
+
+	var cmd tea.Cmd
+	listModel, cmd := t.list.Update(msg)
+	t.list = listModel.(components.SimpleList[themeItem])
+	return t, cmd
 }
 
-func (t *themeDialogComponent) View() string {
-	currentTheme := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
+func (t *themeDialog) Render(background string) string {
+	return t.modal.Render(t.list.View(), background)
+}
 
-	if len(t.themes) == 0 {
-		return baseStyle.Padding(1, 2).
-			Border(lipgloss.RoundedBorder()).
-			BorderBackground(currentTheme.Background()).
-			BorderForeground(currentTheme.TextMuted()).
-			Width(40).
-			Render("No themes available")
-	}
+func (t *themeDialog) Close() tea.Cmd {
+	return nil
+}
 
-	// Calculate max width needed for theme names
-	maxWidth := 40 // Minimum width
-	for _, themeName := range t.themes {
-		if len(themeName) > maxWidth-4 { // Account for padding
-			maxWidth = len(themeName) + 4
+// NewThemeDialog creates a new theme switching dialog
+func NewThemeDialog() ThemeDialog {
+	themes := theme.AvailableThemes()
+	currentTheme := theme.CurrentThemeName()
+
+	var themeItems []themeItem
+	var selectedIdx int
+	for i, name := range themes {
+		themeItems = append(themeItems, themeItem{name: name})
+		if name == currentTheme {
+			selectedIdx = i
 		}
 	}
 
-	maxWidth = max(30, min(maxWidth, t.width-15)) // Limit width to avoid overflow
-
-	// Build the theme list
-	themeItems := make([]string, 0, len(t.themes))
-	for i, themeName := range t.themes {
-		itemStyle := baseStyle.Width(maxWidth)
-
-		if i == t.selectedIdx {
-			itemStyle = itemStyle.
-				Background(currentTheme.Primary()).
-				Foreground(currentTheme.Background()).
-				Bold(true)
-		}
-
-		themeItems = append(themeItems, itemStyle.Padding(0, 1).Render(themeName))
-	}
-
-	title := baseStyle.
-		Foreground(currentTheme.Primary()).
-		Bold(true).
-		Width(maxWidth).
-		Padding(0, 1).
-		Render("Select Theme")
-
-	content := lipgloss.JoinVertical(
-		lipgloss.Left,
-		title,
-		baseStyle.Width(maxWidth).Render(""),
-		baseStyle.Width(maxWidth).Render(lipgloss.JoinVertical(lipgloss.Left, themeItems...)),
-		baseStyle.Width(maxWidth).Render(""),
+	list := components.NewSimpleList(
+		themeItems,
+		10, // maxVisibleThemes
+		"No themes available",
+		true,
 	)
 
-	return baseStyle.Padding(1, 2).
-		Border(lipgloss.RoundedBorder()).
-		BorderBackground(currentTheme.Background()).
-		BorderForeground(currentTheme.TextMuted()).
-		Width(lipgloss.Width(content) + 4).
-		Render(content)
-}
+	// Set the initial selection to the current theme
+	list.SetSelectedIndex(selectedIdx)
 
-func (t *themeDialogComponent) BindingKeys() []key.Binding {
-	return layout.KeyMapToSlice(themeKeys)
-}
-
-// NewThemeDialogCmp creates a new theme switching dialog
-func NewThemeDialogCmp() ThemeDialog {
-	return &themeDialogComponent{
-		themes:       []string{},
-		selectedIdx:  0,
-		currentTheme: "",
+	return &themeDialog{
+		list:  list,
+		modal: modal.New(modal.WithTitle("Select Theme"), modal.WithMaxWidth(40)),
 	}
 }
+

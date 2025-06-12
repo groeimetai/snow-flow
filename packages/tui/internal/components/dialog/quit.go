@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -14,14 +15,17 @@ import (
 
 const question = "Are you sure you want to quit?"
 
-type CloseQuitMsg struct{}
-
+// QuitDialog interface for the quit confirmation dialog
 type QuitDialog interface {
-	layout.ModelWithView
-	layout.Bindings
+	layout.Modal
+	IsQuitDialog() bool
 }
 
-type quitDialogComponent struct {
+type quitDialog struct {
+	width  int
+	height int
+
+	modal      *modal.Modal
 	selectedNo bool
 }
 
@@ -30,12 +34,11 @@ type helpMapping struct {
 	EnterSpace key.Binding
 	Yes        key.Binding
 	No         key.Binding
-	Tab        key.Binding
 }
 
 var helpKeys = helpMapping{
 	LeftRight: key.NewBinding(
-		key.WithKeys("left", "right"),
+		key.WithKeys("left", "right", "h", "l", "tab"),
 		key.WithHelp("←/→", "switch options"),
 	),
 	EnterSpace: key.NewBinding(
@@ -43,58 +46,61 @@ var helpKeys = helpMapping{
 		key.WithHelp("enter/space", "confirm"),
 	),
 	Yes: key.NewBinding(
-		key.WithKeys("y", "Y"),
+		key.WithKeys("y", "Y", "ctrl+c"),
 		key.WithHelp("y/Y", "yes"),
 	),
 	No: key.NewBinding(
 		key.WithKeys("n", "N"),
 		key.WithHelp("n/N", "no"),
 	),
-	Tab: key.NewBinding(
-		key.WithKeys("tab"),
-		key.WithHelp("tab", "switch options"),
-	),
 }
 
-func (q *quitDialogComponent) Init() tea.Cmd {
+func (q *quitDialog) Init() tea.Cmd {
 	return nil
 }
 
-func (q *quitDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (q *quitDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		q.width = msg.Width
+		q.height = msg.Height
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, helpKeys.LeftRight) || key.Matches(msg, helpKeys.Tab):
+		case key.Matches(msg, helpKeys.LeftRight):
 			q.selectedNo = !q.selectedNo
 			return q, nil
 		case key.Matches(msg, helpKeys.EnterSpace):
 			if !q.selectedNo {
 				return q, tea.Quit
 			}
-			return q, util.CmdHandler(CloseQuitMsg{})
+			return q, tea.Batch(
+				util.CmdHandler(modal.CloseModalMsg{}),
+			)
 		case key.Matches(msg, helpKeys.Yes):
 			return q, tea.Quit
 		case key.Matches(msg, helpKeys.No):
-			return q, util.CmdHandler(CloseQuitMsg{})
+			return q, tea.Batch(
+				util.CmdHandler(modal.CloseModalMsg{}),
+			)
 		}
 	}
 	return q, nil
 }
 
-func (q *quitDialogComponent) View() string {
+func (q *quitDialog) Render(background string) string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
 	yesStyle := baseStyle
 	noStyle := baseStyle
-	spacerStyle := baseStyle.Background(t.Background())
+	spacerStyle := baseStyle.Background(t.BackgroundElement())
 
 	if q.selectedNo {
-		noStyle = noStyle.Background(t.Primary()).Foreground(t.Background())
-		yesStyle = yesStyle.Background(t.Background()).Foreground(t.Primary())
+		noStyle = noStyle.Background(t.Primary()).Foreground(t.BackgroundElement())
+		yesStyle = yesStyle.Background(t.BackgroundElement()).Foreground(t.Primary())
 	} else {
-		yesStyle = yesStyle.Background(t.Primary()).Foreground(t.Background())
-		noStyle = noStyle.Background(t.Background()).Foreground(t.Primary())
+		yesStyle = yesStyle.Background(t.Primary()).Foreground(t.BackgroundElement())
+		noStyle = noStyle.Background(t.BackgroundElement()).Foreground(t.Primary())
 	}
 
 	yesButton := yesStyle.Padding(0, 1).Render("Yes")
@@ -117,20 +123,21 @@ func (q *quitDialogComponent) View() string {
 		),
 	)
 
-	return baseStyle.Padding(1, 2).
-		Border(lipgloss.RoundedBorder()).
-		BorderBackground(t.Background()).
-		BorderForeground(t.TextMuted()).
-		Width(lipgloss.Width(content) + 4).
-		Render(content)
+	return q.modal.Render(content, background)
 }
 
-func (q *quitDialogComponent) BindingKeys() []key.Binding {
-	return layout.KeyMapToSlice(helpKeys)
+func (q *quitDialog) Close() tea.Cmd {
+	return nil
 }
 
-func NewQuitCmp() QuitDialog {
-	return &quitDialogComponent{
+func (q *quitDialog) IsQuitDialog() bool {
+	return true
+}
+
+// NewQuitDialog creates a new quit confirmation dialog
+func NewQuitDialog() QuitDialog {
+	return &quitDialog{
 		selectedNo: true,
+		modal:      modal.New(),
 	}
 }

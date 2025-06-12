@@ -11,7 +11,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/layout"
+	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
@@ -19,25 +21,16 @@ import (
 )
 
 const (
-	numVisibleModels = 10
+	numVisibleModels = 6
 	maxDialogWidth   = 40
 )
 
-// CloseModelDialogMsg is sent when a model is selected
-type CloseModelDialogMsg struct {
-	Provider *client.ProviderInfo
-	Model    *client.ProviderModel
-}
-
 // ModelDialog interface for the model selection dialog
 type ModelDialog interface {
-	layout.ModelWithView
-	layout.Bindings
-
-	SetProviders(providers []client.ProviderInfo)
+	layout.Modal
 }
 
-type modelDialogComponent struct {
+type modelDialog struct {
 	app                *app.App
 	availableProviders []client.ProviderInfo
 	provider           client.ProviderInfo
@@ -48,6 +41,8 @@ type modelDialogComponent struct {
 	scrollOffset    int
 	hScrollOffset   int
 	hScrollPossible bool
+
+	modal *modal.Modal
 }
 
 type modelKeyMap struct {
@@ -57,27 +52,23 @@ type modelKeyMap struct {
 	Right  key.Binding
 	Enter  key.Binding
 	Escape key.Binding
-	J      key.Binding
-	K      key.Binding
-	H      key.Binding
-	L      key.Binding
 }
 
 var modelKeys = modelKeyMap{
 	Up: key.NewBinding(
-		key.WithKeys("up"),
+		key.WithKeys("up", "k"),
 		key.WithHelp("↑", "previous model"),
 	),
 	Down: key.NewBinding(
-		key.WithKeys("down"),
+		key.WithKeys("down", "j"),
 		key.WithHelp("↓", "next model"),
 	),
 	Left: key.NewBinding(
-		key.WithKeys("left"),
+		key.WithKeys("left", "h"),
 		key.WithHelp("←", "scroll left"),
 	),
 	Right: key.NewBinding(
-		key.WithKeys("right"),
+		key.WithKeys("right", "l"),
 		key.WithHelp("→", "scroll right"),
 	),
 	Enter: key.NewBinding(
@@ -88,25 +79,9 @@ var modelKeys = modelKeyMap{
 		key.WithKeys("esc"),
 		key.WithHelp("esc", "close"),
 	),
-	J: key.NewBinding(
-		key.WithKeys("j"),
-		key.WithHelp("j", "next model"),
-	),
-	K: key.NewBinding(
-		key.WithKeys("k"),
-		key.WithHelp("k", "previous model"),
-	),
-	H: key.NewBinding(
-		key.WithKeys("h"),
-		key.WithHelp("h", "scroll left"),
-	),
-	L: key.NewBinding(
-		key.WithKeys("l"),
-		key.WithHelp("l", "scroll right"),
-	),
 }
 
-func (m *modelDialogComponent) Init() tea.Cmd {
+func (m *modelDialog) Init() tea.Cmd {
 	// cfg := config.Get()
 	// modelInfo := GetSelectedModel(cfg)
 	// m.availableProviders = getEnabledProviders(cfg)
@@ -116,40 +91,31 @@ func (m *modelDialogComponent) Init() tea.Cmd {
 	// m.hScrollOffset = findProviderIndex(m.availableProviders, m.provider)
 
 	// m.setupModelsForProvider(m.provider)
-
-	m.availableProviders, _ = m.app.ListProviders(context.Background())
-	m.hScrollOffset = 0
-	m.hScrollPossible = len(m.availableProviders) > 1
-	m.provider = m.availableProviders[m.hScrollOffset]
-
 	return nil
 }
 
-func (m *modelDialogComponent) SetProviders(providers []client.ProviderInfo) {
-	m.availableProviders = providers
-}
-
-func (m *modelDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *modelDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, modelKeys.Up) || key.Matches(msg, modelKeys.K):
+		case key.Matches(msg, modelKeys.Up):
 			m.moveSelectionUp()
-		case key.Matches(msg, modelKeys.Down) || key.Matches(msg, modelKeys.J):
+		case key.Matches(msg, modelKeys.Down):
 			m.moveSelectionDown()
-		case key.Matches(msg, modelKeys.Left) || key.Matches(msg, modelKeys.H):
+		case key.Matches(msg, modelKeys.Left):
 			if m.hScrollPossible {
 				m.switchProvider(-1)
 			}
-		case key.Matches(msg, modelKeys.Right) || key.Matches(msg, modelKeys.L):
+		case key.Matches(msg, modelKeys.Right):
 			if m.hScrollPossible {
 				m.switchProvider(1)
 			}
 		case key.Matches(msg, modelKeys.Enter):
 			models := m.models()
-			return m, util.CmdHandler(CloseModelDialogMsg{Provider: &m.provider, Model: &models[m.selectedIdx]})
+			cmd := util.CmdHandler(state.ModelSelectedMsg{Provider: m.provider, Model: models[m.selectedIdx]})
+			return m, tea.Batch(cmd, util.CmdHandler(modal.CloseModalMsg{}))
 		case key.Matches(msg, modelKeys.Escape):
-			return m, util.CmdHandler(CloseModelDialogMsg{})
+			return m, util.CmdHandler(modal.CloseModalMsg{})
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -159,7 +125,7 @@ func (m *modelDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *modelDialogComponent) models() []client.ProviderModel {
+func (m *modelDialog) models() []client.ProviderModel {
 	models := slices.SortedFunc(maps.Values(m.provider.Models), func(a, b client.ProviderModel) int {
 		return strings.Compare(*a.Name, *b.Name)
 	})
@@ -167,7 +133,7 @@ func (m *modelDialogComponent) models() []client.ProviderModel {
 }
 
 // moveSelectionUp moves the selection up or wraps to bottom
-func (m *modelDialogComponent) moveSelectionUp() {
+func (m *modelDialog) moveSelectionUp() {
 	if m.selectedIdx > 0 {
 		m.selectedIdx--
 	} else {
@@ -182,7 +148,7 @@ func (m *modelDialogComponent) moveSelectionUp() {
 }
 
 // moveSelectionDown moves the selection down or wraps to top
-func (m *modelDialogComponent) moveSelectionDown() {
+func (m *modelDialog) moveSelectionDown() {
 	if m.selectedIdx < len(m.provider.Models)-1 {
 		m.selectedIdx++
 	} else {
@@ -196,7 +162,7 @@ func (m *modelDialogComponent) moveSelectionDown() {
 	}
 }
 
-func (m *modelDialogComponent) switchProvider(offset int) {
+func (m *modelDialog) switchProvider(offset int) {
 	newOffset := m.hScrollOffset + offset
 
 	// Ensure we stay within bounds
@@ -212,9 +178,11 @@ func (m *modelDialogComponent) switchProvider(offset int) {
 	m.setupModelsForProvider(m.provider.Id)
 }
 
-func (m *modelDialogComponent) View() string {
+func (m *modelDialog) View() string {
 	t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
+	baseStyle := lipgloss.NewStyle().
+		Background(t.BackgroundElement()).
+		Foreground(t.Text())
 
 	// Capitalize first letter of provider name
 	title := baseStyle.
@@ -232,8 +200,10 @@ func (m *modelDialogComponent) View() string {
 	for i := m.scrollOffset; i < endIdx; i++ {
 		itemStyle := baseStyle.Width(maxDialogWidth)
 		if i == m.selectedIdx {
-			itemStyle = itemStyle.Background(t.Primary()).
-				Foreground(t.Background()).Bold(true)
+			itemStyle = itemStyle.
+				Background(t.Primary()).
+				Foreground(t.BackgroundElement()).
+				Bold(true)
 		}
 		modelItems = append(modelItems, itemStyle.Render(*models[i].Name))
 	}
@@ -247,15 +217,10 @@ func (m *modelDialogComponent) View() string {
 		scrollIndicator,
 	)
 
-	return baseStyle.Padding(1, 2).
-		Border(lipgloss.RoundedBorder()).
-		BorderBackground(t.Background()).
-		BorderForeground(t.TextMuted()).
-		Width(lipgloss.Width(content) + 4).
-		Render(content)
+	return content
 }
 
-func (m *modelDialogComponent) getScrollIndicators(maxWidth int) string {
+func (m *modelDialog) getScrollIndicators(maxWidth int) string {
 	var indicator string
 
 	if len(m.provider.Models) > numVisibleModels {
@@ -291,10 +256,6 @@ func (m *modelDialogComponent) getScrollIndicators(maxWidth int) string {
 		Render(indicator)
 }
 
-func (m *modelDialogComponent) BindingKeys() []key.Binding {
-	return layout.KeyMapToSlice(modelKeys)
-}
-
 // findProviderIndex returns the index of the provider in the list, or -1 if not found
 // func findProviderIndex(providers []string, provider string) int {
 // 	for i, p := range providers {
@@ -305,7 +266,7 @@ func (m *modelDialogComponent) BindingKeys() []key.Binding {
 // 	return -1
 // }
 
-func (m *modelDialogComponent) setupModelsForProvider(_ string) {
+func (m *modelDialog) setupModelsForProvider(_ string) {
 	m.selectedIdx = 0
 	m.scrollOffset = 0
 
@@ -331,8 +292,22 @@ func (m *modelDialogComponent) setupModelsForProvider(_ string) {
 	// }
 }
 
-func NewModelDialogCmp(app *app.App) ModelDialog {
-	return &modelDialogComponent{
-		app: app,
+func (m *modelDialog) Render(background string) string {
+	return m.modal.Render(m.View(), background)
+}
+
+func (s *modelDialog) Close() tea.Cmd {
+	return nil
+}
+
+func NewModelDialog(app *app.App) ModelDialog {
+	availableProviders, _ := app.ListProviders(context.Background())
+
+	return &modelDialog{
+		availableProviders: availableProviders,
+		hScrollOffset:      0,
+		hScrollPossible:    len(availableProviders) > 1,
+		provider:           availableProviders[0],
+		modal:              modal.New(),
 	}
 }

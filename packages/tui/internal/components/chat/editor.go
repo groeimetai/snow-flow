@@ -119,6 +119,13 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.attachments = append(m.attachments, msg.Attachment)
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "ctrl+c":
+			if m.textarea.Value() != "" {
+				m.textarea.Reset()
+				return m, func() tea.Msg {
+					return nil
+				}
+			}
 		case "shift+enter":
 			value := m.textarea.Value()
 			m.textarea.SetValue(value + "\n")
@@ -264,8 +271,12 @@ func (m *editorComponent) View() string {
 	)
 	textarea = styles.BaseStyle().
 		Width(m.width).
-		Border(lipgloss.NormalBorder(), true, true).
-		BorderForeground(t.Border()).
+		PaddingTop(1).
+		PaddingBottom(1).
+		Background(t.BackgroundElement()).
+		Border(lipgloss.ThickBorder(), false, true).
+		BorderForeground(t.BorderActive()).
+		BorderBackground(t.Background()).
 		Render(textarea)
 
 	hint := base("enter") + muted(" send   ") + base("shift") + muted("+") + base("enter") + muted(" newline")
@@ -287,6 +298,7 @@ func (m *editorComponent) View() string {
 	content := lipgloss.JoinVertical(
 		lipgloss.Top,
 		// m.attachmentsContent(),
+		"",
 		textarea,
 		info,
 	)
@@ -409,21 +421,21 @@ func (m *editorComponent) attachmentsContent() string {
 
 func createTextArea(existing *textarea.Model) textarea.Model {
 	t := theme.CurrentTheme()
-	bgColor := t.Background()
+	bgColor := t.BackgroundElement()
 	textColor := t.Text()
 	textMutedColor := t.TextMuted()
 
 	ta := textarea.New()
-	ta.Placeholder = "It's prompting time..."
 
-	ta.Styles.Blurred.Base = styles.BaseStyle().Background(bgColor).Foreground(textColor)
-	ta.Styles.Blurred.CursorLine = styles.BaseStyle().Background(bgColor)
-	ta.Styles.Blurred.Placeholder = styles.BaseStyle().Background(bgColor).Foreground(textMutedColor)
-	ta.Styles.Blurred.Text = styles.BaseStyle().Background(bgColor).Foreground(textColor)
-	ta.Styles.Focused.Base = styles.BaseStyle().Background(bgColor).Foreground(textColor)
-	ta.Styles.Focused.CursorLine = styles.BaseStyle().Background(bgColor)
-	ta.Styles.Focused.Placeholder = styles.BaseStyle().Background(bgColor).Foreground(textMutedColor)
-	ta.Styles.Focused.Text = styles.BaseStyle().Background(bgColor).Foreground(textColor)
+	ta.Styles.Blurred.Base = lipgloss.NewStyle().Background(bgColor).Foreground(textColor)
+	ta.Styles.Blurred.CursorLine = lipgloss.NewStyle().Background(bgColor)
+	ta.Styles.Blurred.Placeholder = lipgloss.NewStyle().Background(bgColor).Foreground(textMutedColor)
+	ta.Styles.Blurred.Text = lipgloss.NewStyle().Background(bgColor).Foreground(textColor)
+	ta.Styles.Focused.Base = lipgloss.NewStyle().Background(bgColor).Foreground(textColor)
+	ta.Styles.Focused.CursorLine = lipgloss.NewStyle().Background(bgColor)
+	ta.Styles.Focused.Placeholder = lipgloss.NewStyle().Background(bgColor).Foreground(textMutedColor)
+	ta.Styles.Focused.Text = lipgloss.NewStyle().Background(bgColor).Foreground(textColor)
+	ta.Styles.Cursor.Color = t.Primary()
 
 	ta.Prompt = " "
 	ta.ShowLineNumbers = false

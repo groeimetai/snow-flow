@@ -8,14 +8,8 @@ import (
 	"github.com/muesli/ansi"
 	"github.com/muesli/reflow/truncate"
 	"github.com/muesli/termenv"
-	"github.com/sst/opencode/internal/styles"
-	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
 )
-
-// Most of this code is borrowed from
-// https://github.com/charmbracelet/lipgloss/v2/pull/102
-// as well as the lipgloss library, with some modification for what I needed.
 
 // Split a string into lines, additionally returning the size of the widest line.
 func getLines(s string) (lines []string, widest int) {
@@ -33,42 +27,18 @@ func getLines(s string) (lines []string, widest int) {
 func PlaceOverlay(
 	x, y int,
 	fg, bg string,
-	shadow bool, opts ...WhitespaceOption,
+	opts ...WhitespaceOption,
 ) string {
 	fgLines, fgWidth := getLines(fg)
 	bgLines, bgWidth := getLines(bg)
 	bgHeight := len(bgLines)
 	fgHeight := len(fgLines)
 
-	shadow = false
-
-	if shadow {
-		t := theme.CurrentTheme()
-		baseStyle := styles.BaseStyle()
-
-		var shadowbg string = ""
-		shadowchar := lipgloss.NewStyle().
-			Background(t.BackgroundElement()).
-			Foreground(t.Background()).
-			Render("░")
-		bgchar := baseStyle.Render(" ")
-		for i := 0; i <= fgHeight; i++ {
-			if i == 0 {
-				shadowbg += bgchar + strings.Repeat(bgchar, fgWidth) + "\n"
-			} else {
-				shadowbg += bgchar + strings.Repeat(shadowchar, fgWidth) + "\n"
-			}
-		}
-
-		fg = PlaceOverlay(0, 0, fg, shadowbg, false, opts...)
-		fgLines, fgWidth = getLines(fg)
-		fgHeight = len(fgLines)
-	}
-
 	if fgWidth >= bgWidth && fgHeight >= bgHeight {
 		// FIXME: return fg or bg?
 		return fg
 	}
+
 	// TODO: allow placement outside of the bg box?
 	x = util.Clamp(x, 0, bgWidth-fgWidth)
 	y = util.Clamp(y, 0, bgHeight-fgHeight)
@@ -120,13 +90,6 @@ func PlaceOverlay(
 // This function is heavily based on muesli's ansi and truncate packages.
 func cutLeft(s string, cutWidth int) string {
 	return chAnsi.Cut(s, cutWidth, lipgloss.Width(s))
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 type whitespace struct {

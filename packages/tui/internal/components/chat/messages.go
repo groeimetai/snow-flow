@@ -237,7 +237,7 @@ func (m *messagesComponent) renderView() {
 	}
 
 	m.viewport.SetHeight(m.height - lipgloss.Height(m.header()))
-	m.viewport.SetContent(strings.Join(centered, "\n"))
+	m.viewport.SetContent("\n" + strings.Join(centered, "\n") + "\n")
 }
 
 func (m *messagesComponent) header() string {

@@ -12,10 +12,8 @@ import (
 	"github.com/sst/opencode/internal/components/chat"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/layout"
-	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/util"
-	"github.com/sst/opencode/pkg/client"
 )
 
 var ChatPage PageID = "chat"
@@ -30,17 +28,12 @@ type chatPage struct {
 }
 
 type ChatKeyMap struct {
-	NewSession           key.Binding
 	Cancel               key.Binding
 	ToggleTools          key.Binding
 	ShowCompletionDialog key.Binding
 }
 
 var keyMap = ChatKeyMap{
-	NewSession: key.NewBinding(
-		key.WithKeys("ctrl+n"),
-		key.WithHelp("ctrl+n", "new session"),
-	),
 	Cancel: key.NewBinding(
 		key.WithKeys("esc"),
 		key.WithHelp("esc", "cancel"),
@@ -101,17 +94,19 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		p.showCompletionDialog = false
 		p.app.SetCompletionDialogOpen(false)
 	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c":
+			_, cmd := p.editor.Update(msg)
+			if cmd != nil {
+				return p, cmd
+			}
+		}
+
 		switch {
 		case key.Matches(msg, keyMap.ShowCompletionDialog):
 			p.showCompletionDialog = true
 			p.app.SetCompletionDialogOpen(true)
 			// Continue sending keys to layout->chat
-		case key.Matches(msg, keyMap.NewSession):
-			p.app.Session = &client.SessionInfo{}
-			p.app.Messages = []client.MessageInfo{}
-			return p, tea.Batch(
-				util.CmdHandler(state.SessionClearedMsg{}),
-			)
 		case key.Matches(msg, keyMap.Cancel):
 			if p.app.Session.Id != "" {
 				// Cancel the current session's generation process
@@ -173,7 +168,6 @@ func (p *chatPage) View() string {
 			layoutHeight-editorHeight-lipgloss.Height(overlay),
 			overlay,
 			layoutView,
-			false,
 		)
 	}
 
@@ -208,7 +202,7 @@ func NewChatPage(app *app.App) layout.ModelWithView {
 			layout.WithDirection(layout.FlexDirectionVertical),
 			layout.WithPaneSizes(
 				layout.FlexPaneSizeGrow,
-				layout.FlexPaneSizeFixed(6),
+				layout.FlexPaneSizeFixed(5),
 			),
 		),
 	}

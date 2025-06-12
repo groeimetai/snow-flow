@@ -36,6 +36,12 @@ type LayoutInfo struct {
 	Container Dimensions
 }
 
+type Modal interface {
+	tea.Model
+	Render(background string) string
+	Close() tea.Cmd
+}
+
 type Focusable interface {
 	Focus() tea.Cmd
 	Blur() tea.Cmd

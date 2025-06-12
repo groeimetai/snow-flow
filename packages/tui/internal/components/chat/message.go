@@ -292,8 +292,8 @@ func renderToolInvocation(
 		toolArgs = renderArgs(&toolArgsMap, "filePath")
 		title = fmt.Sprintf("Read: %s   %s", toolArgs, elapsed)
 		body = ""
-		filename := toolArgsMap["filePath"].(string)
-		if metadata["preview"] != nil {
+		if metadata["preview"] != nil && toolArgsMap["filePath"] != nil {
+			filename := toolArgsMap["filePath"].(string)
 			body = metadata["preview"].(string)
 			body = renderFile(filename, body, WithTruncate(6))
 		}
