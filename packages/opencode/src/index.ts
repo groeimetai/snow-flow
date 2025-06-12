@@ -26,7 +26,7 @@ const cli = yargs(hideBin(process.argv))
     describe: "Print logs to stderr",
     type: "boolean",
   })
-  .middleware(async (args) => {
+  .middleware(async () => {
     await Log.init({ print: process.argv.includes("--print-logs") })
     Log.Default.info("opencode", {
       version: VERSION,

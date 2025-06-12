@@ -12,6 +12,7 @@ import { App } from "../app/app"
 import { Global } from "../global"
 import { mapValues } from "remeda"
 import { NamedError } from "../util/error"
+import { Fzf } from "../external/fzf"
 
 const ERRORS = {
   400: {
@@ -425,6 +426,34 @@ export namespace Server {
               (item) => Provider.sort(Object.values(item.models))[0].id,
             ),
           })
+        },
+      )
+      .post(
+        "/file_search",
+        describeRoute({
+          description: "Search for files",
+          responses: {
+            200: {
+              description: "Search for files",
+              content: {
+                "application/json": {
+                  schema: resolver(z.string().array()),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "json",
+          z.object({
+            query: z.string(),
+          }),
+        ),
+        async (c) => {
+          const body = c.req.valid("json")
+          const app = App.info()
+          const result = await Fzf.search(app.path.cwd, body.query)
+          return c.json(result)
         },
       )
 

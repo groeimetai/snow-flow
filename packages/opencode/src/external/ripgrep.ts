@@ -4,6 +4,7 @@ import { Global } from "../global"
 import fs from "fs/promises"
 import { z } from "zod"
 import { NamedError } from "../util/error"
+import { lazy } from "../util/lazy"
 
 export namespace Ripgrep {
   const PLATFORM = {
@@ -35,8 +36,10 @@ export namespace Ripgrep {
     }),
   )
 
-  const state = App.state("ripgrep", async () => {
-    const filepath = path.join(
+  const state = lazy(async () => {
+    let filepath = Bun.which("rg")
+    if (filepath) return { filepath }
+    filepath = path.join(
       Global.Path.bin,
       "rg" + (process.platform === "win32" ? ".exe" : ""),
     )
