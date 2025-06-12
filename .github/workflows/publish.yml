@@ -32,6 +32,12 @@ jobs:
         with:
           bun-version: 1.2.16
 
+      - name: Setup SSH for AUR
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
       - run: |
           bun install
           ./script/publish.ts

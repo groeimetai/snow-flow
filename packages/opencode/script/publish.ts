@@ -144,18 +144,11 @@ if (!snapshot) {
     )
 
   await $`rm -rf ./dist/aur-opencode-bin`
-  const gitEnv: Record<string, string> = process.env["AUR_KEY"]
-    ? { GIT_SSH_COMMAND: `ssh -i "${process.env["AUR_KEY"].trim()}"` }
-    : {}
 
-  await $`git clone ssh://aur@aur.archlinux.org/opencode-bin.git ./dist/aur-opencode-bin`.env(
-    gitEnv,
-  )
+  await $`git clone ssh://aur@aur.archlinux.org/opencode-bin.git ./dist/aur-opencode-bin`
   await Bun.file("./dist/aur-opencode-bin/PKGBUILD").write(pkgbuild)
   await $`cd ./dist/aur-opencode-bin && makepkg --printsrcinfo > .SRCINFO`
-  await $`cd ./dist/aur-opencode-bin && git add PKGBUILD .SRCINFO`.env(gitEnv)
-  await $`cd ./dist/aur-opencode-bin && git commit -m "Update to v${version}"`.env(
-    gitEnv,
-  )
-  if (!dry) await $`cd ./dist/aur-opencode-bin && git push`.env(gitEnv)
+  await $`cd ./dist/aur-opencode-bin && git add PKGBUILD .SRCINFO`
+  await $`cd ./dist/aur-opencode-bin && git commit -m "Update to v${version}"`
+  if (!dry) await $`cd ./dist/aur-opencode-bin && git push`
 }
