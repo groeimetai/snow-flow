@@ -1,4 +1,3 @@
-import path from "path"
 import { Log } from "../util/log"
 export namespace BunProc {
   const log = Log.create({ service: "bun" })
@@ -13,6 +12,8 @@ export namespace BunProc {
     })
     const result = Bun.spawn([which(), ...cmd], {
       ...options,
+      stdout: "pipe",
+      stderr: "pipe",
       env: {
         ...process.env,
         ...options?.env,
