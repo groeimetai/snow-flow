@@ -3,6 +3,8 @@ name: publish
 on:
   workflow_dispatch:
   push:
+    branches:
+      - dontlook
     tags:
       - "*"
 
@@ -38,9 +40,14 @@ jobs:
           echo "${{ secrets.AUR_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - run: |
+      - name: Publish
+        run: |
           bun install
-          ./script/publish.ts
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            ./script/publish.ts
+          else
+            ./script/publish.ts --snapshot
+          fi
         working-directory: ./packages/opencode
         env:
           GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN }}
