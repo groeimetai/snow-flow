@@ -29,7 +29,8 @@ jobs:
           cache-dependency-path: go.sum
 
       - uses: oven-sh/setup-bun@v2
-        bun-version: 1.2.16
+        with:
+          bun-version: 1.2.16
 
       - run: ./script/publish.ts
         dir: packages/opencode
