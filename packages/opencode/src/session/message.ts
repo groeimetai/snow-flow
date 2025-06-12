@@ -133,7 +133,7 @@ export namespace Message {
   export const Info = z
     .object({
       id: z.string(),
-      role: z.enum(["system", "user", "assistant"]),
+      role: z.enum(["user", "assistant"]),
       parts: z.array(Part),
       metadata: z.object({
         time: z.object({
@@ -161,8 +161,13 @@ export namespace Message {
         ),
         assistant: z
           .object({
+            system: z.string().array(),
             modelID: z.string(),
             providerID: z.string(),
+            path: z.object({
+              cwd: z.string(),
+              root: z.string(),
+            }),
             cost: z.number(),
             summary: z.boolean().optional(),
             tokens: z.object({

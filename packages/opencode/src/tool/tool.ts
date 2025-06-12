@@ -7,6 +7,7 @@ export namespace Tool {
   }
   export type Context = {
     sessionID: string
+    messageID: string
     abort: AbortSignal
   }
   export interface Info<

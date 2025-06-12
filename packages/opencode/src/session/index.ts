@@ -12,24 +12,21 @@ import {
   tool,
   type Tool as AITool,
   type LanguageModelUsage,
+  type UIMessage,
 } from "ai"
 import { z, ZodSchema } from "zod"
 import { Decimal } from "decimal.js"
 
-import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
-import PROMPT_ANTHROPIC_SPOOF from "./prompt/anthropic_spoof.txt"
-import PROMPT_TITLE from "./prompt/title.txt"
-import PROMPT_SUMMARIZE from "./prompt/summarize.txt"
 import PROMPT_INITIALIZE from "../session/prompt/initialize.txt"
 
 import { Share } from "../share/share"
 import { Message } from "./message"
 import { Bus } from "../bus"
 import { Provider } from "../provider/provider"
-import { SessionContext } from "./context"
-import { ListTool } from "../tool/ls"
 import { MCP } from "../mcp"
 import { NamedError } from "../util/error"
+import type { Tool } from "../tool/tool"
+import { SystemPrompt } from "./system"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -37,6 +34,7 @@ export namespace Session {
   export const Info = z
     .object({
       id: Identifier.schema("session"),
+      parentID: Identifier.schema("session").optional(),
       share: z
         .object({
           secret: z.string(),
@@ -79,10 +77,11 @@ export namespace Session {
     }
   })
 
-  export async function create() {
+  export async function create(parentID?: string) {
     const result: Info = {
       id: Identifier.descending("session"),
-      title: "New Session - " + new Date().toISOString(),
+      parentID,
+      title: "Child Session - " + new Date().toISOString(),
       time: {
         created: Date.now(),
         updated: Date.now(),
@@ -91,11 +90,12 @@ export namespace Session {
     log.info("created", result)
     state().sessions.set(result.id, result)
     await Storage.writeJSON("session/info/" + result.id, result)
-    share(result.id).then((share) => {
-      update(result.id, (draft) => {
-        draft.share = share
+    if (!result.parentID)
+      share(result.id).then((share) => {
+        update(result.id, (draft) => {
+          draft.share = share
+        })
       })
-    })
     Bus.publish(Event.Updated, {
       info: result,
     })
@@ -186,12 +186,16 @@ export namespace Session {
     providerID: string
     modelID: string
     parts: Message.Part[]
+    system?: string[]
+    tools?: Tool.Info[]
   }) {
     const l = log.clone().tag("session", input.sessionID)
     l.info("chatting")
     const model = await Provider.getModel(input.providerID, input.modelID)
     let msgs = await messages(input.sessionID)
     const previous = msgs.at(-1)
+
+    // auto summarize if too long
     if (previous?.metadata.assistant) {
       const tokens =
         previous.metadata.assistant.tokens.input +
@@ -214,95 +218,25 @@ export namespace Session {
     const lastSummary = msgs.findLast(
       (msg) => msg.metadata.assistant?.summary === true,
     )
-    if (lastSummary)
-      msgs = msgs.filter(
-        (msg) => msg.role === "system" || msg.id >= lastSummary.id,
-      )
+    if (lastSummary) msgs = msgs.filter((msg) => msg.id >= lastSummary.id)
 
+    const app = App.info()
     if (msgs.length === 0) {
-      const app = App.info()
-      if (input.providerID === "anthropic") {
-        const claude: Message.Info = {
-          id: Identifier.ascending("message"),
-          role: "system",
-          parts: [
-            {
-              type: "text",
-              text: PROMPT_ANTHROPIC_SPOOF.trim(),
-            },
-          ],
-          metadata: {
-            sessionID: input.sessionID,
-            time: {
-              created: Date.now(),
-            },
-            tool: {},
-          },
-        }
-        await updateMessage(claude)
-        msgs.push(claude)
-      }
-      const system: Message.Info = {
-        id: Identifier.ascending("message"),
-        role: "system",
-        parts: [
-          {
-            type: "text",
-            text: PROMPT_ANTHROPIC,
-          },
-          {
-            type: "text",
-            text: [
-              `Here is some useful information about the environment you are running in:`,
-              `<env>`,
-              `Working directory: ${app.path.cwd}`,
-              `Is directory a git repo: ${app.git ? "yes" : "no"}`,
-              `Platform: ${process.platform}`,
-              `Today's date: ${new Date().toISOString()}`,
-              `</env>`,
-              `<project>`,
-              `${app.git ? await ListTool.execute({ path: app.path.cwd, ignore: [] }, { sessionID: input.sessionID, abort: abort.signal }).then((x) => x.output) : ""}`,
-              `</project>`,
-            ].join("\n"),
-          },
-        ],
-        metadata: {
-          sessionID: input.sessionID,
-          time: {
-            created: Date.now(),
-          },
-          tool: {},
-        },
-      }
-      const context = await SessionContext.find()
-      if (context) {
-        system.parts.push({
-          type: "text",
-          text: context,
-        })
-      }
-      msgs.push(system)
       generateText({
         maxOutputTokens: 20,
         messages: convertToModelMessages([
-          {
-            role: "system",
-            parts: [
-              {
-                type: "text",
-                text: PROMPT_ANTHROPIC_SPOOF.trim(),
-              },
-            ],
-          },
-          {
-            role: "system",
-            parts: [
-              {
-                type: "text",
-                text: PROMPT_TITLE,
-              },
-            ],
-          },
+          ...SystemPrompt.title(input.providerID).map(
+            (x): UIMessage => ({
+              id: Identifier.ascending("message"),
+              role: "system",
+              parts: [
+                {
+                  type: "text",
+                  text: x,
+                },
+              ],
+            }),
+          ),
           {
             role: "user",
             parts: input.parts,
@@ -317,7 +251,6 @@ export namespace Session {
           })
         })
         .catch(() => {})
-      await updateMessage(system)
     }
     const msg: Message.Info = {
       role: "user",
@@ -334,12 +267,21 @@ export namespace Session {
     await updateMessage(msg)
     msgs.push(msg)
 
+    const system = input.system ?? SystemPrompt.provider(input.providerID)
+    system.push(...(await SystemPrompt.environment(input.sessionID)))
+    system.push(...(await SystemPrompt.custom()))
+
     const next: Message.Info = {
       id: Identifier.ascending("message"),
       role: "assistant",
       parts: [],
       metadata: {
         assistant: {
+          system,
+          path: {
+            cwd: app.path.cwd,
+            root: app.path.root,
+          },
           cost: 0,
           tokens: {
             input: 0,
@@ -358,6 +300,7 @@ export namespace Session {
     }
     await updateMessage(next)
     const tools: Record<string, AITool> = {}
+
     for (const item of await Provider.tools(input.providerID)) {
       tools[item.id.replaceAll(".", "_")] = tool({
         id: item.id as any,
@@ -369,6 +312,7 @@ export namespace Session {
             const result = await item.execute(args, {
               sessionID: input.sessionID,
               abort: abort.signal,
+              messageID: next.id,
             })
             next.metadata!.tool![opts.toolCallId] = {
               ...result.metadata,
@@ -395,6 +339,7 @@ export namespace Session {
         },
       })
     }
+
     for (const [key, item] of Object.entries(await MCP.tools())) {
       const execute = item.execute
       if (!execute) continue
@@ -576,7 +521,21 @@ export namespace Session {
       toolCallStreaming: true,
       abortSignal: abort.signal,
       stopWhen: stepCountIs(1000),
-      messages: convertToModelMessages(msgs),
+      messages: convertToModelMessages([
+        ...system.map(
+          (x): UIMessage => ({
+            id: Identifier.ascending("message"),
+            role: "system",
+            parts: [
+              {
+                type: "text",
+                text: x,
+              },
+            ],
+          }),
+        ),
+        ...msgs,
+      ]),
       temperature: model.info.id === "codex-mini-latest" ? undefined : 0,
       tools: {
         ...(await MCP.tools()),
@@ -618,10 +577,11 @@ export namespace Session {
     const lastSummary = msgs.findLast(
       (msg) => msg.metadata.assistant?.summary === true,
     )?.id
-    const filtered = msgs.filter(
-      (msg) => msg.role !== "system" && (!lastSummary || msg.id >= lastSummary),
-    )
+    const filtered = msgs.filter((msg) => !lastSummary || msg.id >= lastSummary)
     const model = await Provider.getModel(input.providerID, input.modelID)
+    const app = App.info()
+    const system = SystemPrompt.summarize(input.providerID)
+
     const next: Message.Info = {
       id: Identifier.ascending("message"),
       role: "assistant",
@@ -630,6 +590,11 @@ export namespace Session {
         tool: {},
         sessionID: input.sessionID,
         assistant: {
+          system,
+          path: {
+            cwd: app.path.cwd,
+            root: app.path.root,
+          },
           summary: true,
           cost: 0,
           modelID: input.modelID,
@@ -650,15 +615,18 @@ export namespace Session {
       abortSignal: abort.signal,
       model: model.language,
       messages: convertToModelMessages([
-        {
-          role: "system",
-          parts: [
-            {
-              type: "text",
-              text: PROMPT_SUMMARIZE,
-            },
-          ],
-        },
+        ...system.map(
+          (x): UIMessage => ({
+            id: Identifier.ascending("message"),
+            role: "system",
+            parts: [
+              {
+                type: "text",
+                text: x,
+              },
+            ],
+          }),
+        ),
         ...filtered,
         {
           role: "user",
