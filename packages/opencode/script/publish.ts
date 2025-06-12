@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 
 import { $ } from "bun"
-import { Glob } from "bun"
 
 import pkg from "../package.json"
 
@@ -91,8 +90,30 @@ if (!snapshot) {
     await $`cd dist/${key}/bin && zip -r ../../${key}.zip *`
   }
 
-  const files = Object.keys(optionalDependencies)
-    .map((key) => `dist/${key}.zip`)
-    .join(" ")
-  await $`gh release create v${version} --title "Release v${version}" --generate-notes ./dist/*.zip`
+  const previous = await fetch(
+    "https://api.github.com/repos/sst/opencode/releases/latest",
+  )
+    .then((res) => res.json())
+    .then((data) => data.tag_name)
+
+  const commits = await fetch(
+    `https://api.github.com/repos/sst/opencode/compare/${previous}...HEAD`,
+  )
+    .then((res) => res.json())
+    .then((data) => data.commits || [])
+
+  const notes = commits
+    .map((commit: any) => `- ${commit.commit.message.split("\n")[0]}`)
+    .filter((x: string) => {
+      const lower = x.toLowerCase()
+      return (
+        !lower.includes("chore:") &&
+        !lower.includes("ci:") &&
+        !lower.includes("docs:")
+      )
+    })
+    .join("\n")
+
+  if (!dry)
+    await $`gh release create v${version} --title "v${version}" --notes ${notes} ./dist/*.zip`
 }
