@@ -193,12 +193,15 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
+
 	case tea.BackgroundColorMsg:
 		styles.Terminal = &styles.TerminalInfo{
 			BackgroundIsDark: msg.IsDark(),
 		}
+
 	case cursor.BlinkMsg:
 		return a.updateAllPages(msg)
+
 	case spinner.TickMsg:
 		return a.updateAllPages(msg)
 

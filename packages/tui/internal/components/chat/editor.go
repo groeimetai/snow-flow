@@ -56,12 +56,12 @@ type DeleteAttachmentKeyMaps struct {
 
 var editorMaps = EditorKeyMaps{
 	Send: key.NewBinding(
-		key.WithKeys("enter", "ctrl+s"),
+		key.WithKeys("enter"),
 		key.WithHelp("enter", "send message"),
 	),
 	OpenEditor: key.NewBinding(
-		key.WithKeys("ctrl+e"),
-		key.WithHelp("ctrl+e", "open editor"),
+		key.WithKeys("f12"),
+		key.WithHelp("f12", "open editor"),
 	),
 	Paste: key.NewBinding(
 		key.WithKeys("ctrl+v"),
@@ -118,6 +118,13 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.attachments = append(m.attachments, msg.Attachment)
 	case tea.KeyMsg:
+		switch msg.String() {
+		case "shift+enter":
+			value := m.textarea.Value()
+			m.textarea.SetValue(value + "\n")
+			return m, nil
+		}
+
 		if key.Matches(msg, DeleteKeyMaps.AttachmentDeleteMode) {
 			m.deleteMode = true
 			return m, nil
