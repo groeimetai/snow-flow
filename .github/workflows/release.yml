@@ -33,7 +33,7 @@ jobs:
           bun-version: 1.2.16
 
       - run: ./script/publish.ts
-        dir: packages/opencode
+        working-directory: ./packages/opencode
         env:
           GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN }}
           AUR_KEY: ${{ secrets.AUR_KEY }}
