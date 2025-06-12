@@ -132,9 +132,8 @@ func generateMarkdownStyleConfig(backgroundColor compat.AdaptiveColor) ansi.Styl
 			Color:       stringPtr(AdaptiveColorToString(t.MarkdownListEnumeration())),
 		},
 		Task: ansi.StyleTask{
-			StylePrimitive: ansi.StylePrimitive{},
-			Ticked:         "[✓] ",
-			Unticked:       "[ ] ",
+			Ticked:   "[✓] ",
+			Unticked: "[ ] ",
 		},
 		Link: ansi.StylePrimitive{
 			Color:     stringPtr(AdaptiveColorToString(t.MarkdownLink())),
