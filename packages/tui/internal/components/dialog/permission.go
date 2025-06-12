@@ -257,7 +257,7 @@ func (p *permissionDialogComponent) renderBashContent() string {
 	// 	renderedContent := p.GetOrSetMarkdown(p.permission.ID, func() (string, error) {
 	// 		r := styles.GetMarkdownRenderer(p.width - 10)
 	// 		s, err := r.Render(content)
-	// 		return styles.ForceReplaceBackgroundWithLipgloss(s, t.Background()), err
+	//    return s
 	// 	})
 	//
 	// 	finalContent := baseStyle.
@@ -317,7 +317,7 @@ func (p *permissionDialogComponent) renderFetchContent() string {
 	// 		renderedContent := p.GetOrSetMarkdown(p.permission.ID, func() (string, error) {
 	// 			r := styles.GetMarkdownRenderer(p.width - 10)
 	// 			s, err := r.Render(content)
-	// 			return styles.ForceReplaceBackgroundWithLipgloss(s, t.Background()), err
+	//      return s
 	// 		})
 	//
 	// 		finalContent := baseStyle.
@@ -339,7 +339,7 @@ func (p *permissionDialogComponent) renderDefaultContent() string {
 	// 	renderedContent := p.GetOrSetMarkdown(p.permission.ID, func() (string, error) {
 	// 		r := styles.GetMarkdownRenderer(p.width - 10)
 	// 		s, err := r.Render(content)
-	// 		return styles.ForceReplaceBackgroundWithLipgloss(s, t.Background()), err
+	//    return s
 	// 	})
 	//
 	// 	finalContent := baseStyle.

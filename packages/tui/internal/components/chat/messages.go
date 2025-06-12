@@ -122,6 +122,7 @@ const (
 	userTextBlock
 	assistantTextBlock
 	toolInvocationBlock
+	errorBlock
 )
 
 func (m *messagesComponent) renderView() {
@@ -129,6 +130,7 @@ func (m *messagesComponent) renderView() {
 		return
 	}
 
+	t := theme.CurrentTheme()
 	blocks := make([]string, 0)
 	previousBlockType := none
 	for _, message := range m.app.Messages {
@@ -211,9 +213,19 @@ func (m *messagesComponent) renderView() {
 				previousBlockType = toolInvocationBlock
 			}
 		}
+
+		error := ""
+		errorValue, _ := message.Metadata.Error.ValueByDiscriminator()
+		switch errorValue.(type) {
+		case client.UnknownError:
+			clientError := errorValue.(client.UnknownError)
+			error = clientError.Data.Message
+			error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+			blocks = append(blocks, error)
+			previousBlockType = errorBlock
+		}
 	}
 
-	t := theme.CurrentTheme()
 	centered := []string{}
 	for _, block := range blocks {
 		centered = append(centered, lipgloss.PlaceHorizontal(

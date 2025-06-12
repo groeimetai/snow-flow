@@ -258,16 +258,18 @@ func renderToolInvocation(
 	}
 
 	body := ""
+	error := ""
 	finished := result != nil && *result != ""
 	if finished {
 		body = *result
 	}
 
 	if metadata["error"] != nil && metadata["message"] != nil {
-		body = styles.BaseStyle().
-			Width(outerWidth).
+		body = ""
+		error = styles.BaseStyle().
 			Foreground(t.Error()).
 			Render(metadata["message"].(string))
+		error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 	}
 
 	elapsed := ""
@@ -364,9 +366,11 @@ func renderToolInvocation(
 
 	content := style.Render(title)
 	content = lipgloss.PlaceHorizontal(layout.Current.Viewport.Width, lipgloss.Center, content)
-	// content = styles.ForceReplaceBackgroundWithLipgloss(content, t.Background())
-	if showResult && body != "" {
+	if showResult && body != "" && error == "" {
 		content += "\n" + body
+	}
+	if showResult && error != "" {
+		content += "\n" + error
 	}
 	return content
 }

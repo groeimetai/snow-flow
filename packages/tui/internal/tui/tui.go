@@ -836,18 +836,7 @@ func (a appModel) View() string {
 	}
 
 	if a.showSessionDialog {
-		overlay := a.sessionDialog.View()
-		row := lipgloss.Height(appView) / 2
-		row -= lipgloss.Height(overlay) / 2
-		col := lipgloss.Width(appView) / 2
-		col -= lipgloss.Width(overlay) / 2
-		appView = layout.PlaceOverlay(
-			col,
-			row,
-			overlay,
-			appView,
-			true,
-		)
+		appView = a.sessionDialog.Render(appView)
 	}
 
 	if a.showModelDialog {
