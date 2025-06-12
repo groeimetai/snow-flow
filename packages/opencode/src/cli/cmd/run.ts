@@ -83,6 +83,7 @@ export const RunCommand = {
         }
 
         Bus.subscribe(Message.Event.PartUpdated, async (evt) => {
+          if (evt.properties.sessionID !== session.id) return
           const part = evt.properties.part
           const message = await Session.getMessage(
             evt.properties.sessionID,

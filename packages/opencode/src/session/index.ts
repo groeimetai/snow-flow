@@ -81,7 +81,9 @@ export namespace Session {
     const result: Info = {
       id: Identifier.descending("session"),
       parentID,
-      title: "Child Session - " + new Date().toISOString(),
+      title:
+        (parentID ? "Child session - " : "New Session - ") +
+        new Date().toISOString(),
       time: {
         created: Date.now(),
         updated: Date.now(),
@@ -221,7 +223,8 @@ export namespace Session {
     if (lastSummary) msgs = msgs.filter((msg) => msg.id >= lastSummary.id)
 
     const app = App.info()
-    if (msgs.length === 0) {
+    const session = await get(input.sessionID)
+    if (msgs.length === 0 && !session.parentID) {
       generateText({
         maxOutputTokens: 20,
         messages: convertToModelMessages([
