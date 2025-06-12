@@ -167,6 +167,8 @@ export function getDiagnostics(
 ): string[] {
   const result: string[] = []
 
+  if (diagnosticsByFile === undefined) return result
+
   for (const diags of Object.values(diagnosticsByFile)) {
     for (const d of diags) {
       // Only keep diagnostics explicitly marked as Error (severity === 1)
@@ -1395,6 +1397,7 @@ export default function Share(props: {
                                 part().toolInvocation.toolCallId
                                 ],
                             )
+                            const hasError = metadata()?.error
                             const args = part().toolInvocation.args
                             const filePath = args.filePath
                             const diagnostics = createMemo(() =>
@@ -1429,13 +1432,27 @@ export default function Share(props: {
                                       <span data-element-label>Edit</span>
                                       <b>{filePath}</b>
                                     </span>
-                                    <div data-part-tool-edit>
-                                      <DiffView
-                                        class={styles["diff-code-block"]}
-                                        diff={metadata()?.diff}
-                                        lang={getFileType(filePath)}
-                                      />
-                                    </div>
+                                    <Switch>
+                                      <Match when={hasError}>
+                                        <div data-part-tool-result>
+                                          <TextPart
+                                            expand
+                                            data-size="sm"
+                                            data-color="dimmed"
+                                            text={metadata()?.message}
+                                          />
+                                        </div>
+                                      </Match>
+                                      <Match when={false}>
+                                        <div data-part-tool-edit>
+                                          <DiffView
+                                            class={styles["diff-code-block"]}
+                                            diff={metadata()?.diff}
+                                            lang={getFileType(filePath)}
+                                          />
+                                        </div>
+                                      </Match>
+                                    </Switch>
                                     <Show when={diagnostics().length > 0}>
                                       <TextPart
                                         data-size="sm"
