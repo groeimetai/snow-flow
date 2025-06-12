@@ -35,12 +35,19 @@ const cli = yargs(hideBin(process.argv))
   })
   .usage("\n" + UI.logo())
   .command({
-    command: "$0",
+    command: "$0 <project>",
     describe: "Start OpenCode TUI",
+    builder: (yargs) =>
+      yargs.positional("project", {
+        type: "string",
+        describe: "path to start opencode in",
+      }),
     handler: async (args) => {
       while (true) {
+        const cwd = args.project ? path.resolve(args.project) : process.cwd()
+        process.chdir(cwd)
         const result = await App.provide(
-          { cwd: process.cwd(), version: VERSION },
+          { cwd, version: VERSION },
           async () => {
             const providers = await Provider.list()
             if (Object.keys(providers).length === 0) {
