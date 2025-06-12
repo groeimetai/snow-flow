@@ -32,7 +32,9 @@ jobs:
         with:
           bun-version: 1.2.16
 
-      - run: ./script/publish.ts
+      - run: |
+          bun install
+          ./script/publish.ts
         working-directory: ./packages/opencode
         env:
           GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN }}
