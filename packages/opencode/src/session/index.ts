@@ -465,22 +465,23 @@ export namespace Session {
             } else text.text += value.text
             break
 
-          case "tool-call":
-            next.parts.push({
-              type: "tool-invocation",
-              toolInvocation: {
-                state: "call",
-                ...value,
-                // hack until zod v4
-                args: value.args as any,
-              },
-            })
+          case "tool-call": {
+            const [match] = next.parts.flatMap((p) =>
+              p.type === "tool-invocation" &&
+              p.toolInvocation.toolCallId === value.toolCallId
+                ? [p]
+                : [],
+            )
+            if (!match) break
+            match.toolInvocation.args = value.args
+            match.toolInvocation.state = "call"
             Bus.publish(Message.Event.PartUpdated, {
-              part: next.parts[next.parts.length - 1],
+              part: match,
               messageID: next.id,
               sessionID: next.metadata.sessionID,
             })
             break
+          }
 
           case "tool-call-streaming-start":
             next.parts.push({
@@ -572,7 +573,7 @@ export namespace Session {
         await updateMessage(next)
         return step
       },
-      toolCallStreaming: false,
+      toolCallStreaming: true,
       abortSignal: abort.signal,
       stopWhen: stepCountIs(1000),
       messages: convertToModelMessages(msgs),

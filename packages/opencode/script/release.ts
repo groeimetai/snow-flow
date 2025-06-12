@@ -51,12 +51,16 @@ for (const [os, arch] of targets) {
 
 await $`mkdir -p ./dist/${pkg.name}`
 await $`cp -r ./bin ./dist/${pkg.name}/bin`
+await $`cp ./script/postinstall.js ./dist/${pkg.name}/postinstall.js`
 await Bun.file(`./dist/${pkg.name}/package.json`).write(
   JSON.stringify(
     {
       name: pkg.name + "-ai",
       bin: {
         [pkg.name]: `./bin/${pkg.name}`,
+      },
+      scripts: {
+        postinstall: "node ./postinstall.js",
       },
       version,
       optionalDependencies,
