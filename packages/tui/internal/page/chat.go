@@ -139,7 +139,7 @@ func (p *chatPage) View() string {
 
 		layoutView = layout.PlaceOverlay(
 			editorX,
-			editorY-lipgloss.Height(overlay)+1,
+			editorY-lipgloss.Height(overlay)+2,
 			overlay,
 			layoutView,
 		)
@@ -169,7 +169,7 @@ func NewChatPage(app *app.App) layout.ModelWithView {
 			layout.WithDirection(layout.FlexDirectionVertical),
 			layout.WithPaneSizes(
 				layout.FlexPaneSizeGrow,
-				layout.FlexPaneSizeFixed(5),
+				layout.FlexPaneSizeFixed(6),
 			),
 		),
 	}
