@@ -3,6 +3,7 @@
 
 pkgname='opencode-bin'
 pkgver={{VERSION}}
+options=('!debug' '!strip')
 pkgrel=1
 pkgdesc='The AI coding agent built for the terminal.'
 url='https://github.com/sst/opencode'
