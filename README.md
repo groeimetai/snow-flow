@@ -12,6 +12,8 @@ Note: version 0.1.x is a full rewrite and we do not have proper documentation fo
 
 ## Installation
 
+If you have a previous version of opencode < 0.1.x installed you might have to remove it first.
+
 ### Curl
 
 ```
