@@ -18,11 +18,14 @@ type Container interface {
 	Blur()
 	MaxWidth() int
 	Alignment() lipgloss.Position
+	GetPosition() (x, y int)
 }
 
 type container struct {
 	width  int
 	height int
+	x      int
+	y      int
 
 	content ModelWithView
 
@@ -140,7 +143,7 @@ func (c *container) SetSize(width, height int) tea.Cmd {
 }
 
 func (c *container) GetSize() (int, int) {
-	return c.width, c.height
+	return min(c.width, c.maxWidth), c.height
 }
 
 func (c *container) MaxWidth() int {
@@ -167,6 +170,11 @@ func (c *container) Blur() {
 	if blurable, ok := c.content.(interface{ Blur() }); ok {
 		blurable.Blur()
 	}
+}
+
+// GetPosition returns the x, y coordinates of the container
+func (c *container) GetPosition() (x, y int) {
+	return c.x, c.y
 }
 
 type ContainerOption func(*container)

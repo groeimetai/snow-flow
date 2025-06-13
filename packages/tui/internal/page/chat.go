@@ -130,17 +130,16 @@ func (p *chatPage) GetSize() (int, int) {
 func (p *chatPage) View() string {
 	layoutView := p.layout.View()
 
-	// TODO: Fix this with our new layout
 	if p.showCompletionDialog {
-		_, layoutHeight := p.layout.GetSize()
-		editorWidth, editorHeight := p.editor.GetSize()
+		editorWidth, _ := p.editor.GetSize()
+		editorX, editorY := p.editor.GetPosition()
 
 		p.completionDialog.SetWidth(editorWidth)
 		overlay := p.completionDialog.View()
 
 		layoutView = layout.PlaceOverlay(
-			0,
-			layoutHeight-editorHeight-lipgloss.Height(overlay),
+			editorX,
+			editorY-lipgloss.Height(overlay)+1,
 			overlay,
 			layoutView,
 		)

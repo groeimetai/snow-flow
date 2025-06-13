@@ -203,26 +203,27 @@ func (c *completionDialogComponent) View() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
-	maxWidth := 40
+	// maxWidth := 40
+	//
+	// completions := c.list.GetItems()
 
-	completions := c.list.GetItems()
+	// for _, cmd := range completions {
+	// 	title := cmd.DisplayValue()
+	// 	if len(title) > maxWidth-4 {
+	// 		maxWidth = len(title) + 4
+	// 	}
+	// }
 
-	for _, cmd := range completions {
-		title := cmd.DisplayValue()
-		if len(title) > maxWidth-4 {
-			maxWidth = len(title) + 4
-		}
-	}
-
-	c.list.SetMaxWidth(maxWidth)
+	// c.list.SetMaxWidth(maxWidth)
 
 	return baseStyle.Padding(0, 0).
-		Border(lipgloss.NormalBorder()).
+		Background(t.BackgroundSubtle()).
+		Border(lipgloss.ThickBorder()).
+		BorderTop(false).
 		BorderBottom(false).
-		BorderRight(false).
-		BorderLeft(false).
-		BorderBackground(t.Background()).
-		BorderForeground(t.TextMuted()).
+		BorderRight(true).
+		BorderLeft(true).
+		BorderForeground(t.BackgroundSubtle()).
 		Width(c.width).
 		Render(c.list.View())
 }
@@ -246,7 +247,7 @@ func NewCompletionDialogComponent(completionProvider CompletionProvider) Complet
 	li := utilComponents.NewListComponent(
 		items,
 		7,
-		"No file matches found",
+		"No matching files",
 		false,
 	)
 

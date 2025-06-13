@@ -159,11 +159,51 @@ func (f *flexLayout) SetSize(width, height int) tea.Cmd {
 	f.height = height
 
 	var cmds []tea.Cmd
+	currentX, currentY := 0, 0
+	
 	for i, pane := range f.panes {
 		if pane != nil {
 			paneWidth, paneHeight := f.calculatePaneSize(i)
+			
+			// Calculate actual position based on alignment
+			actualX, actualY := currentX, currentY
+			
+			if f.direction == FlexDirectionHorizontal {
+				// In horizontal layout, vertical alignment affects Y position
+				// (lipgloss.Center is used for vertical alignment in JoinHorizontal)
+				actualY = (f.height - paneHeight) / 2
+			} else {
+				// In vertical layout, horizontal alignment affects X position
+				contentWidth := paneWidth
+				if pane.MaxWidth() > 0 && contentWidth > pane.MaxWidth() {
+					contentWidth = pane.MaxWidth()
+				}
+				
+				switch pane.Alignment() {
+				case lipgloss.Center:
+					actualX = (f.width - contentWidth) / 2
+				case lipgloss.Right:
+					actualX = f.width - contentWidth
+				case lipgloss.Left:
+					actualX = 0
+				}
+			}
+			
+			// Set position if the pane is a *container
+			if c, ok := pane.(*container); ok {
+				c.x = actualX
+				c.y = actualY
+			}
+			
 			cmd := pane.SetSize(paneWidth, paneHeight)
 			cmds = append(cmds, cmd)
+			
+			// Update position for next pane
+			if f.direction == FlexDirectionHorizontal {
+				currentX += paneWidth
+			} else {
+				currentY += paneHeight
+			}
 		}
 	}
 	return tea.Batch(cmds...)
