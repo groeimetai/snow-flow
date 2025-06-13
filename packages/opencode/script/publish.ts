@@ -226,7 +226,7 @@ if (!snapshot) {
   ].join("\n")
 
   await $`rm -rf ./dist/homebrew-tap`
-  await $`git clone https://${process.env["SST_GITHUB_TOKEN"]}@github.com/sst/homebrew-tap.git ./dist/homebrew-tap`
+  await $`git clone https://${process.env["GITHUB_TOKEN"]}@github.com/sst/homebrew-tap.git ./dist/homebrew-tap`
   await Bun.file("./dist/homebrew-tap/opencode.rb").write(homebrewFormula)
   await $`cd ./dist/homebrew-tap && git add opencode.rb`
   await $`cd ./dist/homebrew-tap && git commit -m "Update to v${version}"`
