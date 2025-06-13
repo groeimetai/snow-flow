@@ -271,6 +271,10 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 
+		s, cmd := a.status.Update(msg)
+		cmds = append(cmds, cmd)
+		a.status = s.(core.StatusComponent)
+
 		t := theme.CurrentTheme()
 		cmds = append(cmds, tea.SetBackgroundColor(t.Background()))
 		return a, tea.Batch(cmds...)

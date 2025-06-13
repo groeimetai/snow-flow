@@ -112,8 +112,14 @@ func (m *modelDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case key.Matches(msg, modelKeys.Enter):
 			models := m.models()
-			cmd := util.CmdHandler(state.ModelSelectedMsg{Provider: m.provider, Model: models[m.selectedIdx]})
-			return m, tea.Batch(cmd, util.CmdHandler(modal.CloseModalMsg{}))
+			return m, tea.Sequence(
+				util.CmdHandler(modal.CloseModalMsg{}),
+				util.CmdHandler(
+					state.ModelSelectedMsg{
+						Provider: m.provider,
+						Model:    models[m.selectedIdx],
+					}),
+			)
 		case key.Matches(msg, modelKeys.Escape):
 			return m, util.CmdHandler(modal.CloseModalMsg{})
 		}

@@ -245,7 +245,7 @@ func (m *messagesComponent) header() string {
 	base := styles.BaseStyle().Render
 	muted := styles.Muted().Render
 	headerLines := []string{}
-	headerLines = append(headerLines, toMarkdown("# "+m.app.Session.Title, width, t.Background()))
+	headerLines = append(headerLines, toMarkdown("# "+m.app.Session.Title, width-4, t.BackgroundElement()))
 	if m.app.Session.Share != nil && m.app.Session.Share.Url != "" {
 		headerLines = append(headerLines, muted(m.app.Session.Share.Url))
 	} else {
@@ -255,19 +255,24 @@ func (m *messagesComponent) header() string {
 
 	header = styles.BaseStyle().
 		Width(width).
-		PaddingTop(1).
-		BorderBottom(true).
-		BorderForeground(t.BorderSubtle()).
-		BorderStyle(lipgloss.NormalBorder()).
-		Background(t.Background()).
+		PaddingLeft(2).
+		Background(t.BackgroundElement()).
+		BorderLeft(true).
+		BorderRight(true).
+		BorderBackground(t.Background()).
+		BorderForeground(t.BackgroundSubtle()).
+		BorderStyle(lipgloss.ThickBorder()).
 		Render(header)
 
-	return header
+	return "\n" + header + "\n"
 }
 
 func (m *messagesComponent) View() string {
-	if len(m.app.Messages) == 0 || m.rendering {
+	if len(m.app.Messages) == 0 {
 		return m.home()
+	}
+	if m.rendering {
+		return m.viewport.View()
 	}
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -301,8 +306,8 @@ func (m *messagesComponent) home() string {
 		styles.Muted().Render(open),
 		styles.BaseStyle().Render(code),
 	)
-	cwd := app.Info.Path.Cwd
-	config := app.Info.Path.Config
+	// cwd := app.Info.Path.Cwd
+	// config := app.Info.Path.Config
 
 	commands := [][]string{
 		{"/help", "show help"},
@@ -329,9 +334,9 @@ func (m *messagesComponent) home() string {
 	lines = append(lines, "")
 	lines = append(lines, logoAndVersion)
 	lines = append(lines, "")
-	lines = append(lines, base("cwd ")+muted(cwd))
-	lines = append(lines, base("config ")+muted(config))
-	lines = append(lines, "")
+	// lines = append(lines, base("cwd ")+muted(cwd))
+	// lines = append(lines, base("config ")+muted(config))
+	// lines = append(lines, "")
 	lines = append(lines, commandLines...)
 	lines = append(lines, "")
 	if m.rendering {

@@ -273,7 +273,7 @@ func (m *editorComponent) View() string {
 		Width(m.width).
 		Background(t.BackgroundElement()).
 		Border(lipgloss.ThickBorder(), false, true).
-		BorderForeground(t.BorderActive()).
+		BorderForeground(t.BackgroundSubtle()).
 		BorderBackground(t.Background()).
 		Render(textarea)
 

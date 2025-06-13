@@ -74,9 +74,9 @@ func (t *themeDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					status.Error(err.Error())
 					return t, nil
 				}
-				return t, tea.Batch(
-					util.CmdHandler(ThemeChangedMsg{ThemeName: selectedTheme}),
+				return t, tea.Sequence(
 					util.CmdHandler(modal.CloseModalMsg{}),
+					util.CmdHandler(ThemeChangedMsg{ThemeName: selectedTheme}),
 				)
 			}
 		}
@@ -125,4 +125,3 @@ func NewThemeDialog() ThemeDialog {
 		modal: modal.New(modal.WithTitle("Select Theme"), modal.WithMaxWidth(40)),
 	}
 }
-

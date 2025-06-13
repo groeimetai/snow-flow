@@ -73,15 +73,11 @@ func (q *quitDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !q.selectedNo {
 				return q, tea.Quit
 			}
-			return q, tea.Batch(
-				util.CmdHandler(modal.CloseModalMsg{}),
-			)
+			return q, util.CmdHandler(modal.CloseModalMsg{})
 		case key.Matches(msg, helpKeys.Yes):
 			return q, tea.Quit
 		case key.Matches(msg, helpKeys.No):
-			return q, tea.Batch(
-				util.CmdHandler(modal.CloseModalMsg{}),
-			)
+			return q, util.CmdHandler(modal.CloseModalMsg{})
 		}
 	}
 	return q, nil

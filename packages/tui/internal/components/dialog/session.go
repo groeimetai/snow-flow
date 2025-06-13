@@ -67,9 +67,9 @@ func (s *sessionDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if item, idx := s.list.GetSelectedItem(); idx >= 0 {
 				selectedSession := item.session
 				s.selectedSessionID = selectedSession.Id
-				return s, tea.Batch(
-					util.CmdHandler(state.SessionSelectedMsg(&selectedSession)),
+				return s, tea.Sequence(
 					util.CmdHandler(modal.CloseModalMsg{}),
+					util.CmdHandler(state.SessionSelectedMsg(&selectedSession)),
 				)
 			}
 		}

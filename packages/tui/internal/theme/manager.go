@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strings"
 	"sync"
+
+	"github.com/alecthomas/chroma/v2/styles"
 	// "github.com/alecthomas/chroma/v2/styles"
 )
 
@@ -45,22 +47,7 @@ func RegisterTheme(name string, theme Theme) {
 func SetTheme(name string) error {
 	globalManager.mu.Lock()
 	defer globalManager.mu.Unlock()
-	// delete(styles.Registry, "charm")
-
-	// Handle custom theme
-	// if name == "custom" {
-	// 	cfg := config.Get()
-	// 	if cfg == nil || cfg.TUI.CustomTheme == nil || len(cfg.TUI.CustomTheme) == 0 {
-	// 		return fmt.Errorf("custom theme selected but no custom theme colors defined in config")
-	// 	}
-	//
-	// 	customTheme, err := LoadCustomTheme(cfg.TUI.CustomTheme)
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to load custom theme: %w", err)
-	// 	}
-	//
-	// 	// Register the custom theme
-	// 	globalManager.themes["custom"] = customTheme
+	delete(styles.Registry, "charm")
 
 	if _, exists := globalManager.themes[name]; !exists {
 		return fmt.Errorf("theme '%s' not found", name)
