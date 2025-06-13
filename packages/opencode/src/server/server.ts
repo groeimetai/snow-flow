@@ -13,6 +13,7 @@ import { Global } from "../global"
 import { mapValues } from "remeda"
 import { NamedError } from "../util/error"
 import { Fzf } from "../external/fzf"
+import { ModelsDev } from "../provider/models"
 
 const ERRORS = {
   400: {
@@ -406,7 +407,7 @@ export namespace Server {
                 "application/json": {
                   schema: resolver(
                     z.object({
-                      providers: Provider.Info.array(),
+                      providers: ModelsDev.Provider.array(),
                       default: z.record(z.string(), z.string()),
                     }),
                   ),

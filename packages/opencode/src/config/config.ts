@@ -2,6 +2,7 @@ import { Log } from "../util/log"
 import { z } from "zod"
 import { App } from "../app/app"
 import { Filesystem } from "../util/filesystem"
+import { ModelsDev } from "../provider/models"
 
 export namespace Config {
   const log = Log.create({ service: "config" })
@@ -49,7 +50,14 @@ export namespace Config {
 
   export const Info = z
     .object({
-      provider: z.record(z.string(), z.record(z.string(), z.any())).optional(),
+      provider: z
+        .record(
+          ModelsDev.Provider.partial().extend({
+            models: z.record(ModelsDev.Model.partial()),
+            options: z.record(z.any()).optional(),
+          }),
+        )
+        .optional(),
       tool: z
         .object({
           provider: z.record(z.string(), z.string().array()).optional(),
