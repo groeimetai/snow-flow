@@ -5,6 +5,7 @@ import * as prompts from "@clack/prompts"
 import open from "open"
 import { UI } from "../ui"
 import { ModelsDev } from "../../provider/models"
+import { map, pipe, sort, sortBy, values } from "remeda"
 
 export const AuthCommand = cmd({
   command: "auth",
@@ -43,25 +44,52 @@ export const AuthLoginCommand = cmd({
   async handler() {
     UI.empty()
     prompts.intro("Add credential")
-    const provider = await prompts.select({
+    const providers = await ModelsDev.get()
+    const priority: Record<string, number> = {
+      anthropic: 0,
+      openai: 1,
+      google: 2,
+    }
+    let provider = await prompts.select({
       message: "Select provider",
-      maxItems: 2,
+      maxItems: 8,
       options: [
+        ...pipe(
+          providers,
+          values(),
+          sortBy(
+            (x) => priority[x.id] ?? 99,
+            (x) => x.name ?? x.id,
+          ),
+          map((x) => ({
+            label: x.name,
+            value: x.id,
+            hint: priority[x.id] === 0 ? "recommended" : undefined,
+          })),
+        ),
         {
-          label: "Anthropic",
-          value: "anthropic",
-        },
-        {
-          label: "OpenAI",
-          value: "openai",
-        },
-        {
-          label: "Google",
-          value: "google",
+          value: "other",
+          label: "Other",
         },
       ],
     })
+
     if (prompts.isCancel(provider)) throw new UI.CancelledError()
+
+    if (provider === "other") {
+      provider = await prompts.text({
+        message: "Enter provider - must match @ai-sdk/<provider>",
+      })
+      if (prompts.isCancel(provider)) throw new UI.CancelledError()
+    }
+
+    if (provider === "amazon-bedrock") {
+      prompts.log.info(
+        "Amazon bedrock can be configured with standard AWS environment variables like AWS_PROFILE or AWS_ACCESS_KEY_ID",
+      )
+      prompts.outro("Done")
+      return
+    }
 
     if (provider === "anthropic") {
       const method = await prompts.select({
