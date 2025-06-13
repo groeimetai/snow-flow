@@ -92,12 +92,6 @@ export namespace Session {
     log.info("created", result)
     state().sessions.set(result.id, result)
     await Storage.writeJSON("session/info/" + result.id, result)
-    if (!result.parentID)
-      share(result.id).then((share) => {
-        update(result.id, (draft) => {
-          draft.share = share
-        })
-      })
     Bus.publish(Event.Updated, {
       info: result,
     })
