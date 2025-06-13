@@ -40,3 +40,7 @@ brew install sst/tap/opencode
 ```
 paru -S opencode-bin
 ```
+
+## Usage
+
+We are working on proper keybinds - right now it's the various function keys press F1 to see them
