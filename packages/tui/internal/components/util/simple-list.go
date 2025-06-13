@@ -127,7 +127,6 @@ func (c *simpleListComponent[T]) View() string {
 
 	if len(items) <= 0 {
 		return baseStyle.
-			Background(t.Background()).
 			Padding(0, 1).
 			Width(maxWidth).
 			Render(c.fallbackMsg)
