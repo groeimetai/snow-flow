@@ -422,7 +422,7 @@ export namespace Server {
           )
           return c.json({
             providers: Object.values(providers),
-            defaults: mapValues(
+            default: mapValues(
               providers,
               (item) => Provider.sort(Object.values(item.models))[0].id,
             ),

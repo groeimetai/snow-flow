@@ -86,7 +86,7 @@ func New(ctx context.Context, version string, httpClient *client.ClientWithRespo
 		return nil, fmt.Errorf("no providers found")
 	}
 
-	appConfigPath := filepath.Join(Info.Path.Config, "tui.toml")
+	appConfigPath := filepath.Join(Info.Path.Config, "config")
 	appConfig, err := config.LoadConfig(appConfigPath)
 	if err != nil {
 		slog.Info("No TUI config found, using default values", "error", err)

@@ -10,9 +10,9 @@ import (
 )
 
 type Config struct {
-	Theme    string `toml:"Theme"`
-	Provider string `toml:"Provider"`
-	Model    string `toml:"Model"`
+	Theme    string `toml:"theme"`
+	Provider string `toml:"provider"`
+	Model    string `toml:"model"`
 }
 
 // NewConfig creates a new Config instance with default values.

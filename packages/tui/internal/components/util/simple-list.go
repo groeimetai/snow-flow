@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
-	"github.com/sst/opencode/internal/theme"
 )
 
 type SimpleListItem interface {
@@ -117,7 +116,6 @@ func (c *simpleListComponent[T]) SetSelectedIndex(idx int) {
 }
 
 func (c *simpleListComponent[T]) View() string {
-	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
 	items := c.items
