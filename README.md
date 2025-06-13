@@ -1,10 +1,10 @@
-[![OpenCode Terminal UI](screenshot.png)](https://github.com/sst/opencode)
-
 ```
 █▀▀█ █▀▀█ █▀▀ █▀▀▄ █▀▀ █▀▀█ █▀▀▄ █▀▀
 █░░█ █░░█ █▀▀ █░░█ █░░ █░░█ █░░█ █▀▀
 ▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ ▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀
 ```
+
+[![OpenCode Terminal UI](screenshot.png)](https://github.com/sst/opencode)
 
 AI coding agent, built for the terminal.
 
