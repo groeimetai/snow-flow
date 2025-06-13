@@ -4,6 +4,10 @@
 ▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ ▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀
 ```
 
+AI coding agent, built for the terminal.
+
+Note: version 0.1.x is a full rewrite and we do not have proper documentation for it yet. Should have this out week of June 17th 2025
+
 ## Installation
 
 ### Curl
