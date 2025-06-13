@@ -112,12 +112,6 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		modifiedValue := strings.Replace(existingValue, msg.SearchString, msg.CompletionValue, 1)
 		m.textarea.SetValue(modifiedValue)
 		return m, nil
-	case dialog.AttachmentAddedMsg:
-		if len(m.attachments) >= maxAttachments {
-			status.Error(fmt.Sprintf("cannot add more than %d images", maxAttachments))
-			return m, cmd
-		}
-		m.attachments = append(m.attachments, msg.Attachment)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
@@ -190,7 +184,9 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Handle history navigation with up/down arrow keys
 		// Only handle history navigation if the filepicker is not open and completion dialog is not open
-		if m.textarea.Focused() && key.Matches(msg, editorMaps.HistoryUp) && !m.app.IsFilepickerOpen() && !m.app.IsCompletionDialogOpen() {
+		if m.textarea.Focused() && key.Matches(msg, editorMaps.HistoryUp) {
+			// TODO: fix this
+			//  && !m.app.IsFilepickerOpen() && !m.app.IsCompletionDialogOpen() {
 			// Get the current line number
 			currentLine := m.textarea.Line()
 
@@ -210,7 +206,9 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		if m.textarea.Focused() && key.Matches(msg, editorMaps.HistoryDown) && !m.app.IsFilepickerOpen() && !m.app.IsCompletionDialogOpen() {
+		if m.textarea.Focused() && key.Matches(msg, editorMaps.HistoryDown) {
+			// TODO: fix this
+			// && !m.app.IsFilepickerOpen() && !m.app.IsCompletionDialogOpen() {
 			// Get the current line number and total lines
 			currentLine := m.textarea.Line()
 			value := m.textarea.Value()
@@ -317,13 +315,6 @@ func (m *editorComponent) GetSize() (int, int) {
 	return m.width, m.height
 }
 
-func (m *editorComponent) BindingKeys() []key.Binding {
-	bindings := []key.Binding{}
-	bindings = append(bindings, layout.KeyMapToSlice(editorMaps)...)
-	bindings = append(bindings, layout.KeyMapToSlice(DeleteKeyMaps)...)
-	return bindings
-}
-
 func (m *editorComponent) openEditor(value string) tea.Cmd {
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
@@ -387,7 +378,9 @@ func (m *editorComponent) send() tea.Cmd {
 	// Check for slash command
 	if strings.HasPrefix(value, "/") {
 		commandName := strings.TrimPrefix(value, "/")
-		return util.CmdHandler(commands.ExecuteCommandMsg{Name: commandName})
+		if _, ok := m.app.Commands[commandName]; ok {
+			return util.CmdHandler(commands.ExecuteCommandMsg{Name: commandName})
+		}
 	}
 
 	return tea.Batch(

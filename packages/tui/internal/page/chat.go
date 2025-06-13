@@ -61,13 +61,13 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := p.layout.SetSize(msg.Width, msg.Height)
 		cmds = append(cmds, cmd)
 	case chat.SendMsg:
+		p.showCompletionDialog = false
 		cmd := p.sendMessage(msg.Text, msg.Attachments)
 		if cmd != nil {
 			return p, cmd
 		}
 	case dialog.CompletionDialogCloseMsg:
 		p.showCompletionDialog = false
-		p.app.SetCompletionDialogOpen(false)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
@@ -80,7 +80,6 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, keyMap.ShowCompletionDialog):
 			p.showCompletionDialog = true
-			p.app.SetCompletionDialogOpen(true)
 			// Continue sending keys to layout->chat
 		case key.Matches(msg, keyMap.Cancel):
 			if p.app.Session.Id != "" {
@@ -93,6 +92,7 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, util.CmdHandler(chat.ToggleToolMessagesMsg{})
 		}
 	}
+
 	if p.showCompletionDialog {
 		context, contextCmd := p.completionDialog.Update(msg)
 		p.completionDialog = context.(dialog.CompletionDialog)
@@ -100,7 +100,7 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Doesn't forward event if enter key is pressed
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
-			if keyMsg.String() == "enter" {
+			if keyMsg.String() == "enter" && !p.completionDialog.IsEmpty() {
 				return p, tea.Batch(cmds...)
 			}
 		}
@@ -147,13 +147,6 @@ func (p *chatPage) View() string {
 	}
 
 	return layoutView
-}
-
-func (p *chatPage) BindingKeys() []key.Binding {
-	bindings := layout.KeyMapToSlice(keyMap)
-	bindings = append(bindings, p.messages.BindingKeys()...)
-	bindings = append(bindings, p.editor.BindingKeys()...)
-	return bindings
 }
 
 func NewChatPage(app *app.App) layout.ModelWithView {

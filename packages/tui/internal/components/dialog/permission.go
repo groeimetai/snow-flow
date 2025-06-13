@@ -31,7 +31,6 @@ type PermissionResponseMsg struct {
 // PermissionDialogComponent interface for permission dialog component
 type PermissionDialogComponent interface {
 	layout.ModelWithView
-	layout.Bindings
 	// SetPermissions(permission permission.PermissionRequest) tea.Cmd
 }
 
@@ -422,10 +421,6 @@ func (p *permissionDialogComponent) render() string {
 
 func (p *permissionDialogComponent) View() string {
 	return p.render()
-}
-
-func (p *permissionDialogComponent) BindingKeys() []key.Binding {
-	return layout.KeyMapToSlice(permissionsKeys)
 }
 
 func (p *permissionDialogComponent) SetSize() tea.Cmd {

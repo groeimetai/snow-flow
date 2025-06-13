@@ -23,8 +23,6 @@ import (
 	"github.com/sst/opencode/pkg/client"
 )
 
-
-
 type appModel struct {
 	width, height int
 	currentPage   page.PageID
@@ -34,7 +32,6 @@ type appModel struct {
 	status        core.StatusComponent
 	app           *app.App
 	modal         layout.Modal
-	commands      *commands.Registry
 }
 
 func (a appModel) Init() tea.Cmd {
@@ -99,7 +96,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
-			for _, cmdDef := range a.commands.Commands {
+			for _, cmdDef := range a.app.Commands {
 				if key.Matches(msg, cmdDef.KeyBinding) {
 					isModalTrigger = true
 					break
@@ -136,7 +133,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.modal = themeDialog
 		case "help":
 			var helpBindings []key.Binding
-			for _, cmd := range a.commands.Commands {
+			for _, cmd := range a.app.Commands {
 				// Create a new binding for help display
 				helpBindings = append(helpBindings, key.NewBinding(
 					key.WithKeys(cmd.KeyBinding.Keys()...),
@@ -268,6 +265,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
+		// give the editor a chance to clear input
 		case "ctrl+c":
 			updated, cmd := a.pages[a.currentPage].Update(msg)
 			a.pages[a.currentPage] = updated.(layout.ModelWithView)
@@ -278,7 +276,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// First, check for modal triggers from the command registry
 		if a.modal == nil {
-			for _, cmdDef := range a.commands.Commands {
+			for _, cmdDef := range a.app.Commands {
 				if key.Matches(msg, cmdDef.KeyBinding) {
 					// If a key matches, send an ExecuteCommandMsg to self.
 					// This unifies keybinding and slash command handling.
@@ -331,55 +329,6 @@ func (a appModel) View() string {
 	return appView
 }
 
-func newCommandRegistry() *commands.Registry {
-	return &commands.Registry{
-		Commands: map[string]commands.Command{
-			"help": {
-				Name:        "help",
-				Description: "show help",
-				KeyBinding: key.NewBinding(
-					key.WithKeys("f1", "super+/", "super+h"),
-				),
-			},
-			"new": {
-				Name:        "new",
-				Description: "new session",
-				KeyBinding: key.NewBinding(
-					key.WithKeys("f2", "super+n"),
-				),
-			},
-			"sessions": {
-				Name:        "sessions",
-				Description: "switch session",
-				KeyBinding: key.NewBinding(
-					key.WithKeys("f3", "super+s"),
-				),
-			},
-			"model": {
-				Name:        "model",
-				Description: "switch model",
-				KeyBinding: key.NewBinding(
-					key.WithKeys("f4", "super+m"),
-				),
-			},
-			"theme": {
-				Name:        "theme",
-				Description: "switch theme",
-				KeyBinding: key.NewBinding(
-					key.WithKeys("f5", "super+t"),
-				),
-			},
-			"quit": {
-				Name:        "quit",
-				Description: "quit",
-				KeyBinding: key.NewBinding(
-					key.WithKeys("f10", "ctrl+c", "super+q"),
-				),
-			},
-		},
-	}
-}
-
 func NewModel(app *app.App) tea.Model {
 	startPage := page.ChatPage
 	model := &appModel{
@@ -387,7 +336,6 @@ func NewModel(app *app.App) tea.Model {
 		loadedPages: make(map[page.PageID]bool),
 		status:      core.NewStatusCmp(app),
 		app:         app,
-		commands:    newCommandRegistry(),
 		pages: map[page.PageID]layout.ModelWithView{
 			page.ChatPage: page.NewChatPage(app),
 		},

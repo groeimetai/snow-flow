@@ -50,26 +50,6 @@ func (h *helpDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return h, nil
 }
 
-// func removeDuplicateBindings(bindings []key.Binding) []key.Binding {
-// 	seen := make(map[string]struct{})
-// 	result := make([]key.Binding, 0, len(bindings))
-//
-// 	// Process bindings in reverse order
-// 	for i := len(bindings) - 1; i >= 0; i-- {
-// 		b := bindings[i]
-// 		k := strings.Join(b.Keys(), " ")
-// 		if _, ok := seen[k]; ok {
-// 			// duplicate, skip
-// 			continue
-// 		}
-// 		seen[k] = struct{}{}
-// 		// Add to the beginning of result to maintain original order
-// 		result = append([]key.Binding{b}, result...)
-// 	}
-//
-// 	return result
-// }
-
 func (h *helpDialog) View() string {
 	t := theme.CurrentTheme()
 	keyStyle := lipgloss.NewStyle().

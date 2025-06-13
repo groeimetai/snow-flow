@@ -1,7 +1,6 @@
 package layout
 
 import (
-	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 )
@@ -27,7 +26,6 @@ func FlexPaneSizeFixed(size int) FlexPaneSize {
 type FlexLayout interface {
 	ModelWithView
 	Sizeable
-	Bindings
 	SetPanes(panes []Container) tea.Cmd
 	SetPaneSizes(sizes []FlexPaneSize) tea.Cmd
 	SetDirection(direction FlexDirection) tea.Cmd
@@ -197,18 +195,6 @@ func (f *flexLayout) SetDirection(direction FlexDirection) tea.Cmd {
 		return f.SetSize(f.width, f.height)
 	}
 	return nil
-}
-
-func (f *flexLayout) BindingKeys() []key.Binding {
-	keys := []key.Binding{}
-	for _, pane := range f.panes {
-		if pane != nil {
-			if b, ok := pane.(Bindings); ok {
-				keys = append(keys, b.BindingKeys()...)
-			}
-		}
-	}
-	return keys
 }
 
 func NewFlexLayout(options ...FlexLayoutOption) FlexLayout {

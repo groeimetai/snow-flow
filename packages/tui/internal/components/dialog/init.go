@@ -173,11 +173,6 @@ func (m *InitDialogCmp) SetSize(width, height int) {
 	m.height = height
 }
 
-// Bindings implements layout.Bindings.
-func (m InitDialogCmp) Bindings() []key.Binding {
-	return m.keys.ShortHelp()
-}
-
 // CloseInitDialogMsg is a message that is sent when the init dialog is closed.
 type CloseInitDialogMsg struct {
 	Initialize bool

@@ -15,11 +15,57 @@ type Command struct {
 }
 
 // Registry holds all the available commands.
-type Registry struct {
-	Commands map[string]Command
-}
+type Registry map[string]Command
 
 // ExecuteCommandMsg is a message sent when a command should be executed.
 type ExecuteCommandMsg struct {
 	Name string
 }
+
+func NewCommandRegistry() Registry {
+	return Registry{
+		"help": {
+			Name:        "help",
+			Description: "show help",
+			KeyBinding: key.NewBinding(
+				key.WithKeys("f1", "super+/", "super+h"),
+			),
+		},
+		"new": {
+			Name:        "new",
+			Description: "new session",
+			KeyBinding: key.NewBinding(
+				key.WithKeys("f2", "super+n"),
+			),
+		},
+		"sessions": {
+			Name:        "sessions",
+			Description: "switch session",
+			KeyBinding: key.NewBinding(
+				key.WithKeys("f3", "super+s"),
+			),
+		},
+		"model": {
+			Name:        "model",
+			Description: "switch model",
+			KeyBinding: key.NewBinding(
+				key.WithKeys("f4", "super+m"),
+			),
+		},
+		"theme": {
+			Name:        "theme",
+			Description: "switch theme",
+			KeyBinding: key.NewBinding(
+				key.WithKeys("f5", "super+t"),
+			),
+		},
+		"quit": {
+			Name:        "quit",
+			Description: "quit",
+			KeyBinding: key.NewBinding(
+				key.WithKeys("f10", "ctrl+c", "super+q"),
+			),
+		},
+	}
+}
+

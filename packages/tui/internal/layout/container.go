@@ -1,7 +1,6 @@
 package layout
 
 import (
-	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/theme"
@@ -15,7 +14,6 @@ type ModelWithView interface {
 type Container interface {
 	ModelWithView
 	Sizeable
-	Bindings
 	Focus()
 	Blur()
 	MaxWidth() int
@@ -151,13 +149,6 @@ func (c *container) MaxWidth() int {
 
 func (c *container) Alignment() lipgloss.Position {
 	return c.align
-}
-
-func (c *container) BindingKeys() []key.Binding {
-	if b, ok := c.content.(Bindings); ok {
-		return b.BindingKeys()
-	}
-	return []key.Binding{}
 }
 
 // Focus sets the container as focused

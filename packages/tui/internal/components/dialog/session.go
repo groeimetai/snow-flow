@@ -48,7 +48,7 @@ type sessionDialog struct {
 	height            int
 	modal             *modal.Modal
 	selectedSessionID string
-	list              components.SimpleList[sessionItem]
+	list              components.List[sessionItem]
 }
 
 func (s *sessionDialog) Init() tea.Cmd {
@@ -77,7 +77,7 @@ func (s *sessionDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	listModel, cmd := s.list.Update(msg)
-	s.list = listModel.(components.SimpleList[sessionItem])
+	s.list = listModel.(components.List[sessionItem])
 	return s, cmd
 }
 
@@ -98,7 +98,7 @@ func NewSessionDialog(app *app.App) SessionDialog {
 		sessionItems = append(sessionItems, sessionItem{session: sess})
 	}
 
-	list := components.NewSimpleList(
+	list := components.NewListComponent(
 		sessionItems,
 		10, // maxVisibleSessions
 		"No sessions available",

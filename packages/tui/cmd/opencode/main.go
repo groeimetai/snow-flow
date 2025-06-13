@@ -123,9 +123,6 @@ func main() {
 		// Cancel subscriptions first
 		cancelSubs()
 
-		// Then shutdown the app
-		app_.Shutdown()
-
 		// Then cancel TUI message handler
 		tuiCancel()
 

@@ -8,21 +8,21 @@ import (
 	"github.com/sst/opencode/internal/styles"
 )
 
-type SimpleListItem interface {
+type ListItem interface {
 	Render(selected bool, width int) string
 }
 
-type SimpleList[T SimpleListItem] interface {
+type List[T ListItem] interface {
 	layout.ModelWithView
-	layout.Bindings
 	SetMaxWidth(maxWidth int)
 	GetSelectedItem() (item T, idx int)
 	SetItems(items []T)
 	GetItems() []T
 	SetSelectedIndex(idx int)
+	IsEmpty() bool
 }
 
-type simpleListComponent[T SimpleListItem] struct {
+type listComponent[T ListItem] struct {
 	fallbackMsg         string
 	items               []T
 	selectedIdx         int
@@ -33,14 +33,14 @@ type simpleListComponent[T SimpleListItem] struct {
 	height              int
 }
 
-type simpleListKeyMap struct {
+type listKeyMap struct {
 	Up        key.Binding
 	Down      key.Binding
 	UpAlpha   key.Binding
 	DownAlpha key.Binding
 }
 
-var simpleListKeys = simpleListKeyMap{
+var simpleListKeys = listKeyMap{
 	Up: key.NewBinding(
 		key.WithKeys("up"),
 		key.WithHelp("↑", "previous list item"),
@@ -59,11 +59,11 @@ var simpleListKeys = simpleListKeyMap{
 	),
 }
 
-func (c *simpleListComponent[T]) Init() tea.Cmd {
+func (c *listComponent[T]) Init() tea.Cmd {
 	return nil
 }
 
-func (c *simpleListComponent[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (c *listComponent[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -83,11 +83,7 @@ func (c *simpleListComponent[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, nil
 }
 
-func (c *simpleListComponent[T]) BindingKeys() []key.Binding {
-	return layout.KeyMapToSlice(simpleListKeys)
-}
-
-func (c *simpleListComponent[T]) GetSelectedItem() (T, int) {
+func (c *listComponent[T]) GetSelectedItem() (T, int) {
 	if len(c.items) > 0 {
 		return c.items[c.selectedIdx], c.selectedIdx
 	}
@@ -96,26 +92,30 @@ func (c *simpleListComponent[T]) GetSelectedItem() (T, int) {
 	return zero, -1
 }
 
-func (c *simpleListComponent[T]) SetItems(items []T) {
+func (c *listComponent[T]) SetItems(items []T) {
 	c.selectedIdx = 0
 	c.items = items
 }
 
-func (c *simpleListComponent[T]) GetItems() []T {
+func (c *listComponent[T]) GetItems() []T {
 	return c.items
 }
 
-func (c *simpleListComponent[T]) SetMaxWidth(width int) {
+func (c *listComponent[T]) IsEmpty() bool {
+	return len(c.items) == 0
+}
+
+func (c *listComponent[T]) SetMaxWidth(width int) {
 	c.maxWidth = width
 }
 
-func (c *simpleListComponent[T]) SetSelectedIndex(idx int) {
+func (c *listComponent[T]) SetSelectedIndex(idx int) {
 	if idx >= 0 && idx < len(c.items) {
 		c.selectedIdx = idx
 	}
 }
 
-func (c *simpleListComponent[T]) View() string {
+func (c *listComponent[T]) View() string {
 	baseStyle := styles.BaseStyle()
 
 	items := c.items
@@ -152,8 +152,8 @@ func (c *simpleListComponent[T]) View() string {
 	return lipgloss.JoinVertical(lipgloss.Left, listItems...)
 }
 
-func NewSimpleList[T SimpleListItem](items []T, maxVisibleItems int, fallbackMsg string, useAlphaNumericKeys bool) SimpleList[T] {
-	return &simpleListComponent[T]{
+func NewListComponent[T ListItem](items []T, maxVisibleItems int, fallbackMsg string, useAlphaNumericKeys bool) List[T] {
+	return &listComponent[T]{
 		fallbackMsg:         fallbackMsg,
 		items:               items,
 		maxVisibleItems:     maxVisibleItems,

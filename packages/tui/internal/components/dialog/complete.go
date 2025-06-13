@@ -20,7 +20,7 @@ type CompletionItem struct {
 }
 
 type CompletionItemI interface {
-	utilComponents.SimpleListItem
+	utilComponents.ListItem
 	GetValue() string
 	DisplayValue() string
 }
@@ -78,8 +78,8 @@ type CompletionDialogCloseMsg struct{}
 
 type CompletionDialog interface {
 	layout.ModelWithView
-	layout.Bindings
 	SetWidth(width int)
+	IsEmpty() bool
 }
 
 type completionDialogComponent struct {
@@ -88,7 +88,7 @@ type completionDialogComponent struct {
 	width                int
 	height               int
 	pseudoSearchTextArea textarea.Model
-	listView             utilComponents.SimpleList[CompletionItemI]
+	list                 utilComponents.List[CompletionItemI]
 }
 
 type completionDialogKeyMap struct {
@@ -126,7 +126,7 @@ func (c *completionDialogComponent) complete(item CompletionItemI) tea.Cmd {
 }
 
 func (c *completionDialogComponent) close() tea.Cmd {
-	c.listView.SetItems([]CompletionItemI{})
+	c.list.SetItems([]CompletionItemI{})
 	c.pseudoSearchTextArea.Reset()
 	c.pseudoSearchTextArea.Blur()
 
@@ -138,9 +138,7 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if c.pseudoSearchTextArea.Focused() {
-
 			if !key.Matches(msg, completionDialogKeys.Complete) {
-
 				var cmd tea.Cmd
 				c.pseudoSearchTextArea, cmd = c.pseudoSearchTextArea.Update(msg)
 				cmds = append(cmds, cmd)
@@ -157,25 +155,23 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						status.Error(err.Error())
 					}
 
-					c.listView.SetItems(items)
+					c.list.SetItems(items)
 					c.query = query
 				}
 
-				u, cmd := c.listView.Update(msg)
-				c.listView = u.(utilComponents.SimpleList[CompletionItemI])
+				u, cmd := c.list.Update(msg)
+				c.list = u.(utilComponents.List[CompletionItemI])
 
 				cmds = append(cmds, cmd)
 			}
 
 			switch {
 			case key.Matches(msg, completionDialogKeys.Complete):
-				item, i := c.listView.GetSelectedItem()
+				item, i := c.list.GetSelectedItem()
 				if i == -1 {
 					return c, nil
 				}
-
 				cmd := c.complete(item)
-
 				return c, cmd
 			case key.Matches(msg, completionDialogKeys.Cancel):
 				// Only close on backspace when there are no characters left
@@ -191,7 +187,7 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				status.Error(err.Error())
 			}
 
-			c.listView.SetItems(items)
+			c.list.SetItems(items)
 			c.pseudoSearchTextArea.SetValue(msg.String())
 			return c, c.pseudoSearchTextArea.Focus()
 		}
@@ -209,7 +205,7 @@ func (c *completionDialogComponent) View() string {
 
 	maxWidth := 40
 
-	completions := c.listView.GetItems()
+	completions := c.list.GetItems()
 
 	for _, cmd := range completions {
 		title := cmd.DisplayValue()
@@ -218,7 +214,7 @@ func (c *completionDialogComponent) View() string {
 		}
 	}
 
-	c.listView.SetMaxWidth(maxWidth)
+	c.list.SetMaxWidth(maxWidth)
 
 	return baseStyle.Padding(0, 0).
 		Border(lipgloss.NormalBorder()).
@@ -228,15 +224,15 @@ func (c *completionDialogComponent) View() string {
 		BorderBackground(t.Background()).
 		BorderForeground(t.TextMuted()).
 		Width(c.width).
-		Render(c.listView.View())
+		Render(c.list.View())
 }
 
 func (c *completionDialogComponent) SetWidth(width int) {
 	c.width = width
 }
 
-func (c *completionDialogComponent) BindingKeys() []key.Binding {
-	return layout.KeyMapToSlice(completionDialogKeys)
+func (c *completionDialogComponent) IsEmpty() bool {
+	return c.list.IsEmpty()
 }
 
 func NewCompletionDialogComponent(completionProvider CompletionProvider) CompletionDialog {
@@ -247,7 +243,7 @@ func NewCompletionDialogComponent(completionProvider CompletionProvider) Complet
 		status.Error(err.Error())
 	}
 
-	li := utilComponents.NewSimpleList(
+	li := utilComponents.NewListComponent(
 		items,
 		7,
 		"No file matches found",
@@ -258,6 +254,6 @@ func NewCompletionDialogComponent(completionProvider CompletionProvider) Complet
 		query:                "",
 		completionProvider:   completionProvider,
 		pseudoSearchTextArea: ti,
-		listView:             li,
+		list:                 li,
 	}
 }

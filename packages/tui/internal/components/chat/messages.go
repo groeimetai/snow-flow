@@ -384,15 +384,6 @@ func (m *messagesComponent) Reload() tea.Cmd {
 	}
 }
 
-func (m *messagesComponent) BindingKeys() []key.Binding {
-	return []key.Binding{
-		m.viewport.KeyMap.PageDown,
-		m.viewport.KeyMap.PageUp,
-		m.viewport.KeyMap.HalfPageUp,
-		m.viewport.KeyMap.HalfPageDown,
-	}
-}
-
 func NewMessagesComponent(app *app.App) layout.ModelWithView {
 	customSpinner := spinner.Spinner{
 		Frames: []string{" ", "┃", "┃"},

@@ -9,6 +9,7 @@ import (
 	"log/slog"
 
 	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/status"
@@ -26,10 +27,7 @@ type App struct {
 	Session    *client.SessionInfo
 	Messages   []client.MessageInfo
 	Status     status.Service
-
-	// UI state
-	filepickerOpen       bool
-	completionDialogOpen bool
+	Commands   commands.Registry
 }
 
 type AppInfo struct {
@@ -117,6 +115,7 @@ func New(ctx context.Context, version string, httpClient *client.ClientWithRespo
 		Session:    &client.SessionInfo{},
 		Messages:   []client.MessageInfo{},
 		Status:     status.GetService(),
+		Commands:   commands.NewCommandRegistry(),
 	}
 
 	theme.SetTheme(appConfig.Theme)
@@ -323,29 +322,4 @@ func (a *App) ListProviders(ctx context.Context) ([]client.ProviderInfo, error) 
 
 	providers := *resp.JSON200
 	return providers.Providers, nil
-}
-
-// IsFilepickerOpen returns whether the filepicker is currently open
-func (app *App) IsFilepickerOpen() bool {
-	return app.filepickerOpen
-}
-
-// SetFilepickerOpen sets the state of the filepicker
-func (app *App) SetFilepickerOpen(open bool) {
-	app.filepickerOpen = open
-}
-
-// IsCompletionDialogOpen returns whether the completion dialog is currently open
-func (app *App) IsCompletionDialogOpen() bool {
-	return app.completionDialogOpen
-}
-
-// SetCompletionDialogOpen sets the state of the completion dialog
-func (app *App) SetCompletionDialogOpen(open bool) {
-	app.completionDialogOpen = open
-}
-
-// Shutdown performs a clean shutdown of the application
-func (app *App) Shutdown() {
-	// TODO: cleanup?
 }

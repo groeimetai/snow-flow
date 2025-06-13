@@ -49,7 +49,7 @@ type themeDialog struct {
 	height int
 
 	modal *modal.Modal
-	list  components.SimpleList[themeItem]
+	list  components.List[themeItem]
 }
 
 func (t *themeDialog) Init() tea.Cmd {
@@ -84,7 +84,7 @@ func (t *themeDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	listModel, cmd := t.list.Update(msg)
-	t.list = listModel.(components.SimpleList[themeItem])
+	t.list = listModel.(components.List[themeItem])
 	return t, cmd
 }
 
@@ -110,7 +110,7 @@ func NewThemeDialog() ThemeDialog {
 		}
 	}
 
-	list := components.NewSimpleList(
+	list := components.NewListComponent(
 		themeItems,
 		10, // maxVisibleThemes
 		"No themes available",

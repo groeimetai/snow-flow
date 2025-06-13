@@ -45,10 +45,6 @@ type Sizeable interface {
 	GetSize() (int, int)
 }
 
-type Bindings interface {
-	BindingKeys() []key.Binding
-}
-
 func KeyMapToSlice(t any) (bindings []key.Binding) {
 	typ := reflect.TypeOf(t)
 	if typ.Kind() != reflect.Struct {
