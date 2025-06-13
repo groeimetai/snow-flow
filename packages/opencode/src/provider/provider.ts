@@ -48,14 +48,21 @@ export namespace Provider {
         }
       }
       return {
-        source: "oauth",
-        options: {
-          apiKey: "",
-          headers: {
-            authorization: `Bearer ${access}`,
-            "anthropic-beta": "oauth-2025-04-20",
-          },
+        apiKey: "",
+        headers: {
+          authorization: `Bearer ${access}`,
+          "anthropic-beta": "oauth-2025-04-20",
         },
+      }
+    },
+    "amazon-bedrock": async () => {
+      if (!process.env["AWS_PROFILE"]) return false
+      const { fromNodeProviderChain } = await import(
+        await BunProc.install("@aws-sdk/credential-providers")
+      )
+      return {
+        region: process.env["AWS_REGION"] ?? "us-east-1",
+        credentialProvider: fromNodeProviderChain(),
       }
     },
   }
@@ -144,9 +151,7 @@ export namespace Provider {
     // load custom
     for (const [providerID, fn] of Object.entries(CUSTOM_LOADERS)) {
       const result = await fn(database[providerID])
-      if (result) {
-        mergeProvider(providerID, result, "custom")
-      }
+      if (result) mergeProvider(providerID, result, "custom")
     }
 
     // load config

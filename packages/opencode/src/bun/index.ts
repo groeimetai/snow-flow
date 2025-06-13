@@ -1,4 +1,9 @@
+import { z } from "zod"
+import { Global } from "../global"
 import { Log } from "../util/log"
+import path from "path"
+import { NamedError } from "../util/error"
+
 export namespace BunProc {
   const log = Log.create({ service: "bun" })
 
@@ -29,5 +34,25 @@ export namespace BunProc {
 
   export function which() {
     return process.execPath
+  }
+
+  export const InstallFailedError = NamedError.create(
+    "BunInstallFailedError",
+    z.object({
+      pkg: z.string(),
+      version: z.string(),
+    }),
+  )
+  export async function install(pkg: string, version = "latest") {
+    const dir = path.join(Global.Path.cache, `node_modules`, pkg)
+    if (!(await Bun.file(path.join(dir, "package.json")).exists())) {
+      log.info("installing", { pkg })
+      await BunProc.run(["add", `${pkg}@${version}`], {
+        cwd: Global.Path.cache,
+      }).catch(() => {
+        throw new InstallFailedError({ pkg, version })
+      })
+    }
+    return dir
   }
 }
