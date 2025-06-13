@@ -12,23 +12,28 @@ requested_version=${VERSION:-}
 
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 if [[ "$os" == "darwin" ]]; then
-    os="mac"
+    os="darwin"
 fi
 arch=$(uname -m)
 
 if [[ "$arch" == "aarch64" ]]; then
   arch="arm64"
+elif [[ "$arch" == "x86_64" ]]; then
+  arch="x64"
 fi
 
-filename="$APP-$os-$arch.tar.gz"
+filename="$APP-$os-$arch.zip"
 
 
 case "$filename" in
     *"-linux-"*)
-        [[ "$arch" == "x86_64" || "$arch" == "arm64" || "$arch" == "i386" ]] || exit 1
+        [[ "$arch" == "x64" || "$arch" == "arm64" ]] || exit 1
     ;;
-    *"-mac-"*)
-        [[ "$arch" == "x86_64" || "$arch" == "arm64" ]] || exit 1
+    *"-darwin-"*)
+        [[ "$arch" == "x64" || "$arch" == "arm64" ]] || exit 1
+    ;;
+    *"-windows-"*)
+        [[ "$arch" == "x64" ]] || exit 1
     ;;
     *)
         echo "${RED}Unsupported OS/Arch: $os/$arch${NC}"
@@ -88,8 +93,9 @@ check_version() {
 download_and_install() {
     print_message info "Downloading ${ORANGE}opencode ${GREEN}version: ${YELLOW}$specific_version ${GREEN}..."
     mkdir -p opencodetmp && cd opencodetmp
-    curl -# -L $url | tar xz
-    mv opencode $INSTALL_DIR
+    curl -# -L -o "$filename" "$url"
+    unzip -q "$filename"
+    mv opencode "$INSTALL_DIR"
     cd .. && rm -rf opencodetmp 
 }
 

@@ -6,6 +6,12 @@
 
 ## Installation
 
+### Curl
+
+```
+curl -fsSL https://opencode.ai/install | bash
+```
+
 ### NPM
 
 ```
@@ -21,7 +27,7 @@ yarn global add opencode-ai@latest
 brew install sst/tap/opencode
 ```
 
-### Aur
+### AUR
 
 ```
 paru -S opencode-bin
