@@ -245,7 +245,7 @@ func (m *messagesComponent) header() string {
 	base := styles.BaseStyle().Render
 	muted := styles.Muted().Render
 	headerLines := []string{}
-	headerLines = append(headerLines, toMarkdown("# "+m.app.Session.Title, width-4, t.Background()))
+	headerLines = append(headerLines, toMarkdown("# "+m.app.Session.Title, width-6, t.Background()))
 	if m.app.Session.Share != nil && m.app.Session.Share.Url != "" {
 		headerLines = append(headerLines, muted(m.app.Session.Share.Url))
 	} else {
@@ -256,6 +256,7 @@ func (m *messagesComponent) header() string {
 	header = styles.BaseStyle().
 		Width(width).
 		PaddingLeft(2).
+		PaddingRight(2).
 		// Background(t.BackgroundElement()).
 		BorderLeft(true).
 		BorderRight(true).

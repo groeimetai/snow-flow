@@ -216,7 +216,7 @@ func renderText(message client.MessageInfo, text string, author string) string {
 		align = lipgloss.Left
 	}
 
-	textWidth := lipgloss.Width(text)
+	textWidth := max(lipgloss.Width(text), lipgloss.Width(info))
 	markdownWidth := min(textWidth, width-padding-4) // -4 for the border and padding
 	content := toMarkdown(text, markdownWidth, t.BackgroundSubtle())
 	content = lipgloss.JoinVertical(align, content, info)
@@ -299,13 +299,9 @@ func renderToolInvocation(
 	body := ""
 	error := ""
 	finished := result != nil && *result != ""
-	if finished {
-		body = *result
-	}
 
 	if e, ok := metadata.Get("error"); ok && e.(bool) == true {
 		if m, ok := metadata.Get("message"); ok {
-			body = "" // don't show the body if there's an error
 			style = style.BorderLeftForeground(t.Error())
 			error = styles.BaseStyle().
 				Background(t.BackgroundSubtle()).
@@ -336,58 +332,61 @@ func renderToolInvocation(
 	case "opencode_read":
 		toolArgs = renderArgs(&toolArgsMap, "filePath")
 		title = fmt.Sprintf("Read: %s   %s", toolArgs, elapsed)
-		body = ""
 		if preview, ok := metadata.Get("preview"); ok && toolArgsMap["filePath"] != nil {
 			filename := toolArgsMap["filePath"].(string)
 			body = preview.(string)
 			body = renderFile(filename, body, WithTruncate(6))
 		}
 	case "opencode_edit":
-		filename := toolArgsMap["filePath"].(string)
-		title = fmt.Sprintf("Edit: %s   %s", relative(filename), elapsed)
-		if d, ok := metadata.Get("diff"); ok {
-			patch := d.(string)
-			var formattedDiff string
-			if layout.Current.Viewport.Width < 80 {
-				formattedDiff, _ = diff.FormatUnifiedDiff(
-					filename,
-					patch,
-					diff.WithWidth(layout.Current.Container.Width-2),
+		if filename, ok := toolArgsMap["filePath"].(string); ok {
+			title = fmt.Sprintf("Edit: %s   %s", relative(filename), elapsed)
+			if d, ok := metadata.Get("diff"); ok {
+				patch := d.(string)
+				var formattedDiff string
+				if layout.Current.Viewport.Width < 80 {
+					formattedDiff, _ = diff.FormatUnifiedDiff(
+						filename,
+						patch,
+						diff.WithWidth(layout.Current.Container.Width-2),
+					)
+				} else {
+					diffWidth := min(layout.Current.Viewport.Width-2, 120)
+					formattedDiff, _ = diff.FormatDiff(filename, patch, diff.WithTotalWidth(diffWidth))
+				}
+				formattedDiff = strings.TrimSpace(formattedDiff)
+				formattedDiff = lipgloss.NewStyle().
+					BorderStyle(lipgloss.ThickBorder()).
+					BorderForeground(t.BackgroundSubtle()).
+					BorderLeft(true).
+					BorderRight(true).
+					Render(formattedDiff)
+
+				if showResult {
+					style = style.Width(lipgloss.Width(formattedDiff))
+					title += "\n"
+				}
+
+				body = strings.TrimSpace(formattedDiff)
+				body = lipgloss.Place(
+					layout.Current.Viewport.Width,
+					lipgloss.Height(body)+1,
+					lipgloss.Center,
+					lipgloss.Top,
+					body,
 				)
-			} else {
-				diffWidth := min(layout.Current.Viewport.Width-2, 120)
-				formattedDiff, _ = diff.FormatDiff(filename, patch, diff.WithTotalWidth(diffWidth))
 			}
-			formattedDiff = strings.TrimSpace(formattedDiff)
-			formattedDiff = lipgloss.NewStyle().
-				BorderStyle(lipgloss.ThickBorder()).
-				BorderForeground(t.BackgroundSubtle()).
-				BorderLeft(true).
-				BorderRight(true).
-				Render(formattedDiff)
-
-			if showResult {
-				style = style.Width(lipgloss.Width(formattedDiff))
-				title += "\n"
-			}
-
-			body = strings.TrimSpace(formattedDiff)
-			body = lipgloss.Place(
-				layout.Current.Viewport.Width,
-				lipgloss.Height(body)+1,
-				lipgloss.Center,
-				lipgloss.Top,
-				body,
-			)
 		}
 	case "opencode_write":
-		filename := toolArgsMap["filePath"].(string)
-		title = fmt.Sprintf("Write: %s   %s", relative(filename), elapsed)
-		content := toolArgsMap["content"].(string)
-		body = renderFile(filename, content)
+		if filename, ok := toolArgsMap["filePath"].(string); ok {
+			title = fmt.Sprintf("Write: %s   %s", relative(filename), elapsed)
+			if content, ok := toolArgsMap["content"].(string); ok {
+				body = renderFile(filename, content)
+			}
+		}
 	case "opencode_bash":
-		description := toolArgsMap["description"].(string)
-		title = fmt.Sprintf("Shell: %s   %s", description, elapsed)
+		if description, ok := toolArgsMap["description"].(string); ok {
+			title = fmt.Sprintf("Shell: %s   %s", description, elapsed)
+		}
 		if stdout, ok := metadata.Get("stdout"); ok {
 			command := toolArgsMap["command"].(string)
 			stdout := stdout.(string)
@@ -396,18 +395,20 @@ func renderToolInvocation(
 			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
 	case "opencode_webfetch":
+		toolArgs = renderArgs(&toolArgsMap, "url")
 		title = fmt.Sprintf("Fetching: %s   %s", toolArgs, elapsed)
-		format := toolArgsMap["format"].(string)
-		body = truncateHeight(body, 10)
-		if format == "html" || format == "markdown" {
-			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
+		if format, ok := toolArgsMap["format"].(string); ok {
+			body = *result
+			body = truncateHeight(body, 10)
+			if format == "html" || format == "markdown" {
+				body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
+			}
+			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
-		body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 	case "opencode_todowrite":
 		title = fmt.Sprintf("Planning   %s", elapsed)
 
 		if to, ok := metadata.Get("todos"); ok && finished {
-			body = ""
 			todos := to.([]any)
 			for _, todo := range todos {
 				t := todo.(map[string]any)
@@ -416,7 +417,7 @@ func renderToolInvocation(
 				case "completed":
 					body += fmt.Sprintf("- [x] %s\n", content)
 				// case "in-progress":
-				// 	body += fmt.Sprintf("- [ ] _%s_\n", content)
+				// 	body += fmt.Sprintf("- [ ] %s\n", content)
 				default:
 					body += fmt.Sprintf("- [ ] %s\n", content)
 				}
@@ -427,6 +428,13 @@ func renderToolInvocation(
 	default:
 		toolName := renderToolName(toolCall.ToolName)
 		title = fmt.Sprintf("%s: %s   %s", toolName, toolArgs, elapsed)
+		body = *result
+		body = truncateHeight(body, 10)
+		body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
+	}
+
+	if body == "" && error == "" {
+		body = *result
 		body = truncateHeight(body, 10)
 		body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 	}

@@ -44,11 +44,6 @@ type EditorKeyMaps struct {
 	HistoryDown key.Binding
 }
 
-type bluredEditorKeyMaps struct {
-	Send       key.Binding
-	Focus      key.Binding
-	OpenEditor key.Binding
-}
 type DeleteAttachmentKeyMaps struct {
 	AttachmentDeleteMode key.Binding
 	Escape               key.Binding
@@ -108,10 +103,18 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dialog.ThemeChangedMsg:
 		m.textarea = createTextArea(&m.textarea)
 	case dialog.CompletionSelectedMsg:
-		existingValue := m.textarea.Value()
-		modifiedValue := strings.Replace(existingValue, msg.SearchString, msg.CompletionValue, 1)
-		m.textarea.SetValue(modifiedValue)
-		return m, nil
+		if msg.IsCommand {
+			// Execute the command directly
+			commandName := strings.TrimPrefix(msg.CompletionValue, "/")
+			m.textarea.Reset()
+			return m, util.CmdHandler(commands.ExecuteCommandMsg{Name: commandName})
+		} else {
+			// For files, replace the text in the editor
+			existingValue := m.textarea.Value()
+			modifiedValue := strings.Replace(existingValue, msg.SearchString, msg.CompletionValue, 1)
+			m.textarea.SetValue(modifiedValue)
+			return m, nil
+		}
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
@@ -378,12 +381,13 @@ func (m *editorComponent) send() tea.Cmd {
 	}
 
 	// Check for slash command
-	if strings.HasPrefix(value, "/") {
-		commandName := strings.TrimPrefix(value, "/")
-		if _, ok := m.app.Commands[commandName]; ok {
-			return util.CmdHandler(commands.ExecuteCommandMsg{Name: commandName})
-		}
-	}
+	// if strings.HasPrefix(value, "/") {
+	// 	commandName := strings.TrimPrefix(value, "/")
+	// 	if _, ok := m.app.Commands[commandName]; ok {
+	// 		return util.CmdHandler(commands.ExecuteCommandMsg{Name: commandName})
+	// 	}
+	// }
+	slog.Info("Send message", "value", value)
 
 	return tea.Batch(
 		util.CmdHandler(SendMsg{
@@ -450,6 +454,10 @@ func createTextArea(existing *textarea.Model) textarea.Model {
 
 	ta.Focus()
 	return ta
+}
+
+func (m *editorComponent) GetValue() string {
+	return m.textarea.Value()
 }
 
 func NewEditorComponent(app *app.App) layout.ModelWithView {

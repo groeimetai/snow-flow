@@ -5,8 +5,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/components/modal"
-	components "github.com/sst/opencode/internal/components/util"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/styles"
@@ -48,7 +48,7 @@ type sessionDialog struct {
 	height            int
 	modal             *modal.Modal
 	selectedSessionID string
-	list              components.List[sessionItem]
+	list              list.List[sessionItem]
 }
 
 func (s *sessionDialog) Init() tea.Cmd {
@@ -77,7 +77,7 @@ func (s *sessionDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	listModel, cmd := s.list.Update(msg)
-	s.list = listModel.(components.List[sessionItem])
+	s.list = listModel.(list.List[sessionItem])
 	return s, cmd
 }
 
@@ -98,7 +98,7 @@ func NewSessionDialog(app *app.App) SessionDialog {
 		sessionItems = append(sessionItems, sessionItem{session: sess})
 	}
 
-	list := components.NewListComponent(
+	list := list.NewListComponent(
 		sessionItems,
 		10, // maxVisibleSessions
 		"No sessions available",

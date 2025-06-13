@@ -22,6 +22,7 @@ type chatPage struct {
 	messages             layout.Container
 	layout               layout.FlexLayout
 	completionDialog     dialog.CompletionDialog
+	completionManager    *completions.CompletionManager
 	showCompletionDialog bool
 }
 
@@ -94,13 +95,20 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if p.showCompletionDialog {
+		// Get the current text from the editor to determine which provider to use
+		editorModel := p.editor.GetContent().(interface{ GetValue() string })
+		currentInput := editorModel.GetValue()
+
+		provider := p.completionManager.GetProvider(currentInput)
+		p.completionDialog.SetProvider(provider)
+
 		context, contextCmd := p.completionDialog.Update(msg)
 		p.completionDialog = context.(dialog.CompletionDialog)
 		cmds = append(cmds, contextCmd)
 
-		// Doesn't forward event if enter key is pressed
+		// Doesn't forward event if enter key is pressed and there are completions
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
-			if keyMsg.String() == "enter" && !p.completionDialog.IsEmpty() {
+			if keyMsg.String() == "enter" { // && !p.completionDialog.IsEmpty() {
 				return p, tea.Batch(cmds...)
 			}
 		}
@@ -149,8 +157,10 @@ func (p *chatPage) View() string {
 }
 
 func NewChatPage(app *app.App) layout.ModelWithView {
-	cg := completions.NewFileAndFolderContextGroup()
-	completionDialog := dialog.NewCompletionDialogComponent(cg)
+	completionManager := completions.NewCompletionManager(app)
+	initialProvider := completionManager.GetProvider("")
+	completionDialog := dialog.NewCompletionDialogComponent(initialProvider)
+
 	messagesContainer := layout.NewContainer(
 		chat.NewMessagesComponent(app),
 	)
@@ -159,11 +169,13 @@ func NewChatPage(app *app.App) layout.ModelWithView {
 		layout.WithMaxWidth(layout.Current.Container.Width),
 		layout.WithAlignCenter(),
 	)
+
 	return &chatPage{
-		app:              app,
-		editor:           editorContainer,
-		messages:         messagesContainer,
-		completionDialog: completionDialog,
+		app:               app,
+		editor:            editorContainer,
+		messages:          messagesContainer,
+		completionDialog:  completionDialog,
+		completionManager: completionManager,
 		layout: layout.NewFlexLayout(
 			layout.WithPanes(messagesContainer, editorContainer),
 			layout.WithDirection(layout.FlexDirectionVertical),

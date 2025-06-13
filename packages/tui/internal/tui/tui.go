@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/charmbracelet/bubbles/v2/cursor"
 	"github.com/charmbracelet/bubbles/v2/key"
@@ -78,33 +79,52 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	if a.modal != nil {
-		isModalTrigger := false
+		bypassModal := false
+
 		if _, ok := msg.(modal.CloseModalMsg); ok {
 			a.modal = nil
 			return a, nil
 		}
+
 		if msg, ok := msg.(tea.KeyMsg); ok {
 			switch msg.String() {
 			case "esc":
 				a.modal = nil
 				return a, nil
 			case "ctrl+c":
-				if _, ok := a.modal.(dialog.QuitDialog); !ok {
+				if _, ok := a.modal.(dialog.QuitDialog); ok {
+					return a, tea.Quit
+				} else {
 					quitDialog := dialog.NewQuitDialog()
 					a.modal = quitDialog
 					return a, nil
 				}
 			}
 
+			// don't send commands to the modal
 			for _, cmdDef := range a.app.Commands {
 				if key.Matches(msg, cmdDef.KeyBinding) {
-					isModalTrigger = true
+					bypassModal = true
 					break
 				}
 			}
 		}
 
-		if !isModalTrigger {
+		// thanks i hate this
+		switch msg.(type) {
+		case tea.WindowSizeMsg:
+			bypassModal = true
+		case client.EventSessionUpdated:
+			bypassModal = true
+		case client.EventMessageUpdated:
+			bypassModal = true
+		case cursor.BlinkMsg:
+			bypassModal = true
+		case spinner.TickMsg:
+			bypassModal = true
+		}
+
+		if !bypassModal {
 			updatedModal, cmd := a.modal.Update(msg)
 			a.modal = updatedModal.(layout.Modal)
 			return a, cmd
@@ -112,7 +132,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
-
 	case commands.ExecuteCommandMsg:
 		switch msg.Name {
 		case "quit":
@@ -143,6 +162,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			helpDialog := dialog.NewHelpDialog(helpBindings...)
 			a.modal = helpDialog
 		}
+		slog.Info("Execute command", "cmds", cmds)
 		return a, tea.Batch(cmds...)
 
 	case tea.BackgroundColorMsg:

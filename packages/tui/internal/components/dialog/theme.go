@@ -2,8 +2,8 @@ package dialog
 
 import (
 	tea "github.com/charmbracelet/bubbletea/v2"
+	list "github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/components/modal"
-	components "github.com/sst/opencode/internal/components/util"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/styles"
@@ -49,7 +49,7 @@ type themeDialog struct {
 	height int
 
 	modal *modal.Modal
-	list  components.List[themeItem]
+	list  list.List[themeItem]
 }
 
 func (t *themeDialog) Init() tea.Cmd {
@@ -84,7 +84,7 @@ func (t *themeDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	listModel, cmd := t.list.Update(msg)
-	t.list = listModel.(components.List[themeItem])
+	t.list = listModel.(list.List[themeItem])
 	return t, cmd
 }
 
@@ -110,7 +110,7 @@ func NewThemeDialog() ThemeDialog {
 		}
 	}
 
-	list := components.NewListComponent(
+	list := list.NewListComponent(
 		themeItems,
 		10, // maxVisibleThemes
 		"No themes available",

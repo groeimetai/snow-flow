@@ -1,11 +1,10 @@
-package utilComponents
+package list
 
 import (
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/layout"
-	"github.com/sst/opencode/internal/styles"
 )
 
 type ListItem interface {
@@ -116,18 +115,13 @@ func (c *listComponent[T]) SetSelectedIndex(idx int) {
 }
 
 func (c *listComponent[T]) View() string {
-	baseStyle := styles.BaseStyle()
-
 	items := c.items
 	maxWidth := c.maxWidth
 	maxVisibleItems := min(c.maxVisibleItems, len(items))
 	startIdx := 0
 
 	if len(items) <= 0 {
-		return baseStyle.
-			Padding(0, 1).
-			Width(maxWidth).
-			Render(c.fallbackMsg)
+		return c.fallbackMsg
 	}
 
 	if len(items) > maxVisibleItems {

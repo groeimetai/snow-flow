@@ -19,6 +19,7 @@ type Container interface {
 	MaxWidth() int
 	Alignment() lipgloss.Position
 	GetPosition() (x, y int)
+	GetContent() ModelWithView
 }
 
 type container struct {
@@ -175,6 +176,11 @@ func (c *container) Blur() {
 // GetPosition returns the x, y coordinates of the container
 func (c *container) GetPosition() (x, y int) {
 	return c.x, c.y
+}
+
+// GetContent returns the content of the container
+func (c *container) GetContent() ModelWithView {
+	return c.content
 }
 
 type ContainerOption func(*container)

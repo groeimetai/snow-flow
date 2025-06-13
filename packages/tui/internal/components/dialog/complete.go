@@ -5,7 +5,7 @@ import (
 	"github.com/charmbracelet/bubbles/v2/textarea"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
-	utilComponents "github.com/sst/opencode/internal/components/util"
+	"github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/styles"
@@ -20,7 +20,7 @@ type CompletionItem struct {
 }
 
 type CompletionItemI interface {
-	utilComponents.ListItem
+	list.ListItem
 	GetValue() string
 	DisplayValue() string
 }
@@ -30,18 +30,18 @@ func (ci *CompletionItem) Render(selected bool, width int) string {
 	baseStyle := styles.BaseStyle()
 
 	itemStyle := baseStyle.
+		Background(t.BackgroundElement()).
 		Width(width).
 		Padding(0, 1)
 
 	if selected {
 		itemStyle = itemStyle.
-			Background(t.Background()).
 			Foreground(t.Primary()).
 			Bold(true)
 	}
 
 	title := itemStyle.Render(
-		ci.GetValue(),
+		ci.DisplayValue(),
 	)
 
 	return title
@@ -68,6 +68,7 @@ type CompletionProvider interface {
 type CompletionSelectedMsg struct {
 	SearchString    string
 	CompletionValue string
+	IsCommand       bool
 }
 
 type CompletionDialogCompleteItemMsg struct {
@@ -80,6 +81,7 @@ type CompletionDialog interface {
 	layout.ModelWithView
 	SetWidth(width int)
 	IsEmpty() bool
+	SetProvider(provider CompletionProvider)
 }
 
 type completionDialogComponent struct {
@@ -88,7 +90,7 @@ type completionDialogComponent struct {
 	width                int
 	height               int
 	pseudoSearchTextArea textarea.Model
-	list                 utilComponents.List[CompletionItemI]
+	list                 list.List[CompletionItemI]
 }
 
 type completionDialogKeyMap struct {
@@ -116,10 +118,14 @@ func (c *completionDialogComponent) complete(item CompletionItemI) tea.Cmd {
 		return nil
 	}
 
+	// Check if this is a command completion
+	isCommand := c.completionProvider.GetId() == "commands"
+
 	return tea.Batch(
 		util.CmdHandler(CompletionSelectedMsg{
 			SearchString:    value,
 			CompletionValue: item.GetValue(),
+			IsCommand:       isCommand,
 		}),
 		c.close(),
 	)
@@ -160,7 +166,7 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				u, cmd := c.list.Update(msg)
-				c.list = u.(utilComponents.List[CompletionItemI])
+				c.list = u.(list.List[CompletionItemI])
 
 				cmds = append(cmds, cmd)
 			}
@@ -171,8 +177,7 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if i == -1 {
 					return c, nil
 				}
-				cmd := c.complete(item)
-				return c, cmd
+				return c, c.complete(item)
 			case key.Matches(msg, completionDialogKeys.Cancel):
 				// Only close on backspace when there are no characters left
 				if msg.String() != "backspace" || len(c.pseudoSearchTextArea.Value()) <= 0 {
@@ -203,21 +208,20 @@ func (c *completionDialogComponent) View() string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle()
 
-	// maxWidth := 40
-	//
-	// completions := c.list.GetItems()
+	maxWidth := 40
+	completions := c.list.GetItems()
 
-	// for _, cmd := range completions {
-	// 	title := cmd.DisplayValue()
-	// 	if len(title) > maxWidth-4 {
-	// 		maxWidth = len(title) + 4
-	// 	}
-	// }
+	for _, cmd := range completions {
+		title := cmd.DisplayValue()
+		if len(title) > maxWidth-4 {
+			maxWidth = len(title) + 4
+		}
+	}
 
-	// c.list.SetMaxWidth(maxWidth)
+	c.list.SetMaxWidth(maxWidth)
 
 	return baseStyle.Padding(0, 0).
-		Background(t.BackgroundSubtle()).
+		Background(t.BackgroundElement()).
 		Border(lipgloss.ThickBorder()).
 		BorderTop(false).
 		BorderBottom(false).
@@ -236,6 +240,17 @@ func (c *completionDialogComponent) IsEmpty() bool {
 	return c.list.IsEmpty()
 }
 
+func (c *completionDialogComponent) SetProvider(provider CompletionProvider) {
+	if c.completionProvider.GetId() != provider.GetId() {
+		c.completionProvider = provider
+		items, err := provider.GetChildEntries("")
+		if err != nil {
+			status.Error(err.Error())
+		}
+		c.list.SetItems(items)
+	}
+}
+
 func NewCompletionDialogComponent(completionProvider CompletionProvider) CompletionDialog {
 	ti := textarea.New()
 
@@ -244,10 +259,10 @@ func NewCompletionDialogComponent(completionProvider CompletionProvider) Complet
 		status.Error(err.Error())
 	}
 
-	li := utilComponents.NewListComponent(
+	li := list.NewListComponent(
 		items,
 		7,
-		"No matching files",
+		"No matches",
 		false,
 	)
 
