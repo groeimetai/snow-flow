@@ -214,7 +214,7 @@ func (m *messagesComponent) renderView() {
 			case client.UnknownError:
 				clientError := errorValue.(client.UnknownError)
 				error = clientError.Data.Message
-				error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+				error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
 				blocks = append(blocks, error)
 				previousBlockType = errorBlock
 			}

@@ -55,6 +55,10 @@ type blockRenderer struct {
 	fullWidth     bool
 	paddingTop    int
 	paddingBottom int
+	paddingLeft   int
+	paddingRight  int
+	marginTop     int
+	marginBottom  int
 }
 
 type renderingOption func(*blockRenderer)
@@ -77,6 +81,30 @@ func WithBorderColor(color compat.AdaptiveColor) renderingOption {
 	}
 }
 
+func WithMarginTop(padding int) renderingOption {
+	return func(c *blockRenderer) {
+		c.marginTop = padding
+	}
+}
+
+func WithMarginBottom(padding int) renderingOption {
+	return func(c *blockRenderer) {
+		c.marginBottom = padding
+	}
+}
+
+func WithPaddingLeft(padding int) renderingOption {
+	return func(c *blockRenderer) {
+		c.paddingLeft = padding
+	}
+}
+
+func WithPaddingRight(padding int) renderingOption {
+	return func(c *blockRenderer) {
+		c.paddingRight = padding
+	}
+}
+
 func WithPaddingTop(padding int) renderingOption {
 	return func(c *blockRenderer) {
 		c.paddingTop = padding
@@ -92,17 +120,23 @@ func WithPaddingBottom(padding int) renderingOption {
 func renderContentBlock(content string, options ...renderingOption) string {
 	t := theme.CurrentTheme()
 	renderer := &blockRenderer{
-		fullWidth: false,
+		fullWidth:     false,
+		paddingTop:    1,
+		paddingBottom: 1,
+		paddingLeft:   2,
+		paddingRight:  2,
 	}
 	for _, option := range options {
 		option(renderer)
 	}
 
 	style := styles.BaseStyle().
-		PaddingTop(1).
-		PaddingBottom(1).
-		PaddingLeft(2).
-		PaddingRight(2).
+		MarginTop(renderer.marginTop).
+		MarginBottom(renderer.marginBottom).
+		PaddingTop(renderer.paddingTop).
+		PaddingBottom(renderer.paddingBottom).
+		PaddingLeft(renderer.paddingLeft).
+		PaddingRight(renderer.paddingRight).
 		Background(t.BackgroundSubtle()).
 		Foreground(t.TextMuted()).
 		BorderStyle(lipgloss.ThickBorder())
@@ -142,12 +176,6 @@ func renderContentBlock(content string, options ...renderingOption) string {
 		style = style.Width(layout.Current.Container.Width)
 	}
 	content = style.Render(content)
-	if renderer.paddingTop > 0 {
-		content = strings.Repeat("\n", renderer.paddingTop) + content
-	}
-	if renderer.paddingBottom > 0 {
-		content = content + strings.Repeat("\n", renderer.paddingBottom)
-	}
 	content = lipgloss.PlaceHorizontal(
 		layout.Current.Container.Width,
 		align,
@@ -165,12 +193,11 @@ func renderText(message client.MessageInfo, text string, author string) string {
 	t := theme.CurrentTheme()
 	width := layout.Current.Container.Width
 	padding := 0
-	switch layout.Current.Size {
-	case layout.LayoutSizeSmall:
+	if layout.Current.Viewport.Width < 80 {
 		padding = 5
-	case layout.LayoutSizeNormal:
+	} else if layout.Current.Viewport.Width < 120 {
 		padding = 10
-	case layout.LayoutSizeLarge:
+	} else {
 		padding = 15
 	}
 
@@ -270,7 +297,7 @@ func renderToolInvocation(
 			error = styles.BaseStyle().
 				Foreground(t.Error()).
 				Render(m.(string))
-			error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+			error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
 		}
 	}
 
@@ -301,8 +328,24 @@ func renderToolInvocation(
 		title = fmt.Sprintf("Edit: %s   %s", relative(filename), elapsed)
 		if d, ok := metadata.Get("diff"); ok {
 			patch := d.(string)
-			diffWidth := min(layout.Current.Viewport.Width, 120)
-			formattedDiff, _ := diff.FormatDiff(filename, patch, diff.WithTotalWidth(diffWidth))
+			var formattedDiff string
+			if layout.Current.Viewport.Width < 80 {
+				formattedDiff, _ = diff.FormatUnifiedDiff(
+					filename,
+					patch,
+					diff.WithWidth(layout.Current.Container.Width-2),
+				)
+			} else {
+				diffWidth := min(layout.Current.Viewport.Width, 120)
+				formattedDiff, _ = diff.FormatDiff(filename, patch, diff.WithTotalWidth(diffWidth))
+			}
+			formattedDiff = strings.TrimSpace(formattedDiff)
+			formattedDiff = lipgloss.NewStyle().
+				BorderStyle(lipgloss.ThickBorder()).
+				BorderForeground(t.BackgroundSubtle()).
+				BorderLeft(true).
+				BorderRight(true).
+				Render(formattedDiff)
 			body = strings.TrimSpace(formattedDiff)
 			body = lipgloss.Place(
 				layout.Current.Viewport.Width,
@@ -326,7 +369,7 @@ func renderToolInvocation(
 			stdout := stdout.(string)
 			body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
 			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
-			body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+			body = renderContentBlock(body, WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
 		}
 	case "opencode_webfetch":
 		title = fmt.Sprintf("Fetching: %s   %s", toolArgs, elapsed)
@@ -335,7 +378,7 @@ func renderToolInvocation(
 		if format == "html" || format == "markdown" {
 			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
 		}
-		body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+		body = renderContentBlock(body, WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
 	case "opencode_todowrite":
 		title = fmt.Sprintf("Planning...   %s", elapsed)
 
@@ -355,13 +398,13 @@ func renderToolInvocation(
 				}
 			}
 			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
-			body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+			body = renderContentBlock(body, WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
 		}
 	default:
 		toolName := renderToolName(toolCall.ToolName)
 		title = fmt.Sprintf("%s: %s   %s", toolName, toolArgs, elapsed)
 		body = truncateHeight(body, 10)
-		body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+		body = renderContentBlock(body, WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
 	}
 
 	content := style.Render(title)
@@ -435,7 +478,7 @@ func renderFile(filename string, content string, options ...fileRenderingOption)
 	content = fmt.Sprintf("```%s\n%s\n```", extension(renderer.filename), content)
 	content = toMarkdown(content, width, t.BackgroundSubtle())
 
-	return renderContentBlock(content, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+	return renderContentBlock(content, WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
 }
 
 func renderToolAction(name string) string {

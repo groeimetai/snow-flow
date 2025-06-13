@@ -105,6 +105,40 @@ func WithTotalWidth(width int) SideBySideOption {
 }
 
 // -------------------------------------------------------------------------
+// Unified Configuration
+// -------------------------------------------------------------------------
+
+// UnifiedConfig configures the rendering of unified diffs
+type UnifiedConfig struct {
+	Width int
+}
+
+// UnifiedOption modifies a UnifiedConfig
+type UnifiedOption func(*UnifiedConfig)
+
+// NewUnifiedConfig creates a UnifiedConfig with default values
+func NewUnifiedConfig(opts ...UnifiedOption) UnifiedConfig {
+	config := UnifiedConfig{
+		Width: 80, // Default width for unified view
+	}
+
+	for _, opt := range opts {
+		opt(&config)
+	}
+
+	return config
+}
+
+// WithWidth sets the width for unified view
+func WithWidth(width int) UnifiedOption {
+	return func(u *UnifiedConfig) {
+		if width > 0 {
+			u.Width = width
+		}
+	}
+}
+
+// -------------------------------------------------------------------------
 // Diff Parsing
 // -------------------------------------------------------------------------
 
@@ -642,6 +676,101 @@ func applyHighlighting(content string, segments []Segment, segmentType LineType,
 	return sb.String()
 }
 
+// renderLinePrefix renders the line number and marker prefix for a diff line
+func renderLinePrefix(dl DiffLine, lineNum string, marker string, lineNumberStyle lipgloss.Style, t theme.Theme) string {
+	// Style the marker based on line type
+	var styledMarker string
+	switch dl.Kind {
+	case LineRemoved:
+		styledMarker = lipgloss.NewStyle().Background(t.DiffRemovedBg()).Foreground(t.DiffRemoved()).Render(marker)
+	case LineAdded:
+		styledMarker = lipgloss.NewStyle().Background(t.DiffAddedBg()).Foreground(t.DiffAdded()).Render(marker)
+	case LineContext:
+		styledMarker = lipgloss.NewStyle().Background(t.DiffContextBg()).Foreground(t.TextMuted()).Render(marker)
+	default:
+		styledMarker = marker
+	}
+
+	return lineNumberStyle.Render(lineNum + " " + styledMarker)
+}
+
+// renderLineContent renders the content of a diff line with syntax and intra-line highlighting
+func renderLineContent(fileName string, dl DiffLine, bgStyle lipgloss.Style, highlightColor compat.AdaptiveColor, width int, t theme.Theme) string {
+	// Apply syntax highlighting
+	content := highlightLine(fileName, dl.Content, bgStyle.GetBackground())
+
+	// Apply intra-line highlighting if needed
+	if len(dl.Segments) > 0 && (dl.Kind == LineRemoved || dl.Kind == LineAdded) {
+		content = applyHighlighting(content, dl.Segments, dl.Kind, highlightColor)
+	}
+
+	// Add a padding space for added/removed lines
+	if dl.Kind == LineRemoved || dl.Kind == LineAdded {
+		content = bgStyle.Render(" ") + content
+	}
+
+	// Create the final line and truncate if needed
+	return bgStyle.MaxHeight(1).Width(width).Render(
+		ansi.Truncate(
+			content,
+			width,
+			lipgloss.NewStyle().Background(bgStyle.GetBackground()).Foreground(t.TextMuted()).Render("..."),
+		),
+	)
+}
+
+// renderUnifiedLine renders a single line in unified diff format
+func renderUnifiedLine(fileName string, dl DiffLine, width int, t theme.Theme) string {
+	removedLineStyle, addedLineStyle, contextLineStyle, lineNumberStyle := createStyles(t)
+
+	// Determine line style and marker based on line type
+	var marker string
+	var bgStyle lipgloss.Style
+	var lineNum string
+	var highlightColor compat.AdaptiveColor
+
+	switch dl.Kind {
+	case LineRemoved:
+		marker = "-"
+		bgStyle = removedLineStyle
+		lineNumberStyle = lineNumberStyle.Foreground(t.DiffRemoved()).Background(t.DiffRemovedLineNumberBg())
+		highlightColor = t.DiffHighlightRemoved()
+		if dl.OldLineNo > 0 {
+			lineNum = fmt.Sprintf("%6d       ", dl.OldLineNo)
+		} else {
+			lineNum = "            "
+		}
+	case LineAdded:
+		marker = "+"
+		bgStyle = addedLineStyle
+		lineNumberStyle = lineNumberStyle.Foreground(t.DiffAdded()).Background(t.DiffAddedLineNumberBg())
+		highlightColor = t.DiffHighlightAdded()
+		if dl.NewLineNo > 0 {
+			lineNum = fmt.Sprintf("      %7d", dl.NewLineNo)
+		} else {
+			lineNum = "            "
+		}
+	case LineContext:
+		marker = " "
+		bgStyle = contextLineStyle
+		if dl.OldLineNo > 0 && dl.NewLineNo > 0 {
+			lineNum = fmt.Sprintf("%6d %6d", dl.OldLineNo, dl.NewLineNo)
+		} else {
+			lineNum = "            "
+		}
+	}
+
+	// Create the line prefix
+	prefix := renderLinePrefix(dl, lineNum, marker, lineNumberStyle, t)
+
+	// Render the content
+	prefixWidth := ansi.StringWidth(prefix)
+	contentWidth := width - prefixWidth
+	content := renderLineContent(fileName, dl, bgStyle, highlightColor, contentWidth, t)
+
+	return prefix + content
+}
+
 // renderDiffColumnLine is a helper function that handles the common logic for rendering diff columns
 func renderDiffColumnLine(
 	fileName string,
@@ -661,7 +790,6 @@ func renderDiffColumnLine(
 	var marker string
 	var bgStyle lipgloss.Style
 	var lineNum string
-	var highlightType LineType
 	var highlightColor compat.AdaptiveColor
 
 	if isLeftColumn {
@@ -671,7 +799,6 @@ func renderDiffColumnLine(
 			marker = "-"
 			bgStyle = removedLineStyle
 			lineNumberStyle = lineNumberStyle.Foreground(t.DiffRemoved()).Background(t.DiffRemovedLineNumberBg())
-			highlightType = LineRemoved
 			highlightColor = t.DiffHighlightRemoved()
 		case LineAdded:
 			marker = "?"
@@ -692,7 +819,6 @@ func renderDiffColumnLine(
 			marker = "+"
 			bgStyle = addedLineStyle
 			lineNumberStyle = lineNumberStyle.Foreground(t.DiffAdded()).Background(t.DiffAddedLineNumberBg())
-			highlightType = LineAdded
 			highlightColor = t.DiffHighlightAdded()
 		case LineRemoved:
 			marker = "?"
@@ -708,44 +834,24 @@ func renderDiffColumnLine(
 		}
 	}
 
-	// Style the marker based on line type
-	var styledMarker string
-	switch dl.Kind {
-	case LineRemoved:
-		styledMarker = removedLineStyle.Foreground(t.DiffRemoved()).Render(marker)
-	case LineAdded:
-		styledMarker = addedLineStyle.Foreground(t.DiffAdded()).Render(marker)
-	case LineContext:
-		styledMarker = contextLineStyle.Foreground(t.TextMuted()).Render(marker)
-	default:
-		styledMarker = marker
-	}
-
 	// Create the line prefix
-	prefix := lineNumberStyle.Render(lineNum + " " + styledMarker)
+	prefix := renderLinePrefix(*dl, lineNum, marker, lineNumberStyle, t)
 
-	// Apply syntax highlighting
-	content := highlightLine(fileName, dl.Content, bgStyle.GetBackground())
+	// Determine if we should render content
+	shouldRenderContent := (dl.Kind == LineRemoved && isLeftColumn) ||
+		(dl.Kind == LineAdded && !isLeftColumn) ||
+		dl.Kind == LineContext
 
-	// Apply intra-line highlighting if needed
-	if (dl.Kind == LineRemoved && isLeftColumn || dl.Kind == LineAdded && !isLeftColumn) && len(dl.Segments) > 0 {
-		content = applyHighlighting(content, dl.Segments, highlightType, highlightColor)
+	if !shouldRenderContent {
+		return bgStyle.Width(colWidth).Render("")
 	}
 
-	// Add a padding space for added/removed lines
-	if (dl.Kind == LineRemoved && isLeftColumn) || (dl.Kind == LineAdded && !isLeftColumn) {
-		content = bgStyle.Render(" ") + content
-	}
+	// Render the content
+	prefixWidth := ansi.StringWidth(prefix)
+	contentWidth := colWidth - prefixWidth
+	content := renderLineContent(fileName, *dl, bgStyle, highlightColor, contentWidth, t)
 
-	// Create the final line and truncate if needed
-	lineText := prefix + content
-	return bgStyle.MaxHeight(1).Width(colWidth).Render(
-		ansi.Truncate(
-			lineText,
-			colWidth,
-			lipgloss.NewStyle().Background(bgStyle.GetBackground()).Foreground(t.TextMuted()).Render("..."),
-		),
-	)
+	return prefix + content
 }
 
 // renderLeftColumn formats the left side of a side-by-side diff
@@ -761,6 +867,27 @@ func renderRightColumn(fileName string, dl *DiffLine, colWidth int) string {
 // -------------------------------------------------------------------------
 // Public API
 // -------------------------------------------------------------------------
+
+// RenderUnifiedHunk formats a hunk for unified display
+func RenderUnifiedHunk(fileName string, h Hunk, opts ...UnifiedOption) string {
+	// Apply options to create the configuration
+	config := NewUnifiedConfig(opts...)
+
+	// Make a copy of the hunk so we don't modify the original
+	hunkCopy := Hunk{Lines: make([]DiffLine, len(h.Lines))}
+	copy(hunkCopy.Lines, h.Lines)
+
+	// Highlight changes within lines
+	HighlightIntralineChanges(&hunkCopy)
+
+	var sb strings.Builder
+	for _, line := range hunkCopy.Lines {
+		sb.WriteString(renderUnifiedLine(fileName, line, config.Width, theme.CurrentTheme()))
+		sb.WriteString("\n")
+	}
+
+	return sb.String()
+}
 
 // RenderSideBySideHunk formats a hunk for side-by-side display
 func RenderSideBySideHunk(fileName string, h Hunk, opts ...SideBySideOption) string {
@@ -790,6 +917,21 @@ func RenderSideBySideHunk(fileName string, h Hunk, opts ...SideBySideOption) str
 	}
 
 	return sb.String()
+}
+
+// FormatUnifiedDiff creates a unified formatted view of a diff
+func FormatUnifiedDiff(filename string, diffText string, opts ...UnifiedOption) (string, error) {
+	diffResult, err := ParseUnifiedDiff(diffText)
+	if err != nil {
+		return "", err
+	}
+
+	var sb strings.Builder
+	for _, h := range diffResult.Hunks {
+		sb.WriteString(RenderUnifiedHunk(filename, h, opts...))
+	}
+
+	return sb.String(), nil
 }
 
 // FormatDiff creates a side-by-side formatted view of a diff

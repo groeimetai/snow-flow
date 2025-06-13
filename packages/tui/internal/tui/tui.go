@@ -181,18 +181,8 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		msg.Height -= 2 // Make space for the status bar
 		a.width, a.height = msg.Width, msg.Height
 
-		size := layout.LayoutSizeNormal
-		if a.width < 40 {
-			size = layout.LayoutSizeSmall
-		} else if a.width < 80 {
-			size = layout.LayoutSizeNormal
-		} else {
-			size = layout.LayoutSizeLarge
-		}
-
 		// TODO: move away from global state
 		layout.Current = &layout.LayoutInfo{
-			Size: size,
 			Viewport: layout.Dimensions{
 				Width:  a.width,
 				Height: a.height,
