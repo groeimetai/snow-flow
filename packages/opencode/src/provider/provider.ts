@@ -1,11 +1,9 @@
 import z from "zod"
 import { App } from "../app/app"
 import { Config } from "../config/config"
-import { mergeDeep, pipe, sortBy } from "remeda"
+import { mergeDeep, sortBy } from "remeda"
 import { NoSuchModelError, type LanguageModel, type Provider as SDK } from "ai"
 import { Log } from "../util/log"
-import path from "path"
-import { Global } from "../global"
 import { BunProc } from "../bun"
 import { BashTool } from "../tool/bash"
 import { EditTool } from "../tool/edit"
@@ -33,7 +31,7 @@ export namespace Provider {
     provider: ModelsDev.Provider,
   ) => Promise<Record<string, any> | false>
 
-  type Source = "env" | "config" | "custom"
+  type Source = "env" | "config" | "custom" | "api"
 
   const CUSTOM_LOADERS: Record<string, CustomLoader> = {
     async anthropic(provider) {
@@ -145,6 +143,13 @@ export namespace Provider {
     for (const [providerID, provider] of Object.entries(database)) {
       if (provider.env.some((item) => process.env[item])) {
         mergeProvider(providerID, {}, "env")
+      }
+    }
+
+    // load apikeys
+    for (const [providerID, provider] of Object.entries(await Auth.all())) {
+      if (provider.type === "api") {
+        mergeProvider(providerID, { apiKey: provider.key }, "api")
       }
     }
 
