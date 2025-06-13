@@ -23,7 +23,7 @@ type App struct {
 	Config     *config.Config
 	Client     *client.ClientWithResponses
 	Provider   *client.ProviderInfo
-	Model      *client.ProviderModel
+	Model      *client.ModelInfo
 	Session    *client.SessionInfo
 	Messages   []client.MessageInfo
 	Status     status.Service
@@ -61,20 +61,25 @@ func New(ctx context.Context, version string, httpClient *client.ClientWithRespo
 	}
 	providers := []client.ProviderInfo{}
 	var defaultProvider *client.ProviderInfo
-	var defaultModel *client.ProviderModel
+	var defaultModel *client.ModelInfo
 
-	for i, provider := range providersResponse.JSON200.Providers {
-		if i == 0 || provider.Id == "anthropic" {
-			defaultProvider = &providersResponse.JSON200.Providers[i]
-			if match, ok := providersResponse.JSON200.Default[provider.Id]; ok {
-				model := defaultProvider.Models[match]
-				defaultModel = &model
-			} else {
-				for _, model := range provider.Models {
-					defaultModel = &model
-					break
-				}
-			}
+	var anthropic *client.ProviderInfo
+	for _, provider := range providersResponse.JSON200.Providers {
+		if provider.Id == "anthropic" {
+			anthropic = &provider
+		}
+	}
+
+	// default to anthropic if available
+	if anthropic != nil {
+		defaultProvider = anthropic
+		defaultModel = getDefaultModel(providersResponse, *anthropic)
+	}
+
+	for _, provider := range providersResponse.JSON200.Providers {
+		if defaultProvider == nil || defaultModel == nil {
+			defaultProvider = &provider
+			defaultModel = getDefaultModel(providersResponse, provider)
 		}
 		providers = append(providers, provider)
 	}
@@ -91,7 +96,7 @@ func New(ctx context.Context, version string, httpClient *client.ClientWithRespo
 	}
 
 	var currentProvider *client.ProviderInfo
-	var currentModel *client.ProviderModel
+	var currentModel *client.ModelInfo
 	for _, provider := range providers {
 		if provider.Id == appConfig.Provider {
 			currentProvider = &provider
@@ -119,6 +124,18 @@ func New(ctx context.Context, version string, httpClient *client.ClientWithRespo
 	fileutil.Init()
 
 	return app, nil
+}
+
+func getDefaultModel(response *client.PostProviderListResponse, provider client.ProviderInfo) *client.ModelInfo {
+	if match, ok := response.JSON200.Default[provider.Id]; ok {
+		model := provider.Models[match]
+		return &model
+	} else {
+		for _, model := range provider.Models {
+			return &model
+		}
+	}
+	return nil
 }
 
 type Attachment struct {

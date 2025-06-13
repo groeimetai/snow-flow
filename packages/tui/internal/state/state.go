@@ -7,7 +7,7 @@ import (
 type SessionSelectedMsg = *client.SessionInfo
 type ModelSelectedMsg struct {
 	Provider client.ProviderInfo
-	Model    client.ProviderModel
+	Model    client.ModelInfo
 }
 
 type SessionClearedMsg struct{}
@@ -17,5 +17,3 @@ type CompactSessionMsg struct{}
 type StateUpdatedMsg struct {
 	State map[string]any
 }
-
-// TODO: store in CONFIG/tui.yaml

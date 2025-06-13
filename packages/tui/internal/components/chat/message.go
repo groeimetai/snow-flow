@@ -212,7 +212,7 @@ func renderText(message client.MessageInfo, text string, author string) string {
 func renderToolInvocation(
 	toolCall client.MessageToolInvocationToolCall,
 	result *string,
-	metadata map[string]any,
+	metadata client.MessageInfo_Metadata_Tool_AdditionalProperties,
 	showResult bool,
 ) string {
 	ignoredTools := []string{"opencode_todoread"}
@@ -264,27 +264,26 @@ func renderToolInvocation(
 		body = *result
 	}
 
-	if metadata["error"] != nil && metadata["message"] != nil {
-		body = ""
-		error = styles.BaseStyle().
-			Foreground(t.Error()).
-			Render(metadata["message"].(string))
-		error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+	if e, ok := metadata.Get("error"); ok && e.(bool) == true {
+		if m, ok := metadata.Get("message"); ok {
+			body = "" // don't show the body if there's an error
+			error = styles.BaseStyle().
+				Foreground(t.Error()).
+				Render(m.(string))
+			error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+		}
 	}
 
 	elapsed := ""
-	if metadata["time"] != nil {
-		timeMap := metadata["time"].(map[string]any)
-		start := timeMap["start"].(float64)
-		end := timeMap["end"].(float64)
-		durationMs := end - start
-		duration := time.Duration(durationMs * float64(time.Millisecond))
-		roundedDuration := time.Duration(duration.Round(time.Millisecond))
-		if durationMs > 1000 {
-			roundedDuration = time.Duration(duration.Round(time.Second))
-		}
-		elapsed = styles.Muted().Render(roundedDuration.String())
+	start := metadata.Time.Start
+	end := metadata.Time.End
+	durationMs := end - start
+	duration := time.Duration(durationMs * float32(time.Millisecond))
+	roundedDuration := time.Duration(duration.Round(time.Millisecond))
+	if durationMs > 1000 {
+		roundedDuration = time.Duration(duration.Round(time.Second))
 	}
+	elapsed = styles.Muted().Render(roundedDuration.String())
 
 	title := ""
 	switch toolCall.ToolName {
@@ -292,16 +291,16 @@ func renderToolInvocation(
 		toolArgs = renderArgs(&toolArgsMap, "filePath")
 		title = fmt.Sprintf("Read: %s   %s", toolArgs, elapsed)
 		body = ""
-		if metadata["preview"] != nil && toolArgsMap["filePath"] != nil {
+		if preview, ok := metadata.Get("preview"); ok && toolArgsMap["filePath"] != nil {
 			filename := toolArgsMap["filePath"].(string)
-			body = metadata["preview"].(string)
+			body = preview.(string)
 			body = renderFile(filename, body, WithTruncate(6))
 		}
 	case "opencode_edit":
 		filename := toolArgsMap["filePath"].(string)
 		title = fmt.Sprintf("Edit: %s   %s", relative(filename), elapsed)
-		if metadata["diff"] != nil {
-			patch := metadata["diff"].(string)
+		if d, ok := metadata.Get("diff"); ok {
+			patch := d.(string)
 			diffWidth := min(layout.Current.Viewport.Width, 120)
 			formattedDiff, _ := diff.FormatDiff(filename, patch, diff.WithTotalWidth(diffWidth))
 			body = strings.TrimSpace(formattedDiff)
@@ -322,9 +321,9 @@ func renderToolInvocation(
 	case "opencode_bash":
 		description := toolArgsMap["description"].(string)
 		title = fmt.Sprintf("Shell: %s   %s", description, elapsed)
-		if metadata["stdout"] != nil {
+		if stdout, ok := metadata.Get("stdout"); ok {
 			command := toolArgsMap["command"].(string)
-			stdout := metadata["stdout"].(string)
+			stdout := stdout.(string)
 			body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
 			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
 			body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
@@ -339,9 +338,10 @@ func renderToolInvocation(
 		body = renderContentBlock(body, WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
 	case "opencode_todowrite":
 		title = fmt.Sprintf("Planning...   %s", elapsed)
-		if finished && metadata["todos"] != nil {
+
+		if to, ok := metadata.Get("todos"); ok && finished {
 			body = ""
-			todos := metadata["todos"].([]any)
+			todos := to.([]any)
 			for _, todo := range todos {
 				t := todo.(map[string]any)
 				content := t["content"].(string)

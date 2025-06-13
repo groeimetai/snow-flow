@@ -118,7 +118,6 @@ type blockType int
 
 const (
 	none blockType = iota
-	systemTextBlock
 	userTextBlock
 	assistantTextBlock
 	toolInvocationBlock
@@ -134,10 +133,6 @@ func (m *messagesComponent) renderView() {
 	blocks := make([]string, 0)
 	previousBlockType := none
 	for _, message := range m.app.Messages {
-		if message.Role == client.System {
-			continue // ignoring system messages for now
-		}
-
 		var content string
 		var cached bool
 
@@ -174,15 +169,13 @@ func (m *messagesComponent) renderView() {
 					previousBlockType = userTextBlock
 				} else if message.Role == client.Assistant {
 					previousBlockType = assistantTextBlock
-				} else if message.Role == client.System {
-					previousBlockType = systemTextBlock
 				}
 			case client.MessagePartToolInvocation:
 				toolInvocationPart := part.(client.MessagePartToolInvocation)
 				toolCall, _ := toolInvocationPart.ToolInvocation.AsMessageToolInvocationToolCall()
-				metadata := map[string]any{}
+				metadata := client.MessageInfo_Metadata_Tool_AdditionalProperties{}
 				if _, ok := message.Metadata.Tool[toolCall.ToolCallId]; ok {
-					metadata = message.Metadata.Tool[toolCall.ToolCallId].(map[string]any)
+					metadata = message.Metadata.Tool[toolCall.ToolCallId]
 				}
 				var result *string
 				resultPart, resultError := toolInvocationPart.ToolInvocation.AsMessageToolInvocationToolResult()
@@ -215,14 +208,16 @@ func (m *messagesComponent) renderView() {
 		}
 
 		error := ""
-		errorValue, _ := message.Metadata.Error.ValueByDiscriminator()
-		switch errorValue.(type) {
-		case client.UnknownError:
-			clientError := errorValue.(client.UnknownError)
-			error = clientError.Data.Message
-			error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
-			blocks = append(blocks, error)
-			previousBlockType = errorBlock
+		if message.Metadata.Error != nil {
+			errorValue, _ := message.Metadata.Error.ValueByDiscriminator()
+			switch errorValue.(type) {
+			case client.UnknownError:
+				clientError := errorValue.(client.UnknownError)
+				error = clientError.Data.Message
+				error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithPaddingTop(1), WithPaddingBottom(1))
+				blocks = append(blocks, error)
+				previousBlockType = errorBlock
+			}
 		}
 	}
 

@@ -20,7 +20,6 @@ import (
 // Defines values for MessageInfoRole.
 const (
 	Assistant MessageInfoRole = "assistant"
-	System    MessageInfoRole = "system"
 	User      MessageInfoRole = "user"
 )
 
@@ -61,7 +60,9 @@ type EventLspClientDiagnostics struct {
 // EventMessagePartUpdated defines model for Event.message.part.updated.
 type EventMessagePartUpdated struct {
 	Properties struct {
-		Part MessagePart `json:"part"`
+		MessageID string      `json:"messageID"`
+		Part      MessagePart `json:"part"`
+		SessionID string      `json:"sessionID"`
 	} `json:"properties"`
 	Type string `json:"type"`
 }
@@ -83,7 +84,7 @@ type EventPermissionUpdated struct {
 // EventSessionError defines model for Event.session.error.
 type EventSessionError struct {
 	Properties struct {
-		Error EventSessionError_Properties_Error `json:"error"`
+		Error *EventSessionError_Properties_Error `json:"error,omitempty"`
 	} `json:"properties"`
 	Type string `json:"type"`
 }
@@ -115,23 +116,28 @@ type MessageInfo struct {
 	Id       string `json:"id"`
 	Metadata struct {
 		Assistant *struct {
-			Cost       float32 `json:"cost"`
-			ModelID    string  `json:"modelID"`
-			ProviderID string  `json:"providerID"`
-			Summary    *bool   `json:"summary,omitempty"`
+			Cost    float32 `json:"cost"`
+			ModelID string  `json:"modelID"`
+			Path    struct {
+				Cwd  string `json:"cwd"`
+				Root string `json:"root"`
+			} `json:"path"`
+			ProviderID string   `json:"providerID"`
+			Summary    *bool    `json:"summary,omitempty"`
+			System     []string `json:"system"`
 			Tokens     struct {
 				Input     float32 `json:"input"`
 				Output    float32 `json:"output"`
 				Reasoning float32 `json:"reasoning"`
 			} `json:"tokens"`
 		} `json:"assistant,omitempty"`
-		Error     MessageInfo_Metadata_Error `json:"error"`
-		SessionID string                     `json:"sessionID"`
+		Error     *MessageInfo_Metadata_Error `json:"error,omitempty"`
+		SessionID string                      `json:"sessionID"`
 		Time      struct {
 			Completed *float32 `json:"completed,omitempty"`
 			Created   float32  `json:"created"`
 		} `json:"time"`
-		Tool map[string]interface{} `json:"tool"`
+		Tool map[string]MessageInfo_Metadata_Tool_AdditionalProperties `json:"tool"`
 	} `json:"metadata"`
 	Parts []MessagePart   `json:"parts"`
 	Role  MessageInfoRole `json:"role"`
@@ -140,6 +146,16 @@ type MessageInfo struct {
 // MessageInfo_Metadata_Error defines model for MessageInfo.Metadata.Error.
 type MessageInfo_Metadata_Error struct {
 	union json.RawMessage
+}
+
+// MessageInfo_Metadata_Tool_AdditionalProperties defines model for MessageInfo.Metadata.Tool.AdditionalProperties.
+type MessageInfo_Metadata_Tool_AdditionalProperties struct {
+	Time struct {
+		End   float32 `json:"end"`
+		Start float32 `json:"start"`
+	} `json:"time"`
+	Title                string                 `json:"title"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
 // MessageInfoRole defines model for MessageInfo.Role.
@@ -224,15 +240,8 @@ type MessageToolInvocationToolResult struct {
 	ToolName   string       `json:"toolName"`
 }
 
-// ProviderInfo defines model for Provider.Info.
-type ProviderInfo struct {
-	Id     string                   `json:"id"`
-	Models map[string]ProviderModel `json:"models"`
-	Name   string                   `json:"name"`
-}
-
-// ProviderModel defines model for Provider.Model.
-type ProviderModel struct {
+// ModelInfo defines model for Model.Info.
+type ModelInfo struct {
 	Attachment bool `json:"attachment"`
 	Cost       struct {
 		Input        float32 `json:"input"`
@@ -245,8 +254,17 @@ type ProviderModel struct {
 		Context float32 `json:"context"`
 		Output  float32 `json:"output"`
 	} `json:"limit"`
-	Name      *string `json:"name,omitempty"`
-	Reasoning *bool   `json:"reasoning,omitempty"`
+	Name        string `json:"name"`
+	Reasoning   bool   `json:"reasoning"`
+	Temperature bool   `json:"temperature"`
+}
+
+// ProviderInfo defines model for Provider.Info.
+type ProviderInfo struct {
+	Env    []string             `json:"env"`
+	Id     string               `json:"id"`
+	Models map[string]ModelInfo `json:"models"`
+	Name   string               `json:"name"`
 }
 
 // ProviderAuthError defines model for ProviderAuthError.
@@ -279,8 +297,9 @@ type PermissionInfo struct {
 
 // SessionInfo defines model for session.info.
 type SessionInfo struct {
-	Id    string `json:"id"`
-	Share *struct {
+	Id       string  `json:"id"`
+	ParentID *string `json:"parentID,omitempty"`
+	Share    *struct {
 		Secret string `json:"secret"`
 		Url    string `json:"url"`
 	} `json:"share,omitempty"`
@@ -289,6 +308,11 @@ type SessionInfo struct {
 		Updated float32 `json:"updated"`
 	} `json:"time"`
 	Title string `json:"title"`
+}
+
+// PostFileSearchJSONBody defines parameters for PostFileSearch.
+type PostFileSearchJSONBody struct {
+	Query string `json:"query"`
 }
 
 // PostSessionAbortJSONBody defines parameters for PostSessionAbort.
@@ -328,6 +352,9 @@ type PostSessionSummarizeJSONBody struct {
 	SessionID  string `json:"sessionID"`
 }
 
+// PostFileSearchJSONRequestBody defines body for PostFileSearch for application/json ContentType.
+type PostFileSearchJSONRequestBody PostFileSearchJSONBody
+
 // PostSessionAbortJSONRequestBody defines body for PostSessionAbort for application/json ContentType.
 type PostSessionAbortJSONRequestBody PostSessionAbortJSONBody
 
@@ -345,6 +372,85 @@ type PostSessionShareJSONRequestBody PostSessionShareJSONBody
 
 // PostSessionSummarizeJSONRequestBody defines body for PostSessionSummarize for application/json ContentType.
 type PostSessionSummarizeJSONRequestBody PostSessionSummarizeJSONBody
+
+// Getter for additional properties for MessageInfo_Metadata_Tool_AdditionalProperties. Returns the specified
+// element and whether it was found
+func (a MessageInfo_Metadata_Tool_AdditionalProperties) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for MessageInfo_Metadata_Tool_AdditionalProperties
+func (a *MessageInfo_Metadata_Tool_AdditionalProperties) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for MessageInfo_Metadata_Tool_AdditionalProperties to handle AdditionalProperties
+func (a *MessageInfo_Metadata_Tool_AdditionalProperties) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["time"]; found {
+		err = json.Unmarshal(raw, &a.Time)
+		if err != nil {
+			return fmt.Errorf("error reading 'time': %w", err)
+		}
+		delete(object, "time")
+	}
+
+	if raw, found := object["title"]; found {
+		err = json.Unmarshal(raw, &a.Title)
+		if err != nil {
+			return fmt.Errorf("error reading 'title': %w", err)
+		}
+		delete(object, "title")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for MessageInfo_Metadata_Tool_AdditionalProperties to handle AdditionalProperties
+func (a MessageInfo_Metadata_Tool_AdditionalProperties) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["time"], err = json.Marshal(a.Time)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'time': %w", err)
+	}
+
+	object["title"], err = json.Marshal(a.Title)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'title': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
 
 // AsEventStorageWrite returns the union data inside the Event as a EventStorageWrite
 func (t Event) AsEventStorageWrite() (EventStorageWrite, error) {
@@ -1173,6 +1279,11 @@ type ClientInterface interface {
 	// GetEvent request
 	GetEvent(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostFileSearchWithBody request with any body
+	PostFileSearchWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostFileSearch(ctx context.Context, body PostFileSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostPathGet request
 	PostPathGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1242,6 +1353,30 @@ func (c *Client) PostAppInitialize(ctx context.Context, reqEditors ...RequestEdi
 
 func (c *Client) GetEvent(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetEventRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostFileSearchWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostFileSearchRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostFileSearch(ctx context.Context, body PostFileSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostFileSearchRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1521,6 +1656,46 @@ func NewGetEventRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewPostFileSearchRequest calls the generic PostFileSearch builder with application/json body
+func NewPostFileSearchRequest(server string, body PostFileSearchJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostFileSearchRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostFileSearchRequestWithBody generates requests for PostFileSearch with any type of body
+func NewPostFileSearchRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/file_search")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1925,6 +2100,11 @@ type ClientWithResponsesInterface interface {
 	// GetEventWithResponse request
 	GetEventWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventResponse, error)
 
+	// PostFileSearchWithBodyWithResponse request with any body
+	PostFileSearchWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostFileSearchResponse, error)
+
+	PostFileSearchWithResponse(ctx context.Context, body PostFileSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*PostFileSearchResponse, error)
+
 	// PostPathGetWithResponse request
 	PostPathGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostPathGetResponse, error)
 
@@ -2028,6 +2208,28 @@ func (r GetEventResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetEventResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostFileSearchResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]string
+}
+
+// Status returns HTTPResponse.Status
+func (r PostFileSearchResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostFileSearchResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2290,6 +2492,23 @@ func (c *ClientWithResponses) GetEventWithResponse(ctx context.Context, reqEdito
 	return ParseGetEventResponse(rsp)
 }
 
+// PostFileSearchWithBodyWithResponse request with arbitrary body returning *PostFileSearchResponse
+func (c *ClientWithResponses) PostFileSearchWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostFileSearchResponse, error) {
+	rsp, err := c.PostFileSearchWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostFileSearchResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostFileSearchWithResponse(ctx context.Context, body PostFileSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*PostFileSearchResponse, error) {
+	rsp, err := c.PostFileSearch(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostFileSearchResponse(rsp)
+}
+
 // PostPathGetWithResponse request returning *PostPathGetResponse
 func (c *ClientWithResponses) PostPathGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostPathGetResponse, error) {
 	rsp, err := c.PostPathGet(ctx, reqEditors...)
@@ -2496,6 +2715,32 @@ func ParseGetEventResponse(rsp *http.Response) (*GetEventResponse, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Event
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostFileSearchResponse parses an HTTP response from a PostFileSearchWithResponse call
+func ParsePostFileSearchResponse(rsp *http.Response) (*PostFileSearchResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostFileSearchResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []string
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

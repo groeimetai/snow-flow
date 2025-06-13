@@ -125,9 +125,9 @@ func (m *modelDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *modelDialog) models() []client.ProviderModel {
-	models := slices.SortedFunc(maps.Values(m.provider.Models), func(a, b client.ProviderModel) int {
-		return strings.Compare(*a.Name, *b.Name)
+func (m *modelDialog) models() []client.ModelInfo {
+	models := slices.SortedFunc(maps.Values(m.provider.Models), func(a, b client.ModelInfo) int {
+		return strings.Compare(a.Name, b.Name)
 	})
 	return models
 }
@@ -205,7 +205,7 @@ func (m *modelDialog) View() string {
 				Foreground(t.BackgroundElement()).
 				Bold(true)
 		}
-		modelItems = append(modelItems, itemStyle.Render(*models[i].Name))
+		modelItems = append(modelItems, itemStyle.Render(models[i].Name))
 	}
 
 	scrollIndicator := m.getScrollIndicators(maxDialogWidth)

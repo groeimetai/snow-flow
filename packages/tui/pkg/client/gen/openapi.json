@@ -439,6 +439,45 @@
         "parameters": [],
         "description": "List all providers"
       }
+    },
+    "/file_search": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Search for files",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postFile_search",
+        "parameters": [],
+        "description": "Search for files",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -618,7 +657,6 @@
           "role": {
             "type": "string",
             "enum": [
-              "system",
               "user",
               "assistant"
             ]
@@ -668,16 +706,64 @@
               },
               "tool": {
                 "type": "object",
-                "additionalProperties": {}
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "time": {
+                      "type": "object",
+                      "properties": {
+                        "start": {
+                          "type": "number"
+                        },
+                        "end": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "time"
+                  ],
+                  "additionalProperties": {}
+                }
               },
               "assistant": {
                 "type": "object",
                 "properties": {
+                  "system": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
                   "modelID": {
                     "type": "string"
                   },
                   "providerID": {
                     "type": "string"
+                  },
+                  "path": {
+                    "type": "object",
+                    "properties": {
+                      "cwd": {
+                        "type": "string"
+                      },
+                      "root": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "cwd",
+                      "root"
+                    ]
                   },
                   "cost": {
                     "type": "number"
@@ -706,8 +792,10 @@
                   }
                 },
                 "required": [
+                  "system",
                   "modelID",
                   "providerID",
+                  "path",
                   "cost",
                   "tokens"
                 ]
@@ -715,7 +803,6 @@
             },
             "required": [
               "time",
-              "error",
               "sessionID",
               "tool"
             ]
@@ -1036,10 +1123,18 @@
             "properties": {
               "part": {
                 "$ref": "#/components/schemas/Message.Part"
+              },
+              "sessionID": {
+                "type": "string"
+              },
+              "messageID": {
+                "type": "string"
               }
             },
             "required": [
-              "part"
+              "part",
+              "sessionID",
+              "messageID"
             ]
           }
         },
@@ -1076,6 +1171,10 @@
         "type": "object",
         "properties": {
           "id": {
+            "type": "string",
+            "pattern": "^ses"
+          },
+          "parentID": {
             "type": "string",
             "pattern": "^ses"
           },
@@ -1146,10 +1245,7 @@
                   }
                 }
               }
-            },
-            "required": [
-              "error"
-            ]
+            }
           }
         },
         "required": [
@@ -1220,31 +1316,35 @@
       "Provider.Info": {
         "type": "object",
         "properties": {
-          "id": {
+          "name": {
             "type": "string"
           },
-          "name": {
+          "env": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
             "type": "string"
           },
           "models": {
             "type": "object",
             "additionalProperties": {
-              "$ref": "#/components/schemas/Provider.Model"
+              "$ref": "#/components/schemas/Model.Info"
             }
           }
         },
         "required": [
-          "id",
           "name",
+          "env",
+          "id",
           "models"
         ]
       },
-      "Provider.Model": {
+      "Model.Info": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
           "name": {
             "type": "string"
           },
@@ -1254,16 +1354,19 @@
           "reasoning": {
             "type": "boolean"
           },
+          "temperature": {
+            "type": "boolean"
+          },
           "cost": {
             "type": "object",
             "properties": {
               "input": {
                 "type": "number"
               },
-              "inputCached": {
+              "output": {
                 "type": "number"
               },
-              "output": {
+              "inputCached": {
                 "type": "number"
               },
               "outputCached": {
@@ -1272,8 +1375,8 @@
             },
             "required": [
               "input",
-              "inputCached",
               "output",
+              "inputCached",
               "outputCached"
             ]
           },
@@ -1291,13 +1394,19 @@
               "context",
               "output"
             ]
+          },
+          "id": {
+            "type": "string"
           }
         },
         "required": [
-          "id",
+          "name",
           "attachment",
+          "reasoning",
+          "temperature",
           "cost",
-          "limit"
+          "limit",
+          "id"
         ]
       }
     }
