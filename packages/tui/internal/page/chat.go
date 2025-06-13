@@ -2,7 +2,6 @@ package page
 
 import (
 	"context"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
@@ -12,7 +11,6 @@ import (
 	"github.com/sst/opencode/internal/components/chat"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/layout"
-	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/util"
 )
 
@@ -67,29 +65,6 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if cmd != nil {
 			return p, cmd
 		}
-	case dialog.CommandRunCustomMsg:
-		// Check if the agent is busy before executing custom commands
-		if p.app.IsBusy() {
-			status.Warn("Agent is busy, please wait before executing a command...")
-			return p, nil
-		}
-
-		// Process the command content with arguments if any
-		content := msg.Content
-		if msg.Args != nil {
-			// Replace all named arguments with their values
-			for name, value := range msg.Args {
-				placeholder := "$" + name
-				content = strings.ReplaceAll(content, placeholder, value)
-			}
-		}
-
-		// Handle custom command execution
-		cmd := p.sendMessage(content, nil)
-		if cmd != nil {
-			return p, cmd
-		}
-
 	case dialog.CompletionDialogCloseMsg:
 		p.showCompletionDialog = false
 		p.app.SetCompletionDialogOpen(false)

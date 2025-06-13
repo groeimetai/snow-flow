@@ -2,7 +2,6 @@ package tui
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/charmbracelet/bubbles/v2/cursor"
 	"github.com/charmbracelet/bubbles/v2/key"
@@ -17,7 +16,6 @@ import (
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/page"
 	"github.com/sst/opencode/internal/state"
-	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
@@ -69,7 +67,6 @@ type appModel struct {
 	status        core.StatusComponent
 	app           *app.App
 	modal         layout.Modal
-	commands      []dialog.Command
 }
 
 func (a appModel) Init() tea.Cmd {
@@ -348,11 +345,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return a, tea.Batch(cmds...)
 }
 
-// RegisterCommand adds a command to the command dialog
-func (a *appModel) RegisterCommand(cmd dialog.Command) {
-	a.commands = append(a.commands, cmd)
-}
-
 func (a *appModel) moveToPage(pageID page.PageID) tea.Cmd {
 	var cmds []tea.Cmd
 	if _, ok := a.loadedPages[pageID]; !ok {
@@ -391,46 +383,9 @@ func NewModel(app *app.App) tea.Model {
 		loadedPages: make(map[page.PageID]bool),
 		status:      core.NewStatusCmp(app),
 		app:         app,
-		commands:    []dialog.Command{},
 		pages: map[page.PageID]layout.ModelWithView{
 			page.ChatPage: page.NewChatPage(app),
 		},
-	}
-
-	model.RegisterCommand(dialog.Command{
-		ID:          "init",
-		Title:       "Initialize Project",
-		Description: "Create/Update the AGENTS.md memory file",
-		Handler: func(cmd dialog.Command) tea.Cmd {
-			return app.InitializeProject(context.Background())
-		},
-	})
-
-	model.RegisterCommand(dialog.Command{
-		ID:          "compact_conversation",
-		Title:       "Compact Conversation",
-		Description: "Summarize the current session to save tokens",
-		Handler: func(cmd dialog.Command) tea.Cmd {
-			// Get the current session from the appModel
-			if model.currentPage != page.ChatPage {
-				status.Warn("Please navigate to a chat session first.")
-				return nil
-			}
-
-			// Return a message that will be handled by the chat page
-			status.Info("Compacting conversation...")
-			return util.CmdHandler(state.CompactSessionMsg{})
-		},
-	})
-
-	// Load custom commands
-	customCommands, err := dialog.LoadCustomCommands()
-	if err != nil {
-		slog.Warn("Failed to load custom commands", "error", err)
-	} else {
-		for _, cmd := range customCommands {
-			model.RegisterCommand(cmd)
-		}
 	}
 
 	return model
