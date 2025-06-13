@@ -326,11 +326,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.modal = quitDialog
 			return a, nil
 		}
-
-	default:
-		// f, filepickerCmd := a.filepicker.Update(msg)
-		// a.filepicker = f.(dialog.FilepickerComponent)
-		// cmds = append(cmds, filepickerCmd)
 	}
 
 	// update status bar

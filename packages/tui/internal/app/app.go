@@ -10,7 +10,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/fileutil"
 	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/theme"
@@ -121,7 +120,6 @@ func New(ctx context.Context, version string, httpClient *client.ClientWithRespo
 	}
 
 	theme.SetTheme(appConfig.Theme)
-	fileutil.Init()
 
 	return app, nil
 }
