@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss/v2"
 
 	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/components/core"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/components/modal"
@@ -22,41 +23,7 @@ import (
 	"github.com/sst/opencode/pkg/client"
 )
 
-type keyMap struct {
-	Help          key.Binding
-	NewSession    key.Binding
-	SwitchSession key.Binding
-	SwitchModel   key.Binding
-	SwitchTheme   key.Binding
-	Quit          key.Binding
-}
 
-var keys = keyMap{
-	Help: key.NewBinding(
-		key.WithKeys("f1", "super+/", "super+h"),
-		key.WithHelp("/help", "show help"),
-	),
-	NewSession: key.NewBinding(
-		key.WithKeys("f2", "super+n"),
-		key.WithHelp("/new", "new session"),
-	),
-	SwitchSession: key.NewBinding(
-		key.WithKeys("f3", "super+s"),
-		key.WithHelp("/sessions", "switch session"),
-	),
-	SwitchModel: key.NewBinding(
-		key.WithKeys("f4", "super+m"),
-		key.WithHelp("/model", "switch model"),
-	),
-	SwitchTheme: key.NewBinding(
-		key.WithKeys("f5", "super+t"),
-		key.WithHelp("/theme", "switch theme"),
-	),
-	Quit: key.NewBinding(
-		key.WithKeys("f10", "ctrl+c", "super+q"),
-		key.WithHelp("/quit", "quit"),
-	),
-}
 
 type appModel struct {
 	width, height int
@@ -67,6 +34,7 @@ type appModel struct {
 	status        core.StatusComponent
 	app           *app.App
 	modal         layout.Modal
+	commands      *commands.Registry
 }
 
 func (a appModel) Init() tea.Cmd {
@@ -131,12 +99,12 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
-			isModalTrigger = key.Matches(msg, keys.NewSession) ||
-				key.Matches(msg, keys.SwitchSession) ||
-				key.Matches(msg, keys.SwitchModel) ||
-				key.Matches(msg, keys.SwitchTheme) ||
-				key.Matches(msg, keys.Help) ||
-				key.Matches(msg, keys.Quit)
+			for _, cmdDef := range a.commands.Commands {
+				if key.Matches(msg, cmdDef.KeyBinding) {
+					isModalTrigger = true
+					break
+				}
+			}
 		}
 
 		if !isModalTrigger {
@@ -147,6 +115,38 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+
+	case commands.ExecuteCommandMsg:
+		switch msg.Name {
+		case "quit":
+			quitDialog := dialog.NewQuitDialog()
+			a.modal = quitDialog
+		case "new":
+			a.app.Session = &client.SessionInfo{}
+			a.app.Messages = []client.MessageInfo{}
+			cmds = append(cmds, util.CmdHandler(state.SessionClearedMsg{}))
+		case "sessions":
+			sessionDialog := dialog.NewSessionDialog(a.app)
+			a.modal = sessionDialog
+		case "model":
+			modelDialog := dialog.NewModelDialog(a.app)
+			a.modal = modelDialog
+		case "theme":
+			themeDialog := dialog.NewThemeDialog()
+			a.modal = themeDialog
+		case "help":
+			var helpBindings []key.Binding
+			for _, cmd := range a.commands.Commands {
+				// Create a new binding for help display
+				helpBindings = append(helpBindings, key.NewBinding(
+					key.WithKeys(cmd.KeyBinding.Keys()...),
+					key.WithHelp("/"+cmd.Name, cmd.Description),
+				))
+			}
+			helpDialog := dialog.NewHelpDialog(helpBindings...)
+			a.modal = helpDialog
+		}
+		return a, tea.Batch(cmds...)
 
 	case tea.BackgroundColorMsg:
 		styles.Terminal = &styles.TerminalInfo{
@@ -276,45 +276,15 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		switch {
-		case key.Matches(msg, keys.Help):
-			helpDialog := dialog.NewHelpDialog(
-				keys.Help,
-				keys.NewSession,
-				keys.SwitchSession,
-				keys.SwitchModel,
-				keys.SwitchTheme,
-				keys.Quit,
-			)
-			a.modal = helpDialog
-			return a, nil
-
-		case key.Matches(msg, keys.NewSession):
-			a.app.Session = &client.SessionInfo{}
-			a.app.Messages = []client.MessageInfo{}
-			return a, tea.Batch(
-				util.CmdHandler(state.SessionClearedMsg{}),
-			)
-
-		case key.Matches(msg, keys.SwitchModel):
-			modelDialog := dialog.NewModelDialog(a.app)
-			a.modal = modelDialog
-			return a, nil
-
-		case key.Matches(msg, keys.SwitchSession):
-			sessionDialog := dialog.NewSessionDialog(a.app)
-			a.modal = sessionDialog
-			return a, nil
-
-		case key.Matches(msg, keys.SwitchTheme):
-			themeDialog := dialog.NewThemeDialog()
-			a.modal = themeDialog
-			return a, nil
-
-		case key.Matches(msg, keys.Quit):
-			quitDialog := dialog.NewQuitDialog()
-			a.modal = quitDialog
-			return a, nil
+		// First, check for modal triggers from the command registry
+		if a.modal == nil {
+			for _, cmdDef := range a.commands.Commands {
+				if key.Matches(msg, cmdDef.KeyBinding) {
+					// If a key matches, send an ExecuteCommandMsg to self.
+					// This unifies keybinding and slash command handling.
+					return a, util.CmdHandler(commands.ExecuteCommandMsg{Name: cmdDef.Name})
+				}
+			}
 		}
 	}
 
@@ -361,6 +331,55 @@ func (a appModel) View() string {
 	return appView
 }
 
+func newCommandRegistry() *commands.Registry {
+	return &commands.Registry{
+		Commands: map[string]commands.Command{
+			"help": {
+				Name:        "help",
+				Description: "show help",
+				KeyBinding: key.NewBinding(
+					key.WithKeys("f1", "super+/", "super+h"),
+				),
+			},
+			"new": {
+				Name:        "new",
+				Description: "new session",
+				KeyBinding: key.NewBinding(
+					key.WithKeys("f2", "super+n"),
+				),
+			},
+			"sessions": {
+				Name:        "sessions",
+				Description: "switch session",
+				KeyBinding: key.NewBinding(
+					key.WithKeys("f3", "super+s"),
+				),
+			},
+			"model": {
+				Name:        "model",
+				Description: "switch model",
+				KeyBinding: key.NewBinding(
+					key.WithKeys("f4", "super+m"),
+				),
+			},
+			"theme": {
+				Name:        "theme",
+				Description: "switch theme",
+				KeyBinding: key.NewBinding(
+					key.WithKeys("f5", "super+t"),
+				),
+			},
+			"quit": {
+				Name:        "quit",
+				Description: "quit",
+				KeyBinding: key.NewBinding(
+					key.WithKeys("f10", "ctrl+c", "super+q"),
+				),
+			},
+		},
+	}
+}
+
 func NewModel(app *app.App) tea.Model {
 	startPage := page.ChatPage
 	model := &appModel{
@@ -368,6 +387,7 @@ func NewModel(app *app.App) tea.Model {
 		loadedPages: make(map[page.PageID]bool),
 		status:      core.NewStatusCmp(app),
 		app:         app,
+		commands:    newCommandRegistry(),
 		pages: map[page.PageID]layout.ModelWithView{
 			page.ChatPage: page.NewChatPage(app),
 		},

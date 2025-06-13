@@ -230,7 +230,7 @@ func renderText(message client.MessageInfo, text string, author string) string {
 	case client.Assistant:
 		return renderContentBlock(content,
 			WithAlign(lipgloss.Left),
-			WithBorderColor(t.Primary()),
+			WithBorderColor(t.Accent()),
 		)
 	}
 	return ""
@@ -250,8 +250,12 @@ func renderToolInvocation(
 	outerWidth := layout.Current.Container.Width
 	innerWidth := outerWidth - 6
 	paddingTop := 0
+	paddingBottom := 0
 	if showResult {
 		paddingTop = 1
+		if result == nil || *result == "" {
+			paddingBottom = 1
+		}
 	}
 
 	t := theme.CurrentTheme()
@@ -259,6 +263,7 @@ func renderToolInvocation(
 		Width(outerWidth).
 		Background(t.BackgroundSubtle()).
 		PaddingTop(paddingTop).
+		PaddingBottom(paddingBottom).
 		PaddingLeft(2).
 		PaddingRight(2).
 		BorderLeft(true).
@@ -301,10 +306,17 @@ func renderToolInvocation(
 	if e, ok := metadata.Get("error"); ok && e.(bool) == true {
 		if m, ok := metadata.Get("message"); ok {
 			body = "" // don't show the body if there's an error
+			style = style.BorderLeftForeground(t.Error())
 			error = styles.BaseStyle().
+				Background(t.BackgroundSubtle()).
 				Foreground(t.Error()).
 				Render(m.(string))
-			error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithMarginBottom(1))
+			error = renderContentBlock(
+				error,
+				WithFullWidth(),
+				WithBorderColor(t.Error()),
+				WithMarginBottom(1),
+			)
 		}
 	}
 

@@ -13,6 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/image"
 	"github.com/sst/opencode/internal/layout"
@@ -365,7 +366,7 @@ func (m *editorComponent) openEditor(value string) tea.Cmd {
 }
 
 func (m *editorComponent) send() tea.Cmd {
-	value := m.textarea.Value()
+	value := strings.TrimSpace(m.textarea.Value())
 	m.textarea.Reset()
 	attachments := m.attachments
 
@@ -382,6 +383,13 @@ func (m *editorComponent) send() tea.Cmd {
 	if value == "" {
 		return nil
 	}
+
+	// Check for slash command
+	if strings.HasPrefix(value, "/") {
+		commandName := strings.TrimPrefix(value, "/")
+		return util.CmdHandler(commands.ExecuteCommandMsg{Name: commandName})
+	}
+
 	return tea.Batch(
 		util.CmdHandler(SendMsg{
 			Text:        value,
