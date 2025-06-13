@@ -196,9 +196,9 @@ func renderText(message client.MessageInfo, text string, author string) string {
 	if layout.Current.Viewport.Width < 80 {
 		padding = 5
 	} else if layout.Current.Viewport.Width < 120 {
-		padding = 10
-	} else {
 		padding = 15
+	} else {
+		padding = 20
 	}
 
 	timestamp := time.UnixMilli(int64(message.Metadata.Time.Created)).Local().Format("02 Jan 2006 03:04 PM")
@@ -247,16 +247,23 @@ func renderToolInvocation(
 		return ""
 	}
 
-	padding := 1
-	outerWidth := layout.Current.Container.Width - 1 // subtract 1 for the border
-	innerWidth := outerWidth - padding - 4           // -4 for the border and padding
+	outerWidth := layout.Current.Container.Width
+	innerWidth := outerWidth - 6
+	paddingTop := 0
+	if showResult {
+		paddingTop = 1
+	}
 
 	t := theme.CurrentTheme()
 	style := styles.Muted().
 		Width(outerWidth).
-		PaddingLeft(padding).
+		Background(t.BackgroundSubtle()).
+		PaddingTop(paddingTop).
+		PaddingLeft(2).
+		PaddingRight(2).
 		BorderLeft(true).
-		BorderForeground(t.BorderSubtle()).
+		BorderRight(true).
+		BorderForeground(t.BackgroundSubtle()).
 		BorderStyle(lipgloss.ThickBorder())
 
 	if toolCall.State == "partial-call" {
@@ -297,7 +304,7 @@ func renderToolInvocation(
 			error = styles.BaseStyle().
 				Foreground(t.Error()).
 				Render(m.(string))
-			error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
+			error = renderContentBlock(error, WithBorderColor(t.Error()), WithFullWidth(), WithMarginBottom(1))
 		}
 	}
 
@@ -336,7 +343,7 @@ func renderToolInvocation(
 					diff.WithWidth(layout.Current.Container.Width-2),
 				)
 			} else {
-				diffWidth := min(layout.Current.Viewport.Width, 120)
+				diffWidth := min(layout.Current.Viewport.Width-2, 120)
 				formattedDiff, _ = diff.FormatDiff(filename, patch, diff.WithTotalWidth(diffWidth))
 			}
 			formattedDiff = strings.TrimSpace(formattedDiff)
@@ -346,14 +353,19 @@ func renderToolInvocation(
 				BorderLeft(true).
 				BorderRight(true).
 				Render(formattedDiff)
+
+			if showResult {
+				style = style.Width(lipgloss.Width(formattedDiff))
+				title += "\n"
+			}
+
 			body = strings.TrimSpace(formattedDiff)
 			body = lipgloss.Place(
 				layout.Current.Viewport.Width,
-				lipgloss.Height(body)+2,
+				lipgloss.Height(body)+1,
 				lipgloss.Center,
-				lipgloss.Center,
+				lipgloss.Top,
 				body,
-				lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 			)
 		}
 	case "opencode_write":
@@ -369,7 +381,7 @@ func renderToolInvocation(
 			stdout := stdout.(string)
 			body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
 			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
-			body = renderContentBlock(body, WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
+			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
 	case "opencode_webfetch":
 		title = fmt.Sprintf("Fetching: %s   %s", toolArgs, elapsed)
@@ -378,9 +390,9 @@ func renderToolInvocation(
 		if format == "html" || format == "markdown" {
 			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
 		}
-		body = renderContentBlock(body, WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
+		body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 	case "opencode_todowrite":
-		title = fmt.Sprintf("Planning...   %s", elapsed)
+		title = fmt.Sprintf("Planning   %s", elapsed)
 
 		if to, ok := metadata.Get("todos"); ok && finished {
 			body = ""
@@ -398,13 +410,13 @@ func renderToolInvocation(
 				}
 			}
 			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
-			body = renderContentBlock(body, WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
+			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
 	default:
 		toolName := renderToolName(toolCall.ToolName)
 		title = fmt.Sprintf("%s: %s   %s", toolName, toolArgs, elapsed)
 		body = truncateHeight(body, 10)
-		body = renderContentBlock(body, WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
+		body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 	}
 
 	content := style.Render(title)
@@ -478,7 +490,7 @@ func renderFile(filename string, content string, options ...fileRenderingOption)
 	content = fmt.Sprintf("```%s\n%s\n```", extension(renderer.filename), content)
 	content = toMarkdown(content, width, t.BackgroundSubtle())
 
-	return renderContentBlock(content, WithFullWidth(), WithMarginTop(1), WithMarginBottom(1))
+	return renderContentBlock(content, WithFullWidth(), WithMarginBottom(1))
 }
 
 func renderToolAction(name string) string {
