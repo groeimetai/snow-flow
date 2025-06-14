@@ -289,11 +289,13 @@ export namespace Provider {
     google: TOOLS,
   }
   export async function tools(providerID: string) {
+    /*
     const cfg = await Config.get()
     if (cfg.tool?.provider?.[providerID])
       return cfg.tool.provider[providerID].map(
         (id) => TOOLS.find((t) => t.id === id)!,
       )
+        */
     return TOOL_MAPPING[providerID] ?? TOOLS
   }
 

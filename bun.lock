@@ -50,6 +50,7 @@
         "@types/turndown": "5.0.5",
         "@types/yargs": "17.0.33",
         "typescript": "catalog:",
+        "zod-to-json-schema": "3.24.5",
       },
     },
     "packages/web": {

@@ -2,6 +2,7 @@ import { Server } from "../../server/server"
 import fs from "fs/promises"
 import path from "path"
 import type { CommandModule } from "yargs"
+import { Config } from "../../config/config"
 
 export const GenerateCommand = {
   command: "generate",

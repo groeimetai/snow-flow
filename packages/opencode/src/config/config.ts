@@ -58,11 +58,6 @@ export namespace Config {
           }),
         )
         .optional(),
-      tool: z
-        .object({
-          provider: z.record(z.string(), z.string().array()).optional(),
-        })
-        .optional(),
       mcp: z.record(z.string(), Mcp).optional(),
     })
     .strict()
