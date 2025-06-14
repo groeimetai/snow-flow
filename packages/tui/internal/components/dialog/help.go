@@ -59,6 +59,8 @@ func (h *helpDialog) View() string {
 	descStyle := lipgloss.NewStyle().
 		Background(t.BackgroundElement()).
 		Foreground(t.TextMuted())
+	contentStyle := lipgloss.NewStyle().
+		PaddingLeft(1).Background(t.BackgroundElement())
 
 	lines := []string{}
 	for _, b := range h.bindings {
@@ -74,7 +76,7 @@ func (h *helpDialog) View() string {
 			}
 		}
 
-		lines = append(lines, content)
+		lines = append(lines, contentStyle.Render(content))
 	}
 
 	return strings.Join(lines, "\n")
