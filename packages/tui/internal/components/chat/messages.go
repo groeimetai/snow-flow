@@ -316,7 +316,7 @@ func (m *messagesComponent) home() string {
 		{"/new", "start a new session"},
 		{"/model", "switch model"},
 		{"/share", "share the current session"},
-		{"/exit", "exit the app"},
+		{"/quit", "exit the app"},
 	}
 
 	commandLines := []string{}
