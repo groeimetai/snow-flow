@@ -1,14 +1,14 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
-    "@openrouter/ai-sdk-provider": {
-      "name": "OpenRouter",
+    "@ai-sdk/openai-compatible": {
+      "name": "ollama",
       "options": {
-        "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "anthropic/claude-3.5-sonnet": {
-          "name": "claude-3.5-sonnet"
+        "llama2": {
+          "name": "llama2"
         }
       }
     }

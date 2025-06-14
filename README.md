@@ -82,17 +82,16 @@ You can use opencode with any provider listed at [here](https://ai-sdk.dev/provi
 
 ```json title="opencode.json"
 {
-  "$schema": "http://opencode.ai/config.json",
+  "$schema": "https://opencode.ai/config.json",
   "provider": {
     "@ai-sdk/openai-compatible": {
-      "name": "MySpecialProvider",
+      "name": "ollama",
       "options": {
-        "apiKey": "xxx",
-        "baseURL": "https://api.provider.com/v1"
+        "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "my-model-name": {
-          "name": "My Model Name"
+        "llama2": {
+          "name": "llama2"
         }
       }
     }
@@ -117,9 +116,9 @@ $ bun run src/index.ts
 
 ### FAQ
 
-#### How do I use this with OpenRouter
+#### How do I use this with OpenRou?ter
 
-Theoretically you can use this with OpenRouter with config like this
+OpenRouter is not yet in the models.dev database but you can configure it manually.
 
 ```json title="opencode.json"
 {
@@ -139,5 +138,3 @@ Theoretically you can use this with OpenRouter with config like this
   }
 }
 ```
-
-However we are using [ai-sdk v5](https://ai-sdk.dev) which OpenRouter does not support yet. The moment they do this will work
