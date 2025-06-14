@@ -51,7 +51,7 @@ Project configuration is optional. You can place an `opencode.json` file in the 
 
 ```json title="opencode.json"
 {
-  "$schema": "https://opencode.ai/schemas/opencode.json"
+  "$schema": "http://opencode.ai/config.json"
 }
 ```
 

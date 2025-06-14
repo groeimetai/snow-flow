@@ -50,6 +50,7 @@ export namespace Config {
 
   export const Info = z
     .object({
+      $schema: z.string().optional(),
       provider: z
         .record(
           ModelsDev.Provider.partial().extend({

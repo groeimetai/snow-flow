@@ -111,7 +111,7 @@ if (!snapshot) {
         !lower.includes("chore:") &&
         !lower.includes("ci:") &&
         !lower.includes("docs:") &&
-        !lower.includes("doc:") &&
+        !lower.includes("doc:")
       )
     })
     .join("\n")
