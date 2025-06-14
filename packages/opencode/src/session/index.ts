@@ -4,15 +4,15 @@ import { Identifier } from "../id/id"
 import { Storage } from "../storage/storage"
 import { Log } from "../util/log"
 import {
-  convertToModelMessages,
   generateText,
   LoadAPIKeyError,
-  stepCountIs,
   streamText,
   tool,
   type Tool as AITool,
   type LanguageModelUsage,
-  type UIMessage,
+  type CoreMessage,
+  type UserContent,
+  type AssistantContent,
 } from "ai"
 import { z, ZodSchema } from "zod"
 import { Decimal } from "decimal.js"
@@ -28,6 +28,7 @@ import { NamedError } from "../util/error"
 import type { Tool } from "../tool/tool"
 import { SystemPrompt } from "./system"
 import { Flag } from "../flag/flag"
+import type { ModelsDev } from "../provider/models"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -227,34 +228,28 @@ export namespace Session {
     const session = await get(input.sessionID)
     if (msgs.length === 0 && !session.parentID) {
       generateText({
-        maxOutputTokens: 20,
-        messages: convertToModelMessages([
+        maxTokens: input.providerID === "google" ? 1024 : 20,
+        messages: [
           ...SystemPrompt.title(input.providerID).map(
-            (x): UIMessage => ({
-              id: Identifier.ascending("message"),
+            (x): CoreMessage => ({
               role: "system",
-              parts: [
-                {
-                  type: "text",
-                  text: x,
-                },
-              ],
+              content: x,
             }),
           ),
           {
             role: "user",
-            parts: input.parts,
+            content: toUserContent(input.parts),
           },
-        ]),
-        temperature: 0,
+        ],
         model: model.language,
       })
         .then((result) => {
-          return Session.update(input.sessionID, (draft) => {
-            draft.title = result.text
-          })
+          if (result.text)
+            return Session.update(input.sessionID, (draft) => {
+              draft.title = result.text
+            })
         })
-        .catch(() => {})
+        .catch((e) => {})
     }
     const msg: Message.Info = {
       role: "user",
@@ -400,90 +395,9 @@ export namespace Session {
         }
         text = undefined
       },
-      async onChunk(input) {
-        const value = input.chunk
-        l.info("part", {
-          type: value.type,
-        })
-        switch (value.type) {
-          case "text":
-            if (!text) {
-              text = value
-              next.parts.push(value)
-              break
-            } else text.text += value.text
-            break
-
-          case "tool-call": {
-            const [match] = next.parts.flatMap((p) =>
-              p.type === "tool-invocation" &&
-              p.toolInvocation.toolCallId === value.toolCallId
-                ? [p]
-                : [],
-            )
-            if (!match) break
-            match.toolInvocation.args = value.args
-            match.toolInvocation.state = "call"
-            Bus.publish(Message.Event.PartUpdated, {
-              part: match,
-              messageID: next.id,
-              sessionID: next.metadata.sessionID,
-            })
-            break
-          }
-
-          case "tool-call-streaming-start":
-            next.parts.push({
-              type: "tool-invocation",
-              toolInvocation: {
-                state: "partial-call",
-                toolName: value.toolName,
-                toolCallId: value.toolCallId,
-                args: {},
-              },
-            })
-            Bus.publish(Message.Event.PartUpdated, {
-              part: next.parts[next.parts.length - 1],
-              messageID: next.id,
-              sessionID: next.metadata.sessionID,
-            })
-            break
-
-          case "tool-call-delta":
-            break
-
-          case "tool-result":
-            const match = next.parts.find(
-              (p) =>
-                p.type === "tool-invocation" &&
-                p.toolInvocation.toolCallId === value.toolCallId,
-            )
-            if (match && match.type === "tool-invocation") {
-              match.toolInvocation = {
-                args: value.args,
-                toolCallId: value.toolCallId,
-                toolName: value.toolName,
-                state: "result",
-                result: value.result as string,
-              }
-              Bus.publish(Message.Event.PartUpdated, {
-                part: match,
-                messageID: next.id,
-                sessionID: next.metadata.sessionID,
-              })
-            }
-            break
-
-          default:
-            l.info("unhandled", {
-              type: value.type,
-            })
-        }
-        await updateMessage(next)
-      },
       async onFinish(input) {
         const assistant = next.metadata!.assistant!
-        const usage = getUsage(input.totalUsage, model.info)
+        const usage = getUsage(input.usage, model.info)
         assistant.cost = usage.cost
         await updateMessage(next)
       },
@@ -515,31 +429,44 @@ export namespace Session {
           error: next.metadata.error,
         })
       },
-      async prepareStep(step) {
-        next.parts.push({
-          type: "step-start",
-        })
-        await updateMessage(next)
-        return step
-      },
+      // async prepareStep(step) {
+      //   next.parts.push({
+      //     type: "step-start",
+      //   })
+      //   await updateMessage(next)
+      //   return step
+      // },
       toolCallStreaming: true,
       abortSignal: abort.signal,
-      stopWhen: stepCountIs(1000),
-      messages: convertToModelMessages([
+      maxSteps: 1000,
+      messages: [
         ...system.map(
-          (x): UIMessage => ({
-            id: Identifier.ascending("message"),
+          (x): CoreMessage => ({
             role: "system",
-            parts: [
-              {
-                type: "text",
-                text: x,
-              },
-            ],
+            content: x,
           }),
         ),
-        ...msgs,
-      ]),
+        ...msgs.flatMap((msg): CoreMessage[] => {
+          switch (msg.role) {
+            case "user":
+              return [
+                {
+                  role: "user",
+                  content: toUserContent(msg.parts),
+                },
+              ]
+            case "assistant":
+              return [
+                {
+                  role: "assistant",
+                  content: toAssistantContent(msg.parts),
+                },
+              ]
+            default:
+              return []
+          }
+        }),
+      ],
       temperature: model.info.id === "codex-mini-latest" ? undefined : 0,
       tools: {
         ...(await MCP.tools()),
@@ -547,6 +474,101 @@ export namespace Session {
       },
       model: model.language,
     })
+    for await (const value of result.fullStream) {
+      l.info("part", {
+        type: value.type,
+      })
+      switch (value.type) {
+        case "step-start":
+          next.parts.push({
+            type: "step-start",
+          })
+          break
+        case "text-delta":
+          if (!text) {
+            text = {
+              type: "text",
+              text: value.textDelta,
+            }
+            next.parts.push(text)
+            break
+          } else text.text += value.textDelta
+          break
+
+        case "tool-call": {
+          const [match] = next.parts.flatMap((p) =>
+            p.type === "tool-invocation" &&
+            p.toolInvocation.toolCallId === value.toolCallId
+              ? [p]
+              : [],
+          )
+          if (!match) break
+          match.toolInvocation.args = value.args
+          match.toolInvocation.state = "call"
+          Bus.publish(Message.Event.PartUpdated, {
+            part: match,
+            messageID: next.id,
+            sessionID: next.metadata.sessionID,
+          })
+          break
+        }
+
+        case "tool-call-streaming-start":
+          next.parts.push({
+            type: "tool-invocation",
+            toolInvocation: {
+              state: "partial-call",
+              toolName: value.toolName,
+              toolCallId: value.toolCallId,
+              args: {},
+            },
+          })
+          Bus.publish(Message.Event.PartUpdated, {
+            part: next.parts[next.parts.length - 1],
+            messageID: next.id,
+            sessionID: next.metadata.sessionID,
+          })
+          break
+
+        case "tool-call-delta":
+          break
+
+        // for some reason ai sdk claims to not send this part but it does
+        // @ts-expect-error
+        case "tool-result":
+          const match = next.parts.find(
+            (p) =>
+              p.type === "tool-invocation" &&
+              // @ts-expect-error
+              p.toolInvocation.toolCallId === value.toolCallId,
+          )
+          if (match && match.type === "tool-invocation") {
+            match.toolInvocation = {
+              // @ts-expect-error
+              args: value.args,
+              // @ts-expect-error
+              toolCallId: value.toolCallId,
+              // @ts-expect-error
+              toolName: value.toolName,
+              state: "result",
+              // @ts-expect-error
+              result: value.result as string,
+            }
+            Bus.publish(Message.Event.PartUpdated, {
+              part: match,
+              messageID: next.id,
+              sessionID: next.metadata.sessionID,
+            })
+          }
+          break
+
+        default:
+          l.info("unhandled", {
+            type: value.type,
+          })
+      }
+      await updateMessage(next)
+    }
     await result.consumeStream({
       onError: (err) => {
         log.error("stream error", {
@@ -618,30 +640,23 @@ export namespace Session {
     const result = await generateText({
       abortSignal: abort.signal,
       model: model.language,
-      messages: convertToModelMessages([
+      messages: [
         ...system.map(
-          (x): UIMessage => ({
-            id: Identifier.ascending("message"),
+          (x): CoreMessage => ({
             role: "system",
-            parts: [
-              {
-                type: "text",
-                text: x,
-              },
-            ],
+            content: x,
           }),
         ),
-        ...filtered,
         {
           role: "user",
-          parts: [
+          content: toUserContent([
             {
               type: "text",
               text: "Provide a detailed but concise summary of our conversation above. Focus on information that would be helpful for continuing the conversation, including what we did, what we're doing, which files we're working on, and what we're going to do next.",
             },
-          ],
+          ]),
         },
-      ]),
+      ],
     })
     next.parts.push({
       type: "text",
@@ -669,11 +684,11 @@ export namespace Session {
     }
   }
 
-  function getUsage(usage: LanguageModelUsage, model: Provider.Model) {
+  function getUsage(usage: LanguageModelUsage, model: ModelsDev.Model) {
     const tokens = {
-      input: usage.inputTokens ?? 0,
-      output: usage.outputTokens ?? 0,
-      reasoning: usage.reasoningTokens ?? 0,
+      input: usage.promptTokens ?? 0,
+      output: usage.completionTokens ?? 0,
+      reasoning: 0,
     }
     return {
       cost: new Decimal(0)
@@ -709,4 +724,56 @@ export namespace Session {
     })
     await App.initialize()
   }
+}
+
+function toAssistantContent(parts: Message.Part[]): AssistantContent {
+  const result: AssistantContent = []
+  for (const part of parts) {
+    switch (part.type) {
+      case "text":
+        result.push({ type: "text", text: part.text })
+        break
+      case "file":
+        result.push({
+          type: "file",
+          data: new URL(part.url),
+          mimeType: part.mediaType,
+          filename: part.filename,
+        })
+        break
+      case "tool-invocation":
+        result.push({
+          type: "tool-call",
+          args: part.toolInvocation.args,
+          toolName: part.toolInvocation.toolName,
+          toolCallId: part.toolInvocation.toolCallId,
+        })
+        break
+      default:
+        break
+    }
+  }
+  return result
+}
+
+function toUserContent(parts: Message.Part[]): UserContent {
+  const result: UserContent = []
+  for (const part of parts) {
+    switch (part.type) {
+      case "text":
+        return [{ type: "text", text: part.text }]
+      case "file":
+        return [
+          {
+            type: "file",
+            filename: part.filename,
+            data: new URL(part.url),
+            mimeType: part.mediaType,
+          },
+        ]
+      default:
+        return []
+    }
+  }
+  return result
 }

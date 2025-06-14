@@ -44,15 +44,24 @@ export namespace BunProc {
     }),
   )
   export async function install(pkg: string, version = "latest") {
-    const dir = path.join(Global.Path.cache, `node_modules`, pkg)
-    if (!(await Bun.file(path.join(dir, "package.json")).exists())) {
-      log.info("installing", { pkg })
-      await BunProc.run(["add", `${pkg}@${version}`], {
-        cwd: Global.Path.cache,
-      }).catch(() => {
-        throw new InstallFailedError({ pkg, version })
-      })
-    }
-    return dir
+    const mod = path.join(Global.Path.cache, "node_modules", pkg)
+    const pkgjson = Bun.file(path.join(Global.Path.cache, "package.json"))
+    const parsed = await pkgjson.json().catch(() => ({
+      dependencies: {},
+    }))
+    if (parsed.dependencies[pkg] === version) return mod
+    parsed.dependencies[pkg] = version
+    await Bun.write(pkgjson, JSON.stringify(parsed, null, 2))
+    await BunProc.run(["install"], {
+      cwd: Global.Path.cache,
+    }).catch((e) => {
+      new InstallFailedError(
+        { pkg, version },
+        {
+          cause: e,
+        },
+      )
+    })
+    return mod
   }
 }

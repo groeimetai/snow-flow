@@ -86,7 +86,7 @@ export namespace ModelsDev {
   export async function pkg(providerID: string): Promise<[string, string]> {
     const packages = await aisdk()
     const match = packages[`@ai-sdk/${providerID}`]
-    if (match) return [match.package.name, "alpha"]
+    if (match) return [match.package.name, "latest"]
     return [providerID, "latest"]
   }
 }
