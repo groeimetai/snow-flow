@@ -40,7 +40,7 @@ export const ListTool = Tool.define({
     const glob = new Bun.Glob("**/*")
     const files = []
 
-    for await (const file of glob.scan({ cwd: searchPath })) {
+    for await (const file of glob.scan({ cwd: searchPath, dot: true })) {
       if (file.startsWith(".") || IGNORE_PATTERNS.some((p) => file.includes(p)))
         continue
       if (params.ignore?.some((pattern) => new Bun.Glob(pattern).match(file)))

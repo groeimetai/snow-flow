@@ -27,7 +27,7 @@ export const GlobTool = Tool.define({
     const glob = new Bun.Glob(params.pattern)
     const files = []
     let truncated = false
-    for await (const file of glob.scan({ cwd: search })) {
+    for await (const file of glob.scan({ cwd: search, dot: true })) {
       if (files.length >= limit) {
         truncated = true
         break
