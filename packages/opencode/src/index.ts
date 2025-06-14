@@ -72,7 +72,7 @@ const cli = yargs(hideBin(process.argv))
               cmd = [binary]
             }
             const proc = Bun.spawn({
-              cmd,
+              cmd: [...cmd, ...process.argv.slice(2)],
               cwd,
               stdout: "inherit",
               stderr: "inherit",
