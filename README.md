@@ -55,7 +55,28 @@ Project configuration is optional. You can place an `opencode.json` file in the 
 }
 ```
 
-### Providers
+#### MCP
+
+```json title="opencode.json"
+{
+  "$schema": "http://opencode.ai/config.json",
+  "mcp": {
+    "localmcp": {
+      "type": "local",
+      "command": ["bun", "x", "my-mcp-command"],
+      "environment": {
+        "MY_ENV_VAR": "my_env_var_value"
+      }
+    },
+    "remotemcp": {
+      "type": "remote",
+      "url": "https://my-mcp-server.com"
+    }
+  }
+}
+```
+
+#### Providers
 
 You can use opencode with any provider listed at [here](https://ai-sdk.dev/providers/ai-sdk-providers). Use the npm package name as the key in your config. Note we use v5 of the ai-sdk and not all providers support that yet.
 
@@ -74,29 +95,6 @@ You can use opencode with any provider listed at [here](https://ai-sdk.dev/provi
           "name": "My Model Name"
         }
       }
-    }
-  }
-}
-```
-
-#### Provider Options
-
-#### MCP
-
-```json title="opencode.json"
-{
-  "$schema": "http://opencode.ai/config.json",
-  "mcp": {
-    "localmcp": {
-      "type": "local",
-      "command": ["bun", "x", "my-mcp-command"],
-      "environment": {
-        "MY_ENV_VAR": "my_env_var_value"
-      }
-    },
-    "remotemcp": {
-      "type": "remote",
-      "url": "https://my-mcp-server.com"
     }
   }
 }
