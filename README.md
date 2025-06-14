@@ -56,3 +56,22 @@ Project configuration is optional. You can place an `opencode.json` file in the 
 ```
 
 #### MCP
+
+```json title="opencode.json"
+{
+  "$schema": "http://opencode.ai/config.json",
+  "mcp": {
+    "localmcp": {
+      "type": "local",
+      "command": ["bun", "x", "my-mcp-command"],
+      "environment": {
+        "MY_ENV_VAR": "my_env_var_value"
+      }
+    },
+    "remotemcp": {
+      "type": "remote",
+      "url": "https://my-mcp-server.com"
+    }
+  }
+}
+```
