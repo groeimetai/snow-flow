@@ -124,6 +124,11 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return nil
 				}
 			}
+		case "ctrl+d":
+			if m.textarea.Value() != "" {
+				return m, nil
+			}
+			return m, tea.Quit
 		case "shift+enter":
 			value := m.textarea.Value()
 			m.textarea.SetValue(value + "\n")
