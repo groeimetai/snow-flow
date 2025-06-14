@@ -55,6 +55,32 @@ Project configuration is optional. You can place an `opencode.json` file in the 
 }
 ```
 
+### Providers
+
+You can use opencode with any provider listed at [here](https://ai-sdk.dev/providers/ai-sdk-providers). Use the npm package name as the key in your config. Note we use v5 of the ai-sdk and not all providers support that yet.
+
+```json title="opencode.json"
+{
+  "$schema": "http://opencode.ai/config.json",
+  "provider": {
+    "@ai-sdk/openai-compatible": {
+      "name": "MySpecialProvider",
+      "options": {
+        "apiKey": "xxx",
+        "baseURL": "https://api.provider.com/v1"
+      },
+      "models": {
+        "my-model-name": {
+          "name": "My Model Name"
+        }
+      }
+    }
+  }
+}
+```
+
+#### Provider Options
+
 #### MCP
 
 ```json title="opencode.json"
@@ -108,7 +134,7 @@ Theoretically you can use this with OpenRouter with config like this
       },
       "models": {
         "anthropic/claude-3.5-sonnet": {
-          "name": "claude-3.5-sonnet"
+          "name": "Claude 3.5 Sonnet"
         }
       }
     }
