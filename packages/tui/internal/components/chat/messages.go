@@ -315,7 +315,7 @@ func (m *messagesComponent) home() string {
 		{"/sessions", "list sessions"},
 		{"/new", "start a new session"},
 		{"/model", "switch model"},
-		{"/share", "share the current session"},
+		{"/theme", "switch theme"},
 		{"/quit", "exit the app"},
 	}
 
