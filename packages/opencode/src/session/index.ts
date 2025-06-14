@@ -27,6 +27,7 @@ import { MCP } from "../mcp"
 import { NamedError } from "../util/error"
 import type { Tool } from "../tool/tool"
 import { SystemPrompt } from "./system"
+import { Flag } from "../flag/flag"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -92,6 +93,12 @@ export namespace Session {
     log.info("created", result)
     state().sessions.set(result.id, result)
     await Storage.writeJSON("session/info/" + result.id, result)
+    if (!result.parentID && Flag.OPENCODE_AUTO_SHARE)
+      share(result.id).then((share) => {
+        update(result.id, (draft) => {
+          draft.share = share
+        })
+      })
     Bus.publish(Event.Updated, {
       info: result,
     })
