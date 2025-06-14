@@ -75,3 +75,18 @@ Project configuration is optional. You can place an `opencode.json` file in the 
   }
 }
 ```
+
+### Contributing
+
+To run opencode locally you need
+
+- bun
+- golang 1.24.x
+
+To run
+
+```
+$ bun install
+$ cd packages/opencode
+$ bun run src/index.ts
+```
