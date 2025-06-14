@@ -45,6 +45,7 @@ export namespace Log {
     )
   }
 
+  let last = Date.now()
   export function create(tags?: Record<string, any>) {
     tags = tags || {}
 
@@ -56,9 +57,13 @@ export namespace Log {
         .filter(([_, value]) => value !== undefined && value !== null)
         .map(([key, value]) => `${key}=${value}`)
         .join(" ")
+      const next = new Date()
+      const diff = next.getTime() - last
+      last = next.getTime()
       return (
-        [new Date().toISOString(), prefix, message].filter(Boolean).join(" ") +
-        "\n"
+        [next.toISOString().split(".")[0], "+" + diff + "ms", prefix, message]
+          .filter(Boolean)
+          .join(" ") + "\n"
       )
     }
     const result = {

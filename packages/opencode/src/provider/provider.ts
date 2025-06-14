@@ -186,9 +186,8 @@ export namespace Provider {
       const s = await state()
       const existing = s.sdk.get(providerID)
       if (existing) return existing
-      const mod = await import(
-        await BunProc.install(`@ai-sdk/${providerID}`, "alpha")
-      )
+      const [pkg, version] = await ModelsDev.pkg(providerID)
+      const mod = await import(await BunProc.install(pkg, version))
       const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!]
       const loaded = fn(s.providers[providerID]?.options)
       s.sdk.set(providerID, loaded)
