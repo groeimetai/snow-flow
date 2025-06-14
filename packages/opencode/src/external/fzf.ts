@@ -1,4 +1,3 @@
-import { App } from "../app/app"
 import path from "path"
 import { Global } from "../global"
 import fs from "fs/promises"
@@ -6,6 +5,7 @@ import { z } from "zod"
 import { NamedError } from "../util/error"
 import { lazy } from "../util/lazy"
 import { Log } from "../util/log"
+import { $ } from "bun"
 
 export namespace Fzf {
   const log = Log.create({ service: "fzf" })
@@ -117,18 +117,18 @@ export namespace Fzf {
   }
 
   export async function search(cwd: string, query: string) {
-    const process = Bun.spawn({
-      cwd,
-      stdin: "inherit",
-      stdout: "pipe",
-      stderr: "pipe",
-      cmd: [await filepath(), "--filter", query],
-    })
-    await process.exited
-    const stdout = await Bun.readableStreamToText(process.stdout)
-    return stdout
+    const results = await $`${await filepath()} --filter ${query}`
+      .quiet()
+      .throws(false)
+      .cwd(cwd)
+      .text()
+    const split = results
       .trim()
       .split("\n")
       .filter((line) => line.length > 0)
+    log.info("results", {
+      count: split.length,
+    })
+    return split
   }
 }

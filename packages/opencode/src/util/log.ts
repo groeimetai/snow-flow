@@ -2,7 +2,7 @@ import path from "path"
 import fs from "fs/promises"
 import { Global } from "../global"
 export namespace Log {
-  export const Default = create()
+  export const Default = create({ service: "default" })
 
   export interface Options {
     print: boolean

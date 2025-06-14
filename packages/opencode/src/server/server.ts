@@ -56,12 +56,16 @@ export namespace Server {
           },
         )
       })
-      .use((c, next) => {
+      .use(async (c, next) => {
         log.info("request", {
           method: c.req.method,
           path: c.req.path,
         })
-        return next()
+        const start = Date.now()
+        await next()
+        log.info("response", {
+          duration: Date.now() - start,
+        })
       })
       .get(
         "/openapi",
