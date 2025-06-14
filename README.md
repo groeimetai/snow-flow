@@ -90,3 +90,30 @@ $ bun install
 $ cd packages/opencode
 $ bun run src/index.ts
 ```
+
+### FAQ
+
+#### How do I use this with OpenRouter
+
+Theoretically you can use this with OpenRouter with config like this
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "@openrouter/ai-sdk-provider": {
+      "name": "OpenRouter",
+      "options": {
+        "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "models": {
+        "anthropic/claude-3.5-sonnet": {
+          "name": "claude-3.5-sonnet"
+        }
+      }
+    }
+  }
+}
+```
+
+However we are using [ai-sdk v5](https://ai-sdk.dev) which OpenRouter does not support yet. The moment they do this will work
