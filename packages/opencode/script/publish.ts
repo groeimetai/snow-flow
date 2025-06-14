@@ -108,7 +108,7 @@ if (!snapshot) {
     .filter((x: string) => {
       const lower = x.toLowerCase()
       return (
-        !lower.includes("chore:") &&
+        !lower.includes("ignore:") &&
         !lower.includes("ci:") &&
         !lower.includes("docs:") &&
         !lower.includes("doc:")
