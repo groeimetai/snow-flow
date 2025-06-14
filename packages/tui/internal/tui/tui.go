@@ -92,13 +92,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.modal = nil
 				return a, nil
 			case "ctrl+c":
-				if _, ok := a.modal.(dialog.QuitDialog); ok {
-					return a, tea.Quit
-				} else {
-					quitDialog := dialog.NewQuitDialog()
-					a.modal = quitDialog
-					return a, nil
-				}
+				return a, tea.Quit
 			}
 
 			// don't send commands to the modal
@@ -135,8 +129,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case commands.ExecuteCommandMsg:
 		switch msg.Name {
 		case "quit":
-			quitDialog := dialog.NewQuitDialog()
-			a.modal = quitDialog
+			return a, tea.Quit
 		case "new":
 			a.app.Session = &client.SessionInfo{}
 			a.app.Messages = []client.MessageInfo{}
