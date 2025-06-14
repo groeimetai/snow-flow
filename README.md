@@ -116,7 +116,7 @@ $ bun run src/index.ts
 
 ### FAQ
 
-#### How do I use this with OpenRou?ter
+#### How do I use this with OpenRouter
 
 OpenRouter is not yet in the models.dev database but you can configure it manually.
 
