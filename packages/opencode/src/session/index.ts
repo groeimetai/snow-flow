@@ -446,26 +446,28 @@ export namespace Session {
             content: x,
           }),
         ),
-        ...msgs.flatMap((msg): CoreMessage[] => {
-          switch (msg.role) {
-            case "user":
-              return [
-                {
-                  role: "user",
-                  content: toUserContent(msg.parts),
-                },
-              ]
-            case "assistant":
-              return [
-                {
-                  role: "assistant",
-                  content: toAssistantContent(msg.parts),
-                },
-              ]
-            default:
-              return []
-          }
-        }),
+        ...msgs
+          .filter((msg) => msg.parts.length > 0)
+          .flatMap((msg): CoreMessage[] => {
+            switch (msg.role) {
+              case "user":
+                return [
+                  {
+                    role: "user",
+                    content: toUserContent(msg.parts),
+                  },
+                ]
+              case "assistant":
+                return [
+                  {
+                    role: "assistant",
+                    content: toAssistantContent(msg.parts),
+                  },
+                ]
+              default:
+                return []
+            }
+          }),
       ],
       temperature: model.info.id === "codex-mini-latest" ? undefined : 0,
       tools: {
