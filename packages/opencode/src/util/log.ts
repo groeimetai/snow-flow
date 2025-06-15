@@ -83,6 +83,23 @@ export namespace Log {
       clone() {
         return Log.create({ ...tags })
       },
+      time(message: string, extra?: Record<string, any>) {
+        const now = Date.now()
+        result.info(message, { status: "started", ...extra })
+        function stop() {
+          result.info(message, {
+            status: "completed",
+            duration: Date.now() - now,
+            ...extra,
+          })
+        }
+        return {
+          stop,
+          [Symbol.dispose]() {
+            stop()
+          },
+        }
+      },
     }
 
     return result

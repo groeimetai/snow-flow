@@ -82,7 +82,7 @@ export namespace Provider {
     >()
     const sdk = new Map<string, SDK>()
 
-    log.info("loading")
+    log.info("init")
 
     function mergeProvider(
       id: string,
@@ -167,7 +167,7 @@ export namespace Provider {
     }
 
     for (const providerID of Object.keys(providers)) {
-      log.info("loaded", { providerID })
+      log.info("found", { providerID })
     }
 
     return {
@@ -183,6 +183,9 @@ export namespace Provider {
 
   async function getSDK(providerID: string) {
     return (async () => {
+      using _ = log.time("getSDK", {
+        providerID,
+      })
       const s = await state()
       const existing = s.sdk.get(providerID)
       if (existing) return existing
@@ -202,7 +205,7 @@ export namespace Provider {
     const s = await state()
     if (s.models.has(key)) return s.models.get(key)!
 
-    log.info("loading", {
+    log.info("getModel", {
       providerID,
       modelID,
     })
