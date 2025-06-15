@@ -275,9 +275,15 @@ func (m *messagesComponent) View() string {
 	if m.rendering {
 		return m.viewport.View()
 	}
+	t := theme.CurrentTheme()
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		lipgloss.PlaceHorizontal(m.width, lipgloss.Center, m.header()),
+		lipgloss.PlaceHorizontal(
+			m.width,
+			lipgloss.Center,
+			m.header(),
+			lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
+		),
 		m.viewport.View(),
 	)
 }
@@ -346,13 +352,20 @@ func (m *messagesComponent) home() string {
 		lines = append(lines, "")
 	}
 
-	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
+	t := theme.CurrentTheme()
+	return lipgloss.Place(
+		m.width,
+		m.height,
+		lipgloss.Center,
+		lipgloss.Center,
 		baseStyle.Width(lipgloss.Width(logoAndVersion)).Render(
 			lipgloss.JoinVertical(
 				lipgloss.Top,
 				lines...,
 			),
-		))
+		),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
+	)
 }
 
 func (m *messagesComponent) SetSize(width, height int) tea.Cmd {

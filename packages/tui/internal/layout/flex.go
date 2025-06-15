@@ -3,6 +3,7 @@ package layout
 import (
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/sst/opencode/internal/theme"
 )
 
 type FlexDirection int
@@ -76,6 +77,7 @@ func (f *flexLayout) View() string {
 		return ""
 	}
 
+	t := theme.CurrentTheme()
 	views := make([]string, 0, len(f.panes))
 	for i, pane := range f.panes {
 		if pane == nil {
@@ -89,6 +91,7 @@ func (f *flexLayout) View() string {
 				paneWidth,
 				pane.Alignment(),
 				pane.View(),
+				lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 			)
 			views = append(views, view)
 		} else {
@@ -99,6 +102,7 @@ func (f *flexLayout) View() string {
 				lipgloss.Center,
 				pane.Alignment(),
 				pane.View(),
+				lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 			)
 			views = append(views, view)
 		}
@@ -160,14 +164,14 @@ func (f *flexLayout) SetSize(width, height int) tea.Cmd {
 
 	var cmds []tea.Cmd
 	currentX, currentY := 0, 0
-	
+
 	for i, pane := range f.panes {
 		if pane != nil {
 			paneWidth, paneHeight := f.calculatePaneSize(i)
-			
+
 			// Calculate actual position based on alignment
 			actualX, actualY := currentX, currentY
-			
+
 			if f.direction == FlexDirectionHorizontal {
 				// In horizontal layout, vertical alignment affects Y position
 				// (lipgloss.Center is used for vertical alignment in JoinHorizontal)
@@ -178,7 +182,7 @@ func (f *flexLayout) SetSize(width, height int) tea.Cmd {
 				if pane.MaxWidth() > 0 && contentWidth > pane.MaxWidth() {
 					contentWidth = pane.MaxWidth()
 				}
-				
+
 				switch pane.Alignment() {
 				case lipgloss.Center:
 					actualX = (f.width - contentWidth) / 2
@@ -188,16 +192,16 @@ func (f *flexLayout) SetSize(width, height int) tea.Cmd {
 					actualX = 0
 				}
 			}
-			
+
 			// Set position if the pane is a *container
 			if c, ok := pane.(*container); ok {
 				c.x = actualX
 				c.y = actualY
 			}
-			
+
 			cmd := pane.SetSize(paneWidth, paneHeight)
 			cmds = append(cmds, cmd)
-			
+
 			// Update position for next pane
 			if f.direction == FlexDirectionHorizontal {
 				currentX += paneWidth

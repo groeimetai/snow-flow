@@ -180,11 +180,13 @@ func renderContentBlock(content string, options ...renderingOption) string {
 		layout.Current.Container.Width,
 		align,
 		content,
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 	)
 	content = lipgloss.PlaceHorizontal(
 		layout.Current.Viewport.Width,
 		lipgloss.Center,
 		content,
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 	)
 	return content
 }
@@ -373,6 +375,7 @@ func renderToolInvocation(
 					lipgloss.Center,
 					lipgloss.Top,
 					body,
+					lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 				)
 			}
 		}
@@ -440,7 +443,12 @@ func renderToolInvocation(
 	}
 
 	content := style.Render(title)
-	content = lipgloss.PlaceHorizontal(layout.Current.Viewport.Width, lipgloss.Center, content)
+	content = lipgloss.PlaceHorizontal(
+		layout.Current.Viewport.Width,
+		lipgloss.Center,
+		content,
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
+	)
 	if showResult && body != "" && error == "" {
 		content += "\n" + body
 	}
