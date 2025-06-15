@@ -115,9 +115,6 @@ export const RunCommand = {
         })
 
         const { providerID, modelID } = await Provider.defaultModel()
-        setTimeout(() => {
-          Session.abort(session.id)
-        }, 8000)
         await Session.chat({
           sessionID: session.id,
           providerID,

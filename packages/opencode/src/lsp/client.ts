@@ -11,6 +11,7 @@ import { LANGUAGE_EXTENSIONS } from "./language"
 import { Bus } from "../bus"
 import z from "zod"
 import type { LSPServer } from "./server"
+import { NamedError } from "../util/error"
 
 export namespace LSPClient {
   const log = Log.create({ service: "lsp.client" })
@@ -18,6 +19,13 @@ export namespace LSPClient {
   export type Info = NonNullable<Awaited<ReturnType<typeof create>>>
 
   export type Diagnostic = VSCodeDiagnostic
+
+  export const InitializeError = NamedError.create(
+    "LSPInitializeError",
+    z.object({
+      serverID: z.string(),
+    }),
+  )
 
   export const Event = {
     Diagnostics: Bus.event(
@@ -52,32 +60,40 @@ export namespace LSPClient {
     })
     connection.listen()
 
-    await connection.sendRequest("initialize", {
-      processId: server.process.pid,
-      workspaceFolders: [
-        {
-          name: "workspace",
-          uri: "file://" + app.path.cwd,
-        },
-      ],
-      initializationOptions: {
-        ...server.initialization,
-      },
-      capabilities: {
-        workspace: {
-          configuration: true,
-        },
-        textDocument: {
-          synchronization: {
-            didOpen: true,
-            didChange: true,
+    log.info("sending initialize", { id: serverID })
+    await Promise.race([
+      connection.sendRequest("initialize", {
+        processId: server.process.pid,
+        workspaceFolders: [
+          {
+            name: "workspace",
+            uri: "file://" + app.path.cwd,
           },
-          publishDiagnostics: {
-            versionSupport: true,
+        ],
+        initializationOptions: {
+          ...server.initialization,
+        },
+        capabilities: {
+          workspace: {
+            configuration: true,
+          },
+          textDocument: {
+            synchronization: {
+              didOpen: true,
+              didChange: true,
+            },
+            publishDiagnostics: {
+              versionSupport: true,
+            },
           },
         },
-      },
-    })
+      }),
+      new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new InitializeError({ serverID }))
+        }, 5_000)
+      }),
+    ])
     await connection.sendNotification("initialized", {})
     log.info("initialized")
 

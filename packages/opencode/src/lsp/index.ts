@@ -12,9 +12,10 @@ export namespace LSP {
     async () => {
       log.info("initializing")
       const clients = new Map<string, LSPClient.Info>()
-
+      const skip = new Set<string>()
       return {
         clients,
+        skip,
       }
     },
     async (state) => {
@@ -31,11 +32,19 @@ export namespace LSP {
       x.extensions.includes(extension),
     )
     for (const match of matches) {
+      if (s.skip.has(match.id)) continue
       const existing = s.clients.get(match.id)
       if (existing) continue
       const handle = await match.spawn(App.info())
-      if (!handle) continue
-      const client = await LSPClient.create(match.id, handle)
+      if (!handle) {
+        s.skip.add(match.id)
+        continue
+      }
+      const client = await LSPClient.create(match.id, handle).catch(() => {})
+      if (!client) {
+        s.skip.add(match.id)
+        continue
+      }
       s.clients.set(match.id, client)
     }
     if (waitForDiagnostics) {
