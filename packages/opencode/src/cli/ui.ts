@@ -3,9 +3,9 @@ import { NamedError } from "../util/error"
 
 export namespace UI {
   const LOGO = [
-    `█▀▀█ █▀▀█ █▀▀ █▀▀▄ █▀▀ █▀▀█ █▀▀▄ █▀▀`,
-    `█░░█ █░░█ █▀▀ █░░█ █░░ █░░█ █░░█ █▀▀`,
-    `▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ ▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`,
+    [`█▀▀█ █▀▀█ █▀▀ █▀▀▄ `, `█▀▀ █▀▀█ █▀▀▄ █▀▀`],
+    [`█░░█ █░░█ █▀▀ █░░█ `, `█░░ █░░█ █░░█ █▀▀`],
+    [`▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ `, `▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`],
   ]
 
   export const CancelledError = NamedError.create("UICancelledError", z.void())
@@ -48,12 +48,10 @@ export namespace UI {
     const result = []
     for (const row of LOGO) {
       if (pad) result.push(pad)
-      for (let i = 0; i < row.length; i++) {
-        const color =
-          i > 18 ? Bun.color("white", "ansi") : Bun.color("gray", "ansi")
-        const char = row[i]
-        result.push(color + char)
-      }
+      result.push(Bun.color("gray", "ansi"))
+      result.push(row[0])
+      result.push("\x1b[0m")
+      result.push(row[1])
       result.push("\n")
     }
     return result.join("").trimEnd()
