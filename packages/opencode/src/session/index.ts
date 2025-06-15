@@ -6,13 +6,13 @@ import { Log } from "../util/log"
 import {
   generateText,
   LoadAPIKeyError,
+  convertToCoreMessages,
   streamText,
   tool,
   type Tool as AITool,
   type LanguageModelUsage,
   type CoreMessage,
-  type UserContent,
-  type AssistantContent,
+  type UIMessage,
 } from "ai"
 import { z, ZodSchema } from "zod"
 import { Decimal } from "decimal.js"
@@ -236,10 +236,13 @@ export namespace Session {
               content: x,
             }),
           ),
-          {
-            role: "user",
-            content: toUserContent(input.parts),
-          },
+          ...convertToCoreMessages([
+            {
+              role: "user",
+              content: "",
+              parts: toParts(input.parts),
+            },
+          ]),
         ],
         model: model.language,
       })
@@ -446,28 +449,9 @@ export namespace Session {
             content: x,
           }),
         ),
-        ...msgs
-          .filter((msg) => msg.parts.length > 0)
-          .flatMap((msg): CoreMessage[] => {
-            switch (msg.role) {
-              case "user":
-                return [
-                  {
-                    role: "user",
-                    content: toUserContent(msg.parts),
-                  },
-                ]
-              case "assistant":
-                return [
-                  {
-                    role: "assistant",
-                    content: toAssistantContent(msg.parts),
-                  },
-                ]
-              default:
-                return []
-            }
-          }),
+        ...convertToCoreMessages(
+          msgs.map(toUIMessage).filter((x) => x.parts.length > 0),
+        ),
       ],
       temperature: model.info.id === "codex-mini-latest" ? undefined : 0,
       tools: {
@@ -571,13 +555,6 @@ export namespace Session {
       }
       await updateMessage(next)
     }
-    await result.consumeStream({
-      onError: (err) => {
-        log.error("stream error", {
-          err,
-        })
-      },
-    })
     next.metadata!.time.completed = Date.now()
     for (const part of next.parts) {
       if (
@@ -649,14 +626,15 @@ export namespace Session {
             content: x,
           }),
         ),
+        ...convertToCoreMessages(filtered.map(toUIMessage)),
         {
           role: "user",
-          content: toUserContent([
+          content: [
             {
               type: "text",
               text: "Provide a detailed but concise summary of our conversation above. Focus on information that would be helpful for continuing the conversation, including what we did, what we're doing, which files we're working on, and what we're going to do next.",
             },
-          ]),
+          ],
         },
       ],
     })
@@ -728,8 +706,30 @@ export namespace Session {
   }
 }
 
-function toAssistantContent(parts: Message.Part[]): AssistantContent {
-  const result: AssistantContent = []
+function toUIMessage(msg: Message.Info): UIMessage {
+  if (msg.role === "assistant") {
+    return {
+      id: msg.id,
+      role: "assistant",
+      content: "",
+      parts: toParts(msg.parts),
+    }
+  }
+
+  if (msg.role === "user") {
+    return {
+      id: msg.id,
+      role: "user",
+      content: "",
+      parts: toParts(msg.parts),
+    }
+  }
+
+  throw new Error("not implemented")
+}
+
+function toParts(parts: Message.Part[]): UIMessage["parts"] {
+  const result: UIMessage["parts"] = []
   for (const part of parts) {
     switch (part.type) {
       case "text":
@@ -738,43 +738,23 @@ function toAssistantContent(parts: Message.Part[]): AssistantContent {
       case "file":
         result.push({
           type: "file",
-          data: new URL(part.url),
+          data: part.url,
           mimeType: part.mediaType,
-          filename: part.filename,
         })
         break
       case "tool-invocation":
         result.push({
-          type: "tool-call",
-          args: part.toolInvocation.args,
-          toolName: part.toolInvocation.toolName,
-          toolCallId: part.toolInvocation.toolCallId,
+          type: "tool-invocation",
+          toolInvocation: part.toolInvocation,
+        })
+        break
+      case "step-start":
+        result.push({
+          type: "step-start",
         })
         break
       default:
         break
-    }
-  }
-  return result
-}
-
-function toUserContent(parts: Message.Part[]): UserContent {
-  const result: UserContent = []
-  for (const part of parts) {
-    switch (part.type) {
-      case "text":
-        return [{ type: "text", text: part.text }]
-      case "file":
-        return [
-          {
-            type: "file",
-            filename: part.filename,
-            data: new URL(part.url),
-            mimeType: part.mediaType,
-          },
-        ]
-      default:
-        return []
     }
   }
   return result
