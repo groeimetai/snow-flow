@@ -13,6 +13,7 @@ import { VERSION } from "./cli/version"
 import { ScrapCommand } from "./cli/cmd/scrap"
 import { Log } from "./util/log"
 import { AuthCommand, AuthLoginCommand } from "./cli/cmd/auth"
+import { UpgradeCommand } from "./cli/cmd/upgrade"
 import { Provider } from "./provider/provider"
 import { UI } from "./cli/ui"
 
@@ -33,7 +34,7 @@ const cli = yargs(hideBin(process.argv))
   .usage("\n" + UI.logo())
   .command({
     command: "$0 [project]",
-    describe: "Start OpenCode TUI",
+    describe: "Start opencode TUI",
     builder: (yargs) =>
       yargs.positional("project", {
         type: "string",
@@ -102,6 +103,7 @@ const cli = yargs(hideBin(process.argv))
   .command(GenerateCommand)
   .command(ScrapCommand)
   .command(AuthCommand)
+  .command(UpgradeCommand)
   .fail((msg, err) => {
     if (
       msg.startsWith("Unknown argument") ||

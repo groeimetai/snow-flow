@@ -1,4 +1,4 @@
-# OpenCode Agent Guidelines
+# opencode agent guidelines
 
 ## Build/Test Commands
 
@@ -19,7 +19,7 @@
 
 ## IMPORTANT
 
-- Try to keep things in one function unless composable or reusable
+- Try to keep things in one function unless composable or reusablte
 - DO NOT do unnecessary destructuring of variables
 - DO NOT use else statements unless necessary
 - DO NOT use try catch if it can be avoided
