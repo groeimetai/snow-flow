@@ -3,11 +3,8 @@ import { App } from "./app/app"
 import { Server } from "./server/server"
 import fs from "fs/promises"
 import path from "path"
-
 import { Share } from "./share/share"
-
 import { Global } from "./global"
-
 import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
 import { RunCommand } from "./cli/cmd/run"

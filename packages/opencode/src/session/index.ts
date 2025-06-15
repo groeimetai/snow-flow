@@ -405,7 +405,7 @@ export namespace Session {
         await updateMessage(next)
       },
       onError(err) {
-        log.error("error", err)
+        log.error("callback error", err)
         switch (true) {
           case LoadAPIKeyError.isInstance(err.error):
             next.metadata.error = new Provider.AuthError(
@@ -460,100 +460,131 @@ export namespace Session {
       },
       model: model.language,
     })
-    for await (const value of result.fullStream) {
-      l.info("part", {
-        type: value.type,
-      })
-      switch (value.type) {
-        case "step-start":
-          next.parts.push({
-            type: "step-start",
-          })
-          break
-        case "text-delta":
-          if (!text) {
-            text = {
-              type: "text",
-              text: value.textDelta,
-            }
-            next.parts.push(text)
+    try {
+      for await (const value of result.fullStream) {
+        l.info("part", {
+          type: value.type,
+        })
+        switch (value.type) {
+          case "step-start":
+            next.parts.push({
+              type: "step-start",
+            })
             break
-          } else text.text += value.textDelta
-          break
+          case "text-delta":
+            if (!text) {
+              text = {
+                type: "text",
+                text: value.textDelta,
+              }
+              next.parts.push(text)
+              break
+            } else text.text += value.textDelta
+            break
 
-        case "tool-call": {
-          const [match] = next.parts.flatMap((p) =>
-            p.type === "tool-invocation" &&
-            p.toolInvocation.toolCallId === value.toolCallId
-              ? [p]
-              : [],
-          )
-          if (!match) break
-          match.toolInvocation.args = value.args
-          match.toolInvocation.state = "call"
-          Bus.publish(Message.Event.PartUpdated, {
-            part: match,
-            messageID: next.id,
-            sessionID: next.metadata.sessionID,
-          })
-          break
-        }
-
-        case "tool-call-streaming-start":
-          next.parts.push({
-            type: "tool-invocation",
-            toolInvocation: {
-              state: "partial-call",
-              toolName: value.toolName,
-              toolCallId: value.toolCallId,
-              args: {},
-            },
-          })
-          Bus.publish(Message.Event.PartUpdated, {
-            part: next.parts[next.parts.length - 1],
-            messageID: next.id,
-            sessionID: next.metadata.sessionID,
-          })
-          break
-
-        case "tool-call-delta":
-          break
-
-        // for some reason ai sdk claims to not send this part but it does
-        // @ts-expect-error
-        case "tool-result":
-          const match = next.parts.find(
-            (p) =>
+          case "tool-call": {
+            const [match] = next.parts.flatMap((p) =>
               p.type === "tool-invocation" &&
-              // @ts-expect-error
-              p.toolInvocation.toolCallId === value.toolCallId,
-          )
-          if (match && match.type === "tool-invocation") {
-            match.toolInvocation = {
-              // @ts-expect-error
-              args: value.args,
-              // @ts-expect-error
-              toolCallId: value.toolCallId,
-              // @ts-expect-error
-              toolName: value.toolName,
-              state: "result",
-              // @ts-expect-error
-              result: value.result as string,
-            }
+              p.toolInvocation.toolCallId === value.toolCallId
+                ? [p]
+                : [],
+            )
+            if (!match) break
+            match.toolInvocation.args = value.args
+            match.toolInvocation.state = "call"
             Bus.publish(Message.Event.PartUpdated, {
               part: match,
               messageID: next.id,
               sessionID: next.metadata.sessionID,
             })
+            break
           }
-          break
 
-        default:
-          l.info("unhandled", {
-            type: value.type,
-          })
+          case "tool-call-streaming-start":
+            next.parts.push({
+              type: "tool-invocation",
+              toolInvocation: {
+                state: "partial-call",
+                toolName: value.toolName,
+                toolCallId: value.toolCallId,
+                args: {},
+              },
+            })
+            Bus.publish(Message.Event.PartUpdated, {
+              part: next.parts[next.parts.length - 1],
+              messageID: next.id,
+              sessionID: next.metadata.sessionID,
+            })
+            break
+
+          case "tool-call-delta":
+            break
+
+          // for some reason ai sdk claims to not send this part but it does
+          // @ts-expect-error
+          case "tool-result":
+            const match = next.parts.find(
+              (p) =>
+                p.type === "tool-invocation" &&
+                // @ts-expect-error
+                p.toolInvocation.toolCallId === value.toolCallId,
+            )
+            if (match && match.type === "tool-invocation") {
+              match.toolInvocation = {
+                // @ts-expect-error
+                args: value.args,
+                // @ts-expect-error
+                toolCallId: value.toolCallId,
+                // @ts-expect-error
+                toolName: value.toolName,
+                state: "result",
+                // @ts-expect-error
+                result: value.result as string,
+              }
+              Bus.publish(Message.Event.PartUpdated, {
+                part: match,
+                messageID: next.id,
+                sessionID: next.metadata.sessionID,
+              })
+            }
+            break
+
+          default:
+            l.info("unhandled", {
+              type: value.type,
+            })
+        }
+        await updateMessage(next)
       }
-      await updateMessage(next)
+    } catch (e: any) {
+      log.error("stream error", {
+        error: e,
+      })
+      switch (true) {
+        case LoadAPIKeyError.isInstance(e):
+          next.metadata.error = new Provider.AuthError(
+            {
+              providerID: input.providerID,
+              message: e.message,
+            },
+            { cause: e },
+          ).toObject()
+          break
+        case e instanceof Error:
+          next.metadata.error = new NamedError.Unknown(
+            { message: e.toString() },
+            { cause: e },
+          ).toObject()
+          break
+        default:
+          next.metadata.error = new NamedError.Unknown(
+            { message: JSON.stringify(e) },
+            { cause: e },
+          )
+      }
+      Bus.publish(Event.Error, {
+        error: next.metadata.error,
+      })
     }
     next.metadata!.time.completed = Date.now()
     for (const part of next.parts) {
