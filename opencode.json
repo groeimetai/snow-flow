@@ -7,9 +7,9 @@
         "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "llama2": {
-          "name": "llama2"
-        }
+        "qwen3": {},
+        "deepseek-r1": {},
+        "llama2": {}
       }
     }
   }
