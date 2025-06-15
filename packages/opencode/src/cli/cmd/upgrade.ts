@@ -122,7 +122,7 @@ export const UpgradeCommand = {
     UI.empty()
     UI.println(UI.logo("  "))
     UI.empty()
-    prompts.intro("upgrade")
+    prompts.intro("Upgrade")
 
     if (!process.execPath.includes(path.join(".opencode", "bin")) && false) {
       prompts.log.error(
@@ -132,16 +132,24 @@ export const UpgradeCommand = {
       return
     }
 
-    const release = args.target ? await specific(args.target) : await latest()
-    const target = release.tag_name
+    const release = args.target
+      ? await specific(args.target).catch(() => {})
+      : await latest().catch(() => {})
+    if (!release) {
+      prompts.log.error("Failed to fetch release information")
+      prompts.outro("Done")
+      return
+    }
 
-    prompts.log.info(`Upgrade ${VERSION} → ${target}`)
+    const target = release.tag_name
 
     if (VERSION !== "dev" && compare(VERSION, target) >= 0) {
       prompts.log.success(`Already up to date`)
       prompts.outro("Done")
       return
     }
+
+    prompts.log.info(`From ${VERSION} → ${target}`)
 
     const name = asset()
     const found = release.assets.find((a) => a.name === name)
@@ -155,30 +163,30 @@ export const UpgradeCommand = {
     const spinner = prompts.spinner()
     spinner.start("Downloading update...")
 
-    let downloadPath: string
-    try {
-      downloadPath = await download(found.browser_download_url)
-      spinner.stop("Download complete")
-    } catch (downloadError) {
+    const downloadPath = await download(found.browser_download_url).catch(
+      () => {},
+    )
+    if (!downloadPath) {
       spinner.stop("Download failed")
-      prompts.log.error(
-        `Download failed: ${downloadError instanceof Error ? downloadError.message : String(downloadError)}`,
-      )
+      prompts.log.error("Download failed")
       prompts.outro("Done")
       return
     }
 
-    try {
-      await fs.rename(downloadPath, process.execPath)
-      prompts.log.success(`Successfully upgraded to ${target}`)
-    } catch (installError) {
-      prompts.log.error(
-        `Install failed: ${installError instanceof Error ? installError.message : String(installError)}`,
-      )
-      // Clean up downloaded file
+    spinner.stop("Download complete")
+
+    const renamed = await fs
+      .rename(downloadPath, process.execPath)
+      .catch(() => {})
+
+    if (renamed === undefined) {
+      prompts.log.error("Install failed")
       await fs.unlink(downloadPath).catch(() => {})
+      prompts.outro("Done")
+      return
     }
 
+    prompts.log.success(`Successfully upgraded to ${target}`)
     prompts.outro("Done")
   },
 }
