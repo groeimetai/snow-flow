@@ -3,3 +3,5 @@ node_modules
 .opencode
 .sst
 .env
+.idea
+.vscode
