@@ -111,8 +111,12 @@ export const AuthLoginCommand = cmd({
         // some weird bug where program exits without this
         await new Promise((resolve) => setTimeout(resolve, 10))
         const { url, verifier } = await AuthAnthropic.authorize()
-        prompts.note("Opening browser...")
-        await open(url)
+        prompts.note("Trying to open browser...")
+        try {
+          await open(url)
+        } catch (e) {
+          prompts.log.error("Failed to open browser perhaps you are running without a display or X server, please open the following URL in your browser:")
+        }
         prompts.log.info(url)
 
         const code = await prompts.text({
