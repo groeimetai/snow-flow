@@ -2,7 +2,6 @@ package chat
 
 import (
 	"fmt"
-	"log/slog"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -131,8 +130,8 @@ func renderContentBlock(content string, options ...renderingOption) string {
 	}
 
 	style := styles.BaseStyle().
-		MarginTop(renderer.marginTop).
-		MarginBottom(renderer.marginBottom).
+		// MarginTop(renderer.marginTop).
+		// MarginBottom(renderer.marginBottom).
 		PaddingTop(renderer.paddingTop).
 		PaddingBottom(renderer.paddingBottom).
 		PaddingLeft(renderer.paddingLeft).
@@ -188,6 +187,17 @@ func renderContentBlock(content string, options ...renderingOption) string {
 		content,
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 	)
+	if renderer.marginTop > 0 {
+		for range renderer.marginTop {
+			content = "\n" + content
+		}
+	}
+	if renderer.marginBottom > 0 {
+		for range renderer.marginBottom {
+			content = content + "\n"
+		}
+	}
+
 	return content
 }
 
@@ -210,18 +220,11 @@ func renderText(message client.MessageInfo, text string, author string) string {
 	}
 	info := fmt.Sprintf("%s (%s)", author, timestamp)
 
-	align := lipgloss.Left
-	switch message.Role {
-	case client.User:
-		align = lipgloss.Right
-	case client.Assistant:
-		align = lipgloss.Left
-	}
-
 	textWidth := max(lipgloss.Width(text), lipgloss.Width(info))
 	markdownWidth := min(textWidth, width-padding-4) // -4 for the border and padding
 	content := toMarkdown(text, markdownWidth, t.BackgroundSubtle())
-	content = lipgloss.JoinVertical(align, content, info)
+	content = strings.Join([]string{content, info}, "\n")
+	// content = lipgloss.JoinVertical(align, content, info)
 
 	switch message.Role {
 	case client.User:
@@ -270,6 +273,7 @@ func renderToolInvocation(
 		PaddingRight(2).
 		BorderLeft(true).
 		BorderRight(true).
+		BorderBackground(t.Background()).
 		BorderForeground(t.BackgroundSubtle()).
 		BorderStyle(lipgloss.ThickBorder())
 
@@ -292,10 +296,6 @@ func renderToolInvocation(
 			}
 			toolArgs = renderArgs(&toolArgsMap, firstKey)
 		}
-	}
-
-	if len(toolArgsMap) == 0 {
-		slog.Debug("no args")
 	}
 
 	body := ""
@@ -358,6 +358,7 @@ func renderToolInvocation(
 				formattedDiff = strings.TrimSpace(formattedDiff)
 				formattedDiff = lipgloss.NewStyle().
 					BorderStyle(lipgloss.ThickBorder()).
+					BorderBackground(t.Background()).
 					BorderForeground(t.BackgroundSubtle()).
 					BorderLeft(true).
 					BorderRight(true).

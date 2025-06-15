@@ -140,14 +140,15 @@ func formatTokensAndCost(tokens float32, contextWindow float32, cost float32) st
 }
 
 func (m statusComponent) View() string {
+	t := theme.CurrentTheme()
 	if m.app.Session.Id == "" {
 		return styles.BaseStyle().
+			Background(t.Background()).
 			Width(m.width).
 			Height(2).
 			Render("")
 	}
 
-	t := theme.CurrentTheme()
 	logo := logo()
 
 	cwd := styles.Padded().

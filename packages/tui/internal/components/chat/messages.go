@@ -242,8 +242,8 @@ func (m *messagesComponent) header() string {
 
 	t := theme.CurrentTheme()
 	width := layout.Current.Container.Width
-	base := styles.BaseStyle().Render
-	muted := styles.Muted().Render
+	base := styles.BaseStyle().Background(t.Background()).Render
+	muted := styles.Muted().Background(t.Background()).Render
 	headerLines := []string{}
 	headerLines = append(headerLines, toMarkdown("# "+m.app.Session.Title, width-6, t.Background()))
 	if m.app.Session.Share != nil && m.app.Session.Share.Url != "" {
@@ -257,7 +257,7 @@ func (m *messagesComponent) header() string {
 		Width(width).
 		PaddingLeft(2).
 		PaddingRight(2).
-		// Background(t.BackgroundElement()).
+		Background(t.Background()).
 		BorderLeft(true).
 		BorderRight(true).
 		BorderBackground(t.Background()).
@@ -289,15 +289,11 @@ func (m *messagesComponent) View() string {
 }
 
 func (m *messagesComponent) home() string {
-	// t := theme.CurrentTheme()
-	baseStyle := styles.BaseStyle()
+	t := theme.CurrentTheme()
+	baseStyle := styles.BaseStyle().Background(t.Background())
 	base := baseStyle.Render
-	muted := styles.Muted().Render
+	muted := styles.Muted().Background(t.Background()).Render
 
-	// 	mark := `
-	// ███▀▀█
-	// ███  █
-	// ▀▀▀▀▀▀  `
 	open := `
 █▀▀█ █▀▀█ █▀▀ █▀▀▄ 
 █░░█ █░░█ █▀▀ █░░█ 
@@ -309,9 +305,8 @@ func (m *messagesComponent) home() string {
 
 	logo := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		// styles.BaseStyle().Foreground(t.Primary()).Render(mark),
-		styles.Muted().Render(open),
-		styles.BaseStyle().Render(code),
+		muted(open),
+		base(code),
 	)
 	// cwd := app.Info.Path.Cwd
 	// config := app.Info.Path.Config
@@ -327,7 +322,7 @@ func (m *messagesComponent) home() string {
 
 	commandLines := []string{}
 	for _, command := range commands {
-		commandLines = append(commandLines, (base(command[0]) + " " + muted(command[1])))
+		commandLines = append(commandLines, (base(command[0]+" ") + muted(command[1])))
 	}
 
 	logoAndVersion := lipgloss.JoinVertical(
@@ -347,22 +342,18 @@ func (m *messagesComponent) home() string {
 	lines = append(lines, commandLines...)
 	lines = append(lines, "")
 	if m.rendering {
-		lines = append(lines, styles.Muted().Render("Loading session..."))
+		lines = append(lines, base("Loading session..."))
 	} else {
 		lines = append(lines, "")
 	}
 
-	t := theme.CurrentTheme()
 	return lipgloss.Place(
 		m.width,
 		m.height,
 		lipgloss.Center,
 		lipgloss.Center,
 		baseStyle.Width(lipgloss.Width(logoAndVersion)).Render(
-			lipgloss.JoinVertical(
-				lipgloss.Top,
-				lines...,
-			),
+			strings.Join(lines, "\n"),
 		),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 	)

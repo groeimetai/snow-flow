@@ -258,8 +258,8 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *editorComponent) View() string {
 	t := theme.CurrentTheme()
-	base := styles.BaseStyle().Render
-	muted := styles.Muted().Render
+	base := styles.BaseStyle().Background(t.Background()).Render
+	muted := styles.Muted().Background(t.Background()).Render
 	promptStyle := lipgloss.NewStyle().
 		Padding(0, 0, 0, 1).
 		Bold(true).
@@ -281,7 +281,7 @@ func (m *editorComponent) View() string {
 		BorderBackground(t.Background()).
 		Render(textarea)
 
-	hint := base("enter") + muted(" send   ") + base("shift") + muted("+") + base("enter") + muted(" newline")
+	hint := base("enter") + muted(" send   ")
 	if m.app.IsBusy() {
 		hint = muted("working") + m.spinner.View() + muted("  ") + base("esc") + muted(" interrupt")
 	}
@@ -292,18 +292,12 @@ func (m *editorComponent) View() string {
 	}
 
 	space := m.width - 2 - lipgloss.Width(model) - lipgloss.Width(hint)
-	spacer := lipgloss.NewStyle().Width(space).Render("")
+	spacer := lipgloss.NewStyle().Background(t.Background()).Width(space).Render("")
 
-	info := lipgloss.JoinHorizontal(lipgloss.Left, hint, spacer, model)
-	info = styles.Padded().Render(info)
+	info := hint + spacer + model
+	info = styles.Padded().Background(t.Background()).Render(info)
 
-	content := lipgloss.JoinVertical(
-		lipgloss.Top,
-		// m.attachmentsContent(),
-		"",
-		textarea,
-		info,
-	)
+	content := strings.Join([]string{"", textarea, info}, "\n")
 
 	return content
 }

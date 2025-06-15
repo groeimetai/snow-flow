@@ -227,6 +227,7 @@ func (c *completionDialogComponent) View() string {
 		BorderBottom(false).
 		BorderRight(true).
 		BorderLeft(true).
+		BorderBackground(t.Background()).
 		BorderForeground(t.BackgroundSubtle()).
 		Width(c.width).
 		Render(c.list.View())
