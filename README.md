@@ -84,8 +84,8 @@ You can use opencode with any provider listed at [here](https://ai-sdk.dev/provi
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
-    "@ai-sdk/openai-compatible": {
-      "name": "ollama",
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
       "options": {
         "baseURL": "http://localhost:11434/v1"
       },
@@ -124,7 +124,8 @@ OpenRouter is not yet in the models.dev database, but you can configure it manua
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
-    "@openrouter/ai-sdk-provider": {
+    "openrouter": {
+      "npm": "@openrouter/ai-sdk-provider",
       "name": "OpenRouter",
       "options": {
         "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

@@ -1,5 +1,4 @@
 import { generatePKCE } from "@openauthjs/openauth/pkce"
-import fs from "fs/promises"
 import { Auth } from "./index"
 
 export namespace AuthAnthropic {

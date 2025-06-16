@@ -21,6 +21,9 @@
           "id": {
             "type": "string"
           },
+          "npm": {
+            "type": "string"
+          },
           "models": {
             "type": "object",
             "additionalProperties": {

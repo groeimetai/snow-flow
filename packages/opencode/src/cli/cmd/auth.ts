@@ -5,7 +5,7 @@ import * as prompts from "@clack/prompts"
 import open from "open"
 import { UI } from "../ui"
 import { ModelsDev } from "../../provider/models"
-import { map, pipe, sort, sortBy, values } from "remeda"
+import { map, pipe, sortBy, values } from "remeda"
 
 export const AuthCommand = cmd({
   command: "auth",
@@ -16,7 +16,7 @@ export const AuthCommand = cmd({
       .command(AuthLogoutCommand)
       .command(AuthListCommand)
       .demandCommand(),
-  async handler(args) {},
+  async handler() {},
 })
 
 export const AuthListCommand = cmd({
@@ -78,8 +78,10 @@ export const AuthLoginCommand = cmd({
 
     if (provider === "other") {
       provider = await prompts.text({
-        message: "Enter provider - must match @ai-sdk/<provider>",
+        message:
+          "Enter provider - must be package name from https://ai-sdk.dev/providers",
       })
+      provider = provider.replace(/^@ai-sdk\//, "")
       if (prompts.isCancel(provider)) throw new UI.CancelledError()
     }
 
@@ -115,7 +117,9 @@ export const AuthLoginCommand = cmd({
         try {
           await open(url)
         } catch (e) {
-          prompts.log.error("Failed to open browser perhaps you are running without a display or X server, please open the following URL in your browser:")
+          prompts.log.error(
+            "Failed to open browser perhaps you are running without a display or X server, please open the following URL in your browser:",
+          )
         }
         prompts.log.info(url)
 

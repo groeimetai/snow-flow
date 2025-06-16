@@ -43,6 +43,7 @@ export namespace BunProc {
       version: z.string(),
     }),
   )
+
   export async function install(pkg: string, version = "latest") {
     const mod = path.join(Global.Path.cache, "node_modules", pkg)
     const pkgjson = Bun.file(path.join(Global.Path.cache, "package.json"))

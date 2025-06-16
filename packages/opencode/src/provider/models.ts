@@ -36,6 +36,7 @@ export namespace ModelsDev {
       name: z.string(),
       env: z.array(z.string()),
       id: z.string(),
+      npm: z.string().optional(),
       models: z.record(Model),
     })
     .openapi({

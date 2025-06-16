@@ -108,6 +108,7 @@ export namespace Provider {
       const existing = database[providerID]
       const parsed: ModelsDev.Provider = {
         id: providerID,
+        npm: provider.npm ?? existing?.npm,
         name: provider.name ?? existing?.name ?? providerID,
         env: provider.env ?? existing?.env ?? [],
         models: existing?.models ?? {},
@@ -181,22 +182,22 @@ export namespace Provider {
     return state().then((state) => state.providers)
   }
 
-  async function getSDK(providerID: string) {
+  async function getSDK(provider: ModelsDev.Provider) {
     return (async () => {
       using _ = log.time("getSDK", {
-        providerID,
+        providerID: provider.id,
       })
       const s = await state()
-      const existing = s.sdk.get(providerID)
+      const existing = s.sdk.get(provider.id)
       if (existing) return existing
-      const [pkg, version] = await ModelsDev.pkg(providerID)
+      const [pkg, version] = await ModelsDev.pkg(provider.npm ?? provider.id)
       const mod = await import(await BunProc.install(pkg, version))
       const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!]
-      const loaded = fn(s.providers[providerID]?.options)
-      s.sdk.set(providerID, loaded)
+      const loaded = fn(s.providers[provider.id]?.options)
+      s.sdk.set(provider.id, loaded)
       return loaded as SDK
     })().catch((e) => {
-      throw new InitError({ providerID: providerID }, { cause: e })
+      throw new InitError({ providerID: provider.id }, { cause: e })
     })
   }
 
@@ -214,8 +215,7 @@ export namespace Provider {
     if (!provider) throw new ModelNotFoundError({ providerID, modelID })
     const info = provider.info.models[modelID]
     if (!info) throw new ModelNotFoundError({ providerID, modelID })
-
-    const sdk = await getSDK(providerID)
+    const sdk = await getSDK(provider.info)
 
     try {
       const language =
