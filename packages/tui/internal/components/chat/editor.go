@@ -455,7 +455,14 @@ func (m *editorComponent) GetValue() string {
 }
 
 func NewEditorComponent(app *app.App) layout.ModelWithView {
-	s := spinner.New(spinner.WithSpinner(spinner.Ellipsis), spinner.WithStyle(styles.Muted().Width(3)))
+	s := spinner.New(
+		spinner.WithSpinner(spinner.Ellipsis),
+		spinner.WithStyle(
+			styles.
+				Muted().
+				Background(theme.CurrentTheme().Background()).
+				Width(3)),
+	)
 	ta := createTextArea(nil)
 
 	return &editorComponent{
