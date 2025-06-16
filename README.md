@@ -138,3 +138,12 @@ OpenRouter is not yet in the models.dev database, but you can configure it manua
   }
 }
 ```
+
+#### How is this different than claude code?
+
+It is very similar to claude code in terms of capability - here are the key differences:
+
+- 100% open source
+- Not coupled to any provider. Although anthropic is recommended opencode can be used with openai, google or even local models. As models evolve the gaps between them will close and pricing will drop so being provider agnostic is important.
+- TUI focus - opencode is built by neovim users and the creators of https://terminal.shop - we are going to push the limits of what's possible in the terminal
+- client/server architecture - this means the tui frontend is just the first of many. For example, opencode can run on your computer and you can drive it remotely from a mobile app
