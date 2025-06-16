@@ -126,6 +126,10 @@ type MessageInfo struct {
 			Summary    *bool    `json:"summary,omitempty"`
 			System     []string `json:"system"`
 			Tokens     struct {
+				Cache struct {
+					Read  float32 `json:"read"`
+					Write float32 `json:"write"`
+				} `json:"cache"`
 				Input     float32 `json:"input"`
 				Output    float32 `json:"output"`
 				Reasoning float32 `json:"reasoning"`

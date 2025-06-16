@@ -782,12 +782,28 @@
                       },
                       "reasoning": {
                         "type": "number"
+                      },
+                      "cache": {
+                        "type": "object",
+                        "properties": {
+                          "read": {
+                            "type": "number"
+                          },
+                          "write": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "read",
+                          "write"
+                        ]
                       }
                     },
                     "required": [
                       "input",
                       "output",
-                      "reasoning"
+                      "reasoning",
+                      "cache"
                     ]
                   }
                 },

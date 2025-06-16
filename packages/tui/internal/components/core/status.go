@@ -102,7 +102,11 @@ func (m statusComponent) View() string {
 				cost += message.Metadata.Assistant.Cost
 				usage := message.Metadata.Assistant.Tokens
 				if usage.Output > 0 {
-					tokens = (usage.Input + usage.Output + usage.Reasoning)
+					tokens = (usage.Input +
+						usage.Cache.Write +
+						usage.Cache.Read +
+						usage.Output +
+						usage.Reasoning)
 				}
 			}
 		}
