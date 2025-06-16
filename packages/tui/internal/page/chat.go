@@ -98,7 +98,6 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Get the current text from the editor to determine which provider to use
 		editorModel := p.editor.GetContent().(interface{ GetValue() string })
 		currentInput := editorModel.GetValue()
-
 		provider := p.completionManager.GetProvider(currentInput)
 		p.completionDialog.SetProvider(provider)
 
@@ -106,9 +105,9 @@ func (p *chatPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		p.completionDialog = context.(dialog.CompletionDialog)
 		cmds = append(cmds, contextCmd)
 
-		// Doesn't forward event if enter key is pressed and there are completions
+		// Doesn't forward event if enter key is pressed
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
-			if keyMsg.String() == "enter" { // && !p.completionDialog.IsEmpty() {
+			if keyMsg.String() == "enter" {
 				return p, tea.Batch(cmds...)
 			}
 		}

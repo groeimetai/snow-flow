@@ -190,14 +190,17 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return c, tea.Batch(cmds...)
 		} else {
-			items, err := c.completionProvider.GetChildEntries("")
-			if err != nil {
-				// status.Error(err.Error())
+			cmd := func() tea.Msg {
+				items, err := c.completionProvider.GetChildEntries("")
+				if err != nil {
+					// status.Error(err.Error())
+				}
+				return items
 			}
-
-			c.list.SetItems(items)
+			cmds = append(cmds, cmd)
+			cmds = append(cmds, c.pseudoSearchTextArea.Focus())
 			c.pseudoSearchTextArea.SetValue(msg.String())
-			return c, c.pseudoSearchTextArea.Focus()
+			return c, tea.Batch(cmds...)
 		}
 	case tea.WindowSizeMsg:
 		c.width = msg.Width
@@ -247,11 +250,6 @@ func (c *completionDialogComponent) IsEmpty() bool {
 func (c *completionDialogComponent) SetProvider(provider CompletionProvider) {
 	if c.completionProvider.GetId() != provider.GetId() {
 		c.completionProvider = provider
-		items, err := provider.GetChildEntries("")
-		if err != nil {
-			// status.Error(err.Error())
-		}
-		c.list.SetItems(items)
 	}
 }
 
