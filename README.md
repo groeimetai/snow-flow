@@ -152,3 +152,8 @@ It is very similar to claude code in terms of capability - here are the key diff
 #### Windows Support
 
 There are some minor problems blocking opencode from working on windows. We will fix them soon - would need to use wsl for now.
+
+#### What's the other repo?
+
+If you're looking for opencode built by adam and dax and frank and jay you are in the right place. There is another repo from a former collaborator that is masquerading as the same project.
+[More Info](https://x.com/thdxr/status/1933561254481666466)
