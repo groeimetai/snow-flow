@@ -14,6 +14,7 @@ import { mapValues } from "remeda"
 import { NamedError } from "../util/error"
 import { Fzf } from "../external/fzf"
 import { ModelsDev } from "../provider/models"
+import { Ripgrep } from "../external/ripgrep"
 
 const ERRORS = {
   400: {
@@ -457,7 +458,7 @@ export namespace Server {
         async (c) => {
           const body = c.req.valid("json")
           const app = App.info()
-          const result = await Fzf.search({
+          const result = await Ripgrep.files({
             cwd: app.path.cwd,
             query: body.query,
             limit: 10,

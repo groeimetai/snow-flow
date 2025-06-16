@@ -6,6 +6,7 @@ import { z } from "zod"
 import { NamedError } from "../util/error"
 import { lazy } from "../util/lazy"
 import { $ } from "bun"
+import { Fzf } from "./fzf"
 
 export namespace Ripgrep {
   const PLATFORM = {
@@ -113,11 +114,17 @@ export namespace Ripgrep {
     return filepath
   }
 
-  export async function files(cwd: string) {
-    const result =
-      await $`${await filepath()} --files --hidden --glob '!.git/*'`
-        .cwd(cwd)
-        .text()
+  export async function files(input: {
+    cwd: string
+    query?: string
+    limit?: number
+  }) {
+    const commands = [`${await filepath()} --files --hidden --glob='!.git/*'`]
+    if (input.query)
+      commands.push(`${await Fzf.filepath()} --filter=${input.query}`)
+    if (input.limit) commands.push(`head -n ${input.limit}`)
+    const joined = commands.join(" | ")
+    const result = await $`${{ raw: joined }}`.cwd(input.cwd).text()
     return result.split("\n").filter(Boolean)
   }
 }

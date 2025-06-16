@@ -1,7 +1,5 @@
 import { App } from "../app/app"
-import { Fzf } from "../external/fzf"
 import { Ripgrep } from "../external/ripgrep"
-import { ListTool } from "../tool/ls"
 import { Filesystem } from "../util/filesystem"
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
@@ -28,7 +26,9 @@ export namespace SystemPrompt {
     const app = App.info()
 
     const tree = async () => {
-      const files = await Ripgrep.files(app.path.cwd)
+      const files = await Ripgrep.files({
+        cwd: app.path.cwd,
+      })
       type Node = {
         children: Record<string, Node>
       }
@@ -52,6 +52,7 @@ export namespace SystemPrompt {
       }
 
       function render(path: string[], node: Node): string {
+        // if (path.length === 3) return "\t".repeat(path.length) + "..."
         const lines: string[] = []
         const entries = Object.entries(node.children).sort(([a], [b]) =>
           a.localeCompare(b),
@@ -68,7 +69,8 @@ export namespace SystemPrompt {
 
         return lines.join("\n")
       }
-      return render([], root)
+      const result = render([], root)
+      return result
     }
 
     return [
