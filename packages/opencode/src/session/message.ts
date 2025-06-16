@@ -174,6 +174,10 @@ export namespace Message {
               input: z.number(),
               output: z.number(),
               reasoning: z.number(),
+              cache: z.object({
+                read: z.number(),
+                write: z.number(),
+              }),
             }),
           })
           .optional(),

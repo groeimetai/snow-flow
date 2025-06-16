@@ -13,7 +13,7 @@ import {
   type LanguageModelUsage,
   type CoreMessage,
   type UIMessage,
-  type LanguageModelV1Middleware,
+  type ProviderMetadata,
 } from "ai"
 import { z, ZodSchema } from "zod"
 import { Decimal } from "decimal.js"
@@ -204,6 +204,8 @@ export namespace Session {
     if (previous?.metadata.assistant) {
       const tokens =
         previous.metadata.assistant.tokens.input +
+        previous.metadata.assistant.tokens.cache.read +
+        previous.metadata.assistant.tokens.cache.write +
         previous.metadata.assistant.tokens.output
       if (
         tokens >
@@ -262,7 +264,7 @@ export namespace Session {
               draft.title = result.text
             })
         })
-        .catch((e) => {})
+        .catch(() => {})
     }
     const msg: Message.Info = {
       role: "user",
@@ -299,6 +301,7 @@ export namespace Session {
             input: 0,
             output: 0,
             reasoning: 0,
+            cache: { read: 0, write: 0 },
           },
           modelID: input.modelID,
           providerID: input.providerID,
@@ -413,7 +416,7 @@ export namespace Session {
           finishReason: step.finishReason,
         })
         const assistant = next.metadata!.assistant!
-        const usage = getUsage(step.usage, model.info)
+        const usage = getUsage(model.info, step.usage, step.providerMetadata)
         assistant.cost += usage.cost
         assistant.tokens = usage.tokens
         await updateMessage(next)
@@ -428,7 +431,7 @@ export namespace Session {
       },
       async onFinish(input) {
         const assistant = next.metadata!.assistant!
-        const usage = getUsage(input.usage, model.info)
+        const usage = getUsage(model.info, input.usage, input.providerMetadata)
         assistant.cost = usage.cost
         await updateMessage(next)
       },
@@ -675,6 +678,7 @@ export namespace Session {
             input: 0,
             output: 0,
             reasoning: 0,
+            cache: { read: 0, write: 0 },
           },
         },
         time: {
@@ -710,7 +714,7 @@ export namespace Session {
       text: result.text,
     })
     const assistant = next.metadata!.assistant!
-    const usage = getUsage(result.usage, model.info)
+    const usage = getUsage(model.info, result.usage, result.providerMetadata)
     assistant.cost = usage.cost
     assistant.tokens = usage.tokens
     await updateMessage(next)
@@ -731,11 +735,21 @@ export namespace Session {
     }
   }
 
-  function getUsage(usage: LanguageModelUsage, model: ModelsDev.Model) {
+  function getUsage(
+    model: ModelsDev.Model,
+    usage: LanguageModelUsage,
+    metadata?: ProviderMetadata,
+  ) {
     const tokens = {
       input: usage.promptTokens ?? 0,
       output: usage.completionTokens ?? 0,
       reasoning: 0,
+      cache: {
+        write: (metadata?.["anthropic"]?.["cacheCreationInputTokens"] ??
+          0) as number,
+        read: (metadata?.["anthropic"]?.["cacheReadInputTokens"] ??
+          0) as number,
+      },
     }
     return {
       cost: new Decimal(0)

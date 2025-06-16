@@ -46,7 +46,8 @@ const cli = yargs(hideBin(process.argv))
         process.chdir(cwd)
         const result = await App.provide(
           { cwd, version: VERSION },
-          async () => {
+          async (app) => {
+            App.info().path.config
             const providers = await Provider.list()
             if (Object.keys(providers).length === 0) {
               return "needs_provider"
