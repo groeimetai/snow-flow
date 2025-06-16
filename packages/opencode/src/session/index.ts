@@ -475,11 +475,11 @@ export namespace Session {
       maxSteps: 1000,
       messages: [
         ...system.map(
-          (x): CoreMessage => ({
+          (x, index): CoreMessage => ({
             role: "system",
             content: x,
             providerOptions: {
-              ...(input.providerID === "anthropic"
+              ...(input.providerID === "anthropic" && index < 4
                 ? {
                     anthropic: {
                       cacheControl: { type: "ephemeral" },
