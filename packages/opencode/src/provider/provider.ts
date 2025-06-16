@@ -268,7 +268,6 @@ export namespace Provider {
   }
 
   const TOOLS = [
-    BashTool,
     EditTool,
     WebFetchTool,
     GlobTool,
@@ -281,9 +280,7 @@ export namespace Provider {
     EditTool,
     // MultiEditTool,
     WriteTool,
-    TodoWriteTool,
     TaskTool,
-    TodoReadTool,
   ]
   const TOOL_MAPPING: Record<string, Tool.Info[]> = {
     anthropic: TOOLS.filter((t) => t.id !== "opencode.patch"),

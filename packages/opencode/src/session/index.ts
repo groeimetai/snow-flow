@@ -13,6 +13,7 @@ import {
   type LanguageModelUsage,
   type CoreMessage,
   type UIMessage,
+  type LanguageModelV1Middleware,
 } from "ai"
 import { z, ZodSchema } from "zod"
 import { Decimal } from "decimal.js"
@@ -234,6 +235,13 @@ export namespace Session {
             (x): CoreMessage => ({
               role: "system",
               content: x,
+              providerOptions: {
+                ...(input.providerID === "anthropic"
+                  ? {
+                      cacheControl: { type: "ephemeral" },
+                    }
+                  : {}),
+              },
             }),
           ),
           ...convertToCoreMessages([
@@ -270,7 +278,7 @@ export namespace Session {
     msgs.push(msg)
 
     const system = input.system ?? SystemPrompt.provider(input.providerID)
-    system.push(...(await SystemPrompt.environment(input.sessionID)))
+    system.push(...(await SystemPrompt.environment()))
     system.push(...(await SystemPrompt.custom()))
 
     const next: Message.Info = {
@@ -379,6 +387,24 @@ export namespace Session {
     }
 
     let text: Message.TextPart | undefined
+    await Bun.write(
+      "/tmp/message.json",
+      JSON.stringify(
+        [
+          ...system.map(
+            (x): CoreMessage => ({
+              role: "system",
+              content: x,
+            }),
+          ),
+          ...convertToCoreMessages(
+            msgs.map(toUIMessage).filter((x) => x.parts.length > 0),
+          ),
+        ],
+        null,
+        2,
+      ),
+    )
     const result = streamText({
       onStepFinish: async (step) => {
         log.info("step finish", {
@@ -447,6 +473,13 @@ export namespace Session {
           (x): CoreMessage => ({
             role: "system",
             content: x,
+            providerOptions: {
+              ...(input.providerID === "anthropic"
+                ? {
+                    cacheControl: { type: "ephemeral" },
+                  }
+                : {}),
+            },
           }),
         ),
         ...convertToCoreMessages(
@@ -455,7 +488,6 @@ export namespace Session {
       ],
       temperature: model.info.id === "codex-mini-latest" ? undefined : 0,
       tools: {
-        ...(await MCP.tools()),
         ...tools,
       },
       model: model.language,
