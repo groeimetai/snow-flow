@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -16,7 +17,16 @@ import (
 var Version = "dev"
 
 func main() {
+	version := Version
+	if version != "dev" && !strings.HasPrefix(Version, "v") {
+		version = "v" + Version
+	}
+
 	url := os.Getenv("OPENCODE_SERVER")
+	appInfoStr := os.Getenv("OPENCODE_APP_INFO")
+	var appInfo client.AppInfo
+	json.Unmarshal([]byte(appInfoStr), &appInfo)
+
 	httpClient, err := client.NewClientWithResponses(url)
 	if err != nil {
 		slog.Error("Failed to create client", "error", err)
@@ -27,11 +37,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	version := Version
-	if version != "dev" && !strings.HasPrefix(Version, "v") {
-		version = "v" + Version
-	}
-	app_, err := app.New(ctx, version, httpClient)
+	app_, err := app.New(ctx, version, appInfo, httpClient)
 	if err != nil {
 		panic(err)
 	}
@@ -61,27 +67,29 @@ func main() {
 		}
 	}()
 
-	paths, err := httpClient.PostPathGetWithResponse(context.Background())
-	if err != nil {
-		panic(err)
-	}
-	logfile := filepath.Join(paths.JSON200.Data, "log", "tui.log")
-
-	if _, err := os.Stat(filepath.Dir(logfile)); os.IsNotExist(err) {
-		err := os.MkdirAll(filepath.Dir(logfile), 0755)
+	go func() {
+		paths, err := httpClient.PostPathGetWithResponse(context.Background())
 		if err != nil {
-			slog.Error("Failed to create log directory", "error", err)
+			panic(err)
+		}
+		logfile := filepath.Join(paths.JSON200.Data, "log", "tui.log")
+
+		if _, err := os.Stat(filepath.Dir(logfile)); os.IsNotExist(err) {
+			err := os.MkdirAll(filepath.Dir(logfile), 0755)
+			if err != nil {
+				slog.Error("Failed to create log directory", "error", err)
+				os.Exit(1)
+			}
+		}
+		file, err := os.Create(logfile)
+		if err != nil {
+			slog.Error("Failed to create log file", "error", err)
 			os.Exit(1)
 		}
-	}
-	file, err := os.Create(logfile)
-	if err != nil {
-		slog.Error("Failed to create log file", "error", err)
-		os.Exit(1)
-	}
-	defer file.Close()
-	logger := slog.New(slog.NewTextHandler(file, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	slog.SetDefault(logger)
+		defer file.Close()
+		logger := slog.New(slog.NewTextHandler(file, &slog.HandlerOptions{Level: slog.LevelDebug}))
+		slog.SetDefault(logger)
+	}()
 
 	// Run the TUI
 	result, err := program.Run()

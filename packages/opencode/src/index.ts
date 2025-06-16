@@ -47,7 +47,6 @@ const cli = yargs(hideBin(process.argv))
         const result = await App.provide(
           { cwd, version: VERSION },
           async (app) => {
-            App.info().path.config
             const providers = await Provider.list()
             if (Object.keys(providers).length === 0) {
               return "needs_provider"
@@ -79,6 +78,7 @@ const cli = yargs(hideBin(process.argv))
               env: {
                 ...process.env,
                 OPENCODE_SERVER: server.url.toString(),
+                OPENCODE_APP_INFO: JSON.stringify(app),
               },
               onExit: () => {
                 server.stop()

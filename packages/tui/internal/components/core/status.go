@@ -34,14 +34,14 @@ func (m statusComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func logo() string {
+func (m statusComponent) logo() string {
 	t := theme.CurrentTheme()
 	base := lipgloss.NewStyle().Background(t.BackgroundElement()).Foreground(t.TextMuted()).Render
 	emphasis := lipgloss.NewStyle().Bold(true).Background(t.BackgroundElement()).Foreground(t.Text()).Render
 
 	open := base("open")
 	code := emphasis("code ")
-	version := base(app.Info.Version)
+	version := base(m.app.Version)
 	return styles.Padded().
 		Background(t.BackgroundElement()).
 		Render(open + code + version)
@@ -84,12 +84,12 @@ func (m statusComponent) View() string {
 			Render("")
 	}
 
-	logo := logo()
+	logo := m.logo()
 
 	cwd := styles.Padded().
 		Foreground(t.TextMuted()).
 		Background(t.BackgroundSubtle()).
-		Render(app.Info.Path.Cwd)
+		Render(m.app.Info.Path.Cwd)
 
 	sessionInfo := ""
 	if m.app.Session.Id != "" {

@@ -17,7 +17,11 @@ import (
 	"github.com/sst/opencode/pkg/client"
 )
 
+var RootPath string
+
 type App struct {
+	Info       client.AppInfo
+	Version    string
 	ConfigPath string
 	Config     *config.Config
 	Client     *client.ClientWithResponses
@@ -28,93 +32,97 @@ type App struct {
 	Commands   commands.Registry
 }
 
-type AppInfo struct {
-	client.AppInfo
-	Version string
-}
+func New(
+	ctx context.Context,
+	version string,
+	appInfo client.AppInfo,
+	httpClient *client.ClientWithResponses,
+) (*App, error) {
+	RootPath = appInfo.Path.Root
 
-var Info AppInfo
-
-func New(ctx context.Context, version string, httpClient *client.ClientWithResponses) (*App, error) {
-	appInfoResponse, _ := httpClient.PostAppInfoWithResponse(ctx)
-	appInfo := appInfoResponse.JSON200
-	Info = AppInfo{
-		AppInfo: *appInfo,
-		Version: version,
-	}
-
-	providersResponse, err := httpClient.PostProviderListWithResponse(ctx)
-	if err != nil {
-		return nil, err
-	}
-	providers := []client.ProviderInfo{}
-	var defaultProvider *client.ProviderInfo
-	var defaultModel *client.ModelInfo
-
-	var anthropic *client.ProviderInfo
-	for _, provider := range providersResponse.JSON200.Providers {
-		if provider.Id == "anthropic" {
-			anthropic = &provider
-		}
-	}
-
-	// default to anthropic if available
-	if anthropic != nil {
-		defaultProvider = anthropic
-		defaultModel = getDefaultModel(providersResponse, *anthropic)
-	}
-
-	for _, provider := range providersResponse.JSON200.Providers {
-		if defaultProvider == nil || defaultModel == nil {
-			defaultProvider = &provider
-			defaultModel = getDefaultModel(providersResponse, provider)
-		}
-		providers = append(providers, provider)
-	}
-	if len(providers) == 0 {
-		return nil, fmt.Errorf("no providers found")
-	}
-
-	appConfigPath := filepath.Join(Info.Path.Config, "config")
+	appConfigPath := filepath.Join(appInfo.Path.Config, "config")
 	appConfig, err := config.LoadConfig(appConfigPath)
 	if err != nil {
-		slog.Info("No TUI config found, using default values", "error", err)
-		appConfig = config.NewConfig("opencode", defaultProvider.Id, defaultModel.Id)
+		appConfig = config.NewConfig()
 		config.SaveConfig(appConfigPath, appConfig)
 	}
-
-	var currentProvider *client.ProviderInfo
-	var currentModel *client.ModelInfo
-	for _, provider := range providers {
-		if provider.Id == appConfig.Provider {
-			currentProvider = &provider
-
-			for _, model := range provider.Models {
-				if model.Id == appConfig.Model {
-					currentModel = &model
-				}
-			}
-		}
-	}
-	if currentProvider == nil || currentModel == nil {
-		currentProvider = defaultProvider
-		currentModel = defaultModel
-	}
+	theme.SetTheme(appConfig.Theme)
 
 	app := &App{
+		Info:       appInfo,
+		Version:    version,
 		ConfigPath: appConfigPath,
 		Config:     appConfig,
 		Client:     httpClient,
-		Provider:   currentProvider,
-		Model:      currentModel,
 		Session:    &client.SessionInfo{},
 		Messages:   []client.MessageInfo{},
 		Commands:   commands.NewCommandRegistry(),
 	}
 
-	theme.SetTheme(appConfig.Theme)
-
 	return app, nil
+}
+
+func (a *App) InitializeProvider() tea.Cmd {
+	return func() tea.Msg {
+		providersResponse, err := a.Client.PostProviderListWithResponse(context.Background())
+		if err != nil {
+			slog.Error("Failed to list providers", "error", err)
+			// TODO: notify user
+			return nil
+		}
+		providers := []client.ProviderInfo{}
+		var defaultProvider *client.ProviderInfo
+		var defaultModel *client.ModelInfo
+
+		var anthropic *client.ProviderInfo
+		for _, provider := range providersResponse.JSON200.Providers {
+			if provider.Id == "anthropic" {
+				anthropic = &provider
+			}
+		}
+
+		// default to anthropic if available
+		if anthropic != nil {
+			defaultProvider = anthropic
+			defaultModel = getDefaultModel(providersResponse, *anthropic)
+		}
+
+		for _, provider := range providersResponse.JSON200.Providers {
+			if defaultProvider == nil || defaultModel == nil {
+				defaultProvider = &provider
+				defaultModel = getDefaultModel(providersResponse, provider)
+			}
+			providers = append(providers, provider)
+		}
+		if len(providers) == 0 {
+			slog.Error("No providers configured")
+			return nil
+		}
+
+		var currentProvider *client.ProviderInfo
+		var currentModel *client.ModelInfo
+		for _, provider := range providers {
+			if provider.Id == a.Config.Provider {
+				currentProvider = &provider
+
+				for _, model := range provider.Models {
+					if model.Id == a.Config.Model {
+						currentModel = &model
+					}
+				}
+			}
+		}
+		if currentProvider == nil || currentModel == nil {
+			currentProvider = defaultProvider
+			currentModel = defaultModel
+		}
+
+		// TODO: handle no provider or model setup, yet
+		return state.ModelSelectedMsg{
+			Provider: *currentProvider,
+			Model:    *currentModel,
+		}
+	}
 }
 
 func getDefaultModel(response *client.PostProviderListResponse, provider client.ProviderInfo) *client.ModelInfo {

@@ -139,7 +139,7 @@ func (m *messagesComponent) renderView() {
 		author := ""
 		switch message.Role {
 		case client.User:
-			author = app.Info.User
+			author = m.app.Info.User
 		case client.Assistant:
 			author = message.Metadata.Assistant.ModelID
 		}
@@ -328,7 +328,7 @@ func (m *messagesComponent) home() string {
 	logoAndVersion := lipgloss.JoinVertical(
 		lipgloss.Right,
 		logo,
-		muted(app.Info.Version),
+		muted(m.app.Version),
 	)
 
 	lines := []string{}

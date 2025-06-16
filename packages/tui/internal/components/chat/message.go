@@ -23,7 +23,7 @@ import (
 
 func toMarkdown(content string, width int, backgroundColor compat.AdaptiveColor) string {
 	r := styles.GetMarkdownRenderer(width, backgroundColor)
-	content = strings.ReplaceAll(content, app.Info.Path.Root+"/", "")
+	content = strings.ReplaceAll(content, app.RootPath+"/", "")
 	rendered, _ := r.Render(content)
 	lines := strings.Split(rendered, "\n")
 
@@ -584,7 +584,7 @@ func truncateHeight(content string, height int) string {
 }
 
 func relative(path string) string {
-	return strings.TrimPrefix(path, app.Info.Path.Root+"/")
+	return strings.TrimPrefix(path, app.RootPath+"/")
 }
 
 func extension(path string) string {

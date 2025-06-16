@@ -38,6 +38,8 @@ type appModel struct {
 func (a appModel) Init() tea.Cmd {
 	t := theme.CurrentTheme()
 	var cmds []tea.Cmd
+	cmds = append(cmds, a.app.InitializeProvider())
+
 	cmds = append(cmds, tea.SetBackgroundColor(t.Background()))
 	cmds = append(cmds, tea.RequestBackgroundColor)
 
@@ -50,7 +52,7 @@ func (a appModel) Init() tea.Cmd {
 
 	// Check if we should show the init dialog
 	cmds = append(cmds, func() tea.Msg {
-		shouldShow := app.Info.Git && app.Info.Time.Initialized == nil
+		shouldShow := a.app.Info.Git && a.app.Info.Time.Initialized == nil
 		return dialog.ShowInitDialogMsg{Show: shouldShow}
 	})
 
