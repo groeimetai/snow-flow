@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/bubbles/v2 v2.0.0-beta.1
 	github.com/charmbracelet/bubbletea/v2 v2.0.0-beta.3
 	github.com/charmbracelet/glamour v0.10.0
-	github.com/charmbracelet/lipgloss/v2 v2.0.0-beta1
+	github.com/charmbracelet/lipgloss/v2 v2.0.0-beta.1
 	github.com/charmbracelet/x/ansi v0.8.0
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6
