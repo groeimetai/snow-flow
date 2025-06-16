@@ -78,11 +78,16 @@ export const AuthLoginCommand = cmd({
 
     if (provider === "other") {
       provider = await prompts.text({
-        message:
-          "Enter provider - must be package name from https://ai-sdk.dev/providers",
+        message: "Enter provider id",
+        validate: (x) =>
+          x.match(/^[a-z-]+$/) ? undefined : "a-z and hyphens only",
       })
+      if (prompts.isCancel(provider)) throw new UI.CancelledError()
       provider = provider.replace(/^@ai-sdk\//, "")
       if (prompts.isCancel(provider)) throw new UI.CancelledError()
+      prompts.log.warn(
+        `This only stores a credential for ${provider} - you will need configure it in opencode.json, check the docs for examples.`,
+      )
     }
 
     if (provider === "amazon-bedrock") {
