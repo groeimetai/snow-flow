@@ -78,7 +78,7 @@ Project configuration is optional. You can place an `opencode.json` file in the 
 
 #### Providers
 
-You can use opencode with any provider listed at [here](https://ai-sdk.dev/providers/ai-sdk-providers). Use the npm package name as the key in your config.
+You can use opencode with any provider listed at [here](https://ai-sdk.dev/providers/ai-sdk-providers). Be sure to specify the npm package to use to load the provider.
 
 ```json title="opencode.json"
 {
