@@ -38,11 +38,10 @@ var Info AppInfo
 func New(ctx context.Context, version string, httpClient *client.ClientWithResponses) (*App, error) {
 	appInfoResponse, _ := httpClient.PostAppInfoWithResponse(ctx)
 	appInfo := appInfoResponse.JSON200
-	Info = AppInfo{Version: version}
-	Info.Git = appInfo.Git
-	Info.Path = appInfo.Path
-	Info.Time = appInfo.Time
-	Info.User = appInfo.User
+	Info = AppInfo{
+		AppInfo: *appInfo,
+		Version: version,
+	}
 
 	providersResponse, err := httpClient.PostProviderListWithResponse(ctx)
 	if err != nil {
@@ -96,6 +95,10 @@ func New(ctx context.Context, version string, httpClient *client.ClientWithRespo
 				}
 			}
 		}
+	}
+	if currentProvider == nil || currentModel == nil {
+		currentProvider = defaultProvider
+		currentModel = defaultModel
 	}
 
 	app := &App{
