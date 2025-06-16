@@ -238,7 +238,9 @@ export namespace Session {
               providerOptions: {
                 ...(input.providerID === "anthropic"
                   ? {
-                      cacheControl: { type: "ephemeral" },
+                      anthropic: {
+                        cacheControl: { type: "ephemeral" },
+                      },
                     }
                   : {}),
               },
@@ -476,7 +478,9 @@ export namespace Session {
             providerOptions: {
               ...(input.providerID === "anthropic"
                 ? {
-                    cacheControl: { type: "ephemeral" },
+                    anthropic: {
+                      cacheControl: { type: "ephemeral" },
+                    },
                   }
                 : {}),
             },
