@@ -147,3 +147,7 @@ It is very similar to claude code in terms of capability - here are the key diff
 - Not coupled to any provider. Although anthropic is recommended opencode can be used with openai, google or even local models. As models evolve the gaps between them will close and pricing will drop so being provider agnostic is important.
 - TUI focus - opencode is built by neovim users and the creators of https://terminal.shop - we are going to push the limits of what's possible in the terminal
 - client/server architecture - this means the tui frontend is just the first of many. For example, opencode can run on your computer and you can drive it remotely from a mobile app
+
+#### Windows Support
+
+There are some minor problems blocking opencode from working on windows. We will fix them soon - would need to use wsl for now.
