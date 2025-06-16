@@ -412,9 +412,7 @@ export namespace Session {
     )
     const result = streamText({
       onStepFinish: async (step) => {
-        log.info("step finish", {
-          finishReason: step.finishReason,
-        })
+        log.info("step finish", { finishReason: step.finishReason })
         const assistant = next.metadata!.assistant!
         const usage = getUsage(model.info, step.usage, step.providerMetadata)
         assistant.cost += usage.cost
@@ -430,6 +428,9 @@ export namespace Session {
         text = undefined
       },
       async onFinish(input) {
+        log.info("message finish", {
+          reason: input.finishReason,
+        })
         const assistant = next.metadata!.assistant!
         const usage = getUsage(model.info, input.usage, input.providerMetadata)
         assistant.cost = usage.cost
