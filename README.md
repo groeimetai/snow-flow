@@ -155,5 +155,4 @@ There are some minor problems blocking opencode from working on windows. We will
 
 #### What's the other repo?
 
-If you're looking for opencode built by adam and dax and frank and jay you are in the right place. There is another repo from a former collaborator that is masquerading as the same project.
-[More Info](https://x.com/thdxr/status/1933561254481666466)
+If you're looking for opencode built by adam and dax and frank and jay you are in the right place. Any other similarly named projects have no relation to this one.
