@@ -5,7 +5,6 @@ import (
 	list "github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/layout"
-	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
@@ -71,7 +70,7 @@ func (t *themeDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return t, util.CmdHandler(modal.CloseModalMsg{})
 				}
 				if err := theme.SetTheme(selectedTheme); err != nil {
-					status.Error(err.Error())
+					// status.Error(err.Error())
 					return t, nil
 				}
 				return t, tea.Sequence(

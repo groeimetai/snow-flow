@@ -17,7 +17,6 @@ import (
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/image"
 	"github.com/sst/opencode/internal/layout"
-	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
@@ -157,7 +156,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if key.Matches(msg, editorMaps.OpenEditor) {
 			if m.app.IsBusy() {
-				status.Warn("Agent is working, please wait...")
+				// status.Warn("Agent is working, please wait...")
 				return m, nil
 			}
 			value := m.textarea.Value()
@@ -323,7 +322,7 @@ func (m *editorComponent) openEditor(value string) tea.Cmd {
 	tmpfile, err := os.CreateTemp("", "msg_*.md")
 	tmpfile.WriteString(value)
 	if err != nil {
-		status.Error(err.Error())
+		// status.Error(err.Error())
 		return nil
 	}
 	tmpfile.Close()
@@ -333,16 +332,16 @@ func (m *editorComponent) openEditor(value string) tea.Cmd {
 	c.Stderr = os.Stderr
 	return tea.ExecProcess(c, func(err error) tea.Msg {
 		if err != nil {
-			status.Error(err.Error())
+			// status.Error(err.Error())
 			return nil
 		}
 		content, err := os.ReadFile(tmpfile.Name())
 		if err != nil {
-			status.Error(err.Error())
+			// status.Error(err.Error())
 			return nil
 		}
 		if len(content) == 0 {
-			status.Warn("Message is empty")
+			// status.Warn("Message is empty")
 			return nil
 		}
 		os.Remove(tmpfile.Name())
@@ -381,7 +380,6 @@ func (m *editorComponent) send() tea.Cmd {
 	// 		return util.CmdHandler(commands.ExecuteCommandMsg{Name: commandName})
 	// 	}
 	// }
-	slog.Info("Send message", "value", value)
 
 	return tea.Batch(
 		util.CmdHandler(SendMsg{
@@ -389,33 +387,6 @@ func (m *editorComponent) send() tea.Cmd {
 			Attachments: attachments,
 		}),
 	)
-}
-
-func (m *editorComponent) attachmentsContent() string {
-	if len(m.attachments) == 0 {
-		return ""
-	}
-
-	t := theme.CurrentTheme()
-	var styledAttachments []string
-	attachmentStyles := styles.BaseStyle().
-		MarginLeft(1).
-		Background(t.TextMuted()).
-		Foreground(t.Text())
-	for i, attachment := range m.attachments {
-		var filename string
-		if len(attachment.FileName) > 10 {
-			filename = fmt.Sprintf(" %s %s...", styles.DocumentIcon, attachment.FileName[0:7])
-		} else {
-			filename = fmt.Sprintf(" %s %s", styles.DocumentIcon, attachment.FileName)
-		}
-		if m.deleteMode {
-			filename = fmt.Sprintf("%d%s", i, filename)
-		}
-		styledAttachments = append(styledAttachments, attachmentStyles.Render(filename))
-	}
-	content := lipgloss.JoinHorizontal(lipgloss.Left, styledAttachments...)
-	return content
 }
 
 func createTextArea(existing *textarea.Model) textarea.Model {

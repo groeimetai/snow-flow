@@ -12,7 +12,6 @@ import (
 	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/state"
-	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
 	"github.com/sst/opencode/pkg/client"
@@ -26,7 +25,6 @@ type App struct {
 	Model      *client.ModelInfo
 	Session    *client.SessionInfo
 	Messages   []client.MessageInfo
-	Status     status.Service
 	Commands   commands.Registry
 }
 
@@ -38,12 +36,6 @@ type AppInfo struct {
 var Info AppInfo
 
 func New(ctx context.Context, version string, httpClient *client.ClientWithResponses) (*App, error) {
-	err := status.InitService()
-	if err != nil {
-		slog.Error("Failed to initialize status service", "error", err)
-		return nil, err
-	}
-
 	appInfoResponse, _ := httpClient.PostAppInfoWithResponse(ctx)
 	appInfo := appInfoResponse.JSON200
 	Info = AppInfo{Version: version}
@@ -114,7 +106,6 @@ func New(ctx context.Context, version string, httpClient *client.ClientWithRespo
 		Model:      currentModel,
 		Session:    &client.SessionInfo{},
 		Messages:   []client.MessageInfo{},
-		Status:     status.GetService(),
 		Commands:   commands.NewCommandRegistry(),
 	}
 
@@ -160,7 +151,7 @@ func (a *App) InitializeProject(ctx context.Context) tea.Cmd {
 
 	session, err := a.CreateSession(ctx)
 	if err != nil {
-		status.Error(err.Error())
+		// status.Error(err.Error())
 		return nil
 	}
 
@@ -175,10 +166,10 @@ func (a *App) InitializeProject(ctx context.Context) tea.Cmd {
 			ModelID:    a.Model.Id,
 		})
 		if err != nil {
-			status.Error(err.Error())
+			// status.Error(err.Error())
 		}
 		if response != nil && response.StatusCode != 200 {
-			status.Error(fmt.Sprintf("failed to initialize project: %d", response.StatusCode))
+			// status.Error(fmt.Sprintf("failed to initialize project: %d", response.StatusCode))
 		}
 	}()
 
@@ -214,7 +205,7 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []At
 	if a.Session.Id == "" {
 		session, err := a.CreateSession(ctx)
 		if err != nil {
-			status.Error(err.Error())
+			// status.Error(err.Error())
 			return nil
 		}
 		a.Session = session
@@ -243,11 +234,11 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []At
 		})
 		if err != nil {
 			slog.Error("Failed to send message", "error", err)
-			status.Error(err.Error())
+			// status.Error(err.Error())
 		}
 		if response != nil && response.StatusCode != 200 {
 			slog.Error("Failed to send message", "error", fmt.Sprintf("failed to send message: %d", response.StatusCode))
-			status.Error(fmt.Sprintf("failed to send message: %d", response.StatusCode))
+			// status.Error(fmt.Sprintf("failed to send message: %d", response.StatusCode))
 		}
 	}()
 
@@ -262,12 +253,12 @@ func (a *App) Cancel(ctx context.Context, sessionID string) error {
 	})
 	if err != nil {
 		slog.Error("Failed to cancel session", "error", err)
-		status.Error(err.Error())
+		// status.Error(err.Error())
 		return err
 	}
 	if response != nil && response.StatusCode != 200 {
 		slog.Error("Failed to cancel session", "error", fmt.Sprintf("failed to cancel session: %d", response.StatusCode))
-		status.Error(fmt.Sprintf("failed to cancel session: %d", response.StatusCode))
+		// status.Error(fmt.Sprintf("failed to cancel session: %d", response.StatusCode))
 		return fmt.Errorf("failed to cancel session: %d", response.StatusCode)
 	}
 	return nil

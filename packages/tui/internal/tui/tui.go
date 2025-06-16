@@ -224,24 +224,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return a, tea.Batch(cmds...)
 
-	// case pubsub.Event[permission.PermissionRequest]:
-	// 	a.showPermissions = true
-	// 	return a, a.permissions.SetPermissions(msg.Payload)
-
-	case dialog.PermissionResponseMsg:
-		// TODO: Permissions service not implemented in API yet
-		// var cmd tea.Cmd
-		// switch msg.Action {
-		// case dialog.PermissionAllow:
-		// 	a.app.Permissions.Grant(context.Background(), msg.Permission)
-		// case dialog.PermissionAllowForSession:
-		// 	a.app.Permissions.GrantPersistant(context.Background(), msg.Permission)
-		// case dialog.PermissionDeny:
-		// 	a.app.Permissions.Deny(context.Background(), msg.Permission)
-		// }
-		// a.showPermissions = false
-		return a, nil
-
 	case page.PageChangeMsg:
 		return a, a.moveToPage(msg.ID)
 

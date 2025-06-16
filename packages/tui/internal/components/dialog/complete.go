@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/layout"
-	"github.com/sst/opencode/internal/status"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
@@ -158,7 +157,7 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if query != c.query {
 					items, err := c.completionProvider.GetChildEntries(query)
 					if err != nil {
-						status.Error(err.Error())
+						// status.Error(err.Error())
 					}
 
 					c.list.SetItems(items)
@@ -189,7 +188,7 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			items, err := c.completionProvider.GetChildEntries("")
 			if err != nil {
-				status.Error(err.Error())
+				// status.Error(err.Error())
 			}
 
 			c.list.SetItems(items)
@@ -246,7 +245,7 @@ func (c *completionDialogComponent) SetProvider(provider CompletionProvider) {
 		c.completionProvider = provider
 		items, err := provider.GetChildEntries("")
 		if err != nil {
-			status.Error(err.Error())
+			// status.Error(err.Error())
 		}
 		c.list.SetItems(items)
 	}
@@ -257,7 +256,7 @@ func NewCompletionDialogComponent(completionProvider CompletionProvider) Complet
 
 	items, err := completionProvider.GetChildEntries("")
 	if err != nil {
-		status.Error(err.Error())
+		// status.Error(err.Error())
 	}
 
 	li := list.NewListComponent(
