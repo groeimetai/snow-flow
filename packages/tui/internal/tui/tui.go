@@ -145,6 +145,14 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "theme":
 			themeDialog := dialog.NewThemeDialog()
 			a.modal = themeDialog
+		case "share":
+			a.app.Client.PostSessionShareWithResponse(context.Background(), client.PostSessionShareJSONRequestBody{
+				SessionID: a.app.Session.Id,
+			})
+		case "init":
+			return a, a.app.InitializeProject(context.Background())
+		// case "compact":
+		// 	return a, a.app.CompactSession(context.Background())
 		case "help":
 			var helpBindings []key.Binding
 			for _, cmd := range a.app.Commands {

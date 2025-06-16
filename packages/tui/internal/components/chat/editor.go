@@ -101,6 +101,8 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case dialog.ThemeChangedMsg:
 		m.textarea = createTextArea(&m.textarea)
+		m.spinner = createSpinner()
+		return m, m.spinner.Tick
 	case dialog.CompletionSelectedMsg:
 		if msg.IsCommand {
 			// Execute the command directly
@@ -421,12 +423,8 @@ func createTextArea(existing *textarea.Model) textarea.Model {
 	return ta
 }
 
-func (m *editorComponent) GetValue() string {
-	return m.textarea.Value()
-}
-
-func NewEditorComponent(app *app.App) layout.ModelWithView {
-	s := spinner.New(
+func createSpinner() spinner.Model {
+	return spinner.New(
 		spinner.WithSpinner(spinner.Ellipsis),
 		spinner.WithStyle(
 			styles.
@@ -434,6 +432,14 @@ func NewEditorComponent(app *app.App) layout.ModelWithView {
 				Background(theme.CurrentTheme().Background()).
 				Width(3)),
 	)
+}
+
+func (m *editorComponent) GetValue() string {
+	return m.textarea.Value()
+}
+
+func NewEditorComponent(app *app.App) layout.ModelWithView {
+	s := createSpinner()
 	ta := createTextArea(nil)
 
 	return &editorComponent{

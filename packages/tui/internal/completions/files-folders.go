@@ -24,6 +24,10 @@ func (cg *filesAndFoldersContextGroup) GetEntry() dialog.CompletionItemI {
 	})
 }
 
+func (cg *filesAndFoldersContextGroup) GetEmptyMessage() string {
+	return "no matching files"
+}
+
 func (cg *filesAndFoldersContextGroup) getFiles(query string) ([]string, error) {
 	response, err := cg.app.Client.PostFileSearchWithResponse(context.Background(), client.PostFileSearchJSONRequestBody{
 		Query: query,

@@ -170,21 +170,37 @@ func (a *App) InitializeProject(ctx context.Context) tea.Cmd {
 	cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(session)))
 
 	go func() {
-		// TODO: Handle no provider or model setup, yet
 		response, err := a.Client.PostSessionInitialize(ctx, client.PostSessionInitializeJSONRequestBody{
 			SessionID:  a.Session.Id,
 			ProviderID: a.Provider.Id,
 			ModelID:    a.Model.Id,
 		})
 		if err != nil {
+			slog.Error("Failed to initialize project", "error", err)
 			// status.Error(err.Error())
 		}
 		if response != nil && response.StatusCode != 200 {
+			slog.Error("Failed to initialize project", "error", response.StatusCode)
 			// status.Error(fmt.Sprintf("failed to initialize project: %d", response.StatusCode))
 		}
 	}()
 
 	return tea.Batch(cmds...)
+}
+
+func (a *App) CompactSession(ctx context.Context) tea.Cmd {
+	response, err := a.Client.PostSessionSummarizeWithResponse(ctx, client.PostSessionSummarizeJSONRequestBody{
+		SessionID:  a.Session.Id,
+		ProviderID: a.Provider.Id,
+		ModelID:    a.Model.Id,
+	})
+	if err != nil {
+		slog.Error("Failed to compact session", "error", err)
+	}
+	if response != nil && response.StatusCode() != 200 {
+		slog.Error("Failed to compact session", "error", response.StatusCode)
+	}
+	return nil
 }
 
 func (a *App) MarkProjectInitialized(ctx context.Context) error {

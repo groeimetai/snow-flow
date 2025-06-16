@@ -59,6 +59,27 @@ func NewCommandRegistry() Registry {
 				key.WithKeys("f5", "super+t"),
 			),
 		},
+		"share": {
+			Name:        "share",
+			Description: "create shareable link",
+			KeyBinding: key.NewBinding(
+				key.WithKeys("f6"),
+			),
+		},
+		"init": {
+			Name:        "init",
+			Description: "create or update AGENTS.md",
+			KeyBinding: key.NewBinding(
+				key.WithKeys("f7"),
+			),
+		},
+		// "compact": {
+		// 	Name:        "compact",
+		// 	Description: "compact the session",
+		// 	KeyBinding: key.NewBinding(
+		// 		key.WithKeys("f8"),
+		// 	),
+		// },
 		"quit": {
 			Name:        "quit",
 			Description: "quit",
@@ -68,4 +89,3 @@ func NewCommandRegistry() Registry {
 		},
 	}
 }
-

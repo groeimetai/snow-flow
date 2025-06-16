@@ -13,7 +13,6 @@ import (
 )
 
 type CompletionItem struct {
-	title string
 	Title string
 	Value string
 }
@@ -35,8 +34,7 @@ func (ci *CompletionItem) Render(selected bool, width int) string {
 
 	if selected {
 		itemStyle = itemStyle.
-			Foreground(t.Primary()).
-			Bold(true)
+			Foreground(t.Primary())
 	}
 
 	title := itemStyle.Render(
@@ -62,6 +60,7 @@ type CompletionProvider interface {
 	GetId() string
 	GetEntry() CompletionItemI
 	GetChildEntries(query string) ([]CompletionItemI, error)
+	GetEmptyMessage() string
 }
 
 type CompletionSelectedMsg struct {
@@ -250,6 +249,7 @@ func (c *completionDialogComponent) IsEmpty() bool {
 func (c *completionDialogComponent) SetProvider(provider CompletionProvider) {
 	if c.completionProvider.GetId() != provider.GetId() {
 		c.completionProvider = provider
+		c.list.SetEmptyMessage(" " + provider.GetEmptyMessage())
 	}
 }
 
@@ -259,7 +259,7 @@ func NewCompletionDialogComponent(completionProvider CompletionProvider) Complet
 	li := list.NewListComponent(
 		[]CompletionItemI{},
 		7,
-		"No matches",
+		completionProvider.GetEmptyMessage(),
 		false,
 	)
 

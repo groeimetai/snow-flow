@@ -18,6 +18,7 @@ type List[T ListItem] interface {
 	SetItems(items []T)
 	GetItems() []T
 	SetSelectedIndex(idx int)
+	SetEmptyMessage(msg string)
 	IsEmpty() bool
 }
 
@@ -98,6 +99,10 @@ func (c *listComponent[T]) SetItems(items []T) {
 
 func (c *listComponent[T]) GetItems() []T {
 	return c.items
+}
+
+func (c *listComponent[T]) SetEmptyMessage(msg string) {
+	c.fallbackMsg = msg
 }
 
 func (c *listComponent[T]) IsEmpty() bool {
