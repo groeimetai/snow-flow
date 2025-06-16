@@ -4,7 +4,7 @@ import { App } from "../app/app"
 import * as path from "path"
 import DESCRIPTION from "./ls.txt"
 
-const IGNORE_PATTERNS = [
+export const IGNORE_PATTERNS = [
   "node_modules/",
   "__pycache__/",
   ".git/",
@@ -17,6 +17,8 @@ const IGNORE_PATTERNS = [
   ".idea/",
   ".vscode/",
 ]
+
+const LIMIT = 100
 
 export const ListTool = Tool.define({
   id: "opencode.list",
@@ -45,7 +47,7 @@ export const ListTool = Tool.define({
       if (params.ignore?.some((pattern) => new Bun.Glob(pattern).match(file)))
         continue
       files.push(file)
-      if (files.length >= 1000) break
+      if (files.length >= LIMIT) break
     }
 
     // Build directory structure
@@ -99,7 +101,7 @@ export const ListTool = Tool.define({
     return {
       metadata: {
         count: files.length,
-        truncated: files.length >= 1000,
+        truncated: files.length >= LIMIT,
         title: path.relative(app.path.root, searchPath),
       },
       output,

@@ -5,6 +5,7 @@ import fs from "fs/promises"
 import { z } from "zod"
 import { NamedError } from "../util/error"
 import { lazy } from "../util/lazy"
+import { $ } from "bun"
 
 export namespace Ripgrep {
   const PLATFORM = {
@@ -110,5 +111,13 @@ export namespace Ripgrep {
   export async function filepath() {
     const { filepath } = await state()
     return filepath
+  }
+
+  export async function files(cwd: string) {
+    const result =
+      await $`${await filepath()} --files --hidden --glob '!.git/*'`
+        .cwd(cwd)
+        .text()
+    return result.split("\n").filter(Boolean)
   }
 }

@@ -457,7 +457,11 @@ export namespace Server {
         async (c) => {
           const body = c.req.valid("json")
           const app = App.info()
-          const result = await Fzf.search(app.path.cwd, body.query)
+          const result = await Fzf.search({
+            cwd: app.path.cwd,
+            query: body.query,
+            limit: 10,
+          })
           return c.json(result)
         },
       )

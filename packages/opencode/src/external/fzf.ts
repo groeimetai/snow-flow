@@ -116,11 +116,15 @@ export namespace Fzf {
     return filepath
   }
 
-  export async function search(cwd: string, query: string) {
-    const results = await $`${await filepath()} --filter ${query}`
+  export async function search(input: {
+    cwd: string
+    query: string
+    limit?: number
+  }) {
+    const results = await $`${await filepath()} --filter=${input.query}`
       .quiet()
       .throws(false)
-      .cwd(cwd)
+      .cwd(input.cwd)
       .text()
     const split = results
       .trim()

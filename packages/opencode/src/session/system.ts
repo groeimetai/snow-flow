@@ -1,4 +1,6 @@
 import { App } from "../app/app"
+import { Fzf } from "../external/fzf"
+import { Ripgrep } from "../external/ripgrep"
 import { ListTool } from "../tool/ls"
 import { Filesystem } from "../util/filesystem"
 
@@ -22,8 +24,53 @@ export namespace SystemPrompt {
     return result
   }
 
-  export async function environment(sessionID: string) {
+  export async function environment() {
     const app = App.info()
+
+    const tree = async () => {
+      const files = await Ripgrep.files(app.path.cwd)
+      type Node = {
+        children: Record<string, Node>
+      }
+      const root: Node = {
+        children: {},
+      }
+      for (const file of files) {
+        const parts = file.split("/")
+        let node = root
+        for (const part of parts) {
+          const existing = node.children[part]
+          if (existing) {
+            node = existing
+            continue
+          }
+          node.children[part] = {
+            children: {},
+          }
+          node = node.children[part]
+        }
+      }
+
+      function render(path: string[], node: Node): string {
+        const lines: string[] = []
+        const entries = Object.entries(node.children).sort(([a], [b]) =>
+          a.localeCompare(b),
+        )
+
+        for (const [name, child] of entries) {
+          const currentPath = [...path, name]
+          const indent = "\t".repeat(path.length)
+          const hasChildren = Object.keys(child.children).length > 0
+          lines.push(`${indent}${name}` + (hasChildren ? "/" : ""))
+
+          if (hasChildren) lines.push(render(currentPath, child))
+        }
+
+        return lines.join("\n")
+      }
+      return render([], root)
+    }
+
     return [
       [
         `Here is some useful information about the environment you are running in:`,
@@ -34,7 +81,7 @@ export namespace SystemPrompt {
         `  Today's date: ${new Date().toDateString()}`,
         `</env>`,
         `<project>`,
-        `  ${app.git ? await ListTool.execute({ path: app.path.cwd, ignore: [] }, { sessionID: sessionID, messageID: "", abort: AbortSignal.any([]) }).then((x) => x.output) : ""}`,
+        `  ${app.git ? await tree() : ""}`,
         `</project>`,
       ].join("\n"),
     ]
