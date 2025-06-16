@@ -396,8 +396,8 @@ func NewMessagesComponent(app *app.App) layout.ModelWithView {
 	}
 	s := spinner.New(spinner.WithSpinner(customSpinner))
 
-	vp := viewport.New()          //(0, 0)
-	attachments := viewport.New() //(0, 0)
+	vp := viewport.New()
+	attachments := viewport.New()
 	vp.KeyMap.PageUp = messageKeys.PageUp
 	vp.KeyMap.PageDown = messageKeys.PageDown
 	vp.KeyMap.HalfPageUp = messageKeys.HalfPageUp

@@ -141,6 +141,8 @@ func (c *completionDialogComponent) close() tea.Cmd {
 func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
+	case []CompletionItemI:
+		c.list.SetItems(msg)
 	case tea.KeyMsg:
 		if c.pseudoSearchTextArea.Focused() {
 			if !key.Matches(msg, completionDialogKeys.Complete) {
@@ -155,18 +157,20 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				if query != c.query {
-					items, err := c.completionProvider.GetChildEntries(query)
-					if err != nil {
-						// status.Error(err.Error())
-					}
-
-					c.list.SetItems(items)
 					c.query = query
+					cmd = func() tea.Msg {
+						items, err := c.completionProvider.GetChildEntries(query)
+						if err != nil {
+							// status.Error(err.Error())
+						}
+						// c.list.SetItems(items)
+						return items
+					}
+					cmds = append(cmds, cmd)
 				}
 
 				u, cmd := c.list.Update(msg)
 				c.list = u.(list.List[CompletionItemI])
-
 				cmds = append(cmds, cmd)
 			}
 
@@ -254,17 +258,20 @@ func (c *completionDialogComponent) SetProvider(provider CompletionProvider) {
 func NewCompletionDialogComponent(completionProvider CompletionProvider) CompletionDialog {
 	ti := textarea.New()
 
-	items, err := completionProvider.GetChildEntries("")
-	if err != nil {
-		// status.Error(err.Error())
-	}
-
 	li := list.NewListComponent(
-		items,
+		[]CompletionItemI{},
 		7,
 		"No matches",
 		false,
 	)
+
+	go func() {
+		items, err := completionProvider.GetChildEntries("")
+		if err != nil {
+			// status.Error(err.Error())
+		}
+		li.SetItems(items)
+	}()
 
 	return &completionDialogComponent{
 		query:                "",
