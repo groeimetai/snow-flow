@@ -18,6 +18,7 @@ export namespace App {
         data: z.string(),
         root: z.string(),
         cwd: z.string(),
+        state: z.string(),
       }),
       time: z.object({
         initialized: z.number().optional(),
