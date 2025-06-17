@@ -73,7 +73,7 @@ model = "claude-sonnet-4-20250514"
 autoupdate = true
 ```
 
-You can also extend the models.dev database with your own providers and models by placing a `provider.toml` file in `~/.config/opencode/providers`.
+You can also extend the models.dev database with your own providers and models by placing a `provider.toml` file in `~/.config/opencode/providers`
 
 ```toml
 # ~/.config/opencode/providers/openrouter/provider.toml
@@ -84,7 +84,7 @@ id = "openrouter"
 npm = "@openrouter/ai-sdk-provider"
 ```
 
-And models in `~/.config/opencode/providers/openrouter/models/[model-id]`.
+And models in `~/.config/opencode/providers/openrouter/models/[model-id]`
 
 ```toml
 # ~/.config/opencode/providers/openrouter/models/anthropic/claude-3.5-sonnet.toml
