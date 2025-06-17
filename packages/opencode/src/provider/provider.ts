@@ -169,8 +169,12 @@ export namespace Provider {
       database[providerID] = parsed
     }
 
+    const disabled = await GlobalConfig.get().then(
+      (cfg) => new Set(cfg.disabled_providers ?? []),
+    )
     // load env
     for (const [providerID, provider] of Object.entries(database)) {
+      if (disabled.has(providerID)) continue
       if (provider.env.some((item) => process.env[item])) {
         mergeProvider(providerID, {}, "env")
       }
@@ -178,6 +182,7 @@ export namespace Provider {
 
     // load apikeys
     for (const [providerID, provider] of Object.entries(await Auth.all())) {
+      if (disabled.has(providerID)) continue
       if (provider.type === "api") {
         mergeProvider(providerID, { apiKey: provider.key }, "api")
       }
@@ -185,6 +190,7 @@ export namespace Provider {
 
     // load custom
     for (const [providerID, fn] of Object.entries(CUSTOM_LOADERS)) {
+      if (disabled.has(providerID)) continue
       const result = await fn(database[providerID])
       if (result) mergeProvider(providerID, result, "custom")
     }

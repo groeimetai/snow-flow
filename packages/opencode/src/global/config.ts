@@ -9,6 +9,7 @@ export namespace GlobalConfig {
     autoshare: z.boolean().optional(),
     provider: z.string().optional(),
     model: z.string().optional(),
+    disabled_providers: z.array(z.string()).optional(),
   })
   export type Info = z.infer<typeof Info>
 
