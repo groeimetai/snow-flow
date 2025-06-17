@@ -65,7 +65,8 @@ If there are additional providers you want to use you can submit a PR to the [Mo
 
 Some basic configuration is available in the global config file.
 
-```toml title="~/.config/opencode/config.toml"
+```toml
+# ~/.config/opencode/config
 theme = "opencode"
 provider = "anthropic"
 model = "claude-sonnet-4-20250514"
@@ -74,7 +75,8 @@ autoupdate = true
 
 You can also extend the models.dev database with your own providers and models by placing a `provider.toml` file in `~/.config/opencode/providers`.
 
-```toml title="~/.config/opencode/providers/openrouter/provider.toml"
+```toml
+# ~/.config/opencode/providers/openrouter/provider.toml
 [provider]
 name = "OpenRouter"
 env = ["OPENROUTER_API_KEY"]
@@ -84,7 +86,8 @@ npm = "@openrouter/ai-sdk-provider"
 
 And models in `~/.config/opencode/providers/openrouter/models/[model-id]`.
 
-```toml title="~/.config/opencode/providers/openrouter/models/anthropic/claude-3.5-sonnet.toml"
+```toml
+# ~/.config/opencode/providers/openrouter/models/anthropic/claude-3.5-sonnet.toml
 name = "Claude 4 Sonnet"
 attachment = true
 reasoning = false
