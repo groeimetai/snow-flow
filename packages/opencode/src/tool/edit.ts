@@ -21,7 +21,7 @@ export const EditTool = Tool.define({
       ),
     replaceAll: z
       .boolean()
-      .nullable()
+      .optional()
       .describe("Replace all occurences of old_string (default false)"),
   }),
   async execute(params, ctx) {

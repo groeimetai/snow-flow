@@ -23,6 +23,7 @@ import { ModelsDev } from "./models"
 import { NamedError } from "../util/error"
 import { Auth } from "../auth"
 import { TaskTool } from "../tool/task"
+import { GlobalConfig } from "../global/config"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -257,7 +258,10 @@ export namespace Provider {
   }
 
   export async function defaultModel() {
-    const [provider] = await list().then((val) => Object.values(val))
+    const cfg = await GlobalConfig.get()
+    const provider = await list()
+      .then((val) => Object.values(val))
+      .then((x) => x.find((p) => !cfg.provider || cfg.provider === p.info.id))
     if (!provider) throw new Error("no providers found")
     const [model] = sort(Object.values(provider.info.models))
     if (!model) throw new Error("no models found")
@@ -285,11 +289,16 @@ export namespace Provider {
     TaskTool,
     TodoReadTool,
   ]
+
   const TOOL_MAPPING: Record<string, Tool.Info[]> = {
     anthropic: TOOLS.filter((t) => t.id !== "opencode.patch"),
-    openai: TOOLS,
+    openai: TOOLS.map((t) => ({
+      ...t,
+      parameters: optionalToNullable(t.parameters),
+    })),
     google: TOOLS,
   }
+
   export async function tools(providerID: string) {
     /*
     const cfg = await Config.get()
@@ -299,6 +308,38 @@ export namespace Provider {
       )
         */
     return TOOL_MAPPING[providerID] ?? TOOLS
+  }
+
+  function optionalToNullable(schema: z.ZodTypeAny): z.ZodTypeAny {
+    if (schema instanceof z.ZodObject) {
+      const shape = schema.shape
+      const newShape: Record<string, z.ZodTypeAny> = {}
+
+      for (const [key, value] of Object.entries(shape)) {
+        const zodValue = value as z.ZodTypeAny
+        if (zodValue instanceof z.ZodOptional) {
+          newShape[key] = zodValue.unwrap().nullable()
+        } else {
+          newShape[key] = optionalToNullable(zodValue)
+        }
+      }
+
+      return z.object(newShape)
+    }
+
+    if (schema instanceof z.ZodArray) {
+      return z.array(optionalToNullable(schema.element))
+    }
+
+    if (schema instanceof z.ZodUnion) {
+      return z.union(
+        schema.options.map((option: z.ZodTypeAny) =>
+          optionalToNullable(option),
+        ) as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]],
+      )
+    }
+
+    return schema
   }
 
   export const ModelNotFoundError = NamedError.create(

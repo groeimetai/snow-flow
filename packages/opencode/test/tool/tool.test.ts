@@ -9,7 +9,7 @@ describe("tool.glob", () => {
       let result = await GlobTool.execute(
         {
           pattern: "./node_modules/**/*",
-          path: null,
+          path: undefined,
         },
         {
           sessionID: "test",
@@ -25,7 +25,7 @@ describe("tool.glob", () => {
       let result = await GlobTool.execute(
         {
           pattern: "*.json",
-          path: null,
+          path: undefined,
         },
         {
           sessionID: "test",

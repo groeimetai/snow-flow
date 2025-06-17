@@ -29,11 +29,11 @@ export const ListTool = Tool.define({
       .describe(
         "The absolute path to the directory to list (must be absolute, not relative)",
       )
-      .nullable(),
+      .optional(),
     ignore: z
       .array(z.string())
       .describe("List of glob patterns to ignore")
-      .nullable(),
+      .optional(),
   }),
   async execute(params) {
     const app = App.info()

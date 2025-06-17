@@ -14,13 +14,13 @@ export const GrepTool = Tool.define({
       .describe("The regex pattern to search for in file contents"),
     path: z
       .string()
-      .nullable()
+      .optional()
       .describe(
         "The directory to search in. Defaults to the current working directory.",
       ),
     include: z
       .string()
-      .nullable()
+      .optional()
       .describe(
         'File pattern to include in the search (e.g. "*.js", "*.{ts,tsx}")',
       ),

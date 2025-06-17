@@ -117,6 +117,6 @@ export namespace Installation {
   export async function latest() {
     return fetch("https://api.github.com/repos/sst/opencode/releases/latest")
       .then((res) => res.json())
-      .then((data) => data.tag_name.slice(1))
+      .then((data) => data.tag_name.slice(1) as string)
   }
 }

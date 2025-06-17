@@ -497,7 +497,7 @@ export namespace Session {
           msgs.map(toUIMessage).filter((x) => x.parts.length > 0),
         ),
       ],
-      temperature: model.info.id === "codex-mini-latest" ? undefined : 0,
+      temperature: model.info.temperature ? 0 : undefined,
       tools: {
         ...tools,
       },

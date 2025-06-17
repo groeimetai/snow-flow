@@ -93,8 +93,11 @@ const cli = yargs(hideBin(process.argv))
             if (Installation.VERSION === latest) return
             const method = await Installation.method()
             if (method === "unknown") return
-            await Installation.upgrade(method, latest).catch(() => {})
-            Bus.publish(Installation.Event.Updated, { version: latest })
+            await Installation.upgrade(method, latest)
+              .then(() => {
+                Bus.publish(Installation.Event.Updated, { version: latest })
+              })
+              .catch(() => {})
           })()
 
           await proc.exited

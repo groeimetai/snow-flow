@@ -35,7 +35,7 @@ export const BashTool = Tool.define({
       .min(0)
       .max(MAX_TIMEOUT)
       .describe("Optional timeout in milliseconds")
-      .nullable(),
+      .optional(),
     description: z
       .string()
       .describe(
