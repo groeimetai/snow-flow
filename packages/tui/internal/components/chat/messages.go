@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"slices"
 	"strings"
 	"time"
 
@@ -144,6 +145,17 @@ func (m *messagesComponent) renderView() {
 	for _, message := range m.app.Messages {
 		var content string
 		var cached bool
+		lastToolIndex := 0
+		lastToolIndices := []int{}
+		for i, p := range message.Parts {
+			part, _ := p.ValueByDiscriminator()
+			switch part.(type) {
+			case client.MessagePartText:
+				lastToolIndices = append(lastToolIndices, lastToolIndex)
+			case client.MessagePartToolInvocation:
+				lastToolIndex = i
+			}
+		}
 
 		author := ""
 		switch message.Role {
@@ -153,7 +165,7 @@ func (m *messagesComponent) renderView() {
 			author = message.Metadata.Assistant.ModelID
 		}
 
-		for _, p := range message.Parts {
+		for i, p := range message.Parts {
 			part, err := p.ValueByDiscriminator()
 			if err != nil {
 				continue //TODO: handle error?
@@ -180,6 +192,7 @@ func (m *messagesComponent) renderView() {
 					previousBlockType = assistantTextBlock
 				}
 			case client.MessagePartToolInvocation:
+				isLastToolInvocation := slices.Contains(lastToolIndices, i)
 				toolInvocationPart := part.(client.MessagePartToolInvocation)
 				toolCall, _ := toolInvocationPart.ToolInvocation.AsMessageToolInvocationToolCall()
 				metadata := client.MessageInfo_Metadata_Tool_AdditionalProperties{}
@@ -200,15 +213,27 @@ func (m *messagesComponent) renderView() {
 					)
 					content, cached = m.cache.Get(key)
 					if !cached {
-						content = renderToolInvocation(toolCall, result, metadata, m.showToolResults)
+						content = renderToolInvocation(
+							toolCall,
+							result,
+							metadata,
+							m.showToolResults,
+							isLastToolInvocation,
+						)
 						m.cache.Set(key, content)
 					}
 				} else {
-					// if the tool call isn't finished, never cache
-					content = renderToolInvocation(toolCall, result, metadata, m.showToolResults)
+					// if the tool call isn't finished, don't cache
+					content = renderToolInvocation(
+						toolCall,
+						result,
+						metadata,
+						m.showToolResults,
+						isLastToolInvocation,
+					)
 				}
 
-				if previousBlockType != toolInvocationBlock {
+				if previousBlockType != toolInvocationBlock && m.showToolResults {
 					blocks = append(blocks, "")
 				}
 				blocks = append(blocks, content)
