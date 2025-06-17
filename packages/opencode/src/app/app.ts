@@ -5,7 +5,6 @@ import { Global } from "../global"
 import path from "path"
 import os from "os"
 import { z } from "zod"
-import { Installation } from "../installation"
 
 export namespace App {
   const log = Log.create({ service: "app" })
@@ -50,9 +49,7 @@ export namespace App {
     const stateFile = Bun.file(path.join(data, APP_JSON))
     const state = (await stateFile.json().catch(() => ({}))) as {
       initialized: number
-      version: string
     }
-    state.version = Installation.VERSION
     await stateFile.write(JSON.stringify(state))
 
     const services = new Map<
@@ -129,7 +126,6 @@ export namespace App {
     await Bun.write(
       path.join(info.path.data, APP_JSON),
       JSON.stringify({
-        version: Installation.VERSION,
         initialized: Date.now(),
       }),
     )
