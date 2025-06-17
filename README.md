@@ -61,9 +61,51 @@ The Models.dev dataset is also used to detect common environment variables like 
 
 If there are additional providers you want to use you can submit a PR to the [Models.dev repo](https://github.com/sst/models.dev). If configuring just for yourself check out the Config section below.
 
+### Global Config
+
+Some basic configuration is available in the global config file.
+
+```toml title="~/.config/opencode/config.toml"
+theme = "opencode"
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"
+autoupdate = true
+```
+
+You can also extend the models.dev database with your own providers and models by placing a `provider.toml` file in `~/.config/opencode/providers`.
+
+```toml title="~/.config/opencode/providers/openrouter/provider.toml"
+[provider]
+name = "OpenRouter"
+env = ["OPENROUTER_API_KEY"]
+id = "openrouter"
+npm = "@openrouter/ai-sdk-provider"
+```
+
+And models in `~/.config/opencode/providers/openrouter/models/[model-id]`.
+
+```toml title="~/.config/opencode/providers/openrouter/models/anthropic/claude-3.5-sonnet.toml"
+name = "Claude 4 Sonnet"
+attachment = true
+reasoning = false
+temperature = true
+
+[cost]
+input = 3.00
+output = 15.00
+inputCached = 3.75
+outputCached = 0.30
+
+[limit]
+context = 200_000
+output = 50_000
+```
+
+This mirrors the structure found [here](https://github.com/sst/models.dev/tree/dev/providers/anthropic)
+
 ### Project Config
 
-Project configuration is optional. You can place an `opencode.json` file in the root of your repo, and it'll be loaded.
+Project configuration is optional. You can place an `opencode.json` file in the root of your repo and is meant to be checked in and shared with your team.
 
 ```json title="opencode.json"
 {
@@ -106,9 +148,7 @@ You can use opencode with any provider listed at [here](https://ai-sdk.dev/provi
         "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "llama2": {
-          "name": "llama2"
-        }
+        "llama2": {}
       }
     }
   }
