@@ -20,11 +20,13 @@ import { GlobalConfig } from "./global/config"
 import { Installation } from "./installation"
 ;(async () => {
   if (Installation.VERSION === "dev") return
+  if (Installation.isSnapshot()) return
   const config = await GlobalConfig.get()
   if (config.autoupdate === false) return
   const latest = await Installation.latest()
   if (Installation.VERSION === latest) return
   const method = await Installation.method()
+  if (method === "unknown") return
   await Installation.upgrade(method, latest).catch(() => {})
 })()
 
