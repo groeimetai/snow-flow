@@ -69,6 +69,7 @@ export namespace App {
       git: git !== undefined,
       path: {
         config: Global.Path.config,
+        state: Global.Path.state,
         data,
         root: git ?? input.cwd,
         cwd: input.cwd,
