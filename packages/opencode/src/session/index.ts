@@ -30,6 +30,7 @@ import type { Tool } from "../tool/tool"
 import { SystemPrompt } from "./system"
 import { Flag } from "../flag/flag"
 import type { ModelsDev } from "../provider/models"
+import { GlobalConfig } from "../global/config"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -95,7 +96,8 @@ export namespace Session {
     log.info("created", result)
     state().sessions.set(result.id, result)
     await Storage.writeJSON("session/info/" + result.id, result)
-    if (!result.parentID && Flag.OPENCODE_AUTO_SHARE)
+    const cfg = await GlobalConfig.get()
+    if (!result.parentID && (Flag.OPENCODE_AUTO_SHARE || cfg.autoshare))
       share(result.id).then((share) => {
         update(result.id, (draft) => {
           draft.share = share

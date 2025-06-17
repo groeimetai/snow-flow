@@ -7,13 +7,9 @@ import { Share } from "../../share/share"
 import { Message } from "../../session/message"
 import { UI } from "../ui"
 import { VERSION } from "../version"
-
-const COLOR = [
-  UI.Style.TEXT_SUCCESS_BOLD,
-  UI.Style.TEXT_INFO_BOLD,
-  UI.Style.TEXT_HIGHLIGHT_BOLD,
-  UI.Style.TEXT_WARNING_BOLD,
-]
+import { cmd } from "./cmd"
+import { GlobalConfig } from "../../global/config"
+import { Flag } from "../../flag/flag"
 
 const TOOL: Record<string, [string, string]> = {
   opencode_todowrite: ["Todo", UI.Style.TEXT_WARNING_BOLD],
@@ -27,7 +23,7 @@ const TOOL: Record<string, [string, string]> = {
   opencode_write: ["Write", UI.Style.TEXT_SUCCESS_BOLD],
 }
 
-export const RunCommand = {
+export const RunCommand = cmd({
   command: "run [message..]",
   describe: "Run OpenCode with a message",
   builder: (yargs: Argv) => {
@@ -42,12 +38,12 @@ export const RunCommand = {
         describe: "Session ID to continue",
         type: "string",
       })
+      .option("share", {
+        type: "boolean",
+        describe: "Share the session",
+      })
   },
-  handler: async (args: {
-    message: string[]
-    session?: string
-    printLogs?: boolean
-  }) => {
+  handler: async (args) => {
     const message = args.message.join(" ")
     await App.provide(
       {
@@ -60,14 +56,27 @@ export const RunCommand = {
           ? await Session.get(args.session)
           : await Session.create()
 
-        UI.println(UI.Style.TEXT_HIGHLIGHT_BOLD + "◍  OpenCode", VERSION)
+        UI.empty()
+        UI.println(UI.logo())
         UI.empty()
         UI.println(UI.Style.TEXT_NORMAL_BOLD + "> ", message)
         UI.empty()
+
+        const cfg = await GlobalConfig.get()
+        if (cfg.autoshare || Flag.OPENCODE_AUTO_SHARE || args.share) {
+          await Session.share(session.id)
+          UI.println(
+            UI.Style.TEXT_INFO_BOLD +
+              "~  https://dev.opencode.ai/s/" +
+              session.id.slice(-8),
+          )
+        }
+        UI.empty()
+
+        const { providerID, modelID } = await Provider.defaultModel()
         UI.println(
-          UI.Style.TEXT_INFO_BOLD +
-            "~  https://dev.opencode.ai/s/" +
-            session.id.slice(-8),
+          UI.Style.TEXT_NORMAL_BOLD + "@ ",
+          UI.Style.TEXT_NORMAL + `${providerID}/${modelID}`,
         )
         UI.empty()
 
@@ -113,8 +122,6 @@ export const RunCommand = {
             printEvent(UI.Style.TEXT_NORMAL_BOLD, "Text", part.text)
           }
         })
-
-        const { providerID, modelID } = await Provider.defaultModel()
         await Session.chat({
           sessionID: session.id,
           providerID,
@@ -130,4 +137,4 @@ export const RunCommand = {
       },
     )
   },
-}
+})

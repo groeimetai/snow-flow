@@ -6,6 +6,7 @@ import path from "path"
 export namespace GlobalConfig {
   export const Info = z.object({
     autoupdate: z.boolean().optional(),
+    autoshare: z.boolean().optional(),
     provider: z.string().optional(),
     model: z.string().optional(),
   })
