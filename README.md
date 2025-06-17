@@ -73,14 +73,15 @@ model = "claude-sonnet-4-20250514"
 autoupdate = true
 ```
 
-You can also extend the models.dev database with your own providers and models by placing a `provider.toml` file in `~/.config/opencode/providers`
+You can also extend the models.dev database with your own providers by mirroring the structure found [here](https://github.com/sst/models.dev/tree/dev/providers/anthropic)
+
+Start with a `provider.toml` file in `~/.config/opencode/providers`
 
 ```toml
 # ~/.config/opencode/providers/openrouter/provider.toml
 [provider]
 name = "OpenRouter"
 env = ["OPENROUTER_API_KEY"]
-id = "openrouter"
 npm = "@openrouter/ai-sdk-provider"
 ```
 
@@ -103,8 +104,6 @@ outputCached = 0.30
 context = 200_000
 output = 50_000
 ```
-
-This mirrors the structure found [here](https://github.com/sst/models.dev/tree/dev/providers/anthropic)
 
 ### Project Config
 
