@@ -210,8 +210,9 @@ export namespace Session {
         previous.metadata.assistant.tokens.cache.write +
         previous.metadata.assistant.tokens.output
       if (
+        model.info.limit.context &&
         tokens >
-        (model.info.limit.context - (model.info.limit.output ?? 0)) * 0.9
+          (model.info.limit.context - (model.info.limit.output ?? 0)) * 0.9
       ) {
         await summarize({
           sessionID: input.sessionID,
