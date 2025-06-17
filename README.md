@@ -1,8 +1,25 @@
-[![OpenCode Terminal UI](screenshot.png)](https://github.com/sst/opencode)
+<p align="center">
+  <a href="https://opencode.ai">
+    <picture>
+      <source srcset="packages/web/src/assets/logo-dark.svg" media="(prefers-color-scheme: dark)">
+      <source srcset="packages/web/src/assets/logo-light.svg" media="(prefers-color-scheme: light)">
+      <img src="packages/web/src/assets/logo-light.svg" alt="opencode logo">
+    </picture>
+  </a>
+</p>
+<p align="center">
+  <a href="https://sst.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/983865673656705025?style=flat-square&label=Discord" /></a>
+  <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
+  <a href="https://github.com/sst/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/sst/opencode/publish.yml?style=flat-square&branch=dev" /></a>
+</p>
+
+---
 
 AI coding agent, built for the terminal.
 
-⚠️ **Note:** version 0.1.x is a full rewrite, and we do not have proper documentation for it yet. Should have this out week of June 17th 2025 📚
+**Note:** Version 0.1.x is a full rewrite, and we do not have proper documentation for it yet. Should have this out week of June 17th 2025.
+
+[![opencode Terminal UI](screenshot.png)](https://opencode.ai)
 
 ### Installation
 
@@ -16,13 +33,13 @@ brew install sst/tap/opencode      # macOS
 paru -S opencode-bin               # Arch Linux
 ```
 
-> **Note:** Remove previous versions < 0.1.x first if installed
+> **Note:** Remove versions older than 0.1.x before installing
 
 ### Providers
 
-The recommended approach is to sign up for claude pro or max and do `opencode auth login` and select Anthropic. It is the most cost-effective way to use this tool.
+The recommended approach is to sign up for Claude Pro or Max, run `opencode auth login`, and select Anthropic. It's the most cost-effective way to use opencode.
 
-Additionally, opencode is powered by the provider list at [models.dev](https://models.dev) so you can use `opencode auth login` to configure api keys for any provider you'd like to use. This is stored in `~/.local/share/opencode/auth.json`
+opencode is powered by the provider list at [Models.dev](https://models.dev), so you can use `opencode auth login` to configure API keys for any provider you'd like to use. This is stored in `~/.local/share/opencode/auth.json`.
 
 ```bash
 $ opencode auth login
@@ -41,13 +58,13 @@ $ opencode auth login
 └
 ```
 
-The models.dev dataset is also used to detect common environment variables like `OPENAI_API_KEY` to autoload that provider.
+The Models.dev dataset is also used to detect common environment variables like `OPENAI_API_KEY` to autoload that provider.
 
-If there are additional providers you want to use you can submit a PR to the [models.dev repo](https://github.com/sst/models.dev). If configuring just for yourself check out the Config section below
+If there are additional providers you want to use you can submit a PR to the [Models.dev repo](https://github.com/sst/models.dev). If configuring just for yourself check out the Config section below.
 
 ### Project Config
 
-Project configuration is optional. You can place an `opencode.json` file in the root of your repo, and it will be loaded.
+Project configuration is optional. You can place an `opencode.json` file in the root of your repo, and it'll be loaded.
 
 ```json title="opencode.json"
 {
@@ -101,14 +118,14 @@ You can use opencode with any provider listed at [here](https://ai-sdk.dev/provi
 
 ### Contributing
 
-To run opencode locally you need
+To run opencode locally you need.
 
-- bun
-- golang 1.24.x
+- Bun
+- Golang 1.24.x
 
-To run
+To run.
 
-```
+```bash
 $ bun install
 $ cd packages/opencode
 $ bun run src/index.ts
@@ -116,9 +133,9 @@ $ bun run src/index.ts
 
 ### FAQ
 
-#### How do I use this with OpenRouter
+#### How do I use this with OpenRouter?
 
-OpenRouter is not yet in the models.dev database, but you can configure it manually.
+OpenRouter is not in the Models.dev database yet, but you can configure it manually.
 
 ```json title="opencode.json"
 {
@@ -140,19 +157,23 @@ OpenRouter is not yet in the models.dev database, but you can configure it manua
 }
 ```
 
-#### How is this different than claude code?
+#### How is this different than Claude Code?
 
-It is very similar to claude code in terms of capability - here are the key differences:
+It's very similar to Claude Code in terms of capability. Here are the key differences:
 
 - 100% open source
-- Not coupled to any provider. Although anthropic is recommended opencode can be used with openai, google or even local models. As models evolve the gaps between them will close and pricing will drop so being provider agnostic is important.
-- TUI focus - opencode is built by neovim users and the creators of https://terminal.shop - we are going to push the limits of what's possible in the terminal
-- client/server architecture - this means the tui frontend is just the first of many. For example, opencode can run on your computer and you can drive it remotely from a mobile app
+- Not coupled to any provider. Although Anthropic is recommended, opencode can be used with OpenAI, Google or even local models. As models evolve the gaps between them will close and pricing will drop so being provider agnostic is important.
+- A focus on TUI. opencode is built by neovim users and the creators of [terminal.shop](https://terminal.shop); we are going to push the limits of what's possible in the terminal.
+- A client/server architecture. This for example can allow opencode to run on your computer, while you can drive it remotely from a mobile app. Meaning that the TUI frontend is just one of the possible clients.
 
-#### Windows Support
+#### What about Windows support?
 
-There are some minor problems blocking opencode from working on windows. We will fix them soon - would need to use wsl for now.
+There are some minor problems blocking opencode from working on windows. We are working on on them now. You'll need to use WSL for now.
 
 #### What's the other repo?
 
-If you're looking for opencode built by adam and dax and frank and jay you are in the right place. Any other similarly named projects have no relation to this one.
+The other confusingly named repo has no relation to this one. You can [read the story behind it here](https://x.com/thdxr/status/1933561254481666466).
+
+---
+
+**Join our community** [Discord](https://sst.dev/discord) | [YouTube](https://www.youtube.com/c/sst-dev) | [X.com](https://x.com/SST_dev)
