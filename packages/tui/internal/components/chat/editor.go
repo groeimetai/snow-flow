@@ -16,11 +16,16 @@ import (
 	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/image"
-	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
 )
+
+type EditorComponent interface {
+	tea.Model
+	tea.ViewModel
+	Value() string
+}
 
 type editorComponent struct {
 	width          int
@@ -99,7 +104,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
-	case dialog.ThemeChangedMsg:
+	case dialog.ThemeSelectedMsg:
 		m.textarea = createTextArea(&m.textarea)
 		m.spinner = createSpinner()
 		return m, m.spinner.Tick
@@ -434,11 +439,11 @@ func createSpinner() spinner.Model {
 	)
 }
 
-func (m *editorComponent) GetValue() string {
+func (m *editorComponent) Value() string {
 	return m.textarea.Value()
 }
 
-func NewEditorComponent(app *app.App) layout.ModelWithView {
+func NewEditorComponent(app *app.App) EditorComponent {
 	s := createSpinner()
 	ta := createTextArea(nil)
 

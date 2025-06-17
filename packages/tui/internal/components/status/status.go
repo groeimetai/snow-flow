@@ -1,4 +1,4 @@
-package core
+package status
 
 import (
 	"fmt"
@@ -7,13 +7,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
-	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 )
 
 type StatusComponent interface {
-	layout.ModelWithView
+	tea.Model
+	tea.ViewModel
 }
 
 type statusComponent struct {

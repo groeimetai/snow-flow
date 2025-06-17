@@ -12,11 +12,15 @@ import (
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/layout"
-	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/pkg/client"
 )
+
+type MessagesComponent interface {
+	tea.Model
+	tea.ViewModel
+}
 
 type messagesComponent struct {
 	app             *app.App
@@ -69,7 +73,7 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.GotoBottom()
 		m.tail = true
 		return m, nil
-	case dialog.ThemeChangedMsg:
+	case dialog.ThemeSelectedMsg:
 		m.cache.Clear()
 		m.renderView()
 		return m, nil
@@ -77,12 +81,12 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.showToolResults = !m.showToolResults
 		m.renderView()
 		return m, nil
-	case state.SessionSelectedMsg:
+	case app.SessionSelectedMsg:
 		m.cache.Clear()
 		cmd := m.Reload()
 		m.viewport.GotoBottom()
 		return m, cmd
-	case state.SessionClearedMsg:
+	case app.SessionClearedMsg:
 		m.cache.Clear()
 		cmd := m.Reload()
 		return m, cmd
@@ -101,7 +105,12 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.tail {
 			m.viewport.GotoBottom()
 		}
-	case state.StateUpdatedMsg:
+	case client.EventSessionUpdated:
+		m.renderView()
+		if m.tail {
+			m.viewport.GotoBottom()
+		}
+	case client.EventMessageUpdated:
 		m.renderView()
 		if m.tail {
 			m.viewport.GotoBottom()
@@ -389,7 +398,7 @@ func (m *messagesComponent) Reload() tea.Cmd {
 	}
 }
 
-func NewMessagesComponent(app *app.App) layout.ModelWithView {
+func NewMessagesComponent(app *app.App) MessagesComponent {
 	customSpinner := spinner.Spinner{
 		Frames: []string{" ", "┃", "┃"},
 		FPS:    time.Second / 3,

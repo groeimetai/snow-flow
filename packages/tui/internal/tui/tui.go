@@ -12,12 +12,12 @@ import (
 
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/commands"
-	"github.com/sst/opencode/internal/components/core"
+	"github.com/sst/opencode/internal/completions"
+	"github.com/sst/opencode/internal/components/chat"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/components/modal"
+	"github.com/sst/opencode/internal/components/status"
 	"github.com/sst/opencode/internal/layout"
-	"github.com/sst/opencode/internal/page"
-	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
@@ -25,14 +25,38 @@ import (
 )
 
 type appModel struct {
-	width, height int
-	currentPage   page.PageID
-	previousPage  page.PageID
-	pages         map[page.PageID]layout.ModelWithView
-	loadedPages   map[page.PageID]bool
-	status        core.StatusComponent
-	app           *app.App
-	modal         layout.Modal
+	width, height        int
+	status               status.StatusComponent
+	app                  *app.App
+	modal                layout.Modal
+	editorContainer      layout.Container
+	editor               chat.EditorComponent
+	messagesContainer    layout.Container
+	layout               layout.FlexLayout
+	completionDialog     dialog.CompletionDialog
+	completionManager    *completions.CompletionManager
+	showCompletionDialog bool
+}
+
+type ChatKeyMap struct {
+	Cancel               key.Binding
+	ToggleTools          key.Binding
+	ShowCompletionDialog key.Binding
+}
+
+var keyMap = ChatKeyMap{
+	Cancel: key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("esc", "cancel"),
+	),
+	ToggleTools: key.NewBinding(
+		key.WithKeys("ctrl+h"),
+		key.WithHelp("ctrl+h", "toggle tools"),
+	),
+	ShowCompletionDialog: key.NewBinding(
+		key.WithKeys("/"),
+		key.WithHelp("/", "Complete"),
+	),
 }
 
 func (a appModel) Init() tea.Cmd {
@@ -43,12 +67,9 @@ func (a appModel) Init() tea.Cmd {
 	cmds = append(cmds, tea.SetBackgroundColor(t.Background()))
 	cmds = append(cmds, tea.RequestBackgroundColor)
 
-	cmd := a.pages[a.currentPage].Init()
-	a.loadedPages[a.currentPage] = true
-	cmds = append(cmds, cmd)
-
-	cmd = a.status.Init()
-	cmds = append(cmds, cmd)
+	cmds = append(cmds, a.layout.Init())
+	cmds = append(cmds, a.completionDialog.Init())
+	cmds = append(cmds, a.status.Init())
 
 	// Check if we should show the init dialog
 	cmds = append(cmds, func() tea.Msg {
@@ -57,23 +78,6 @@ func (a appModel) Init() tea.Cmd {
 	})
 
 	return tea.Batch(cmds...)
-}
-
-func (a appModel) updateAllPages(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	var cmd tea.Cmd
-
-	for id := range a.pages {
-		updated, cmd := a.pages[id].Update(msg)
-		a.pages[id] = updated.(layout.ModelWithView)
-		cmds = append(cmds, cmd)
-	}
-
-	s, cmd := a.status.Update(msg)
-	cmds = append(cmds, cmd)
-	a.status = s.(core.StatusComponent)
-
-	return a, tea.Batch(cmds...)
 }
 
 func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -97,6 +101,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return a, tea.Quit
 			}
 
+			// TODO: do we need this?
 			// don't send commands to the modal
 			for _, cmdDef := range a.app.Commands {
 				if key.Matches(msg, cmdDef.KeyBinding) {
@@ -128,6 +133,14 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+	case chat.SendMsg:
+		a.showCompletionDialog = false
+		cmd := a.sendMessage(msg.Text, msg.Attachments)
+		if cmd != nil {
+			return a, cmd
+		}
+	case dialog.CompletionDialogCloseMsg:
+		a.showCompletionDialog = false
 	case commands.ExecuteCommandMsg:
 		switch msg.Name {
 		case "quit":
@@ -135,7 +148,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "new":
 			a.app.Session = &client.SessionInfo{}
 			a.app.Messages = []client.MessageInfo{}
-			cmds = append(cmds, util.CmdHandler(state.SessionClearedMsg{}))
+			cmds = append(cmds, util.CmdHandler(app.SessionClearedMsg{}))
 		case "sessions":
 			sessionDialog := dialog.NewSessionDialog(a.app)
 			a.modal = sessionDialog
@@ -173,28 +186,23 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			BackgroundIsDark: msg.IsDark(),
 		}
 
-	case cursor.BlinkMsg:
-		return a.updateAllPages(msg)
-
-	case spinner.TickMsg:
-		return a.updateAllPages(msg)
-
 	case client.EventSessionUpdated:
 		if msg.Properties.Info.Id == a.app.Session.Id {
 			a.app.Session = &msg.Properties.Info
-			return a.updateAllPages(state.StateUpdatedMsg{State: nil})
 		}
 
 	case client.EventMessageUpdated:
 		if msg.Properties.Info.Metadata.SessionID == a.app.Session.Id {
+			exists := false
 			for i, m := range a.app.Messages {
 				if m.Id == msg.Properties.Info.Id {
 					a.app.Messages[i] = msg.Properties.Info
-					return a.updateAllPages(state.StateUpdatedMsg{State: nil})
+					exists = true
 				}
 			}
-			a.app.Messages = append(a.app.Messages, msg.Properties.Info)
-			return a.updateAllPages(state.StateUpdatedMsg{State: nil})
+			if !exists {
+				a.app.Messages = append(a.app.Messages, msg.Properties.Info)
+			}
 		}
 
 	case tea.WindowSizeMsg:
@@ -212,18 +220,20 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			},
 		}
 
+		// Update status
 		s, cmd := a.status.Update(msg)
-		a.status = s.(core.StatusComponent)
+		a.status = s.(status.StatusComponent)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
 
-		updated, cmd := a.pages[a.currentPage].Update(msg)
-		a.pages[a.currentPage] = updated.(layout.ModelWithView)
+		// Update chat layout
+		cmd = a.layout.SetSize(msg.Width, msg.Height)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
 
+		// Update modal if present
 		if a.modal != nil {
 			s, cmd := a.modal.Update(msg)
 			a.modal = s.(layout.Modal)
@@ -234,35 +244,32 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return a, tea.Batch(cmds...)
 
-	case page.PageChangeMsg:
-		return a, a.moveToPage(msg.ID)
-
-	case state.SessionSelectedMsg:
+	case app.SessionSelectedMsg:
 		a.app.Session = msg
 		a.app.Messages, _ = a.app.ListMessages(context.Background(), msg.Id)
-		return a.updateAllPages(msg)
 
-	case state.ModelSelectedMsg:
+	case app.ModelSelectedMsg:
 		a.app.Provider = &msg.Provider
 		a.app.Model = &msg.Model
 		a.app.Config.Provider = msg.Provider.Id
 		a.app.Config.Model = msg.Model.Id
 		a.app.SaveConfig()
-		return a.updateAllPages(msg)
 
-	case dialog.ThemeChangedMsg:
+	case dialog.ThemeSelectedMsg:
 		a.app.Config.Theme = msg.ThemeName
 		a.app.SaveConfig()
 
-		updated, cmd := a.pages[a.currentPage].Update(msg)
-		a.pages[a.currentPage] = updated.(layout.ModelWithView)
+		// Update layout
+		u, cmd := a.layout.Update(msg)
+		a.layout = u.(layout.FlexLayout)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
 
+		// Update status
 		s, cmd := a.status.Update(msg)
 		cmds = append(cmds, cmd)
-		a.status = s.(core.StatusComponent)
+		a.status = s.(status.StatusComponent)
 
 		t := theme.CurrentTheme()
 		cmds = append(cmds, tea.SetBackgroundColor(t.Background()))
@@ -272,11 +279,26 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		// give the editor a chance to clear input
 		case "ctrl+c":
-			updated, cmd := a.pages[a.currentPage].Update(msg)
-			a.pages[a.currentPage] = updated.(layout.ModelWithView)
+			_, cmd := a.editorContainer.Update(msg)
 			if cmd != nil {
 				return a, cmd
 			}
+		}
+
+		// Handle chat-specific keys
+		switch {
+		case key.Matches(msg, keyMap.ShowCompletionDialog):
+			a.showCompletionDialog = true
+			// Continue sending keys to layout->chat
+		case key.Matches(msg, keyMap.Cancel):
+			if a.app.Session.Id != "" {
+				// Cancel the current session's generation process
+				// This allows users to interrupt long-running operations
+				a.app.Cancel(context.Background(), a.app.Session.Id)
+				return a, nil
+			}
+		case key.Matches(msg, keyMap.ToggleTools):
+			return a, util.CmdHandler(chat.ToggleToolMessagesMsg{})
 		}
 
 		// First, check for modal triggers from the command registry
@@ -291,40 +313,64 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	if a.showCompletionDialog {
+		currentInput := a.editor.Value()
+		provider := a.completionManager.GetProvider(currentInput)
+		a.completionDialog.SetProvider(provider)
+
+		context, contextCmd := a.completionDialog.Update(msg)
+		a.completionDialog = context.(dialog.CompletionDialog)
+		cmds = append(cmds, contextCmd)
+
+		// Doesn't forward event if enter key is pressed
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			if keyMsg.String() == "enter" {
+				return a, tea.Batch(cmds...)
+			}
+		}
+	}
+
 	// update status bar
 	s, cmd := a.status.Update(msg)
 	cmds = append(cmds, cmd)
-	a.status = s.(core.StatusComponent)
+	a.status = s.(status.StatusComponent)
 
-	// update current page
-	updated, cmd := a.pages[a.currentPage].Update(msg)
-	a.pages[a.currentPage] = updated.(layout.ModelWithView)
+	// update chat layout
+	u, cmd := a.layout.Update(msg)
+	a.layout = u.(layout.FlexLayout)
 	cmds = append(cmds, cmd)
 	return a, tea.Batch(cmds...)
 }
 
-func (a *appModel) moveToPage(pageID page.PageID) tea.Cmd {
+func (a *appModel) sendMessage(text string, attachments []app.Attachment) tea.Cmd {
 	var cmds []tea.Cmd
-	if _, ok := a.loadedPages[pageID]; !ok {
-		cmd := a.pages[pageID].Init()
-		cmds = append(cmds, cmd)
-		a.loadedPages[pageID] = true
-	}
-	a.previousPage = a.currentPage
-	a.currentPage = pageID
-	if sizable, ok := a.pages[a.currentPage].(layout.Sizeable); ok {
-		cmd := sizable.SetSize(a.width, a.height)
-		cmds = append(cmds, cmd)
-	}
-
+	cmd := a.app.SendChatMessage(context.Background(), text, attachments)
+	cmds = append(cmds, cmd)
 	return tea.Batch(cmds...)
 }
 
 func (a appModel) View() string {
-	components := []string{
-		a.pages[a.currentPage].View(),
+	layoutView := a.layout.View()
+
+	if a.showCompletionDialog {
+		editorWidth, _ := a.editorContainer.GetSize()
+		editorX, editorY := a.editorContainer.GetPosition()
+
+		a.completionDialog.SetWidth(editorWidth)
+		overlay := a.completionDialog.View()
+
+		layoutView = layout.PlaceOverlay(
+			editorX,
+			editorY-lipgloss.Height(overlay)+2,
+			overlay,
+			layoutView,
+		)
 	}
-	components = append(components, a.status.View())
+
+	components := []string{
+		layoutView,
+		a.status.View(),
+	}
 	appView := lipgloss.JoinVertical(lipgloss.Top, components...)
 
 	if a.modal != nil {
@@ -335,15 +381,37 @@ func (a appModel) View() string {
 }
 
 func NewModel(app *app.App) tea.Model {
-	startPage := page.ChatPage
+	completionManager := completions.NewCompletionManager(app)
+	initialProvider := completionManager.GetProvider("")
+	completionDialog := dialog.NewCompletionDialogComponent(initialProvider)
+
+	messagesContainer := layout.NewContainer(
+		chat.NewMessagesComponent(app),
+	)
+	editor := chat.NewEditorComponent(app)
+	editorContainer := layout.NewContainer(
+		editor,
+		layout.WithMaxWidth(layout.Current.Container.Width),
+		layout.WithAlignCenter(),
+	)
+
 	model := &appModel{
-		currentPage: startPage,
-		loadedPages: make(map[page.PageID]bool),
-		status:      core.NewStatusCmp(app),
-		app:         app,
-		pages: map[page.PageID]layout.ModelWithView{
-			page.ChatPage: page.NewChatPage(app),
-		},
+		status:               status.NewStatusCmp(app),
+		app:                  app,
+		editorContainer:      editorContainer,
+		editor:               editor,
+		messagesContainer:    messagesContainer,
+		completionDialog:     completionDialog,
+		completionManager:    completionManager,
+		showCompletionDialog: false,
+		layout: layout.NewFlexLayout(
+			layout.WithPanes(messagesContainer, editorContainer),
+			layout.WithDirection(layout.FlexDirectionVertical),
+			layout.WithPaneSizes(
+				layout.FlexPaneSizeGrow,
+				layout.FlexPaneSizeFixed(6),
+			),
+		),
 	}
 
 	return model

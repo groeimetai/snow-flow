@@ -4,7 +4,6 @@ import (
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
-	"github.com/sst/opencode/internal/layout"
 )
 
 type ListItem interface {
@@ -12,7 +11,8 @@ type ListItem interface {
 }
 
 type List[T ListItem] interface {
-	layout.ModelWithView
+	tea.Model
+	tea.ViewModel
 	SetMaxWidth(maxWidth int)
 	GetSelectedItem() (item T, idx int)
 	SetItems(items []T)

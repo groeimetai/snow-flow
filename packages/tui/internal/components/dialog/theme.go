@@ -10,8 +10,8 @@ import (
 	"github.com/sst/opencode/internal/util"
 )
 
-// ThemeChangedMsg is sent when the theme is changed
-type ThemeChangedMsg struct {
+// ThemeSelectedMsg is sent when the theme is changed
+type ThemeSelectedMsg struct {
 	ThemeName string
 }
 
@@ -75,7 +75,7 @@ func (t *themeDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return t, tea.Sequence(
 					util.CmdHandler(modal.CloseModalMsg{}),
-					util.CmdHandler(ThemeChangedMsg{ThemeName: selectedTheme}),
+					util.CmdHandler(ThemeSelectedMsg{ThemeName: selectedTheme}),
 				)
 			}
 		}

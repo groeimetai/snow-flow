@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/bubbles/v2/viewport"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
-	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
@@ -30,7 +29,8 @@ type PermissionResponseMsg struct {
 
 // PermissionDialogComponent interface for permission dialog component
 type PermissionDialogComponent interface {
-	layout.ModelWithView
+	tea.Model
+	tea.ViewModel
 	// SetPermissions(permission permission.PermissionRequest) tea.Cmd
 }
 

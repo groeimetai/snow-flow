@@ -25,7 +25,8 @@ func FlexPaneSizeFixed(size int) FlexPaneSize {
 }
 
 type FlexLayout interface {
-	ModelWithView
+	tea.Model
+	tea.ViewModel
 	Sizeable
 	SetPanes(panes []Container) tea.Cmd
 	SetPaneSizes(sizes []FlexPaneSize) tea.Cmd

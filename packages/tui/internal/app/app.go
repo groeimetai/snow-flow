@@ -11,7 +11,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/config"
-	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
 	"github.com/sst/opencode/pkg/client"
@@ -31,6 +30,14 @@ type App struct {
 	Messages   []client.MessageInfo
 	Commands   commands.Registry
 }
+
+type SessionSelectedMsg = *client.SessionInfo
+type ModelSelectedMsg struct {
+	Provider client.ProviderInfo
+	Model    client.ModelInfo
+}
+type SessionClearedMsg struct{}
+type CompactSessionMsg struct{}
 
 func New(
 	ctx context.Context,
@@ -118,7 +125,7 @@ func (a *App) InitializeProvider() tea.Cmd {
 		}
 
 		// TODO: handle no provider or model setup, yet
-		return state.ModelSelectedMsg{
+		return ModelSelectedMsg{
 			Provider: *currentProvider,
 			Model:    *currentModel,
 		}
@@ -167,7 +174,7 @@ func (a *App) InitializeProject(ctx context.Context) tea.Cmd {
 	}
 
 	a.Session = session
-	cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(session)))
+	cmds = append(cmds, util.CmdHandler(SessionSelectedMsg(session)))
 
 	go func() {
 		response, err := a.Client.PostSessionInitialize(ctx, client.PostSessionInitializeJSONRequestBody{
@@ -236,7 +243,7 @@ func (a *App) SendChatMessage(ctx context.Context, text string, attachments []At
 			return nil
 		}
 		a.Session = session
-		cmds = append(cmds, util.CmdHandler(state.SessionSelectedMsg(session)))
+		cmds = append(cmds, util.CmdHandler(SessionSelectedMsg(session)))
 	}
 
 	// TODO: Handle attachments when API supports them

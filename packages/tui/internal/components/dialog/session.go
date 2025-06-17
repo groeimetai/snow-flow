@@ -8,7 +8,6 @@ import (
 	"github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/layout"
-	"github.com/sst/opencode/internal/state"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
@@ -69,7 +68,7 @@ func (s *sessionDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				s.selectedSessionID = selectedSession.Id
 				return s, tea.Sequence(
 					util.CmdHandler(modal.CloseModalMsg{}),
-					util.CmdHandler(state.SessionSelectedMsg(&selectedSession)),
+					util.CmdHandler(app.SessionSelectedMsg(&selectedSession)),
 				)
 			}
 		}

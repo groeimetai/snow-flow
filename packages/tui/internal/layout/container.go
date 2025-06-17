@@ -6,20 +6,14 @@ import (
 	"github.com/sst/opencode/internal/theme"
 )
 
-type ModelWithView interface {
+type Container interface {
 	tea.Model
 	tea.ViewModel
-}
-
-type Container interface {
-	ModelWithView
 	Sizeable
-	Focus()
-	Blur()
+	Focusable
 	MaxWidth() int
 	Alignment() lipgloss.Position
 	GetPosition() (x, y int)
-	GetContent() ModelWithView
 }
 
 type container struct {
@@ -28,7 +22,7 @@ type container struct {
 	x      int
 	y      int
 
-	content ModelWithView
+	content tea.ViewModel
 
 	paddingTop    int
 	paddingRight  int
@@ -48,13 +42,19 @@ type container struct {
 }
 
 func (c *container) Init() tea.Cmd {
-	return c.content.Init()
+	if model, ok := c.content.(tea.Model); ok {
+		return model.Init()
+	}
+	return nil
 }
 
 func (c *container) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	u, cmd := c.content.Update(msg)
-	c.content = u.(ModelWithView)
-	return c, cmd
+	if model, ok := c.content.(tea.Model); ok {
+		u, cmd := model.Update(msg)
+		c.content = u.(tea.ViewModel)
+		return c, cmd
+	}
+	return c, nil
 }
 
 func (c *container) View() string {
@@ -156,21 +156,28 @@ func (c *container) Alignment() lipgloss.Position {
 }
 
 // Focus sets the container as focused
-func (c *container) Focus() {
+func (c *container) Focus() tea.Cmd {
 	c.focused = true
-	// Pass focus to content if it supports it
-	if focusable, ok := c.content.(interface{ Focus() }); ok {
-		focusable.Focus()
+	if focusable, ok := c.content.(Focusable); ok {
+		return focusable.Focus()
 	}
+	return nil
 }
 
 // Blur removes focus from the container
-func (c *container) Blur() {
+func (c *container) Blur() tea.Cmd {
 	c.focused = false
-	// Remove focus from content if it supports it
-	if blurable, ok := c.content.(interface{ Blur() }); ok {
-		blurable.Blur()
+	if blurable, ok := c.content.(Focusable); ok {
+		return blurable.Blur()
 	}
+	return nil
+}
+
+func (c *container) IsFocused() bool {
+	if blurable, ok := c.content.(Focusable); ok {
+		return blurable.IsFocused()
+	}
+	return c.focused
 }
 
 // GetPosition returns the x, y coordinates of the container
@@ -178,14 +185,9 @@ func (c *container) GetPosition() (x, y int) {
 	return c.x, c.y
 }
 
-// GetContent returns the content of the container
-func (c *container) GetContent() ModelWithView {
-	return c.content
-}
-
 type ContainerOption func(*container)
 
-func NewContainer(content ModelWithView, options ...ContainerOption) Container {
+func NewContainer(content tea.ViewModel, options ...ContainerOption) Container {
 	c := &container{
 		content:     content,
 		borderStyle: lipgloss.NormalBorder(),
