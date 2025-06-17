@@ -11,15 +11,16 @@ export abstract class NamedError extends Error {
     name: Name,
     data: Data,
   ) {
+    const schema = z
+      .object({
+        name: z.literal(name),
+        data,
+      })
+      .openapi({
+        ref: name,
+      })
     const result = class extends NamedError {
-      public static readonly Schema = z
-        .object({
-          name: z.literal(name),
-          data: data,
-        })
-        .openapi({
-          ref: name,
-        })
+      public static readonly Schema = schema
 
       public readonly name = name as Name
 
@@ -40,7 +41,7 @@ export abstract class NamedError extends Error {
       }
 
       schema() {
-        return result.Schema
+        return schema
       }
 
       toObject() {

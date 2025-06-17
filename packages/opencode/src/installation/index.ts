@@ -2,9 +2,23 @@ import path from "path"
 import { $ } from "bun"
 import { z } from "zod"
 import { NamedError } from "../util/error"
+import { Bus } from "../bus"
+
+declare global {
+  const OPENCODE_VERSION: string
+}
 
 export namespace Installation {
   export type Method = Awaited<ReturnType<typeof method>>
+
+  export const Event = {
+    Updated: Bus.event(
+      "installation.updated",
+      z.object({
+        version: z.string(),
+      }),
+    ),
+  }
 
   export const Info = z
     .object({

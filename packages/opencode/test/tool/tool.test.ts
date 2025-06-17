@@ -5,19 +5,33 @@ import { ListTool } from "../../src/tool/ls"
 
 describe("tool.glob", () => {
   test("truncate", async () => {
-    await App.provide({ cwd: process.cwd(), version: "test" }, async () => {
+    await App.provide({ cwd: process.cwd() }, async () => {
       let result = await GlobTool.execute(
-        { pattern: "./node_modules/**/*" },
-        { sessionID: "test" },
+        {
+          pattern: "./node_modules/**/*",
+          path: null,
+        },
+        {
+          sessionID: "test",
+          messageID: "",
+          abort: AbortSignal.any([]),
+        },
       )
       expect(result.metadata.truncated).toBe(true)
     })
   })
   test("basic", async () => {
-    await App.provide({ cwd: process.cwd(), version: "test" }, async () => {
+    await App.provide({ cwd: process.cwd() }, async () => {
       let result = await GlobTool.execute(
-        { pattern: "*.json" },
-        { sessionID: "test" },
+        {
+          pattern: "*.json",
+          path: null,
+        },
+        {
+          sessionID: "test",
+          messageID: "",
+          abort: AbortSignal.any([]),
+        },
       )
       expect(result.metadata).toMatchObject({
         truncated: false,
@@ -29,15 +43,16 @@ describe("tool.glob", () => {
 
 describe("tool.ls", () => {
   test("basic", async () => {
-    const result = await App.provide(
-      { cwd: process.cwd(), version: "test" },
-      async () => {
-        return await ListTool.execute(
-          { path: "./example" },
-          { sessionID: "test" },
-        )
-      },
-    )
+    const result = await App.provide({ cwd: process.cwd() }, async () => {
+      return await ListTool.execute(
+        { path: "./example", ignore: [".git"] },
+        {
+          sessionID: "test",
+          messageID: "",
+          abort: AbortSignal.any([]),
+        },
+      )
+    })
     expect(result.output).toMatchSnapshot()
   })
 })

@@ -4,7 +4,6 @@ import * as fs from "fs/promises"
 import { Tool } from "./tool"
 import { FileTimes } from "./util/file-times"
 import DESCRIPTION from "./patch.txt"
-import { App } from "../app/app"
 
 const PatchParams = z.object({
   patchText: z

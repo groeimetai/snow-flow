@@ -5,6 +5,7 @@ import { Global } from "../global"
 import path from "path"
 import os from "os"
 import { z } from "zod"
+import { Installation } from "../installation"
 
 export namespace App {
   const log = Log.create({ service: "app" })
@@ -32,7 +33,7 @@ export namespace App {
 
   const APP_JSON = "app.json"
 
-  async function create(input: { cwd: string; version: string }) {
+  async function create(input: { cwd: string }) {
     log.info("creating", {
       cwd: input.cwd,
     })
@@ -51,7 +52,7 @@ export namespace App {
       initialized: number
       version: string
     }
-    state.version = input.version
+    state.version = Installation.VERSION
     await stateFile.write(JSON.stringify(state))
 
     const services = new Map<
@@ -76,7 +77,6 @@ export namespace App {
       },
     }
     const result = {
-      version: input.version,
       services,
       info,
     }
@@ -108,7 +108,7 @@ export namespace App {
   }
 
   export async function provide<T>(
-    input: { cwd: string; version: string },
+    input: { cwd: string },
     cb: (app: Info) => Promise<T>,
   ) {
     const app = await create(input)
@@ -124,12 +124,12 @@ export namespace App {
   }
 
   export async function initialize() {
-    const { info, version } = ctx.use()
+    const { info } = ctx.use()
     info.time.initialized = Date.now()
     await Bun.write(
       path.join(info.path.data, APP_JSON),
       JSON.stringify({
-        version,
+        version: Installation.VERSION,
         initialized: Date.now(),
       }),
     )

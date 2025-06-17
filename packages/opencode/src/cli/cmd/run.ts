@@ -6,7 +6,6 @@ import { Session } from "../../session"
 import { Share } from "../../share/share"
 import { Message } from "../../session/message"
 import { UI } from "../ui"
-import { VERSION } from "../version"
 import { cmd } from "./cmd"
 import { GlobalConfig } from "../../global/config"
 import { Flag } from "../../flag/flag"
@@ -48,7 +47,6 @@ export const RunCommand = cmd({
     await App.provide(
       {
         cwd: process.cwd(),
-        version: VERSION,
       },
       async () => {
         await Share.init()

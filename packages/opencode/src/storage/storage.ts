@@ -24,8 +24,6 @@ export namespace Storage {
     }
   })
 
-  const locks = new Map<string, Promise<void>>()
-
   export async function readJSON<T>(key: string) {
     return Bun.file(path.join(state().dir, key + ".json")).json() as Promise<T>
   }

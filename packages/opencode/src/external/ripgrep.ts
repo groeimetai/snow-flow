@@ -1,4 +1,3 @@
-import { App } from "../app/app"
 import path from "path"
 import { Global } from "../global"
 import fs from "fs/promises"
