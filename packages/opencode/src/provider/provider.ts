@@ -50,9 +50,18 @@ export namespace Provider {
       }
       return {
         apiKey: "",
-        headers: {
-          authorization: `Bearer ${access}`,
-          "anthropic-beta": "oauth-2025-04-20",
+        async fetch(input: any, init: any) {
+          const access = await AuthAnthropic.access()
+          const headers = {
+            ...init.headers,
+            authorization: `Bearer ${access}`,
+            "anthropic-beta": "oauth-2025-04-20",
+          }
+          delete headers["x-api-key"]
+          return fetch(input, {
+            ...init,
+            headers,
+          })
         },
       }
     },

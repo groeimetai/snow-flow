@@ -7,6 +7,7 @@ export namespace Auth {
   export const Oauth = z.object({
     type: z.literal("oauth"),
     refresh: z.string(),
+    access: z.string(),
     expires: z.number(),
   })
 

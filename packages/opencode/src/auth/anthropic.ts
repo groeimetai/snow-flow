@@ -48,6 +48,7 @@ export namespace AuthAnthropic {
     await Auth.set("anthropic", {
       type: "oauth",
       refresh: json.refresh_token as string,
+      access: json.access_token as string,
       expires: Date.now() + json.expires_in * 1000,
     })
   }
@@ -55,6 +56,7 @@ export namespace AuthAnthropic {
   export async function access() {
     const info = await Auth.get("anthropic")
     if (!info || info.type !== "oauth") return
+    if (info.access && info.expires > Date.now()) return info.access
     const response = await fetch(
       "https://console.anthropic.com/v1/oauth/token",
       {
@@ -74,6 +76,7 @@ export namespace AuthAnthropic {
     await Auth.set("anthropic", {
       type: "oauth",
       refresh: json.refresh_token as string,
+      access: json.access_token as string,
       expires: Date.now() + json.expires_in * 1000,
     })
     return json.access_token as string
