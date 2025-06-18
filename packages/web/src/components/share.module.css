@@ -421,6 +421,50 @@
   }
 }
 
+.message-lsp {
+  background-color: var(--sl-color-bg-surface);
+  padding: 0.5rem calc(0.5rem + 3px);
+  border-radius: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  align-self: flex-start;
+  max-width: var(--md-tool-width);
+
+    padding: 0.5rem calc(0.5rem + 3px);
+
+    pre {
+      --shiki-dark-bg: var(--sl-color-bg-surface) !important;
+      background-color: var(--sl-color-bg-surface) !important;
+      line-height: 1.4;
+      font-size: 0.75rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+  &[data-expanded="true"] {
+    pre {
+      display: block;
+    }
+  }
+  &[data-expanded="false"] {
+    pre {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 7;
+      overflow: hidden;
+    }
+  }
+
+  button {
+    flex: 0 0 auto;
+    padding: 2px 0;
+    font-size: 0.75rem;
+  }
+
+}
+
 .message-terminal {
   display: flex;
   flex-direction: column;

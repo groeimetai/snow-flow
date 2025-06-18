@@ -174,12 +174,15 @@ function flattenToolArgs(obj: any, prefix: string = ""): Array<[string, any]> {
 
 export function getDiagnostics(
   diagnosticsByFile: Record<string, Diagnostic[]>,
+  currentFile: string
 ): string[] {
   // Return a flat array of error diagnostics, in the format:
   // "ERROR [65:20] Property 'x' does not exist on type 'Y'"
   const result: string[] = []
 
-  if (diagnosticsByFile === undefined) return result
+  if (
+    diagnosticsByFile === undefined || diagnosticsByFile[currentFile] === undefined
+  ) return result
 
   for (const diags of Object.values(diagnosticsByFile)) {
     for (const d of diags) {
@@ -189,7 +192,7 @@ export function getDiagnostics(
       const line = d.range.start.line + 1 // 1-based
       const column = d.range.start.character + 1 // 1-based
 
-      result.push(`ERROR [${line}:${column}] ${d.message}`)
+      result.push(`\x1b[31mERROR\x1b[0m \x1b[2m[${line}:${column}]\x1b[0m ${d.message}`)
     }
   }
 
@@ -308,6 +311,59 @@ function TextPart(props: TextPartProps) {
       {...rest}
     >
       <pre ref={(el) => (preEl = el)}>{local.text}</pre>
+      {((!local.expand && overflowed()) || expanded()) && (
+        <button
+          type="button"
+          data-element-button-text
+          onClick={() => setExpanded((e) => !e)}
+        >
+          {expanded() ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  )
+}
+
+interface LspPartProps extends JSX.HTMLAttributes<HTMLDivElement> {
+  text: string
+  expand?: boolean
+}
+function LspPart(props: LspPartProps) {
+  const [local, rest] = splitProps(props, ["text", "expand"])
+  const [expanded, setExpanded] = createSignal(false)
+  const [overflowed, setOverflowed] = createSignal(false)
+  let preEl: HTMLElement | undefined
+
+  function checkOverflow() {
+    if (!preEl) return
+
+    const code = preEl.getElementsByTagName("code")[0]
+
+    if (code && !local.expand) {
+      setOverflowed(preEl.clientHeight < code.offsetHeight)
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener("resize", checkOverflow)
+  })
+
+  onCleanup(() => {
+    window.removeEventListener("resize", checkOverflow)
+  })
+
+  return (
+    <div
+      class={styles["message-lsp"]}
+      data-expanded={expanded() || local.expand === true}
+      {...rest}
+    >
+      <CodeBlock
+        lang="ansi"
+        code={local.text}
+        onRendered={checkOverflow}
+        ref={(el) => (preEl = el)}
+      />
       {((!local.expand && overflowed()) || expanded()) && (
         <button
           type="button"
@@ -1258,7 +1314,10 @@ export default function Share(props: {
                             const hasError = () => toolData()?.metadata?.error
                             const content = () => toolData()?.args?.content
                             const diagnostics = createMemo(() =>
-                              getDiagnostics(toolData()?.metadata?.diagnostics)
+                              getDiagnostics(
+                                toolData()?.metadata?.diagnostics,
+                                toolData()?.args.filePath
+                              )
                             )
 
                             return (
@@ -1280,8 +1339,7 @@ export default function Share(props: {
                                       <b>{filePath()}</b>
                                     </div>
                                     <Show when={diagnostics().length > 0}>
-                                      <TextPart
-                                        data-size="sm"
+                                      <LspPart
                                         text={diagnostics().join("\n\n")}
                                       />
                                     </Show>
@@ -1344,7 +1402,10 @@ export default function Share(props: {
                               )
                             )
                             const diagnostics = createMemo(() =>
-                              getDiagnostics(toolData()?.metadata?.diagnostics)
+                              getDiagnostics(
+                                toolData()?.metadata?.diagnostics,
+                                toolData()?.args.filePath
+                              )
                             )
 
                             return (
@@ -1387,8 +1448,7 @@ export default function Share(props: {
                                       </Match>
                                     </Switch>
                                     <Show when={diagnostics().length > 0}>
-                                      <TextPart
-                                        data-size="sm"
+                                      <LspPart
                                         text={diagnostics().join("\n\n")}
                                       />
                                     </Show>
