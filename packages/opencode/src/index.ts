@@ -127,14 +127,13 @@ const cli = yargs(hideBin(process.argv))
     ) {
       cli.showHelp("log")
     }
-    Log.Default.error(msg, {
-      err,
-    })
   })
   .strict()
 
 try {
   await cli.parse()
 } catch (e) {
-  Log.Default.error(e)
+  Log.Default.error(e, {
+    stack: e instanceof Error ? e.stack : undefined,
+  })
 }
