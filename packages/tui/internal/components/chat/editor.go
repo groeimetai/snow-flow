@@ -126,7 +126,7 @@ func (m *editorComponent) View() string {
 
 	model := ""
 	if m.app.Model != nil {
-		model = base(m.app.Model.Name) + muted(" • /model")
+		model = muted(m.app.Provider.Name) + base(" "+m.app.Model.Name)
 	}
 
 	space := m.width - 2 - lipgloss.Width(model) - lipgloss.Width(hint)

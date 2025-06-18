@@ -20,10 +20,13 @@ func NewCompletionManager(app *app.App) *CompletionManager {
 	}
 }
 
+func (m *CompletionManager) DefaultProvider() dialog.CompletionProvider {
+	return m.providers["commands"]
+}
+
 func (m *CompletionManager) GetProvider(input string) dialog.CompletionProvider {
 	if strings.HasPrefix(input, "/") {
 		return m.providers["commands"]
 	}
 	return m.providers["files"]
 }
-

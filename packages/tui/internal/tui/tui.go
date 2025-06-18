@@ -208,6 +208,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	case dialog.CompletionDialogCloseMsg:
 		a.showCompletionDialog = false
+		a.completions.SetProvider(a.completionManager.DefaultProvider())
 	case client.EventSessionUpdated:
 		if msg.Properties.Info.Id == a.app.Session.Id {
 			a.app.Session = &msg.Properties.Info
@@ -494,7 +495,7 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 
 func NewModel(app *app.App) tea.Model {
 	completionManager := completions.NewCompletionManager(app)
-	initialProvider := completionManager.GetProvider("")
+	initialProvider := completionManager.DefaultProvider()
 
 	messages := chat.NewMessagesComponent(app)
 	editor := chat.NewEditorComponent(app)
