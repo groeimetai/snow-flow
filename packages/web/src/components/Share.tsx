@@ -14,7 +14,12 @@ import {
 import { DateTime } from "luxon"
 import { createStore, reconcile } from "solid-js/store"
 import type { Diagnostic } from "vscode-languageserver-types"
-import { IconOpenAI, IconGemini, IconAnthropic } from "./icons/custom"
+import {
+  IconOpenAI,
+  IconGemini,
+  IconOpencode,
+  IconAnthropic
+} from "./icons/custom"
 import {
   IconFolder,
   IconCpuChip,
@@ -729,11 +734,17 @@ export default function Share(props: {
           </ul>
           <Show when={data().rootDir}>
             <ul data-section="stats" data-section-root>
-              <li>
+              <li title="Project root">
                 <div data-stat-icon>
                   <IconFolder width={16} height={16} />
                 </div>
                 <span>{data().rootDir}</span>
+              </li>
+              <li title="opencode version">
+                <div data-stat-icon title="opencode">
+                  <IconOpencode width={16} height={16} />
+                </div>
+                <span>v0.1.1</span>
               </li>
             </ul>
           </Show>
