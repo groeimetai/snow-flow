@@ -101,9 +101,11 @@ export namespace Provider {
     ) {
       const provider = providers[id]
       if (!provider) {
+        const info = database[id]
+        if (!info) return
         providers[id] = {
           source,
-          info: database[id],
+          info,
           options,
         }
         return
