@@ -204,8 +204,12 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		a.layout.SetSize(a.width, a.height)
 	case app.SessionSelectedMsg:
+		var err error
 		a.app.Session = msg
-		a.app.Messages, _ = a.app.ListMessages(context.Background(), msg.Id)
+		a.app.Messages, err = a.app.ListMessages(context.Background(), msg.Id)
+		if err != nil {
+			slog.Error("Failed to list messages", "error", err)
+		}
 	case app.ModelSelectedMsg:
 		a.app.Provider = &msg.Provider
 		a.app.Model = &msg.Model

@@ -83,6 +83,6 @@ type HelpDialog interface {
 func NewHelpDialog(commands []commands.Command) HelpDialog {
 	return &helpDialog{
 		commands: commands,
-		modal:    modal.New(),
+		modal:    modal.New(modal.WithTitle("Help")),
 	}
 }

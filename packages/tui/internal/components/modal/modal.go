@@ -1,6 +1,8 @@
 package modal
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
@@ -66,6 +68,10 @@ func New(opts ...ModalOption) *Modal {
 	return m
 }
 
+func (m *Modal) SetTitle(title string) {
+	m.title = title
+}
+
 // Render renders the modal centered on the screen
 func (m *Modal) Render(contentView string, background string) string {
 	t := theme.CurrentTheme()
@@ -95,15 +101,21 @@ func (m *Modal) Render(contentView string, background string) string {
 		titleStyle := baseStyle.
 			Foreground(t.Primary()).
 			Bold(true).
-			Width(innerWidth).
 			Padding(0, 1)
 
-		titleView := titleStyle.Render(m.title)
-		finalContent = lipgloss.JoinVertical(
-			lipgloss.Left,
-			titleView,
-			contentView,
-		)
+		// titleView := titleStyle.Render(m.title)
+		escStyle := baseStyle.Foreground(t.TextMuted()).Bold(false)
+		escText := escStyle.Render("esc")
+
+		// Calculate position for esc text
+		titleWidth := lipgloss.Width(m.title)
+		escWidth := lipgloss.Width(escText)
+		spacesNeeded := max(0, innerWidth-titleWidth-escWidth-3)
+		spacer := strings.Repeat(" ", spacesNeeded)
+		titleLine := m.title + spacer + escText
+		titleLine = titleStyle.Render(titleLine)
+
+		finalContent = strings.Join([]string{titleLine, contentView}, "\n") + "\n"
 	} else {
 		finalContent = contentView
 	}

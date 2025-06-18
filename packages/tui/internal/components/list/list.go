@@ -1,9 +1,10 @@
 package list
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
-	"github.com/charmbracelet/lipgloss/v2"
 )
 
 type ListItem interface {
@@ -148,7 +149,7 @@ func (c *listComponent[T]) View() string {
 		listItems = append(listItems, title)
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, listItems...)
+	return strings.Join(listItems, "\n")
 }
 
 func NewListComponent[T ListItem](items []T, maxVisibleItems int, fallbackMsg string, useAlphaNumericKeys bool) List[T] {

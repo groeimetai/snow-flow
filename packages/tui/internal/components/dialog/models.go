@@ -180,6 +180,7 @@ func (m *modelDialog) switchProvider(offset int) {
 
 	m.hScrollOffset = newOffset
 	m.provider = m.availableProviders[m.hScrollOffset]
+	m.modal.SetTitle(fmt.Sprintf("Select %s Model", m.provider.Name))
 	m.setupModelsForProvider(m.provider.Id)
 }
 
@@ -188,14 +189,6 @@ func (m *modelDialog) View() string {
 	baseStyle := lipgloss.NewStyle().
 		Background(t.BackgroundElement()).
 		Foreground(t.Text())
-
-	// Capitalize first letter of provider name
-	title := baseStyle.
-		Foreground(t.Primary()).
-		Bold(true).
-		Width(maxDialogWidth).
-		Padding(0, 0, 1).
-		Render(fmt.Sprintf("Select %s Model", m.provider.Name))
 
 	// Render visible models
 	endIdx := min(m.scrollOffset+numVisibleModels, len(m.provider.Models))
@@ -217,8 +210,9 @@ func (m *modelDialog) View() string {
 
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
-		title,
-		baseStyle.Width(maxDialogWidth).Render(lipgloss.JoinVertical(lipgloss.Left, modelItems...)),
+		baseStyle.
+			Width(maxDialogWidth).
+			Render(lipgloss.JoinVertical(lipgloss.Left, modelItems...)),
 		scrollIndicator,
 	)
 
@@ -238,12 +232,7 @@ func (m *modelDialog) getScrollIndicators(maxWidth int) string {
 	}
 
 	if m.hScrollPossible {
-		if m.hScrollOffset > 0 {
-			indicator = "← " + indicator
-		}
-		if m.hScrollOffset < len(m.availableProviders)-1 {
-			indicator += "→"
-		}
+		indicator = "← " + indicator + "→"
 	}
 
 	if indicator == "" {
@@ -313,6 +302,6 @@ func NewModelDialog(app *app.App) ModelDialog {
 		hScrollOffset:      0,
 		hScrollPossible:    len(availableProviders) > 1,
 		provider:           availableProviders[0],
-		modal:              modal.New(),
+		modal:              modal.New(modal.WithTitle(fmt.Sprintf("Select %s Model", availableProviders[0].Name))),
 	}
 }

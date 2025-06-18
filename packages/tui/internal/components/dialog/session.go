@@ -19,14 +19,12 @@ type SessionDialog interface {
 	layout.Modal
 }
 
-type sessionItem struct {
-	session client.SessionInfo
-}
+type sessionItem client.SessionInfo
 
 func (s sessionItem) Render(selected bool, width int) string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.BaseStyle().
-		Width(width - 2).
+		Width(width - 4).
 		Background(t.BackgroundElement())
 
 	if selected {
@@ -39,7 +37,7 @@ func (s sessionItem) Render(selected bool, width int) string {
 			Foreground(t.Text())
 	}
 
-	return baseStyle.Padding(0, 1).Render(s.session.Title)
+	return baseStyle.Padding(0, 1).Render(s.Title)
 }
 
 type sessionDialog struct {
@@ -60,15 +58,14 @@ func (s *sessionDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.width = msg.Width
 		s.height = msg.Height
 		s.list.SetMaxWidth(layout.Current.Container.Width - 12)
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "enter":
 			if item, idx := s.list.GetSelectedItem(); idx >= 0 {
-				selectedSession := item.session
-				s.selectedSessionID = selectedSession.Id
+				s.selectedSessionID = item.Id
 				return s, tea.Sequence(
 					util.CmdHandler(modal.CloseModalMsg{}),
-					util.CmdHandler(app.SessionSelectedMsg(&selectedSession)),
+					util.CmdHandler(app.SessionSelectedMsg(&item)),
 				)
 			}
 		}
@@ -94,7 +91,10 @@ func NewSessionDialog(app *app.App) SessionDialog {
 
 	var sessionItems []sessionItem
 	for _, sess := range sessions {
-		sessionItems = append(sessionItems, sessionItem{session: sess})
+		if sess.ParentID != nil {
+			continue
+		}
+		sessionItems = append(sessionItems, sessionItem(sess))
 	}
 
 	list := list.NewListComponent(
