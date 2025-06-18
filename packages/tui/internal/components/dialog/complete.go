@@ -146,7 +146,6 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.list.SetItems(msg)
 	case tea.KeyMsg:
 		if c.pseudoSearchTextArea.Focused() {
-			slog.Info("CompletionDialog", "key", msg.String(), "focused", true)
 			if !key.Matches(msg, completionDialogKeys.Complete) {
 				var cmd tea.Cmd
 				c.pseudoSearchTextArea, cmd = c.pseudoSearchTextArea.Update(msg)
@@ -162,7 +161,6 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					c.query = query
 					cmd = func() tea.Msg {
 						items, err := c.completionProvider.GetChildEntries(query)
-						slog.Info("CompletionDialog", "query", query, "items", len(items))
 						if err != nil {
 							slog.Error("Failed to get completion items", "error", err)
 						}
@@ -192,7 +190,6 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return c, tea.Batch(cmds...)
 		} else {
-			slog.Info("CompletionDialog", "key", msg.String(), "focused", false)
 			cmd := func() tea.Msg {
 				items, err := c.completionProvider.GetChildEntries("")
 				if err != nil {
