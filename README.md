@@ -83,6 +83,9 @@ Start with a `provider.toml` file in `~/.config/opencode/providers`
 name = "OpenRouter"
 env = ["OPENROUTER_API_KEY"]
 npm = "@openrouter/ai-sdk-provider"
+
+[options]
+baseURL = "https://api.openrouter.ai" # optional settings
 ```
 
 And models in `~/.config/opencode/providers/openrouter/models/[model-id]`

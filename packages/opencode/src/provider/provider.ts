@@ -203,9 +203,7 @@ export namespace Provider {
     }
 
     // load config
-    for (const [providerID, provider] of Object.entries(
-      config.provider ?? {},
-    )) {
+    for (const [providerID, provider] of configProviders) {
       mergeProvider(providerID, provider.options ?? {}, "config")
     }
 
