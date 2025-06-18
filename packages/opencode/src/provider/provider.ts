@@ -43,9 +43,7 @@ export namespace Provider {
       for (const model of Object.values(provider.models)) {
         model.cost = {
           input: 0,
-          inputCached: 0,
           output: 0,
-          outputCached: 0,
         }
       }
       return {
@@ -234,7 +232,7 @@ export namespace Provider {
       const s = await state()
       const existing = s.sdk.get(provider.id)
       if (existing) return existing
-      const [pkg, version] = await ModelsDev.pkg(provider.npm ?? provider.id)
+      const [pkg, version] = provider.npm ?? provider.id
       const mod = await import(await BunProc.install(pkg, version))
       const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!]
       const loaded = fn(s.providers[provider.id]?.options)

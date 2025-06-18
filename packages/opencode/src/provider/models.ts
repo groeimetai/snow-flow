@@ -64,30 +64,4 @@ export namespace ModelsDev {
       throw new Error(`Failed to fetch models.dev: ${result.statusText}`)
     await Bun.write(file, result)
   }
-
-  const aisdk = lazy(async () => {
-    log.info("fetching ai-sdk")
-    const response = await fetch(
-      "https://registry.npmjs.org/-/v1/search?text=scope:@ai-sdk",
-    )
-    if (!response.ok)
-      throw new Error(
-        `Failed to fetch ai-sdk information: ${response.statusText}`,
-      )
-    const result = await response.json()
-    log.info("found ai-sdk", result.objects.length)
-    return result.objects
-      .filter((obj: any) => obj.package.name.startsWith("@ai-sdk/"))
-      .reduce((acc: any, obj: any) => {
-        acc[obj.package.name] = obj
-        return acc
-      }, {})
-  })
-
-  export async function pkg(providerID: string): Promise<[string, string]> {
-    const packages = await aisdk()
-    const match = packages[`@ai-sdk/${providerID}`]
-    if (match) return [match.package.name, "latest"]
-    return [providerID, "latest"]
-  }
 }
