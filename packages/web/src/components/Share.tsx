@@ -36,7 +36,8 @@ import DiffView from "./DiffView"
 import CodeBlock from "./CodeBlock"
 import MarkdownView from "./MarkdownView"
 import styles from "./share.module.css"
-import { type UIMessage } from "ai"
+import { type Message } from "opencode/session/message"
+import { type Session } from "opencode/session"
 
 const MIN_DURATION = 2
 
@@ -47,38 +48,7 @@ type Status =
   | "error"
   | "reconnecting"
 
-type SessionMessage = UIMessage<{
-  time: {
-    created: number
-    completed?: number
-  }
-  assistant?: {
-    modelID: string
-    providerID: string
-    cost: number
-    tokens: {
-      input: number
-      output: number
-      reasoning: number
-    }
-  }
-  sessionID: string
-  tool: Record<
-    string,
-    {
-      [key: string]: any
-      time: {
-        start: number
-        end: number
-      }
-    }
-  >
-}>
 
-type SessionInfo = {
-  title: string
-  cost?: number
-}
 
 type TodoStatus = "pending" | "in_progress" | "completed"
 
@@ -531,8 +501,8 @@ function ToolFooter(props: { time: number }) {
 export default function Share(props: {
   id: string
   api: string
-  info: SessionInfo
-  messages: Record<string, SessionMessage>
+  info: Session.Info
+  messages: Record<string, Message.Info>
 }) {
   let hasScrolled = false
 
@@ -547,8 +517,8 @@ export default function Share(props: {
   })
 
   const [store, setStore] = createStore<{
-    info?: SessionInfo
-    messages: Record<string, SessionMessage>
+    info?: Session.Info
+    messages: Record<string, Message.Info>
   }>({ info: props.info, messages: props.messages })
   const messages = createMemo(() =>
     Object.values(store.messages).toSorted((a, b) => a.id?.localeCompare(b.id)),
@@ -659,7 +629,7 @@ export default function Share(props: {
     const result = {
       created: undefined as number | undefined,
       system: [] as string[],
-      messages: [] as SessionMessage[],
+      messages: [] as Message.Info[],
       models: {} as Record<string, string[]>,
       cost: 0,
       tokens: {
@@ -701,7 +671,6 @@ export default function Share(props: {
     }
     return result
   })
-  const [showingSystemPrompt, showSystemPrompt] = createSignal(false)
 
   return (
     <main class={`${styles.root} not-content`}>

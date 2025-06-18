@@ -79,6 +79,7 @@
       },
       "devDependencies": {
         "@types/node": "catalog:",
+        "opencode": "workspace:*",
         "typescript": "catalog:",
       },
     },
