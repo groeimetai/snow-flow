@@ -67,7 +67,7 @@
       letter-spacing: -0.05em;
       display: -webkit-box;
       -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
       overflow: hidden;
 
       @media (max-width: 30rem) {
