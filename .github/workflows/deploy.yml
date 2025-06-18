@@ -3,7 +3,7 @@ name: deploy
 on:
   push:
     branches:
-      - dontlook
+      - dev
   workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
