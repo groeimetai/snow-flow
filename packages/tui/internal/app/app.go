@@ -42,6 +42,9 @@ type SendMsg struct {
 	Text        string
 	Attachments []Attachment
 }
+type CompletionDialogTriggerdMsg struct {
+	InitialValue string
+}
 
 func New(
 	ctx context.Context,

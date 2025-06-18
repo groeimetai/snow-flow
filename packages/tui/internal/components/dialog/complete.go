@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/v2/textarea"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -111,39 +112,13 @@ func (c *completionDialogComponent) Init() tea.Cmd {
 	return nil
 }
 
-func (c *completionDialogComponent) complete(item CompletionItemI) tea.Cmd {
-	value := c.pseudoSearchTextArea.Value()
-
-	if value == "" {
-		return nil
-	}
-
-	// Check if this is a command completion
-	isCommand := c.completionProvider.GetId() == "commands"
-
-	return tea.Batch(
-		util.CmdHandler(CompletionSelectedMsg{
-			SearchString:    value,
-			CompletionValue: item.GetValue(),
-			IsCommand:       isCommand,
-		}),
-		c.close(),
-	)
-}
-
-func (c *completionDialogComponent) close() tea.Cmd {
-	c.list.SetItems([]CompletionItemI{})
-	c.pseudoSearchTextArea.Reset()
-	c.pseudoSearchTextArea.Blur()
-
-	return util.CmdHandler(CompletionDialogCloseMsg{})
-}
-
 func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case []CompletionItemI:
 		c.list.SetItems(msg)
+	case app.CompletionDialogTriggerdMsg:
+		c.pseudoSearchTextArea.SetValue(msg.InitialValue)
 	case tea.KeyMsg:
 		if c.pseudoSearchTextArea.Focused() {
 			if !key.Matches(msg, completionDialogKeys.Complete) {
@@ -194,13 +169,12 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				items, err := c.completionProvider.GetChildEntries("")
 				if err != nil {
 					slog.Error("Failed to get completion items", "error", err)
-					// status.Error(err.Error())
 				}
 				return items
 			}
 			cmds = append(cmds, cmd)
 			cmds = append(cmds, c.pseudoSearchTextArea.Focus())
-			c.pseudoSearchTextArea.SetValue(msg.String())
+			// c.pseudoSearchTextArea.SetValue(msg.String())
 			return c, tea.Batch(cmds...)
 		}
 	case tea.WindowSizeMsg:
@@ -255,6 +229,34 @@ func (c *completionDialogComponent) SetProvider(provider CompletionProvider) {
 	}
 }
 
+func (c *completionDialogComponent) complete(item CompletionItemI) tea.Cmd {
+	value := c.pseudoSearchTextArea.Value()
+
+	if value == "" {
+		return nil
+	}
+
+	// Check if this is a command completion
+	isCommand := c.completionProvider.GetId() == "commands"
+
+	return tea.Batch(
+		util.CmdHandler(CompletionSelectedMsg{
+			SearchString:    value,
+			CompletionValue: item.GetValue(),
+			IsCommand:       isCommand,
+		}),
+		c.close(),
+	)
+}
+
+func (c *completionDialogComponent) close() tea.Cmd {
+	c.list.SetItems([]CompletionItemI{})
+	c.pseudoSearchTextArea.Reset()
+	c.pseudoSearchTextArea.Blur()
+
+	return util.CmdHandler(CompletionDialogCloseMsg{})
+}
+
 func NewCompletionDialogComponent(completionProvider CompletionProvider) CompletionDialog {
 	ti := textarea.New()
 
@@ -268,7 +270,7 @@ func NewCompletionDialogComponent(completionProvider CompletionProvider) Complet
 	go func() {
 		items, err := completionProvider.GetChildEntries("")
 		if err != nil {
-			// status.Error(err.Error())
+			slog.Error("Failed to get completion items", "error", err)
 		}
 		li.SetItems(items)
 	}()

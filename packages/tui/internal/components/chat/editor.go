@@ -80,7 +80,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			existingValue := m.textarea.Value()
 			modifiedValue := strings.Replace(existingValue, msg.SearchString, msg.CompletionValue, 1)
-			m.textarea.SetValue(modifiedValue)
+			m.textarea.SetValue(modifiedValue + " ")
 			return m, nil
 		}
 	}
@@ -152,11 +152,11 @@ func (m *editorComponent) SetSize(width, height int) tea.Cmd {
 }
 
 func (m *editorComponent) Value() string {
-	return strings.TrimSpace(m.textarea.Value())
+	return m.textarea.Value()
 }
 
 func (m *editorComponent) Submit() (tea.Model, tea.Cmd) {
-	value := m.Value()
+	value := strings.TrimSpace(m.Value())
 	m.textarea.Reset()
 	if value == "" {
 		return m, nil

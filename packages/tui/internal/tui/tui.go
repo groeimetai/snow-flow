@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
@@ -90,10 +91,49 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// 3. Handle completions trigger
 		switch msg.String() {
 		case "/":
-			a.showCompletionDialog = true
+			if !a.showCompletionDialog {
+				a.showCompletionDialog = true
+
+				initialValue := "/"
+				currentInput := a.editor.Value()
+				// if the input doesn't end with a space,
+				// then we want to include the last word
+				if !strings.HasSuffix(currentInput, " ") {
+					words := strings.Split(a.editor.Value(), " ")
+					if len(words) > 0 {
+						lastWord := words[len(words)-1]
+						lastWord = strings.TrimSpace(lastWord)
+						initialValue = lastWord + "/"
+					}
+				}
+				updated, cmd := a.completions.Update(
+					app.CompletionDialogTriggerdMsg{
+						InitialValue: initialValue,
+					},
+				)
+				a.completions = updated.(dialog.CompletionDialog)
+				cmds = append(cmds, cmd)
+
+				updated, cmd = a.completions.Update(msg)
+				a.completions = updated.(dialog.CompletionDialog)
+				cmds = append(cmds, cmd)
+
+				updated, cmd = a.editor.Update(msg)
+				a.editor = updated.(chat.EditorComponent)
+				cmds = append(cmds, cmd)
+				return a, tea.Sequence(cmds...)
+			}
 		}
 
 		if a.showCompletionDialog {
+			switch msg.String() {
+			case "tab", "enter", "esc":
+				context, contextCmd := a.completions.Update(msg)
+				a.completions = context.(dialog.CompletionDialog)
+				cmds = append(cmds, contextCmd)
+				return a, tea.Batch(cmds...)
+			}
+
 			updated, cmd := a.editor.Update(msg)
 			a.editor = updated.(chat.EditorComponent)
 			cmds = append(cmds, cmd)
@@ -106,11 +146,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.completions = context.(dialog.CompletionDialog)
 			cmds = append(cmds, contextCmd)
 			return a, tea.Batch(cmds...)
-
-			// Doesn't forward event if enter key is pressed
-			// if msg.String() == "enter" {
-			// 	return a, tea.Batch(cmds...)
-			// }
 		}
 
 		// 4. Maximize editor responsiveness for printable characters
