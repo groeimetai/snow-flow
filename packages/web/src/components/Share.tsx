@@ -505,6 +505,7 @@ export default function Share(props: {
   info: Session.Info
   messages: Record<string, Message.Info>
 }) {
+  console.log(props.info)
   let hasScrolled = false
 
   const id = props.id
@@ -630,6 +631,7 @@ export default function Share(props: {
     const result = {
       rootDir: undefined as string | undefined,
       created: undefined as number | undefined,
+      updated: undefined as number | undefined,
       messages: [] as Message.Info[],
       models: {} as Record<string, string[]>,
       cost: 0,
@@ -639,6 +641,10 @@ export default function Share(props: {
         reasoning: 0,
       },
     }
+
+    result.created = props.info.time.created
+    result.updated = props.info.time.updated
+
     for (let i = 0; i < messages().length; i++) {
       const msg = messages()[i]
 
@@ -772,6 +778,23 @@ export default function Share(props: {
               </li>
             )}
           </ul>
+          <div data-section="time">
+            {data().created ? (
+              <span
+                title={DateTime.fromMillis(
+                  data().created || 0,
+                ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}
+              >
+                {DateTime.fromMillis(data().created || 0).toLocaleString(
+                  DateTime.DATE_MED,
+                )}
+              </span>
+            ) : (
+              <span data-element-label data-placeholder>
+                Started at &mdash;
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
