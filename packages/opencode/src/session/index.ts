@@ -42,7 +42,6 @@ export namespace Session {
       parentID: Identifier.schema("session").optional(),
       share: z
         .object({
-          secret: z.string(),
           url: z.string(),
         })
         .optional(),
@@ -57,6 +56,12 @@ export namespace Session {
       ref: "session.info",
     })
   export type Info = z.output<typeof Info>
+
+  export const ShareInfo = z.object({
+    secret: z.string(),
+    url: z.string(),
+  })
+  export type ShareInfo = z.output<typeof ShareInfo>
 
   export const Event = {
     Updated: Bus.event(
@@ -132,13 +137,20 @@ export namespace Session {
     return read as Info
   }
 
+  export async function getShare(id: string) {
+    return Storage.readJSON<ShareInfo>("session/share/" + id)
+  }
+
   export async function share(id: string) {
     const session = await get(id)
     if (session.share) return session.share
     const share = await Share.create(id)
     await update(id, (draft) => {
-      draft.share = share
+      draft.share = {
+        url: share.url,
+      }
     })
+    await Storage.writeJSON<ShareInfo>("session/share/" + id, share)
     for (const msg of await messages(id)) {
       await Share.sync("session/message/" + id + "/" + msg.id, msg)
     }

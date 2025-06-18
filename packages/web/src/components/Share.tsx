@@ -37,7 +37,7 @@ import CodeBlock from "./CodeBlock"
 import MarkdownView from "./MarkdownView"
 import styles from "./share.module.css"
 import { type Message } from "opencode/session/message"
-import { type Session } from "opencode/session"
+import { type Session } from "opencode/session/index"
 
 const MIN_DURATION = 2
 

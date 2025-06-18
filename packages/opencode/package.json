@@ -9,10 +9,7 @@
     "dev": "bun run ./src/index.ts"
   },
   "exports": {
-    "./*": [
-      "./src/*.ts",
-      "./src/*/index.ts"
-    ]
+    "./*": "./src/*.ts"
   },
   "devDependencies": {
     "@tsconfig/bun": "1.0.7",

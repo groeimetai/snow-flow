@@ -19,10 +19,11 @@ export namespace Share {
   export async function sync(key: string, content: any) {
     const [root, ...splits] = key.split("/")
     if (root !== "session") return
-    const [, sessionID] = splits
-    const session = await Session.get(sessionID)
-    if (!session.share) return
-    const { secret } = session.share
+    const [sub, sessionID] = splits
+    if (sub === "share") return
+    const share = await Session.getShare(sessionID).catch(() => {})
+    if (!share) return
+    const { secret } = share
     pending.set(key, content)
     queue = queue
       .then(async () => {
