@@ -17,8 +17,8 @@ export namespace ModelsDev {
       cost: z.object({
         input: z.number(),
         output: z.number(),
-        inputCached: z.number(),
-        outputCached: z.number(),
+        cache_read: z.number().optional(),
+        cache_write: z.number().optional(),
       }),
       limit: z.object({
         context: z.number(),

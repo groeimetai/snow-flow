@@ -759,6 +759,16 @@ export namespace Session {
       cost: new Decimal(0)
         .add(new Decimal(tokens.input).mul(model.cost.input).div(1_000_000))
         .add(new Decimal(tokens.output).mul(model.cost.output).div(1_000_000))
+        .add(
+          new Decimal(tokens.cache.read)
+            .mul(model.cost.cache_read ?? 0)
+            .div(1_000_000),
+        )
+        .add(
+          new Decimal(tokens.cache.write)
+            .mul(model.cost.cache_write ?? 0)
+            .div(1_000_000),
+        )
         .toNumber(),
       tokens,
     }
