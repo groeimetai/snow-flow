@@ -73,15 +73,25 @@ export namespace Session {
     ),
   }
 
-  const state = App.state("session", () => {
-    const sessions = new Map<string, Info>()
-    const messages = new Map<string, Message.Info[]>()
+  const state = App.state(
+    "session",
+    () => {
+      const sessions = new Map<string, Info>()
+      const messages = new Map<string, Message.Info[]>()
+      const pending = new Map<string, AbortController>()
 
-    return {
-      sessions,
-      messages,
-    }
-  })
+      return {
+        sessions,
+        messages,
+        pending,
+      }
+    },
+    async (state) => {
+      for (const [_, controller] of state.pending) {
+        controller.abort()
+      }
+    },
+  )
 
   export async function create(parentID?: string) {
     const result: Info = {
@@ -174,10 +184,10 @@ export namespace Session {
   }
 
   export function abort(sessionID: string) {
-    const controller = pending.get(sessionID)
+    const controller = state().pending.get(sessionID)
     if (!controller) return false
     controller.abort()
-    pending.delete(sessionID)
+    state().pending.delete(sessionID)
     return true
   }
 
@@ -737,17 +747,16 @@ export namespace Session {
     await updateMessage(next)
   }
 
-  const pending = new Map<string, AbortController>()
   function lock(sessionID: string) {
     log.info("locking", { sessionID })
-    if (pending.has(sessionID)) throw new BusyError(sessionID)
+    if (state().pending.has(sessionID)) throw new BusyError(sessionID)
     const controller = new AbortController()
-    pending.set(sessionID, controller)
+    state().pending.set(sessionID, controller)
     return {
       signal: controller.signal,
       [Symbol.dispose]() {
         log.info("unlocking", { sessionID })
-        pending.delete(sessionID)
+        state().pending.delete(sessionID)
       },
     }
   }

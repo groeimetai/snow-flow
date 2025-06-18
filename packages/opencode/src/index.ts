@@ -101,7 +101,7 @@ const cli = yargs(hideBin(process.argv))
           })()
 
           await proc.exited
-          await server.stop()
+          server.stop()
 
           return "done"
         })
