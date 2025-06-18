@@ -11,9 +11,7 @@ type Container interface {
 	tea.ViewModel
 	Sizeable
 	Focusable
-	MaxWidth() int
-	Alignment() lipgloss.Position
-	GetPosition() (x, y int)
+	Alignable
 }
 
 type container struct {
@@ -183,6 +181,11 @@ func (c *container) IsFocused() bool {
 // GetPosition returns the x, y coordinates of the container
 func (c *container) GetPosition() (x, y int) {
 	return c.x, c.y
+}
+
+func (c *container) SetPosition(x, y int) {
+	c.x = x
+	c.y = y
 }
 
 type ContainerOption func(*container)

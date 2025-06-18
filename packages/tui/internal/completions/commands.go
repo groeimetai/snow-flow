@@ -38,8 +38,8 @@ func (c *CommandCompletionProvider) GetEmptyMessage() string {
 func getCommandCompletionItem(cmd commands.Command, space int) dialog.CompletionItemI {
 	t := theme.CurrentTheme()
 	spacer := strings.Repeat(" ", space)
-	title := "  /" + cmd.Name + lipgloss.NewStyle().Foreground(t.TextMuted()).Render(spacer+cmd.Description)
-	value := "/" + cmd.Name
+	title := "  /" + cmd.Trigger + lipgloss.NewStyle().Foreground(t.TextMuted()).Render(spacer+cmd.Description)
+	value := string(cmd.Name)
 	return dialog.NewCompletionItem(dialog.CompletionItem{
 		Title: title,
 		Value: value,
@@ -49,8 +49,8 @@ func getCommandCompletionItem(cmd commands.Command, space int) dialog.Completion
 func (c *CommandCompletionProvider) GetChildEntries(query string) ([]dialog.CompletionItemI, error) {
 	space := 1
 	for _, cmd := range c.app.Commands {
-		if lipgloss.Width(cmd.Name) > space {
-			space = lipgloss.Width(cmd.Name)
+		if lipgloss.Width(cmd.Trigger) > space {
+			space = lipgloss.Width(cmd.Trigger)
 		}
 	}
 	space += 2
@@ -59,7 +59,10 @@ func (c *CommandCompletionProvider) GetChildEntries(query string) ([]dialog.Comp
 		// If no query, return all commands
 		items := []dialog.CompletionItemI{}
 		for _, cmd := range c.app.Commands {
-			space := space - lipgloss.Width(cmd.Name)
+			if cmd.Trigger == "" {
+				continue
+			}
+			space := space - lipgloss.Width(cmd.Trigger)
 			items = append(items, getCommandCompletionItem(cmd, space))
 		}
 		return items, nil
@@ -70,9 +73,12 @@ func (c *CommandCompletionProvider) GetChildEntries(query string) ([]dialog.Comp
 	commandMap := make(map[string]dialog.CompletionItemI)
 
 	for _, cmd := range c.app.Commands {
-		space := space - lipgloss.Width(cmd.Name)
-		commandNames = append(commandNames, cmd.Name)
-		commandMap[cmd.Name] = getCommandCompletionItem(cmd, space)
+		if cmd.Trigger == "" {
+			continue
+		}
+		space := space - lipgloss.Width(cmd.Trigger)
+		commandNames = append(commandNames, cmd.Trigger)
+		commandMap[cmd.Trigger] = getCommandCompletionItem(cmd, space)
 	}
 
 	// Find fuzzy matches
@@ -88,6 +94,5 @@ func (c *CommandCompletionProvider) GetChildEntries(query string) ([]dialog.Comp
 			items = append(items, item)
 		}
 	}
-
 	return items, nil
 }

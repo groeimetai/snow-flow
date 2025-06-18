@@ -3,10 +3,10 @@ package tui
 import (
 	"context"
 	"log/slog"
+	"os"
+	"os/exec"
 
-	"github.com/charmbracelet/bubbles/v2/cursor"
 	"github.com/charmbracelet/bubbles/v2/key"
-	"github.com/charmbracelet/bubbles/v2/spinner"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 
@@ -19,57 +19,34 @@ import (
 	"github.com/sst/opencode/internal/components/status"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
-	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
 	"github.com/sst/opencode/pkg/client"
 )
 
 type appModel struct {
 	width, height        int
-	status               status.StatusComponent
 	app                  *app.App
 	modal                layout.Modal
-	editorContainer      layout.Container
+	status               status.StatusComponent
 	editor               chat.EditorComponent
-	messagesContainer    layout.Container
+	messages             chat.MessagesComponent
+	editorContainer      layout.Container
 	layout               layout.FlexLayout
-	completionDialog     dialog.CompletionDialog
+	completions          dialog.CompletionDialog
 	completionManager    *completions.CompletionManager
 	showCompletionDialog bool
-}
-
-type ChatKeyMap struct {
-	Cancel               key.Binding
-	ToggleTools          key.Binding
-	ShowCompletionDialog key.Binding
-}
-
-var keyMap = ChatKeyMap{
-	Cancel: key.NewBinding(
-		key.WithKeys("esc"),
-		key.WithHelp("esc", "cancel"),
-	),
-	ToggleTools: key.NewBinding(
-		key.WithKeys("ctrl+h"),
-		key.WithHelp("ctrl+h", "toggle tools"),
-	),
-	ShowCompletionDialog: key.NewBinding(
-		key.WithKeys("/"),
-		key.WithHelp("/", "Complete"),
-	),
+	leaderBinding        *key.Binding
+	isLeaderSequence     bool
 }
 
 func (a appModel) Init() tea.Cmd {
-	t := theme.CurrentTheme()
 	var cmds []tea.Cmd
-	cmds = append(cmds, a.app.InitializeProvider())
-
-	cmds = append(cmds, tea.SetBackgroundColor(t.Background()))
 	cmds = append(cmds, tea.RequestBackgroundColor)
-
-	cmds = append(cmds, a.layout.Init())
-	cmds = append(cmds, a.completionDialog.Init())
+	cmds = append(cmds, a.app.InitializeProvider())
+	cmds = append(cmds, a.editor.Init())
+	cmds = append(cmds, a.messages.Init())
 	cmds = append(cmds, a.status.Init())
+	cmds = append(cmds, a.completions.Init())
 
 	// Check if we should show the init dialog
 	cmds = append(cmds, func() tea.Msg {
@@ -82,115 +59,124 @@ func (a appModel) Init() tea.Cmd {
 
 func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	var cmd tea.Cmd
 
-	if a.modal != nil {
-		bypassModal := false
-
-		if _, ok := msg.(modal.CloseModalMsg); ok {
-			a.modal = nil
-			return a, nil
-		}
-
-		if msg, ok := msg.(tea.KeyMsg); ok {
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		// 1. Handle active modal
+		if a.modal != nil {
 			switch msg.String() {
-			case "esc":
+			// Escape always closes current modal
+			case "esc", "ctrl+c":
 				a.modal = nil
 				return a, nil
-			case "ctrl+c":
-				return a, tea.Quit
 			}
 
-			// TODO: do we need this?
-			// don't send commands to the modal
-			for _, cmdDef := range a.app.Commands {
-				if key.Matches(msg, cmdDef.KeyBinding) {
-					bypassModal = true
-					break
-				}
-			}
-		}
-
-		// thanks i hate this
-		switch msg.(type) {
-		case tea.WindowSizeMsg:
-			bypassModal = true
-		case client.EventSessionUpdated:
-			bypassModal = true
-		case client.EventMessageUpdated:
-			bypassModal = true
-		case cursor.BlinkMsg:
-			bypassModal = true
-		case spinner.TickMsg:
-			bypassModal = true
-		}
-
-		if !bypassModal {
+			// Pass all other key presses to the modal
 			updatedModal, cmd := a.modal.Update(msg)
 			a.modal = updatedModal.(layout.Modal)
 			return a, cmd
 		}
-	}
 
-	switch msg := msg.(type) {
-	case chat.SendMsg:
-		a.showCompletionDialog = false
-		cmd := a.sendMessage(msg.Text, msg.Attachments)
-		if cmd != nil {
-			return a, cmd
-		}
-	case dialog.CompletionDialogCloseMsg:
-		a.showCompletionDialog = false
-	case commands.ExecuteCommandMsg:
-		switch msg.Name {
-		case "quit":
-			return a, tea.Quit
-		case "new":
-			a.app.Session = &client.SessionInfo{}
-			a.app.Messages = []client.MessageInfo{}
-			cmds = append(cmds, util.CmdHandler(app.SessionClearedMsg{}))
-		case "sessions":
-			sessionDialog := dialog.NewSessionDialog(a.app)
-			a.modal = sessionDialog
-		case "model":
-			modelDialog := dialog.NewModelDialog(a.app)
-			a.modal = modelDialog
-		case "theme":
-			themeDialog := dialog.NewThemeDialog()
-			a.modal = themeDialog
-		case "share":
-			a.app.Client.PostSessionShareWithResponse(context.Background(), client.PostSessionShareJSONRequestBody{
-				SessionID: a.app.Session.Id,
-			})
-		case "init":
-			return a, a.app.InitializeProject(context.Background())
-		// case "compact":
-		// 	return a, a.app.CompactSession(context.Background())
-		case "help":
-			var helpBindings []key.Binding
-			for _, cmd := range a.app.Commands {
-				// Create a new binding for help display
-				helpBindings = append(helpBindings, key.NewBinding(
-					key.WithKeys(cmd.KeyBinding.Keys()...),
-					key.WithHelp("/"+cmd.Name, cmd.Description),
-				))
+		// 2. Check for commands that require leader
+		if a.isLeaderSequence {
+			matches := a.app.Commands.Matches(msg, a.isLeaderSequence)
+			// Reset leader state
+			a.isLeaderSequence = false
+			if len(matches) > 0 {
+				return a, util.CmdHandler(commands.ExecuteCommandsMsg(matches))
 			}
-			helpDialog := dialog.NewHelpDialog(helpBindings...)
-			a.modal = helpDialog
 		}
-		slog.Info("Execute command", "cmds", cmds)
-		return a, tea.Batch(cmds...)
 
+		// 3. Handle completions trigger
+		switch msg.String() {
+		case "/":
+			a.showCompletionDialog = true
+		}
+
+		if a.showCompletionDialog {
+			updated, cmd := a.editor.Update(msg)
+			a.editor = updated.(chat.EditorComponent)
+			cmds = append(cmds, cmd)
+
+			currentInput := a.editor.Value()
+			provider := a.completionManager.GetProvider(currentInput)
+			a.completions.SetProvider(provider)
+
+			context, contextCmd := a.completions.Update(msg)
+			a.completions = context.(dialog.CompletionDialog)
+			cmds = append(cmds, contextCmd)
+			return a, tea.Batch(cmds...)
+
+			// Doesn't forward event if enter key is pressed
+			// if msg.String() == "enter" {
+			// 	return a, tea.Batch(cmds...)
+			// }
+		}
+
+		// 4. Maximize editor responsiveness for printable characters
+		if msg.Text != "" {
+			updated, cmd := a.editor.Update(msg)
+			a.editor = updated.(chat.EditorComponent)
+			cmds = append(cmds, cmd)
+			return a, tea.Batch(cmds...)
+		}
+
+		// 5. Check for leader key activation
+		if a.leaderBinding != nil &&
+			!a.isLeaderSequence &&
+			key.Matches(msg, *a.leaderBinding) {
+			a.isLeaderSequence = true
+			return a, nil
+		}
+
+		// 6. Check again for commands that don't require leader
+		matches := a.app.Commands.Matches(msg, a.isLeaderSequence)
+		if len(matches) > 0 {
+			return a, util.CmdHandler(commands.ExecuteCommandsMsg(matches))
+		}
+
+		// 7. Fallback to editor. This shouldn't happen?
+		// All printable characters were already sent, and
+		// any other keypress that didn't match a command
+		// is likely a noop.
+		updatedEditor, cmd := a.editor.Update(msg)
+		a.editor = updatedEditor.(chat.EditorComponent)
+		return a, cmd
+	case tea.MouseWheelMsg:
+		if a.modal != nil {
+			return a, nil
+		}
+		updated, cmd := a.messages.Update(msg)
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
 	case tea.BackgroundColorMsg:
 		styles.Terminal = &styles.TerminalInfo{
 			BackgroundIsDark: msg.IsDark(),
 		}
-
+		slog.Debug("Background color", "isDark", msg.IsDark())
+	case modal.CloseModalMsg:
+		a.modal = nil
+		return a, nil
+	case commands.ExecuteCommandMsg:
+		updated, cmd := a.executeCommand(commands.Command(msg))
+		return updated, cmd
+	case commands.ExecuteCommandsMsg:
+		for _, command := range msg {
+			updated, cmd := a.executeCommand(command)
+			if cmd != nil {
+				return updated, cmd
+			}
+		}
+	case app.SendMsg:
+		a.showCompletionDialog = false
+		cmd := a.app.SendChatMessage(context.Background(), msg.Text, msg.Attachments)
+		cmds = append(cmds, cmd)
+	case dialog.CompletionDialogCloseMsg:
+		a.showCompletionDialog = false
 	case client.EventSessionUpdated:
 		if msg.Properties.Info.Id == a.app.Session.Id {
 			a.app.Session = &msg.Properties.Info
 		}
-
 	case client.EventMessageUpdated:
 		if msg.Properties.Info.Metadata.SessionID == a.app.Session.Id {
 			exists := false
@@ -204,12 +190,9 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.app.Messages = append(a.app.Messages, msg.Properties.Info)
 			}
 		}
-
 	case tea.WindowSizeMsg:
 		msg.Height -= 2 // Make space for the status bar
 		a.width, a.height = msg.Width, msg.Height
-
-		// TODO: move away from global state
 		layout.Current = &layout.LayoutInfo{
 			Viewport: layout.Dimensions{
 				Width:  a.width,
@@ -219,115 +202,19 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Width: min(a.width, 80),
 			},
 		}
-
-		// Update status
-		s, cmd := a.status.Update(msg)
-		a.status = s.(status.StatusComponent)
-		if cmd != nil {
-			cmds = append(cmds, cmd)
-		}
-
-		// Update chat layout
-		cmd = a.layout.SetSize(msg.Width, msg.Height)
-		if cmd != nil {
-			cmds = append(cmds, cmd)
-		}
-
-		// Update modal if present
-		if a.modal != nil {
-			s, cmd := a.modal.Update(msg)
-			a.modal = s.(layout.Modal)
-			if cmd != nil {
-				cmds = append(cmds, cmd)
-			}
-		}
-
-		return a, tea.Batch(cmds...)
-
+		a.layout.SetSize(a.width, a.height)
 	case app.SessionSelectedMsg:
 		a.app.Session = msg
 		a.app.Messages, _ = a.app.ListMessages(context.Background(), msg.Id)
-
 	case app.ModelSelectedMsg:
 		a.app.Provider = &msg.Provider
 		a.app.Model = &msg.Model
 		a.app.Config.Provider = msg.Provider.Id
 		a.app.Config.Model = msg.Model.Id
-		a.app.SaveConfig()
-
+		a.app.SaveState()
 	case dialog.ThemeSelectedMsg:
 		a.app.Config.Theme = msg.ThemeName
-		a.app.SaveConfig()
-
-		// Update layout
-		u, cmd := a.layout.Update(msg)
-		a.layout = u.(layout.FlexLayout)
-		if cmd != nil {
-			cmds = append(cmds, cmd)
-		}
-
-		// Update status
-		s, cmd := a.status.Update(msg)
-		cmds = append(cmds, cmd)
-		a.status = s.(status.StatusComponent)
-
-		t := theme.CurrentTheme()
-		cmds = append(cmds, tea.SetBackgroundColor(t.Background()))
-		return a, tea.Batch(cmds...)
-
-	case tea.KeyMsg:
-		switch msg.String() {
-		// give the editor a chance to clear input
-		case "ctrl+c":
-			_, cmd := a.editorContainer.Update(msg)
-			if cmd != nil {
-				return a, cmd
-			}
-		}
-
-		// Handle chat-specific keys
-		switch {
-		case key.Matches(msg, keyMap.ShowCompletionDialog):
-			a.showCompletionDialog = true
-			// Continue sending keys to layout->chat
-		case key.Matches(msg, keyMap.Cancel):
-			if a.app.Session.Id != "" {
-				// Cancel the current session's generation process
-				// This allows users to interrupt long-running operations
-				a.app.Cancel(context.Background(), a.app.Session.Id)
-				return a, nil
-			}
-		case key.Matches(msg, keyMap.ToggleTools):
-			return a, util.CmdHandler(chat.ToggleToolMessagesMsg{})
-		}
-
-		// First, check for modal triggers from the command registry
-		if a.modal == nil {
-			for _, cmdDef := range a.app.Commands {
-				if key.Matches(msg, cmdDef.KeyBinding) {
-					// If a key matches, send an ExecuteCommandMsg to self.
-					// This unifies keybinding and slash command handling.
-					return a, util.CmdHandler(commands.ExecuteCommandMsg{Name: cmdDef.Name})
-				}
-			}
-		}
-	}
-
-	if a.showCompletionDialog {
-		currentInput := a.editor.Value()
-		provider := a.completionManager.GetProvider(currentInput)
-		a.completionDialog.SetProvider(provider)
-
-		context, contextCmd := a.completionDialog.Update(msg)
-		a.completionDialog = context.(dialog.CompletionDialog)
-		cmds = append(cmds, contextCmd)
-
-		// Doesn't forward event if enter key is pressed
-		if keyMsg, ok := msg.(tea.KeyMsg); ok {
-			if keyMsg.String() == "enter" {
-				return a, tea.Batch(cmds...)
-			}
-		}
+		a.app.SaveState()
 	}
 
 	// update status bar
@@ -335,18 +222,30 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 	a.status = s.(status.StatusComponent)
 
-	// update chat layout
-	u, cmd := a.layout.Update(msg)
-	a.layout = u.(layout.FlexLayout)
+	// update editor
+	u, cmd := a.editor.Update(msg)
+	a.editor = u.(chat.EditorComponent)
 	cmds = append(cmds, cmd)
-	return a, tea.Batch(cmds...)
-}
 
-func (a *appModel) sendMessage(text string, attachments []app.Attachment) tea.Cmd {
-	var cmds []tea.Cmd
-	cmd := a.app.SendChatMessage(context.Background(), text, attachments)
+	// update messages
+	u, cmd = a.messages.Update(msg)
+	a.messages = u.(chat.MessagesComponent)
 	cmds = append(cmds, cmd)
-	return tea.Batch(cmds...)
+
+	// update modal
+	if a.modal != nil {
+		u, cmd := a.modal.Update(msg)
+		a.modal = u.(layout.Modal)
+		cmds = append(cmds, cmd)
+	}
+
+	if a.showCompletionDialog {
+		u, cmd := a.completions.Update(msg)
+		a.completions = u.(dialog.CompletionDialog)
+		cmds = append(cmds, cmd)
+	}
+
+	return a, tea.Batch(cmds...)
 }
 
 func (a appModel) View() string {
@@ -356,8 +255,8 @@ func (a appModel) View() string {
 		editorWidth, _ := a.editorContainer.GetSize()
 		editorX, editorY := a.editorContainer.GetPosition()
 
-		a.completionDialog.SetWidth(editorWidth)
-		overlay := a.completionDialog.View()
+		a.completions.SetWidth(editorWidth)
+		overlay := a.completions.View()
 
 		layoutView = layout.PlaceOverlay(
 			editorX,
@@ -372,7 +271,6 @@ func (a appModel) View() string {
 		a.status.View(),
 	}
 	appView := lipgloss.JoinVertical(lipgloss.Top, components...)
-
 	if a.modal != nil {
 		appView = a.modal.Render(appView)
 	}
@@ -380,36 +278,219 @@ func (a appModel) View() string {
 	return appView
 }
 
+func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
+	cmds := []tea.Cmd{
+		util.CmdHandler(commands.CommandExecutedMsg(command)),
+	}
+	switch command.Name {
+	case commands.AppHelpCommand:
+		helpDialog := dialog.NewHelpDialog(a.app.Commands)
+		a.modal = helpDialog
+	case commands.EditorOpenCommand:
+		if a.app.IsBusy() {
+			// status.Warn("Agent is working, please wait...")
+			return a, nil
+		}
+		editor := os.Getenv("EDITOR")
+		if editor == "" {
+			// TODO: let the user know there's no EDITOR set
+			return a, nil
+		}
+
+		value := a.editor.Value()
+		updated, cmd := a.editor.Clear()
+		a.editor = updated.(chat.EditorComponent)
+		cmds = append(cmds, cmd)
+
+		tmpfile, err := os.CreateTemp("", "msg_*.md")
+		tmpfile.WriteString(value)
+		if err != nil {
+			slog.Error("Failed to create temp file", "error", err)
+			return a, nil
+		}
+		tmpfile.Close()
+		c := exec.Command(editor, tmpfile.Name()) //nolint:gosec
+		c.Stdin = os.Stdin
+		c.Stdout = os.Stdout
+		c.Stderr = os.Stderr
+		cmd = tea.ExecProcess(c, func(err error) tea.Msg {
+			if err != nil {
+				slog.Error("Failed to open editor", "error", err)
+				return nil
+			}
+			content, err := os.ReadFile(tmpfile.Name())
+			if err != nil {
+				slog.Error("Failed to read file", "error", err)
+				return nil
+			}
+			if len(content) == 0 {
+				slog.Warn("Message is empty")
+				return nil
+			}
+			os.Remove(tmpfile.Name())
+			// attachments := m.attachments
+			// m.attachments = nil
+			return app.SendMsg{
+				Text:        string(content),
+				Attachments: []app.Attachment{}, // attachments,
+			}
+		})
+		cmds = append(cmds, cmd)
+	case commands.SessionNewCommand:
+		if a.app.Session.Id == "" {
+			return a, nil
+		}
+		a.app.Session = &client.SessionInfo{}
+		a.app.Messages = []client.MessageInfo{}
+		cmds = append(cmds, util.CmdHandler(app.SessionClearedMsg{}))
+	case commands.SessionListCommand:
+		sessionDialog := dialog.NewSessionDialog(a.app)
+		a.modal = sessionDialog
+	case commands.SessionShareCommand:
+		if a.app.Session.Id == "" {
+			return a, nil
+		}
+		a.app.Client.PostSessionShareWithResponse(
+			context.Background(),
+			client.PostSessionShareJSONRequestBody{
+				SessionID: a.app.Session.Id,
+			},
+		)
+	case commands.SessionInterruptCommand:
+		if a.app.Session.Id == "" {
+			return a, nil
+		}
+		a.app.Cancel(context.Background(), a.app.Session.Id)
+		return a, nil
+	case commands.SessionCompactCommand:
+		if a.app.Session.Id == "" {
+			return a, nil
+		}
+		// TODO: block until compaction is complete
+		a.app.CompactSession(context.Background())
+	case commands.ToolDetailsCommand:
+		cmds = append(cmds, util.CmdHandler(chat.ToggleToolDetailsMsg{}))
+	case commands.ModelListCommand:
+		modelDialog := dialog.NewModelDialog(a.app)
+		a.modal = modelDialog
+	case commands.ThemeListCommand:
+		themeDialog := dialog.NewThemeDialog()
+		a.modal = themeDialog
+	case commands.ProjectInitCommand:
+		cmds = append(cmds, a.app.InitializeProject(context.Background()))
+	case commands.InputClearCommand:
+		if a.editor.Value() == "" {
+			return a, nil
+		}
+		updated, cmd := a.editor.Clear()
+		a.editor = updated.(chat.EditorComponent)
+		cmds = append(cmds, cmd)
+	case commands.InputPasteCommand:
+		updated, cmd := a.editor.Paste()
+		a.editor = updated.(chat.EditorComponent)
+		cmds = append(cmds, cmd)
+	case commands.InputSubmitCommand:
+		updated, cmd := a.editor.Submit()
+		a.editor = updated.(chat.EditorComponent)
+		cmds = append(cmds, cmd)
+	case commands.InputNewlineCommand:
+		updated, cmd := a.editor.Newline()
+		a.editor = updated.(chat.EditorComponent)
+		cmds = append(cmds, cmd)
+	case commands.HistoryPreviousCommand:
+		if a.showCompletionDialog {
+			return a, nil
+		}
+		updated, cmd := a.editor.Previous()
+		a.editor = updated.(chat.EditorComponent)
+		cmds = append(cmds, cmd)
+	case commands.HistoryNextCommand:
+		if a.showCompletionDialog {
+			return a, nil
+		}
+		updated, cmd := a.editor.Next()
+		a.editor = updated.(chat.EditorComponent)
+		cmds = append(cmds, cmd)
+	case commands.MessagesFirstCommand:
+		updated, cmd := a.messages.First()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
+	case commands.MessagesLastCommand:
+		updated, cmd := a.messages.Last()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
+	case commands.MessagesPageUpCommand:
+		if a.showCompletionDialog {
+			return a, nil
+		}
+		updated, cmd := a.messages.PageUp()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
+	case commands.MessagesPageDownCommand:
+		if a.showCompletionDialog {
+			return a, nil
+		}
+		updated, cmd := a.messages.PageDown()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
+	case commands.MessagesHalfPageUpCommand:
+		if a.showCompletionDialog {
+			return a, nil
+		}
+		updated, cmd := a.messages.HalfPageUp()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
+	case commands.MessagesHalfPageDownCommand:
+		if a.showCompletionDialog {
+			return a, nil
+		}
+		updated, cmd := a.messages.HalfPageDown()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
+	case commands.AppExitCommand:
+		return a, tea.Quit
+	}
+	return a, tea.Batch(cmds...)
+}
+
 func NewModel(app *app.App) tea.Model {
 	completionManager := completions.NewCompletionManager(app)
 	initialProvider := completionManager.GetProvider("")
-	completionDialog := dialog.NewCompletionDialogComponent(initialProvider)
 
-	messagesContainer := layout.NewContainer(
-		chat.NewMessagesComponent(app),
-	)
+	messages := chat.NewMessagesComponent(app)
 	editor := chat.NewEditorComponent(app)
+	completions := dialog.NewCompletionDialogComponent(initialProvider)
+
 	editorContainer := layout.NewContainer(
 		editor,
 		layout.WithMaxWidth(layout.Current.Container.Width),
 		layout.WithAlignCenter(),
 	)
+	messagesContainer := layout.NewContainer(messages)
+
+	var leaderBinding *key.Binding
+	if leader, ok := app.Config.Keybinds["leader"]; ok {
+		binding := key.NewBinding(key.WithKeys(leader))
+		leaderBinding = &binding
+	}
 
 	model := &appModel{
 		status:               status.NewStatusCmp(app),
 		app:                  app,
-		editorContainer:      editorContainer,
 		editor:               editor,
-		messagesContainer:    messagesContainer,
-		completionDialog:     completionDialog,
+		messages:             messages,
+		completions:          completions,
 		completionManager:    completionManager,
+		leaderBinding:        leaderBinding,
+		isLeaderSequence:     false,
 		showCompletionDialog: false,
+		editorContainer:      editorContainer,
 		layout: layout.NewFlexLayout(
-			layout.WithPanes(messagesContainer, editorContainer),
+			[]tea.ViewModel{messagesContainer, editorContainer},
 			layout.WithDirection(layout.FlexDirectionVertical),
-			layout.WithPaneSizes(
-				layout.FlexPaneSizeGrow,
-				layout.FlexPaneSizeFixed(6),
+			layout.WithSizes(
+				layout.FlexChildSizeGrow,
+				layout.FlexChildSizeFixed(6),
 			),
 		),
 	}

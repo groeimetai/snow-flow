@@ -71,7 +71,48 @@ theme = "opencode"
 provider = "anthropic"
 model = "claude-sonnet-4-20250514"
 autoupdate = true
+
+keybinds.leader = "ctrl+x"
+keybinds.session_new = "<leader>n"
+keybinds.editor_open = "<leader>e"
 ```
+
+#### Keybinds
+
+You can configure the keybinds in the global config file. (Note: values listed below are the defaults.)
+
+```toml
+# ~/.config/opencode/config
+keybinds.leader = "ctrl+x"
+keybinds.help = "<leader>h"
+keybinds.editor_open = "<leader>e"
+keybinds.session_new = "<leader>n"
+keybinds.session_list = "<leader>l"
+keybinds.session_share = "<leader>s"
+keybinds.session_interrupt = "esc"
+keybinds.session_compact = "<leader>c"
+keybinds.tool_details = "<leader>d"
+keybinds.model_list = "<leader>m"
+keybinds.theme_list = "<leader>t"
+keybinds.project_init = "<leader>i"
+keybinds.input_clear = "ctrl+c"
+keybinds.input_paste = "ctrl+v"
+keybinds.input_submit = "enter"
+keybinds.input_newline = "shift+enter"
+keybinds.history_previous = "up"
+keybinds.history_next = "down"
+keybinds.messages_page_up = "pgup"
+keybinds.messages_page_down = "pgdown"
+keybinds.messages_half_page_up = "ctrl+alt+u"
+keybinds.messages_half_page_down = "ctrl+alt+d"
+keybinds.messages_previous = "ctrl+alt+k"
+keybinds.messages_next = "ctrl+alt+j"
+keybinds.messages_first = "ctrl+g"
+keybinds.messages_last = "ctrl+alt+g"
+keybinds.app_exit = "ctrl+c,<leader>q"
+```
+
+#### Models.dev
 
 You can also extend the models.dev database with your own providers by mirroring the structure found [here](https://github.com/sst/models.dev/tree/dev/providers/anthropic)
 
@@ -171,8 +212,7 @@ To run.
 
 ```bash
 $ bun install
-$ cd packages/opencode
-$ bun run src/index.ts
+$ bun run packages/opencode/src/index.ts
 ```
 
 ### FAQ

@@ -250,7 +250,7 @@ func renderToolInvocation(
 	toolCall client.MessageToolInvocationToolCall,
 	result *string,
 	metadata client.MessageInfo_Metadata_Tool_AdditionalProperties,
-	showResult bool,
+	showDetails bool,
 	isLast bool,
 ) string {
 	ignoredTools := []string{"opencode_todoread"}
@@ -262,7 +262,7 @@ func renderToolInvocation(
 	innerWidth := outerWidth - 6
 	paddingTop := 0
 	paddingBottom := 0
-	if showResult {
+	if showDetails {
 		paddingTop = 1
 		if result == nil || *result == "" {
 			paddingBottom = 1
@@ -284,8 +284,21 @@ func renderToolInvocation(
 		BorderStyle(lipgloss.ThickBorder())
 
 	if toolCall.State == "partial-call" {
+		title := renderToolAction(toolCall.ToolName)
+		if !showDetails {
+			title = "∟ " + title
+			padding := calculatePadding()
+			style := lipgloss.NewStyle().Width(outerWidth - padding - 4).Background(t.BackgroundSubtle())
+			return renderContentBlock(style.Render(title),
+				WithAlign(lipgloss.Left),
+				WithBorderColor(t.Accent()),
+				WithPaddingTop(0),
+				WithPaddingBottom(1),
+			)
+		}
+
 		style = style.Foreground(t.TextMuted())
-		return style.Render(renderToolAction(toolCall.ToolName))
+		return style.Render(title)
 	}
 
 	toolArgs := ""
@@ -370,7 +383,7 @@ func renderToolInvocation(
 					BorderRight(true).
 					Render(formattedDiff)
 
-				if showResult {
+				if showDetails {
 					style = style.Width(lipgloss.Width(formattedDiff))
 					title += "\n"
 				}
@@ -443,7 +456,8 @@ func renderToolInvocation(
 		body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 	}
 
-	if !showResult {
+	if !showDetails {
+		title = "∟ " + title
 		padding := calculatePadding()
 		style := lipgloss.NewStyle().Width(outerWidth - padding - 4).Background(t.BackgroundSubtle())
 		paddingBottom := 0
@@ -471,10 +485,10 @@ func renderToolInvocation(
 		content,
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 	)
-	if showResult && body != "" && error == "" {
+	if showDetails && body != "" && error == "" {
 		content += "\n" + body
 	}
-	if showResult && error != "" {
+	if showDetails && error != "" {
 		content += "\n" + error
 	}
 	return content
@@ -561,6 +575,8 @@ func renderToolAction(name string) string {
 		return "Reading file..."
 	case "opencode_write":
 		return "Preparing write..."
+	case "opencode_todowrite", "opencode_todoread":
+		return "Planning..."
 	case "opencode_patch":
 		return "Preparing patch..."
 	case "opencode_batch":

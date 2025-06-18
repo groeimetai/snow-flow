@@ -31,6 +31,7 @@ type AppInfo struct {
 		Cwd    string `json:"cwd"`
 		Data   string `json:"data"`
 		Root   string `json:"root"`
+		State  string `json:"state"`
 	} `json:"path"`
 	Time struct {
 		Initialized *float32 `json:"initialized,omitempty"`
@@ -46,6 +47,14 @@ type Error struct {
 // Event defines model for Event.
 type Event struct {
 	union json.RawMessage
+}
+
+// EventInstallationUpdated defines model for Event.installation.updated.
+type EventInstallationUpdated struct {
+	Properties struct {
+		Version string `json:"version"`
+	} `json:"properties"`
+	Type string `json:"type"`
 }
 
 // EventLspClientDiagnostics defines model for Event.lsp.client.diagnostics.
@@ -109,6 +118,12 @@ type EventStorageWrite struct {
 		Key     string       `json:"key"`
 	} `json:"properties"`
 	Type string `json:"type"`
+}
+
+// InstallationInfo defines model for InstallationInfo.
+type InstallationInfo struct {
+	Latest  string `json:"latest"`
+	Version string `json:"version"`
 }
 
 // MessageInfo defines model for Message.Info.
@@ -269,6 +284,7 @@ type ProviderInfo struct {
 	Id     string               `json:"id"`
 	Models map[string]ModelInfo `json:"models"`
 	Name   string               `json:"name"`
+	Npm    *string              `json:"npm,omitempty"`
 }
 
 // ProviderAuthError defines model for ProviderAuthError.
@@ -652,6 +668,34 @@ func (t *Event) MergeEventSessionError(v EventSessionError) error {
 	return err
 }
 
+// AsEventInstallationUpdated returns the union data inside the Event as a EventInstallationUpdated
+func (t Event) AsEventInstallationUpdated() (EventInstallationUpdated, error) {
+	var body EventInstallationUpdated
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventInstallationUpdated overwrites any union data inside the Event as the provided EventInstallationUpdated
+func (t *Event) FromEventInstallationUpdated(v EventInstallationUpdated) error {
+	v.Type = "installation.updated"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventInstallationUpdated performs a merge with any union data inside the Event, using the provided EventInstallationUpdated
+func (t *Event) MergeEventInstallationUpdated(v EventInstallationUpdated) error {
+	v.Type = "installation.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 func (t Event) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"type"`
@@ -666,6 +710,8 @@ func (t Event) ValueByDiscriminator() (interface{}, error) {
 		return nil, err
 	}
 	switch discriminator {
+	case "installation.updated":
+		return t.AsEventInstallationUpdated()
 	case "lsp.client.diagnostics":
 		return t.AsEventLspClientDiagnostics()
 	case "message.part.updated":
@@ -1288,6 +1334,9 @@ type ClientInterface interface {
 
 	PostFileSearch(ctx context.Context, body PostFileSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostInstallationInfo request
+	PostInstallationInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostPathGet request
 	PostPathGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1381,6 +1430,18 @@ func (c *Client) PostFileSearchWithBody(ctx context.Context, contentType string,
 
 func (c *Client) PostFileSearch(ctx context.Context, body PostFileSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostFileSearchRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostInstallationInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostInstallationInfoRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -1700,6 +1761,33 @@ func NewPostFileSearchRequestWithBody(server string, contentType string, body io
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostInstallationInfoRequest generates requests for PostInstallationInfo
+func NewPostInstallationInfoRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/installation_info")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -2109,6 +2197,9 @@ type ClientWithResponsesInterface interface {
 
 	PostFileSearchWithResponse(ctx context.Context, body PostFileSearchJSONRequestBody, reqEditors ...RequestEditorFn) (*PostFileSearchResponse, error)
 
+	// PostInstallationInfoWithResponse request
+	PostInstallationInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostInstallationInfoResponse, error)
+
 	// PostPathGetWithResponse request
 	PostPathGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostPathGetResponse, error)
 
@@ -2234,6 +2325,28 @@ func (r PostFileSearchResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PostFileSearchResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostInstallationInfoResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *InstallationInfo
+}
+
+// Status returns HTTPResponse.Status
+func (r PostInstallationInfoResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostInstallationInfoResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2513,6 +2626,15 @@ func (c *ClientWithResponses) PostFileSearchWithResponse(ctx context.Context, bo
 	return ParsePostFileSearchResponse(rsp)
 }
 
+// PostInstallationInfoWithResponse request returning *PostInstallationInfoResponse
+func (c *ClientWithResponses) PostInstallationInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostInstallationInfoResponse, error) {
+	rsp, err := c.PostInstallationInfo(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostInstallationInfoResponse(rsp)
+}
+
 // PostPathGetWithResponse request returning *PostPathGetResponse
 func (c *ClientWithResponses) PostPathGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostPathGetResponse, error) {
 	rsp, err := c.PostPathGet(ctx, reqEditors...)
@@ -2745,6 +2867,32 @@ func ParsePostFileSearchResponse(rsp *http.Response) (*PostFileSearchResponse, e
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostInstallationInfoResponse parses an HTTP response from a PostInstallationInfoWithResponse call
+func ParsePostInstallationInfoResponse(rsp *http.Response) (*PostInstallationInfoResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostInstallationInfoResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest InstallationInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

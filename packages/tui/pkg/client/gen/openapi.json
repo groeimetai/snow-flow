@@ -478,6 +478,25 @@
           }
         }
       }
+    },
+    "/installation_info": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Get installation info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallationInfo"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postInstallation_info",
+        "parameters": [],
+        "description": "Get installation info"
+      }
     }
   },
   "components": {
@@ -504,6 +523,9 @@
           },
           {
             "$ref": "#/components/schemas/Event.session.error"
+          },
+          {
+            "$ref": "#/components/schemas/Event.installation.updated"
           }
         ],
         "discriminator": {
@@ -515,7 +537,8 @@
             "message.updated": "#/components/schemas/Event.message.updated",
             "message.part.updated": "#/components/schemas/Event.message.part.updated",
             "session.updated": "#/components/schemas/Event.session.updated",
-            "session.error": "#/components/schemas/Event.session.error"
+            "session.error": "#/components/schemas/Event.session.error",
+            "installation.updated": "#/components/schemas/Event.installation.updated"
           }
         }
       },
@@ -1269,6 +1292,30 @@
           "properties"
         ]
       },
+      "Event.installation.updated": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "installation.updated"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "properties"
+        ]
+      },
       "App.Info": {
         "type": "object",
         "properties": {
@@ -1292,13 +1339,17 @@
               },
               "cwd": {
                 "type": "string"
+              },
+              "state": {
+                "type": "string"
               }
             },
             "required": [
               "config",
               "data",
               "root",
-              "cwd"
+              "cwd",
+              "state"
             ]
           },
           "time": {
@@ -1342,6 +1393,9 @@
             }
           },
           "id": {
+            "type": "string"
+          },
+          "npm": {
             "type": "string"
           },
           "models": {
@@ -1423,6 +1477,21 @@
           "cost",
           "limit",
           "id"
+        ]
+      },
+      "InstallationInfo": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "latest": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "latest"
         ]
       }
     }

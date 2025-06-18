@@ -23,9 +23,27 @@ func main() {
 	}
 
 	url := os.Getenv("OPENCODE_SERVER")
+
 	appInfoStr := os.Getenv("OPENCODE_APP_INFO")
 	var appInfo client.AppInfo
 	json.Unmarshal([]byte(appInfoStr), &appInfo)
+
+	logfile := filepath.Join(appInfo.Path.Data, "log", "tui.log")
+	if _, err := os.Stat(filepath.Dir(logfile)); os.IsNotExist(err) {
+		err := os.MkdirAll(filepath.Dir(logfile), 0755)
+		if err != nil {
+			slog.Error("Failed to create log directory", "error", err)
+			os.Exit(1)
+		}
+	}
+	file, err := os.Create(logfile)
+	if err != nil {
+		slog.Error("Failed to create log file", "error", err)
+		os.Exit(1)
+	}
+	defer file.Close()
+	logger := slog.New(slog.NewTextHandler(file, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
 
 	httpClient, err := client.NewClientWithResponses(url)
 	if err != nil {
@@ -46,7 +64,7 @@ func main() {
 		tui.NewModel(app_),
 		tea.WithAltScreen(),
 		tea.WithKeyboardEnhancements(),
-		// tea.WithMouseCellMotion(),
+		tea.WithMouseCellMotion(),
 	)
 
 	eventClient, err := client.NewClient(url)
@@ -67,35 +85,10 @@ func main() {
 		}
 	}()
 
-	go func() {
-		paths, err := httpClient.PostPathGetWithResponse(context.Background())
-		if err != nil {
-			panic(err)
-		}
-		logfile := filepath.Join(paths.JSON200.Data, "log", "tui.log")
-
-		if _, err := os.Stat(filepath.Dir(logfile)); os.IsNotExist(err) {
-			err := os.MkdirAll(filepath.Dir(logfile), 0755)
-			if err != nil {
-				slog.Error("Failed to create log directory", "error", err)
-				os.Exit(1)
-			}
-		}
-		file, err := os.Create(logfile)
-		if err != nil {
-			slog.Error("Failed to create log file", "error", err)
-			os.Exit(1)
-		}
-		defer file.Close()
-		logger := slog.New(slog.NewTextHandler(file, &slog.HandlerOptions{Level: slog.LevelDebug}))
-		slog.SetDefault(logger)
-	}()
-
 	// Run the TUI
 	result, err := program.Run()
 	if err != nil {
 		slog.Error("TUI error", "error", err)
-		// return fmt.Errorf("TUI error: %v", err)
 	}
 
 	slog.Info("TUI exited", "result", result)

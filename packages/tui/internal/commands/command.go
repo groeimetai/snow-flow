@@ -1,91 +1,273 @@
 package commands
 
 import (
-	"github.com/charmbracelet/bubbles/v2/key"
+	"slices"
+	"strings"
+
+	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/sst/opencode/internal/config"
 )
 
-// Command represents a user-triggerable action.
+type ExecuteCommandMsg Command
+type ExecuteCommandsMsg []Command
+type CommandExecutedMsg Command
+
+type Keybinding struct {
+	RequiresLeader bool
+	Key            string
+}
+
+func (k Keybinding) Matches(msg tea.KeyPressMsg, leader bool) bool {
+	key := k.Key
+	key = strings.TrimSpace(key)
+	return key == msg.String() && (k.RequiresLeader == leader)
+}
+
+type CommandName string
 type Command struct {
-	// Name is the identifier used for slash commands (e.g., "new").
-	Name string
-	// Description is a short explanation of what the command does.
+	Name        CommandName
 	Description string
-	// KeyBinding is the keyboard shortcut to trigger this command.
-	KeyBinding key.Binding
+	Keybindings []Keybinding
+	Trigger     string
 }
 
-// Registry holds all the available commands.
-type Registry map[string]Command
-
-// ExecuteCommandMsg is a message sent when a command should be executed.
-type ExecuteCommandMsg struct {
-	Name string
+func (c Command) Keys() []string {
+	var keys []string
+	for _, k := range c.Keybindings {
+		keys = append(keys, k.Key)
+	}
+	return keys
 }
 
-func NewCommandRegistry() Registry {
-	return Registry{
-		"help": {
-			Name:        "help",
+type CommandRegistry map[CommandName]Command
+
+func (r CommandRegistry) Matches(msg tea.KeyPressMsg, leader bool) []Command {
+	var matched []Command
+	for _, command := range r {
+		if command.Matches(msg, leader) {
+			matched = append(matched, command)
+		}
+	}
+	slices.SortFunc(matched, func(a, b Command) int {
+		if a.Name == AppExitCommand {
+			return 1
+		}
+		if b.Name == AppExitCommand {
+			return -1
+		}
+		return strings.Compare(string(a.Name), string(b.Name))
+	})
+	return matched
+}
+
+const (
+	AppHelpCommand              CommandName = "app_help"
+	EditorOpenCommand           CommandName = "editor_open"
+	SessionNewCommand           CommandName = "session_new"
+	SessionListCommand          CommandName = "session_list"
+	SessionShareCommand         CommandName = "session_share"
+	SessionInterruptCommand     CommandName = "session_interrupt"
+	SessionCompactCommand       CommandName = "session_compact"
+	ToolDetailsCommand          CommandName = "tool_details"
+	ModelListCommand            CommandName = "model_list"
+	ThemeListCommand            CommandName = "theme_list"
+	ProjectInitCommand          CommandName = "project_init"
+	InputClearCommand           CommandName = "input_clear"
+	InputPasteCommand           CommandName = "input_paste"
+	InputSubmitCommand          CommandName = "input_submit"
+	InputNewlineCommand         CommandName = "input_newline"
+	HistoryPreviousCommand      CommandName = "history_previous"
+	HistoryNextCommand          CommandName = "history_next"
+	MessagesPageUpCommand       CommandName = "messages_page_up"
+	MessagesPageDownCommand     CommandName = "messages_page_down"
+	MessagesHalfPageUpCommand   CommandName = "messages_half_page_up"
+	MessagesHalfPageDownCommand CommandName = "messages_half_page_down"
+	MessagesPreviousCommand     CommandName = "messages_previous"
+	MessagesNextCommand         CommandName = "messages_next"
+	MessagesFirstCommand        CommandName = "messages_first"
+	MessagesLastCommand         CommandName = "messages_last"
+	AppExitCommand              CommandName = "app_exit"
+)
+
+func (k Command) Matches(msg tea.KeyPressMsg, leader bool) bool {
+	for _, binding := range k.Keybindings {
+		if binding.Matches(msg, leader) {
+			return true
+		}
+	}
+	return false
+}
+
+func (k Command) FromConfig(config *config.Config) Command {
+	if keybind, ok := config.Keybinds[string(k.Name)]; ok {
+		k.Keybindings = parseBindings(keybind)
+	}
+	return k
+}
+
+func parseBindings(bindings ...string) []Keybinding {
+	var parsedBindings []Keybinding
+	for _, binding := range bindings {
+		for p := range strings.SplitSeq(binding, ",") {
+			requireLeader := strings.HasPrefix(p, "<leader>")
+			keybinding := strings.ReplaceAll(p, "<leader>", "")
+			keybinding = strings.TrimSpace(keybinding)
+			parsedBindings = append(parsedBindings, Keybinding{
+				RequiresLeader: requireLeader,
+				Key:            keybinding,
+			})
+		}
+	}
+	return parsedBindings
+}
+
+func LoadFromConfig(config *config.Config) CommandRegistry {
+	defaults := []Command{
+		{
+			Name:        AppHelpCommand,
 			Description: "show help",
-			KeyBinding: key.NewBinding(
-				key.WithKeys("f1", "super+/", "super+h"),
-			),
+			Keybindings: parseBindings("<leader>h"),
+			Trigger:     "help",
 		},
-		"new": {
-			Name:        "new",
+		{
+			Name:        EditorOpenCommand,
+			Description: "open editor",
+			Keybindings: parseBindings("<leader>e"),
+			Trigger:     "editor",
+		},
+		{
+			Name:        SessionNewCommand,
 			Description: "new session",
-			KeyBinding: key.NewBinding(
-				key.WithKeys("f2", "super+n"),
-			),
+			Keybindings: parseBindings("<leader>n"),
+			Trigger:     "new",
 		},
-		"sessions": {
-			Name:        "sessions",
-			Description: "switch session",
-			KeyBinding: key.NewBinding(
-				key.WithKeys("f3", "super+s"),
-			),
+		{
+			Name:        SessionListCommand,
+			Description: "list sessions",
+			Keybindings: parseBindings("<leader>l"),
+			Trigger:     "sessions",
 		},
-		"model": {
-			Name:        "model",
-			Description: "switch model",
-			KeyBinding: key.NewBinding(
-				key.WithKeys("f4", "super+m"),
-			),
+		{
+			Name:        SessionShareCommand,
+			Description: "share session",
+			Keybindings: parseBindings("<leader>s"),
+			Trigger:     "share",
 		},
-		"theme": {
-			Name:        "theme",
-			Description: "switch theme",
-			KeyBinding: key.NewBinding(
-				key.WithKeys("f5", "super+t"),
-			),
+		{
+			Name:        SessionInterruptCommand,
+			Description: "interrupt session",
+			Keybindings: parseBindings("esc"),
 		},
-		"share": {
-			Name:        "share",
-			Description: "create shareable link",
-			KeyBinding: key.NewBinding(
-				key.WithKeys("f6"),
-			),
+		{
+			Name:        SessionCompactCommand,
+			Description: "compact the session",
+			Keybindings: parseBindings("<leader>c"),
+			Trigger:     "compact",
 		},
-		"init": {
-			Name:        "init",
+		{
+			Name:        ToolDetailsCommand,
+			Description: "toggle tool details",
+			Keybindings: parseBindings("<leader>d"),
+			Trigger:     "details",
+		},
+		{
+			Name:        ModelListCommand,
+			Description: "list models",
+			Keybindings: parseBindings("<leader>m"),
+			Trigger:     "models",
+		},
+		{
+			Name:        ThemeListCommand,
+			Description: "list themes",
+			Keybindings: parseBindings("<leader>t"),
+			Trigger:     "themes",
+		},
+		{
+			Name:        ProjectInitCommand,
 			Description: "create or update AGENTS.md",
-			KeyBinding: key.NewBinding(
-				key.WithKeys("f7"),
-			),
+			Keybindings: parseBindings("<leader>i"),
+			Trigger:     "init",
 		},
-		// "compact": {
-		// 	Name:        "compact",
-		// 	Description: "compact the session",
-		// 	KeyBinding: key.NewBinding(
-		// 		key.WithKeys("f8"),
-		// 	),
-		// },
-		"quit": {
-			Name:        "quit",
-			Description: "quit",
-			KeyBinding: key.NewBinding(
-				key.WithKeys("f10", "ctrl+c", "super+q"),
-			),
+		{
+			Name:        InputClearCommand,
+			Description: "clear input",
+			Keybindings: parseBindings("ctrl+c"),
+		},
+		{
+			Name:        InputPasteCommand,
+			Description: "paste content",
+			Keybindings: parseBindings("ctrl+v"),
+		},
+		{
+			Name:        InputSubmitCommand,
+			Description: "submit message",
+			Keybindings: parseBindings("enter"),
+		},
+		{
+			Name:        InputNewlineCommand,
+			Description: "insert newline",
+			Keybindings: parseBindings("shift+enter"),
+		},
+		{
+			Name:        HistoryPreviousCommand,
+			Description: "previous prompt",
+			Keybindings: parseBindings("up"),
+		},
+		{
+			Name:        HistoryNextCommand,
+			Description: "next prompt",
+			Keybindings: parseBindings("down"),
+		},
+		{
+			Name:        MessagesPageUpCommand,
+			Description: "page up",
+			Keybindings: parseBindings("pgup"),
+		},
+		{
+			Name:        MessagesPageDownCommand,
+			Description: "page down",
+			Keybindings: parseBindings("pgdown"),
+		},
+		{
+			Name:        MessagesHalfPageUpCommand,
+			Description: "half page up",
+			Keybindings: parseBindings("ctrl+alt+u"),
+		},
+		{
+			Name:        MessagesHalfPageDownCommand,
+			Description: "half page down",
+			Keybindings: parseBindings("ctrl+alt+d"),
+		},
+		{
+			Name:        MessagesPreviousCommand,
+			Description: "previous message",
+			Keybindings: parseBindings("ctrl+alt+k"),
+		},
+		{
+			Name:        MessagesNextCommand,
+			Description: "next message",
+			Keybindings: parseBindings("ctrl+alt+j"),
+		},
+		{
+			Name:        MessagesFirstCommand,
+			Description: "first message",
+			Keybindings: parseBindings("ctrl+g"),
+		},
+		{
+			Name:        MessagesLastCommand,
+			Description: "last message",
+			Keybindings: parseBindings("ctrl+alt+g"),
+		},
+		{
+			Name:        AppExitCommand,
+			Description: "exit the app",
+			Keybindings: parseBindings("ctrl+c", "<leader>q"),
+			Trigger:     "exit",
 		},
 	}
+	registry := make(CommandRegistry)
+	for _, command := range defaults {
+		registry[command.Name] = command.FromConfig(config)
+	}
+	return registry
 }

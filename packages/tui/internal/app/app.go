@@ -19,16 +19,16 @@ import (
 var RootPath string
 
 type App struct {
-	Info       client.AppInfo
-	Version    string
-	ConfigPath string
-	Config     *config.Config
-	Client     *client.ClientWithResponses
-	Provider   *client.ProviderInfo
-	Model      *client.ModelInfo
-	Session    *client.SessionInfo
-	Messages   []client.MessageInfo
-	Commands   commands.Registry
+	Info      client.AppInfo
+	Version   string
+	StatePath string
+	Config    *config.Config
+	Client    *client.ClientWithResponses
+	Provider  *client.ProviderInfo
+	Model     *client.ModelInfo
+	Session   *client.SessionInfo
+	Messages  []client.MessageInfo
+	Commands  commands.CommandRegistry
 }
 
 type SessionSelectedMsg = *client.SessionInfo
@@ -38,6 +38,10 @@ type ModelSelectedMsg struct {
 }
 type SessionClearedMsg struct{}
 type CompactSessionMsg struct{}
+type SendMsg struct {
+	Text        string
+	Attachments []Attachment
+}
 
 func New(
 	ctx context.Context,
@@ -51,19 +55,33 @@ func New(
 	appConfig, err := config.LoadConfig(appConfigPath)
 	if err != nil {
 		appConfig = config.NewConfig()
-		config.SaveConfig(appConfigPath, appConfig)
 	}
-	theme.SetTheme(appConfig.Theme)
+	if len(appConfig.Keybinds) == 0 {
+		appConfig.Keybinds = make(map[string]string)
+		appConfig.Keybinds["leader"] = "ctrl+x"
+	}
+
+	appStatePath := filepath.Join(appInfo.Path.State, "tui")
+	appState, err := config.LoadState(appStatePath)
+	if err != nil {
+		appState = config.NewState()
+		config.SaveState(appStatePath, appState)
+	}
+
+	mergedConfig := config.MergeState(appState, appConfig)
+	theme.SetTheme(mergedConfig.Theme)
+
+	slog.Debug("Loaded config", "config", mergedConfig)
 
 	app := &App{
-		Info:       appInfo,
-		Version:    version,
-		ConfigPath: appConfigPath,
-		Config:     appConfig,
-		Client:     httpClient,
-		Session:    &client.SessionInfo{},
-		Messages:   []client.MessageInfo{},
-		Commands:   commands.NewCommandRegistry(),
+		Info:      appInfo,
+		Version:   version,
+		StatePath: appStatePath,
+		Config:    mergedConfig,
+		Client:    httpClient,
+		Session:   &client.SessionInfo{},
+		Messages:  []client.MessageInfo{},
+		Commands:  commands.LoadFromConfig(mergedConfig),
 	}
 
 	return app, nil
@@ -160,8 +178,12 @@ func (a *App) IsBusy() bool {
 	return lastMessage.Metadata.Time.Completed == nil
 }
 
-func (a *App) SaveConfig() {
-	config.SaveConfig(a.ConfigPath, a.Config)
+func (a *App) SaveState() {
+	state := config.ConfigToState(a.Config)
+	err := config.SaveState(a.StatePath, state)
+	if err != nil {
+		slog.Error("Failed to save state", "error", err)
+	}
 }
 
 func (a *App) InitializeProject(ctx context.Context) tea.Cmd {
@@ -348,3 +370,7 @@ func (a *App) ListProviders(ctx context.Context) ([]client.ProviderInfo, error) 
 	providers := *resp.JSON200
 	return providers.Providers, nil
 }
+
+// func (a *App) loadCustomKeybinds() {
+//
+// }

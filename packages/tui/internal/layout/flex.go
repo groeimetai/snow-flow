@@ -13,23 +13,22 @@ const (
 	FlexDirectionVertical
 )
 
-type FlexPaneSize struct {
+type FlexChildSize struct {
 	Fixed bool
 	Size  int
 }
 
-var FlexPaneSizeGrow = FlexPaneSize{Fixed: false}
+var FlexChildSizeGrow = FlexChildSize{Fixed: false}
 
-func FlexPaneSizeFixed(size int) FlexPaneSize {
-	return FlexPaneSize{Fixed: true, Size: size}
+func FlexChildSizeFixed(size int) FlexChildSize {
+	return FlexChildSize{Fixed: true, Size: size}
 }
 
 type FlexLayout interface {
-	tea.Model
 	tea.ViewModel
 	Sizeable
-	SetPanes(panes []Container) tea.Cmd
-	SetPaneSizes(sizes []FlexPaneSize) tea.Cmd
+	SetChildren(panes []tea.ViewModel) tea.Cmd
+	SetSizes(sizes []FlexChildSize) tea.Cmd
 	SetDirection(direction FlexDirection) tea.Cmd
 }
 
@@ -37,94 +36,69 @@ type flexLayout struct {
 	width     int
 	height    int
 	direction FlexDirection
-	panes     []Container
-	sizes     []FlexPaneSize
+	children  []tea.ViewModel
+	sizes     []FlexChildSize
 }
 
 type FlexLayoutOption func(*flexLayout)
 
-func (f *flexLayout) Init() tea.Cmd {
-	var cmds []tea.Cmd
-	for _, pane := range f.panes {
-		if pane != nil {
-			cmds = append(cmds, pane.Init())
-		}
-	}
-	return tea.Batch(cmds...)
-}
-
-func (f *flexLayout) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		return f, f.SetSize(msg.Width, msg.Height)
-	}
-
-	for i, pane := range f.panes {
-		if pane != nil {
-			u, cmd := pane.Update(msg)
-			f.panes[i] = u.(Container)
-			if cmd != nil {
-				cmds = append(cmds, cmd)
-			}
-		}
-	}
-
-	return f, tea.Batch(cmds...)
-}
-
 func (f *flexLayout) View() string {
-	if len(f.panes) == 0 {
+	if len(f.children) == 0 {
 		return ""
 	}
 
 	t := theme.CurrentTheme()
-	views := make([]string, 0, len(f.panes))
-	for i, pane := range f.panes {
-		if pane == nil {
+	views := make([]string, 0, len(f.children))
+	for i, child := range f.children {
+		if child == nil {
 			continue
 		}
 
-		var paneWidth, paneHeight int
+		alignment := lipgloss.Center
+		if alignable, ok := child.(Alignable); ok {
+			alignment = alignable.Alignment()
+		}
+		var childWidth, childHeight int
 		if f.direction == FlexDirectionHorizontal {
-			paneWidth, paneHeight = f.calculatePaneSize(i)
+			childWidth, childHeight = f.calculateChildSize(i)
 			view := lipgloss.PlaceHorizontal(
-				paneWidth,
-				pane.Alignment(),
-				pane.View(),
+				childWidth,
+				alignment,
+				child.View(),
+				// TODO: make configurable WithBackgroundStyle
 				lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 			)
 			views = append(views, view)
 		} else {
-			paneWidth, paneHeight = f.calculatePaneSize(i)
+			childWidth, childHeight = f.calculateChildSize(i)
 			view := lipgloss.Place(
 				f.width,
-				paneHeight,
+				childHeight,
 				lipgloss.Center,
-				pane.Alignment(),
-				pane.View(),
+				alignment,
+				child.View(),
+				// TODO: make configurable WithBackgroundStyle
 				lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 			)
 			views = append(views, view)
 		}
 	}
-
 	if f.direction == FlexDirectionHorizontal {
 		return lipgloss.JoinHorizontal(lipgloss.Center, views...)
 	}
 	return lipgloss.JoinVertical(lipgloss.Center, views...)
 }
 
-func (f *flexLayout) calculatePaneSize(index int) (width, height int) {
-	if index >= len(f.panes) {
+func (f *flexLayout) calculateChildSize(index int) (width, height int) {
+	if index >= len(f.children) {
 		return 0, 0
 	}
 
 	totalFixed := 0
 	flexCount := 0
 
-	for i, pane := range f.panes {
-		if pane == nil {
+	for i, child := range f.children {
+		if child == nil {
 			continue
 		}
 		if i < len(f.sizes) && f.sizes[i].Fixed {
@@ -166,9 +140,13 @@ func (f *flexLayout) SetSize(width, height int) tea.Cmd {
 	var cmds []tea.Cmd
 	currentX, currentY := 0, 0
 
-	for i, pane := range f.panes {
-		if pane != nil {
-			paneWidth, paneHeight := f.calculatePaneSize(i)
+	for i, child := range f.children {
+		if child != nil {
+			paneWidth, paneHeight := f.calculateChildSize(i)
+			alignment := lipgloss.Center
+			if alignable, ok := child.(Alignable); ok {
+				alignment = alignable.Alignment()
+			}
 
 			// Calculate actual position based on alignment
 			actualX, actualY := currentX, currentY
@@ -180,11 +158,13 @@ func (f *flexLayout) SetSize(width, height int) tea.Cmd {
 			} else {
 				// In vertical layout, horizontal alignment affects X position
 				contentWidth := paneWidth
-				if pane.MaxWidth() > 0 && contentWidth > pane.MaxWidth() {
-					contentWidth = pane.MaxWidth()
+				if alignable, ok := child.(Alignable); ok {
+					if alignable.MaxWidth() > 0 && contentWidth > alignable.MaxWidth() {
+						contentWidth = alignable.MaxWidth()
+					}
 				}
 
-				switch pane.Alignment() {
+				switch alignment {
 				case lipgloss.Center:
 					actualX = (f.width - contentWidth) / 2
 				case lipgloss.Right:
@@ -194,14 +174,15 @@ func (f *flexLayout) SetSize(width, height int) tea.Cmd {
 				}
 			}
 
-			// Set position if the pane is a *container
-			if c, ok := pane.(*container); ok {
-				c.x = actualX
-				c.y = actualY
+			// Set position if the pane is Alignable
+			if c, ok := child.(Alignable); ok {
+				c.SetPosition(actualX, actualY)
 			}
 
-			cmd := pane.SetSize(paneWidth, paneHeight)
-			cmds = append(cmds, cmd)
+			if sizeable, ok := child.(Sizeable); ok {
+				cmd := sizeable.SetSize(paneWidth, paneHeight)
+				cmds = append(cmds, cmd)
+			}
 
 			// Update position for next pane
 			if f.direction == FlexDirectionHorizontal {
@@ -218,15 +199,15 @@ func (f *flexLayout) GetSize() (int, int) {
 	return f.width, f.height
 }
 
-func (f *flexLayout) SetPanes(panes []Container) tea.Cmd {
-	f.panes = panes
+func (f *flexLayout) SetChildren(children []tea.ViewModel) tea.Cmd {
+	f.children = children
 	if f.width > 0 && f.height > 0 {
 		return f.SetSize(f.width, f.height)
 	}
 	return nil
 }
 
-func (f *flexLayout) SetPaneSizes(sizes []FlexPaneSize) tea.Cmd {
+func (f *flexLayout) SetSizes(sizes []FlexChildSize) tea.Cmd {
 	f.sizes = sizes
 	if f.width > 0 && f.height > 0 {
 		return f.SetSize(f.width, f.height)
@@ -242,11 +223,11 @@ func (f *flexLayout) SetDirection(direction FlexDirection) tea.Cmd {
 	return nil
 }
 
-func NewFlexLayout(options ...FlexLayoutOption) FlexLayout {
+func NewFlexLayout(children []tea.ViewModel, options ...FlexLayoutOption) FlexLayout {
 	layout := &flexLayout{
+		children:  children,
 		direction: FlexDirectionHorizontal,
-		panes:     []Container{},
-		sizes:     []FlexPaneSize{},
+		sizes:     []FlexChildSize{},
 	}
 	for _, option := range options {
 		option(layout)
@@ -260,13 +241,13 @@ func WithDirection(direction FlexDirection) FlexLayoutOption {
 	}
 }
 
-func WithPanes(panes ...Container) FlexLayoutOption {
+func WithChildren(children ...tea.ViewModel) FlexLayoutOption {
 	return func(f *flexLayout) {
-		f.panes = panes
+		f.children = children
 	}
 }
 
-func WithPaneSizes(sizes ...FlexPaneSize) FlexLayoutOption {
+func WithSizes(sizes ...FlexChildSize) FlexLayoutOption {
 	return func(f *flexLayout) {
 		f.sizes = sizes
 	}

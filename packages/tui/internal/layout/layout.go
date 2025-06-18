@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 )
 
 var Current *LayoutInfo
@@ -43,6 +44,13 @@ type Focusable interface {
 type Sizeable interface {
 	SetSize(width, height int) tea.Cmd
 	GetSize() (int, int)
+}
+
+type Alignable interface {
+	MaxWidth() int
+	Alignment() lipgloss.Position
+	SetPosition(x, y int)
+	GetPosition() (x, y int)
 }
 
 func KeyMapToSlice(t any) (bindings []key.Binding) {

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/v2/key"
 	"github.com/charmbracelet/bubbles/v2/spinner"
 	"github.com/charmbracelet/bubbles/v2/viewport"
 	tea "github.com/charmbracelet/bubbletea/v2"
@@ -21,47 +20,29 @@ import (
 type MessagesComponent interface {
 	tea.Model
 	tea.ViewModel
+	PageUp() (tea.Model, tea.Cmd)
+	PageDown() (tea.Model, tea.Cmd)
+	HalfPageUp() (tea.Model, tea.Cmd)
+	HalfPageDown() (tea.Model, tea.Cmd)
+	First() (tea.Model, tea.Cmd)
+	Last() (tea.Model, tea.Cmd)
+	// Previous() (tea.Model, tea.Cmd)
+	// Next() (tea.Model, tea.Cmd)
 }
 
 type messagesComponent struct {
-	app             *app.App
 	width, height   int
+	app             *app.App
 	viewport        viewport.Model
 	spinner         spinner.Model
-	rendering       bool
 	attachments     viewport.Model
-	showToolResults bool
 	cache           *MessageCache
+	rendering       bool
+	showToolDetails bool
 	tail            bool
 }
 type renderFinishedMsg struct{}
-type ToggleToolMessagesMsg struct{}
-
-type MessageKeys struct {
-	PageDown     key.Binding
-	PageUp       key.Binding
-	HalfPageUp   key.Binding
-	HalfPageDown key.Binding
-}
-
-var messageKeys = MessageKeys{
-	PageDown: key.NewBinding(
-		key.WithKeys("pgdown"),
-		key.WithHelp("f/pgdn", "page down"),
-	),
-	PageUp: key.NewBinding(
-		key.WithKeys("pgup"),
-		key.WithHelp("b/pgup", "page up"),
-	),
-	HalfPageUp: key.NewBinding(
-		key.WithKeys("ctrl+u"),
-		key.WithHelp("ctrl+u", "½ page up"),
-	),
-	HalfPageDown: key.NewBinding(
-		key.WithKeys("ctrl+d", "ctrl+d"),
-		key.WithHelp("ctrl+d", "½ page down"),
-	),
-}
+type ToggleToolDetailsMsg struct{}
 
 func (m *messagesComponent) Init() tea.Cmd {
 	return tea.Batch(m.viewport.Init(), m.spinner.Tick)
@@ -69,8 +50,8 @@ func (m *messagesComponent) Init() tea.Cmd {
 
 func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	switch msg := msg.(type) {
-	case SendMsg:
+	switch msg.(type) {
+	case app.SendMsg:
 		m.viewport.GotoBottom()
 		m.tail = true
 		return m, nil
@@ -78,8 +59,8 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.cache.Clear()
 		m.renderView()
 		return m, nil
-	case ToggleToolMessagesMsg:
-		m.showToolResults = !m.showToolResults
+	case ToggleToolDetailsMsg:
+		m.showToolDetails = !m.showToolDetails
 		m.renderView()
 		return m, nil
 	case app.SessionSelectedMsg:
@@ -91,32 +72,22 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.cache.Clear()
 		cmd := m.Reload()
 		return m, cmd
-	case tea.KeyMsg:
-		if key.Matches(msg, messageKeys.PageUp) ||
-			key.Matches(msg, messageKeys.PageDown) ||
-			key.Matches(msg, messageKeys.HalfPageUp) ||
-			key.Matches(msg, messageKeys.HalfPageDown) {
-			u, cmd := m.viewport.Update(msg)
-			m.viewport = u
-			m.tail = m.viewport.AtBottom()
-			cmds = append(cmds, cmd)
-		}
 	case renderFinishedMsg:
 		m.rendering = false
 		if m.tail {
 			m.viewport.GotoBottom()
 		}
-	case client.EventSessionUpdated:
-		m.renderView()
-		if m.tail {
-			m.viewport.GotoBottom()
-		}
-	case client.EventMessageUpdated:
+	case client.EventSessionUpdated, client.EventMessageUpdated:
 		m.renderView()
 		if m.tail {
 			m.viewport.GotoBottom()
 		}
 	}
+
+	viewport, cmd := m.viewport.Update(msg)
+	m.viewport = viewport
+	m.tail = m.viewport.AtBottom()
+	cmds = append(cmds, cmd)
 
 	spinner, cmd := m.spinner.Update(msg)
 	m.spinner = spinner
@@ -208,7 +179,7 @@ func (m *messagesComponent) renderView() {
 				if toolCall.State == "result" {
 					key := m.cache.GenerateKey(message.Id,
 						toolCall.ToolCallId,
-						m.showToolResults,
+						m.showToolDetails,
 						layout.Current.Viewport.Width,
 					)
 					content, cached = m.cache.Get(key)
@@ -217,7 +188,7 @@ func (m *messagesComponent) renderView() {
 							toolCall,
 							result,
 							metadata,
-							m.showToolResults,
+							m.showToolDetails,
 							isLastToolInvocation,
 						)
 						m.cache.Set(key, content)
@@ -228,12 +199,12 @@ func (m *messagesComponent) renderView() {
 						toolCall,
 						result,
 						metadata,
-						m.showToolResults,
+						m.showToolDetails,
 						isLastToolInvocation,
 					)
 				}
 
-				if previousBlockType != toolInvocationBlock && m.showToolResults {
+				if previousBlockType != toolInvocationBlock && m.showToolDetails {
 					blocks = append(blocks, "")
 				}
 				blocks = append(blocks, content)
@@ -423,6 +394,38 @@ func (m *messagesComponent) Reload() tea.Cmd {
 	}
 }
 
+func (m *messagesComponent) PageUp() (tea.Model, tea.Cmd) {
+	m.viewport.ViewUp()
+	return m, nil
+}
+
+func (m *messagesComponent) PageDown() (tea.Model, tea.Cmd) {
+	m.viewport.ViewDown()
+	return m, nil
+}
+
+func (m *messagesComponent) HalfPageUp() (tea.Model, tea.Cmd) {
+	m.viewport.HalfViewUp()
+	return m, nil
+}
+
+func (m *messagesComponent) HalfPageDown() (tea.Model, tea.Cmd) {
+	m.viewport.HalfViewDown()
+	return m, nil
+}
+
+func (m *messagesComponent) First() (tea.Model, tea.Cmd) {
+	m.viewport.GotoTop()
+	m.tail = false
+	return m, nil
+}
+
+func (m *messagesComponent) Last() (tea.Model, tea.Cmd) {
+	m.viewport.GotoBottom()
+	m.tail = true
+	return m, nil
+}
+
 func NewMessagesComponent(app *app.App) MessagesComponent {
 	customSpinner := spinner.Spinner{
 		Frames: []string{" ", "┃", "┃"},
@@ -432,17 +435,14 @@ func NewMessagesComponent(app *app.App) MessagesComponent {
 
 	vp := viewport.New()
 	attachments := viewport.New()
-	vp.KeyMap.PageUp = messageKeys.PageUp
-	vp.KeyMap.PageDown = messageKeys.PageDown
-	vp.KeyMap.HalfPageUp = messageKeys.HalfPageUp
-	vp.KeyMap.HalfPageDown = messageKeys.HalfPageDown
+	vp.KeyMap = viewport.KeyMap{}
 
 	return &messagesComponent{
 		app:             app,
 		viewport:        vp,
 		spinner:         s,
 		attachments:     attachments,
-		showToolResults: true,
+		showToolDetails: true,
 		cache:           NewMessageCache(),
 		tail:            true,
 	}
