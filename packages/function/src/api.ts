@@ -19,9 +19,9 @@ export class SyncServer extends DurableObject<Env> {
     this.ctx.acceptWebSocket(server)
 
     const data = await this.ctx.storage.list()
-    for (const [key, content] of data.entries()) {
-      server.send(JSON.stringify({ key, content }))
-    }
+    Array.from(data.entries())
+      .filter(([key, _]) => key.startsWith("session/"))
+      .map(([key, content]) => server.send(JSON.stringify({ key, content })))
 
     return new Response(null, {
       status: 101,
@@ -71,11 +71,9 @@ export class SyncServer extends DurableObject<Env> {
 
   public async getData() {
     const data = await this.ctx.storage.list()
-    const messages = []
-    for (const [key, content] of data.entries()) {
-      messages.push({ key, content })
-    }
-    return messages
+    return Array.from(data.entries())
+      .filter(([key, _]) => key.startsWith("session/"))
+      .map(([key, content]) => ({ key, content }))
   }
 
   private async getSecret() {
