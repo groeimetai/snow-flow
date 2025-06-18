@@ -103,6 +103,7 @@ export namespace Provider {
       if (!provider) {
         const info = database[id]
         if (!info) return
+        if (info.api) options["baseURL"] = info.api
         providers[id] = {
           source,
           info,

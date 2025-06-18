@@ -1,14 +1,20 @@
 import { Log } from "../util/log"
+import path from "path"
 import { z } from "zod"
 import { App } from "../app/app"
 import { Filesystem } from "../util/filesystem"
 import { ModelsDev } from "../provider/models"
+import { mergeDeep } from "remeda"
+import { Global } from "../global"
 
 export namespace Config {
   const log = Log.create({ service: "config" })
 
   export const state = App.state("config", async (app) => {
-    let result: Info = {}
+    let result = await Bun.file(path.join(Global.Path.config, "config.json"))
+      .json()
+      .then((mod) => Info.parse(mod))
+      .catch(() => ({}) as Info)
     for (const file of ["opencode.jsonc", "opencode.json"]) {
       const [resolved] = await Filesystem.findUp(
         file,
@@ -17,7 +23,10 @@ export namespace Config {
       )
       if (!resolved) continue
       try {
-        result = await import(resolved).then((mod) => Info.parse(mod.default))
+        result = mergeDeep(
+          result,
+          await import(resolved).then((mod) => Info.parse(mod.default)),
+        )
         log.info("found", { path: resolved })
         break
       } catch (e) {

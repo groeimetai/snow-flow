@@ -32,6 +32,7 @@ export namespace ModelsDev {
 
   export const Provider = z
     .object({
+      api: z.string().optional(),
       name: z.string(),
       env: z.array(z.string()),
       id: z.string(),

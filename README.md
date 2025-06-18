@@ -114,43 +114,6 @@ messages_last = "ctrl+alt+g"
 app_exit = "ctrl+c,<leader>q"
 ```
 
-#### Models.dev
-
-You can also extend the models.dev database with your own providers by mirroring the structure found [here](https://github.com/sst/models.dev/tree/dev/providers/anthropic)
-
-Start with a `provider.toml` file in `~/.config/opencode/providers`
-
-```toml
-# ~/.config/opencode/providers/openrouter/provider.toml
-[provider]
-name = "OpenRouter"
-env = ["OPENROUTER_API_KEY"]
-npm = "@openrouter/ai-sdk-provider"
-
-[options]
-baseURL = "https://api.openrouter.ai" # optional settings
-```
-
-And models in `~/.config/opencode/providers/openrouter/models/[model-id]`
-
-```toml
-# ~/.config/opencode/providers/openrouter/models/anthropic/claude-3.5-sonnet.toml
-name = "Claude 4 Sonnet"
-attachment = true
-reasoning = false
-temperature = true
-
-[cost]
-input = 3.00
-output = 15.00
-inputCached = 3.75
-outputCached = 0.30
-
-[limit]
-context = 200_000
-output = 50_000
-```
-
 ### Project Config
 
 Project configuration is optional. You can place an `opencode.json` file in the root of your repo and is meant to be checked in and shared with your team.
@@ -230,9 +193,7 @@ OpenRouter is not in the Models.dev database yet, but you can configure it manua
     "openrouter": {
       "npm": "@openrouter/ai-sdk-provider",
       "name": "OpenRouter",
-      "options": {
-        "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-      },
+      "options": {},
       "models": {
         "anthropic/claude-3.5-sonnet": {
           "name": "Claude 3.5 Sonnet"
@@ -242,6 +203,8 @@ OpenRouter is not in the Models.dev database yet, but you can configure it manua
   }
 }
 ```
+
+And then to configure an api key you can do `opencode auth login` and select "Other -> 'openrouter'"
 
 #### How is this different than Claude Code?
 
