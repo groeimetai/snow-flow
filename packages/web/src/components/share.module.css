@@ -433,7 +433,7 @@
   max-width: var(--md-tool-width);
 
   [data-section="content"] {
-    p {
+    pre {
       margin-bottom: 0.5rem;
       line-height: 1.5;
       font-size: 0.75rem;

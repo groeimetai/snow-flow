@@ -177,14 +177,14 @@ function formatErrorString(error: string): JSX.Element {
   const startsWithError = error.startsWith(errorMarker)
 
   return startsWithError ? (
-    <p>
+    <pre>
       <span data-color="red" data-marker="label" data-separator>
         Error
       </span>
       <span>{error.slice(errorMarker.length)}</span>
-    </p>
+    </pre>
   ) : (
-    <p><span data-color="dimmed">{error}</span></p>
+    <pre><span data-color="dimmed">{error}</span></pre>
   )
 }
 
@@ -209,13 +209,13 @@ function getDiagnostics(
       const column = d.range.start.character + 1 // 1-based
 
       result.push(
-        <p>
+        <pre>
           <span data-color="red" data-marker="label">Error</span>
           <span data-color="dimmed" data-separator>
             [{line}:{column}]
           </span>
           <span>{d.message}</span>
-        </p>
+        </pre>
       )
     }
   }
@@ -535,7 +535,10 @@ export default function Share(props: {
   messages: Record<string, SessionMessage>
 }) {
   let hasScrolled = false
+
   const id = props.id
+  const params = new URLSearchParams(window.location.search)
+  const debug = params.get("debug") === "true"
 
   const anchorId = createMemo<string | null>(() => {
     const raw = window.location.hash.slice(1)
@@ -1784,39 +1787,41 @@ export default function Share(props: {
         </Show>
       </div>
 
-      <div style={{ margin: "2rem 0" }}>
-        <div
-          style={{
-            border: "1px solid #ccc",
-            padding: "1rem",
-            "overflow-y": "auto",
-          }}
-        >
-          <Show
-            when={data().messages.length > 0}
-            fallback={<p>Waiting for messages...</p>}
+      <Show when={debug}>
+        <div style={{ margin: "2rem 0" }}>
+          <div
+            style={{
+              border: "1px solid #ccc",
+              padding: "1rem",
+              "overflow-y": "auto",
+            }}
           >
-            <ul style={{ "list-style-type": "none", padding: 0 }}>
-              <For each={data().messages}>
-                {(msg) => (
-                  <li
-                    style={{
-                      padding: "0.75rem",
-                      margin: "0.75rem 0",
-                      "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
-                    }}
-                  >
-                    <div>
-                      <strong>Key:</strong> {msg.id}
-                    </div>
-                    <pre>{JSON.stringify(msg, null, 2)}</pre>
-                  </li>
-                )}
-              </For>
-            </ul>
-          </Show>
+            <Show
+              when={data().messages.length > 0}
+              fallback={<p>Waiting for messages...</p>}
+            >
+              <ul style={{ "list-style-type": "none", padding: 0 }}>
+                <For each={data().messages}>
+                  {(msg) => (
+                    <li
+                      style={{
+                        padding: "0.75rem",
+                        margin: "0.75rem 0",
+                        "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
+                      }}
+                    >
+                      <div>
+                        <strong>Key:</strong> {msg.id}
+                      </div>
+                      <pre>{JSON.stringify(msg, null, 2)}</pre>
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </Show>
+          </div>
         </div>
-      </div>
+      </Show>
     </main>
   )
 }
