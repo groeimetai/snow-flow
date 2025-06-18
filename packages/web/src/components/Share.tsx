@@ -203,7 +203,7 @@ function stripEnclosingTag(text: string): string {
 function getStatusText(status: [Status, string?]): string {
   switch (status[0]) {
     case "connected":
-      return "Connected"
+      return "Connected, waiting for messages..."
     case "connecting":
       return "Connecting..."
     case "disconnected":
@@ -688,31 +688,6 @@ export default function Share(props: {
       <div class={styles.header}>
         <div data-section="title">
           <h1>{store.info?.title}</h1>
-          <div>
-            <div data-section="date">
-              {data().created ? (
-                <span
-                  title={DateTime.fromMillis(
-                    data().created || 0,
-                  ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}
-                >
-                  {DateTime.fromMillis(data().created || 0).toLocaleString(
-                    DateTime.DATE_MED,
-                  )}
-                </span>
-              ) : (
-                <span data-element-label data-placeholder>
-                  Started at &mdash;
-                </span>
-              )}
-            </div>
-            <p data-section="status">
-              <span data-status={connectionStatus()[0]}>&#9679;</span>
-              <span data-element-label>
-                {getStatusText(connectionStatus())}
-              </span>
-            </p>
-          </div>
         </div>
         <div data-section="row">
           <ul data-section="stats">
@@ -786,7 +761,7 @@ export default function Share(props: {
                 ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}
               >
                 {DateTime.fromMillis(data().created || 0).toLocaleString(
-                  DateTime.DATE_MED,
+                  DateTime.DATETIME_MED
                 )}
               </span>
             ) : (
@@ -1789,6 +1764,17 @@ export default function Share(props: {
                 </For>
               )}
             </For>
+            <div data-section="part" data-part-type="connection-status">
+              <div data-section="decoration">
+                <span data-status={connectionStatus()[0]}></span>
+                <div></div>
+              </div>
+              <div data-section="content">
+                <span>
+                  {getStatusText(connectionStatus())}
+                </span>
+              </div>
+            </div>
           </div>
         </Show>
       </div>
