@@ -16,6 +16,7 @@ import { createStore, reconcile } from "solid-js/store"
 import type { Diagnostic } from "vscode-languageserver-types"
 import { IconOpenAI, IconGemini, IconAnthropic } from "./icons/custom"
 import {
+  IconFolder,
   IconCpuChip,
   IconSparkles,
   IconGlobeAlt,
@@ -36,8 +37,8 @@ import DiffView from "./DiffView"
 import CodeBlock from "./CodeBlock"
 import MarkdownView from "./MarkdownView"
 import styles from "./share.module.css"
-import { type Message } from "opencode/session/message"
-import { type Session } from "opencode/session/index"
+// import { type Message } from "opencode/session/message"
+// import { type Session } from "opencode/session/index"
 
 const MIN_DURATION = 2
 
@@ -47,8 +48,6 @@ type Status =
   | "connected"
   | "error"
   | "reconnecting"
-
-
 
 type TodoStatus = "pending" | "in_progress" | "completed"
 
@@ -78,7 +77,9 @@ function scrollToAnchor(id: string) {
   el.scrollIntoView({ behavior: "smooth" })
 }
 
-function stripWorkingDirectory(filePath: string, workingDir: string) {
+function stripWorkingDirectory(filePath: string, workingDir?: string) {
+  if (workingDir === undefined) return filePath
+
   const prefix = workingDir.endsWith('/') ? workingDir : workingDir + '/'
 
   if (filePath === workingDir) {
@@ -521,7 +522,7 @@ export default function Share(props: {
     messages: Record<string, Message.Info>
   }>({ info: props.info, messages: props.messages })
   const messages = createMemo(() =>
-    Object.values(store.messages).toSorted((a, b) => a.id?.localeCompare(b.id)),
+    Object.values(store.messages).toSorted((a, b) => a.id?.localeCompare(b.id))
   )
   const [connectionStatus, setConnectionStatus] = createSignal<
     [Status, string?]
@@ -627,8 +628,8 @@ export default function Share(props: {
 
   const data = createMemo(() => {
     const result = {
+      rootDir: undefined as string | undefined,
       created: undefined as number | undefined,
-      system: [] as string[],
       messages: [] as Message.Info[],
       models: {} as Record<string, string[]>,
       cost: 0,
@@ -667,6 +668,10 @@ export default function Share(props: {
           assistant.providerID,
           assistant.modelID,
         ]
+
+        if (assistant.path?.root) {
+          result.rootDir = assistant.path.root
+        }
       }
     }
     return result
@@ -738,6 +743,14 @@ export default function Share(props: {
               )}
             </li>
           </ul>
+          <Show when={!data().rootDir}>
+            <div data-section="info">
+              <div data-stat-info-icon>
+                <IconFolder width={16} height={16} />
+              </div>
+              <span>{data().rootDir}</span>
+            </div>
+          </Show>
           <ul data-section="stats" data-section-models>
             {Object.values(data().models).length > 0 ? (
               <For each={Object.values(data().models)}>
@@ -792,7 +805,6 @@ export default function Share(props: {
                         msg.role !== "assistant" || part.type !== "tool-invocation"
                       ) return {}
 
-                      const root = msg.metadata?.assistant?.path?.root || ''
                       const metadata = msg.metadata?.tool[part.toolInvocation.toolCallId]
                       const args = part.toolInvocation.args
                       const result = part.toolInvocation.state === "result" && part.toolInvocation.result
@@ -801,7 +813,7 @@ export default function Share(props: {
                         .diff(DateTime.fromMillis(metadata?.time.start || 0))
                         .toMillis()
 
-                      return { root, metadata, args, result, duration }
+                      return { metadata, args, result, duration }
                     })
                     return (
                       <Switch>
@@ -1141,12 +1153,12 @@ export default function Share(props: {
                         >
                           {(_part) => {
                             const path = createMemo(
-                              () => toolData()?.args.path === toolData()?.root
-                                ? toolData()?.root
-                                : stripWorkingDirectory(
+                              () => toolData()?.args.path !== data().rootDir
+                                ? stripWorkingDirectory(
                                   toolData()?.args.path,
-                                  toolData()?.root
+                                  data().rootDir
                                 )
+                                : toolData()?.args.path
                             )
 
                             return (
@@ -1210,7 +1222,7 @@ export default function Share(props: {
                             const filePath = createMemo(
                               () => stripWorkingDirectory(
                                 toolData()?.args.filePath,
-                                toolData()?.root
+                                data().rootDir
                               )
                             )
                             const hasError = () => toolData()?.metadata?.error
@@ -1301,7 +1313,7 @@ export default function Share(props: {
                             const filePath = createMemo(
                               () => stripWorkingDirectory(
                                 toolData()?.args.filePath,
-                                toolData()?.root
+                                data().rootDir
                               )
                             )
                             const hasError = () => toolData()?.metadata?.error
@@ -1386,7 +1398,7 @@ export default function Share(props: {
                             const filePath = createMemo(
                               () => stripWorkingDirectory(
                                 toolData()?.args.filePath,
-                                toolData()?.root
+                                data().rootDir
                               )
                             )
                             const diagnostics = createMemo(() =>
