@@ -172,13 +172,29 @@ function flattenToolArgs(obj: any, prefix: string = ""): Array<[string, any]> {
   return entries
 }
 
-export function getDiagnostics(
+function formatErrorString(error: string): JSX.Element {
+  const errorMarker = "Error: "
+  const startsWithError = error.startsWith(errorMarker)
+
+  return startsWithError ? (
+    <p>
+      <span data-color="red" data-marker="label" data-separator>
+        Error
+      </span>
+      <span>{error.slice(errorMarker.length)}</span>
+    </p>
+  ) : (
+    <p><span data-color="dimmed">{error}</span></p>
+  )
+}
+
+function getDiagnostics(
   diagnosticsByFile: Record<string, Diagnostic[]>,
   currentFile: string
-): string[] {
+): JSX.Element[] {
   // Return a flat array of error diagnostics, in the format:
-  // "ERROR [65:20] Property 'x' does not exist on type 'Y'"
-  const result: string[] = []
+  // "Error [65:20] Property 'x' does not exist on type 'Y'"
+  const result: JSX.Element[] = []
 
   if (
     diagnosticsByFile === undefined || diagnosticsByFile[currentFile] === undefined
@@ -192,7 +208,15 @@ export function getDiagnostics(
       const line = d.range.start.line + 1 // 1-based
       const column = d.range.start.character + 1 // 1-based
 
-      result.push(`\x1b[31mERROR\x1b[0m \x1b[2m[${line}:${column}]\x1b[0m ${d.message}`)
+      result.push(
+        <p>
+          <span data-color="red" data-marker="label">Error</span>
+          <span data-color="dimmed" data-separator>
+            [{line}:{column}]
+          </span>
+          <span>{d.message}</span>
+        </p>
+      )
     }
   }
 
@@ -324,28 +348,29 @@ function TextPart(props: TextPartProps) {
   )
 }
 
-interface LspPartProps extends JSX.HTMLAttributes<HTMLDivElement> {
-  text: string
+interface ErrorPartProps extends JSX.HTMLAttributes<HTMLDivElement> {
   expand?: boolean
 }
-function LspPart(props: LspPartProps) {
-  const [local, rest] = splitProps(props, ["text", "expand"])
+function ErrorPart(props: ErrorPartProps) {
+  const [local, rest] = splitProps(props, ["expand", "children"])
   const [expanded, setExpanded] = createSignal(false)
   const [overflowed, setOverflowed] = createSignal(false)
   let preEl: HTMLElement | undefined
 
   function checkOverflow() {
-    if (!preEl) return
-
-    const code = preEl.getElementsByTagName("code")[0]
-
-    if (code && !local.expand) {
-      setOverflowed(preEl.clientHeight < code.offsetHeight)
+    if (preEl && !local.expand) {
+      setOverflowed(preEl.scrollHeight > preEl.clientHeight + 1)
     }
   }
 
   onMount(() => {
+    checkOverflow()
     window.addEventListener("resize", checkOverflow)
+  })
+
+  createEffect(() => {
+    local.children
+    setTimeout(checkOverflow, 0)
   })
 
   onCleanup(() => {
@@ -354,16 +379,13 @@ function LspPart(props: LspPartProps) {
 
   return (
     <div
-      class={styles["message-lsp"]}
+      class={styles["message-error"]}
       data-expanded={expanded() || local.expand === true}
       {...rest}
     >
-      <CodeBlock
-        lang="ansi"
-        code={local.text}
-        onRendered={checkOverflow}
-        ref={(el) => (preEl = el)}
-      />
+      <div data-section="content" ref={(el) => (preEl = el)}>
+        {local.children}
+      </div>
       {((!local.expand && overflowed()) || expanded()) && (
         <button
           type="button"
@@ -512,6 +534,7 @@ export default function Share(props: {
   info: SessionInfo
   messages: Record<string, SessionMessage>
 }) {
+  let hasScrolled = false
   const id = props.id
 
   const anchorId = createMemo<string | null>(() => {
@@ -586,8 +609,9 @@ export default function Share(props: {
             const [, messageID] = splits
             setStore("messages", messageID, reconcile(d.content))
 
-            if (messageID === anchorId()) {
+            if (!hasScrolled && messageID === anchorId()) {
               scrollToAnchor(window.location.hash.slice(1))
+              hasScrolled = true
             }
           }
         } catch (error) {
@@ -1241,12 +1265,9 @@ export default function Share(props: {
                                     <Switch>
                                       <Match when={hasError()}>
                                         <div data-part-tool-result>
-                                          <TextPart
-                                            expand
-                                            text={toolData()?.result}
-                                            data-size="sm"
-                                            data-color="dimmed"
-                                          />
+                                          <ErrorPart>
+                                            {formatErrorString(toolData()?.result)}
+                                          </ErrorPart>
                                         </div>
                                       </Match>
                                       <Match when={preview()}>
@@ -1339,19 +1360,14 @@ export default function Share(props: {
                                       <b>{filePath()}</b>
                                     </div>
                                     <Show when={diagnostics().length > 0}>
-                                      <LspPart
-                                        text={diagnostics().join("\n\n")}
-                                      />
+                                      <ErrorPart>{diagnostics()}</ErrorPart>
                                     </Show>
                                     <Switch>
                                       <Match when={hasError()}>
                                         <div data-part-tool-result>
-                                          <TextPart
-                                            expand
-                                            text={toolData()?.result}
-                                            data-size="sm"
-                                            data-color="dimmed"
-                                          />
+                                          <ErrorPart>
+                                            {formatErrorString(toolData()?.result)}
+                                          </ErrorPart>
                                         </div>
                                       </Match>
                                       <Match when={content()}>
@@ -1429,12 +1445,9 @@ export default function Share(props: {
                                     <Switch>
                                       <Match when={hasError()}>
                                         <div data-part-tool-result>
-                                          <TextPart
-                                            expand
-                                            data-size="sm"
-                                            data-color="dimmed"
-                                            text={message()}
-                                          />
+                                          <ErrorPart>
+                                            {formatErrorString(message())}
+                                          </ErrorPart>
                                         </div>
                                       </Match>
                                       <Match when={diff()}>
@@ -1448,9 +1461,7 @@ export default function Share(props: {
                                       </Match>
                                     </Switch>
                                     <Show when={diagnostics().length > 0}>
-                                      <LspPart
-                                        text={diagnostics().join("\n\n")}
-                                      />
+                                      <ErrorPart>{diagnostics()}</ErrorPart>
                                     </Show>
                                   </div>
                                   <ToolFooter time={toolData()?.duration || 0} />
@@ -1601,12 +1612,9 @@ export default function Share(props: {
                                     <Switch>
                                       <Match when={hasError()}>
                                         <div data-part-tool-result>
-                                          <TextPart
-                                            expand
-                                            text={toolData()?.result}
-                                            data-size="sm"
-                                            data-color="dimmed"
-                                          />
+                                          <ErrorPart>
+                                            {formatErrorString(toolData()?.result)}
+                                          </ErrorPart>
                                         </div>
                                       </Match>
                                       <Match when={toolData()?.result}>
