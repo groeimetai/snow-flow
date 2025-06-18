@@ -5,10 +5,11 @@ export namespace Tool {
     title: string
     [key: string]: any
   }
-  export type Context = {
+  export type Context<M extends Metadata = Metadata> = {
     sessionID: string
     messageID: string
     abort: AbortSignal
+    metadata(meta: M): void
   }
   export interface Info<
     Parameters extends StandardSchemaV1 = StandardSchemaV1,

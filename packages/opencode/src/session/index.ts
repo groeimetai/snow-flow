@@ -31,6 +31,7 @@ import { SystemPrompt } from "./system"
 import { Flag } from "../flag/flag"
 import type { ModelsDev } from "../provider/models"
 import { GlobalConfig } from "../global/config"
+import { Installation } from "../installation"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -46,6 +47,7 @@ export namespace Session {
         })
         .optional(),
       title: z.string(),
+      version: z.string(),
       time: z.object({
         created: z.number(),
         updated: z.number(),
@@ -84,6 +86,7 @@ export namespace Session {
   export async function create(parentID?: string) {
     const result: Info = {
       id: Identifier.descending("session"),
+      version: Installation.VERSION,
       parentID,
       title:
         (parentID ? "Child session - " : "New Session - ") +
@@ -331,6 +334,16 @@ export namespace Session {
               sessionID: input.sessionID,
               abort: abort.signal,
               messageID: next.id,
+              metadata: async (val) => {
+                next.metadata.tool[opts.toolCallId] = {
+                  ...val,
+                  time: {
+                    start: 0,
+                    end: 0,
+                  },
+                }
+                await updateMessage(next)
+              },
             })
             next.metadata!.tool![opts.toolCallId] = {
               ...result.metadata,

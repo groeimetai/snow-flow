@@ -3,6 +3,12 @@ import { App } from "../../src/app/app"
 import { GlobTool } from "../../src/tool/glob"
 import { ListTool } from "../../src/tool/ls"
 
+const ctx = {
+  sessionID: "test",
+  messageID: "",
+  abort: AbortSignal.any([]),
+  metadata: () => {},
+}
 describe("tool.glob", () => {
   test("truncate", async () => {
     await App.provide({ cwd: process.cwd() }, async () => {
@@ -11,11 +17,7 @@ describe("tool.glob", () => {
           pattern: "./node_modules/**/*",
           path: undefined,
         },
-        {
-          sessionID: "test",
-          messageID: "",
-          abort: AbortSignal.any([]),
-        },
+        ctx,
       )
       expect(result.metadata.truncated).toBe(true)
     })
@@ -27,11 +29,7 @@ describe("tool.glob", () => {
           pattern: "*.json",
           path: undefined,
         },
-        {
-          sessionID: "test",
-          messageID: "",
-          abort: AbortSignal.any([]),
-        },
+        ctx,
       )
       expect(result.metadata).toMatchObject({
         truncated: false,
@@ -46,11 +44,7 @@ describe("tool.ls", () => {
     const result = await App.provide({ cwd: process.cwd() }, async () => {
       return await ListTool.execute(
         { path: "./example", ignore: [".git"] },
-        {
-          sessionID: "test",
-          messageID: "",
-          abort: AbortSignal.any([]),
-        },
+        ctx,
       )
     })
     expect(result.output).toMatchSnapshot()

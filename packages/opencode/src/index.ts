@@ -120,7 +120,7 @@ const cli = yargs(hideBin(process.argv))
   .command(ScrapCommand)
   .command(AuthCommand)
   .command(UpgradeCommand)
-  .fail((msg, err) => {
+  .fail((msg) => {
     if (
       msg.startsWith("Unknown argument") ||
       msg.startsWith("Not enough non-option arguments")

@@ -1,5 +1,4 @@
 import { Global } from "../global"
-import { lazy } from "../util/lazy"
 import { Log } from "../util/log"
 import path from "path"
 import { z } from "zod"
