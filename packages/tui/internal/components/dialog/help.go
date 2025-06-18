@@ -15,7 +15,7 @@ type helpDialog struct {
 	width    int
 	height   int
 	modal    *modal.Modal
-	commands commands.CommandRegistry
+	commands []commands.Command
 }
 
 func (h *helpDialog) Init() tea.Cmd {
@@ -80,7 +80,7 @@ type HelpDialog interface {
 	layout.Modal
 }
 
-func NewHelpDialog(commands commands.CommandRegistry) HelpDialog {
+func NewHelpDialog(commands []commands.Command) HelpDialog {
 	return &helpDialog{
 		commands: commands,
 		modal:    modal.New(),

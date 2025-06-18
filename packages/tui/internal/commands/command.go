@@ -41,14 +41,12 @@ func (c Command) Keys() []string {
 
 type CommandRegistry map[CommandName]Command
 
-func (r CommandRegistry) Matches(msg tea.KeyPressMsg, leader bool) []Command {
-	var matched []Command
+func (r CommandRegistry) Sorted() []Command {
+	var commands []Command
 	for _, command := range r {
-		if command.Matches(msg, leader) {
-			matched = append(matched, command)
-		}
+		commands = append(commands, command)
 	}
-	slices.SortFunc(matched, func(a, b Command) int {
+	slices.SortFunc(commands, func(a, b Command) int {
 		if a.Name == AppExitCommand {
 			return 1
 		}
@@ -57,6 +55,16 @@ func (r CommandRegistry) Matches(msg tea.KeyPressMsg, leader bool) []Command {
 		}
 		return strings.Compare(string(a.Name), string(b.Name))
 	})
+	return commands
+}
+
+func (r CommandRegistry) Matches(msg tea.KeyPressMsg, leader bool) []Command {
+	var matched []Command
+	for _, command := range r.Sorted() {
+		if command.Matches(msg, leader) {
+			matched = append(matched, command)
+		}
+	}
 	return matched
 }
 
