@@ -631,7 +631,7 @@ export default function Share(props: {
     const result = {
       rootDir: undefined as string | undefined,
       created: undefined as number | undefined,
-      updated: undefined as number | undefined,
+      completed: undefined as number | undefined,
       messages: [] as Message.Info[],
       models: {} as Record<string, string[]>,
       cost: 0,
@@ -643,7 +643,6 @@ export default function Share(props: {
     }
 
     result.created = props.info.time.created
-    result.updated = props.info.time.updated
 
     for (let i = 0; i < messages().length; i++) {
       const msg = messages()[i]
@@ -677,6 +676,10 @@ export default function Share(props: {
 
         if (assistant.path?.root) {
           result.rootDir = assistant.path.root
+        }
+
+        if (msg.metadata?.time.completed) {
+          result.completed = msg.metadata?.time.completed
         }
       }
     }
@@ -871,6 +874,17 @@ export default function Share(props: {
                                   expand={isLastPart()}
                                   text={stripEnclosingTag(part().text)}
                                 />
+                                <Show when={isLastPart() && data().completed}>
+                                  <span data-part-footer
+                                    title={DateTime.fromMillis(
+                                      data().completed || 0,
+                                    ).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}
+                                  >
+                                    {DateTime.fromMillis(data().completed || 0).toLocaleString(
+                                      DateTime.DATETIME_MED
+                                    )}
+                                  </span>
+                                </Show>
                               </div>
                             </div>
                           )}
