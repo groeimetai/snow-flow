@@ -898,7 +898,12 @@ export default function Share(props: {
                           }
                         >
                           {(assistant) => {
-                            const system = () => assistant().system || []
+                            const system = createMemo(() => {
+                              const prompts = assistant().system || []
+                              return prompts.filter(
+                                (p: string) => !p.startsWith("You are Claude Code")
+                              )
+                            })
                             return (
                               <div
                                 id={anchor()}
@@ -924,24 +929,26 @@ export default function Share(props: {
                                     <span data-part-model>
                                       {assistant().modelID}
                                     </span>
-                                    <div data-part-tool-result>
-                                      <ResultsButton
-                                        showCopy="Show system prompt"
-                                        hideCopy="Hide system prompt"
-                                        results={showResults()}
-                                        onClick={() =>
-                                          setShowResults((e) => !e)
-                                        }
-                                      />
-                                      <Show when={showResults()}>
-                                        <TextPart
-                                          expand
-                                          data-size="sm"
-                                          data-color="dimmed"
-                                          text={system().join("\n\n").trim()}
+                                    <Show when={system().length > 0}>
+                                      <div data-part-tool-result>
+                                        <ResultsButton
+                                          showCopy="Show system prompt"
+                                          hideCopy="Hide system prompt"
+                                          results={showResults()}
+                                          onClick={() =>
+                                            setShowResults((e) => !e)
+                                          }
                                         />
-                                      </Show>
-                                    </div>
+                                        <Show when={showResults()}>
+                                          <TextPart
+                                            expand
+                                            data-size="sm"
+                                            data-color="dimmed"
+                                            text={system().join("\n\n").trim()}
+                                          />
+                                        </Show>
+                                      </div>
+                                    </Show>
                                   </div>
                                 </div>
                               </div>
