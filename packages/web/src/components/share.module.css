@@ -150,11 +150,12 @@
     }
   }
 
+  [data-section="stats"][data-section-root],
   [data-section="stats"][data-section-models] {
     li {
       gap: 0.3125rem;
 
-      [data-stat-model-icon] {
+      [data-stat-icon] {
         flex: 0 0 auto;
         color: var(--sl-color-text-dimmed);
         opacity: 0.85;

@@ -743,20 +743,22 @@ export default function Share(props: {
               )}
             </li>
           </ul>
-          <Show when={!data().rootDir}>
-            <div data-section="info">
-              <div data-stat-info-icon>
-                <IconFolder width={16} height={16} />
-              </div>
-              <span>{data().rootDir}</span>
-            </div>
+          <Show when={data().rootDir}>
+            <ul data-section="stats" data-section-root>
+              <li>
+                <div data-stat-icon>
+                  <IconFolder width={16} height={16} />
+                </div>
+                <span>{data().rootDir}</span>
+              </li>
+            </ul>
           </Show>
           <ul data-section="stats" data-section-models>
             {Object.values(data().models).length > 0 ? (
               <For each={Object.values(data().models)}>
                 {([provider, model]) => (
                   <li>
-                    <div data-stat-model-icon title={provider}>
+                    <div data-stat-icon title={provider}>
                       <ProviderIcon provider={provider} />
                     </div>
                     <span data-stat-model>{model}</span>
