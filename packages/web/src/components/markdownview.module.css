@@ -12,6 +12,10 @@
     margin-bottom: 1rem;
   }
 
+  strong {
+    font-weight: 600;
+  }
+
   ol {
     list-style-position: inside;
     padding-left: 0.75rem;

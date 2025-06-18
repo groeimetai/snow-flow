@@ -18,9 +18,9 @@ function CodeBlock(props: CodeBlockProps) {
   const [local, rest] = splitProps(props, ["code", "lang", "onRendered"])
   let containerRef!: HTMLDivElement
 
-  const [html] = createResource(async () => {
-    return (await codeToHtml(local.code, {
-      lang: local.lang || "text",
+  const [html] = createResource(() => [local.code, local.lang], async ([code, lang]) => {
+    return (await codeToHtml(code || "", {
+      lang: lang || "text",
       themes: {
         light: "github-light",
         dark: "github-dark",

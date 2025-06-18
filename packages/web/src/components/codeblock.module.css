@@ -1,7 +1,7 @@
 .codeblock {
   pre {
-    --shiki-dark-bg: var(--sl-color-bg) !important;
-    background-color: var(--sl-color-bg) !important;
+    --shiki-dark-bg: var(--sl-color-bg-surface) !important;
+    background-color: var(--sl-color-bg-surface) !important;
   }
 }
 
