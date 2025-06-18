@@ -266,7 +266,7 @@ func (m *messagesComponent) header() string {
 		BorderLeft(true).
 		BorderRight(true).
 		BorderBackground(t.Background()).
-		BorderForeground(t.BackgroundSubtle()).
+		BorderForeground(t.BackgroundElement()).
 		BorderStyle(lipgloss.ThickBorder()).
 		Render(header)
 
