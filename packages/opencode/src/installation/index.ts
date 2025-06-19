@@ -41,6 +41,10 @@ export namespace Installation {
     return VERSION.startsWith("0.0.0")
   }
 
+  export function isDev() {
+    return VERSION === "dev"
+  }
+
   export async function method() {
     if (process.execPath.includes(path.join(".opencode", "bin"))) return "curl"
     const exec = process.execPath.toLowerCase()

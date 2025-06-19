@@ -1,5 +1,6 @@
 import { App } from "../app/app"
 import { Bus } from "../bus"
+import { Installation } from "../installation"
 import { Session } from "../session"
 import { Storage } from "../storage/storage"
 import { Log } from "../util/log"
@@ -56,7 +57,10 @@ export namespace Share {
   }
 
   export const URL =
-    process.env["OPENCODE_API"] ?? "https://api.dev.opencode.ai"
+    process.env["OPENCODE_API"] ??
+    (Installation.isSnapshot() || Installation.isDev()
+      ? "https://api.dev.opencode.ai"
+      : "https://api.opencode.ai")
 
   export async function create(sessionID: string) {
     return fetch(`${URL}/share_create`, {

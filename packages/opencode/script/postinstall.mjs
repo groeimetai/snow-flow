@@ -80,9 +80,9 @@ function main() {
 
     // Create symlink to the actual binary
     fs.symlinkSync(binaryPath, binScript)
-    console.log(`OpenCode binary symlinked: ${binScript} -> ${binaryPath}`)
+    console.log(`opencode binary symlinked: ${binScript} -> ${binaryPath}`)
   } catch (error) {
-    console.error("Failed to create OpenCode binary symlink:", error.message)
+    console.error("Failed to create opencode binary symlink:", error.message)
     process.exit(1)
   }
 }

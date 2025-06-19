@@ -1,5 +1,5 @@
 
-- Allows OpenCode to search the web and use the results to inform responses
+- Allows opencode to search the web and use the results to inform responses
 - Provides up-to-date information for current events and recent data
 - Returns search result information formatted as search result blocks
 - Use this tool for accessing information beyond Claude's knowledge cutoff

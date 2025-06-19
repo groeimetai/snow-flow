@@ -20,11 +20,12 @@ const TOOL: Record<string, [string, string]> = {
   list: ["List", UI.Style.TEXT_INFO_BOLD],
   read: ["Read", UI.Style.TEXT_HIGHLIGHT_BOLD],
   write: ["Write", UI.Style.TEXT_SUCCESS_BOLD],
+  websearch: ["Search", UI.Style.TEXT_MUTED_BOLD],
 }
 
 export const RunCommand = cmd({
   command: "run [message..]",
-  describe: "Run OpenCode with a message",
+  describe: "Run opencode with a message",
   builder: (yargs: Argv) => {
     return yargs
       .positional("message", {
