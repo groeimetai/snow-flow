@@ -5,6 +5,7 @@ import type { Props } from '@astrojs/starlight/props';
 
 import CopyIcon from "../assets/lander/copy.svg";
 import CheckIcon from "../assets/lander/check.svg";
+import Screenshot from "../assets/themes/tokyonight.png";
 
 const { data } = Astro.locals.starlightRoute.entry;
 const { title = data.title, tagline, image, actions = [] } = data.hero || {};
@@ -77,6 +78,13 @@ if (image) {
       </ul>
     </section>
 
+    <section class="images">
+      <div>
+        <p>opencode TUI with the tokyonight theme</p>
+        <Image width={600} src={Screenshot} alt="opencode TUI with the tokyonight theme" />
+      </div>
+    </section>
+
     <section class="footer">
       <div class="col1">
         <span>Version: Beta</span>
@@ -128,24 +136,39 @@ section.cta {
   justify-content: space-between;
   border-top: 2px solid var(--sl-color-border);
 
+  @media (max-width: 40rem) {
+    flex-direction: column;
+  }
+
   & > div {
     flex: 1;
     line-height: 1.4;
     padding: calc(var(--padding) / 2) 0.5rem;
+
+    @media (max-width: 40rem) {
+      padding-bottom: calc(var(--padding) / 2 + 4px);
+    }
+
+    a {
+      font-size: 1rem;
+    }
+  }
+  & > div.col2 {
+    @media (max-width: 50rem) {
+      flex: 0 0 auto;
+    }
   }
   & > div:not(.col2) {
     text-align: center;
     text-transform: uppercase;
   }
 
-  @media (max-width: 30rem) {
-    & > div {
-      padding-bottom: calc(var(--padding) / 2 + 4px);
-    }
-  }
-
   & > div + div {
     border-left: 2px solid var(--sl-color-border);
+    @media (max-width: 40rem) {
+      border-left: none;
+      border-top: 2px solid var(--sl-color-border);
+    }
   }
 
   .command {
@@ -207,6 +230,61 @@ section.content {
 
     li b {
       text-transform: uppercase;
+    }
+  }
+}
+
+section.images {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  border-top: 2px solid var(--sl-color-border);
+
+  & > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--padding) / 4);
+    padding: calc(var(--padding) / 2);
+    border-width: 0;
+    border-style: solid;
+    border-color: var(--sl-color-border);
+
+    & > div, p {
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  p {
+    letter-spacing: -0.03125rem;
+    text-transform: uppercase;
+    color: var(--sl-color-text-dimmed);
+
+    @media (max-width: 30rem) {
+      font-size: 0.75rem;
+    }
+  }
+
+  img {
+    align-self: center;
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+  }
+
+  & > div + div {
+    border-width: 0 0 0 2px;
+  }
+
+  @media (max-width: 30rem) {
+    & {
+      flex-direction: column;
+    }
+    & > div + div {
+      border-width: 2px 0 0 0;
     }
   }
 }
