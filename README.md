@@ -63,7 +63,7 @@ If there are additional providers you want to use you can submit a PR to the [Mo
 
 ### Config
 
-Config is optional and can be placed in the root of your repo or globally in `~/.config/opencode/config`. It can be checked in and shared with your team.
+Config is optional and can be placed in the root of your repo or globally in `~/.config/opencode/config.json`. It can be checked in and shared with your team.
 
 ```json title="opencode.json"
 {
