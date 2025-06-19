@@ -32,6 +32,7 @@ import { Flag } from "../flag/flag"
 import type { ModelsDev } from "../provider/models"
 import { Installation } from "../installation"
 import { Config } from "../config/config"
+import { ProviderTransform } from "../provider/transform"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -266,15 +267,6 @@ export namespace Session {
             (x): CoreMessage => ({
               role: "system",
               content: x,
-              providerOptions: {
-                ...(input.providerID === "anthropic"
-                  ? {
-                      anthropic: {
-                        cacheControl: { type: "ephemeral" },
-                      },
-                    }
-                  : {}),
-              },
             }),
           ),
           ...convertToCoreMessages([
@@ -284,7 +276,9 @@ export namespace Session {
               parts: toParts(input.parts),
             },
           ]),
-        ],
+        ].map((msg, i) =>
+          ProviderTransform.message(msg, i, input.providerID, input.modelID),
+        ),
         model: model.language,
       })
         .then((result) => {
@@ -515,24 +509,17 @@ export namespace Session {
       maxSteps: 1000,
       messages: [
         ...system.map(
-          (x, index): CoreMessage => ({
+          (x): CoreMessage => ({
             role: "system",
             content: x,
-            providerOptions: {
-              ...(input.providerID === "anthropic" && index < 4
-                ? {
-                    anthropic: {
-                      cacheControl: { type: "ephemeral" },
-                    },
-                  }
-                : {}),
-            },
           }),
         ),
         ...convertToCoreMessages(
           msgs.map(toUIMessage).filter((x) => x.parts.length > 0),
         ),
-      ],
+      ].map((msg, i) =>
+        ProviderTransform.message(msg, i, input.providerID, input.modelID),
+      ),
       temperature: model.info.temperature ? 0 : undefined,
       tools: {
         ...tools,
