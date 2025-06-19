@@ -23,9 +23,9 @@ export const api = new sst.cloudflare.Worker("Api", {
         },
       ])
       args.migrations = {
-        oldTag: "v1",
-        newTag: "v1",
-        //newSqliteClasses: ["SyncServer"],
+        // oldTag: "v1",
+        // newTag: "v1",
+        newSqliteClasses: ["SyncServer"],
       }
     },
   },
