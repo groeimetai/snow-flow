@@ -115,32 +115,6 @@ export namespace Provider {
     }
 
     const configProviders = Object.entries(config.provider ?? {})
-    for await (const providerPath of new Bun.Glob("*/provider.toml").scan({
-      cwd: Global.Path.providers,
-    })) {
-      const [providerID] = providerPath.split("/")
-      const toml = await import(
-        path.join(Global.Path.providers, providerPath),
-        {
-          with: {
-            type: "toml",
-          },
-        }
-      ).then((mod) => mod.default)
-      toml.models = {}
-      const modelsPath = path.join(Global.Path.providers, providerID, "models")
-      for await (const modelPath of new Bun.Glob("**/*.toml").scan({
-        cwd: modelsPath,
-      })) {
-        const modelID = modelPath.slice(0, -5)
-        toml.models[modelID] = await import(path.join(modelsPath, modelPath), {
-          with: {
-            type: "toml",
-          },
-        })
-      }
-      configProviders.unshift([providerID, toml])
-    }
 
     for (const [providerID, provider] of configProviders) {
       const existing = database[providerID]
