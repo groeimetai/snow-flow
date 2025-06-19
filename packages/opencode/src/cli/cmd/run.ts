@@ -33,13 +33,24 @@ export const RunCommand = cmd({
         array: true,
         default: [],
       })
+      .option("continue", {
+        alias: ["c"],
+        describe: "Continue the last session",
+        type: "boolean",
+      })
       .option("session", {
+        alias: ["s"],
         describe: "Session ID to continue",
         type: "string",
       })
       .option("share", {
         type: "boolean",
         describe: "Share the session",
+      })
+      .option("model", {
+        type: "string",
+        alias: ["m"],
+        describe: "Model to use in the format of provider/model",
       })
   },
   handler: async (args) => {
@@ -50,9 +61,22 @@ export const RunCommand = cmd({
       },
       async () => {
         await Share.init()
-        const session = args.session
-          ? await Session.get(args.session)
-          : await Session.create()
+        const session = await (async () => {
+          if (args.continue) {
+            const first = await Session.list().next()
+            if (first.done) return
+            return first.value
+          }
+
+          if (args.session) return Session.get(args.session)
+
+          return Session.create()
+        })()
+
+        if (!session) {
+          UI.error("Session not found")
+          return
+        }
 
         UI.empty()
         UI.println(UI.logo())
@@ -71,7 +95,9 @@ export const RunCommand = cmd({
         }
         UI.empty()
 
-        const { providerID, modelID } = await Provider.defaultModel()
+        const { providerID, modelID } = args.model
+          ? Provider.parseModel(args.model)
+          : await Provider.defaultModel()
         UI.println(
           UI.Style.TEXT_NORMAL_BOLD + "@ ",
           UI.Style.TEXT_NORMAL + `${providerID}/${modelID}`,

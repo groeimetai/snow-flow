@@ -272,15 +272,28 @@ export namespace Provider {
 
   export async function defaultModel() {
     const cfg = await Config.get()
+    if (cfg.model) return parseModel(cfg.model)
     const provider = await list()
       .then((val) => Object.values(val))
-      .then((x) => x.find((p) => !cfg.provider || Object.keys(cfg.provider).includes(p.info.id)))
+      .then((x) =>
+        x.find(
+          (p) => !cfg.provider || Object.keys(cfg.provider).includes(p.info.id),
+        ),
+      )
     if (!provider) throw new Error("no providers found")
     const [model] = sort(Object.values(provider.info.models))
     if (!model) throw new Error("no models found")
     return {
       providerID: provider.info.id,
       modelID: model.id,
+    }
+  }
+
+  export function parseModel(model: string) {
+    const [providerID, ...rest] = model.split("/")
+    return {
+      providerID: providerID,
+      modelID: rest.join("/"),
     }
   }
 
