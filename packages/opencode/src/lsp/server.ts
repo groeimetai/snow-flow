@@ -70,6 +70,9 @@ export namespace LSPServer {
           const proc = Bun.spawn({
             cmd: ["go", "install", "golang.org/x/tools/gopls@latest"],
             env: { ...process.env, GOBIN: Global.Path.bin },
+            stdout: "pipe",
+            stderr: "pipe",
+            stdin: "pipe",
           })
           const exit = await proc.exited
           if (exit !== 0) {
