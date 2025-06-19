@@ -110,9 +110,6 @@ func (m *editorComponent) Content() string {
 		PaddingTop(1).
 		PaddingBottom(1).
 		Background(t.BackgroundElement()).
-		Border(lipgloss.ThickBorder(), false, true).
-		BorderForeground(t.BackgroundElement()).
-		BorderBackground(t.Background()).
 		Render(textarea)
 
 	hint := base("enter") + muted(" send   ")

@@ -93,12 +93,7 @@ func (tm *ToastManager) renderSingleToast(toast Toast) string {
 	baseStyle := styles.BaseStyle().
 		Background(t.BackgroundElement()).
 		Foreground(t.Text()).
-		Padding(1, 2).
-		BorderStyle(lipgloss.ThickBorder()).
-		BorderBackground(t.Background()).
-		BorderForeground(toast.Color).
-		BorderLeft(true).
-		BorderRight(true)
+		Padding(1, 2)
 
 	maxWidth := max(40, layout.Current.Viewport.Width/3)
 	contentMaxWidth := max(maxWidth-6, 20)
@@ -137,9 +132,7 @@ func (tm *ToastManager) View() string {
 		toastViews = append(toastViews, toastView+"\n")
 	}
 
-	t := theme.CurrentTheme()
-	content := lipgloss.JoinVertical(lipgloss.Right, toastViews...)
-	return lipgloss.NewStyle().Background(t.Background()).Render(content)
+	return strings.Join(toastViews, "\n")
 }
 
 // RenderOverlay renders the toasts as an overlay on the given background
@@ -151,38 +144,40 @@ func (tm *ToastManager) RenderOverlay(background string) string {
 	bgWidth := lipgloss.Width(background)
 	bgHeight := lipgloss.Height(background)
 	result := background
-	
+
 	// Start from top with 2 character padding
 	currentY := 2
-	
+
 	// Render each toast individually
 	for _, toast := range tm.toasts {
 		// Render individual toast
 		toastView := tm.renderSingleToast(toast)
 		toastWidth := lipgloss.Width(toastView)
 		toastHeight := lipgloss.Height(toastView)
-		
+
 		// Position at top-right with 2 character padding from right edge
-		x := bgWidth - toastWidth - 2
-		
-		// Ensure we don't go negative
-		if x < 0 {
-			x = 0
-		}
-		
+		x := max(bgWidth-toastWidth-4, 0)
+
 		// Check if toast fits vertically
-		if currentY + toastHeight > bgHeight - 2 {
+		if currentY+toastHeight > bgHeight-2 {
 			// No more room for toasts
 			break
 		}
-		
+
 		// Place this toast
-		result = layout.PlaceOverlay(x, currentY, toastView, result)
-		
+		result = layout.PlaceOverlay(
+			x,
+			currentY,
+			toastView,
+			result,
+			layout.WithOverlayBorder(),
+			layout.WithOverlayBorderColor(toast.Color),
+		)
+
 		// Move down for next toast (add 1 for spacing between toasts)
 		currentY += toastHeight + 1
 	}
-	
+
 	return result
 }
 

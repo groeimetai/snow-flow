@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/bubbles/v2/key"
 	"github.com/charmbracelet/bubbles/v2/textarea"
 	tea "github.com/charmbracelet/bubbletea/v2"
-	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/styles"
@@ -203,13 +202,6 @@ func (c *completionDialogComponent) View() string {
 
 	return baseStyle.Padding(0, 0).
 		Background(t.BackgroundElement()).
-		Border(lipgloss.ThickBorder()).
-		BorderTop(false).
-		BorderBottom(false).
-		BorderRight(true).
-		BorderLeft(true).
-		BorderBackground(t.Background()).
-		BorderForeground(t.BackgroundElement()).
 		Width(c.width).
 		Render(c.list.View())
 }

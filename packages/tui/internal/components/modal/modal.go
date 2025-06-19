@@ -100,9 +100,9 @@ func (m *Modal) Render(contentView string, background string) string {
 	if m.title != "" {
 		titleStyle := baseStyle.
 			Foreground(t.Primary()).
-			Bold(true)
+			Bold(true).
+			Padding(0, 1)
 
-		// titleView := titleStyle.Render(m.title)
 		escStyle := baseStyle.Foreground(t.TextMuted()).Bold(false)
 		escText := escStyle.Render("esc")
 
@@ -123,14 +123,7 @@ func (m *Modal) Render(contentView string, background string) string {
 		PaddingTop(1).
 		PaddingBottom(1).
 		PaddingLeft(2).
-		PaddingRight(2).
-		BorderStyle(lipgloss.ThickBorder()).
-		BorderLeft(true).
-		BorderRight(true).
-		BorderLeftForeground(t.BackgroundSubtle()).
-		BorderLeftBackground(t.Background()).
-		BorderRightForeground(t.BackgroundSubtle()).
-		BorderRightBackground(t.Background())
+		PaddingRight(2)
 
 	modalView := modalStyle.
 		Width(outerWidth).
@@ -150,5 +143,7 @@ func (m *Modal) Render(contentView string, background string) string {
 		row,
 		modalView,
 		background,
+		layout.WithOverlayBorder(),
+		layout.WithOverlayBorderColor(t.Primary()),
 	)
 }
