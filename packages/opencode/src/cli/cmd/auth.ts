@@ -9,14 +9,14 @@ import { map, pipe, sortBy, values } from "remeda"
 
 export const AuthCommand = cmd({
   command: "auth",
-  describe: "manage credentials",
+  describe: "Manage credentials",
   builder: (yargs) =>
     yargs
       .command(AuthLoginCommand)
       .command(AuthLogoutCommand)
       .command(AuthListCommand)
       .demandCommand(),
-  async handler() {},
+  async handler() { },
 })
 
 export const AuthListCommand = cmd({

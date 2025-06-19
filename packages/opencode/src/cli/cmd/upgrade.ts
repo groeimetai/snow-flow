@@ -5,10 +5,10 @@ import { Installation } from "../../installation"
 
 export const UpgradeCommand = {
   command: "upgrade [target]",
-  describe: "Upgrade opencode to the latest version or a specific version",
+  describe: "upgrade opencode to the latest version or a specific version",
   builder: (yargs: Argv) => {
     return yargs.positional("target", {
-      describe: "Specific version to upgrade to (e.g., '0.1.48' or 'v0.1.48')",
+      describe: "specific version to upgrade to (e.g., '0.1.48' or 'v0.1.48')",
       type: "string",
     })
   },

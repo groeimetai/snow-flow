@@ -36,7 +36,7 @@ const cli = yargs(hideBin(process.argv))
   .usage("\n" + UI.logo())
   .command({
     command: "$0 [project]",
-    describe: "Start opencode TUI",
+    describe: "start opencode TUI",
     builder: (yargs) =>
       yargs.positional("project", {
         type: "string",
@@ -84,21 +84,21 @@ const cli = yargs(hideBin(process.argv))
             },
           })
 
-          ;(async () => {
-            if (Installation.VERSION === "dev") return
-            if (Installation.isSnapshot()) return
-            const config = await Config.global()
-            if (config.autoupdate === false) return
-            const latest = await Installation.latest()
-            if (Installation.VERSION === latest) return
-            const method = await Installation.method()
-            if (method === "unknown") return
-            await Installation.upgrade(method, latest)
-              .then(() => {
-                Bus.publish(Installation.Event.Updated, { version: latest })
-              })
-              .catch(() => {})
-          })()
+            ; (async () => {
+              if (Installation.VERSION === "dev") return
+              if (Installation.isSnapshot()) return
+              const config = await Config.global()
+              if (config.autoupdate === false) return
+              const latest = await Installation.latest()
+              if (Installation.VERSION === latest) return
+              const method = await Installation.method()
+              if (method === "unknown") return
+              await Installation.upgrade(method, latest)
+                .then(() => {
+                  Bus.publish(Installation.Event.Updated, { version: latest })
+                })
+                .catch(() => { })
+            })()
 
           await proc.exited
           server.stop()

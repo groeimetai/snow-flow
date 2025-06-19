@@ -29,7 +29,7 @@ export const RunCommand = cmd({
   builder: (yargs: Argv) => {
     return yargs
       .positional("message", {
-        describe: "Message to send",
+        describe: "message to send",
         type: "string",
         array: true,
         default: [],
@@ -46,7 +46,7 @@ export const RunCommand = cmd({
       })
       .option("share", {
         type: "boolean",
-        describe: "Share the session",
+        describe: "share the session",
       })
       .option("model", {
         type: "string",
@@ -90,8 +90,8 @@ export const RunCommand = cmd({
           await Session.share(session.id)
           UI.println(
             UI.Style.TEXT_INFO_BOLD +
-              "~  https://opencode.ai/s/" +
-              session.id.slice(-8),
+            "~  https://opencode.ai/s/" +
+            session.id.slice(-8),
           )
         }
         UI.empty()
@@ -109,8 +109,8 @@ export const RunCommand = cmd({
           UI.println(
             color + `|`,
             UI.Style.TEXT_NORMAL +
-              UI.Style.TEXT_DIM +
-              ` ${type.padEnd(7, " ")}`,
+            UI.Style.TEXT_DIM +
+            ` ${type.padEnd(7, " ")}`,
             "",
             UI.Style.TEXT_NORMAL + title,
           )
