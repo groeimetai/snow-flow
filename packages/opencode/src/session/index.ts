@@ -584,7 +584,7 @@ export namespace Session {
             break
 
           case "tool-call-delta":
-            break
+            continue
 
           // for some reason ai sdk claims to not send this part but it does
           // @ts-expect-error
@@ -619,6 +619,7 @@ export namespace Session {
             l.info("unhandled", {
               type: value.type,
             })
+            continue
         }
         await updateMessage(next)
       }

@@ -34,13 +34,16 @@ export const TaskTool = Tool.define({
     }
 
     const unsub = Bus.subscribe(Message.Event.Updated, async (evt) => {
-      if (evt.properties.info.metadata.sessionID !== ctx.sessionID) return
+      if (evt.properties.info.metadata.sessionID !== session.id) return
       ctx.metadata({
         title: params.description,
         summary: summary(evt.properties.info),
       })
     })
 
+    ctx.abort.addEventListener("abort", () => {
+      Session.abort(session.id)
+    })
     const result = await Session.chat({
       sessionID: session.id,
       modelID: metadata.modelID,
