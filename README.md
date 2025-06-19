@@ -7,17 +7,16 @@
     </picture>
   </a>
 </p>
+<p align="center">AI coding agent, built for the terminal.</p>
 <p align="center">
   <a href="https://opencode.ai/docs"><img alt="View docs" src="https://img.shields.io/badge/view-docs-blue?style=flat-square" /></a>
   <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
   <a href="https://github.com/sst/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/sst/opencode/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
 
----
-
-AI coding agent, built for the terminal.
-
 [![opencode Terminal UI](packages/web/src/assets/themes/opencode.png)](https://opencode.ai)
+
+---
 
 ### Installation
 
