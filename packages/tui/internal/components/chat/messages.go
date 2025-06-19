@@ -191,6 +191,7 @@ func (m *messagesComponent) renderView() {
 							metadata,
 							m.showToolDetails,
 							isLastToolInvocation,
+							false,
 						)
 						m.cache.Set(key, content)
 					}
@@ -202,6 +203,7 @@ func (m *messagesComponent) renderView() {
 						metadata,
 						m.showToolDetails,
 						isLastToolInvocation,
+						false,
 					)
 				}
 

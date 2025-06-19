@@ -212,6 +212,11 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dialog.CompletionDialogCloseMsg:
 		a.showCompletionDialog = false
 		a.completions.SetProvider(a.completionManager.DefaultProvider())
+	case client.EventInstallationUpdated:
+		return a, toast.NewSuccessToast(
+			"New version installed",
+			toast.WithTitle("opencode updated to "+msg.Properties.Version+", restart to apply."),
+		)
 	case client.EventSessionUpdated:
 		if msg.Properties.Info.Id == a.app.Session.Id {
 			a.app.Session = &msg.Properties.Info

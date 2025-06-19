@@ -526,6 +526,9 @@
             "$ref": "#/components/schemas/Event.storage.write"
           },
           {
+            "$ref": "#/components/schemas/Event.installation.updated"
+          },
+          {
             "$ref": "#/components/schemas/Event.lsp.client.diagnostics"
           },
           {
@@ -538,9 +541,6 @@
             "$ref": "#/components/schemas/Event.message.part.updated"
           },
           {
-            "$ref": "#/components/schemas/Event.installation.updated"
-          },
-          {
             "$ref": "#/components/schemas/Event.session.updated"
           },
           {
@@ -551,11 +551,11 @@
           "propertyName": "type",
           "mapping": {
             "storage.write": "#/components/schemas/Event.storage.write",
+            "installation.updated": "#/components/schemas/Event.installation.updated",
             "lsp.client.diagnostics": "#/components/schemas/Event.lsp.client.diagnostics",
             "permission.updated": "#/components/schemas/Event.permission.updated",
             "message.updated": "#/components/schemas/Event.message.updated",
             "message.part.updated": "#/components/schemas/Event.message.part.updated",
-            "installation.updated": "#/components/schemas/Event.installation.updated",
             "session.updated": "#/components/schemas/Event.session.updated",
             "session.error": "#/components/schemas/Event.session.error"
           }
@@ -578,6 +578,30 @@
             },
             "required": [
               "key"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "properties"
+        ]
+      },
+      "Event.installation.updated": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "installation.updated"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
             ]
           }
         },
@@ -1201,30 +1225,6 @@
           "properties"
         ]
       },
-      "Event.installation.updated": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "installation.updated"
-          },
-          "properties": {
-            "type": "object",
-            "properties": {
-              "version": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "version"
-            ]
-          }
-        },
-        "required": [
-          "type",
-          "properties"
-        ]
-      },
       "Event.session.updated": {
         "type": "object",
         "properties": {
@@ -1391,13 +1391,16 @@
         "type": "object",
         "properties": {
           "$schema": {
-            "type": "string"
+            "type": "string",
+            "description": "JSON schema reference for configuration validation"
           },
           "theme": {
-            "type": "string"
+            "type": "string",
+            "description": "Theme name to use for the interface"
           },
           "keybinds": {
-            "$ref": "#/components/schemas/Config.Keybinds"
+            "$ref": "#/components/schemas/Config.Keybinds",
+            "description": "Custom keybind configurations"
           },
           "autoshare": {
             "type": "boolean",
@@ -1508,7 +1511,8 @@
               "required": [
                 "models"
               ]
-            }
+            },
+            "description": "Custom provider configurations and model overrides"
           },
           "mcp": {
             "type": "object",
@@ -1528,7 +1532,8 @@
                   "remote": "#/components/schemas/Config.McpRemote"
                 }
               }
-            }
+            },
+            "description": "MCP (Model Context Protocol) server configurations"
           }
         }
       },
@@ -1536,85 +1541,112 @@
         "type": "object",
         "properties": {
           "leader": {
-            "type": "string"
+            "type": "string",
+            "description": "Leader key for keybind combinations"
           },
           "help": {
-            "type": "string"
+            "type": "string",
+            "description": "Show help dialog"
           },
           "editor_open": {
-            "type": "string"
+            "type": "string",
+            "description": "Open external editor"
           },
           "session_new": {
-            "type": "string"
+            "type": "string",
+            "description": "Create a new session"
           },
           "session_list": {
-            "type": "string"
+            "type": "string",
+            "description": "List all sessions"
           },
           "session_share": {
-            "type": "string"
+            "type": "string",
+            "description": "Share current session"
           },
           "session_interrupt": {
-            "type": "string"
+            "type": "string",
+            "description": "Interrupt current session"
           },
           "session_compact": {
-            "type": "string"
+            "type": "string",
+            "description": "Toggle compact mode for session"
           },
           "tool_details": {
-            "type": "string"
+            "type": "string",
+            "description": "Show tool details"
           },
           "model_list": {
-            "type": "string"
+            "type": "string",
+            "description": "List available models"
           },
           "theme_list": {
-            "type": "string"
+            "type": "string",
+            "description": "List available themes"
           },
           "project_init": {
-            "type": "string"
+            "type": "string",
+            "description": "Initialize project configuration"
           },
           "input_clear": {
-            "type": "string"
+            "type": "string",
+            "description": "Clear input field"
           },
           "input_paste": {
-            "type": "string"
+            "type": "string",
+            "description": "Paste from clipboard"
           },
           "input_submit": {
-            "type": "string"
+            "type": "string",
+            "description": "Submit input"
           },
           "input_newline": {
-            "type": "string"
+            "type": "string",
+            "description": "Insert newline in input"
           },
           "history_previous": {
-            "type": "string"
+            "type": "string",
+            "description": "Navigate to previous history item"
           },
           "history_next": {
-            "type": "string"
+            "type": "string",
+            "description": "Navigate to next history item"
           },
           "messages_page_up": {
-            "type": "string"
+            "type": "string",
+            "description": "Scroll messages up by one page"
           },
           "messages_page_down": {
-            "type": "string"
+            "type": "string",
+            "description": "Scroll messages down by one page"
           },
           "messages_half_page_up": {
-            "type": "string"
+            "type": "string",
+            "description": "Scroll messages up by half page"
           },
           "messages_half_page_down": {
-            "type": "string"
+            "type": "string",
+            "description": "Scroll messages down by half page"
           },
           "messages_previous": {
-            "type": "string"
+            "type": "string",
+            "description": "Navigate to previous message"
           },
           "messages_next": {
-            "type": "string"
+            "type": "string",
+            "description": "Navigate to next message"
           },
           "messages_first": {
-            "type": "string"
+            "type": "string",
+            "description": "Navigate to first message"
           },
           "messages_last": {
-            "type": "string"
+            "type": "string",
+            "description": "Navigate to last message"
           },
           "app_exit": {
-            "type": "string"
+            "type": "string",
+            "description": "Exit the application"
           }
         }
       },
@@ -1723,19 +1755,22 @@
         "properties": {
           "type": {
             "type": "string",
-            "const": "local"
+            "const": "local",
+            "description": "Type of MCP server connection"
           },
           "command": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Command and arguments to run the MCP server"
           },
           "environment": {
             "type": "object",
             "additionalProperties": {
               "type": "string"
-            }
+            },
+            "description": "Environment variables to set when running the MCP server"
           }
         },
         "required": [
@@ -1748,10 +1783,12 @@
         "properties": {
           "type": {
             "type": "string",
-            "const": "remote"
+            "const": "remote",
+            "description": "Type of MCP server connection"
           },
           "url": {
-            "type": "string"
+            "type": "string",
+            "description": "URL of the remote MCP server"
           }
         },
         "required": [

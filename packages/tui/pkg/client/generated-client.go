@@ -41,6 +41,7 @@ type AppInfo struct {
 
 // ConfigInfo defines model for Config.Info.
 type ConfigInfo struct {
+	// Schema JSON schema reference for configuration validation
 	Schema *string `json:"$schema,omitempty"`
 
 	// Autoshare Share newly created sessions automatically
@@ -50,12 +51,16 @@ type ConfigInfo struct {
 	Autoupdate *bool `json:"autoupdate,omitempty"`
 
 	// DisabledProviders Disable providers that are loaded automatically
-	DisabledProviders *[]string                                       `json:"disabled_providers,omitempty"`
-	Keybinds          *ConfigKeybinds                                 `json:"keybinds,omitempty"`
-	Mcp               *map[string]ConfigInfo_Mcp_AdditionalProperties `json:"mcp,omitempty"`
+	DisabledProviders *[]string       `json:"disabled_providers,omitempty"`
+	Keybinds          *ConfigKeybinds `json:"keybinds,omitempty"`
+
+	// Mcp MCP (Model Context Protocol) server configurations
+	Mcp *map[string]ConfigInfo_Mcp_AdditionalProperties `json:"mcp,omitempty"`
 
 	// Model Model to use in the format of provider/model, eg anthropic/claude-2
-	Model    *string `json:"model,omitempty"`
+	Model *string `json:"model,omitempty"`
+
+	// Provider Custom provider configurations and model overrides
 	Provider *map[string]struct {
 		Api    *string   `json:"api,omitempty"`
 		Env    *[]string `json:"env,omitempty"`
@@ -81,6 +86,8 @@ type ConfigInfo struct {
 		Npm     *string                 `json:"npm,omitempty"`
 		Options *map[string]interface{} `json:"options,omitempty"`
 	} `json:"provider,omitempty"`
+
+	// Theme Theme name to use for the interface
 	Theme *string `json:"theme,omitempty"`
 }
 
@@ -91,46 +98,107 @@ type ConfigInfo_Mcp_AdditionalProperties struct {
 
 // ConfigKeybinds defines model for Config.Keybinds.
 type ConfigKeybinds struct {
-	AppExit              *string `json:"app_exit,omitempty"`
-	EditorOpen           *string `json:"editor_open,omitempty"`
-	Help                 *string `json:"help,omitempty"`
-	HistoryNext          *string `json:"history_next,omitempty"`
-	HistoryPrevious      *string `json:"history_previous,omitempty"`
-	InputClear           *string `json:"input_clear,omitempty"`
-	InputNewline         *string `json:"input_newline,omitempty"`
-	InputPaste           *string `json:"input_paste,omitempty"`
-	InputSubmit          *string `json:"input_submit,omitempty"`
-	Leader               *string `json:"leader,omitempty"`
-	MessagesFirst        *string `json:"messages_first,omitempty"`
+	// AppExit Exit the application
+	AppExit *string `json:"app_exit,omitempty"`
+
+	// EditorOpen Open external editor
+	EditorOpen *string `json:"editor_open,omitempty"`
+
+	// Help Show help dialog
+	Help *string `json:"help,omitempty"`
+
+	// HistoryNext Navigate to next history item
+	HistoryNext *string `json:"history_next,omitempty"`
+
+	// HistoryPrevious Navigate to previous history item
+	HistoryPrevious *string `json:"history_previous,omitempty"`
+
+	// InputClear Clear input field
+	InputClear *string `json:"input_clear,omitempty"`
+
+	// InputNewline Insert newline in input
+	InputNewline *string `json:"input_newline,omitempty"`
+
+	// InputPaste Paste from clipboard
+	InputPaste *string `json:"input_paste,omitempty"`
+
+	// InputSubmit Submit input
+	InputSubmit *string `json:"input_submit,omitempty"`
+
+	// Leader Leader key for keybind combinations
+	Leader *string `json:"leader,omitempty"`
+
+	// MessagesFirst Navigate to first message
+	MessagesFirst *string `json:"messages_first,omitempty"`
+
+	// MessagesHalfPageDown Scroll messages down by half page
 	MessagesHalfPageDown *string `json:"messages_half_page_down,omitempty"`
-	MessagesHalfPageUp   *string `json:"messages_half_page_up,omitempty"`
-	MessagesLast         *string `json:"messages_last,omitempty"`
-	MessagesNext         *string `json:"messages_next,omitempty"`
-	MessagesPageDown     *string `json:"messages_page_down,omitempty"`
-	MessagesPageUp       *string `json:"messages_page_up,omitempty"`
-	MessagesPrevious     *string `json:"messages_previous,omitempty"`
-	ModelList            *string `json:"model_list,omitempty"`
-	ProjectInit          *string `json:"project_init,omitempty"`
-	SessionCompact       *string `json:"session_compact,omitempty"`
-	SessionInterrupt     *string `json:"session_interrupt,omitempty"`
-	SessionList          *string `json:"session_list,omitempty"`
-	SessionNew           *string `json:"session_new,omitempty"`
-	SessionShare         *string `json:"session_share,omitempty"`
-	ThemeList            *string `json:"theme_list,omitempty"`
-	ToolDetails          *string `json:"tool_details,omitempty"`
+
+	// MessagesHalfPageUp Scroll messages up by half page
+	MessagesHalfPageUp *string `json:"messages_half_page_up,omitempty"`
+
+	// MessagesLast Navigate to last message
+	MessagesLast *string `json:"messages_last,omitempty"`
+
+	// MessagesNext Navigate to next message
+	MessagesNext *string `json:"messages_next,omitempty"`
+
+	// MessagesPageDown Scroll messages down by one page
+	MessagesPageDown *string `json:"messages_page_down,omitempty"`
+
+	// MessagesPageUp Scroll messages up by one page
+	MessagesPageUp *string `json:"messages_page_up,omitempty"`
+
+	// MessagesPrevious Navigate to previous message
+	MessagesPrevious *string `json:"messages_previous,omitempty"`
+
+	// ModelList List available models
+	ModelList *string `json:"model_list,omitempty"`
+
+	// ProjectInit Initialize project configuration
+	ProjectInit *string `json:"project_init,omitempty"`
+
+	// SessionCompact Toggle compact mode for session
+	SessionCompact *string `json:"session_compact,omitempty"`
+
+	// SessionInterrupt Interrupt current session
+	SessionInterrupt *string `json:"session_interrupt,omitempty"`
+
+	// SessionList List all sessions
+	SessionList *string `json:"session_list,omitempty"`
+
+	// SessionNew Create a new session
+	SessionNew *string `json:"session_new,omitempty"`
+
+	// SessionShare Share current session
+	SessionShare *string `json:"session_share,omitempty"`
+
+	// ThemeList List available themes
+	ThemeList *string `json:"theme_list,omitempty"`
+
+	// ToolDetails Show tool details
+	ToolDetails *string `json:"tool_details,omitempty"`
 }
 
 // ConfigMcpLocal defines model for Config.McpLocal.
 type ConfigMcpLocal struct {
-	Command     []string           `json:"command"`
+	// Command Command and arguments to run the MCP server
+	Command []string `json:"command"`
+
+	// Environment Environment variables to set when running the MCP server
 	Environment *map[string]string `json:"environment,omitempty"`
-	Type        string             `json:"type"`
+
+	// Type Type of MCP server connection
+	Type string `json:"type"`
 }
 
 // ConfigMcpRemote defines model for Config.McpRemote.
 type ConfigMcpRemote struct {
+	// Type Type of MCP server connection
 	Type string `json:"type"`
-	Url  string `json:"url"`
+
+	// Url URL of the remote MCP server
+	Url string `json:"url"`
 }
 
 // Error defines model for Error.
@@ -684,6 +752,34 @@ func (t *Event) MergeEventStorageWrite(v EventStorageWrite) error {
 	return err
 }
 
+// AsEventInstallationUpdated returns the union data inside the Event as a EventInstallationUpdated
+func (t Event) AsEventInstallationUpdated() (EventInstallationUpdated, error) {
+	var body EventInstallationUpdated
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventInstallationUpdated overwrites any union data inside the Event as the provided EventInstallationUpdated
+func (t *Event) FromEventInstallationUpdated(v EventInstallationUpdated) error {
+	v.Type = "installation.updated"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventInstallationUpdated performs a merge with any union data inside the Event, using the provided EventInstallationUpdated
+func (t *Event) MergeEventInstallationUpdated(v EventInstallationUpdated) error {
+	v.Type = "installation.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsEventLspClientDiagnostics returns the union data inside the Event as a EventLspClientDiagnostics
 func (t Event) AsEventLspClientDiagnostics() (EventLspClientDiagnostics, error) {
 	var body EventLspClientDiagnostics
@@ -786,34 +882,6 @@ func (t *Event) FromEventMessagePartUpdated(v EventMessagePartUpdated) error {
 // MergeEventMessagePartUpdated performs a merge with any union data inside the Event, using the provided EventMessagePartUpdated
 func (t *Event) MergeEventMessagePartUpdated(v EventMessagePartUpdated) error {
 	v.Type = "message.part.updated"
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsEventInstallationUpdated returns the union data inside the Event as a EventInstallationUpdated
-func (t Event) AsEventInstallationUpdated() (EventInstallationUpdated, error) {
-	var body EventInstallationUpdated
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromEventInstallationUpdated overwrites any union data inside the Event as the provided EventInstallationUpdated
-func (t *Event) FromEventInstallationUpdated(v EventInstallationUpdated) error {
-	v.Type = "installation.updated"
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeEventInstallationUpdated performs a merge with any union data inside the Event, using the provided EventInstallationUpdated
-func (t *Event) MergeEventInstallationUpdated(v EventInstallationUpdated) error {
-	v.Type = "installation.updated"
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err

@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"slices"
@@ -252,6 +253,7 @@ func renderToolInvocation(
 	metadata client.MessageInfo_Metadata_Tool_AdditionalProperties,
 	showDetails bool,
 	isLast bool,
+	contentOnly bool,
 ) string {
 	ignoredTools := []string{"todoread"}
 	if slices.Contains(ignoredTools, toolCall.ToolName) {
@@ -313,7 +315,6 @@ func renderToolInvocation(
 				keys = append(keys, key)
 			}
 			slices.Sort(keys)
-
 			firstKey := ""
 			if len(keys) > 0 {
 				firstKey = keys[0]
@@ -454,12 +455,58 @@ func renderToolInvocation(
 			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
 			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
+	case "task":
+		if description, ok := toolArgsMap["description"].(string); ok {
+			title = fmt.Sprintf("TASK %s   %s", description, elapsed)
+			if summary, ok := metadata.Get("summary"); ok {
+				toolcalls := summary.([]any)
+				// toolcalls :=
+
+				steps := []string{}
+				for _, toolcall := range toolcalls {
+					call := toolcall.(map[string]any)
+					if toolInvocation, ok := call["toolInvocation"].(map[string]any); ok {
+						data, _ := json.Marshal(toolInvocation)
+						var toolCall client.MessageToolInvocationToolCall
+						_ = json.Unmarshal(data, &toolCall)
+
+						if metadata, ok := call["metadata"].(map[string]any); ok {
+							data, _ = json.Marshal(metadata)
+							var toolMetadata client.MessageInfo_Metadata_Tool_AdditionalProperties
+							_ = json.Unmarshal(data, &toolMetadata)
+
+							step := renderToolInvocation(
+								toolCall,
+								nil,
+								toolMetadata,
+								false,
+								false,
+								true,
+							)
+							steps = append(steps, step)
+						}
+					}
+				}
+				body = strings.Join(steps, "\n")
+				body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
+			}
+		}
+
 	default:
 		toolName := renderToolName(toolCall.ToolName)
 		title = fmt.Sprintf("%s %s   %s", toolName, toolArgs, elapsed)
+		if result == nil {
+			empty := ""
+			result = &empty
+		}
 		body = *result
 		body = truncateHeight(body, 10)
 		body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
+	}
+
+	if contentOnly {
+		title = "∟ " + title
+		return title
 	}
 
 	if !showDetails {
@@ -502,8 +549,6 @@ func renderToolInvocation(
 
 func renderToolName(name string) string {
 	switch name {
-	// case agent.AgentToolName:
-	// 	return "Task"
 	case "list":
 		return "LIST"
 	case "webfetch":
@@ -563,8 +608,8 @@ func renderFile(filename string, content string, options ...fileRenderingOption)
 
 func renderToolAction(name string) string {
 	switch name {
-	// case agent.AgentToolName:
-	// 	return "Preparing prompt..."
+	case "task":
+		return "Searching..."
 	case "bash":
 		return "Building command..."
 	case "edit":
