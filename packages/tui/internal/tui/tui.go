@@ -469,7 +469,6 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		a.editor = updated.(chat.EditorComponent)
 		cmds = append(cmds, cmd)
 	case commands.InputNewlineCommand:
-		slog.Debug("InputNewlineCommand")
 		updated, cmd := a.editor.Newline()
 		a.editor = updated.(chat.EditorComponent)
 		cmds = append(cmds, cmd)
