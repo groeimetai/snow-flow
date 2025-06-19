@@ -151,6 +151,7 @@ export namespace Session {
       }
     })
     await Storage.writeJSON<ShareInfo>("session/share/" + id, share)
+    await Share.sync("session/info/" + id, session)
     for (const msg of await messages(id)) {
       await Share.sync("session/message/" + id + "/" + msg.id, msg)
     }
