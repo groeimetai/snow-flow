@@ -95,16 +95,23 @@
       "additionalProperties": false
     },
     "autoshare": {
-      "type": "boolean"
+      "type": "boolean",
+      "description": "Share newly created sessions automatically"
     },
     "autoupdate": {
-      "type": "boolean"
+      "type": "boolean",
+      "description": "Automatically update to the latest version"
     },
     "disabled_providers": {
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "description": "Disable providers that are loaded automatically"
+    },
+    "model": {
+      "type": "string",
+      "description": "Model to use in the format of provider/model, eg anthropic/claude-2"
     },
     "provider": {
       "type": "object",

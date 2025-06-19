@@ -41,13 +41,22 @@ type AppInfo struct {
 
 // ConfigInfo defines model for Config.Info.
 type ConfigInfo struct {
-	Schema            *string                                         `json:"$schema,omitempty"`
-	Autoshare         *bool                                           `json:"autoshare,omitempty"`
-	Autoupdate        *bool                                           `json:"autoupdate,omitempty"`
+	Schema *string `json:"$schema,omitempty"`
+
+	// Autoshare Share newly created sessions automatically
+	Autoshare *bool `json:"autoshare,omitempty"`
+
+	// Autoupdate Automatically update to the latest version
+	Autoupdate *bool `json:"autoupdate,omitempty"`
+
+	// DisabledProviders Disable providers that are loaded automatically
 	DisabledProviders *[]string                                       `json:"disabled_providers,omitempty"`
-	Keybinds          *map[string]string                              `json:"keybinds,omitempty"`
+	Keybinds          *ConfigKeybinds                                 `json:"keybinds,omitempty"`
 	Mcp               *map[string]ConfigInfo_Mcp_AdditionalProperties `json:"mcp,omitempty"`
-	Provider          *map[string]struct {
+
+	// Model Model to use in the format of provider/model, eg anthropic/claude-2
+	Model    *string `json:"model,omitempty"`
+	Provider *map[string]struct {
 		Api    *string   `json:"api,omitempty"`
 		Env    *[]string `json:"env,omitempty"`
 		Id     *string   `json:"id,omitempty"`
@@ -78,6 +87,37 @@ type ConfigInfo struct {
 // ConfigInfo_Mcp_AdditionalProperties defines model for Config.Info.mcp.AdditionalProperties.
 type ConfigInfo_Mcp_AdditionalProperties struct {
 	union json.RawMessage
+}
+
+// ConfigKeybinds defines model for Config.Keybinds.
+type ConfigKeybinds struct {
+	AppExit              *string `json:"app_exit,omitempty"`
+	EditorOpen           *string `json:"editor_open,omitempty"`
+	Help                 *string `json:"help,omitempty"`
+	HistoryNext          *string `json:"history_next,omitempty"`
+	HistoryPrevious      *string `json:"history_previous,omitempty"`
+	InputClear           *string `json:"input_clear,omitempty"`
+	InputNewline         *string `json:"input_newline,omitempty"`
+	InputPaste           *string `json:"input_paste,omitempty"`
+	InputSubmit          *string `json:"input_submit,omitempty"`
+	Leader               *string `json:"leader,omitempty"`
+	MessagesFirst        *string `json:"messages_first,omitempty"`
+	MessagesHalfPageDown *string `json:"messages_half_page_down,omitempty"`
+	MessagesHalfPageUp   *string `json:"messages_half_page_up,omitempty"`
+	MessagesLast         *string `json:"messages_last,omitempty"`
+	MessagesNext         *string `json:"messages_next,omitempty"`
+	MessagesPageDown     *string `json:"messages_page_down,omitempty"`
+	MessagesPageUp       *string `json:"messages_page_up,omitempty"`
+	MessagesPrevious     *string `json:"messages_previous,omitempty"`
+	ModelList            *string `json:"model_list,omitempty"`
+	ProjectInit          *string `json:"project_init,omitempty"`
+	SessionCompact       *string `json:"session_compact,omitempty"`
+	SessionInterrupt     *string `json:"session_interrupt,omitempty"`
+	SessionList          *string `json:"session_list,omitempty"`
+	SessionNew           *string `json:"session_new,omitempty"`
+	SessionShare         *string `json:"session_share,omitempty"`
+	ThemeList            *string `json:"theme_list,omitempty"`
+	ToolDetails          *string `json:"tool_details,omitempty"`
 }
 
 // ConfigMcpLocal defines model for Config.McpLocal.

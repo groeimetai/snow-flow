@@ -61,66 +61,56 @@ The Models.dev dataset is also used to detect common environment variables like 
 
 If there are additional providers you want to use you can submit a PR to the [Models.dev repo](https://github.com/sst/models.dev). If configuring just for yourself check out the Config section below.
 
-### Global Config
+### Config
 
-Some basic configuration is available in the global config file.
-
-```toml
-# ~/.config/opencode/config
-theme = "opencode"
-provider = "anthropic"
-model = "claude-sonnet-4-20250514"
-autoupdate = true
-
-keybinds.leader = "ctrl+x"
-keybinds.session_new = "<leader>n"
-keybinds.editor_open = "<leader>e"
-```
-
-#### Keybinds
-
-You can configure the keybinds in the global config file. (Note: values listed below are the defaults.)
-
-```toml
-# ~/.config/opencode/config
-
-[keybinds]
-leader = "ctrl+x"
-help = "<leader>h"
-editor_open = "<leader>e"
-session_new = "<leader>n"
-session_list = "<leader>l"
-session_share = "<leader>s"
-session_interrupt = "esc"
-session_compact = "<leader>c"
-tool_details = "<leader>d"
-model_list = "<leader>m"
-theme_list = "<leader>t"
-project_init = "<leader>i"
-input_clear = "ctrl+c"
-input_paste = "ctrl+v"
-input_submit = "enter"
-input_newline = "shift+enter"
-history_previous = "up"
-history_next = "down"
-messages_page_up = "pgup"
-messages_page_down = "pgdown"
-messages_half_page_up = "ctrl+alt+u"
-messages_half_page_down = "ctrl+alt+d"
-messages_previous = "ctrl+alt+k"
-messages_next = "ctrl+alt+j"
-messages_first = "ctrl+g"
-messages_last = "ctrl+alt+g"
-app_exit = "ctrl+c,<leader>q"
-```
-
-### Project Config
-
-Project configuration is optional. You can place an `opencode.json` file in the root of your repo and is meant to be checked in and shared with your team.
+Config is optional and can be placed in the root of your repo or globally in `~/.config/opencode/config`. It can be checked in and shared with your team.
 
 ```json title="opencode.json"
 {
   "$schema": "http://opencode.ai/config.json"
+  "theme": "opencode",
+  "model": "anthropic/claude-sonnet-4-20250514" // format is provider/model
+  "autoshare": false,
+  "autoupdate": true,
+}
+```
+
+#### Keybinds
+
+You can configure custom keybinds, the values listed below are the defaults.
+
+```json title="opencode.json"
+{
+  "$schema": "http://opencode.ai/config.json",
+  "keybinds": {
+    "leader": "ctrl+x",
+    "help": "<leader>h",
+    "editor_open": "<leader>e",
+    "session_new": "<leader>n",
+    "session_list": "<leader>l",
+    "session_share": "<leader>s",
+    "session_interrupt": "esc",
+    "session_compact": "<leader>c",
+    "tool_details": "<leader>d",
+    "model_list": "<leader>m",
+    "theme_list": "<leader>t",
+    "project_init": "<leader>i",
+    "input_clear": "ctrl+c",
+    "input_paste": "ctrl+v",
+    "input_submit": "enter",
+    "input_newline": "shift+enter",
+    "history_previous": "up",
+    "history_next": "down",
+    "messages_page_up": "pgup",
+    "messages_page_down": "pgdown",
+    "messages_half_page_up": "ctrl+alt+u",
+    "messages_half_page_down": "ctrl+alt+d",
+    "messages_previous": "ctrl+alt+k",
+    "messages_next": "ctrl+alt+j",
+    "messages_first": "ctrl+g",
+    "messages_last": "ctrl+alt+g",
+    "app_exit": "ctrl+c,<leader>q"
+  }
 }
 ```
 
@@ -147,7 +137,7 @@ Project configuration is optional. You can place an `opencode.json` file in the 
 
 #### Providers
 
-You can use opencode with any provider listed at [here](https://ai-sdk.dev/providers/ai-sdk-providers). Be sure to specify the npm package to use to load the provider.
+You can use opencode with any provider listed at [here](https://ai-sdk.dev/providers/ai-sdk-providers). Be sure to specify the npm package to use to load the provider. Remember most popular providers are preloaded from [models.dev](https://models.dev)
 
 ```json title="opencode.json"
 {

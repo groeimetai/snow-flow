@@ -64,44 +64,62 @@ export namespace Config {
   export const Mcp = z.discriminatedUnion("type", [McpLocal, McpRemote])
   export type Mcp = z.infer<typeof Mcp>
 
+  export const Keybinds = z
+    .object({
+      leader: z.string().optional(),
+      help: z.string().optional(),
+      editor_open: z.string().optional(),
+      session_new: z.string().optional(),
+      session_list: z.string().optional(),
+      session_share: z.string().optional(),
+      session_interrupt: z.string().optional(),
+      session_compact: z.string().optional(),
+      tool_details: z.string().optional(),
+      model_list: z.string().optional(),
+      theme_list: z.string().optional(),
+      project_init: z.string().optional(),
+      input_clear: z.string().optional(),
+      input_paste: z.string().optional(),
+      input_submit: z.string().optional(),
+      input_newline: z.string().optional(),
+      history_previous: z.string().optional(),
+      history_next: z.string().optional(),
+      messages_page_up: z.string().optional(),
+      messages_page_down: z.string().optional(),
+      messages_half_page_up: z.string().optional(),
+      messages_half_page_down: z.string().optional(),
+      messages_previous: z.string().optional(),
+      messages_next: z.string().optional(),
+      messages_first: z.string().optional(),
+      messages_last: z.string().optional(),
+      app_exit: z.string().optional(),
+    })
+    .openapi({
+      ref: "Config.Keybinds",
+    })
   export const Info = z
     .object({
       $schema: z.string().optional(),
       theme: z.string().optional(),
-      keybinds: z
-        .object({
-          leader: z.string().optional(),
-          help: z.string().optional(),
-          editor_open: z.string().optional(),
-          session_new: z.string().optional(),
-          session_list: z.string().optional(),
-          session_share: z.string().optional(),
-          session_interrupt: z.string().optional(),
-          session_compact: z.string().optional(),
-          tool_details: z.string().optional(),
-          model_list: z.string().optional(),
-          theme_list: z.string().optional(),
-          project_init: z.string().optional(),
-          input_clear: z.string().optional(),
-          input_paste: z.string().optional(),
-          input_submit: z.string().optional(),
-          input_newline: z.string().optional(),
-          history_previous: z.string().optional(),
-          history_next: z.string().optional(),
-          messages_page_up: z.string().optional(),
-          messages_page_down: z.string().optional(),
-          messages_half_page_up: z.string().optional(),
-          messages_half_page_down: z.string().optional(),
-          messages_previous: z.string().optional(),
-          messages_next: z.string().optional(),
-          messages_first: z.string().optional(),
-          messages_last: z.string().optional(),
-          app_exit: z.string().optional(),
-        })
+      keybinds: Keybinds.optional(),
+      autoshare: z
+        .boolean()
+        .optional()
+        .describe("Share newly created sessions automatically"),
+      autoupdate: z
+        .boolean()
+        .optional()
+        .describe("Automatically update to the latest version"),
+      disabled_providers: z
+        .array(z.string())
+        .optional()
+        .describe("Disable providers that are loaded automatically"),
+      model: z
+        .string()
+        .describe(
+          "Model to use in the format of provider/model, eg anthropic/claude-2",
+        )
         .optional(),
-      autoshare: z.boolean().optional(),
-      autoupdate: z.boolean().optional(),
-      disabled_providers: z.array(z.string()).optional(),
       provider: z
         .record(
           ModelsDev.Provider.partial().extend({
@@ -130,9 +148,9 @@ export namespace Config {
       },
     })
       .then(async (mod) => {
-        delete mod.default.provider
-        delete mod.default.model
-        result = mergeDeep(result, mod.default)
+        const { provider, model, ...rest } = mod.default
+        if (provider && model) result.model = `${provider}/${model}`
+        result = mergeDeep(result, rest)
         await Bun.write(
           path.join(Global.Path.config, "config.json"),
           JSON.stringify(result, null, 2),

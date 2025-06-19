@@ -1397,22 +1397,26 @@
             "type": "string"
           },
           "keybinds": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            }
+            "$ref": "#/components/schemas/Config.Keybinds"
           },
           "autoshare": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Share newly created sessions automatically"
           },
           "autoupdate": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Automatically update to the latest version"
           },
           "disabled_providers": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Disable providers that are loaded automatically"
+          },
+          "model": {
+            "type": "string",
+            "description": "Model to use in the format of provider/model, eg anthropic/claude-2"
           },
           "provider": {
             "type": "object",
@@ -1525,6 +1529,92 @@
                 }
               }
             }
+          }
+        }
+      },
+      "Config.Keybinds": {
+        "type": "object",
+        "properties": {
+          "leader": {
+            "type": "string"
+          },
+          "help": {
+            "type": "string"
+          },
+          "editor_open": {
+            "type": "string"
+          },
+          "session_new": {
+            "type": "string"
+          },
+          "session_list": {
+            "type": "string"
+          },
+          "session_share": {
+            "type": "string"
+          },
+          "session_interrupt": {
+            "type": "string"
+          },
+          "session_compact": {
+            "type": "string"
+          },
+          "tool_details": {
+            "type": "string"
+          },
+          "model_list": {
+            "type": "string"
+          },
+          "theme_list": {
+            "type": "string"
+          },
+          "project_init": {
+            "type": "string"
+          },
+          "input_clear": {
+            "type": "string"
+          },
+          "input_paste": {
+            "type": "string"
+          },
+          "input_submit": {
+            "type": "string"
+          },
+          "input_newline": {
+            "type": "string"
+          },
+          "history_previous": {
+            "type": "string"
+          },
+          "history_next": {
+            "type": "string"
+          },
+          "messages_page_up": {
+            "type": "string"
+          },
+          "messages_page_down": {
+            "type": "string"
+          },
+          "messages_half_page_up": {
+            "type": "string"
+          },
+          "messages_half_page_down": {
+            "type": "string"
+          },
+          "messages_previous": {
+            "type": "string"
+          },
+          "messages_next": {
+            "type": "string"
+          },
+          "messages_first": {
+            "type": "string"
+          },
+          "messages_last": {
+            "type": "string"
+          },
+          "app_exit": {
+            "type": "string"
           }
         }
       },

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"slices"
 	"strings"
 
@@ -104,17 +105,6 @@ func (k Command) Matches(msg tea.KeyPressMsg, leader bool) bool {
 		}
 	}
 	return false
-}
-
-func (k Command) FromConfig(config *client.ConfigInfo) Command {
-	if config.Keybinds == nil {
-		return k
-	}
-	keybinds := *config.Keybinds
-	if keybind, ok := keybinds[string(k.Name)]; ok {
-		k.Keybindings = parseBindings(keybind)
-	}
-	return k
 }
 
 func parseBindings(bindings ...string) []Keybinding {
@@ -278,8 +268,14 @@ func LoadFromConfig(config *client.ConfigInfo) CommandRegistry {
 		},
 	}
 	registry := make(CommandRegistry)
+	keybinds := map[string]string{}
+	marshalled, _ := json.Marshal(*config.Keybinds)
+	json.Unmarshal(marshalled, &keybinds)
 	for _, command := range defaults {
-		registry[command.Name] = command.FromConfig(config)
+		if keybind, ok := keybinds[string(command.Name)]; ok {
+			command.Keybindings = parseBindings(keybind)
+		}
+		registry[command.Name] = command
 	}
 	return registry
 }

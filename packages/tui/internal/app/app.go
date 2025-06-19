@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"log/slog"
 
@@ -61,8 +62,10 @@ func New(
 	}
 	configInfo := configResponse.JSON200
 	if configInfo.Keybinds == nil {
-		keybinds := make(map[string]string)
-		keybinds["leader"] = "ctrl+x"
+		leader := "ctrl+x"
+		keybinds := client.ConfigKeybinds{
+			Leader: &leader,
+		}
 		configInfo.Keybinds = &keybinds
 	}
 
@@ -76,6 +79,12 @@ func New(
 	if configInfo.Theme != nil {
 		appState.Theme = *configInfo.Theme
 	}
+	if configInfo.Model != nil {
+		splits := strings.Split(*configInfo.Model, "/")
+		appState.Provider = splits[0]
+		appState.Model = strings.Join(splits[1:], "/")
+	}
+
 	if appState.Theme != "" {
 		theme.SetTheme(appState.Theme)
 	}
