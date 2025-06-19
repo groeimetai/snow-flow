@@ -22,8 +22,9 @@ type App struct {
 	Info      client.AppInfo
 	Version   string
 	StatePath string
-	Config    *config.Config
+	Configg   *client.ConfigInfo
 	Client    *client.ClientWithResponses
+	State     *config.State
 	Provider  *client.ProviderInfo
 	Model     *client.ModelInfo
 	Session   *client.SessionInfo
@@ -54,14 +55,15 @@ func New(
 ) (*App, error) {
 	RootPath = appInfo.Path.Root
 
-	appConfigPath := filepath.Join(appInfo.Path.Config, "config")
-	appConfig, err := config.LoadConfig(appConfigPath)
+	configResponse, err := httpClient.PostConfigGetWithResponse(ctx)
 	if err != nil {
-		appConfig = config.NewConfig()
+		return nil, err
 	}
-	if len(appConfig.Keybinds) == 0 {
-		appConfig.Keybinds = make(map[string]string)
-		appConfig.Keybinds["leader"] = "ctrl+x"
+	configInfo := configResponse.JSON200
+	if configInfo.Keybinds == nil {
+		keybinds := make(map[string]string)
+		keybinds["leader"] = "ctrl+x"
+		configInfo.Keybinds = &keybinds
 	}
 
 	appStatePath := filepath.Join(appInfo.Path.State, "tui")
@@ -71,20 +73,25 @@ func New(
 		config.SaveState(appStatePath, appState)
 	}
 
-	mergedConfig := config.MergeState(appState, appConfig)
-	theme.SetTheme(mergedConfig.Theme)
+	if configInfo.Theme != nil {
+		appState.Theme = *configInfo.Theme
+	}
+	if appState.Theme != "" {
+		theme.SetTheme(appState.Theme)
+	}
 
-	slog.Debug("Loaded config", "config", mergedConfig)
+	slog.Debug("Loaded config", "config", configInfo)
 
 	app := &App{
 		Info:      appInfo,
 		Version:   version,
 		StatePath: appStatePath,
-		Config:    mergedConfig,
+		Configg:   configInfo,
+		State:     appState,
 		Client:    httpClient,
 		Session:   &client.SessionInfo{},
 		Messages:  []client.MessageInfo{},
-		Commands:  commands.LoadFromConfig(mergedConfig),
+		Commands:  commands.LoadFromConfig(configInfo),
 	}
 
 	return app, nil
@@ -130,11 +137,11 @@ func (a *App) InitializeProvider() tea.Cmd {
 		var currentProvider *client.ProviderInfo
 		var currentModel *client.ModelInfo
 		for _, provider := range providers {
-			if provider.Id == a.Config.Provider {
+			if provider.Id == a.State.Provider {
 				currentProvider = &provider
 
 				for _, model := range provider.Models {
-					if model.Id == a.Config.Model {
+					if model.Id == a.State.Model {
 						currentModel = &model
 					}
 				}
@@ -182,8 +189,7 @@ func (a *App) IsBusy() bool {
 }
 
 func (a *App) SaveState() {
-	state := config.ConfigToState(a.Config)
-	err := config.SaveState(a.StatePath, state)
+	err := config.SaveState(a.StatePath, a.State)
 	if err != nil {
 		slog.Error("Failed to save state", "error", err)
 	}

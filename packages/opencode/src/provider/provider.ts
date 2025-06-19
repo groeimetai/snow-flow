@@ -24,7 +24,6 @@ import { ModelsDev } from "./models"
 import { NamedError } from "../util/error"
 import { Auth } from "../auth"
 import { TaskTool } from "../tool/task"
-import { GlobalConfig } from "../global/config"
 import { Global } from "../global"
 
 export namespace Provider {
@@ -179,7 +178,7 @@ export namespace Provider {
       database[providerID] = parsed
     }
 
-    const disabled = await GlobalConfig.get().then(
+    const disabled = await Config.get().then(
       (cfg) => new Set(cfg.disabled_providers ?? []),
     )
     // load env
@@ -300,7 +299,7 @@ export namespace Provider {
   }
 
   export async function defaultModel() {
-    const cfg = await GlobalConfig.get()
+    const cfg = await Config.get()
     const provider = await list()
       .then((val) => Object.values(val))
       .then((x) => x.find((p) => !cfg.provider || cfg.provider === p.info.id))

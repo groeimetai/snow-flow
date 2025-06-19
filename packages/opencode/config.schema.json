@@ -4,11 +4,116 @@
     "$schema": {
       "type": "string"
     },
+    "theme": {
+      "type": "string"
+    },
+    "keybinds": {
+      "type": "object",
+      "properties": {
+        "leader": {
+          "type": "string"
+        },
+        "help": {
+          "type": "string"
+        },
+        "editor_open": {
+          "type": "string"
+        },
+        "session_new": {
+          "type": "string"
+        },
+        "session_list": {
+          "type": "string"
+        },
+        "session_share": {
+          "type": "string"
+        },
+        "session_interrupt": {
+          "type": "string"
+        },
+        "session_compact": {
+          "type": "string"
+        },
+        "tool_details": {
+          "type": "string"
+        },
+        "model_list": {
+          "type": "string"
+        },
+        "theme_list": {
+          "type": "string"
+        },
+        "project_init": {
+          "type": "string"
+        },
+        "input_clear": {
+          "type": "string"
+        },
+        "input_paste": {
+          "type": "string"
+        },
+        "input_submit": {
+          "type": "string"
+        },
+        "input_newline": {
+          "type": "string"
+        },
+        "history_previous": {
+          "type": "string"
+        },
+        "history_next": {
+          "type": "string"
+        },
+        "messages_page_up": {
+          "type": "string"
+        },
+        "messages_page_down": {
+          "type": "string"
+        },
+        "messages_half_page_up": {
+          "type": "string"
+        },
+        "messages_half_page_down": {
+          "type": "string"
+        },
+        "messages_previous": {
+          "type": "string"
+        },
+        "messages_next": {
+          "type": "string"
+        },
+        "messages_first": {
+          "type": "string"
+        },
+        "messages_last": {
+          "type": "string"
+        },
+        "app_exit": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "autoshare": {
+      "type": "boolean"
+    },
+    "autoupdate": {
+      "type": "boolean"
+    },
+    "disabled_providers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "provider": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
         "properties": {
+          "api": {
+            "type": "string"
+          },
           "name": {
             "type": "string"
           },
@@ -50,18 +155,16 @@
                     "output": {
                       "type": "number"
                     },
-                    "inputCached": {
+                    "cache_read": {
                       "type": "number"
                     },
-                    "outputCached": {
+                    "cache_write": {
                       "type": "number"
                     }
                   },
                   "required": [
                     "input",
-                    "output",
-                    "inputCached",
-                    "outputCached"
+                    "output"
                   ],
                   "additionalProperties": false
                 },

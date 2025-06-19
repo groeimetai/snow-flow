@@ -6,15 +6,14 @@ import { Filesystem } from "../util/filesystem"
 import { ModelsDev } from "../provider/models"
 import { mergeDeep } from "remeda"
 import { Global } from "../global"
+import fs from "fs/promises"
+import { lazy } from "../util/lazy"
 
 export namespace Config {
   const log = Log.create({ service: "config" })
 
   export const state = App.state("config", async (app) => {
-    let result = await Bun.file(path.join(Global.Path.config, "config.json"))
-      .json()
-      .then((mod) => Info.parse(mod))
-      .catch(() => ({}) as Info)
+    let result = await global()
     for (const file of ["opencode.jsonc", "opencode.json"]) {
       const [resolved] = await Filesystem.findUp(
         file,
@@ -43,16 +42,24 @@ export namespace Config {
     return result
   })
 
-  export const McpLocal = z.object({
-    type: z.literal("local"),
-    command: z.string().array(),
-    environment: z.record(z.string(), z.string()).optional(),
-  })
+  export const McpLocal = z
+    .object({
+      type: z.literal("local"),
+      command: z.string().array(),
+      environment: z.record(z.string(), z.string()).optional(),
+    })
+    .openapi({
+      ref: "Config.McpLocal",
+    })
 
-  export const McpRemote = z.object({
-    type: z.literal("remote"),
-    url: z.string(),
-  })
+  export const McpRemote = z
+    .object({
+      type: z.literal("remote"),
+      url: z.string(),
+    })
+    .openapi({
+      ref: "Config.McpRemote",
+    })
 
   export const Mcp = z.discriminatedUnion("type", [McpLocal, McpRemote])
   export type Mcp = z.infer<typeof Mcp>
@@ -60,6 +67,41 @@ export namespace Config {
   export const Info = z
     .object({
       $schema: z.string().optional(),
+      theme: z.string().optional(),
+      keybinds: z
+        .object({
+          leader: z.string().optional(),
+          help: z.string().optional(),
+          editor_open: z.string().optional(),
+          session_new: z.string().optional(),
+          session_list: z.string().optional(),
+          session_share: z.string().optional(),
+          session_interrupt: z.string().optional(),
+          session_compact: z.string().optional(),
+          tool_details: z.string().optional(),
+          model_list: z.string().optional(),
+          theme_list: z.string().optional(),
+          project_init: z.string().optional(),
+          input_clear: z.string().optional(),
+          input_paste: z.string().optional(),
+          input_submit: z.string().optional(),
+          input_newline: z.string().optional(),
+          history_previous: z.string().optional(),
+          history_next: z.string().optional(),
+          messages_page_up: z.string().optional(),
+          messages_page_down: z.string().optional(),
+          messages_half_page_up: z.string().optional(),
+          messages_half_page_down: z.string().optional(),
+          messages_previous: z.string().optional(),
+          messages_next: z.string().optional(),
+          messages_first: z.string().optional(),
+          messages_last: z.string().optional(),
+          app_exit: z.string().optional(),
+        })
+        .optional(),
+      autoshare: z.boolean().optional(),
+      autoupdate: z.boolean().optional(),
+      disabled_providers: z.array(z.string()).optional(),
       provider: z
         .record(
           ModelsDev.Provider.partial().extend({
@@ -70,9 +112,36 @@ export namespace Config {
         .optional(),
       mcp: z.record(z.string(), Mcp).optional(),
     })
-    .strict()
+    .openapi({
+      ref: "Config.Info",
+    })
 
   export type Info = z.output<typeof Info>
+
+  export const global = lazy(async () => {
+    let result = await Bun.file(path.join(Global.Path.config, "config.json"))
+      .json()
+      .then((mod) => Info.parse(mod))
+      .catch(() => ({}) as Info)
+
+    await import(path.join(Global.Path.config, "config"), {
+      with: {
+        type: "toml",
+      },
+    })
+      .then(async (mod) => {
+        delete mod.default.provider
+        delete mod.default.model
+        result = mergeDeep(result, mod.default)
+        await Bun.write(
+          path.join(Global.Path.config, "config.json"),
+          JSON.stringify(result, null, 2),
+        )
+        await fs.unlink(path.join(Global.Path.config, "config"))
+      })
+      .catch(() => {})
+    return Info.parse(result)
+  })
 
   export function get() {
     return state()

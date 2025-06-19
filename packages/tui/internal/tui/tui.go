@@ -249,11 +249,11 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case app.ModelSelectedMsg:
 		a.app.Provider = &msg.Provider
 		a.app.Model = &msg.Model
-		a.app.Config.Provider = msg.Provider.Id
-		a.app.Config.Model = msg.Model.Id
+		a.app.State.Provider = msg.Provider.Id
+		a.app.State.Model = msg.Model.Id
 		a.app.SaveState()
 	case dialog.ThemeSelectedMsg:
-		a.app.Config.Theme = msg.ThemeName
+		a.app.State.Theme = msg.ThemeName
 		a.app.SaveState()
 	}
 
@@ -509,7 +509,7 @@ func NewModel(app *app.App) tea.Model {
 	messagesContainer := layout.NewContainer(messages)
 
 	var leaderBinding *key.Binding
-	if leader, ok := app.Config.Keybinds["leader"]; ok {
+	if leader, ok := (*app.Configg.Keybinds)["leader"]; ok {
 		binding := key.NewBinding(key.WithKeys(leader))
 		leaderBinding = &binding
 	}

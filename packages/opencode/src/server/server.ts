@@ -15,6 +15,7 @@ import { NamedError } from "../util/error"
 import { ModelsDev } from "../provider/models"
 import { Ripgrep } from "../external/ripgrep"
 import { Installation } from "../installation"
+import { Config } from "../config/config"
 
 const ERRORS = {
   400: {
@@ -138,6 +139,25 @@ export namespace Server {
         }),
         async (c) => {
           return c.json(App.info())
+        },
+      )
+      .post(
+        "/config_get",
+        describeRoute({
+          description: "Get config info",
+          responses: {
+            200: {
+              description: "Get config info",
+              content: {
+                "application/json": {
+                  schema: resolver(Config.Info),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          return c.json(await Config.get())
         },
       )
       .post(

@@ -7,8 +7,8 @@ import { Share } from "../../share/share"
 import { Message } from "../../session/message"
 import { UI } from "../ui"
 import { cmd } from "./cmd"
-import { GlobalConfig } from "../../global/config"
 import { Flag } from "../../flag/flag"
+import { Config } from "../../config/config"
 
 const TOOL: Record<string, [string, string]> = {
   opencode_todowrite: ["Todo", UI.Style.TEXT_WARNING_BOLD],
@@ -60,7 +60,7 @@ export const RunCommand = cmd({
         UI.println(UI.Style.TEXT_NORMAL_BOLD + "> ", message)
         UI.empty()
 
-        const cfg = await GlobalConfig.get()
+        const cfg = await Config.get()
         if (cfg.autoshare || Flag.OPENCODE_AUTO_SHARE || args.share) {
           await Session.share(session.id)
           UI.println(

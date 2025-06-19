@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea/v2"
-	"github.com/sst/opencode/internal/config"
+	"github.com/sst/opencode/pkg/client"
 )
 
 type ExecuteCommandMsg Command
@@ -106,8 +106,12 @@ func (k Command) Matches(msg tea.KeyPressMsg, leader bool) bool {
 	return false
 }
 
-func (k Command) FromConfig(config *config.Config) Command {
-	if keybind, ok := config.Keybinds[string(k.Name)]; ok {
+func (k Command) FromConfig(config *client.ConfigInfo) Command {
+	if config.Keybinds == nil {
+		return k
+	}
+	keybinds := *config.Keybinds
+	if keybind, ok := keybinds[string(k.Name)]; ok {
 		k.Keybindings = parseBindings(keybind)
 	}
 	return k
@@ -129,7 +133,7 @@ func parseBindings(bindings ...string) []Keybinding {
 	return parsedBindings
 }
 
-func LoadFromConfig(config *config.Config) CommandRegistry {
+func LoadFromConfig(config *client.ConfigInfo) CommandRegistry {
 	defaults := []Command{
 		{
 			Name:        AppHelpCommand,

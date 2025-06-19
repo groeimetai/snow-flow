@@ -39,6 +39,60 @@ type AppInfo struct {
 	User string `json:"user"`
 }
 
+// ConfigInfo defines model for Config.Info.
+type ConfigInfo struct {
+	Schema            *string                                         `json:"$schema,omitempty"`
+	Autoshare         *bool                                           `json:"autoshare,omitempty"`
+	Autoupdate        *bool                                           `json:"autoupdate,omitempty"`
+	DisabledProviders *[]string                                       `json:"disabled_providers,omitempty"`
+	Keybinds          *map[string]string                              `json:"keybinds,omitempty"`
+	Mcp               *map[string]ConfigInfo_Mcp_AdditionalProperties `json:"mcp,omitempty"`
+	Provider          *map[string]struct {
+		Api    *string   `json:"api,omitempty"`
+		Env    *[]string `json:"env,omitempty"`
+		Id     *string   `json:"id,omitempty"`
+		Models map[string]struct {
+			Attachment *bool `json:"attachment,omitempty"`
+			Cost       *struct {
+				CacheRead  *float32 `json:"cache_read,omitempty"`
+				CacheWrite *float32 `json:"cache_write,omitempty"`
+				Input      float32  `json:"input"`
+				Output     float32  `json:"output"`
+			} `json:"cost,omitempty"`
+			Id    *string `json:"id,omitempty"`
+			Limit *struct {
+				Context float32 `json:"context"`
+				Output  float32 `json:"output"`
+			} `json:"limit,omitempty"`
+			Name        *string `json:"name,omitempty"`
+			Reasoning   *bool   `json:"reasoning,omitempty"`
+			Temperature *bool   `json:"temperature,omitempty"`
+		} `json:"models"`
+		Name    *string                 `json:"name,omitempty"`
+		Npm     *string                 `json:"npm,omitempty"`
+		Options *map[string]interface{} `json:"options,omitempty"`
+	} `json:"provider,omitempty"`
+	Theme *string `json:"theme,omitempty"`
+}
+
+// ConfigInfo_Mcp_AdditionalProperties defines model for Config.Info.mcp.AdditionalProperties.
+type ConfigInfo_Mcp_AdditionalProperties struct {
+	union json.RawMessage
+}
+
+// ConfigMcpLocal defines model for Config.McpLocal.
+type ConfigMcpLocal struct {
+	Command     []string           `json:"command"`
+	Environment *map[string]string `json:"environment,omitempty"`
+	Type        string             `json:"type"`
+}
+
+// ConfigMcpRemote defines model for Config.McpRemote.
+type ConfigMcpRemote struct {
+	Type string `json:"type"`
+	Url  string `json:"url"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Data map[string]interface{} `json:"data"`
@@ -263,10 +317,10 @@ type MessageToolInvocationToolResult struct {
 type ModelInfo struct {
 	Attachment bool `json:"attachment"`
 	Cost       struct {
-		Input        float32 `json:"input"`
-		InputCached  float32 `json:"inputCached"`
-		Output       float32 `json:"output"`
-		OutputCached float32 `json:"outputCached"`
+		CacheRead  *float32 `json:"cache_read,omitempty"`
+		CacheWrite *float32 `json:"cache_write,omitempty"`
+		Input      float32  `json:"input"`
+		Output     float32  `json:"output"`
 	} `json:"cost"`
 	Id    string `json:"id"`
 	Limit struct {
@@ -280,6 +334,7 @@ type ModelInfo struct {
 
 // ProviderInfo defines model for Provider.Info.
 type ProviderInfo struct {
+	Api    *string              `json:"api,omitempty"`
 	Env    []string             `json:"env"`
 	Id     string               `json:"id"`
 	Models map[string]ModelInfo `json:"models"`
@@ -320,14 +375,14 @@ type SessionInfo struct {
 	Id       string  `json:"id"`
 	ParentID *string `json:"parentID,omitempty"`
 	Share    *struct {
-		Secret string `json:"secret"`
-		Url    string `json:"url"`
+		Url string `json:"url"`
 	} `json:"share,omitempty"`
 	Time struct {
 		Created float32 `json:"created"`
 		Updated float32 `json:"updated"`
 	} `json:"time"`
-	Title string `json:"title"`
+	Title   string `json:"title"`
+	Version string `json:"version"`
 }
 
 // PostFileSearchJSONBody defines parameters for PostFileSearch.
@@ -472,6 +527,95 @@ func (a MessageInfo_Metadata_Tool_AdditionalProperties) MarshalJSON() ([]byte, e
 	return json.Marshal(object)
 }
 
+// AsConfigMcpLocal returns the union data inside the ConfigInfo_Mcp_AdditionalProperties as a ConfigMcpLocal
+func (t ConfigInfo_Mcp_AdditionalProperties) AsConfigMcpLocal() (ConfigMcpLocal, error) {
+	var body ConfigMcpLocal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromConfigMcpLocal overwrites any union data inside the ConfigInfo_Mcp_AdditionalProperties as the provided ConfigMcpLocal
+func (t *ConfigInfo_Mcp_AdditionalProperties) FromConfigMcpLocal(v ConfigMcpLocal) error {
+	v.Type = "local"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeConfigMcpLocal performs a merge with any union data inside the ConfigInfo_Mcp_AdditionalProperties, using the provided ConfigMcpLocal
+func (t *ConfigInfo_Mcp_AdditionalProperties) MergeConfigMcpLocal(v ConfigMcpLocal) error {
+	v.Type = "local"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsConfigMcpRemote returns the union data inside the ConfigInfo_Mcp_AdditionalProperties as a ConfigMcpRemote
+func (t ConfigInfo_Mcp_AdditionalProperties) AsConfigMcpRemote() (ConfigMcpRemote, error) {
+	var body ConfigMcpRemote
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromConfigMcpRemote overwrites any union data inside the ConfigInfo_Mcp_AdditionalProperties as the provided ConfigMcpRemote
+func (t *ConfigInfo_Mcp_AdditionalProperties) FromConfigMcpRemote(v ConfigMcpRemote) error {
+	v.Type = "remote"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeConfigMcpRemote performs a merge with any union data inside the ConfigInfo_Mcp_AdditionalProperties, using the provided ConfigMcpRemote
+func (t *ConfigInfo_Mcp_AdditionalProperties) MergeConfigMcpRemote(v ConfigMcpRemote) error {
+	v.Type = "remote"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ConfigInfo_Mcp_AdditionalProperties) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t ConfigInfo_Mcp_AdditionalProperties) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "local":
+		return t.AsConfigMcpLocal()
+	case "remote":
+		return t.AsConfigMcpRemote()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t ConfigInfo_Mcp_AdditionalProperties) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ConfigInfo_Mcp_AdditionalProperties) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsEventStorageWrite returns the union data inside the Event as a EventStorageWrite
 func (t Event) AsEventStorageWrite() (EventStorageWrite, error) {
 	var body EventStorageWrite
@@ -612,6 +756,34 @@ func (t *Event) MergeEventMessagePartUpdated(v EventMessagePartUpdated) error {
 	return err
 }
 
+// AsEventInstallationUpdated returns the union data inside the Event as a EventInstallationUpdated
+func (t Event) AsEventInstallationUpdated() (EventInstallationUpdated, error) {
+	var body EventInstallationUpdated
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromEventInstallationUpdated overwrites any union data inside the Event as the provided EventInstallationUpdated
+func (t *Event) FromEventInstallationUpdated(v EventInstallationUpdated) error {
+	v.Type = "installation.updated"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeEventInstallationUpdated performs a merge with any union data inside the Event, using the provided EventInstallationUpdated
+func (t *Event) MergeEventInstallationUpdated(v EventInstallationUpdated) error {
+	v.Type = "installation.updated"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsEventSessionUpdated returns the union data inside the Event as a EventSessionUpdated
 func (t Event) AsEventSessionUpdated() (EventSessionUpdated, error) {
 	var body EventSessionUpdated
@@ -658,34 +830,6 @@ func (t *Event) FromEventSessionError(v EventSessionError) error {
 // MergeEventSessionError performs a merge with any union data inside the Event, using the provided EventSessionError
 func (t *Event) MergeEventSessionError(v EventSessionError) error {
 	v.Type = "session.error"
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsEventInstallationUpdated returns the union data inside the Event as a EventInstallationUpdated
-func (t Event) AsEventInstallationUpdated() (EventInstallationUpdated, error) {
-	var body EventInstallationUpdated
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromEventInstallationUpdated overwrites any union data inside the Event as the provided EventInstallationUpdated
-func (t *Event) FromEventInstallationUpdated(v EventInstallationUpdated) error {
-	v.Type = "installation.updated"
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeEventInstallationUpdated performs a merge with any union data inside the Event, using the provided EventInstallationUpdated
-func (t *Event) MergeEventInstallationUpdated(v EventInstallationUpdated) error {
-	v.Type = "installation.updated"
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -1326,6 +1470,9 @@ type ClientInterface interface {
 	// PostAppInitialize request
 	PostAppInitialize(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostConfigGet request
+	PostConfigGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetEvent request
 	GetEvent(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1394,6 +1541,18 @@ func (c *Client) PostAppInfo(ctx context.Context, reqEditors ...RequestEditorFn)
 
 func (c *Client) PostAppInitialize(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostAppInitializeRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostConfigGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostConfigGetRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -1681,6 +1840,33 @@ func NewPostAppInitializeRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/app_initialize")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostConfigGetRequest generates requests for PostConfigGet
+func NewPostConfigGetRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/config_get")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -2189,6 +2375,9 @@ type ClientWithResponsesInterface interface {
 	// PostAppInitializeWithResponse request
 	PostAppInitializeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostAppInitializeResponse, error)
 
+	// PostConfigGetWithResponse request
+	PostConfigGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostConfigGetResponse, error)
+
 	// GetEventWithResponse request
 	GetEventWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventResponse, error)
 
@@ -2281,6 +2470,28 @@ func (r PostAppInitializeResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PostAppInitializeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostConfigGetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ConfigInfo
+}
+
+// Status returns HTTPResponse.Status
+func (r PostConfigGetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostConfigGetResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2600,6 +2811,15 @@ func (c *ClientWithResponses) PostAppInitializeWithResponse(ctx context.Context,
 	return ParsePostAppInitializeResponse(rsp)
 }
 
+// PostConfigGetWithResponse request returning *PostConfigGetResponse
+func (c *ClientWithResponses) PostConfigGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*PostConfigGetResponse, error) {
+	rsp, err := c.PostConfigGet(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostConfigGetResponse(rsp)
+}
+
 // GetEventWithResponse request returning *GetEventResponse
 func (c *ClientWithResponses) GetEventWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventResponse, error) {
 	rsp, err := c.GetEvent(ctx, reqEditors...)
@@ -2815,6 +3035,32 @@ func ParsePostAppInitializeResponse(rsp *http.Response) (*PostAppInitializeRespo
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest bool
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostConfigGetResponse parses an HTTP response from a PostConfigGetWithResponse call
+func ParsePostConfigGetResponse(rsp *http.Response) (*PostConfigGetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostConfigGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ConfigInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

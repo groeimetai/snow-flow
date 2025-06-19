@@ -15,9 +15,9 @@ import { AuthCommand, AuthLoginCommand } from "./cli/cmd/auth"
 import { UpgradeCommand } from "./cli/cmd/upgrade"
 import { Provider } from "./provider/provider"
 import { UI } from "./cli/ui"
-import { GlobalConfig } from "./global/config"
 import { Installation } from "./installation"
 import { Bus } from "./bus"
+import { Config } from "./config/config"
 
 const cli = yargs(hideBin(process.argv))
   .scriptName("opencode")
@@ -87,7 +87,7 @@ const cli = yargs(hideBin(process.argv))
           ;(async () => {
             if (Installation.VERSION === "dev") return
             if (Installation.isSnapshot()) return
-            const config = await GlobalConfig.get()
+            const config = await Config.global()
             if (config.autoupdate === false) return
             const latest = await Installation.latest()
             if (Installation.VERSION === latest) return
