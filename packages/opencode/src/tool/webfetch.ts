@@ -76,7 +76,7 @@ export const WebFetchTool = Tool.define({
     switch (params.format) {
       case "text":
         if (contentType.includes("text/html")) {
-          const text = extractTextFromHTML(content)
+          const text = await extractTextFromHTML(content)
           return {
             output: text,
             metadata: {
@@ -127,10 +127,45 @@ export const WebFetchTool = Tool.define({
   },
 })
 
-function extractTextFromHTML(html: string): string {
-  const doc = new DOMParser().parseFromString(html, "text/html")
-  const text = doc.body.textContent || doc.body.innerText || ""
-  return text.replace(/\s+/g, " ").trim()
+async function extractTextFromHTML(html: string) {
+  let text = ""
+  let skipContent = false
+
+  const rewriter = new HTMLRewriter()
+    .on("script, style, noscript, iframe, object, embed", {
+      element() {
+        skipContent = true
+      },
+      text() {
+        // Skip text content inside these elements
+      },
+    })
+    .on("*", {
+      element(element) {
+        // Reset skip flag when entering other elements
+        if (
+          ![
+            "script",
+            "style",
+            "noscript",
+            "iframe",
+            "object",
+            "embed",
+          ].includes(element.tagName)
+        ) {
+          skipContent = false
+        }
+      },
+      text(input) {
+        if (!skipContent) {
+          text += input.text
+        }
+      },
+    })
+    .transform(new Response(html))
+
+  await rewriter.text()
+  return text.trim()
 }
 
 function convertHTMLToMarkdown(html: string): string {
