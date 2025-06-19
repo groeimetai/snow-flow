@@ -18,6 +18,7 @@ import (
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/components/status"
+	"github.com/sst/opencode/internal/components/toast"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/util"
@@ -38,6 +39,7 @@ type appModel struct {
 	showCompletionDialog bool
 	leaderBinding        *key.Binding
 	isLeaderSequence     bool
+	toastManager         *toast.ToastManager
 }
 
 func (a appModel) Init() tea.Cmd {
@@ -48,6 +50,7 @@ func (a appModel) Init() tea.Cmd {
 	cmds = append(cmds, a.messages.Init())
 	cmds = append(cmds, a.status.Init())
 	cmds = append(cmds, a.completions.Init())
+	cmds = append(cmds, a.toastManager.Init())
 
 	// Check if we should show the init dialog
 	cmds = append(cmds, func() tea.Msg {
@@ -255,6 +258,14 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dialog.ThemeSelectedMsg:
 		a.app.State.Theme = msg.ThemeName
 		a.app.SaveState()
+	case toast.ShowToastMsg:
+		tm, cmd := a.toastManager.Update(msg)
+		a.toastManager = tm
+		cmds = append(cmds, cmd)
+	case toast.DismissToastMsg:
+		tm, cmd := a.toastManager.Update(msg)
+		a.toastManager = tm
+		cmds = append(cmds, cmd)
 	}
 
 	// update status bar
@@ -319,9 +330,12 @@ func (a appModel) View() string {
 		a.status.View(),
 	}
 	appView := lipgloss.JoinVertical(lipgloss.Top, components...)
+
 	if a.modal != nil {
 		appView = a.modal.Render(appView)
 	}
+
+	appView = a.toastManager.RenderOverlay(appView)
 
 	return appView
 }
@@ -398,15 +412,20 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		if a.app.Session.Id == "" {
 			return a, nil
 		}
-		response, _ := a.app.Client.PostSessionShareWithResponse(
+		response, err := a.app.Client.PostSessionShareWithResponse(
 			context.Background(),
 			client.PostSessionShareJSONRequestBody{
 				SessionID: a.app.Session.Id,
 			},
 		)
+		if err != nil {
+			slog.Error("Failed to share session", "error", err)
+			return a, toast.NewErrorToast("Failed to share session")
+		}
 		if response.JSON200 != nil && response.JSON200.Share != nil {
 			shareUrl := response.JSON200.Share.Url
 			cmds = append(cmds, tea.SetClipboard(shareUrl))
+			cmds = append(cmds, toast.NewSuccessToast("Share URL copied to clipboard!"))
 		}
 	case commands.SessionInterruptCommand:
 		if a.app.Session.Id == "" {
@@ -537,6 +556,7 @@ func NewModel(app *app.App) tea.Model {
 		isLeaderSequence:     false,
 		showCompletionDialog: false,
 		editorContainer:      editorContainer,
+		toastManager:         toast.NewToastManager(),
 		layout: layout.NewFlexLayout(
 			[]tea.ViewModel{messagesContainer, editorContainer},
 			layout.WithDirection(layout.FlexDirectionVertical),

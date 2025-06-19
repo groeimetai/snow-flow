@@ -100,8 +100,7 @@ func (m *Modal) Render(contentView string, background string) string {
 	if m.title != "" {
 		titleStyle := baseStyle.
 			Foreground(t.Primary()).
-			Bold(true).
-			Padding(0, 1)
+			Bold(true)
 
 		// titleView := titleStyle.Render(m.title)
 		escStyle := baseStyle.Foreground(t.TextMuted()).Bold(false)
