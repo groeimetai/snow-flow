@@ -398,12 +398,16 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		if a.app.Session.Id == "" {
 			return a, nil
 		}
-		a.app.Client.PostSessionShareWithResponse(
+		response, _ := a.app.Client.PostSessionShareWithResponse(
 			context.Background(),
 			client.PostSessionShareJSONRequestBody{
 				SessionID: a.app.Session.Id,
 			},
 		)
+		if response.JSON200 != nil && response.JSON200.Share != nil {
+			shareUrl := response.JSON200.Share.Url
+			cmds = append(cmds, tea.SetClipboard(shareUrl))
+		}
 	case commands.SessionInterruptCommand:
 		if a.app.Session.Id == "" {
 			return a, nil
