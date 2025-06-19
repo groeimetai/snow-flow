@@ -86,77 +86,104 @@ func (tm *ToastManager) Update(msg tea.Msg) (*ToastManager, tea.Cmd) {
 	return tm, nil
 }
 
+// renderSingleToast renders a single toast notification
+func (tm *ToastManager) renderSingleToast(toast Toast) string {
+	t := theme.CurrentTheme()
+
+	baseStyle := styles.BaseStyle().
+		Background(t.BackgroundElement()).
+		Foreground(t.Text()).
+		Padding(1, 2).
+		BorderStyle(lipgloss.ThickBorder()).
+		BorderBackground(t.Background()).
+		BorderForeground(toast.Color).
+		BorderLeft(true).
+		BorderRight(true)
+
+	maxWidth := max(40, layout.Current.Viewport.Width/3)
+	contentMaxWidth := max(maxWidth-6, 20)
+
+	// Build content with wrapping
+	var content strings.Builder
+	if toast.Title != nil {
+		titleStyle := lipgloss.NewStyle().
+			Foreground(toast.Color).
+			Bold(true)
+		content.WriteString(titleStyle.Render(*toast.Title))
+		content.WriteString("\n")
+	}
+
+	// Wrap message text
+	messageStyle := lipgloss.NewStyle()
+	contentWidth := lipgloss.Width(toast.Message)
+	if contentWidth > contentMaxWidth {
+		messageStyle = messageStyle.Width(contentMaxWidth)
+	}
+	content.WriteString(messageStyle.Render(toast.Message))
+
+	// Render toast with max width
+	return baseStyle.MaxWidth(maxWidth).Render(content.String())
+}
+
 // View renders all active toasts
 func (tm *ToastManager) View() string {
 	if len(tm.toasts) == 0 {
 		return ""
 	}
 
-	t := theme.CurrentTheme()
-
 	var toastViews []string
 	for _, toast := range tm.toasts {
-		baseStyle := styles.BaseStyle().
-			Background(t.BackgroundElement()).
-			Foreground(t.Text()).
-			Padding(1, 2).
-			BorderStyle(lipgloss.ThickBorder()).
-			BorderBackground(t.Background()).
-			BorderForeground(toast.Color).
-			BorderLeft(true).
-			BorderRight(true)
-
-		maxWidth := max(40, layout.Current.Viewport.Width/3)
-		contentMaxWidth := max(maxWidth-6, 20)
-
-		// Build content with wrapping
-		var content strings.Builder
-		if toast.Title != nil {
-			titleStyle := lipgloss.NewStyle().
-				Foreground(toast.Color).
-				Bold(true)
-			content.WriteString(titleStyle.Render(*toast.Title))
-			content.WriteString("\n")
-		}
-
-		// Wrap message text
-		messageStyle := lipgloss.NewStyle().Width(contentMaxWidth)
-		content.WriteString(messageStyle.Render(toast.Message))
-
-		// Render toast with max width
-		toastView := baseStyle.MaxWidth(maxWidth).Render(content.String())
-		toastViews = append(toastViews, toastView)
+		toastView := tm.renderSingleToast(toast)
+		toastViews = append(toastViews, toastView+"\n")
 	}
 
-	// Stack toasts vertically with small gap
-	return strings.Join(toastViews, "\n\n")
+	t := theme.CurrentTheme()
+	content := lipgloss.JoinVertical(lipgloss.Right, toastViews...)
+	return lipgloss.NewStyle().Background(t.Background()).Render(content)
 }
 
 // RenderOverlay renders the toasts as an overlay on the given background
 func (tm *ToastManager) RenderOverlay(background string) string {
-	toastView := tm.View()
-	if toastView == "" {
+	if len(tm.toasts) == 0 {
 		return background
 	}
 
-	// Calculate position (bottom right with padding)
 	bgWidth := lipgloss.Width(background)
 	bgHeight := lipgloss.Height(background)
-	toastWidth := lipgloss.Width(toastView)
-	toastHeight := lipgloss.Height(toastView)
-
-	// Position with 2 character padding from edges
-	x := bgWidth - toastWidth - 2
-	y := bgHeight - toastHeight - 2
-
-	// Ensure we don't go negative
-	if x < 0 {
-		x = 0
+	result := background
+	
+	// Start from top with 2 character padding
+	currentY := 2
+	
+	// Render each toast individually
+	for _, toast := range tm.toasts {
+		// Render individual toast
+		toastView := tm.renderSingleToast(toast)
+		toastWidth := lipgloss.Width(toastView)
+		toastHeight := lipgloss.Height(toastView)
+		
+		// Position at top-right with 2 character padding from right edge
+		x := bgWidth - toastWidth - 2
+		
+		// Ensure we don't go negative
+		if x < 0 {
+			x = 0
+		}
+		
+		// Check if toast fits vertically
+		if currentY + toastHeight > bgHeight - 2 {
+			// No more room for toasts
+			break
+		}
+		
+		// Place this toast
+		result = layout.PlaceOverlay(x, currentY, toastView, result)
+		
+		// Move down for next toast (add 1 for spacing between toasts)
+		currentY += toastHeight + 1
 	}
-	if y < 0 {
-		y = 0
-	}
-	return layout.PlaceOverlay(x, y, toastView, background)
+	
+	return result
 }
 
 type ToastOptions struct {
