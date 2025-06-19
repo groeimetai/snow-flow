@@ -82,9 +82,9 @@ export namespace SystemPrompt {
         `  Platform: ${process.platform}`,
         `  Today's date: ${new Date().toDateString()}`,
         `</env>`,
-        `<project>`,
-        `  ${app.git ? await tree() : ""}`,
-        `</project>`,
+        // `<project>`,
+        // `  ${app.git ? await tree() : ""}`,
+        // `</project>`,
       ].join("\n"),
     ]
   }
