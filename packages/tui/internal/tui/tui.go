@@ -556,8 +556,8 @@ func NewModel(app *app.App) tea.Model {
 	messagesContainer := layout.NewContainer(messages)
 
 	var leaderBinding *key.Binding
-	if (*app.Configg.Keybinds).Leader != nil {
-		binding := key.NewBinding(key.WithKeys(*app.Configg.Keybinds.Leader))
+	if (*app.Config.Keybinds).Leader != nil {
+		binding := key.NewBinding(key.WithKeys(*app.Config.Keybinds.Leader))
 		leaderBinding = &binding
 	}
 

@@ -186,7 +186,7 @@ func LoadFromConfig(config *client.ConfigInfo) CommandRegistry {
 		},
 		{
 			Name:        ProjectInitCommand,
-			Description: "create or update AGENTS.md",
+			Description: "create/update AGENTS.md",
 			Keybindings: parseBindings("<leader>i"),
 			Trigger:     "init",
 		},

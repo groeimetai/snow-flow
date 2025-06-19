@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/components/commands"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
@@ -37,6 +38,7 @@ type messagesComponent struct {
 	viewport        viewport.Model
 	spinner         spinner.Model
 	attachments     viewport.Model
+	commands        commands.CommandsComponent
 	cache           *MessageCache
 	rendering       bool
 	showToolDetails bool
@@ -46,7 +48,7 @@ type renderFinishedMsg struct{}
 type ToggleToolDetailsMsg struct{}
 
 func (m *messagesComponent) Init() tea.Cmd {
-	return tea.Batch(m.viewport.Init(), m.spinner.Tick)
+	return tea.Batch(m.viewport.Init(), m.spinner.Tick, m.commands.Init())
 }
 
 func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -93,6 +95,11 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	spinner, cmd := m.spinner.Update(msg)
 	m.spinner = spinner
 	cmds = append(cmds, cmd)
+
+	updated, cmd := m.commands.Update(msg)
+	m.commands = updated.(commands.CommandsComponent)
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
@@ -281,7 +288,13 @@ func (m *messagesComponent) View() string {
 		return m.home()
 	}
 	if m.rendering {
-		return m.viewport.View()
+		return lipgloss.Place(
+			m.width,
+			m.height,
+			lipgloss.Center,
+			lipgloss.Center,
+			"Loading session...",
+		)
 	}
 	t := theme.CurrentTheme()
 	return lipgloss.JoinVertical(
@@ -319,50 +332,42 @@ func (m *messagesComponent) home() string {
 	// cwd := app.Info.Path.Cwd
 	// config := app.Info.Path.Config
 
-	commands := [][]string{
-		{"/help", "show help"},
-		{"/sessions", "list sessions"},
-		{"/new", "start a new session"},
-		{"/model", "switch model"},
-		{"/theme", "switch theme"},
-		{"/exit", "exit the app"},
-	}
+	versionStyle := lipgloss.NewStyle().
+		Background(t.Background()).
+		Foreground(t.TextMuted()).
+		Width(lipgloss.Width(logo)).
+		Align(lipgloss.Right)
+	version := versionStyle.Render(m.app.Version)
 
-	commandLines := []string{}
-	for _, command := range commands {
-		commandLines = append(commandLines, (base(command[0]+" ") + muted(command[1])))
-	}
-
-	logoAndVersion := lipgloss.JoinVertical(
-		lipgloss.Right,
-		logo,
-		muted(m.app.Version),
+	logoAndVersion := strings.Join([]string{logo, version}, "\n")
+	logoAndVersion = lipgloss.PlaceHorizontal(
+		m.width,
+		lipgloss.Center,
+		logoAndVersion,
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
+	)
+	commands := lipgloss.PlaceHorizontal(
+		m.width,
+		lipgloss.Center,
+		m.commands.View(),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 	)
 
 	lines := []string{}
-	lines = append(lines, "")
-	lines = append(lines, "")
 	lines = append(lines, logoAndVersion)
+	lines = append(lines, "")
 	lines = append(lines, "")
 	// lines = append(lines, base("cwd ")+muted(cwd))
 	// lines = append(lines, base("config ")+muted(config))
 	// lines = append(lines, "")
-	lines = append(lines, commandLines...)
-	lines = append(lines, "")
-	if m.rendering {
-		lines = append(lines, base("Loading session..."))
-	} else {
-		lines = append(lines, "")
-	}
+	lines = append(lines, commands)
 
 	return lipgloss.Place(
 		m.width,
 		m.height,
 		lipgloss.Center,
 		lipgloss.Center,
-		baseStyle.Width(lipgloss.Width(logoAndVersion)).Render(
-			strings.Join(lines, "\n"),
-		),
+		baseStyle.Render(strings.Join(lines, "\n")),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 	)
 }
@@ -381,6 +386,7 @@ func (m *messagesComponent) SetSize(width, height int) tea.Cmd {
 	m.viewport.SetHeight(height - lipgloss.Height(m.header()))
 	m.attachments.SetWidth(width + 40)
 	m.attachments.SetHeight(3)
+	m.commands.SetSize(width, height)
 	m.renderView()
 	return nil
 }
@@ -444,11 +450,19 @@ func NewMessagesComponent(app *app.App) MessagesComponent {
 	attachments := viewport.New()
 	vp.KeyMap = viewport.KeyMap{}
 
+	t := theme.CurrentTheme()
+	commandsView := commands.New(
+		app,
+		commands.WithBackground(t.Background()),
+		commands.WithLimit(6),
+	)
+
 	return &messagesComponent{
 		app:             app,
 		viewport:        vp,
 		spinner:         s,
 		attachments:     attachments,
+		commands:        commandsView,
 		showToolDetails: true,
 		cache:           NewMessageCache(),
 		tail:            true,

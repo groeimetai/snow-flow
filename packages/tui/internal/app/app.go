@@ -23,7 +23,7 @@ type App struct {
 	Info      client.AppInfo
 	Version   string
 	StatePath string
-	Configg   *client.ConfigInfo
+	Config    *client.ConfigInfo
 	Client    *client.ClientWithResponses
 	State     *config.State
 	Provider  *client.ProviderInfo
@@ -95,7 +95,7 @@ func New(
 		Info:      appInfo,
 		Version:   version,
 		StatePath: appStatePath,
-		Configg:   configInfo,
+		Config:    configInfo,
 		State:     appState,
 		Client:    httpClient,
 		Session:   &client.SessionInfo{},
