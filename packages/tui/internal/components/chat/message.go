@@ -308,10 +308,15 @@ func renderToolInvocation(
 		if m, ok := value.(map[string]any); ok {
 			toolArgsMap = m
 
-			firstKey := ""
+			keys := make([]string, 0, len(toolArgsMap))
 			for key := range toolArgsMap {
-				firstKey = key
-				break
+				keys = append(keys, key)
+			}
+			slices.Sort(keys)
+
+			firstKey := ""
+			if len(keys) > 0 {
+				firstKey = keys[0]
 			}
 
 			toolArgs = renderArgs(&toolArgsMap, firstKey)
