@@ -802,7 +802,7 @@ export default function Share(props: {
                   <IconOpencode width={16} height={16} />
                 </div>
                 <Show when={store.info?.version} fallback="v0.0.1">
-                  <span>v${store.info?.version}</span>
+                  <span>v{store.info?.version}</span>
                 </Show>
               </li>
             </ul>
