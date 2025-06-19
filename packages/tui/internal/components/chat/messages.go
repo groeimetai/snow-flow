@@ -28,6 +28,7 @@ type MessagesComponent interface {
 	Last() (tea.Model, tea.Cmd)
 	// Previous() (tea.Model, tea.Cmd)
 	// Next() (tea.Model, tea.Cmd)
+	ToolDetailsVisible() bool
 }
 
 type messagesComponent struct {
@@ -424,6 +425,10 @@ func (m *messagesComponent) Last() (tea.Model, tea.Cmd) {
 	m.viewport.GotoBottom()
 	m.tail = true
 	return m, nil
+}
+
+func (m *messagesComponent) ToolDetailsVisible() bool {
+	return m.showToolDetails
 }
 
 func NewMessagesComponent(app *app.App) MessagesComponent {

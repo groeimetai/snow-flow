@@ -355,8 +355,7 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		}
 		editor := os.Getenv("EDITOR")
 		if editor == "" {
-			// TODO: let the user know there's no EDITOR set
-			return a, nil
+			return a, toast.NewErrorToast("No EDITOR set, can't open editor")
 		}
 
 		value := a.editor.Value()
@@ -368,7 +367,7 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		tmpfile.WriteString(value)
 		if err != nil {
 			slog.Error("Failed to create temp file", "error", err)
-			return a, nil
+			return a, toast.NewErrorToast("Something went wrong, couldn't open editor")
 		}
 		tmpfile.Close()
 		c := exec.Command(editor, tmpfile.Name()) //nolint:gosec
@@ -440,7 +439,12 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		// TODO: block until compaction is complete
 		a.app.CompactSession(context.Background())
 	case commands.ToolDetailsCommand:
+		message := "Tool details are now visible"
+		if a.messages.ToolDetailsVisible() {
+			message = "Tool details are now hidden"
+		}
 		cmds = append(cmds, util.CmdHandler(chat.ToggleToolDetailsMsg{}))
+		cmds = append(cmds, toast.NewInfoToast(message))
 	case commands.ModelListCommand:
 		modelDialog := dialog.NewModelDialog(a.app)
 		a.modal = modelDialog
@@ -465,6 +469,7 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		a.editor = updated.(chat.EditorComponent)
 		cmds = append(cmds, cmd)
 	case commands.InputNewlineCommand:
+		slog.Debug("InputNewlineCommand")
 		updated, cmd := a.editor.Newline()
 		a.editor = updated.(chat.EditorComponent)
 		cmds = append(cmds, cmd)
