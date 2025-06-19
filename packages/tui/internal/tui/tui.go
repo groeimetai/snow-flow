@@ -214,8 +214,8 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.completions.SetProvider(a.completionManager.DefaultProvider())
 	case client.EventInstallationUpdated:
 		return a, toast.NewSuccessToast(
-			"New version installed",
-			toast.WithTitle("opencode updated to "+msg.Properties.Version+", restart to apply."),
+			"opencode updated to "+msg.Properties.Version+", restart to apply.",
+			toast.WithTitle("New version installed"),
 		)
 	case client.EventSessionUpdated:
 		if msg.Properties.Info.Id == a.app.Session.Id {
