@@ -229,6 +229,12 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.app.Messages = append(a.app.Messages, msg.Properties.Info)
 			}
 		}
+	case client.EventSessionError:
+		unknownError, err := msg.Properties.Error.AsUnknownError()
+		if err == nil {
+			slog.Error("Server error", "name", unknownError.Name, "message", unknownError.Data.Message)
+			return a, toast.NewErrorToast(unknownError.Data.Message, toast.WithTitle(unknownError.Name))
+		}
 	case tea.WindowSizeMsg:
 		msg.Height -= 2 // Make space for the status bar
 		a.width, a.height = msg.Width, msg.Height
@@ -243,12 +249,13 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		a.layout.SetSize(a.width, a.height)
 	case app.SessionSelectedMsg:
-		var err error
-		a.app.Session = msg
-		a.app.Messages, err = a.app.ListMessages(context.Background(), msg.Id)
+		messages, err := a.app.ListMessages(context.Background(), msg.Id)
 		if err != nil {
 			slog.Error("Failed to list messages", "error", err)
+			return a, toast.NewErrorToast("Failed to open session")
 		}
+		a.app.Session = msg
+		a.app.Messages = messages
 	case app.ModelSelectedMsg:
 		a.app.Provider = &msg.Provider
 		a.app.Model = &msg.Model

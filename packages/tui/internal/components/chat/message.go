@@ -305,14 +305,15 @@ func renderToolInvocation(
 	toolArgsMap := make(map[string]any)
 	if toolCall.Args != nil {
 		value := *toolCall.Args
-		m, ok := value.(map[string]any)
-		if ok {
+		if m, ok := value.(map[string]any); ok {
 			toolArgsMap = m
+
 			firstKey := ""
 			for key := range toolArgsMap {
 				firstKey = key
 				break
 			}
+
 			toolArgs = renderArgs(&toolArgsMap, firstKey)
 		}
 	}
@@ -589,9 +590,17 @@ func renderArgs(args *map[string]any, titleKey string) string {
 	if args == nil || len(*args) == 0 {
 		return ""
 	}
+
+	keys := make([]string, 0, len(*args))
+	for key := range *args {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+
 	title := ""
 	parts := []string{}
-	for key, value := range *args {
+	for _, key := range keys {
+		value := (*args)[key]
 		if value == nil {
 			continue
 		}
