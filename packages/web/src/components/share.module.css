@@ -149,14 +149,80 @@
       align-items: center;
       justify-content: flex-start;
 
-      a:first-child {
-        display: block;
-        flex: 0 0 auto;
-        width: 18px;
-        opacity: 0.65;
-        svg {
-          color: var(--sl-color-text-secondary);
+      [data-element-anchor] {
+        position: relative;
+
+        a:first-child {
           display: block;
+          flex: 0 0 auto;
+          width: 18px;
+          opacity: 0.65;
+
+          svg {
+            color: var(--sl-color-text-secondary);
+            display: block;
+
+            &:nth-child(3) {
+              color: var(--sl-color-green-high);
+            }
+          }
+
+          svg:nth-child(2),
+          svg:nth-child(3) {
+            display: none;
+          }
+          &:hover {
+            svg:nth-child(1) {
+              display: none;
+            }
+            svg:nth-child(2) {
+              display: block;
+            }
+          }
+        }
+
+        [data-element-tooltip] {
+          position: absolute;
+          top: 50%;
+          left: calc(100% + 12px);
+          transform: translate(0, -50%);
+          line-height: 1.1;
+          padding: 0.375em 0.5em calc(0.375em + 2px);
+          background: var(--sl-color-white);
+          color: var(--sl-color-text-invert);
+          font-size: 0.6875rem;
+          border-radius: 7px;
+          white-space: nowrap;
+
+          opacity: 0;
+          visibility: hidden;
+
+          &::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: -15px;
+            transform: translateY(-50%);
+            border: 8px solid transparent;
+            border-right-color: var(--sl-color-white);
+          }
+        }
+
+        &[data-status="copied"] {
+          [data-element-tooltip] {
+            opacity: 1;
+            visibility: visible;
+          }
+          a,
+          a:hover {
+            svg:nth-child(1),
+            svg:nth-child(2) {
+              display: none;
+            }
+            svg:nth-child(3) {
+              display: block;
+            }
+          }
         }
       }
 

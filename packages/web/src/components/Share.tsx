@@ -23,11 +23,13 @@ import {
 import {
   IconFolder,
   IconCpuChip,
+  IconHashtag,
   IconSparkles,
   IconGlobeAlt,
   IconDocument,
   IconQueueList,
   IconUserCircle,
+  IconCheckCircle,
   IconChevronDown,
   IconCommandLine,
   IconChevronRight,
@@ -504,13 +506,52 @@ function ToolFooter(props: { time: number }) {
   )
 }
 
+interface AnchorProps extends JSX.HTMLAttributes<HTMLDivElement> {
+  id: string
+}
+function AnchorIcon(props: AnchorProps) {
+  const [local, rest] = splitProps(props, ["id", "children"])
+  const [copied, setCopied] = createSignal(false)
+
+  return (
+    <div
+      {...rest}
+      data-element-anchor
+      title="Link to this message"
+      data-status={copied() ? "copied" : ""}
+    >
+      <a
+        href={`#${local.id}`}
+        onClick={e => {
+          e.preventDefault()
+
+          const anchor = e.currentTarget
+          const hash = anchor.getAttribute("href") || ""
+          const { origin, pathname, search } = window.location
+
+          navigator.clipboard
+            .writeText(`${origin}${pathname}${search}${hash}`)
+            .catch((err) => console.error("Copy failed", err))
+
+          setCopied(true)
+          setTimeout(() => setCopied(false), 3000)
+        }}
+      >
+        {local.children}
+        <IconHashtag width={18} height={18} />
+        <IconCheckCircle width={18} height={18} />
+      </a>
+      <span data-element-tooltip>Copied!</span>
+    </div>
+  )
+}
+
 export default function Share(props: {
   id: string
   api: string
   info: Session.Info
   messages: Record<string, Message.Info>
 }) {
-  console.log(props.info)
   let hasScrolled = false
 
   const id = props.id
@@ -844,9 +885,9 @@ export default function Share(props: {
                               data-part-type="user-text"
                             >
                               <div data-section="decoration">
-                                <a href={`#${anchor()}`} title="Message">
+                                <AnchorIcon id={anchor()}>
                                   <IconUserCircle width={18} height={18} />
-                                </a>
+                                </AnchorIcon>
                                 <div></div>
                               </div>
                               <div data-section="content">
@@ -874,9 +915,9 @@ export default function Share(props: {
                               data-part-type="ai-text"
                             >
                               <div data-section="decoration">
-                                <a href={`#${anchor()}`} title="AI response">
+                                <AnchorIcon id={anchor()}>
                                   <IconSparkles width={18} height={18} />
-                                </a>
+                                </AnchorIcon>
                                 <div></div>
                               </div>
                               <div data-section="content">
@@ -922,12 +963,12 @@ export default function Share(props: {
                                 data-part-type="ai-model"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="Model">
+                                  <AnchorIcon id={anchor()}>
                                     <ProviderIcon
                                       size={18}
                                       provider={assistant().providerID}
                                     />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -981,9 +1022,9 @@ export default function Share(props: {
                               data-part-type="system-text"
                             >
                               <div data-section="decoration">
-                                <a href={`#${anchor()}`} title="System message">
+                                <AnchorIcon id={anchor()}>
                                   <IconCpuChip width={18} height={18} />
-                                </a>
+                                </AnchorIcon>
                                 <div></div>
                               </div>
                               <div data-section="content">
@@ -1024,12 +1065,12 @@ export default function Share(props: {
                                 data-part-type="tool-grep"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="Grep files">
+                                  <AnchorIcon id={anchor()}>
                                     <IconDocumentMagnifyingGlass
                                       width={18}
                                       height={18}
                                     />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1118,12 +1159,12 @@ export default function Share(props: {
                                 data-part-type="tool-glob"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="Glob files">
+                                  <AnchorIcon id={anchor()}>
                                     <IconMagnifyingGlass
                                       width={18}
                                       height={18}
                                     />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1200,12 +1241,12 @@ export default function Share(props: {
                                 data-part-type="tool-list"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="List files">
+                                  <AnchorIcon id={anchor()}>
                                     <IconRectangleStack
                                       width={18}
                                       height={18}
                                     />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1267,9 +1308,9 @@ export default function Share(props: {
                                 data-part-type="tool-read"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="Read file">
+                                  <AnchorIcon id={anchor()}>
                                     <IconDocument width={18} height={18} />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1364,9 +1405,9 @@ export default function Share(props: {
                                 data-part-type="tool-write"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="Write file">
+                                  <AnchorIcon id={anchor()}>
                                     <IconDocumentPlus width={18} height={18} />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1447,9 +1488,9 @@ export default function Share(props: {
                                 data-part-type="tool-edit"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="Edit file">
+                                  <AnchorIcon id={anchor()}>
                                     <IconPencilSquare width={18} height={18} />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1506,9 +1547,9 @@ export default function Share(props: {
                                 data-part-type="tool-bash"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="Bash command">
+                                  <AnchorIcon id={anchor()}>
                                     <IconCommandLine width={18} height={18} />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1554,9 +1595,9 @@ export default function Share(props: {
                                 data-part-type="tool-todo"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="Plan">
+                                  <AnchorIcon id={anchor()}>
                                     <IconQueueList width={18} height={18} />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1614,9 +1655,9 @@ export default function Share(props: {
                                 data-part-type="tool-fetch"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="Web fetch">
+                                  <AnchorIcon id={anchor()}>
                                     <IconGlobeAlt width={18} height={18} />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1675,12 +1716,12 @@ export default function Share(props: {
                                 data-part-type="tool-fallback"
                               >
                                 <div data-section="decoration">
-                                  <a href={`#${anchor()}`} title="Tool call">
+                                  <AnchorIcon id={anchor()}>
                                     <IconWrenchScrewdriver
                                       width={18}
                                       height={18}
                                     />
-                                  </a>
+                                  </AnchorIcon>
                                   <div></div>
                                 </div>
                                 <div data-section="content">
@@ -1749,7 +1790,7 @@ export default function Share(props: {
                             data-part-type="fallback"
                           >
                             <div data-section="decoration">
-                              <a href={`#${anchor()}`}>
+                              <AnchorIcon id={anchor()}>
                                 <Switch
                                   fallback={
                                     <IconWrenchScrewdriver
@@ -1773,7 +1814,7 @@ export default function Share(props: {
                                     <IconUserCircle width={18} height={18} />
                                   </Match>
                                 </Switch>
-                              </a>
+                              </AnchorIcon>
                               <div></div>
                             </div>
                             <div data-section="content">

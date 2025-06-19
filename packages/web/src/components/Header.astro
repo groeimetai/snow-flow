@@ -10,7 +10,7 @@ const path = Astro.url.pathname;
 const links = config.social || [];
 ---
 
-{ path.startsWith("/share")
+{ path.startsWith("/s")
   ? <div class="header sl-flex">
       <div class="title-wrapper sl-flex">
         <SiteTitle {...Astro.props} />
