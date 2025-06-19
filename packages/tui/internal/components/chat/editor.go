@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/v2/spinner"
-	"github.com/charmbracelet/bubbles/v2/textarea"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/components/dialog"
+	"github.com/sst/opencode/internal/components/textarea"
 	"github.com/sst/opencode/internal/image"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
@@ -23,6 +23,8 @@ type EditorComponent interface {
 	tea.Model
 	tea.ViewModel
 	layout.Sizeable
+	Content() string
+	Lines() int
 	Value() string
 	Submit() (tea.Model, tea.Cmd)
 	Clear() (tea.Model, tea.Cmd)
@@ -50,22 +52,15 @@ func (m *editorComponent) Init() tea.Cmd {
 func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		// Maximize editor responsiveness for printable characters
 		if msg.Text != "" {
 			m.textarea, cmd = m.textarea.Update(msg)
-			return m, cmd
+			cmds = append(cmds, cmd)
+			return m, tea.Batch(cmds...)
 		}
-
-		// // TODO: ?
-		// if key.Matches(msg, messageKeys.PageUp) ||
-		// 	key.Matches(msg, messageKeys.PageDown) ||
-		// 	key.Matches(msg, messageKeys.HalfPageUp) ||
-		// 	key.Matches(msg, messageKeys.HalfPageDown) {
-		// 	return m, nil
-		// }
-
 	case dialog.ThemeSelectedMsg:
 		m.textarea = createTextArea(&m.textarea)
 		m.spinner = createSpinner()
@@ -73,10 +68,11 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dialog.CompletionSelectedMsg:
 		if msg.IsCommand {
 			commandName := strings.TrimPrefix(msg.CompletionValue, "/")
-			m.textarea.Reset()
-			return m, util.CmdHandler(
-				commands.ExecuteCommandMsg(m.app.Commands[commands.CommandName(commandName)]),
-			)
+			updated, cmd := m.Clear()
+			m = updated.(*editorComponent)
+			cmds = append(cmds, cmd)
+			cmds = append(cmds, util.CmdHandler(commands.ExecuteCommandMsg(m.app.Commands[commands.CommandName(commandName)])))
+			return m, tea.Batch(cmds...)
 		} else {
 			existingValue := m.textarea.Value()
 			modifiedValue := strings.Replace(existingValue, msg.SearchString, msg.CompletionValue, 1)
@@ -94,7 +90,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *editorComponent) View() string {
+func (m *editorComponent) Content() string {
 	t := theme.CurrentTheme()
 	base := styles.BaseStyle().Background(t.Background()).Render
 	muted := styles.Muted().Background(t.Background()).Render
@@ -139,6 +135,13 @@ func (m *editorComponent) View() string {
 	return content
 }
 
+func (m *editorComponent) View() string {
+	if m.Lines() > 1 {
+		return ""
+	}
+	return m.Content()
+}
+
 func (m *editorComponent) GetSize() (width, height int) {
 	return m.width, m.height
 }
@@ -146,9 +149,13 @@ func (m *editorComponent) GetSize() (width, height int) {
 func (m *editorComponent) SetSize(width, height int) tea.Cmd {
 	m.width = width
 	m.height = height
-	m.textarea.SetWidth(width - 5)   // account for the prompt and padding right
-	m.textarea.SetHeight(height - 4) // account for info underneath
+	m.textarea.SetWidth(width - 5) // account for the prompt and padding right
+	// m.textarea.SetHeight(height - 4)
 	return nil
+}
+
+func (m *editorComponent) Lines() int {
+	return m.textarea.LineCount()
 }
 
 func (m *editorComponent) Value() string {
@@ -157,7 +164,6 @@ func (m *editorComponent) Value() string {
 
 func (m *editorComponent) Submit() (tea.Model, tea.Cmd) {
 	value := strings.TrimSpace(m.Value())
-	m.textarea.Reset()
 	if value == "" {
 		return m, nil
 	}
@@ -166,6 +172,11 @@ func (m *editorComponent) Submit() (tea.Model, tea.Cmd) {
 		m.textarea.SetValue(value[:len(value)-1] + "\n")
 		return m, nil
 	}
+
+	var cmds []tea.Cmd
+	updated, cmd := m.Clear()
+	m = updated.(*editorComponent)
+	cmds = append(cmds, cmd)
 
 	attachments := m.attachments
 
@@ -180,12 +191,8 @@ func (m *editorComponent) Submit() (tea.Model, tea.Cmd) {
 
 	m.attachments = nil
 
-	return m, tea.Batch(
-		util.CmdHandler(app.SendMsg{
-			Text:        value,
-			Attachments: attachments,
-		}),
-	)
+	cmds = append(cmds, util.CmdHandler(app.SendMsg{Text: value, Attachments: attachments}))
+	return m, tea.Batch(cmds...)
 }
 
 func (m *editorComponent) Clear() (tea.Model, tea.Cmd) {

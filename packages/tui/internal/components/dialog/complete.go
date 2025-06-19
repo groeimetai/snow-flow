@@ -101,10 +101,10 @@ type completionDialogKeyMap struct {
 
 var completionDialogKeys = completionDialogKeyMap{
 	Complete: key.NewBinding(
-		key.WithKeys("tab", "enter"),
+		key.WithKeys("tab", "enter", "right"),
 	),
 	Cancel: key.NewBinding(
-		key.WithKeys(" ", "esc", "backspace"),
+		key.WithKeys(" ", "esc", "backspace", "ctrl+c"),
 	),
 }
 
@@ -209,7 +209,7 @@ func (c *completionDialogComponent) View() string {
 		BorderRight(true).
 		BorderLeft(true).
 		BorderBackground(t.Background()).
-		BorderForeground(t.BackgroundSubtle()).
+		BorderForeground(t.BackgroundElement()).
 		Width(c.width).
 		Render(c.list.View())
 }

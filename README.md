@@ -98,7 +98,7 @@ You can configure custom keybinds, the values listed below are the defaults.
     "input_clear": "ctrl+c",
     "input_paste": "ctrl+v",
     "input_submit": "enter",
-    "input_newline": "shift+enter",
+    "input_newline": "shift+enter,ctrl+j",
     "history_previous": "up",
     "history_next": "down",
     "messages_page_up": "pgup",

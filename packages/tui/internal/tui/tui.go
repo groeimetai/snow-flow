@@ -127,7 +127,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if a.showCompletionDialog {
 			switch msg.String() {
-			case "tab", "enter", "esc":
+			case "tab", "enter", "esc", "ctrl+c":
 				context, contextCmd := a.completions.Update(msg)
 				a.completions = context.(dialog.CompletionDialog)
 				cmds = append(cmds, contextCmd)
@@ -290,14 +290,22 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (a appModel) View() string {
 	layoutView := a.layout.View()
+	editorWidth, _ := a.editorContainer.GetSize()
+	editorX, editorY := a.editorContainer.GetPosition()
+
+	if a.editor.Lines() > 1 {
+		editorY = editorY - a.editor.Lines() + 1
+		layoutView = layout.PlaceOverlay(
+			editorX,
+			editorY,
+			a.editor.Content(),
+			layoutView,
+		)
+	}
 
 	if a.showCompletionDialog {
-		editorWidth, _ := a.editorContainer.GetSize()
-		editorX, editorY := a.editorContainer.GetPosition()
-
 		a.completions.SetWidth(editorWidth)
 		overlay := a.completions.View()
-
 		layoutView = layout.PlaceOverlay(
 			editorX,
 			editorY-lipgloss.Height(overlay)+2,
@@ -530,7 +538,7 @@ func NewModel(app *app.App) tea.Model {
 			layout.WithDirection(layout.FlexDirectionVertical),
 			layout.WithSizes(
 				layout.FlexChildSizeGrow,
-				layout.FlexChildSizeFixed(6),
+				layout.FlexChildSizeFixed(5),
 			),
 		),
 	}

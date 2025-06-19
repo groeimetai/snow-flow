@@ -208,18 +208,18 @@ func LoadFromConfig(config *client.ConfigInfo) CommandRegistry {
 		{
 			Name:        InputNewlineCommand,
 			Description: "insert newline",
-			Keybindings: parseBindings("shift+enter"),
+			Keybindings: parseBindings("shift+enter", "ctrl+j"),
 		},
-		{
-			Name:        HistoryPreviousCommand,
-			Description: "previous prompt",
-			Keybindings: parseBindings("up"),
-		},
-		{
-			Name:        HistoryNextCommand,
-			Description: "next prompt",
-			Keybindings: parseBindings("down"),
-		},
+		// {
+		// 	Name:        HistoryPreviousCommand,
+		// 	Description: "previous prompt",
+		// 	Keybindings: parseBindings("up"),
+		// },
+		// {
+		// 	Name:        HistoryNextCommand,
+		// 	Description: "next prompt",
+		// 	Keybindings: parseBindings("down"),
+		// },
 		{
 			Name:        MessagesPageUpCommand,
 			Description: "page up",
