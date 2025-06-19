@@ -3,6 +3,10 @@
   --sl-color-divider: var(--sl-color-gray-5);
 }
 
+.expressive-code .frame {
+  box-shadow: none;
+}
+
 @media (prefers-color-scheme: dark) {
   .shiki,
   .shiki span {
