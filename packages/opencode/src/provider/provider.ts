@@ -274,7 +274,7 @@ export namespace Provider {
     const cfg = await Config.get()
     const provider = await list()
       .then((val) => Object.values(val))
-      .then((x) => x.find((p) => !cfg.provider || cfg.provider === p.info.id))
+      .then((x) => x.find((p) => !cfg.provider || Object.keys(cfg.provider).includes(p.info.id)))
     if (!provider) throw new Error("no providers found")
     const [model] = sort(Object.values(provider.info.models))
     if (!model) throw new Error("no models found")
@@ -304,7 +304,7 @@ export namespace Provider {
   ]
 
   const TOOL_MAPPING: Record<string, Tool.Info[]> = {
-    anthropic: TOOLS.filter((t) => t.id !== "opencode.patch"),
+    anthropic: TOOLS.filter((t) => t.id !== "patch"),
     openai: TOOLS.map((t) => ({
       ...t,
       parameters: optionalToNullable(t.parameters),

@@ -21,7 +21,7 @@ export const IGNORE_PATTERNS = [
 const LIMIT = 100
 
 export const ListTool = Tool.define({
-  id: "opencode.list",
+  id: "list",
   description: DESCRIPTION,
   parameters: z.object({
     path: z

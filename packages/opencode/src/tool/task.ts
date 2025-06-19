@@ -6,7 +6,7 @@ import { Bus } from "../bus"
 import { Message } from "../session/message"
 
 export const TaskTool = Tool.define({
-  id: "opencode.task",
+  id: "task",
   description: DESCRIPTION,
   parameters: z.object({
     description: z

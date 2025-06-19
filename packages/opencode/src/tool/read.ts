@@ -12,7 +12,7 @@ const DEFAULT_READ_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
 
 export const ReadTool = Tool.define({
-  id: "opencode.read",
+  id: "read",
   description: DESCRIPTION,
   parameters: z.object({
     filePath: z.string().describe("The path to the file to read"),

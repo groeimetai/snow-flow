@@ -6,7 +6,7 @@ import { App } from "../app/app"
 import DESCRIPTION from "./lsp-hover.txt"
 
 export const LspHoverTool = Tool.define({
-  id: "opencode.lsp_hover",
+  id: "lsp_hover",
   description: DESCRIPTION,
   parameters: z.object({
     file: z.string().describe("The path to the file to get diagnostics."),

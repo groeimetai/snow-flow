@@ -9,7 +9,7 @@ import DESCRIPTION from "./edit.txt"
 import { App } from "../app/app"
 
 export const EditTool = Tool.define({
-  id: "opencode.edit",
+  id: "edit",
   description: DESCRIPTION,
   parameters: z.object({
     filePath: z.string().describe("The absolute path to the file to modify"),
@@ -35,7 +35,7 @@ export const EditTool = Tool.define({
       : path.join(app.path.cwd, params.filePath)
 
     await Permission.ask({
-      id: "opencode.edit",
+      id: "edit",
       sessionID: ctx.sessionID,
       title: "Edit this file: " + filepath,
       metadata: {

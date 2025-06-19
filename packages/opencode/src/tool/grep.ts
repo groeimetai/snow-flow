@@ -6,7 +6,7 @@ import { Ripgrep } from "../external/ripgrep"
 import DESCRIPTION from "./grep.txt"
 
 export const GrepTool = Tool.define({
-  id: "opencode.grep",
+  id: "grep",
   description: DESCRIPTION,
   parameters: z.object({
     pattern: z

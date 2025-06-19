@@ -8,7 +8,7 @@ const DEFAULT_TIMEOUT = 30 * 1000 // 30 seconds
 const MAX_TIMEOUT = 120 * 1000 // 2 minutes
 
 export const WebFetchTool = Tool.define({
-  id: "opencode.webfetch",
+  id: "webfetch",
   description: DESCRIPTION,
   parameters: z.object({
     url: z.string().describe("The URL to fetch content from"),

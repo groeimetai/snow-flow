@@ -5,7 +5,7 @@ import { App } from "../app/app"
 import DESCRIPTION from "./glob.txt"
 
 export const GlobTool = Tool.define({
-  id: "opencode.glob",
+  id: "glob",
   description: DESCRIPTION,
   parameters: z.object({
     pattern: z.string().describe("The glob pattern to match files against"),

@@ -8,7 +8,7 @@ import DESCRIPTION from "./write.txt"
 import { App } from "../app/app"
 
 export const WriteTool = Tool.define({
-  id: "opencode.write",
+  id: "write",
   description: DESCRIPTION,
   parameters: z.object({
     filePath: z
@@ -29,7 +29,7 @@ export const WriteTool = Tool.define({
     if (exists) await FileTimes.assert(ctx.sessionID, filepath)
 
     await Permission.ask({
-      id: "opencode.write",
+      id: "write",
       sessionID: ctx.sessionID,
       title: exists
         ? "Overwrite this file: " + filepath

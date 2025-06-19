@@ -26,7 +26,7 @@ const DEFAULT_TIMEOUT = 1 * 60 * 1000
 const MAX_TIMEOUT = 10 * 60 * 1000
 
 export const BashTool = Tool.define({
-  id: "opencode.bash",
+  id: "bash",
   description: DESCRIPTION,
   parameters: z.object({
     command: z.string().describe("The command to execute"),

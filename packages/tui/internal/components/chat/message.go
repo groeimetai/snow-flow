@@ -253,7 +253,7 @@ func renderToolInvocation(
 	showDetails bool,
 	isLast bool,
 ) string {
-	ignoredTools := []string{"opencode_todoread"}
+	ignoredTools := []string{"todoread"}
 	if slices.Contains(ignoredTools, toolCall.ToolName) {
 		return ""
 	}
@@ -350,7 +350,7 @@ func renderToolInvocation(
 
 	title := ""
 	switch toolCall.ToolName {
-	case "opencode_read":
+	case "read":
 		toolArgs = renderArgs(&toolArgsMap, "filePath")
 		title = fmt.Sprintf("READ %s   %s", toolArgs, elapsed)
 		if preview, ok := metadata.Get("preview"); ok && toolArgsMap["filePath"] != nil {
@@ -358,7 +358,7 @@ func renderToolInvocation(
 			body = preview.(string)
 			body = renderFile(filename, body, WithTruncate(6))
 		}
-	case "opencode_edit":
+	case "edit":
 		if filename, ok := toolArgsMap["filePath"].(string); ok {
 			title = fmt.Sprintf("EDIT %s   %s", relative(filename), elapsed)
 			if d, ok := metadata.Get("diff"); ok {
@@ -399,14 +399,14 @@ func renderToolInvocation(
 				)
 			}
 		}
-	case "opencode_write":
+	case "write":
 		if filename, ok := toolArgsMap["filePath"].(string); ok {
 			title = fmt.Sprintf("WRITE %s   %s", relative(filename), elapsed)
 			if content, ok := toolArgsMap["content"].(string); ok {
 				body = renderFile(filename, content)
 			}
 		}
-	case "opencode_bash":
+	case "bash":
 		if description, ok := toolArgsMap["description"].(string); ok {
 			title = fmt.Sprintf("SHELL %s   %s", description, elapsed)
 		}
@@ -417,7 +417,7 @@ func renderToolInvocation(
 			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
 			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
-	case "opencode_webfetch":
+	case "webfetch":
 		toolArgs = renderArgs(&toolArgsMap, "url")
 		title = fmt.Sprintf("FETCH %s   %s", toolArgs, elapsed)
 		if format, ok := toolArgsMap["format"].(string); ok {
@@ -428,7 +428,7 @@ func renderToolInvocation(
 			}
 			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
-	case "opencode_todowrite":
+	case "todowrite":
 		title = fmt.Sprintf("PLAN   %s", elapsed)
 
 		if to, ok := metadata.Get("todos"); ok && finished {
@@ -498,11 +498,11 @@ func renderToolName(name string) string {
 	switch name {
 	// case agent.AgentToolName:
 	// 	return "Task"
-	case "opencode_ls":
+	case "list":
 		return "LIST"
-	case "opencode_webfetch":
+	case "webfetch":
 		return "FETCH"
-	case "opencode_todowrite":
+	case "todowrite":
 		return "PLAN"
 	default:
 		normalizedName := name
@@ -559,27 +559,27 @@ func renderToolAction(name string) string {
 	switch name {
 	// case agent.AgentToolName:
 	// 	return "Preparing prompt..."
-	case "opencode_bash":
+	case "bash":
 		return "Building command..."
-	case "opencode_edit":
+	case "edit":
 		return "Preparing edit..."
-	case "opencode_fetch":
+	case "webfetch":
 		return "Writing fetch..."
-	case "opencode_glob":
+	case "glob":
 		return "Finding files..."
-	case "opencode_grep":
+	case "grep":
 		return "Searching content..."
-	case "opencode_ls":
+	case "list":
 		return "Listing directory..."
-	case "opencode_read":
+	case "read":
 		return "Reading file..."
-	case "opencode_write":
+	case "write":
 		return "Preparing write..."
-	case "opencode_todowrite", "opencode_todoread":
+	case "todowrite", "todoread":
 		return "Planning..."
-	case "opencode_patch":
+	case "patch":
 		return "Preparing patch..."
-	case "opencode_batch":
+	case "batch":
 		return "Running batch operations..."
 	}
 	return "Working..."

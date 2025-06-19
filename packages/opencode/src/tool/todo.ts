@@ -23,7 +23,7 @@ const state = App.state("todo-tool", () => {
 })
 
 export const TodoWriteTool = Tool.define({
-  id: "opencode.todowrite",
+  id: "todowrite",
   description: DESCRIPTION_WRITE,
   parameters: z.object({
     todos: z.array(TodoInfo).describe("The updated todo list"),
@@ -42,7 +42,7 @@ export const TodoWriteTool = Tool.define({
 })
 
 export const TodoReadTool = Tool.define({
-  id: "opencode.todoread",
+  id: "todoread",
   description: "Use this tool to read your todo list",
   parameters: z.object({}),
   async execute(_params, opts) {

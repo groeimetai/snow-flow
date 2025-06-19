@@ -232,7 +232,7 @@ async function applyCommit(
 }
 
 export const PatchTool = Tool.define({
-  id: "opencode.patch",
+  id: "patch",
   description: DESCRIPTION,
   parameters: PatchParams,
   execute: async (params, ctx) => {

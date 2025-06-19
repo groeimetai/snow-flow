@@ -6,7 +6,7 @@ import path from "path"
 import { App } from "../app/app"
 
 export const MultiEditTool = Tool.define({
-  id: "opencode.multiedit",
+  id: "multiedit",
   description: DESCRIPTION,
   parameters: z.object({
     filePath: z.string().describe("The absolute path to the file to modify"),

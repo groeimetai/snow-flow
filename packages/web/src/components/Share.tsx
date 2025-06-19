@@ -859,7 +859,7 @@ export default function Share(props: {
                         (partIndex() > 0 || !msg.metadata?.assistant)) ||
                       (msg.role === "assistant" &&
                         part.type === "tool-invocation" &&
-                        part.toolInvocation.toolName === "opencode_todoread")
+                        part.toolInvocation.toolName === "todoread")
                     )
                       return null
 
@@ -1072,7 +1072,7 @@ export default function Share(props: {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "opencode_grep" &&
+                            part.toolInvocation.toolName === "grep" &&
                             part
                           }
                         >
@@ -1175,7 +1175,7 @@ export default function Share(props: {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "opencode_glob" &&
+                            part.toolInvocation.toolName === "glob" &&
                             part
                           }
                         >
@@ -1253,7 +1253,7 @@ export default function Share(props: {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "opencode_list" &&
+                            part.toolInvocation.toolName === "list" &&
                             part
                           }
                         >
@@ -1322,7 +1322,7 @@ export default function Share(props: {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "opencode_read" &&
+                            part.toolInvocation.toolName === "read" &&
                             part
                           }
                         >
@@ -1417,7 +1417,7 @@ export default function Share(props: {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "opencode_write" &&
+                            part.toolInvocation.toolName === "write" &&
                             part
                           }
                         >
@@ -1503,7 +1503,7 @@ export default function Share(props: {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "opencode_edit" &&
+                            part.toolInvocation.toolName === "edit" &&
                             part
                           }
                         >
@@ -1577,7 +1577,7 @@ export default function Share(props: {
                           when={
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
-                            part.toolInvocation.toolName === "opencode_bash" &&
+                            part.toolInvocation.toolName === "bash" &&
                             part
                           }
                         >
@@ -1620,7 +1620,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                              "opencode_todowrite" &&
+                              "todowrite" &&
                             part
                           }
                         >
@@ -1686,7 +1686,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                              "opencode_webfetch" &&
+                              "webfetch" &&
                             part
                           }
                         >

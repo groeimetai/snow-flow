@@ -6,7 +6,7 @@ import { App } from "../app/app"
 import DESCRIPTION from "./lsp-diagnostics.txt"
 
 export const LspDiagnosticTool = Tool.define({
-  id: "opencode.lsp_diagnostics",
+  id: "lsp_diagnostics",
   description: DESCRIPTION,
   parameters: z.object({
     path: z.string().describe("The path to the file to get diagnostics."),
