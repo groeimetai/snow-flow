@@ -322,6 +322,10 @@ export namespace Provider {
       ...t,
       parameters: optionalToNullable(t.parameters),
     })),
+    azure: TOOLS.map((t) => ({
+      ...t,
+      parameters: optionalToNullable(t.parameters),
+    })),
     google: TOOLS,
   }
 
