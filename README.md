@@ -8,7 +8,7 @@
   </a>
 </p>
 <p align="center">
-  <a href="https://opencode.ai/docs"><img alt="view docs" src="https://img.shields.io/badge/View-Docs-blue?style=flat-square" /></a>
+  <a href="https://opencode.ai/docs"><img alt="View docs" src="https://img.shields.io/badge/view-docs-blue?style=flat-square" /></a>
   <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
   <a href="https://github.com/sst/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/sst/opencode/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
