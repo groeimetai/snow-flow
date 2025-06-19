@@ -1,5 +1,4 @@
 import z from "zod"
-import path from "path"
 import { App } from "../app/app"
 import { Config } from "../config/config"
 import { mergeDeep, sortBy } from "remeda"
@@ -24,7 +23,6 @@ import { ModelsDev } from "./models"
 import { NamedError } from "../util/error"
 import { Auth } from "../auth"
 import { TaskTool } from "../tool/task"
-import { Global } from "../global"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })

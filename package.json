@@ -5,7 +5,8 @@
   "type": "module",
   "packageManager": "bun@1.2.14",
   "scripts": {
-    "typecheck": "bun run --filter='*' typecheck"
+    "typecheck": "bun run --filter='*' typecheck",
+    "postinstall": "./scripts/hooks"
   },
   "workspaces": {
     "packages": [
