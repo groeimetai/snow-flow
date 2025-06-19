@@ -2,88 +2,119 @@
 title: CLI
 ---
 
-Once installed you can run the OpenCode CLI.
+Running the opencode CLI starts it for the current directory.
 
 ```bash
 opencode
 ```
 
-Or pass in flags. For example, to start with debug logging:
+Or you can start it for a specific working directory.
 
 ```bash
-opencode -d
+opencode /path/to/project
 ```
 
-Or start with a specific working directory.
+---
+
+## Commands
+
+The opencode CLI also has the following commands.
+
+### run
+
+Run opencode in non-interactive mode by passing a prompt directly.
 
 ```bash
-opencode -c /path/to/project
+opencode run [message..]
 ```
+
+This is useful for scripting, automation, or when you want a quick answer without launching the full TUI. For example.
+
+```bash "opencode run"
+opencode run Explain the use of context in Go
+```
+
+#### Flags
+
+| Flag              | Short | Description |
+| ----------------- | ----- | --------------------- |
+| `--continue`          | `-c`  | Continue the last session |
+| `--session`          | `-s`  | Session ID to continue |
+| `--share`          |   | Share the session |
+| `--model`          | `-m`  | Mode to use in the form of provider/model |
+
+---
+
+### auth
+
+Command to manage credentials and login for providers.
+
+```bash
+opencode auth [command]
+```
+
+#### login
+
+Logs you into a provider and saves them in the credentials file in `~/.local/share/opencode/auth.json`.
+
+```bash
+opencode auth login
+```
+
+When opencode starts up it will loads the providers from the credentials file. And if there are any keys defined in your environments or a `.env` file in your project.
+
+#### list
+
+Lists all the authenticated providers as stored in the credentials file.
+
+```bash
+opencode auth list
+```
+
+Or the short version.
+
+```bash
+opencode auth ls
+```
+
+#### logout
+
+Logs you out of a provider by clearing it from the credentials file.
+
+```bash
+opencode auth logout
+```
+
+---
+
+### upgrade
+
+Updates opencode to the latest version or a specific version.
+
+```bash
+opencode upgrade [target]
+```
+
+To upgrade to the latest version.
+
+```bash
+opencode upgrade
+```
+
+To upgrade to a specific version.
+
+```bash
+opencode upgrade v0.1.48
+```
+
+---
 
 ## Flags
 
-The OpenCode CLI takes the following flags.
+The opencode CLI takes the following flags.
 
-| Flag              | Short | Description                                              |
-| ----------------- | ----- | -------------------------------------------------------- |
-| `--help`          | `-h`  | Display help                                             |
-| `--debug`         | `-d`  | Enable debug mode                                        |
-| `--cwd`           | `-c`  | Set current working directory                            |
-| `--prompt`        | `-p`  | Run a single prompt in non-interactive mode              |
-| `--output-format` | `-f`  | Output format for non-interactive mode, `text` or `json` |
-| `--quiet`         | `-q`  | Hide spinner in non-interactive mode                     |
-| `--verbose`       |       | Display logs to stderr in non-interactive mode           |
-| `--allowedTools`  |       | Restrict the agent to only use specified tools           |
-| `--excludedTools` |       | Prevent the agent from using specified tools             |
-
-## Non-interactive
-
-By default, OpenCode runs in interactive mode.
-
-But you can also run OpenCode in non-interactive mode by passing a prompt directly as a command-line argument. This is useful for scripting, automation, or when you want a quick answer without launching the full TUI.
-
-For example, to run a single prompt use the `-p` flag.
-
-```bash "-p"
-opencode -p "Explain the use of context in Go"
-```
-
-If you want to run without showing the spinner, use `-q`.
-
-```bash "-q"
-opencode -p "Explain the use of context in Go" -q
-```
-
-In this mode, OpenCode will process your prompt, print the result to standard output, and then exit. All **permissions are auto-approved** for the session.
-
-#### Tool restrictions
-
-You can control which tools the AI assistant has access to in non-interactive mode.
-
-- `--allowedTools`
-
-  A comma-separated list of tools that the agent is allowed to use. Only these tools will be available.
-
-  ```bash "--allowedTools"
-  opencode -p "Explain the use of context in Go" --allowedTools=view,ls,glob
-  ```
-
-- `--excludedTools`
-
-  Comma-separated list of tools that the agent is not allowed to use. All other tools will be available.
-
-  ```bash "--excludedTools"
-  opencode -p "Explain the use of context in Go" --excludedTools=bash,edit
-  ```
-
-These flags are mutually exclusive. So you can either use `--allowedTools` or `--excludedTools`, but not both.
-
-#### Output formats
-
-In non-interactive mode, you can also set the CLI to return as JSON using `-f`.
-
-```bash "-f json"
-opencode -p "Explain the use of context in Go" -f json
-```
-
-By default, this is set to `text`, to return plain text.
+| Flag              | Short | Description |
+| ----------------- | ----- | --------------------- |
+| `--help`          | `-h`  | Display help |
+| `--version`       |       | Print version number |
+| `--print-logs`    |       | Print logs to stderr |

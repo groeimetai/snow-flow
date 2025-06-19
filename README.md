@@ -8,6 +8,7 @@
   </a>
 </p>
 <p align="center">
+  <a href="https://opencode.ai/docs"><img alt="view docs" src="https://img.shields.io/badge/View-Docs-blue?style=flat-square" /></a>
   <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
   <a href="https://github.com/sst/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/sst/opencode/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
@@ -16,9 +17,7 @@
 
 AI coding agent, built for the terminal.
 
-**Note:** Version 0.1.x is a full rewrite, and we do not have proper documentation for it yet. Should have this out week of June 17th 2025.
-
-[![opencode Terminal UI](screenshot.png)](https://opencode.ai)
+[![opencode Terminal UI](packages/web/src/assets/themes/opencode.png)](https://opencode.ai)
 
 ### Installation
 
@@ -34,127 +33,9 @@ paru -S opencode-bin               # Arch Linux
 
 > **Note:** Remove versions older than 0.1.x before installing
 
-### Providers
+### Documentation
 
-The recommended approach is to sign up for Claude Pro or Max, run `opencode auth login`, and select Anthropic. It's the most cost-effective way to use opencode.
-
-opencode is powered by the provider list at [Models.dev](https://models.dev), so you can use `opencode auth login` to configure API keys for any provider you'd like to use. This is stored in `~/.local/share/opencode/auth.json`.
-
-```bash
-$ opencode auth login
-
-┌  Add credential
-│
-◆  Select provider
-│  ● Anthropic (recommended)
-│  ○ OpenAI
-│  ○ Google
-│  ○ Amazon Bedrock
-│  ○ Azure
-│  ○ DeepSeek
-│  ○ Groq
-│  ...
-└
-```
-
-The Models.dev dataset is also used to detect common environment variables like `OPENAI_API_KEY` to autoload that provider.
-
-If there are additional providers you want to use you can submit a PR to the [Models.dev repo](https://github.com/sst/models.dev). If configuring just for yourself check out the Config section below.
-
-### Config
-
-Config is optional and can be placed in the root of your repo or globally in `~/.config/opencode/config.json`. It can be checked in and shared with your team.
-
-```json title="opencode.json"
-{
-  "$schema": "http://opencode.ai/config.json"
-  "theme": "opencode",
-  "model": "anthropic/claude-sonnet-4-20250514" // format is provider/model
-  "autoshare": false,
-  "autoupdate": true,
-}
-```
-
-#### Keybinds
-
-You can configure custom keybinds, the values listed below are the defaults.
-
-```json title="opencode.json"
-{
-  "$schema": "http://opencode.ai/config.json",
-  "keybinds": {
-    "leader": "ctrl+x",
-    "help": "<leader>h",
-    "editor_open": "<leader>e",
-    "session_new": "<leader>n",
-    "session_list": "<leader>l",
-    "session_share": "<leader>s",
-    "session_interrupt": "esc",
-    "session_compact": "<leader>c",
-    "tool_details": "<leader>d",
-    "model_list": "<leader>m",
-    "theme_list": "<leader>t",
-    "project_init": "<leader>i",
-    "input_clear": "ctrl+c",
-    "input_paste": "ctrl+v",
-    "input_submit": "enter",
-    "input_newline": "shift+enter,ctrl+j",
-    "history_previous": "up",
-    "history_next": "down",
-    "messages_page_up": "pgup",
-    "messages_page_down": "pgdown",
-    "messages_half_page_up": "ctrl+alt+u",
-    "messages_half_page_down": "ctrl+alt+d",
-    "messages_previous": "ctrl+alt+k",
-    "messages_next": "ctrl+alt+j",
-    "messages_first": "ctrl+g",
-    "messages_last": "ctrl+alt+g",
-    "app_exit": "ctrl+c,<leader>q"
-  }
-}
-```
-
-#### MCP
-
-```json title="opencode.json"
-{
-  "$schema": "http://opencode.ai/config.json",
-  "mcp": {
-    "localmcp": {
-      "type": "local",
-      "command": ["bun", "x", "my-mcp-command"],
-      "environment": {
-        "MY_ENV_VAR": "my_env_var_value"
-      }
-    },
-    "remotemcp": {
-      "type": "remote",
-      "url": "https://my-mcp-server.com"
-    }
-  }
-}
-```
-
-#### Providers
-
-You can use opencode with any provider listed at [here](https://ai-sdk.dev/providers/ai-sdk-providers). Be sure to specify the npm package to use to load the provider. Remember most popular providers are preloaded from [models.dev](https://models.dev)
-
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "provider": {
-    "ollama": {
-      "npm": "@ai-sdk/openai-compatible",
-      "options": {
-        "baseURL": "http://localhost:11434/v1"
-      },
-      "models": {
-        "llama2": {}
-      }
-    }
-  }
-}
-```
+For more info on how to configure opencode [**head over to our docs**](https://opencode.ai/docs).
 
 ### Contributing
 
@@ -163,7 +44,7 @@ To run opencode locally you need.
 - Bun
 - Golang 1.24.x
 
-To run.
+And run.
 
 ```bash
 $ bun install

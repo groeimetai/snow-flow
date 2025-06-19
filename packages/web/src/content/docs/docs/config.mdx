@@ -2,86 +2,28 @@
 title: Config
 ---
 
-You can configure OpenCode using the OpenCode config. It can be places in:
+You can configure opencode using a JSON config file that can be placed in:
 
-- `$HOME/.opencode.json`
-- `$XDG_CONFIG_HOME/opencode/.opencode.json`
+- Globally under `~/.config/opencode/config.json`.
+- Your project root under `opencode.json`. This is safe to checked into Git and uses the same schema as the global one.
 
-Or in the current directory, `./.opencode.json`.
-
-## OpenCode config
-
-The config file has the following structure.
-
-```json title=".opencode.json"
+```json
 {
-  "data": {
-    "directory": ".opencode"
-  },
-  "providers": {
-    "openai": {
-      "apiKey": "your-api-key",
-      "disabled": false
-    },
-    "anthropic": {
-      "apiKey": "your-api-key",
-      "disabled": false
-    },
-    "groq": {
-      "apiKey": "your-api-key",
-      "disabled": false
-    },
-    "openrouter": {
-      "apiKey": "your-api-key",
-      "disabled": false
-    }
-  },
-  "agents": {
-    "primary": {
-      "model": "claude-3.7-sonnet",
-      "maxTokens": 5000
-    },
-    "task": {
-      "model": "claude-3.7-sonnet",
-      "maxTokens": 5000
-    },
-    "title": {
-      "model": "claude-3.7-sonnet",
-      "maxTokens": 80
-    }
-  },
-  "mcpServers": {
-    "example": {
-      "type": "stdio",
-      "command": "path/to/mcp-server",
-      "env": [],
-      "args": []
-    }
-  },
-  "lsp": {
-    "go": {
-      "disabled": false,
-      "command": "gopls"
-    }
-  },
-  "debug": false,
-  "debugLSP": false
+  "$schema": "https://opencode.ai/config.json",
+  "theme": "opencode",
+  "model": "anthropic/claude-sonnet-4-20250514",
+  "autoshare": false,
+  "autoupdate": true
 }
 ```
 
-## Environment variables
+In most cases, you'll want to use the global config for things like themes, providers, or keybinds. Having a config per project is useful if you are using different providers for your company.
 
-For the providers, you can also specify the keys using environment variables.
+When opencode starts up, it looks for a config file in the current directory or traverse up to the nearest Git directory.
 
-| Environment Variable       | Models                                     |
-| -------------------------- | ------------------------------------------ |
-| `ANTHROPIC_API_KEY`        | Claude                                     |
-| `OPENAI_API_KEY`           | OpenAI                                     |
-| `GEMINI_API_KEY`           | Google Gemini                              |
-| `GROQ_API_KEY`             | Groq                                       |
-| `AWS_ACCESS_KEY_ID`        | Amazon Bedrock                             |
-| `AWS_SECRET_ACCESS_KEY`    | Amazon Bedrock                             |
-| `AWS_REGION`               | Amazon Bedrock                             |
-| `AZURE_OPENAI_ENDPOINT`    | Azure OpenAI                               |
-| `AZURE_OPENAI_API_KEY`     | Azure OpenAI, optional when using Entra ID |
-| `AZURE_OPENAI_API_VERSION` | Azure OpenAI                               |
+
+## Schema
+
+The config file has a schema that's defined in [**`opencode.ai/config.json`**](https://opencode.ai/config.json).
+
+Your editor should be able to validate and autocomplete based on the schema.

@@ -7,7 +7,6 @@ import theme from "toolbeam-docs-theme"
 import { rehypeHeadingIds } from "@astrojs/markdown-remark"
 import rehypeAutolinkHeadings from "rehype-autolink-headings"
 
-const discord = "https://discord.gg/sst"
 const github = "https://github.com/sst/opencode"
 
 // https://astro.build/config
@@ -28,10 +27,9 @@ export default defineConfig({
   integrations: [
     solidJs(),
     starlight({
-      title: "OpenCode",
+      title: "opencode",
       expressiveCode: { themes: ["github-light", "github-dark"] },
       social: [
-        { icon: "discord", label: "Discord", href: discord },
         { icon: "github", label: "GitHub", href: github },
       ],
       editLink: {
@@ -52,8 +50,7 @@ export default defineConfig({
         "docs/config",
         "docs/models",
         "docs/themes",
-        "docs/shortcuts",
-        "docs/lsp-servers",
+        "docs/keybinds",
         "docs/mcp-servers",
       ],
       components: {

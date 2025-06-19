@@ -19,7 +19,7 @@ const imageAttrs = {
 const github = config.social.filter(s => s.icon === 'github')[0];
 
 const command = "npm i -g";
-const pkg = "opencode";
+const pkg = "opencode-ai";
 
 let darkImage: ImageMetadata | undefined;
 let lightImage: ImageMetadata | undefined;
@@ -68,12 +68,12 @@ if (image) {
 
     <section class="content">
       <ul>
-      <li><b>Native TUI</b>: A native terminal UI for a smoother, snappier experience.</li>
-        <li><b>LSP enabled</b>: Loads the right LSPs for your codebase. Helps the LLM make fewer mistakes.</li>
-        <li><b>Multi-session</b>: Start multiple conversations in a project to have agents working in parallel.</li>
-        <li><b>Use any model</b>: Supports all the models from OpenAI, Anthropic, Google, OpenRouter, and more.</li>
-        <li><b>Change tracking</b>: View the file changes from the current conversation in the sidebar.</li>
-        <li><b>Edit with Vim</b>: Use Vim as an external editor to compose longer messages.</li>
+        <li><b>Native TUI</b>: A responsive, native, themeable terminal UI.</li>
+        <li><b>LSP enabled</b>: Automatically loads the right LSPs for the LLM.</li>
+        <li><b>Multi-session</b>: Start multiple agents in parallel on the same project.</li>
+        <li><b>Shareable links</b>: Share a link to any sessions for reference or to debug.</li>
+        <li><b>Claude Pro</b>: Log in with Anthropic to use your Claude Pro or Max account.</li>
+        <li><b>Use any model</b>: Supports 75+ LLM providers through <a href="https://models.dev">Models.dev</a>, including local models.</li>
       </ul>
     </section>
 
@@ -94,7 +94,7 @@ if (image) {
   --heading-font-size: var(--sl-text-3xl);
 
   margin: 1rem;
-  border: 2px solid var(--sl-color-white);
+  border: 2px solid var(--sl-color-border);
 }
 @media (max-width: 30rem) {
   .hero {
@@ -126,7 +126,7 @@ section.cta {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  border-top: 2px solid var(--sl-color-white);
+  border-top: 2px solid var(--sl-color-border);
 
   & > div {
     flex: 1;
@@ -145,7 +145,7 @@ section.cta {
   }
 
   & > div + div {
-    border-left: 2px solid var(--sl-color-white);
+    border-left: 2px solid var(--sl-color-border);
   }
 
   .command {
@@ -195,7 +195,7 @@ section.cta {
 }
 
 section.content {
-  border-top: 2px solid var(--sl-color-white);
+  border-top: 2px solid var(--sl-color-border);
   padding: var(--padding);
 
   ul {
@@ -212,7 +212,7 @@ section.content {
 }
 
 section.approach {
-  border-top: 2px solid var(--sl-color-white);
+  border-top: 2px solid var(--sl-color-border);
   padding: var(--padding);
 
   p + p {
@@ -221,7 +221,7 @@ section.approach {
 }
 
 section.footer {
-  border-top: 2px solid var(--sl-color-white);
+  border-top: 2px solid var(--sl-color-border);
   display: flex;
   flex-direction: row;
 
@@ -233,7 +233,7 @@ section.footer {
   }
 
   & > div + div {
-    border-left: 2px solid var(--sl-color-white);
+    border-left: 2px solid var(--sl-color-border);
   }
 }
 </style>

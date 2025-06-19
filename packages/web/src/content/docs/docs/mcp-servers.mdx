@@ -2,27 +2,33 @@
 title: MCP servers
 ---
 
-You can add external tools to OpenCode using the _Model Context Protocol_, or MCP. OpenCode supports both:
+You can add external tools to opencode using the _Model Context Protocol_, or MCP. opencode supports both:
 
-- Local servers that use standard input/output, `stdio`
-- Remote servers that use server-sent events `sse`
+- Local servers
+- And remote servers
 
-## Add MCP servers
+Once added, MCP tools are automatically available to the LLM alongside built-in tools.
 
-You can define MCP servers in your OpenCode config under the `mcpServers` section:
+---
+
+## Configure
+
+You can define MCP servers in your opencode config under `mcp`.
 
 ### Local
 
-To add a local or `stdio` MCP server.
+Add a local MCP servers under `mcp.localmcp`.
 
-```json title=".opencode.json" {4}
+```json title="opencode.json"
 {
-  "mcpServers": {
-    "local-example": {
-      "type": "stdio",
-      "command": "path/to/mcp-server",
-      "env": [],
-      "args": []
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "localmcp": {
+      "type": "local",
+      "command": ["bun", "x", "my-mcp-command"],
+      "environment": {
+        "MY_ENV_VAR": "my_env_var_value"
+      }
     }
   }
 }
@@ -30,22 +36,16 @@ To add a local or `stdio` MCP server.
 
 ### Remote
 
-To add a remote or `sse` MCP server.
+Add a remote MCP servers under `mcp.remotemcp`.
 
-```json title=".opencode.json" {4}
+```json title="opencode.json"
 {
-  "mcpServers": {
-    "remote-example": {
-      "type": "sse",
-      "url": "https://example.com/mcp",
-      "headers": {
-        "Authorization": "Bearer token"
-      }
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "remotemcp": {
+      "type": "remote",
+      "url": "https://my-mcp-server.com"
     }
   }
 }
 ```
-
-## Usage
-
-Once added, MCP tools are automatically available to the LLM alongside built-in tools. They follow the same permission model; requiring user approval before execution.
