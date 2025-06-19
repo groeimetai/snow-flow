@@ -344,22 +344,11 @@ func renderToolInvocation(
 		}
 	}
 
-	elapsed := ""
-	start := metadata.Time.Start
-	end := metadata.Time.End
-	durationMs := end - start
-	duration := time.Duration(durationMs * float32(time.Millisecond))
-	roundedDuration := time.Duration(duration.Round(time.Millisecond))
-	if durationMs > 1000 {
-		roundedDuration = time.Duration(duration.Round(time.Second))
-	}
-	elapsed = styles.Muted().Render(roundedDuration.String())
-
 	title := ""
 	switch toolCall.ToolName {
 	case "read":
 		toolArgs = renderArgs(&toolArgsMap, "filePath")
-		title = fmt.Sprintf("READ %s   %s", toolArgs, elapsed)
+		title = fmt.Sprintf("READ %s", toolArgs)
 		if preview, ok := metadata.Get("preview"); ok && toolArgsMap["filePath"] != nil {
 			filename := toolArgsMap["filePath"].(string)
 			body = preview.(string)
@@ -367,7 +356,7 @@ func renderToolInvocation(
 		}
 	case "edit":
 		if filename, ok := toolArgsMap["filePath"].(string); ok {
-			title = fmt.Sprintf("EDIT %s   %s", relative(filename), elapsed)
+			title = fmt.Sprintf("EDIT %s", relative(filename))
 			if d, ok := metadata.Get("diff"); ok {
 				patch := d.(string)
 				var formattedDiff string
@@ -408,14 +397,14 @@ func renderToolInvocation(
 		}
 	case "write":
 		if filename, ok := toolArgsMap["filePath"].(string); ok {
-			title = fmt.Sprintf("WRITE %s   %s", relative(filename), elapsed)
+			title = fmt.Sprintf("WRITE %s", relative(filename))
 			if content, ok := toolArgsMap["content"].(string); ok {
 				body = renderFile(filename, content)
 			}
 		}
 	case "bash":
 		if description, ok := toolArgsMap["description"].(string); ok {
-			title = fmt.Sprintf("SHELL %s   %s", description, elapsed)
+			title = fmt.Sprintf("SHELL %s", description)
 		}
 		if stdout, ok := metadata.Get("stdout"); ok {
 			command := toolArgsMap["command"].(string)
@@ -426,7 +415,7 @@ func renderToolInvocation(
 		}
 	case "webfetch":
 		toolArgs = renderArgs(&toolArgsMap, "url")
-		title = fmt.Sprintf("FETCH %s   %s", toolArgs, elapsed)
+		title = fmt.Sprintf("FETCH %s", toolArgs)
 		if format, ok := toolArgsMap["format"].(string); ok {
 			body = *result
 			body = truncateHeight(body, 10)
@@ -436,7 +425,7 @@ func renderToolInvocation(
 			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
 	case "todowrite":
-		title = fmt.Sprintf("PLAN   %s", elapsed)
+		title = fmt.Sprintf("PLAN")
 
 		if to, ok := metadata.Get("todos"); ok && finished {
 			todos := to.([]any)
@@ -457,7 +446,7 @@ func renderToolInvocation(
 		}
 	case "task":
 		if description, ok := toolArgsMap["description"].(string); ok {
-			title = fmt.Sprintf("TASK %s   %s", description, elapsed)
+			title = fmt.Sprintf("TASK %s", description)
 			if summary, ok := metadata.Get("summary"); ok {
 				toolcalls := summary.([]any)
 				// toolcalls :=
@@ -494,7 +483,7 @@ func renderToolInvocation(
 
 	default:
 		toolName := renderToolName(toolCall.ToolName)
-		title = fmt.Sprintf("%s %s   %s", toolName, toolArgs, elapsed)
+		title = fmt.Sprintf("%s %s", toolName, toolArgs)
 		if result == nil {
 			empty := ""
 			result = &empty
