@@ -11,13 +11,12 @@ const { id } = Astro.params;
 const res = await fetch(`${apiUrl}/share_data?id=${id}`);
 const data = await res.json();
 
-let cost = 0;
 const models: Set<string> = new Set();
-const version = `v${data.info.version}`;
+const version = data.info.version ? `v${data.info.version}` : "v0.0.1";
+
 Object.values(data.messages).forEach((d) => {
   const assistant = d.metadata?.assistant;
   if (assistant) {
-    cost += assistant.cost;
     models.add(assistant.modelID);
   }
 });
@@ -31,9 +30,8 @@ const encodedTitle = encodeURIComponent(
     )
   )
 );
-const encodedCost = encodeURIComponent(`$${cost.toFixed(2)}`);
 
-const ogImage = `https://social-cards.sst.dev/opencode-share/${encodedTitle}.png?cost=${encodedCost}&model=${Array.from(models).join(",")}&version=${version}&id=${id}`;
+const ogImage = `https://social-cards.sst.dev/opencode-share/${encodedTitle}.png?model=${Array.from(models).join(",")}&version=${version}&id=${id}`;
 
 ---
 <StarlightPage

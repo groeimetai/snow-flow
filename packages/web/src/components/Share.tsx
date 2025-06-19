@@ -801,7 +801,9 @@ export default function Share(props: {
                 <div data-stat-icon title="opencode">
                   <IconOpencode width={16} height={16} />
                 </div>
-                <span>v${store.info?.version}</span>
+                <Show when={store.info?.version} fallback="v0.0.1">
+                  <span>v${store.info?.version}</span>
+                </Show>
               </li>
             </ul>
           </Show>
@@ -1261,9 +1263,9 @@ export default function Share(props: {
                             const path = createMemo(() =>
                               toolData()?.args.path !== data().rootDir
                                 ? stripWorkingDirectory(
-                                    toolData()?.args.path,
-                                    data().rootDir,
-                                  )
+                                  toolData()?.args.path,
+                                  data().rootDir,
+                                )
                                 : toolData()?.args.path,
                             )
 
@@ -1620,7 +1622,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                              "todowrite" &&
+                            "todowrite" &&
                             part
                           }
                         >
@@ -1686,7 +1688,7 @@ export default function Share(props: {
                             msg.role === "assistant" &&
                             part.type === "tool-invocation" &&
                             part.toolInvocation.toolName ===
-                              "webfetch" &&
+                            "webfetch" &&
                             part
                           }
                         >
