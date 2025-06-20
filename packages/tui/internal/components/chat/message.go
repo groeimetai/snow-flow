@@ -417,12 +417,14 @@ func renderToolInvocation(
 		toolArgs = renderArgs(&toolArgsMap, "url")
 		title = fmt.Sprintf("FETCH %s", toolArgs)
 		if format, ok := toolArgsMap["format"].(string); ok {
-			body = *result
-			body = truncateHeight(body, 10)
-			if format == "html" || format == "markdown" {
-				body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
+			if result != nil {
+				body = *result
+				body = truncateHeight(body, 10)
+				if format == "html" || format == "markdown" {
+					body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
+				}
+				body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 			}
-			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
 	case "todowrite":
 		title = fmt.Sprintf("PLAN")
@@ -604,7 +606,7 @@ func renderToolAction(name string) string {
 	case "edit":
 		return "Preparing edit..."
 	case "webfetch":
-		return "Writing fetch..."
+		return "Fetching from the web..."
 	case "glob":
 		return "Finding files..."
 	case "grep":
