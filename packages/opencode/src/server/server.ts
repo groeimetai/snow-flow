@@ -291,6 +291,34 @@ export namespace Server {
         },
       )
       .post(
+        "/session_unshare",
+        describeRoute({
+          description: "Unshare the session",
+          responses: {
+            200: {
+              description: "Successfully unshared session",
+              content: {
+                "application/json": {
+                  schema: resolver(Session.Info),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "json",
+          z.object({
+            sessionID: z.string(),
+          }),
+        ),
+        async (c) => {
+          const body = c.req.valid("json")
+          await Session.unshare(body.sessionID)
+          const session = await Session.get(body.sessionID)
+          return c.json(session)
+        },
+      )
+      .post(
         "/session_messages",
         describeRoute({
           description: "Get messages for a session",

@@ -70,4 +70,11 @@ export namespace Share {
       .then((x) => x.json())
       .then((x) => x as { url: string; secret: string })
   }
+
+  export async function remove(id: string) {
+    return fetch(`${URL}/share_delete`, {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    }).then((x) => x.json())
+  }
 }

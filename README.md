@@ -52,30 +52,6 @@ $ bun run packages/opencode/src/index.ts
 
 ### FAQ
 
-#### How do I use this with OpenRouter?
-
-OpenRouter is not in the Models.dev database yet, but you can configure it manually.
-
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "provider": {
-    "openrouter": {
-      "npm": "@openrouter/ai-sdk-provider",
-      "name": "OpenRouter",
-      "options": {},
-      "models": {
-        "anthropic/claude-3.5-sonnet": {
-          "name": "Claude 3.5 Sonnet"
-        }
-      }
-    }
-  }
-}
-```
-
-And then to configure an api key you can do `opencode auth login` and select "Other -> 'openrouter'"
-
 #### How is this different than Claude Code?
 
 It's very similar to Claude Code in terms of capability. Here are the key differences:

@@ -159,6 +159,14 @@ export namespace Session {
     return share
   }
 
+  export async function unshare(id: string) {
+    await Storage.remove("session/share/" + id)
+    await update(id, (draft) => {
+      draft.share = undefined
+    })
+    await Share.remove(id)
+  }
+
   export async function update(id: string, editor: (session: Info) => void) {
     const { sessions } = state()
     const session = await get(id)
