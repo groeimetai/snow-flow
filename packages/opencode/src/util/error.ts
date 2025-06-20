@@ -30,10 +30,6 @@ export abstract class NamedError extends Error {
       ) {
         super(name, options)
         this.name = name
-        log.error(name, {
-          ...this.data,
-          cause: options?.cause?.toString(),
-        })
       }
 
       static isInstance(input: any): input is InstanceType<typeof result> {

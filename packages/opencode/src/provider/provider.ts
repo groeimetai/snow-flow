@@ -181,7 +181,11 @@ export namespace Provider {
       mergeProvider(providerID, provider.options ?? {}, "config")
     }
 
-    for (const providerID of Object.keys(providers)) {
+    for (const [providerID, provider] of Object.entries(providers)) {
+      if (Object.keys(provider.info.models).length === 0) {
+        delete providers[providerID]
+        continue
+      }
       log.info("found", { providerID })
     }
 

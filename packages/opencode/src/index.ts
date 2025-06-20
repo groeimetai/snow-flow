@@ -18,6 +18,8 @@ import { UI } from "./cli/ui"
 import { Installation } from "./installation"
 import { Bus } from "./bus"
 import { Config } from "./config/config"
+import { NamedError } from "./util/error"
+import { FormatError } from "./cli/error"
 
 const cli = yargs(hideBin(process.argv))
   .scriptName("opencode")
@@ -84,21 +86,21 @@ const cli = yargs(hideBin(process.argv))
             },
           })
 
-            ; (async () => {
-              if (Installation.VERSION === "dev") return
-              if (Installation.isSnapshot()) return
-              const config = await Config.global()
-              if (config.autoupdate === false) return
-              const latest = await Installation.latest()
-              if (Installation.VERSION === latest) return
-              const method = await Installation.method()
-              if (method === "unknown") return
-              await Installation.upgrade(method, latest)
-                .then(() => {
-                  Bus.publish(Installation.Event.Updated, { version: latest })
-                })
-                .catch(() => { })
-            })()
+          ;(async () => {
+            if (Installation.VERSION === "dev") return
+            if (Installation.isSnapshot()) return
+            const config = await Config.global()
+            if (config.autoupdate === false) return
+            const latest = await Installation.latest()
+            if (Installation.VERSION === latest) return
+            const method = await Installation.method()
+            if (method === "unknown") return
+            await Installation.upgrade(method, latest)
+              .then(() => {
+                Bus.publish(Installation.Event.Updated, { version: latest })
+              })
+              .catch(() => {})
+          })()
 
           await proc.exited
           server.stop()
@@ -133,7 +135,25 @@ const cli = yargs(hideBin(process.argv))
 try {
   await cli.parse()
 } catch (e) {
-  Log.Default.error(e, {
-    stack: e instanceof Error ? e.stack : undefined,
-  })
+  const data: Record<string, any> = {}
+  if (e instanceof NamedError) {
+    const obj = e.toObject()
+    Object.assign(data, {
+      ...obj.data,
+    })
+  }
+  if (e instanceof Error) {
+    Object.assign(data, {
+      name: e.name,
+      message: e.message,
+      cause: e.cause?.toString(),
+    })
+  }
+  Log.Default.error("fatal", data)
+  const formatted = FormatError(e)
+  if (formatted) UI.error(formatted)
+  if (!formatted)
+    UI.error(
+      "Unexpected error, check log file at " + Log.file() + " for more details",
+    )
 }

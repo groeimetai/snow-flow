@@ -68,13 +68,13 @@ export namespace Log {
     }
     const result = {
       info(message?: any, extra?: Record<string, any>) {
-        process.stderr.write(build(message, extra))
+        process.stderr.write("INFO  " + build(message, extra))
       },
       error(message?: any, extra?: Record<string, any>) {
-        process.stderr.write(build(message, extra))
+        process.stderr.write("ERROR " + build(message, extra))
       },
       warn(message?: any, extra?: Record<string, any>) {
-        process.stderr.write(build(message, extra))
+        process.stderr.write("WARN  " + build(message, extra))
       },
       tag(key: string, value: string) {
         if (tags) tags[key] = value
