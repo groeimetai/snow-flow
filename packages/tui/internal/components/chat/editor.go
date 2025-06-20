@@ -54,6 +54,9 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case spinner.TickMsg:
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 	case tea.KeyPressMsg:
 		// Maximize editor responsiveness for printable characters
 		if msg.Text != "" {
