@@ -14,7 +14,7 @@ import (
 type Theme interface {
 	// Background colors
 	Background() compat.AdaptiveColor        // Radix 1
-	BackgroundSubtle() compat.AdaptiveColor  // Radix 2
+	BackgroundPanel() compat.AdaptiveColor   // Radix 2
 	BackgroundElement() compat.AdaptiveColor // Radix 3
 
 	// Border colors
@@ -84,7 +84,7 @@ type Theme interface {
 type BaseTheme struct {
 	// Background colors
 	BackgroundColor        compat.AdaptiveColor
-	BackgroundSubtleColor  compat.AdaptiveColor
+	BackgroundPanelColor   compat.AdaptiveColor
 	BackgroundElementColor compat.AdaptiveColor
 
 	// Border colors
@@ -163,7 +163,7 @@ func (t *BaseTheme) Text() compat.AdaptiveColor      { return t.TextColor }
 func (t *BaseTheme) TextMuted() compat.AdaptiveColor { return t.TextMutedColor }
 
 func (t *BaseTheme) Background() compat.AdaptiveColor        { return t.BackgroundColor }
-func (t *BaseTheme) BackgroundSubtle() compat.AdaptiveColor  { return t.BackgroundSubtleColor }
+func (t *BaseTheme) BackgroundPanel() compat.AdaptiveColor   { return t.BackgroundPanelColor }
 func (t *BaseTheme) BackgroundElement() compat.AdaptiveColor { return t.BackgroundElementColor }
 
 func (t *BaseTheme) Border() compat.AdaptiveColor       { return t.BorderColor }

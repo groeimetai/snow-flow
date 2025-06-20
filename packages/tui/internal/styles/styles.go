@@ -15,7 +15,7 @@ func BaseStyle() lipgloss.Style {
 func Panel() lipgloss.Style {
 	t := theme.CurrentTheme()
 	return lipgloss.NewStyle().
-		Background(t.BackgroundSubtle()).
+		Background(t.BackgroundPanel()).
 		Border(lipgloss.NormalBorder(), true, false, true, false).
 		BorderForeground(t.BorderSubtle()).
 		Foreground(t.Text())
@@ -131,9 +131,9 @@ func BackgroundColor() compat.AdaptiveColor {
 	return theme.CurrentTheme().Background()
 }
 
-// BackgroundSubtleColor returns the subtle background color from the current theme
-func BackgroundSubtleColor() compat.AdaptiveColor {
-	return theme.CurrentTheme().BackgroundSubtle()
+// BackgroundPanelColor returns the subtle background color from the current theme
+func BackgroundPanelColor() compat.AdaptiveColor {
+	return theme.CurrentTheme().BackgroundPanel()
 }
 
 // BackgroundElementColor returns the darker background color from the current theme

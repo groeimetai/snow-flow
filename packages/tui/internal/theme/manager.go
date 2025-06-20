@@ -146,7 +146,7 @@ func LoadCustomTheme(customTheme map[string]any) (Theme, error) {
 		case "background":
 			theme.BackgroundColor = adaptiveColor
 		case "backgroundsubtle":
-			theme.BackgroundSubtleColor = adaptiveColor
+			theme.BackgroundPanelColor = adaptiveColor
 		case "backgroundelement":
 			theme.BackgroundElementColor = adaptiveColor
 		case "border":

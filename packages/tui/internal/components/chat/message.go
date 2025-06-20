@@ -137,7 +137,7 @@ func renderContentBlock(content string, options ...renderingOption) string {
 		PaddingBottom(renderer.paddingBottom).
 		PaddingLeft(renderer.paddingLeft).
 		PaddingRight(renderer.paddingRight).
-		Background(t.BackgroundSubtle()).
+		Background(t.BackgroundPanel()).
 		Foreground(t.TextMuted()).
 		BorderStyle(lipgloss.ThickBorder())
 
@@ -146,7 +146,7 @@ func renderContentBlock(content string, options ...renderingOption) string {
 		align = *renderer.align
 	}
 
-	borderColor := t.BackgroundSubtle()
+	borderColor := t.BackgroundPanel()
 	if renderer.borderColor != nil {
 		borderColor = *renderer.borderColor
 	}
@@ -159,7 +159,7 @@ func renderContentBlock(content string, options ...renderingOption) string {
 			AlignHorizontal(align).
 			BorderLeftForeground(borderColor).
 			BorderLeftBackground(t.Background()).
-			BorderRightForeground(t.BackgroundSubtle()).
+			BorderRightForeground(t.BackgroundPanel()).
 			BorderRightBackground(t.Background())
 	case lipgloss.Right:
 		style = style.
@@ -168,7 +168,7 @@ func renderContentBlock(content string, options ...renderingOption) string {
 			AlignHorizontal(align).
 			BorderRightForeground(borderColor).
 			BorderRightBackground(t.Background()).
-			BorderLeftForeground(t.BackgroundSubtle()).
+			BorderLeftForeground(t.BackgroundPanel()).
 			BorderLeftBackground(t.Background())
 	}
 
@@ -229,7 +229,7 @@ func renderText(message client.MessageInfo, text string, author string) string {
 	if message.Role == client.Assistant {
 		markdownWidth = width - padding - 4
 	}
-	content := toMarkdown(text, markdownWidth, t.BackgroundSubtle())
+	content := toMarkdown(text, markdownWidth, t.BackgroundPanel())
 	content = strings.Join([]string{content, info}, "\n")
 
 	switch message.Role {
@@ -274,7 +274,7 @@ func renderToolInvocation(
 	t := theme.CurrentTheme()
 	style := styles.Muted().
 		Width(outerWidth).
-		Background(t.BackgroundSubtle()).
+		Background(t.BackgroundPanel()).
 		PaddingTop(paddingTop).
 		PaddingBottom(paddingBottom).
 		PaddingLeft(2).
@@ -282,7 +282,7 @@ func renderToolInvocation(
 		BorderLeft(true).
 		BorderRight(true).
 		BorderBackground(t.Background()).
-		BorderForeground(t.BackgroundSubtle()).
+		BorderForeground(t.BackgroundPanel()).
 		BorderStyle(lipgloss.ThickBorder())
 
 	if toolCall.State == "partial-call" {
@@ -290,7 +290,7 @@ func renderToolInvocation(
 		if !showDetails {
 			title = "∟ " + title
 			padding := calculatePadding()
-			style := lipgloss.NewStyle().Width(outerWidth - padding - 4).Background(t.BackgroundSubtle())
+			style := lipgloss.NewStyle().Width(outerWidth - padding - 4).Background(t.BackgroundPanel())
 			return renderContentBlock(style.Render(title),
 				WithAlign(lipgloss.Left),
 				WithBorderColor(t.Accent()),
@@ -332,7 +332,7 @@ func renderToolInvocation(
 		if m, ok := metadata.Get("message"); ok {
 			style = style.BorderLeftForeground(t.Error())
 			error = styles.BaseStyle().
-				Background(t.BackgroundSubtle()).
+				Background(t.BackgroundPanel()).
 				Foreground(t.Error()).
 				Render(m.(string))
 			error = renderContentBlock(
@@ -374,7 +374,7 @@ func renderToolInvocation(
 				formattedDiff = lipgloss.NewStyle().
 					BorderStyle(lipgloss.ThickBorder()).
 					BorderBackground(t.Background()).
-					BorderForeground(t.BackgroundSubtle()).
+					BorderForeground(t.BackgroundPanel()).
 					BorderLeft(true).
 					BorderRight(true).
 					Render(formattedDiff)
@@ -410,7 +410,7 @@ func renderToolInvocation(
 			command := toolArgsMap["command"].(string)
 			stdout := stdout.(string)
 			body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
-			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
+			body = toMarkdown(body, innerWidth, t.BackgroundPanel())
 			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
 	case "webfetch":
@@ -421,7 +421,7 @@ func renderToolInvocation(
 				body = *result
 				body = truncateHeight(body, 10)
 				if format == "html" || format == "markdown" {
-					body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
+					body = toMarkdown(body, innerWidth, t.BackgroundPanel())
 				}
 				body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 			}
@@ -443,7 +443,7 @@ func renderToolInvocation(
 					body += fmt.Sprintf("- [ ] %s\n", content)
 				}
 			}
-			body = toMarkdown(body, innerWidth, t.BackgroundSubtle())
+			body = toMarkdown(body, innerWidth, t.BackgroundPanel())
 			body = renderContentBlock(body, WithFullWidth(), WithMarginBottom(1))
 		}
 	case "task":
@@ -503,7 +503,7 @@ func renderToolInvocation(
 	if !showDetails {
 		title = "∟ " + title
 		padding := calculatePadding()
-		style := lipgloss.NewStyle().Width(outerWidth - padding - 4).Background(t.BackgroundSubtle())
+		style := lipgloss.NewStyle().Width(outerWidth - padding - 4).Background(t.BackgroundPanel())
 		paddingBottom := 0
 		if isLast {
 			paddingBottom = 1
@@ -592,7 +592,7 @@ func renderFile(filename string, content string, options ...fileRenderingOption)
 		content = truncateHeight(content, renderer.height)
 	}
 	content = fmt.Sprintf("```%s\n%s\n```", extension(renderer.filename), content)
-	content = toMarkdown(content, width, t.BackgroundSubtle())
+	content = toMarkdown(content, width, t.BackgroundPanel())
 
 	return renderContentBlock(content, WithFullWidth(), WithMarginBottom(1))
 }

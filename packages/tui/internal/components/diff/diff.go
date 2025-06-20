@@ -441,10 +441,10 @@ func SyntaxHighlight(w io.Writer, source, fileName, formatter string, bg color.C
 	<entry type="TextWhitespace" style="%s"/>
 </style>
 `,
-		getColor(t.BackgroundSubtle()), // Background
-		getColor(t.Text()),             // Text
-		getColor(t.Text()),             // Other
-		getColor(t.Error()),            // Error
+		getColor(t.BackgroundPanel()), // Background
+		getColor(t.Text()),            // Text
+		getColor(t.Text()),            // Other
+		getColor(t.Error()),           // Error
 
 		getColor(t.SyntaxKeyword()), // Keyword
 		getColor(t.SyntaxKeyword()), // KeywordConstant
@@ -614,7 +614,7 @@ func applyHighlighting(content string, segments []Segment, segmentType LineType,
 
 	// Get the appropriate color based on terminal background
 	bgColor := lipgloss.Color(getColor(highlightBg))
-	fgColor := lipgloss.Color(getColor(theme.CurrentTheme().BackgroundSubtle()))
+	fgColor := lipgloss.Color(getColor(theme.CurrentTheme().BackgroundPanel()))
 
 	for i := 0; i < len(content); {
 		// Check if we're at an ANSI sequence

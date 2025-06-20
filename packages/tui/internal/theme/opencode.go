@@ -119,7 +119,7 @@ func NewOpenCodeTheme() *OpenCodeTheme {
 		Dark:  lipgloss.Color(darkStep1),
 		Light: lipgloss.Color(lightStep1),
 	}
-	theme.BackgroundSubtleColor = compat.AdaptiveColor{
+	theme.BackgroundPanelColor = compat.AdaptiveColor{
 		Dark:  lipgloss.Color(darkStep2),
 		Light: lipgloss.Color(lightStep2),
 	}

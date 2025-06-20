@@ -98,7 +98,7 @@ func NewAyuTheme() *AyuTheme {
 		Dark:  lipgloss.Color(darkBg),
 		Light: lipgloss.Color(darkBg),
 	}
-	theme.BackgroundSubtleColor = compat.AdaptiveColor{
+	theme.BackgroundPanelColor = compat.AdaptiveColor{
 		Dark:  lipgloss.Color(darkBgAlt),
 		Light: lipgloss.Color(darkBgAlt),
 	}

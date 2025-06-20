@@ -88,7 +88,7 @@ func (m statusComponent) View() string {
 
 	cwd := styles.Padded().
 		Foreground(t.TextMuted()).
-		Background(t.BackgroundSubtle()).
+		Background(t.BackgroundPanel()).
 		Render(m.app.Info.Path.Cwd)
 
 	sessionInfo := ""
@@ -123,7 +123,7 @@ func (m statusComponent) View() string {
 		0,
 		m.width-lipgloss.Width(logo)-lipgloss.Width(cwd)-lipgloss.Width(sessionInfo),
 	)
-	spacer := lipgloss.NewStyle().Background(t.BackgroundSubtle()).Width(space).Render("")
+	spacer := lipgloss.NewStyle().Background(t.BackgroundPanel()).Width(space).Render("")
 
 	status := logo + cwd + spacer + sessionInfo
 
