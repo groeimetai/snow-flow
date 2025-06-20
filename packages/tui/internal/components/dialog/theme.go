@@ -89,8 +89,8 @@ func (t *themeDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if item, newIdx := t.list.GetSelectedItem(); newIdx >= 0 && newIdx != prevIdx {
 		theme.SetTheme(item.name)
+		return t, util.CmdHandler(ThemeSelectedMsg{ThemeName: item.name})
 	}
-
 	return t, cmd
 }
 

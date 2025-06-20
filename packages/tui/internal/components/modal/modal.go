@@ -114,7 +114,7 @@ func (m *Modal) Render(contentView string, background string) string {
 		titleLine := m.title + spacer + escText
 		titleLine = titleStyle.Render(titleLine)
 
-		finalContent = strings.Join([]string{titleLine, contentView}, "\n") + "\n"
+		finalContent = strings.Join([]string{titleLine, "", contentView}, "\n")
 	} else {
 		finalContent = contentView
 	}
