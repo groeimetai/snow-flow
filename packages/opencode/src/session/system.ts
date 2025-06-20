@@ -114,7 +114,7 @@ export namespace SystemPrompt {
         .text()
         .catch(() => ""),
     )
-    return Promise.all(found).then(Boolean)
+    return Promise.all(found).then((result) => result.filter(Boolean))
   }
 
   export function summarize(providerID: string) {
