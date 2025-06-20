@@ -214,8 +214,7 @@ func (m *editorComponent) Paste() (tea.Model, tea.Cmd) {
 }
 
 func (m *editorComponent) Newline() (tea.Model, tea.Cmd) {
-	value := m.textarea.Value()
-	m.textarea.SetValue(value + "\n")
+	m.textarea.Newline()
 	return m, nil
 }
 

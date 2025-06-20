@@ -553,6 +553,14 @@ func (m Model) Line() int {
 	return m.row
 }
 
+func (m *Model) Newline() {
+	if m.MaxHeight > 0 && len(m.value) >= m.MaxHeight {
+		return
+	}
+	m.col = clamp(m.col, 0, len(m.value[m.row]))
+	m.splitLine(m.row, m.col)
+}
+
 // CursorDown moves the cursor down by one line.
 // Returns whether or not the cursor blink should be reset.
 func (m *Model) CursorDown() {
@@ -1113,11 +1121,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 			m.deleteWordRight()
 		case key.Matches(msg, m.KeyMap.InsertNewline):
-			if m.MaxHeight > 0 && len(m.value) >= m.MaxHeight {
-				return m, nil
-			}
-			m.col = clamp(m.col, 0, len(m.value[m.row]))
-			m.splitLine(m.row, m.col)
+			m.Newline()
 		case key.Matches(msg, m.KeyMap.LineEnd):
 			m.CursorEnd()
 		case key.Matches(msg, m.KeyMap.LineStart):
