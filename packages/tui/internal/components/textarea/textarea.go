@@ -1161,8 +1161,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
-	cmds = append(cmds, cmd)
-
 	newRow, newCol := m.cursorLineNumber(), m.col
 	m.virtualCursor, cmd = m.virtualCursor.Update(msg)
 	if (newRow != oldRow || newCol != oldCol) && m.virtualCursor.Mode() == cursor.CursorBlink {
@@ -1171,7 +1169,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	}
 	cmds = append(cmds, cmd)
 
-	m.SetHeight(m.ContentHeight())
 	return m, tea.Batch(cmds...)
 }
 

@@ -70,9 +70,11 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
+		keyString := msg.String()
+
 		// 1. Handle active modal
 		if a.modal != nil {
-			switch msg.String() {
+			switch keyString {
 			// Escape always closes current modal
 			case "esc", "ctrl+c":
 				a.modal = nil
@@ -88,7 +90,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// 2. Check for commands that require leader
 		if a.isLeaderSequence {
 			matches := a.app.Commands.Matches(msg, a.isLeaderSequence)
-			// Reset leader state
 			a.isLeaderSequence = false
 			if len(matches) > 0 {
 				return a, util.CmdHandler(commands.ExecuteCommandsMsg(matches))
@@ -96,44 +97,44 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// 3. Handle completions trigger
-		switch msg.String() {
-		case "/":
-			if !a.showCompletionDialog {
-				a.showCompletionDialog = true
+		if keyString == "/" && !a.showCompletionDialog {
+			a.showCompletionDialog = true
 
-				initialValue := "/"
-				currentInput := a.editor.Value()
-				// if the input doesn't end with a space,
-				// then we want to include the last word
-				if !strings.HasSuffix(currentInput, " ") {
-					words := strings.Split(a.editor.Value(), " ")
-					if len(words) > 0 {
-						lastWord := words[len(words)-1]
-						lastWord = strings.TrimSpace(lastWord)
-						initialValue = lastWord + "/"
-					}
+			initialValue := "/"
+			currentInput := a.editor.Value()
+
+			// if the input doesn't end with a space,
+			// then we want to include the last word
+			// (ie, `packages/`)
+			if !strings.HasSuffix(currentInput, " ") {
+				words := strings.Split(a.editor.Value(), " ")
+				if len(words) > 0 {
+					lastWord := words[len(words)-1]
+					lastWord = strings.TrimSpace(lastWord)
+					initialValue = lastWord + "/"
 				}
-				updated, cmd := a.completions.Update(
-					app.CompletionDialogTriggerdMsg{
-						InitialValue: initialValue,
-					},
-				)
-				a.completions = updated.(dialog.CompletionDialog)
-				cmds = append(cmds, cmd)
-
-				updated, cmd = a.completions.Update(msg)
-				a.completions = updated.(dialog.CompletionDialog)
-				cmds = append(cmds, cmd)
-
-				updated, cmd = a.editor.Update(msg)
-				a.editor = updated.(chat.EditorComponent)
-				cmds = append(cmds, cmd)
-				return a, tea.Sequence(cmds...)
 			}
+
+			updated, cmd := a.completions.Update(
+				app.CompletionDialogTriggerdMsg{
+					InitialValue: initialValue,
+				},
+			)
+			a.completions = updated.(dialog.CompletionDialog)
+			cmds = append(cmds, cmd)
+
+			updated, cmd = a.completions.Update(msg)
+			a.completions = updated.(dialog.CompletionDialog)
+			cmds = append(cmds, cmd)
+
+			updated, cmd = a.editor.Update(msg)
+			a.editor = updated.(chat.EditorComponent)
+			cmds = append(cmds, cmd)
+			return a, tea.Sequence(cmds...)
 		}
 
 		if a.showCompletionDialog {
-			switch msg.String() {
+			switch keyString {
 			case "tab", "enter", "esc", "ctrl+c":
 				context, contextCmd := a.completions.Update(msg)
 				a.completions = context.(dialog.CompletionDialog)
