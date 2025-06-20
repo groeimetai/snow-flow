@@ -173,7 +173,6 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			cmds = append(cmds, cmd)
 			cmds = append(cmds, c.pseudoSearchTextArea.Focus())
-			// c.pseudoSearchTextArea.SetValue(msg.String())
 			return c, tea.Batch(cmds...)
 		}
 	case tea.WindowSizeMsg:
@@ -218,12 +217,12 @@ func (c *completionDialogComponent) SetProvider(provider CompletionProvider) {
 	if c.completionProvider.GetId() != provider.GetId() {
 		c.completionProvider = provider
 		c.list.SetEmptyMessage(" " + provider.GetEmptyMessage())
+		c.list.SetItems([]CompletionItemI{})
 	}
 }
 
 func (c *completionDialogComponent) complete(item CompletionItemI) tea.Cmd {
 	value := c.pseudoSearchTextArea.Value()
-
 	if value == "" {
 		return nil
 	}
@@ -242,10 +241,8 @@ func (c *completionDialogComponent) complete(item CompletionItemI) tea.Cmd {
 }
 
 func (c *completionDialogComponent) close() tea.Cmd {
-	c.list.SetItems([]CompletionItemI{})
 	c.pseudoSearchTextArea.Reset()
 	c.pseudoSearchTextArea.Blur()
-
 	return util.CmdHandler(CompletionDialogCloseMsg{})
 }
 

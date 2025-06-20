@@ -35,8 +35,7 @@ func (c *CommandCompletionProvider) GetEmptyMessage() string {
 	return "no matching commands"
 }
 
-func getCommandCompletionItem(cmd commands.Command, space int) dialog.CompletionItemI {
-	t := theme.CurrentTheme()
+func getCommandCompletionItem(cmd commands.Command, space int, t theme.Theme) dialog.CompletionItemI {
 	spacer := strings.Repeat(" ", space)
 	title := "  /" + cmd.Trigger + lipgloss.NewStyle().Foreground(t.TextMuted()).Render(spacer+cmd.Description)
 	value := string(cmd.Name)
@@ -47,6 +46,9 @@ func getCommandCompletionItem(cmd commands.Command, space int) dialog.Completion
 }
 
 func (c *CommandCompletionProvider) GetChildEntries(query string) ([]dialog.CompletionItemI, error) {
+	t := theme.CurrentTheme()
+	commands := c.app.Commands
+
 	space := 1
 	for _, cmd := range c.app.Commands {
 		if lipgloss.Width(cmd.Trigger) > space {
@@ -55,15 +57,16 @@ func (c *CommandCompletionProvider) GetChildEntries(query string) ([]dialog.Comp
 	}
 	space += 2
 
+	sorted := commands.Sorted()
 	if query == "" {
 		// If no query, return all commands
 		items := []dialog.CompletionItemI{}
-		for _, cmd := range c.app.Commands {
+		for _, cmd := range sorted {
 			if cmd.Trigger == "" {
 				continue
 			}
 			space := space - lipgloss.Width(cmd.Trigger)
-			items = append(items, getCommandCompletionItem(cmd, space))
+			items = append(items, getCommandCompletionItem(cmd, space, t))
 		}
 		return items, nil
 	}
@@ -72,13 +75,13 @@ func (c *CommandCompletionProvider) GetChildEntries(query string) ([]dialog.Comp
 	var commandNames []string
 	commandMap := make(map[string]dialog.CompletionItemI)
 
-	for _, cmd := range c.app.Commands {
+	for _, cmd := range sorted {
 		if cmd.Trigger == "" {
 			continue
 		}
 		space := space - lipgloss.Width(cmd.Trigger)
 		commandNames = append(commandNames, cmd.Trigger)
-		commandMap[cmd.Trigger] = getCommandCompletionItem(cmd, space)
+		commandMap[cmd.Trigger] = getCommandCompletionItem(cmd, space, t)
 	}
 
 	// Find fuzzy matches

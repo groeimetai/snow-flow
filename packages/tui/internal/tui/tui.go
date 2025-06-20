@@ -123,22 +123,23 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.completions = updated.(dialog.CompletionDialog)
 			cmds = append(cmds, cmd)
 
-			updated, cmd = a.completions.Update(msg)
-			a.completions = updated.(dialog.CompletionDialog)
-			cmds = append(cmds, cmd)
-
 			updated, cmd = a.editor.Update(msg)
 			a.editor = updated.(chat.EditorComponent)
 			cmds = append(cmds, cmd)
+
+			updated, cmd = a.updateCompletions(msg)
+			a.completions = updated.(dialog.CompletionDialog)
+			cmds = append(cmds, cmd)
+
 			return a, tea.Sequence(cmds...)
 		}
 
 		if a.showCompletionDialog {
 			switch keyString {
 			case "tab", "enter", "esc", "ctrl+c":
-				context, contextCmd := a.completions.Update(msg)
-				a.completions = context.(dialog.CompletionDialog)
-				cmds = append(cmds, contextCmd)
+				updated, cmd := a.updateCompletions(msg)
+				a.completions = updated.(dialog.CompletionDialog)
+				cmds = append(cmds, cmd)
 				return a, tea.Batch(cmds...)
 			}
 
@@ -146,13 +147,10 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.editor = updated.(chat.EditorComponent)
 			cmds = append(cmds, cmd)
 
-			currentInput := a.editor.Value()
-			provider := a.completionManager.GetProvider(currentInput)
-			a.completions.SetProvider(provider)
+			updated, cmd = a.updateCompletions(msg)
+			a.completions = updated.(dialog.CompletionDialog)
+			cmds = append(cmds, cmd)
 
-			context, contextCmd := a.completions.Update(msg)
-			a.completions = context.(dialog.CompletionDialog)
-			cmds = append(cmds, contextCmd)
 			return a, tea.Batch(cmds...)
 		}
 
@@ -178,10 +176,8 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, util.CmdHandler(commands.ExecuteCommandsMsg(matches))
 		}
 
-		// 7. Fallback to editor. This shouldn't happen?
-		// All printable characters were already sent, and
-		// any other keypress that didn't match a command
-		// is likely a noop.
+		// 7. Fallback to editor. This is for other characters
+		// likek backspace, tab, etc.
 		updatedEditor, cmd := a.editor.Update(msg)
 		a.editor = updatedEditor.(chat.EditorComponent)
 		return a, cmd
@@ -216,7 +212,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	case dialog.CompletionDialogCloseMsg:
 		a.showCompletionDialog = false
-		a.completions.SetProvider(a.completionManager.DefaultProvider())
 	case client.EventInstallationUpdated:
 		return a, toast.NewSuccessToast(
 			"opencode updated to "+msg.Properties.Version+", restart to apply.",
@@ -512,30 +507,18 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		a.messages = updated.(chat.MessagesComponent)
 		cmds = append(cmds, cmd)
 	case commands.MessagesPageUpCommand:
-		if a.showCompletionDialog {
-			return a, nil
-		}
 		updated, cmd := a.messages.PageUp()
 		a.messages = updated.(chat.MessagesComponent)
 		cmds = append(cmds, cmd)
 	case commands.MessagesPageDownCommand:
-		if a.showCompletionDialog {
-			return a, nil
-		}
 		updated, cmd := a.messages.PageDown()
 		a.messages = updated.(chat.MessagesComponent)
 		cmds = append(cmds, cmd)
 	case commands.MessagesHalfPageUpCommand:
-		if a.showCompletionDialog {
-			return a, nil
-		}
 		updated, cmd := a.messages.HalfPageUp()
 		a.messages = updated.(chat.MessagesComponent)
 		cmds = append(cmds, cmd)
 	case commands.MessagesHalfPageDownCommand:
-		if a.showCompletionDialog {
-			return a, nil
-		}
 		updated, cmd := a.messages.HalfPageDown()
 		a.messages = updated.(chat.MessagesComponent)
 		cmds = append(cmds, cmd)
@@ -543,6 +526,15 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		return a, tea.Quit
 	}
 	return a, tea.Batch(cmds...)
+}
+
+func (a appModel) updateCompletions(msg tea.Msg) (tea.Model, tea.Cmd) {
+	currentInput := a.editor.Value()
+	if currentInput != "" {
+		provider := a.completionManager.GetProvider(currentInput)
+		a.completions.SetProvider(provider)
+	}
+	return a.completions.Update(msg)
 }
 
 func NewModel(app *app.App) tea.Model {
