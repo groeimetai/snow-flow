@@ -1,6 +1,9 @@
 import { App } from "../app/app"
 import { Ripgrep } from "../external/ripgrep"
+import { Global } from "../global"
 import { Filesystem } from "../util/filesystem"
+import path from "path"
+import os from "os"
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
 import PROMPT_ANTHROPIC_SPOOF from "./prompt/anthropic_spoof.txt"
@@ -101,7 +104,17 @@ export namespace SystemPrompt {
       const matches = await Filesystem.findUp(item, cwd, root)
       found.push(...matches.map((x) => Bun.file(x).text()))
     }
-    return Promise.all(found)
+    found.push(
+      Bun.file(path.join(Global.Path.config, "AGENTS.md"))
+        .text()
+        .catch(() => ""),
+    )
+    found.push(
+      Bun.file(path.join(os.homedir(), ".claude", "CLAUDE.md"))
+        .text()
+        .catch(() => ""),
+    )
+    return Promise.all(found).then(Boolean)
   }
 
   export function summarize(providerID: string) {
