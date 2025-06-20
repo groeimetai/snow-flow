@@ -4,10 +4,15 @@ import starlight from "@astrojs/starlight"
 import solidJs from "@astrojs/solid-js"
 import cloudflare from "@astrojs/cloudflare"
 import theme from "toolbeam-docs-theme"
+import config from "./config.mjs"
 import { rehypeHeadingIds } from "@astrojs/markdown-remark"
 import rehypeAutolinkHeadings from "rehype-autolink-headings"
 
 const github = "https://github.com/sst/opencode"
+const headerLinks = [
+  { name: "Docs", url: "/docs/" },
+  { name: "GitHub", url: github },
+]
 
 // https://astro.build/config
 export default defineConfig({
@@ -30,7 +35,7 @@ export default defineConfig({
       title: "opencode",
       expressiveCode: { themes: ["github-light", "github-dark"] },
       social: [
-        { icon: "github", label: "GitHub", href: github },
+        { icon: "github", label: "GitHub", href: config.github },
       ],
       editLink: {
         baseUrl: `${github}/edit/master/www/`,
@@ -59,11 +64,7 @@ export default defineConfig({
       },
       plugins: [
         theme({
-          // Optionally, add your own header links
-          headerLinks: [
-            { name: "Home", url: "/" },
-            { name: "Docs", url: "/docs/" },
-          ],
+          headerLinks: config.headerLinks,
         }),
       ],
     }),

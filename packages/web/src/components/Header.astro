@@ -1,5 +1,6 @@
 ---
-import config from 'virtual:starlight/user-config';
+import config from '../../config.mjs';
+import astroConfig from 'virtual:starlight/user-config';
 import { Icon } from '@astrojs/starlight/components';
 import { HeaderLinks } from 'toolbeam-docs-theme/components';
 import Default from 'toolbeam-docs-theme/overrides/Header.astro';
@@ -8,8 +9,8 @@ import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
 
 const path = Astro.url.pathname;
 
-const links = config.social || [];
-const { headerLinks } = globalThis.toolbeamDocsThemeConfig ?? {};
+const links = astroConfig.social || [];
+const headerLinks = config.headerLinks;
 
 ---
 
@@ -19,11 +20,11 @@ const { headerLinks } = globalThis.toolbeamDocsThemeConfig ?? {};
 		<SiteTitle {...Astro.props} />
 	</div>
 	<div class="middle-group sl-flex">
-{
-  headerLinks?.map(({ name, url }) => (
-    <a class="links" href={url}>{name}</a>
-  ))
-}
+		{
+		  headerLinks?.map(({ name, url }) => (
+		    <a class="links" href={url}>{name}</a>
+		  ))
+		}
 	</div>
 	<div class="sl-hidden md:sl-flex right-group">
 		{
