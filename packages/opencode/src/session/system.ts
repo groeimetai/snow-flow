@@ -25,7 +25,7 @@ export namespace SystemPrompt {
   export async function environment() {
     const app = App.info()
 
-    const tree = async () => {
+    ;async () => {
       const files = await Ripgrep.files({
         cwd: app.path.cwd,
       })

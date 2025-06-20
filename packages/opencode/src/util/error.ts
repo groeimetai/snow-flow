@@ -1,7 +1,7 @@
 import { z, type ZodSchema } from "zod"
-import { Log } from "./log"
+// import { Log } from "./log"
 
-const log = Log.create()
+// const log = Log.create()
 
 export abstract class NamedError extends Error {
   abstract schema(): ZodSchema
