@@ -9,6 +9,8 @@ import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
 const path = Astro.url.pathname;
 
 const links = config.social || [];
+const { headerLinks } = globalThis.toolbeamDocsThemeConfig ?? {};
+
 ---
 
 { path.startsWith("/s")
@@ -17,7 +19,11 @@ const links = config.social || [];
 		<SiteTitle {...Astro.props} />
 	</div>
 	<div class="middle-group sl-flex">
-		<HeaderLinks {...Astro.props} />
+{
+  headerLinks?.map(({ name, url }) => (
+    <a class="links" href={url}>{name}</a>
+  ))
+}
 	</div>
 	<div class="sl-hidden md:sl-flex right-group">
 		{
@@ -80,6 +86,12 @@ const links = config.social || [];
               color: var(--sl-color-text-dimmed);
           }
       }
+  a.links {
+		text-transform: uppercase;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-text-secondary);
+    line-height: normal;
+  }
 	}
 
 	@media (min-width: 50rem) {
@@ -113,4 +125,3 @@ const links = config.social || [];
 		}
 	}
 </style>
-

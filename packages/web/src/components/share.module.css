@@ -254,7 +254,7 @@
         line-height: 18px;
         font-size: 0.875rem;
         color: var(--sl-color-text-secondary);
-        max-wdith: var(--sm-tool-width);
+        max-width: var(--sm-tool-width);
 
         display: flex;
         align-items: flex-start;
