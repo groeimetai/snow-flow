@@ -11,6 +11,7 @@ import {
   createEffect,
   createSignal,
 } from "solid-js"
+import map from "lang-map"
 import { DateTime } from "luxon"
 import { createStore, reconcile } from "solid-js/store"
 import type { Diagnostic } from "vscode-languageserver-types"
@@ -100,8 +101,24 @@ function stripWorkingDirectory(filePath: string, workingDir?: string) {
   return filePath
 }
 
-function getFileType(path: string) {
-  return path.split(".").pop()
+function getShikiLang(filename: string) {
+  const ext = filename
+    .split('.')
+    .pop()
+    ?.toLowerCase() ?? ''
+
+  // map.languages(ext) returns an array of matching Linguist language names (e.g. ['TypeScript'])
+  const langs = map.languages(ext)
+  const type = langs?.[0]?.toLowerCase()
+
+  // Overrride any specific language mappings
+  const overrides: Record<string, string> = {
+    "conf": "shellscript"
+  }
+
+  return type
+    ? overrides[type] ?? type
+    : 'plaintext'
 }
 
 function formatDuration(ms: number): string {
@@ -980,7 +997,7 @@ export default function Share(props: {
                               const prompts = assistant().system || []
                               return prompts.filter(
                                 (p: string) =>
-                                  !p.startsWith("You are Claude Code"),
+                                  !p.startsWith("You are Claude"),
                               )
                             })
                             return (
@@ -1379,7 +1396,7 @@ export default function Share(props: {
                                           <Show when={showResults()}>
                                             <div data-part-tool-code>
                                               <CodeBlock
-                                                lang={getFileType(filePath())}
+                                                lang={getShikiLang(filePath())}
                                                 code={preview()}
                                               />
                                             </div>
@@ -1483,8 +1500,8 @@ export default function Share(props: {
                                           <Show when={showResults()}>
                                             <div data-part-tool-code>
                                               <CodeBlock
-                                                lang={getFileType(filePath())}
-                                                code={content()}
+                                                lang={getShikiLang(filePath())}
+                                                code={args.content}
                                               />
                                             </div>
                                           </Show>
@@ -1557,7 +1574,7 @@ export default function Share(props: {
                                           <DiffView
                                             class={styles["diff-code-block"]}
                                             diff={diff()}
-                                            lang={getFileType(filePath())}
+                                            lang={getShikiLang(filePath())}
                                           />
                                         </div>
                                       </Match>

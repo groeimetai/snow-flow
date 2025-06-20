@@ -63,7 +63,7 @@
     h1 {
       font-size: 2.75rem;
       font-weight: 500;
-      line-height: 1.15;
+      line-height: 1.2;
       letter-spacing: -0.05em;
       display: -webkit-box;
       -webkit-box-orient: vertical;
@@ -360,7 +360,7 @@
   [data-part-type="tool-fetch"] {
     [data-part-tool-result] {
       [data-part-tool-code] {
-        width: var(--md-tool-width);
+        max-width: var(--md-tool-width);
         border: 1px solid var(--sl-color-divider);
         background-color: var(--sl-color-bg-surface);
         border-radius: 0.25rem;
