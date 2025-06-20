@@ -86,7 +86,7 @@ function scrollToAnchor(id: string) {
 }
 
 function stripWorkingDirectory(filePath: string, workingDir?: string) {
-  if (workingDir === undefined) return filePath
+  if (filePath === undefined || workingDir === undefined) return filePath
 
   const prefix = workingDir.endsWith("/") ? workingDir : workingDir + "/"
 
