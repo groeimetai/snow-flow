@@ -41,6 +41,17 @@ export namespace Identifier {
     return given
   }
 
+  function randomBase62(length: number): string {
+    const chars =
+      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    let result = ""
+    const bytes = randomBytes(length)
+    for (let i = 0; i < length; i++) {
+      result += chars[bytes[i] % 62]
+    }
+    return result
+  }
+
   function generateNewID(
     prefix: keyof typeof prefixes,
     descending: boolean,
@@ -62,14 +73,11 @@ export namespace Identifier {
       timeBytes[i] = Number((now >> BigInt(40 - 8 * i)) & BigInt(0xff))
     }
 
-    const randLength = (LENGTH - 12) / 2
-    const random = randomBytes(randLength)
-
     return (
       prefixes[prefix] +
       "_" +
       timeBytes.toString("hex") +
-      random.toString("hex")
+      randomBase62(LENGTH - 12)
     )
   }
 }
