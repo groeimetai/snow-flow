@@ -60,6 +60,9 @@ func New(
 	if err != nil {
 		return nil, err
 	}
+	if configResponse.StatusCode() != 200 || configResponse.JSON200 == nil {
+		return nil, fmt.Errorf("failed to get config: %d", configResponse.StatusCode())
+	}
 	configInfo := configResponse.JSON200
 	if configInfo.Keybinds == nil {
 		leader := "ctrl+x"
@@ -83,6 +86,15 @@ func New(
 		splits := strings.Split(*configInfo.Model, "/")
 		appState.Provider = splits[0]
 		appState.Model = strings.Join(splits[1:], "/")
+	}
+
+	// Load themes from all directories
+	if err := theme.LoadThemesFromDirectories(
+		appInfo.Path.Config,
+		appInfo.Path.Root,
+		appInfo.Path.Cwd,
+	); err != nil {
+		slog.Warn("Failed to load themes from directories", "error", err)
 	}
 
 	if appState.Theme != "" {

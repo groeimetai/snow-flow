@@ -346,7 +346,7 @@ func (a appModel) View() string {
 		layoutView,
 		a.status.View(),
 	}
-	appView := lipgloss.JoinVertical(lipgloss.Top, components...)
+	appView := strings.Join(components, "\n")
 
 	if a.modal != nil {
 		appView = a.modal.Render(appView)
