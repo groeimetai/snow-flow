@@ -60,17 +60,14 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case dialog.ThemeSelectedMsg:
 		m.cache.Clear()
-		m.renderView()
-		return m, nil
+		return m, m.Reload()
 	case ToggleToolDetailsMsg:
 		m.showToolDetails = !m.showToolDetails
-		m.renderView()
-		return m, nil
+		return m, m.Reload()
 	case app.SessionSelectedMsg:
 		m.cache.Clear()
-		cmd := m.Reload()
-		m.viewport.GotoBottom()
-		return m, cmd
+		m.tail = true
+		return m, m.Reload()
 	case app.SessionClearedMsg:
 		m.cache.Clear()
 		cmd := m.Reload()
@@ -346,6 +343,7 @@ func (m *messagesComponent) home() string {
 		logoAndVersion,
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(t.Background())),
 	)
+	m.commands.SetBackgroundColor(t.Background())
 	commands := lipgloss.PlaceHorizontal(
 		m.width,
 		lipgloss.Center,

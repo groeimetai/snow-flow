@@ -18,6 +18,7 @@ type CommandsComponent interface {
 	tea.Model
 	tea.ViewModel
 	layout.Sizeable
+	SetBackgroundColor(color compat.AdaptiveColor)
 }
 
 type commandsComponent struct {
@@ -36,6 +37,10 @@ func (c *commandsComponent) SetSize(width, height int) tea.Cmd {
 
 func (c *commandsComponent) GetSize() (int, int) {
 	return c.width, c.height
+}
+
+func (c *commandsComponent) SetBackgroundColor(color compat.AdaptiveColor) {
+	c.background = &color
 }
 
 func (c *commandsComponent) Init() tea.Cmd {
