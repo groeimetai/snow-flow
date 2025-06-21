@@ -14,6 +14,7 @@ import {
   type CoreMessage,
   type UIMessage,
   type ProviderMetadata,
+  wrapLanguageModel,
 } from "ai"
 import { z, ZodSchema } from "zod"
 import { Decimal } from "decimal.js"
@@ -285,9 +286,7 @@ export namespace Session {
               parts: toParts(input.parts),
             },
           ]),
-        ].map((msg, i) =>
-          ProviderTransform.message(msg, i, input.providerID, input.modelID),
-        ),
+        ],
         model: model.language,
       })
         .then((result) => {
@@ -527,12 +526,26 @@ export namespace Session {
         ...convertToCoreMessages(
           msgs.map(toUIMessage).filter((x) => x.parts.length > 0),
         ),
-      ].map((msg, i) =>
-        ProviderTransform.message(msg, i, input.providerID, input.modelID),
-      ),
+      ],
       temperature: model.info.temperature ? 0 : undefined,
       tools: model.info.tool_call === false ? undefined : tools,
-      model: model.language,
+      model: wrapLanguageModel({
+        model: model.language,
+        middleware: [
+          {
+            async transformParams(args) {
+              if (args.type === "stream") {
+                args.params.prompt = ProviderTransform.message(
+                  args.params.prompt,
+                  input.providerID,
+                  input.modelID,
+                )
+              }
+              return args.params
+            },
+          },
+        ],
+      }),
     })
     try {
       for await (const value of result.fullStream) {

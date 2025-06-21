@@ -1,24 +1,25 @@
-import type { CoreMessage } from "ai"
+import type { CoreMessage, LanguageModelV1Prompt } from "ai"
+import { unique } from "remeda"
 
 export namespace ProviderTransform {
   export function message(
-    msg: CoreMessage,
-    index: number,
+    msgs: LanguageModelV1Prompt,
     providerID: string,
     modelID: string,
   ) {
-    if (
-      (providerID === "anthropic" || modelID.includes("anthropic")) &&
-      index < 4
-    ) {
-      msg.providerOptions = {
-        ...msg.providerOptions,
-        anthropic: {
-          cacheControl: { type: "ephemeral" },
-        },
+    if (providerID === "anthropic" || modelID.includes("anthropic")) {
+      const system = msgs.filter((msg) => msg.role === "system").slice(0, 2)
+      const final = msgs.filter((msg) => msg.role !== "system").slice(-2)
+
+      for (const msg of unique([...system, ...final])) {
+        msg.providerMetadata = {
+          ...msg.providerMetadata,
+          anthropic: {
+            cacheControl: { type: "ephemeral" },
+          },
+        }
       }
     }
-
-    return msg
+    return msgs
   }
 }
