@@ -3,12 +3,15 @@ import { $ } from "bun"
 import { z } from "zod"
 import { NamedError } from "../util/error"
 import { Bus } from "../bus"
+import { Log } from "../util/log"
 
 declare global {
   const OPENCODE_VERSION: string
 }
 
 export namespace Installation {
+  const log = Log.create({ service: "installation" })
+
   export type Method = Awaited<ReturnType<typeof method>>
 
   export const Event = {
@@ -102,8 +105,8 @@ export namespace Installation {
       switch (method) {
         case "curl":
           return $`curl -fsSL https://opencode.ai/install | bash`.env({
-            VERSION: target,
             ...process.env,
+            VERSION: target,
           })
         case "npm":
           return $`npm install -g opencode-ai@${target}`
@@ -118,6 +121,12 @@ export namespace Installation {
       }
     })()
     const result = await cmd.quiet().throws(false)
+    log.info("upgraded", {
+      method,
+      target,
+      stdout: result.stdout.toString(),
+      stderr: result.stderr.toString(),
+    })
     if (result.exitCode !== 0)
       throw new UpgradeFailedError({
         stderr: result.stderr.toString("utf8"),

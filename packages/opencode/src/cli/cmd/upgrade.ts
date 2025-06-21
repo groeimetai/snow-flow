@@ -7,17 +7,25 @@ export const UpgradeCommand = {
   command: "upgrade [target]",
   describe: "upgrade opencode to the latest version or a specific version",
   builder: (yargs: Argv) => {
-    return yargs.positional("target", {
-      describe: "specific version to upgrade to (e.g., '0.1.48' or 'v0.1.48')",
-      type: "string",
-    })
+    return yargs
+      .positional("target", {
+        describe: "specific version to upgrade to (e.g., '0.1.48' or 'v0.1.48')",
+        type: "string",
+      })
+      .option("method", {
+        alias: "m",
+        describe: "installation method to use (curl, npm, pnpm, bun, brew)",
+        type: "string",
+        choices: ["curl", "npm", "pnpm", "bun", "brew"],
+      })
   },
-  handler: async (args: { target?: string }) => {
+  handler: async (args: { target?: string; method?: string }) => {
     UI.empty()
     UI.println(UI.logo("  "))
     UI.empty()
     prompts.intro("Upgrade")
-    const method = await Installation.method()
+    const detectedMethod = await Installation.method()
+    const method = (args.method as Installation.Method) ?? detectedMethod
     if (method === "unknown") {
       prompts.log.error(
         `opencode is installed to ${process.execPath} and seems to be managed by a package manager`,
@@ -25,7 +33,7 @@ export const UpgradeCommand = {
       prompts.outro("Done")
       return
     }
-    prompts.log.info("Installed via " + method)
+    prompts.log.info("Using method: " + method)
     const target = args.target ?? (await Installation.latest())
     prompts.log.info(`From ${Installation.VERSION} → ${target}`)
     const spinner = prompts.spinner()
