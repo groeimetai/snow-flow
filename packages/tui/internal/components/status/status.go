@@ -71,7 +71,7 @@ func formatTokensAndCost(tokens float32, contextWindow float32, cost float32) st
 	formattedCost := fmt.Sprintf("$%.2f", cost)
 	percentage := (float64(tokens) / float64(contextWindow)) * 100
 
-	return fmt.Sprintf("Tokens: %s (%d%%), Cost: %s", formattedTokens, int(percentage), formattedCost)
+	return fmt.Sprintf("Context: %s (%d%%), Cost: %s", formattedTokens, int(percentage), formattedCost)
 }
 
 func (m statusComponent) View() string {
