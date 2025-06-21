@@ -66,6 +66,10 @@ export namespace Installation {
         name: "bun" as const,
         command: () => $`bun pm ls -g`.throws(false).text(),
       },
+      {
+        name: "brew" as const,
+        command: () => $`brew list --formula opencode-ai`.throws(false).text(),
+      },
     ]
 
     checks.sort((a, b) => {
@@ -97,13 +101,18 @@ export namespace Installation {
     const cmd = (() => {
       switch (method) {
         case "curl":
-          return $`curl -fsSL https://opencode.ai/install | bash`
+          return $`curl -fsSL https://opencode.ai/install | bash`.env({
+            VERSION: target,
+            ...process.env,
+          })
         case "npm":
           return $`npm install -g opencode-ai@${target}`
         case "pnpm":
           return $`pnpm install -g opencode-ai@${target}`
         case "bun":
           return $`bun install -g opencode-ai@${target}`
+        case "brew":
+          return $`brew install sst/tap/opencode`
         default:
           throw new Error(`Unknown method: ${method}`)
       }

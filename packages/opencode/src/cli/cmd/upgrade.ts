@@ -25,6 +25,7 @@ export const UpgradeCommand = {
       prompts.outro("Done")
       return
     }
+    prompts.log.info("Installed via " + method)
     const target = args.target ?? (await Installation.latest())
     prompts.log.info(`From ${Installation.VERSION} → ${target}`)
     const spinner = prompts.spinner()
