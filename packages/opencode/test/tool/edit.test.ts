@@ -302,6 +302,96 @@ const testCases: TestCase[] = [
     find: ["function test() {", "return 'value';", "}"].join("\n"),
     replace: ["function test() {", "return 'new value';", "}"].join("\n"),
   },
+
+  // Test for same oldString and newString (should fail)
+  {
+    content: 'console.log("test");',
+    find: 'console.log("test");',
+    replace: 'console.log("test");',
+    fail: true,
+  },
+
+  // Additional tests for fixes made
+
+  // WhitespaceNormalizedReplacer - test regex special characters that could cause errors
+  {
+    content: 'const pattern = "test[123]";',
+    find: 'test[123]',
+    replace: 'test[456]',
+  },
+  {
+    content: 'const regex = "^start.*end$";',
+    find: '^start.*end$',
+    replace: '^begin.*finish$',
+  },
+
+  // EscapeNormalizedReplacer - test single backslash vs double backslash
+  {
+    content: 'const path = "C:\\Users";',
+    find: 'const path = "C:\\Users";',
+    replace: 'const path = "D:\\Users";',
+  },
+  {
+    content: 'console.log("Line1\\nLine2");',
+    find: 'console.log("Line1\\nLine2");',
+    replace: 'console.log("First\\nSecond");',
+  },
+
+  // BlockAnchorReplacer - test edge case with exact newline boundaries
+  {
+    content: ["function test() {", "  return true;", "}"].join("\n"),
+    find: ["function test() {", "  // middle", "}"].join("\n"),
+    replace: ["function test() {", "  return false;", "}"].join("\n"),
+  },
+
+  // ContextAwareReplacer - test with trailing newline in find string
+  {
+    content: [
+      "class Test {",
+      "  method1() {",
+      "    return 1;",
+      "  }",
+      "}",
+    ].join("\n"),
+    find: [
+      "class Test {",
+      "  // different content",
+      "}",
+      "", // trailing empty line
+    ].join("\n"),
+    replace: ["class Test {", "  method2() { return 2; }", "}"].join("\n"),
+  },
+
+  // Test validation for empty strings with same oldString and newString
+  {
+    content: "",
+    find: "",
+    replace: "",
+    fail: true,
+  },
+
+  // Test multiple occurrences with replaceAll=false (should fail)
+  {
+    content: ["const a = 1;", "const b = 1;", "const c = 1;"].join("\n"),
+    find: "= 1",
+    replace: "= 2",
+    all: false,
+    fail: true,
+  },
+
+  // Test whitespace normalization with multiple spaces and tabs mixed
+  {
+    content: "if\t \t( \tcondition\t )\t{",
+    find: "if ( condition ) {",
+    replace: "if (newCondition) {",
+  },
+
+  // Test escape sequences in template literals
+  {
+    content: "const msg = `Hello\\tWorld`;",
+    find: "const msg = `Hello\\tWorld`;",
+    replace: "const msg = `Hi\\tWorld`;",
+  },
 ]
 
 describe("EditTool Replacers", () => {

@@ -33,6 +33,10 @@ export const EditTool = Tool.define({
       throw new Error("filePath is required")
     }
 
+    if (params.oldString === params.newString) {
+      throw new Error("oldString and newString must be different")
+    }
+
     const app = App.info()
     const filepath = path.isAbsolute(params.filePath)
       ? params.filePath
@@ -182,7 +186,10 @@ export const BlockAnchorReplacer: Replacer = function* (content, find) {
 
         let matchEndIndex = matchStartIndex
         for (let k = 0; k <= j - i; k++) {
-          matchEndIndex += originalLines[i + k].length + 1
+          matchEndIndex += originalLines[i + k].length
+          if (k < j - i) {
+            matchEndIndex += 1 // Add newline character except for the last line
+          }
         }
 
         yield content.substring(matchStartIndex, matchEndIndex)
@@ -216,10 +223,14 @@ export const WhitespaceNormalizedReplacer: Replacer = function* (
         const pattern = words
           .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
           .join("\\s+")
-        const regex = new RegExp(pattern)
-        const match = line.match(regex)
-        if (match) {
-          yield match[0]
+        try {
+          const regex = new RegExp(pattern)
+          const match = line.match(regex)
+          if (match) {
+            yield match[0]
+          }
+        } catch (e) {
+          // Invalid regex pattern, skip
         }
       }
     }
@@ -269,7 +280,7 @@ export const IndentationFlexibleReplacer: Replacer = function* (content, find) {
 
 export const EscapeNormalizedReplacer: Replacer = function* (content, find) {
   const unescapeString = (str: string): string => {
-    return str.replace(/\\+(n|t|r|'|"|`|\\|\n|\$)/g, (match, capturedChar) => {
+    return str.replace(/\\(n|t|r|'|"|`|\\|\n|\$)/g, (match, capturedChar) => {
       switch (capturedChar) {
         case "n":
           return "\n"
@@ -363,6 +374,11 @@ export const ContextAwareReplacer: Replacer = function* (content, find) {
     return
   }
 
+  // Remove trailing empty line if present
+  if (findLines[findLines.length - 1] === "") {
+    findLines.pop()
+  }
+
   const contentLines = content.split("\n")
 
   // Extract first and last lines as context anchors
@@ -454,6 +470,10 @@ export function replace(
   newString: string,
   replaceAll = false,
 ): string {
+  if (oldString === newString) {
+    throw new Error("oldString and newString must be different")
+  }
+  
   for (const replacer of [
     SimpleReplacer,
     LineTrimmedReplacer,
