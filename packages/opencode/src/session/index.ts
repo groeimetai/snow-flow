@@ -657,6 +657,21 @@ export namespace Session {
             }
             break
 
+          case "finish":
+            log.info("message finish", {
+              reason: value.finishReason,
+            })
+            const assistant = next.metadata!.assistant!
+            const usage = getUsage(
+              model.info,
+              value.usage,
+              value.providerMetadata,
+            )
+            assistant.cost = usage.cost
+            await updateMessage(next)
+            if (value.finishReason === "length")
+              throw new Message.OutputLengthError({})
+            break
           default:
             l.info("unhandled", {
               type: value.type,
@@ -670,6 +685,9 @@ export namespace Session {
         error: e,
       })
       switch (true) {
+        case Message.OutputLengthError.isInstance(e):
+          next.metadata.error = e
+          break
         case LoadAPIKeyError.isInstance(e):
           next.metadata.error = new Provider.AuthError(
             {
