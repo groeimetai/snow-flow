@@ -4,6 +4,11 @@ import { Provider } from "../provider/provider"
 import { NamedError } from "../util/error"
 
 export namespace Message {
+  export const OutputLengthError = NamedError.create(
+    "SessionOutputLengthError",
+    z.object({}),
+  )
+
   export const ToolCall = z
     .object({
       state: z.literal("call"),
@@ -145,6 +150,7 @@ export namespace Message {
             .discriminatedUnion("name", [
               Provider.AuthError.Schema,
               NamedError.Unknown.Schema,
+              OutputLengthError.Schema,
             ])
             .optional(),
           sessionID: z.string(),
