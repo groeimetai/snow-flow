@@ -26,6 +26,18 @@ import { ServeCommand } from "./cli/cmd/serve"
 
 const cancel = new AbortController()
 
+process.on("unhandledRejection", (e) => {
+  Log.Default.error("rejection", {
+    e: e instanceof Error ? e.message : e,
+  })
+})
+
+process.on("uncaughtException", (e) => {
+  Log.Default.error("exception", {
+    e: e instanceof Error ? e.message : e,
+  })
+})
+
 const cli = yargs(hideBin(process.argv))
   .scriptName("opencode")
   .help("help", "show help")
