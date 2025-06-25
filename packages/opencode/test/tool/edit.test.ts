@@ -188,6 +188,120 @@ const testCases: TestCase[] = [
     find: "Hello 世界! 🌍",
     replace: "Hello World! 🌎",
   },
+
+  // EscapeNormalizedReplacer cases
+  {
+    content: 'console.log("Hello\nWorld");',
+    find: 'console.log("Hello\\nWorld");',
+    replace: 'console.log("Hello\nUniverse");',
+  },
+  {
+    content: "const str = 'It's working';",
+    find: "const str = 'It\\'s working';",
+    replace: "const str = 'It's fixed';",
+  },
+  {
+    content: "const template = `Hello ${name}`;",
+    find: "const template = `Hello \\${name}`;",
+    replace: "const template = `Hi ${name}`;",
+  },
+  {
+    content: "const path = 'C:\\Users\\test';",
+    find: "const path = 'C:\\\\Users\\\\test';",
+    replace: "const path = 'C:\\Users\\admin';",
+  },
+
+  // MultiOccurrenceReplacer cases (with replaceAll)
+  {
+    content: ["debug('start');", "debug('middle');", "debug('end');"].join(
+      "\n",
+    ),
+    find: "debug",
+    replace: "log",
+    all: true,
+  },
+  {
+    content: "const x = 1; const y = 1; const z = 1;",
+    find: "1",
+    replace: "2",
+    all: true,
+  },
+
+  // TrimmedBoundaryReplacer cases
+  {
+    content: ["  function test() {", "    return true;", "  }"].join("\n"),
+    find: ["function test() {", "  return true;", "}"].join("\n"),
+    replace: ["function test() {", "  return false;", "}"].join("\n"),
+  },
+  {
+    content: "\n  const value = 42;  \n",
+    find: "const value = 42;",
+    replace: "const value = 24;",
+  },
+  {
+    content: ["", "  if (condition) {", "    doSomething();", "  }", ""].join(
+      "\n",
+    ),
+    find: ["if (condition) {", "  doSomething();", "}"].join("\n"),
+    replace: ["if (condition) {", "  doNothing();", "}"].join("\n"),
+  },
+
+  // ContextAwareReplacer cases
+  {
+    content: [
+      "function calculate(a, b) {",
+      "  const temp = a + b;",
+      "  const result = temp * 2;",
+      "  return result;",
+      "}",
+    ].join("\n"),
+    find: [
+      "function calculate(a, b) {",
+      "  // some different content here",
+      "  // more different content",
+      "  return result;",
+      "}",
+    ].join("\n"),
+    replace: ["function calculate(a, b) {", "  return (a + b) * 2;", "}"].join(
+      "\n",
+    ),
+  },
+  {
+    content: [
+      "class TestClass {",
+      "  constructor() {",
+      "    this.value = 0;",
+      "  }",
+      "  ",
+      "  method() {",
+      "    return this.value;",
+      "  }",
+      "}",
+    ].join("\n"),
+    find: [
+      "class TestClass {",
+      "  // different implementation",
+      "  // with multiple lines",
+      "}",
+    ].join("\n"),
+    replace: ["class TestClass {", "  getValue() { return 42; }", "}"].join(
+      "\n",
+    ),
+  },
+
+  // Combined edge cases for new replacers
+  {
+    content: '\tconsole.log("test");\t',
+    find: 'console.log("test");',
+    replace: 'console.log("updated");',
+  },
+  {
+    content: ["  ", "function test() {", "  return 'value';", "}", "  "].join(
+      "\n",
+    ),
+    find: ["function test() {", "return 'value';", "}"].join("\n"),
+    replace: ["function test() {", "return 'new value';", "}"].join("\n"),
+  },
 ]
 
 describe("EditTool Replacers", () => {
