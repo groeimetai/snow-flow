@@ -1,3 +1,6 @@
+// the approaches in this edit tool are sourced from
+// https://github.com/cline/cline/blob/main/evals/diff-edits/diff-apply/diff-06-23-25.ts
+
 import { z } from "zod"
 import * as path from "path"
 import { Tool } from "./tool"
@@ -55,35 +58,19 @@ export const EditTool = Tool.define({
       }
 
       const file = Bun.file(filepath)
-      if (!(await file.exists())) throw new Error(`File ${filepath} not found`)
-      const stats = await file.stat()
+      const stats = await file.stat().catch(() => {})
+      if (!stats) throw new Error(`File ${filepath} not found`)
       if (stats.isDirectory())
         throw new Error(`Path is a directory, not a file: ${filepath}`)
       await FileTimes.assert(ctx.sessionID, filepath)
       contentOld = await file.text()
-      const index = contentOld.indexOf(params.oldString)
-      if (index === -1)
-        throw new Error(
-          `oldString not found in file. Make sure it matches exactly, including whitespace and line breaks`,
-        )
 
-      if (params.replaceAll) {
-        contentNew = contentOld.replaceAll(params.oldString, params.newString)
-      }
-
-      if (!params.replaceAll) {
-        const lastIndex = contentOld.lastIndexOf(params.oldString)
-        if (index !== lastIndex)
-          throw new Error(
-            `oldString appears multiple times in the file. Please provide more context to ensure a unique match`,
-          )
-
-        contentNew =
-          contentOld.substring(0, index) +
-          params.newString +
-          contentOld.substring(index + params.oldString.length)
-      }
-
+      contentNew = replace(
+        contentOld,
+        params.oldString,
+        params.newString,
+        params.replaceAll,
+      )
       await file.write(contentNew)
     })()
 
@@ -115,6 +102,169 @@ export const EditTool = Tool.define({
     }
   },
 })
+
+export type Replacer = (
+  content: string,
+  find: string,
+) => Generator<string, void, unknown>
+
+export const SimpleReplacer: Replacer = function* (_content, find) {
+  yield find
+}
+
+export const LineTrimmedReplacer: Replacer = function* (content, find) {
+  const originalLines = content.split("\n")
+  const searchLines = find.split("\n")
+
+  if (searchLines[searchLines.length - 1] === "") {
+    searchLines.pop()
+  }
+
+  for (let i = 0; i <= originalLines.length - searchLines.length; i++) {
+    let matches = true
+
+    for (let j = 0; j < searchLines.length; j++) {
+      const originalTrimmed = originalLines[i + j].trim()
+      const searchTrimmed = searchLines[j].trim()
+
+      if (originalTrimmed !== searchTrimmed) {
+        matches = false
+        break
+      }
+    }
+
+    if (matches) {
+      let matchStartIndex = 0
+      for (let k = 0; k < i; k++) {
+        matchStartIndex += originalLines[k].length + 1
+      }
+
+      let matchEndIndex = matchStartIndex
+      for (let k = 0; k < searchLines.length; k++) {
+        matchEndIndex += originalLines[i + k].length + 1
+      }
+
+      yield content.substring(matchStartIndex, matchEndIndex)
+    }
+  }
+}
+
+export const BlockAnchorReplacer: Replacer = function* (content, find) {
+  const originalLines = content.split("\n")
+  const searchLines = find.split("\n")
+
+  if (searchLines.length < 3) {
+    return
+  }
+
+  if (searchLines[searchLines.length - 1] === "") {
+    searchLines.pop()
+  }
+
+  const firstLineSearch = searchLines[0].trim()
+  const lastLineSearch = searchLines[searchLines.length - 1].trim()
+
+  // Find blocks where first line matches the search first line
+  for (let i = 0; i < originalLines.length; i++) {
+    if (originalLines[i].trim() !== firstLineSearch) {
+      continue
+    }
+
+    // Look for the matching last line after this first line
+    for (let j = i + 2; j < originalLines.length; j++) {
+      if (originalLines[j].trim() === lastLineSearch) {
+        // Found a potential block from i to j
+        let matchStartIndex = 0
+        for (let k = 0; k < i; k++) {
+          matchStartIndex += originalLines[k].length + 1
+        }
+
+        let matchEndIndex = matchStartIndex
+        for (let k = 0; k <= j - i; k++) {
+          matchEndIndex += originalLines[i + k].length + 1
+        }
+
+        yield content.substring(matchStartIndex, matchEndIndex)
+        break // Only match the first occurrence of the last line
+      }
+    }
+  }
+}
+
+export const WhitespaceNormalizedReplacer: Replacer = function* (
+  content,
+  find,
+) {
+  const normalizeWhitespace = (text: string) => text.replace(/\s+/g, " ").trim()
+  const normalizedFind = normalizeWhitespace(find)
+
+  // Handle single line matches
+  const lines = content.split("\n")
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    if (normalizeWhitespace(line) === normalizedFind) {
+      yield line
+    }
+
+    // Also check for substring matches within lines
+    const normalizedLine = normalizeWhitespace(line)
+    if (normalizedLine.includes(normalizedFind)) {
+      // Find the actual substring in the original line that matches
+      const words = find.trim().split(/\s+/)
+      if (words.length > 0) {
+        const pattern = words
+          .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+          .join("\\s+")
+        const regex = new RegExp(pattern)
+        const match = line.match(regex)
+        if (match) {
+          yield match[0]
+        }
+      }
+    }
+  }
+
+  // Handle multi-line matches
+  const findLines = find.split("\n")
+  if (findLines.length > 1) {
+    for (let i = 0; i <= lines.length - findLines.length; i++) {
+      const block = lines.slice(i, i + findLines.length)
+      if (normalizeWhitespace(block.join("\n")) === normalizedFind) {
+        yield block.join("\n")
+      }
+    }
+  }
+}
+
+export const IndentationFlexibleReplacer: Replacer = function* (content, find) {
+  const removeIndentation = (text: string) => {
+    const lines = text.split("\n")
+    const nonEmptyLines = lines.filter((line) => line.trim().length > 0)
+    if (nonEmptyLines.length === 0) return text
+
+    const minIndent = Math.min(
+      ...nonEmptyLines.map((line) => {
+        const match = line.match(/^(\s*)/)
+        return match ? match[1].length : 0
+      }),
+    )
+
+    return lines
+      .map((line) => (line.trim().length === 0 ? line : line.slice(minIndent)))
+      .join("\n")
+  }
+
+  const normalizedFind = removeIndentation(find)
+  const contentLines = content.split("\n")
+  const findLines = find.split("\n")
+
+  for (let i = 0; i <= contentLines.length - findLines.length; i++) {
+    const block = contentLines.slice(i, i + findLines.length).join("\n")
+    if (removeIndentation(block) === normalizedFind) {
+      yield block
+    }
+  }
+}
 
 function trimDiff(diff: string): string {
   const lines = diff.split("\n")
@@ -150,4 +300,35 @@ function trimDiff(diff: string): string {
   })
 
   return trimmedLines.join("\n")
+}
+
+export function replace(
+  content: string,
+  oldString: string,
+  newString: string,
+  replaceAll = false,
+): string {
+  for (const replacer of [
+    SimpleReplacer,
+    LineTrimmedReplacer,
+    BlockAnchorReplacer,
+    WhitespaceNormalizedReplacer,
+    IndentationFlexibleReplacer,
+  ]) {
+    for (const search of replacer(content, oldString)) {
+      const index = content.indexOf(search)
+      if (index === -1) continue
+      if (replaceAll) {
+        return content.replaceAll(search, newString)
+      }
+      const lastIndex = content.lastIndexOf(search)
+      if (index !== lastIndex) continue
+      return (
+        content.substring(0, index) +
+        newString +
+        content.substring(index + search.length)
+      )
+    }
+  }
+  throw new Error("oldString not found in content or was found multiple times")
 }
