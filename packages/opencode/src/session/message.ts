@@ -5,7 +5,7 @@ import { NamedError } from "../util/error"
 
 export namespace Message {
   export const OutputLengthError = NamedError.create(
-    "SessionOutputLengthError",
+    "MessageOutputLengthError",
     z.object({}),
   )
 
