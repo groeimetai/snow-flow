@@ -397,6 +397,11 @@ func renderToolInvocation(
 					body,
 					styles.WhitespaceStyle(t.Background()),
 				)
+
+				// Add diagnostics at the bottom if they exist
+				if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
+					body += "\n" + renderContentBlock(diagnostics, WithFullWidth(), WithBorderColor(t.Error()))
+				}
 			}
 		}
 	case "write":
@@ -404,6 +409,11 @@ func renderToolInvocation(
 			title = fmt.Sprintf("WRITE %s", relative(filename))
 			if content, ok := toolArgsMap["content"].(string); ok {
 				body = renderFile(filename, content)
+				
+				// Add diagnostics at the bottom if they exist
+				if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
+					body += "\n" + renderContentBlock(diagnostics, WithFullWidth(), WithBorderColor(t.Error()))
+				}
 			}
 		}
 	case "bash":
@@ -684,4 +694,82 @@ func extension(path string) string {
 		ext = strings.ToLower(ext[1:])
 	}
 	return ext
+}
+
+// Diagnostic represents an LSP diagnostic
+type Diagnostic struct {
+	Range struct {
+		Start struct {
+			Line      int `json:"line"`
+			Character int `json:"character"`
+		} `json:"start"`
+	} `json:"range"`
+	Severity int    `json:"severity"`
+	Message  string `json:"message"`
+}
+
+// renderDiagnostics formats LSP diagnostics for display in the TUI
+func renderDiagnostics(metadata client.MessageMetadata_Tool_AdditionalProperties, filePath string) string {
+	diagnosticsData, ok := metadata.Get("diagnostics")
+	if !ok {
+		return ""
+	}
+
+	// diagnosticsData should be a map[string][]Diagnostic
+	diagnosticsMap, ok := diagnosticsData.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	fileDiagnostics, ok := diagnosticsMap[filePath]
+	if !ok {
+		return ""
+	}
+
+	diagnosticsList, ok := fileDiagnostics.([]interface{})
+	if !ok {
+		return ""
+	}
+
+	var errorDiagnostics []string
+	for _, diagInterface := range diagnosticsList {
+		diagMap, ok := diagInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Parse the diagnostic
+		var diag Diagnostic
+		diagBytes, err := json.Marshal(diagMap)
+		if err != nil {
+			continue
+		}
+		if err := json.Unmarshal(diagBytes, &diag); err != nil {
+			continue
+		}
+
+		// Only show error diagnostics (severity === 1)
+		if diag.Severity != 1 {
+			continue
+		}
+
+		line := diag.Range.Start.Line + 1      // 1-based
+		column := diag.Range.Start.Character + 1 // 1-based
+		errorDiagnostics = append(errorDiagnostics, fmt.Sprintf("Error [%d:%d] %s", line, column, diag.Message))
+	}
+
+	if len(errorDiagnostics) == 0 {
+		return ""
+	}
+
+	t := theme.CurrentTheme()
+	var result strings.Builder
+	for _, diagnostic := range errorDiagnostics {
+		if result.Len() > 0 {
+			result.WriteString("\n")
+		}
+		result.WriteString(styles.NewStyle().Foreground(t.Error()).Render(diagnostic))
+	}
+
+	return result.String()
 }
