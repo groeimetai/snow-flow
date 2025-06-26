@@ -73,8 +73,8 @@ export default defineConfig({
       sidebar: [
         "docs",
         "docs/cli",
+        "docs/rules",
         "docs/config",
-        "docs/agents",
         "docs/models",
         "docs/themes",
         "docs/keybinds",
