@@ -34,9 +34,7 @@ export default defineConfig({
     starlight({
       title: "opencode",
       expressiveCode: { themes: ["github-light", "github-dark"] },
-      social: [
-        { icon: "github", label: "GitHub", href: config.github },
-      ],
+      social: [{ icon: "github", label: "GitHub", href: config.github }],
       editLink: {
         baseUrl: `${github}/edit/master/www/`,
       },
@@ -53,6 +51,7 @@ export default defineConfig({
         "docs",
         "docs/cli",
         "docs/config",
+        "docs/agents",
         "docs/models",
         "docs/themes",
         "docs/keybinds",

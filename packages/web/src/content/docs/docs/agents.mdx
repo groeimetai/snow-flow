@@ -1,0 +1,45 @@
+---
+title: AGENTS.md
+---
+
+You can provide custom instructions to opencode by creating an `AGENTS.md` file. This works similarly to CLAUDE.md or cursor rules files. It contains instructions that will be included in the LLM's context to customize its behavior for your specific project or workflow.
+
+## File Locations
+
+The `AGENTS.md` files are read from the following locations:
+
+- **Globally** under `~/.config/opencode/AGENTS.md` (applied to all opencode sessions)
+- **Project-specific** as `AGENTS.md` in any directory (applied when working within that directory or its subdirectories)
+
+When opencode starts, it looks for `AGENTS.md` files by starting from the current directory and traversing up the directory tree.
+
+## File Precedence
+
+When both global and local `AGENTS.md` files exist, opencode combines their contents. All found files are processed together:
+
+1. **Local files** found by traversing up from the current directory
+2. **Global file** located at `~/.config/opencode/AGENTS.md`
+
+This allows you to set general preferences globally while adding project-specific instructions locally.
+
+## Example
+
+```markdown
+# SST v3 Monorepo Project
+
+This is an SST v3 monorepo with TypeScript. The project uses bun workspaces for package management.
+
+## Project Structure
+- `packages/` - Contains all workspace packages (functions, core, web, etc.)
+- `infra/` - Infrastructure definitions split by service (storage.ts, api.ts, web.ts)
+- `sst.config.ts` - Main SST configuration with dynamic imports
+
+## Code Standards
+- Use TypeScript with strict mode enabled
+- Shared code goes in `packages/core/` with proper exports configuration
+- Functions go in `packages/functions/`
+- Infrastructure should be split into logical files in `infra/`
+
+## Monorepo Conventions
+- Import shared modules using workspace names: `@my-app/core/example`
+```
