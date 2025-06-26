@@ -79,6 +79,8 @@ export const RunCommand = cmd({
           return
         }
 
+        const isPiped = !process.stdout.isTTY
+
         UI.empty()
         UI.println(UI.logo())
         UI.empty()
@@ -90,8 +92,8 @@ export const RunCommand = cmd({
           await Session.share(session.id)
           UI.println(
             UI.Style.TEXT_INFO_BOLD +
-            "~  https://opencode.ai/s/" +
-            session.id.slice(-8),
+              "~  https://opencode.ai/s/" +
+              session.id.slice(-8),
           )
         }
         UI.empty()
@@ -109,8 +111,8 @@ export const RunCommand = cmd({
           UI.println(
             color + `|`,
             UI.Style.TEXT_NORMAL +
-            UI.Style.TEXT_DIM +
-            ` ${type.padEnd(7, " ")}`,
+              UI.Style.TEXT_DIM +
+              ` ${type.padEnd(7, " ")}`,
             "",
             UI.Style.TEXT_NORMAL + title,
           )
@@ -134,7 +136,7 @@ export const RunCommand = cmd({
               part.toolInvocation.toolName,
               UI.Style.TEXT_INFO_BOLD,
             ]
-            printEvent(color, tool, metadata?.title || 'Unknown')
+            printEvent(color, tool, metadata?.title || "Unknown")
           }
 
           if (part.type === "text") {
@@ -147,7 +149,8 @@ export const RunCommand = cmd({
             printEvent(UI.Style.TEXT_NORMAL_BOLD, "Text", part.text)
           }
         })
-        await Session.chat({
+
+        const result = await Session.chat({
           sessionID: session.id,
           providerID,
           modelID,
@@ -158,8 +161,14 @@ export const RunCommand = cmd({
             },
           ],
         })
+
+        if (isPiped) {
+          const match = result.parts.findLast((x) => x.type === "text")
+          if (match) process.stdout.write(match.text)
+        }
         UI.empty()
       },
     )
   },
 })
+

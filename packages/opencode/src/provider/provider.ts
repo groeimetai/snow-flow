@@ -23,7 +23,6 @@ import { AuthCopilot } from "../auth/copilot"
 import { ModelsDev } from "./models"
 import { NamedError } from "../util/error"
 import { Auth } from "../auth"
-import { TaskTool } from "../tool/task"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -411,7 +410,7 @@ export namespace Provider {
     // MultiEditTool,
     WriteTool,
     TodoWriteTool,
-    TaskTool,
+    // TaskTool,
     TodoReadTool,
   ]
 
