@@ -124,6 +124,11 @@ func (m *editorComponent) Content() string {
 		Width(m.width).
 		PaddingTop(1).
 		PaddingBottom(1).
+		BorderStyle(lipgloss.ThickBorder()).
+		BorderForeground(t.Border()).
+		BorderBackground(t.Background()).
+		BorderLeft(true).
+		BorderRight(true).
 		Render(textarea)
 
 	hint := base(m.getSubmitKeyText()) + muted(" send   ")
