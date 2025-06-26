@@ -8,14 +8,12 @@ import config from "./config.mjs"
 import { rehypeHeadingIds } from "@astrojs/markdown-remark"
 import rehypeAutolinkHeadings from "rehype-autolink-headings"
 
+const url = "https://opencode.ai"
 const github = "https://github.com/sst/opencode"
-const headerLinks = [
-  { name: "Docs", url: "/docs/" },
-  { name: "GitHub", url: github },
-]
 
 // https://astro.build/config
 export default defineConfig({
+  site: url,
   output: "server",
   adapter: cloudflare({
     imageService: "passthrough",
@@ -36,6 +34,29 @@ export default defineConfig({
       expressiveCode: { themes: ["github-light", "github-dark"] },
       social: [
         { icon: "github", label: "GitHub", href: config.github },
+      ],
+      head: [
+        {
+          tag: "link",
+          attrs: {
+            rel: "icon",
+            href: "/favicon.svg",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image",
+            content: `${url}/social-share.png`,
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "twitter:image",
+            content: `${url}/social-share.png`,
+          },
+        },
       ],
       editLink: {
         baseUrl: `${github}/edit/master/www/`,
