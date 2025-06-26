@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/v2/key"
 	"github.com/charmbracelet/bubbles/v2/textarea"
 	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/styles"
@@ -34,8 +35,7 @@ func (ci *CompletionItem) Render(selected bool, width int) string {
 		Padding(0, 1)
 
 	if selected {
-		itemStyle = itemStyle.
-			Foreground(t.Primary())
+		itemStyle = itemStyle.Foreground(t.Primary())
 	}
 
 	title := itemStyle.Render(
@@ -199,8 +199,14 @@ func (c *completionDialogComponent) View() string {
 
 	c.list.SetMaxWidth(maxWidth)
 
-	return baseStyle.Padding(0, 0).
+	return baseStyle.
+		Padding(0, 0).
 		Background(t.BackgroundElement()).
+		BorderStyle(lipgloss.ThickBorder()).
+		BorderLeft(true).
+		BorderRight(true).
+		BorderForeground(t.Border()).
+		BorderBackground(t.Background()).
 		Width(c.width).
 		Render(c.list.View())
 }
