@@ -83,7 +83,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		} else {
 			existingValue := m.textarea.Value()
-			
+
 			// Replace the current token (after last space)
 			lastSpaceIndex := strings.LastIndex(existingValue, " ")
 			if lastSpaceIndex == -1 {
@@ -341,7 +341,7 @@ func createSpinner() spinner.Model {
 		spinner.WithSpinner(spinner.Ellipsis),
 		spinner.WithStyle(
 			styles.NewStyle().
-				Foreground(t.Background()).
+				Background(t.Background()).
 				Foreground(t.TextMuted()).
 				Width(3).
 				Lipgloss(),
