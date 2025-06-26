@@ -40,6 +40,7 @@ import {
   IconMagnifyingGlass,
   IconWrenchScrewdriver,
   IconDocumentMagnifyingGlass,
+  IconArrowDown,
 } from "./icons"
 import DiffView from "./DiffView"
 import CodeBlock from "./CodeBlock"
@@ -721,6 +722,83 @@ export default function Share(props: {
     })
   })
 
+  const [showScrollButton, setShowScrollButton] = createSignal(false)
+  const [isButtonHovered, setIsButtonHovered] = createSignal(false)
+  let scrollTimeout: number | undefined
+  let lastScrollY = 0
+
+  const checkScrollNeed = () => {
+    const currentScrollY = window.scrollY
+    const isScrollingDown = currentScrollY > lastScrollY
+    const scrolled = currentScrollY > 200 // Show after scrolling 200px
+    const isNearBottom = window.innerHeight + currentScrollY >= document.body.scrollHeight - 100
+    
+    // Only show when scrolling down, scrolled enough, and not near bottom
+    const shouldShow = isScrollingDown && scrolled && !isNearBottom
+    
+    // Update last scroll position
+    lastScrollY = currentScrollY
+    
+    if (shouldShow) {
+      setShowScrollButton(true)
+      // Clear existing timeout
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout)
+      }
+      // Hide button after 3 seconds of no scrolling (unless hovered)
+      scrollTimeout = window.setTimeout(() => {
+        if (!isButtonHovered()) {
+          setShowScrollButton(false)
+        }
+      }, 3000)
+    } else if (!isButtonHovered()) {
+      // Only hide if not hovered (to prevent disappearing while user is about to click)
+      setShowScrollButton(false)
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout)
+      }
+    }
+  }
+
+  const handleButtonMouseEnter = () => {
+    setIsButtonHovered(true)
+    // Clear timeout when hovering
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout)
+    }
+  }
+
+  const handleButtonMouseLeave = () => {
+    setIsButtonHovered(false)
+    // Restart timeout when leaving hover
+    if (showScrollButton()) {
+      scrollTimeout = window.setTimeout(() => {
+        if (!isButtonHovered()) {
+          setShowScrollButton(false)
+        }
+      }, 3000)
+    }
+  }
+
+  const scrollToBottom = () => {
+    document.body.scrollIntoView({ behavior: "smooth", block: "end" })
+  }
+
+  onMount(() => {
+    lastScrollY = window.scrollY // Initialize scroll position
+    checkScrollNeed()
+    window.addEventListener("scroll", checkScrollNeed)
+    window.addEventListener("resize", checkScrollNeed)
+  })
+
+  onCleanup(() => {
+    window.removeEventListener("scroll", checkScrollNeed)
+    window.removeEventListener("resize", checkScrollNeed)
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout)
+    }
+  })
+
   const data = createMemo(() => {
     const result = {
       rootDir: undefined as string | undefined,
@@ -875,6 +953,7 @@ export default function Share(props: {
               </span>
             )}
           </div>
+
         </div>
       </div>
 
@@ -1974,6 +2053,21 @@ export default function Share(props: {
             </Show>
           </div>
         </div>
+      </Show>
+
+      {/* Floating scroll to bottom button */}
+      <Show when={showScrollButton()}>
+        <button
+          type="button"
+          class={styles.scrollButton}
+          onClick={scrollToBottom}
+          onMouseEnter={handleButtonMouseEnter}
+          onMouseLeave={handleButtonMouseLeave}
+          title="Scroll to bottom"
+          aria-label="Scroll to bottom"
+        >
+          <IconArrowDown width={20} height={20} />
+        </button>
       </Show>
     </main>
   )
