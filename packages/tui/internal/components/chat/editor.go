@@ -182,8 +182,6 @@ func (m *editorComponent) GetSize() (width, height int) {
 func (m *editorComponent) SetSize(width, height int) tea.Cmd {
 	m.width = width
 	m.height = height
-	m.textarea.SetWidth(width - 5) // account for the prompt and padding right
-	// m.textarea.SetHeight(height - 4)
 	return nil
 }
 
@@ -329,10 +327,11 @@ func createTextArea(existing *textarea.Model) textarea.Model {
 	ta.Prompt = " "
 	ta.ShowLineNumbers = false
 	ta.CharLimit = -1
+	ta.SetWidth(layout.Current.Container.Width - 6)
 
 	if existing != nil {
 		ta.SetValue(existing.Value())
-		ta.SetWidth(existing.Width())
+		// ta.SetWidth(existing.Width())
 		ta.SetHeight(existing.Height())
 	}
 
