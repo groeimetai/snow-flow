@@ -49,14 +49,14 @@ func (s sessionItem) Render(selected bool, width int) string {
 			// Red background for delete confirmation
 			itemStyle = baseStyle.
 				Background(t.Error()).
-				Foreground(t.Background()).
+				Foreground(t.BackgroundElement()).
 				Width(width).
 				PaddingLeft(1)
 		} else {
 			// Normal selection
 			itemStyle = baseStyle.
 				Background(t.Primary()).
-				Foreground(t.Background()).
+				Foreground(t.BackgroundElement()).
 				Width(width).
 				PaddingLeft(1)
 		}
