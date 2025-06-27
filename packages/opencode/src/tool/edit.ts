@@ -80,6 +80,7 @@ export const EditTool = Tool.define({
       )
       await file.write(contentNew)
       await Format.run(filepath)
+      contentNew = await file.text()
     })()
 
     const diff = trimDiff(
