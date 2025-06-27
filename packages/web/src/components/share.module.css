@@ -784,3 +784,31 @@
     }
   }
 }
+
+.scroll-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--sl-color-divider);
+  background-color: var(--sl-color-bg-surface);
+  color: var(--sl-color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease, opacity 0.5s ease;
+  z-index: 100;
+  appearance: none;
+  opacity: 1;
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  svg {
+    display: block;
+  }
+}
