@@ -167,6 +167,32 @@ export namespace Config {
         .record(z.string(), Mcp)
         .optional()
         .describe("MCP (Model Context Protocol) server configurations"),
+      experimental: z
+        .object({
+          hook: z
+            .object({
+              file_edited: z
+                .record(
+                  z.string(),
+                  z
+                    .object({
+                      command: z.string().array(),
+                      environment: z.record(z.string(), z.string()).optional(),
+                    })
+                    .array(),
+                )
+                .optional(),
+              session_completed: z
+                .object({
+                  command: z.string().array(),
+                  environment: z.record(z.string(), z.string()).optional(),
+                })
+                .array()
+                .optional(),
+            })
+            .optional(),
+        })
+        .optional(),
     })
     .strict()
     .openapi({

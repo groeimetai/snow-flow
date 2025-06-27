@@ -6,6 +6,7 @@ import { LSP } from "../lsp"
 import { Permission } from "../permission"
 import DESCRIPTION from "./write.txt"
 import { App } from "../app/app"
+import { Format } from "../format"
 
 export const WriteTool = Tool.define({
   id: "write",
@@ -42,6 +43,7 @@ export const WriteTool = Tool.define({
     })
 
     await Bun.write(filepath, params.content)
+    await Format.run(filepath)
     FileTimes.read(ctx.sessionID, filepath)
 
     let output = ""
