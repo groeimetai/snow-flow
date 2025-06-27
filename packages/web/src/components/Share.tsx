@@ -595,11 +595,16 @@ export default function Share(props: {
   info: Session.Info
   messages: Record<string, Message.Info>
 }) {
+  let lastScrollY = 0
   let hasScrolled = false
+  let scrollTimeout: number | undefined
 
   const id = props.id
   const params = new URLSearchParams(window.location.search)
   const debug = params.get("debug") === "true"
+
+  const [showScrollButton, setShowScrollButton] = createSignal(false)
+  const [isButtonHovered, setIsButtonHovered] = createSignal(false)
 
   const anchorId = createMemo<string | null>(() => {
     const raw = window.location.hash.slice(1)
@@ -716,23 +721,18 @@ export default function Share(props: {
     })
   })
 
-  const [showScrollButton, setShowScrollButton] = createSignal(false)
-  const [isButtonHovered, setIsButtonHovered] = createSignal(false)
-  let scrollTimeout: number | undefined
-  let lastScrollY = 0
-
-  const checkScrollNeed = () => {
+  function checkScrollNeed() {
     const currentScrollY = window.scrollY
     const isScrollingDown = currentScrollY > lastScrollY
     const scrolled = currentScrollY > 200 // Show after scrolling 200px
     const isNearBottom = window.innerHeight + currentScrollY >= document.body.scrollHeight - 100
-    
+
     // Only show when scrolling down, scrolled enough, and not near bottom
     const shouldShow = isScrollingDown && scrolled && !isNearBottom
-    
+
     // Update last scroll position
     lastScrollY = currentScrollY
-    
+
     if (shouldShow) {
       setShowScrollButton(true)
       // Clear existing timeout
@@ -752,30 +752,6 @@ export default function Share(props: {
         clearTimeout(scrollTimeout)
       }
     }
-  }
-
-  const handleButtonMouseEnter = () => {
-    setIsButtonHovered(true)
-    // Clear timeout when hovering
-    if (scrollTimeout) {
-      clearTimeout(scrollTimeout)
-    }
-  }
-
-  const handleButtonMouseLeave = () => {
-    setIsButtonHovered(false)
-    // Restart timeout when leaving hover
-    if (showScrollButton()) {
-      scrollTimeout = window.setTimeout(() => {
-        if (!isButtonHovered()) {
-          setShowScrollButton(false)
-        }
-      }, 3000)
-    }
-  }
-
-  const scrollToBottom = () => {
-    document.body.scrollIntoView({ behavior: "smooth", block: "end" })
   }
 
   onMount(() => {
@@ -1982,14 +1958,29 @@ export default function Share(props: {
         </div>
       </Show>
 
-      {/* Floating scroll to bottom button */}
       <Show when={showScrollButton()}>
         <button
           type="button"
-          class={styles.scrollButton}
-          onClick={scrollToBottom}
-          onMouseEnter={handleButtonMouseEnter}
-          onMouseLeave={handleButtonMouseLeave}
+          class={styles["scroll-button"]}
+          onClick={() =>
+            document.body.scrollIntoView({ behavior: "smooth", block: "end" })
+          }
+          onMouseEnter={() => {
+            setIsButtonHovered(true)
+            if (scrollTimeout) {
+              clearTimeout(scrollTimeout)
+            }
+          }}
+          onMouseLeave={() => {
+            setIsButtonHovered(false)
+            if (showScrollButton()) {
+              scrollTimeout = window.setTimeout(() => {
+                if (!isButtonHovered()) {
+                  setShowScrollButton(false)
+                }
+              }, 3000)
+            }
+          }}
           title="Scroll to bottom"
           aria-label="Scroll to bottom"
         >
