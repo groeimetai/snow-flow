@@ -202,10 +202,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "input",
-                    "output"
-                  ],
+                  "required": ["input", "output"],
                   "additionalProperties": false
                 },
                 "limit": {
@@ -218,10 +215,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "context",
-                    "output"
-                  ],
+                  "required": ["context", "output"],
                   "additionalProperties": false
                 },
                 "id": {
@@ -240,9 +234,7 @@
             "additionalProperties": {}
           }
         },
-        "required": [
-          "models"
-        ],
+        "required": ["models"],
         "additionalProperties": false
       },
       "description": "Custom provider configurations and model overrides"
@@ -274,10 +266,7 @@
                 "description": "Environment variables to set when running the MCP server"
               }
             },
-            "required": [
-              "type",
-              "command"
-            ],
+            "required": ["type", "command"],
             "additionalProperties": false
           },
           {
@@ -293,10 +282,7 @@
                 "description": "URL of the remote MCP server"
               }
             },
-            "required": [
-              "type",
-              "url"
-            ],
+            "required": ["type", "url"],
             "additionalProperties": false
           }
         ]
@@ -329,9 +315,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "command"
-                  ],
+                  "required": ["command"],
                   "additionalProperties": false
                 }
               }
@@ -354,9 +338,7 @@
                     }
                   }
                 },
-                "required": [
-                  "command"
-                ],
+                "required": ["command"],
                 "additionalProperties": false
               }
             }

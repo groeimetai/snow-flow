@@ -3,7 +3,11 @@
   "experimental": {
     "hook": {
       "file_edited": {
-        ".json": []
+        ".json": [
+          {
+            "command": ["bun", "run", "prettier", "$FILE"]
+          }
+        ]
       },
       "session_completed": [
         {

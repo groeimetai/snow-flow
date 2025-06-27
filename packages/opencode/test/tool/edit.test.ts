@@ -316,13 +316,13 @@ const testCases: TestCase[] = [
   // WhitespaceNormalizedReplacer - test regex special characters that could cause errors
   {
     content: 'const pattern = "test[123]";',
-    find: 'test[123]',
-    replace: 'test[456]',
+    find: "test[123]",
+    replace: "test[456]",
   },
   {
     content: 'const regex = "^start.*end$";',
-    find: '^start.*end$',
-    replace: '^begin.*finish$',
+    find: "^start.*end$",
+    replace: "^begin.*finish$",
   },
 
   // EscapeNormalizedReplacer - test single backslash vs double backslash
