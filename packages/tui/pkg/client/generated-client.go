@@ -25,15 +25,17 @@ const (
 
 // AppInfo defines model for App.Info.
 type AppInfo struct {
-	Git  bool `json:"git"`
-	Path struct {
+	Git      bool   `json:"git"`
+	Hostname string `json:"hostname"`
+	Path     struct {
 		Config string `json:"config"`
 		Cwd    string `json:"cwd"`
 		Data   string `json:"data"`
 		Root   string `json:"root"`
 		State  string `json:"state"`
 	} `json:"path"`
-	Time struct {
+	Project string `json:"project"`
+	Time    struct {
 		Initialized *float32 `json:"initialized,omitempty"`
 	} `json:"time"`
 	User string `json:"user"`
@@ -51,8 +53,20 @@ type ConfigInfo struct {
 	Autoupdate *bool `json:"autoupdate,omitempty"`
 
 	// DisabledProviders Disable providers that are loaded automatically
-	DisabledProviders *[]string       `json:"disabled_providers,omitempty"`
-	Keybinds          *ConfigKeybinds `json:"keybinds,omitempty"`
+	DisabledProviders *[]string `json:"disabled_providers,omitempty"`
+	Experimental      *struct {
+		Hook *struct {
+			FileEdited *map[string][]struct {
+				Command     []string           `json:"command"`
+				Environment *map[string]string `json:"environment,omitempty"`
+			} `json:"file_edited,omitempty"`
+			SessionCompleted *[]struct {
+				Command     []string           `json:"command"`
+				Environment *map[string]string `json:"environment,omitempty"`
+			} `json:"session_completed,omitempty"`
+		} `json:"hook,omitempty"`
+	} `json:"experimental,omitempty"`
+	Keybinds *ConfigKeybinds `json:"keybinds,omitempty"`
 
 	// Mcp MCP (Model Context Protocol) server configurations
 	Mcp *map[string]ConfigInfo_Mcp_AdditionalProperties `json:"mcp,omitempty"`
@@ -432,6 +446,12 @@ type MessageToolInvocationToolResult struct {
 	Step       *float32     `json:"step,omitempty"`
 	ToolCallId string       `json:"toolCallId"`
 	ToolName   string       `json:"toolName"`
+}
+
+// MessageOutputLengthError defines model for MessageOutputLengthError.
+type MessageOutputLengthError struct {
+	Data map[string]interface{} `json:"data"`
+	Name string                 `json:"name"`
 }
 
 // ModelInfo defines model for Model.Info.
@@ -1110,6 +1130,34 @@ func (t *EventSessionError_Properties_Error) MergeUnknownError(v UnknownError) e
 	return err
 }
 
+// AsMessageOutputLengthError returns the union data inside the EventSessionError_Properties_Error as a MessageOutputLengthError
+func (t EventSessionError_Properties_Error) AsMessageOutputLengthError() (MessageOutputLengthError, error) {
+	var body MessageOutputLengthError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessageOutputLengthError overwrites any union data inside the EventSessionError_Properties_Error as the provided MessageOutputLengthError
+func (t *EventSessionError_Properties_Error) FromMessageOutputLengthError(v MessageOutputLengthError) error {
+	v.Name = "MessageOutputLengthError"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessageOutputLengthError performs a merge with any union data inside the EventSessionError_Properties_Error, using the provided MessageOutputLengthError
+func (t *EventSessionError_Properties_Error) MergeMessageOutputLengthError(v MessageOutputLengthError) error {
+	v.Name = "MessageOutputLengthError"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 func (t EventSessionError_Properties_Error) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"name"`
@@ -1124,6 +1172,8 @@ func (t EventSessionError_Properties_Error) ValueByDiscriminator() (interface{},
 		return nil, err
 	}
 	switch discriminator {
+	case "MessageOutputLengthError":
+		return t.AsMessageOutputLengthError()
 	case "ProviderAuthError":
 		return t.AsProviderAuthError()
 	case "UnknownError":
@@ -1199,6 +1249,34 @@ func (t *MessageMetadata_Error) MergeUnknownError(v UnknownError) error {
 	return err
 }
 
+// AsMessageOutputLengthError returns the union data inside the MessageMetadata_Error as a MessageOutputLengthError
+func (t MessageMetadata_Error) AsMessageOutputLengthError() (MessageOutputLengthError, error) {
+	var body MessageOutputLengthError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessageOutputLengthError overwrites any union data inside the MessageMetadata_Error as the provided MessageOutputLengthError
+func (t *MessageMetadata_Error) FromMessageOutputLengthError(v MessageOutputLengthError) error {
+	v.Name = "MessageOutputLengthError"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessageOutputLengthError performs a merge with any union data inside the MessageMetadata_Error, using the provided MessageOutputLengthError
+func (t *MessageMetadata_Error) MergeMessageOutputLengthError(v MessageOutputLengthError) error {
+	v.Name = "MessageOutputLengthError"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 func (t MessageMetadata_Error) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"name"`
@@ -1213,6 +1291,8 @@ func (t MessageMetadata_Error) ValueByDiscriminator() (interface{}, error) {
 		return nil, err
 	}
 	switch discriminator {
+	case "MessageOutputLengthError":
+		return t.AsMessageOutputLengthError()
 	case "ProviderAuthError":
 		return t.AsProviderAuthError()
 	case "UnknownError":
