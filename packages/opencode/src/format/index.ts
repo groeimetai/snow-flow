@@ -54,6 +54,8 @@ export namespace Format {
         cmd: item.command.map((x) => x.replace("$FILE", file)),
         cwd: App.info().path.cwd,
         env: item.environment,
+        stdout: "ignore",
+        stderr: "ignore",
       })
       const exit = await proc.exited
       if (exit !== 0)

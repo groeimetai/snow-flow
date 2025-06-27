@@ -537,6 +537,7 @@ export namespace Session {
       //   return step
       // },
       toolCallStreaming: true,
+      maxTokens: model.info.limit.output || undefined,
       abortSignal: abort.signal,
       maxSteps: 1000,
       providerOptions: model.info.options,
@@ -860,6 +861,8 @@ export namespace Session {
                 cmd: item.command,
                 cwd: App.info().path.cwd,
                 env: item.environment,
+                stdout: "ignore",
+                stderr: "ignore",
               })
             }
           }
