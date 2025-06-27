@@ -40,7 +40,7 @@ export namespace Config {
     })
     .strict()
     .openapi({
-      ref: "Config.McpLocal",
+      ref: "McpLocalConfig",
     })
 
   export const McpRemote = z
@@ -50,7 +50,7 @@ export namespace Config {
     })
     .strict()
     .openapi({
-      ref: "Config.McpRemote",
+      ref: "McpRemoteConfig",
     })
 
   export const Mcp = z.discriminatedUnion("type", [McpLocal, McpRemote])
@@ -124,7 +124,7 @@ export namespace Config {
     })
     .strict()
     .openapi({
-      ref: "Config.Keybinds",
+      ref: "KeybindsConfig",
     })
   export const Info = z
     .object({
@@ -197,7 +197,7 @@ export namespace Config {
     })
     .strict()
     .openapi({
-      ref: "Config.Info",
+      ref: "Config",
     })
 
   export type Info = z.output<typeof Info>

@@ -54,14 +54,7 @@ $ bun run packages/opencode/src/index.ts
 
 #### Development Notes
 
-**API Client Generation**: After making changes to the TypeScript API endpoints in `packages/opencode/src/server/server.ts`, you need to regenerate the Go client and OpenAPI specification:
-
-```bash
-$ cd packages/tui
-$ go generate ./pkg/client/
-```
-
-This updates the generated Go client code that the TUI uses to communicate with the backend server.
+**API Client**: After making changes to the TypeScript API endpoints in `packages/opencode/src/server/server.ts`, you will need the opencode team to generate a new stainless sdk for the clients.
 
 ### FAQ
 

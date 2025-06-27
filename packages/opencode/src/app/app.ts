@@ -27,7 +27,7 @@ export namespace App {
       }),
     })
     .openapi({
-      ref: "App.Info",
+      ref: "App",
     })
   export type Info = z.infer<typeof Info>
 
