@@ -859,59 +859,15 @@ export default function Share(props: {
           <h1>{store.info?.title}</h1>
         </div>
         <div data-section="row">
-          <ul data-section="stats">
-            <li>
-              <span data-element-label>Cost</span>
-              {data().cost !== undefined ? (
-                <span>${data().cost.toFixed(2)}</span>
-              ) : (
-                <span data-placeholder>&mdash;</span>
-              )}
-            </li>
-            <li>
-              <span data-element-label>Input Tokens</span>
-              {data().tokens.input ? (
-                <span>{data().tokens.input}</span>
-              ) : (
-                <span data-placeholder>&mdash;</span>
-              )}
-            </li>
-            <li>
-              <span data-element-label>Output Tokens</span>
-              {data().tokens.output ? (
-                <span>{data().tokens.output}</span>
-              ) : (
-                <span data-placeholder>&mdash;</span>
-              )}
-            </li>
-            <li>
-              <span data-element-label>Reasoning Tokens</span>
-              {data().tokens.reasoning ? (
-                <span>{data().tokens.reasoning}</span>
-              ) : (
-                <span data-placeholder>&mdash;</span>
-              )}
-            </li>
-          </ul>
-          <Show when={data().rootDir}>
-            <ul data-section="stats" data-section-root>
-              <li title="Project root">
-                <div data-stat-icon>
-                  <IconFolder width={16} height={16} />
-                </div>
-                <span>{data().rootDir}</span>
-              </li>
-              <li title="opencode version">
-                <div data-stat-icon title="opencode">
-                  <IconOpencode width={16} height={16} />
-                </div>
-                <Show when={store.info?.version} fallback="v0.0.1">
-                  <span>v{store.info?.version}</span>
-                </Show>
-              </li>
-            </ul>
-          </Show>
           <ul data-section="stats" data-section-models>
+            <li title="opencode version">
+              <div data-stat-icon title="opencode">
+                <IconOpencode width={16} height={16} />
+              </div>
+              <Show when={store.info?.version} fallback="v0.0.1">
+                <span>v{store.info?.version}</span>
+              </Show>
+            </li>
             {Object.values(data().models).length > 0 ? (
               <For each={Object.values(data().models)}>
                 {([provider, model]) => (
@@ -1305,12 +1261,12 @@ export default function Share(props: {
                         >
                           {(_part) => {
                             const path = createMemo(() =>
-                              toolData()?.args.path !== data().rootDir
+                              toolData()?.args?.path !== data().rootDir
                                 ? stripWorkingDirectory(
-                                  toolData()?.args.path,
+                                  toolData()?.args?.path,
                                   data().rootDir,
                                 )
-                                : toolData()?.args.path,
+                                : toolData()?.args?.path,
                             )
 
                             return (
@@ -1332,7 +1288,9 @@ export default function Share(props: {
                                   <div data-part-tool-body>
                                     <div data-part-title>
                                       <span data-element-label>LS</span>
-                                      <b>{path()}</b>
+                                      <b title={toolData()?.args?.path}>
+                                        {path()}
+                                      </b>
                                     </div>
                                     <Switch>
                                       <Match when={toolData()?.result}>
@@ -1375,7 +1333,7 @@ export default function Share(props: {
                           {(_part) => {
                             const filePath = createMemo(() =>
                               stripWorkingDirectory(
-                                toolData()?.args.filePath,
+                                toolData()?.args?.filePath,
                                 data().rootDir,
                               ),
                             )
@@ -1398,7 +1356,9 @@ export default function Share(props: {
                                   <div data-part-tool-body>
                                     <div data-part-title>
                                       <span data-element-label>Read</span>
-                                      <b>{filePath()}</b>
+                                      <b title={toolData()?.args?.filePath}>
+                                        {filePath()}
+                                      </b>
                                     </div>
                                     <Switch>
                                       <Match when={hasError()}>
@@ -1499,7 +1459,9 @@ export default function Share(props: {
                                   <div data-part-tool-body>
                                     <div data-part-title>
                                       <span data-element-label>Write</span>
-                                      <b>{filePath()}</b>
+                                      <b title={toolData()?.args?.filePath}>
+                                        {filePath()}
+                                      </b>
                                     </div>
                                     <Show when={diagnostics().length > 0}>
                                       <ErrorPart>{diagnostics()}</ErrorPart>
@@ -1586,7 +1548,9 @@ export default function Share(props: {
                                   <div data-part-tool-body>
                                     <div data-part-title>
                                       <span data-element-label>Edit</span>
-                                      <b>{filePath()}</b>
+                                      <b title={toolData()?.args?.filePath}>
+                                        {filePath()}
+                                      </b>
                                     </div>
                                     <Switch>
                                       <Match when={hasError()}>
@@ -1935,13 +1899,47 @@ export default function Share(props: {
                 </For>
               )}
             </For>
-            <div data-section="part" data-part-type="connection-status">
+            <div data-section="part" data-part-type="summary">
               <div data-section="decoration">
                 <span data-status={connectionStatus()[0]}></span>
                 <div></div>
               </div>
               <div data-section="content">
-                <span>{getStatusText(connectionStatus())}</span>
+                <p data-section="copy">{getStatusText(connectionStatus())}</p>
+                <ul data-section="stats">
+                  <li>
+                    <span data-element-label>Cost</span>
+                    {data().cost !== undefined ? (
+                      <span>${data().cost.toFixed(2)}</span>
+                    ) : (
+                      <span data-placeholder>&mdash;</span>
+                    )}
+                  </li>
+                  <li>
+                    <span data-element-label>Input Tokens</span>
+                    {data().tokens.input ? (
+                      <span>{data().tokens.input}</span>
+                    ) : (
+                      <span data-placeholder>&mdash;</span>
+                    )}
+                  </li>
+                  <li>
+                    <span data-element-label>Output Tokens</span>
+                    {data().tokens.output ? (
+                      <span>{data().tokens.output}</span>
+                    ) : (
+                      <span data-placeholder>&mdash;</span>
+                    )}
+                  </li>
+                  <li>
+                    <span data-element-label>Reasoning Tokens</span>
+                    {data().tokens.reasoning ? (
+                      <span>{data().tokens.reasoning}</span>
+                    ) : (
+                      <span data-placeholder>&mdash;</span>
+                    )}
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
