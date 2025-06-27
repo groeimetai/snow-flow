@@ -183,6 +183,9 @@
                 "temperature": {
                   "type": "boolean"
                 },
+                "tool_call": {
+                  "type": "boolean"
+                },
                 "cost": {
                   "type": "object",
                   "properties": {
@@ -223,6 +226,10 @@
                 },
                 "id": {
                   "type": "string"
+                },
+                "options": {
+                  "type": "object",
+                  "additionalProperties": {}
                 }
               },
               "additionalProperties": false
@@ -295,6 +302,69 @@
         ]
       },
       "description": "MCP (Model Context Protocol) server configurations"
+    },
+    "experimental": {
+      "type": "object",
+      "properties": {
+        "hook": {
+          "type": "object",
+          "properties": {
+            "file_edited": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "command": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "environment": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "command"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "session_completed": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "environment": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "command"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false,

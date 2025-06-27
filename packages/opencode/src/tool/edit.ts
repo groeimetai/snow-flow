@@ -11,6 +11,7 @@ import { createTwoFilesPatch } from "diff"
 import { Permission } from "../permission"
 import DESCRIPTION from "./edit.txt"
 import { App } from "../app/app"
+import { Format } from "../format"
 
 export const EditTool = Tool.define({
   id: "edit",
@@ -59,6 +60,7 @@ export const EditTool = Tool.define({
       if (params.oldString === "") {
         contentNew = params.newString
         await Bun.write(filepath, params.newString)
+        await Format.run(filepath)
         return
       }
 
@@ -77,6 +79,7 @@ export const EditTool = Tool.define({
         params.replaceAll,
       )
       await file.write(contentNew)
+      await Format.run(filepath)
     })()
 
     const diff = trimDiff(
@@ -473,7 +476,7 @@ export function replace(
   if (oldString === newString) {
     throw new Error("oldString and newString must be different")
   }
-  
+
   for (const replacer of [
     SimpleReplacer,
     LineTrimmedReplacer,
