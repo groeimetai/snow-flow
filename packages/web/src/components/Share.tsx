@@ -85,7 +85,7 @@ function scrollToAnchor(id: string) {
   el.scrollIntoView({ behavior: "smooth" })
 }
 
-function stripWorkingDirectory(filePath: string, workingDir?: string) {
+function stripWorkingDirectory(filePath?: string, workingDir?: string) {
   if (filePath === undefined || workingDir === undefined) return filePath
 
   const prefix = workingDir.endsWith("/") ? workingDir : workingDir + "/"
@@ -1307,9 +1307,9 @@ export default function Share(props: {
                             const path = createMemo(() =>
                               toolData()?.args.path !== data().rootDir
                                 ? stripWorkingDirectory(
-                                    toolData()?.args.path,
-                                    data().rootDir,
-                                  )
+                                  toolData()?.args.path,
+                                  data().rootDir,
+                                )
                                 : toolData()?.args.path,
                             )
 
@@ -1470,7 +1470,7 @@ export default function Share(props: {
                           {(_part) => {
                             const filePath = createMemo(() =>
                               stripWorkingDirectory(
-                                toolData()?.args.filePath,
+                                toolData()?.args?.filePath,
                                 data().rootDir,
                               ),
                             )
@@ -1509,7 +1509,7 @@ export default function Share(props: {
                                         <div data-part-tool-result>
                                           <ErrorPart>
                                             {formatErrorString(
-                                              toolData()?.result,
+                                              toolData()?.result
                                             )}
                                           </ErrorPart>
                                         </div>
@@ -1528,7 +1528,7 @@ export default function Share(props: {
                                             <div data-part-tool-code>
                                               <CodeBlock
                                                 lang={getShikiLang(filePath())}
-                                                code={args.content}
+                                                code={toolData()?.args?.content}
                                               />
                                             </div>
                                           </Show>
