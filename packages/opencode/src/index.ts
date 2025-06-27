@@ -74,15 +74,15 @@ try {
       ...obj.data,
     })
   }
-  
+
   if (e instanceof Error) {
     Object.assign(data, {
       name: e.name,
       message: e.message,
       cause: e.cause?.toString(),
     })
-  } 
-  
+  }
+
   if (e instanceof ResolveMessage) {
     Object.assign(data, {
       name: e.name,
@@ -92,7 +92,7 @@ try {
       referrer: e.referrer,
       position: e.position,
       importKind: e.importKind,
-    });
+    })
   }
   Log.Default.error("fatal", data)
   const formatted = FormatError(e)
@@ -101,6 +101,7 @@ try {
     UI.error(
       "Unexpected error, check log file at " + Log.file() + " for more details",
     )
+  process.exitCode = 1
 }
 
 cancel.abort()
