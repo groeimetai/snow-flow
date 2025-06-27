@@ -226,11 +226,18 @@ func renderText(message client.MessageInfo, text string, author string) string {
 	if message.Role == client.Assistant {
 		markdownWidth = width - padding - 4 - 3
 	}
-	if message.Role == client.User {
-		text = strings.ReplaceAll(text, "<", "\\<")
-		text = strings.ReplaceAll(text, ">", "\\>")
+	minWidth := max(markdownWidth, (width-4)/2)
+	messageStyle := styles.NewStyle().
+		Width(minWidth).
+		Background(t.BackgroundPanel()).
+		Foreground(t.Text())
+	if textWidth < minWidth {
+		messageStyle = messageStyle.AlignHorizontal(lipgloss.Right)
 	}
-	content := toMarkdown(text, markdownWidth, t.BackgroundPanel())
+	content := messageStyle.Render(text)
+	if message.Role == client.Assistant {
+		content = toMarkdown(text, markdownWidth, t.BackgroundPanel())
+	}
 	content = strings.Join([]string{content, info}, "\n")
 
 	switch message.Role {
@@ -409,7 +416,7 @@ func renderToolInvocation(
 			title = fmt.Sprintf("WRITE %s", relative(filename))
 			if content, ok := toolArgsMap["content"].(string); ok {
 				body = renderFile(filename, content)
-				
+
 				// Add diagnostics at the bottom if they exist
 				if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
 					body += "\n" + renderContentBlock(diagnostics, WithFullWidth(), WithBorderColor(t.Error()))
@@ -753,7 +760,7 @@ func renderDiagnostics(metadata client.MessageMetadata_Tool_AdditionalProperties
 			continue
 		}
 
-		line := diag.Range.Start.Line + 1      // 1-based
+		line := diag.Range.Start.Line + 1        // 1-based
 		column := diag.Range.Start.Character + 1 // 1-based
 		errorDiagnostics = append(errorDiagnostics, fmt.Sprintf("Error [%d:%d] %s", line, column, diag.Message))
 	}
