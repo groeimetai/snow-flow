@@ -102,6 +102,9 @@ export const TuiCommand = cmd({
         UI.println(UI.logo("   "))
         UI.empty()
         await AuthLoginCommand.handler(args)
+        UI.empty()
+        UI.println("Provider configured - please run again")
+        return
       }
     }
   },
