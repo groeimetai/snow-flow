@@ -9,7 +9,6 @@ import fs from "fs/promises"
 import { Installation } from "../../installation"
 import { Config } from "../../config/config"
 import { Bus } from "../../bus"
-import { AuthLoginCommand } from "./auth"
 
 export const TuiCommand = cmd({
   command: "$0 [project]",
@@ -100,11 +99,15 @@ export const TuiCommand = cmd({
       if (result === "needs_provider") {
         UI.empty()
         UI.println(UI.logo("   "))
+        const result = await Bun.spawn({
+          cmd: [process.execPath, "auth", "login"],
+          cwd: process.cwd(),
+          stdout: "inherit",
+          stderr: "inherit",
+          stdin: "inherit",
+        }).exited
+        if (result !== 0) return
         UI.empty()
-        await AuthLoginCommand.handler(args)
-        UI.empty()
-        UI.println("Provider configured - please run again")
-        return
       }
     }
   },
