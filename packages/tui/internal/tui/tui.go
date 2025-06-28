@@ -341,6 +341,9 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case opencode.EventListResponseEventSessionError:
 		switch err := msg.Properties.Error.AsUnion().(type) {
 		case nil:
+		case opencode.ProviderAuthError:
+			slog.Error("Failed to authenticate with provider", "error", err.Data.Message)
+			return a, toast.NewErrorToast("Provider error: " + err.Data.Message)
 		case opencode.UnknownError:
 			slog.Error("Server error", "name", err.Name, "message", err.Data.Message)
 			return a, toast.NewErrorToast(err.Data.Message, toast.WithTitle(string(err.Name)))
@@ -535,11 +538,14 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		if a.app.Session.ID == "" {
 			return a, nil
 		}
-		_, err := a.app.Client.Session.Share(context.Background(), a.app.Session.ID)
+		response, err := a.app.Client.Session.Share(context.Background(), a.app.Session.ID)
 		if err != nil {
 			slog.Error("Failed to share session", "error", err)
 			return a, toast.NewErrorToast("Failed to share session")
 		}
+		shareUrl := response.Share.URL
+		cmds = append(cmds, tea.SetClipboard(shareUrl))
+		cmds = append(cmds, toast.NewSuccessToast("Share URL copied to clipboard!"))
 	case commands.SessionInterruptCommand:
 		if a.app.Session.ID == "" {
 			return a, nil
