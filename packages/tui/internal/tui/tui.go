@@ -56,6 +56,7 @@ type appModel struct {
 	isLeaderSequence     bool
 	toastManager         *toast.ToastManager
 	interruptKeyState    InterruptKeyState
+	lastScroll           time.Time
 }
 
 func (a appModel) Init() tea.Cmd {
@@ -81,12 +82,32 @@ func (a appModel) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+var BUGGED_SCROLL_KEYS = map[string]bool{
+	"0": true,
+	"1": true,
+	"2": true,
+	"3": true,
+	"4": true,
+	"5": true,
+	"6": true,
+	"7": true,
+	"8": true,
+	"9": true,
+	"M": true,
+	"m": true,
+	"[": true,
+	";": true,
+}
+
 func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		keyString := msg.String()
+		if time.Since(a.lastScroll) < time.Millisecond*100 && BUGGED_SCROLL_KEYS[keyString] {
+			return a, nil
+		}
 
 		// 1. Handle active modal
 		if a.modal != nil {
@@ -222,6 +243,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.editor = updatedEditor.(chat.EditorComponent)
 		return a, cmd
 	case tea.MouseWheelMsg:
+		a.lastScroll = time.Now()
 		if a.modal != nil {
 			return a, nil
 		}
