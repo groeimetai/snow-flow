@@ -47,8 +47,6 @@ type appModel struct {
 	status               status.StatusComponent
 	editor               chat.EditorComponent
 	messages             chat.MessagesComponent
-	editorContainer      layout.Container
-	layout               layout.FlexLayout
 	completions          dialog.CompletionDialog
 	completionManager    *completions.CompletionManager
 	showCompletionDialog bool
@@ -360,7 +358,10 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Width: min(a.width, 80),
 			},
 		}
-		a.layout.SetSize(a.width, a.height)
+		// Update child component sizes
+		messagesHeight := a.height - 6 // Leave room for editor and status bar
+		a.messages.SetSize(a.width, messagesHeight)
+		a.editor.SetSize(min(a.width, 80), 5)
 	case app.SessionSelectedMsg:
 		messages, err := a.app.ListMessages(context.Background(), msg.ID)
 		if err != nil {
@@ -424,33 +425,69 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a appModel) View() string {
-	layoutView := a.layout.View()
-	editorWidth, _ := a.editorContainer.GetSize()
-	editorX, editorY := a.editorContainer.GetPosition()
+	messagesView := a.messages.View()
+	editorView := a.editor.View()
+
+	editorHeight := lipgloss.Height(editorView)
+	if editorHeight < 5 {
+		editorHeight = 5
+	}
+
+	t := theme.CurrentTheme()
+	centeredEditorView := lipgloss.PlaceHorizontal(
+		a.width,
+		lipgloss.Center,
+		editorView,
+		styles.WhitespaceStyle(t.Background()),
+	)
+
+	mainLayout := layout.Render(
+		layout.FlexOptions{
+			Direction: layout.Column,
+			Width:     a.width,
+			Height:    a.height - 1, // Leave room for status bar
+		},
+		layout.FlexItem{
+			View: messagesView,
+			Grow: true,
+		},
+		layout.FlexItem{
+			View:      centeredEditorView,
+			FixedSize: editorHeight,
+		},
+	)
 
 	if a.editor.Lines() > 1 {
-		editorY = editorY - a.editor.Lines() + 1
-		layoutView = layout.PlaceOverlay(
+		editorWidth := min(a.width, 80)
+		editorX := (a.width - editorWidth) / 2
+		editorY := a.height - editorHeight - 1 // Position from bottom, accounting for status bar
+
+		mainLayout = layout.PlaceOverlay(
 			editorX,
 			editorY,
 			a.editor.Content(),
-			layoutView,
+			mainLayout,
 		)
 	}
 
 	if a.showCompletionDialog {
+		editorWidth := min(a.width, 80)
+		editorX := (a.width - editorWidth) / 2
 		a.completions.SetWidth(editorWidth)
 		overlay := a.completions.View()
-		layoutView = layout.PlaceOverlay(
+		overlayHeight := lipgloss.Height(overlay)
+		editorY := a.height - editorHeight - 1
+
+		mainLayout = layout.PlaceOverlay(
 			editorX,
-			editorY-lipgloss.Height(overlay)+2,
+			editorY-overlayHeight,
 			overlay,
-			layoutView,
+			mainLayout,
 		)
 	}
 
 	components := []string{
-		layoutView,
+		mainLayout,
 		a.status.View(),
 	}
 	appView := strings.Join(components, "\n")
@@ -464,6 +501,7 @@ func (a appModel) View() string {
 	if theme.CurrentThemeUsesAnsiColors() {
 		appView = util.ConvertRGBToAnsi16Colors(appView)
 	}
+
 	return appView
 }
 
@@ -653,13 +691,6 @@ func NewModel(app *app.App) tea.Model {
 	editor := chat.NewEditorComponent(app)
 	completions := dialog.NewCompletionDialogComponent(initialProvider)
 
-	editorContainer := layout.NewContainer(
-		editor,
-		layout.WithMaxWidth(layout.Current.Container.Width),
-		layout.WithAlignCenter(),
-	)
-	messagesContainer := layout.NewContainer(messages)
-
 	var leaderBinding *key.Binding
 	if app.Config.Keybinds.Leader != "" {
 		binding := key.NewBinding(key.WithKeys(app.Config.Keybinds.Leader))
@@ -676,17 +707,8 @@ func NewModel(app *app.App) tea.Model {
 		leaderBinding:        leaderBinding,
 		isLeaderSequence:     false,
 		showCompletionDialog: false,
-		editorContainer:      editorContainer,
 		toastManager:         toast.NewToastManager(),
 		interruptKeyState:    InterruptKeyIdle,
-		layout: layout.NewFlexLayout(
-			[]tea.ViewModel{messagesContainer, editorContainer},
-			layout.WithDirection(layout.FlexDirectionVertical),
-			layout.WithSizes(
-				layout.FlexChildSizeGrow,
-				layout.FlexChildSizeFixed(5),
-			),
-		),
 	}
 
 	return model

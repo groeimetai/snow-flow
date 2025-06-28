@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/lipgloss/v2/compat"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/commands"
-	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 )
@@ -17,7 +16,7 @@ import (
 type CommandsComponent interface {
 	tea.Model
 	tea.ViewModel
-	layout.Sizeable
+	SetSize(width, height int) tea.Cmd
 	SetBackgroundColor(color compat.AdaptiveColor)
 }
 

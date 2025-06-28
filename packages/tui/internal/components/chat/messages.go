@@ -21,6 +21,7 @@ import (
 type MessagesComponent interface {
 	tea.Model
 	tea.ViewModel
+	SetSize(width, height int) tea.Cmd
 	PageUp() (tea.Model, tea.Cmd)
 	PageDown() (tea.Model, tea.Cmd)
 	HalfPageUp() (tea.Model, tea.Cmd)
@@ -311,6 +312,7 @@ func (m *messagesComponent) View() string {
 	if len(m.app.Messages) == 0 {
 		return m.home()
 	}
+	t := theme.CurrentTheme()
 	if m.rendering {
 		return lipgloss.Place(
 			m.width,
@@ -318,19 +320,18 @@ func (m *messagesComponent) View() string {
 			lipgloss.Center,
 			lipgloss.Center,
 			"Loading session...",
+			styles.WhitespaceStyle(t.Background()),
 		)
 	}
-	t := theme.CurrentTheme()
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		lipgloss.PlaceHorizontal(
-			m.width,
-			lipgloss.Center,
-			m.header(),
-			styles.WhitespaceStyle(t.Background()),
-		),
-		m.viewport.View(),
+	header := lipgloss.PlaceHorizontal(
+		m.width,
+		lipgloss.Center,
+		m.header(),
+		styles.WhitespaceStyle(t.Background()),
 	)
+	return styles.NewStyle().
+		Background(t.Background()).
+		Render(header + "\n" + m.viewport.View())
 }
 
 func (m *messagesComponent) home() string {
