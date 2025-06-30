@@ -74,3 +74,53 @@ export const prettier: Definition = {
     }
   },
 }
+
+export const zig: Definition = {
+  name: "zig",
+  command: ["zig", "fmt", "$FILE"],
+  extensions: [".zig", ".zon"],
+  async enabled() {
+    return Bun.which("zig") !== null
+  },
+}
+
+export const clang: Definition = {
+  name: "clang-format",
+  command: ["clang-format", "-i", "$FILE"],
+  extensions: [
+    ".c",
+    ".cc",
+    ".cpp",
+    ".cxx",
+    ".c++",
+    ".h",
+    ".hh",
+    ".hpp",
+    ".hxx",
+    ".h++",
+    ".ino",
+    ".C",
+    ".H",
+  ],
+  async enabled() {
+    return Bun.which("clang-format") !== null
+  },
+}
+
+export const ktlint: Definition = {
+  name: "ktlint",
+  command: ["ktlint", "-F", "$FILE"],
+  extensions: [".kt", ".kts"],
+  async enabled() {
+    return Bun.which("ktlint") !== null
+  },
+}
+
+export const ruff: Definition = {
+  name: "ruff",
+  command: ["ruff", "format", "$FILE"],
+  extensions: [".py", ".pyi"],
+  async enabled() {
+    return Bun.which("ruff") !== null
+  },
+}
