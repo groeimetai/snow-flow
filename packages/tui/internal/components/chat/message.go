@@ -359,11 +359,10 @@ func renderToolDetails(
 			}
 		}
 	case "bash":
-		stdout := metadata.JSON.ExtraFields["stdout"]
-		if !stdout.IsNull() {
+		stdout := metadata.ExtraFields["stdout"]
+		if stdout != nil {
 			command := toolArgsMap["command"].(string)
-			stdout := stdout.Raw()
-			body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
+			body = fmt.Sprintf("```console\n> %s\n%s\n```", command, stdout)
 			body = toMarkdown(body, width, t.BackgroundPanel())
 		}
 	case "webfetch":
