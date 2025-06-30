@@ -450,7 +450,6 @@ export namespace Provider {
     // LspHoverTool,
     PatchTool,
     ReadTool,
-    EditTool,
     // MultiEditTool,
     WriteTool,
     TodoWriteTool,
