@@ -14,7 +14,6 @@ import (
 )
 
 type CommandsComponent interface {
-	tea.Model
 	tea.ViewModel
 	SetSize(width, height int) tea.Cmd
 	SetBackgroundColor(color compat.AdaptiveColor)
@@ -41,19 +40,6 @@ func (c *commandsComponent) GetSize() (int, int) {
 
 func (c *commandsComponent) SetBackgroundColor(color compat.AdaptiveColor) {
 	c.background = &color
-}
-
-func (c *commandsComponent) Init() tea.Cmd {
-	return nil
-}
-
-func (c *commandsComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		c.width = msg.Width
-		c.height = msg.Height
-	}
-	return c, nil
 }
 
 func (c *commandsComponent) View() string {

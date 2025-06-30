@@ -17,6 +17,7 @@ import (
 	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/completions"
 	"github.com/sst/opencode/internal/components/chat"
+	cmdcomp "github.com/sst/opencode/internal/components/commands"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/components/status"
@@ -425,13 +426,13 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a appModel) View() string {
-	messagesView := a.messages.View()
 	editorView := a.editor.View()
-
-	editorHeight := lipgloss.Height(editorView)
-	if editorHeight < 5 {
-		editorHeight = 5
+	lines := a.editor.Lines()
+	messagesView := a.messages.View()
+	if a.app.Session.ID == "" {
+		messagesView = a.home()
 	}
+	editorHeight := max(lines, 5)
 
 	t := theme.CurrentTheme()
 	centeredEditorView := lipgloss.PlaceHorizontal(
@@ -445,7 +446,7 @@ func (a appModel) View() string {
 		layout.FlexOptions{
 			Direction: layout.Column,
 			Width:     a.width,
-			Height:    a.height - 1, // Leave room for status bar
+			Height:    a.height,
 		},
 		layout.FlexItem{
 			View: messagesView,
@@ -453,15 +454,18 @@ func (a appModel) View() string {
 		},
 		layout.FlexItem{
 			View:      centeredEditorView,
-			FixedSize: editorHeight,
+			FixedSize: 5,
 		},
+		// layout.FlexItem{
+		// 	View:      a.status.View(),
+		// 	FixedSize: 1,
+		// },
 	)
 
-	if a.editor.Lines() > 1 {
+	if lines > 1 {
 		editorWidth := min(a.width, 80)
 		editorX := (a.width - editorWidth) / 2
-		editorY := a.height - editorHeight - 1 // Position from bottom, accounting for status bar
-
+		editorY := a.height - editorHeight
 		mainLayout = layout.PlaceOverlay(
 			editorX,
 			editorY,
@@ -476,7 +480,7 @@ func (a appModel) View() string {
 		a.completions.SetWidth(editorWidth)
 		overlay := a.completions.View()
 		overlayHeight := lipgloss.Height(overlay)
-		editorY := a.height - editorHeight - 1
+		editorY := a.height - editorHeight + 1
 
 		mainLayout = layout.PlaceOverlay(
 			editorX,
@@ -486,23 +490,82 @@ func (a appModel) View() string {
 		)
 	}
 
-	components := []string{
-		mainLayout,
-		a.status.View(),
-	}
-	appView := strings.Join(components, "\n")
-
 	if a.modal != nil {
-		appView = a.modal.Render(appView)
+		mainLayout = a.modal.Render(mainLayout)
 	}
-
-	appView = a.toastManager.RenderOverlay(appView)
-
+	mainLayout = a.toastManager.RenderOverlay(mainLayout)
 	if theme.CurrentThemeUsesAnsiColors() {
-		appView = util.ConvertRGBToAnsi16Colors(appView)
+		mainLayout = util.ConvertRGBToAnsi16Colors(mainLayout)
 	}
+	return mainLayout + "\n" + a.status.View()
+}
 
-	return appView
+func (a appModel) home() string {
+	t := theme.CurrentTheme()
+	baseStyle := styles.NewStyle().Background(t.Background())
+	base := baseStyle.Render
+	muted := styles.NewStyle().Foreground(t.TextMuted()).Background(t.Background()).Render
+
+	open := `
+█▀▀█ █▀▀█ █▀▀ █▀▀▄ 
+█░░█ █░░█ █▀▀ █░░█ 
+▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ `
+	code := `
+█▀▀ █▀▀█ █▀▀▄ █▀▀
+█░░ █░░█ █░░█ █▀▀
+▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`
+
+	logo := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		muted(open),
+		base(code),
+	)
+	// cwd := app.Info.Path.Cwd
+	// config := app.Info.Path.Config
+
+	versionStyle := styles.NewStyle().
+		Foreground(t.TextMuted()).
+		Background(t.Background()).
+		Width(lipgloss.Width(logo)).
+		Align(lipgloss.Right)
+	version := versionStyle.Render(a.app.Version)
+
+	logoAndVersion := strings.Join([]string{logo, version}, "\n")
+	logoAndVersion = lipgloss.PlaceHorizontal(
+		a.width,
+		lipgloss.Center,
+		logoAndVersion,
+		styles.WhitespaceStyle(t.Background()),
+	)
+	commandsView := cmdcomp.New(
+		a.app,
+		cmdcomp.WithBackground(t.Background()),
+		cmdcomp.WithLimit(6),
+	)
+	cmds := lipgloss.PlaceHorizontal(
+		a.width,
+		lipgloss.Center,
+		commandsView.View(),
+		styles.WhitespaceStyle(t.Background()),
+	)
+
+	lines := []string{}
+	lines = append(lines, logoAndVersion)
+	lines = append(lines, "")
+	lines = append(lines, "")
+	// lines = append(lines, base("cwd ")+muted(cwd))
+	// lines = append(lines, base("config ")+muted(config))
+	// lines = append(lines, "")
+	lines = append(lines, cmds)
+
+	return lipgloss.Place(
+		a.width,
+		a.height-5,
+		lipgloss.Center,
+		lipgloss.Center,
+		baseStyle.Render(strings.Join(lines, "\n")),
+		styles.WhitespaceStyle(t.Background()),
+	)
 }
 
 func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {

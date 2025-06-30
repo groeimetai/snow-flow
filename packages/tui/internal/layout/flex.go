@@ -73,10 +73,7 @@ func Render(opts FlexOptions, items ...FlexItem) string {
 	}
 
 	// Calculate available space for grow items
-	availableSpace := mainAxisSize - totalFixedSize
-	if availableSpace < 0 {
-		availableSpace = 0
-	}
+	availableSpace := max(mainAxisSize-totalFixedSize, 0)
 
 	// Calculate size for each grow item
 	growItemSize := 0
@@ -164,10 +161,7 @@ func Render(opts FlexOptions, items ...FlexItem) string {
 	}
 
 	// Apply justification
-	remainingSpace := mainAxisSize - totalActualSize
-	if remainingSpace < 0 {
-		remainingSpace = 0
-	}
+	remainingSpace := max(mainAxisSize-totalActualSize, 0)
 
 	// Calculate spacing based on justification
 	var spaceBefore, spaceBetween, spaceAfter int
