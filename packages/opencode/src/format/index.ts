@@ -4,9 +4,7 @@ import { File } from "../file"
 import { Log } from "../util/log"
 import path from "path"
 
-import type { Definition } from "./definition"
-
-import * as Formatters from "./formatters"
+import * as Formatter from "./formatter"
 
 export namespace Format {
   const log = Log.create({ service: "format" })
@@ -19,7 +17,7 @@ export namespace Format {
     }
   })
 
-  async function isEnabled(item: Definition) {
+  async function isEnabled(item: Formatter.Info) {
     const s = state()
     let status = s.enabled[item.name]
     if (status === undefined) {
@@ -31,7 +29,7 @@ export namespace Format {
 
   async function getFormatter(ext: string) {
     const result = []
-    for (const item of Object.values(Formatters)) {
+    for (const item of Object.values(Formatter)) {
       if (!item.extensions.includes(ext)) continue
       if (!isEnabled(item)) continue
       result.push(item)

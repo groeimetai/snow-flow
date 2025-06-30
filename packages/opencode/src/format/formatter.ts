@@ -1,8 +1,15 @@
 import { App } from "../app/app"
 import { BunProc } from "../bun"
-import type { Definition } from "./definition"
 
-export const gofmt: Definition = {
+export interface Info {
+  name: string
+  command: string[]
+  environment?: Record<string, string>
+  extensions: string[]
+  enabled(): Promise<boolean>
+}
+
+export const gofmt: Info = {
   name: "gofmt",
   command: ["gofmt", "-w", "$FILE"],
   extensions: [".go"],
@@ -11,7 +18,7 @@ export const gofmt: Definition = {
   },
 }
 
-export const mix: Definition = {
+export const mix: Info = {
   name: "mix",
   command: ["mix", "format", "$FILE"],
   extensions: [".ex", ".exs", ".eex", ".heex", ".leex", ".neex", ".sface"],
@@ -20,7 +27,7 @@ export const mix: Definition = {
   },
 }
 
-export const prettier: Definition = {
+export const prettier: Info = {
   name: "prettier",
   command: [BunProc.which(), "run", "prettier", "--write", "$FILE"],
   environment: {
@@ -75,7 +82,7 @@ export const prettier: Definition = {
   },
 }
 
-export const zig: Definition = {
+export const zig: Info = {
   name: "zig",
   command: ["zig", "fmt", "$FILE"],
   extensions: [".zig", ".zon"],
@@ -84,7 +91,7 @@ export const zig: Definition = {
   },
 }
 
-export const clang: Definition = {
+export const clang: Info = {
   name: "clang-format",
   command: ["clang-format", "-i", "$FILE"],
   extensions: [
@@ -107,7 +114,7 @@ export const clang: Definition = {
   },
 }
 
-export const ktlint: Definition = {
+export const ktlint: Info = {
   name: "ktlint",
   command: ["ktlint", "-F", "$FILE"],
   extensions: [".kt", ".kts"],
@@ -116,7 +123,7 @@ export const ktlint: Definition = {
   },
 }
 
-export const ruff: Definition = {
+export const ruff: Info = {
   name: "ruff",
   command: ["ruff", "format", "$FILE"],
   extensions: [".py", ".pyi"],
