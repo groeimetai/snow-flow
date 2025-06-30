@@ -282,6 +282,8 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return updated, cmd
 			}
 		}
+	case error:
+		return a, toast.NewErrorToast(msg.Error())
 	case app.SendMsg:
 		a.showCompletionDialog = false
 		cmd := a.app.SendChatMessage(context.Background(), msg.Text, msg.Attachments)
