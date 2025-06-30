@@ -254,6 +254,7 @@ export namespace Provider {
         const parsedModel: ModelsDev.Model = {
           id: modelID,
           name: model.name ?? existing?.name ?? modelID,
+          release_date: model.release_date ?? existing?.release_date,
           attachment: model.attachment ?? existing?.attachment ?? false,
           reasoning: model.reasoning ?? existing?.reasoning ?? false,
           temperature: model.temperature ?? existing?.temperature ?? false,
