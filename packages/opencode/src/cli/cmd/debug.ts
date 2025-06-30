@@ -1,6 +1,7 @@
 import { App } from "../../app/app"
 import { Ripgrep } from "../../file/ripgrep"
 import { LSP } from "../../lsp"
+import { Log } from "../../util/log"
 import { bootstrap } from "../bootstrap"
 import { cmd } from "./cmd"
 
@@ -49,7 +50,7 @@ const SymbolsCommand = cmd({
   async handler(args) {
     await bootstrap({ cwd: process.cwd() }, async () => {
       await LSP.touchFile("./src/index.ts", true)
-      await new Promise((resolve) => setTimeout(resolve, 3000))
+      using _ = Log.Default.time("symbols")
       const results = await LSP.workspaceSymbol(args.query)
       console.log(JSON.stringify(results, null, 2))
     })

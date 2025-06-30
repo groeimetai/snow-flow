@@ -246,6 +246,7 @@ export namespace Provider {
         npm: provider.npm ?? existing?.npm,
         name: provider.name ?? existing?.name ?? providerID,
         env: provider.env ?? existing?.env ?? [],
+        api: provider.api ?? existing?.api,
         models: existing?.models ?? {},
       }
 
@@ -288,9 +289,14 @@ export namespace Provider {
     // load env
     for (const [providerID, provider] of Object.entries(database)) {
       if (disabled.has(providerID)) continue
-      if (provider.env.some((item) => process.env[item])) {
-        mergeProvider(providerID, {}, "env")
-      }
+      const apiKey = provider.env.map((item) => process.env[item]).at(0)
+      if (!apiKey) continue
+      mergeProvider(
+        providerID,
+        // only include apiKey if there's only one potential option
+        provider.env.length === 1 ? { apiKey } : {},
+        "env",
+      )
     }
 
     // load apikeys
