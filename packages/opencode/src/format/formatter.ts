@@ -131,3 +131,30 @@ export const ruff: Info = {
     return Bun.which("ruff") !== null
   },
 }
+
+export const rubocop: Info = {
+  name: "rubocop",
+  command: ["rubocop", "--autocorrect", "$FILE"],
+  extensions: [".rb", ".rake", ".gemspec", ".ru"],
+  async enabled() {
+    return Bun.which("rubocop") !== null
+  },
+}
+
+export const standardrb: Info = {
+  name: "standardrb",
+  command: ["standardrb", "--fix", "$FILE"],
+  extensions: [".rb", ".rake", ".gemspec", ".ru"],
+  async enabled() {
+    return Bun.which("standardrb") !== null
+  },
+}
+
+export const htmlbeautifier: Info = {
+  name: "htmlbeautifier",
+  command: ["htmlbeautifier", "$FILE"],
+  extensions: [".erb", ".html.erb"],
+  async enabled() {
+    return Bun.which("htmlbeautifier") !== null
+  },
+}
