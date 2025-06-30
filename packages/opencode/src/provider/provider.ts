@@ -140,10 +140,54 @@ export namespace Provider {
           credentialProvider: fromNodeProviderChain(),
         },
         async getModel(sdk: any, modelID: string) {
-          if (modelID.includes("claude")) {
-            const prefix = region.split("-")[0]
-            modelID = `${prefix}.${modelID}`
+          let regionPrefix = region.split("-")[0]
+
+          switch (regionPrefix) {
+            case "us": {
+              const modelRequiresPrefix = ["claude", "deepseek"].some((m) =>
+                modelID.includes(m),
+              )
+              if (modelRequiresPrefix) {
+                modelID = `${regionPrefix}.${modelID}`
+              }
+              break
+            }
+            case "eu": {
+              const regionRequiresPrefix = [
+                "eu-west-1",
+                "eu-west-3",
+                "eu-north-1",
+                "eu-central-1",
+                "eu-south-1",
+                "eu-south-2",
+              ].some((r) => region.includes(r))
+              const modelRequiresPrefix = [
+                "claude",
+                "nova-lite",
+                "nova-micro",
+                "llama3",
+                "pixtral",
+              ].some((m) => modelID.includes(m))
+              if (regionRequiresPrefix && modelRequiresPrefix) {
+                modelID = `${regionPrefix}.${modelID}`
+              }
+              break
+            }
+            case "ap": {
+              const modelRequiresPrefix = [
+                "claude",
+                "nova-lite",
+                "nova-micro",
+                "nova-pro",
+              ].some((m) => modelID.includes(m))
+              if (modelRequiresPrefix) {
+                regionPrefix = "apac"
+                modelID = `${regionPrefix}.${modelID}`
+              }
+              break
+            }
           }
+
           return sdk.languageModel(modelID)
         },
       }
