@@ -6,9 +6,7 @@ import path from "path"
 
 import type { Definition } from "./definition"
 
-import prettier from "./formatters/prettier"
-import mix from "./formatters/mix"
-import gofmt from "./formatters/gofmt"
+import * as Formatters from "./formatters"
 
 export namespace Format {
   const log = Log.create({ service: "format" })
@@ -33,7 +31,7 @@ export namespace Format {
 
   async function getFormatter(ext: string) {
     const result = []
-    for (const item of FORMATTERS) {
+    for (const item of Object.values(Formatters)) {
       if (!item.extensions.includes(ext)) continue
       if (!isEnabled(item)) continue
       result.push(item)
@@ -66,10 +64,4 @@ export namespace Format {
       }
     })
   }
-
-  const FORMATTERS: Definition[] = [
-    prettier,
-    mix,
-    gofmt,
-  ]
 }
