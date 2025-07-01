@@ -104,14 +104,15 @@ func (m *messagesComponent) renderView() {
 	defer measure("messageCount", len(m.app.Messages))
 
 	t := theme.CurrentTheme()
-	blocks := make([]string, 0)
 
 	align := lipgloss.Center
 	width := layout.Current.Container.Width
 
-	for _, message := range m.app.Messages {
+	sb := strings.Builder{}
+	util.WriteStringsPar(&sb, m.app.Messages, func(message opencode.Message) string {
 		var content string
 		var cached bool
+		blocks := make([]string, 0)
 
 		switch message.Role {
 		case opencode.MessageRoleUser:
@@ -224,7 +225,6 @@ func (m *messagesComponent) renderView() {
 					}
 				}
 			}
-
 		}
 
 		error := ""
@@ -247,20 +247,14 @@ func (m *messagesComponent) renderView() {
 			)
 			blocks = append(blocks, error)
 		}
-	}
 
-	centered := []string{}
-	for _, block := range blocks {
-		centered = append(centered, lipgloss.PlaceHorizontal(
-			m.width,
-			lipgloss.Center,
-			block+"\n",
-			styles.WhitespaceStyle(t.Background()),
-		))
-	}
+		return strings.Join(blocks, "\n\n")
+	})
+
+	content := sb.String()
 
 	m.viewport.SetHeight(m.height - lipgloss.Height(m.header()) + 1)
-	m.viewport.SetContent("\n" + strings.Join(centered, "\n"))
+	m.viewport.SetContent("\n" + content)
 }
 
 func (m *messagesComponent) header() string {
