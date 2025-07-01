@@ -1,3 +1,4 @@
+// Ripgrep utility functions
 import path from "path"
 import { Global } from "../global"
 import fs from "fs/promises"
@@ -8,6 +9,82 @@ import { $ } from "bun"
 import { Fzf } from "./fzf"
 
 export namespace Ripgrep {
+  const Stats = z.object({
+    elapsed: z.object({
+      secs: z.number(),
+      nanos: z.number(),
+      human: z.string(),
+    }),
+    searches: z.number(),
+    searches_with_match: z.number(),
+    bytes_searched: z.number(),
+    bytes_printed: z.number(),
+    matched_lines: z.number(),
+    matches: z.number(),
+  })
+
+  const Begin = z.object({
+    type: z.literal("begin"),
+    data: z.object({
+      path: z.object({
+        text: z.string(),
+      }),
+    }),
+  })
+
+  const Match = z.object({
+    type: z.literal("match"),
+    data: z.object({
+      path: z.object({
+        text: z.string(),
+      }),
+      lines: z.object({
+        text: z.string(),
+      }),
+      line_number: z.number(),
+      absolute_offset: z.number(),
+      submatches: z.array(
+        z.object({
+          match: z.object({
+            text: z.string(),
+          }),
+          start: z.number(),
+          end: z.number(),
+        }),
+      ),
+    }),
+  })
+
+  const End = z.object({
+    type: z.literal("end"),
+    data: z.object({
+      path: z.object({
+        text: z.string(),
+      }),
+      binary_offset: z.number().nullable(),
+      stats: Stats,
+    }),
+  })
+
+  const Summary = z.object({
+    type: z.literal("summary"),
+    data: z.object({
+      elapsed_total: z.object({
+        human: z.string(),
+        nanos: z.number(),
+        secs: z.number(),
+      }),
+      stats: Stats,
+    }),
+  })
+
+  const Result = z.union([Begin, Match, End, Summary])
+
+  export type Result = z.infer<typeof Result>
+  export type Match = z.infer<typeof Match>
+  export type Begin = z.infer<typeof Begin>
+  export type End = z.infer<typeof End>
+  export type Summary = z.infer<typeof Summary>
   const PLATFORM = {
     darwin: { platform: "apple-darwin", extension: "tar.gz" },
     linux: { platform: "unknown-linux-musl", extension: "tar.gz" },
@@ -228,5 +305,46 @@ export namespace Ripgrep {
     result.children.map((x) => render(x, 0))
 
     return lines.join("\n")
+  }
+
+  export async function search(input: {
+    cwd: string
+    pattern: string
+    glob?: string[]
+    limit?: number
+  }) {
+    const args = [
+      `${await filepath()}`,
+      "--json",
+      "--hidden",
+      "--glob='!.git/*'",
+    ]
+
+    if (input.glob) {
+      for (const g of input.glob) {
+        args.push(`--glob=${g}`)
+      }
+    }
+
+    if (input.limit) {
+      args.push(`--max-count=${input.limit}`)
+    }
+
+    args.push(input.pattern)
+
+    const command = args.join(" ")
+    const result = await $`${{ raw: command }}`.cwd(input.cwd).quiet().nothrow()
+    if (result.exitCode !== 0) {
+      return []
+    }
+
+    const lines = result.text().trim().split("\n").filter(Boolean)
+    // Parse JSON lines from ripgrep output
+
+    return lines
+      .map((line) => JSON.parse(line))
+      .map((parsed) => Result.parse(parsed))
+      .filter((r) => r.type === "match")
+      .map((r) => r.data)
   }
 }
