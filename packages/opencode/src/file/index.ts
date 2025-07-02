@@ -102,6 +102,7 @@ export namespace File {
     const full = path.join(app.path.cwd, file)
     const content = await Bun.file(full)
       .text()
+      .catch(() => "")
       .then((x) => x.trim())
     if (app.git) {
       const rel = path.relative(app.path.root, full)
