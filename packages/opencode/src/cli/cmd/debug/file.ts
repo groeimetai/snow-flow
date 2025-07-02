@@ -2,12 +2,6 @@ import { File } from "../../../file"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
 
-export const FileCommand = cmd({
-  command: "file",
-  builder: (yargs) => yargs.command(FileReadCommand).demandCommand(),
-  async handler() {},
-})
-
 const FileReadCommand = cmd({
   command: "read <path>",
   builder: (yargs) =>
@@ -22,4 +16,22 @@ const FileReadCommand = cmd({
       console.log(content)
     })
   },
+})
+
+const FileStatusCommand = cmd({
+  command: "status",
+  builder: (yargs) => yargs,
+  async handler() {
+    await bootstrap({ cwd: process.cwd() }, async () => {
+      const status = await File.status()
+      console.log(JSON.stringify(status, null, 2))
+    })
+  },
+})
+
+export const FileCommand = cmd({
+  command: "file",
+  builder: (yargs) =>
+    yargs.command(FileReadCommand).command(FileStatusCommand).demandCommand(),
+  async handler() {},
 })
