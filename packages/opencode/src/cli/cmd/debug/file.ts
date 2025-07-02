@@ -1,7 +1,6 @@
 import { File } from "../../../file"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
-import path from "path"
 
 export const FileCommand = cmd({
   command: "file",
@@ -19,7 +18,7 @@ const FileReadCommand = cmd({
     }),
   async handler(args) {
     await bootstrap({ cwd: process.cwd() }, async () => {
-      const content = await File.read(path.resolve(args.path))
+      const content = await File.read(args.path)
       console.log(content)
     })
   },

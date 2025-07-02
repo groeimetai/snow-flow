@@ -3,8 +3,14 @@ import { Bus } from "../bus"
 import { $ } from "bun"
 import { createPatch } from "diff"
 import path from "path"
+import { status } from "isomorphic-git"
+import { App } from "../app/app"
+import fs from "fs"
+import { Log } from "../util/log"
 
 export namespace File {
+  const log = Log.create({ service: "files" })
+
   export const Event = {
     Edited: Bus.event(
       "file.edited",
@@ -15,21 +21,24 @@ export namespace File {
   }
 
   export async function read(file: string) {
-    const content = await Bun.file(file).text()
-    const gitDiff = await $`git diff HEAD -- ${file}`
-      .cwd(path.dirname(file))
-      .quiet()
-      .nothrow()
-      .text()
-    if (gitDiff.trim()) {
-      const relativePath = path.relative(process.cwd(), file)
-      const originalContent = await $`git show HEAD:./${relativePath}`
-        .cwd(process.cwd())
-        .quiet()
-        .nothrow()
-        .text()
-      if (originalContent.trim()) {
-        const patch = createPatch(file, originalContent, content)
+    using _ = log.time("read", { file })
+    const app = App.info()
+    const full = path.join(app.path.cwd, file)
+    const content = await Bun.file(full).text()
+    if (app.git) {
+      const rel = path.relative(app.path.root, full)
+      const diff = await status({
+        fs,
+        dir: app.path.root,
+        filepath: rel,
+      })
+      if (diff !== "unmodified") {
+        const original = await $`git show HEAD:${rel}`
+          .cwd(app.path.root)
+          .quiet()
+          .nothrow()
+          .text()
+        const patch = createPatch(file, original, content)
         return patch
       }
     }
