@@ -24,9 +24,8 @@ export namespace File {
     const app = App.info()
     if (!app.git) return []
 
-    // Get all changed files with line counts in one command
     const diffOutput = await $`git diff --numstat HEAD`
-      .cwd(app.path.root)
+      .cwd(app.path.cwd)
       .quiet()
       .nothrow()
       .text()
@@ -46,9 +45,8 @@ export namespace File {
       }
     }
 
-    // Get untracked files
     const untrackedOutput = await $`git ls-files --others --exclude-standard`
-      .cwd(app.path.root)
+      .cwd(app.path.cwd)
       .quiet()
       .nothrow()
       .text()
@@ -75,7 +73,7 @@ export namespace File {
 
     // Get deleted files
     const deletedOutput = await $`git diff --name-only --diff-filter=D HEAD`
-      .cwd(app.path.root)
+      .cwd(app.path.cwd)
       .quiet()
       .nothrow()
       .text()
@@ -102,7 +100,9 @@ export namespace File {
     using _ = log.time("read", { file })
     const app = App.info()
     const full = path.join(app.path.cwd, file)
-    const content = await Bun.file(full).text()
+    const content = await Bun.file(full)
+      .text()
+      .then((x) => x.trim())
     if (app.git) {
       const rel = path.relative(app.path.root, full)
       const diff = await git.status({
@@ -119,9 +119,9 @@ export namespace File {
         const patch = createPatch(file, original, content, "old", "new", {
           context: Infinity,
         })
-        return patch
+        return { type: "patch", content: patch }
       }
     }
-    return content.trim()
+    return { type: "raw", content }
   }
 }
