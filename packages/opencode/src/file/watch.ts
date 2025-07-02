@@ -40,7 +40,7 @@ export namespace FileWatcher {
             },
           )
           return { watcher }
-        } finally {
+        } catch {
           return {}
         }
       },
