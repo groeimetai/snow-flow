@@ -205,6 +205,17 @@ export namespace Provider {
         },
       }
     },
+    openrouter: async (provider) => {
+      return {
+        autoload: false,
+        options: {
+          headers: {
+            "HTTP-Referer": "https://opencode.ai/",
+            "X-Title": "opencode",
+          },
+        },
+      }
+    },
   }
 
   const state = App.state("provider", async () => {
