@@ -27,7 +27,6 @@ type FindDialog interface {
 	SetWidth(width int)
 	SetHeight(height int)
 	IsEmpty() bool
-	SetProvider(provider CompletionProvider)
 }
 
 type findDialogComponent struct {
@@ -151,12 +150,6 @@ func (f *findDialogComponent) IsEmpty() bool {
 	return f.list.IsEmpty()
 }
 
-func (f *findDialogComponent) SetProvider(provider CompletionProvider) {
-	f.completionProvider = provider
-	f.list.SetEmptyMessage(" " + provider.GetEmptyMessage())
-	f.list.SetItems([]CompletionItemI{})
-}
-
 func (f *findDialogComponent) selectFile(item CompletionItemI) tea.Cmd {
 	return tea.Sequence(
 		f.Close(),
@@ -184,9 +177,15 @@ func createTextInput(existing *textinput.Model) textinput.Model {
 
 	ti := textinput.New()
 
-	ti.Styles.Blurred.Placeholder = styles.NewStyle().Foreground(textMutedColor).Background(bgColor).Lipgloss()
+	ti.Styles.Blurred.Placeholder = styles.NewStyle().
+		Foreground(textMutedColor).
+		Background(bgColor).
+		Lipgloss()
 	ti.Styles.Blurred.Text = styles.NewStyle().Foreground(textColor).Background(bgColor).Lipgloss()
-	ti.Styles.Focused.Placeholder = styles.NewStyle().Foreground(textMutedColor).Background(bgColor).Lipgloss()
+	ti.Styles.Focused.Placeholder = styles.NewStyle().
+		Foreground(textMutedColor).
+		Background(bgColor).
+		Lipgloss()
 	ti.Styles.Focused.Text = styles.NewStyle().Foreground(textColor).Background(bgColor).Lipgloss()
 	ti.Styles.Cursor.Color = t.Primary()
 	ti.VirtualCursor = true
@@ -213,7 +212,6 @@ func NewFindDialog(completionProvider CompletionProvider) FindDialog {
 		false,
 	)
 
-	// Load initial items
 	go func() {
 		items, err := completionProvider.GetChildEntries("")
 		if err != nil {

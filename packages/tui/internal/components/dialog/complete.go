@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/bubbles/v2/textarea"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
-	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -79,7 +78,6 @@ type CompletionDialog interface {
 	tea.ViewModel
 	SetWidth(width int)
 	IsEmpty() bool
-	SetProvider(provider CompletionProvider)
 }
 
 type completionDialogComponent struct {
@@ -114,8 +112,6 @@ func (c *completionDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case []CompletionItemI:
 		c.list.SetItems(msg)
-	case app.CompletionDialogTriggeredMsg:
-		c.pseudoSearchTextArea.SetValue(msg.InitialValue)
 	case tea.KeyMsg:
 		if c.pseudoSearchTextArea.Focused() {
 			if !key.Matches(msg, completionDialogKeys.Complete) {
@@ -214,19 +210,8 @@ func (c *completionDialogComponent) IsEmpty() bool {
 	return c.list.IsEmpty()
 }
 
-func (c *completionDialogComponent) SetProvider(provider CompletionProvider) {
-	if c.completionProvider.GetId() != provider.GetId() {
-		c.completionProvider = provider
-		c.list.SetEmptyMessage(" " + provider.GetEmptyMessage())
-		c.list.SetItems([]CompletionItemI{})
-	}
-}
-
 func (c *completionDialogComponent) complete(item CompletionItemI) tea.Cmd {
 	value := c.pseudoSearchTextArea.Value()
-	if value == "" {
-		return nil
-	}
 
 	// Check if this is a command completion
 	isCommand := c.completionProvider.GetId() == "commands"

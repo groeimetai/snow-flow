@@ -46,9 +46,6 @@ type SendMsg struct {
 	Text        string
 	Attachments []Attachment
 }
-type CompletionDialogTriggeredMsg struct {
-	InitialValue string
-}
 type OptimisticMessageAddedMsg struct {
 	Message opencode.Message
 }
@@ -129,7 +126,11 @@ func New(
 func (a *App) Key(commandName commands.CommandName) string {
 	t := theme.CurrentTheme()
 	base := styles.NewStyle().Background(t.Background()).Foreground(t.Text()).Bold(true).Render
-	muted := styles.NewStyle().Background(t.Background()).Foreground(t.TextMuted()).Faint(true).Render
+	muted := styles.NewStyle().
+		Background(t.Background()).
+		Foreground(t.TextMuted()).
+		Faint(true).
+		Render
 	command := a.Commands[commandName]
 	kb := command.Keybindings[0]
 	key := kb.Key
@@ -201,7 +202,10 @@ func (a *App) InitializeProvider() tea.Cmd {
 	}
 }
 
-func getDefaultModel(response *opencode.ConfigProvidersResponse, provider opencode.Provider) *opencode.Model {
+func getDefaultModel(
+	response *opencode.ConfigProvidersResponse,
+	provider opencode.Provider,
+) *opencode.Model {
 	if match, ok := response.Default[provider.ID]; ok {
 		model := provider.Models[match]
 		return &model
