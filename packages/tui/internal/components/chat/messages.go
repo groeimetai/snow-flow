@@ -125,6 +125,8 @@ func (m *messagesComponent) renderView(width int) {
 	m.partCount = 0
 	m.lineCount = 0
 
+	orphanedToolCalls := make([]opencode.ToolInvocationPart, 0)
+
 	for _, message := range m.app.Messages {
 		var content string
 		var cached bool
@@ -156,12 +158,22 @@ func (m *messagesComponent) renderView(width int) {
 			}
 
 		case opencode.MessageRoleAssistant:
-			for i, p := range message.Parts {
+			hasTextPart := false
+			for partIndex, p := range message.Parts {
 				switch part := p.AsUnion().(type) {
 				case opencode.TextPart:
+					hasTextPart = true
 					finished := message.Metadata.Time.Completed > 0
-					remainingParts := message.Parts[i+1:]
+					remainingParts := message.Parts[partIndex+1:]
 					toolCallParts := make([]opencode.ToolInvocationPart, 0)
+
+					// sometimes tool calls happen without an assistant message
+					// these should be included in this assistant message as well
+					if len(orphanedToolCalls) > 0 {
+						toolCallParts = append(toolCallParts, orphanedToolCalls...)
+						orphanedToolCalls = make([]opencode.ToolInvocationPart, 0)
+					}
+
 					for _, part := range remainingParts {
 						switch part := part.AsUnion().(type) {
 						case opencode.TextPart:
@@ -212,6 +224,9 @@ func (m *messagesComponent) renderView(width int) {
 					}
 				case opencode.ToolInvocationPart:
 					if !m.showToolDetails {
+						if !hasTextPart {
+							orphanedToolCalls = append(orphanedToolCalls, part)
+						}
 						continue
 					}
 
