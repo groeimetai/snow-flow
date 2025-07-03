@@ -174,12 +174,16 @@ func (m *messagesComponent) renderView(width int) {
 						orphanedToolCalls = make([]opencode.ToolInvocationPart, 0)
 					}
 
+					remaining := true
 					for _, part := range remainingParts {
+						if !remaining {
+							break
+						}
 						switch part := part.AsUnion().(type) {
 						case opencode.TextPart:
 							// we only want tool calls associated with the current text part.
 							// if we hit another text part, we're done.
-							break
+							remaining = false
 						case opencode.ToolInvocationPart:
 							toolCallParts = append(toolCallParts, part)
 							if part.ToolInvocation.State != "result" {
