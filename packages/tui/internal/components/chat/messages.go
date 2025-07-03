@@ -309,9 +309,12 @@ func (m *messagesComponent) header(width int) string {
 	base := styles.NewStyle().Foreground(t.Text()).Background(t.Background()).Render
 	muted := styles.NewStyle().Foreground(t.TextMuted()).Background(t.Background()).Render
 	headerLines := []string{}
-	headerLines = append(headerLines, util.ToMarkdown("# "+m.app.Session.Title, width-6, t.Background()))
+	headerLines = append(
+		headerLines,
+		util.ToMarkdown("# "+m.app.Session.Title, width-6, t.Background()),
+	)
 	if m.app.Session.Share.URL != "" {
-		headerLines = append(headerLines, muted(m.app.Session.Share.URL))
+		headerLines = append(headerLines, muted(m.app.Session.Share.URL+"  /unshare"))
 	} else {
 		headerLines = append(headerLines, base("/share")+muted(" to create a shareable link"))
 	}

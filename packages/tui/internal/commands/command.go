@@ -75,6 +75,7 @@ const (
 	SessionNewCommand           CommandName = "session_new"
 	SessionListCommand          CommandName = "session_list"
 	SessionShareCommand         CommandName = "session_share"
+	SessionUnshareCommand       CommandName = "session_unshare"
 	SessionInterruptCommand     CommandName = "session_interrupt"
 	SessionCompactCommand       CommandName = "session_compact"
 	ToolDetailsCommand          CommandName = "tool_details"
@@ -159,6 +160,12 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 			Description: "share session",
 			Keybindings: parseBindings("<leader>s"),
 			Trigger:     "share",
+		},
+		{
+			Name:        SessionUnshareCommand,
+			Description: "unshare session",
+			Keybindings: parseBindings("<leader>u"),
+			Trigger:     "unshare",
 		},
 		{
 			Name:        SessionInterruptCommand,
@@ -289,7 +296,7 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 		{
 			Name:        MessagesRevertCommand,
 			Description: "revert message",
-			Keybindings: parseBindings("<leader>u"),
+			Keybindings: parseBindings("<leader>r"),
 		},
 		{
 			Name:        AppExitCommand,
