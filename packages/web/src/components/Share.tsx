@@ -321,6 +321,7 @@ function TextPart(props: TextPartProps) {
 
   createEffect(() => {
     local.text
+    local.expand
     setTimeout(checkOverflow, 0)
   })
 
@@ -372,6 +373,7 @@ function ErrorPart(props: ErrorPartProps) {
 
   createEffect(() => {
     local.children
+    local.expand
     setTimeout(checkOverflow, 0)
   })
 
@@ -425,6 +427,7 @@ function MarkdownPart(props: MarkdownPartProps) {
 
   createEffect(() => {
     local.text
+    local.expand
     setTimeout(checkOverflow, 0)
   })
 
@@ -485,6 +488,14 @@ function TerminalPart(props: TerminalPartProps) {
       setOverflowed(preEl.clientHeight < code.offsetHeight)
     }
   }
+
+  createEffect(() => {
+    local.command
+    local.result
+    local.error
+    local.expand
+    setTimeout(checkOverflow, 0)
+  })
 
   onMount(() => {
     checkOverflow()
@@ -895,7 +906,7 @@ export default function Share(props: {
           fallback={<p>Waiting for messages...</p>}
         >
           <div class={styles.parts}>
-            <SuspenseList>
+            <SuspenseList revealOrder="forwards">
               <For each={data().messages}>
                 {(msg, msgIndex) => (
                   <Suspense>
