@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters"
@@ -575,7 +576,10 @@ func applyHighlighting(content string, segments []Segment, segmentType LineType,
 			ansiSequences[visibleIdx] = lastAnsiSeq
 		}
 		visibleIdx++
-		i++
+
+		// Properly advance by UTF-8 rune, not byte
+		_, size := utf8.DecodeRuneInString(content[i:])
+		i += size
 	}
 
 	// Apply highlighting
@@ -622,8 +626,9 @@ func applyHighlighting(content string, segments []Segment, segmentType LineType,
 			}
 		}
 
-		// Get current character
-		char := string(content[i])
+		// Get current character (properly handle UTF-8)
+		r, size := utf8.DecodeRuneInString(content[i:])
+		char := string(r)
 
 		if inSelection {
 			// Get the current styling
@@ -657,7 +662,7 @@ func applyHighlighting(content string, segments []Segment, segmentType LineType,
 		}
 
 		currentPos++
-		i++
+		i += size
 	}
 
 	return sb.String()
