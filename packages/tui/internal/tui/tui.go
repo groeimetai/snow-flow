@@ -41,7 +41,7 @@ const (
 )
 
 const interruptDebounceTimeout = 1 * time.Second
-const fileViewerFullWidthCutoff = 200
+const fileViewerFullWidthCutoff = 160
 
 type appModel struct {
 	width, height        int
@@ -111,18 +111,19 @@ func isScrollRelatedInput(keyString string) bool {
 	if len(keyString) == 0 {
 		return false
 	}
-	
+
 	for _, char := range keyString {
 		charStr := string(char)
 		if !BUGGED_SCROLL_KEYS[charStr] {
 			return false
 		}
 	}
-	
-	if len(keyString) > 3 && (keyString[len(keyString)-1] == 'M' || keyString[len(keyString)-1] == 'm') {
+
+	if len(keyString) > 3 &&
+		(keyString[len(keyString)-1] == 'M' || keyString[len(keyString)-1] == 'm') {
 		return true
 	}
-	
+
 	return len(keyString) > 1
 }
 

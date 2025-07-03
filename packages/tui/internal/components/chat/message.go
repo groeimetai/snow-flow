@@ -162,18 +162,16 @@ func renderContentBlock(
 
 		if highlight {
 			style = style.
-				BorderLeftBackground(t.Primary()).
-				BorderLeftForeground(t.Primary()).
-				BorderRightForeground(t.Primary()).
-				BorderRightBackground(t.Primary())
+				BorderLeftForeground(borderColor).
+				BorderRightForeground(borderColor)
 		}
 	}
 
 	if highlight {
 		style = style.
 			Foreground(t.Text()).
-			Bold(true).
-			Background(t.BackgroundElement())
+			Background(t.BackgroundElement()).
+			Bold(true)
 	}
 
 	content = style.Render(content)
@@ -211,7 +209,7 @@ func renderContentBlock(
 		)
 		header = styles.NewStyle().Background(t.Background()).Padding(0, 1).Render(header)
 
-		content = "\n\n\n" + header + "\n\n" + content + "\n\n"
+		content = "\n\n\n" + header + "\n\n" + content + "\n\n\n"
 	}
 
 	return content
@@ -229,7 +227,9 @@ func renderText(
 ) string {
 	t := theme.CurrentTheme()
 
-	timestamp := time.UnixMilli(int64(message.Metadata.Time.Created)).Local().Format("02 Jan 2006 03:04 PM")
+	timestamp := time.UnixMilli(int64(message.Metadata.Time.Created)).
+		Local().
+		Format("02 Jan 2006 03:04 PM")
 	if time.Now().Format("02 Jan 2006") == timestamp[:11] {
 		// don't show the date if it's today
 		timestamp = timestamp[12:]
@@ -338,8 +338,10 @@ func renderToolDetails(
 	finished := result != nil && *result != ""
 	t := theme.CurrentTheme()
 	backgroundColor := t.BackgroundPanel()
+	borderColor := t.BackgroundPanel()
 	if highlight {
 		backgroundColor = t.BackgroundElement()
+		borderColor = t.BorderActive()
 	}
 
 	switch toolCall.ToolInvocation.ToolName {
@@ -362,7 +364,11 @@ func renderToolDetails(
 					diff.WithWidth(width-2),
 				)
 				body = strings.TrimSpace(formattedDiff)
-				style := styles.NewStyle().Background(backgroundColor).Foreground(t.TextMuted()).Padding(1, 2).Width(width - 4)
+				style := styles.NewStyle().
+					Background(backgroundColor).
+					Foreground(t.TextMuted()).
+					Padding(1, 2).
+					Width(width - 4)
 				if highlight {
 					style = style.Foreground(t.Text()).Bold(true)
 				}
@@ -375,7 +381,14 @@ func renderToolDetails(
 				title := renderToolTitle(toolCall, messageMetadata, width)
 				title = style.Render(title)
 				content := title + "\n" + body
-				content = renderContentBlock(app, content, highlight, width, WithPadding(0))
+				content = renderContentBlock(
+					app,
+					content,
+					highlight,
+					width,
+					WithPadding(0),
+					WithBorderColor(borderColor),
+				)
 				return content
 			}
 		}
@@ -478,7 +491,7 @@ func renderToolDetails(
 
 	title := renderToolTitle(toolCall, messageMetadata, width)
 	content := title + "\n\n" + body
-	return renderContentBlock(app, content, highlight, width)
+	return renderContentBlock(app, content, highlight, width, WithBorderColor(borderColor))
 }
 
 func renderToolName(name string) string {
@@ -489,8 +502,8 @@ func renderToolName(name string) string {
 		return "Plan"
 	default:
 		normalizedName := name
-		if strings.HasPrefix(name, "opencode_") {
-			normalizedName = strings.TrimPrefix(name, "opencode_")
+		if after, ok := strings.CutPrefix(name, "opencode_"); ok {
+			normalizedName = after
 		}
 		return cases.Title(language.Und).String(normalizedName)
 	}
@@ -651,7 +664,10 @@ func renderDiagnostics(metadata opencode.MessageMetadataTool, filePath string) s
 				}
 				line := diag.Range.Start.Line + 1        // 1-based
 				column := diag.Range.Start.Character + 1 // 1-based
-				errorDiagnostics = append(errorDiagnostics, fmt.Sprintf("Error [%d:%d] %s", line, column, diag.Message))
+				errorDiagnostics = append(
+					errorDiagnostics,
+					fmt.Sprintf("Error [%d:%d] %s", line, column, diag.Message),
+				)
 			}
 			if len(errorDiagnostics) == 0 {
 				return ""
