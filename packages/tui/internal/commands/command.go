@@ -279,7 +279,7 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 		{
 			Name:        MessagesLayoutToggleCommand,
 			Description: "toggle layout",
-			Keybindings: parseBindings("<leader>m"),
+			Keybindings: parseBindings("<leader>p"),
 		},
 		{
 			Name:        MessagesCopyCommand,
