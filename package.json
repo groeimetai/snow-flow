@@ -6,6 +6,7 @@
   "packageManager": "bun@1.2.14",
   "scripts": {
     "typecheck": "bun run --filter='*' typecheck",
+    "stainless": "bun run ./packages/opencode/src/index.ts serve ",
     "postinstall": "./scripts/hooks"
   },
   "workspaces": {

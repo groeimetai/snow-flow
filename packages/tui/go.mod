@@ -20,6 +20,8 @@ require (
 	rsc.io/qr v0.2.0
 )
 
+replace github.com/sst/opencode-sdk-go => ./sdk
+
 require golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 
 require (
