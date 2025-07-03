@@ -66,13 +66,10 @@ export namespace Share {
       .then((x) => x as { url: string; secret: string })
   }
 
-  export async function remove(id: string) {
-    const share = await Session.getShare(id).catch(() => {})
-    if (!share) return
-    const { secret } = share
+  export async function remove(sessionID: string, secret: string) {
     return fetch(`${URL}/share_delete`, {
       method: "POST",
-      body: JSON.stringify({ id, secret }),
+      body: JSON.stringify({ sessionID, secret }),
     }).then((x) => x.json())
   }
 }
