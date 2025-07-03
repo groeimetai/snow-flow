@@ -61,7 +61,9 @@ func (cg *filesAndFoldersContextGroup) getGitFiles() []dialog.CompletionItemI {
 	return items
 }
 
-func (cg *filesAndFoldersContextGroup) GetChildEntries(query string) ([]dialog.CompletionItemI, error) {
+func (cg *filesAndFoldersContextGroup) GetChildEntries(
+	query string,
+) ([]dialog.CompletionItemI, error) {
 	items := make([]dialog.CompletionItemI, 0)
 
 	query = strings.TrimSpace(query)
@@ -75,6 +77,10 @@ func (cg *filesAndFoldersContextGroup) GetChildEntries(query string) ([]dialog.C
 	)
 	if err != nil {
 		slog.Error("Failed to get completion items", "error", err)
+		return items, err
+	}
+	if files == nil {
+		return items, nil
 	}
 
 	for _, file := range *files {
