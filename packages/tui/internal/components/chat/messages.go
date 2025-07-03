@@ -80,13 +80,9 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.showToolDetails = !m.showToolDetails
 		m.rendering = true
 		return m, m.Reload()
-	case app.SessionLoadedMsg:
+	case app.SessionLoadedMsg, app.SessionClearedMsg:
 		m.cache.Clear()
 		m.tail = true
-		m.rendering = true
-		return m, m.Reload()
-	case app.SessionClearedMsg:
-		m.cache.Clear()
 		m.rendering = true
 		return m, m.Reload()
 	case renderFinishedMsg:
@@ -153,13 +149,8 @@ func (m *messagesComponent) renderView(width int) {
 						m.cache.Set(key, content)
 					}
 					if content != "" {
-						if m.selectedPart == m.partCount {
-							m.viewport.SetYOffset(m.lineCount - 4)
-							m.selectedText = part.Text
-						}
+						m = m.updateSelected(content, part.Text)
 						blocks = append(blocks, content)
-						m.partCount++
-						m.lineCount += lipgloss.Height(content) + 1
 					}
 				}
 			}
@@ -216,13 +207,8 @@ func (m *messagesComponent) renderView(width int) {
 						)
 					}
 					if content != "" {
-						if m.selectedPart == m.partCount {
-							m.viewport.SetYOffset(m.lineCount - 4)
-							m.selectedText = p.Text
-						}
+						m = m.updateSelected(content, p.Text)
 						blocks = append(blocks, content)
-						m.partCount++
-						m.lineCount += lipgloss.Height(content) + 1
 					}
 				case opencode.ToolInvocationPart:
 					if !m.showToolDetails {
@@ -258,13 +244,8 @@ func (m *messagesComponent) renderView(width int) {
 						)
 					}
 					if content != "" {
-						if m.selectedPart == m.partCount {
-							m.viewport.SetYOffset(m.lineCount - 4)
-							m.selectedText = ""
-						}
+						m = m.updateSelected(content, "")
 						blocks = append(blocks, content)
-						m.partCount++
-						m.lineCount += lipgloss.Height(content) + 1
 					}
 				}
 			}
@@ -295,9 +276,20 @@ func (m *messagesComponent) renderView(width int) {
 	}
 
 	m.viewport.SetContent("\n" + strings.Join(blocks, "\n\n"))
-	if m.selectedPart == m.partCount-1 {
+	if m.selectedPart == m.partCount {
 		m.viewport.GotoBottom()
 	}
+
+}
+
+func (m *messagesComponent) updateSelected(content string, selectedText string) *messagesComponent {
+	if m.selectedPart == m.partCount {
+		m.viewport.SetYOffset(m.lineCount - (m.viewport.Height() / 2) + 4)
+		m.selectedText = selectedText
+	}
+	m.partCount++
+	m.lineCount += lipgloss.Height(content) + 1
+	return m
 }
 
 func (m *messagesComponent) header(width int) string {
@@ -343,7 +335,7 @@ func (m *messagesComponent) View(width, height int) string {
 			height,
 			lipgloss.Center,
 			lipgloss.Center,
-			styles.NewStyle().Background(t.Background()).Render("Loading session..."),
+			styles.NewStyle().Background(t.Background()).Render(""),
 			styles.WhitespaceStyle(t.Background()),
 		)
 	}
