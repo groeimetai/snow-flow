@@ -583,6 +583,7 @@ export namespace Session {
       //   return step
       // },
       toolCallStreaming: true,
+      maxRetries: 10,
       maxTokens: Math.max(0, model.info.limit.output) || undefined,
       abortSignal: abort.signal,
       maxSteps: 1000,
