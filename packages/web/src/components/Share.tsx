@@ -294,15 +294,11 @@ function ResultsButton(props: ResultsButtonProps) {
 interface TextPartProps extends JSX.HTMLAttributes<HTMLDivElement> {
   text: string
   expand?: boolean
-  invert?: boolean
-  highlight?: boolean
 }
 function TextPart(props: TextPartProps) {
   const [local, rest] = splitProps(props, [
     "text",
     "expand",
-    "invert",
-    "highlight",
   ])
   const [expanded, setExpanded] = createSignal(false)
   const [overflowed, setOverflowed] = createSignal(false)
@@ -332,8 +328,6 @@ function TextPart(props: TextPartProps) {
   return (
     <div
       class={styles["message-text"]}
-      data-invert={local.invert}
-      data-highlight={local.highlight}
       data-expanded={expanded() || local.expand === true}
       {...rest}
     >
@@ -991,9 +985,9 @@ export default function Share(props: {
                                   </div>
                                   <div data-section="content">
                                     <TextPart
-                                      invert
                                       text={part().text}
                                       expand={isLastPart()}
+                                      data-background="blue"
                                     />
                                   </div>
                                 </div>
@@ -1021,7 +1015,6 @@ export default function Share(props: {
                                   </div>
                                   <div data-section="content">
                                     <MarkdownPart
-                                      highlight
                                       expand={isLastPart()}
                                       text={stripEnclosingTag(part().text)}
                                     />
