@@ -16,12 +16,14 @@ export namespace Snapshot {
   const log = Log.create({ service: "snapshot" })
 
   export async function create(sessionID: string) {
+    log.info("creating snapshot")
     const app = App.info()
     const git = gitdir(sessionID)
     const files = await Ripgrep.files({
       cwd: app.path.cwd,
       limit: app.git ? undefined : 1000,
     })
+    log.info("found files", { count: files.length })
     // not a git repo and too big to snapshot
     if (!app.git && files.length === 1000) return
     await init({
@@ -29,19 +31,17 @@ export namespace Snapshot {
       gitdir: git,
       fs,
     })
+    log.info("initialized")
     const status = await statusMatrix({
       fs,
       gitdir: git,
       dir: app.path.cwd,
     })
-    await add({
-      fs,
-      gitdir: git,
-      parallel: true,
-      dir: app.path.cwd,
-      filepath: files,
+    log.info("matrix", {
+      count: status.length,
     })
-    for (const [file, _head, workdir, stage] of status) {
+    const added = []
+    for (const [file, head, workdir, stage] of status) {
       if (workdir === 0 && stage === 1) {
         log.info("remove", { file })
         await remove({
@@ -50,8 +50,21 @@ export namespace Snapshot {
           dir: app.path.cwd,
           filepath: file,
         })
+        continue
+      }
+      if (workdir !== head) {
+        added.push(file)
       }
     }
+    log.info("removed files")
+    await add({
+      fs,
+      gitdir: git,
+      parallel: true,
+      dir: app.path.cwd,
+      filepath: added,
+    })
+    log.info("added files")
     const result = await commit({
       fs,
       gitdir: git,
