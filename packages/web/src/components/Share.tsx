@@ -601,6 +601,7 @@ export default function Share(props: {
   messages: Record<string, Message.Info>
 }) {
   let lastScrollY = 0
+  let hasScrolledToAnchor = false
   let scrollTimeout: number | undefined
   let scrollSentinel: HTMLElement | undefined
   let scrollObserver: IntersectionObserver | undefined
@@ -954,9 +955,11 @@ export default function Share(props: {
                           // Wait till all parts are loaded
                           if (
                             hash !== ""
+                            && !hasScrolledToAnchor
                             && msg.parts.length === partIndex() + 1
                             && data().messages.length === msgIndex() + 1
                           ) {
+                            hasScrolledToAnchor = true
                             scrollToAnchor(hash)
                           }
                         })
