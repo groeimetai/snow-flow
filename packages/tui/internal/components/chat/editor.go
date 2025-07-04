@@ -108,7 +108,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			attachment := &textarea.Attachment{
 				ID:        uuid.NewString(),
 				Display:   "@" + fileName,
-				URL:       fmt.Sprintf("file://%s", filePath),
+				URL:       fmt.Sprintf("file://./%s", filePath),
 				Filename:  fileName,
 				MediaType: mediaType,
 			}
