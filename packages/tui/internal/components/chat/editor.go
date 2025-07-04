@@ -93,12 +93,24 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// The cursor is now at `atIndex` after the replacement.
 			filePath := msg.CompletionValue
 			fileName := filepath.Base(filePath)
+			extension := filepath.Ext(filePath)
+			mediaType := ""
+			switch extension {
+			case ".jpg":
+				mediaType = "image/jpeg"
+			case ".png", ".jpeg", ".gif", ".webp":
+				mediaType = "image/" + extension[1:]
+			case ".pdf":
+				mediaType = "application/pdf"
+			default:
+				mediaType = "text/plain"
+			}
 			attachment := &textarea.Attachment{
 				ID:        uuid.NewString(),
 				Display:   "@" + fileName,
 				URL:       fmt.Sprintf("file://%s", filePath),
 				Filename:  fileName,
-				MediaType: "text/plain",
+				MediaType: mediaType,
 			}
 			m.textarea.InsertAttachment(attachment)
 			m.textarea.InsertString(" ")
