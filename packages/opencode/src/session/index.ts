@@ -1,41 +1,42 @@
 import path from "node:path"
-import { App } from "../app/app"
-import { Identifier } from "../id/id"
-import { Storage } from "../storage/storage"
-import { Log } from "../util/log"
+import { Decimal } from "decimal.js"
+import { z, ZodSchema } from "zod"
 import {
   generateText,
   LoadAPIKeyError,
   convertToCoreMessages,
   streamText,
   tool,
+  wrapLanguageModel,
   type Tool as AITool,
   type LanguageModelUsage,
   type CoreMessage,
   type UIMessage,
   type ProviderMetadata,
-  wrapLanguageModel,
   type Attachment,
 } from "ai"
-import { z, ZodSchema } from "zod"
-import { Decimal } from "decimal.js"
 
 import PROMPT_INITIALIZE from "../session/prompt/initialize.txt"
 
-import { Share } from "../share/share"
-import { Message } from "./message"
+import { App } from "../app/app"
 import { Bus } from "../bus"
-import { Provider } from "../provider/provider"
-import { MCP } from "../mcp"
-import { NamedError } from "../util/error"
-import type { Tool } from "../tool/tool"
-import { SystemPrompt } from "./system"
-import { Flag } from "../flag/flag"
-import type { ModelsDev } from "../provider/models"
-import { Installation } from "../installation"
 import { Config } from "../config/config"
+import { Flag } from "../flag/flag"
+import { Identifier } from "../id/id"
+import { Installation } from "../installation"
+import { MCP } from "../mcp"
+import { Provider } from "../provider/provider"
 import { ProviderTransform } from "../provider/transform"
+import type { ModelsDev } from "../provider/models"
+import { Share } from "../share/share"
 import { Snapshot } from "../snapshot"
+import { Storage } from "../storage/storage"
+import type { Tool } from "../tool/tool"
+import { Log } from "../util/log"
+import { NamedError } from "../util/error"
+import { Message } from "./message"
+import { SystemPrompt } from "./system"
+import { FileTime } from "../file/time"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -367,10 +368,11 @@ export namespace Session {
           const url = new URL(part.url)
           switch (url.protocol) {
             case "file:":
-              let content = Bun.file(path.join(app.path.cwd, url.pathname))
+              const filepath = path.join(app.path.cwd, url.pathname)
+              let file = Bun.file(filepath)
 
               if (part.mediaType === "text/plain") {
-                let text = await content.text()
+                let text = await file.text()
                 const range = {
                   start: url.searchParams.get("start"),
                   end: url.searchParams.get("end"),
@@ -381,6 +383,7 @@ export namespace Session {
                   const end = range.end ? parseInt(range.end) : lines.length
                   text = lines.slice(start, end).join("\n")
                 }
+                FileTime.read(input.sessionID, filepath)
                 return [
                   {
                     type: "text",
@@ -403,9 +406,9 @@ export namespace Session {
                   type: "file",
                   url:
                     `data:${part.mediaType};base64,` +
-                    Buffer.from(await content.bytes()).toString("base64url"),
+                    Buffer.from(await file.bytes()).toString("base64url"),
                   mediaType: part.mediaType,
-                  filename: path.basename(part.filename!),
+                  filename: part.filename!,
                 },
               ]
           }
