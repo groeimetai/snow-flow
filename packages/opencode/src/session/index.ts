@@ -374,7 +374,7 @@ export namespace Session {
                 start: url.searchParams.get("start"),
                 end: url.searchParams.get("end"),
               }
-              if (range.start != null) {
+              if (range.start != null && part.mediaType === "text/plain") {
                 const lines = content.split("\n")
                 const start = parseInt(range.start)
                 const end = range.end ? parseInt(range.end) : lines.length
@@ -382,8 +382,8 @@ export namespace Session {
               }
               return {
                 type: "file",
-                url: "data:text/plain;base64," + btoa(content),
-                mediaType: "text/plain",
+                url: `data:${part.mediaType};base64,` + btoa(content),
+                mediaType: part.mediaType,
                 filename: part.filename,
               }
           }
@@ -406,7 +406,7 @@ export namespace Session {
             {
               role: "user",
               content: "",
-              ...toParts(input.parts),
+              parts: toParts(input.parts).parts,
             },
           ]),
         ],
