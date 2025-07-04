@@ -134,6 +134,7 @@ func (m *messagesComponent) renderView(width int) {
 
 		switch message.Role {
 		case opencode.MessageRoleUser:
+		userLoop:
 			for partIndex, part := range message.Parts {
 				switch part := part.AsUnion().(type) {
 				case opencode.TextPart:
@@ -195,6 +196,8 @@ func (m *messagesComponent) renderView(width int) {
 						m = m.updateSelected(content, part.Text)
 						blocks = append(blocks, content)
 					}
+					// Only render the first text part
+					break userLoop
 				}
 			}
 

@@ -362,35 +362,57 @@ export namespace Session {
 
     const app = App.info()
     input.parts = await Promise.all(
-      input.parts.map(async (part) => {
+      input.parts.map(async (part): Promise<Message.MessagePart[]> => {
         if (part.type === "file") {
           const url = new URL(part.url)
           switch (url.protocol) {
             case "file:":
-              let content = await Bun.file(
-                path.join(app.path.cwd, url.pathname),
-              ).text()
-              const range = {
-                start: url.searchParams.get("start"),
-                end: url.searchParams.get("end"),
+              let content = Bun.file(path.join(app.path.cwd, url.pathname))
+
+              if (part.mediaType === "text/plain") {
+                let text = await content.text()
+                const range = {
+                  start: url.searchParams.get("start"),
+                  end: url.searchParams.get("end"),
+                }
+                if (range.start != null && part.mediaType === "text/plain") {
+                  const lines = text.split("\n")
+                  const start = parseInt(range.start)
+                  const end = range.end ? parseInt(range.end) : lines.length
+                  text = lines.slice(start, end).join("\n")
+                }
+                return [
+                  {
+                    type: "text",
+                    text: [
+                      "Called the Read tool on " + url.pathname,
+                      "<results>",
+                      text,
+                      "</results>",
+                    ].join("\n"),
+                  },
+                ]
               }
-              if (range.start != null && part.mediaType === "text/plain") {
-                const lines = content.split("\n")
-                const start = parseInt(range.start)
-                const end = range.end ? parseInt(range.end) : lines.length
-                content = lines.slice(start, end).join("\n")
-              }
-              return {
-                type: "file",
-                url: `data:${part.mediaType};base64,` + btoa(content),
-                mediaType: part.mediaType,
-                filename: part.filename,
-              }
+
+              return [
+                {
+                  type: "text",
+                  text: ["Called the Read tool on " + url.pathname].join("\n"),
+                },
+                {
+                  type: "file",
+                  url:
+                    `data:${part.mediaType};base64,` +
+                    Buffer.from(await content.bytes()).toString("base64url"),
+                  mediaType: part.mediaType,
+                  filename: path.basename(part.filename!),
+                },
+              ]
           }
         }
-        return part
+        return [part]
       }),
-    )
+    ).then((x) => x.flat())
     if (msgs.length === 0 && !session.parentID) {
       generateText({
         maxTokens: input.providerID === "google" ? 1024 : 20,
