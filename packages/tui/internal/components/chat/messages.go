@@ -156,10 +156,11 @@ func (m *messagesComponent) renderView(width int) {
 								mediaType = "txt"
 							case "image/png", "image/jpeg", "image/gif", "image/webp":
 								mediaType = "img"
+								mediaTypeStyle = mediaTypeStyle.Background(t.Accent())
 							case "application/pdf":
 								mediaType = "pdf"
+								mediaTypeStyle = mediaTypeStyle.Background(t.Primary())
 							}
-
 							flexItems = append(flexItems, layout.FlexItem{
 								View: mediaTypeStyle.Render(mediaType) + fileStyle.Render(filePart.Filename),
 							})
@@ -170,8 +171,7 @@ func (m *messagesComponent) renderView(width int) {
 						layout.FlexOptions{
 							Background: &bgColor,
 							Width:      width - 6,
-							Direction:  layout.Row,
-							Gap:        3,
+							Direction:  layout.Column,
 						},
 						flexItems...,
 					)

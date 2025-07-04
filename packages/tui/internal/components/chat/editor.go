@@ -109,7 +109,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				ID:        uuid.NewString(),
 				Display:   "@" + fileName,
 				URL:       fmt.Sprintf("file://./%s", filePath),
-				Filename:  fileName,
+				Filename:  filePath,
 				MediaType: mediaType,
 			}
 			m.textarea.InsertAttachment(attachment)
@@ -238,7 +238,8 @@ func (m *editorComponent) Submit() (tea.Model, tea.Cmd) {
 	}
 	if len(value) > 0 && value[len(value)-1] == '\\' {
 		// If the last character is a backslash, remove it and add a newline
-		m.textarea.SetValue(value[:len(value)-1] + "\n")
+		m.textarea.ReplaceRange(len(value)-1, len(value), "")
+		m.textarea.InsertString("\n")
 		return m, nil
 	}
 
@@ -284,7 +285,7 @@ func (m *editorComponent) Paste() (tea.Model, tea.Cmd) {
 	// 	}
 	// 	m.attachments = append(m.attachments, attachment)
 	// } else {
-	m.textarea.SetValue(m.textarea.Value() + text)
+	m.textarea.InsertString(text)
 	// }
 	return m, nil
 }
