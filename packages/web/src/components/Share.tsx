@@ -957,7 +957,12 @@ export default function Share(props: {
 
                         onMount(() => {
                           const hash = window.location.hash.slice(1)
-                          if (hash !== "" && hash === anchor()) {
+                          // Wait till all parts are loaded
+                          if (
+                            hash !== ""
+                            && msg.parts.length === partIndex() + 1
+                            && data().messages.length === msgIndex() + 1
+                          ) {
                             scrollToAnchor(hash)
                           }
                         })
