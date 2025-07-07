@@ -496,14 +496,20 @@ export namespace Session {
       const execute = item.execute
       if (!execute) continue
       item.execute = async (args, opts) => {
-        try {
-          const result = await execute(args, opts)
-          return result.content
-            .filter((x: any) => x.type === "text")
-            .map((x: any) => x.text)
-            .join("\n\n")
-        } catch (e: any) {
-          return e.toString()
+        const result = await execute(args, opts)
+        const output = result.content
+          .filter((x: any) => x.type === "text")
+          .map((x: any) => x.text)
+          .join("\n\n")
+
+        return {
+          output,
+        }
+      }
+      item.toModelOutput = (result) => {
+        return {
+          type: "text",
+          value: result.output,
         }
       }
       tools[key] = item
