@@ -9,12 +9,13 @@ import { rehypeHeadingIds } from "@astrojs/markdown-remark"
 import rehypeAutolinkHeadings from "rehype-autolink-headings"
 
 const github = "https://github.com/sst/opencode"
-
-console.log("stage", process.env.SST_STAGE)
+const stage = process.env.SST_STAGE || "dev"
 
 // https://astro.build/config
 export default defineConfig({
-  site: config.url,
+  site: stage === "production"
+    ? `https://${config.domain}`
+    : `https://${stage}.${config.domain}`,
   output: "server",
   adapter: cloudflare({
     imageService: "passthrough",
