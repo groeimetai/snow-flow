@@ -10,7 +10,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings"
 
 const github = "https://github.com/sst/opencode"
 
-console.log(process.env.SST_STAGE)
+console.log("stage", process.env.SST_STAGE)
 
 // https://astro.build/config
 export default defineConfig({
