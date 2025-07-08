@@ -23,6 +23,8 @@ require (
 
 replace github.com/sst/opencode-sdk-go => ./sdk
 
+replace golang.design/x/clipboard v0.7.1 => github.com/sst/clipboard v0.0.0-20250708194754-36e9fc12a4e8
+
 require golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 
 require (
@@ -63,7 +65,7 @@ require (
 )
 
 require (
-	github.com/atotto/clipboard v0.1.4
+	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/charmbracelet/colorprofile v0.3.1 // indirect
