@@ -28,7 +28,6 @@ import {
   IconDocumentMagnifyingGlass,
 } from "../icons"
 import { IconMeta, IconOpenAI, IconGemini, IconAnthropic } from "../icons/custom"
-import CodeBlock from "../CodeBlock"
 import { ContentCode } from "./content-code"
 import { ContentDiff } from "./content-diff"
 import { ContentText } from "./content-text"
@@ -133,7 +132,8 @@ export function Part(props: PartProps) {
       <div data-component="content">
         {props.message.role === "user" && props.part.type === "text" && (
           <>
-            <ContentText text={props.part.text} expand={props.last} /> <Spacer />
+            <ContentText text={props.part.text} expand={props.last} />
+            <Spacer />
           </>
         )}
         {props.message.role === "assistant" && props.part.type === "text" && (
@@ -165,6 +165,14 @@ export function Part(props: PartProps) {
             <div data-slot="model">{props.message.modelID}</div>
           </div>
         )}
+        {props.part.type === "tool" &&
+          props.part.state.status === "error" && (
+            <div data-component="tool">
+              <ContentError>
+                {formatErrorString(props.part.state.error)}
+              </ContentError>
+            </div>
+          )}
         {props.part.type === "tool" &&
           props.part.state.status === "completed" &&
           props.message.role === "assistant" && (
@@ -453,7 +461,7 @@ export function WebFetchTool(props: ToolProps) {
           </Match>
           <Match when={props.state.output}>
             <ResultsButton>
-              <CodeBlock lang={props.state.input.format || "text"} code={props.state.output} />
+              <ContentCode lang={props.state.input.format || "text"} code={props.state.output} />
             </ResultsButton>
           </Match>
         </Switch>
