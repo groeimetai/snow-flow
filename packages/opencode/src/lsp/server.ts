@@ -75,7 +75,7 @@ export namespace LSPServer {
               notif.dispose()
               resolve()
             })
-            await lsp.notify.open({ path: hint })
+            await lsp.notify.open({ path: path.join(lsp.root, hint) })
           })
         },
       }
