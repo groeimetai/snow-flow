@@ -38,8 +38,19 @@ const encodedTitle = encodeURIComponent(
   )
 );
 
-const ogImage = `${config.socialCard}/opencode-share/${encodedTitle}.png?model=${Array.from(models).join(",")}&version=${version}&id=${id}`;
+const modelsArray = Array.from(models);
+let modelParam;
+if (modelsArray.length === 1) {
+  modelParam = modelsArray[0];
+}
+else if (modelsArray.length === 2) {
+  modelParam = `${modelsArray[0]} & ${modelsArray[1]}`;
+}
+else {
+  modelParam = `${modelsArray[0]} & ${modelsArray.length - 1} others`;
+}
 
+const ogImage = `${config.socialCard}/opencode-share/${encodedTitle}.png?model=${modelParam}&version=${version}&id=${id}`;
 ---
 <StarlightPage
   hasSidebar={false}
