@@ -64,7 +64,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		}
 	case dialog.ThemeSelectedMsg:
-		m.textarea = createTextArea(&m.textarea)
+		m.textarea = m.resetTextareaStyles()
 		m.spinner = createSpinner()
 		return m, tea.Batch(m.spinner.Tick, m.textarea.Focus())
 	case dialog.CompletionSelectedMsg:
@@ -306,13 +306,13 @@ func (m *editorComponent) getSubmitKeyText() string {
 	return m.app.Commands[commands.InputSubmitCommand].Keys()[0]
 }
 
-func createTextArea(existing *textarea.Model) textarea.Model {
+func (m *editorComponent) resetTextareaStyles() textarea.Model {
 	t := theme.CurrentTheme()
 	bgColor := t.BackgroundElement()
 	textColor := t.Text()
 	textMutedColor := t.TextMuted()
 
-	ta := textarea.New()
+	ta := m.textarea
 
 	ta.Styles.Blurred.Base = styles.NewStyle().Foreground(textColor).Background(bgColor).Lipgloss()
 	ta.Styles.Blurred.CursorLine = styles.NewStyle().Background(bgColor).Lipgloss()
@@ -337,17 +337,6 @@ func createTextArea(existing *textarea.Model) textarea.Model {
 		Background(t.Secondary()).
 		Lipgloss()
 	ta.Styles.Cursor.Color = t.Primary()
-
-	ta.Prompt = " "
-	ta.ShowLineNumbers = false
-	ta.CharLimit = -1
-
-	if existing != nil {
-		ta.SetValue(existing.Value())
-		// ta.SetWidth(existing.Width())
-		ta.SetHeight(existing.Height())
-	}
-
 	return ta
 }
 
@@ -367,12 +356,19 @@ func createSpinner() spinner.Model {
 
 func NewEditorComponent(app *app.App) EditorComponent {
 	s := createSpinner()
-	ta := createTextArea(nil)
 
-	return &editorComponent{
+	ta := textarea.New()
+	ta.Prompt = " "
+	ta.ShowLineNumbers = false
+	ta.CharLimit = -1
+
+	m := &editorComponent{
 		app:                    app,
 		textarea:               ta,
 		spinner:                s,
 		interruptKeyInDebounce: false,
 	}
+	m.resetTextareaStyles()
+
+	return m
 }
