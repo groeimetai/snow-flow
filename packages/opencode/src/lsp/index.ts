@@ -53,7 +53,10 @@ export namespace LSP {
             serverID: server.id,
             server: handle,
             root,
-          }).catch((err) => log.error("", { error: err }))
+          }).catch((err) => {
+            handle.process.kill()
+            log.error("", { error: err })
+          })
           if (!client) break
           clients.push(client)
         }

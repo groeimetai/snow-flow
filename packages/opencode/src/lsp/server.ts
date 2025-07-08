@@ -9,6 +9,7 @@ import fs from "fs/promises"
 import { unique } from "remeda"
 import { Ripgrep } from "../file/ripgrep"
 import type { LSPClient } from "./client"
+import { withTimeout } from "../util/timeout"
 
 export namespace LSPServer {
   const log = Log.create({ service: "lsp.server" })
@@ -69,7 +70,7 @@ export namespace LSPServer {
             glob: ["*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs", "*.mts", "*.cts"],
             limit: 1,
           })
-          await new Promise<void>(async (resolve) => {
+          const wait = new Promise<void>(async (resolve) => {
             const notif = lsp.connection.onNotification("$/progress", (params) => {
               if (params.value.kind !== "end") return
               notif.dispose()
@@ -77,6 +78,7 @@ export namespace LSPServer {
             })
             await lsp.notify.open({ path: path.join(lsp.root, hint) })
           })
+          await withTimeout(wait, 5_000)
         },
       }
     },
