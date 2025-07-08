@@ -372,11 +372,11 @@ export namespace Session {
               return [
                 {
                   type: "text",
-                  text: ["Called the Read tool on " + url.pathname].join("\n"),
+                  text: `Called the Read tool with the following input: {\"filePath\":\"${url.pathname}\"}`,
                 },
                 {
                   type: "file",
-                  url: `data:${part.mime};base64,` + Buffer.from(await file.bytes()).toString("base64url"),
+                  url: `data:${part.mime};base64,` + Buffer.from(await file.bytes()).toString("base64"),
                   mime: part.mime,
                   filename: part.filename!,
                 },

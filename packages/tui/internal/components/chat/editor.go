@@ -104,13 +104,19 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		base64EncodedFile := base64.StdEncoding.EncodeToString(fileBytes)
 		url := fmt.Sprintf("data:%s;base64,%s", mediaType, base64EncodedFile)
+		attachmentCount := len(m.textarea.GetAttachments())
+		attachmentIndex := attachmentCount + 1
+		label := "File"
+		if strings.HasPrefix(mediaType, "image/") {
+			label = "Image"
+		}
 
 		attachment := &textarea.Attachment{
 			ID:        uuid.NewString(),
-			Display:   fmt.Sprintf("<%s>", filePath),
+			MediaType: mediaType,
+			Display:   fmt.Sprintf("[%s #%d]", label, attachmentIndex),
 			URL:       url,
 			Filename:  filePath,
-			MediaType: mediaType,
 		}
 		m.textarea.InsertAttachment(attachment)
 		m.textarea.InsertString(" ")
@@ -325,12 +331,14 @@ func (m *editorComponent) Clear() (tea.Model, tea.Cmd) {
 func (m *editorComponent) Paste() (tea.Model, tea.Cmd) {
 	imageBytes := clipboard.Read(clipboard.FmtImage)
 	if imageBytes != nil {
+		attachmentCount := len(m.textarea.GetAttachments())
+		attachmentIndex := attachmentCount + 1
 		base64EncodedFile := base64.StdEncoding.EncodeToString(imageBytes)
 		attachment := &textarea.Attachment{
 			ID:        uuid.NewString(),
-			Display:   "<clipboard-image>",
-			Filename:  "clipboard-image",
 			MediaType: "image/png",
+			Display:   fmt.Sprintf("[Image #%d]", attachmentIndex),
+			Filename:  fmt.Sprintf("image-%d.png", attachmentIndex),
 			URL:       fmt.Sprintf("data:image/png;base64,%s", base64EncodedFile),
 		}
 		m.textarea.InsertAttachment(attachment)
