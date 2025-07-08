@@ -220,7 +220,8 @@ func (a *App) InitializeProvider() tea.Cmd {
 			if provider.ID == splits[0] {
 				initialProvider = &provider
 				for _, model := range provider.Models {
-					if model.ID == splits[1] {
+					modelID := strings.Join(splits[1:], "/")
+					if model.ID == modelID {
 						initialModel = &model
 					}
 				}
