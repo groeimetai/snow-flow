@@ -14,6 +14,7 @@ import (
 	"github.com/sst/opencode-sdk-go/option"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/tui"
+	"golang.design/x/clipboard"
 )
 
 var Version = "dev"
@@ -65,6 +66,13 @@ func main() {
 		slog.Error("Failed to create client", "error", err)
 		os.Exit(1)
 	}
+
+	go func() {
+		err = clipboard.Init()
+		if err != nil {
+			slog.Error("Failed to initialize clipboard", "error", err)
+		}
+	}()
 
 	// Create main context for the application
 	ctx, cancel := context.WithCancel(context.Background())

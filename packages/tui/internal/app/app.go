@@ -18,6 +18,7 @@ import (
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
+	"golang.design/x/clipboard"
 )
 
 type App struct {
@@ -144,6 +145,17 @@ func (a *App) Key(commandName commands.CommandName) string {
 		key = a.Config.Keybinds.Leader + " " + kb.Key
 	}
 	return base(key) + muted(" "+command.Description)
+}
+
+func (a *App) SetClipboard(text string) tea.Cmd {
+	var cmds []tea.Cmd
+	cmds = append(cmds, func() tea.Msg {
+		clipboard.Write(clipboard.FmtText, []byte(text))
+		return nil
+	})
+	// try to set the clipboard using OSC52 for terminals that support it
+	cmds = append(cmds, tea.SetClipboard(text))
+	return tea.Sequence(cmds...)
 }
 
 func (a *App) InitializeProvider() tea.Cmd {

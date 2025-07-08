@@ -231,7 +231,7 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 		{
 			Name:        InputPasteCommand,
 			Description: "paste content",
-			Keybindings: parseBindings("ctrl+v"),
+			Keybindings: parseBindings("ctrl+v", "super+v"),
 		},
 		{
 			Name:        InputSubmitCommand,
