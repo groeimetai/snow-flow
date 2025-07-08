@@ -23,9 +23,8 @@ const models: Set<string> = new Set();
 const version = data.info.version ? `v${data.info.version}` : "v0.0.1";
 
 Object.values(data.messages).forEach((d) => {
-  const assistant = d.metadata?.assistant;
-  if (assistant) {
-    models.add(assistant.modelID);
+  if (d.role === "assistant" && d.modelID) {
+    models.add(d.modelID);
   }
 });
 
