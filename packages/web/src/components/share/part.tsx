@@ -1,4 +1,15 @@
-import { For, Show, Match, Switch, type JSX, createMemo, createSignal, type ParentProps } from "solid-js"
+import map from "lang-map"
+import { DateTime } from "luxon"
+import {
+  For,
+  Show,
+  Match,
+  Switch,
+  type JSX,
+  createMemo,
+  createSignal,
+  type ParentProps
+} from "solid-js"
 import {
   IconHashtag,
   IconSparkles,
@@ -17,17 +28,16 @@ import {
   IconDocumentMagnifyingGlass,
 } from "../icons"
 import { IconMeta, IconOpenAI, IconGemini, IconAnthropic } from "../icons/custom"
-import styles from "./part.module.css"
-import type { MessageV2 } from "opencode/session/message-v2"
-import { ContentText } from "./content-text"
-import { ContentMarkdown } from "./content-markdown"
-import { DateTime } from "luxon"
 import CodeBlock from "../CodeBlock"
-import map from "lang-map"
-import type { Diagnostic } from "vscode-languageserver-types"
-
 import { ContentCode } from "./content-code"
 import { ContentDiff } from "./content-diff"
+import { ContentText } from "./content-text"
+import { ContentError } from "./content-error"
+import { ContentMarkdown } from "./content-markdown"
+import type { MessageV2 } from "opencode/session/message-v2"
+import type { Diagnostic } from "vscode-languageserver-types"
+
+import styles from "./part.module.css"
 
 export interface PartProps {
   index: number
@@ -439,7 +449,7 @@ export function WebFetchTool(props: ToolProps) {
       <div data-component="tool-result">
         <Switch>
           <Match when={props.state.metadata?.error}>
-            <div data-component="error">{formatErrorString(props.state.output)}</div>
+            <ContentError>{formatErrorString(props.state.output)}</ContentError>
           </Match>
           <Match when={props.state.output}>
             <ResultsButton>
@@ -466,7 +476,7 @@ export function ReadTool(props: ToolProps) {
       <div data-component="tool-result">
         <Switch>
           <Match when={props.state.metadata?.error}>
-            <div data-component="error">{formatErrorString(props.state.output)}</div>
+            <ContentError>{formatErrorString(props.state.output)}</ContentError>
           </Match>
           <Match when={typeof props.state.metadata?.preview === "string"}>
             <ResultsButton showCopy="Show preview" hideCopy="Hide preview">
@@ -502,7 +512,7 @@ export function WriteTool(props: ToolProps) {
       <div data-component="tool-result">
         <Switch>
           <Match when={props.state.metadata?.error}>
-            <div data-component="error">{formatErrorString(props.state.output)}</div>
+            <ContentError>{formatErrorString(props.state.output)}</ContentError>
           </Match>
           <Match when={props.state.input?.content}>
             <ResultsButton showCopy="Show contents" hideCopy="Hide contents">
@@ -530,7 +540,7 @@ export function EditTool(props: ToolProps) {
       <div data-component="tool-result">
         <Switch>
           <Match when={props.state.metadata?.error}>
-            <div data-component="error">{formatErrorString(props.state.metadata?.message || "")}</div>
+            <ContentError>{formatErrorString(props.state.metadata?.message || "")}</ContentError>
           </Match>
           <Match when={props.state.metadata?.diff}>
             <div data-component="diff">
@@ -706,6 +716,9 @@ export function ProviderIcon(props: { model: string; size?: number }) {
       </Match>
       <Match when={provider === "gemini"}>
         <IconGemini width={size} height={size} />
+      </Match>
+      <Match when={provider === "meta"}>
+        <IconMeta width={size} height={size} />
       </Match>
     </Switch>
   )
