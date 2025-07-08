@@ -1,20 +1,22 @@
-import { createMemo, createSignal, For, Match, Show, Switch, type JSX, type ParentProps } from "solid-js"
+import { For, Show, Match, Switch, type JSX, createMemo, createSignal, type ParentProps } from "solid-js"
 import {
-  IconCheckCircle,
-  IconChevronDown,
-  IconChevronRight,
   IconHashtag,
   IconSparkles,
   IconGlobeAlt,
   IconDocument,
   IconQueueList,
+  IconUserCircle,
   IconCommandLine,
+  IconCheckCircle,
+  IconChevronDown,
+  IconChevronRight,
   IconDocumentPlus,
   IconPencilSquare,
   IconRectangleStack,
   IconMagnifyingGlass,
   IconDocumentMagnifyingGlass,
 } from "../icons"
+import { IconMeta, IconOpenAI, IconGemini, IconAnthropic } from "../icons/custom"
 import styles from "./part.module.css"
 import type { MessageV2 } from "opencode/session/message-v2"
 import { ContentText } from "./content-text"
@@ -65,6 +67,15 @@ export function Part(props: PartProps) {
             }}
           >
             <Switch>
+              <Match when={props.message.role === "user" && props.part.type === "text"}>
+                <IconUserCircle width={18} height={18} />
+              </Match>
+              <Match when={props.message.role === "user" && props.part.type === "file"}>
+                <IconDocument width={18} height={18} />
+              </Match>
+              <Match when={props.part.type === "step-start" && props.message.role === "assistant" && props.message.modelID}>
+                {model => <ProviderIcon model={model()} size={18} />}
+              </Match>
               <Match when={props.part.type === "tool" && props.part.tool === "todowrite"}>
                 <IconQueueList width={18} height={18} />
               </Match>
@@ -129,6 +140,14 @@ export function Part(props: PartProps) {
             )}
             <Spacer />
           </>
+        )}
+        {props.message.role === "user" && props.part.type === "file" && (
+          <div data-component="tool-title">
+            <span data-slot="name">Read</span>
+            <span data-slot="target" title={props.part.filename}>
+              {props.part.filename}
+            </span>
+          </div>
         )}
         {props.part.type === "step-start" && props.message.role === "assistant" && (
           <div data-component="step-start">
@@ -661,4 +680,33 @@ function flattenToolArgs(obj: any, prefix: string = ""): Array<[string, any]> {
   }
 
   return entries
+}
+
+function getProvider(model: string) {
+  const lowerModel = model.toLowerCase()
+
+  if (/claude|anthropic/.test(lowerModel)) return "anthropic"
+  if (/gpt|o[1-4]|codex|openai/.test(lowerModel)) return "openai"
+  if (/gemini|palm|bard|google/.test(lowerModel)) return "gemini"
+  if (/llama|meta/.test(lowerModel)) return "meta"
+
+  return "any"
+}
+
+export function ProviderIcon(props: { model: string; size?: number }) {
+  const provider = getProvider(props.model)
+  const size = props.size || 16
+  return (
+    <Switch fallback={<IconSparkles width={size} height={size} />}>
+      <Match when={provider === "openai"}>
+        <IconOpenAI width={size} height={size} />
+      </Match>
+      <Match when={provider === "anthropic"}>
+        <IconAnthropic width={size} height={size} />
+      </Match>
+      <Match when={provider === "gemini"}>
+        <IconGemini width={size} height={size} />
+      </Match>
+    </Switch>
+  )
 }
