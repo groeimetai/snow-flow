@@ -16,6 +16,7 @@ import { Config } from "../config/config"
 import { File } from "../file"
 import { LSP } from "../lsp"
 import { MessageV2 } from "../session/message-v2"
+import { Mode } from "../session/mode"
 
 const ERRORS = {
   400: {
@@ -679,6 +680,26 @@ export namespace Server {
           }
 
           return c.json(true)
+        },
+      )
+      .get(
+        "/mode",
+        describeRoute({
+          description: "List all modes",
+          responses: {
+            200: {
+              description: "List of modes",
+              content: {
+                "application/json": {
+                  schema: resolver(Mode.Info.array()),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          const modes = await Mode.list()
+          return c.json(modes)
         },
       )
 
