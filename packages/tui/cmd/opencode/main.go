@@ -13,8 +13,8 @@ import (
 	"github.com/sst/opencode-sdk-go"
 	"github.com/sst/opencode-sdk-go/option"
 	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/clipboard"
 	"github.com/sst/opencode/internal/tui"
-	"golang.design/x/clipboard"
 )
 
 var Version = "dev"
