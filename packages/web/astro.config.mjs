@@ -84,7 +84,7 @@ export default defineConfig({
     }),
   ],
   redirects: {
-    "/discord": "https://discord.com/invite/opencode",
+    "/discord": "https://discord.gg/opencode",
   },
 })
 

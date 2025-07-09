@@ -3,9 +3,14 @@ title: Troubleshooting
 description: Common issues and how to resolve them.
 ---
 
-## Logs
+To debug any issues with opencode, you can check the logs or the session data
+that it stores locally.
 
-opencode writes detailed logs that can help diagnose issues. Log files are stored in:
+---
+
+### Logs
+
+Log files are written to:
 
 - **macOS/Linux**: `~/.local/share/opencode/log/`
 - **Windows**: `%APPDATA%\opencode\log\`
@@ -16,7 +21,7 @@ You can configure the log level in your [config file](/docs/config#logging) to g
 
 ---
 
-## Storage
+### Storage
 
 opencode stores session data and other application data on disk at:
 
@@ -25,9 +30,11 @@ opencode stores session data and other application data on disk at:
 
 This directory contains:
 
-- `auth.json` - Authentication data (e.g., API keys, OAuth tokens)
+- `auth.json` - Authentication data like API keys, OAuth tokens
 - `log/` - Application logs
-- `project/` - Project-specific data (e.g., session and message data)
+- `project/` - Project-specific data like session and message data
+  - If the project is within a Git repo, it is stored in `./<project-slug>/storage/`
+  - If it is not a Git repo, it is stored in `./global/storage/`
 
 ---
 
@@ -35,25 +42,27 @@ This directory contains:
 
 If you're experiencing issues with opencode:
 
-### Report issues on GitHub
+1. **Report issues on GitHub**
+   
+   The best way to report bugs or request features is through our GitHub repository:
+   
+   [**github.com/sst/opencode/issues**](https://github.com/sst/opencode/issues)
+   
+   Before creating a new issue, search existing issues to see if your problem has already been reported.
 
-The best way to report bugs or request features is through our GitHub repository:
+2. **Join our Discord**
 
-[**github.com/sst/opencode/issues**](https://github.com/sst/opencode/issues)
-
-Before creating a new issue, please search existing issues to see if your problem has already been reported.
-
-### Join our Discord
-
-For real-time help and community discussion, join our Discord server:
-
-[**opencode.ai/discord**](https://opencode.ai/discord)
-
-Our community and team are happy to help with questions and troubleshooting.
+   For real-time help and community discussion, join our Discord server:
+   
+   [**opencode.ai/discord**](https://opencode.ai/discord)
 
 ---
 
 ## Common issues
+
+Here are some common issues and how to resolve them.
+
+---
 
 ### opencode won't start
 

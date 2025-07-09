@@ -63,6 +63,36 @@ You can configure the theme you want to use in your opencode config through the 
 
 ---
 
+### Logging
+
+Logs are written to:
+
+- **macOS/Linux**: `~/.local/share/opencode/log/`
+- **Windows**: `%APPDATA%\opencode\log\`
+
+You can configure the minimum log level through the `log_level` option.
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "log_level": "INFO"
+}
+```
+
+With the following options:
+
+| Level | Description |
+| ----- | ----------- |
+| `DEBUG` | All messages including debug information |
+| `INFO` | Informational messages and above |
+| `WARN` | Warnings and errors only |
+| `ERROR` | Errors only |
+
+The **default** log level is `INFO`. If you are running opencode locally in
+development mode it's set to `DEBUG`.
+
+---
+
 ### Keybinds
 
 You can customize your keybinds through the `keybinds` option.
@@ -90,28 +120,6 @@ You can configure MCP servers you want to use through the `mcp` option.
 ```
 
 [Learn more here](/docs/mcp-servers).
-
----
-
-### Logging
-
-You can configure the minimum log level through the `log_level` option. This controls which log messages are written to the log files.
-
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "log_level": "INFO"
-}
-```
-
-Available log levels are:
-
-- `DEBUG` - All messages including debug information
-- `INFO` - Informational messages and above (default)
-- `WARN` - Warnings and errors only
-- `ERROR` - Errors only
-
-The default log level is `INFO` in production and `DEBUG` in development mode.
 
 ---
 
