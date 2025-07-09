@@ -65,6 +65,7 @@ export default defineConfig({
         "docs/themes",
         "docs/keybinds",
         "docs/mcp-servers",
+        "docs/troubleshooting",
       ],
       components: {
         Hero: "./src/components/Hero.astro",
@@ -79,6 +80,6 @@ export default defineConfig({
     }),
   ],
   redirects: {
-    "/discord": "https://discord.gg/invite/opencode",
+    "/discord": "https://discord.com/invite/opencode",
   },
 })
