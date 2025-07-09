@@ -265,7 +265,13 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		}
 
-		// 6. Handle interrupt key debounce for session interrupt
+		// 6 Handle input clear command
+		inputClearCommand := a.app.Commands[commands.InputClearCommand]
+		if inputClearCommand.Matches(msg, a.isLeaderSequence) && a.editor.Length() > 0 {
+			return a, util.CmdHandler(commands.ExecuteCommandMsg(inputClearCommand))
+		}
+
+		// 7. Handle interrupt key debounce for session interrupt
 		interruptCommand := a.app.Commands[commands.SessionInterruptCommand]
 		if interruptCommand.Matches(msg, a.isLeaderSequence) && a.app.IsBusy() {
 			switch a.interruptKeyState {
@@ -284,7 +290,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// 7. Handle exit key debounce for app exit when using non-leader command
+		// 8. Handle exit key debounce for app exit when using non-leader command
 		exitCommand := a.app.Commands[commands.AppExitCommand]
 		if exitCommand.Matches(msg, a.isLeaderSequence) {
 			switch a.exitKeyState {
@@ -303,7 +309,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// 8. Check again for commands that don't require leader (excluding interrupt when busy and exit when in debounce)
+		// 9. Check again for commands that don't require leader (excluding interrupt when busy and exit when in debounce)
 		matches := a.app.Commands.Matches(msg, a.isLeaderSequence)
 		if len(matches) > 0 {
 			// Skip interrupt key if we're in debounce mode and app is busy
@@ -313,8 +319,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, util.CmdHandler(commands.ExecuteCommandsMsg(matches))
 		}
 
-		// 9. Fallback to editor. This is for other characters
-		// like backspace, tab, etc.
+		// 10. Fallback to editor. This is for other characters like backspace, tab, etc.
 		updatedEditor, cmd := a.editor.Update(msg)
 		a.editor = updatedEditor.(chat.EditorComponent)
 		return a, cmd

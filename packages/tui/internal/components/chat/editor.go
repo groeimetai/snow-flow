@@ -30,6 +30,7 @@ type EditorComponent interface {
 	Content(width int) string
 	Lines() int
 	Value() string
+	Length() int
 	Focused() bool
 	Focus() (tea.Model, tea.Cmd)
 	Blur()
@@ -293,6 +294,10 @@ func (m *editorComponent) Lines() int {
 
 func (m *editorComponent) Value() string {
 	return m.textarea.Value()
+}
+
+func (m *editorComponent) Length() int {
+	return m.textarea.Length()
 }
 
 func (m *editorComponent) Submit() (tea.Model, tea.Cmd) {
