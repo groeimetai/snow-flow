@@ -2,6 +2,23 @@ import path from "path"
 import fs from "fs/promises"
 import { Global } from "../global"
 export namespace Log {
+  export type Logger = {
+    info(message?: any, extra?: Record<string, any>): void
+    error(message?: any, extra?: Record<string, any>): void
+    warn(message?: any, extra?: Record<string, any>): void
+    tag(key: string, value: string): Logger
+    clone(): Logger
+    time(
+      message: string,
+      extra?: Record<string, any>,
+    ): {
+      stop(): void
+      [Symbol.dispose](): void
+    }
+  }
+
+  const loggers = new Map<string, Logger>()
+
   export const Default = create({ service: "default" })
 
   export interface Options {
@@ -9,7 +26,6 @@ export namespace Log {
   }
 
   let logpath = ""
-
   export function file() {
     return logpath
   }
@@ -47,6 +63,14 @@ export namespace Log {
   export function create(tags?: Record<string, any>) {
     tags = tags || {}
 
+    const service = tags["service"]
+    if (service && typeof service === "string") {
+      const cached = loggers.get(service)
+      if (cached) {
+        return cached
+      }
+    }
+
     function build(message: any, extra?: Record<string, any>) {
       const prefix = Object.entries({
         ...tags,
@@ -60,7 +84,7 @@ export namespace Log {
       last = next.getTime()
       return [next.toISOString().split(".")[0], "+" + diff + "ms", prefix, message].filter(Boolean).join(" ") + "\n"
     }
-    const result = {
+    const result: Logger = {
       info(message?: any, extra?: Record<string, any>) {
         process.stderr.write("INFO  " + build(message, extra))
       },
@@ -94,6 +118,10 @@ export namespace Log {
           },
         }
       },
+    }
+
+    if (service && typeof service === "string") {
+      loggers.set(service, result)
     }
 
     return result
