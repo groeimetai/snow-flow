@@ -66,7 +66,9 @@ export const RunCommand = cmd({
     await bootstrap({ cwd: process.cwd() }, async () => {
       const session = await (async () => {
         if (args.continue) {
-          const first = await Session.list().next()
+          const list = Session.list()
+          const first = await list.next()
+          await list.return()
           if (first.done) return
           return first.value
         }
