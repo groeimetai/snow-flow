@@ -36,6 +36,8 @@ import { SystemPrompt } from "./system"
 import { FileTime } from "../file/time"
 import { MessageV2 } from "./message-v2"
 import { Mode } from "./mode"
+import { LSP } from "../lsp"
+import { ReadTool } from "../tool/read"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -346,31 +348,68 @@ export namespace Session {
           const url = new URL(part.url)
           switch (url.protocol) {
             case "file:":
-              const filepath = path.join(app.path.cwd, url.pathname)
-              let file = Bun.file(filepath)
+              // have to normalize, symbol search returns absolute paths
+              const relativePath = url.pathname.replace(app.path.cwd, ".")
+              const filePath = path.join(app.path.cwd, relativePath)
 
               if (part.mime === "text/plain") {
-                let text = await file.text()
+                let offset: number | undefined = undefined
+                let limit: number | undefined = undefined
                 const range = {
                   start: url.searchParams.get("start"),
                   end: url.searchParams.get("end"),
                 }
-                if (range.start != null && part.mime === "text/plain") {
-                  const lines = text.split("\n")
-                  const start = parseInt(range.start)
-                  const end = range.end ? parseInt(range.end) : lines.length
-                  text = lines.slice(start, end).join("\n")
+                if (range.start != null) {
+                  const filePath = part.url.split("?")[0]
+                  let start = parseInt(range.start)
+                  let end = range.end ? parseInt(range.end) : undefined
+                  // some LSP servers (eg, gopls) don't give full range in
+                  // workspace/symbol searches, so we'll try to find the
+                  // symbol in the document to get the full range
+                  if (start === end) {
+                    const symbols = await LSP.documentSymbol(filePath)
+                    for (const symbol of symbols) {
+                      let range: LSP.Range | undefined
+                      if ("range" in symbol) {
+                        range = symbol.range
+                      } else if ("location" in symbol) {
+                        range = symbol.location.range
+                      }
+                      if (range?.start?.line && range?.start?.line === start) {
+                        start = range.start.line
+                        end = range?.end?.line ?? start
+                        break
+                      }
+                    }
+                    offset = Math.max(start - 2, 0)
+                    if (end) {
+                      limit = end - offset + 2
+                    }
+                  }
                 }
-                FileTime.read(input.sessionID, filepath)
+                const args = { filePath, offset, limit }
+                const result = await ReadTool.execute(args, {
+                  sessionID: input.sessionID,
+                  abort: abort.signal,
+                  messageID: "", // read tool doesn't use message ID
+                  metadata: async () => {},
+                })
                 return [
                   {
                     type: "text",
                     synthetic: true,
-                    text: ["Called the Read tool on " + url.pathname, "<results>", text, "</results>"].join("\n"),
+                    text: `Called the Read tool with the following input: ${JSON.stringify(args)}`,
+                  },
+                  {
+                    type: "text",
+                    synthetic: true,
+                    text: result.output,
                   },
                 ]
               }
 
+              let file = Bun.file(filePath)
+              FileTime.read(input.sessionID, filePath)
               return [
                 {
                   type: "text",

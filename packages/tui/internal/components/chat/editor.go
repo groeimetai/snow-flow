@@ -140,9 +140,9 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spinner = createSpinner()
 		return m, tea.Batch(m.spinner.Tick, m.textarea.Focus())
 	case dialog.CompletionSelectedMsg:
-		switch msg.ProviderID {
+		switch msg.Item.GetProviderID() {
 		case "commands":
-			commandName := strings.TrimPrefix(msg.CompletionValue, "/")
+			commandName := strings.TrimPrefix(msg.Item.GetValue(), "/")
 			updated, cmd := m.Clear()
 			m = updated.(*editorComponent)
 			cmds = append(cmds, cmd)
@@ -152,7 +152,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			atIndex := m.textarea.LastRuneIndex('@')
 			if atIndex == -1 {
 				// Should not happen, but as a fallback, just insert.
-				m.textarea.InsertString(msg.CompletionValue + " ")
+				m.textarea.InsertString(msg.Item.GetValue() + " ")
 				return m, nil
 			}
 
@@ -163,7 +163,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// Now, insert the attachment at the position where the '@' was.
 			// The cursor is now at `atIndex` after the replacement.
-			filePath := msg.CompletionValue
+			filePath := msg.Item.GetValue()
 			extension := filepath.Ext(filePath)
 			mediaType := ""
 			switch extension {
@@ -186,15 +186,32 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.textarea.InsertAttachment(attachment)
 			m.textarea.InsertString(" ")
 			return m, nil
-		default:
-			existingValue := m.textarea.Value()
-			lastSpaceIndex := strings.LastIndex(existingValue, " ")
-			if lastSpaceIndex == -1 {
-				m.textarea.SetValue(msg.CompletionValue + " ")
-			} else {
-				modifiedValue := existingValue[:lastSpaceIndex+1] + msg.CompletionValue
-				m.textarea.SetValue(modifiedValue + " ")
+		case "symbols":
+			atIndex := m.textarea.LastRuneIndex('@')
+			if atIndex == -1 {
+				// Should not happen, but as a fallback, just insert.
+				m.textarea.InsertString(msg.Item.GetValue() + " ")
+				return m, nil
 			}
+
+			cursorCol := m.textarea.CursorColumn()
+			m.textarea.ReplaceRange(atIndex, cursorCol, "")
+
+			symbol := msg.Item.GetRaw().(opencode.Symbol)
+			parts := strings.Split(symbol.Name, ".")
+			lastPart := parts[len(parts)-1]
+			attachment := &textarea.Attachment{
+				ID:        uuid.NewString(),
+				Display:   "@" + lastPart,
+				URL:       msg.Item.GetValue(),
+				Filename:  lastPart,
+				MediaType: "text/plain",
+			}
+			m.textarea.InsertAttachment(attachment)
+			m.textarea.InsertString(" ")
+			return m, nil
+		default:
+			slog.Debug("Unknown provider", "provider", msg.Item.GetProviderID())
 			return m, nil
 		}
 	}

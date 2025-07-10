@@ -65,6 +65,7 @@ type appModel struct {
 	completions          dialog.CompletionDialog
 	commandProvider      dialog.CompletionProvider
 	fileProvider         dialog.CompletionProvider
+	symbolsProvider      dialog.CompletionProvider
 	showCompletionDialog bool
 	fileCompletionActive bool
 	leaderBinding        *key.Binding
@@ -202,7 +203,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 
 			// Set command provider for command completion
-			a.completions = dialog.NewCompletionDialogComponent(a.commandProvider, "/")
+			a.completions = dialog.NewCompletionDialogComponent("/", a.commandProvider)
 			updated, cmd = a.completions.Update(msg)
 			a.completions = updated.(dialog.CompletionDialog)
 			cmds = append(cmds, cmd)
@@ -220,8 +221,8 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.editor = updated.(chat.EditorComponent)
 			cmds = append(cmds, cmd)
 
-			// Set file provider for file completion
-			a.completions = dialog.NewCompletionDialogComponent(a.fileProvider, "@")
+			// Set both file and symbols providers for @ completion
+			a.completions = dialog.NewCompletionDialogComponent("@", a.fileProvider, a.symbolsProvider)
 			updated, cmd = a.completions.Update(msg)
 			a.completions = updated.(dialog.CompletionDialog)
 			cmds = append(cmds, cmd)
@@ -922,7 +923,7 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		a.modal = themeDialog
 	case commands.FileListCommand:
 		a.editor.Blur()
-		provider := completions.NewFileAndFolderContextGroup(a.app)
+		provider := completions.NewFileContextGroup(a.app)
 		findDialog := dialog.NewFindDialog(provider)
 		findDialog.SetWidth(layout.Current.Container.Width - 8)
 		a.modal = findDialog
@@ -1030,11 +1031,12 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 
 func NewModel(app *app.App) tea.Model {
 	commandProvider := completions.NewCommandCompletionProvider(app)
-	fileProvider := completions.NewFileAndFolderContextGroup(app)
+	fileProvider := completions.NewFileContextGroup(app)
+	symbolsProvider := completions.NewSymbolsContextGroup(app)
 
 	messages := chat.NewMessagesComponent(app)
 	editor := chat.NewEditorComponent(app)
-	completions := dialog.NewCompletionDialogComponent(commandProvider, "/")
+	completions := dialog.NewCompletionDialogComponent("/", commandProvider)
 
 	var leaderBinding *key.Binding
 	if app.Config.Keybinds.Leader != "" {
@@ -1050,6 +1052,7 @@ func NewModel(app *app.App) tea.Model {
 		completions:          completions,
 		commandProvider:      commandProvider,
 		fileProvider:         fileProvider,
+		symbolsProvider:      symbolsProvider,
 		leaderBinding:        leaderBinding,
 		isLeaderSequence:     false,
 		showCompletionDialog: false,
