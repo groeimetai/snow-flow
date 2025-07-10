@@ -24,6 +24,57 @@ When opencode starts up, it looks for a config file in the current directory or 
 
 ---
 
+## Variable substitution
+
+You can use variable substitution in your config files to reference environment variables and file contents.
+
+### Environment variables
+
+Use `{env:VARIABLE_NAME}` to substitute environment variables:
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "{env:OPENCODE_MODEL}",
+  "provider": {
+    "anthropic": {
+      "api_key": "{env:ANTHROPIC_API_KEY}"
+    }
+  }
+}
+```
+
+If the environment variable is not set, it will be replaced with an empty string.
+
+### File contents
+
+Use `{file:path/to/file}` to substitute the contents of a file:
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["{file:./custom-instructions.md}"],
+  "provider": {
+    "openai": {
+      "api_key": "{file:~/.secrets/openai-key}"
+    }
+  }
+}
+```
+
+File paths can be:
+
+- Relative to the config file directory
+- Absolute paths (starting with `/` or `~`)
+
+This is useful for:
+
+- Keeping sensitive data like API keys in separate files
+- Including large instruction files without cluttering your config
+- Sharing common configuration snippets across multiple config files
+
+---
+
 ## Schema
 
 The config file has a schema that's defined in [**`opencode.ai/config.json`**](https://opencode.ai/config.json).
@@ -81,12 +132,12 @@ You can configure the minimum log level through the `log_level` option.
 
 With the following options:
 
-| Level | Description |
-| ----- | ----------- |
+| Level   | Description                              |
+| ------- | ---------------------------------------- |
 | `DEBUG` | All messages including debug information |
-| `INFO` | Informational messages and above |
-| `WARN` | Warnings and errors only |
-| `ERROR` | Errors only |
+| `INFO`  | Informational messages and above         |
+| `WARN`  | Warnings and errors only                 |
+| `ERROR` | Errors only                              |
 
 The **default** log level is `INFO`. If you are running opencode locally in
 development mode it's set to `DEBUG`.
