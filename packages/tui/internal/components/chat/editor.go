@@ -242,13 +242,17 @@ func (m *editorComponent) Content(width int) string {
 		prompt,
 		m.textarea.View(),
 	)
+	borderForeground := t.Border()
+	if m.app.IsLeaderSequence {
+		borderForeground = t.Accent()
+	}
 	textarea = styles.NewStyle().
 		Background(t.BackgroundElement()).
 		Width(width).
 		PaddingTop(1).
 		PaddingBottom(1).
 		BorderStyle(lipgloss.ThickBorder()).
-		BorderForeground(t.Border()).
+		BorderForeground(borderForeground).
 		BorderBackground(t.Background()).
 		BorderLeft(true).
 		BorderRight(true).

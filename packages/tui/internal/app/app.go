@@ -22,25 +22,26 @@ import (
 )
 
 type App struct {
-	Info          opencode.App
-	Modes         []opencode.Mode
-	Providers     []opencode.Provider
-	Version       string
-	StatePath     string
-	Config        *opencode.Config
-	Client        *opencode.Client
-	State         *config.State
-	ModeIndex     int
-	Mode          *opencode.Mode
-	Provider      *opencode.Provider
-	Model         *opencode.Model
-	Session       *opencode.Session
-	Messages      []opencode.MessageUnion
-	Commands      commands.CommandRegistry
-	InitialModel  *string
-	InitialPrompt *string
-	IntitialMode  *string
-	compactCancel context.CancelFunc
+	Info             opencode.App
+	Modes            []opencode.Mode
+	Providers        []opencode.Provider
+	Version          string
+	StatePath        string
+	Config           *opencode.Config
+	Client           *opencode.Client
+	State            *config.State
+	ModeIndex        int
+	Mode             *opencode.Mode
+	Provider         *opencode.Provider
+	Model            *opencode.Model
+	Session          *opencode.Session
+	Messages         []opencode.MessageUnion
+	Commands         commands.CommandRegistry
+	InitialModel     *string
+	InitialPrompt    *string
+	IntitialMode     *string
+	compactCancel    context.CancelFunc
+	IsLeaderSequence bool
 }
 
 type SessionSelectedMsg = *opencode.Session

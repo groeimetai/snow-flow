@@ -70,17 +70,17 @@ type appModel struct {
 	showCompletionDialog bool
 	fileCompletionActive bool
 	leaderBinding        *key.Binding
-	isLeaderSequence     bool
-	toastManager         *toast.ToastManager
-	interruptKeyState    InterruptKeyState
-	exitKeyState         ExitKeyState
-	lastScroll           time.Time
-	messagesRight        bool
-	fileViewer           fileviewer.Model
-	lastMouse            tea.Mouse
-	fileViewerStart      int
-	fileViewerEnd        int
-	fileViewerHit        bool
+	// isLeaderSequence     bool
+	toastManager      *toast.ToastManager
+	interruptKeyState InterruptKeyState
+	exitKeyState      ExitKeyState
+	lastScroll        time.Time
+	messagesRight     bool
+	fileViewer        fileviewer.Model
+	lastMouse         tea.Mouse
+	fileViewerStart   int
+	fileViewerEnd     int
+	fileViewerHit     bool
 }
 
 func (a appModel) Init() tea.Cmd {
@@ -184,9 +184,9 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// 2. Check for commands that require leader
-		if a.isLeaderSequence {
-			matches := a.app.Commands.Matches(msg, a.isLeaderSequence)
-			a.isLeaderSequence = false
+		if a.app.IsLeaderSequence {
+			matches := a.app.Commands.Matches(msg, a.app.IsLeaderSequence)
+			a.app.IsLeaderSequence = false
 			if len(matches) > 0 {
 				return a, util.CmdHandler(commands.ExecuteCommandsMsg(matches))
 			}
@@ -261,21 +261,21 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// 5. Check for leader key activation
 		if a.leaderBinding != nil &&
-			!a.isLeaderSequence &&
+			!a.app.IsLeaderSequence &&
 			key.Matches(msg, *a.leaderBinding) {
-			a.isLeaderSequence = true
+			a.app.IsLeaderSequence = true
 			return a, nil
 		}
 
 		// 6 Handle input clear command
 		inputClearCommand := a.app.Commands[commands.InputClearCommand]
-		if inputClearCommand.Matches(msg, a.isLeaderSequence) && a.editor.Length() > 0 {
+		if inputClearCommand.Matches(msg, a.app.IsLeaderSequence) && a.editor.Length() > 0 {
 			return a, util.CmdHandler(commands.ExecuteCommandMsg(inputClearCommand))
 		}
 
 		// 7. Handle interrupt key debounce for session interrupt
 		interruptCommand := a.app.Commands[commands.SessionInterruptCommand]
-		if interruptCommand.Matches(msg, a.isLeaderSequence) && a.app.IsBusy() {
+		if interruptCommand.Matches(msg, a.app.IsLeaderSequence) && a.app.IsBusy() {
 			switch a.interruptKeyState {
 			case InterruptKeyIdle:
 				// First interrupt key press - start debounce timer
@@ -294,7 +294,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// 8. Handle exit key debounce for app exit when using non-leader command
 		exitCommand := a.app.Commands[commands.AppExitCommand]
-		if exitCommand.Matches(msg, a.isLeaderSequence) {
+		if exitCommand.Matches(msg, a.app.IsLeaderSequence) {
 			switch a.exitKeyState {
 			case ExitKeyIdle:
 				// First exit key press - start debounce timer
@@ -312,10 +312,10 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// 9. Check again for commands that don't require leader (excluding interrupt when busy and exit when in debounce)
-		matches := a.app.Commands.Matches(msg, a.isLeaderSequence)
+		matches := a.app.Commands.Matches(msg, a.app.IsLeaderSequence)
 		if len(matches) > 0 {
 			// Skip interrupt key if we're in debounce mode and app is busy
-			if interruptCommand.Matches(msg, a.isLeaderSequence) && a.app.IsBusy() && a.interruptKeyState != InterruptKeyIdle {
+			if interruptCommand.Matches(msg, a.app.IsLeaderSequence) && a.app.IsBusy() && a.interruptKeyState != InterruptKeyIdle {
 				return a, nil
 			}
 			return a, util.CmdHandler(commands.ExecuteCommandsMsg(matches))
@@ -1067,7 +1067,6 @@ func NewModel(app *app.App) tea.Model {
 		fileProvider:         fileProvider,
 		symbolsProvider:      symbolsProvider,
 		leaderBinding:        leaderBinding,
-		isLeaderSequence:     false,
 		showCompletionDialog: false,
 		fileCompletionActive: false,
 		toastManager:         toast.NewToastManager(),
