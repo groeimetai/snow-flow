@@ -97,6 +97,42 @@ You can configure the providers and models you want to use in your opencode conf
 
 [Learn more here](/docs/models).
 
+#### Custom Providers
+
+You can also define custom providers in your configuration. This is useful for connecting to services that are not natively supported but are OpenAI API-compatible, such as local models served through LM Studio or Ollama.
+
+Here's an example of how to configure a local on-device model from LM Studio:
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "lmstudio/google/gemma-3n-e4b",
+  "provider": {
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LM Studio (local)",
+      "options": {
+        "baseURL": "http://127.0.0.1:1234/v1"
+      },
+      "models": {
+        "google/gemma-3n-e4b": {
+          "name": "Gemma 3n-e4b (local)"
+        }
+      }
+    }
+  }
+}
+```
+
+In this example:
+
+- `lmstudio` is the custom provider ID.
+- `npm` specifies the package to use for this provider. `@ai-sdk/openai-compatible` is used for any OpenAI-compatible API.
+- `name` is the display name for the provider in the UI.
+- `options.baseURL` is the endpoint for the local server.
+- `models` is a map of model IDs to their configurations. The model name will be displayed in the model selection list.
+- The `model` key at the root is set to the full ID of the model you want to use, which is `provider_id/model_id`.
+
 ---
 
 ### Themes
