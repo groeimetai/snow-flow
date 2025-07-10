@@ -27,6 +27,7 @@ func main() {
 
 	var model *string = flag.String("model", "", "model to begin with")
 	var prompt *string = flag.String("prompt", "", "prompt to begin with")
+	var mode *string = flag.String("mode", "", "mode to begin with")
 	flag.Parse()
 
 	url := os.Getenv("OPENCODE_SERVER")
@@ -68,7 +69,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	app_, err := app.New(ctx, version, appInfo, modes, httpClient, model, prompt)
+	app_, err := app.New(ctx, version, appInfo, modes, httpClient, model, prompt, mode)
 	if err != nil {
 		panic(err)
 	}

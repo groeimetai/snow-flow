@@ -39,6 +39,7 @@ type App struct {
 	Commands      commands.CommandRegistry
 	InitialModel  *string
 	InitialPrompt *string
+	IntitialMode  *string
 	compactCancel context.CancelFunc
 }
 
@@ -70,8 +71,9 @@ func New(
 	appInfo opencode.App,
 	modes []opencode.Mode,
 	httpClient *opencode.Client,
-	model *string,
-	prompt *string,
+	initialModel *string,
+	initialPrompt *string,
+	initialMode *string,
 ) (*App, error) {
 	util.RootPath = appInfo.Path.Root
 	util.CwdPath = appInfo.Path.Cwd
@@ -105,6 +107,9 @@ func New(
 	modeName := "build"
 	if appState.Mode != "" {
 		modeName = appState.Mode
+	}
+	if initialMode != nil && *initialMode != "" {
+		modeName = *initialMode
 	}
 	for i, m := range modes {
 		if m.Name == modeName {
@@ -154,8 +159,9 @@ func New(
 		Session:       &opencode.Session{},
 		Messages:      []opencode.MessageUnion{},
 		Commands:      commands.LoadFromConfig(configInfo),
-		InitialModel:  model,
-		InitialPrompt: prompt,
+		InitialModel:  initialModel,
+		InitialPrompt: initialPrompt,
+		IntitialMode:  initialMode,
 	}
 
 	return app, nil

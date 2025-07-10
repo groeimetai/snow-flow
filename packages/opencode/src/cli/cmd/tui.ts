@@ -31,6 +31,10 @@ export const TuiCommand = cmd({
         alias: ["p"],
         type: "string",
         describe: "prompt to use",
+      })
+      .option("mode", {
+        type: "string",
+        describe: "mode to use",
       }),
   handler: async (args) => {
     while (true) {
@@ -78,6 +82,7 @@ export const TuiCommand = cmd({
             ...cmd,
             ...(args.model ? ["--model", args.model] : []),
             ...(args.prompt ? ["--prompt", args.prompt] : []),
+            ...(args.mode ? ["--mode", args.mode] : []),
           ],
           cwd,
           stdout: "inherit",
