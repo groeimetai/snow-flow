@@ -1,7 +1,6 @@
 package status
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -56,50 +55,6 @@ func (m statusComponent) logo() string {
 		Render(open + code + version)
 }
 
-func formatTokensAndCost(
-	tokens float64,
-	contextWindow float64,
-	cost float64,
-	isSubscriptionModel bool,
-) string {
-	// Format tokens in human-readable format (e.g., 110K, 1.2M)
-	var formattedTokens string
-	switch {
-	case tokens >= 1_000_000:
-		formattedTokens = fmt.Sprintf("%.1fM", float64(tokens)/1_000_000)
-	case tokens >= 1_000:
-		formattedTokens = fmt.Sprintf("%.1fK", float64(tokens)/1_000)
-	default:
-		formattedTokens = fmt.Sprintf("%d", int(tokens))
-	}
-
-	// Remove .0 suffix if present
-	if strings.HasSuffix(formattedTokens, ".0K") {
-		formattedTokens = strings.Replace(formattedTokens, ".0K", "K", 1)
-	}
-	if strings.HasSuffix(formattedTokens, ".0M") {
-		formattedTokens = strings.Replace(formattedTokens, ".0M", "M", 1)
-	}
-
-	percentage := (float64(tokens) / float64(contextWindow)) * 100
-
-	if isSubscriptionModel {
-		return fmt.Sprintf(
-			"Context: %s (%d%%)",
-			formattedTokens,
-			int(percentage),
-		)
-	}
-
-	formattedCost := fmt.Sprintf("$%.2f", cost)
-	return fmt.Sprintf(
-		"Context: %s (%d%%), Cost: %s",
-		formattedTokens,
-		int(percentage),
-		formattedCost,
-	)
-}
-
 func (m statusComponent) View() string {
 	t := theme.CurrentTheme()
 	logo := m.logo()
@@ -109,41 +64,6 @@ func (m statusComponent) View() string {
 		Background(t.BackgroundPanel()).
 		Padding(0, 1).
 		Render(m.cwd)
-
-		// sessionInfo := ""
-		// if m.app.Session.ID != "" {
-		// 	tokens := float64(0)
-		// 	cost := float64(0)
-		// 	contextWindow := m.app.Model.Limit.Context
-		//
-		// 	for _, message := range m.app.Messages {
-		// 		if assistant, ok := message.(opencode.AssistantMessage); ok {
-		// 			cost += assistant.Cost
-		// 			usage := assistant.Tokens
-		// 			if usage.Output > 0 {
-		// 				if assistant.Summary {
-		// 					tokens = usage.Output
-		// 					continue
-		// 				}
-		// 				tokens = (usage.Input +
-		// 					usage.Cache.Write +
-		// 					usage.Cache.Read +
-		// 					usage.Output +
-		// 					usage.Reasoning)
-		// 			}
-		// 		}
-		// 	}
-		//
-		// 	// Check if current model is a subscription model (cost is 0 for both input and output)
-		// 	isSubscriptionModel := m.app.Model != nil &&
-		// 		m.app.Model.Cost.Input == 0 && m.app.Model.Cost.Output == 0
-		//
-		// 	sessionInfo = styles.NewStyle().
-		// 		Foreground(t.TextMuted()).
-		// 		Background(t.BackgroundElement()).
-		// 		Padding(0, 1).
-		// 		Render(formatTokensAndCost(tokens, contextWindow, cost, isSubscriptionModel))
-		// }
 
 	var modeBackground compat.AdaptiveColor
 	var modeForeground compat.AdaptiveColor
