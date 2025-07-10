@@ -4,7 +4,6 @@ import { LSPClient } from "./client"
 import path from "path"
 import { LSPServer } from "./server"
 import { z } from "zod"
-import { Filesystem } from "../util/filesystem"
 
 export namespace LSP {
   const log = Log.create({ service: "lsp" })
@@ -54,37 +53,10 @@ export namespace LSP {
 
   const state = App.state(
     "lsp",
-    async (app) => {
-      log.info("initializing")
+    async () => {
       const clients: LSPClient.Info[] = []
-      if (!app.git) return { clients }
-
-      for (const server of Object.values(LSPServer)) {
-        const roots = await server.roots(app)
-
-        for (const root of roots) {
-          if (!Filesystem.overlaps(app.path.cwd, root)) continue
-          log.info("", {
-            root,
-            serverID: server.id,
-          })
-          const handle = await server.spawn(App.info(), root)
-          if (!handle) break
-          const client = await LSPClient.create({
-            serverID: server.id,
-            server: handle,
-            root,
-          }).catch((err) => {
-            handle.process.kill()
-            log.error("", { error: err })
-          })
-          if (!client) break
-          clients.push(client)
-        }
-      }
-
-      log.info("initialized")
       return {
+        broken: new Set<string>(),
         clients,
       }
     },
@@ -99,13 +71,43 @@ export namespace LSP {
     return state()
   }
 
+  async function getClients(file: string) {
+    const s = await state()
+    const extension = path.parse(file).ext
+    const result: LSPClient.Info[] = []
+    for (const server of Object.values(LSPServer)) {
+      if (!server.extensions.includes(extension)) continue
+      const root = await server.root(file, App.info())
+      if (!root) continue
+      if (s.broken.has(root + server.id)) continue
+
+      const match = s.clients.find((x) => x.root === root && x.serverID === server.id)
+      if (match) {
+        result.push(match)
+        continue
+      }
+      const handle = await server.spawn(App.info(), root)
+      if (!handle) continue
+      const client = await LSPClient.create({
+        serverID: server.id,
+        server: handle,
+        root,
+      }).catch((err) => {
+        s.broken.add(root + server.id)
+        handle.process.kill()
+        log.error("", { error: err })
+      })
+      if (!client) continue
+      s.clients.push(client)
+      result.push(client)
+    }
+    return result
+  }
+
   export async function touchFile(input: string, waitForDiagnostics?: boolean) {
-    const extension = path.parse(input).ext
-    const matches = Object.values(LSPServer)
-      .filter((x) => x.extensions.includes(extension))
-      .map((x) => x.id)
+    const clients = await getClients(input)
     await run(async (client) => {
-      if (!matches.includes(client.serverID)) return
+      if (!clients.includes(client)) return
       const wait = waitForDiagnostics ? client.waitForDiagnostics({ path: input }) : Promise.resolve()
       await client.notify.open({ path: input })
       return wait
