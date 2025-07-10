@@ -390,7 +390,7 @@ export namespace Session {
       }),
     ).then((x) => x.flat())
 
-    if (true)
+    if (input.mode === "plan")
       input.parts.push({
         type: "text",
         text: PROMPT_PLAN,
