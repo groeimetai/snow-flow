@@ -1,0 +1,173 @@
+---
+title: Modes
+description: Configure different modes for different use cases.
+---
+
+Modes in opencode allow you to customize the behavior, tools, and prompts for different use cases. You can switch between modes during a session or configure them in your config file.
+
+## Built-in modes
+
+opencode comes with two built-in modes:
+
+### Build mode (default)
+
+The default mode with all tools enabled. This is the standard mode for development work where you need full access to file operations and system commands.
+
+### Plan mode
+
+A restricted mode designed for planning and analysis. In plan mode, the following tools are disabled by default:
+
+- `write` - Cannot create new files
+- `edit` - Cannot modify existing files
+- `patch` - Cannot apply patches
+- `bash` - Cannot execute shell commands
+
+This mode is useful when you want the AI to analyze code, suggest changes, or create plans without making any actual modifications to your codebase.
+
+## Switching modes
+
+You can switch between modes during a session using the `tab` key (or your configured `switch_mode` keybind).
+
+## Configuring modes
+
+You can customize modes in your `opencode.json` config file:
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mode": {
+    "build": {
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "prompt": "{file:./prompts/build.txt}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "plan": {
+      "model": "anthropic/claude-haiku-4-20250514",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false
+      }
+    },
+    "review": {
+      "prompt": "{file:./prompts/code-review.txt}",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false,
+        "read": true,
+        "grep": true,
+        "glob": true
+      }
+    }
+  }
+}
+```
+
+## Mode configuration options
+
+Each mode can be configured with the following options:
+
+### `model`
+
+Override the default model for this mode. Useful for using different models optimized for different tasks (e.g., a faster model for planning, a more capable model for implementation).
+
+```json
+{
+  "mode": {
+    "plan": {
+      "model": "anthropic/claude-haiku-4-20250514"
+    }
+  }
+}
+```
+
+### `prompt`
+
+Specify a custom system prompt file for this mode. The prompt file should contain instructions specific to the mode's purpose.
+
+```json
+{
+  "mode": {
+    "review": {
+      "prompt": "{file:./prompts/code-review.txt}"
+    }
+  }
+}
+```
+
+### `tools`
+
+Control which tools are available in this mode. You can enable or disable specific tools by setting them to `true` or `false`.
+
+```json
+{
+  "mode": {
+    "readonly": {
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false,
+        "read": true,
+        "grep": true,
+        "glob": true
+      }
+    }
+  }
+}
+```
+
+## Creating custom modes
+
+You can create your own custom modes by adding them to the `mode` configuration. For example, a documentation mode that focuses on reading and analysis:
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mode": {
+    "docs": {
+      "prompt": "{file:./prompts/documentation.txt}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": false,
+        "read": true,
+        "grep": true,
+        "glob": true
+      }
+    }
+  }
+}
+```
+
+## Available tools
+
+The following tools can be controlled in mode configurations:
+
+| Tool        | Description             |
+| ----------- | ----------------------- |
+| `bash`      | Execute shell commands  |
+| `edit`      | Modify existing files   |
+| `write`     | Create new files        |
+| `read`      | Read file contents      |
+| `grep`      | Search file contents    |
+| `glob`      | Find files by pattern   |
+| `list`      | List directory contents |
+| `patch`     | Apply patches to files  |
+| `todowrite` | Manage todo lists       |
+| `todoread`  | Read todo lists         |
+| `webfetch`  | Fetch web content       |
+
+## Use cases
+
+Here are some common use cases for different modes:
+
+- **Build mode**: Full development work with all tools enabled
+- **Plan mode**: Analysis and planning without making changes
+- **Review mode**: Code review with read-only access plus documentation tools
+- **Debug mode**: Focused on investigation with bash and read tools enabled
+- **Docs mode**: Documentation writing with file operations but no system commands

@@ -174,6 +174,48 @@ You can configure MCP servers you want to use through the `mcp` option.
 
 ---
 
+### Modes
+
+You can configure different modes for opencode through the `mode` option. Modes allow you to customize the behavior, tools, and prompts for different use cases.
+
+opencode comes with two built-in modes: `build` (default with all tools enabled) and `plan` (restricted mode with file modification tools disabled). You can override these built-in modes or create your own custom modes.
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mode": {
+    "build": {
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "prompt": "{file:./prompts/build.txt}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "plan": {
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false
+      }
+    },
+    "review": {
+      "prompt": "{file:./prompts/code-review.txt}",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false
+      }
+    }
+  }
+}
+```
+
+[Learn more here](/docs/modes).
+
+---
+
 ### Disabled providers
 
 You can disable providers that are loaded automatically through the `disabled_providers` option. This is useful when you want to prevent certain providers from being loaded even if their credentials are available.
