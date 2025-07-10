@@ -42,6 +42,8 @@ import { ReadTool } from "../tool/read"
 export namespace Session {
   const log = Log.create({ service: "session" })
 
+  const OUTPUT_TOKEN_MAX = 32_000
+
   export const Info = z
     .object({
       id: Identifier.schema("session"),
@@ -319,15 +321,13 @@ export namespace Session {
     }
 
     const previous = msgs.at(-1) as MessageV2.Assistant
+    const outputLimit = Math.min(model.info.limit.output, OUTPUT_TOKEN_MAX)
 
     // auto summarize if too long
     if (previous) {
       const tokens =
         previous.tokens.input + previous.tokens.cache.read + previous.tokens.cache.write + previous.tokens.output
-      if (
-        model.info.limit.context &&
-        tokens > Math.max((model.info.limit.context - (model.info.limit.output ?? 0)) * 0.9, 0)
-      ) {
+      if (model.info.limit.context && tokens > Math.max((model.info.limit.context - outputLimit) * 0.9, 0)) {
         await summarize({
           sessionID: input.sessionID,
           providerID: input.providerID,
@@ -580,7 +580,7 @@ export namespace Session {
     const result = streamText({
       onError() {},
       maxRetries: 10,
-      maxOutputTokens: input.modelID.includes("grok-4") ? undefined : Math.max(0, model.info.limit.output) || undefined,
+      maxOutputTokens: outputLimit,
       abortSignal: abort.signal,
       stopWhen: stepCountIs(1000),
       providerOptions: model.info.options,
