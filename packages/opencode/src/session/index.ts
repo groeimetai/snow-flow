@@ -580,7 +580,7 @@ export namespace Session {
     const result = streamText({
       onError() {},
       maxRetries: 10,
-      maxOutputTokens: Math.max(0, model.info.limit.output) || undefined,
+      maxOutputTokens: input.modelID.includes("grok-4") ? undefined : Math.max(0, model.info.limit.output) || undefined,
       abortSignal: abort.signal,
       stopWhen: stepCountIs(1000),
       providerOptions: model.info.options,
