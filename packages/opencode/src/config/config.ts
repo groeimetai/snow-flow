@@ -195,19 +195,40 @@ export namespace Config {
     return result
   })
 
-  async function load(path: string) {
-    const data = await Bun.file(path)
-      .json()
+  async function load(configPath: string) {
+    let text = await Bun.file(configPath)
+      .text()
       .catch((err) => {
-        if (err.code === "ENOENT") return {}
-        throw new JsonError({ path }, { cause: err })
+        if (err.code === "ENOENT") return "{}"
+        throw new JsonError({ path: configPath }, { cause: err })
       })
+
+    text = text.replace(/\{env:([^}]+)\}/g, (_, varName) => {
+      return process.env[varName] || ""
+    })
+
+    const fileMatches = text.match(/\{file:([^}]+)\}/g)
+    if (fileMatches) {
+      const configDir = path.dirname(configPath)
+      for (const match of fileMatches) {
+        const filePath = match.slice(6, -1)
+        const resolvedPath = path.isAbsolute(filePath) ? filePath : path.resolve(configDir, filePath)
+        const fileContent = await Bun.file(resolvedPath).text()
+        text = text.replace(match, fileContent)
+      }
+    }
+
+    let data: any
+    try {
+      data = JSON.parse(text)
+    } catch (err) {
+      throw new JsonError({ path: configPath }, { cause: err as Error })
+    }
 
     const parsed = Info.safeParse(data)
     if (parsed.success) return parsed.data
-    throw new InvalidError({ path, issues: parsed.error.issues })
+    throw new InvalidError({ path: configPath, issues: parsed.error.issues })
   }
-
   export const JsonError = NamedError.create(
     "ConfigJsonError",
     z.object({
