@@ -43,6 +43,25 @@ Your editor should be able to validate and autocomplete based on the schema.
 
 ---
 
+### Modes
+
+opencode comes with two built-in modes: _build_, the default with all tools enabled. And _plan_, restricted mode with file modification tools disabled. You can override these built-in modes or define your own custom modes with the `mode` option.
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mode": {
+    "build": { },
+    "plan": { },
+    "my-custom-mode": { }
+  }
+}
+```
+
+[Learn more here](/docs/modes).
+
+---
+
 ### Models
 
 You can configure the providers and models you want to use in your opencode config through the `provider` and `model` options.
@@ -55,43 +74,7 @@ You can configure the providers and models you want to use in your opencode conf
 }
 ```
 
-[Learn more here](/docs/models).
-
-#### Custom Providers
-
-You can also define custom providers in your configuration. This is useful for connecting to services that are not natively supported but are OpenAI API-compatible, such as local models served through LM Studio or Ollama.
-
-Here's an example of how to configure a local on-device model from LM Studio:
-
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "model": "lmstudio/google/gemma-3n-e4b",
-  "provider": {
-    "lmstudio": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "LM Studio (local)",
-      "options": {
-        "baseURL": "http://127.0.0.1:1234/v1"
-      },
-      "models": {
-        "google/gemma-3n-e4b": {
-          "name": "Gemma 3n-e4b (local)"
-        }
-      }
-    }
-  }
-}
-```
-
-In this example:
-
-- `lmstudio` is the custom provider ID.
-- `npm` specifies the package to use for this provider. `@ai-sdk/openai-compatible` is used for any OpenAI-compatible API.
-- `name` is the display name for the provider in the UI.
-- `options.baseURL` is the endpoint for the local server.
-- `models` is a map of model IDs to their configurations. The model name will be displayed in the model selection list.
-- The `model` key at the root is set to the full ID of the model you want to use, which is `provider_id/model_id`.
+You can also configure [local models](/docs/models#local). [Learn more](/docs/models).
 
 ---
 
@@ -167,48 +150,6 @@ You can configure MCP servers you want to use through the `mcp` option.
 ```
 
 [Learn more here](/docs/mcp-servers).
-
----
-
-### Modes
-
-You can configure different modes for opencode through the `mode` option. Modes allow you to customize the behavior, tools, and prompts for different use cases.
-
-opencode comes with two built-in modes: `build` (default with all tools enabled) and `plan` (restricted mode with file modification tools disabled). You can override these built-in modes or create your own custom modes.
-
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mode": {
-    "build": {
-      "model": "anthropic/claude-sonnet-4-20250514",
-      "prompt": "{file:./prompts/build.txt}",
-      "tools": {
-        "write": true,
-        "edit": true,
-        "bash": true
-      }
-    },
-    "plan": {
-      "tools": {
-        "write": false,
-        "edit": false,
-        "bash": false
-      }
-    },
-    "review": {
-      "prompt": "{file:./prompts/code-review.txt}",
-      "tools": {
-        "write": false,
-        "edit": false,
-        "bash": false
-      }
-    }
-  }
-}
-```
-
-[Learn more here](/docs/modes).
 
 ---
 
