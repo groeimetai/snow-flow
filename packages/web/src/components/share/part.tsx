@@ -1,15 +1,6 @@
 import map from "lang-map"
 import { DateTime } from "luxon"
-import {
-  For,
-  Show,
-  Match,
-  Switch,
-  type JSX,
-  createMemo,
-  createSignal,
-  type ParentProps
-} from "solid-js"
+import { For, Show, Match, Switch, type JSX, createMemo, createSignal, type ParentProps } from "solid-js"
 import {
   IconHashtag,
   IconSparkles,
@@ -34,6 +25,7 @@ import { ContentDiff } from "./content-diff"
 import { ContentText } from "./content-text"
 import { ContentError } from "./content-error"
 import { ContentMarkdown } from "./content-markdown"
+import { ContentBash } from "./content-bash"
 import type { MessageV2 } from "opencode/session/message-v2"
 import type { Diagnostic } from "vscode-languageserver-types"
 
@@ -83,8 +75,10 @@ export function Part(props: PartProps) {
               <Match when={props.message.role === "user" && props.part.type === "file"}>
                 <IconPaperClip width={18} height={18} />
               </Match>
-              <Match when={props.part.type === "step-start" && props.message.role === "assistant" && props.message.modelID}>
-                {model => <ProviderIcon model={model()} size={18} />}
+              <Match
+                when={props.part.type === "step-start" && props.message.role === "assistant" && props.message.modelID}
+              >
+                {(model) => <ProviderIcon model={model()} size={18} />}
               </Match>
               <Match when={props.part.type === "tool" && props.part.tool === "todowrite"}>
                 <IconQueueList width={18} height={18} />
@@ -164,14 +158,11 @@ export function Part(props: PartProps) {
             <div data-slot="model">{props.message.modelID}</div>
           </div>
         )}
-        {props.part.type === "tool" &&
-          props.part.state.status === "error" && (
-            <div data-component="tool">
-              <ContentError>
-                {formatErrorString(props.part.state.error)}
-              </ContentError>
-            </div>
-          )}
+        {props.part.type === "tool" && props.part.state.status === "error" && (
+          <div data-component="tool">
+            <ContentError>{formatErrorString(props.part.state.error)}</ContentError>
+          </div>
+        )}
         {props.part.type === "tool" &&
           props.part.state.status === "completed" &&
           props.message.role === "assistant" && (
@@ -565,19 +556,11 @@ export function EditTool(props: ToolProps) {
 
 export function BashTool(props: ToolProps) {
   return (
-    <>
-      <div data-component="terminal" data-size="sm">
-        <div data-slot="body">
-          <div data-slot="header">
-            <span>{props.state.metadata.description}</span>
-          </div>
-          <div data-slot="content">
-            <ContentCode flush lang="bash" code={props.state.input.command} />
-            <ContentCode flush lang="console" code={props.state.metadata?.stdout || ""} />
-          </div>
-        </div>
-      </div>
-    </>
+    <ContentBash
+      command={props.state.input.command}
+      output={props.state.metadata?.stdout || ""}
+      description={props.state.metadata.description}
+    />
   )
 }
 
