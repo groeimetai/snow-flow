@@ -144,13 +144,16 @@ export const RunCommand = cmd({
         UI.error(err)
       })
 
-      // TODO: dax, should this impact model selection as well?
       const mode = args.mode ? await Mode.get(args.mode) : await Mode.list().then((x) => x[0])
 
       const result = await Session.chat({
         sessionID: session.id,
-        providerID,
-        modelID,
+        ...(mode.model
+          ? mode.model
+          : {
+              providerID,
+              modelID,
+            }),
         mode: mode.name,
         parts: [
           {
