@@ -1,5 +1,8 @@
 import { DurableObject } from "cloudflare:workers"
 import { randomUUID } from "node:crypto"
+import { jwtVerify, createRemoteJWKSet } from "jose"
+import { createAppAuth } from "@octokit/auth-app"
+import { Resource } from "sst"
 
 type Env = {
   SYNC_SERVER: DurableObjectNamespace<SyncServer>
@@ -217,6 +220,43 @@ export default {
           headers: { "Content-Type": "application/json" },
         },
       )
+    }
+
+    if (request.method === "POST" && method === "exchange_github_app_token") {
+      const EXPECTED_AUDIENCE = "opencode-github-action"
+      const GITHUB_ISSUER = "https://token.actions.githubusercontent.com"
+      const JWKS_URL = `${GITHUB_ISSUER}/.well-known/jwks`
+
+      // get Authorization header
+      const authHeader = request.headers.get("Authorization")
+      const token = authHeader?.replace(/^Bearer /, "")
+      if (!token) return new Response("Error: authorization header is required", { status: 401 })
+
+      // verify token
+      const JWKS = createRemoteJWKSet(new URL(JWKS_URL))
+      try {
+        await jwtVerify(token, JWKS, {
+          issuer: GITHUB_ISSUER,
+          audience: EXPECTED_AUDIENCE,
+        })
+      } catch (err) {
+        console.error("Token verification failed:", err)
+        return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        })
+      }
+
+      // Create app token
+      const auth = createAppAuth({
+        appId: Resource.GITHUB_APP_ID.value,
+        privateKey: Resource.GITHUB_APP_PRIVATE_KEY.value,
+      })
+      const appAuthentication = await auth({ type: "app" })
+
+      return new Response(JSON.stringify({ token: appAuthentication.token }), {
+        headers: { "Content-Type": "application/json" },
+      })
     }
   },
 }

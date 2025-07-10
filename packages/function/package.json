@@ -8,5 +8,9 @@
     "@cloudflare/workers-types": "4.20250522.0",
     "typescript": "catalog:",
     "@types/node": "catalog:"
+  },
+  "dependencies": {
+    "@octokit/auth-app": "8.0.1",
+    "jose": "6.0.11"
   }
 }
