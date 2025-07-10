@@ -63,6 +63,7 @@ export default defineConfig({
         "docs",
         "docs/cli",
         "docs/rules",
+        "docs/share",
         "docs/config",
         "docs/models",
         "docs/themes",
