@@ -230,7 +230,11 @@ export default {
       // get Authorization header
       const authHeader = request.headers.get("Authorization")
       const token = authHeader?.replace(/^Bearer /, "")
-      if (!token) return new Response("Error: authorization header is required", { status: 401 })
+      if (!token)
+        return new Response(JSON.stringify({ error: "Authorization header is required" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        })
 
       // verify token
       const JWKS = createRemoteJWKSet(new URL(JWKS_URL))
