@@ -721,6 +721,11 @@ export namespace Session {
             const usage = getUsage(model.info, value.usage, value.providerMetadata)
             next.cost += usage.cost
             next.tokens = usage.tokens
+            next.parts.push({
+              type: "step-finish",
+              tokens: usage.tokens,
+              cost: usage.cost,
+            })
             break
 
           case "text-start":
