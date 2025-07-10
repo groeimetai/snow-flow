@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers"
 import { randomUUID } from "node:crypto"
 import { jwtVerify, createRemoteJWKSet } from "jose"
 import { createAppAuth } from "@octokit/auth-app"
+import { Octokit } from "@octokit/rest"
 import { Resource } from "sst"
 
 type Env = {
@@ -238,11 +239,16 @@ export default {
 
       // verify token
       const JWKS = createRemoteJWKSet(new URL(JWKS_URL))
+      let owner, repo
       try {
-        await jwtVerify(token, JWKS, {
+        const { payload } = await jwtVerify(token, JWKS, {
           issuer: GITHUB_ISSUER,
           audience: EXPECTED_AUDIENCE,
         })
+        const sub = payload.sub // e.g. 'repo:my-org/my-repo:ref:refs/heads/main'
+        const parts = sub.split(":")[1].split("/")
+        owner = parts[0]
+        repo = parts[1]
       } catch (err) {
         console.error("Token verification failed:", err)
         return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
@@ -251,14 +257,21 @@ export default {
         })
       }
 
-      // Create app token
+      // Create app JWT token
       const auth = createAppAuth({
         appId: Resource.GITHUB_APP_ID.value,
         privateKey: Resource.GITHUB_APP_PRIVATE_KEY.value,
       })
-      const appAuthentication = await auth({ type: "app" })
+      const appAuth = await auth({ type: "app" })
 
-      return new Response(JSON.stringify({ token: appAuthentication.token }), {
+      // Lookup installation
+      const octokit = new Octokit({ auth: appAuth.token })
+      const { data: installation } = await octokit.apps.getRepoInstallation({ owner, repo })
+
+      // Get installation token
+      const installationAuth = await auth({ type: "installation", installationId: installation.id })
+
+      return new Response(JSON.stringify({ token: installationAuth.token }), {
         headers: { "Content-Type": "application/json" },
       })
     }
