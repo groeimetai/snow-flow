@@ -31,7 +31,7 @@ export const mix: Info = {
 
 export const prettier: Info = {
   name: "prettier",
-  command: [BunProc.which(), "run", "prettier", "--write", "$FILE"],
+  command: [BunProc.which(), "x", "prettier", "--write", "$FILE"],
   environment: {
     BUN_BE_BUN: "1",
   },

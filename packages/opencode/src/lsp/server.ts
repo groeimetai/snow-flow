@@ -25,7 +25,7 @@ export namespace LSPServer {
   const SimpleRoots = (patterns: string[]): RootsFunction => {
     return async (app) => {
       const files = await Ripgrep.files({
-        glob: patterns.map(p => `**/${p}`),
+        glob: patterns.map((p) => `**/${p}`),
         cwd: app.path.root,
       })
       const dirs = files.map((file) => path.dirname(file))
@@ -85,7 +85,11 @@ export namespace LSPServer {
 
   export const Gopls: Info = {
     id: "golang",
-    roots: SimpleRoots(["go.mod", "go.sum"]),
+    roots: async (app) => {
+      const work = await SimpleRoots(["go.work"])(app)
+      if (work.length > 0) return work
+      return SimpleRoots(["go.mod", "go.sum"])(app)
+    },
     extensions: [".go"],
     async spawn(_, root) {
       let bin = Bun.which("gopls", {
