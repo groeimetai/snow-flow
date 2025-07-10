@@ -287,7 +287,6 @@ export namespace Session {
     mode?: string
     parts: MessageV2.UserPart[]
   }) {
-    using abort = lock(input.sessionID)
     const l = log.clone().tag("session", input.sessionID)
     l.info("chatting")
 
@@ -337,6 +336,8 @@ export namespace Session {
         return chat(input)
       }
     }
+
+    using abort = lock(input.sessionID)
 
     const lastSummary = msgs.findLast((msg) => msg.role === "assistant" && msg.summary === true)
     if (lastSummary) msgs = msgs.filter((msg) => msg.id >= lastSummary.id)
