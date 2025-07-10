@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea/v2"
 	flag "github.com/spf13/pflag"
@@ -81,6 +83,10 @@ func main() {
 		tea.WithMouseCellMotion(),
 	)
 
+	// Set up signal handling for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
 	go func() {
 		stream := httpClient.Event.ListStreaming(ctx)
 		for stream.Next() {
@@ -91,6 +97,13 @@ func main() {
 			slog.Error("Error streaming events", "error", err)
 			program.Send(err)
 		}
+	}()
+
+	// Handle signals in a separate goroutine
+	go func() {
+		sig := <-sigChan
+		slog.Info("Received signal, shutting down gracefully", "signal", sig)
+		program.Quit()
 	}()
 
 	// Run the TUI
