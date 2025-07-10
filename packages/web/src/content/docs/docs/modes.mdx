@@ -3,17 +3,33 @@ title: Modes
 description: Different modes for different use cases.
 ---
 
-Modes in opencode allow you to customize the behavior, tools, and prompts for different use cases. You can switch between modes during a session or configure them in your config file.
+Modes in opencode allow you to customize the behavior, tools, and prompts for different use cases.
 
-## Built-in modes
+It comes with two built-in modes: **build** and **plan**. You can customize
+these or configure your own through the opencode config.
 
-opencode comes with two built-in modes:
+:::tip
+Use the plan mode to analyze code and review suggestions without making any code
+changes.
+:::
 
-### Build mode (default)
+You can switch between modes during a session or configure them in your config file.
 
-The default mode with all tools enabled. This is the standard mode for development work where you need full access to file operations and system commands.
+---
 
-### Plan mode
+## Built-in
+
+opencode comes with two built-in modes.
+
+---
+
+### Build
+
+Build is the **default** mode with all tools enabled. This is the standard mode for development work where you need full access to file operations and system commands.
+
+---
+
+### Plan
 
 A restricted mode designed for planning and analysis. In plan mode, the following tools are disabled by default:
 
@@ -24,13 +40,17 @@ A restricted mode designed for planning and analysis. In plan mode, the followin
 
 This mode is useful when you want the AI to analyze code, suggest changes, or create plans without making any actual modifications to your codebase.
 
-## Switching modes
+---
 
-You can switch between modes during a session using the `tab` key (or your configured `switch_mode` keybind).
+## Switching
 
-## Configuring modes
+You can switch between modes during a session using the _Tab_ key. Or your configured `switch_mode` keybind.
 
-You can customize modes in your `opencode.json` config file:
+---
+
+## Configure
+
+You can customize the built-in modes or create your own in the opencode [config](/docs/config).
 
 ```json title="opencode.json"
 {
@@ -52,31 +72,20 @@ You can customize modes in your `opencode.json` config file:
         "edit": false,
         "bash": false
       }
-    },
-    "review": {
-      "prompt": "{file:./prompts/code-review.txt}",
-      "tools": {
-        "write": false,
-        "edit": false,
-        "bash": false,
-        "read": true,
-        "grep": true,
-        "glob": true
-      }
     }
   }
 }
 ```
 
-## Mode configuration options
+Let's look at these options in detail.
 
-Each mode can be configured with the following options:
+---
 
-### `model`
+### Model
 
-Override the default model for this mode. Useful for using different models optimized for different tasks (e.g., a faster model for planning, a more capable model for implementation).
+Use the `model` config to override the default model for this mode. Useful for using different models optimized for different tasks. For example, a faster model for planning, a more capable model for implementation.
 
-```json
+```json title="opencode.json"
 {
   "mode": {
     "plan": {
@@ -86,11 +95,13 @@ Override the default model for this mode. Useful for using different models opti
 }
 ```
 
-### `prompt`
+---
 
-Specify a custom system prompt file for this mode. The prompt file should contain instructions specific to the mode's purpose.
+### Prompt
 
-```json
+Specify a custom system prompt file for this mode with the `prompt` config. The prompt file should contain instructions specific to the mode's purpose.
+
+```json title="opencode.json"
 {
   "mode": {
     "review": {
@@ -100,9 +111,14 @@ Specify a custom system prompt file for this mode. The prompt file should contai
 }
 ```
 
-### `tools`
+This path is relative to where the config file is located. So this works for
+both the global opencode config and the project specific config.
 
-Control which tools are available in this mode. You can enable or disable specific tools by setting them to `true` or `false`.
+---
+
+### Tools
+
+Control which tools are available in this mode with the `tools` config. You can enable or disable specific tools by setting them to `true` or `false`.
 
 ```json
 {
@@ -121,11 +137,35 @@ Control which tools are available in this mode. You can enable or disable specif
 }
 ```
 
-## Creating custom modes
+If no tools are specified, all tools are enabled by default.
 
-You can create your own custom modes by adding them to the `mode` configuration. For example, a documentation mode that focuses on reading and analysis:
+---
 
-```json title="opencode.json"
+#### Available tools
+
+Here are all the tools can be controlled through the mode config.
+
+| Tool        | Description             |
+| ----------- | ----------------------- |
+| `bash`      | Execute shell commands  |
+| `edit`      | Modify existing files   |
+| `write`     | Create new files        |
+| `read`      | Read file contents      |
+| `grep`      | Search file contents    |
+| `glob`      | Find files by pattern   |
+| `list`      | List directory contents |
+| `patch`     | Apply patches to files  |
+| `todowrite` | Manage todo lists       |
+| `todoread`  | Read todo lists         |
+| `webfetch`  | Fetch web content       |
+
+---
+
+## Custom modes
+
+You can create your own custom modes by adding them to the `mode` configuration. For example, a documentation mode that focuses on reading and analysis.
+
+```json title="opencode.json" {4-14}
 {
   "$schema": "https://opencode.ai/config.json",
   "mode": {
@@ -144,30 +184,16 @@ You can create your own custom modes by adding them to the `mode` configuration.
 }
 ```
 
-## Available tools
+---
 
-The following tools can be controlled in mode configurations:
+### Use cases
 
-| Tool        | Description             |
-| ----------- | ----------------------- |
-| `bash`      | Execute shell commands  |
-| `edit`      | Modify existing files   |
-| `write`     | Create new files        |
-| `read`      | Read file contents      |
-| `grep`      | Search file contents    |
-| `glob`      | Find files by pattern   |
-| `list`      | List directory contents |
-| `patch`     | Apply patches to files  |
-| `todowrite` | Manage todo lists       |
-| `todoread`  | Read todo lists         |
-| `webfetch`  | Fetch web content       |
-
-## Use cases
-
-Here are some common use cases for different modes:
+Here are some common use cases for different modes.
 
 - **Build mode**: Full development work with all tools enabled
 - **Plan mode**: Analysis and planning without making changes
 - **Review mode**: Code review with read-only access plus documentation tools
 - **Debug mode**: Focused on investigation with bash and read tools enabled
 - **Docs mode**: Documentation writing with file operations but no system commands
+
+You might also find different models are good for different use cases.
