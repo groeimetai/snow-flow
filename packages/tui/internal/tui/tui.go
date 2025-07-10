@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/charmbracelet/x/input"
 
 	"github.com/sst/opencode-sdk-go"
 	"github.com/sst/opencode/internal/app"
@@ -74,7 +75,6 @@ type appModel struct {
 	toastManager      *toast.ToastManager
 	interruptKeyState InterruptKeyState
 	exitKeyState      ExitKeyState
-	lastScroll        time.Time
 	messagesRight     bool
 	fileViewer        fileviewer.Model
 	lastMouse         tea.Mouse
@@ -107,44 +107,6 @@ func (a appModel) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-var BUGGED_SCROLL_KEYS = map[string]bool{
-	"0": true,
-	"1": true,
-	"2": true,
-	"3": true,
-	"4": true,
-	"5": true,
-	"6": true,
-	"7": true,
-	"8": true,
-	"9": true,
-	"M": true,
-	"m": true,
-	"[": true,
-	";": true,
-	"<": true,
-}
-
-func isScrollRelatedInput(keyString string) bool {
-	if len(keyString) == 0 {
-		return false
-	}
-
-	for _, char := range keyString {
-		charStr := string(char)
-		if !BUGGED_SCROLL_KEYS[charStr] {
-			return false
-		}
-	}
-
-	if len(keyString) > 3 &&
-		(keyString[len(keyString)-1] == 'M' || keyString[len(keyString)-1] == 'm') {
-		return true
-	}
-
-	return len(keyString) > 1
-}
-
 func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
@@ -152,10 +114,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		keyString := msg.String()
-
-		if time.Since(a.lastScroll) < time.Millisecond*100 && (BUGGED_SCROLL_KEYS[keyString] || isScrollRelatedInput(keyString)) {
-			return a, nil
-		}
 
 		// 1. Handle active modal
 		if a.modal != nil {
@@ -326,7 +284,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.editor = updatedEditor.(chat.EditorComponent)
 		return a, cmd
 	case tea.MouseWheelMsg:
-		a.lastScroll = time.Now()
 		if a.modal != nil {
 			return a, nil
 		}
@@ -552,6 +509,8 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.editor.SetExitKeyInDebounce(false)
 	case dialog.FindSelectedMsg:
 		return a.openFile(msg.FilePath)
+	case input.UnknownEvent:
+		return a, nil
 	}
 
 	s, cmd := a.status.Update(msg)

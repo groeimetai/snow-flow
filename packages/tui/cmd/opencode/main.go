@@ -77,7 +77,7 @@ func main() {
 	program := tea.NewProgram(
 		tui.NewModel(app_),
 		tea.WithAltScreen(),
-		tea.WithKeyboardEnhancements(),
+		// tea.WithKeyboardEnhancements(),
 		tea.WithMouseCellMotion(),
 	)
 
