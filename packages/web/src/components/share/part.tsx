@@ -514,7 +514,7 @@ export function WriteTool(props: ToolProps) {
         </span>
       </div>
       <Show when={diagnostics().length > 0}>
-        <div data-component="error">{diagnostics()}</div>
+        <ContentError>{diagnostics()}</ContentError>
       </Show>
       <div data-component="tool-result">
         <Switch>
@@ -557,7 +557,7 @@ export function EditTool(props: ToolProps) {
         </Switch>
       </div>
       <Show when={diagnostics().length > 0}>
-        <div data-component="error">{diagnostics()}</div>
+        <ContentError>{diagnostics()}</ContentError>
       </Show>
     </>
   )
