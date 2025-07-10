@@ -284,7 +284,7 @@ export namespace Session {
     sessionID: string
     providerID: string
     modelID: string
-    mode: string
+    mode?: string
     parts: MessageV2.UserPart[]
   }) {
     const l = log.clone().tag("session", input.sessionID)

@@ -8,6 +8,7 @@ import { Flag } from "../../flag/flag"
 import { Config } from "../../config/config"
 import { bootstrap } from "../bootstrap"
 import { MessageV2 } from "../../session/message-v2"
+import { Mode } from "../../session/mode"
 
 const TOOL: Record<string, [string, string]> = {
   todowrite: ["Todo", UI.Style.TEXT_WARNING_BOLD],
@@ -51,6 +52,10 @@ export const RunCommand = cmd({
         type: "string",
         alias: ["m"],
         describe: "model to use in the format of provider/model",
+      })
+      .option("mode", {
+        type: "string",
+        describe: "mode to use",
       })
   },
   handler: async (args) => {
@@ -139,10 +144,14 @@ export const RunCommand = cmd({
         UI.error(err)
       })
 
+      // TODO: dax, should this impact model selection as well?
+      const mode = args.mode ? await Mode.get(args.mode) : await Mode.list().then((x) => x[0])
+
       const result = await Session.chat({
         sessionID: session.id,
         providerID,
         modelID,
+        mode: mode.name,
         parts: [
           {
             type: "text",
