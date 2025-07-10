@@ -15,6 +15,7 @@ import {
   IconSparkles,
   IconGlobeAlt,
   IconDocument,
+  IconPaperClip,
   IconQueueList,
   IconUserCircle,
   IconCommandLine,
@@ -80,7 +81,7 @@ export function Part(props: PartProps) {
                 <IconUserCircle width={18} height={18} />
               </Match>
               <Match when={props.message.role === "user" && props.part.type === "file"}>
-                <IconDocument width={18} height={18} />
+                <IconPaperClip width={18} height={18} />
               </Match>
               <Match when={props.part.type === "step-start" && props.message.role === "assistant" && props.message.modelID}>
                 {model => <ProviderIcon model={model()} size={18} />}
@@ -152,11 +153,9 @@ export function Part(props: PartProps) {
           </>
         )}
         {props.message.role === "user" && props.part.type === "file" && (
-          <div data-component="tool-title">
-            <span data-slot="name">Read</span>
-            <span data-slot="target" title={props.part.filename}>
-              {props.part.filename}
-            </span>
+          <div data-component="attachment">
+            <div data-slot="copy">Attachment</div>
+            <div data-slot="filename">{props.part.filename}</div>
           </div>
         )}
         {props.part.type === "step-start" && props.message.role === "assistant" && (
