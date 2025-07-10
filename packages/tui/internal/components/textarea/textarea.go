@@ -931,7 +931,6 @@ func (m *Model) mapVisualOffsetToSliceIndex(row int, charOffset int) int {
 }
 
 // CursorDown moves the cursor down by one line.
-// Returns whether or not the cursor blink should be reset.
 func (m *Model) CursorDown() {
 	li := m.LineInfo()
 	charOffset := max(m.lastCharOffset, li.CharOffset)
@@ -940,11 +939,73 @@ func (m *Model) CursorDown() {
 	if li.RowOffset+1 >= li.Height && m.row < len(m.value)-1 {
 		// Move to the next model line
 		m.row++
-		m.col = m.mapVisualOffsetToSliceIndex(m.row, charOffset)
+
+		// We want to land on the first wrapped line of the new model line.
+		grid := m.memoizedWrap(m.value[m.row], m.width)
+		targetLineContent := grid[0]
+
+		// Find position within the first wrapped line.
+		offset := 0
+		colInLine := 0
+		for i, item := range targetLineContent {
+			var itemWidth int
+			switch v := item.(type) {
+			case rune:
+				itemWidth = rw.RuneWidth(v)
+			case *Attachment:
+				itemWidth = uniseg.StringWidth(v.Display)
+			}
+			if offset+itemWidth > charOffset {
+				// Decide whether to stick with the previous index or move to the current
+				// one based on which is closer to the target offset.
+				if (charOffset - offset) > ((offset + itemWidth) - charOffset) {
+					colInLine = i + 1
+				} else {
+					colInLine = i
+				}
+				goto foundNextLine
+			}
+			offset += itemWidth
+		}
+		colInLine = len(targetLineContent)
+	foundNextLine:
+		m.col = colInLine // startCol is 0 for the first wrapped line
 	} else if li.RowOffset+1 < li.Height {
 		// Move to the next wrapped line within the same model line
-		startOfNextWrappedLine := li.StartColumn + li.Width
-		m.col = startOfNextWrappedLine + m.mapVisualOffsetToSliceIndex(m.row, charOffset)
+		grid := m.memoizedWrap(m.value[m.row], m.width)
+		targetLineContent := grid[li.RowOffset+1]
+
+		startCol := 0
+		for i := 0; i < li.RowOffset+1; i++ {
+			startCol += len(grid[i])
+		}
+
+		// Find position within the target wrapped line.
+		offset := 0
+		colInLine := 0
+		for i, item := range targetLineContent {
+			var itemWidth int
+			switch v := item.(type) {
+			case rune:
+				itemWidth = rw.RuneWidth(v)
+			case *Attachment:
+				itemWidth = uniseg.StringWidth(v.Display)
+			}
+			if offset+itemWidth > charOffset {
+				// Decide whether to stick with the previous index or move to the current
+				// one based on which is closer to the target offset.
+				if (charOffset - offset) > ((offset + itemWidth) - charOffset) {
+					colInLine = i + 1
+				} else {
+					colInLine = i
+				}
+				goto foundSameLine
+			}
+			offset += itemWidth
+		}
+		colInLine = len(targetLineContent)
+	foundSameLine:
+		m.col = startCol + colInLine
 	}
 	m.SetCursorColumn(m.col)
 }
