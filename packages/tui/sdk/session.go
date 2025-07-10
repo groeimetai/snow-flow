@@ -439,11 +439,12 @@ type AssistantMessagePart struct {
 	Type AssistantMessagePartType `json:"type,required"`
 	ID   string                   `json:"id"`
 	// This field can have the runtime type of [ToolPartState].
-	State interface{}              `json:"state"`
-	Text  string                   `json:"text"`
-	Tool  string                   `json:"tool"`
-	JSON  assistantMessagePartJSON `json:"-"`
-	union AssistantMessagePartUnion
+	State     interface{}              `json:"state"`
+	Synthetic bool                     `json:"synthetic"`
+	Text      string                   `json:"text"`
+	Tool      string                   `json:"tool"`
+	JSON      assistantMessagePartJSON `json:"-"`
+	union     AssistantMessagePartUnion
 }
 
 // assistantMessagePartJSON contains the JSON metadata for the struct
@@ -452,6 +453,7 @@ type assistantMessagePartJSON struct {
 	Type        apijson.Field
 	ID          apijson.Field
 	State       apijson.Field
+	Synthetic   apijson.Field
 	Text        apijson.Field
 	Tool        apijson.Field
 	raw         string
@@ -815,15 +817,17 @@ func (r StepStartPartType) IsKnown() bool {
 }
 
 type TextPart struct {
-	Text string       `json:"text,required"`
-	Type TextPartType `json:"type,required"`
-	JSON textPartJSON `json:"-"`
+	Text      string       `json:"text,required"`
+	Type      TextPartType `json:"type,required"`
+	Synthetic bool         `json:"synthetic"`
+	JSON      textPartJSON `json:"-"`
 }
 
 // textPartJSON contains the JSON metadata for the struct [TextPart]
 type textPartJSON struct {
 	Text        apijson.Field
 	Type        apijson.Field
+	Synthetic   apijson.Field
 	raw         string
 	ExtraFields map[string]apijson.Field
 }
@@ -855,8 +859,9 @@ func (r TextPartType) IsKnown() bool {
 }
 
 type TextPartParam struct {
-	Text param.Field[string]       `json:"text,required"`
-	Type param.Field[TextPartType] `json:"type,required"`
+	Text      param.Field[string]       `json:"text,required"`
+	Type      param.Field[TextPartType] `json:"type,required"`
+	Synthetic param.Field[bool]         `json:"synthetic"`
 }
 
 func (r TextPartParam) MarshalJSON() (data []byte, err error) {
@@ -1311,13 +1316,14 @@ func (r userMessageTimeJSON) RawJSON() string {
 }
 
 type UserMessagePart struct {
-	Type     UserMessagePartType `json:"type,required"`
-	Filename string              `json:"filename"`
-	Mime     string              `json:"mime"`
-	Text     string              `json:"text"`
-	URL      string              `json:"url"`
-	JSON     userMessagePartJSON `json:"-"`
-	union    UserMessagePartUnion
+	Type      UserMessagePartType `json:"type,required"`
+	Filename  string              `json:"filename"`
+	Mime      string              `json:"mime"`
+	Synthetic bool                `json:"synthetic"`
+	Text      string              `json:"text"`
+	URL       string              `json:"url"`
+	JSON      userMessagePartJSON `json:"-"`
+	union     UserMessagePartUnion
 }
 
 // userMessagePartJSON contains the JSON metadata for the struct [UserMessagePart]
@@ -1325,6 +1331,7 @@ type userMessagePartJSON struct {
 	Type        apijson.Field
 	Filename    apijson.Field
 	Mime        apijson.Field
+	Synthetic   apijson.Field
 	Text        apijson.Field
 	URL         apijson.Field
 	raw         string
@@ -1390,11 +1397,12 @@ func (r UserMessagePartType) IsKnown() bool {
 }
 
 type UserMessagePartParam struct {
-	Type     param.Field[UserMessagePartType] `json:"type,required"`
-	Filename param.Field[string]              `json:"filename"`
-	Mime     param.Field[string]              `json:"mime"`
-	Text     param.Field[string]              `json:"text"`
-	URL      param.Field[string]              `json:"url"`
+	Type      param.Field[UserMessagePartType] `json:"type,required"`
+	Filename  param.Field[string]              `json:"filename"`
+	Mime      param.Field[string]              `json:"mime"`
+	Synthetic param.Field[bool]                `json:"synthetic"`
+	Text      param.Field[string]              `json:"text"`
+	URL       param.Field[string]              `json:"url"`
 }
 
 func (r UserMessagePartParam) MarshalJSON() (data []byte, err error) {
@@ -1409,6 +1417,7 @@ type UserMessagePartUnionParam interface {
 }
 
 type SessionChatParams struct {
+	Mode       param.Field[string]                      `json:"mode,required"`
 	ModelID    param.Field[string]                      `json:"modelID,required"`
 	Parts      param.Field[[]UserMessagePartUnionParam] `json:"parts,required"`
 	ProviderID param.Field[string]                      `json:"providerID,required"`

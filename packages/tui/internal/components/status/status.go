@@ -7,8 +7,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
-	"github.com/sst/opencode-sdk-go"
+	"github.com/charmbracelet/lipgloss/v2/compat"
 	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 )
@@ -55,7 +56,12 @@ func (m statusComponent) logo() string {
 		Render(open + code + version)
 }
 
-func formatTokensAndCost(tokens float64, contextWindow float64, cost float64, isSubscriptionModel bool) string {
+func formatTokensAndCost(
+	tokens float64,
+	contextWindow float64,
+	cost float64,
+	isSubscriptionModel bool,
+) string {
 	// Format tokens in human-readable format (e.g., 110K, 1.2M)
 	var formattedTokens string
 	switch {
@@ -104,50 +110,103 @@ func (m statusComponent) View() string {
 		Padding(0, 1).
 		Render(m.cwd)
 
-	sessionInfo := ""
-	if m.app.Session.ID != "" {
-		tokens := float64(0)
-		cost := float64(0)
-		contextWindow := m.app.Model.Limit.Context
+		// sessionInfo := ""
+		// if m.app.Session.ID != "" {
+		// 	tokens := float64(0)
+		// 	cost := float64(0)
+		// 	contextWindow := m.app.Model.Limit.Context
+		//
+		// 	for _, message := range m.app.Messages {
+		// 		if assistant, ok := message.(opencode.AssistantMessage); ok {
+		// 			cost += assistant.Cost
+		// 			usage := assistant.Tokens
+		// 			if usage.Output > 0 {
+		// 				if assistant.Summary {
+		// 					tokens = usage.Output
+		// 					continue
+		// 				}
+		// 				tokens = (usage.Input +
+		// 					usage.Cache.Write +
+		// 					usage.Cache.Read +
+		// 					usage.Output +
+		// 					usage.Reasoning)
+		// 			}
+		// 		}
+		// 	}
+		//
+		// 	// Check if current model is a subscription model (cost is 0 for both input and output)
+		// 	isSubscriptionModel := m.app.Model != nil &&
+		// 		m.app.Model.Cost.Input == 0 && m.app.Model.Cost.Output == 0
+		//
+		// 	sessionInfo = styles.NewStyle().
+		// 		Foreground(t.TextMuted()).
+		// 		Background(t.BackgroundElement()).
+		// 		Padding(0, 1).
+		// 		Render(formatTokensAndCost(tokens, contextWindow, cost, isSubscriptionModel))
+		// }
 
-		for _, message := range m.app.Messages {
-			if assistant, ok := message.(opencode.AssistantMessage); ok {
-				cost += assistant.Cost
-				usage := assistant.Tokens
-				if usage.Output > 0 {
-					if assistant.Summary {
-						tokens = usage.Output
-						continue
-					}
-					tokens = (usage.Input +
-						usage.Cache.Write +
-						usage.Cache.Read +
-						usage.Output +
-						usage.Reasoning)
-				}
-			}
-		}
-
-		// Check if current model is a subscription model (cost is 0 for both input and output)
-		isSubscriptionModel := m.app.Model != nil &&
-			m.app.Model.Cost.Input == 0 && m.app.Model.Cost.Output == 0
-
-		sessionInfo = styles.NewStyle().
-			Foreground(t.TextMuted()).
-			Background(t.BackgroundElement()).
-			Padding(0, 1).
-			Render(formatTokensAndCost(tokens, contextWindow, cost, isSubscriptionModel))
+	var modeBackground compat.AdaptiveColor
+	var modeForeground compat.AdaptiveColor
+	switch m.app.ModeIndex {
+	case 0:
+		modeBackground = t.BackgroundElement()
+		modeForeground = t.TextMuted()
+	case 1:
+		modeBackground = t.Secondary()
+		modeForeground = t.BackgroundPanel()
+	case 2:
+		modeBackground = t.Accent()
+		modeForeground = t.BackgroundPanel()
+	case 3:
+		modeBackground = t.Success()
+		modeForeground = t.BackgroundPanel()
+	case 4:
+		modeBackground = t.Warning()
+		modeForeground = t.BackgroundPanel()
+	case 5:
+		modeBackground = t.Primary()
+		modeForeground = t.BackgroundPanel()
+	case 6:
+		modeBackground = t.Error()
+		modeForeground = t.BackgroundPanel()
+	default:
+		modeBackground = t.Secondary()
+		modeForeground = t.BackgroundPanel()
 	}
 
-	// diagnostics := styles.Padded().Background(t.BackgroundElement()).Render(m.projectDiagnostics())
+	command := m.app.Commands[commands.SwitchModeCommand]
+	kb := command.Keybindings[0]
+	key := kb.Key
+	if kb.RequiresLeader {
+		key = m.app.Config.Keybinds.Leader + " " + kb.Key
+	}
+
+	modeStyle := styles.NewStyle().Background(modeBackground).Foreground(modeForeground)
+	modeNameStyle := modeStyle.Bold(true).Render
+	modeDescStyle := modeStyle.Render
+	mode := modeNameStyle(strings.ToUpper(m.app.Mode.Name)) + modeDescStyle(" MODE")
+	mode = modeStyle.
+		Padding(0, 1).
+		BorderLeft(true).
+		BorderStyle(lipgloss.ThickBorder()).
+		BorderForeground(modeBackground).
+		BorderBackground(t.BackgroundPanel()).
+		Render(mode)
+
+	mode = styles.NewStyle().
+		Faint(true).
+		Background(t.BackgroundPanel()).
+		Foreground(t.TextMuted()).
+		Render(key+" ") +
+		mode
 
 	space := max(
 		0,
-		m.width-lipgloss.Width(logo)-lipgloss.Width(cwd)-lipgloss.Width(sessionInfo),
+		m.width-lipgloss.Width(logo)-lipgloss.Width(cwd)-lipgloss.Width(mode),
 	)
 	spacer := styles.NewStyle().Background(t.BackgroundPanel()).Width(space).Render("")
 
-	status := logo + cwd + spacer + sessionInfo
+	status := logo + cwd + spacer + mode
 
 	blank := styles.NewStyle().Background(t.Background()).Width(m.width).Render("")
 	return blank + "\n" + status

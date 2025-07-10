@@ -39,6 +39,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	modesStr := os.Getenv("OPENCODE_MODES")
+	var modes []opencode.Mode
+	err = json.Unmarshal([]byte(modesStr), &modes)
+	if err != nil {
+		slog.Error("Failed to unmarshal modes", "error", err)
+		os.Exit(1)
+	}
+
 	httpClient := opencode.NewClient(
 		option.WithBaseURL(url),
 	)
@@ -47,7 +55,7 @@ func main() {
 	logger := slog.New(apiHandler)
 	slog.SetDefault(logger)
 
-	slog.Debug("TUI launched", "app", appInfo)
+	slog.Debug("TUI launched", "app", appInfoStr, "modes", modesStr)
 
 	go func() {
 		err = clipboard.Init()
@@ -60,7 +68,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	app_, err := app.New(ctx, version, appInfo, httpClient, model, prompt)
+	app_, err := app.New(ctx, version, appInfo, modes, httpClient, model, prompt)
 	if err != nil {
 		panic(err)
 	}

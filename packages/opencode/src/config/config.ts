@@ -70,6 +70,7 @@ export namespace Config {
     .object({
       leader: z.string().optional().default("ctrl+x").describe("Leader key for keybind combinations"),
       app_help: z.string().optional().default("<leader>h").describe("Show help dialog"),
+      switch_mode: z.string().optional().default("tab").describe("Switch mode"),
       editor_open: z.string().optional().default("<leader>e").describe("Open external editor"),
       session_new: z.string().optional().default("<leader>n").describe("Create a new session"),
       session_list: z.string().optional().default("<leader>l").describe("List all sessions"),

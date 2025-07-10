@@ -23,6 +23,7 @@ import (
 	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/components/status"
 	"github.com/sst/opencode/internal/components/toast"
+	"github.com/sst/opencode/internal/config"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -524,8 +525,10 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case app.ModelSelectedMsg:
 		a.app.Provider = &msg.Provider
 		a.app.Model = &msg.Model
-		a.app.State.Provider = msg.Provider.ID
-		a.app.State.Model = msg.Model.ID
+		a.app.State.ModeModel[a.app.Mode.Name] = config.ModeModel{
+			ProviderID: msg.Provider.ID,
+			ModelID:    msg.Model.ID,
+		}
 		a.app.State.UpdateModelUsage(msg.Provider.ID, msg.Model.ID)
 		a.app.SaveState()
 	case dialog.ThemeSelectedMsg:
@@ -823,6 +826,10 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 	case commands.AppHelpCommand:
 		helpDialog := dialog.NewHelpDialog(a.app)
 		a.modal = helpDialog
+	case commands.SwitchModeCommand:
+		updated, cmd := a.app.SwitchMode()
+		a.app = updated
+		cmds = append(cmds, cmd)
 	case commands.EditorOpenCommand:
 		if a.app.IsBusy() {
 			// status.Warn("Agent is working, please wait...")
