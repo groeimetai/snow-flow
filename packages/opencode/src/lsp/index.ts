@@ -57,6 +57,7 @@ export namespace LSP {
     async (app) => {
       log.info("initializing")
       const clients: LSPClient.Info[] = []
+      if (!app.git) return { clients }
 
       for (const server of Object.values(LSPServer)) {
         const roots = await server.roots(app)
