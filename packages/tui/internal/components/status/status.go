@@ -2,6 +2,7 @@ package status
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea/v2"
@@ -20,6 +21,7 @@ type StatusComponent interface {
 type statusComponent struct {
 	app   *app.App
 	width int
+	cwd   string
 }
 
 func (m statusComponent) Init() tea.Cmd {
@@ -100,7 +102,7 @@ func (m statusComponent) View() string {
 		Foreground(t.TextMuted()).
 		Background(t.BackgroundPanel()).
 		Padding(0, 1).
-		Render(m.app.Info.Path.Cwd)
+		Render(m.cwd)
 
 	sessionInfo := ""
 	if m.app.Session.ID != "" {
@@ -155,6 +157,13 @@ func NewStatusCmp(app *app.App) StatusComponent {
 	statusComponent := &statusComponent{
 		app: app,
 	}
+
+	homePath, err := os.UserHomeDir()
+	cwdPath := app.Info.Path.Cwd
+	if err == nil && homePath != "" && strings.HasPrefix(cwdPath, homePath) {
+		cwdPath = "~" + cwdPath[len(homePath):]
+	}
+	statusComponent.cwd = cwdPath
 
 	return statusComponent
 }
