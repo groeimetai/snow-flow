@@ -137,7 +137,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		text := string(msg)
 		m.textarea.InsertRunesFromUserInput([]rune(text))
 	case dialog.ThemeSelectedMsg:
-		m.textarea = m.resetTextareaStyles()
+		m.textarea = updateTextareaStyles(m.textarea)
 		m.spinner = createSpinner()
 		return m, tea.Batch(m.spinner.Tick, m.textarea.Focus())
 	case dialog.CompletionSelectedMsg:
@@ -422,13 +422,11 @@ func (m *editorComponent) getExitKeyText() string {
 	return m.app.Commands[commands.AppExitCommand].Keys()[0]
 }
 
-func (m *editorComponent) resetTextareaStyles() textarea.Model {
+func updateTextareaStyles(ta textarea.Model) textarea.Model {
 	t := theme.CurrentTheme()
 	bgColor := t.BackgroundElement()
 	textColor := t.Text()
 	textMutedColor := t.TextMuted()
-
-	ta := m.textarea
 
 	ta.Styles.Blurred.Base = styles.NewStyle().Foreground(textColor).Background(bgColor).Lipgloss()
 	ta.Styles.Blurred.CursorLine = styles.NewStyle().Background(bgColor).Lipgloss()
@@ -477,6 +475,7 @@ func NewEditorComponent(app *app.App) EditorComponent {
 	ta.Prompt = " "
 	ta.ShowLineNumbers = false
 	ta.CharLimit = -1
+	ta = updateTextareaStyles(ta)
 
 	m := &editorComponent{
 		app:                    app,
@@ -484,7 +483,6 @@ func NewEditorComponent(app *app.App) EditorComponent {
 		spinner:                s,
 		interruptKeyInDebounce: false,
 	}
-	m.resetTextareaStyles()
 
 	return m
 }
