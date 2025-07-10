@@ -14,13 +14,7 @@ export namespace Mode {
         })
         .optional(),
       prompt: z.string().optional(),
-      tools: z
-        .object({
-          write: z.boolean().optional(),
-          edit: z.boolean().optional(),
-          patch: z.boolean().optional(),
-        })
-        .optional(),
+      tools: z.record(z.boolean()),
     })
     .openapi({
       ref: "Mode",
@@ -61,6 +55,7 @@ export namespace Mode {
       if (value.prompt) item.prompt = await Bun.file(value.prompt).text()
       if (value.tools) item.tools = value.tools
     }
+
     return result
   })
 
