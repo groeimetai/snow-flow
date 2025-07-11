@@ -65,10 +65,12 @@ export namespace BunProc {
     }))
     if (parsed.dependencies[pkg] === version) return mod
     parsed.dependencies[pkg] = version
-    await Bun.write(pkgjson, JSON.stringify(parsed, null, 2))
-    await BunProc.run(["install", "--cwd", Global.Path.cache, "--registry=https://registry.npmjs.org"], {
-      cwd: Global.Path.cache,
-    }).catch((e) => {
+    await BunProc.run(
+      ["add", "--exact", "--cwd", Global.Path.cache, "--registry=https://registry.npmjs.org", pkg + "@" + version],
+      {
+        cwd: Global.Path.cache,
+      },
+    ).catch((e) => {
       throw new InstallFailedError(
         { pkg, version },
         {
