@@ -126,13 +126,13 @@ export function Part(props: PartProps) {
       </div>
       <div data-component="content">
         {props.message.role === "user" && props.part.type === "text" && (
-          <>
+          <div data-component="user-text">
             <ContentText text={props.part.text} expand={props.last} />
             <Spacer />
-          </>
+          </div>
         )}
         {props.message.role === "assistant" && props.part.type === "text" && (
-          <>
+          <div data-component="assistant-text">
             <ContentMarkdown expand={props.last} text={props.part.text} />
             {props.last && props.message.role === "assistant" && props.message.time.completed && (
               <Footer
@@ -144,7 +144,7 @@ export function Part(props: PartProps) {
               </Footer>
             )}
             <Spacer />
-          </>
+          </div>
         )}
         {props.message.role === "user" && props.part.type === "file" && (
           <div data-component="attachment">
@@ -159,7 +159,7 @@ export function Part(props: PartProps) {
           </div>
         )}
         {props.part.type === "tool" && props.part.state.status === "error" && (
-          <div data-component="tool">
+          <div data-component="tool" data-tool="error">
             <ContentError>{formatErrorString(props.part.state.error)}</ContentError>
           </div>
         )}
