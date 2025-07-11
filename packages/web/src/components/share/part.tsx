@@ -20,6 +20,7 @@ import {
   IconDocumentMagnifyingGlass,
 } from "../icons"
 import { IconMeta, IconOpenAI, IconGemini, IconAnthropic } from "../icons/custom"
+import { formatDuration } from "../share/common"
 import { ContentCode } from "./content-code"
 import { ContentDiff } from "./content-diff"
 import { ContentText } from "./content-text"
@@ -30,6 +31,8 @@ import type { MessageV2 } from "opencode/session/message-v2"
 import type { Diagnostic } from "vscode-languageserver-types"
 
 import styles from "./part.module.css"
+
+const MIN_DURATION = 2
 
 export interface PartProps {
   index: number
@@ -161,95 +164,104 @@ export function Part(props: PartProps) {
         {props.part.type === "tool" && props.part.state.status === "error" && (
           <div data-component="tool" data-tool="error">
             <ContentError>{formatErrorString(props.part.state.error)}</ContentError>
+            <Spacer />
           </div>
         )}
         {props.part.type === "tool" &&
           props.part.state.status === "completed" &&
           props.message.role === "assistant" && (
-            <div data-component="tool" data-tool={props.part.tool}>
-              <Switch>
-                <Match when={props.part.tool === "grep"}>
-                  <GrepTool
-                    message={props.message}
-                    id={props.part.id}
-                    tool={props.part.tool}
-                    state={props.part.state}
-                  />
-                </Match>
-                <Match when={props.part.tool === "glob"}>
-                  <GlobTool
-                    message={props.message}
-                    id={props.part.id}
-                    tool={props.part.tool}
-                    state={props.part.state}
-                  />
-                </Match>
-                <Match when={props.part.tool === "list"}>
-                  <ListTool
-                    message={props.message}
-                    id={props.part.id}
-                    tool={props.part.tool}
-                    state={props.part.state}
-                  />
-                </Match>
-                <Match when={props.part.tool === "read"}>
-                  <ReadTool
-                    message={props.message}
-                    id={props.part.id}
-                    tool={props.part.tool}
-                    state={props.part.state}
-                  />
-                </Match>
-                <Match when={props.part.tool === "write"}>
-                  <WriteTool
-                    message={props.message}
-                    id={props.part.id}
-                    tool={props.part.tool}
-                    state={props.part.state}
-                  />
-                </Match>
-                <Match when={props.part.tool === "edit"}>
-                  <EditTool
-                    message={props.message}
-                    id={props.part.id}
-                    tool={props.part.tool}
-                    state={props.part.state}
-                  />
-                </Match>
-                <Match when={props.part.tool === "bash"}>
-                  <BashTool
-                    id={props.part.id}
-                    tool={props.part.tool}
-                    state={props.part.state}
-                    message={props.message}
-                  />
-                </Match>
-                <Match when={props.part.tool === "todowrite"}>
-                  <TodoWriteTool
-                    message={props.message}
-                    id={props.part.id}
-                    tool={props.part.tool}
-                    state={props.part.state}
-                  />
-                </Match>
-                <Match when={props.part.tool === "webfetch"}>
-                  <WebFetchTool
-                    message={props.message}
-                    id={props.part.id}
-                    tool={props.part.tool}
-                    state={props.part.state}
-                  />
-                </Match>
-                <Match when={true}>
-                  <FallbackTool
-                    message={props.message}
-                    id={props.part.id}
-                    tool={props.part.tool}
-                    state={props.part.state}
-                  />
-                </Match>
-              </Switch>
-            </div>
+            <>
+              <div data-component="tool" data-tool={props.part.tool}>
+                <Switch>
+                  <Match when={props.part.tool === "grep"}>
+                    <GrepTool
+                      message={props.message}
+                      id={props.part.id}
+                      tool={props.part.tool}
+                      state={props.part.state}
+                    />
+                  </Match>
+                  <Match when={props.part.tool === "glob"}>
+                    <GlobTool
+                      message={props.message}
+                      id={props.part.id}
+                      tool={props.part.tool}
+                      state={props.part.state}
+                    />
+                  </Match>
+                  <Match when={props.part.tool === "list"}>
+                    <ListTool
+                      message={props.message}
+                      id={props.part.id}
+                      tool={props.part.tool}
+                      state={props.part.state}
+                    />
+                  </Match>
+                  <Match when={props.part.tool === "read"}>
+                    <ReadTool
+                      message={props.message}
+                      id={props.part.id}
+                      tool={props.part.tool}
+                      state={props.part.state}
+                    />
+                  </Match>
+                  <Match when={props.part.tool === "write"}>
+                    <WriteTool
+                      message={props.message}
+                      id={props.part.id}
+                      tool={props.part.tool}
+                      state={props.part.state}
+                    />
+                  </Match>
+                  <Match when={props.part.tool === "edit"}>
+                    <EditTool
+                      message={props.message}
+                      id={props.part.id}
+                      tool={props.part.tool}
+                      state={props.part.state}
+                    />
+                  </Match>
+                  <Match when={props.part.tool === "bash"}>
+                    <BashTool
+                      id={props.part.id}
+                      tool={props.part.tool}
+                      state={props.part.state}
+                      message={props.message}
+                    />
+                  </Match>
+                  <Match when={props.part.tool === "todowrite"}>
+                    <TodoWriteTool
+                      message={props.message}
+                      id={props.part.id}
+                      tool={props.part.tool}
+                      state={props.part.state}
+                    />
+                  </Match>
+                  <Match when={props.part.tool === "webfetch"}>
+                    <WebFetchTool
+                      message={props.message}
+                      id={props.part.id}
+                      tool={props.part.tool}
+                      state={props.part.state}
+                    />
+                  </Match>
+                  <Match when={true}>
+                    <FallbackTool
+                      message={props.message}
+                      id={props.part.id}
+                      tool={props.part.tool}
+                      state={props.part.state}
+                    />
+                  </Match>
+                </Switch>
+              </div>
+              <ToolFooter
+                time={
+                  DateTime.fromMillis(props.message.time.completed || 0)
+                    .diff(DateTime.fromMillis(props.message.time.created || 0))
+                    .toMillis()
+                } />
+            </>
           )}
       </div>
     </div>
@@ -620,6 +632,16 @@ function Footer(props: ParentProps<{ title: string }>) {
     <div data-component="content-footer" title={props.title}>
       {props.children}
     </div>
+  )
+}
+
+function ToolFooter(props: { time: number }) {
+  return props.time > MIN_DURATION ? (
+    <Footer title={`${props.time}ms`}>
+      {formatDuration(props.time)}
+    </Footer>
+  ) : (
+    <Spacer />
   )
 }
 

@@ -364,7 +364,6 @@ export default function Share(props: {
             <div data-section="part" data-part-type="summary">
               <div data-section="decoration">
                 <span data-status={connectionStatus()[0]}></span>
-                <div></div>
               </div>
               <div data-section="content">
                 <p data-section="copy">{getStatusText(connectionStatus())}</p>
