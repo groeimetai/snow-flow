@@ -257,8 +257,8 @@ export function Part(props: PartProps) {
               </div>
               <ToolFooter
                 time={
-                  DateTime.fromMillis(props.message.time.completed || 0)
-                    .diff(DateTime.fromMillis(props.message.time.created || 0))
+                  DateTime.fromMillis(props.part.state.time.start)
+                    .diff(DateTime.fromMillis(props.part.state.time.end))
                     .toMillis()
                 } />
             </>
