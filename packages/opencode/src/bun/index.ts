@@ -67,7 +67,15 @@ export namespace BunProc {
     })
     if (parsed.dependencies[pkg] === version) return mod
     await BunProc.run(
-      ["add", "--exact", "--cwd", Global.Path.cache, "--registry=https://registry.npmjs.org", pkg + "@" + version],
+      [
+        "add",
+        "--force",
+        "--exact",
+        "--cwd",
+        Global.Path.cache,
+        "--registry=https://registry.npmjs.org",
+        pkg + "@" + version,
+      ],
       {
         cwd: Global.Path.cache,
       },
@@ -79,6 +87,8 @@ export namespace BunProc {
         },
       )
     })
+    parsed.dependencies[pkg] = version
+    await Bun.write(pkgjson.name!, JSON.stringify(parsed, null, 2))
     return mod
   }
 }
