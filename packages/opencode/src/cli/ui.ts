@@ -1,6 +1,8 @@
 import { z } from "zod"
 import { EOL } from "os"
 import { NamedError } from "../util/error"
+// @ts-ignore
+import cliMarkdown from "cli-markdown"
 
 export namespace UI {
   const LOGO = [
@@ -75,5 +77,19 @@ export namespace UI {
 
   export function error(message: string) {
     println(Style.TEXT_DANGER_BOLD + "Error: " + Style.TEXT_NORMAL + message)
+  }
+
+  export function markdown(text: string): string {
+    const rendered = cliMarkdown(text, {
+      width: process.stdout.columns || 80,
+      firstHeading: false,
+      tab: 0,
+    }).trim()
+
+    // Remove leading space from each line
+    return rendered
+      .split("\n")
+      .map((line: string) => line.replace(/^ /, ""))
+      .join("\n")
   }
 }

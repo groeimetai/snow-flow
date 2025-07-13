@@ -9,6 +9,7 @@ import { Config } from "../../config/config"
 import { bootstrap } from "../bootstrap"
 import { MessageV2 } from "../../session/message-v2"
 import { Mode } from "../../session/mode"
+import { Identifier } from "../../id/id"
 
 const TOOL: Record<string, [string, string]> = {
   todowrite: ["Todo", UI.Style.TEXT_WARNING_BOLD],
@@ -83,13 +84,8 @@ export const RunCommand = cmd({
         return
       }
 
-      const isPiped = !process.stdout.isTTY
-
       UI.empty()
       UI.println(UI.logo())
-      UI.empty()
-      const displayMessage = message.length > 300 ? message.slice(0, 300) + "..." : message
-      UI.println(UI.Style.TEXT_NORMAL_BOLD + "> ", displayMessage)
       UI.empty()
 
       const cfg = await Config.get()
@@ -120,8 +116,10 @@ export const RunCommand = cmd({
         )
       }
 
+      let text = ""
       Bus.subscribe(MessageV2.Event.PartUpdated, async (evt) => {
-        if (evt.properties.sessionID !== session.id) return
+        if (evt.properties.part.sessionID !== session.id) return
+        if (evt.properties.part.messageID === messageID) return
         const part = evt.properties.part
 
         if (part.type === "tool" && part.state.status === "completed") {
@@ -130,13 +128,15 @@ export const RunCommand = cmd({
         }
 
         if (part.type === "text") {
-          if (part.text.includes("\n")) {
+          text = part.text
+
+          if (part.time?.end) {
             UI.empty()
-            UI.println(part.text)
+            UI.println(UI.markdown(text))
             UI.empty()
+            text = ""
             return
           }
-          printEvent(UI.Style.TEXT_NORMAL_BOLD, "Text", part.text)
         }
       })
 
@@ -156,8 +156,10 @@ export const RunCommand = cmd({
 
       const mode = args.mode ? await Mode.get(args.mode) : await Mode.list().then((x) => x[0])
 
+      const messageID = Identifier.ascending("message")
       const result = await Session.chat({
         sessionID: session.id,
+        messageID,
         ...(mode.model
           ? mode.model
           : {
@@ -167,15 +169,19 @@ export const RunCommand = cmd({
         mode: mode.name,
         parts: [
           {
+            id: Identifier.ascending("part"),
+            sessionID: session.id,
+            messageID: messageID,
             type: "text",
             text: message,
           },
         ],
       })
 
+      const isPiped = !process.stdout.isTTY
       if (isPiped) {
         const match = result.parts.findLast((x) => x.type === "text")
-        if (match) process.stdout.write(match.text)
+        if (match) process.stdout.write(UI.markdown(match.text))
         if (errorMsg) process.stdout.write(errorMsg)
       }
       UI.empty()
