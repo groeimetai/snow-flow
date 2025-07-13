@@ -27,7 +27,6 @@ interface SessionStats {
 
 export const StatsCommand = cmd({
   command: "stats",
-  describe: "analyze and display statistics from message-v2 format",
   handler: async () => {
     await bootstrap({ cwd: process.cwd() }, async () => {
       const stats: SessionStats = {
