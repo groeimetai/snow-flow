@@ -93,9 +93,17 @@ export const RunCommand = cmd({
       UI.empty()
 
       const cfg = await Config.get()
-      if (cfg.autoshare || Flag.OPENCODE_AUTO_SHARE || args.share) {
-        await Session.share(session.id)
-        UI.println(UI.Style.TEXT_INFO_BOLD + "~  https://opencode.ai/s/" + session.id.slice(-8))
+      if (cfg.share === "auto" || Flag.OPENCODE_AUTO_SHARE || args.share) {
+        try {
+          await Session.share(session.id)
+          UI.println(UI.Style.TEXT_INFO_BOLD + "~  https://opencode.ai/s/" + session.id.slice(-8))
+        } catch (error) {
+          if (error instanceof Error && error.message.includes("disabled")) {
+            UI.println(UI.Style.TEXT_ERROR_BOLD + "!  " + error.message)
+          } else {
+            throw error
+          }
+        }
       }
       UI.empty()
 

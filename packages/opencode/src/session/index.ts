@@ -145,11 +145,13 @@ export namespace Session {
     state().sessions.set(result.id, result)
     await Storage.writeJSON("session/info/" + result.id, result)
     const cfg = await Config.get()
-    if (!result.parentID && (Flag.OPENCODE_AUTO_SHARE || cfg.autoshare))
+    if (!result.parentID && (Flag.OPENCODE_AUTO_SHARE || cfg.share === "auto"))
       share(result.id).then((share) => {
         update(result.id, (draft) => {
           draft.share = share
         })
+      }).catch(() => {
+        // Silently ignore sharing errors during session creation
       })
     Bus.publish(Event.Updated, {
       info: result,
@@ -172,6 +174,11 @@ export namespace Session {
   }
 
   export async function share(id: string) {
+    const cfg = await Config.get()
+    if (cfg.share === "disabled") {
+      throw new Error("Sharing is disabled in configuration")
+    }
+    
     const session = await get(id)
     if (session.share) return session.share
     const share = await Share.create(id)
