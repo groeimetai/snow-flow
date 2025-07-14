@@ -34,13 +34,13 @@ type CompletionItemI interface {
 	GetRaw() any
 }
 
-func (ci *CompletionItem) Render(selected bool, width int) string {
+func (ci *CompletionItem) Render(selected bool, width int, isFirstInViewport bool) string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.NewStyle().Foreground(t.Text())
 
 	truncatedStr := truncate.String(string(ci.DisplayValue()), uint(width-4))
 
-	backgroundColor := t.BackgroundElement()
+	backgroundColor := t.BackgroundPanel()
 	if ci.backgroundColor != nil {
 		backgroundColor = *ci.backgroundColor
 	}
@@ -73,6 +73,10 @@ func (ci *CompletionItem) GetRaw() any {
 	return ci.Raw
 }
 
+func (ci *CompletionItem) Selectable() bool {
+	return true
+}
+
 type CompletionItemOption func(*CompletionItem)
 
 func WithBackgroundColor(color compat.AdaptiveColor) CompletionItemOption {
@@ -81,7 +85,10 @@ func WithBackgroundColor(color compat.AdaptiveColor) CompletionItemOption {
 	}
 }
 
-func NewCompletionItem(completionItem CompletionItem, opts ...CompletionItemOption) CompletionItemI {
+func NewCompletionItem(
+	completionItem CompletionItem,
+	opts ...CompletionItemOption,
+) CompletionItemI {
 	for _, opt := range opts {
 		opt(&completionItem)
 	}

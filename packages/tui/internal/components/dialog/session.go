@@ -30,7 +30,7 @@ type sessionItem struct {
 	isDeleteConfirming bool
 }
 
-func (s sessionItem) Render(selected bool, width int) string {
+func (s sessionItem) Render(selected bool, width int, isFirstInViewport bool) string {
 	t := theme.CurrentTheme()
 	baseStyle := styles.NewStyle()
 
@@ -73,6 +73,10 @@ func (s sessionItem) Render(selected bool, width int) string {
 	}
 
 	return itemStyle.Render(truncatedStr)
+}
+
+func (s sessionItem) Selectable() bool {
+	return true
 }
 
 type sessionDialog struct {
