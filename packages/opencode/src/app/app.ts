@@ -12,7 +12,6 @@ export namespace App {
 
   export const Info = z
     .object({
-      user: z.string(),
       hostname: z.string(),
       git: z.boolean(),
       path: z.object({
@@ -69,12 +68,7 @@ export namespace App {
 
     const root = git ?? input.cwd
 
-    // Load config to get custom username if set
-    const { Config } = await import("../config/config")
-    const config = await Config.global()
-    
     const info: Info = {
-      user: config.username || os.userInfo().username,
       hostname: os.hostname(),
       time: {
         initialized: state.initialized,
