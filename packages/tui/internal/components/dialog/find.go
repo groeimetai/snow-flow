@@ -133,7 +133,7 @@ func (f *findDialogComponent) View() string {
 	listView := f.list.View()
 	return styles.NewStyle().
 		Height(12).
-		Background(t.BackgroundElement()).
+		Background(t.BackgroundPanel()).
 		Width(f.width - 4).
 		Render(inputView + "\n" + listView)
 }
