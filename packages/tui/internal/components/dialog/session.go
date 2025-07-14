@@ -110,6 +110,15 @@ func (s *sessionDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					util.CmdHandler(app.SessionSelectedMsg(&selectedSession)),
 				)
 			}
+		case "n":
+			return s, tea.Sequence(
+				util.CmdHandler(modal.CloseModalMsg{}),
+				func() tea.Msg {
+					s.app.Session = &opencode.Session{}
+					s.app.Messages = []opencode.MessageUnion{}
+					return app.SessionClearedMsg{}
+				},
+			)
 		case "x", "delete", "backspace":
 			if _, idx := s.list.GetSelectedItem(); idx >= 0 && idx < len(s.sessions) {
 				if s.deleteConfirmation == idx {
@@ -150,10 +159,21 @@ func (s *sessionDialog) Render(background string) string {
 	listView := s.list.View()
 
 	t := theme.CurrentTheme()
-	helpStyle := styles.NewStyle().PaddingLeft(1).PaddingTop(1)
-	helpText := styles.NewStyle().Foreground(t.Text()).Render("x/del")
-	helpText = helpText + styles.NewStyle().Background(t.BackgroundElement()).Foreground(t.TextMuted()).Render(" delete session")
-	helpText = helpStyle.Render(helpText)
+	keyStyle := styles.NewStyle().Foreground(t.Text()).Background(t.BackgroundPanel()).Render
+	mutedStyle := styles.NewStyle().Foreground(t.TextMuted()).Background(t.BackgroundPanel()).Render
+
+	leftHelp := keyStyle("n") + mutedStyle(" new session")
+	rightHelp := keyStyle("x/del") + mutedStyle(" delete session")
+
+	bgColor := t.BackgroundPanel()
+	helpText := layout.Render(layout.FlexOptions{
+		Direction:  layout.Row,
+		Justify:    layout.JustifySpaceBetween,
+		Width:      layout.Current.Container.Width - 14,
+		Background: &bgColor,
+	}, layout.FlexItem{View: leftHelp}, layout.FlexItem{View: rightHelp})
+
+	helpText = styles.NewStyle().PaddingLeft(1).PaddingTop(1).Render(helpText)
 
 	content := strings.Join([]string{listView, helpText}, "\n")
 
