@@ -42,11 +42,11 @@ type searchKeyMap struct {
 
 var searchKeys = searchKeyMap{
 	Up: key.NewBinding(
-		key.WithKeys("up"),
+		key.WithKeys("up", "ctrl+p"),
 		key.WithHelp("↑", "previous item"),
 	),
 	Down: key.NewBinding(
-		key.WithKeys("down"),
+		key.WithKeys("down", "ctrl+n"),
 		key.WithHelp("↓", "next item"),
 	),
 	Enter: key.NewBinding(
