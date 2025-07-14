@@ -147,13 +147,15 @@ export namespace Session {
     await Storage.writeJSON("session/info/" + result.id, result)
     const cfg = await Config.get()
     if (!result.parentID && (Flag.OPENCODE_AUTO_SHARE || cfg.share === "auto"))
-      share(result.id).then((share) => {
-        update(result.id, (draft) => {
-          draft.share = share
+      share(result.id)
+        .then((share) => {
+          update(result.id, (draft) => {
+            draft.share = share
+          })
         })
-      }).catch(() => {
-        // Silently ignore sharing errors during session creation
-      })
+        .catch(() => {
+          // Silently ignore sharing errors during session creation
+        })
     Bus.publish(Event.Updated, {
       info: result,
     })
@@ -179,7 +181,7 @@ export namespace Session {
     if (cfg.share === "disabled") {
       throw new Error("Sharing is disabled in configuration")
     }
-    
+
     const session = await get(id)
     if (session.share) return session.share
     const share = await Share.create(id)
@@ -363,7 +365,7 @@ export namespace Session {
     const outputLimit = Math.min(model.info.limit.output, OUTPUT_TOKEN_MAX) || OUTPUT_TOKEN_MAX
 
     // auto summarize if too long
-    if (previous) {
+    if (previous && previous.tokens) {
       const tokens =
         previous.tokens.input + previous.tokens.cache.read + previous.tokens.cache.write + previous.tokens.output
       if (model.info.limit.context && tokens > Math.max((model.info.limit.context - outputLimit) * 0.9, 0)) {
