@@ -46,11 +46,11 @@ type listKeyMap struct {
 
 var simpleListKeys = listKeyMap{
 	Up: key.NewBinding(
-		key.WithKeys("up"),
+		key.WithKeys("up", "ctrl+p"),
 		key.WithHelp("↑", "previous list item"),
 	),
 	Down: key.NewBinding(
-		key.WithKeys("down"),
+		key.WithKeys("down", "ctrl+n"),
 		key.WithHelp("↓", "next list item"),
 	),
 	UpAlpha: key.NewBinding(
