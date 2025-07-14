@@ -696,6 +696,15 @@ export namespace Session {
         })
         switch (value.type) {
           case "start":
+            const snapshot = await Snapshot.create(assistantMsg.sessionID)
+            if (snapshot)
+              await updatePart({
+                id: Identifier.ascending("part"),
+                messageID: assistantMsg.id,
+                sessionID: assistantMsg.sessionID,
+                type: "snapshot",
+                snapshot,
+              })
             break
 
           case "tool-input-start":
@@ -751,6 +760,15 @@ export namespace Session {
                 },
               })
               delete toolCalls[value.toolCallId]
+              const snapshot = await Snapshot.create(assistantMsg.sessionID)
+              if (snapshot)
+                await updatePart({
+                  id: Identifier.ascending("part"),
+                  messageID: assistantMsg.id,
+                  sessionID: assistantMsg.sessionID,
+                  type: "snapshot",
+                  snapshot,
+                })
             }
             break
           }
@@ -771,6 +789,15 @@ export namespace Session {
                 },
               })
               delete toolCalls[value.toolCallId]
+              const snapshot = await Snapshot.create(assistantMsg.sessionID)
+              if (snapshot)
+                await updatePart({
+                  id: Identifier.ascending("part"),
+                  messageID: assistantMsg.id,
+                  sessionID: assistantMsg.sessionID,
+                  type: "snapshot",
+                  snapshot,
+                })
             }
             break
           }
