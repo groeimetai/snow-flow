@@ -122,6 +122,7 @@ export namespace Config {
       autoupdate: z.boolean().optional().describe("Automatically update to the latest version"),
       disabled_providers: z.array(z.string()).optional().describe("Disable providers that are loaded automatically"),
       model: z.string().describe("Model to use in the format of provider/model, eg anthropic/claude-2").optional(),
+      username: z.string().optional().describe("Custom username to display in conversations instead of system username"),
       mode: z
         .object({
           build: Mode.optional(),
