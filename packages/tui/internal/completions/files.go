@@ -30,7 +30,7 @@ func (cg *filesContextGroup) GetEmptyMessage() string {
 func (cg *filesContextGroup) getGitFiles() []dialog.CompletionItemI {
 	t := theme.CurrentTheme()
 	items := make([]dialog.CompletionItemI, 0)
-	base := styles.NewStyle().Background(t.BackgroundElement())
+	base := styles.NewStyle().Background(t.BackgroundPanel())
 	green := base.Foreground(t.Success()).Render
 	red := base.Foreground(t.Error()).Render
 

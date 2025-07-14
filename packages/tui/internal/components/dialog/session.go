@@ -111,13 +111,11 @@ func (s *sessionDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				)
 			}
 		case "n":
+			s.app.Session = &opencode.Session{}
+			s.app.Messages = []app.Message{}
 			return s, tea.Sequence(
 				util.CmdHandler(modal.CloseModalMsg{}),
-				func() tea.Msg {
-					s.app.Session = &opencode.Session{}
-					s.app.Messages = []opencode.MessageUnion{}
-					return app.SessionClearedMsg{}
-				},
+				util.CmdHandler(app.SessionClearedMsg{}),
 			)
 		case "x", "delete", "backspace":
 			if _, idx := s.list.GetSelectedItem(); idx >= 0 && idx < len(s.sessions) {
