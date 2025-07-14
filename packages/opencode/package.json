@@ -33,7 +33,6 @@
     "@openauthjs/openauth": "0.4.3",
     "@standard-schema/spec": "1.0.0",
     "ai": "catalog:",
-    "cli-markdown": "3.5.1",
     "decimal.js": "10.5.0",
     "diff": "8.0.2",
     "env-paths": "3.0.0",
