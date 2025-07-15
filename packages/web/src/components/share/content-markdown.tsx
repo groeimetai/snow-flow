@@ -2,6 +2,7 @@ import { marked } from "marked"
 import { codeToHtml } from "shiki"
 import markedShiki from "marked-shiki"
 import { createOverflow } from "./common"
+import { CopyButton } from "./copy-button"
 import { createResource, createSignal } from "solid-js"
 import { transformerNotationDiff } from "@shikijs/transformers"
 import style from "./content-markdown.module.css"
@@ -41,6 +42,7 @@ export function ContentMarkdown(props: Props) {
       class={style.root}
       data-highlight={props.highlight === true ? true : undefined}
       data-expanded={expanded() || props.expand === true ? true : undefined}
+      style={{ position: "relative" }}
     >
       <div data-slot="markdown" ref={overflow.ref} innerHTML={html()} />
 
@@ -54,6 +56,7 @@ export function ContentMarkdown(props: Props) {
           {expanded() ? "Show less" : "Show more"}
         </button>
       )}
+      <CopyButton text={props.text} />
     </div>
   )
 }
