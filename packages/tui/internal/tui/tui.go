@@ -1001,11 +1001,11 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		a.editor = updated.(chat.EditorComponent)
 		cmds = append(cmds, cmd)
 	case commands.MessagesFirstCommand:
-		updated, cmd := a.messages.First()
+		updated, cmd := a.messages.GotoTop()
 		a.messages = updated.(chat.MessagesComponent)
 		cmds = append(cmds, cmd)
 	case commands.MessagesLastCommand:
-		updated, cmd := a.messages.Last()
+		updated, cmd := a.messages.GotoBottom()
 		a.messages = updated.(chat.MessagesComponent)
 		cmds = append(cmds, cmd)
 	case commands.MessagesPageUpCommand:
@@ -1044,26 +1044,14 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 			a.messages = updated.(chat.MessagesComponent)
 			cmds = append(cmds, cmd)
 		}
-	case commands.MessagesPreviousCommand:
-		updated, cmd := a.messages.Previous()
-		a.messages = updated.(chat.MessagesComponent)
-		cmds = append(cmds, cmd)
-	case commands.MessagesNextCommand:
-		updated, cmd := a.messages.Next()
-		a.messages = updated.(chat.MessagesComponent)
-		cmds = append(cmds, cmd)
 	case commands.MessagesLayoutToggleCommand:
 		a.messagesRight = !a.messagesRight
 		a.app.State.MessagesRight = a.messagesRight
 		a.app.SaveState()
 	case commands.MessagesCopyCommand:
-		selected := a.messages.Selected()
-		if selected != "" {
-			cmd = a.app.SetClipboard(selected)
-			cmds = append(cmds, cmd)
-			cmd = toast.NewSuccessToast("Message copied to clipboard")
-			cmds = append(cmds, cmd)
-		}
+		updated, cmd := a.messages.CopyLastMessage()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
 	case commands.MessagesRevertCommand:
 	case commands.AppExitCommand:
 		return a, tea.Quit
