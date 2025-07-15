@@ -13,11 +13,19 @@ import (
 	"github.com/sst/opencode/internal/util"
 )
 
+const (
+	findDialogWidth = 76
+)
+
 type FindSelectedMsg struct {
 	FilePath string
 }
 
 type FindDialogCloseMsg struct{}
+
+type findInitialSuggestionsMsg struct {
+	suggestions []completions.CompletionSuggestion
+}
 
 type FindDialog interface {
 	layout.Modal
@@ -57,21 +65,62 @@ func (f findItem) Selectable() bool {
 
 type findDialogComponent struct {
 	completionProvider completions.CompletionProvider
+	allSuggestions     []completions.CompletionSuggestion
 	width, height      int
 	modal              *modal.Modal
 	searchDialog       *SearchDialog
-	suggestions        []completions.CompletionSuggestion
+	dialogWidth        int
 }
 
 func (f *findDialogComponent) Init() tea.Cmd {
-	return f.searchDialog.Init()
+	return tea.Batch(
+		f.loadInitialSuggestions(),
+		f.searchDialog.Init(),
+	)
+}
+
+func (f *findDialogComponent) loadInitialSuggestions() tea.Cmd {
+	return func() tea.Msg {
+		items, err := f.completionProvider.GetChildEntries("")
+		if err != nil {
+			slog.Error("Failed to get initial completion items", "error", err)
+			return findInitialSuggestionsMsg{suggestions: []completions.CompletionSuggestion{}}
+		}
+		return findInitialSuggestionsMsg{suggestions: items}
+	}
 }
 
 func (f *findDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case findInitialSuggestionsMsg:
+		// Handle initial suggestions setup
+		f.allSuggestions = msg.suggestions
+
+		// Calculate dialog width
+		f.dialogWidth = f.calculateDialogWidth()
+
+		// Initialize search dialog with calculated width
+		f.searchDialog = NewSearchDialog("Search files...", 10)
+		f.searchDialog.SetWidth(f.dialogWidth)
+
+		// Convert to list items
+		items := make([]list.Item, len(f.allSuggestions))
+		for i, suggestion := range f.allSuggestions {
+			items[i] = findItem{suggestion: suggestion}
+		}
+		f.searchDialog.SetItems(items)
+
+		// Update modal with calculated width
+		f.modal = modal.New(
+			modal.WithTitle("Find Files"),
+			modal.WithMaxWidth(f.dialogWidth+4),
+		)
+
+		return f, f.searchDialog.Init()
+
 	case []completions.CompletionSuggestion:
 		// Store suggestions and convert to findItem for the search dialog
-		f.suggestions = msg
+		f.allSuggestions = msg
 		items := make([]list.Item, len(msg))
 		for i, suggestion := range msg {
 			items[i] = findItem{suggestion: suggestion}
@@ -95,9 +144,26 @@ func (f *findDialogComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			items, err := f.completionProvider.GetChildEntries(msg.Query)
 			if err != nil {
 				slog.Error("Failed to get completion items", "error", err)
+				return []completions.CompletionSuggestion{}
 			}
 			return items
 		}
+
+	case tea.WindowSizeMsg:
+		f.width = msg.Width
+		f.height = msg.Height
+		// Recalculate width based on new viewport size
+		oldWidth := f.dialogWidth
+		f.dialogWidth = f.calculateDialogWidth()
+		if oldWidth != f.dialogWidth {
+			f.searchDialog.SetWidth(f.dialogWidth)
+			// Update modal max width too
+			f.modal = modal.New(
+				modal.WithTitle("Find Files"),
+				modal.WithMaxWidth(f.dialogWidth+4),
+			)
+		}
+		f.searchDialog.SetHeight(msg.Height)
 	}
 
 	// Forward all other messages to the search dialog
@@ -110,9 +176,17 @@ func (f *findDialogComponent) View() string {
 	return f.searchDialog.View()
 }
 
+func (f *findDialogComponent) calculateDialogWidth() int {
+	// Use fixed width unless viewport is smaller
+	if f.width > 0 && f.width < findDialogWidth+10 {
+		return f.width - 10
+	}
+	return findDialogWidth
+}
+
 func (f *findDialogComponent) SetWidth(width int) {
 	f.width = width
-	f.searchDialog.SetWidth(width - 4)
+	f.searchDialog.SetWidth(f.dialogWidth)
 }
 
 func (f *findDialogComponent) SetHeight(height int) {
@@ -143,33 +217,20 @@ func (f *findDialogComponent) Close() tea.Cmd {
 }
 
 func NewFindDialog(completionProvider completions.CompletionProvider) FindDialog {
-	searchDialog := NewSearchDialog("Search files...", 10)
-
 	component := &findDialogComponent{
 		completionProvider: completionProvider,
-		searchDialog:       searchDialog,
-		suggestions:        []completions.CompletionSuggestion{},
-		modal: modal.New(
-			modal.WithTitle("Find Files"),
-			modal.WithMaxWidth(80),
-		),
+		dialogWidth:        findDialogWidth,
+		allSuggestions:     []completions.CompletionSuggestion{},
 	}
 
-	// Initialize with empty query to get initial items
-	go func() {
-		items, err := completionProvider.GetChildEntries("")
-		if err != nil {
-			slog.Error("Failed to get completion items", "error", err)
-			return
-		}
-		// Store suggestions and convert to findItem
-		component.suggestions = items
-		listItems := make([]list.Item, len(items))
-		for i, item := range items {
-			listItems[i] = findItem{suggestion: item}
-		}
-		searchDialog.SetItems(listItems)
-	}()
+	// Create search dialog and modal with fixed width
+	component.searchDialog = NewSearchDialog("Search files...", 10)
+	component.searchDialog.SetWidth(findDialogWidth)
+
+	component.modal = modal.New(
+		modal.WithTitle("Find Files"),
+		modal.WithMaxWidth(findDialogWidth+4),
+	)
 
 	return component
 }
