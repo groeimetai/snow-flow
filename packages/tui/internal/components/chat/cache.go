@@ -1,9 +1,9 @@
 package chat
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"hash/fnv"
 	"sync"
 )
 
@@ -22,7 +22,7 @@ func NewMessageCache() *MessageCache {
 
 // generateKey creates a unique key for a message based on its content and rendering parameters
 func (c *MessageCache) GenerateKey(params ...any) string {
-	h := sha256.New()
+	h := fnv.New64a()
 	for _, param := range params {
 		h.Write(fmt.Appendf(nil, ":%v", param))
 	}
