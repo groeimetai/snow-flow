@@ -23,6 +23,7 @@ const (
 	numVisibleModels = 10
 	minDialogWidth   = 40
 	maxDialogWidth   = 80
+	maxRecentModels  = 5
 )
 
 // ModelDialog interface for the model selection dialog
@@ -121,6 +122,17 @@ func (m *modelDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, util.CmdHandler(modal.CloseModalMsg{})
 	case SearchCancelledMsg:
 		return m, util.CmdHandler(modal.CloseModalMsg{})
+
+	case SearchRemoveItemMsg:
+		if item, ok := msg.Item.(modelItem); ok {
+			if m.isModelInRecentSection(item.model, msg.Index) {
+				m.app.State.RemoveModelFromRecentlyUsed(item.model.Provider.ID, item.model.Model.ID)
+				m.app.SaveState()
+				items := m.buildDisplayList(m.searchDialog.GetQuery())
+				m.searchDialog.SetItems(items)
+			}
+		}
+		return m, nil
 
 	case SearchQueryChangedMsg:
 		// Update the list based on search query
@@ -307,7 +319,7 @@ func (m *modelDialog) buildGroupedResults() []list.Item {
 	var items []list.Item
 
 	// Add Recent section
-	recentModels := m.getRecentModels(5)
+	recentModels := m.getRecentModels(maxRecentModels)
 	if len(recentModels) > 0 {
 		items = append(items, list.HeaderItem("Recent"))
 		for _, model := range recentModels {
@@ -396,6 +408,28 @@ func (m *modelDialog) getRecentModels(limit int) []ModelWithProvider {
 	}
 
 	return recentModels
+}
+
+func (m *modelDialog) isModelInRecentSection(model ModelWithProvider, index int) bool {
+	// Only check if we're in grouped mode (no search query)
+	if m.searchDialog.GetQuery() != "" {
+		return false
+	}
+
+	recentModels := m.getRecentModels(maxRecentModels)
+	if len(recentModels) == 0 {
+		return false
+	}
+
+	// Index 0 is the "Recent" header, so recent models are at indices 1 to len(recentModels)
+	if index >= 1 && index <= len(recentModels) {
+		if index-1 < len(recentModels) {
+			recentModel := recentModels[index-1]
+			return recentModel.Provider.ID == model.Provider.ID && recentModel.Model.ID == model.Model.ID
+		}
+	}
+
+	return false
 }
 
 func (m *modelDialog) Render(background string) string {
