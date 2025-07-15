@@ -1,10 +1,10 @@
-import style from "./content-markdown.module.css"
-import { createResource, createSignal } from "solid-js"
-import { createOverflow } from "./common"
-import { transformerNotationDiff } from "@shikijs/transformers"
 import { marked } from "marked"
-import markedShiki from "marked-shiki"
 import { codeToHtml } from "shiki"
+import markedShiki from "marked-shiki"
+import { createOverflow } from "./common"
+import { createResource, createSignal } from "solid-js"
+import { transformerNotationDiff } from "@shikijs/transformers"
+import style from "./content-markdown.module.css"
 
 const markedWithShiki = marked.use(
   markedShiki({
