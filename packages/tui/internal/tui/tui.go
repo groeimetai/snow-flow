@@ -65,9 +65,9 @@ type appModel struct {
 	editor               chat.EditorComponent
 	messages             chat.MessagesComponent
 	completions          dialog.CompletionDialog
-	commandProvider      dialog.CompletionProvider
-	fileProvider         dialog.CompletionProvider
-	symbolsProvider      dialog.CompletionProvider
+	commandProvider      completions.CompletionProvider
+	fileProvider         completions.CompletionProvider
+	symbolsProvider      completions.CompletionProvider
 	showCompletionDialog bool
 	leaderBinding        *key.Binding
 	// isLeaderSequence     bool
