@@ -337,124 +337,132 @@ func renderToolDetails(
 		borderColor = t.BorderActive()
 	}
 
-	metadata := toolCall.State.Metadata.(map[string]any)
-	switch toolCall.Tool {
-	case "read":
-		preview := metadata["preview"]
-		if preview != nil && toolInputMap["filePath"] != nil {
-			filename := toolInputMap["filePath"].(string)
-			body = preview.(string)
-			body = util.RenderFile(filename, body, width, util.WithTruncate(6))
-		}
-	case "edit":
-		if filename, ok := toolInputMap["filePath"].(string); ok {
-			diffField := metadata["diff"]
-			if diffField != nil {
-				patch := diffField.(string)
-				var formattedDiff string
-				formattedDiff, _ = diff.FormatUnifiedDiff(
-					filename,
-					patch,
-					diff.WithWidth(width-2),
-				)
-				body = strings.TrimSpace(formattedDiff)
-				style := styles.NewStyle().
-					Background(backgroundColor).
-					Foreground(t.TextMuted()).
-					Padding(1, 2).
-					Width(width - 4)
-				if highlight {
-					style = style.Foreground(t.Text()).Bold(true)
-				}
-
-				if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
-					diagnostics = style.Render(diagnostics)
-					body += "\n" + diagnostics
-				}
-
-				title := renderToolTitle(toolCall, width)
-				title = style.Render(title)
-				content := title + "\n" + body
-				content = renderContentBlock(
-					app,
-					content,
-					highlight,
-					width,
-					WithPadding(0),
-					WithBorderColor(borderColor),
-				)
-				return content
+	if toolCall.State.Metadata != nil {
+		metadata := toolCall.State.Metadata.(map[string]any)
+		switch toolCall.Tool {
+		case "read":
+			var preview any
+			if metadata != nil {
+				preview = metadata["preview"]
 			}
-		}
-	case "write":
-		if filename, ok := toolInputMap["filePath"].(string); ok {
-			if content, ok := toolInputMap["content"].(string); ok {
-				body = util.RenderFile(filename, content, width)
-				if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
-					body += "\n\n" + diagnostics
+			if preview != nil && toolInputMap["filePath"] != nil {
+				filename := toolInputMap["filePath"].(string)
+				body = preview.(string)
+				body = util.RenderFile(filename, body, width, util.WithTruncate(6))
+			}
+		case "edit":
+			if filename, ok := toolInputMap["filePath"].(string); ok {
+				var diffField any
+				if metadata != nil {
+					diffField = metadata["diff"]
+				}
+				if diffField != nil {
+					patch := diffField.(string)
+					var formattedDiff string
+					formattedDiff, _ = diff.FormatUnifiedDiff(
+						filename,
+						patch,
+						diff.WithWidth(width-2),
+					)
+					body = strings.TrimSpace(formattedDiff)
+					style := styles.NewStyle().
+						Background(backgroundColor).
+						Foreground(t.TextMuted()).
+						Padding(1, 2).
+						Width(width - 4)
+					if highlight {
+						style = style.Foreground(t.Text()).Bold(true)
+					}
+
+					if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
+						diagnostics = style.Render(diagnostics)
+						body += "\n" + diagnostics
+					}
+
+					title := renderToolTitle(toolCall, width)
+					title = style.Render(title)
+					content := title + "\n" + body
+					content = renderContentBlock(
+						app,
+						content,
+						highlight,
+						width,
+						WithPadding(0),
+						WithBorderColor(borderColor),
+					)
+					return content
 				}
 			}
-		}
-	case "bash":
-		stdout := metadata["stdout"]
-		if stdout != nil {
-			command := toolInputMap["command"].(string)
-			body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
-			body = util.ToMarkdown(body, width, backgroundColor)
-		}
-	case "webfetch":
-		if format, ok := toolInputMap["format"].(string); ok && result != nil {
-			body = *result
-			body = util.TruncateHeight(body, 10)
-			if format == "html" || format == "markdown" {
+		case "write":
+			if filename, ok := toolInputMap["filePath"].(string); ok {
+				if content, ok := toolInputMap["content"].(string); ok {
+					body = util.RenderFile(filename, content, width)
+					if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
+						body += "\n\n" + diagnostics
+					}
+				}
+			}
+		case "bash":
+			stdout := metadata["stdout"]
+			if stdout != nil {
+				command := toolInputMap["command"].(string)
+				body = fmt.Sprintf("```console\n> %s\n%s```", command, stdout)
 				body = util.ToMarkdown(body, width, backgroundColor)
 			}
-		}
-	case "todowrite":
-		todos := metadata["todos"]
-		if todos != nil {
-			for _, item := range todos.([]any) {
-				todo := item.(map[string]any)
-				content := todo["content"].(string)
-				switch todo["status"] {
-				case "completed":
-					body += fmt.Sprintf("- [x] %s\n", content)
-				case "cancelled":
-					// strike through cancelled todo
-					body += fmt.Sprintf("- [~] ~~%s~~\n", content)
-				case "in_progress":
-					// highlight in progress todo
-					body += fmt.Sprintf("- [ ] `%s`\n", content)
-				default:
-					body += fmt.Sprintf("- [ ] %s\n", content)
+		case "webfetch":
+			if format, ok := toolInputMap["format"].(string); ok && result != nil {
+				body = *result
+				body = util.TruncateHeight(body, 10)
+				if format == "html" || format == "markdown" {
+					body = util.ToMarkdown(body, width, backgroundColor)
 				}
 			}
-			body = util.ToMarkdown(body, width, backgroundColor)
-		}
-	case "task":
-		summary := metadata["summary"]
-		if summary != nil {
-			toolcalls := summary.([]any)
-			steps := []string{}
-			for _, item := range toolcalls {
-				data, _ := json.Marshal(item)
-				var toolCall opencode.ToolPart
-				_ = json.Unmarshal(data, &toolCall)
-				step := renderToolTitle(toolCall, width)
-				step = "∟ " + step
-				steps = append(steps, step)
+		case "todowrite":
+			todos := metadata["todos"]
+			if todos != nil {
+				for _, item := range todos.([]any) {
+					todo := item.(map[string]any)
+					content := todo["content"].(string)
+					switch todo["status"] {
+					case "completed":
+						body += fmt.Sprintf("- [x] %s\n", content)
+					case "cancelled":
+						// strike through cancelled todo
+						body += fmt.Sprintf("- [~] ~~%s~~\n", content)
+					case "in_progress":
+						// highlight in progress todo
+						body += fmt.Sprintf("- [ ] `%s`\n", content)
+					default:
+						body += fmt.Sprintf("- [ ] %s\n", content)
+					}
+				}
+				body = util.ToMarkdown(body, width, backgroundColor)
 			}
-			body = strings.Join(steps, "\n")
+		case "task":
+			summary := metadata["summary"]
+			if summary != nil {
+				toolcalls := summary.([]any)
+				steps := []string{}
+				for _, item := range toolcalls {
+					data, _ := json.Marshal(item)
+					var toolCall opencode.ToolPart
+					_ = json.Unmarshal(data, &toolCall)
+					step := renderToolTitle(toolCall, width)
+					step = "∟ " + step
+					steps = append(steps, step)
+				}
+				body = strings.Join(steps, "\n")
+			}
+			body = styles.NewStyle().Width(width - 6).Render(body)
+		default:
+			if result == nil {
+				empty := ""
+				result = &empty
+			}
+			body = *result
+			body = util.TruncateHeight(body, 10)
+			body = styles.NewStyle().Width(width - 6).Render(body)
 		}
-		body = styles.NewStyle().Width(width - 6).Render(body)
-	default:
-		if result == nil {
-			empty := ""
-			result = &empty
-		}
-		body = *result
-		body = util.TruncateHeight(body, 10)
-		body = styles.NewStyle().Width(width - 6).Render(body)
 	}
 
 	error := ""
