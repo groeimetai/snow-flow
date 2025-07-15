@@ -97,7 +97,7 @@
   ],
   "catalog": {
     "@types/node": "22.13.9",
-    "ai": "5.0.0-beta.15",
+    "ai": "5.0.0-beta.18",
     "typescript": "5.8.2",
     "zod": "3.25.49",
   },
@@ -106,7 +106,7 @@
 
     "@ai-sdk/anthropic": ["@ai-sdk/anthropic@1.2.12", "", { "dependencies": { "@ai-sdk/provider": "1.1.3", "@ai-sdk/provider-utils": "2.2.8" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-YSzjlko7JvuiyQFmI9RN1tNZdEiZxc+6xld/0tq/VkJaHpEzGAb1yiNxxvmYVcjvfu/PcvCxAAYXmTYQQ63IHQ=="],
 
-    "@ai-sdk/gateway": ["@ai-sdk/gateway@1.0.0-beta.5", "", { "dependencies": { "@ai-sdk/provider": "2.0.0-beta.1", "@ai-sdk/provider-utils": "3.0.0-beta.2" }, "peerDependencies": { "zod": "^3.25.49" } }, "sha512-+SgaqoxfFRpFQwgvCK5rh4kznz09x//n9Xtm/l3sjJwlUPLrj+wOeKCCJRWdp1Lpl5cbfdz9qWXrK7Ul+qfUJg=="],
+    "@ai-sdk/gateway": ["@ai-sdk/gateway@1.0.0-beta.7", "", { "dependencies": { "@ai-sdk/provider": "2.0.0-beta.1", "@ai-sdk/provider-utils": "3.0.0-beta.2" }, "peerDependencies": { "zod": "^3.25.49" } }, "sha512-0TOWFetxYximugqdmA/uxk+NRkz51Lyo+anntc3hPzm2OnsbE/Q2wWkKJ14YzoCAfWZ9ZhvxsJRp8xzvvQREsA=="],
 
     "@ai-sdk/provider": ["@ai-sdk/provider@2.0.0-beta.1", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-Z8SPncMtS3RsoXITmT7NVwrAq6M44dmw0DoUOYJqNNtCu8iMWuxB8Nxsoqpa0uEEy9R1V1ZThJAXTYgjTUxl3w=="],
 
@@ -528,7 +528,7 @@
 
     "acorn-walk": ["acorn-walk@8.3.2", "", {}, "sha512-cjkyv4OtNCIeqhHrfS81QWXoCBPExR/J62oyEqepVw8WaQeSqpW2uhuLPh1m9eWhDuOo/jUXVTlifvesOWp/4A=="],
 
-    "ai": ["ai@5.0.0-beta.15", "", { "dependencies": { "@ai-sdk/gateway": "1.0.0-beta.5", "@ai-sdk/provider": "2.0.0-beta.1", "@ai-sdk/provider-utils": "3.0.0-beta.2", "@opentelemetry/api": "1.9.0" }, "peerDependencies": { "zod": "^3.25.49" } }, "sha512-+RpdNV+E551QzWXSFqIjoVkgfMH30sgliTL2yCu4PS2hqWK03CY57Pi0oHcVplw5TLOVeMhs0ax83+dKIJbGIg=="],
+    "ai": ["ai@5.0.0-beta.18", "", { "dependencies": { "@ai-sdk/gateway": "1.0.0-beta.7", "@ai-sdk/provider": "2.0.0-beta.1", "@ai-sdk/provider-utils": "3.0.0-beta.2", "@opentelemetry/api": "1.9.0" }, "peerDependencies": { "zod": "^3.25.49" } }, "sha512-gUkO9WF315aT6Al7FxBpY41z3aOVE11BdQUIdIekP1sebys4dElMmKjs9AoaNeYPcf+PklwQ6ZofztiT0egd4A=="],
 
     "ajv": ["ajv@6.12.6", "", { "dependencies": { "fast-deep-equal": "^3.1.1", "fast-json-stable-stringify": "^2.0.0", "json-schema-traverse": "^0.4.1", "uri-js": "^4.2.2" } }, "sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g=="],
 
