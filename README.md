@@ -40,8 +40,8 @@ For more info on how to configure opencode [**head over to our docs**](https://o
 
 For any new features we'd appreciate it if you could open an issue first to discuss what you'd like to implement. We're pretty responsive there and it'll save you from working on something that we don't end up using. No need to do this for simpler fixes.
 
-> **Note**: Please talk to us via github issues before spending time working on
-> a new feature
+> **Note**: If you do not follow the above guidelines we might close your PR
+> that you worked really hard on.
 
 To run opencode locally you need.
 
