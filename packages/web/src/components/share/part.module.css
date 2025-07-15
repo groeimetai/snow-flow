@@ -245,13 +245,15 @@
     &[data-tool="edit"] {
       [data-component="tool-result"] {
         max-width: var(--lg-tool-width);
+        align-items: stretch;
+        width: 100%;
       }
     }
     &[data-tool="task"] {
       [data-component="tool-input"] {
         font-size: 0.75rem;
         line-height: 1.5;
-        max-width: var(--sm-tool-width);
+        max-width: var(--md-tool-width);
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
