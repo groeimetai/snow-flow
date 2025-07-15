@@ -408,6 +408,17 @@ export namespace Provider {
     }
   }
 
+  export async function getSmallModel(providerID: string) {
+    const provider = await state().then((state) => state.providers[providerID])
+    if (!provider) return
+    const priority = ["3-5-haiku", "3.5-haiku", "gemini-2.5-flash"]
+    for (const item of priority) {
+      for (const model of Object.keys(provider.info.models)) {
+        if (model.includes(item)) return getModel(providerID, model)
+      }
+    }
+  }
+
   const priority = ["gemini-2.5-pro-preview", "codex-mini", "claude-sonnet-4"]
   export function sort(models: ModelsDev.Model[]) {
     return sortBy(

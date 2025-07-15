@@ -504,6 +504,7 @@ export namespace Session {
       })
 
     if (msgs.length === 0 && !session.parentID) {
+      const small = (await Provider.getSmallModel(input.providerID)) ?? model
       generateText({
         maxOutputTokens: input.providerID === "google" ? 1024 : 20,
         providerOptions: model.info.options,
@@ -528,7 +529,7 @@ export namespace Session {
             },
           ]),
         ],
-        model: model.language,
+        model: small.language,
       })
         .then((result) => {
           if (result.text)
@@ -1012,6 +1013,7 @@ export namespace Session {
 
     const processor = createProcessor(next, model.info)
     const stream = streamText({
+      maxRetries: 10,
       abortSignal: abort.signal,
       model: model.language,
       messages: [

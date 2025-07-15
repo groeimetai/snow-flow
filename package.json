@@ -39,7 +39,5 @@
     "protobufjs",
     "sharp"
   ],
-  "patchedDependencies": {
-    "ai@4.3.16": "patches/ai@4.3.16.patch"
-  }
+  "patchedDependencies": {}
 }

@@ -492,7 +492,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case app.SessionSelectedMsg:
 		messages, err := a.app.ListMessages(context.Background(), msg.ID)
 		if err != nil {
-			slog.Error("Failed to list messages", "error", err)
+			slog.Error("Failed to list messages", "error", err.Error())
 			return a, toast.NewErrorToast("Failed to open session")
 		}
 		a.app.Session = msg
