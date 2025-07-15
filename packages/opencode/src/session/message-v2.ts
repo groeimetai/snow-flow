@@ -88,7 +88,10 @@ export namespace MessageV2 {
   export const SnapshotPart = PartBase.extend({
     type: z.literal("snapshot"),
     snapshot: z.string(),
+  }).openapi({
+    ref: "SnapshotPart",
   })
+  export type SnapshotPart = z.infer<typeof SnapshotPart>
 
   export const TextPart = PartBase.extend({
     type: z.literal("text"),
