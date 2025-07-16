@@ -35,7 +35,7 @@ type messagesComponent struct {
 	width           int
 	app             *app.App
 	viewport        viewport.Model
-	cache           *MessageCache
+	cache           *PartCache
 	rendering       bool
 	showToolDetails bool
 	tail            bool
@@ -128,10 +128,12 @@ func (m *messagesComponent) renderView(width int) {
 
 		switch casted := message.Info.(type) {
 		case opencode.UserMessage:
-		userLoop:
 			for partIndex, part := range message.Parts {
 				switch part := part.(type) {
 				case opencode.TextPart:
+					if part.Synthetic {
+						continue
+					}
 					remainingParts := message.Parts[partIndex+1:]
 					fileParts := make([]opencode.FilePart, 0)
 					for _, part := range remainingParts {
@@ -190,8 +192,6 @@ func (m *messagesComponent) renderView(width int) {
 						m.lineCount += lipgloss.Height(content) + 1
 						blocks = append(blocks, content)
 					}
-					// Only render the first text part
-					break userLoop
 				}
 			}
 
@@ -574,7 +574,7 @@ func NewMessagesComponent(app *app.App) MessagesComponent {
 		app:             app,
 		viewport:        vp,
 		showToolDetails: true,
-		cache:           NewMessageCache(),
+		cache:           NewPartCache(),
 		tail:            true,
 	}
 }
