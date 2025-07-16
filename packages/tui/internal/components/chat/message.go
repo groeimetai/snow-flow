@@ -331,7 +331,7 @@ func renderToolDetails(
 						Padding(1, 2).
 						Width(width - 4)
 
-					if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
+					if diagnostics := renderDiagnostics(metadata, filename, backgroundColor, width-6); diagnostics != "" {
 						diagnostics = style.Render(diagnostics)
 						body += "\n" + diagnostics
 					}
@@ -353,7 +353,7 @@ func renderToolDetails(
 			if filename, ok := toolInputMap["filePath"].(string); ok {
 				if content, ok := toolInputMap["content"].(string); ok {
 					body = util.RenderFile(filename, content, width)
-					if diagnostics := renderDiagnostics(metadata, filename); diagnostics != "" {
+					if diagnostics := renderDiagnostics(metadata, filename, backgroundColor, width-4); diagnostics != "" {
 						body += "\n\n" + diagnostics
 					}
 				}
@@ -628,7 +628,12 @@ type Diagnostic struct {
 }
 
 // renderDiagnostics formats LSP diagnostics for display in the TUI
-func renderDiagnostics(metadata map[string]any, filePath string) string {
+func renderDiagnostics(
+	metadata map[string]any,
+	filePath string,
+	backgroundColor compat.AdaptiveColor,
+	width int,
+) string {
 	if diagnosticsData, ok := metadata["diagnostics"].(map[string]any); ok {
 		if fileDiagnostics, ok := diagnosticsData[filePath].([]any); ok {
 			var errorDiagnostics []string
@@ -664,9 +669,15 @@ func renderDiagnostics(metadata map[string]any, filePath string) string {
 			var result strings.Builder
 			for _, diagnostic := range errorDiagnostics {
 				if result.Len() > 0 {
-					result.WriteString("\n")
+					result.WriteString("\n\n")
 				}
-				result.WriteString(styles.NewStyle().Foreground(t.Error()).Render(diagnostic))
+				diagnostic = ansi.WordwrapWc(diagnostic, width, " -")
+				result.WriteString(
+					styles.NewStyle().
+						Background(backgroundColor).
+						Foreground(t.Error()).
+						Render(diagnostic),
+				)
 			}
 			return result.String()
 		}
