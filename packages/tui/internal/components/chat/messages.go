@@ -616,6 +616,7 @@ func (m *messagesComponent) CopyLastMessage() (tea.Model, tea.Cmd) {
 func NewMessagesComponent(app *app.App) MessagesComponent {
 	vp := viewport.New()
 	vp.KeyMap = viewport.KeyMap{}
+	vp.MouseWheelDelta = 4
 
 	return &messagesComponent{
 		app:             app,
