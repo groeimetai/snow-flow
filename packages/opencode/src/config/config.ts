@@ -31,6 +31,9 @@ export namespace Config {
       const os = await import("os")
       result.username = os.userInfo().username
     }
+    if (!result.layout) {
+      result.layout = "auto"
+    }
 
     log.info("loaded", result)
 
