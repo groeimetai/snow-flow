@@ -56,7 +56,6 @@ const (
 
 const interruptDebounceTimeout = 1 * time.Second
 const exitDebounceTimeout = 1 * time.Second
-const fileViewerFullWidthCutoff = 160
 
 type appModel struct {
 	width, height        int
@@ -77,10 +76,6 @@ type appModel struct {
 	exitKeyState      ExitKeyState
 	messagesRight     bool
 	fileViewer        fileviewer.Model
-	lastMouse         tea.Mouse
-	fileViewerStart   int
-	fileViewerEnd     int
-	fileViewerHit     bool
 }
 
 func (a appModel) Init() tea.Cmd {
@@ -288,30 +283,16 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, cmd
 	case tea.MouseWheelMsg:
 		if a.modal != nil {
-			return a, nil
+			u, cmd := a.modal.Update(msg)
+			a.modal = u.(layout.Modal)
+			cmds = append(cmds, cmd)
+			return a, tea.Batch(cmds...)
 		}
 
-		var cmd tea.Cmd
-		if a.fileViewerHit {
-			a.fileViewer, cmd = a.fileViewer.Update(msg)
-			cmds = append(cmds, cmd)
-		} else {
-			updated, cmd := a.messages.Update(msg)
-			a.messages = updated.(chat.MessagesComponent)
-			cmds = append(cmds, cmd)
-		}
-
+		updated, cmd := a.messages.Update(msg)
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
 		return a, tea.Batch(cmds...)
-	case tea.MouseMotionMsg:
-		a.lastMouse = msg.Mouse()
-		a.fileViewerHit = a.fileViewer.HasFile() &&
-			a.lastMouse.X > a.fileViewerStart &&
-			a.lastMouse.X < a.fileViewerEnd
-	case tea.MouseClickMsg:
-		a.lastMouse = msg.Mouse()
-		a.fileViewerHit = a.fileViewer.HasFile() &&
-			a.lastMouse.X > a.fileViewerStart &&
-			a.lastMouse.X < a.fileViewerEnd
 	case tea.BackgroundColorMsg:
 		styles.Terminal = &styles.TerminalInfo{
 			Background:       msg.Color,
@@ -458,14 +439,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		msg.Height -= 2 // Make space for the status bar
 		a.width, a.height = msg.Width, msg.Height
-		container := min(a.width, 104)
-		if a.fileViewer.HasFile() {
-			if a.width < fileViewerFullWidthCutoff {
-				container = a.width
-			} else {
-				container = min(min(a.width, max(a.width/2, 50)), 104)
-			}
-		}
+		container := min(a.width, app.MAX_CONTAINER_WIDTH)
 		layout.Current = &layout.LayoutInfo{
 			Viewport: layout.Dimensions{
 				Width:  a.width,
@@ -475,21 +449,6 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Width: container,
 			},
 		}
-		mainWidth := layout.Current.Container.Width
-		a.messages.SetWidth(mainWidth - 4)
-
-		sideWidth := a.width - mainWidth
-		if a.width < fileViewerFullWidthCutoff {
-			sideWidth = a.width
-		}
-		a.fileViewerStart = mainWidth
-		a.fileViewerEnd = a.fileViewerStart + sideWidth
-		if a.messagesRight {
-			a.fileViewerStart = 0
-			a.fileViewerEnd = sideWidth
-		}
-		a.fileViewer, cmd = a.fileViewer.SetSize(sideWidth, layout.Current.Viewport.Height)
-		cmds = append(cmds, cmd)
 	case app.SessionSelectedMsg:
 		messages, err := a.app.ListMessages(context.Background(), msg.ID)
 		if err != nil {
@@ -569,48 +528,22 @@ func (a appModel) View() string {
 	t := theme.CurrentTheme()
 
 	var mainLayout string
-	mainWidth := layout.Current.Container.Width - 4
+
 	if a.app.Session.ID == "" {
-		mainLayout = a.home(mainWidth)
+		mainLayout = a.home()
 	} else {
-		mainLayout = a.chat(mainWidth)
+		mainLayout = a.chat()
 	}
 	mainLayout = styles.NewStyle().
 		Background(t.Background()).
 		Padding(0, 2).
 		Render(mainLayout)
-
-	mainHeight := lipgloss.Height(mainLayout)
-
-	if a.fileViewer.HasFile() {
-		file := a.fileViewer.View()
-		baseStyle := styles.NewStyle().Background(t.BackgroundPanel())
-		sidePanel := baseStyle.Height(mainHeight).Render(file)
-		if a.width >= fileViewerFullWidthCutoff {
-			if a.messagesRight {
-				mainLayout = lipgloss.JoinHorizontal(
-					lipgloss.Top,
-					sidePanel,
-					mainLayout,
-				)
-			} else {
-				mainLayout = lipgloss.JoinHorizontal(
-					lipgloss.Top,
-					mainLayout,
-					sidePanel,
-				)
-			}
-		} else {
-			mainLayout = sidePanel
-		}
-	} else {
-		mainLayout = lipgloss.PlaceHorizontal(
-			a.width,
-			lipgloss.Center,
-			mainLayout,
-			styles.WhitespaceStyle(t.Background()),
-		)
-	}
+	mainLayout = lipgloss.PlaceHorizontal(
+		a.width,
+		lipgloss.Center,
+		mainLayout,
+		styles.WhitespaceStyle(t.Background()),
+	)
 
 	mainStyle := styles.NewStyle().Background(t.Background())
 	mainLayout = mainStyle.Render(mainLayout)
@@ -646,8 +579,9 @@ func (a appModel) openFile(filepath string) (tea.Model, tea.Cmd) {
 	return a, cmd
 }
 
-func (a appModel) home(width int) string {
+func (a appModel) home() string {
 	t := theme.CurrentTheme()
+	effectiveWidth := a.width - 4
 	baseStyle := styles.NewStyle().Background(t.Background())
 	base := baseStyle.Render
 	muted := styles.NewStyle().Foreground(t.TextMuted()).Background(t.Background()).Render
@@ -678,7 +612,7 @@ func (a appModel) home(width int) string {
 
 	logoAndVersion := strings.Join([]string{logo, version}, "\n")
 	logoAndVersion = lipgloss.PlaceHorizontal(
-		width,
+		effectiveWidth,
 		lipgloss.Center,
 		logoAndVersion,
 		styles.WhitespaceStyle(t.Background()),
@@ -689,7 +623,7 @@ func (a appModel) home(width int) string {
 		cmdcomp.WithLimit(6),
 	)
 	cmds := lipgloss.PlaceHorizontal(
-		width,
+		effectiveWidth,
 		lipgloss.Center,
 		commandsView.View(),
 		styles.WhitespaceStyle(t.Background()),
@@ -701,19 +635,16 @@ func (a appModel) home(width int) string {
 	lines = append(lines, logoAndVersion)
 	lines = append(lines, "")
 	lines = append(lines, "")
-	// lines = append(lines, base("cwd ")+muted(cwd))
-	// lines = append(lines, base("config ")+muted(config))
-	// lines = append(lines, "")
 	lines = append(lines, cmds)
 	lines = append(lines, "")
 	lines = append(lines, "")
 
 	mainHeight := lipgloss.Height(strings.Join(lines, "\n"))
 
-	editorWidth := min(width, 80)
-	editorView := a.editor.View(editorWidth)
+	editorView := a.editor.View()
+	editorWidth := lipgloss.Width(editorView)
 	editorView = lipgloss.PlaceHorizontal(
-		width,
+		effectiveWidth,
 		lipgloss.Center,
 		editorView,
 		styles.WhitespaceStyle(t.Background()),
@@ -723,7 +654,7 @@ func (a appModel) home(width int) string {
 	editorLines := a.editor.Lines()
 
 	mainLayout := lipgloss.Place(
-		width,
+		effectiveWidth,
 		a.height,
 		lipgloss.Center,
 		lipgloss.Center,
@@ -731,14 +662,14 @@ func (a appModel) home(width int) string {
 		styles.WhitespaceStyle(t.Background()),
 	)
 
-	editorX := (width - editorWidth) / 2
+	editorX := (effectiveWidth - editorWidth) / 2
 	editorY := (a.height / 2) + (mainHeight / 2) - 2
 
 	if editorLines > 1 {
 		mainLayout = layout.PlaceOverlay(
 			editorX,
 			editorY,
-			a.editor.Content(editorWidth),
+			a.editor.Content(),
 			mainLayout,
 		)
 	}
@@ -759,23 +690,31 @@ func (a appModel) home(width int) string {
 	return mainLayout
 }
 
-func (a appModel) chat(width int) string {
-	editorView := a.editor.View(width)
+func (a appModel) chat() string {
+	effectiveWidth := a.width - 4
+	t := theme.CurrentTheme()
+	editorView := a.editor.View()
 	lines := a.editor.Lines()
-	messagesView := a.messages.View(width, a.height-5)
+	messagesView := a.messages.View()
 
 	editorWidth := lipgloss.Width(editorView)
 	editorHeight := max(lines, 5)
+	editorView = lipgloss.PlaceHorizontal(
+		effectiveWidth,
+		lipgloss.Center,
+		editorView,
+		styles.WhitespaceStyle(t.Background()),
+	)
 
 	mainLayout := messagesView + "\n" + editorView
-	editorX := (a.width - editorWidth) / 2
+	editorX := (effectiveWidth - editorWidth) / 2
 
 	if lines > 1 {
 		editorY := a.height - editorHeight
 		mainLayout = layout.PlaceOverlay(
 			editorX,
 			editorY,
-			a.editor.Content(width),
+			a.editor.Content(),
 			mainLayout,
 		)
 	}
@@ -968,11 +907,11 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 	case commands.ThemeListCommand:
 		themeDialog := dialog.NewThemeDialog()
 		a.modal = themeDialog
-	case commands.FileListCommand:
-		a.editor.Blur()
-		findDialog := dialog.NewFindDialog(a.fileProvider)
-		cmds = append(cmds, findDialog.Init())
-		a.modal = findDialog
+	// case commands.FileListCommand:
+	// 	a.editor.Blur()
+	// 	findDialog := dialog.NewFindDialog(a.fileProvider)
+	// 	cmds = append(cmds, findDialog.Init())
+	// 	a.modal = findDialog
 	case commands.FileCloseCommand:
 		a.fileViewer, cmd = a.fileViewer.Clear()
 		cmds = append(cmds, cmd)

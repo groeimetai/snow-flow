@@ -260,7 +260,7 @@ func (a *App) SwitchModeReverse() (*App, tea.Cmd) {
 }
 
 func (a *App) InitializeProvider() tea.Cmd {
-	providersResponse, err := a.Client.Config.Providers(context.Background())
+	providersResponse, err := a.Client.App.Providers(context.Background())
 	if err != nil {
 		slog.Error("Failed to list providers", "error", err)
 		// TODO: notify user
@@ -355,7 +355,7 @@ func (a *App) InitializeProvider() tea.Cmd {
 }
 
 func getDefaultModel(
-	response *opencode.ConfigProvidersResponse,
+	response *opencode.AppProvidersResponse,
 	provider opencode.Provider,
 ) *opencode.Model {
 	if match, ok := response.Default[provider.ID]; ok {
@@ -618,7 +618,7 @@ func (a *App) ListMessages(ctx context.Context, sessionId string) ([]Message, er
 }
 
 func (a *App) ListProviders(ctx context.Context) ([]opencode.Provider, error) {
-	response, err := a.Client.Config.Providers(ctx)
+	response, err := a.Client.App.Providers(ctx)
 	if err != nil {
 		return nil, err
 	}

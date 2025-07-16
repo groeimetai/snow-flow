@@ -116,3 +116,20 @@ export DISPLAY=:99.0
 ```
 
 opencode will detect if you're using Wayland and prefer `wl-clipboard`, otherwise it will try to find clipboard tools in order of: `xclip` and `xsel`.
+
+---
+
+### TUI not rendering full width
+
+By default, opencode's TUI uses an "auto" layout that centers content with padding. If you want the TUI to use the full width of your terminal, you can configure the layout setting:
+
+```json
+{
+  "layout": "stretch"
+}
+```
+
+Add this to your `opencode.json` configuration file. The available layout options are:
+
+- `"auto"` (default) - Centers content with padding
+- `"stretch"` - Uses full terminal width

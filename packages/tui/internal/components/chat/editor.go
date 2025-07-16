@@ -27,8 +27,8 @@ import (
 
 type EditorComponent interface {
 	tea.Model
-	View(width int) string
-	Content(width int) string
+	tea.ViewModel
+	Content() string
 	Lines() int
 	Value() string
 	Length() int
@@ -46,6 +46,7 @@ type EditorComponent interface {
 
 type editorComponent struct {
 	app                    *app.App
+	width                  int
 	textarea               textarea.Model
 	spinner                spinner.Model
 	interruptKeyInDebounce bool
@@ -61,6 +62,12 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = min(msg.Width-4, app.MAX_CONTAINER_WIDTH)
+		if m.app.Config.Layout == opencode.LayoutConfigStretch {
+			m.width = msg.Width - 4
+		}
+		return m, nil
 	case spinner.TickMsg:
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
@@ -227,7 +234,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *editorComponent) Content(width int) string {
+func (m *editorComponent) Content() string {
 	t := theme.CurrentTheme()
 	base := styles.NewStyle().Foreground(t.Text()).Background(t.Background()).Render
 	muted := styles.NewStyle().Foreground(t.TextMuted()).Background(t.Background()).Render
@@ -236,7 +243,7 @@ func (m *editorComponent) Content(width int) string {
 		Bold(true)
 	prompt := promptStyle.Render(">")
 
-	m.textarea.SetWidth(width - 6)
+	m.textarea.SetWidth(m.width - 6)
 	textarea := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		prompt,
@@ -248,7 +255,7 @@ func (m *editorComponent) Content(width int) string {
 	}
 	textarea = styles.NewStyle().
 		Background(t.BackgroundElement()).
-		Width(width).
+		Width(m.width).
 		PaddingTop(1).
 		PaddingBottom(1).
 		BorderStyle(lipgloss.ThickBorder()).
@@ -284,7 +291,7 @@ func (m *editorComponent) Content(width int) string {
 		model = muted(m.app.Provider.Name) + base(" "+m.app.Model.Name)
 	}
 
-	space := width - 2 - lipgloss.Width(model) - lipgloss.Width(hint)
+	space := m.width - 2 - lipgloss.Width(model) - lipgloss.Width(hint)
 	spacer := styles.NewStyle().Background(t.Background()).Width(space).Render("")
 
 	info := hint + spacer + model
@@ -294,10 +301,10 @@ func (m *editorComponent) Content(width int) string {
 	return content
 }
 
-func (m *editorComponent) View(width int) string {
+func (m *editorComponent) View() string {
 	if m.Lines() > 1 {
 		return lipgloss.Place(
-			width,
+			m.width,
 			5,
 			lipgloss.Center,
 			lipgloss.Center,
@@ -305,7 +312,7 @@ func (m *editorComponent) View(width int) string {
 			styles.WhitespaceStyle(theme.CurrentTheme().Background()),
 		)
 	}
-	return m.Content(width)
+	return m.Content()
 }
 
 func (m *editorComponent) Focused() bool {

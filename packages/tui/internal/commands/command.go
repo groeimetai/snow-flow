@@ -230,12 +230,12 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 			Keybindings: parseBindings("<leader>t"),
 			Trigger:     []string{"themes"},
 		},
-		{
-			Name:        FileListCommand,
-			Description: "list files",
-			Keybindings: parseBindings("<leader>f"),
-			Trigger:     []string{"files"},
-		},
+		// {
+		// 	Name:        FileListCommand,
+		// 	Description: "list files",
+		// 	Keybindings: parseBindings("<leader>f"),
+		// 	Trigger:     []string{"files"},
+		// },
 		{
 			Name:        FileCloseCommand,
 			Description: "close file",

@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/charmbracelet/lipgloss/v2/compat"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/muesli/reflow/truncate"
 	"github.com/sst/opencode-sdk-go"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/diff"
@@ -319,11 +320,19 @@ func renderToolDetails(
 				if diffField != nil {
 					patch := diffField.(string)
 					var formattedDiff string
-					formattedDiff, _ = diff.FormatUnifiedDiff(
-						filename,
-						patch,
-						diff.WithWidth(width-2),
-					)
+					if width < 120 {
+						formattedDiff, _ = diff.FormatUnifiedDiff(
+							filename,
+							patch,
+							diff.WithWidth(width-2),
+						)
+					} else {
+						formattedDiff, _ = diff.FormatDiff(
+							filename,
+							patch,
+							diff.WithWidth(width-2),
+						)
+					}
 					body = strings.TrimSpace(formattedDiff)
 					style := styles.NewStyle().
 						Background(backgroundColor).
@@ -551,6 +560,8 @@ func renderToolTitle(
 		toolName := renderToolName(toolCall.Tool)
 		title = fmt.Sprintf("%s %s", toolName, toolArgs)
 	}
+
+	title = truncate.StringWithTail(title, uint(width-6), "...")
 	return title
 }
 

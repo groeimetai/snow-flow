@@ -125,6 +125,11 @@ export namespace Config {
       ref: "KeybindsConfig",
     })
 
+  export const Layout = z.enum(["auto", "stretch"]).openapi({
+    ref: "LayoutConfig",
+  })
+  export type Layout = z.infer<typeof Layout>
+
   export const Info = z
     .object({
       $schema: z.string().optional().describe("JSON schema reference for configuration validation"),
@@ -151,7 +156,8 @@ export namespace Config {
           plan: Mode.optional(),
         })
         .catchall(Mode)
-        .optional(),
+        .optional()
+        .describe("Modes configuration, see https://opencode.ai/docs/modes"),
       log_level: Log.Level.optional().describe("Minimum log level to write to log files"),
       provider: z
         .record(
@@ -164,6 +170,7 @@ export namespace Config {
         .describe("Custom provider configurations and model overrides"),
       mcp: z.record(z.string(), Mcp).optional().describe("MCP (Model Context Protocol) server configurations"),
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
+      layout: Layout.optional().describe("Layout to use for the TUI"),
       experimental: z
         .object({
           hook: z

@@ -19,8 +19,7 @@ import (
 
 type MessagesComponent interface {
 	tea.Model
-	View(width, height int) string
-	SetWidth(width int) tea.Cmd
+	tea.ViewModel
 	PageUp() (tea.Model, tea.Cmd)
 	PageDown() (tea.Model, tea.Cmd)
 	HalfPageUp() (tea.Model, tea.Cmd)
@@ -32,8 +31,9 @@ type MessagesComponent interface {
 }
 
 type messagesComponent struct {
-	width           int
+	width, height   int
 	app             *app.App
+	header          string
 	viewport        viewport.Model
 	cache           *PartCache
 	rendering       bool
@@ -53,6 +53,17 @@ func (m *messagesComponent) Init() tea.Cmd {
 func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		effectiveWidth := msg.Width - 4
+		// Clear cache on resize since width affects rendering
+		if m.width != effectiveWidth {
+			m.cache.Clear()
+		}
+		m.width = effectiveWidth
+		m.height = msg.Height - 7
+		m.viewport.SetWidth(m.width)
+		m.header = m.renderHeader()
+		return m, m.Reload()
 	case app.SendMsg:
 		m.viewport.GotoBottom()
 		m.tail = true
@@ -82,21 +93,18 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case opencode.EventListResponseEventSessionUpdated:
 		if msg.Properties.Info.ID == m.app.Session.ID {
-			m.renderView(m.width)
-			if m.tail {
-				m.viewport.GotoBottom()
-			}
+			m.header = m.renderHeader()
 		}
 	case opencode.EventListResponseEventMessageUpdated:
 		if msg.Properties.Info.SessionID == m.app.Session.ID {
-			m.renderView(m.width)
+			m.renderView()
 			if m.tail {
 				m.viewport.GotoBottom()
 			}
 		}
 	case opencode.EventListResponseEventMessagePartUpdated:
 		if msg.Properties.Part.SessionID == m.app.Session.ID {
-			m.renderView(m.width)
+			m.renderView()
 			if m.tail {
 				m.viewport.GotoBottom()
 			}
@@ -111,9 +119,11 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *messagesComponent) renderView(width int) {
+func (m *messagesComponent) renderView() {
 	measure := util.Measure("messages.renderView")
 	defer measure("messageCount", len(m.app.Messages))
+
+	m.header = m.renderHeader()
 
 	t := theme.CurrentTheme()
 	blocks := make([]string, 0)
@@ -121,6 +131,11 @@ func (m *messagesComponent) renderView(width int) {
 	m.lineCount = 0
 
 	orphanedToolCalls := make([]opencode.ToolPart, 0)
+
+	width := min(m.width, app.MAX_CONTAINER_WIDTH)
+	if m.app.Config.Layout == opencode.LayoutConfigStretch {
+		width = m.width
+	}
 
 	for _, message := range m.app.Messages {
 		var content string
@@ -185,6 +200,12 @@ func (m *messagesComponent) renderView(width int) {
 							width,
 							files,
 						)
+						content = lipgloss.PlaceHorizontal(
+							m.width,
+							lipgloss.Center,
+							content,
+							styles.WhitespaceStyle(t.Background()),
+						)
 						m.cache.Set(key, content)
 					}
 					if content != "" {
@@ -246,6 +267,12 @@ func (m *messagesComponent) renderView(width int) {
 								"",
 								toolCallParts...,
 							)
+							content = lipgloss.PlaceHorizontal(
+								m.width,
+								lipgloss.Center,
+								content,
+								styles.WhitespaceStyle(t.Background()),
+							)
 							m.cache.Set(key, content)
 						}
 					} else {
@@ -258,6 +285,12 @@ func (m *messagesComponent) renderView(width int) {
 							width,
 							"",
 							toolCallParts...,
+						)
+						content = lipgloss.PlaceHorizontal(
+							m.width,
+							lipgloss.Center,
+							content,
+							styles.WhitespaceStyle(t.Background()),
 						)
 					}
 					if content != "" {
@@ -273,6 +306,13 @@ func (m *messagesComponent) renderView(width int) {
 						continue
 					}
 
+					width := width
+					if m.app.Config.Layout == opencode.LayoutConfigAuto &&
+						part.Tool == "edit" &&
+						part.State.Error == "" {
+						width = min(m.width, app.EDIT_DIFF_MAX_WIDTH)
+					}
+
 					if part.State.Status == opencode.ToolPartStateStatusCompleted || part.State.Status == opencode.ToolPartStateStatusError {
 						key := m.cache.GenerateKey(casted.ID,
 							part.ID,
@@ -286,6 +326,12 @@ func (m *messagesComponent) renderView(width int) {
 								part,
 								width,
 							)
+							content = lipgloss.PlaceHorizontal(
+								m.width,
+								lipgloss.Center,
+								content,
+								styles.WhitespaceStyle(t.Background()),
+							)
 							m.cache.Set(key, content)
 						}
 					} else {
@@ -294,6 +340,12 @@ func (m *messagesComponent) renderView(width int) {
 							m.app,
 							part,
 							width,
+						)
+						content = lipgloss.PlaceHorizontal(
+							m.width,
+							lipgloss.Center,
+							content,
+							styles.WhitespaceStyle(t.Background()),
 						)
 					}
 					if content != "" {
@@ -333,13 +385,18 @@ func (m *messagesComponent) renderView(width int) {
 		}
 	}
 
+	m.viewport.SetHeight(m.height - lipgloss.Height(m.header))
 	m.viewport.SetContent("\n" + strings.Join(blocks, "\n\n"))
-
 }
 
-func (m *messagesComponent) header(width int) string {
+func (m *messagesComponent) renderHeader() string {
 	if m.app.Session.ID == "" {
 		return ""
+	}
+
+	headerWidth := min(m.width, app.MAX_CONTAINER_WIDTH)
+	if m.app.Config.Layout == opencode.LayoutConfigStretch {
+		headerWidth = m.width
 	}
 
 	t := theme.CurrentTheme()
@@ -348,7 +405,7 @@ func (m *messagesComponent) header(width int) string {
 	headerLines := []string{}
 	headerLines = append(
 		headerLines,
-		util.ToMarkdown("# "+m.app.Session.Title, width-6, t.Background()),
+		util.ToMarkdown("# "+m.app.Session.Title, headerWidth-6, t.Background()),
 	)
 
 	share := ""
@@ -397,7 +454,7 @@ func (m *messagesComponent) header(width int) string {
 			Direction:  layout.Row,
 			Justify:    layout.JustifySpaceBetween,
 			Align:      layout.AlignStretch,
-			Width:      width - 6,
+			Width:      headerWidth - 6,
 		},
 		layout.FlexItem{
 			View: share,
@@ -408,12 +465,10 @@ func (m *messagesComponent) header(width int) string {
 	)
 
 	headerLines = append(headerLines, share)
-
 	header := strings.Join(headerLines, "\n")
-
 	header = styles.NewStyle().
 		Background(t.Background()).
-		Width(width).
+		Width(headerWidth).
 		PaddingLeft(2).
 		PaddingRight(2).
 		BorderLeft(true).
@@ -422,6 +477,12 @@ func (m *messagesComponent) header(width int) string {
 		BorderForeground(t.BackgroundElement()).
 		BorderStyle(lipgloss.ThickBorder()).
 		Render(header)
+	header = lipgloss.PlaceHorizontal(
+		m.width,
+		lipgloss.Center,
+		header,
+		styles.WhitespaceStyle(t.Background()),
+	)
 
 	return "\n" + header + "\n"
 }
@@ -473,44 +534,27 @@ func formatTokensAndCost(
 	)
 }
 
-func (m *messagesComponent) View(width, height int) string {
+func (m *messagesComponent) View() string {
 	t := theme.CurrentTheme()
 	if m.rendering {
 		return lipgloss.Place(
-			width,
-			height,
+			m.width,
+			m.height,
 			lipgloss.Center,
 			lipgloss.Center,
 			styles.NewStyle().Background(t.Background()).Render(""),
 			styles.WhitespaceStyle(t.Background()),
 		)
 	}
-	header := m.header(width)
-	m.viewport.SetWidth(width)
-	m.viewport.SetHeight(height - lipgloss.Height(header))
 
 	return styles.NewStyle().
 		Background(t.Background()).
-		Render(header + "\n" + m.viewport.View())
-}
-
-func (m *messagesComponent) SetWidth(width int) tea.Cmd {
-	if m.width == width {
-		return nil
-	}
-	// Clear cache on resize since width affects rendering
-	if m.width != width {
-		m.cache.Clear()
-	}
-	m.width = width
-	m.viewport.SetWidth(width)
-	m.renderView(width)
-	return nil
+		Render(m.header + "\n" + m.viewport.View())
 }
 
 func (m *messagesComponent) Reload() tea.Cmd {
 	return func() tea.Msg {
-		m.renderView(m.width)
+		m.renderView()
 		return renderFinishedMsg{}
 	}
 }

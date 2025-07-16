@@ -49,12 +49,15 @@ resources:
     models:
       app: App
       logLevel: LogLevel
+      provider: Provider
+      model: Model
       mode: Mode
     methods:
       get: get /app
       init: post /app/init
       log: post /log
       modes: get /mode
+      providers: get /config/providers
 
   find:
     models:
@@ -75,15 +78,13 @@ resources:
   config:
     models:
       config: Config
-      keybinds: KeybindsConfig
-      mcpLocal: McpLocalConfig
-      mcpRemote: McpRemoteConfig
-      mode: ModeConfig
-      provider: Provider
-      model: Model
+      keybindsConfig: KeybindsConfig
+      mcpLocalConfig: McpLocalConfig
+      mcpRemoteConfig: McpRemoteConfig
+      modeConfig: ModeConfig
+      layoutConfig: LayoutConfig
     methods:
       get: get /config
-      providers: get /config/providers
 
   session:
     models:
