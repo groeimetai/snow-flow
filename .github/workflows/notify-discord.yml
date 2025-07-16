@@ -1,4 +1,4 @@
-name: Discord Releases
+name: discord
 
 on:
   release:
