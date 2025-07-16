@@ -451,7 +451,10 @@ func formatTokensAndCost(
 		formattedTokens = strings.Replace(formattedTokens, ".0M", "M", 1)
 	}
 
-	percentage := (float64(tokens) / float64(contextWindow)) * 100
+	percentage := 0.0
+	if contextWindow > 0 {
+		percentage = (float64(tokens) / float64(contextWindow)) * 100
+	}
 
 	if isSubscriptionModel {
 		return fmt.Sprintf(
