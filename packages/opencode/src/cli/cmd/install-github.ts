@@ -143,15 +143,6 @@ export const InstallGithubCommand = cmd({
         return model
       }
 
-      async function promptKey() {
-        const key = await prompts.password({
-          message: "Enter your API key",
-          validate: (x) => (x.length > 0 ? undefined : "Required"),
-        })
-        if (prompts.isCancel(key)) throw new UI.CancelledError()
-        return key
-      }
-
       async function installGitHubApp() {
         const s = prompts.spinner()
         s.start("Installing GitHub app")
