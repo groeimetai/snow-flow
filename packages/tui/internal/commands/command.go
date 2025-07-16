@@ -336,7 +336,7 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 			Name:        AppExitCommand,
 			Description: "exit the app",
 			Keybindings: parseBindings("ctrl+c", "<leader>q"),
-			Trigger:     []string{"exit", "quit"},
+			Trigger:     []string{"exit", "quit", "q"},
 		},
 	}
 	registry := make(CommandRegistry)

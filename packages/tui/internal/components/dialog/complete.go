@@ -85,7 +85,7 @@ func (c *completionDialogComponent) getAllCompletions(query string) tea.Cmd {
 		}
 
 		// If there's a query, use fuzzy ranking to sort results
-		if query != "" && len(allItems) > 0 {
+		if query != "" && len(allItems) > 0 && len(c.providers) > 1 {
 			t := theme.CurrentTheme()
 			baseStyle := styles.NewStyle().Background(t.BackgroundElement())
 			// Create a slice of display values for fuzzy matching
@@ -94,10 +94,7 @@ func (c *completionDialogComponent) getAllCompletions(query string) tea.Cmd {
 				displayValues[i] = item.Display(baseStyle)
 			}
 
-			// Get fuzzy matches with ranking
 			matches := fuzzy.RankFindFold(query, displayValues)
-
-			// Sort by score (best matches first)
 			sort.Sort(matches)
 
 			// Reorder items based on fuzzy ranking
