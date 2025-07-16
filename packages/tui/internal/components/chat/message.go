@@ -295,6 +295,7 @@ func renderToolDetails(
 	t := theme.CurrentTheme()
 	backgroundColor := t.BackgroundPanel()
 	borderColor := t.BackgroundPanel()
+	defaultStyle := styles.NewStyle().Background(backgroundColor).Width(width - 6).Render
 
 	if toolCall.State.Metadata != nil {
 		metadata := toolCall.State.Metadata.(map[string]any)
@@ -408,7 +409,7 @@ func renderToolDetails(
 				}
 				body = strings.Join(steps, "\n")
 			}
-			body = styles.NewStyle().Width(width - 6).Render(body)
+			body = defaultStyle(body)
 		default:
 			if result == nil {
 				empty := ""
@@ -416,7 +417,7 @@ func renderToolDetails(
 			}
 			body = *result
 			body = util.TruncateHeight(body, 10)
-			body = styles.NewStyle().Width(width - 6).Render(body)
+			body = defaultStyle(body)
 		}
 	}
 
@@ -436,7 +437,11 @@ func renderToolDetails(
 	if body == "" && error == "" && result != nil {
 		body = *result
 		body = util.TruncateHeight(body, 10)
-		body = styles.NewStyle().Width(width - 6).Render(body)
+		body = defaultStyle(body)
+	}
+
+	if body == "" {
+		body = defaultStyle("")
 	}
 
 	title := renderToolTitle(toolCall, width)
