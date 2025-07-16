@@ -86,7 +86,10 @@ export const EditTool = Tool.define({
         output += `\nThis file has errors, please fix\n<file_diagnostics>\n${issues.map(LSP.Diagnostic.pretty).join("\n")}\n</file_diagnostics>\n`
         continue
       }
-      output += `\n<project_diagnostics>\n${file}\n${issues.map(LSP.Diagnostic.pretty).join("\n")}\n</project_diagnostics>\n`
+      output += `\n<project_diagnostics>\n${file}\n${issues
+        .filter((item) => item.severity === 1)
+        .map(LSP.Diagnostic.pretty)
+        .join("\n")}\n</project_diagnostics>\n`
     }
 
     return {
