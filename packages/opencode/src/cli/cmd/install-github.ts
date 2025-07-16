@@ -231,7 +231,7 @@ jobs:
           fetch-depth: 1
 
       - name: Run opencode
-        uses: sst/opencode/sdks/github@dev${envStr}
+        uses: sst/opencode/sdks/github@github-v1${envStr}
         with:
           model: ${provider}/${model}
 `.trim(),
