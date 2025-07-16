@@ -16,6 +16,7 @@ import { TuiCommand } from "./cli/cmd/tui"
 import { DebugCommand } from "./cli/cmd/debug"
 import { StatsCommand } from "./cli/cmd/stats"
 import { McpCommand } from "./cli/cmd/mcp"
+import { InstallGithubCommand } from "./cli/cmd/install-github"
 
 const cancel = new AbortController()
 
@@ -76,6 +77,7 @@ const cli = yargs(hideBin(process.argv))
   .command(ServeCommand)
   .command(ModelsCommand)
   .command(StatsCommand)
+  .command(InstallGithubCommand)
   .fail((msg) => {
     if (msg.startsWith("Unknown argument") || msg.startsWith("Not enough non-option arguments")) {
       cli.showHelp("log")
