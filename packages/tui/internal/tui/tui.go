@@ -1134,11 +1134,11 @@ func formatConversationToMarkdown(messages []app.Message) string {
 		for _, part := range msg.Parts {
 			switch p := part.(type) {
 			case opencode.TextPart:
-				builder.WriteString("> " + strings.ReplaceAll(p.Text, "\n", "\n> ") + "\n\n")
+				builder.WriteString(p.Text + "\n\n")
 			case opencode.FilePart:
-				builder.WriteString(fmt.Sprintf("> [File: %s]\n\n", p.Filename))
+				builder.WriteString(fmt.Sprintf("[File: %s]\n\n", p.Filename))
 			case opencode.ToolPart:
-				builder.WriteString(fmt.Sprintf("> [Tool: %s]\n\n", p.Tool))
+				builder.WriteString(fmt.Sprintf("[Tool: %s]\n\n", p.Tool))
 			}
 		}
 	}
