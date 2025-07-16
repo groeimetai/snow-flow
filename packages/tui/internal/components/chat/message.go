@@ -9,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/charmbracelet/lipgloss/v2/compat"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode-sdk-go"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/diff"
@@ -193,8 +194,18 @@ func renderText(
 		content = util.ToMarkdown(text, width, backgroundColor)
 	case opencode.UserMessage:
 		ts = time.UnixMilli(int64(casted.Time.Created))
-		messageStyle := styles.NewStyle().Background(backgroundColor).Width(width - 6)
-		content = messageStyle.Render(text)
+		base := styles.NewStyle().Foreground(t.Text()).Background(backgroundColor)
+		words := strings.Fields(text)
+		for i, word := range words {
+			if strings.HasPrefix(word, "@") {
+				words[i] = base.Foreground(t.Secondary()).Render(word + " ")
+			} else {
+				words[i] = base.Render(word + " ")
+			}
+		}
+		text = strings.Join(words, "")
+		text = ansi.WordwrapWc(text, width-6, " -")
+		content = base.Width(width - 6).Render(text)
 	}
 
 	timestamp := ts.

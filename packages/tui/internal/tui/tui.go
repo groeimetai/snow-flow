@@ -1117,7 +1117,9 @@ func formatConversationToMarkdown(messages []app.Message) string {
 			continue
 		}
 
-		builder.WriteString(fmt.Sprintf("**%s** (*%s*)\n\n", role, timestamp.Format("2006-01-02 15:04:05")))
+		builder.WriteString(
+			fmt.Sprintf("**%s** (*%s*)\n\n", role, timestamp.Format("2006-01-02 15:04:05")),
+		)
 
 		for _, part := range msg.Parts {
 			switch p := part.(type) {
