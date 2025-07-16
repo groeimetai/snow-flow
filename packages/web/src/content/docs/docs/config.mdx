@@ -188,7 +188,9 @@ Use `{env:VARIABLE_NAME}` to substitute environment variables:
   "model": "{env:OPENCODE_MODEL}",
   "provider": {
     "anthropic": {
-      "api_key": "{env:ANTHROPIC_API_KEY}"
+      "options": {
+        "apiKey": "{env:ANTHROPIC_API_KEY}"
+        }
     }
   }
 }
@@ -208,7 +210,9 @@ Use `{file:path/to/file}` to substitute the contents of a file:
   "instructions": ["{file:./custom-instructions.md}"],
   "provider": {
     "openai": {
-      "api_key": "{file:~/.secrets/openai-key}"
+      "options": {
+        "apiKey": "{file:~/.secrets/openai-key}"
+      }
     }
   }
 }
