@@ -203,6 +203,22 @@ You can configure MCP servers you want to use through the `mcp` option.
 
 ---
 
+### Instructions
+
+You can configure the instructions for the model you're using through the `instructions` option.
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["CONTRIBUTING.md", "docs/guidelines.md", ".cursor/rules/*.md"]
+}
+```
+
+This takes an array of paths and glob patterns to instruction files. [Learn more
+about rules here](/docs/rules).
+
+---
+
 ### Disabled providers
 
 You can disable providers that are loaded automatically through the `disabled_providers` option. This is useful when you want to prevent certain providers from being loaded even if their credentials are available.
