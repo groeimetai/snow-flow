@@ -9,32 +9,46 @@ opencode has a list of keybinds that you can customize through the opencode conf
 {
   "$schema": "https://opencode.ai/config.json",
   "keybinds": {
+
     "leader": "ctrl+x",
-    "help": "<leader>h",
+    "app_help": "<leader>h",
+    "switch_mode": "tab",
+
     "editor_open": "<leader>e",
+
     "session_new": "<leader>n",
     "session_list": "<leader>l",
     "session_share": "<leader>s",
+    "session_unshare": "<leader>u",
     "session_interrupt": "esc",
     "session_compact": "<leader>c",
+
     "tool_details": "<leader>d",
     "model_list": "<leader>m",
     "theme_list": "<leader>t",
     "project_init": "<leader>i",
+
+    "file_list": "<leader>f",
+    "file_close": "esc",
+    "file_search": "@",
+    "file_diff_toggle": "<leader>v",
+
     "input_clear": "ctrl+c",
     "input_paste": "ctrl+v",
     "input_submit": "enter",
     "input_newline": "shift+enter,ctrl+j",
-    "history_previous": "up",
-    "history_next": "down",
+
     "messages_page_up": "pgup",
     "messages_page_down": "pgdown",
     "messages_half_page_up": "ctrl+alt+u",
     "messages_half_page_down": "ctrl+alt+d",
-    "messages_previous": "ctrl+alt+k",
-    "messages_next": "ctrl+alt+j",
+    "messages_previous": "ctrl+up",
+    "messages_next": "ctrl+down",
     "messages_first": "ctrl+g",
     "messages_last": "ctrl+alt+g",
+    "messages_layout_toggle": "<leader>p",
+    "messages_copy": "<leader>y",
+    "messages_revert": "<leader>r",
     "app_exit": "ctrl+c,<leader>q"
   }
 }
