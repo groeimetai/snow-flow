@@ -810,6 +810,10 @@ func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) 
 		updated, cmd := a.app.SwitchMode()
 		a.app = updated
 		cmds = append(cmds, cmd)
+	case commands.SwitchModeReverseCommand:
+		updated, cmd := a.app.SwitchModeReverse()
+		a.app = updated
+		cmds = append(cmds, cmd)
 	case commands.EditorOpenCommand:
 		if a.app.IsBusy() {
 			// status.Warn("Agent is working, please wait...")
