@@ -46,14 +46,14 @@ You can add custom providers by specifying the npm package for the provider and 
 
 You can customize the base URL for any provider by setting the `baseURL` option. This is useful when using proxy services or custom endpoints.
 
-```json title="opencode.json" {6-7}
+```json title="opencode.json" {6}
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
     "anthropic": {
       "options": {
         "baseURL": "https://api.anthropic.com/v1"
-      },
+      }
     }
   }
 }

@@ -39,22 +39,22 @@ This will generate a unique URL that'll be copied to your clipboard.
 
 ---
 
-### Autoshare
+### Auto-share
 
 You can enable automatic sharing for all new conversations through the `autoshare` option in your [config file](/docs/config).
 
 ```json title="opencode.json"
 {
   "$schema": "https://opencode.ai/config.json",
-  "autoshare": true
+  "share": "auto"
 }
 ```
 
-By default, `autoshare` is disabled.
+By default, automatic sharing is disabled.
 
 ---
 
-## Unsharing
+## Un-sharing
 
 To stop sharing a conversation and remove it from public access:
 
@@ -63,6 +63,21 @@ To stop sharing a conversation and remove it from public access:
 ```
 
 This will remove the share link and delete the data related to the conversation.
+
+---
+
+## Disable
+
+If you'd like to disable sharing entirely, you can do so by setting the `share` option to `"disabled"` in your [config file](/docs/config).
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "share": "disabled"
+}
+```
+
+To enforce this across your team for a given project, add it to the `opencode.json` in your project and check into Git.
 
 ---
 
@@ -85,10 +100,11 @@ includes:
 
 ### Recommendations
 
-- Only share conversations that don't contain sensitive information
-- Review conversation content before sharing
-- Unshare conversations when collaboration is complete
-- Avoid sharing conversations with proprietary code or confidential data
+- Only share conversations that don't contain sensitive information.
+- Review conversation content before sharing.
+- Unshare conversations when collaboration is complete.
+- Avoid sharing conversations with proprietary code or confidential data.
+- For sensitive projects, disable sharing entirely.
 
 ---
 
