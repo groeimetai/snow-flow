@@ -439,7 +439,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		msg.Height -= 2 // Make space for the status bar
 		a.width, a.height = msg.Width, msg.Height
-		container := min(a.width, app.MAX_CONTAINER_WIDTH)
+		container := min(a.width, 86)
 		layout.Current = &layout.LayoutInfo{
 			Viewport: layout.Dimensions{
 				Width:  a.width,

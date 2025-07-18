@@ -146,10 +146,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 
 		orphanedToolCalls := make([]opencode.ToolPart, 0)
 
-		width := min(m.width, app.MAX_CONTAINER_WIDTH)
-		if m.app.Config.Layout == opencode.LayoutConfigStretch {
-			width = m.width
-		}
+		width := m.width // always use full width
 
 		for _, message := range m.app.Messages {
 			var content string
@@ -320,13 +317,6 @@ func (m *messagesComponent) renderView() tea.Cmd {
 							continue
 						}
 
-						width := width
-						if m.app.Config.Layout == opencode.LayoutConfigAuto &&
-							part.Tool == "edit" &&
-							part.State.Error == "" {
-							width = min(m.width, app.EDIT_DIFF_MAX_WIDTH)
-						}
-
 						if part.State.Status == opencode.ToolPartStateStatusCompleted || part.State.Status == opencode.ToolPartStateStatusError {
 							key := m.cache.GenerateKey(casted.ID,
 								part.ID,
@@ -419,10 +409,7 @@ func (m *messagesComponent) renderHeader() string {
 		return ""
 	}
 
-	headerWidth := min(m.width, app.MAX_CONTAINER_WIDTH)
-	if m.app.Config.Layout == opencode.LayoutConfigStretch {
-		headerWidth = m.width
-	}
+	headerWidth := m.width
 
 	t := theme.CurrentTheme()
 	base := styles.NewStyle().Foreground(t.Text()).Background(t.Background()).Render

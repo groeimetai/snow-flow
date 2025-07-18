@@ -82,7 +82,6 @@ resources:
       mcpLocalConfig: McpLocalConfig
       mcpRemoteConfig: McpRemoteConfig
       modeConfig: ModeConfig
-      layoutConfig: LayoutConfig
     methods:
       get: get /config
 

@@ -64,10 +64,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = min(msg.Width-4, app.MAX_CONTAINER_WIDTH)
-		if m.app.Config.Layout == opencode.LayoutConfigStretch {
-			m.width = msg.Width - 4
-		}
+		m.width = msg.Width - 4
 		return m, nil
 	case spinner.TickMsg:
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -180,6 +177,11 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *editorComponent) Content() string {
+	width := m.width
+	if m.app.Session.ID == "" {
+		width = min(width, 80)
+	}
+
 	t := theme.CurrentTheme()
 	base := styles.NewStyle().Foreground(t.Text()).Background(t.Background()).Render
 	muted := styles.NewStyle().Foreground(t.TextMuted()).Background(t.Background()).Render
@@ -188,7 +190,7 @@ func (m *editorComponent) Content() string {
 		Bold(true)
 	prompt := promptStyle.Render(">")
 
-	m.textarea.SetWidth(m.width - 6)
+	m.textarea.SetWidth(width - 6)
 	textarea := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		prompt,
@@ -200,7 +202,7 @@ func (m *editorComponent) Content() string {
 	}
 	textarea = styles.NewStyle().
 		Background(t.BackgroundElement()).
-		Width(m.width).
+		Width(width).
 		PaddingTop(1).
 		PaddingBottom(1).
 		BorderStyle(lipgloss.ThickBorder()).
@@ -236,7 +238,7 @@ func (m *editorComponent) Content() string {
 		model = muted(m.app.Provider.Name) + base(" "+m.app.Model.Name)
 	}
 
-	space := m.width - 2 - lipgloss.Width(model) - lipgloss.Width(hint)
+	space := width - 2 - lipgloss.Width(model) - lipgloss.Width(hint)
 	spacer := styles.NewStyle().Background(t.Background()).Width(space).Render("")
 
 	info := hint + spacer + model
@@ -247,9 +249,14 @@ func (m *editorComponent) Content() string {
 }
 
 func (m *editorComponent) View() string {
+	width := m.width
+	if m.app.Session.ID == "" {
+		width = min(width, 80)
+	}
+
 	if m.Lines() > 1 {
 		return lipgloss.Place(
-			m.width,
+			width,
 			5,
 			lipgloss.Center,
 			lipgloss.Center,

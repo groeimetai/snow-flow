@@ -31,9 +31,6 @@ export namespace Config {
       const os = await import("os")
       result.username = os.userInfo().username
     }
-    if (!result.layout) {
-      result.layout = "auto"
-    }
 
     log.info("loaded", result)
 
@@ -176,7 +173,7 @@ export namespace Config {
         .describe("Custom provider configurations and model overrides"),
       mcp: z.record(z.string(), Mcp).optional().describe("MCP (Model Context Protocol) server configurations"),
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
-      layout: Layout.optional().describe("Layout to use for the TUI"),
+      layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
       experimental: z
         .object({
           hook: z
