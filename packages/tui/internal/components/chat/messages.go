@@ -393,6 +393,9 @@ func (m *messagesComponent) renderView() {
 
 	m.viewport.SetHeight(m.height - lipgloss.Height(m.header))
 	m.viewport.SetContent("\n" + strings.Join(blocks, "\n\n"))
+	if m.tail {
+		m.viewport.GotoBottom()
+	}
 }
 
 func (m *messagesComponent) renderHeader() string {
