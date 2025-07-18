@@ -44,8 +44,6 @@ export const TaskTool = Tool.define({
       parts: [
         {
           id: Identifier.ascending("part"),
-          messageID,
-          sessionID: session.id,
           type: "text",
           text: params.prompt,
         },

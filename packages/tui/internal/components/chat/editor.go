@@ -306,10 +306,10 @@ func (m *editorComponent) Submit() (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	attachments := m.textarea.GetAttachments()
-	fileParts := make([]opencode.FilePartParam, 0)
+	fileParts := make([]opencode.FilePartInputParam, 0)
 	for _, attachment := range attachments {
-		fileParts = append(fileParts, opencode.FilePartParam{
-			Type:     opencode.F(opencode.FilePartTypeFile),
+		fileParts = append(fileParts, opencode.FilePartInputParam{
+			Type:     opencode.F(opencode.FilePartInputTypeFile),
 			Mime:     opencode.F(attachment.MediaType),
 			URL:      opencode.F(attachment.URL),
 			Filename: opencode.F(attachment.Filename),

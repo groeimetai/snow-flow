@@ -451,16 +451,7 @@ export namespace Server {
             id: z.string().openapi({ description: "Session ID" }),
           }),
         ),
-        zValidator(
-          "json",
-          z.object({
-            messageID: z.string(),
-            providerID: z.string(),
-            modelID: z.string(),
-            mode: z.string(),
-            parts: z.union([MessageV2.FilePart, MessageV2.TextPart]).array(),
-          }),
-        ),
+        zValidator("json", Session.ChatInput.omit({ sessionID: true })),
         async (c) => {
           const sessionID = c.req.valid("param").id
           const body = c.req.valid("json")

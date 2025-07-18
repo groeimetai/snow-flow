@@ -92,7 +92,9 @@ resources:
       message: Message
       part: Part
       textPart: TextPart
+      textPartInput: TextPartInput
       filePart: FilePart
+      filePartInput: FilePartInput
       toolPart: ToolPart
       stepStartPart: StepStartPart
       stepFinishPart: StepFinishPart

@@ -63,7 +63,7 @@ type SessionClearedMsg struct{}
 type CompactSessionMsg struct{}
 type SendMsg struct {
 	Text        string
-	Attachments []opencode.FilePartParam
+	Attachments []opencode.FilePartInputParam
 }
 type SetEditorContentMsg struct {
 	Text string
@@ -462,7 +462,7 @@ func (a *App) CreateSession(ctx context.Context) (*opencode.Session, error) {
 func (a *App) SendChatMessage(
 	ctx context.Context,
 	text string,
-	attachments []opencode.FilePartParam,
+	attachments []opencode.FilePartInputParam,
 ) (*App, tea.Cmd) {
 	var cmds []tea.Cmd
 	if a.Session.ID == "" {
@@ -511,22 +511,18 @@ func (a *App) SendChatMessage(
 		for _, part := range parts {
 			switch casted := part.(type) {
 			case opencode.TextPart:
-				partsParam = append(partsParam, opencode.TextPartParam{
-					ID:        opencode.F(casted.ID),
-					MessageID: opencode.F(casted.MessageID),
-					SessionID: opencode.F(casted.SessionID),
-					Type:      opencode.F(casted.Type),
-					Text:      opencode.F(casted.Text),
+				partsParam = append(partsParam, opencode.TextPartInputParam{
+					ID:   opencode.F(casted.ID),
+					Type: opencode.F(opencode.TextPartInputType(casted.Type)),
+					Text: opencode.F(casted.Text),
 				})
 			case opencode.FilePart:
-				partsParam = append(partsParam, opencode.FilePartParam{
-					ID:        opencode.F(casted.ID),
-					Mime:      opencode.F(casted.Mime),
-					MessageID: opencode.F(casted.MessageID),
-					SessionID: opencode.F(casted.SessionID),
-					Type:      opencode.F(casted.Type),
-					URL:       opencode.F(casted.URL),
-					Filename:  opencode.F(casted.Filename),
+				partsParam = append(partsParam, opencode.FilePartInputParam{
+					ID:       opencode.F(casted.ID),
+					Mime:     opencode.F(casted.Mime),
+					Type:     opencode.F(opencode.FilePartInputType(casted.Type)),
+					URL:      opencode.F(casted.URL),
+					Filename: opencode.F(casted.Filename),
 				})
 			}
 		}

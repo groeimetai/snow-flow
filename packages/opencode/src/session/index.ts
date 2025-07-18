@@ -319,14 +319,39 @@ export namespace Session {
     return part
   }
 
-  export async function chat(input: {
-    sessionID: string
-    messageID: string
-    providerID: string
-    modelID: string
-    mode?: string
-    parts: (MessageV2.TextPart | MessageV2.FilePart)[]
-  }) {
+  export const ChatInput = z.object({
+    sessionID: Identifier.schema("session"),
+    messageID: Identifier.schema("message").optional(),
+    providerID: z.string(),
+    modelID: z.string(),
+    mode: z.string().optional(),
+    parts: z.array(
+      z.discriminatedUnion("type", [
+        MessageV2.TextPart.omit({
+          messageID: true,
+          sessionID: true,
+        })
+          .partial({
+            id: true,
+          })
+          .openapi({
+            ref: "TextPartInput",
+          }),
+        MessageV2.FilePart.omit({
+          messageID: true,
+          sessionID: true,
+        })
+          .partial({
+            id: true,
+          })
+          .openapi({
+            ref: "FilePartInput",
+          }),
+      ]),
+    ),
+  })
+
+  export async function chat(input: z.infer<typeof ChatInput>) {
     const l = log.clone().tag("session", input.sessionID)
     l.info("chatting")
 
@@ -384,7 +409,7 @@ export namespace Session {
     if (lastSummary) msgs = msgs.filter((msg) => msg.info.id >= lastSummary.info.id)
 
     const userMsg: MessageV2.Info = {
-      id: input.messageID,
+      id: input.messageID ?? Identifier.ascending("message"),
       role: "user",
       sessionID: input.sessionID,
       time: {
@@ -490,7 +515,14 @@ export namespace Session {
               ]
           }
         }
-        return [part]
+        return [
+          {
+            id: Identifier.ascending("part"),
+            ...part,
+            messageID: userMsg.id,
+            sessionID: input.sessionID,
+          },
+        ]
       }),
     ).then((x) => x.flat())
 
@@ -1104,8 +1136,6 @@ export namespace Session {
       parts: [
         {
           id: Identifier.ascending("part"),
-          sessionID: input.sessionID,
-          messageID: input.messageID,
           type: "text",
           text: PROMPT_INITIALIZE.replace("${path}", app.path.root),
         },
