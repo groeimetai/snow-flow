@@ -40,6 +40,7 @@ type EditorComponent interface {
 	Paste() (tea.Model, tea.Cmd)
 	Newline() (tea.Model, tea.Cmd)
 	SetValue(value string)
+	SetValueWithAttachments(value string)
 	SetInterruptKeyInDebounce(inDebounce bool)
 	SetExitKeyInDebounce(inDebounce bool)
 }
@@ -94,51 +95,13 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		filePath := text
-		ext := strings.ToLower(filepath.Ext(filePath))
 
-		mediaType := ""
-		switch ext {
-		case ".jpg":
-			mediaType = "image/jpeg"
-		case ".png", ".jpeg", ".gif", ".webp":
-			mediaType = "image/" + ext[1:]
-		case ".pdf":
-			mediaType = "application/pdf"
-		default:
-			attachment := &textarea.Attachment{
-				ID:        uuid.NewString(),
-				Display:   "@" + filePath,
-				URL:       fmt.Sprintf("file://./%s", filePath),
-				Filename:  filePath,
-				MediaType: "text/plain",
-			}
-			m.textarea.InsertAttachment(attachment)
-			m.textarea.InsertString(" ")
-			return m, nil
-		}
-
-		fileBytes, err := os.ReadFile(filePath)
-		if err != nil {
-			slog.Error("Failed to read file", "error", err)
+		attachment := m.createAttachmentFromFile(filePath)
+		if attachment == nil {
 			m.textarea.InsertRunesFromUserInput([]rune(msg))
 			return m, nil
 		}
-		base64EncodedFile := base64.StdEncoding.EncodeToString(fileBytes)
-		url := fmt.Sprintf("data:%s;base64,%s", mediaType, base64EncodedFile)
-		attachmentCount := len(m.textarea.GetAttachments())
-		attachmentIndex := attachmentCount + 1
-		label := "File"
-		if strings.HasPrefix(mediaType, "image/") {
-			label = "Image"
-		}
 
-		attachment := &textarea.Attachment{
-			ID:        uuid.NewString(),
-			MediaType: mediaType,
-			Display:   fmt.Sprintf("[%s #%d]", label, attachmentIndex),
-			URL:       url,
-			Filename:  filePath,
-		}
 		m.textarea.InsertAttachment(attachment)
 		m.textarea.InsertString(" ")
 	case tea.ClipboardMsg:
@@ -173,25 +136,7 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Now, insert the attachment at the position where the '@' was.
 			// The cursor is now at `atIndex` after the replacement.
 			filePath := msg.Item.Value
-			extension := filepath.Ext(filePath)
-			mediaType := ""
-			switch extension {
-			case ".jpg":
-				mediaType = "image/jpeg"
-			case ".png", ".jpeg", ".gif", ".webp":
-				mediaType = "image/" + extension[1:]
-			case ".pdf":
-				mediaType = "application/pdf"
-			default:
-				mediaType = "text/plain"
-			}
-			attachment := &textarea.Attachment{
-				ID:        uuid.NewString(),
-				Display:   "@" + filePath,
-				URL:       fmt.Sprintf("file://./%s", url.PathEscape(filePath)),
-				Filename:  filePath,
-				MediaType: mediaType,
-			}
+			attachment := m.createAttachmentFromPath(filePath)
 			m.textarea.InsertAttachment(attachment)
 			m.textarea.InsertString(" ")
 			return m, nil
@@ -424,6 +369,38 @@ func (m *editorComponent) SetValue(value string) {
 	m.textarea.SetValue(value)
 }
 
+func (m *editorComponent) SetValueWithAttachments(value string) {
+	m.textarea.Reset()
+
+	i := 0
+	for i < len(value) {
+		// Check if filepath and add attachment
+		if value[i] == '@' {
+			start := i + 1
+			end := start
+			for end < len(value) && value[end] != ' ' && value[end] != '\t' && value[end] != '\n' && value[end] != '\r' {
+				end++
+			}
+
+			if end > start {
+				filePath := value[start:end]
+				if _, err := os.Stat(filePath); err == nil {
+					attachment := m.createAttachmentFromFile(filePath)
+					if attachment != nil {
+						m.textarea.InsertAttachment(attachment)
+						i = end
+						continue
+					}
+				}
+			}
+		}
+
+		// Not a valid file path, insert the character normally
+		m.textarea.InsertRune(rune(value[i]))
+		i++
+	}
+}
+
 func (m *editorComponent) SetExitKeyInDebounce(inDebounce bool) {
 	m.exitKeyInDebounce = inDebounce
 }
@@ -503,4 +480,70 @@ func NewEditorComponent(app *app.App) EditorComponent {
 	}
 
 	return m
+}
+
+func getMediaTypeFromExtension(ext string) string {
+	switch strings.ToLower(ext) {
+	case ".jpg":
+		return "image/jpeg"
+	case ".png", ".jpeg", ".gif", ".webp":
+		return "image/" + ext[1:]
+	case ".pdf":
+		return "application/pdf"
+	default:
+		return "text/plain"
+	}
+}
+
+func (m *editorComponent) createAttachmentFromFile(filePath string) *textarea.Attachment {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	mediaType := getMediaTypeFromExtension(ext)
+
+	// For text files, create a simple file reference
+	if mediaType == "text/plain" {
+		return &textarea.Attachment{
+			ID:        uuid.NewString(),
+			Display:   "@" + filePath,
+			URL:       fmt.Sprintf("file://./%s", filePath),
+			Filename:  filePath,
+			MediaType: mediaType,
+		}
+	}
+
+	// For binary files (images, PDFs), read and encode
+	fileBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		slog.Error("Failed to read file", "error", err)
+		return nil
+	}
+
+	base64EncodedFile := base64.StdEncoding.EncodeToString(fileBytes)
+	url := fmt.Sprintf("data:%s;base64,%s", mediaType, base64EncodedFile)
+	attachmentCount := len(m.textarea.GetAttachments())
+	attachmentIndex := attachmentCount + 1
+	label := "File"
+	if strings.HasPrefix(mediaType, "image/") {
+		label = "Image"
+	}
+
+	return &textarea.Attachment{
+		ID:        uuid.NewString(),
+		MediaType: mediaType,
+		Display:   fmt.Sprintf("[%s #%d]", label, attachmentIndex),
+		URL:       url,
+		Filename:  filePath,
+	}
+}
+
+func (m *editorComponent) createAttachmentFromPath(filePath string) *textarea.Attachment {
+	extension := filepath.Ext(filePath)
+	mediaType := getMediaTypeFromExtension(extension)
+
+	return &textarea.Attachment{
+		ID:        uuid.NewString(),
+		Display:   "@" + filePath,
+		URL:       fmt.Sprintf("file://./%s", url.PathEscape(filePath)),
+		Filename:  filePath,
+		MediaType: mediaType,
+	}
 }
