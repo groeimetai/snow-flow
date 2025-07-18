@@ -41,8 +41,20 @@ case "$filename" in
     ;;
 esac
 
-INSTALL_DIR=$HOME/.opencode/bin
+# Determine installation directory with priority order
+if [ -n "${OPENCODE_INSTALL_DIR:-}" ]; then
+    INSTALL_DIR="$OPENCODE_INSTALL_DIR"
+elif [ -n "${XDG_BIN_DIR:-}" ]; then
+    INSTALL_DIR="$XDG_BIN_DIR"
+elif [ -d "$HOME/bin" ] || mkdir -p "$HOME/bin" 2>/dev/null; then
+    INSTALL_DIR="$HOME/bin"
+else
+    INSTALL_DIR="$HOME/.opencode/bin"
+fi
+
 mkdir -p "$INSTALL_DIR"
+
+print_message info "Installing to: ${YELLOW}$INSTALL_DIR${GREEN}"
 
 if [ -z "$requested_version" ]; then
     url="https://github.com/sst/opencode/releases/latest/download/$filename"
