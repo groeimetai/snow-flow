@@ -68,9 +68,6 @@ type SendMsg struct {
 type SetEditorContentMsg struct {
 	Text string
 }
-type OptimisticMessageAddedMsg struct {
-	Message opencode.MessageUnion
-}
 type FileRenderedMsg struct {
 	FilePath string
 }
@@ -508,7 +505,6 @@ func (a *App) SendChatMessage(
 	}
 
 	a.Messages = append(a.Messages, Message{Info: message, Parts: parts})
-	cmds = append(cmds, util.CmdHandler(OptimisticMessageAddedMsg{Message: message}))
 
 	cmds = append(cmds, func() tea.Msg {
 		partsParam := []opencode.SessionChatParamsPartUnion{}

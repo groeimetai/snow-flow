@@ -17,6 +17,9 @@ import { DebugCommand } from "./cli/cmd/debug"
 import { StatsCommand } from "./cli/cmd/stats"
 import { McpCommand } from "./cli/cmd/mcp"
 import { InstallGithubCommand } from "./cli/cmd/install-github"
+import { Trace } from "./trace"
+
+Trace.init()
 
 const cancel = new AbortController()
 
@@ -42,7 +45,7 @@ const cli = yargs(hideBin(process.argv))
     type: "boolean",
   })
   .middleware(async () => {
-    await Log.init({ print: process.argv.includes("--print-logs") })
+    await Log.init({ print: process.argv.includes("--print-logs"), dev: Installation.isDev() })
 
     try {
       const { Config } = await import("./config/config")

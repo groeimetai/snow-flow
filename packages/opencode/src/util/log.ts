@@ -50,6 +50,7 @@ export namespace Log {
 
   export interface Options {
     print: boolean
+    dev?: boolean
     level?: Level
   }
 
@@ -63,7 +64,10 @@ export namespace Log {
     await fs.mkdir(dir, { recursive: true })
     cleanup(dir)
     if (options.print) return
-    logpath = path.join(dir, new Date().toISOString().split(".")[0].replace(/:/g, "") + ".log")
+    logpath = path.join(
+      dir,
+      options.dev ? "dev.log" : new Date().toISOString().split(".")[0].replace(/:/g, "") + ".log",
+    )
     const logfile = Bun.file(logpath)
     await fs.truncate(logpath).catch(() => {})
     const writer = logfile.writer()
@@ -75,15 +79,16 @@ export namespace Log {
   }
 
   async function cleanup(dir: string) {
-    const entries = await fs.readdir(dir, { withFileTypes: true })
-    const files = entries
-      .filter((entry) => entry.isFile() && entry.name.endsWith(".log"))
-      .map((entry) => path.join(dir, entry.name))
-
+    const glob = new Bun.Glob("????-??-??T??????.log")
+    const files = await Array.fromAsync(
+      glob.scan({
+        cwd: dir,
+        absolute: true,
+      }),
+    )
     if (files.length <= 5) return
 
     const filesToDelete = files.slice(0, -10)
-
     await Promise.all(filesToDelete.map((file) => fs.unlink(file).catch(() => {})))
   }
 
