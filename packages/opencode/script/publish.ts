@@ -152,6 +152,7 @@ if (!snapshot) {
   for (const pkg of ["opencode", "opencode-bin"]) {
     await $`rm -rf ./dist/aur-${pkg}`
     await $`git clone ssh://aur@aur.archlinux.org/${pkg}.git ./dist/aur-${pkg}`
+    await $`cd ./dist/aur-${pkg} && git checkout -b master origin/master`
     await Bun.file(`./dist/aur-${pkg}/PKGBUILD`).write(pkgbuild.replace("${pkg}", pkg))
     await $`cd ./dist/aur-${pkg} && makepkg --printsrcinfo > .SRCINFO`
     await $`cd ./dist/aur-${pkg} && git add PKGBUILD .SRCINFO`
