@@ -103,7 +103,7 @@ func (a appModel) Init() tea.Cmd {
 }
 
 func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	measure := util.Measure("Update")
+	measure := util.Measure("app.Update")
 	defer measure("from", fmt.Sprintf("%T", msg))
 
 	var cmd tea.Cmd

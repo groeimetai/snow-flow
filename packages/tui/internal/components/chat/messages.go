@@ -53,6 +53,8 @@ func (m *messagesComponent) Init() tea.Cmd {
 }
 
 func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	measure := util.Measure("messages.Update")
+	defer measure("from", fmt.Sprintf("%T", msg))
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -102,6 +104,7 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		m.tail = m.viewport.AtBottom()
 		m.viewport = msg.viewport
+		m.header = msg.header
 		if m.dirty {
 			cmds = append(cmds, m.renderView())
 		}
@@ -117,12 +120,12 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 type renderCompleteMsg struct {
 	viewport  viewport.Model
+	header    string
 	partCount int
 	lineCount int
 }
 
 func (m *messagesComponent) renderView() tea.Cmd {
-	m.header = m.renderHeader()
 
 	if m.rendering {
 		slog.Debug("pending render, skipping")
@@ -138,6 +141,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 	tail := m.tail
 
 	return func() tea.Msg {
+		header := m.renderHeader()
 		measure := util.Measure("messages.renderView")
 		defer measure()
 
@@ -405,6 +409,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 		}
 
 		return renderCompleteMsg{
+			header:    header,
 			viewport:  viewport,
 			partCount: partCount,
 			lineCount: lineCount,

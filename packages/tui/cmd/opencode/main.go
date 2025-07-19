@@ -91,6 +91,9 @@ func main() {
 		stream := httpClient.Event.ListStreaming(ctx)
 		for stream.Next() {
 			evt := stream.Current().AsUnion()
+			if _, ok := evt.(opencode.EventListResponseEventStorageWrite); ok {
+				continue
+			}
 			program.Send(evt)
 		}
 		if err := stream.Err(); err != nil {
