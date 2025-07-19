@@ -97,20 +97,21 @@ if (!snapshot) {
     .then((res) => res.json())
     .then((data) => data.commits || [])
 
-  const notes = commits
-    .map((commit: any) => `- ${commit.commit.message.split("\n")[0]}`)
-    .filter((x: string) => {
-      const lower = x.toLowerCase()
-      return (
-        !lower.includes("ignore:") &&
-        !lower.includes("chore:") &&
-        !lower.includes("ci:") &&
-        !lower.includes("wip:") &&
-        !lower.includes("docs:") &&
-        !lower.includes("doc:")
-      )
-    })
-    .join("\n")
+  const notes =
+    commits
+      .map((commit: any) => `- ${commit.commit.message.split("\n")[0]}`)
+      .filter((x: string) => {
+        const lower = x.toLowerCase()
+        return (
+          !lower.includes("ignore:") &&
+          !lower.includes("chore:") &&
+          !lower.includes("ci:") &&
+          !lower.includes("wip:") &&
+          !lower.includes("docs:") &&
+          !lower.includes("doc:")
+        )
+      })
+      .join("\n") || "No notable changes"
 
   if (!dry) await $`gh release create v${version} --title "v${version}" --notes ${notes} ./dist/*.zip`
 
