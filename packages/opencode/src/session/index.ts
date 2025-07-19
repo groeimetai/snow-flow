@@ -325,6 +325,7 @@ export namespace Session {
     providerID: z.string(),
     modelID: z.string(),
     mode: z.string().optional(),
+    tools: z.record(z.boolean()).optional(),
     parts: z.array(
       z.discriminatedUnion("type", [
         MessageV2.TextPart.omit({
@@ -618,6 +619,7 @@ export namespace Session {
 
     for (const item of await Provider.tools(input.providerID)) {
       if (mode.tools[item.id] === false) continue
+      if (input.tools?.[item.id] === false) continue
       if (session.parentID && item.id === "task") continue
       tools[item.id] = tool({
         id: item.id as any,

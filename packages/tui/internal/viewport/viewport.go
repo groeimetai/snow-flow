@@ -1,7 +1,6 @@
 package viewport
 
 import (
-	"log/slog"
 	"math"
 	"strings"
 
