@@ -103,6 +103,9 @@ func (a appModel) Init() tea.Cmd {
 }
 
 func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	measure := util.Measure("Update")
+	defer measure("from", fmt.Sprintf("%T", msg))
+
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -529,11 +532,13 @@ func (a appModel) View() string {
 
 	var mainLayout string
 
+	measure := util.Measure("app.View")
 	if a.app.Session.ID == "" {
 		mainLayout = a.home()
 	} else {
 		mainLayout = a.chat()
 	}
+	measure()
 	mainLayout = styles.NewStyle().
 		Background(t.Background()).
 		Padding(0, 2).
@@ -691,6 +696,8 @@ func (a appModel) home() string {
 }
 
 func (a appModel) chat() string {
+	measure := util.Measure("chat.View")
+	defer measure()
 	effectiveWidth := a.width - 4
 	t := theme.CurrentTheme()
 	editorView := a.editor.View()

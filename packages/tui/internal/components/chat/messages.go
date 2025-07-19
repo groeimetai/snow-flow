@@ -2,9 +2,9 @@ package chat
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/v2/viewport"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode-sdk-go"
@@ -15,6 +15,7 @@ import (
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
 	"github.com/sst/opencode/internal/util"
+	"github.com/sst/opencode/internal/viewport"
 )
 
 type MessagesComponent interface {
@@ -99,8 +100,8 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.lineCount = msg.lineCount
 		m.rendering = false
 		m.loading = false
-		m.viewport.SetHeight(m.height - lipgloss.Height(m.header))
-		m.viewport.SetContent(msg.content)
+		m.tail = m.viewport.AtBottom()
+		m.viewport = msg.viewport
 		if m.tail {
 			m.viewport.GotoBottom()
 		}
@@ -109,16 +110,16 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	m.tail = m.viewport.AtBottom()
 	viewport, cmd := m.viewport.Update(msg)
 	m.viewport = viewport
-	m.tail = m.viewport.AtBottom()
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
 
 type renderCompleteMsg struct {
-	content   string
+	viewport  viewport.Model
 	partCount int
 	lineCount int
 }
@@ -127,6 +128,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 	m.header = m.renderHeader()
 
 	if m.rendering {
+		slog.Debug("pending render, skipping")
 		m.dirty = true
 		return func() tea.Msg {
 			return nil
@@ -134,6 +136,8 @@ func (m *messagesComponent) renderView() tea.Cmd {
 	}
 	m.dirty = false
 	m.rendering = true
+
+	viewport := m.viewport
 
 	return func() tea.Msg {
 		measure := util.Measure("messages.renderView")
@@ -396,8 +400,11 @@ func (m *messagesComponent) renderView() tea.Cmd {
 		}
 
 		content := "\n" + strings.Join(blocks, "\n\n")
+		viewport.SetHeight(m.height - lipgloss.Height(m.header))
+		viewport.SetContent(content)
+
 		return renderCompleteMsg{
-			content:   content,
+			viewport:  viewport,
 			partCount: partCount,
 			lineCount: lineCount,
 		}
@@ -562,9 +569,12 @@ func (m *messagesComponent) View() string {
 		)
 	}
 
+	measure := util.Measure("messages.View")
+	viewport := m.viewport.View()
+	measure()
 	return styles.NewStyle().
 		Background(t.Background()).
-		Render(m.header + "\n" + m.viewport.View())
+		Render(m.header + "\n" + viewport)
 }
 
 func (m *messagesComponent) Reload() tea.Cmd {
