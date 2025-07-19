@@ -14,18 +14,10 @@ export namespace Log {
     ERROR: 3,
   }
 
-  let currentLevel: Level = "INFO"
+  let level: Level = "INFO"
 
-  export function setLevel(level: Level) {
-    currentLevel = level
-  }
-
-  export function getLevel(): Level {
-    return currentLevel
-  }
-
-  function shouldLog(level: Level): boolean {
-    return levelPriority[level] >= levelPriority[currentLevel]
+  function shouldLog(input: Level): boolean {
+    return levelPriority[input] >= levelPriority[level]
   }
 
   export type Logger = {
@@ -60,6 +52,7 @@ export namespace Log {
   }
 
   export async function init(options: Options) {
+    if (options.level) level = options.level
     const dir = path.join(Global.Path.data, "log")
     await fs.mkdir(dir, { recursive: true })
     cleanup(dir)

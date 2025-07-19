@@ -167,7 +167,6 @@ export namespace Config {
         .catchall(Mode)
         .optional()
         .describe("Modes configuration, see https://opencode.ai/docs/modes"),
-      log_level: Log.Level.optional().describe("Minimum log level to write to log files"),
       provider: z
         .record(
           ModelsDev.Provider.partial().extend({

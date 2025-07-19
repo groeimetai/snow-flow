@@ -44,25 +44,21 @@ const cli = yargs(hideBin(process.argv))
     describe: "print logs to stderr",
     type: "boolean",
   })
-  .middleware(async () => {
-    await Log.init({ print: process.argv.includes("--print-logs"), dev: Installation.isDev() })
-
-    try {
-      const { Config } = await import("./config/config")
-      const { App } = await import("./app/app")
-
-      App.provide({ cwd: process.cwd() }, async () => {
-        const cfg = await Config.get()
-        if (cfg.log_level) {
-          Log.setLevel(cfg.log_level as Log.Level)
-        } else {
-          const defaultLevel = Installation.isDev() ? "DEBUG" : "INFO"
-          Log.setLevel(defaultLevel)
-        }
-      })
-    } catch (e) {
-      Log.Default.error("failed to load config", { error: e })
-    }
+  .option("log-level", {
+    describe: "log level",
+    type: "string",
+    choices: ["DEBUG", "INFO", "WARN", "ERROR"],
+  })
+  .middleware(async (opts) => {
+    await Log.init({
+      print: process.argv.includes("--print-logs"),
+      dev: Installation.isDev(),
+      level: (() => {
+        if (opts.logLevel) return opts.logLevel as Log.Level
+        if (Installation.isDev()) return "DEBUG"
+        return "INFO"
+      })(),
+    })
 
     Log.Default.info("opencode", {
       version: Installation.VERSION,
