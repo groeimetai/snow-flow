@@ -540,7 +540,9 @@ export namespace Session {
       const small = (await Provider.getSmallModel(input.providerID)) ?? model
       generateText({
         maxOutputTokens: input.providerID === "google" ? 1024 : 20,
-        providerOptions: small.info.options,
+        providerOptions: {
+          [input.providerID]: small.info.options,
+        },
         messages: [
           ...SystemPrompt.title(input.providerID).map(
             (x): ModelMessage => ({
@@ -685,7 +687,9 @@ export namespace Session {
       maxOutputTokens: outputLimit,
       abortSignal: abort.signal,
       stopWhen: stepCountIs(1000),
-      providerOptions: model.info.options,
+      providerOptions: {
+        [input.providerID]: model.info.options,
+      },
       messages: [
         ...system.map(
           (x): ModelMessage => ({

@@ -367,7 +367,10 @@ export namespace Provider {
       const pkg = provider.npm ?? provider.id
       const mod = await import(await BunProc.install(pkg, "beta"))
       const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!]
-      const loaded = fn(s.providers[provider.id]?.options)
+      const loaded = fn({
+        name: provider.id,
+        ...s.providers[provider.id]?.options,
+      })
       s.sdk.set(provider.id, loaded)
       return loaded as SDK
     })().catch((e) => {
