@@ -13,21 +13,14 @@ export namespace ProviderTransform {
           anthropic: {
             cacheControl: { type: "ephemeral" },
           },
-          openaiCompatible: {
+          openrouter: {
             cache_control: { type: "ephemeral" },
           },
-        }
-      }
-    }
-    if (providerID === "amazon-bedrock" || modelID.includes("anthropic")) {
-      const system = msgs.filter((msg) => msg.role === "system").slice(0, 2)
-      const final = msgs.filter((msg) => msg.role !== "system").slice(-2)
-
-      for (const msg of unique([...system, ...final])) {
-        msg.providerOptions = {
-          ...msg.providerOptions,
           bedrock: {
             cachePoint: { type: "ephemeral" },
+          },
+          openaiCompatible: {
+            cache_control: { type: "ephemeral" },
           },
         }
       }
