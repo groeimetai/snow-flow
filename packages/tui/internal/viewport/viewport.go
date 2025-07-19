@@ -1,6 +1,7 @@
 package viewport
 
 import (
+	"log/slog"
 	"math"
 	"strings"
 
@@ -43,16 +44,36 @@ func New(opts ...Option) (m Model) {
 		opt(&m)
 	}
 	m.setInitialValues()
+	m.memo = &Memo{}
 	return m
+}
+
+type Memo struct {
+	dirty bool
+	cache string
+}
+
+func (m *Memo) View(render func() string) string {
+	if m.dirty {
+		// slog.Debug("memo dirty")
+		m.cache = render()
+		m.dirty = false
+		return m.cache
+	}
+	// slog.Debug("memo cache")
+	return m.cache
+}
+
+func (m *Memo) Invalidate() {
+	m.dirty = true
 }
 
 // Model is the Bubble Tea model for this viewport element.
 type Model struct {
+	memo   *Memo
 	width  int
 	height int
 	KeyMap KeyMap
-
-	cache string
 
 	// Whether or not to wrap text. If false, it'll allow horizontal scrolling
 	// instead.
@@ -160,6 +181,7 @@ func (m Model) Height() int {
 // SetHeight sets the height of the viewport.
 func (m *Model) SetHeight(h int) {
 	m.height = h
+	m.memo.Invalidate()
 }
 
 // Width returns the width of the viewport.
@@ -170,6 +192,7 @@ func (m Model) Width() int {
 // SetWidth sets the width of the viewport.
 func (m *Model) SetWidth(w int) {
 	m.width = w
+	m.memo.Invalidate()
 }
 
 // AtTop returns whether or not the viewport is at the very top position.
@@ -220,7 +243,7 @@ func (m Model) HorizontalScrollPercent() float64 {
 func (m *Model) SetContent(s string) {
 	s = strings.ReplaceAll(s, "\r\n", "\n") // normalize line endings
 	m.SetContentLines(strings.Split(s, "\n"))
-	m.render()
+	m.memo.Invalidate()
 }
 
 // SetContentLines allows to set the lines to be shown instead of the content.
@@ -239,7 +262,7 @@ func (m *Model) SetContentLines(lines []string) {
 	if m.YOffset > m.maxYOffset() {
 		m.GotoBottom()
 	}
-	m.render()
+	m.memo.Invalidate()
 }
 
 // GetContent returns the entire content as a single string.
@@ -442,12 +465,14 @@ func (m Model) setupGutter(lines []string) []string {
 		}
 		result[i] = strings.Join(line, "\n")
 	}
+	m.memo.Invalidate()
 	return result
 }
 
 // SetYOffset sets the Y offset.
 func (m *Model) SetYOffset(n int) {
 	m.YOffset = clamp(n, 0, m.maxYOffset())
+	m.memo.Invalidate()
 }
 
 // SetXOffset sets the X offset.
@@ -457,6 +482,7 @@ func (m *Model) SetXOffset(n int) {
 		return
 	}
 	m.xOffset = clamp(n, 0, m.maxXOffset())
+	m.memo.Invalidate()
 }
 
 // EnsureVisible ensures that the given line and column are in the viewport.
@@ -483,7 +509,7 @@ func (m *Model) ViewDown() {
 	}
 
 	m.LineDown(m.Height())
-	m.render()
+	m.memo.Invalidate()
 }
 
 // ViewUp moves the view up by one height of the viewport. Basically, "page up".
@@ -493,7 +519,7 @@ func (m *Model) ViewUp() {
 	}
 
 	m.LineUp(m.Height())
-	m.render()
+	m.memo.Invalidate()
 }
 
 // HalfViewDown moves the view down by half the height of the viewport.
@@ -503,7 +529,7 @@ func (m *Model) HalfViewDown() {
 	}
 
 	m.LineDown(m.Height() / 2) //nolint:mnd
-	m.render()
+	m.memo.Invalidate()
 }
 
 // HalfViewUp moves the view up by half the height of the viewport.
@@ -513,7 +539,7 @@ func (m *Model) HalfViewUp() {
 	}
 
 	m.LineUp(m.Height() / 2) //nolint:mnd
-	m.render()
+	m.memo.Invalidate()
 }
 
 // LineDown moves the view down by the given number of lines.
@@ -527,7 +553,7 @@ func (m *Model) LineDown(n int) {
 	// the bottom.
 	m.SetYOffset(m.YOffset + n)
 	m.hiIdx = m.findNearedtMatch()
-	m.render()
+	m.memo.Invalidate()
 }
 
 // LineUp moves the view down by the given number of lines. Returns the new
@@ -541,7 +567,7 @@ func (m *Model) LineUp(n int) {
 	// greater than the number of lines we are from the top.
 	m.SetYOffset(m.YOffset - n)
 	m.hiIdx = m.findNearedtMatch()
-	m.render()
+	m.memo.Invalidate()
 }
 
 // TotalLineCount returns the total number of lines (both hidden and visible) within the viewport.
@@ -562,7 +588,7 @@ func (m *Model) GotoTop() (lines []string) {
 
 	m.SetYOffset(0)
 	m.hiIdx = m.findNearedtMatch()
-	m.render()
+	m.memo.Invalidate()
 	return m.visibleLines()
 }
 
@@ -570,7 +596,7 @@ func (m *Model) GotoTop() (lines []string) {
 func (m *Model) GotoBottom() (lines []string) {
 	m.SetYOffset(m.maxYOffset())
 	m.hiIdx = m.findNearedtMatch()
-	m.render()
+	m.memo.Invalidate()
 	return m.visibleLines()
 }
 
@@ -583,6 +609,7 @@ func (m *Model) SetHorizontalStep(n int) {
 	}
 
 	m.horizontalStep = n
+	m.memo.Invalidate()
 }
 
 // MoveLeft moves the viewport to the left by the given number of columns.
@@ -590,6 +617,7 @@ func (m *Model) MoveLeft(cols int) {
 	m.xOffset -= cols
 	if m.xOffset < 0 {
 		m.xOffset = 0
+		m.memo.Invalidate()
 	}
 }
 
@@ -606,6 +634,7 @@ func (m *Model) MoveRight(cols int) {
 // Resets lines indent to zero.
 func (m *Model) ResetIndent() {
 	m.xOffset = 0
+	m.memo.Invalidate()
 }
 
 // SetHighlights sets ranges of characters to highlight.
@@ -623,12 +652,14 @@ func (m *Model) SetHighlights(matches [][]int) {
 	m.highlights = parseMatches(m.GetContent(), matches)
 	m.hiIdx = m.findNearedtMatch()
 	m.showHighlight()
+	m.memo.Invalidate()
 }
 
 // ClearHighlights clears previously set highlights.
 func (m *Model) ClearHighlights() {
 	m.highlights = nil
 	m.hiIdx = -1
+	m.memo.Invalidate()
 }
 
 func (m *Model) showHighlight() {
@@ -637,6 +668,7 @@ func (m *Model) showHighlight() {
 	}
 	line, colstart, colend := m.highlights[m.hiIdx].coords()
 	m.EnsureVisible(line, colstart, colend)
+	m.memo.Invalidate()
 }
 
 // HighlightNext highlights the next match.
@@ -647,6 +679,7 @@ func (m *Model) HighlightNext() {
 
 	m.hiIdx = (m.hiIdx + 1) % len(m.highlights)
 	m.showHighlight()
+	m.memo.Invalidate()
 }
 
 // HighlightPrevious highlights the previous match.
@@ -657,6 +690,7 @@ func (m *Model) HighlightPrevious() {
 
 	m.hiIdx = (m.hiIdx - 1 + len(m.highlights)) % len(m.highlights)
 	m.showHighlight()
+	m.memo.Invalidate()
 }
 
 func (m Model) findNearedtMatch() int {
@@ -728,29 +762,30 @@ func (m Model) updateAsModel(msg tea.Msg) Model {
 
 // View renders the viewport into a string.
 func (m *Model) render() {
-	w, h := m.Width(), m.Height()
-	if sw := m.Style.GetWidth(); sw != 0 {
-		w = min(w, sw)
-	}
-	if sh := m.Style.GetHeight(); sh != 0 {
-		h = min(h, sh)
-	}
-	contentWidth := w - m.Style.GetHorizontalFrameSize()
-	contentHeight := h - m.Style.GetVerticalFrameSize()
-	visible := m.visibleLines()
-	contents := lipgloss.NewStyle().
-		Width(contentWidth).      // pad to width.
-		Height(contentHeight).    // pad to height.
-		MaxHeight(contentHeight). // truncate height if taller.
-		MaxWidth(contentWidth).   // truncate width if wider.
-		Render(strings.Join(visible, "\n"))
-	m.cache = m.Style.
-		UnsetWidth().UnsetHeight(). // Style size already applied in contents.
-		Render(contents)
 }
 
 func (m Model) View() string {
-	return m.cache
+	return m.memo.View(func() string {
+		w, h := m.Width(), m.Height()
+		if sw := m.Style.GetWidth(); sw != 0 {
+			w = min(w, sw)
+		}
+		if sh := m.Style.GetHeight(); sh != 0 {
+			h = min(h, sh)
+		}
+		contentWidth := w - m.Style.GetHorizontalFrameSize()
+		contentHeight := h - m.Style.GetVerticalFrameSize()
+		visible := m.visibleLines()
+		contents := lipgloss.NewStyle().
+			Width(contentWidth).      // pad to width.
+			Height(contentHeight).    // pad to height.
+			MaxHeight(contentHeight). // truncate height if taller.
+			MaxWidth(contentWidth).   // truncate width if wider.
+			Render(strings.Join(visible, "\n"))
+		return m.Style.
+			UnsetWidth().UnsetHeight(). // Style size already applied in contents.
+			Render(contents)
+	})
 }
 
 func clamp(v, low, high int) int {
