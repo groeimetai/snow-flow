@@ -83,11 +83,17 @@ func Extension(path string) string {
 }
 
 func ToMarkdown(content string, width int, backgroundColor compat.AdaptiveColor) string {
-	r := styles.GetMarkdownRenderer(width-6, backgroundColor)
+	renderWidth := width - GetMarkdownContainerFrame()
+	r := styles.GetMarkdownRenderer(renderWidth, backgroundColor)
 	content = strings.ReplaceAll(content, RootPath+"/", "")
-	rendered, _ := r.Render(content)
-	lines := strings.Split(rendered, "\n")
 
+	// Apply hyphen preservation during markdown rendering
+	rendered := ProcessTextWithHyphens(content, func(t string) string {
+		result, _ := r.Render(t)
+		return result
+	})
+	lines := strings.Split(rendered, "\n")
+	// Clean up empty lines at start/end
 	if len(lines) > 0 {
 		firstLine := lines[0]
 		cleaned := ansi.Strip(firstLine)

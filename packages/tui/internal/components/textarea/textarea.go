@@ -2051,6 +2051,10 @@ func wrapInterfaces(content []any, width int) [][]any {
 			if unicode.IsSpace(r) {
 				isSpace = true
 			}
+			// Use hyphen-aware word boundary detection
+			if r == '-' {
+				isSpace = false
+			}
 			itemW = rw.RuneWidth(r)
 		} else if att, ok := item.(*Attachment); ok {
 			itemW = uniseg.StringWidth(att.Display)
