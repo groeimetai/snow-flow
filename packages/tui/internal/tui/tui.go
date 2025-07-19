@@ -528,17 +528,17 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a appModel) View() string {
+	measure := util.Measure("app.View")
+	defer measure()
 	t := theme.CurrentTheme()
 
 	var mainLayout string
 
-	measure := util.Measure("app.View")
 	if a.app.Session.ID == "" {
 		mainLayout = a.home()
 	} else {
 		mainLayout = a.chat()
 	}
-	measure()
 	mainLayout = styles.NewStyle().
 		Background(t.Background()).
 		Padding(0, 2).

@@ -102,9 +102,6 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		m.tail = m.viewport.AtBottom()
 		m.viewport = msg.viewport
-		if m.tail {
-			m.viewport.GotoBottom()
-		}
 		if m.dirty {
 			cmds = append(cmds, m.renderView())
 		}
@@ -138,6 +135,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 	m.rendering = true
 
 	viewport := m.viewport
+	tail := m.tail
 
 	return func() tea.Msg {
 		measure := util.Measure("messages.renderView")
@@ -402,6 +400,9 @@ func (m *messagesComponent) renderView() tea.Cmd {
 		content := "\n" + strings.Join(blocks, "\n\n")
 		viewport.SetHeight(m.height - lipgloss.Height(m.header))
 		viewport.SetContent(content)
+		if tail {
+			viewport.GotoBottom()
+		}
 
 		return renderCompleteMsg{
 			viewport:  viewport,
