@@ -78,6 +78,8 @@ export const AuthLoginCommand = cmd({
       "github-copilot": 1,
       openai: 2,
       google: 3,
+      openrouter: 4,
+      vercel: 5,
     }
     let provider = await prompts.select({
       message: "Select provider",
@@ -108,7 +110,7 @@ export const AuthLoginCommand = cmd({
     if (provider === "other") {
       provider = await prompts.text({
         message: "Enter provider id",
-        validate: (x) => (x.match(/^[a-z-]+$/) ? undefined : "a-z and hyphens only"),
+        validate: (x) => (x.match(/^[0-9a-z-]+$/) ? undefined : "a-z, 0-9 and hyphens only"),
       })
       if (prompts.isCancel(provider)) throw new UI.CancelledError()
       provider = provider.replace(/^@ai-sdk\//, "")
@@ -263,6 +265,10 @@ export const AuthLoginCommand = cmd({
 
       prompts.outro("Done")
       return
+    }
+
+    if (provider === "vercel") {
+      prompts.log.info("You can create an api key in the dashboard")
     }
 
     const key = await prompts.password({
