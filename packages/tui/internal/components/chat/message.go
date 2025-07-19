@@ -196,8 +196,6 @@ func renderText(
 	case opencode.UserMessage:
 		ts = time.UnixMilli(int64(casted.Time.Created))
 		base := styles.NewStyle().Foreground(t.Text()).Background(backgroundColor)
-
-		// Process @ mentions and styling with hyphen preservation
 		words := strings.Fields(text)
 		for i, word := range words {
 			if strings.HasPrefix(word, "@") {
@@ -206,14 +204,9 @@ func renderText(
 				words[i] = base.Render(word + " ")
 			}
 		}
-		styledText := strings.Join(words, "")
-
-		// Apply word wrapping with hyphen preservation
-		frameSize := util.GetMessageContainerFrame()
-		wrappedText := util.ProcessTextWithHyphens(styledText, func(t string) string {
-			return ansi.WordwrapWc(t, width-frameSize, " ")
-		})
-		content = base.Width(width - frameSize).Render(wrappedText)
+		text = strings.Join(words, "")
+		text = ansi.WordwrapWc(text, width-6, " -")
+		content = base.Width(width - 6).Render(text)
 	}
 
 	timestamp := ts.
@@ -715,4 +708,5 @@ func renderDiagnostics(
 	// if !ok {
 	// 	return ""
 	// }
+
 }
