@@ -14,6 +14,7 @@ export namespace Snapshot {
 
     // not a git repo, check if too big to snapshot
     if (!app.git) {
+      return
       const files = await Ripgrep.files({
         cwd: app.path.cwd,
         limit: 1000,
