@@ -1,6 +1,6 @@
 {
-  "name": "opencode-agent",
-  "displayName": "opencode for VS Code",
+  "name": "opencode",
+  "displayName": "opencode",
   "description": "opencode for VS Code",
   "version": "0.0.0",
   "publisher": "sst-dev",
