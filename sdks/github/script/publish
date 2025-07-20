@@ -11,5 +11,8 @@ echo "Latest tag: $latest_tag"
 # Update github-v1 to latest
 git tag -d github-v1
 git push origin :refs/tags/github-v1
+echo "Deleted tag: github-v1"
+
 git tag -a github-v1 $latest_tag -m "Update github-v1 to $latest_tag"
 git push origin github-v1
+echo "Created tag: github-v1"
