@@ -84,40 +84,22 @@ export const InstallGithubCommand = cmd({
         let provider = await prompts.select({
           message: "Select provider",
           maxItems: 8,
-          options: [
-            ...pipe(
-              providers,
-              values(),
-              sortBy(
-                (x) => priority[x.id] ?? 99,
-                (x) => x.name ?? x.id,
-              ),
-              map((x) => ({
-                label: x.name,
-                value: x.id,
-                hint: priority[x.id] === 0 ? "recommended" : undefined,
-              })),
+          options: pipe(
+            providers,
+            values(),
+            sortBy(
+              (x) => priority[x.id] ?? 99,
+              (x) => x.name ?? x.id,
             ),
-            {
-              value: "other",
-              label: "Other",
-            },
-          ],
+            map((x) => ({
+              label: x.name,
+              value: x.id,
+              hint: priority[x.id] === 0 ? "recommended" : undefined,
+            })),
+          ),
         })
 
         if (prompts.isCancel(provider)) throw new UI.CancelledError()
-        if (provider === "other") {
-          provider = await prompts.text({
-            message: "Enter provider id",
-            validate: (x) => (x.match(/^[a-z-]+$/) ? undefined : "a-z and hyphens only"),
-          })
-          if (prompts.isCancel(provider)) throw new UI.CancelledError()
-          provider = provider.replace(/^@ai-sdk\//, "")
-          if (prompts.isCancel(provider)) throw new UI.CancelledError()
-          prompts.log.warn(
-            `This only stores a credential for ${provider} - you will need configure it in opencode.json, check the docs for examples.`,
-          )
-        }
 
         return provider
       }
@@ -211,7 +193,11 @@ on:
 
 jobs:
   opencode:
-    if: startsWith(github.event.comment.body, 'hey opencode')
+    if: |
+      startsWith(github.event.comment.body, 'opencode') ||
+      startsWith(github.event.comment.body, 'hi opencode') ||
+      startsWith(github.event.comment.body, 'hey opencode') ||
+      contains(github.event.comment.body, '@opencode-agent')
     runs-on: ubuntu-latest
     permissions:
       id-token: write

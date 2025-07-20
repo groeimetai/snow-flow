@@ -2,6 +2,9 @@ name: publish-github-action
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - "github-v*.*.*"
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -18,12 +21,9 @@ jobs:
 
       - run: git fetch --force --tags
 
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.17
-
       - name: Publish
         run: |
           git config --global user.email "opencode@sst.dev"
           git config --global user.name "opencode"
-          ./scripts/publish-github-action.ts
+          ./scripts/publish
+        working-directory: ./sdks/github
