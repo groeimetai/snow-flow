@@ -31,3 +31,5 @@ jobs:
           bun install
           ./script/publish
         working-directory: ./sdks/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
