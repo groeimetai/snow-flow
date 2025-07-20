@@ -15,7 +15,7 @@
     "theme": "dark"
   },
   "engines": {
-    "vscode": "^1.102.0"
+    "vscode": "^1.94.0"
   },
   "categories": [
     "Other"
