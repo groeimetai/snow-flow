@@ -25,5 +25,5 @@ jobs:
         run: |
           git config --global user.email "opencode@sst.dev"
           git config --global user.name "opencode"
-          ./scripts/publish
+          ./script/publish
         working-directory: ./sdks/github
