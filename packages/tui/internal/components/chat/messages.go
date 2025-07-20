@@ -73,7 +73,6 @@ func (s selection) coords(offset int) selection {
 
 	// selecting backwards same line
 	if s.startY == s.endY && s.startX >= s.endX {
-		slog.Info("selecting backwards same line", "start", s.startX, "end", s.endX)
 		return selection{
 			startY: s.startY - offset,
 			startX: max(0, s.endX-1),
