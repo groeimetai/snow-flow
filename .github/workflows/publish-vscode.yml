@@ -24,9 +24,10 @@ jobs:
           bun-version: 1.2.17
 
       - run: git fetch --force --tags
-      - run: bun install
       - run: bun install -g @vscode/vsce
 
       - name: Publish
-        run: ./script/publish
+        run: |
+          bun install
+          ./script/publish
         working-directory: ./sdks/vscode
