@@ -191,7 +191,7 @@ func (a *App) Key(commandName commands.CommandName) string {
 	return base(key) + muted(" "+command.Description)
 }
 
-func (a *App) SetClipboard(text string) tea.Cmd {
+func SetClipboard(text string) tea.Cmd {
 	var cmds []tea.Cmd
 	cmds = append(cmds, func() tea.Msg {
 		clipboard.Write(clipboard.FmtText, []byte(text))

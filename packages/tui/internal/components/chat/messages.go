@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/sst/opencode-sdk-go"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/dialog"
@@ -36,6 +37,7 @@ type messagesComponent struct {
 	app             *app.App
 	header          string
 	viewport        viewport.Model
+	clipboard       []string
 	cache           *PartCache
 	loading         bool
 	showToolDetails bool
@@ -44,6 +46,48 @@ type messagesComponent struct {
 	tail            bool
 	partCount       int
 	lineCount       int
+	selection       selection
+}
+
+type selection struct {
+	startX int
+	endX   int
+	startY int
+	endY   int
+}
+
+func (s selection) selecting() bool {
+	return s.startX >= 0 && s.startY >= 0
+}
+
+func (s selection) coords(offset int) selection {
+	// selecting backwards
+	if s.startY > s.endY && s.endY >= 0 {
+		return selection{
+			startX: max(0, s.endX-1),
+			startY: s.endY - offset,
+			endX:   s.startX + 1,
+			endY:   s.startY - offset,
+		}
+	}
+
+	// selecting backwards same line
+	if s.startY == s.endY && s.startX >= s.endX {
+		slog.Info("selecting backwards same line", "start", s.startX, "end", s.endX)
+		return selection{
+			startY: s.startY - offset,
+			startX: max(0, s.endX-1),
+			endY:   s.endY - offset,
+			endX:   s.startX + 1,
+		}
+	}
+
+	return selection{
+		startX: s.startX,
+		startY: s.startY - offset,
+		endX:   s.endX,
+		endY:   s.endY - offset,
+	}
 }
 
 type ToggleToolDetailsMsg struct{}
@@ -57,6 +101,45 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	defer measure("from", fmt.Sprintf("%T", msg))
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
+	case tea.MouseClickMsg:
+		slog.Info("mouse", "x", msg.X, "y", msg.Y, "offset", m.viewport.YOffset)
+		y := msg.Y + m.viewport.YOffset
+		if y > 0 {
+			m.selection = selection{
+				startY: y,
+				startX: msg.X,
+				endY:   -1,
+				endX:   -1,
+			}
+
+			slog.Info("mouse selection", "start", fmt.Sprintf("%d,%d", m.selection.startX, m.selection.startY), "end", fmt.Sprintf("%d,%d", m.selection.endX, m.selection.endY))
+			return m, m.renderView()
+		}
+
+	case tea.MouseMotionMsg:
+		if m.selection.selecting() {
+			m.selection = selection{
+				startX: m.selection.startX,
+				startY: m.selection.startY,
+				endX:   msg.X + 1,
+				endY:   msg.Y + m.viewport.YOffset,
+			}
+			return m, m.renderView()
+		}
+
+	case tea.MouseReleaseMsg:
+		if m.selection.selecting() {
+			m.selection = selection{
+				startX: -1,
+				startY: -1,
+				endX:   -1,
+				endY:   -1,
+			}
+			return m, tea.Batch(
+				app.SetClipboard(strings.Join(m.clipboard, "\n")),
+				m.renderView(),
+			)
+		}
 	case tea.WindowSizeMsg:
 		effectiveWidth := msg.Width - 4
 		// Clear cache on resize since width affects rendering
@@ -101,6 +184,7 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.partCount = msg.partCount
 		m.lineCount = msg.lineCount
 		m.rendering = false
+		m.clipboard = msg.clipboard
 		m.loading = false
 		m.tail = m.viewport.AtBottom()
 		m.viewport = msg.viewport
@@ -120,6 +204,7 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 type renderCompleteMsg struct {
 	viewport  viewport.Model
+	clipboard []string
 	header    string
 	partCount int
 	lineCount int
@@ -234,7 +319,6 @@ func (m *messagesComponent) renderView() tea.Cmd {
 				}
 
 			case opencode.AssistantMessage:
-				messageMeasure := util.Measure("messages.Render")
 				hasTextPart := false
 				for partIndex, p := range message.Parts {
 					switch part := p.(type) {
@@ -366,7 +450,6 @@ func (m *messagesComponent) renderView() tea.Cmd {
 						}
 					}
 				}
-				messageMeasure()
 			}
 
 			error := ""
@@ -403,7 +486,42 @@ func (m *messagesComponent) renderView() tea.Cmd {
 			}
 		}
 
-		content := "\n" + strings.Join(blocks, "\n\n")
+		final := []string{}
+		clipboard := []string{}
+		selection := m.selection.coords(lipgloss.Height(header) + 1)
+		hasSelection := m.selection.selecting()
+		for _, block := range blocks {
+			lines := strings.Split(block, "\n")
+			for index, line := range lines {
+				if !hasSelection || index == 0 || index == len(lines)-1 {
+					final = append(final, line)
+					continue
+				}
+				y := len(final)
+				if y >= selection.startY && y <= selection.endY {
+					left := 3
+					if y == selection.startY {
+						left = selection.startX - 2
+					}
+					left = max(3, left)
+
+					width := ansi.StringWidth(line)
+					right := width - 1
+					if y == selection.endY {
+						right = min(selection.endX-2, right)
+					}
+
+					prefix := ansi.Cut(line, 0, left)
+					middle := ansi.Strip(ansi.Cut(line, left, right))
+					suffix := ansi.Cut(line, right, width)
+					clipboard = append(clipboard, strings.TrimRight(middle, " "))
+					line = prefix + styles.NewStyle().Background(t.Accent()).Foreground(t.BackgroundPanel()).Render(ansi.Strip(middle)) + suffix
+				}
+				final = append(final, line)
+			}
+			final = append(final, "")
+		}
+		content := "\n" + strings.Join(final, "\n")
 		viewport.SetHeight(m.height - lipgloss.Height(header))
 		viewport.SetContent(content)
 		if tail {
@@ -412,6 +530,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 
 		return renderCompleteMsg{
 			header:    header,
+			clipboard: clipboard,
 			viewport:  viewport,
 			partCount: partCount,
 			lineCount: lineCount,
@@ -634,7 +753,7 @@ func (m *messagesComponent) CopyLastMessage() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	var cmds []tea.Cmd
-	cmds = append(cmds, m.app.SetClipboard(lastTextPart.Text))
+	cmds = append(cmds, app.SetClipboard(lastTextPart.Text))
 	cmds = append(cmds, toast.NewSuccessToast("Message copied to clipboard"))
 	return m, tea.Batch(cmds...)
 }
@@ -650,5 +769,11 @@ func NewMessagesComponent(app *app.App) MessagesComponent {
 		showToolDetails: true,
 		cache:           NewPartCache(),
 		tail:            true,
+		selection: selection{
+			startX: -1,
+			startY: -1,
+			endX:   -1,
+			endY:   -1,
+		},
 	}
 }
