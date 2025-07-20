@@ -585,6 +585,8 @@ func (a appModel) openFile(filepath string) (tea.Model, tea.Cmd) {
 }
 
 func (a appModel) home() string {
+	measure := util.Measure("home.View")
+	defer measure()
 	t := theme.CurrentTheme()
 	effectiveWidth := a.width - 4
 	baseStyle := styles.NewStyle().Background(t.Background())

@@ -15,16 +15,32 @@ type APILogHandler struct {
 	attrs   []slog.Attr
 	groups  []string
 	mu      sync.Mutex
+	queue   chan opencode.AppLogParams
 }
 
-func NewAPILogHandler(client *opencode.Client, service string, level slog.Level) *APILogHandler {
-	return &APILogHandler{
+func NewAPILogHandler(ctx context.Context, client *opencode.Client, service string, level slog.Level) *APILogHandler {
+	result := &APILogHandler{
 		client:  client,
 		service: service,
 		level:   level,
 		attrs:   make([]slog.Attr, 0),
 		groups:  make([]string, 0),
+		queue:   make(chan opencode.AppLogParams, 100_000),
 	}
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case params := <-result.queue:
+				_, err := client.App.Log(context.Background(), params)
+				if err != nil {
+					slog.Error("Failed to log to API", "error", err)
+				}
+			}
+		}
+	}()
+	return result
 }
 
 func (h *APILogHandler) Enabled(_ context.Context, level slog.Level) bool {
@@ -69,13 +85,7 @@ func (h *APILogHandler) Handle(ctx context.Context, r slog.Record) error {
 		params.Extra = opencode.F(extra)
 	}
 
-	go func() {
-		_, err := h.client.App.Log(context.Background(), params)
-		if err != nil {
-			// Fallback: we can't log the error using slog as it would create a loop
-			// TODO: fallback file?
-		}
-	}()
+	h.queue <- params
 
 	return nil
 }

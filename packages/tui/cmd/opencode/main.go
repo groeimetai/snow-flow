@@ -54,7 +54,9 @@ func main() {
 		option.WithBaseURL(url),
 	)
 
-	apiHandler := util.NewAPILogHandler(httpClient, "tui", slog.LevelDebug)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	apiHandler := util.NewAPILogHandler(ctx, httpClient, "tui", slog.LevelDebug)
 	logger := slog.New(apiHandler)
 	slog.SetDefault(logger)
 
@@ -68,8 +70,6 @@ func main() {
 	}()
 
 	// Create main context for the application
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	app_, err := app.New(ctx, version, appInfo, modes, httpClient, model, prompt, mode)
 	if err != nil {
