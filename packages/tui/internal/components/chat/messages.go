@@ -234,6 +234,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 				}
 
 			case opencode.AssistantMessage:
+				messageMeasure := util.Measure("messages.Render")
 				hasTextPart := false
 				for partIndex, p := range message.Parts {
 					switch part := p.(type) {
@@ -365,6 +366,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 						}
 					}
 				}
+				messageMeasure()
 			}
 
 			error := ""

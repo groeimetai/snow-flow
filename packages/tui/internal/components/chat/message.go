@@ -264,6 +264,8 @@ func renderToolDetails(
 	toolCall opencode.ToolPart,
 	width int,
 ) string {
+	measure := util.Measure("chat.renderToolDetails")
+	defer measure("tool", toolCall.Tool)
 	ignoredTools := []string{"todoread"}
 	if slices.Contains(ignoredTools, toolCall.Tool) {
 		return ""
@@ -368,13 +370,14 @@ func renderToolDetails(
 				}
 			}
 		case "bash":
+			command := toolInputMap["command"].(string)
+			body = fmt.Sprintf("```console\n$ %s\n", command)
 			stdout := metadata["stdout"]
 			if stdout != nil {
-				command := toolInputMap["command"].(string)
-				out := ansi.Strip(fmt.Sprintf("%s", stdout))
-				body = fmt.Sprintf("```console\n> %s\n%s```", command, out)
-				body = util.ToMarkdown(body, width, backgroundColor)
+				body += ansi.Strip(fmt.Sprintf("%s", stdout))
 			}
+			body += "```"
+			body = util.ToMarkdown(body, width, backgroundColor)
 		case "webfetch":
 			if format, ok := toolInputMap["format"].(string); ok && result != nil {
 				body = *result
