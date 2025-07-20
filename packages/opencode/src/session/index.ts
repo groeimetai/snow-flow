@@ -490,6 +490,12 @@ export namespace Session {
                     synthetic: true,
                     text: result.output,
                   },
+                  {
+                    ...part,
+                    id: part.id ?? Identifier.ascending("part"),
+                    messageID: userMsg.id,
+                    sessionID: input.sessionID,
+                  },
                 ]
               }
 
@@ -505,13 +511,14 @@ export namespace Session {
                   synthetic: true,
                 },
                 {
-                  id: Identifier.ascending("part"),
+                  id: part.id ?? Identifier.ascending("part"),
                   messageID: userMsg.id,
                   sessionID: input.sessionID,
                   type: "file",
                   url: `data:${part.mime};base64,` + Buffer.from(await file.bytes()).toString("base64"),
                   mime: part.mime,
                   filename: part.filename!,
+                  source: part.source,
                 },
               ]
           }

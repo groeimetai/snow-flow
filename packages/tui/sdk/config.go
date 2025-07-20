@@ -70,6 +70,9 @@ type Config struct {
 	// Control sharing behavior:'manual' allows manual sharing via commands, 'auto'
 	// enables automatic sharing, 'disabled' disables all sharing
 	Share ConfigShare `json:"share"`
+	// Small model to use for tasks like summarization and title generation in the
+	// format of provider/model
+	SmallModel string `json:"small_model"`
 	// Theme name to use for the interface
 	Theme string `json:"theme"`
 	// Custom username to display in conversations instead of system username
@@ -93,6 +96,7 @@ type configJSON struct {
 	Model             apijson.Field
 	Provider          apijson.Field
 	Share             apijson.Field
+	SmallModel        apijson.Field
 	Theme             apijson.Field
 	Username          apijson.Field
 	raw               string

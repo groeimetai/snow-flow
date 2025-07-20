@@ -4,6 +4,7 @@ import { NamedError } from "../util/error"
 import { Message } from "./message"
 import { convertToModelMessages, type ModelMessage, type UIMessage } from "ai"
 import { Identifier } from "../id/id"
+import { LSP } from "../lsp"
 
 export namespace MessageV2 {
   export const OutputLengthError = NamedError.create("MessageOutputLengthError", z.object({}))
@@ -118,11 +119,45 @@ export namespace MessageV2 {
   })
   export type ToolPart = z.infer<typeof ToolPart>
 
+  const FilePartSourceBase = z.object({
+    text: z
+      .object({
+        value: z.string(),
+        start: z.number().int(),
+        end: z.number().int(),
+      })
+      .openapi({
+        ref: "FilePartSourceText",
+      }),
+  })
+
+  export const FileSource = FilePartSourceBase.extend({
+    type: z.literal("file"),
+    path: z.string(),
+  }).openapi({
+    ref: "FileSource",
+  })
+
+  export const SymbolSource = FilePartSourceBase.extend({
+    type: z.literal("symbol"),
+    path: z.string(),
+    range: LSP.Range,
+    name: z.string(),
+    kind: z.number().int(),
+  }).openapi({
+    ref: "SymbolSource",
+  })
+
+  export const FilePartSource = z.discriminatedUnion("type", [FileSource, SymbolSource]).openapi({
+    ref: "FilePartSource",
+  })
+
   export const FilePart = PartBase.extend({
     type: z.literal("file"),
     mime: z.string(),
     filename: z.string().optional(),
     url: z.string(),
+    source: FilePartSource.optional(),
   }).openapi({
     ref: "FilePart",
   })
@@ -394,7 +429,8 @@ export namespace MessageV2 {
                   text: part.text,
                 },
               ]
-            if (part.type === "file")
+            // text/plain files are converted into text parts, ignore them
+            if (part.type === "file" && part.mime !== "text/plain")
               return [
                 {
                   type: "file",
