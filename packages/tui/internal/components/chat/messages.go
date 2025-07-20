@@ -67,7 +67,7 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height - 7
 		m.viewport.SetWidth(m.width)
 		m.loading = true
-		return m, m.Reload()
+		return m, m.renderView()
 	case app.SendMsg:
 		m.viewport.GotoBottom()
 		m.tail = true
@@ -75,15 +75,15 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dialog.ThemeSelectedMsg:
 		m.cache.Clear()
 		m.loading = true
-		return m, m.Reload()
+		return m, m.renderView()
 	case ToggleToolDetailsMsg:
 		m.showToolDetails = !m.showToolDetails
-		return m, m.Reload()
+		return m, m.renderView()
 	case app.SessionLoadedMsg, app.SessionClearedMsg:
 		m.cache.Clear()
 		m.tail = true
 		m.loading = true
-		return m, m.Reload()
+		return m, m.renderView()
 
 	case opencode.EventListResponseEventSessionUpdated:
 		if msg.Properties.Info.ID == m.app.Session.ID {
@@ -404,7 +404,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 		}
 
 		content := "\n" + strings.Join(blocks, "\n\n")
-		viewport.SetHeight(m.height - lipgloss.Height(m.header))
+		viewport.SetHeight(m.height - lipgloss.Height(header))
 		viewport.SetContent(content)
 		if tail {
 			viewport.GotoBottom()
@@ -583,10 +583,6 @@ func (m *messagesComponent) View() string {
 	return styles.NewStyle().
 		Background(t.Background()).
 		Render(m.header + "\n" + viewport)
-}
-
-func (m *messagesComponent) Reload() tea.Cmd {
-	return m.renderView()
 }
 
 func (m *messagesComponent) PageUp() (tea.Model, tea.Cmd) {
