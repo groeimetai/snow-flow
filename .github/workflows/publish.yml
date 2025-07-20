@@ -6,7 +6,9 @@ on:
     branches:
       - dev
     tags:
-      - "v*.*.*"
+      - "*"
+      - "!vscode-v*"
+      - "!github-v*"
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
