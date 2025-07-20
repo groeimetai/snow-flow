@@ -14,7 +14,7 @@ echo "Latest version: $version"
 vsce package --no-git-tag-version --no-update-package-json --no-dependencies --skip-license -o dist/opencode.vsix $version
 
 # publish-marketplace
-#vsce publish --packagePath dist/opencode.vsix
+vsce publish --packagePath dist/opencode.vsix
 
 # publish-openvsx
 npx ovsx publish dist/opencode.vsix -p $OPENVSX_TOKEN
