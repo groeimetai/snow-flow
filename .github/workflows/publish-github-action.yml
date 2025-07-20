@@ -5,11 +5,13 @@ on:
   push:
     tags:
       - "github-v*.*.*"
+      - "!github-v1"
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
   contents: write
+  workflows: write
 
 jobs:
   publish:

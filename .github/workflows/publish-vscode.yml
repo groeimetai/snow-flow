@@ -33,3 +33,4 @@ jobs:
         working-directory: ./sdks/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          OPENVSX_TOKEN: ${{ secrets.OPENVSX_TOKEN }}

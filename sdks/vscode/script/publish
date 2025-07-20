@@ -15,3 +15,6 @@ vsce package --no-git-tag-version --no-update-package-json --no-dependencies --s
 
 # publish-marketplace
 vsce publish --packagePath dist/opencode.vsix
+
+# publish-openvsx
+npx ovsx publish dist/opencode.vsix -p $OPENVSX_TOKEN
