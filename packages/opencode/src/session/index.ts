@@ -125,7 +125,7 @@ export namespace Session {
           message: MessageV2.User
           parts: MessageV2.Part[]
           processed: boolean
-          callback: (input: ReturnType<typeof chat>) => void
+          callback: (input: { info: MessageV2.Assistant; parts: MessageV2.Part[] }) => void
         }[]
       >()
 
@@ -576,7 +576,7 @@ export namespace Session {
     const lastSummary = msgs.findLast((msg) => msg.info.role === "assistant" && msg.info.summary === true)
     if (lastSummary) msgs = msgs.filter((msg) => msg.info.id >= lastSummary.info.id)
 
-    if (msgs.length === 0 && !session.parentID) {
+    if (msgs.length === 1 && !session.parentID) {
       const small = (await Provider.getSmallModel(input.providerID)) ?? model
       generateText({
         maxOutputTokens: small.info.reasoning ? 1024 : 20,
@@ -614,7 +614,6 @@ export namespace Session {
         })
         .catch(() => {})
     }
-    msgs.push({ info: userMsg, parts: userParts })
 
     const mode = await Mode.get(input.mode ?? "build")
     let system = input.providerID === "anthropic" ? [PROMPT_ANTHROPIC_SPOOF.trim()] : []
@@ -799,10 +798,14 @@ export namespace Session {
       }),
     })
     const result = await processor.process(stream)
-    const queued = (state().queued.get(input.sessionID) ?? []).find((item) => !item.processed)
-    if (queued) {
-      queued.processed = true
-      return chat(queued.input)
+    const queued = state().queued.get(input.sessionID) ?? []
+    const unprocessed = queued.find((x) => !x.processed)
+    if (unprocessed) {
+      unprocessed.processed = true
+      return chat(unprocessed.input)
+    }
+    for (const item of queued) {
+      item.callback(result)
     }
     state().queued.delete(input.sessionID)
     return result
