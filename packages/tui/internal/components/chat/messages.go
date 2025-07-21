@@ -56,10 +56,6 @@ type selection struct {
 	endY   int
 }
 
-func (s selection) hasCompleteSelection() bool {
-	return s.startX >= 0 && s.startY >= 0 && s.endX >= 0 && s.endY >= 0
-}
-
 func (s selection) coords(offset int) *selection {
 	// selecting backwards
 	if s.startY > s.endY && s.endY >= 0 {
@@ -127,11 +123,13 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.MouseReleaseMsg:
-		if m.selection != nil && m.selection.hasCompleteSelection() {
+		if m.selection != nil && len(m.clipboard) > 0 {
+			content := strings.Join(m.clipboard, "\n")
 			m.selection = nil
+			m.clipboard = []string{}
 			return m, tea.Sequence(
 				m.renderView(),
-				app.SetClipboard(strings.Join(m.clipboard, "\n")),
+				app.SetClipboard(content),
 				toast.NewSuccessToast("Copied to clipboard"),
 			)
 		}
