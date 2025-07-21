@@ -104,6 +104,7 @@ func New(
 	if configInfo.Theme != "" {
 		appState.Theme = configInfo.Theme
 	}
+
 	themeEnv := os.Getenv("OPENCODE_THEME")
 	if themeEnv != "" {
 		appState.Theme = themeEnv
