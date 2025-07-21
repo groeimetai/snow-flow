@@ -59,8 +59,7 @@ type editorComponent struct {
 }
 
 func (m *editorComponent) Init() tea.Cmd {
-	return tea.Batch(m.textarea.Focus(), tea.EnableReportFocus)
-	// return tea.Batch(m.textarea.Focus(), m.spinner.Tick, tea.EnableReportFocus)
+	return tea.Batch(m.textarea.Focus(), m.spinner.Tick, tea.EnableReportFocus)
 }
 
 func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
