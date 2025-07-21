@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"github.com/charmbracelet/lipgloss/v2"
 
 	"github.com/sst/opencode-sdk-go"
+	"github.com/sst/opencode/internal/api"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/completions"
@@ -57,7 +59,7 @@ const (
 const interruptDebounceTimeout = 1 * time.Second
 const exitDebounceTimeout = 1 * time.Second
 
-type appModel struct {
+type Model struct {
 	width, height        int
 	app                  *app.App
 	modal                layout.Modal
@@ -78,7 +80,7 @@ type appModel struct {
 	fileViewer        fileviewer.Model
 }
 
-func (a appModel) Init() tea.Cmd {
+func (a Model) Init() tea.Cmd {
 	var cmds []tea.Cmd
 	// https://github.com/charmbracelet/bubbletea/issues/1440
 	// https://github.com/sst/opencode/issues/127
@@ -102,7 +104,7 @@ func (a appModel) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	measure := util.Measure("app.Update")
 	defer measure("from", fmt.Sprintf("%T", msg))
 
@@ -499,6 +501,26 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.editor.SetExitKeyInDebounce(false)
 	case dialog.FindSelectedMsg:
 		return a.openFile(msg.FilePath)
+
+	// API
+	case api.Request:
+		slog.Info("api", "path", msg.Path)
+		var response any = true
+		switch msg.Path {
+		case "/tui/open-help":
+			helpDialog := dialog.NewHelpDialog(a.app)
+			a.modal = helpDialog
+		case "/tui/prompt":
+			var body struct {
+				Text  string          `json:"text"`
+				Parts []opencode.Part `json:"parts"`
+			}
+			json.Unmarshal((msg.Body), &body)
+			a.editor.SetValue(body.Text)
+		default:
+			break
+		}
+		cmds = append(cmds, api.Reply(context.Background(), a.app.Client, response))
 	}
 
 	s, cmd := a.status.Update(msg)
@@ -532,7 +554,7 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return a, tea.Batch(cmds...)
 }
 
-func (a appModel) View() string {
+func (a Model) View() string {
 	measure := util.Measure("app.View")
 	defer measure()
 	t := theme.CurrentTheme()
@@ -569,7 +591,7 @@ func (a appModel) View() string {
 	return mainLayout + "\n" + a.status.View()
 }
 
-func (a appModel) openFile(filepath string) (tea.Model, tea.Cmd) {
+func (a Model) openFile(filepath string) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	response, err := a.app.Client.File.Read(
 		context.Background(),
@@ -589,7 +611,7 @@ func (a appModel) openFile(filepath string) (tea.Model, tea.Cmd) {
 	return a, cmd
 }
 
-func (a appModel) home() string {
+func (a Model) home() string {
 	measure := util.Measure("home.View")
 	defer measure()
 	t := theme.CurrentTheme()
@@ -726,7 +748,7 @@ func (a appModel) home() string {
 	return mainLayout
 }
 
-func (a appModel) chat() string {
+func (a Model) chat() string {
 	measure := util.Measure("chat.View")
 	defer measure()
 	effectiveWidth := a.width - 4
@@ -774,7 +796,7 @@ func (a appModel) chat() string {
 	return mainLayout
 }
 
-func (a appModel) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
+func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	cmds := []tea.Cmd{
 		util.CmdHandler(commands.CommandExecutedMsg(command)),
@@ -1057,7 +1079,7 @@ func NewModel(app *app.App) tea.Model {
 		leaderBinding = &binding
 	}
 
-	model := &appModel{
+	model := &Model{
 		status:               status.NewStatusCmp(app),
 		app:                  app,
 		editor:               editor,

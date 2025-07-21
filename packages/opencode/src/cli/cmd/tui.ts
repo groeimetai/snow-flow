@@ -36,6 +36,17 @@ export const TuiCommand = cmd({
       .option("mode", {
         type: "string",
         describe: "mode to use",
+      })
+      .option("port", {
+        type: "number",
+        describe: "port to listen on",
+        default: 0,
+      })
+      .option("hostname", {
+        alias: ["h"],
+        type: "string",
+        describe: "hostname to listen on",
+        default: "127.0.0.1",
       }),
   handler: async (args) => {
     while (true) {
@@ -54,8 +65,8 @@ export const TuiCommand = cmd({
         }
 
         const server = Server.listen({
-          port: 0,
-          hostname: "127.0.0.1",
+          port: args.port,
+          hostname: args.hostname,
         })
 
         let cmd = ["go", "run", "./main.go"]
