@@ -83,13 +83,13 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.historyIndex == -1 {
 					// Save current text before entering history
 					m.currentText = m.textarea.Value()
-					m.textarea.CursorStart()
+					m.textarea.MoveToBegin()
 				}
 				// Move up in history (older messages)
 				if m.historyIndex < len(m.app.State.MessageHistory)-1 {
 					m.historyIndex++
 					m.RestoreFromHistory(m.historyIndex)
-					m.textarea.CursorStart()
+					m.textarea.MoveToBegin()
 				}
 				return m, nil
 			}
@@ -105,11 +105,11 @@ func (m *editorComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.currentText = ""
 				} else {
 					m.RestoreFromHistory(m.historyIndex)
-					m.textarea.CursorEnd()
+					m.textarea.MoveToEnd()
 				}
 				return m, nil
 			} else if m.historyIndex > -1 {
-				m.textarea.CursorEnd()
+				m.textarea.MoveToEnd()
 				return m, nil
 			}
 		}
