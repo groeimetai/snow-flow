@@ -22,6 +22,7 @@ import (
 	cmdcomp "github.com/sst/opencode/internal/components/commands"
 	"github.com/sst/opencode/internal/components/dialog"
 	"github.com/sst/opencode/internal/components/fileviewer"
+	"github.com/sst/opencode/internal/components/ide"
 	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/components/status"
 	"github.com/sst/opencode/internal/components/toast"
@@ -347,6 +348,11 @@ func (a appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			"opencode updated to "+msg.Properties.Version+", restart to apply.",
 			toast.WithTitle("New version installed"),
 		)
+	case opencode.EventListResponseEventIdeInstalled:
+		return a, toast.NewSuccessToast(
+			"Installed the opencode extension in "+msg.Properties.Ide,
+			toast.WithTitle(msg.Properties.Ide+" extension installed"),
+		)
 	case opencode.EventListResponseEventSessionDeleted:
 		if a.app.Session != nil && msg.Properties.Info.ID == a.app.Session.ID {
 			a.app.Session = &opencode.Session{}
@@ -623,10 +629,17 @@ func (a appModel) home() string {
 		logoAndVersion,
 		styles.WhitespaceStyle(t.Background()),
 	)
+
+	// Use limit of 4 for vscode, 6 for others
+	limit := 6
+	if os.Getenv("OPENCODE_CALLER") == "vscode" {
+		limit = 4
+	}
+
 	commandsView := cmdcomp.New(
 		a.app,
 		cmdcomp.WithBackground(t.Background()),
-		cmdcomp.WithLimit(6),
+		cmdcomp.WithLimit(limit),
 	)
 	cmds := lipgloss.PlaceHorizontal(
 		effectiveWidth,
@@ -635,6 +648,19 @@ func (a appModel) home() string {
 		styles.WhitespaceStyle(t.Background()),
 	)
 
+	// Add VSCode shortcuts if in VSCode environment
+	var ideShortcuts string
+	if os.Getenv("OPENCODE_CALLER") == "vscode" {
+		ideView := ide.New()
+		ideView.SetBackgroundColor(t.Background())
+		ideShortcuts = lipgloss.PlaceHorizontal(
+			effectiveWidth,
+			lipgloss.Center,
+			ideView.View(),
+			styles.WhitespaceStyle(t.Background()),
+		)
+	}
+
 	lines := []string{}
 	lines = append(lines, "")
 	lines = append(lines, "")
@@ -642,6 +668,10 @@ func (a appModel) home() string {
 	lines = append(lines, "")
 	lines = append(lines, "")
 	lines = append(lines, cmds)
+	if os.Getenv("OPENCODE_CALLER") == "vscode" {
+		lines = append(lines, "")
+		lines = append(lines, ideShortcuts)
+	}
 	lines = append(lines, "")
 	lines = append(lines, "")
 
