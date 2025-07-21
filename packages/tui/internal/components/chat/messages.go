@@ -516,6 +516,10 @@ func (m *messagesComponent) renderView() tea.Cmd {
 				}
 				final = append(final, line)
 			}
+			y := len(final)
+			if selection != nil && y >= selection.startY && y < selection.endY {
+				clipboard = append(clipboard, "")
+			}
 			final = append(final, "")
 		}
 		content := "\n" + strings.Join(final, "\n")
