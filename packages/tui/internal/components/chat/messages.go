@@ -154,7 +154,7 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.SetWidth(m.width)
 		m.loading = true
 		return m, m.renderView()
-	case app.SendMsg:
+	case app.SendPrompt:
 		m.viewport.GotoBottom()
 		m.tail = true
 		return m, nil
@@ -585,7 +585,11 @@ func (m *messagesComponent) renderHeader() string {
 		Render(formatTokensAndCost(tokens, contextWindow, cost, isSubscriptionModel))
 
 	shareEnabled := m.app.Config.Share != opencode.ConfigShareDisabled
-	headerText := util.ToMarkdown("# "+m.app.Session.Title, headerWidth-len(sessionInfo), t.Background())
+	headerText := util.ToMarkdown(
+		"# "+m.app.Session.Title,
+		headerWidth-len(sessionInfo),
+		t.Background(),
+	)
 
 	var items []layout.FlexItem
 	if shareEnabled {
