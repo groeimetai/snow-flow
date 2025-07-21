@@ -430,7 +430,7 @@ export namespace Session {
                 const args = { filePath, offset, limit }
                 const result = await ReadTool.execute(args, {
                   sessionID: input.sessionID,
-                  abort: abort.signal,
+                  abort: new AbortController().signal,
                   messageID: userMsg.id,
                   metadata: async () => {},
                 })
