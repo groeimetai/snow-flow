@@ -72,6 +72,7 @@ export default defineConfig({
         "docs/keybinds",
         "docs/enterprise",
         "docs/mcp-servers",
+        "docs/using-in-ide",
         "docs/troubleshooting",
       ],
       components: {

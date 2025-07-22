@@ -1,0 +1,45 @@
+---
+title: Using in IDE
+description: Using opencode in your favorite IDE
+---
+
+opencode works great with VS Code, Cursor, or any Integrated Development Environment (IDE) that has a terminal. Just run `opencode`, and you’re ready to go.
+
+---
+
+## Features
+
+- **Quick launch**: Use `Cmd+Esc` (Mac) or `Ctrl+Esc` (Windows/Linux) to open opencode directly from your editor, or click the opencode button in the UI
+- **Selection context**: The current selection/tab in the IDE is automatically shared with opencode
+- **File reference shortcuts**: Use `Cmd+Option+K` (Mac) or `Alt+Ctrl+K` (Linux/Windows) to insert file references (e.g., @File#L1-99)
+
+---
+
+## Installation
+
+To install opencode on VS Code and popular forks like Cursor, Windsurf, and VSCodium:
+
+1. Open VS Code
+2. Open the integrated terminal
+3. Run `opencode` - the extension will auto-install
+
+---
+
+### Manual Install
+
+Alternatively, you can search for `opencode` in extension marketplace in your VS Code. And then click on `Install`.
+
+---
+
+### Troubleshooting
+
+If VS Code extension is not installing:
+
+- Ensure you’re running opencode from VS Code’s integrated terminal
+- Ensure that the CLI corresponding to your IDE is installed:
+  - For VS Code: `code` command should be available
+  - For Cursor: `cursor` command should be available
+  - For Windsurf: `windsurf` command should be available
+  - For VSCodium: `codium` command should be available
+  - If not installed, use `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows/Linux) and search for "Shell Command: Install 'code' command in PATH" (or the equivalent for your IDE)
+- Check that VS Code has permission to install extensions
