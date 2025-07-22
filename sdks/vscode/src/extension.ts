@@ -4,12 +4,14 @@ export function deactivate() {}
 import * as vscode from "vscode"
 
 export function activate(context: vscode.ExtensionContext) {
+  const TERMINAL_NAME = "opencode"
+
   // Register command to open terminal in split screen and run opencode
   let openTerminalDisposable = vscode.commands.registerCommand("opencode.openTerminal", async () => {
     // Create a new terminal in split screen
     const port = Math.floor(Math.random() * (65535 - 16384 + 1)) + 16384
     const terminal = vscode.window.createTerminal({
-      name: "opencode",
+      name: TERMINAL_NAME,
       iconPath: {
         light: vscode.Uri.file(context.asAbsolutePath("images/button-dark.svg")),
         dark: vscode.Uri.file(context.asAbsolutePath("images/button-light.svg")),
@@ -23,7 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
       },
     })
 
-    terminal.show(false)
+    terminal.show()
     terminal.sendText(`OPENCODE_THEME=system OPENCODE_CALLER=vscode opencode --port ${port}`)
 
     const fileRef = getActiveFile()
@@ -46,6 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
     // If connected, append the prompt to the terminal
     if (connected) {
       await appendPrompt(port, `In ${fileRef}`)
+      terminal.show()
     }
   })
 
@@ -57,12 +60,12 @@ export function activate(context: vscode.ExtensionContext) {
     const terminal = vscode.window.activeTerminal
     if (!terminal) return
 
-    // @ts-ignore
-    const port = terminal.creationOptions.env?.["_EXTENSION_OPENCODE_PORT"]
-    if (!port) return
-
-    await appendPrompt(parseInt(port), fileRef)
-    terminal.show()
+    if (terminal.name === TERMINAL_NAME) {
+      // @ts-ignore
+      const port = terminal.creationOptions.env?.["_EXTENSION_OPENCODE_PORT"]
+      port ? await appendPrompt(parseInt(port), fileRef) : terminal.sendText(fileRef)
+      terminal.show()
+    }
   })
 
   context.subscriptions.push(openTerminalDisposable, addFilepathDisposable)
