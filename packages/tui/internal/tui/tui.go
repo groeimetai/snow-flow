@@ -511,8 +511,7 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.modal = helpDialog
 		case "/tui/append-prompt":
 			var body struct {
-				Text  string          `json:"text"`
-				Parts []opencode.Part `json:"parts"`
+				Text string `json:"text"`
 			}
 			json.Unmarshal((msg.Body), &body)
 			existing := a.editor.Value()
