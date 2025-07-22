@@ -128,7 +128,7 @@ resources:
 
 settings:
   disable_mock_tests: true
-  license: Apache-2.0
+  license: MIT
 
 security:
   - {}
