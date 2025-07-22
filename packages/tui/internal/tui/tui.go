@@ -509,13 +509,13 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "/tui/open-help":
 			helpDialog := dialog.NewHelpDialog(a.app)
 			a.modal = helpDialog
-		case "/tui/prompt":
+		case "/tui/append-prompt":
 			var body struct {
 				Text  string          `json:"text"`
 				Parts []opencode.Part `json:"parts"`
 			}
 			json.Unmarshal((msg.Body), &body)
-			a.editor.SetValue(body.Text)
+			a.editor.SetValueWithAttachments(strings.TrimRight(a.editor.Value(), " ") + " " + body.Text + " ")
 		default:
 			break
 		}
