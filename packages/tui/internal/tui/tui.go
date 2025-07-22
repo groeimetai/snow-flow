@@ -515,7 +515,12 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Parts []opencode.Part `json:"parts"`
 			}
 			json.Unmarshal((msg.Body), &body)
-			a.editor.SetValueWithAttachments(strings.TrimRight(a.editor.Value(), " ") + " " + body.Text + " ")
+			existing := a.editor.Value()
+			text := body.Text
+			if existing != "" && !strings.HasSuffix(existing, " ") {
+				text = " " + text
+			}
+			a.editor.SetValueWithAttachments(existing + text + " ")
 		default:
 			break
 		}
