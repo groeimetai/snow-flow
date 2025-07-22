@@ -63,6 +63,7 @@ export default defineConfig({
       sidebar: [
         "docs",
         "docs/cli",
+        "docs/ide",
         "docs/share",
         "docs/modes",
         "docs/rules",
@@ -72,7 +73,6 @@ export default defineConfig({
         "docs/keybinds",
         "docs/enterprise",
         "docs/mcp-servers",
-        "docs/using-in-ide",
         "docs/troubleshooting",
       ],
       components: {
