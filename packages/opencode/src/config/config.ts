@@ -169,10 +169,18 @@ export namespace Config {
         .describe("Modes configuration, see https://opencode.ai/docs/modes"),
       provider: z
         .record(
-          ModelsDev.Provider.partial().extend({
-            models: z.record(ModelsDev.Model.partial()),
-            options: z.record(z.any()).optional(),
-          }),
+          ModelsDev.Provider.partial()
+            .extend({
+              models: z.record(ModelsDev.Model.partial()),
+              options: z
+                .object({
+                  apiKey: z.string().optional(),
+                  baseURL: z.string().optional(),
+                })
+                .catchall(z.any())
+                .optional(),
+            })
+            .strict(),
         )
         .optional()
         .describe("Custom provider configurations and model overrides"),
