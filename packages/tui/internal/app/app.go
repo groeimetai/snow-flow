@@ -178,6 +178,11 @@ func New(
 		IntitialMode:  initialMode,
 	}
 
+	if app.Version != "dev" {
+		delete(app.Commands, commands.MessagesUndoCommand)
+		delete(app.Commands, commands.MessagesRedoCommand)
+	}
+
 	return app, nil
 }
 
