@@ -23,7 +23,7 @@ export namespace Snapshot {
     })
   }
 
-  export async function create(force?: boolean) {
+  export async function create() {
     log.info("creating snapshot")
     const app = App.info()
 
@@ -55,7 +55,7 @@ export namespace Snapshot {
     log.info("added files")
 
     const result =
-      await $`git --git-dir ${git} commit ${force ? "--allow-empty" : ""} -m "snapshot" --no-gpg-sign --author="opencode <mail@opencode.ai>"`
+      await $`git --git-dir ${git} commit --allow-empty -m "snapshot" --no-gpg-sign --author="opencode <mail@opencode.ai>"`
         .quiet()
         .cwd(app.path.cwd)
         .nothrow()
