@@ -7,6 +7,7 @@ import { NamedError } from "../util/error"
 import { lazy } from "../util/lazy"
 import { $ } from "bun"
 import { Fzf } from "./fzf"
+import { ZipReader, BlobReader, BlobWriter } from "@zip.js/zip.js"
 
 export namespace Ripgrep {
   const Stats = z.object({
@@ -34,27 +35,25 @@ export namespace Ripgrep {
 
   export const Match = z.object({
     type: z.literal("match"),
-    data: z
-      .object({
-        path: z.object({
-          text: z.string(),
-        }),
-        lines: z.object({
-          text: z.string(),
-        }),
-        line_number: z.number(),
-        absolute_offset: z.number(),
-        submatches: z.array(
-          z.object({
-            match: z.object({
-              text: z.string(),
-            }),
-            start: z.number(),
-            end: z.number(),
+    data: z.object({
+      path: z.object({
+        text: z.string(),
+      }),
+      lines: z.object({
+        text: z.string(),
+      }),
+      line_number: z.number(),
+      absolute_offset: z.number(),
+      submatches: z.array(
+        z.object({
+          match: z.object({
+            text: z.string(),
           }),
-        ),
-      })
-      .openapi({ ref: "Match" }),
+          start: z.number(),
+          end: z.number(),
+        }),
+      ),
+    }),
   })
 
   const End = z.object({
@@ -124,11 +123,15 @@ export namespace Ripgrep {
   const state = lazy(async () => {
     let filepath = Bun.which("rg")
     if (filepath) return { filepath }
-    filepath = path.join(Global.Path.bin, "rg" + (process.platform === "win32" ? ".exe" : ""))
+    filepath = path.join(
+      Global.Path.bin,
+      "rg" + (process.platform === "win32" ? ".exe" : ""),
+    )
 
     const file = Bun.file(filepath)
     if (!(await file.exists())) {
-      const platformKey = `${process.arch}-${process.platform}` as keyof typeof PLATFORM
+      const platformKey =
+        `${process.arch}-${process.platform}` as keyof typeof PLATFORM
       const config = PLATFORM[platformKey]
       if (!config) throw new UnsupportedPlatformError({ platform: platformKey })
 
@@ -137,7 +140,8 @@ export namespace Ripgrep {
       const url = `https://github.com/BurntSushi/ripgrep/releases/download/${version}/${filename}`
 
       const response = await fetch(url)
-      if (!response.ok) throw new DownloadFailedError({ url, status: response.status })
+      if (!response.ok)
+        throw new DownloadFailedError({ url, status: response.status })
 
       const buffer = await response.arrayBuffer()
       const archivePath = path.join(Global.Path.bin, filename)
@@ -161,17 +165,34 @@ export namespace Ripgrep {
           })
       }
       if (config.extension === "zip") {
-        const proc = Bun.spawn(["unzip", "-j", archivePath, "*/rg.exe", "-d", Global.Path.bin], {
-          cwd: Global.Path.bin,
-          stderr: "pipe",
-          stdout: "ignore",
-        })
-        await proc.exited
-        if (proc.exitCode !== 0)
+        if (config.extension === "zip") {
+        const zipFileReader = new ZipReader(new BlobReader(new Blob([await Bun.file(archivePath).arrayBuffer()])));
+        const entries = await zipFileReader.getEntries();
+        let rgEntry: any;
+        for (const entry of entries) {
+          if (entry.filename.endsWith("rg.exe")) {
+            rgEntry = entry;
+            break;
+          }
+          }
+
+        if (!rgEntry) {
           throw new ExtractionFailedError({
             filepath: archivePath,
-            stderr: await Bun.readableStreamToText(proc.stderr),
-          })
+            stderr: "rg.exe not found in zip archive",
+          });
+        }
+
+        const rgBlob = await rgEntry.getData(new BlobWriter());
+        if (!rgBlob) {
+          throw new ExtractionFailedError({
+            filepath: archivePath,
+            stderr: "Failed to extract rg.exe from zip archive",
+          });
+        }
+        await Bun.write(filepath, await rgBlob.arrayBuffer());
+        await zipFileReader.close();
+      }
       }
       await fs.unlink(archivePath)
       if (!platformKey.endsWith("-win32")) await fs.chmod(filepath, 0o755)
@@ -187,16 +208,17 @@ export namespace Ripgrep {
     return filepath
   }
 
-  export async function files(input: { cwd: string; query?: string; glob?: string[]; limit?: number }) {
-    const commands = [`${$.escape(await filepath())} --files --follow --hidden --glob='!.git/*'`]
-
-    if (input.glob) {
-      for (const g of input.glob) {
-        commands[0] += ` --glob='${g}'`
-      }
-    }
-
-    if (input.query) commands.push(`${await Fzf.filepath()} --filter=${input.query}`)
+  export async function files(input: {
+    cwd: string
+    query?: string
+    glob?: string
+    limit?: number
+  }) {
+    const commands = [
+      `${await filepath()} --files --hidden --glob='!.git/*' ${input.glob ? `--glob='${input.glob}'` : ``}`,
+    ]
+    if (input.query)
+      commands.push(`${await Fzf.filepath()} --filter=${input.query}`)
     if (input.limit) commands.push(`head -n ${input.limit}`)
     const joined = commands.join(" | ")
     const result = await $`${{ raw: joined }}`.cwd(input.cwd).nothrow().text()
@@ -303,8 +325,18 @@ export namespace Ripgrep {
     return lines.join("\n")
   }
 
-  export async function search(input: { cwd: string; pattern: string; glob?: string[]; limit?: number }) {
-    const args = [`${await filepath()}`, "--json", "--hidden", "--glob='!.git/*'"]
+  export async function search(input: {
+    cwd: string
+    pattern: string
+    glob?: string[]
+    limit?: number
+  }) {
+    const args = [
+      `${await filepath()}`,
+      "--json",
+      "--hidden",
+      "--glob='!.git/*'",
+    ]
 
     if (input.glob) {
       for (const g of input.glob) {
