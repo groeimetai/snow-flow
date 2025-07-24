@@ -678,7 +678,7 @@ func (m *messagesComponent) renderHeader() string {
 	shareEnabled := m.app.Config.Share != opencode.ConfigShareDisabled
 	headerText := util.ToMarkdown(
 		"# "+m.app.Session.Title,
-		headerWidth-len(sessionInfo),
+		headerWidth,
 		t.Background(),
 	)
 
