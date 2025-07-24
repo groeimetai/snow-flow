@@ -22,6 +22,7 @@ console.log(`publishing ${version}`)
 const GOARCH: Record<string, string> = {
   arm64: "arm64",
   x64: "amd64",
+  "x64-baseline": "amd64",
 }
 
 const targets = [
