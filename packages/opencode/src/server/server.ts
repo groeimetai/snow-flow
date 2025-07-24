@@ -490,6 +490,7 @@ export namespace Server {
         zValidator("json", Session.RevertInput.omit({ sessionID: true })),
         async (c) => {
           const id = c.req.valid("param").id
+          log.info("revert", c.req.valid("json"))
           const session = await Session.revert({ sessionID: id, ...c.req.valid("json") })
           return c.json(session)
         },

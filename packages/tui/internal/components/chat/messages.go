@@ -925,6 +925,13 @@ func (m *messagesComponent) UndoLastMessage() (tea.Model, tea.Cmd) {
 }
 
 func (m *messagesComponent) RedoLastMessage() (tea.Model, tea.Cmd) {
+	// Check if there's a revert state to redo from
+	if m.app.Session.Revert.MessageID == "" {
+		return m, func() tea.Msg {
+			return toast.NewErrorToast("Nothing to redo")
+		}
+	}
+
 	before := float64(0)
 	var revertedMessage app.Message
 	for _, message := range m.app.Messages {
