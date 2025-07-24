@@ -2,10 +2,8 @@ import { App } from "../app/app"
 import { $ } from "bun"
 import path from "path"
 import fs from "fs/promises"
-import { Ripgrep } from "../file/ripgrep"
 import { Log } from "../util/log"
 import { Global } from "../global"
-import { Installation } from "../installation"
 import { z } from "zod"
 
 export namespace Snapshot {
