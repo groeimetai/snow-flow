@@ -9,7 +9,21 @@ import { Tabs, TabItem } from "@astrojs/starlight/components"
 
 ![opencode TUI with the opencode theme](../../../assets/lander/screenshot.png)
 
-Let's start by installing opencode.
+Let's get started.
+
+---
+
+#### Prerequisites
+
+To use opencode, you'll need:
+
+1. A modern terminal emulator like:
+   - [WezTerm](https://wezterm.org), cross-platform
+   - [Alacritty](https://alacritty.org), cross-platform
+   - [Ghostty](https://ghostty.org), Linux and macOS
+   - [Kitty](https://sw.kovidgoyal.net/kitty/), Linux and macOS
+
+2. API keys for the LLM providers you want to use.
 
 ---
 
@@ -190,9 +204,16 @@ You can ask opencode to add new features to your project. Though we first recomm
    Once it gives you a plan, you can give it feedback or add more details.
    
    ```txt frame="none"
-   We'd like to design this new screen using the design we are already using.
-   There's an example of a list of notes in @packages/web/src/components/NoteList.tsx
+   We'd like to design this new screen using a design I've used before.
+   [Image #1] Take a look at this image and use it as a reference.
    ```
+
+   :::tip
+   Drag and drop images into the terminal to add them to the prompt.
+   :::
+
+   opencode can scan any images you give it and add them to the prompt. You can
+   do this by dragging and dropping an image into the terminal.
 
 3. **Build the feature**
    
