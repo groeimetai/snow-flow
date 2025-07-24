@@ -5,6 +5,7 @@ import fs from "fs/promises"
 import { Ripgrep } from "../file/ripgrep"
 import { Log } from "../util/log"
 import { Global } from "../global"
+import { Installation } from "../installation"
 
 export namespace Snapshot {
   const log = Log.create({ service: "snapshot" })
@@ -28,7 +29,7 @@ export namespace Snapshot {
     const app = App.info()
 
     // not a git repo, check if too big to snapshot
-    if (!app.git) {
+    if (!app.git || !Installation.isDev()) {
       return
       const files = await Ripgrep.files({
         cwd: app.path.cwd,
