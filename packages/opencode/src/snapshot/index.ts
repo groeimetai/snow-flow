@@ -52,6 +52,7 @@ export namespace Snapshot {
   export async function patch(hash: string): Promise<Patch> {
     const app = App.info()
     const git = gitdir()
+    await $`git --git-dir ${git} add .`.quiet().cwd(app.path.cwd).nothrow()
     const files = await $`git --git-dir ${git} diff --name-only ${hash} -- .`.cwd(app.path.cwd).text()
     return {
       hash,
@@ -80,7 +81,14 @@ export namespace Snapshot {
       for (const file of item.files) {
         if (files.has(file)) continue
         log.info("reverting", { file, hash: item.hash })
-        await $`git --git-dir=${git} checkout ${item.hash} -- ${file}`.quiet().cwd(App.info().path.root)
+        const result = await $`git --git-dir=${git} checkout ${item.hash} -- ${file}`
+          .quiet()
+          .cwd(App.info().path.root)
+          .nothrow()
+        if (result.exitCode !== 0) {
+          log.info("file not found in history, deleting", { file })
+          await fs.unlink(file).catch(() => {})
+        }
         files.add(file)
       }
     }
