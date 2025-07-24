@@ -27,6 +27,7 @@ const GOARCH: Record<string, string> = {
 const targets = [
   ["linux", "arm64"],
   ["linux", "x64"],
+  ["linux", "x64-baseline"],
   ["darwin", "x64"],
   ["darwin", "arm64"],
   ["windows", "x64"],
