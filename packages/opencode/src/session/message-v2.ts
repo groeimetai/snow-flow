@@ -226,6 +226,7 @@ export namespace MessageV2 {
     system: z.string().array(),
     modelID: z.string(),
     providerID: z.string(),
+    mode: z.string(),
     path: z.object({
       cwd: z.string(),
       root: z.string(),
@@ -290,6 +291,7 @@ export namespace MessageV2 {
         modelID: v1.metadata.assistant!.modelID,
         providerID: v1.metadata.assistant!.providerID,
         system: v1.metadata.assistant!.system,
+        mode: "build",
         error: v1.metadata.error,
       }
       const parts = v1.parts.flatMap((part): Part[] => {
