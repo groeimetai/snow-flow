@@ -120,6 +120,8 @@ resources:
       summarize: post /session/{id}/summarize
       messages: get /session/{id}/message
       chat: post /session/{id}/message
+      revert: post /session/{id}/revert
+      unrevert: post /session/{id}/unrevert
 
   tui:
     methods:

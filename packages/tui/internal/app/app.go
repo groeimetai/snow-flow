@@ -52,6 +52,13 @@ type SessionCreatedMsg = struct {
 	Session *opencode.Session
 }
 type SessionSelectedMsg = *opencode.Session
+type MessageRevertedMsg struct {
+	Session opencode.Session
+	Message Message
+}
+type SessionUnrevertedMsg struct {
+	Session opencode.Session
+}
 type SessionLoadedMsg struct{}
 type ModelSelectedMsg struct {
 	Provider opencode.Provider
@@ -174,6 +181,16 @@ func New(
 	return app, nil
 }
 
+func (a *App) Keybind(commandName commands.CommandName) string {
+	command := a.Commands[commandName]
+	kb := command.Keybindings[0]
+	key := kb.Key
+	if kb.RequiresLeader {
+		key = a.Config.Keybinds.Leader + " " + kb.Key
+	}
+	return key
+}
+
 func (a *App) Key(commandName commands.CommandName) string {
 	t := theme.CurrentTheme()
 	base := styles.NewStyle().Background(t.Background()).Foreground(t.Text()).Bold(true).Render
@@ -183,11 +200,7 @@ func (a *App) Key(commandName commands.CommandName) string {
 		Faint(true).
 		Render
 	command := a.Commands[commandName]
-	kb := command.Keybindings[0]
-	key := kb.Key
-	if kb.RequiresLeader {
-		key = a.Config.Keybinds.Leader + " " + kb.Key
-	}
+	key := a.Keybind(commandName)
 	return base(key) + muted(" "+command.Description)
 }
 

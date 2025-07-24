@@ -26,6 +26,9 @@ export namespace Config {
     if (result.autoshare === true && !result.share) {
       result.share = "auto"
     }
+    if (result.keybinds?.messages_revert && !result.keybinds.messages_undo) {
+      result.keybinds.messages_undo = result.keybinds.messages_revert
+    }
 
     if (!result.username) {
       const os = await import("os")
@@ -89,7 +92,7 @@ export namespace Config {
       session_new: z.string().optional().default("<leader>n").describe("Create a new session"),
       session_list: z.string().optional().default("<leader>l").describe("List all sessions"),
       session_share: z.string().optional().default("<leader>s").describe("Share current session"),
-      session_unshare: z.string().optional().default("<leader>u").describe("Unshare current session"),
+      session_unshare: z.string().optional().default("none").describe("Unshare current session"),
       session_interrupt: z.string().optional().default("esc").describe("Interrupt current session"),
       session_compact: z.string().optional().default("<leader>c").describe("Compact the session"),
       tool_details: z.string().optional().default("<leader>d").describe("Toggle tool details"),
@@ -118,7 +121,9 @@ export namespace Config {
       messages_last: z.string().optional().default("ctrl+alt+g").describe("Navigate to last message"),
       messages_layout_toggle: z.string().optional().default("<leader>p").describe("Toggle layout"),
       messages_copy: z.string().optional().default("<leader>y").describe("Copy message"),
-      messages_revert: z.string().optional().default("<leader>r").describe("Revert message"),
+      messages_revert: z.string().optional().default("none").describe("@deprecated use messages_undo. Revert message"),
+      messages_undo: z.string().optional().default("<leader>u").describe("Undo message"),
+      messages_redo: z.string().optional().default("<leader>r").describe("Redo message"),
       app_exit: z.string().optional().default("ctrl+c,<leader>q").describe("Exit the application"),
     })
     .strict()

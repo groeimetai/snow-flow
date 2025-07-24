@@ -272,6 +272,13 @@ export namespace MessageV2 {
         part: Part,
       }),
     ),
+    PartRemoved: Bus.event(
+      "message.part.removed",
+      z.object({
+        messageID: z.string(),
+        partID: z.string(),
+      }),
+    ),
   }
 
   export function fromV1(v1: Message.Info) {
