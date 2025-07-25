@@ -407,12 +407,6 @@ export namespace Session {
                     synthetic: true,
                     text: Buffer.from(part.url, "base64url").toString(),
                   },
-                  {
-                    ...part,
-                    id: part.id ?? Identifier.ascending("part"),
-                    messageID: userMsg.id,
-                    sessionID: input.sessionID,
-                  },
                 ]
               }
               break
