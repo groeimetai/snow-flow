@@ -22,13 +22,16 @@ export namespace Mode {
   export type Info = z.infer<typeof Info>
   const state = App.state("mode", async () => {
     const cfg = await Config.get()
+    const model = cfg.model ? Provider.parseModel(cfg.model) : undefined
     const result: Record<string, Info> = {
       build: {
+        model,
         name: "build",
         tools: {},
       },
       plan: {
         name: "plan",
+        model,
         tools: {
           write: false,
           edit: false,
@@ -45,10 +48,7 @@ export namespace Mode {
           tools: {},
         }
       item.name = key
-      const model = value.model ?? cfg.model
-      if (model) {
-        item.model = Provider.parseModel(model)
-      }
+      if (value.model) item.model = Provider.parseModel(value.model)
       if (value.prompt) item.prompt = value.prompt
       if (value.tools)
         item.tools = {
