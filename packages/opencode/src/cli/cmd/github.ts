@@ -375,6 +375,9 @@ export const GithubRunCommand = cmd({
       const runUrl = `/${owner}/${repo}/actions/runs/${runId}`
       const shareBaseUrl = isMock ? "https://dev.opencode.ai" : "https://opencode.ai"
 
+      // TODO
+      console.log("payload", payload)
+
       let appToken: string
       let octoRest: Octokit
       let octoGraph: typeof graphql
@@ -386,7 +389,6 @@ export const GithubRunCommand = cmd({
       type PromptFiles = Awaited<ReturnType<typeof getUserPrompt>>["promptFiles"]
 
       try {
-        const { userPrompt, promptFiles } = await getUserPrompt()
         const actionToken = isMock ? args.token! : await getOidcToken()
         appToken = await exchangeForAppToken(actionToken)
         octoRest = new Octokit({ auth: appToken })
@@ -394,6 +396,7 @@ export const GithubRunCommand = cmd({
           headers: { authorization: `token ${appToken}` },
         })
 
+        const { userPrompt, promptFiles } = await getUserPrompt()
         await configureGit(appToken)
         await assertPermissions()
 
@@ -531,20 +534,31 @@ export const GithubRunCommand = cmd({
         }[] = []
 
         // Search for files
+        // ie. <img alt="Image" src="https://github.com/user-attachments/assets/xxxx" />
         // ie. [api.json](https://github.com/user-attachments/files/21433810/api.json)
         // ie. ![Image](https://github.com/user-attachments/assets/xxxx)
-        const imgTags = prompt.matchAll(/!?\[.*?\]\((https:\/\/github\.com\/user-attachments\/[^)]+)\)/gi)
+        const mdMatches = prompt.matchAll(/!?\[.*?\]\((https:\/\/github\.com\/user-attachments\/[^)]+)\)/gi)
+        const tagMatches = prompt.matchAll(/<img .*?src="(https:\/\/github\.com\/user-attachments\/[^"]+)" \/>/gi)
+        const matches = [...mdMatches, ...tagMatches].sort((a, b) => a.index - b.index)
 
         let offset = 0
-        for (const imgTag of imgTags) {
-          const tag = imgTag[0]
-          const url = imgTag[1]
-          const start = imgTag.index
+        for (const m of matches) {
+          const tag = m[0]
+          const url = m[1]
+          const start = m.index
           const filename = path.basename(url)
 
           // Download image
-          const res = await fetch(url)
+          const res = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${appToken}`,
+              Accept: "application/vnd.github.v3+json",
+            },
+          })
           if (!res.ok) {
+            // TODO
+            //console.log(res)
+            //throw new Error("manual")
             console.error(`Failed to download image: ${url}`)
             continue
           }
