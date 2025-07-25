@@ -1004,6 +1004,7 @@ export namespace Session {
                     start: Date.now(),
                     end: Date.now(),
                   }
+                  currentText.text = currentText.text.trimEnd()
                   await updatePart(currentText)
                 }
                 currentText = undefined
