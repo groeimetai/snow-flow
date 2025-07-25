@@ -64,12 +64,12 @@ export namespace ToolRegistry {
   }
 
   export function enabled(_providerID: string, modelID: string): Record<string, boolean> {
-    if (modelID.includes("claude")) {
+    if (modelID.toLowerCase().includes("claude")) {
       return {
         patch: false,
       }
     }
-    if (modelID.includes("qwen")) {
+    if (modelID.toLowerCase().includes("qwen")) {
       return {
         patch: false,
         todowrite: false,
