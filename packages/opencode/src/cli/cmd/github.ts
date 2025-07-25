@@ -375,9 +375,6 @@ export const GithubRunCommand = cmd({
       const runUrl = `/${owner}/${repo}/actions/runs/${runId}`
       const shareBaseUrl = isMock ? "https://dev.opencode.ai" : "https://opencode.ai"
 
-      // TODO
-      console.log("payload", payload)
-
       let appToken: string
       let octoRest: Octokit
       let octoGraph: typeof graphql
@@ -428,7 +425,7 @@ export const GithubRunCommand = cmd({
             const response = await chat(`${userPrompt}\n\n${dataPrompt}`, promptFiles)
             if (await branchIsDirty()) {
               const summary = await summarize(response)
-              await pushToCurrentBranch(summary)
+              await pushToLocalBranch(summary)
             }
             const hasShared = prData.comments.nodes.some((c) => c.body.includes(`${shareBaseUrl}/s/${shareId}`))
             await updateComment(`${response}${footer({ image: !hasShared })}`)
@@ -454,7 +451,7 @@ export const GithubRunCommand = cmd({
           const response = await chat(`${userPrompt}\n\n${dataPrompt}`, promptFiles)
           if (await branchIsDirty()) {
             const summary = await summarize(response)
-            await pushToCurrentBranch(summary)
+            await pushToNewBranch(summary, branch)
             const pr = await createPR(
               repoData.data.default_branch,
               branch,
@@ -540,6 +537,7 @@ export const GithubRunCommand = cmd({
         const mdMatches = prompt.matchAll(/!?\[.*?\]\((https:\/\/github\.com\/user-attachments\/[^)]+)\)/gi)
         const tagMatches = prompt.matchAll(/<img .*?src="(https:\/\/github\.com\/user-attachments\/[^"]+)" \/>/gi)
         const matches = [...mdMatches, ...tagMatches].sort((a, b) => a.index - b.index)
+        console.log("Images", JSON.stringify(matches, null, 2))
 
         let offset = 0
         for (const m of matches) {
@@ -556,9 +554,6 @@ export const GithubRunCommand = cmd({
             },
           })
           if (!res.ok) {
-            // TODO
-            //console.log(res)
-            //throw new Error("manual")
             console.error(`Failed to download image: ${url}`)
             continue
           }
@@ -791,8 +786,17 @@ export const GithubRunCommand = cmd({
         return `opencode/${type}${issueId}-${timestamp}`
       }
 
-      async function pushToCurrentBranch(summary: string) {
-        console.log("Pushing to current branch...")
+      async function pushToNewBranch(summary: string, branch: string) {
+        console.log("Pushing to new branch...")
+        await $`git add .`
+        await $`git commit -m "${summary}
+  
+Co-authored-by: ${actor} <${actor}@users.noreply.github.com>"`
+        await $`git push -u origin ${branch}`
+      }
+
+      async function pushToLocalBranch(summary: string) {
+        console.log("Pushing to local branch...")
         await $`git add .`
         await $`git commit -m "${summary}
   
