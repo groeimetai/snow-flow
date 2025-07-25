@@ -36,6 +36,7 @@
     "ai": "catalog:",
     "decimal.js": "10.5.0",
     "diff": "8.0.2",
+    "gray-matter": "4.0.3",
     "hono": "4.7.10",
     "hono-openapi": "0.4.8",
     "isomorphic-git": "1.32.1",

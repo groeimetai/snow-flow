@@ -9,6 +9,7 @@ import { Global } from "../global"
 import fs from "fs/promises"
 import { lazy } from "../util/lazy"
 import { NamedError } from "../util/error"
+import matter from "gray-matter"
 
 export namespace Config {
   const log = Log.create({ service: "config" })
@@ -20,6 +21,31 @@ export namespace Config {
       for (const resolved of found.toReversed()) {
         result = mergeDeep(result, await load(resolved))
       }
+    }
+
+    result.agent = result.agent || {}
+    const markdownAgents = [
+      ...(await Filesystem.globUp("agent/*.md", Global.Path.config, Global.Path.config)),
+      ...(await Filesystem.globUp(".opencode/agent/*.md", app.path.cwd, app.path.root)),
+    ]
+    for (const item of markdownAgents) {
+      const content = await Bun.file(item).text()
+      const md = matter(content)
+      if (!md.data) continue
+
+      const config = {
+        name: path.basename(item, ".md"),
+        ...md.data,
+        prompt: md.content.trim(),
+      }
+      const parsed = Agent.safeParse(config)
+      if (parsed.success) {
+        result.agent = mergeDeep(result.agent, {
+          [config.name]: parsed.data,
+        })
+        continue
+      }
+      throw new InvalidError({ path: item }, { cause: parsed.error })
     }
 
     // Handle migration from autoshare to share field
@@ -75,11 +101,18 @@ export namespace Config {
       model: z.string().optional(),
       prompt: z.string().optional(),
       tools: z.record(z.string(), z.boolean()).optional(),
+      disable: z.boolean().optional(),
     })
     .openapi({
       ref: "ModeConfig",
     })
   export type Mode = z.infer<typeof Mode>
+
+  export const Agent = Mode.extend({
+    description: z.string(),
+  }).openapi({
+    ref: "AgentConfig",
+  })
 
   export const Keybinds = z
     .object({
@@ -170,6 +203,13 @@ export namespace Config {
           plan: Mode.optional(),
         })
         .catchall(Mode)
+        .optional()
+        .describe("Modes configuration, see https://opencode.ai/docs/modes"),
+      agent: z
+        .object({
+          general: Agent.optional(),
+        })
+        .catchall(Agent)
         .optional()
         .describe("Modes configuration, see https://opencode.ai/docs/modes"),
       provider: z

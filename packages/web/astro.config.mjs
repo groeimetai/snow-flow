@@ -66,6 +66,7 @@ export default defineConfig({
         "docs/ide",
         "docs/share",
         "docs/modes",
+        "docs/agents",
         "docs/rules",
         "docs/config",
         "docs/models",

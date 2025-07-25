@@ -17,7 +17,6 @@ import {
 
 import PROMPT_INITIALIZE from "../session/prompt/initialize.txt"
 import PROMPT_PLAN from "../session/prompt/plan.txt"
-import PROMPT_ANTHROPIC_SPOOF from "../session/prompt/anthropic_spoof.txt"
 
 import { App } from "../app/app"
 import { Bus } from "../bus"
@@ -337,6 +336,7 @@ export namespace Session {
     providerID: z.string(),
     modelID: z.string(),
     mode: z.string().optional(),
+    system: z.string().optional(),
     tools: z.record(z.boolean()).optional(),
     parts: z.array(
       z.discriminatedUnion("type", [
@@ -430,12 +430,14 @@ export namespace Session {
                   }
                 }
                 const args = { filePath, offset, limit }
-                const result = await ReadTool.execute(args, {
-                  sessionID: input.sessionID,
-                  abort: new AbortController().signal,
-                  messageID: userMsg.id,
-                  metadata: async () => {},
-                })
+                const result = await ReadTool().then((t) =>
+                  t.execute(args, {
+                    sessionID: input.sessionID,
+                    abort: new AbortController().signal,
+                    messageID: userMsg.id,
+                    metadata: async () => {},
+                  }),
+                )
                 return [
                   {
                     id: Identifier.ascending("part"),
@@ -616,7 +618,14 @@ export namespace Session {
     }
 
     const mode = await Mode.get(inputMode)
-    let system = input.providerID === "anthropic" ? [PROMPT_ANTHROPIC_SPOOF.trim()] : []
+    let system = SystemPrompt.header(input.providerID)
+    system.push(
+      ...(() => {
+        if (input.system) return [input.system]
+        if (mode.prompt) return [mode.prompt]
+        return SystemPrompt.provider(input.modelID)
+      })(),
+    )
     system.push(...(mode.prompt ? [mode.prompt] : SystemPrompt.provider(input.modelID)))
     system.push(...(await SystemPrompt.environment()))
     system.push(...(await SystemPrompt.custom()))
