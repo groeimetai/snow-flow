@@ -17,7 +17,7 @@ import { TuiCommand } from "./cli/cmd/tui"
 import { DebugCommand } from "./cli/cmd/debug"
 import { StatsCommand } from "./cli/cmd/stats"
 import { McpCommand } from "./cli/cmd/mcp"
-import { InstallGithubCommand } from "./cli/cmd/install-github"
+import { GithubCommand } from "./cli/cmd/github"
 import { Trace } from "./trace"
 
 Trace.init()
@@ -78,7 +78,7 @@ const cli = yargs(hideBin(process.argv))
   .command(ServeCommand)
   .command(ModelsCommand)
   .command(StatsCommand)
-  .command(InstallGithubCommand)
+  .command(GithubCommand)
   .fail((msg) => {
     if (msg.startsWith("Unknown argument") || msg.startsWith("Not enough non-option arguments")) {
       cli.showHelp("log")
