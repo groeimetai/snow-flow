@@ -768,6 +768,7 @@ export namespace Session {
             },
             modelID: input.modelID,
             providerID: input.providerID,
+            mode: inputMode,
             time: {
               created: Date.now(),
             },
