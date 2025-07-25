@@ -388,6 +388,34 @@ export namespace Session {
         if (part.type === "file") {
           const url = new URL(part.url)
           switch (url.protocol) {
+            case "data:":
+              if (part.mime === "text/plain") {
+                return [
+                  {
+                    id: Identifier.ascending("part"),
+                    messageID: userMsg.id,
+                    sessionID: input.sessionID,
+                    type: "text",
+                    synthetic: true,
+                    text: `Called the Read tool with the following input: ${JSON.stringify({ filePath: part.filename })}`,
+                  },
+                  {
+                    id: Identifier.ascending("part"),
+                    messageID: userMsg.id,
+                    sessionID: input.sessionID,
+                    type: "text",
+                    synthetic: true,
+                    text: Buffer.from(part.url, "base64url").toString(),
+                  },
+                  {
+                    ...part,
+                    id: part.id ?? Identifier.ascending("part"),
+                    messageID: userMsg.id,
+                    sessionID: input.sessionID,
+                  },
+                ]
+              }
+              break
             case "file:":
               // have to normalize, symbol search returns absolute paths
               // Decode the pathname since URL constructor doesn't automatically decode it
