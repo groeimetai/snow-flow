@@ -44,4 +44,9 @@ export namespace ProviderTransform {
     }
     return msgs
   }
+
+  export function temperature(_providerID: string, modelID: string) {
+    if (modelID.includes("qwen")) return 0.55
+    return 0
+  }
 }

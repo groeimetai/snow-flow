@@ -99,6 +99,7 @@ export namespace Config {
   export const Mode = z
     .object({
       model: z.string().optional(),
+      temperature: z.number().optional(),
       prompt: z.string().optional(),
       tools: z.record(z.string(), z.boolean()).optional(),
       disable: z.boolean().optional(),

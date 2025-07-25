@@ -7,11 +7,10 @@ import { MessageV2 } from "../session/message-v2"
 import { Identifier } from "../id/id"
 import { Agent } from "../agent/agent"
 
-export const TaskTool = Tool.define(async () => {
+export const TaskTool = Tool.define("task", async () => {
   const agents = await Agent.list()
   const description = DESCRIPTION.replace("{agents}", agents.map((a) => `- ${a.name}: ${a.description}`).join("\n"))
   return {
-    id: "task",
     description,
     parameters: z.object({
       description: z.string().describe("A short (3-5 words) description of the task"),
@@ -53,7 +52,10 @@ export const TaskTool = Tool.define(async () => {
         providerID: model.providerID,
         mode: msg.mode,
         system: agent.prompt,
-        tools: agent.tools,
+        tools: {
+          ...agent.tools,
+          task: false,
+        },
         parts: [
           {
             id: Identifier.ascending("part"),

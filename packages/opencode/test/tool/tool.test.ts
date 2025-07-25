@@ -9,8 +9,8 @@ const ctx = {
   abort: AbortSignal.any([]),
   metadata: () => {},
 }
-const glob = await GlobTool()
-const list = await ListTool()
+const glob = await GlobTool.init()
+const list = await ListTool.init()
 
 describe("tool.glob", () => {
   test("truncate", async () => {

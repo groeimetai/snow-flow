@@ -39,7 +39,8 @@ import { MessageV2 } from "./message-v2"
 import { Mode } from "./mode"
 import { LSP } from "../lsp"
 import { ReadTool } from "../tool/read"
-import { splitWhen } from "remeda"
+import { mergeDeep, pipe, splitWhen } from "remeda"
+import { ToolRegistry } from "../tool/registry"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -430,7 +431,7 @@ export namespace Session {
                   }
                 }
                 const args = { filePath, offset, limit }
-                const result = await ReadTool().then((t) =>
+                const result = await ReadTool.init().then((t) =>
                   t.execute(args, {
                     sessionID: input.sessionID,
                     abort: new AbortController().signal,
@@ -660,10 +661,13 @@ export namespace Session {
 
     const processor = createProcessor(assistantMsg, model.info)
 
-    for (const item of await Provider.tools(input.providerID)) {
-      if (mode.tools[item.id] === false) continue
-      if (input.tools?.[item.id] === false) continue
-      if (session.parentID && item.id === "task") continue
+    const enabledTools = pipe(
+      mode.tools,
+      mergeDeep(ToolRegistry.enabled(input.providerID, input.modelID)),
+      mergeDeep(input.tools ?? {}),
+    )
+    for (const item of await ToolRegistry.tools(input.providerID, input.modelID)) {
+      if (enabledTools[item.id] === false) continue
       tools[item.id] = tool({
         id: item.id as any,
         description: item.description,
@@ -791,7 +795,9 @@ export namespace Session {
         ),
         ...MessageV2.toModelMessage(msgs),
       ],
-      temperature: model.info.temperature ? 0 : undefined,
+      temperature: model.info.temperature
+        ? (mode.temperature ?? ProviderTransform.temperature(input.providerID, input.modelID))
+        : undefined,
       tools: model.info.tool_call === false ? undefined : tools,
       model: wrapLanguageModel({
         model: model.language,

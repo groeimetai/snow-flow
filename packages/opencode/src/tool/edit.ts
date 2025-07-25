@@ -14,8 +14,7 @@ import { File } from "../file"
 import { Bus } from "../bus"
 import { FileTime } from "../file/time"
 
-export const EditTool = Tool.define({
-  id: "edit",
+export const EditTool = Tool.define("edit", {
   description: DESCRIPTION,
   parameters: z.object({
     filePath: z.string().describe("The absolute path to the file to modify"),
