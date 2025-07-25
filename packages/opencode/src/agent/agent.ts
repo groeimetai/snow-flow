@@ -44,7 +44,10 @@ export namespace Agent {
         item = result[key] = {
           name: key,
           description: "",
-          tools: {},
+          tools: {
+            todowrite: false,
+            todoread: false,
+          },
         }
       const model = value.model ?? cfg.model
       if (model) item.model = Provider.parseModel(model)
