@@ -21,33 +21,25 @@ Agents are automatically available through the Task tool when configured. The ma
 
 ### Documentation Agent
 
-```json
-{
-  "agent": {
-    "docs-writer": {
-      "description": "Writes and maintains project documentation",
-      "prompt": "You are a technical writer. Create clear, comprehensive documentation.",
-      "tools": {
-        "bash": false
-      }
-    }
-  }
-}
+```markdown
+---
+description: Writes and maintains project documentation
+tools:
+  bash: false
+---
+
+You are a technical writer. Create clear, comprehensive documentation.
 ```
 
 ### Security Auditor
 
-```json
-{
-  "agent": {
-    "security-auditor": {
-      "description": "Performs security audits and identifies vulnerabilities",
-      "prompt": "You are a security expert. Focus on identifying potential security issues.",
-      "tools": {
-        "write": false,
-        "edit": false
-      }
-    }
-  }
-}
+```markdown
+---
+description: Performs security audits and identifies vulnerabilities
+tools:
+  write: false
+  edit: false
+---
+
+You are a security expert. Focus on identifying potential security issues.
 ```
