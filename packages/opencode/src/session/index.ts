@@ -626,7 +626,6 @@ export namespace Session {
         return SystemPrompt.provider(input.modelID)
       })(),
     )
-    system.push(...(mode.prompt ? [mode.prompt] : SystemPrompt.provider(input.modelID)))
     system.push(...(await SystemPrompt.environment()))
     system.push(...(await SystemPrompt.custom()))
     // max 2 system prompt messages for caching purposes
