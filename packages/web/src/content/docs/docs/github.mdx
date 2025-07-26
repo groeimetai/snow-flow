@@ -77,18 +77,24 @@ This will walk you through installing the GitHub app, creating the workflow, and
 
 - Explain an issue
 
-  ```bash
+  Leave the following comment on a GitHub issue. `opencode` will read the entire thread, including all comments, and reply with a clear explanation.
+
+  ```
   /opencode explain this issue
   ```
 
-- Fix an issue - opencode will create a PR with the changes.
+- Fix an issue
 
-  ```bash
+  Leave the following comment on a GitHub issue. opencode will create a new branch, implement the changes, and open a PR with the changes.
+
+  ```
   /opencode fix this
   ```
 
 - Review PRs and make changes
 
-  ```bash
+  Leave the following comment on a GitHub PR. opencode will implement the requested change and commit it to the same PR.
+
+  ```
   Delete the attachment from S3 when the note is removed /oc
   ```

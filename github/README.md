@@ -6,21 +6,27 @@ Mention `/opencode` in your comment, and opencode will execute tasks within your
 
 ## Features
 
-#### Triage and explain issues
+#### Explain an issues
 
-```bash
+Leave the following comment on a GitHub issue. `opencode` will read the entire thread, including all comments, and reply with a clear explanation.
+
+```
 /opencode explain this issue
 ```
 
-#### Fix or implement issues - opencode will create a PR with the changes.
+#### Fix an issues
 
-```bash
+Leave the following comment on a GitHub issue. opencode will create a new branch, implement the changes, and open a PR with the changes.
+
+```
 /opencode fix this
 ```
 
 #### Review PRs and make changes
 
-```bash
+Leave the following comment on a GitHub PR. opencode will implement the requested change and commit it to the same PR.
+
+```
 Delete the attachment from S3 when the note is removed /oc
 ```
 
