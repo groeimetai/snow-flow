@@ -68,6 +68,7 @@ export default defineConfig({
         "docs/modes",
         "docs/agents",
         "docs/rules",
+        "docs/github",
         "docs/config",
         "docs/models",
         "docs/themes",
