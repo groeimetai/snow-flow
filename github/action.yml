@@ -7,7 +7,7 @@ branding:
 inputs:
   model:
     description: "Model to use"
-    required: false
+    required: true
 
   share:
     description: "Share the opencode session (defaults to true for public repos)"

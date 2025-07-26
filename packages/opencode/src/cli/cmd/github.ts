@@ -316,10 +316,8 @@ on:
 jobs:
   opencode:
     if: |
-      startsWith(github.event.comment.body, 'opencode') ||
-      startsWith(github.event.comment.body, 'hi opencode') ||
-      startsWith(github.event.comment.body, 'hey opencode') ||
-      contains(github.event.comment.body, '@opencode-agent')
+      contains(github.event.comment.body, '/oc') ||
+      contains(github.event.comment.body, '/opencode')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -508,16 +506,10 @@ export const GithubRunCommand = cmd({
 
       async function getUserPrompt() {
         let prompt = (() => {
-          const body = payload.comment.body
-          if (body.match("@opencode-agent")) return body
-
-          const match = body.match(/^(?:hey|hi)?\s*opencode(?:-agent)?,?\s*(.*)$/is)
-          if (match?.[1] === undefined)
-            throw new Error(
-              "Command must mention @opencode-agent, or start with `opencode`, `hi opencode`, or `hey opencode` followed by instructions",
-            )
-          if (match[1] === "") return "Summarize this thread"
-          return match[1]
+          const body = payload.comment.body.trim()
+          if (body === "/opencode" || body === "/oc") return "Summarize this thread"
+          if (body.includes("/opencode") || body.includes("/oc")) return body
+          throw new Error("Comments must mention `/opencode` or `/oc`")
         })()
 
         // Handle images
