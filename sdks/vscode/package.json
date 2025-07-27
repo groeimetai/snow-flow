@@ -41,7 +41,6 @@
       "editor/title": [
         {
           "command": "opencode.openTerminal",
-          "when": "editorTextFocus",
           "group": "navigation"
         }
       ]
