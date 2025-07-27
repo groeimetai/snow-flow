@@ -8,6 +8,13 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register command to open terminal in split screen and run opencode
   let openTerminalDisposable = vscode.commands.registerCommand("opencode.openTerminal", async () => {
+    // An opencode terminal already exists => focus it
+    const existingTerminal = vscode.window.terminals.find((t) => t.name === TERMINAL_NAME)
+    if (existingTerminal) {
+      existingTerminal.show()
+      return
+    }
+
     // Create a new terminal in split screen
     const port = Math.floor(Math.random() * (65535 - 16384 + 1)) + 16384
     const terminal = vscode.window.createTerminal({
