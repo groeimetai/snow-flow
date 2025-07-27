@@ -327,8 +327,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - name: Run opencode
         uses: sst/opencode/github@latest${envStr}
