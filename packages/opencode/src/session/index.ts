@@ -67,6 +67,7 @@ export namespace Session {
           messageID: z.string(),
           partID: z.string().optional(),
           snapshot: z.string().optional(),
+          diff: z.string().optional(),
         })
         .optional(),
     })
@@ -1160,6 +1161,7 @@ export namespace Session {
       const session = await get(input.sessionID)
       revert.snapshot = session.revert?.snapshot ?? (await Snapshot.track())
       await Snapshot.revert(patches)
+      if (revert.snapshot) revert.diff = await Snapshot.diff(revert.snapshot)
       return update(input.sessionID, (draft) => {
         draft.revert = revert
       })
