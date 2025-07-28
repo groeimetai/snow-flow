@@ -368,7 +368,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 						if reverted {
 							continue
 						}
-						if part.Text == "" {
+						if strings.TrimSpace(part.Text) == "" {
 							continue
 						}
 						hasTextPart = true
