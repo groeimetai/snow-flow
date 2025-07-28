@@ -882,7 +882,7 @@ export namespace Session {
 
               case "tool-input-start":
                 const part = await updatePart({
-                  id: Identifier.ascending("part"),
+                  id: toolCalls[value.id]?.id ?? Identifier.ascending("part"),
                   messageID: assistantMsg.id,
                   sessionID: assistantMsg.sessionID,
                   type: "tool",
@@ -1029,17 +1029,17 @@ export namespace Session {
               case "text":
                 if (currentText) {
                   currentText.text += value.text
-                  await updatePart(currentText)
+                  if (currentText.text) await updatePart(currentText)
                 }
                 break
 
               case "text-end":
-                if (currentText && currentText.text) {
+                if (currentText) {
+                  currentText.text = currentText.text.trimEnd()
                   currentText.time = {
                     start: Date.now(),
                     end: Date.now(),
                   }
-                  currentText.text = currentText.text.trimEnd()
                   await updatePart(currentText)
                 }
                 currentText = undefined
