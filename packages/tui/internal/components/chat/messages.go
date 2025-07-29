@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
+	"sort"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea/v2"
@@ -14,6 +16,7 @@ import (
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/components/dialog"
+	"github.com/sst/opencode/internal/components/diff"
 	"github.com/sst/opencode/internal/components/toast"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
@@ -569,6 +572,36 @@ func (m *messagesComponent) renderView() tea.Cmd {
 			hint += revertedStyle.Render(" (or /redo) to restore")
 
 			content += "\n" + hint
+			if m.app.Session.Revert.Diff != "" {
+				t := theme.CurrentTheme()
+				s := styles.NewStyle().Background(t.BackgroundPanel())
+				green := s.Foreground(t.Success()).Render
+				red := s.Foreground(t.Error()).Render
+				content += "\n"
+				stats, err := diff.ParseStats(m.app.Session.Revert.Diff)
+				if err != nil {
+					slog.Error("Failed to parse diff stats", "error", err)
+				} else {
+					var files []string
+					for file := range stats {
+						files = append(files, file)
+					}
+					sort.Strings(files)
+
+					for _, file := range files {
+						fileStats := stats[file]
+						display := file
+						if fileStats.Added > 0 {
+							display += green(" +" + strconv.Itoa(int(fileStats.Added)))
+						}
+						if fileStats.Removed > 0 {
+							display += red(" -" + strconv.Itoa(int(fileStats.Removed)))
+						}
+						content += "\n" + display
+					}
+				}
+			}
+
 			content = styles.NewStyle().
 				Background(t.BackgroundPanel()).
 				Width(width - 6).
