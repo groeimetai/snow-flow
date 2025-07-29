@@ -11,7 +11,7 @@ export const BashTool = Tool.define("bash", {
   description: DESCRIPTION,
   parameters: z.object({
     command: z.string().describe("The command to execute"),
-    timeout: z.number().min(0).max(MAX_TIMEOUT).describe("Optional timeout in milliseconds").optional(),
+    timeout: z.number().describe("Optional timeout in milliseconds").optional(),
     description: z
       .string()
       .describe(
