@@ -73,6 +73,7 @@ export default defineConfig({
         "docs/models",
         "docs/themes",
         "docs/keybinds",
+        // "docs/providers",
         "docs/enterprise",
         "docs/mcp-servers",
         "docs/troubleshooting",
