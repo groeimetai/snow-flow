@@ -11,11 +11,13 @@ import { lazy } from "../util/lazy"
 import { NamedError } from "../util/error"
 import matter from "gray-matter"
 import { Flag } from "../flag/flag"
+import { Auth } from "../auth"
 
 export namespace Config {
   const log = Log.create({ service: "config" })
 
   export const state = App.state("config", async (app) => {
+    const auth = await Auth.all()
     let result = await global()
     for (const file of ["opencode.jsonc", "opencode.json"]) {
       const found = await Filesystem.findUp(file, app.path.cwd, app.path.root)
@@ -28,6 +30,14 @@ export namespace Config {
     if (Flag.OPENCODE_CONFIG) {
       result = mergeDeep(result, await load(Flag.OPENCODE_CONFIG))
       log.debug("loaded custom config", { path: Flag.OPENCODE_CONFIG })
+    }
+
+    for (const [key, value] of Object.entries(auth)) {
+      if (value.type === "wellknown") {
+        process.env[value.key] = value.token
+        const wellknown = await fetch(`${key}/.well-known/opencode`).then((x) => x.json())
+        result = mergeDeep(result, await loadRaw(JSON.stringify(wellknown.config ?? {}), process.cwd()))
+      }
     }
 
     result.agent = result.agent || {}
@@ -307,7 +317,10 @@ export namespace Config {
         throw new JsonError({ path: configPath }, { cause: err })
       })
     if (!text) return {}
+    return loadRaw(text, configPath)
+  }
 
+  async function loadRaw(text: string, configPath: string) {
     text = text.replace(/\{env:([^}]+)\}/g, (_, varName) => {
       return process.env[varName] || ""
     })
