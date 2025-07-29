@@ -43,6 +43,10 @@ export namespace Server {
 
   export type Routes = ReturnType<typeof app>
 
+  export const Event = {
+    Connected: Bus.event("server.connected", z.object({})),
+  }
+
   function app() {
     const app = new Hono()
 
@@ -109,7 +113,10 @@ export namespace Server {
           log.info("event connected")
           return streamSSE(c, async (stream) => {
             stream.writeSSE({
-              data: JSON.stringify({}),
+              data: JSON.stringify({
+                type: "server.connected",
+                properties: {},
+              }),
             })
             const unsub = Bus.subscribeAll(async (event) => {
               await stream.writeSSE({

@@ -402,6 +402,58 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.app.Messages[messageIndex] = message
 			}
 		}
+	case opencode.EventListResponseEventMessagePartRemoved:
+		slog.Info("message part removed", "session", msg.Properties.SessionID, "message", msg.Properties.MessageID, "part", msg.Properties.PartID)
+		if msg.Properties.SessionID == a.app.Session.ID {
+			messageIndex := slices.IndexFunc(a.app.Messages, func(m app.Message) bool {
+				switch casted := m.Info.(type) {
+				case opencode.UserMessage:
+					return casted.ID == msg.Properties.MessageID
+				case opencode.AssistantMessage:
+					return casted.ID == msg.Properties.MessageID
+				}
+				return false
+			})
+			if messageIndex > -1 {
+				message := a.app.Messages[messageIndex]
+				partIndex := slices.IndexFunc(message.Parts, func(p opencode.PartUnion) bool {
+					switch casted := p.(type) {
+					case opencode.TextPart:
+						return casted.ID == msg.Properties.PartID
+					case opencode.FilePart:
+						return casted.ID == msg.Properties.PartID
+					case opencode.ToolPart:
+						return casted.ID == msg.Properties.PartID
+					case opencode.StepStartPart:
+						return casted.ID == msg.Properties.PartID
+					case opencode.StepFinishPart:
+						return casted.ID == msg.Properties.PartID
+					}
+					return false
+				})
+				if partIndex > -1 {
+					// Remove the part at partIndex
+					message.Parts = append(message.Parts[:partIndex], message.Parts[partIndex+1:]...)
+					a.app.Messages[messageIndex] = message
+				}
+			}
+		}
+	case opencode.EventListResponseEventMessageRemoved:
+		slog.Info("message removed", "session", msg.Properties.SessionID, "message", msg.Properties.MessageID)
+		if msg.Properties.SessionID == a.app.Session.ID {
+			messageIndex := slices.IndexFunc(a.app.Messages, func(m app.Message) bool {
+				switch casted := m.Info.(type) {
+				case opencode.UserMessage:
+					return casted.ID == msg.Properties.MessageID
+				case opencode.AssistantMessage:
+					return casted.ID == msg.Properties.MessageID
+				}
+				return false
+			})
+			if messageIndex > -1 {
+				a.app.Messages = append(a.app.Messages[:messageIndex], a.app.Messages[messageIndex+1:]...)
+			}
+		}
 	case opencode.EventListResponseEventMessageUpdated:
 		if msg.Properties.Info.SessionID == a.app.Session.ID {
 			matchIndex := slices.IndexFunc(a.app.Messages, func(m app.Message) bool {

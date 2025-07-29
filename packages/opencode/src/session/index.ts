@@ -540,8 +540,6 @@ export namespace Session {
     for (const part of userParts) {
       await updatePart(part)
     }
-    // mark session as updated since a message has been added to it
-    await update(input.sessionID, (_draft) => {})
 
     if (isLocked(input.sessionID)) {
       return new Promise((resolve) => {
@@ -566,6 +564,7 @@ export namespace Session {
       const [preserve, remove] = splitWhen(msgs, (x) => x.info.id === messageID)
       msgs = preserve
       for (const msg of remove) {
+        if (msg.info.id === userMsg.id) continue
         await Storage.remove(`session/message/${input.sessionID}/${msg.info.id}`)
         await Bus.publish(MessageV2.Event.Removed, { sessionID: input.sessionID, messageID: msg.info.id })
       }
@@ -577,11 +576,15 @@ export namespace Session {
         for (const part of removeParts) {
           await Storage.remove(`session/part/${input.sessionID}/${last.info.id}/${part.id}`)
           await Bus.publish(MessageV2.Event.PartRemoved, {
+            sessionID: input.sessionID,
             messageID: last.info.id,
             partID: part.id,
           })
         }
       }
+      await update(input.sessionID, (draft) => {
+        draft.revert = undefined
+      })
     }
 
     const previous = msgs.filter((x) => x.info.role === "assistant").at(-1)?.info as MessageV2.Assistant
