@@ -812,7 +812,7 @@ export namespace Session {
           messages,
         }
       },
-      maxRetries: 10,
+      maxRetries: 3,
       maxOutputTokens: outputLimit,
       abortSignal: abort.signal,
       stopWhen: stepCountIs(1000),
