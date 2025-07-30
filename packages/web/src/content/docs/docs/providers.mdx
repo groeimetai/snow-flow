@@ -5,3 +5,454 @@ description: Using any LLM provider in opencode.
 
 opencode uses the [AI SDK](https://ai-sdk.dev/) and [Models.dev](https://models.dev) to support for **75+ LLM providers** and it supports running local models.
 
+To add a provider you need to:
+
+1. Add the API keys for the provider using `opencode auth login`.
+2. Configure the provider in your opencode config.
+
+---
+
+### Credentials
+
+When you add a provider's API keys with `opencode auth login`, they are stored
+in `~/.local/share/opencode/auth.json`.
+
+---
+
+### Config
+
+You can customize the providers through the `provider` section in your opencode
+config.
+
+---
+
+#### Base URL
+
+You can customize the base URL for any provider by setting the `baseURL` option. This is useful when using proxy services or custom endpoints.
+
+```json title="opencode.json" {6}
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "anthropic": {
+      "options": {
+        "baseURL": "https://api.anthropic.com/v1"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Directory
+
+Let's look at some of the providers in detail. If you'd like to add a provider to the
+list, feel free to open a PR.
+
+---
+
+### Amazon Bedrock
+
+To use Amazon Bedrock with opencode:
+
+1. Head over to the **Model catalog** in the Amazon Bedrock console and request
+   access to the models you want.
+   
+   :::tip
+   You need to have access to the model you want in Amazon Bedrock.
+   :::
+
+1. You'll need either to set one of the following environment variables:
+
+   - `AWS_ACCESS_KEY_ID`: You can get this by creating an IAM user and generating
+     an access key for it.
+   - `AWS_PROFILE`: First login through AWS IAM Identity Center (or AWS SSO) using
+     `aws sso login`. Then get the name of the profile you want to use.
+   - `AWS_BEARER_TOKEN_BEDROCK`: You can generate a long-term API key from the
+   Amazon Bedrock console.
+   
+   Once you have one of the above, set it while running opencode.
+   
+   ```bash
+   AWS_ACCESS_KEY_ID=XXX opencode
+   ```
+   
+   Or add it to a `.env` file in the project root.
+   
+   ```bash title=".env"
+   AWS_ACCESS_KEY_ID=XXX
+   ```
+   
+   Or add it to your bash profile.
+   
+   ```bash title="~/.bash_profile"
+   export AWS_ACCESS_KEY_ID=XXX
+   ```
+
+2. Run the `/models` command to select the model you want.
+
+---
+
+### Anthropic
+
+We recommend signing up for [Claude Pro](https://www.anthropic.com/news/claude-pro) or [Max](https://www.anthropic.com/max), it's the most cost-effective way to use opencode.
+
+Once you've singed up, run `opencode auth login` and select Anthropic.
+
+```bash
+$ opencode auth login
+
+┌  Add credential
+│
+◆  Select provider
+│  ● Anthropic (recommended)
+│  ○ OpenAI
+│  ○ Google
+│  ...
+└
+```
+
+This will ask you login with your Anthropic account in your browser. Now all the
+the Anthropic models should be available when you use the `/models` command.
+
+---
+
+### GitHub Copilot
+
+To use your GitHub Copilot subscription with opencode:
+
+:::note
+Some models might need a [Pro+
+subscription](https://github.com/features/copilot/plans) to use.
+:::
+
+1. Run `opencode auth login` and select GitHub Copilot.
+
+   ```bash
+   $ opencode auth login
+   ┌  Add credential
+   
+   │
+   ◇  Select provider
+   │  GitHub Copilot
+   │
+   ◇   ──────────────────────────────────────────────╮
+   │                                                 │
+   │  Please visit: https://github.com/login/device  │
+   │  Enter code: 8F43-6FCF                          │
+   │                                                 │
+   ├─────────────────────────────────────────────────╯
+   │
+   ◓  Waiting for authorization...
+   ```
+
+2. Navigate to [github.com/login/device](https://github.com/login/device) and enter the code.
+
+3. Now run the `/models` command to select the model you want.
+
+---
+
+### Groq
+
+1. Head over to the [Groq console](https://console.groq.com/), click **Create API Key**, and copy the key.
+
+2. Run `opencode auth login` and select Groq.
+
+   ```bash
+   $ opencode auth login
+
+   ┌  Add credential
+   │
+   ◆  Select provider
+   │  ● Groq
+   │  ...
+   └
+   ```
+   
+3. Enter the API key for the provider.
+
+   ```bash
+   $ opencode auth login
+
+   ┌  Add credential
+   │
+   ◇  Select provider
+   │  Groq
+   │
+   ◇  Enter your API key
+   │  _
+   └
+   ```
+
+4. Run the `/models` command to select the one you want.
+
+---
+
+### LM Studio
+
+You can configure opencode to use local models through LM Studio.
+
+```json title="opencode.json" "lmstudio" {5, 6, 8, 10-14}
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LM Studio (local)",
+      "options": {
+        "baseURL": "http://127.0.0.1:1234/v1"
+      },
+      "models": {
+        "google/gemma-3n-e4b": {
+          "name": "Gemma 3n-e4b (local)"
+        }
+      }
+    }
+  }
+}
+```
+
+In this example:
+
+- `lmstudio` is the custom provider ID. This can be any string you want.
+- `npm` specifies the package to use for this provider. Here, `@ai-sdk/openai-compatible` is used for any OpenAI-compatible API.
+- `name` is the display name for the provider in the UI.
+- `options.baseURL` is the endpoint for the local server.
+- `models` is a map of model IDs to their configurations. The model name will be displayed in the model selection list.
+
+---
+
+### Ollama
+
+You can configure opencode to use local models through Ollama.
+
+```json title="opencode.json" "ollama" {5, 6, 8, 10-14}
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (local)",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "llama2": {
+          "name": "Llama 2"
+        }
+      }
+    }
+  }
+}
+```
+
+In this example:
+
+- `ollama` is the custom provider ID. This can be any string you want.
+- `npm` specifies the package to use for this provider. Here, `@ai-sdk/openai-compatible` is used for any OpenAI-compatible API.
+- `name` is the display name for the provider in the UI.
+- `options.baseURL` is the endpoint for the local server.
+- `models` is a map of model IDs to their configurations. The model name will be displayed in the model selection list.
+
+---
+
+### OpenAI
+
+https://platform.openai.com/api-keys
+
+1. Head over to the [OpenAI Platform console](https://platform.openai.com/api-keys), click **Create new secret key**, and copy the key.
+
+2. Run `opencode auth login` and select OpenAI.
+
+   ```bash
+   $ opencode auth login
+
+   ┌  Add credential
+   │
+   ◆  Select provider
+   │  ● OpenAI
+   │  ...
+   └
+   ```
+   
+3. Enter the API key for the provider.
+
+   ```bash
+   $ opencode auth login
+
+   ┌  Add credential
+   │
+   ◇  Select provider
+   │  OpenAI
+   │
+   ◇  Enter your API key
+   │  _
+   └
+   ```
+
+4. Run the `/models` command to select the one you want.
+
+---
+
+### OpenRouter
+
+1. Head over to the [OpenRouter dashboard](https://openrouter.ai/settings/keys), click **Create API Key**, and copy the key.
+
+2. Run `opencode auth login` and select OpenRouter.
+
+   ```bash
+   $ opencode auth login
+
+   ┌  Add credential
+   │
+   ◆  Select provider
+   │  ● OpenRouter
+   │  ○ Anthropic
+   │  ○ Google
+   │  ...
+   └
+   ```
+   
+3. Enter the API key for the provider.
+
+   ```bash
+   $ opencode auth login
+
+   ┌  Add credential
+   │
+   ◇  Select provider
+   │  OpenRouter
+   │
+   ◇  Enter your API key
+   │  _
+   └
+   ```
+
+4. Many OpenRouter models are preloaded by default, run the `/models` command to select the one you want.
+
+   You can also add additional models through your opencode config.
+   
+   ```json title="opencode.json" {6}
+   {
+     "$schema": "https://opencode.ai/config.json",
+     "provider": {
+       "openrouter": {
+         "models": {
+           "somecoolnewmodel": {},
+         }
+       }
+     }
+   }
+   ```
+
+5. You can also customize them through your opencode config. Here's an example of specifying a provider
+   
+   ```json title="opencode.json"
+   {
+     "$schema": "https://opencode.ai/config.json",
+     "provider": {
+       "openrouter": {
+         "models": {
+           "moonshotai/kimi-k2": {
+             "options": {
+               "provider": {
+                 "order": ["baseten"],
+                 "allow_fallbacks": false
+               }
+             }
+           }
+         }
+       }
+     }
+   }
+   ```
+
+---
+
+### Custom
+
+To add any **OpenAI-compatible** provider that's not listed in `opencode auth login`:
+
+:::tip
+You can use any OpenAI-compatible provider with opencode.
+:::
+
+1. Scroll down to **Other**.
+
+   ```bash
+   $ opencode auth login
+   
+   ┌  Add credential
+   │
+   ◆  Select provider
+   │  ...
+   │  ● Other
+   └
+   ```
+
+2. Enter the ID for the provider.
+
+   ```bash
+   $ opencode auth login
+   
+   ┌  Add credential
+   │
+   ◆  Select provider
+   │  ...
+   │  ● Other
+   │
+   ◇  Enter provider id
+   │  _
+   └
+   ```
+
+   You can use any ID you want, we'll use this later in the opencode config.
+
+3. Add the API keys for the provider.
+
+   ```bash
+   $ opencode auth login
+ 
+   ┌  Add credential
+   │
+   ◇  Select provider
+   │  Other
+   │
+   ◇  Enter provider id
+   │  coolnewprovider
+   │
+   ▲  This only stores a credential for coolnewprovider - you will need configure it in opencode.json, check the docs for examples.
+   │
+   ◆  Enter your API key
+   │  _
+   └
+   ```
+
+4. Configure the provider in your [opencode config](/docs/config).
+
+   ```json title="opencode.json" "coolnewprovider" {7,9-11}
+   {
+     "$schema": "https://opencode.ai/config.json",
+     "provider": {
+       "coolnewprovider": {
+         "npm": "@ai-sdk/openai-compatible",
+         "options": {
+           "baseURL": "https://api.newaicompany.com/v1"
+         },
+         "models": {
+           "newmodel-m1-0711-preview": {}
+         }
+       }
+     }
+   }
+   ```
+
+   A couple of things to note here:
+
+   - We are using the provider ID we entered earlier, `coolnewprovider` in
+   this example.
+   - The `baseURL` is the OpenAI-compatible endpoint for the provider.
+   - And we are listing the models we want to use. This will show up when we run
+     the `/models` command.
+
