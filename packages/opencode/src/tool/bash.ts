@@ -7,6 +7,7 @@ import { Config } from "../config/config"
 import { Filesystem } from "../util/filesystem"
 import path from "path"
 import { lazy } from "../util/lazy"
+import { minimatch } from "minimatch"
 
 const MAX_OUTPUT_LENGTH = 30000
 const DEFAULT_TIMEOUT = 1 * 60 * 1000
@@ -84,7 +85,7 @@ export const BashTool = Tool.define("bash", {
       if (!needsAsk && command[0] !== "cd") {
         const ask = (() => {
           for (const [pattern, value] of Object.entries(permissions)) {
-            if (new Bun.Glob(pattern).match(node.text)) {
+            if (minimatch(node.text, pattern)) {
               return value
             }
           }
