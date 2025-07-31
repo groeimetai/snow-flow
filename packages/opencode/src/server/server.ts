@@ -462,6 +462,7 @@ export namespace Server {
         "/session/:id/message/:messageID",
         describeRoute({
           description: "Get a message from a session",
+          operationId: "session.message",
           responses: {
             200: {
               description: "Message",
