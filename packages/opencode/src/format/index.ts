@@ -5,6 +5,7 @@ import { Log } from "../util/log"
 import path from "path"
 
 import * as Formatter from "./formatter"
+import { Config } from "../config/config"
 
 export namespace Format {
   const log = Log.create({ service: "format" })
@@ -28,9 +29,11 @@ export namespace Format {
   }
 
   async function getFormatter(ext: string) {
+    const cfg = await Config.get()
     const result = []
     for (const item of Object.values(Formatter)) {
       if (!item.extensions.includes(ext)) continue
+      if (cfg.formatter?.[item.name]?.disabled) continue
       if (!(await isEnabled(item))) continue
       result.push(item)
     }

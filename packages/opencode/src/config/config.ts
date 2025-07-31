@@ -278,6 +278,14 @@ export namespace Config {
         .optional()
         .describe("Custom provider configurations and model overrides"),
       mcp: z.record(z.string(), Mcp).optional().describe("MCP (Model Context Protocol) server configurations"),
+      formatter: z
+        .record(
+          z.string(),
+          z.object({
+            disabled: z.boolean().optional(),
+          }),
+        )
+        .optional(),
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
       layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
       permission: z
