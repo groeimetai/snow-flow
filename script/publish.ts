@@ -11,8 +11,8 @@ if (!version) {
 }
 process.env["OPENCODE_VERSION"] = version
 
-await import(`../packages/opencode/script/publish.ts`)
 await import(`../packages/sdk/js/script/publish.ts`)
+await import(`../packages/opencode/script/publish.ts`)
 // await import(`../packages/sdk/stainless/generate.ts`)
 
 if (!snapshot) {
