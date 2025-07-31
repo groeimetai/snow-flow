@@ -7,6 +7,10 @@ on:
         description: "Version to publish"
         required: true
         type: string
+      title:
+        description: "Custom title for this run"
+        required: false
+        type: string
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 

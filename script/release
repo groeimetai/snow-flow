@@ -38,5 +38,5 @@ fi
 
 echo "New version: $new_version"
 
-gh workflow run publish.yml -f version="$new_version"
+gh workflow run publish.yml -f version="$new_version" -f title="$new_version"
 
