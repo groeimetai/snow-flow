@@ -12,6 +12,7 @@ import { NamedError } from "../util/error"
 import matter from "gray-matter"
 import { Flag } from "../flag/flag"
 import { Auth } from "../auth"
+import { type ParseError as JsoncParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser"
 
 export namespace Config {
   const log = Log.create({ service: "config" })
@@ -371,11 +372,20 @@ export namespace Config {
       }
     }
 
-    let data: any
-    try {
-      data = JSON.parse(text)
-    } catch (err) {
-      throw new JsonError({ path: configPath }, { cause: err as Error })
+    const errors: JsoncParseError[] = []
+    const data = parseJsonc(text, errors, { allowTrailingComma: true })
+    if (errors.length) {
+      throw new JsonError({
+        path: configPath,
+        message: errors
+          .map((e) => {
+            const lines = text.substring(0, e.offset).split("\n")
+            const line = lines.length
+            const column = lines[lines.length - 1].length + 1
+            return `${printParseErrorCode(e.error)} at line ${line}, column ${column}`
+          })
+          .join("; "),
+      })
     }
 
     const parsed = Info.safeParse(data)
@@ -392,6 +402,7 @@ export namespace Config {
     "ConfigJsonError",
     z.object({
       path: z.string(),
+      message: z.string().optional(),
     }),
   )
 
