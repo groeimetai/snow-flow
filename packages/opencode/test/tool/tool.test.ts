@@ -7,6 +7,7 @@ import path from "path"
 const ctx = {
   sessionID: "test",
   messageID: "",
+  toolCallID: "",
   abort: AbortSignal.any([]),
   metadata: () => {},
 }
