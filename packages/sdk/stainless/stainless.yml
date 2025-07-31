@@ -118,10 +118,18 @@ resources:
       share: post /session/{id}/share
       unshare: delete /session/{id}/share
       summarize: post /session/{id}/summarize
+      message: get /session/{id}/message/{messageID}
       messages: get /session/{id}/message
       chat: post /session/{id}/message
       revert: post /session/{id}/revert
       unrevert: post /session/{id}/unrevert
+
+    subresources:
+      permissions:
+        models:
+          permission: Permission
+        methods:
+          respond: post /session/{id}/permissions/{permissionID}
 
   tui:
     methods:

@@ -256,7 +256,10 @@ export namespace Session {
   }
 
   export async function getMessage(sessionID: string, messageID: string) {
-    return Storage.readJSON<MessageV2.Info>("session/message/" + sessionID + "/" + messageID)
+    return {
+      info: await Storage.readJSON<MessageV2.Info>("session/message/" + sessionID + "/" + messageID),
+      parts: await getParts(sessionID, messageID),
+    }
   }
 
   export async function getParts(sessionID: string, messageID: string) {
@@ -714,6 +717,7 @@ export namespace Session {
             sessionID: input.sessionID,
             abort: abort.signal,
             messageID: assistantMsg.id,
+            toolCallID: options.toolCallId,
             metadata: async (val) => {
               const match = processor.partFromToolCall(options.toolCallId)
               if (match && match.state.status === "running") {

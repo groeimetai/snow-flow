@@ -103,15 +103,51 @@ func (a Model) Init() tea.Cmd {
 }
 
 func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	measure := util.Measure("app.Update")
-	defer measure("from", fmt.Sprintf("%T", msg))
-
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		keyString := msg.String()
+
+		if a.app.CurrentPermission.ID != "" {
+			if keyString == "enter" || keyString == "esc" || keyString == "a" {
+				sessionID := a.app.CurrentPermission.SessionID
+				permissionID := a.app.CurrentPermission.ID
+				a.editor.Focus()
+				a.app.Permissions = a.app.Permissions[1:]
+				if len(a.app.Permissions) > 0 {
+					a.app.CurrentPermission = a.app.Permissions[0]
+				} else {
+					a.app.CurrentPermission = opencode.Permission{}
+				}
+
+				response := opencode.SessionPermissionRespondParamsResponseOnce
+				switch keyString {
+				case "enter":
+					response = opencode.SessionPermissionRespondParamsResponseOnce
+				case "a":
+					response = opencode.SessionPermissionRespondParamsResponseAlways
+				case "esc":
+					response = opencode.SessionPermissionRespondParamsResponseReject
+				}
+
+				return a, func() tea.Msg {
+					resp, err := a.app.Client.Session.Permissions.Respond(
+						context.Background(),
+						sessionID,
+						permissionID,
+						opencode.SessionPermissionRespondParams{Response: opencode.F(response)},
+					)
+					if err != nil {
+						slog.Error("Failed to respond to permission request", "error", err)
+						return toast.NewErrorToast("Failed to respond to permission request")
+					}
+					slog.Debug("Responded to permission request", "response", resp)
+					return nil
+				}
+			}
+		}
 
 		// 1. Handle active modal
 		if a.modal != nil {
@@ -341,6 +377,9 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		updated, cmd := a.editor.Focus()
 		a.editor = updated.(chat.EditorComponent)
 		cmds = append(cmds, cmd)
+	case app.SessionClearedMsg:
+		a.app.Session = &opencode.Session{}
+		a.app.Messages = []app.Message{}
 	case dialog.CompletionDialogCloseMsg:
 		a.showCompletionDialog = false
 	case opencode.EventListResponseEventInstallationUpdated:
@@ -364,7 +403,7 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.app.Session = &msg.Properties.Info
 		}
 	case opencode.EventListResponseEventMessagePartUpdated:
-		slog.Info("message part updated", "message", msg.Properties.Part.MessageID, "part", msg.Properties.Part.ID)
+		slog.Debug("message part updated", "message", msg.Properties.Part.MessageID, "part", msg.Properties.Part.ID)
 		if msg.Properties.Part.SessionID == a.app.Session.ID {
 			messageIndex := slices.IndexFunc(a.app.Messages, func(m app.Message) bool {
 				switch casted := m.Info.(type) {
@@ -402,7 +441,7 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case opencode.EventListResponseEventMessagePartRemoved:
-		slog.Info("message part removed", "session", msg.Properties.SessionID, "message", msg.Properties.MessageID, "part", msg.Properties.PartID)
+		slog.Debug("message part removed", "session", msg.Properties.SessionID, "message", msg.Properties.MessageID, "part", msg.Properties.PartID)
 		if msg.Properties.SessionID == a.app.Session.ID {
 			messageIndex := slices.IndexFunc(a.app.Messages, func(m app.Message) bool {
 				switch casted := m.Info.(type) {
@@ -438,7 +477,7 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case opencode.EventListResponseEventMessageRemoved:
-		slog.Info("message removed", "session", msg.Properties.SessionID, "message", msg.Properties.MessageID)
+		slog.Debug("message removed", "session", msg.Properties.SessionID, "message", msg.Properties.MessageID)
 		if msg.Properties.SessionID == a.app.Session.ID {
 			messageIndex := slices.IndexFunc(a.app.Messages, func(m app.Message) bool {
 				switch casted := m.Info.(type) {
@@ -480,6 +519,12 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 			}
 		}
+	case opencode.EventListResponseEventPermissionUpdated:
+		slog.Debug("permission updated", "session", msg.Properties.SessionID, "permission", msg.Properties.ID)
+		a.app.Permissions = append(a.app.Permissions, msg.Properties)
+		a.app.CurrentPermission = a.app.Permissions[0]
+		cmds = append(cmds, toast.NewInfoToast(msg.Properties.Title, toast.WithTitle("Permission requested")))
+		a.editor.Blur()
 	case opencode.EventListResponseEventSessionError:
 		switch err := msg.Properties.Error.AsUnion().(type) {
 		case nil:
@@ -613,8 +658,6 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a Model) View() string {
-	measure := util.Measure("app.View")
-	defer measure()
 	t := theme.CurrentTheme()
 
 	var mainLayout string
@@ -674,8 +717,6 @@ func (a Model) openFile(filepath string) (tea.Model, tea.Cmd) {
 }
 
 func (a Model) home() string {
-	measure := util.Measure("home.View")
-	defer measure()
 	t := theme.CurrentTheme()
 	effectiveWidth := a.width - 4
 	baseStyle := styles.NewStyle().Background(t.Background())
@@ -796,8 +837,6 @@ func (a Model) home() string {
 }
 
 func (a Model) chat() string {
-	measure := util.Measure("chat.View")
-	defer measure()
 	effectiveWidth := a.width - 4
 	t := theme.CurrentTheme()
 	editorView := a.editor.View()
@@ -911,9 +950,8 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 		if a.app.Session.ID == "" {
 			return a, nil
 		}
-		a.app.Session = &opencode.Session{}
-		a.app.Messages = []app.Message{}
 		cmds = append(cmds, util.CmdHandler(app.SessionClearedMsg{}))
+
 	case commands.SessionListCommand:
 		sessionDialog := dialog.NewSessionDialog(a.app)
 		a.modal = sessionDialog

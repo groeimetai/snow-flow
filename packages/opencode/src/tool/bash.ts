@@ -2,6 +2,8 @@ import { z } from "zod"
 import { Tool } from "./tool"
 import DESCRIPTION from "./bash.txt"
 import { App } from "../app/app"
+import { Permission } from "../permission"
+import { Config } from "../config/config"
 
 // import Parser from "tree-sitter"
 // import Bash from "tree-sitter-bash"
@@ -93,6 +95,8 @@ export const BashTool = Tool.define("bash", {
       await Permission.ask({
         id: "bash",
         sessionID: ctx.sessionID,
+        messageID: ctx.messageID,
+        toolCallID: ctx.toolCallID,
         title: params.command,
         metadata: {
           command: params.command,
@@ -100,6 +104,21 @@ export const BashTool = Tool.define("bash", {
       })
     }
     */
+
+    const cfg = await Config.get()
+    if (cfg.permission?.bash === "ask")
+      await Permission.ask({
+        id: "bash",
+        sessionID: ctx.sessionID,
+        messageID: ctx.messageID,
+        toolCallID: ctx.toolCallID,
+        title: "Run this command: " + params.command,
+        metadata: {
+          command: params.command,
+          description: params.description,
+          timeout: params.timeout,
+        },
+      })
 
     const process = Bun.spawn({
       cmd: ["bash", "-c", params.command],

@@ -344,9 +344,13 @@ func (m *editorComponent) Content() string {
 		hint = base(keyText+" again") + muted(" to exit")
 	} else if m.app.IsBusy() {
 		keyText := m.getInterruptKeyText()
-		if m.interruptKeyInDebounce {
+		status := "working"
+		if m.app.CurrentPermission.ID != "" {
+			status = "waiting for permission"
+		}
+		if m.interruptKeyInDebounce && m.app.CurrentPermission.ID == "" {
 			hint = muted(
-				"working",
+				status,
 			) + m.spinner.View() + muted(
 				"  ",
 			) + base(
@@ -355,7 +359,10 @@ func (m *editorComponent) Content() string {
 				" interrupt",
 			)
 		} else {
-			hint = muted("working") + m.spinner.View() + muted("  ") + base(keyText) + muted(" interrupt")
+			hint = muted(status) + m.spinner.View()
+			if m.app.CurrentPermission.ID == "" {
+				hint += muted("  ") + base(keyText) + muted(" interrupt")
+			}
 		}
 	}
 

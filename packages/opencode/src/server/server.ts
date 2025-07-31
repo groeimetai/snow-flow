@@ -18,6 +18,7 @@ import { LSP } from "../lsp"
 import { MessageV2 } from "../session/message-v2"
 import { Mode } from "../session/mode"
 import { callTui, TuiRoute } from "./tui"
+import { Permission } from "../permission"
 
 const ERRORS = {
   400: {
@@ -457,6 +458,39 @@ export namespace Server {
           return c.json(messages)
         },
       )
+      .get(
+        "/session/:id/message/:messageID",
+        describeRoute({
+          description: "Get a message from a session",
+          responses: {
+            200: {
+              description: "Message",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    z.object({
+                      info: MessageV2.Info,
+                      parts: MessageV2.Part.array(),
+                    }),
+                  ),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "param",
+          z.object({
+            id: z.string().openapi({ description: "Session ID" }),
+            messageID: z.string().openapi({ description: "Message ID" }),
+          }),
+        ),
+        async (c) => {
+          const params = c.req.valid("param")
+          const message = await Session.getMessage(params.id, params.messageID)
+          return c.json(message)
+        },
+      )
       .post(
         "/session/:id/message",
         describeRoute({
@@ -543,6 +577,37 @@ export namespace Server {
           const id = c.req.valid("param").id
           const session = await Session.unrevert({ sessionID: id })
           return c.json(session)
+        },
+      )
+      .post(
+        "/session/:id/permissions/:permissionID",
+        describeRoute({
+          description: "Respond to a permission request",
+          responses: {
+            200: {
+              description: "Permission processed successfully",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "param",
+          z.object({
+            id: z.string(),
+            permissionID: z.string(),
+          }),
+        ),
+        zValidator("json", z.object({ response: Permission.Response })),
+        async (c) => {
+          const params = c.req.valid("param")
+          const id = params.id
+          const permissionID = params.permissionID
+          Permission.respond({ sessionID: id, permissionID, response: c.req.valid("json").response })
+          return c.json(true)
         },
       )
       .get(

@@ -26,26 +26,28 @@ type Message struct {
 }
 
 type App struct {
-	Info             opencode.App
-	Modes            []opencode.Mode
-	Providers        []opencode.Provider
-	Version          string
-	StatePath        string
-	Config           *opencode.Config
-	Client           *opencode.Client
-	State            *State
-	ModeIndex        int
-	Mode             *opencode.Mode
-	Provider         *opencode.Provider
-	Model            *opencode.Model
-	Session          *opencode.Session
-	Messages         []Message
-	Commands         commands.CommandRegistry
-	InitialModel     *string
-	InitialPrompt    *string
-	IntitialMode     *string
-	compactCancel    context.CancelFunc
-	IsLeaderSequence bool
+	Info              opencode.App
+	Modes             []opencode.Mode
+	Providers         []opencode.Provider
+	Version           string
+	StatePath         string
+	Config            *opencode.Config
+	Client            *opencode.Client
+	State             *State
+	ModeIndex         int
+	Mode              *opencode.Mode
+	Provider          *opencode.Provider
+	Model             *opencode.Model
+	Session           *opencode.Session
+	Messages          []Message
+	Permissions       []opencode.Permission
+	CurrentPermission opencode.Permission
+	Commands          commands.CommandRegistry
+	InitialModel      *string
+	InitialPrompt     *string
+	IntitialMode      *string
+	compactCancel     context.CancelFunc
+	IsLeaderSequence  bool
 }
 
 type SessionCreatedMsg = struct {

@@ -100,8 +100,6 @@ func (m *messagesComponent) Init() tea.Cmd {
 }
 
 func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	measure := util.Measure("messages.Update")
-	defer measure("from", fmt.Sprintf("%T", msg))
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.MouseClickMsg:
@@ -199,6 +197,9 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.cache.Clear()
 			cmds = append(cmds, m.renderView())
 		}
+	case opencode.EventListResponseEventPermissionUpdated:
+		m.tail = true
+		return m, m.renderView()
 	case renderCompleteMsg:
 		m.partCount = msg.partCount
 		m.lineCount = msg.lineCount
@@ -214,6 +215,7 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	m.tail = m.viewport.AtBottom()
+
 	viewport, cmd := m.viewport.Update(msg)
 	m.viewport = viewport
 	cmds = append(cmds, cmd)
@@ -465,7 +467,13 @@ func (m *messagesComponent) renderView() tea.Cmd {
 							revertedToolCount++
 							continue
 						}
-						if !m.showToolDetails {
+
+						permission := opencode.Permission{}
+						if m.app.CurrentPermission.ToolCallID == part.CallID {
+							permission = m.app.CurrentPermission
+						}
+
+						if !m.showToolDetails && permission.ID == "" {
 							if !hasTextPart {
 								orphanedToolCalls = append(orphanedToolCalls, part)
 							}
@@ -477,12 +485,14 @@ func (m *messagesComponent) renderView() tea.Cmd {
 								part.ID,
 								m.showToolDetails,
 								width,
+								permission.ID,
 							)
 							content, cached = m.cache.Get(key)
 							if !cached {
 								content = renderToolDetails(
 									m.app,
 									part,
+									permission,
 									width,
 								)
 								content = lipgloss.PlaceHorizontal(
@@ -498,6 +508,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 							content = renderToolDetails(
 								m.app,
 								part,
+								permission,
 								width,
 							)
 							content = lipgloss.PlaceHorizontal(
@@ -616,6 +627,40 @@ func (m *messagesComponent) renderView() tea.Cmd {
 				WithBorderColor(t.BackgroundPanel()),
 			)
 			blocks = append(blocks, content)
+		}
+
+		if m.app.CurrentPermission.ID != "" &&
+			m.app.CurrentPermission.SessionID != m.app.Session.ID {
+			response, err := m.app.Client.Session.Message(
+				context.Background(),
+				m.app.CurrentPermission.SessionID,
+				m.app.CurrentPermission.MessageID,
+			)
+			if err != nil || response == nil {
+				slog.Error("Failed to get message from child session", "error", err)
+			} else {
+				for _, part := range response.Parts {
+					if part.CallID == m.app.CurrentPermission.ToolCallID {
+						content := renderToolDetails(
+							m.app,
+							part.AsUnion().(opencode.ToolPart),
+							m.app.CurrentPermission,
+							width,
+						)
+						content = lipgloss.PlaceHorizontal(
+							m.width,
+							lipgloss.Center,
+							content,
+							styles.WhitespaceStyle(t.Background()),
+						)
+						if content != "" {
+							partCount++
+							lineCount += lipgloss.Height(content) + 1
+							blocks = append(blocks, content)
+						}
+					}
+				}
+			}
 		}
 
 		final := []string{}
@@ -846,9 +891,7 @@ func (m *messagesComponent) View() string {
 		)
 	}
 
-	measure := util.Measure("messages.View")
 	viewport := m.viewport.View()
-	measure()
 	return styles.NewStyle().
 		Background(t.Background()).
 		Render(m.header + "\n" + viewport)

@@ -24,7 +24,8 @@ import (
 // automatically. You should not instantiate this service directly, and instead use
 // the [NewSessionService] method instead.
 type SessionService struct {
-	Options []option.RequestOption
+	Options     []option.RequestOption
+	Permissions *SessionPermissionService
 }
 
 // NewSessionService generates a new service that applies the given options to each
@@ -33,6 +34,7 @@ type SessionService struct {
 func NewSessionService(opts ...option.RequestOption) (r *SessionService) {
 	r = &SessionService{}
 	r.Options = opts
+	r.Permissions = NewSessionPermissionService(opts...)
 	return
 }
 
@@ -97,6 +99,22 @@ func (r *SessionService) Init(ctx context.Context, id string, body SessionInitPa
 	}
 	path := fmt.Sprintf("session/%s/init", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return
+}
+
+// Get a message from a session
+func (r *SessionService) Message(ctx context.Context, id string, messageID string, opts ...option.RequestOption) (res *SessionMessageResponse, err error) {
+	opts = append(r.Options[:], opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	if messageID == "" {
+		err = errors.New("missing required messageID parameter")
+		return
+	}
+	path := fmt.Sprintf("session/%s/message/%s", id, messageID)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return
 }
 
@@ -2009,6 +2027,29 @@ func (r *UserMessageTime) UnmarshalJSON(data []byte) (err error) {
 }
 
 func (r userMessageTimeJSON) RawJSON() string {
+	return r.raw
+}
+
+type SessionMessageResponse struct {
+	Info  Message                    `json:"info,required"`
+	Parts []Part                     `json:"parts,required"`
+	JSON  sessionMessageResponseJSON `json:"-"`
+}
+
+// sessionMessageResponseJSON contains the JSON metadata for the struct
+// [SessionMessageResponse]
+type sessionMessageResponseJSON struct {
+	Info        apijson.Field
+	Parts       apijson.Field
+	raw         string
+	ExtraFields map[string]apijson.Field
+}
+
+func (r *SessionMessageResponse) UnmarshalJSON(data []byte) (err error) {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func (r sessionMessageResponseJSON) RawJSON() string {
 	return r.raw
 }
 

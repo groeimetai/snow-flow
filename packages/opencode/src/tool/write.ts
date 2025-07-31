@@ -33,6 +33,8 @@ export const WriteTool = Tool.define("write", {
       await Permission.ask({
         id: "write",
         sessionID: ctx.sessionID,
+        messageID: ctx.messageID,
+        toolCallID: ctx.toolCallID,
         title: exists ? "Overwrite this file: " + filepath : "Create new file: " + filepath,
         metadata: {
           filePath: filepath,
