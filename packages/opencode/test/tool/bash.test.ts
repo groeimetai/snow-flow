@@ -7,6 +7,7 @@ import { Log } from "../../src/util/log"
 const ctx = {
   sessionID: "test",
   messageID: "",
+  toolCallID: "",
   abort: AbortSignal.any([]),
   metadata: () => {},
 }
