@@ -321,7 +321,7 @@ export namespace Config {
   export type Info = z.output<typeof Info>
 
   export const global = lazy(async () => {
-    let result = pipe(
+    let result: Info = pipe(
       {},
       mergeDeep(await load(path.join(Global.Path.config, "config.json"))),
       mergeDeep(await load(path.join(Global.Path.config, "opencode.json"))),
@@ -346,7 +346,7 @@ export namespace Config {
     return result
   })
 
-  async function load(configPath: string) {
+  async function load(configPath: string): Promise<Info> {
     let text = await Bun.file(configPath)
       .text()
       .catch((err) => {
