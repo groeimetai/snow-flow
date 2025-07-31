@@ -62,7 +62,7 @@ To use Amazon Bedrock with opencode:
 
 1. Head over to the **Model catalog** in the Amazon Bedrock console and request
    access to the models you want.
-   
+
    :::tip
    You need to have access to the model you want in Amazon Bedrock.
    :::
@@ -74,27 +74,27 @@ To use Amazon Bedrock with opencode:
    - `AWS_PROFILE`: First login through AWS IAM Identity Center (or AWS SSO) using
      `aws sso login`. Then get the name of the profile you want to use.
    - `AWS_BEARER_TOKEN_BEDROCK`: You can generate a long-term API key from the
-   Amazon Bedrock console.
-   
+     Amazon Bedrock console.
+
    Once you have one of the above, set it while running opencode.
-   
+
    ```bash
    AWS_ACCESS_KEY_ID=XXX opencode
    ```
-   
+
    Or add it to a `.env` file in the project root.
-   
+
    ```bash title=".env"
    AWS_ACCESS_KEY_ID=XXX
    ```
-   
+
    Or add it to your bash profile.
-   
+
    ```bash title="~/.bash_profile"
    export AWS_ACCESS_KEY_ID=XXX
    ```
 
-2. Run the `/models` command to select the model you want.
+1. Run the `/models` command to select the model you want.
 
 ---
 
@@ -122,6 +122,69 @@ the Anthropic models should be available when you use the `/models` command.
 
 ---
 
+### Azure OpenAI
+
+1. Head over to the [Azure portal](https://portal.azure.com/) and create an **Azure OpenAI** resource. You'll need:
+
+   - **Resource name**: This becomes part of your API endpoint (`https://RESOURCE_NAME.openai.azure.com/`)
+   - **API key**: Either `KEY 1` or `KEY 2` from your resource
+
+2. Go to [Azure AI Foundry](https://ai.azure.com/) and deploy a model.
+
+   :::note
+   The deployment name must match the model name for opencode to work properly.
+   :::
+
+3. Run `opencode auth login` and select **Azure**.
+
+   ```bash
+   $ opencode auth login
+
+   ┌  Add credential
+   │
+   ◆  Select provider
+   │  ● Azure
+   │  ...
+   └
+   ```
+
+4. Enter your API key.
+
+   ```bash
+   $ opencode auth login
+
+   ┌  Add credential
+   │
+   ◇  Select provider
+   │  Azure
+   │
+   ◇  Enter your API key
+   │  _
+   └
+   ```
+
+5. Set your resource name as an environment variable:
+
+   ```bash
+   AZURE_RESOURCE_NAME=XXX opencode
+   ```
+
+   Or add it to a `.env` file in the project root:
+
+   ```bash title=".env"
+   AZURE_RESOURCE_NAME=XXX
+   ```
+
+   Or add it to your bash profile:
+
+   ```bash title="~/.bash_profile"
+   export AZURE_RESOURCE_NAME=XXX
+   ```
+
+6. Run the `/models` command to select your deployed model.
+
+---
+
 ### GitHub Copilot
 
 To use your GitHub Copilot subscription with opencode:
@@ -136,7 +199,7 @@ subscription](https://github.com/features/copilot/plans) to use.
    ```bash
    $ opencode auth login
    ┌  Add credential
-   
+
    │
    ◇  Select provider
    │  GitHub Copilot
@@ -173,7 +236,7 @@ subscription](https://github.com/features/copilot/plans) to use.
    │  ...
    └
    ```
-   
+
 3. Enter the API key for the provider.
 
    ```bash
@@ -279,7 +342,7 @@ https://platform.openai.com/api-keys
    │  ...
    └
    ```
-   
+
 3. Enter the API key for the provider.
 
    ```bash
@@ -317,7 +380,7 @@ https://platform.openai.com/api-keys
    │  ...
    └
    ```
-   
+
 3. Enter the API key for the provider.
 
    ```bash
@@ -336,14 +399,14 @@ https://platform.openai.com/api-keys
 4. Many OpenRouter models are preloaded by default, run the `/models` command to select the one you want.
 
    You can also add additional models through your opencode config.
-   
+
    ```json title="opencode.json" {6}
    {
      "$schema": "https://opencode.ai/config.json",
      "provider": {
        "openrouter": {
          "models": {
-           "somecoolnewmodel": {},
+           "somecoolnewmodel": {}
          }
        }
      }
@@ -351,7 +414,7 @@ https://platform.openai.com/api-keys
    ```
 
 5. You can also customize them through your opencode config. Here's an example of specifying a provider
-   
+
    ```json title="opencode.json"
    {
      "$schema": "https://opencode.ai/config.json",
@@ -384,7 +447,7 @@ Cerebras offers fast inference with generous free tiers and competitive pricing.
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◆  Select provider
@@ -397,7 +460,7 @@ Cerebras offers fast inference with generous free tiers and competitive pricing.
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◇  Select provider
@@ -412,7 +475,7 @@ Cerebras offers fast inference with generous free tiers and competitive pricing.
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◇  Enter your API key
@@ -459,7 +522,7 @@ DeepSeek offers powerful reasoning models at competitive prices.
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◆  Select provider
@@ -472,7 +535,7 @@ DeepSeek offers powerful reasoning models at competitive prices.
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◇  Select provider
@@ -487,7 +550,7 @@ DeepSeek offers powerful reasoning models at competitive prices.
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◇  Enter your API key
@@ -531,7 +594,7 @@ Moonshot AI offers the Kimi models with long context capabilities.
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◆  Select provider
@@ -544,7 +607,7 @@ Moonshot AI offers the Kimi models with long context capabilities.
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◇  Select provider
@@ -559,7 +622,7 @@ Moonshot AI offers the Kimi models with long context capabilities.
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◇  Enter your API key
@@ -605,7 +668,7 @@ You can use any OpenAI-compatible provider with opencode. Most modern AI provide
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◆  Select provider
@@ -618,7 +681,7 @@ You can use any OpenAI-compatible provider with opencode. Most modern AI provide
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ◇  Enter provider id
@@ -634,7 +697,7 @@ You can use any OpenAI-compatible provider with opencode. Most modern AI provide
 
    ```bash
    $ opencode auth login
-   
+
    ┌  Add credential
    │
    ▲  This only stores a credential for myprovider - you will need configure it in opencode.json, check the docs for examples.
@@ -646,7 +709,7 @@ You can use any OpenAI-compatible provider with opencode. Most modern AI provide
 
 4. Create or update your `opencode.json` file in your project directory:
 
-   ```json title="opencode.json" "\"myprovider\"" {5-15}
+   ```json title="opencode.json" ""myprovider"" {5-15}
    {
      "$schema": "https://opencode.ai/config.json",
      "provider": {
@@ -667,7 +730,7 @@ You can use any OpenAI-compatible provider with opencode. Most modern AI provide
    ```
 
    Here are the configuration options:
-   
+
    - **npm**: AI SDK package to use, `@ai-sdk/openai-compatible` for OpenAI-compatible providers
    - **name**: Display name in UI.
    - **models**: Available models.
@@ -714,6 +777,7 @@ We are setting the `apiKey` using the `env` variable syntax, [learn more](/docs/
 #### Common Examples
 
 **Together AI:**
+
 ```json title="opencode.json"
 {
   "$schema": "https://opencode.ai/config.json",
@@ -735,6 +799,7 @@ We are setting the `apiKey` using the `env` variable syntax, [learn more](/docs/
 ```
 
 **Fireworks AI:**
+
 ```json title="opencode.json"
 {
   "$schema": "https://opencode.ai/config.json",
@@ -754,6 +819,7 @@ We are setting the `apiKey` using the `env` variable syntax, [learn more](/docs/
   }
 }
 ```
+
 ---
 
 ## Troubleshooting
