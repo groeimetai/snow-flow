@@ -86,7 +86,7 @@ func main() {
 	logger := slog.New(apiHandler)
 	slog.SetDefault(logger)
 
-	slog.Debug("TUI launched", "app", appInfoStr, "modes", modesStr)
+	slog.Debug("TUI launched", "app", appInfoStr, "modes", modesStr, "url", url)
 
 	go func() {
 		err = clipboard.Init()

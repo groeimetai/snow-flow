@@ -905,6 +905,120 @@ export namespace Server {
         }),
         async (c) => c.json(await callTui(c)),
       )
+      .post(
+        "/tui/open-sessions",
+        describeRoute({
+          description: "Open the session dialog",
+          operationId: "tui.openSessions",
+          responses: {
+            200: {
+              description: "Session dialog opened successfully",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => c.json(await callTui(c)),
+      )
+      .post(
+        "/tui/open-themes",
+        describeRoute({
+          description: "Open the theme dialog",
+          operationId: "tui.openThemes",
+          responses: {
+            200: {
+              description: "Theme dialog opened successfully",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => c.json(await callTui(c)),
+      )
+      .post(
+        "/tui/open-models",
+        describeRoute({
+          description: "Open the model dialog",
+          operationId: "tui.openModels",
+          responses: {
+            200: {
+              description: "Model dialog opened successfully",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => c.json(await callTui(c)),
+      )
+      .post(
+        "/tui/submit-prompt",
+        describeRoute({
+          description: "Submit the prompt",
+          operationId: "tui.submitPrompt",
+          responses: {
+            200: {
+              description: "Prompt submitted successfully",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => c.json(await callTui(c)),
+      )
+      .post(
+        "/tui/clear-prompt",
+        describeRoute({
+          description: "Clear the prompt",
+          operationId: "tui.clearPrompt",
+          responses: {
+            200: {
+              description: "Prompt cleared successfully",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => c.json(await callTui(c)),
+      )
+      .post(
+        "/tui/execute-command",
+        describeRoute({
+          description: "Execute a TUI command (e.g. switch_mode)",
+          operationId: "tui.executeCommand",
+          responses: {
+            200: {
+              description: "Command executed successfully",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "json",
+          z.object({
+            command: z.string(),
+          }),
+        ),
+        async (c) => c.json(await callTui(c)),
+      )
       .route("/tui/control", TuiRoute)
 
     return result

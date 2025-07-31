@@ -609,6 +609,15 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "/tui/open-help":
 			helpDialog := dialog.NewHelpDialog(a.app)
 			a.modal = helpDialog
+		case "/tui/open-sessions":
+			sessionDialog := dialog.NewSessionDialog(a.app)
+			a.modal = sessionDialog
+		case "/tui/open-themes":
+			themeDialog := dialog.NewThemeDialog()
+			a.modal = themeDialog
+		case "/tui/open-models":
+			modelDialog := dialog.NewModelDialog(a.app)
+			a.modal = modelDialog
 		case "/tui/append-prompt":
 			var body struct {
 				Text string `json:"text"`
@@ -620,6 +629,34 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				text = " " + text
 			}
 			a.editor.SetValueWithAttachments(existing + text + " ")
+		case "/tui/submit-prompt":
+			updated, cmd := a.editor.Submit()
+			a.editor = updated.(chat.EditorComponent)
+			cmds = append(cmds, cmd)
+		case "/tui/clear-prompt":
+			updated, cmd := a.editor.Clear()
+			a.editor = updated.(chat.EditorComponent)
+			cmds = append(cmds, cmd)
+		case "/tui/execute-command":
+			var body struct {
+				Command string `json:"command"`
+			}
+			json.Unmarshal((msg.Body), &body)
+			command := commands.Command{}
+			for _, cmd := range a.app.Commands {
+				if string(cmd.Name) == body.Command {
+					command = cmd
+					break
+				}
+			}
+			if command.Name == "" {
+				slog.Error("Invalid command passed to /tui/execute-command", "command", body.Command)
+				return a, nil
+			}
+			updated, cmd := a.executeCommand(commands.Command(command))
+			a = updated.(Model)
+			cmds = append(cmds, cmd)
+
 		default:
 			break
 		}

@@ -134,7 +134,13 @@ resources:
   tui:
     methods:
       appendPrompt: post /tui/append-prompt
+      submitPrompt: post /tui/submit-prompt
+      clearPrompt: post /tui/clear-prompt
       openHelp: post /tui/open-help
+      openSessions: post /tui/open-sessions
+      openThemes: post /tui/open-themes
+      openModels: post /tui/open-models
+      executeCommand: post /tui/execute-command
 
 settings:
   disable_mock_tests: true
