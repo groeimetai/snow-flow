@@ -2,20 +2,17 @@ import { z } from "zod"
 import { Tool } from "./tool"
 import DESCRIPTION from "./bash.txt"
 import { App } from "../app/app"
-import path from "path"
 
-import Parser from "tree-sitter"
-import Bash from "tree-sitter-bash"
-import { Config } from "../config/config"
-import { Filesystem } from "../util/filesystem"
-import { Permission } from "../permission"
+// import Parser from "tree-sitter"
+// import Bash from "tree-sitter-bash"
+// import { Config } from "../config/config"
 
 const MAX_OUTPUT_LENGTH = 30000
 const DEFAULT_TIMEOUT = 1 * 60 * 1000
 const MAX_TIMEOUT = 10 * 60 * 1000
 
-const parser = new Parser()
-parser.setLanguage(Bash.language as any)
+// const parser = new Parser()
+// parser.setLanguage(Bash.language as any)
 
 export const BashTool = Tool.define("bash", {
   description: DESCRIPTION,
@@ -30,9 +27,10 @@ export const BashTool = Tool.define("bash", {
   }),
   async execute(params, ctx) {
     const timeout = Math.min(params.timeout ?? DEFAULT_TIMEOUT, MAX_TIMEOUT)
-    const tree = parser.parse(params.command)
-    const cfg = await Config.get()
     const app = App.info()
+    /*
+    const _cfg = await Config.get()
+    const tree = parser.parse(params.command)
     const permissions = (() => {
       const value = cfg.permission?.bash
       if (!value)
@@ -101,6 +99,7 @@ export const BashTool = Tool.define("bash", {
         },
       })
     }
+    */
 
     const process = Bun.spawn({
       cmd: ["bash", "-c", params.command],
