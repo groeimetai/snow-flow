@@ -1,57 +1,74 @@
 ---
 title: Permissions
-description: Control what AI agents can do in your codebase.
+description: Control what agents can do in your codebase.
 ---
 
-By default, opencode allows all operations without requiring explicit approval. The permissions system provides granular control to restrict what actions AI agents can perform in your codebase, allowing you to configure explicit approval requirements for sensitive operations like file editing, bash commands, and more.
+By default, opencode **allows all operations** without requiring explicit approval.
 
-## Configuration
+The permissions system provides granular control to restrict what actions AI agents can perform in your codebase, allowing you to configure explicit approval requirements for sensitive operations like file editing, bash commands, and more.
 
-Permissions are configured in your `opencode.json` file under the `permission` key. Here are the available options:
+---
 
-### permission.edit
+## Configure
 
-Controls whether file editing operations require user approval.
+Permissions are configured in your `opencode.json` file under the `permission` key. Here are the available options.
 
-- `"ask"` - Prompt user for approval before editing files
+---
+
+### edit
+
+Use the `permission.edit` key to control whether file editing operations require user approval.
+
+- `"ask"` - Prompt for approval before editing files
 - `"allow"` - Allow all file editing operations without approval
 
-### permission.bash
-
-Controls whether bash commands require user approval. This can be configured globally or with specific patterns. Setting this to "ask" is the strictest mode, requiring approval for all bash commands.
-
-## Configuration examples
-
-### Basic permission configuration
-
-```json title="opencode.json"
+```json title="opencode.json" {4}
 {
   "$schema": "https://opencode.ai/config.json",
   "permission": {
-    "edit": "ask",
-    "bash": "ask"
+    "edit": "ask"
   }
 }
 ```
 
-### Advanced bash permission configuration
+---
 
-Setting bash permissions to "ask" is the strictest mode. If you want to allow specific commands without approval, you can configure them explicitly. All other commands will require approval by default:
+### bash
 
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "edit": "ask",
-    "bash": {
-      "git status": "allow",
-      "git diff": "allow",
-      "npm run build": "allow",
-      "ls": "allow",
-      "pwd": "allow"
+Controls whether bash commands require user approval.
+
+:::tip
+You can specify which commands you want to have run without approval.
+:::
+
+This can be configured globally or with specific patterns. Setting this to `"ask"` is the strictest mode, requiring approval for all bash commands.
+
+For example.
+
+- **Ask for approval for all commands**
+
+  ```json title="opencode.json"
+  {
+    "$schema": "https://opencode.ai/config.json",
+    "permission": {
+      "bash": "ask"
     }
   }
-}
-```
+  ```
 
-This permissions system ensures that you maintain control over what AI agents can do in your codebase while providing flexibility for trusted operations.
+- **Approve specific commands**
+
+  ```json title="opencode.json"
+  {
+    "$schema": "https://opencode.ai/config.json",
+    "permission": {
+      "bash": {
+        "git status": "allow",
+        "git diff": "allow",
+        "npm run build": "allow",
+        "ls": "allow",
+        "pwd": "allow"
+      }
+    }
+  }
+  ```
