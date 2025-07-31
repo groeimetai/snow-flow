@@ -9,10 +9,8 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-git fetch --force --tags
-
-# Get the latest Git tag
-latest_tag=$(git tag --sort=committerdate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | tail -1)
+# Get the latest release from GitHub
+latest_tag=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
 
 # If there is no tag, exit the script
 if [ -z "$latest_tag" ]; then
@@ -22,8 +20,9 @@ fi
 
 echo "Latest tag: $latest_tag"
 
-# Split the tag into major, minor, and patch numbers
-IFS='.' read -ra VERSION <<< "$latest_tag"
+# Remove the 'v' prefix and split into major, minor, and patch numbers
+version_without_v=${latest_tag#v}
+IFS='.' read -ra VERSION <<< "$version_without_v"
 
 if [ "$minor" = true ]; then
     # Increment the minor version and reset patch to 0
@@ -39,5 +38,5 @@ fi
 
 echo "New version: $new_version"
 
-git tag $new_version
-git push --tags
+gh workflow run publish.yml -f version="$new_version"
+

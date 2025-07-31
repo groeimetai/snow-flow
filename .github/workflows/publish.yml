@@ -52,7 +52,6 @@ jobs:
         run: |
           bun install
           OPENCODE_VERSION=${{ inputs.version }} ./script/publish.ts
-        working-directory: ./packages/opencode
         env:
           GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN }}
           AUR_KEY: ${{ secrets.AUR_KEY }}
