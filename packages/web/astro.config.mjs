@@ -83,6 +83,7 @@ export default defineConfig({
             "docs/keybinds",
             "docs/permissions",
             "docs/mcp-servers",
+            "docs/formatters",
           ],
         },
       ],
