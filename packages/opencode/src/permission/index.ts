@@ -2,7 +2,6 @@ import { App } from "../app/app"
 import { z } from "zod"
 import { Bus } from "../bus"
 import { Log } from "../util/log"
-import { Installation } from "../installation"
 import { Identifier } from "../id/id"
 
 export namespace Permission {
@@ -50,7 +49,7 @@ export namespace Permission {
 
       const approved: {
         [sessionID: string]: {
-          [permissionID: string]: Info
+          [permissionID: string]: boolean
         }
       } = {}
 
@@ -77,9 +76,6 @@ export namespace Permission {
     messageID: Info["messageID"]
     metadata: Info["metadata"]
   }) {
-    // TODO: dax, remove this when you're happy with permissions
-    if (!Installation.isDev()) return
-
     const { pending, approved } = state()
     log.info("asking", {
       sessionID: input.sessionID,
@@ -131,7 +127,7 @@ export namespace Permission {
     })
     if (input.response === "always") {
       approved[input.sessionID] = approved[input.sessionID] || {}
-      approved[input.sessionID][input.permissionID] = match.info
+      approved[input.sessionID][match.info.pattern ?? match.info.type] = true
       for (const item of Object.values(pending[input.sessionID])) {
         if ((item.info.pattern ?? item.info.type) === (match.info.pattern ?? match.info.type)) {
           respond({ sessionID: item.info.sessionID, permissionID: item.info.id, response: input.response })

@@ -3,18 +3,22 @@ import { Tool } from "./tool"
 import DESCRIPTION from "./bash.txt"
 import { App } from "../app/app"
 import { Permission } from "../permission"
-import Parser from "tree-sitter"
-import Bash from "tree-sitter-bash"
 import { Config } from "../config/config"
 import { Filesystem } from "../util/filesystem"
 import path from "path"
+import { lazy } from "../util/lazy"
 
 const MAX_OUTPUT_LENGTH = 30000
 const DEFAULT_TIMEOUT = 1 * 60 * 1000
 const MAX_TIMEOUT = 10 * 60 * 1000
 
-const parser = new Parser()
-parser.setLanguage(Bash.language as any)
+const parser = lazy(async () => {
+  const { default: Parser } = await import("tree-sitter")
+  const Bash = await import("tree-sitter-bash")
+  const p = new Parser()
+  p.setLanguage(Bash.language as any)
+  return p
+})
 
 export const BashTool = Tool.define("bash", {
   description: DESCRIPTION,
@@ -31,7 +35,7 @@ export const BashTool = Tool.define("bash", {
     const timeout = Math.min(params.timeout ?? DEFAULT_TIMEOUT, MAX_TIMEOUT)
     const app = App.info()
     const cfg = await Config.get()
-    const tree = parser.parse(params.command)
+    const tree = await parser().then((p) => p.parse(params.command))
     const permissions = (() => {
       const value = cfg.permission?.bash
       if (!value)
