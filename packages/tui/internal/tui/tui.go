@@ -121,7 +121,6 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					a.app.CurrentPermission = opencode.Permission{}
 				}
-
 				response := opencode.SessionPermissionRespondParamsResponseOnce
 				switch keyString {
 				case "enter":
@@ -144,7 +143,7 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return toast.NewErrorToast("Failed to respond to permission request")
 					}
 					slog.Debug("Responded to permission request", "response", resp)
-					return nil
+					return app.PermissionRespondedToMsg{Response: response}
 				}
 			}
 		}

@@ -75,6 +75,9 @@ type SetEditorContentMsg struct {
 type FileRenderedMsg struct {
 	FilePath string
 }
+type PermissionRespondedToMsg struct {
+	Response opencode.SessionPermissionRespondParamsResponse
+}
 
 func New(
 	ctx context.Context,
