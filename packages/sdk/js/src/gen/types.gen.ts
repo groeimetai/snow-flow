@@ -593,6 +593,11 @@ export type Config = {
     formatter?: {
         [key: string]: {
             disabled?: boolean;
+            command?: Array<string>;
+            environment?: {
+                [key: string]: string;
+            };
+            extensions?: Array<string>;
         };
     };
     /**
