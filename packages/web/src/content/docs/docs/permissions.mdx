@@ -3,28 +3,7 @@ title: Permissions
 description: Control what AI agents can do in your codebase.
 ---
 
-The opencode permissions system provides granular control over what actions AI agents can perform in your codebase. It allows you to configure explicit approval requirements for sensitive operations like file editing, bash commands, and more.
-
-## How it works
-
-The permissions system works by intercepting tool calls and checking if user approval is required before executing potentially sensitive operations. When a tool requests permission, it creates a permission request that must be approved by the user.
-
-```typescript
-// Example of how a tool requests permission
-await Permission.ask({
-  type: "edit",
-  sessionID: ctx.sessionID,
-  messageID: ctx.messageID,
-  callID: ctx.callID,
-  title: "Edit this file: " + filePath,
-  metadata: {
-    filePath,
-    diff,
-  },
-})
-```
-
-When a permission is requested, the system checks the configuration to determine if approval is needed. If approval is required, the user is prompted to allow or deny the action.
+By default, opencode allows all operations without requiring explicit approval. The permissions system provides granular control to restrict what actions AI agents can perform in your codebase, allowing you to configure explicit approval requirements for sensitive operations like file editing, bash commands, and more.
 
 ## Configuration
 
@@ -34,42 +13,12 @@ Permissions are configured in your `opencode.json` file under the `permission` k
 
 Controls whether file editing operations require user approval.
 
-```json title="opencode.json"
-{
-  "permission": {
-    "edit": "ask"
-  }
-}
-```
-
 - `"ask"` - Prompt user for approval before editing files
 - `"allow"` - Allow all file editing operations without approval
 
 ### permission.bash
 
-Controls whether bash commands require user approval. This can be configured globally or with specific patterns.
-
-```json title="opencode.json"
-{
-  "permission": {
-    "bash": "ask"
-  }
-}
-```
-
-Or with specific patterns:
-
-```json title="opencode.json"
-{
-  "permission": {
-    "bash": {
-      "git *": "allow",
-      "npm install": "ask",
-      "*": "ask"
-    }
-  }
-}
-```
+Controls whether bash commands require user approval. This can be configured globally or with specific patterns. Setting this to "ask" is the strictest mode, requiring approval for all bash commands.
 
 ## Configuration examples
 
@@ -87,6 +36,8 @@ Or with specific patterns:
 
 ### Advanced bash permission configuration
 
+Setting bash permissions to "ask" is the strictest mode. If you want to allow specific commands without approval, you can configure them explicitly. All other commands will require approval by default:
+
 ```json title="opencode.json"
 {
   "$schema": "https://opencode.ai/config.json",
@@ -95,50 +46,12 @@ Or with specific patterns:
     "bash": {
       "git status": "allow",
       "git diff": "allow",
-      "git add *": "ask",
-      "git commit*": "ask",
-      "npm install": "ask",
       "npm run build": "allow",
       "ls": "allow",
-      "pwd": "allow",
-      "*": "ask"
+      "pwd": "allow"
     }
   }
 }
 ```
-
-### Permissive configuration (development only)
-
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "edit": "allow",
-    "bash": "allow"
-  }
-}
-```
-
-### Strict configuration
-
-```json title="opencode.json"
-{
-  "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "edit": "ask",
-    "bash": {
-      "*": "ask"
-    }
-  }
-}
-```
-
-## Best practices
-
-1. **Start with "ask"**: Begin with asking for permissions and adjust based on your workflow
-2. **Use patterns wisely**: Create specific patterns for commands you trust
-3. **Review regularly**: Periodically review your permission settings
-4. **Be specific**: Use specific patterns rather than broad wildcards when possible
-5. **Document exceptions**: Comment your configuration to explain why certain permissions are set
 
 This permissions system ensures that you maintain control over what AI agents can do in your codebase while providing flexibility for trusted operations.
