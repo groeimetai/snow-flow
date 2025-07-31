@@ -19,12 +19,6 @@
       }
     }
   },
-  "formatter": {
-    "test": {
-      "extensions": [".json"],
-      "command": ["sed", "-i", "s/name/poop/g", "$FILE"]
-    }
-  },
   "mcp": {
     "context7": {
       "type": "remote",
