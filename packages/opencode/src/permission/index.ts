@@ -29,6 +29,10 @@ export namespace Permission {
 
   export const Event = {
     Updated: Bus.event("permission.updated", Info),
+    Replied: Bus.event(
+      "permission.replied",
+      z.object({ sessionID: z.string(), permissionID: z.string(), response: z.string() }),
+    ),
   }
 
   const state = App.state(
@@ -120,9 +124,19 @@ export namespace Permission {
       return
     }
     match.resolve()
+    Bus.publish(Event.Replied, {
+      sessionID: input.sessionID,
+      permissionID: input.permissionID,
+      response: input.response,
+    })
     if (input.response === "always") {
       approved[input.sessionID] = approved[input.sessionID] || {}
       approved[input.sessionID][input.permissionID] = match.info
+      for (const item of Object.values(pending[input.sessionID])) {
+        if ((item.info.pattern ?? item.info.type) === (match.info.pattern ?? match.info.type)) {
+          respond({ sessionID: item.info.sessionID, permissionID: item.info.id, response: input.response })
+        }
+      }
     }
   }
 

@@ -200,7 +200,7 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case opencode.EventListResponseEventPermissionUpdated:
 		m.tail = true
 		return m, m.renderView()
-	case app.PermissionRespondedToMsg:
+	case opencode.EventListResponseEventPermissionReplied:
 		m.tail = true
 		return m, m.renderView()
 	case renderCompleteMsg:
