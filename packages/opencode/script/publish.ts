@@ -1,21 +1,13 @@
 #!/usr/bin/env bun
-
+const dir = new URL("..", import.meta.url).pathname
+process.chdir(dir)
 import { $ } from "bun"
 
 import pkg from "../package.json"
 
-const dry = process.argv.includes("--dry")
-const snapshot = process.argv.includes("--snapshot")
-
-const version = snapshot
-  ? `0.0.0-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}`
-  : await $`git describe --tags --abbrev=0`
-      .text()
-      .then((x) => x.substring(1).trim())
-      .catch(() => {
-        console.error("tag not found")
-        process.exit(1)
-      })
+const dry = process.env["OPENCODE_DRY"] === "true"
+const version = process.env["OPENCODE_VERSION"]!
+const snapshot = process.env["OPENCODE_SNAPSHOT"] === "true"
 
 console.log(`publishing ${version}`)
 

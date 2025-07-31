@@ -94,6 +94,7 @@ export namespace Server {
         "/event",
         describeRoute({
           description: "Get events",
+          operationId: "event.subscribe",
           responses: {
             200: {
               description: "Event stream",
@@ -137,6 +138,7 @@ export namespace Server {
         "/app",
         describeRoute({
           description: "Get app info",
+          operationId: "app.get",
           responses: {
             200: {
               description: "200",
@@ -156,6 +158,7 @@ export namespace Server {
         "/app/init",
         describeRoute({
           description: "Initialize the app",
+          operationId: "app.init",
           responses: {
             200: {
               description: "Initialize the app",
@@ -176,6 +179,7 @@ export namespace Server {
         "/config",
         describeRoute({
           description: "Get config info",
+          operationId: "config.get",
           responses: {
             200: {
               description: "Get config info",
@@ -195,6 +199,7 @@ export namespace Server {
         "/session",
         describeRoute({
           description: "List all sessions",
+          operationId: "session.list",
           responses: {
             200: {
               description: "List of sessions",
@@ -216,6 +221,7 @@ export namespace Server {
         "/session",
         describeRoute({
           description: "Create a new session",
+          operationId: "session.create",
           responses: {
             ...ERRORS,
             200: {
@@ -237,6 +243,7 @@ export namespace Server {
         "/session/:id",
         describeRoute({
           description: "Delete a session and all its data",
+          operationId: "session.delete",
           responses: {
             200: {
               description: "Successfully deleted session",
@@ -263,6 +270,7 @@ export namespace Server {
         "/session/:id/init",
         describeRoute({
           description: "Analyze the app and create an AGENTS.md file",
+          operationId: "session.init",
           responses: {
             200: {
               description: "200",
@@ -299,6 +307,7 @@ export namespace Server {
         "/session/:id/abort",
         describeRoute({
           description: "Abort a session",
+          operationId: "session.abort",
           responses: {
             200: {
               description: "Aborted session",
@@ -324,6 +333,7 @@ export namespace Server {
         "/session/:id/share",
         describeRoute({
           description: "Share a session",
+          operationId: "session.share",
           responses: {
             200: {
               description: "Successfully shared session",
@@ -352,6 +362,7 @@ export namespace Server {
         "/session/:id/share",
         describeRoute({
           description: "Unshare the session",
+          operationId: "session.unshare",
           responses: {
             200: {
               description: "Successfully unshared session",
@@ -380,6 +391,7 @@ export namespace Server {
         "/session/:id/summarize",
         describeRoute({
           description: "Summarize the session",
+          operationId: "session.summarize",
           responses: {
             200: {
               description: "Summarized session",
@@ -415,6 +427,7 @@ export namespace Server {
         "/session/:id/message",
         describeRoute({
           description: "List messages for a session",
+          operationId: "session.messages",
           responses: {
             200: {
               description: "List of messages",
@@ -448,6 +461,7 @@ export namespace Server {
         "/session/:id/message",
         describeRoute({
           description: "Create and send a new message to a session",
+          operationId: "session.chat",
           responses: {
             200: {
               description: "Created message",
@@ -477,6 +491,7 @@ export namespace Server {
         "/session/:id/revert",
         describeRoute({
           description: "Revert a message",
+          operationId: "session.revert",
           responses: {
             200: {
               description: "Updated session",
@@ -506,6 +521,7 @@ export namespace Server {
         "/session/:id/unrevert",
         describeRoute({
           description: "Restore all reverted messages",
+          operationId: "session.unrevert",
           responses: {
             200: {
               description: "Updated session",
@@ -533,6 +549,7 @@ export namespace Server {
         "/config/providers",
         describeRoute({
           description: "List all providers",
+          operationId: "config.providers",
           responses: {
             200: {
               description: "List of providers",
@@ -561,6 +578,7 @@ export namespace Server {
         "/find",
         describeRoute({
           description: "Find text in files",
+          operationId: "find.text",
           responses: {
             200: {
               description: "Matches",
@@ -593,6 +611,7 @@ export namespace Server {
         "/find/file",
         describeRoute({
           description: "Find files",
+          operationId: "find.files",
           responses: {
             200: {
               description: "File paths",
@@ -625,6 +644,7 @@ export namespace Server {
         "/find/symbol",
         describeRoute({
           description: "Find workspace symbols",
+          operationId: "find.symbols",
           responses: {
             200: {
               description: "Symbols",
@@ -652,6 +672,7 @@ export namespace Server {
         "/file",
         describeRoute({
           description: "Read a file",
+          operationId: "file.read",
           responses: {
             200: {
               description: "File content",
@@ -688,6 +709,7 @@ export namespace Server {
         "/file/status",
         describeRoute({
           description: "Get file status",
+          operationId: "file.status",
           responses: {
             200: {
               description: "File status",
@@ -708,6 +730,7 @@ export namespace Server {
         "/log",
         describeRoute({
           description: "Write a log entry to the server logs",
+          operationId: "app.log",
           responses: {
             200: {
               description: "Log entry written successfully",
@@ -757,6 +780,7 @@ export namespace Server {
         "/mode",
         describeRoute({
           description: "List all modes",
+          operationId: "app.modes",
           responses: {
             200: {
               description: "List of modes",
@@ -777,6 +801,7 @@ export namespace Server {
         "/tui/append-prompt",
         describeRoute({
           description: "Append prompt to the TUI",
+          operationId: "tui.appendPrompt",
           responses: {
             200: {
               description: "Prompt processed successfully",
@@ -800,6 +825,7 @@ export namespace Server {
         "/tui/open-help",
         describeRoute({
           description: "Open the help dialog",
+          operationId: "tui.openHelp",
           responses: {
             200: {
               description: "Help dialog opened successfully",

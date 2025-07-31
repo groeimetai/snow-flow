@@ -12,10 +12,12 @@
   },
   "workspaces": {
     "packages": [
-      "packages/*"
+      "packages/*",
+      "packages/sdk/js"
     ],
     "catalog": {
       "@types/node": "22.13.9",
+      "@tsconfig/node22": "22.0.2",
       "ai": "5.0.0-beta.33",
       "hono": "4.7.10",
       "typescript": "5.8.2",

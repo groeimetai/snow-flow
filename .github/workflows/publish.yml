@@ -2,13 +2,11 @@ name: publish
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - dev
-    tags:
-      - "*"
-      - "!vscode-v*"
-      - "!github-v*"
+    inputs:
+      version:
+        description: "Version to publish"
+        required: true
+        type: string
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -53,11 +51,7 @@ jobs:
       - name: Publish
         run: |
           bun install
-          if [ "${{ startsWith(github.ref, 'refs/tags/') }}" = "true" ]; then
-            ./script/publish.ts
-          else
-            ./script/publish.ts --snapshot
-          fi
+          OPENCODE_VERSION=${{ inputs.version }} ./script/publish.ts
         working-directory: ./packages/opencode
         env:
           GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN }}
