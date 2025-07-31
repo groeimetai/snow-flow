@@ -50,10 +50,10 @@ export const EditTool = Tool.define("edit", {
         diff = trimDiff(createTwoFilesPatch(filePath, filePath, contentOld, contentNew))
         if (cfg.permission?.edit === "ask") {
           await Permission.ask({
-            id: "edit",
+            type: "edit",
             sessionID: ctx.sessionID,
             messageID: ctx.messageID,
-            toolCallID: ctx.toolCallID,
+            callID: ctx.toolCallID,
             title: "Edit this file: " + filePath,
             metadata: {
               filePath,
@@ -79,10 +79,10 @@ export const EditTool = Tool.define("edit", {
       diff = trimDiff(createTwoFilesPatch(filePath, filePath, contentOld, contentNew))
       if (cfg.permission?.edit === "ask") {
         await Permission.ask({
-          id: "edit",
+          type: "edit",
           sessionID: ctx.sessionID,
           messageID: ctx.messageID,
-          toolCallID: ctx.toolCallID,
+          callID: ctx.toolCallID,
           title: "Edit this file: " + filePath,
           metadata: {
             filePath,

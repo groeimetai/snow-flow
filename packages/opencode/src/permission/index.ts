@@ -3,6 +3,7 @@ import { z } from "zod"
 import { Bus } from "../bus"
 import { Log } from "../util/log"
 import { Installation } from "../installation"
+import { Identifier } from "../id/id"
 
 export namespace Permission {
   const log = Log.create({ service: "permission" })
@@ -10,9 +11,11 @@ export namespace Permission {
   export const Info = z
     .object({
       id: z.string(),
+      type: z.string(),
+      pattern: z.string().optional(),
       sessionID: z.string(),
       messageID: z.string(),
-      toolCallID: z.string().optional(),
+      callID: z.string().optional(),
       title: z.string(),
       metadata: z.record(z.any()),
       time: z.object({
@@ -55,18 +58,19 @@ export namespace Permission {
     async (state) => {
       for (const pending of Object.values(state.pending)) {
         for (const item of Object.values(pending)) {
-          item.reject(new RejectedError(item.info.sessionID, item.info.id, item.info.toolCallID))
+          item.reject(new RejectedError(item.info.sessionID, item.info.id, item.info.callID))
         }
       }
     },
   )
 
   export function ask(input: {
-    id: Info["id"]
+    type: Info["type"]
+    title: Info["title"]
+    pattern?: Info["pattern"]
+    callID?: Info["callID"]
     sessionID: Info["sessionID"]
     messageID: Info["messageID"]
-    toolCallID?: Info["toolCallID"]
-    title: Info["title"]
     metadata: Info["metadata"]
   }) {
     // TODO: dax, remove this when you're happy with permissions
@@ -75,24 +79,16 @@ export namespace Permission {
     const { pending, approved } = state()
     log.info("asking", {
       sessionID: input.sessionID,
-      permissionID: input.id,
       messageID: input.messageID,
-      toolCallID: input.toolCallID,
+      toolCallID: input.callID,
     })
-    if (approved[input.sessionID]?.[input.id]) {
-      log.info("previously approved", {
-        sessionID: input.sessionID,
-        permissionID: input.id,
-        messageID: input.messageID,
-        toolCallID: input.toolCallID,
-      })
-      return
-    }
+    if (approved[input.sessionID]?.[input.pattern ?? input.type]) return
     const info: Info = {
-      id: input.id,
+      id: Identifier.ascending("permission"),
+      type: input.type,
       sessionID: input.sessionID,
       messageID: input.messageID,
-      toolCallID: input.toolCallID,
+      callID: input.callID,
       title: input.title,
       metadata: input.metadata,
       time: {
@@ -101,18 +97,11 @@ export namespace Permission {
     }
     pending[input.sessionID] = pending[input.sessionID] || {}
     return new Promise<void>((resolve, reject) => {
-      pending[input.sessionID][input.id] = {
+      pending[input.sessionID][info.id] = {
         info,
         resolve,
         reject,
       }
-      // setTimeout(() => {
-      //   respond({
-      //     sessionID: input.sessionID,
-      //     permissionID: input.id,
-      //     response: "always",
-      //   })
-      // }, 1000)
       Bus.publish(Event.Updated, info)
     })
   }
@@ -127,7 +116,7 @@ export namespace Permission {
     if (!match) return
     delete pending[input.sessionID][input.permissionID]
     if (input.response === "reject") {
-      match.reject(new RejectedError(input.sessionID, input.permissionID, match.info.toolCallID))
+      match.reject(new RejectedError(input.sessionID, input.permissionID, match.info.callID))
       return
     }
     match.resolve()

@@ -54,8 +54,7 @@ type EventListResponse struct {
 	// [EventListResponseEventMessageRemovedProperties],
 	// [EventListResponseEventMessagePartUpdatedProperties],
 	// [EventListResponseEventMessagePartRemovedProperties],
-	// [EventListResponseEventStorageWriteProperties],
-	// [EventListResponseEventPermissionUpdatedProperties],
+	// [EventListResponseEventStorageWriteProperties], [Permission],
 	// [EventListResponseEventFileEditedProperties],
 	// [EventListResponseEventSessionUpdatedProperties],
 	// [EventListResponseEventSessionDeletedProperties],
@@ -643,9 +642,9 @@ func (r EventListResponseEventStorageWriteType) IsKnown() bool {
 }
 
 type EventListResponseEventPermissionUpdated struct {
-	Properties EventListResponseEventPermissionUpdatedProperties `json:"properties,required"`
-	Type       EventListResponseEventPermissionUpdatedType       `json:"type,required"`
-	JSON       eventListResponseEventPermissionUpdatedJSON       `json:"-"`
+	Properties Permission                                  `json:"properties,required"`
+	Type       EventListResponseEventPermissionUpdatedType `json:"type,required"`
+	JSON       eventListResponseEventPermissionUpdatedJSON `json:"-"`
 }
 
 // eventListResponseEventPermissionUpdatedJSON contains the JSON metadata for the
@@ -666,56 +665,6 @@ func (r eventListResponseEventPermissionUpdatedJSON) RawJSON() string {
 }
 
 func (r EventListResponseEventPermissionUpdated) implementsEventListResponse() {}
-
-type EventListResponseEventPermissionUpdatedProperties struct {
-	ID        string                                                `json:"id,required"`
-	Metadata  map[string]interface{}                                `json:"metadata,required"`
-	SessionID string                                                `json:"sessionID,required"`
-	Time      EventListResponseEventPermissionUpdatedPropertiesTime `json:"time,required"`
-	Title     string                                                `json:"title,required"`
-	JSON      eventListResponseEventPermissionUpdatedPropertiesJSON `json:"-"`
-}
-
-// eventListResponseEventPermissionUpdatedPropertiesJSON contains the JSON metadata
-// for the struct [EventListResponseEventPermissionUpdatedProperties]
-type eventListResponseEventPermissionUpdatedPropertiesJSON struct {
-	ID          apijson.Field
-	Metadata    apijson.Field
-	SessionID   apijson.Field
-	Time        apijson.Field
-	Title       apijson.Field
-	raw         string
-	ExtraFields map[string]apijson.Field
-}
-
-func (r *EventListResponseEventPermissionUpdatedProperties) UnmarshalJSON(data []byte) (err error) {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-func (r eventListResponseEventPermissionUpdatedPropertiesJSON) RawJSON() string {
-	return r.raw
-}
-
-type EventListResponseEventPermissionUpdatedPropertiesTime struct {
-	Created float64                                                   `json:"created,required"`
-	JSON    eventListResponseEventPermissionUpdatedPropertiesTimeJSON `json:"-"`
-}
-
-// eventListResponseEventPermissionUpdatedPropertiesTimeJSON contains the JSON
-// metadata for the struct [EventListResponseEventPermissionUpdatedPropertiesTime]
-type eventListResponseEventPermissionUpdatedPropertiesTimeJSON struct {
-	Created     apijson.Field
-	raw         string
-	ExtraFields map[string]apijson.Field
-}
-
-func (r *EventListResponseEventPermissionUpdatedPropertiesTime) UnmarshalJSON(data []byte) (err error) {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-func (r eventListResponseEventPermissionUpdatedPropertiesTimeJSON) RawJSON() string {
-	return r.raw
-}
 
 type EventListResponseEventPermissionUpdatedType string
 

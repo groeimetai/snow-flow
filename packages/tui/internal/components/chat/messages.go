@@ -469,7 +469,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 						}
 
 						permission := opencode.Permission{}
-						if m.app.CurrentPermission.ToolCallID == part.CallID {
+						if m.app.CurrentPermission.CallID == part.CallID {
 							permission = m.app.CurrentPermission
 						}
 
@@ -640,7 +640,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 				slog.Error("Failed to get message from child session", "error", err)
 			} else {
 				for _, part := range response.Parts {
-					if part.CallID == m.app.CurrentPermission.ToolCallID {
+					if part.CallID == m.app.CurrentPermission.CallID {
 						content := renderToolDetails(
 							m.app,
 							part.AsUnion().(opencode.ToolPart),

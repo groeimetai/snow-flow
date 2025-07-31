@@ -108,10 +108,11 @@ export const BashTool = Tool.define("bash", {
     const cfg = await Config.get()
     if (cfg.permission?.bash === "ask")
       await Permission.ask({
-        id: "bash",
+        type: "bash",
+        pattern: params.command.split(" ").slice(0, 2).join(" ").trim(),
         sessionID: ctx.sessionID,
         messageID: ctx.messageID,
-        toolCallID: ctx.toolCallID,
+        callID: ctx.toolCallID,
         title: "Run this command: " + params.command,
         metadata: {
           command: params.command,
