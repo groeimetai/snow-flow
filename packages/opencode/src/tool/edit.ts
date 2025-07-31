@@ -96,6 +96,7 @@ export const EditTool = Tool.define("edit", {
         file: filePath,
       })
       contentNew = await file.text()
+      diff = trimDiff(createTwoFilesPatch(filePath, filePath, contentOld, contentNew))
     })()
 
     FileTime.read(ctx.sessionID, filePath)

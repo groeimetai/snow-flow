@@ -6,20 +6,39 @@ import path from "path"
 
 import * as Formatter from "./formatter"
 import { Config } from "../config/config"
+import { mergeDeep } from "remeda"
 
 export namespace Format {
   const log = Log.create({ service: "format" })
 
-  const state = App.state("format", () => {
+  const state = App.state("format", async () => {
     const enabled: Record<string, boolean> = {}
+    const cfg = await Config.get()
+
+    const formatters = { ...Formatter } as Record<string, Formatter.Info>
+    for (const [name, item] of Object.entries(cfg.formatter ?? {})) {
+      if (item.disabled) {
+        delete formatters[name]
+        continue
+      }
+      const result: Formatter.Info = mergeDeep(formatters[name] ?? {}, {
+        command: [],
+        extensions: [],
+        ...item,
+      })
+      result.enabled = async () => true
+      result.name = name
+      formatters[name] = result
+    }
 
     return {
       enabled,
+      formatters,
     }
   })
 
   async function isEnabled(item: Formatter.Info) {
-    const s = state()
+    const s = await state()
     let status = s.enabled[item.name]
     if (status === undefined) {
       status = await item.enabled()
@@ -29,11 +48,11 @@ export namespace Format {
   }
 
   async function getFormatter(ext: string) {
-    const cfg = await Config.get()
+    const formatters = await state().then((x) => x.formatters)
     const result = []
-    for (const item of Object.values(Formatter)) {
+    for (const item of Object.values(formatters)) {
+      log.info("checking", { name: item.name, ext })
       if (!item.extensions.includes(ext)) continue
-      if (cfg.formatter?.[item.name]?.disabled) continue
       if (!(await isEnabled(item))) continue
       result.push(item)
     }
