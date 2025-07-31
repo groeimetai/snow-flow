@@ -17,6 +17,8 @@ export type Event = ({
 } & EventStorageWrite) | ({
     type: 'permission.updated';
 } & EventPermissionUpdated) | ({
+    type: 'permission.replied';
+} & EventPermissionReplied) | ({
     type: 'file.edited';
 } & EventFileEdited) | ({
     type: 'session.updated';
@@ -371,6 +373,15 @@ export type Permission = {
     };
     time: {
         created: number;
+    };
+};
+
+export type EventPermissionReplied = {
+    type: string;
+    properties: {
+        sessionID: string;
+        permissionID: string;
+        response: string;
     };
 };
 

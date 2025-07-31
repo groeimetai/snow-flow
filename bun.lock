@@ -75,7 +75,7 @@
     },
     "packages/sdk/js": {
       "name": "@opencode-ai/sdk",
-      "version": "0.0.0",
+      "version": "0.0.0-202507312003",
       "devDependencies": {
         "@hey-api/openapi-ts": "0.80.1",
         "@tsconfig/node22": "catalog:",
