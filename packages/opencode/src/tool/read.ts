@@ -6,6 +6,7 @@ import { LSP } from "../lsp"
 import { FileTime } from "../file/time"
 import DESCRIPTION from "./read.txt"
 import { App } from "../app/app"
+import { Filesystem } from "../util/filesystem"
 
 const DEFAULT_READ_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
@@ -18,15 +19,19 @@ export const ReadTool = Tool.define("read", {
     limit: z.coerce.number().describe("The number of lines to read (defaults to 2000)").optional(),
   }),
   async execute(params, ctx) {
-    let filePath = params.filePath
-    if (!path.isAbsolute(filePath)) {
-      filePath = path.join(process.cwd(), filePath)
+    let filepath = params.filePath
+    if (!path.isAbsolute(filepath)) {
+      filepath = path.join(process.cwd(), filepath)
+    }
+    const app = App.info()
+    if (!Filesystem.contains(app.path.cwd, filepath)) {
+      throw new Error(`File ${filepath} is not in the current working directory`)
     }
 
-    const file = Bun.file(filePath)
+    const file = Bun.file(filepath)
     if (!(await file.exists())) {
-      const dir = path.dirname(filePath)
-      const base = path.basename(filePath)
+      const dir = path.dirname(filepath)
+      const base = path.basename(filepath)
 
       const dirEntries = fs.readdirSync(dir)
       const suggestions = dirEntries
@@ -38,18 +43,18 @@ export const ReadTool = Tool.define("read", {
         .slice(0, 3)
 
       if (suggestions.length > 0) {
-        throw new Error(`File not found: ${filePath}\n\nDid you mean one of these?\n${suggestions.join("\n")}`)
+        throw new Error(`File not found: ${filepath}\n\nDid you mean one of these?\n${suggestions.join("\n")}`)
       }
 
-      throw new Error(`File not found: ${filePath}`)
+      throw new Error(`File not found: ${filepath}`)
     }
 
     const limit = params.limit ?? DEFAULT_READ_LIMIT
     const offset = params.offset || 0
-    const isImage = isImageFile(filePath)
+    const isImage = isImageFile(filepath)
     if (isImage) throw new Error(`This is an image file of type: ${isImage}\nUse a different tool to process images`)
     const isBinary = await isBinaryFile(file)
-    if (isBinary) throw new Error(`Cannot read binary file: ${filePath}`)
+    if (isBinary) throw new Error(`Cannot read binary file: ${filepath}`)
     const lines = await file.text().then((text) => text.split("\n"))
     const raw = lines.slice(offset, offset + limit).map((line) => {
       return line.length > MAX_LINE_LENGTH ? line.substring(0, MAX_LINE_LENGTH) + "..." : line
@@ -68,11 +73,11 @@ export const ReadTool = Tool.define("read", {
     output += "\n</file>"
 
     // just warms the lsp client
-    LSP.touchFile(filePath, false)
-    FileTime.read(ctx.sessionID, filePath)
+    LSP.touchFile(filepath, false)
+    FileTime.read(ctx.sessionID, filepath)
 
     return {
-      title: path.relative(App.info().path.root, filePath),
+      title: path.relative(App.info().path.root, filepath),
       output,
       metadata: {
         preview,

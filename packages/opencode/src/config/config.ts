@@ -187,6 +187,9 @@ export namespace Config {
   })
   export type Layout = z.infer<typeof Layout>
 
+  export const Permission = z.union([z.literal("ask"), z.literal("allow")])
+  export type Permission = z.infer<typeof Permission>
+
   export const Info = z
     .object({
       $schema: z.string().optional().describe("JSON schema reference for configuration validation"),
@@ -250,6 +253,12 @@ export namespace Config {
       mcp: z.record(z.string(), Mcp).optional().describe("MCP (Model Context Protocol) server configurations"),
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
       layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
+      permission: z
+        .object({
+          edit: Permission.optional(),
+          bash: z.union([Permission, z.record(z.string(), Permission)]).optional(),
+        })
+        .optional(),
       experimental: z
         .object({
           hook: z

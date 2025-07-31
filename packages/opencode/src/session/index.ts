@@ -290,6 +290,9 @@ export namespace Session {
   export function abort(sessionID: string) {
     const controller = state().pending.get(sessionID)
     if (!controller) return false
+    log.info("aborting", {
+      sessionID,
+    })
     controller.abort()
     state().pending.delete(sessionID)
     return true
@@ -765,7 +768,11 @@ export namespace Session {
     }
 
     const stream = streamText({
-      onError() {},
+      onError(e) {
+        log.error("streamText error", {
+          error: e,
+        })
+      },
       async prepareStep({ messages }) {
         const queue = (state().queued.get(input.sessionID) ?? []).filter((x) => !x.processed)
         if (queue.length) {
@@ -1030,7 +1037,7 @@ export namespace Session {
                 }
                 break
 
-              case "text":
+              case "text-delta":
                 if (currentText) {
                   currentText.text += value.text
                   if (currentText.text) await updatePart(currentText)
