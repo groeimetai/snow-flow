@@ -16,7 +16,7 @@ await import(`../packages/sdk/js/script/publish.ts`)
 // await import(`../packages/sdk/stainless/generate.ts`)
 
 if (!snapshot) {
-  await $`git commit -am "Release v${version}"`
+  await $`git commit -am "release: v${version}"`
   await $`git tag v${version}`
   await $`git push origin HEAD --tags`
 }
