@@ -590,6 +590,11 @@ export type Config = {
             type: 'remote';
         } & McpRemoteConfig);
     };
+    formatter?: {
+        [key: string]: {
+            disabled?: boolean;
+        };
+    };
     /**
      * Additional instruction files or patterns to include
      */
