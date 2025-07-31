@@ -53,7 +53,7 @@ export const EditTool = Tool.define("edit", {
             type: "edit",
             sessionID: ctx.sessionID,
             messageID: ctx.messageID,
-            callID: ctx.toolCallID,
+            callID: ctx.callID,
             title: "Edit this file: " + filePath,
             metadata: {
               filePath,
@@ -82,7 +82,7 @@ export const EditTool = Tool.define("edit", {
           type: "edit",
           sessionID: ctx.sessionID,
           messageID: ctx.messageID,
-          callID: ctx.toolCallID,
+          callID: ctx.callID,
           title: "Edit this file: " + filePath,
           metadata: {
             filePath,

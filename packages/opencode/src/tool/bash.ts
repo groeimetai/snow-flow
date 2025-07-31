@@ -3,18 +3,18 @@ import { Tool } from "./tool"
 import DESCRIPTION from "./bash.txt"
 import { App } from "../app/app"
 import { Permission } from "../permission"
+import Parser from "tree-sitter"
+import Bash from "tree-sitter-bash"
 import { Config } from "../config/config"
-
-// import Parser from "tree-sitter"
-// import Bash from "tree-sitter-bash"
-// import { Config } from "../config/config"
+import { Filesystem } from "../util/filesystem"
+import path from "path"
 
 const MAX_OUTPUT_LENGTH = 30000
 const DEFAULT_TIMEOUT = 1 * 60 * 1000
 const MAX_TIMEOUT = 10 * 60 * 1000
 
-// const parser = new Parser()
-// parser.setLanguage(Bash.language as any)
+const parser = new Parser()
+parser.setLanguage(Bash.language as any)
 
 export const BashTool = Tool.define("bash", {
   description: DESCRIPTION,
@@ -30,8 +30,7 @@ export const BashTool = Tool.define("bash", {
   async execute(params, ctx) {
     const timeout = Math.min(params.timeout ?? DEFAULT_TIMEOUT, MAX_TIMEOUT)
     const app = App.info()
-    /*
-    const _cfg = await Config.get()
+    const cfg = await Config.get()
     const tree = parser.parse(params.command)
     const permissions = (() => {
       const value = cfg.permission?.bash
@@ -93,33 +92,16 @@ export const BashTool = Tool.define("bash", {
 
     if (needsAsk) {
       await Permission.ask({
-        id: "bash",
+        type: "bash",
         sessionID: ctx.sessionID,
         messageID: ctx.messageID,
-        toolCallID: ctx.toolCallID,
+        callID: ctx.callID,
         title: params.command,
         metadata: {
           command: params.command,
         },
       })
     }
-    */
-
-    const cfg = await Config.get()
-    if (cfg.permission?.bash === "ask")
-      await Permission.ask({
-        type: "bash",
-        pattern: params.command.split(" ").slice(0, 2).join(" ").trim(),
-        sessionID: ctx.sessionID,
-        messageID: ctx.messageID,
-        callID: ctx.toolCallID,
-        title: "Run this command: " + params.command,
-        metadata: {
-          command: params.command,
-          description: params.description,
-          timeout: params.timeout,
-        },
-      })
 
     const process = Bun.spawn({
       cmd: ["bash", "-c", params.command],

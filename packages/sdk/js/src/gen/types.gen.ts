@@ -355,12 +355,16 @@ export type EventStorageWrite = {
 
 export type EventPermissionUpdated = {
     type: string;
-    properties: PermissionInfo;
+    properties: Permission;
 };
 
-export type PermissionInfo = {
+export type Permission = {
     id: string;
+    type: string;
+    pattern?: string;
     sessionID: string;
+    messageID: string;
+    callID?: string;
     title: string;
     metadata: {
         [key: string]: unknown;
@@ -1193,6 +1197,34 @@ export type SessionChatResponses = {
 
 export type SessionChatResponse = SessionChatResponses[keyof SessionChatResponses];
 
+export type SessionMessageData = {
+    body?: never;
+    path: {
+        /**
+         * Session ID
+         */
+        id: string;
+        /**
+         * Message ID
+         */
+        messageID: string;
+    };
+    query?: never;
+    url: '/session/{id}/message/{messageID}';
+};
+
+export type SessionMessageResponses = {
+    /**
+     * Message
+     */
+    200: {
+        info: Message;
+        parts: Array<Part>;
+    };
+};
+
+export type SessionMessageResponse = SessionMessageResponses[keyof SessionMessageResponses];
+
 export type SessionRevertData = {
     body?: {
         messageID: string;
@@ -1231,6 +1263,27 @@ export type SessionUnrevertResponses = {
 };
 
 export type SessionUnrevertResponse = SessionUnrevertResponses[keyof SessionUnrevertResponses];
+
+export type PostSessionByIdPermissionsByPermissionIdData = {
+    body?: {
+        response: 'once' | 'always' | 'reject';
+    };
+    path: {
+        id: string;
+        permissionID: string;
+    };
+    query?: never;
+    url: '/session/{id}/permissions/{permissionID}';
+};
+
+export type PostSessionByIdPermissionsByPermissionIdResponses = {
+    /**
+     * Permission processed successfully
+     */
+    200: boolean;
+};
+
+export type PostSessionByIdPermissionsByPermissionIdResponse = PostSessionByIdPermissionsByPermissionIdResponses[keyof PostSessionByIdPermissionsByPermissionIdResponses];
 
 export type ConfigProvidersData = {
     body?: never;
@@ -1444,6 +1497,104 @@ export type TuiOpenHelpResponses = {
 };
 
 export type TuiOpenHelpResponse = TuiOpenHelpResponses[keyof TuiOpenHelpResponses];
+
+export type TuiOpenSessionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/tui/open-sessions';
+};
+
+export type TuiOpenSessionsResponses = {
+    /**
+     * Session dialog opened successfully
+     */
+    200: boolean;
+};
+
+export type TuiOpenSessionsResponse = TuiOpenSessionsResponses[keyof TuiOpenSessionsResponses];
+
+export type TuiOpenThemesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/tui/open-themes';
+};
+
+export type TuiOpenThemesResponses = {
+    /**
+     * Theme dialog opened successfully
+     */
+    200: boolean;
+};
+
+export type TuiOpenThemesResponse = TuiOpenThemesResponses[keyof TuiOpenThemesResponses];
+
+export type TuiOpenModelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/tui/open-models';
+};
+
+export type TuiOpenModelsResponses = {
+    /**
+     * Model dialog opened successfully
+     */
+    200: boolean;
+};
+
+export type TuiOpenModelsResponse = TuiOpenModelsResponses[keyof TuiOpenModelsResponses];
+
+export type TuiSubmitPromptData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/tui/submit-prompt';
+};
+
+export type TuiSubmitPromptResponses = {
+    /**
+     * Prompt submitted successfully
+     */
+    200: boolean;
+};
+
+export type TuiSubmitPromptResponse = TuiSubmitPromptResponses[keyof TuiSubmitPromptResponses];
+
+export type TuiClearPromptData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/tui/clear-prompt';
+};
+
+export type TuiClearPromptResponses = {
+    /**
+     * Prompt cleared successfully
+     */
+    200: boolean;
+};
+
+export type TuiClearPromptResponse = TuiClearPromptResponses[keyof TuiClearPromptResponses];
+
+export type TuiExecuteCommandData = {
+    body?: {
+        command: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/tui/execute-command';
+};
+
+export type TuiExecuteCommandResponses = {
+    /**
+     * Command executed successfully
+     */
+    200: boolean;
+};
+
+export type TuiExecuteCommandResponse = TuiExecuteCommandResponses[keyof TuiExecuteCommandResponses];
 
 export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
