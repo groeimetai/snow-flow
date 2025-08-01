@@ -50,18 +50,15 @@ export namespace ModelsDev {
   export type Provider = z.infer<typeof Provider>
 
   export async function get() {
+    refresh()
     const file = Bun.file(filepath)
     const result = await file.json().catch(() => {})
-    if (result) {
-      refresh()
-      return result as Record<string, Provider>
-    }
-    refresh()
+    if (result) return result as Record<string, Provider>
     const json = await data()
     return JSON.parse(json) as Record<string, Provider>
   }
 
-  async function refresh() {
+  export async function refresh() {
     const file = Bun.file(filepath)
     log.info("refreshing")
     const result = await fetch("https://models.dev/api.json", {
@@ -72,3 +69,5 @@ export namespace ModelsDev {
     if (result && result.ok) await Bun.write(file, result)
   }
 }
+
+setInterval(() => ModelsDev.refresh(), 60 * 1000).unref()
