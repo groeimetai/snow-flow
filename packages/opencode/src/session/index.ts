@@ -1115,7 +1115,7 @@ export namespace Session {
         }
         const p = await getParts(assistantMsg.sessionID, assistantMsg.id)
         for (const part of p) {
-          if (part.type === "tool" && part.state.status !== "completed") {
+          if (part.type === "tool" && part.state.status !== "completed" && part.state.status !== "error") {
             updatePart({
               ...part,
               state: {
