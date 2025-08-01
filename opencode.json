@@ -17,6 +17,22 @@
       "models": {
         "Qwen/Qwen3-235B-A22B-Instruct-2507:fireworks-ai": {}
       }
+    },
+    "local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local",
+      "options": {
+        "baseURL": "http://127.0.0.1:1234/v1"
+      },
+      "models": {
+        "qwen/qwen3-coder-30b": {
+          "name": "Qwen-Coder 30B",
+          "limit": {
+            "context": 262144,
+            "output": 66536
+          }
+        }
+      }
     }
   },
   "mcp": {
