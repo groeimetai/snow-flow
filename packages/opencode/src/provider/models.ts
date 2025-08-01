@@ -64,7 +64,11 @@ export namespace ModelsDev {
   async function refresh() {
     const file = Bun.file(filepath)
     log.info("refreshing")
-    const result = await fetch("https://models.dev/api.json").catch(() => {})
+    const result = await fetch("https://models.dev/api.json", {
+      headers: {
+        "User-Agent": "opencode",
+      },
+    }).catch(() => {})
     if (result && result.ok) await Bun.write(file, result)
   }
 }
