@@ -61,13 +61,19 @@ export namespace ModelsDev {
 
   export async function refresh() {
     const file = Bun.file(filepath)
-    log.info("refreshing")
+    log.info("refreshing", {
+      file,
+    })
     const result = await fetch("https://models.dev/api.json", {
       headers: {
         "User-Agent": Installation.USER_AGENT,
       },
-    }).catch(() => {})
-    if (result && result.ok) await Bun.write(file, result)
+    }).catch((e) => {
+      log.error("Failed to fetch models.dev", {
+        error: e,
+      })
+    })
+    if (result && result.ok) await Bun.write(file, await result.text())
   }
 }
 

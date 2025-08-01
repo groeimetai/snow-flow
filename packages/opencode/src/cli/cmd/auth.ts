@@ -100,6 +100,7 @@ export const AuthLoginCommand = cmd({
       prompts.outro("Done")
       return
     }
+    await ModelsDev.refresh().catch(() => {})
     const providers = await ModelsDev.get()
     const priority: Record<string, number> = {
       anthropic: 0,

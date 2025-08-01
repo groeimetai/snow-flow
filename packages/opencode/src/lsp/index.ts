@@ -84,6 +84,7 @@ export namespace LSP {
       }
       return {
         broken: new Set<string>(),
+        servers,
         clients,
       }
     },

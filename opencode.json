@@ -1,38 +1,13 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
-    "openrouter": {
-      "models": {
-        "moonshotai/kimi-k2": {
-          "options": {
-            "provider": {
-              "order": ["baseten"],
-              "allow_fallbacks": false
-            }
-          }
-        }
-      }
-    },
-    "huggingface": {
-      "models": {
-        "Qwen/Qwen3-235B-A22B-Instruct-2507:fireworks-ai": {}
-      }
-    },
-    "local": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "Local",
+    "cerebras": {
       "options": {
-        "baseURL": "http://127.0.0.1:1234/v1",
-        "includeUsage": true
+        "apiKey": "csk-m33xrvt43whkypn8r4ph9xc8fenhx2f68c3pj22ext45v5k9"
       },
+      "npm": "@ai-sdk/cerebras",
       "models": {
-        "qwen/qwen3-coder-30b": {
-          "name": "Qwen-Coder 30B",
-          "limit": {
-            "context": 262144,
-            "output": 66536
-          }
-        }
+        "qwen-3-coder-480b": {}
       }
     }
   },
