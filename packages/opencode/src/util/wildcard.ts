@@ -7,6 +7,7 @@ export namespace Wildcard {
           .replace(/\*/g, ".*") // * becomes .*
           .replace(/\?/g, ".") + // ? becomes .
         "$",
+      "s", // s flag enables multiline matching
     )
     return regex.test(str)
   }
