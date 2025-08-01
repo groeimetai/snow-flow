@@ -7,7 +7,8 @@ import { Config } from "../config/config"
 import { Filesystem } from "../util/filesystem"
 import path from "path"
 import { lazy } from "../util/lazy"
-import { minimatch } from "minimatch"
+import { Log } from "../util/log"
+import { Wildcard } from "../util/wildcard"
 
 const MAX_OUTPUT_LENGTH = 30000
 const DEFAULT_TIMEOUT = 1 * 60 * 1000
@@ -85,7 +86,9 @@ export const BashTool = Tool.define("bash", {
       if (!needsAsk && command[0] !== "cd") {
         const ask = (() => {
           for (const [pattern, value] of Object.entries(permissions)) {
-            if (minimatch(node.text, pattern)) {
+            const match = Wildcard.match(node.text, pattern)
+            Log.Default.info("checking", { text: node.text, pattern, match })
+            if (match) {
               return value
             }
           }
