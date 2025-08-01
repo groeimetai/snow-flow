@@ -144,6 +144,7 @@ export namespace Config {
     .object({
       model: z.string().optional(),
       temperature: z.number().optional(),
+      top_p: z.number().optional(),
       prompt: z.string().optional(),
       tools: z.record(z.string(), z.boolean()).optional(),
       disable: z.boolean().optional(),

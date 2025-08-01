@@ -84,6 +84,7 @@ export default defineConfig({
             "docs/permissions",
             "docs/mcp-servers",
             "docs/formatters",
+            "docs/lsp",
           ],
         },
       ],

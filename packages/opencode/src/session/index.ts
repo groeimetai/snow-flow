@@ -847,6 +847,7 @@ export namespace Session {
       temperature: model.info.temperature
         ? (mode.temperature ?? ProviderTransform.temperature(input.providerID, input.modelID))
         : undefined,
+      topP: mode.topP ?? ProviderTransform.topP(input.providerID, input.modelID),
       tools: model.info.tool_call === false ? undefined : tools,
       model: wrapLanguageModel({
         model: model.language,
