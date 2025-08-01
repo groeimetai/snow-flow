@@ -600,6 +600,21 @@ export type Config = {
             extensions?: Array<string>;
         };
     };
+    lsp?: {
+        [key: string]: {
+            disabled: boolean;
+        } | {
+            command: Array<string>;
+            extensions?: Array<string>;
+            disabled?: boolean;
+            env?: {
+                [key: string]: string;
+            };
+            initialization?: {
+                [key: string]: unknown;
+            };
+        };
+    };
     /**
      * Additional instruction files or patterns to include
      */
@@ -789,6 +804,7 @@ export type KeybindsConfig = {
 export type ModeConfig = {
     model?: string;
     temperature?: number;
+    top_p?: number;
     prompt?: string;
     tools?: {
         [key: string]: boolean;
@@ -923,6 +939,7 @@ export type File = {
 export type Mode = {
     name: string;
     temperature?: number;
+    topP?: number;
     model?: {
         modelID: string;
         providerID: string;
