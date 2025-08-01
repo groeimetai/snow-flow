@@ -289,6 +289,23 @@ export namespace Config {
           }),
         )
         .optional(),
+      lsp: z
+        .record(
+          z.string(),
+          z.union([
+            z.object({
+              disabled: z.literal(true),
+            }),
+            z.object({
+              command: z.array(z.string()),
+              extensions: z.array(z.string()).optional(),
+              disabled: z.boolean().optional(),
+              env: z.record(z.string(), z.string()).optional(),
+              initialization: z.record(z.string(), z.any()).optional(),
+            }),
+          ]),
+        )
+        .optional(),
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
       layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
       permission: z
