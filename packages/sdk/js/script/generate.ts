@@ -13,7 +13,7 @@ console.log()
 import { createClient } from "@hey-api/openapi-ts"
 
 await fs.rm(path.join(dir, "src/gen"), { recursive: true, force: true })
-await $`bun run ../../opencode/src/index.ts generate > openapi.json`
+await $`bun run ./src/index.ts generate > openapi.json`.cwd(path.resolve(dir, "../../opencode"))
 
 await createClient({
   input: "./openapi.json",
