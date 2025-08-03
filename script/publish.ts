@@ -29,7 +29,7 @@ for (const file of pkgjsons) {
 }
 
 console.log("\n=== opencode ===\n")
-// await import(`../packages/opencode/script/publish.ts`)
+await import(`../packages/opencode/script/publish.ts`)
 
 console.log("\n=== sdk ===\n")
 await import(`../packages/sdk/js/script/publish.ts`)
