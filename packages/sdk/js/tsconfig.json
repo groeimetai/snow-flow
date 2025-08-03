@@ -10,6 +10,9 @@
       "es2022",
       "dom",
       "dom.iterable"
+    ],
+    "customConditions": [
+      "development"
     ]
   },
   "include": [
