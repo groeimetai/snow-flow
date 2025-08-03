@@ -737,7 +737,7 @@ export namespace Session {
           )
           const result = await item.execute(args, {
             sessionID: input.sessionID,
-            abort: abort.signal,
+            abort: options.abortSignal!,
             messageID: assistantMsg.id,
             callID: options.toolCallId,
             metadata: async (val) => {
@@ -779,7 +779,7 @@ export namespace Session {
     }
 
     for (const [key, item] of Object.entries(await MCP.tools())) {
-      if (mode.tools[key] === false) continue
+      if (enabledTools[key] === false) continue
       const execute = item.execute
       if (!execute) continue
       item.execute = async (args, opts) => {

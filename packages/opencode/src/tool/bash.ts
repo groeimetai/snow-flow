@@ -1,4 +1,6 @@
 import { z } from "zod"
+import { spawn } from "child_process"
+import { text } from "stream/consumers"
 import { Tool } from "./tool"
 import DESCRIPTION from "./bash.txt"
 import { App } from "../app/app"
@@ -10,7 +12,7 @@ import { Log } from "../util/log"
 import { Wildcard } from "../util/wildcard"
 import { $ } from "bun"
 
-const MAX_OUTPUT_LENGTH = 30000
+// const MAX_OUTPUT_LENGTH = 30000
 const DEFAULT_TIMEOUT = 1 * 60 * 1000
 const MAX_TIMEOUT = 10 * 60 * 1000
 
@@ -116,19 +118,19 @@ export const BashTool = Tool.define("bash", {
       })
     }
 
-    const process = Bun.spawn({
-      cmd: ["bash", "-c", params.command],
+    const process = spawn("bash", ["-c", params.command], {
+      stdio: "pipe",
       cwd: app.path.cwd,
-      maxBuffer: MAX_OUTPUT_LENGTH,
       signal: ctx.abort,
-      timeout: timeout,
-      stdin: "pipe",
-      stdout: "pipe",
-      stderr: "pipe",
+      timeout,
     })
-    await process.exited
-    const stdout = await new Response(process.stdout).text()
-    const stderr = await new Response(process.stderr).text()
+    await new Promise<void>((resolve) => {
+      process.on("close", () => {
+        resolve()
+      })
+    })
+    const stdout = await text(process.stdout)
+    const stderr = await text(process.stderr)
 
     return {
       title: params.command,
