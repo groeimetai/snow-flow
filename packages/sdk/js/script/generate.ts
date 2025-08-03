@@ -6,9 +6,6 @@ process.chdir(dir)
 import { $ } from "bun"
 import path from "path"
 
-console.log("=== Generating JS SDK ===")
-console.log()
-
 import { createClient } from "@hey-api/openapi-ts"
 
 await $`bun dev generate > ${dir}/openapi.json`.cwd(path.resolve(dir, "../../opencode"))
