@@ -75,9 +75,13 @@ export const BashTool = Tool.define("bash", {
       if (["cd", "rm", "cp", "mv", "mkdir", "touch", "chmod", "chown"].includes(command[0])) {
         for (const arg of command.slice(1)) {
           if (arg.startsWith("-") || (command[0] === "chmod" && arg.startsWith("+"))) continue
-          const resolved = await $`realpath ${arg}`.text().then((x) => x.trim())
+          const resolved = await $`realpath ${arg}`
+            .quiet()
+            .nothrow()
+            .text()
+            .then((x) => x.trim())
           log.info("resolved path", { arg, resolved })
-          if (!Filesystem.contains(app.path.cwd, resolved)) {
+          if (resolved && !Filesystem.contains(app.path.cwd, resolved)) {
             throw new Error(
               `This command references paths outside of ${app.path.cwd} so it is not allowed to be executed.`,
             )
