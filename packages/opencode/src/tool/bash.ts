@@ -136,7 +136,6 @@ export const BashTool = Tool.define("bash", {
 
     const stdout = await stdoutPromise
     const stderr = await stderrPromise
-    console.log({ stderr, stdout })
 
     return {
       title: params.command,
