@@ -796,6 +796,42 @@ https://platform.openai.com/api-keys
 
 ---
 
+### Zhipu AI
+
+1. Head over to the [Zhipu AI console](https://chat.z.ai/), create an account, navigate to **Manage APIs**, and click **Create a new API key**.
+
+2. Run `opencode auth login` and select **Zhipu AI**.
+
+   ```bash
+   $ opencode auth login
+
+   ┌  Add credential
+   │
+   ◆  Select provider
+   │  ● Zhipu AI
+   │  ...
+   └
+   ```
+
+3. Enter your Zhipu AI API key.
+
+   ```bash
+   $ opencode auth login
+
+   ┌  Add credential
+   │
+   ◇  Select provider
+   │  Zhipu AI
+   │
+   ◇  Enter your API key
+   │  _
+   └
+   ```
+
+4. Run the `/models` command to select a model like _GLM-4.5_.
+
+---
+
 ## Troubleshooting
 
 If you are having trouble with configuring a provider, check the following:
