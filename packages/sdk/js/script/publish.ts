@@ -6,6 +6,8 @@ process.chdir(dir)
 import { $ } from "bun"
 
 await import("./generate")
+await $`rm -rf dist`
+await $`bun tsc`
 
 const snapshot = process.env["OPENCODE_SNAPSHOT"] === "true"
 

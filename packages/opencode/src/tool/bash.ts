@@ -122,6 +122,7 @@ export const BashTool = Tool.define("bash", {
       maxBuffer: MAX_OUTPUT_LENGTH,
       signal: ctx.abort,
       timeout: timeout,
+      stdin: "pipe",
       stdout: "pipe",
       stderr: "pipe",
     })

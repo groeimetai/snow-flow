@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "dev": "bun run ./src/index.ts"
+    "dev": "bun run --conditions=development ./src/index.ts"
   },
   "bin": {
     "opencode": "./bin/opencode"
