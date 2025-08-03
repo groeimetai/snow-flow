@@ -37,6 +37,7 @@
     "@octokit/rest": "22.0.0",
     "@openauthjs/openauth": "0.4.3",
     "@opencode-ai/plugin": "workspace:*",
+    "@opencode-ai/sdk": "workspace:*",
     "@standard-schema/spec": "1.0.0",
     "@zip.js/zip.js": "2.7.62",
     "ai": "catalog:",

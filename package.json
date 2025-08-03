@@ -39,7 +39,6 @@
     "printWidth": 120
   },
   "trustedDependencies": [
-    "esbuild",
     "protobufjs",
     "sharp"
   ],
