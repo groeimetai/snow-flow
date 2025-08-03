@@ -130,6 +130,7 @@
   },
   "trustedDependencies": [
     "sharp",
+    "esbuild",
   ],
   "catalog": {
     "@tsconfig/node22": "22.0.2",
