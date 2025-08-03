@@ -11,7 +11,7 @@ console.log()
 
 import { createClient } from "@hey-api/openapi-ts"
 
-await $`bun dev generate > openapi.json`.cwd(path.resolve(dir, "../../opencode"))
+await $`bun dev generate > ${dir}/openapi.json`.cwd(path.resolve(dir, "../../opencode"))
 
 await createClient({
   input: "./openapi.json",
