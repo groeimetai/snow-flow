@@ -5,7 +5,6 @@ import { Bus } from "../bus"
 import { Log } from "../util/log"
 import { createOpencodeClient } from "@opencode-ai/sdk"
 import { Server } from "../server/server"
-import { pathOr } from "remeda"
 import { BunProc } from "../bun"
 
 export namespace Plugin {
@@ -40,38 +39,14 @@ export namespace Plugin {
     }
   })
 
-  type Path<T, Prefix extends string = ""> = T extends object
-    ? {
-        [K in keyof T]: K extends string
-          ? T[K] extends Function | undefined
-            ? `${Prefix}${K}`
-            : Path<T[K], `${Prefix}${K}.`>
-          : never
-      }[keyof T]
-    : never
-
-  export type FunctionFromKey<T, P extends Path<T>> = P extends `${infer K}.${infer R}`
-    ? K extends keyof T
-      ? R extends Path<T[K]>
-        ? FunctionFromKey<T[K], R>
-        : never
-      : never
-    : P extends keyof T
-      ? T[P]
-      : never
-
   export async function trigger<
-    Name extends Path<Required<Hooks>>,
-    Input = Parameters<FunctionFromKey<Required<Hooks>, Name>>[0],
-    Output = Parameters<FunctionFromKey<Required<Hooks>, Name>>[1],
-  >(fn: Name, input: Input, output: Output): Promise<Output> {
-    if (!fn) return output
-    const path = fn.split(".")
+    Name extends keyof Required<Hooks>,
+    Input = Parameters<Required<Hooks>[Name]>[0],
+    Output = Parameters<Required<Hooks>[Name]>[1],
+  >(name: Name, input: Input, output: Output): Promise<Output> {
+    if (!name) return output
     for (const hook of await state().then((x) => x.hooks)) {
-      // @ts-expect-error if you feel adventurous, please fix the typing, make sure to bump the try-counter if you
-      // give up.
-      // try-counter: 2
-      const fn = pathOr(hook, path, undefined)
+      const fn = hook[name]
       if (!fn) continue
       // @ts-expect-error if you feel adventurous, please fix the typing, make sure to bump the try-counter if you
       // give up.

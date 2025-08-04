@@ -93,6 +93,14 @@ export namespace Config {
       throw new InvalidError({ path: item }, { cause: parsed.error })
     }
 
+    result.plugin = result.plugin || []
+    result.plugin.push(
+      ...[
+        ...(await Filesystem.globUp("plugin/*.ts", Global.Path.config, Global.Path.config)),
+        ...(await Filesystem.globUp(".opencode/plugin/*.ts", app.path.cwd, app.path.root)),
+      ].map((x) => "file://" + x),
+    )
+
     // Handle migration from autoshare to share field
     if (result.autoshare === true && !result.share) {
       result.share = "auto"
