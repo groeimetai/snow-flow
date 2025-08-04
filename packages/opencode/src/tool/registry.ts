@@ -10,9 +10,11 @@ import { TaskTool } from "./task"
 import { TodoWriteTool, TodoReadTool } from "./todo"
 import { WebFetchTool } from "./webfetch"
 import { WriteTool } from "./write"
+import { InvalidTool } from "./invalid"
 
 export namespace ToolRegistry {
   const ALL = [
+    InvalidTool,
     BashTool,
     EditTool,
     WebFetchTool,
