@@ -1,0 +1,306 @@
+---
+title: Plugins
+description: Extend opencode with custom plugins.
+---
+
+Plugins allow you to extend opencode's functionality by hooking into various events and customizing behavior. You can create plugins to add new features, integrate with external services, or modify opencode's default behavior.
+
+---
+
+## Configuration
+
+Plugins are configured in your `opencode.json` file using the `plugin` array. Each entry should be a path to a plugin module.
+
+```json title="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["./my-plugin.js", "../shared/company-plugin.js", "/absolute/path/to/plugin.js"]
+}
+```
+
+Paths can be:
+
+- **Relative paths** - Resolved from the directory containing the config file
+- **Absolute paths** - Used as-is
+
+---
+
+## Creating a Plugin
+
+A plugin is a JavaScript/TypeScript module that exports one or more plugin functions. Each function receives a context object and returns a hooks object.
+
+### Basic Structure
+
+```typescript title="my-plugin.js"
+export const MyPlugin = async ({ app, client, $ }) => {
+  console.log("Plugin initialized!")
+
+  return {
+    // Hook implementations go here
+  }
+}
+```
+
+The plugin function receives:
+
+- `app` - The opencode application instance
+- `client` - An opencode SDK client for interacting with the AI
+- `$` - Bun's shell API for executing commands
+
+### TypeScript Support
+
+For TypeScript plugins, you can import types from the plugin package:
+
+```typescript title="my-plugin.ts"
+import type { Plugin } from "@opencode-ai/plugin"
+
+export const MyPlugin: Plugin = async ({ app, client, $ }) => {
+  return {
+    // Type-safe hook implementations
+  }
+}
+```
+
+---
+
+## Available Hooks
+
+Plugins can implement various hooks to respond to opencode events:
+
+### permission
+
+Control permissions for various operations:
+
+```javascript
+export const SecurityPlugin = async ({ client }) => {
+  return {
+    permission: {
+      // Add permission logic here
+    },
+  }
+}
+```
+
+### event
+
+Listen to all events in the opencode system:
+
+```javascript
+export const LoggingPlugin = async ({ client }) => {
+  return {
+    event: ({ event }) => {
+      console.log("Event occurred:", event)
+    },
+  }
+}
+```
+
+---
+
+## Examples
+
+### Notification Plugin
+
+Send notifications when certain events occur:
+
+```javascript title="notification-plugin.js"
+export const NotificationPlugin = async ({ client, $ }) => {
+  return {
+    event: async ({ event }) => {
+      // Send notification on session completion
+      if (event.type === "session.completed") {
+        await $`osascript -e 'display notification "Session completed!" with title "opencode"'`
+      }
+    },
+  }
+}
+```
+
+### Custom Commands Plugin
+
+Add custom functionality that can be triggered by the AI:
+
+```javascript title="custom-commands.js"
+export const CustomCommands = async ({ client }) => {
+  return {
+    event: async ({ event }) => {
+      if (event.type === "message" && event.content.includes("/deploy")) {
+        // Trigger deployment logic
+        console.log("Deploying application...")
+      }
+    },
+  }
+}
+```
+
+### Integration Plugin
+
+Integrate with external services:
+
+```javascript title="slack-integration.js"
+export const SlackIntegration = async ({ client, $ }) => {
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL
+
+  return {
+    event: async ({ event }) => {
+      if (event.type === "error") {
+        // Send error to Slack
+        await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: `opencode error: ${event.message}`,
+          }),
+        })
+      }
+    },
+  }
+}
+```
+
+---
+
+## Plugin Development Tips
+
+1. **Error Handling**: Always handle errors gracefully to avoid crashing opencode
+
+   ```javascript
+   event: async ({ event }) => {
+     try {
+       // Your logic here
+     } catch (error) {
+       console.error("Plugin error:", error)
+     }
+   }
+   ```
+
+2. **Performance**: Keep plugin operations lightweight and async where possible
+
+   ```javascript
+   event: async ({ event }) => {
+     // Don't block - use async operations
+     setImmediate(() => {
+       // Heavy processing here
+     })
+   }
+   ```
+
+3. **Environment Variables**: Use environment variables for configuration
+
+   ```javascript
+   const apiKey = process.env.MY_PLUGIN_API_KEY
+   if (!apiKey) {
+     console.warn("MY_PLUGIN_API_KEY not set")
+     return {}
+   }
+   ```
+
+4. **Multiple Exports**: You can export multiple plugins from one file
+   ```javascript
+   export const PluginOne = async (context) => {
+     /* ... */
+   }
+   export const PluginTwo = async (context) => {
+     /* ... */
+   }
+   ```
+
+---
+
+## Advanced Usage
+
+### Using the SDK Client
+
+The `client` parameter is a full opencode SDK client that can interact with the AI:
+
+```javascript
+export const AIAssistantPlugin = async ({ client }) => {
+  return {
+    event: async ({ event }) => {
+      if (event.type === "file.created") {
+        // Ask AI to review the new file
+        const response = await client.messages.create({
+          messages: [
+            {
+              role: "user",
+              content: `Review this new file: ${event.path}`,
+            },
+          ],
+        })
+        console.log("AI Review:", response)
+      }
+    },
+  }
+}
+```
+
+### Accessing Application State
+
+The `app` parameter provides access to the opencode application instance:
+
+```javascript
+export const StatePlugin = async ({ app }) => {
+  return {
+    event: async ({ event }) => {
+      // Access application state and configuration
+      const currentPath = app.path.cwd
+      console.log("Working directory:", currentPath)
+    },
+  }
+}
+```
+
+---
+
+## Debugging Plugins
+
+To debug your plugins:
+
+1. **Console Logging**: Use `console.log()` to output debug information
+2. **Error Boundaries**: Wrap hook implementations in try-catch blocks
+3. **Development Mode**: Test plugins in a separate opencode instance first
+
+```javascript
+export const DebugPlugin = async (context) => {
+  console.log("Plugin loaded with context:", Object.keys(context))
+
+  return {
+    event: ({ event }) => {
+      console.log(`[${new Date().toISOString()}] Event:`, event.type)
+    },
+  }
+}
+```
+
+---
+
+## Best Practices
+
+1. **Namespace Your Plugins**: Use descriptive names to avoid conflicts
+2. **Document Your Hooks**: Add comments explaining what each hook does
+3. **Version Control**: Keep plugins in version control with your project
+4. **Test Thoroughly**: Test plugins with various opencode operations
+5. **Handle Cleanup**: Clean up resources when appropriate
+
+```javascript
+// Good example with best practices
+export const CompanyStandardsPlugin = async ({ client, $ }) => {
+  // Initialize resources
+  const config = await loadConfig()
+
+  return {
+    event: async ({ event }) => {
+      try {
+        // Well-documented hook logic
+        if (event.type === "code.generated") {
+          // Enforce company coding standards
+          await enforceStandards(event.code)
+        }
+      } catch (error) {
+        // Graceful error handling
+        console.error("Standards check failed:", error)
+      }
+    },
+  }
+}
+```

@@ -449,9 +449,9 @@ export namespace Config {
       if (data.plugin) {
         for (let i = 0; i < data.plugin?.length; i++) {
           const plugin = data.plugin[i]
-          if (typeof plugin === "string") {
-            data.plugin[i] = path.resolve(path.dirname(filepath), plugin)
-          }
+          try {
+            data.plugin[i] = import.meta.resolve(plugin, filepath)
+          } catch (err) {}
         }
       }
       return data

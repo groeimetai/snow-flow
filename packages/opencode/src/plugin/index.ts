@@ -6,6 +6,7 @@ import { Log } from "../util/log"
 import { createOpencodeClient } from "@opencode-ai/sdk"
 import { Server } from "../server/server"
 import { pathOr } from "remeda"
+import { BunProc } from "../bun"
 
 export namespace Plugin {
   const log = Log.create({ service: "plugin" })
@@ -17,8 +18,12 @@ export namespace Plugin {
     })
     const config = await Config.get()
     const hooks = []
-    for (const plugin of config.plugin ?? []) {
+    for (let plugin of config.plugin ?? []) {
       log.info("loading plugin", { path: plugin })
+      if (!plugin.startsWith("file://")) {
+        const [pkg, version] = plugin.split("@")
+        plugin = await BunProc.install(pkg, version ?? "latest")
+      }
       const mod = await import(plugin)
       for (const [_name, fn] of Object.entries<PluginInstance>(mod)) {
         const init = await fn({
