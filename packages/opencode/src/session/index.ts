@@ -13,7 +13,6 @@ import {
   type ModelMessage,
   stepCountIs,
   type StreamTextResult,
-  InvalidToolInputError,
 } from "ai"
 
 import PROMPT_INITIALIZE from "../session/prompt/initialize.txt"
@@ -874,17 +873,14 @@ export namespace Session {
         }
       },
       async experimental_repairToolCall(input) {
-        if (InvalidToolInputError.isInstance(input.error)) {
-          return {
-            ...input.toolCall,
-            input: JSON.stringify({
-              tool: input.toolCall.toolName,
-              error: input.error.message,
-            }),
-            toolName: "invalid",
-          }
+        return {
+          ...input.toolCall,
+          input: JSON.stringify({
+            tool: input.toolCall.toolName,
+            error: input.error.message,
+          }),
+          toolName: "invalid",
         }
-        return null
       },
       maxRetries: 3,
       activeTools: Object.keys(tools).filter((x) => x !== "invalid"),
