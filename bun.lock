@@ -84,9 +84,11 @@
     "packages/plugin": {
       "name": "@opencode-ai/plugin",
       "version": "0.3.128",
+      "dependencies": {
+        "@opencode-ai/sdk": "workspace:*",
+      },
       "devDependencies": {
         "@hey-api/openapi-ts": "0.80.1",
-        "@opencode-ai/sdk": "workspace:*",
         "@tsconfig/node22": "catalog:",
         "typescript": "catalog:",
       },
