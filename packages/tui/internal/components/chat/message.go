@@ -23,17 +23,18 @@ import (
 )
 
 type blockRenderer struct {
-	textColor     compat.AdaptiveColor
-	border        bool
-	borderColor   *compat.AdaptiveColor
-	borderLeft    bool
-	borderRight   bool
-	paddingTop    int
-	paddingBottom int
-	paddingLeft   int
-	paddingRight  int
-	marginTop     int
-	marginBottom  int
+	textColor       compat.AdaptiveColor
+	backgroundColor compat.AdaptiveColor
+	border          bool
+	borderColor     *compat.AdaptiveColor
+	borderLeft      bool
+	borderRight     bool
+	paddingTop      int
+	paddingBottom   int
+	paddingLeft     int
+	paddingRight    int
+	marginTop       int
+	marginBottom    int
 }
 
 type renderingOption func(*blockRenderer)
@@ -41,6 +42,12 @@ type renderingOption func(*blockRenderer)
 func WithTextColor(color compat.AdaptiveColor) renderingOption {
 	return func(c *blockRenderer) {
 		c.textColor = color
+	}
+}
+
+func WithBackgroundColor(color compat.AdaptiveColor) renderingOption {
+	return func(c *blockRenderer) {
+		c.backgroundColor = color
 	}
 }
 
@@ -132,14 +139,15 @@ func renderContentBlock(
 ) string {
 	t := theme.CurrentTheme()
 	renderer := &blockRenderer{
-		textColor:     t.TextMuted(),
-		border:        true,
-		borderLeft:    true,
-		borderRight:   false,
-		paddingTop:    1,
-		paddingBottom: 1,
-		paddingLeft:   2,
-		paddingRight:  2,
+		textColor:       t.TextMuted(),
+		backgroundColor: t.BackgroundPanel(),
+		border:          true,
+		borderLeft:      true,
+		borderRight:     false,
+		paddingTop:      1,
+		paddingBottom:   1,
+		paddingLeft:     2,
+		paddingRight:    2,
 	}
 	for _, option := range options {
 		option(renderer)
@@ -152,7 +160,7 @@ func renderContentBlock(
 
 	style := styles.NewStyle().
 		Foreground(renderer.textColor).
-		Background(t.BackgroundPanel()).
+		Background(renderer.backgroundColor).
 		PaddingTop(renderer.paddingTop).
 		PaddingBottom(renderer.paddingBottom).
 		PaddingLeft(renderer.paddingLeft).
@@ -211,7 +219,7 @@ func renderText(
 	switch casted := message.(type) {
 	case opencode.AssistantMessage:
 		ts = time.UnixMilli(int64(casted.Time.Created))
-		content = util.ToMarkdown(text, width, backgroundColor)
+		content = util.ToMarkdown(text, width+2, t.Background())
 	case opencode.UserMessage:
 		ts = time.UnixMilli(int64(casted.Time.Created))
 		base := styles.NewStyle().Foreground(t.Text()).Background(backgroundColor)
@@ -286,14 +294,14 @@ func renderText(
 			width,
 			WithTextColor(t.Text()),
 			WithBorderColor(t.Secondary()),
-			WithBorderRight(),
 		)
 	case opencode.AssistantMessage:
 		return renderContentBlock(
 			app,
 			content,
-			width,
-			WithBorderColor(t.Accent()),
+			width+2,
+			WithNoBorder(),
+			WithBackgroundColor(t.Background()),
 		)
 	}
 	return ""
