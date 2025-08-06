@@ -249,6 +249,42 @@ changes.
 
 ---
 
+### Undo changes
+
+Let's say you ask opencode to makes some changes.
+
+```txt frame="none"
+Can you refator the function in @packages/functions/src/api/index.ts?
+```
+
+But you realize that it is not what you wanted. You **can undo** the changes
+using the `/undo` command.
+
+```bash frame="none"
+/undo
+```
+
+opencode will now revert the changes you made and show your original message
+again.
+
+```txt frame="none"
+Can you refator the function in @packages/functions/src/api/index.ts?
+```
+
+From here you can tweak the prompt and ask opencode to try again.
+
+:::tip
+You can run `/undo` multiple times to undo multiple changes.
+:::
+
+Or you **can redo** the changes using the `/redo` command.
+
+```bash frame="none"
+/redo
+```
+
+---
+
 ## Share
 
 The conversations that you have with opencode can be [shared with your
