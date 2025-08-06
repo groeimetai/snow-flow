@@ -233,6 +233,7 @@ export namespace Config {
       theme: z.string().optional().describe("Theme name to use for the interface"),
       keybinds: Keybinds.optional().describe("Custom keybind configurations"),
       plugin: z.string().array().optional(),
+      snapshot: z.boolean().optional(),
       share: z
         .enum(["manual", "auto", "disabled"])
         .optional()
