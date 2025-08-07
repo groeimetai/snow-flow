@@ -3,75 +3,108 @@ title: Agents
 description: Configure and use specialized agents in opencode.
 ---
 
+agents allow opencode to operate different for specific tasks
+you can cycle them with tab, or @ to delegate a subtask to them
+explain built in build/plan agent
+explain how to make your own agent
+examples
+
 Agents are specialized AI assistants that can be configured for specific tasks and workflows. They allow you to create focused tools with custom prompts, models, and tool access.
 
 :::tip
 Use the plan agent to analyze code and review suggestions without making any code changes.
 :::
 
-You can switch between agents during a session or configure them in your config file.
+You can switch between agents during a session or invoke them with the `@` mention.
 
 ---
 
-## Agent Types
+## Types
 
-opencode has two types of agents:
+There are two types of agents in opencode; primary agents and subagents.
 
-### Primary Agents
+---
 
-Primary agents are the main assistants you interact with directly. You can cycle through them using the **Tab** key (or your configured `switch_agent` keybind). These agents handle your main conversation and can access all configured tools.
+### Primary agents
 
-**Built-in Primary Agents:**
+Primary agents are the main assistants you interact with directly. You can cycle through them using the **Tab** key, or your configured `switch_agent` keybind. These agents handle your main conversation and can access all configured tools.
 
-- **Build** - The default agent with all tools enabled. Standard for development work where you need full access to file operations and system commands.
-- **Plan** - A restricted agent for planning and analysis. Has `write`, `edit`, `patch`, and `bash` tools disabled by default. Useful for analyzing code and suggesting changes without making modifications.
+:::tip
+You can use the **Tab** key to switch between primary agents during a session.
+:::
+
+opencode comes with two built-in primary agents, **Build** and **Plan**. We'll
+look at these below.
+
+---
 
 ### Subagents
 
-Subagents are specialized assistants that primary agents can invoke for specific tasks. You can also manually invoke them by **@ mentioning** them in your messages (e.g., `@general help me search for this function`).
+Subagents are specialized assistants that primary agents can invoke for specific tasks. You can also manually invoke them by **@ mentioning** them in your messages.
 
-**Built-in Subagents:**
-
-- **General** - General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. Use when searching for keywords or files and you're not confident you'll find the right match in the first few tries.
+opencode comes with one built-in subagent, **General**. We'll look at this below.
 
 ---
 
-## Using Agents
+## Built-in
 
-### Switching Primary Agents
-
-Use the **Tab** key to cycle through available primary agents during a session. You can also use your configured `switch_agent` keybind.
-
-### Invoking Subagents
-
-- **Automatic**: Primary agents will automatically use subagents for specialized tasks based on their descriptions
-- **Manual**: @ mention a subagent in your message: `@general search for authentication code`
-
-See also: [Formatters](/docs/formatters) for information about code formatting configuration.
+opencode comes with two built-in primary agents and one built-in subagent.
 
 ---
 
-## Creating Agents
+### Build
 
-You can create new agents using the `opencode agent create` command. This interactive command will:
+_Mode_: `primary`
 
-1. Ask where to save the agent (global or project-specific)
-2. Prompt for a description of what the agent should do
-3. Generate an appropriate system prompt and identifier
-4. Let you select which tools the agent can access
-5. Create a markdown file with the agent configuration
+Build is the **default** primary agent with all tools enabled. This is the standard agent for development work where you need full access to file operations and system commands.
 
-```bash
-opencode agent create
-```
+---
 
-The command will guide you through the process and automatically generate a well-structured agent based on your requirements.
+### Plan
 
-## Configuration
+_Mode_: `primary`
+
+A restricted agent designed for planning and analysis. In the plan agent, the following tools are disabled by default:
+
+- `write` - Cannot create new files
+- `edit` - Cannot modify existing files
+- `patch` - Cannot apply patches
+- `bash` - Cannot execute shell commands
+
+This agent is useful when you want the LLM to analyze code, suggest changes, or create plans without making any actual modifications to your codebase.
+
+---
+
+### General
+
+_Mode_: `subagent`
+
+A general-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. Use when searching for keywords or files and you're not confident you'll find the right match in the first few tries.
+
+---
+
+## Usage
+
+1. For primary agents, use the **Tab** key to cycle through them during a session. You can also use your configured `switch_agent` keybind.
+
+2. Subagents can be invoked:
+
+   - **Automatically** by primary agents for specialized tasks based on their descriptions.
+   - Manually by **@ mentioning** a subagent in your message. For example.
+
+     ```txt frame="none"
+     @general help me search for this function
+     ```
+
+---
+
+## Configure
 
 You can customize the built-in agents or create your own through configuration. Agents can be configured in two ways:
 
-### JSON Configuration
+---
+
+### JSON
 
 Configure agents in your `opencode.json` config file:
 
@@ -112,12 +145,14 @@ Configure agents in your `opencode.json` config file:
 }
 ```
 
-### Markdown Configuration
+---
+
+### Markdown
 
 You can also define agents using markdown files. Place them in:
 
 - Global: `~/.config/opencode/agent/`
-- Project: `.opencode/agent/`
+- Per-project: `.opencode/agent/`
 
 ```markdown title="~/.config/opencode/agent/review.md"
 ---
@@ -141,31 +176,41 @@ You are in code review mode. Focus on:
 Provide constructive feedback without making direct changes.
 ```
 
-The markdown file name becomes the agent name (e.g., `review.md` creates a `review` agent).
+The markdown file name becomes the agent name. For example, `review.md` creates a `review` agent.
 
 Let's look at these configuration options in detail.
 
 ---
 
-### Model
+## Options
 
-Use the `model` config to override the default model for this agent. Useful for using different models optimized for different tasks. For example, a faster model for planning, a more capable model for implementation.
+Let's look at these configuration options in detail.
+
+---
+
+### Description
+
+Use the `description` option to provide a brief description of what the agent does and when to use it.
 
 ```json title="opencode.json"
 {
   "agent": {
-    "plan": {
-      "model": "anthropic/claude-haiku-4-20250514"
+    "review": {
+      "description": "Reviews code for best practices and potential issues"
     }
   }
 }
 ```
 
+This is a **required** config option.
+
 ---
 
 ### Temperature
 
-Control the randomness and creativity of the AI's responses with the `temperature` config. Lower values make responses more focused and deterministic, while higher values increase creativity and variability.
+Control the randomness and creativity of the LLM's responses with the `temperature` config.
+
+Lower values make responses more focused and deterministic, while higher values increase creativity and variability.
 
 ```json title="opencode.json"
 {
@@ -204,7 +249,23 @@ Temperature values typically range from 0.0 to 1.0:
 }
 ```
 
-If no temperature is specified, opencode uses model-specific defaults (typically 0 for most models, 0.55 for Qwen models).
+If no temperature is specified, opencode uses model-specific defaults; typically 0 for most models, 0.55 for Qwen models.
+
+---
+
+### Disable
+
+Set to `true` to disable the agent.
+
+```json title="opencode.json"
+{
+  "agent": {
+    "review": {
+      "disable": true
+    }
+  }
+}
+```
 
 ---
 
@@ -226,26 +287,27 @@ This path is relative to where the config file is located. So this works for bot
 
 ---
 
-## Agent Properties
+### Model
 
-### Required
+Use the `model` config to override the default model for this agent. Useful for using different models optimized for different tasks. For example, a faster model for planning, a more capable model for implementation.
 
-- **description** - Brief description of what the agent does and when to use it
+```json title="opencode.json"
+{
+  "agent": {
+    "plan": {
+      "model": "anthropic/claude-haiku-4-20250514"
+    }
+  }
+}
+```
 
-### Optional
-
-- **model** - Specific model to use (defaults to your configured model)
-- **prompt** - Custom system prompt for the agent
-- **tools** - Object specifying which tools the agent can access (true/false for each tool)
-- **temperature** - Control response randomness (0.0-1.0)
-- **mode** - Agent type: `"primary"` (can be cycled with Tab), `"subagent"` (invoked by @ mention), or `"all"` (both)
-- **disable** - Set to true to disable the agent
+---
 
 ### Tools
 
 Control which tools are available in this agent with the `tools` config. You can enable or disable specific tools by setting them to `true` or `false`.
 
-```json
+```json title="opencode.json"
 {
   "agent": {
     "readonly": {
@@ -286,104 +348,43 @@ Here are all the tools can be controlled through the agent config.
 
 ---
 
-## Tool Access
+### Mode
 
-By default, agents inherit the same tool access as the main assistant. You can restrict or enable specific tools as shown in the Tools section above.
+Control the agent's mode with the `mode` config. The `mode` option is used to determine how the agent can be used.
 
-## Agent Modes
-
-The `mode` property determines how an agent can be used:
-
-- **`"primary"`** - Can be cycled through with Tab key as your main assistant
-- **`"subagent"`** - Can be invoked by @ mentioning or automatically by primary agents
-- **`"all"`** - Can be used both as primary and subagent (default for custom agents)
-
-## Best Practices
-
-1. **Clear descriptions** - Write specific descriptions that help the main assistant know when to use each agent
-2. **Focused prompts** - Keep agent prompts focused on their specific role
-3. **Appropriate tool access** - Only give agents the tools they need for their tasks
-4. **Consistent naming** - Use descriptive, consistent names for your agents
-5. **Project-specific agents** - Use `.opencode/agent/` for project-specific workflows
-
-## Custom Agents
-
-You can create your own custom agents by adding them to the configuration. Here are examples using both approaches:
-
-### Using JSON configuration
-
-```json title="opencode.json" {4-14}
+```json title="opencode.json"
 {
-  "$schema": "https://opencode.ai/config.json",
   "agent": {
-    "docs": {
-      "prompt": "{file:./prompts/documentation.txt}",
-      "tools": {
-        "write": true,
-        "edit": true,
-        "bash": false,
-        "read": true,
-        "grep": true,
-        "glob": true
-      }
+    "review": {
+      "mode": "subagent"
     }
   }
 }
 ```
 
-### Using markdown files
+The `mode` option can be set to `primary`, `subagent`, or `all`. If no `mode` is specified, it defaults to `all`.
 
-Create agent files in `.opencode/agent/` for project-specific agents or `~/.config/opencode/agent/` for global agents:
-
-```markdown title=".opencode/agent/debug.md"
----
-temperature: 0.1
-tools:
-  bash: true
-  read: true
-  grep: true
-  write: false
-  edit: false
 ---
 
-You are in debug mode. Your primary goal is to help investigate and diagnose issues.
+## Create agents
 
-Focus on:
+You can create new agents using the following command:
 
-- Understanding the problem through careful analysis
-- Using bash commands to inspect system state
-- Reading relevant files and logs
-- Searching for patterns and anomalies
-- Providing clear explanations of findings
-
-Do not make any changes to files. Only investigate and report.
+```bash
+opencode agent create
 ```
 
-```markdown title="~/.config/opencode/agent/refactor.md"
----
-model: anthropic/claude-sonnet-4-20250514
-temperature: 0.2
-tools:
-  edit: true
-  read: true
-  grep: true
-  glob: true
----
+This interactive command will:
 
-You are in refactoring mode. Focus on improving code quality without changing functionality.
-
-Priorities:
-
-- Improve code readability and maintainability
-- Apply consistent naming conventions
-- Reduce code duplication
-- Optimize performance where appropriate
-- Ensure all tests continue to pass
-```
+1. Ask where to save the agent; global or project-specific.
+2. Description of what the agent should do.
+3. Generate an appropriate system prompt and identifier.
+4. Let you select which tools the agent can access.
+5. Finally, create a markdown file with the agent configuration.
 
 ---
 
-### Use cases
+## Use cases
 
 Here are some common use cases for different agents.
 
@@ -393,13 +394,19 @@ Here are some common use cases for different agents.
 - **Debug agent**: Focused on investigation with bash and read tools enabled
 - **Docs agent**: Documentation writing with file operations but no system commands
 
-You might also find different models are good for different use cases.
-
 ---
 
 ## Examples
 
-### Documentation Agent
+Here are some examples agents you might find useful.
+
+:::tip
+Do you have an agent you'd like to share? [Submit a PR](https://github.com/sst/opencode).
+:::
+
+---
+
+### Documentation agent
 
 ```markdown title="~/.config/opencode/agent/docs-writer.md"
 ---
@@ -419,7 +426,9 @@ Focus on:
 - User-friendly language
 ```
 
-### Security Auditor
+---
+
+### Security auditor
 
 ```markdown title="~/.config/opencode/agent/security-auditor.md"
 ---
