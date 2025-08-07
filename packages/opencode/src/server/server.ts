@@ -219,6 +219,34 @@ export namespace Server {
           return c.json(sessions)
         },
       )
+      .get(
+        "/session/:sessionID",
+        describeRoute({
+          description: "Get session",
+          operationId: "session.get",
+          responses: {
+            200: {
+              description: "Get session",
+              content: {
+                "application/json": {
+                  schema: resolver(Session.Info),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "param",
+          z.object({
+            id: z.string(),
+          }),
+        ),
+        async (c) => {
+          const sessionID = c.req.valid("param").id
+          const session = await Session.get(sessionID)
+          return c.json(session)
+        },
+      )
       .post(
         "/session",
         describeRoute({

@@ -15,6 +15,8 @@ import type {
   SessionCreateData,
   SessionCreateResponses,
   SessionCreateErrors,
+  SessionGetData,
+  SessionGetResponses,
   SessionDeleteData,
   SessionDeleteResponses,
   SessionInitData,
@@ -198,6 +200,16 @@ class Session extends _HeyApiClient {
   public create<ThrowOnError extends boolean = false>(options?: Options<SessionCreateData, ThrowOnError>) {
     return (options?.client ?? this._client).post<SessionCreateResponses, SessionCreateErrors, ThrowOnError>({
       url: "/session",
+      ...options,
+    })
+  }
+
+  /**
+   * Get session
+   */
+  public get<ThrowOnError extends boolean = false>(options: Options<SessionGetData, ThrowOnError>) {
+    return (options.client ?? this._client).get<SessionGetResponses, unknown, ThrowOnError>({
+      url: "/session/{sessionID}",
       ...options,
     })
   }

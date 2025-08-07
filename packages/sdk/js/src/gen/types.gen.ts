@@ -537,6 +537,7 @@ export type Config = {
   theme?: string
   keybinds?: KeybindsConfig
   plugin?: Array<string>
+  snapshot?: boolean
   /**
    * Control sharing behavior:'manual' allows manual sharing via commands, 'auto' enables automatic sharing, 'disabled' disables all sharing
    */
@@ -1101,6 +1102,24 @@ export type SessionCreateResponses = {
 }
 
 export type SessionCreateResponse = SessionCreateResponses[keyof SessionCreateResponses]
+
+export type SessionGetData = {
+  body?: never
+  path: {
+    sessionID: string
+  }
+  query?: never
+  url: "/session/{sessionID}"
+}
+
+export type SessionGetResponses = {
+  /**
+   * Get session
+   */
+  200: Session
+}
+
+export type SessionGetResponse = SessionGetResponses[keyof SessionGetResponses]
 
 export type SessionDeleteData = {
   body?: never
