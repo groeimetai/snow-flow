@@ -322,9 +322,9 @@ export namespace Session {
       for (const child of await children(sessionID)) {
         await remove(child.id, false)
       }
-      await unshare(sessionID).catch(() => {})
-      await Storage.remove(`session/info/${sessionID}`).catch(() => {})
-      await Storage.removeDir(`session/message/${sessionID}/`).catch(() => {})
+      await unshare(sessionID).catch(() => { })
+      await Storage.remove(`session/info/${sessionID}`).catch(() => { })
+      await Storage.removeDir(`session/message/${sessionID}/`).catch(() => { })
       state().sessions.delete(sessionID)
       state().messages.delete(sessionID)
       if (emitEvent) {
@@ -523,7 +523,7 @@ export namespace Session {
                     sessionID: input.sessionID,
                     abort: new AbortController().signal,
                     messageID: userMsg.id,
-                    metadata: async () => {},
+                    metadata: async () => { },
                   }),
                 )
                 return [
@@ -632,7 +632,7 @@ export namespace Session {
 
     // mark session as updated
     // used for session list sorting (indicates when session was most recently interacted with)
-    await update(input.sessionID, (_draft) => {})
+    await update(input.sessionID, (_draft) => { })
 
     if (isLocked(input.sessionID)) {
       return new Promise((resolve) => {
@@ -712,7 +712,7 @@ export namespace Session {
               draft.title = title.trim()
             })
         })
-        .catch(() => {})
+        .catch(() => { })
     }
 
     const agent = await Agent.get(inputAgent)
@@ -927,7 +927,7 @@ export namespace Session {
       },
       maxRetries: 3,
       activeTools: Object.keys(tools).filter((x) => x !== "invalid"),
-      maxOutputTokens: outputLimit,
+      maxOutputTokens: model.info.id.startsWith("gpt-5") ? undefined : outputLimit,
       abortSignal: abort.signal,
       stopWhen: stepCountIs(1000),
       providerOptions: {
