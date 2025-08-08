@@ -12,10 +12,12 @@
   },
   "workspaces": {
     "packages": [
+      "cloud/*",
       "packages/*",
       "packages/sdk/js"
     ],
     "catalog": {
+      "@hono/zod-validator": "0.4.2",
       "@types/node": "22.13.9",
       "@tsconfig/node22": "22.0.2",
       "ai": "5.0.0-beta.34",
@@ -24,6 +26,9 @@
       "zod": "3.25.49",
       "remeda": "2.26.0"
     }
+  },
+  "dependencies": {
+    "pulumi-stripe": "0.0.24"
   },
   "devDependencies": {
     "prettier": "3.5.3",
