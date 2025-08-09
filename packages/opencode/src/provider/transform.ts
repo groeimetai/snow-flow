@@ -81,4 +81,13 @@ export namespace ProviderTransform {
     if (modelID.toLowerCase().includes("qwen")) return 1
     return undefined
   }
+
+  export function options(_providerID: string, modelID: string) {
+    if (modelID.includes("gpt-5")) {
+      return {
+        reasoningEffort: "low",
+        textVerbosity: "low",
+      }
+    }
+  }
 }

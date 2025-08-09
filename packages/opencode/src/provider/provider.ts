@@ -97,7 +97,7 @@ export namespace Provider {
                     Array.isArray(msg.content) && msg.content.some((part: any) => part.type === "image_url"),
                 )
               }
-            } catch { }
+            } catch {}
             const headers: Record<string, string> = {
               ...init.headers,
               ...copilot.HEADERS,
@@ -283,26 +283,26 @@ export namespace Provider {
           cost:
             !model.cost && !existing?.cost
               ? {
-                input: 0,
-                output: 0,
-                cache_read: 0,
-                cache_write: 0,
-              }
+                  input: 0,
+                  output: 0,
+                  cache_read: 0,
+                  cache_write: 0,
+                }
               : {
-                cache_read: 0,
-                cache_write: 0,
-                ...existing?.cost,
-                ...model.cost,
-              },
+                  cache_read: 0,
+                  cache_write: 0,
+                  ...existing?.cost,
+                  ...model.cost,
+                },
           options: {
             ...existing?.options,
             ...model.options,
           },
           limit: model.limit ??
             existing?.limit ?? {
-            context: 0,
-            output: 0,
-          },
+              context: 0,
+              output: 0,
+            },
         }
         parsed.models[modelID] = parsedModel
       }
@@ -373,7 +373,7 @@ export namespace Provider {
       const existing = s.sdk.get(provider.id)
       if (existing) return existing
       const pkg = provider.npm ?? provider.id
-      const mod = await import(await BunProc.install(pkg, "beta"))
+      const mod = await import(await BunProc.install(pkg, "latest"))
       const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!]
       const loaded = fn({
         name: provider.id,
