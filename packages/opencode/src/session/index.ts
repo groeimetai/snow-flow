@@ -11,7 +11,6 @@ import {
   type LanguageModelUsage,
   type ProviderMetadata,
   type ModelMessage,
-  stepCountIs,
   type StreamTextResult,
 } from "ai"
 
@@ -41,6 +40,7 @@ import { mergeDeep, pipe, splitWhen } from "remeda"
 import { ToolRegistry } from "../tool/registry"
 import { Plugin } from "../plugin"
 import { Agent } from "../agent/agent"
+import { Permission } from "../permission"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -932,7 +932,18 @@ export namespace Session {
       activeTools: Object.keys(tools).filter((x) => x !== "invalid"),
       maxOutputTokens: outputLimit,
       abortSignal: abort.signal,
-      stopWhen: stepCountIs(1000),
+      stopWhen: async ({ steps }) => {
+        if (steps.length >= 1000) {
+          return true
+        }
+
+        // Check if processor flagged that we should stop
+        if (processor.getShouldStop()) {
+          return true
+        }
+
+        return false
+      },
       providerOptions: {
         [input.providerID]: {
           ...ProviderTransform.options(input.providerID, input.modelID),
@@ -983,9 +994,13 @@ export namespace Session {
   function createProcessor(assistantMsg: MessageV2.Assistant, model: ModelsDev.Model) {
     const toolcalls: Record<string, MessageV2.ToolPart> = {}
     let snapshot: string | undefined
+    let shouldStop = false
     return {
       partFromToolCall(toolCallID: string) {
         return toolcalls[toolCallID]
+      },
+      getShouldStop() {
+        return shouldStop
       },
       async process(stream: StreamTextResult<Record<string, AITool>, never>) {
         try {
@@ -1063,6 +1078,9 @@ export namespace Session {
               case "tool-error": {
                 const match = toolcalls[value.toolCallId]
                 if (match && match.state.status === "running") {
+                  if (value.error instanceof Permission.RejectedError) {
+                    shouldStop = true
+                  }
                   await updatePart({
                     ...match,
                     state: {
@@ -1079,7 +1097,6 @@ export namespace Session {
                 }
                 break
               }
-
               case "error":
                 throw value.error
 
