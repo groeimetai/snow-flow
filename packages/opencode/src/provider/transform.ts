@@ -85,7 +85,7 @@ export namespace ProviderTransform {
   export function options(_providerID: string, modelID: string) {
     if (modelID.includes("gpt-5")) {
       return {
-        reasoningEffort: "low",
+        reasoningEffort: "minimal",
         textVerbosity: "low",
       }
     }

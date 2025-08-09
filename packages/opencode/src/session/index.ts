@@ -682,6 +682,7 @@ export namespace Session {
         providerOptions: {
           [input.providerID]: {
             ...small.info.options,
+            ...ProviderTransform.options(input.providerID, small.info.id),
           },
         },
         messages: [
@@ -1012,6 +1013,15 @@ export namespace Session {
             })
             switch (value.type) {
               case "start":
+                break
+
+              case "reasoning-start":
+                break
+
+              case "reasoning-delta":
+                break
+
+              case "reasoning-end":
                 break
 
               case "tool-input-start":
