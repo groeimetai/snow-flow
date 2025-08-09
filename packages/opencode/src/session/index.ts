@@ -16,7 +16,6 @@ import {
 } from "ai"
 
 import PROMPT_INITIALIZE from "../session/prompt/initialize.txt"
-import PROMPT_PLAN from "../session/prompt/plan.txt"
 
 import { App } from "../app/app"
 import { Bus } from "../bus"
@@ -608,6 +607,7 @@ export namespace Session {
         ]
       }),
     ).then((x) => x.flat())
+    /*
     if (inputAgent === "plan")
       userParts.push({
         id: Identifier.ascending("part"),
@@ -617,6 +617,7 @@ export namespace Session {
         text: PROMPT_PLAN,
         synthetic: true,
       })
+      */
     await Plugin.trigger(
       "chat.message",
       {},
