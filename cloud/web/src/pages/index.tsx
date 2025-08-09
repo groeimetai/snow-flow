@@ -24,8 +24,11 @@ export default function Index() {
             </section>
 
             <section data-slot="cta">
-              <div data-slot="col-2">
+              <div>
                 <span onClick={() => auth.authorize({ provider: "github" })}>Sign in with GitHub</span>
+              </div>
+              <div>
+                <span onClick={() => auth.authorize({ provider: "google" })}>Sign in with Google</span>
               </div>
             </section>
           </div>
