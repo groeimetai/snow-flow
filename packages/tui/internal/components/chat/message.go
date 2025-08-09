@@ -268,7 +268,26 @@ func renderText(
 			return 0
 		})
 
+		// Merge overlapping highlights to prevent duplication
+		merged := make([]highlightPart, 0)
 		for _, part := range highlights {
+			if len(merged) == 0 {
+				merged = append(merged, part)
+				continue
+			}
+
+			last := &merged[len(merged)-1]
+			// If current part overlaps with the last one, merge them
+			if part.start <= last.end {
+				if part.end > last.end {
+					last.end = part.end
+				}
+			} else {
+				merged = append(merged, part)
+			}
+		}
+
+		for _, part := range merged {
 			highlight := base.Foreground(part.color)
 			start, end := part.start, part.end
 
