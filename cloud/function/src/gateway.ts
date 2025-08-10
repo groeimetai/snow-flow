@@ -4,7 +4,7 @@ import { cors } from "hono/cors"
 import { HTTPException } from "hono/http-exception"
 import { zValidator } from "@hono/zod-validator"
 import { Resource } from "sst"
-import { type ProviderMetadata, type LanguageModelUsage, generateText, streamText, Tool } from "ai"
+import { type ProviderMetadata, type LanguageModelUsage, generateText, streamText } from "ai"
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { createOpenAI } from "@ai-sdk/openai"
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible"
@@ -189,8 +189,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
       return body.stream ? await handleStream() : await handleGenerate()
 
       async function handleStream() {
-        const result = streamText({
-          model,
+        const result = await model.doStream({
           ...requestBody,
         })
 
@@ -201,7 +200,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
             const created = Math.floor(Date.now() / 1000)
 
             try {
-              for await (const chunk of result.fullStream) {
+              for await (const chunk of result.stream) {
                 console.log("!!! CHUNK !!! : " + chunk.type)
                 switch (chunk.type) {
                   case "text-delta": {
@@ -214,7 +213,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
                         {
                           index: 0,
                           delta: {
-                            content: chunk.text,
+                            content: chunk.delta,
                           },
                           finish_reason: null,
                         },
@@ -234,7 +233,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
                         {
                           index: 0,
                           delta: {
-                            reasoning_content: chunk.text,
+                            reasoning_content: chunk.delta,
                           },
                           finish_reason: null,
                         },
@@ -256,11 +255,12 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
                           delta: {
                             tool_calls: [
                               {
+                                index: 0,
                                 id: chunk.toolCallId,
                                 type: "function",
                                 function: {
                                   name: chunk.toolName,
-                                  arguments: JSON.stringify(chunk.input),
+                                  arguments: chunk.input,
                                 },
                               },
                             ],
@@ -287,7 +287,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
                         },
                       ],
                       error: {
-                        message: typeof chunk.error === "string" ? chunk.error : JSON.stringify(chunk.error),
+                        message: typeof chunk.error === "string" ? chunk.error : chunk.error,
                         type: "server_error",
                       },
                     }
@@ -320,30 +320,26 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
                         },
                       ],
                       usage: {
-                        prompt_tokens: chunk.totalUsage.inputTokens,
-                        completion_tokens: chunk.totalUsage.outputTokens,
-                        total_tokens: chunk.totalUsage.totalTokens,
+                        prompt_tokens: chunk.usage.inputTokens,
+                        completion_tokens: chunk.usage.outputTokens,
+                        total_tokens: chunk.usage.totalTokens,
                         completion_tokens_details: {
-                          reasoning_tokens: chunk.totalUsage.reasoningTokens,
+                          reasoning_tokens: chunk.usage.reasoningTokens,
                         },
                         prompt_tokens_details: {
-                          cached_tokens: chunk.totalUsage.cachedInputTokens,
+                          cached_tokens: chunk.usage.cachedInputTokens,
                         },
                       },
                     }
+                    await trackUsage(body.model, chunk.usage, chunk.providerMetadata)
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
                     controller.enqueue(encoder.encode("data: [DONE]\n\n"))
                     controller.close()
                     break
                   }
 
-                  case "finish-step": {
-                    await trackUsage(body.model, chunk.usage, chunk.providerMetadata)
-                  }
-
                   //case "stream-start":
                   //case "response-metadata":
-                  case "start-step":
                   case "text-start":
                   case "text-end":
                   case "reasoning-start":
@@ -374,8 +370,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
       }
 
       async function handleGenerate() {
-        const response = await generateText({
-          model,
+        const response = await model.doGenerate({
           ...requestBody,
         })
         await trackUsage(body.model, response.usage, response.providerMetadata)
@@ -450,20 +445,20 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
             : undefined,
           stopSequences: (typeof body.stop === "string" ? [body.stop] : body.stop) ?? undefined,
           responseFormat: (() => {
-            if (!body.response_format) return { type: "text" }
+            if (!body.response_format) return { type: "text" as const }
             if (body.response_format.type === "json_schema")
               return {
-                type: "json",
+                type: "json" as const,
                 schema: body.response_format.json_schema.schema,
                 name: body.response_format.json_schema.name,
                 description: body.response_format.json_schema.description,
               }
-            if (body.response_format.type === "json_object") return { type: "json" }
+            if (body.response_format.type === "json_object") return { type: "json" as const }
             throw new Error("Unsupported response format")
           })(),
           seed: body.seed ?? undefined,
-          //tools: tools.tools,
-          //toolChoice: tools.toolChoice,
+          tools: tools.tools,
+          toolChoice: tools.toolChoice,
         }
 
         function transformTools() {
@@ -473,27 +468,24 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
             return { tools: undefined, toolChoice: undefined }
           }
 
-          const aiSdkTools = tools.reduce(
-            (acc, tool) => {
-              acc[tool.function.name] = {
-                name: tool.function.name,
-                description: tool.function.description,
-                inputSchema: tool.function.parameters,
-              }
-              return acc
-            },
-            {} as Record<string, any>,
-          )
+          const aiSdkTools = tools.map((tool) => {
+            return {
+              type: tool.type,
+              name: tool.function.name,
+              description: tool.function.description,
+              inputSchema: tool.function.parameters!,
+            }
+          })
 
           let aiSdkToolChoice
           if (tool_choice == null) {
             aiSdkToolChoice = undefined
           } else if (tool_choice === "auto") {
-            aiSdkToolChoice = "auto" as const
+            aiSdkToolChoice = { type: "auto" as const }
           } else if (tool_choice === "none") {
-            aiSdkToolChoice = "none" as const
+            aiSdkToolChoice = { type: "none" as const }
           } else if (tool_choice === "required") {
-            aiSdkToolChoice = "required" as const
+            aiSdkToolChoice = { type: "required" as const }
           } else if (tool_choice.type === "function") {
             aiSdkToolChoice = {
               type: "tool" as const,
