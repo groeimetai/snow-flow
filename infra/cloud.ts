@@ -2,6 +2,50 @@ import { WebhookEndpoint } from "pulumi-stripe"
 import { domain } from "./stage"
 import { web } from "./app"
 
+////////////////
+// DATABASE
+////////////////
+
+const DATABASE_USERNAME = new sst.Secret("DATABASE_USERNAME")
+const DATABASE_PASSWORD = new sst.Secret("DATABASE_PASSWORD")
+export const database = new sst.Linkable("Database", {
+  properties: {
+    host: "aws-us-east-2-1.pg.psdb.cloud",
+    database: "postgres",
+    username: DATABASE_USERNAME.value,
+    password: DATABASE_PASSWORD.value,
+    port: 5432,
+  },
+})
+
+new sst.x.DevCommand("Studio", {
+  link: [database],
+  dev: {
+    command: "bun db studio",
+    directory: "cloud/core",
+    autostart: true,
+  },
+})
+
+////////////////
+// AUTH
+////////////////
+
+const GITHUB_CLIENT_ID_CONSOLE = new sst.Secret("GITHUB_CLIENT_ID_CONSOLE")
+const GITHUB_CLIENT_SECRET_CONSOLE = new sst.Secret("GITHUB_CLIENT_SECRET_CONSOLE")
+const GOOGLE_CLIENT_ID = new sst.Secret("GOOGLE_CLIENT_ID")
+const authStorage = new sst.cloudflare.Kv("AuthStorage")
+export const auth = new sst.cloudflare.Worker("AuthApi", {
+  domain: `auth.${domain}`,
+  handler: "cloud/function/src/auth.ts",
+  url: true,
+  link: [database, authStorage, GITHUB_CLIENT_ID_CONSOLE, GITHUB_CLIENT_SECRET_CONSOLE, GOOGLE_CLIENT_ID],
+})
+
+////////////////
+// GATEWAY
+////////////////
+
 export const stripeWebhook = new WebhookEndpoint("StripeWebhook", {
   url: $interpolate`https://api.gateway.${domain}/stripe/webhook`,
   enabledEvents: [
@@ -33,42 +77,9 @@ export const stripeWebhook = new WebhookEndpoint("StripeWebhook", {
   ],
 })
 
-const DATABASE_USERNAME = new sst.Secret("DATABASE_USERNAME")
-const DATABASE_PASSWORD = new sst.Secret("DATABASE_PASSWORD")
-export const database = new sst.Linkable("Database", {
-  properties: {
-    host: "aws-us-east-2-1.pg.psdb.cloud",
-    database: "postgres",
-    username: DATABASE_USERNAME.value,
-    password: DATABASE_PASSWORD.value,
-    port: 5432,
-  },
-})
-
-new sst.x.DevCommand("Studio", {
-  link: [database],
-  dev: {
-    command: "bun db studio",
-    directory: "cloud/core",
-    autostart: true,
-  },
-})
-
-const GITHUB_CLIENT_ID_CONSOLE = new sst.Secret("GITHUB_CLIENT_ID_CONSOLE")
-const GITHUB_CLIENT_SECRET_CONSOLE = new sst.Secret("GITHUB_CLIENT_SECRET_CONSOLE")
-const GOOGLE_CLIENT_ID = new sst.Secret("GOOGLE_CLIENT_ID")
-const authStorage = new sst.cloudflare.Kv("AuthStorage")
-export const auth = new sst.cloudflare.Worker("AuthApi", {
-  domain: `auth.${domain}`,
-  handler: "cloud/function/src/auth.ts",
-  url: true,
-  link: [database, authStorage, GITHUB_CLIENT_ID_CONSOLE, GITHUB_CLIENT_SECRET_CONSOLE, GOOGLE_CLIENT_ID],
-})
-
 const ANTHROPIC_API_KEY = new sst.Secret("ANTHROPIC_API_KEY")
 const OPENAI_API_KEY = new sst.Secret("OPENAI_API_KEY")
 const ZHIPU_API_KEY = new sst.Secret("ZHIPU_API_KEY")
-
 const STRIPE_SECRET_KEY = new sst.Secret("STRIPE_SECRET_KEY")
 const AUTH_API_URL = new sst.Linkable("AUTH_API_URL", {
   properties: { value: auth.url.apply((url) => url!) },
@@ -90,6 +101,10 @@ export const gateway = new sst.cloudflare.Worker("GatewayApi", {
     ZHIPU_API_KEY,
   ],
 })
+
+////////////////
+// CONSOLE
+////////////////
 
 export const console = new sst.cloudflare.x.StaticSite("Console", {
   domain: `console.${domain}`,
