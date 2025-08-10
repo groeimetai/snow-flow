@@ -4,11 +4,11 @@ import { cors } from "hono/cors"
 import { HTTPException } from "hono/http-exception"
 import { zValidator } from "@hono/zod-validator"
 import { Resource } from "sst"
-import { generateText, streamText } from "ai"
+import { type ProviderMetadata, type LanguageModelUsage, generateText, streamText, Tool } from "ai"
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { createOpenAI } from "@ai-sdk/openai"
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible"
-import type { LanguageModelV2Usage, LanguageModelV2Prompt } from "@ai-sdk/provider"
+import type { LanguageModelV2Prompt } from "@ai-sdk/provider"
 import { type ChatCompletionCreateParamsBase } from "openai/resources/chat/completions"
 import { Actor } from "@opencode/cloud-core/actor.js"
 import { and, Database, eq, sql } from "@opencode/cloud-core/drizzle/index.js"
@@ -181,8 +181,6 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
     try {
       const body = await c.req.json<ChatCompletionCreateParamsBase>()
 
-      console.log(body)
-
       const model = SUPPORTED_MODELS[body.model as keyof typeof SUPPORTED_MODELS]?.model()
       if (!model) throw new Error(`Unsupported model: ${body.model}`)
 
@@ -191,7 +189,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
       return body.stream ? await handleStream() : await handleGenerate()
 
       async function handleStream() {
-        const result = await streamText({
+        const result = streamText({
           model,
           ...requestBody,
         })
@@ -204,8 +202,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
 
             try {
               for await (const chunk of result.fullStream) {
-                // TODO
-                //console.log("!!! CHUCK !!!", chunk);
+                console.log("!!! CHUNK !!! : " + chunk.type)
                 switch (chunk.type) {
                   case "text-delta": {
                     const data = {
@@ -282,8 +279,15 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
                       object: "chat.completion.chunk",
                       created,
                       model: body.model,
+                      choices: [
+                        {
+                          index: 0,
+                          delta: {},
+                          finish_reason: "stop",
+                        },
+                      ],
                       error: {
-                        message: chunk.error,
+                        message: typeof chunk.error === "string" ? chunk.error : JSON.stringify(chunk.error),
                         type: "server_error",
                       },
                     }
@@ -294,17 +298,6 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
                   }
 
                   case "finish": {
-                    const finishReason =
-                      {
-                        stop: "stop",
-                        length: "length",
-                        "content-filter": "content_filter",
-                        "tool-calls": "tool_calls",
-                        error: "stop",
-                        other: "stop",
-                        unknown: "stop",
-                      }[chunk.finishReason] || "stop"
-
                     const data = {
                       id,
                       object: "chat.completion.chunk",
@@ -314,7 +307,16 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
                         {
                           index: 0,
                           delta: {},
-                          finish_reason: finishReason,
+                          finish_reason:
+                            {
+                              stop: "stop",
+                              length: "length",
+                              "content-filter": "content_filter",
+                              "tool-calls": "tool_calls",
+                              error: "stop",
+                              other: "stop",
+                              unknown: "stop",
+                            }[chunk.finishReason] || "stop",
                         },
                       ],
                       usage: {
@@ -335,10 +337,13 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
                     break
                   }
 
+                  case "finish-step": {
+                    await trackUsage(body.model, chunk.usage, chunk.providerMetadata)
+                  }
+
                   //case "stream-start":
                   //case "response-metadata":
                   case "start-step":
-                  case "finish-step":
                   case "text-start":
                   case "text-end":
                   case "reasoning-start":
@@ -373,7 +378,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
           model,
           ...requestBody,
         })
-        await trackUsage(body.model, response.usage)
+        await trackUsage(body.model, response.usage, response.providerMetadata)
         return c.json({
           id: `chatcmpl-${Date.now()}`,
           object: "chat.completion" as const,
@@ -427,6 +432,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
 
       function transformOpenAIRequestToAiSDK() {
         const prompt = transformMessages()
+        const tools = transformTools()
 
         return {
           prompt,
@@ -456,6 +462,8 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
             throw new Error("Unsupported response format")
           })(),
           seed: body.seed ?? undefined,
+          //tools: tools.tools,
+          //toolChoice: tools.toolChoice,
         }
 
         function transformTools() {
@@ -468,7 +476,6 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
           const aiSdkTools = tools.reduce(
             (acc, tool) => {
               acc[tool.function.name] = {
-                type: "function" as const,
                 name: tool.function.name,
                 description: tool.function.description,
                 inputSchema: tool.function.parameters,
@@ -482,14 +489,14 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
           if (tool_choice == null) {
             aiSdkToolChoice = undefined
           } else if (tool_choice === "auto") {
-            aiSdkToolChoice = "auto"
+            aiSdkToolChoice = "auto" as const
           } else if (tool_choice === "none") {
-            aiSdkToolChoice = "none"
+            aiSdkToolChoice = "none" as const
           } else if (tool_choice === "required") {
-            aiSdkToolChoice = "required"
+            aiSdkToolChoice = "required" as const
           } else if (tool_choice.type === "function") {
             aiSdkToolChoice = {
-              type: "tool",
+              type: "tool" as const,
               toolName: tool_choice.function.name,
             }
           }
@@ -604,30 +611,39 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
         }
       }
 
-      async function trackUsage(model: string, usage: LanguageModelV2Usage) {
+      async function trackUsage(model: string, usage: LanguageModelUsage, providerMetadata?: ProviderMetadata) {
         const keyRecord = c.get("keyRecord")
         if (!keyRecord) return
 
         const modelData = SUPPORTED_MODELS[model as keyof typeof SUPPORTED_MODELS]
         if (!modelData) throw new Error(`Unsupported model: ${model}`)
 
-        const inputCost = modelData.input * (usage.inputTokens ?? 0)
-        const outputCost = modelData.output * (usage.outputTokens ?? 0)
-        const reasoningCost = modelData.reasoning * (usage.reasoningTokens ?? 0)
-        const cacheReadCost = modelData.cacheRead * (usage.cachedInputTokens ?? 0)
-        const cacheWriteCost = modelData.cacheWrite * (usage.outputTokens ?? 0)
+        const inputTokens = usage.inputTokens ?? 0
+        const outputTokens = usage.outputTokens ?? 0
+        const reasoningTokens = usage.reasoningTokens ?? 0
+        const cacheReadTokens = usage.cachedInputTokens ?? 0
+        const cacheWriteTokens =
+          providerMetadata?.["anthropic"]?.["cacheCreationInputTokens"] ??
+          // @ts-expect-error
+          providerMetadata?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"] ??
+          0
 
-        const totalCost = inputCost + outputCost + reasoningCost + cacheReadCost + cacheWriteCost
+        const inputCost = modelData.input * inputTokens
+        const outputCost = modelData.output * outputTokens
+        const reasoningCost = modelData.reasoning * reasoningTokens
+        const cacheReadCost = modelData.cacheRead * cacheReadTokens
+        const cacheWriteCost = modelData.cacheWrite * cacheWriteTokens
+        const costInCents = (inputCost + outputCost + reasoningCost + cacheReadCost + cacheWriteCost) * 100
 
         await Actor.provide("system", { workspaceID: keyRecord.workspaceID }, async () => {
           await Billing.consume({
             model,
-            inputTokens: usage.inputTokens ?? 0,
-            outputTokens: usage.outputTokens ?? 0,
-            reasoningTokens: usage.reasoningTokens ?? 0,
-            cacheReadTokens: usage.cachedInputTokens ?? 0,
-            cacheWriteTokens: usage.outputTokens ?? 0,
-            costInCents: totalCost * 100,
+            inputTokens,
+            outputTokens,
+            reasoningTokens,
+            cacheReadTokens,
+            cacheWriteTokens,
+            costInCents,
           })
         })
 
@@ -699,7 +715,7 @@ const app = new Hono<{ Bindings: Env; Variables: { keyRecord?: { id: string; wor
             price_data: {
               currency: "usd",
               product_data: {
-                name: "OpenControl credits",
+                name: "opencode credits",
               },
               unit_amount: 2000, // $20 minimum
             },
