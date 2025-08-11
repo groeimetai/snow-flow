@@ -852,20 +852,24 @@ export namespace Session {
       tools[key] = item
     }
 
-    const params = {
-      temperature: model.info.temperature
-        ? (agent.temperature ?? ProviderTransform.temperature(input.providerID, input.modelID))
-        : undefined,
-      topP: agent.topP ?? ProviderTransform.topP(input.providerID, input.modelID),
-    }
-    await Plugin.trigger(
+    const params = await Plugin.trigger(
       "chat.params",
       {
         model: model.info,
         provider: await Provider.getProvider(input.providerID),
         message: userMsg,
       },
-      params,
+      {
+        temperature: model.info.temperature
+          ? (agent.temperature ?? ProviderTransform.temperature(input.providerID, input.modelID))
+          : undefined,
+        topP: agent.topP ?? ProviderTransform.topP(input.providerID, input.modelID),
+        options: {
+          ...ProviderTransform.options(input.providerID, input.modelID),
+          ...model.info.options,
+          ...agent.options,
+        },
+      },
     )
     const stream = streamText({
       onError(e) {
@@ -946,10 +950,7 @@ export namespace Session {
         return false
       },
       providerOptions: {
-        [input.providerID]: {
-          ...ProviderTransform.options(input.providerID, input.modelID),
-          ...model.info.options,
-        },
+        [input.providerID]: params.options,
       },
       temperature: params.temperature,
       topP: params.topP,
