@@ -289,6 +289,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 		for _, message := range m.app.Messages {
 			var content string
 			var cached bool
+			error := ""
 
 			switch casted := message.Info.(type) {
 			case opencode.UserMessage:
@@ -589,7 +590,19 @@ func (m *messagesComponent) renderView() tea.Cmd {
 					}
 				}
 
-				if !hasContent {
+				switch err := casted.Error.AsUnion().(type) {
+				case nil:
+				case opencode.AssistantMessageErrorMessageOutputLengthError:
+					error = "Message output length exceeded"
+				case opencode.ProviderAuthError:
+					error = err.Data.Message
+				case opencode.MessageAbortedError:
+					error = "Request was aborted"
+				case opencode.UnknownError:
+					error = err.Data.Message
+				}
+
+				if !hasContent && error == "" && !reverted {
 					content = renderText(
 						m.app,
 						message.Info,
@@ -611,21 +624,6 @@ func (m *messagesComponent) renderView() tea.Cmd {
 					partCount++
 					lineCount += lipgloss.Height(content) + 1
 					blocks = append(blocks, content)
-				}
-			}
-
-			error := ""
-			if assistant, ok := message.Info.(opencode.AssistantMessage); ok {
-				switch err := assistant.Error.AsUnion().(type) {
-				case nil:
-				case opencode.AssistantMessageErrorMessageOutputLengthError:
-					error = "Message output length exceeded"
-				case opencode.ProviderAuthError:
-					error = err.Data.Message
-				case opencode.MessageAbortedError:
-					error = "Request was aborted"
-				case opencode.UnknownError:
-					error = err.Data.Message
 				}
 			}
 
