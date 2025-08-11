@@ -87,7 +87,22 @@ export namespace ProviderTransform {
       return {
         reasoningEffort: "minimal",
         textVerbosity: "low",
+        // reasoningSummary: "auto",
+        // include: ["reasoning.encrypted_content"],
       }
     }
+    // if (modelID.includes("claude")) {
+    //   return {
+    //     thinking: {
+    //       type: "enabled",
+    //       budgetTokens: 32000,
+    //     },
+    //   }
+    // }
+    // if (_providerID === "bedrock") {
+    //   return {
+    //     reasoningConfig: { type: "enabled", budgetTokens: 32000 },
+    //   }
+    // }
   }
 }

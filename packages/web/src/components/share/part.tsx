@@ -19,7 +19,7 @@ import {
   IconMagnifyingGlass,
   IconDocumentMagnifyingGlass,
 } from "../icons"
-import { IconMeta, IconRobot, IconOpenAI, IconGemini, IconAnthropic } from "../icons/custom"
+import { IconMeta, IconRobot, IconOpenAI, IconGemini, IconAnthropic, IconBrain } from "../icons/custom"
 import { ContentCode } from "./content-code"
 import { ContentDiff } from "./content-diff"
 import { ContentText } from "./content-text"
@@ -82,6 +82,9 @@ export function Part(props: PartProps) {
                 when={props.part.type === "step-start" && props.message.role === "assistant" && props.message.modelID}
               >
                 {(model) => <ProviderIcon model={model()} size={18} />}
+              </Match>
+              <Match when={props.part.type === "reasoning" && props.message.role === "assistant"}>
+                <IconBrain width={18} height={18} />
               </Match>
               <Match when={props.part.type === "tool" && props.part.tool === "todowrite"}>
                 <IconQueueList width={18} height={18} />
@@ -155,6 +158,13 @@ export function Part(props: PartProps) {
                 )}
               </Footer>
             )}
+          </div>
+        )}
+        {props.message.role === "assistant" && props.part.type === "reasoning" && (
+          <div data-component="assistant-reasoning">
+            <div data-component="assistant-reasoning-markdown">
+              <ContentMarkdown expand={props.last} text={props.part.text || "Thinking..."} />
+            </div>
           </div>
         )}
         {props.message.role === "user" && props.part.type === "file" && (

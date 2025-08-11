@@ -423,6 +423,8 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					switch casted := p.(type) {
 					case opencode.TextPart:
 						return casted.ID == msg.Properties.Part.ID
+					case opencode.ReasoningPart:
+						return casted.ID == msg.Properties.Part.ID
 					case opencode.FilePart:
 						return casted.ID == msg.Properties.Part.ID
 					case opencode.ToolPart:
@@ -460,6 +462,8 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				partIndex := slices.IndexFunc(message.Parts, func(p opencode.PartUnion) bool {
 					switch casted := p.(type) {
 					case opencode.TextPart:
+						return casted.ID == msg.Properties.PartID
+					case opencode.ReasoningPart:
 						return casted.ID == msg.Properties.PartID
 					case opencode.FilePart:
 						return casted.ID == msg.Properties.PartID

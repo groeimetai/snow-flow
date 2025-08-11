@@ -208,6 +208,7 @@ func renderText(
 	showToolDetails bool,
 	width int,
 	extra string,
+	isThinking bool,
 	fileParts []opencode.FilePart,
 	agentParts []opencode.AgentPart,
 	toolCalls ...opencode.ToolPart,
@@ -219,8 +220,15 @@ func renderText(
 	var content string
 	switch casted := message.(type) {
 	case opencode.AssistantMessage:
+		bg := t.Background()
+		if isThinking {
+			bg = t.BackgroundPanel()
+		}
 		ts = time.UnixMilli(int64(casted.Time.Created))
-		content = util.ToMarkdown(text, width, t.Background())
+		content = util.ToMarkdown(text, width, bg)
+		if isThinking {
+			content = styles.NewStyle().Background(bg).Foreground(t.TextMuted()).Render("Thinking") + "\n\n" + content
+		}
 	case opencode.UserMessage:
 		ts = time.UnixMilli(int64(casted.Time.Created))
 		base := styles.NewStyle().Foreground(t.Text()).Background(backgroundColor)
@@ -385,6 +393,16 @@ func renderText(
 			WithBorderColor(t.Secondary()),
 		)
 	case opencode.AssistantMessage:
+		if isThinking {
+			return renderContentBlock(
+				app,
+				content,
+				width,
+				WithTextColor(t.Text()),
+				WithBackgroundColor(t.BackgroundPanel()),
+				WithBorderColor(t.BackgroundPanel()),
+			)
+		}
 		return renderContentBlock(
 			app,
 			content,

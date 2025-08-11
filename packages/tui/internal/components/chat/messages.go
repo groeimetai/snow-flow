@@ -369,6 +369,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 								m.showToolDetails,
 								width,
 								files,
+								false,
 								fileParts,
 								agentParts,
 							)
@@ -448,6 +449,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 									m.showToolDetails,
 									width,
 									"",
+									false,
 									[]opencode.FilePart{},
 									[]opencode.AgentPart{},
 									toolCallParts...,
@@ -469,6 +471,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 								m.showToolDetails,
 								width,
 								"",
+								false,
 								[]opencode.FilePart{},
 								[]opencode.AgentPart{},
 								toolCallParts...,
@@ -546,6 +549,35 @@ func (m *messagesComponent) renderView() tea.Cmd {
 							lineCount += lipgloss.Height(content) + 1
 							blocks = append(blocks, content)
 						}
+					case opencode.ReasoningPart:
+						if reverted {
+							continue
+						}
+						text := "..."
+						if part.Text != "" {
+							text = part.Text
+						}
+						content = renderText(
+							m.app,
+							message.Info,
+							text,
+							casted.ModelID,
+							m.showToolDetails,
+							width,
+							"",
+							true,
+							[]opencode.FilePart{},
+							[]opencode.AgentPart{},
+						)
+						content = lipgloss.PlaceHorizontal(
+							m.width,
+							lipgloss.Center,
+							content,
+							styles.WhitespaceStyle(t.Background()),
+						)
+						partCount++
+						lineCount += lipgloss.Height(content) + 1
+						blocks = append(blocks, content)
 					}
 				}
 			}
