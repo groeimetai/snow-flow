@@ -1,4 +1,6 @@
 ---
+model: openai/gpt-5
+reasoningEffort: medium
 description: ALWAYS use this when writing docs
 ---
 
