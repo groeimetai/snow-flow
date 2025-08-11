@@ -61,7 +61,7 @@ export default function Share(props: {
   const [store, setStore] = createStore<{
     info?: Session.Info
     messages: Record<string, MessageWithParts>
-  }>({ info: props.info, messages: mapValues(props.messages, (x: any) => ("metadata" in x ? fromV1(x) : x)) })
+  }>({ info: props.info, messages: {} })
   const messages = createMemo(() => Object.values(store.messages).toSorted((a, b) => a.id?.localeCompare(b.id)))
   const [connectionStatus, setConnectionStatus] = createSignal<[Status, string?]>(["disconnected", "Disconnected"])
   // createEffect(() => {
