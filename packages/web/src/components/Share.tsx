@@ -1,6 +1,6 @@
-import { For, Show, onMount, Suspense, onCleanup, createMemo, createSignal, SuspenseList, createEffect } from "solid-js"
+import { For, Show, onMount, Suspense, onCleanup, createMemo, createSignal, SuspenseList } from "solid-js"
 import { DateTime } from "luxon"
-import { createStore, reconcile, unwrap } from "solid-js/store"
+import { createStore, reconcile } from "solid-js/store"
 import { mapValues } from "remeda"
 import { IconArrowDown } from "./icons"
 import { IconOpencode } from "./icons/custom"
@@ -62,7 +62,9 @@ export default function Share(props: {
     info?: Session.Info
     messages: Record<string, MessageWithParts>
   }>({ info: props.info, messages: mapValues(props.messages, (x: any) => ("metadata" in x ? fromV1(x) : x)) })
-  const messages = createMemo(() => Object.values(store.messages).toSorted((a, b) => a.id?.localeCompare(b.id)))
+  const messages = createMemo(() =>
+    Object.values(store.messages).toSorted((a, b) => (a.id || "").localeCompare(b.id || "")),
+  )
   const [connectionStatus, setConnectionStatus] = createSignal<[Status, string?]>(["disconnected", "Disconnected"])
   // createEffect(() => {
   //   console.log(unwrap(store))
@@ -508,6 +510,7 @@ export function fromV1(v1: Message.Info): MessageWithParts {
       },
       modelID: v1.metadata.assistant!.modelID,
       providerID: v1.metadata.assistant!.providerID,
+      mode: "build",
       system: v1.metadata.assistant!.system,
       error: v1.metadata.error,
       parts: v1.parts.flatMap((part, index): MessageV2.Part[] => {
