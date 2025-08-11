@@ -23,17 +23,14 @@ export type Event =
       type: "storage.write"
     } & EventStorageWrite)
   | ({
-      type: "file.edited"
-    } & EventFileEdited)
-  | ({
-      type: "server.connected"
-    } & EventServerConnected)
-  | ({
       type: "permission.updated"
     } & EventPermissionUpdated)
   | ({
       type: "permission.replied"
     } & EventPermissionReplied)
+  | ({
+      type: "file.edited"
+    } & EventFileEdited)
   | ({
       type: "session.updated"
     } & EventSessionUpdated)
@@ -46,6 +43,9 @@ export type Event =
   | ({
       type: "session.error"
     } & EventSessionError)
+  | ({
+      type: "server.connected"
+    } & EventServerConnected)
   | ({
       type: "file.watcher.updated"
     } & EventFileWatcherUpdated)
@@ -183,6 +183,9 @@ export type Part =
       type: "text"
     } & TextPart)
   | ({
+      type: "reasoning"
+    } & ReasoningPart)
+  | ({
       type: "file"
     } & FilePart)
   | ({
@@ -212,6 +215,21 @@ export type TextPart = {
   text: string
   synthetic?: boolean
   time?: {
+    start: number
+    end?: number
+  }
+}
+
+export type ReasoningPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: string
+  text: string
+  metadata?: {
+    [key: string]: unknown
+  }
+  time: {
     start: number
     end?: number
   }
@@ -407,20 +425,6 @@ export type EventStorageWrite = {
   }
 }
 
-export type EventFileEdited = {
-  type: string
-  properties: {
-    file: string
-  }
-}
-
-export type EventServerConnected = {
-  type: string
-  properties: {
-    [key: string]: unknown
-  }
-}
-
 export type EventPermissionUpdated = {
   type: string
   properties: Permission
@@ -448,6 +452,13 @@ export type EventPermissionReplied = {
     sessionID: string
     permissionID: string
     response: string
+  }
+}
+
+export type EventFileEdited = {
+  type: string
+  properties: {
+    file: string
   }
 }
 
@@ -509,6 +520,13 @@ export type EventSessionError = {
       | ({
           name: "MessageAbortedError"
         } & MessageAbortedError)
+  }
+}
+
+export type EventServerConnected = {
+  type: string
+  properties: {
+    [key: string]: unknown
   }
 }
 
@@ -691,6 +709,7 @@ export type Config = {
       | {
           [key: string]: string
         }
+    webfetch?: string
   }
   experimental?: {
     hook?: {
@@ -888,6 +907,12 @@ export type AgentConfig = {
    * Description of when to use the agent
    */
   description?: string
+  /**
+   * Additional model options passed through to provider
+   */
+  options?: {
+    [key: string]: unknown
+  }
   mode?: string
 }
 
@@ -1028,6 +1053,9 @@ export type Agent = {
   mode: string
   topP?: number
   temperature?: number
+  options: {
+    [key: string]: unknown
+  }
   model?: {
     modelID: string
     providerID: string
