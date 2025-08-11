@@ -1,6 +1,6 @@
 ---
 title: Agents
-description: Configure and use specialized agents in opencode.
+description: Configure and use specialized agents.
 ---
 
 Agents are specialized AI assistants that can be configured for specific tasks and workflows. They allow you to create focused tools with custom prompts, models, and tool access.
@@ -360,25 +360,13 @@ The `mode` option can be set to `primary`, `subagent`, or `all`. If no `mode` is
 
 ---
 
-### Additional options
+### Additional
 
-Any other options you specify in your agent configuration will be passed through directly to the provider as model options. This allows you to use provider-specific features and parameters.
-
-```json title="opencode.json"
-{
-  "agent": {
-    "reasoning": {
-      "model": "openai/gpt-5-turbo",
-      "reasoningEffort": "high",
-      "textVerbosity": "medium"
-    }
-  }
-}
-```
+Any other options you specify in your agent configuration will be **passed through directly** to the provider as model options. This allows you to use provider-specific features and parameters.
 
 For example, with OpenAI's reasoning models, you can control the reasoning effort:
 
-```json title="opencode.json"
+```json title="opencode.json" {6,7}
 {
   "agent": {
     "deep-thinker": {
