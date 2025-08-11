@@ -356,8 +356,7 @@ export default function Share(props: {
                       <For each={filteredParts()}>
                         {(part, partIndex) => {
                           const last = createMemo(
-                            () =>
-                              data().messages.length === msgIndex() + 1 && filteredParts().length === partIndex() + 1,
+                            () => messages().length === msgIndex() + 1 && filteredParts().length === partIndex() + 1,
                           )
 
                           onMount(() => {
