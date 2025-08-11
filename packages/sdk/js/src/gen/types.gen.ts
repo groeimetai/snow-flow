@@ -627,7 +627,7 @@ export type Config = {
       env?: Array<string>
       id?: string
       npm?: string
-      models: {
+      models?: {
         [key: string]: {
           id?: string
           name?: string
