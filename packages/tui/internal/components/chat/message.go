@@ -225,6 +225,9 @@ func renderText(
 			bg = t.BackgroundPanel()
 		}
 		ts = time.UnixMilli(int64(casted.Time.Created))
+		if casted.Time.Completed > 0 {
+			ts = time.UnixMilli(int64(casted.Time.Completed))
+		}
 		content = util.ToMarkdown(text, width, bg)
 		if isThinking {
 			content = styles.NewStyle().Background(bg).Foreground(t.TextMuted()).Render("Thinking") + "\n\n" + content
@@ -333,7 +336,7 @@ func renderText(
 		timestamp = timestamp[12:]
 	}
 
-	// Check if this is an assistant message with mode (agent) information
+	// Check if this is an assistant message with agent information
 	var modelAndAgentSuffix string
 	if assistantMsg, ok := message.(opencode.AssistantMessage); ok && assistantMsg.Mode != "" {
 		// Find the agent index by name to get the correct color
@@ -349,17 +352,15 @@ func renderText(
 		agentColor := util.GetAgentColor(agentIndex)
 
 		// Style the agent name with the same color as status bar
-		agentName := strings.Title(assistantMsg.Mode)
-		styledAgentName := styles.NewStyle().Foreground(agentColor).Bold(true).Render(agentName)
-		modelAndAgentSuffix = fmt.Sprintf(" | %s | %s", assistantMsg.ModelID, styledAgentName)
+		agentName := cases.Title(language.Und).String(assistantMsg.Mode)
+		styledAgentName := styles.NewStyle().Foreground(agentColor).Render(agentName)
+		modelAndAgentSuffix = fmt.Sprintf("%s %s", styledAgentName, assistantMsg.ModelID)
 	}
 
 	var info string
 	if modelAndAgentSuffix != "" {
-		// For assistant messages: "timestamp | modelID | agentName"
-		info = fmt.Sprintf("%s%s", timestamp, modelAndAgentSuffix)
+		info = fmt.Sprintf("%s (%s)", modelAndAgentSuffix, timestamp)
 	} else {
-		// For user messages: "author (timestamp)"
 		info = fmt.Sprintf("%s (%s)", author, timestamp)
 	}
 	info = styles.NewStyle().Foreground(t.TextMuted()).Render(info)
