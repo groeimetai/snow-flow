@@ -152,18 +152,23 @@ export function Part(props: PartProps) {
                 )}
                 {` | ${props.message.modelID}`}
                 {props.message.mode && (
-                  <span style={{ "font-weight": "bold", color: "var(--sl-color-accent)" }}>
-                    {` | ${props.message.mode}`}
-                  </span>
+                  <span style={{ color: "var(--sl-color-accent)" }}>{` | ${props.message.mode}`}</span>
                 )}
               </Footer>
             )}
           </div>
         )}
         {props.message.role === "assistant" && props.part.type === "reasoning" && (
-          <div data-component="assistant-reasoning">
-            <div data-component="assistant-reasoning-markdown">
-              <ContentMarkdown expand={props.last} text={props.part.text || "Thinking..."} />
+          <div data-component="tool">
+            <div data-component="tool-title">
+              <span data-slot="name">Thinking</span>
+            </div>
+            <div data-component="assistant-reasoning">
+              <ResultsButton showCopy="Show details" hideCopy="Hide details">
+                <div data-component="assistant-reasoning-markdown">
+                  <ContentMarkdown expand text={props.part.text || "Thinking..."} />
+                </div>
+              </ResultsButton>
             </div>
           </div>
         )}
@@ -182,9 +187,7 @@ export function Part(props: PartProps) {
               )}
               {` | ${props.message.modelID}`}
               {props.message.mode && (
-                <span style={{ "font-weight": "bold", color: "var(--sl-color-accent)" }}>
-                  {` | ${props.message.mode}`}
-                </span>
+                <span style={{ color: "var(--sl-color-accent)" }}>{` | ${props.message.mode}`}</span>
               )}
             </div>
           </div>

@@ -202,6 +202,7 @@ export namespace Config {
       session_interrupt: z.string().optional().default("esc").describe("Interrupt current session"),
       session_compact: z.string().optional().default("<leader>c").describe("Compact the session"),
       tool_details: z.string().optional().default("<leader>d").describe("Toggle tool details"),
+      thinking_blocks: z.string().optional().default("<leader>b").describe("Toggle thinking blocks"),
       model_list: z.string().optional().default("<leader>m").describe("List available models"),
       theme_list: z.string().optional().default("<leader>t").describe("List available themes"),
       file_list: z.string().optional().default("<leader>f").describe("List files"),

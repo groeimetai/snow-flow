@@ -1142,6 +1142,13 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 		}
 		cmds = append(cmds, util.CmdHandler(chat.ToggleToolDetailsMsg{}))
 		cmds = append(cmds, toast.NewInfoToast(message))
+	case commands.ThinkingBlocksCommand:
+		message := "Thinking blocks are now visible"
+		if a.messages.ThinkingBlocksVisible() {
+			message = "Thinking blocks are now hidden"
+		}
+		cmds = append(cmds, util.CmdHandler(chat.ToggleThinkingBlocksMsg{}))
+		cmds = append(cmds, toast.NewInfoToast(message))
 	case commands.ModelListCommand:
 		modelDialog := dialog.NewModelDialog(a.app)
 		a.modal = modelDialog
