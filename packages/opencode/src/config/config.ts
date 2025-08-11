@@ -294,7 +294,7 @@ export namespace Config {
         .record(
           ModelsDev.Provider.partial()
             .extend({
-              models: z.record(ModelsDev.Model.partial()),
+              models: z.record(ModelsDev.Model.partial()).optional(),
               options: z
                 .object({
                   apiKey: z.string().optional(),
