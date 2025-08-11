@@ -84,10 +84,6 @@ export const RunCommand = cmd({
         return
       }
 
-      UI.empty()
-      UI.println(UI.logo())
-      UI.empty()
-
       const cfg = await Config.get()
       if (cfg.share === "auto" || Flag.OPENCODE_AUTO_SHARE || args.share) {
         try {
@@ -101,7 +97,6 @@ export const RunCommand = cmd({
           }
         }
       }
-      UI.empty()
 
       const agent = await (async () => {
         if (args.agent) return Agent.get(args.agent)
@@ -115,9 +110,6 @@ export const RunCommand = cmd({
         if (agent.model) return agent.model
         return Provider.defaultModel()
       })()
-
-      UI.println(UI.Style.TEXT_NORMAL_BOLD + "@ ", UI.Style.TEXT_NORMAL + `${providerID}/${modelID}`)
-      UI.empty()
 
       function printEvent(color: string, type: string, title: string) {
         UI.println(
@@ -137,7 +129,8 @@ export const RunCommand = cmd({
         if (part.type === "tool" && part.state.status === "completed") {
           const [tool, color] = TOOL[part.tool] ?? [part.tool, UI.Style.TEXT_INFO_BOLD]
           const title =
-            part.state.title || Object.keys(part.state.input).length > 0 ? JSON.stringify(part.state.input) : "Unknown"
+            part.state.title ||
+            (Object.keys(part.state.input).length > 0 ? JSON.stringify(part.state.input) : "Unknown")
           printEvent(color, tool, title)
         }
 
