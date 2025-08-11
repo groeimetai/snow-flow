@@ -20,6 +20,7 @@ export namespace SystemPrompt {
     if (providerID.includes("anthropic")) return [PROMPT_ANTHROPIC_SPOOF.trim()]
     return []
   }
+
   export function provider(modelID: string) {
     if (modelID.includes("gpt-5")) return [PROMPT_CODEX]
     if (modelID.includes("gpt-") || modelID.includes("o1") || modelID.includes("o3")) return [PROMPT_BEAST]
