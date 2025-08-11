@@ -220,17 +220,17 @@ func renderText(
 	var content string
 	switch casted := message.(type) {
 	case opencode.AssistantMessage:
-		bg := t.Background()
+		backgroundColor = t.Background()
 		if isThinking {
-			bg = t.BackgroundPanel()
+			backgroundColor = t.BackgroundPanel()
 		}
 		ts = time.UnixMilli(int64(casted.Time.Created))
 		if casted.Time.Completed > 0 {
 			ts = time.UnixMilli(int64(casted.Time.Completed))
 		}
-		content = util.ToMarkdown(text, width, bg)
+		content = util.ToMarkdown(text, width, backgroundColor)
 		if isThinking {
-			content = styles.NewStyle().Background(bg).Foreground(t.TextMuted()).Render("Thinking") + "\n\n" + content
+			content = styles.NewStyle().Background(backgroundColor).Foreground(t.TextMuted()).Render("Thinking") + "\n\n" + content
 		}
 	case opencode.UserMessage:
 		ts = time.UnixMilli(int64(casted.Time.Created))
