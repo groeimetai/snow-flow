@@ -147,13 +147,16 @@ export function Part(props: PartProps) {
                   DateTime.DATETIME_FULL_WITH_SECONDS,
                 )}
               >
-                {DateTime.fromMillis(props.message.time.completed || props.message.time.created).toLocaleString(
+                {DateTime.fromMillis(props.message.time.completed).toLocaleString(DateTime.DATETIME_MED)}
+                {/*
+                  DateTime.fromMillis(props.message.time.completed || props.message.time.created).toLocaleString(
                   DateTime.DATETIME_MED,
                 )}
                 {` | ${props.message.modelID}`}
                 {props.message.mode && (
                   <span style={{ color: "var(--sl-color-accent)" }}>{` | ${props.message.mode}`}</span>
-                )}
+                )
+                */}
               </Footer>
             )}
           </div>
@@ -184,6 +187,8 @@ export function Part(props: PartProps) {
           props.part.type === "step-start" && props.message.role === "assistant" && (
             <div data-component="step-start">
               <div data-slot="provider">{props.message.providerID}</div>
+              <div data-slot="model">{props.message.modelID}</div>
+              { /*
               <div data-slot="model">
                 {DateTime.fromMillis(props.message.time.completed || props.message.time.created).toLocaleString(
                   DateTime.DATETIME_MED,
@@ -193,6 +198,7 @@ export function Part(props: PartProps) {
                   <span style={{ color: "var(--sl-color-accent)" }}>{` | ${props.message.mode}`}</span>
                 )}
               </div>
+              */ }
             </div>
           )
         }
