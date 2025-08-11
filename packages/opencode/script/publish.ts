@@ -40,7 +40,10 @@ for (const [os, arch] of targets) {
   )
   await $`bun build --define OPENCODE_TUI_PATH="'../../../dist/${name}/bin/tui'" --define OPENCODE_VERSION="'${version}'" --compile --target=bun-${os}-${arch} --outfile=dist/${name}/bin/opencode ./src/index.ts`
   // Run the binary only if it matches current OS/arch
-  if ((process.platform === (os === "windows" ? "win32" : os)) && (process.arch === arch || (process.arch === "x64" && arch === "x64-baseline"))) {
+  if (
+    process.platform === (os === "windows" ? "win32" : os) &&
+    (process.arch === arch || (process.arch === "x64" && arch === "x64-baseline"))
+  ) {
     console.log(`smoke test: running dist/${name}/bin/opencode --version`)
     await $`./dist/${name}/bin/opencode --version`
   }
@@ -84,43 +87,9 @@ await Bun.file(`./dist/${pkg.name}/package.json`).write(
 if (!dry) await $`cd ./dist/${pkg.name} && bun publish --access public --tag ${npmTag}`
 
 if (!snapshot) {
-  // Github Release
   for (const key of Object.keys(optionalDependencies)) {
     await $`cd dist/${key}/bin && zip -r ../../${key}.zip *`
   }
-
-  const previous = await fetch("https://api.github.com/repos/sst/opencode/releases/latest")
-    .then((res) => {
-      if (!res.ok) throw new Error(res.statusText)
-      return res.json()
-    })
-    .then((data) => data.tag_name)
-
-  console.log("finding commits between", previous, "and", "HEAD")
-  const commits = await fetch(`https://api.github.com/repos/sst/opencode/compare/${previous}...HEAD`)
-    .then((res) => res.json())
-    .then((data) => data.commits || [])
-
-  const raw = commits.map((commit: any) => `- ${commit.commit.message.split("\n").join(" ")}`)
-  console.log(raw)
-
-  const notes =
-    raw
-      .filter((x: string) => {
-        const lower = x.toLowerCase()
-        return (
-          !lower.includes("release:") &&
-          !lower.includes("ignore:") &&
-          !lower.includes("chore:") &&
-          !lower.includes("ci:") &&
-          !lower.includes("wip:") &&
-          !lower.includes("docs:") &&
-          !lower.includes("doc:")
-        )
-      })
-      .join("\n") || "No notable changes"
-
-  if (!dry) await $`gh release create v${version} --title "v${version}" --notes ${notes} ./dist/*.zip`
 
   // Calculate SHA values
   const arm64Sha = await $`sha256sum ./dist/opencode-linux-arm64.zip | cut -d' ' -f1`.text().then((x) => x.trim())
