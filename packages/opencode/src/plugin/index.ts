@@ -4,8 +4,7 @@ import { Config } from "../config/config"
 import { Bus } from "../bus"
 import { Log } from "../util/log"
 import { createOpencodeClient } from "@opencode-ai/sdk"
-// Lazy import to avoid circular dependency with session/tool registry
-// import { Server } from "../server/server"
+import { Server } from "../server/server"
 import { BunProc } from "../bun"
 
 export namespace Plugin {
@@ -14,7 +13,7 @@ export namespace Plugin {
   const state = App.state("plugin", async (app) => {
     const client = createOpencodeClient({
       baseUrl: "http://localhost:4096",
-      fetch: async (...args) => (await import("../server/server")).Server.app().fetch(...args),
+      fetch: async (...args) => Server.app().fetch(...args),
     })
     const config = await Config.get()
     const hooks = []
