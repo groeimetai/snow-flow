@@ -13,6 +13,7 @@ import { Log } from "../../util/log"
 import { FileWatcher } from "../../file/watch"
 import { Ide } from "../../ide"
 import { Agent } from "../../agent/agent"
+import { Flag } from "../../flag/flag"
 
 declare global {
   const OPENCODE_TUI_PATH: string
@@ -126,7 +127,7 @@ export const TuiCommand = cmd({
           if (Installation.isDev()) return
           if (Installation.isSnapshot()) return
           const config = await Config.global()
-          if (config.autoupdate === false) return
+          if (config.autoupdate === false || Flag.OPENCODE_DISABLE_AUTOUPDATE) return
           const latest = await Installation.latest().catch(() => {})
           if (!latest) return
           if (Installation.VERSION === latest) return
