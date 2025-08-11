@@ -121,13 +121,11 @@ export namespace MessageV2 {
   export const ReasoningPart = PartBase.extend({
     type: z.literal("reasoning"),
     text: z.string(),
-    providerMetadata: z.record(z.any()).optional(),
-    time: z
-      .object({
-        start: z.number(),
-        end: z.number().optional(),
-      })
-      .optional(),
+    metadata: z.record(z.any()).optional(),
+    time: z.object({
+      start: z.number(),
+      end: z.number().optional(),
+    }),
   }).openapi({
     ref: "ReasoningPart",
   })

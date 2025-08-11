@@ -1007,7 +1007,7 @@ export namespace Session {
       async process(stream: StreamTextResult<Record<string, AITool>, never>) {
         try {
           let currentText: MessageV2.TextPart | undefined
-          let reasoningMap: Record<string, MessageV2.ReasoningPart> = {}
+          // let reasoningMap: Record<string, MessageV2.ReasoningPart> = {}
 
           for await (const value of stream.fullStream) {
             log.info("part", {
@@ -1017,6 +1017,7 @@ export namespace Session {
               case "start":
                 break
 
+              /*
               case "reasoning-start":
                 if (value.id in reasoningMap) {
                   continue
@@ -1045,15 +1046,16 @@ export namespace Session {
                 if (value.id in reasoningMap) {
                   const part = reasoningMap[value.id]
                   part.text = part.text.trimEnd()
-                  part.providerMetadata = value.providerMetadata
+                  part.metadata = value.providerMetadata
                   part.time = {
-                    start: Date.now(),
+                    ...part.time,
                     end: Date.now(),
                   }
                   await updatePart(part)
                   delete reasoningMap[value.id]
                 }
                 break
+                */
 
               case "tool-input-start":
                 const part = await updatePart({
