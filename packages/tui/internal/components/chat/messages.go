@@ -400,6 +400,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 					revertedToolCount = 0
 				}
 				hasTextPart := false
+				hasContent := false
 				for partIndex, p := range message.Parts {
 					switch part := p.(type) {
 					case opencode.TextPart:
@@ -491,6 +492,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 							partCount++
 							lineCount += lipgloss.Height(content) + 1
 							blocks = append(blocks, content)
+							hasContent = true
 						}
 					case opencode.ToolPart:
 						if reverted {
@@ -552,6 +554,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 							partCount++
 							lineCount += lipgloss.Height(content) + 1
 							blocks = append(blocks, content)
+							hasContent = true
 						}
 					case opencode.ReasoningPart:
 						if reverted {
@@ -582,7 +585,32 @@ func (m *messagesComponent) renderView() tea.Cmd {
 						partCount++
 						lineCount += lipgloss.Height(content) + 1
 						blocks = append(blocks, content)
+						hasContent = true
 					}
+				}
+
+				if !hasContent {
+					content = renderText(
+						m.app,
+						message.Info,
+						"Generating...",
+						casted.ModelID,
+						m.showToolDetails,
+						width,
+						"",
+						false,
+						[]opencode.FilePart{},
+						[]opencode.AgentPart{},
+					)
+					content = lipgloss.PlaceHorizontal(
+						m.width,
+						lipgloss.Center,
+						content,
+						styles.WhitespaceStyle(t.Background()),
+					)
+					partCount++
+					lineCount += lipgloss.Height(content) + 1
+					blocks = append(blocks, content)
 				}
 			}
 
