@@ -335,6 +335,10 @@ func renderText(
 	if time.Now().Format("02 Jan 2006") == timestamp[:11] {
 		timestamp = timestamp[12:]
 	}
+	timestamp = styles.NewStyle().
+		Background(backgroundColor).
+		Foreground(t.TextMuted()).
+		Render(" (" + timestamp + ")")
 
 	// Check if this is an assistant message with agent information
 	var modelAndAgentSuffix string
@@ -353,17 +357,23 @@ func renderText(
 
 		// Style the agent name with the same color as status bar
 		agentName := cases.Title(language.Und).String(assistantMsg.Mode)
-		styledAgentName := styles.NewStyle().Foreground(agentColor).Render(agentName)
-		modelAndAgentSuffix = fmt.Sprintf("%s %s", styledAgentName, assistantMsg.ModelID)
+		styledAgentName := styles.NewStyle().
+			Background(backgroundColor).
+			Foreground(agentColor).
+			Render(agentName + " ")
+		styledModelID := styles.NewStyle().
+			Background(backgroundColor).
+			Foreground(t.TextMuted()).
+			Render(assistantMsg.ModelID)
+		modelAndAgentSuffix = styledAgentName + styledModelID
 	}
 
 	var info string
 	if modelAndAgentSuffix != "" {
-		info = fmt.Sprintf("%s (%s)", modelAndAgentSuffix, timestamp)
+		info = modelAndAgentSuffix + timestamp
 	} else {
-		info = fmt.Sprintf("%s (%s)", author, timestamp)
+		info = author + timestamp
 	}
-	info = styles.NewStyle().Foreground(t.TextMuted()).Render(info)
 	if !showToolDetails && toolCalls != nil && len(toolCalls) > 0 {
 		content = content + "\n\n"
 		for _, toolCall := range toolCalls {
@@ -378,10 +388,11 @@ func renderText(
 		}
 	}
 
-	sections := []string{content, info}
+	sections := []string{content}
 	if extra != "" {
-		sections = append(sections, "\n"+extra)
+		sections = append(sections, "\n"+extra+"\n")
 	}
+	sections = append(sections, info)
 	content = strings.Join(sections, "\n")
 
 	switch message.(type) {
