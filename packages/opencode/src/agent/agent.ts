@@ -14,7 +14,6 @@ export namespace Agent {
       mode: z.union([z.literal("subagent"), z.literal("primary"), z.literal("all")]),
       topP: z.number().optional(),
       temperature: z.number().optional(),
-      options: z.record(z.any()),
       model: z
         .object({
           modelID: z.string(),
@@ -23,6 +22,7 @@ export namespace Agent {
         .optional(),
       prompt: z.string().optional(),
       tools: z.record(z.boolean()),
+      options: z.record(z.string(), z.any()),
     })
     .openapi({
       ref: "Agent",
@@ -73,6 +73,11 @@ export namespace Agent {
           options: {},
           tools: {},
         }
+      const { model, prompt, tools, description, temperature, top_p, mode, ...extra } = value
+      item.options = {
+        ...item.options,
+        ...extra,
+      }
       if (value.model) item.model = Provider.parseModel(value.model)
       if (value.prompt) item.prompt = value.prompt
       if (value.tools)
@@ -84,11 +89,6 @@ export namespace Agent {
       if (value.temperature != undefined) item.temperature = value.temperature
       if (value.top_p != undefined) item.topP = value.top_p
       if (value.mode) item.mode = value.mode
-      if (value.options)
-        item.options = {
-          ...item.options,
-          ...value.options,
-        }
     }
     return result
   })

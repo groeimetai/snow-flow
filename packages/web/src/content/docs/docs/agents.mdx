@@ -360,6 +360,41 @@ The `mode` option can be set to `primary`, `subagent`, or `all`. If no `mode` is
 
 ---
 
+### Additional options
+
+Any other options you specify in your agent configuration will be passed through directly to the provider as model options. This allows you to use provider-specific features and parameters.
+
+```json title="opencode.json"
+{
+  "agent": {
+    "reasoning": {
+      "model": "openai/gpt-5-turbo",
+      "reasoningEffort": "high",
+      "textVerbosity": "medium"
+    }
+  }
+}
+```
+
+For example, with OpenAI's reasoning models, you can control the reasoning effort:
+
+```json title="opencode.json"
+{
+  "agent": {
+    "deep-thinker": {
+      "description": "Agent that uses high reasoning effort for complex problems",
+      "model": "openai/gpt-5-turbo", 
+      "reasoningEffort": "high",
+      "textVerbosity": "low"
+    }
+  }
+}
+```
+
+These additional options are model and provider-specific. Check your provider's documentation for available parameters.
+
+---
+
 ## Create agents
 
 You can create new agents using the following command:

@@ -173,9 +173,9 @@ export namespace Config {
       tools: z.record(z.string(), z.boolean()).optional(),
       disable: z.boolean().optional(),
       description: z.string().optional().describe("Description of when to use the agent"),
-      options: z.record(z.string(), z.any()).optional().describe("Additional model options passed through to provider"),
       mode: z.union([z.literal("subagent"), z.literal("primary"), z.literal("all")]).optional(),
     })
+    .catchall(z.any())
     .openapi({
       ref: "AgentConfig",
     })
