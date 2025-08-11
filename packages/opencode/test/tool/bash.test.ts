@@ -27,7 +27,7 @@ describe("tool.bash", () => {
         ctx,
       )
       expect(result.metadata.exit).toBe(0)
-      expect(result.metadata.stdout).toContain("test")
+      expect(result.metadata.output).toContain("test")
     })
   })
 
