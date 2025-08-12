@@ -12,7 +12,7 @@ import { Bus } from "../../bus"
 import { Log } from "../../util/log"
 import { FileWatcher } from "../../file/watch"
 import { Ide } from "../../ide"
-import { Agent } from "../../agent/agent"
+
 import { Flag } from "../../flag/flag"
 import { Session } from "../../session"
 
@@ -141,7 +141,6 @@ export const TuiCommand = cmd({
             CGO_ENABLED: "0",
             OPENCODE_SERVER: server.url.toString(),
             OPENCODE_APP_INFO: JSON.stringify(app),
-            OPENCODE_AGENTS: JSON.stringify(await Agent.list()),
           },
           onExit: () => {
             server.stop()

@@ -45,14 +45,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	agentsStr := os.Getenv("OPENCODE_AGENTS")
-	var agents []opencode.Agent
-	err = json.Unmarshal([]byte(agentsStr), &agents)
-	if err != nil {
-		slog.Error("Failed to unmarshal modes", "error", err)
-		os.Exit(1)
-	}
-
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		slog.Error("Failed to stat stdin", "error", err)
@@ -81,13 +73,25 @@ func main() {
 		option.WithBaseURL(url),
 	)
 
+	// Fetch agents from the /agent endpoint
+	agentsPtr, err := httpClient.App.Agents(context.Background())
+	if err != nil {
+		slog.Error("Failed to fetch agents", "error", err)
+		os.Exit(1)
+	}
+	if agentsPtr == nil {
+		slog.Error("No agents returned from server")
+		os.Exit(1)
+	}
+	agents := *agentsPtr
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	apiHandler := util.NewAPILogHandler(ctx, httpClient, "tui", slog.LevelDebug)
 	logger := slog.New(apiHandler)
 	slog.SetDefault(logger)
 
-	slog.Debug("TUI launched", "app", appInfoStr, "modes", agentsStr, "url", url)
+	slog.Debug("TUI launched", "app", appInfoStr, "agents_count", len(agents), "url", url)
 
 	go func() {
 		err = clipboard.Init()
