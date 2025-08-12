@@ -87,8 +87,7 @@ export namespace ProviderTransform {
     if (modelID.includes("gpt-5")) {
       if (providerID === "azure") {
         return {
-          reasoning_effort: "minimal",
-          text_verbosity: "verbose",
+          reasoningEffort: "minimal",
         }
       }
       return {
