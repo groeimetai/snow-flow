@@ -1,8 +1,9 @@
 name: Guidelines Check
 
 on:
-  pull_request_target:
-    types: [opened, synchronize]
+  # Disabled - uncomment to re-enable
+  # pull_request_target:
+  #   types: [opened, synchronize]
 
 jobs:
   check-guidelines:
