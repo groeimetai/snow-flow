@@ -318,6 +318,22 @@ Control which tools are available in this agent with the `tools` config. You can
 }
 ```
 
+You can also use wildcards to control multiple tools at once. For example, to disable all tools from an MCP server:
+
+```json title="opencode.json"
+{
+  "agent": {
+    "readonly": {
+      "tools": {
+        "mymcp_*": false,
+        "write": false,
+        "edit": false
+      }
+    }
+  }
+}
+```
+
 If no tools are specified, all tools are enabled by default.
 
 ---
@@ -371,7 +387,7 @@ For example, with OpenAI's reasoning models, you can control the reasoning effor
   "agent": {
     "deep-thinker": {
       "description": "Agent that uses high reasoning effort for complex problems",
-      "model": "openai/gpt-5-turbo", 
+      "model": "openai/gpt-5-turbo",
       "reasoningEffort": "high",
       "textVerbosity": "low"
     }

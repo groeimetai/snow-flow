@@ -42,6 +42,7 @@ import { ToolRegistry } from "../tool/registry"
 import { Plugin } from "../plugin"
 import { Agent } from "../agent/agent"
 import { Permission } from "../permission"
+import { Wildcard } from "../util/wildcard"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -768,7 +769,7 @@ export namespace Session {
       mergeDeep(input.tools ?? {}),
     )
     for (const item of await ToolRegistry.tools(input.providerID, input.modelID)) {
-      if (enabledTools[item.id] === false) continue
+      if (Wildcard.all(item.id, enabledTools) === false) continue
       tools[item.id] = tool({
         id: item.id as any,
         description: item.description,
@@ -829,7 +830,7 @@ export namespace Session {
     }
 
     for (const [key, item] of Object.entries(await MCP.tools())) {
-      if (enabledTools[key] === false) continue
+      if (Wildcard.all(key, enabledTools) === false) continue
       const execute = item.execute
       if (!execute) continue
       item.execute = async (args, opts) => {
