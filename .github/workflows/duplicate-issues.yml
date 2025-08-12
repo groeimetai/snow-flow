@@ -25,7 +25,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          opencode run "A new issue has been created: '${{ github.event.issue.title }}'
+          opencode run -m anthropic/claude-sonnet-4-20250514 "A new issue has been created: '${{ github.event.issue.title }}'
 
           Issue body:
           ${{ github.event.issue.body }}
