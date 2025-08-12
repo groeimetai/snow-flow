@@ -12,7 +12,6 @@ import { Wildcard } from "../util/wildcard"
 import { $ } from "bun"
 import { Agent } from "../agent/agent"
 
-const MAX_OUTPUT_LENGTH = 30000
 const DEFAULT_TIMEOUT = 1 * 60 * 1000
 const MAX_TIMEOUT = 10 * 60 * 1000
 
@@ -107,7 +106,6 @@ export const BashTool = Tool.define("bash", {
     const process = exec(params.command, {
       cwd: app.path.cwd,
       signal: ctx.abort,
-      maxBuffer: MAX_OUTPUT_LENGTH,
       timeout,
     })
 
@@ -154,6 +152,12 @@ export const BashTool = Tool.define("bash", {
         description: params.description,
       },
     })
+
+    const lines = output.split("\n")
+    if (lines.length > 1000) {
+      output = lines.slice(0, 1000).join("\n")
+      output += "\n\n(Ouput was truncated)"
+    }
 
     return {
       title: params.command,
