@@ -421,4 +421,81 @@ export namespace LSPServer {
       }
     },
   }
+
+  export const Clangd: Info = {
+    id: "clangd",
+    root: NearestRoot(["compile_commands.json", "compile_flags.txt", ".clangd", "CMakeLists.txt", "Makefile"]),
+    extensions: [".c", ".cpp", ".cc", ".cxx", ".c++", ".h", ".hpp", ".hh", ".hxx", ".h++"],
+    async spawn(_, root) {
+      let bin = Bun.which("clangd", {
+        PATH: process.env["PATH"] + ":" + Global.Path.bin,
+      })
+      if (!bin) {
+        log.info("downloading clangd from GitHub releases")
+
+        const releaseResponse = await fetch("https://api.github.com/repos/clangd/clangd/releases/latest")
+        if (!releaseResponse.ok) {
+          log.error("Failed to fetch clangd release info")
+          return
+        }
+
+        const release = await releaseResponse.json()
+
+        const platform = process.platform
+        let assetName = ""
+
+        if (platform === "darwin") {
+          assetName = "clangd-mac-"
+        } else if (platform === "linux") {
+          assetName = "clangd-linux-"
+        } else if (platform === "win32") {
+          assetName = "clangd-windows-"
+        } else {
+          log.error(`Platform ${platform} is not supported by clangd auto-download`)
+          return
+        }
+
+        assetName += release.tag_name + ".zip"
+
+        const asset = release.assets.find((a: any) => a.name === assetName)
+        if (!asset) {
+          log.error(`Could not find asset ${assetName} in latest clangd release`)
+          return
+        }
+
+        const downloadUrl = asset.browser_download_url
+        const downloadResponse = await fetch(downloadUrl)
+        if (!downloadResponse.ok) {
+          log.error("Failed to download clangd")
+          return
+        }
+
+        const zipPath = path.join(Global.Path.bin, "clangd.zip")
+        await Bun.file(zipPath).write(downloadResponse)
+
+        await $`unzip -o -q ${zipPath}`.cwd(Global.Path.bin).nothrow()
+        await fs.rm(zipPath, { force: true })
+
+        const extractedDir = path.join(Global.Path.bin, assetName.replace(".zip", ""))
+        bin = path.join(extractedDir, "bin", "clangd" + (platform === "win32" ? ".exe" : ""))
+
+        if (!(await Bun.file(bin).exists())) {
+          log.error("Failed to extract clangd binary")
+          return
+        }
+
+        if (platform !== "win32") {
+          await $`chmod +x ${bin}`.nothrow()
+        }
+
+        log.info(`installed clangd`, { bin })
+      }
+
+      return {
+        process: spawn(bin, ["--background-index", "--clang-tidy"], {
+          cwd: root,
+        }),
+      }
+    },
+  }
 }
