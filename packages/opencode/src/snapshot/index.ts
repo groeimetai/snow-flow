@@ -43,6 +43,7 @@ export namespace Snapshot {
     }
     await $`git --git-dir ${git} add .`.quiet().cwd(app.path.cwd).nothrow()
     const hash = await $`git --git-dir ${git} write-tree`.quiet().cwd(app.path.cwd).nothrow().text()
+    log.info("tracking", { hash })
     return hash.trim()
   }
 
