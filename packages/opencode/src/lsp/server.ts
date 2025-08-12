@@ -210,7 +210,24 @@ export namespace LSPServer {
     extensions: [".py", ".pyi"],
     root: NearestRoot(["pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", "Pipfile", "pyrightconfig.json"]),
     async spawn(_, root) {
-      const proc = spawn(BunProc.which(), ["x", "pyright-langserver", "--stdio"], {
+      let binary = Bun.which("pyright-langserver")
+      const args = []
+      if (!binary) {
+        const js = path.join(Global.Path.bin, "node_modules", "pyright", "dist", "pyright-langserver.js")
+        if (!(await Bun.file(js).exists())) {
+          await Bun.spawn([BunProc.which(), "install", "pyright"], {
+            cwd: Global.Path.bin,
+            env: {
+              ...process.env,
+              BUN_BE_BUN: "1",
+            },
+          }).exited
+        }
+        binary = BunProc.which()
+        args.push(...["run", js])
+      }
+      args.push("--stdio")
+      const proc = spawn(binary, args, {
         cwd: root,
         env: {
           ...process.env,

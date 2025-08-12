@@ -2,7 +2,6 @@ import { LSP } from "../../../lsp"
 import { bootstrap } from "../../bootstrap"
 import { cmd } from "../cmd"
 import { Log } from "../../../util/log"
-import { appendFile } from "fs/promises"
 
 export const LSPCommand = cmd({
   command: "lsp",
@@ -16,9 +15,6 @@ const DiagnosticsCommand = cmd({
   builder: (yargs) => yargs.positional("file", { type: "string", demandOption: true }),
   async handler(args) {
     await bootstrap({ cwd: process.cwd() }, async () => {
-      await LSP.touchFile(args.file, true)
-      console.log(await LSP.diagnostics())
-      await appendFile(args.file, `\nconst x: number = "foo"`)
       await LSP.touchFile(args.file, true)
       console.log(await LSP.diagnostics())
     })
