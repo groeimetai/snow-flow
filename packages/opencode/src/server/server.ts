@@ -593,6 +593,36 @@ export namespace Server {
         },
       )
       .post(
+        "/session/:id/command",
+        describeRoute({
+          description: "Run a bash command",
+          operationId: "session.chat",
+          responses: {
+            200: {
+              description: "Created message",
+              content: {
+                "application/json": {
+                  schema: resolver(MessageV2.Assistant),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "param",
+          z.object({
+            id: z.string().openapi({ description: "Session ID" }),
+          }),
+        ),
+        zValidator("json", Session.CommandInput.omit({ sessionID: true })),
+        async (c) => {
+          const sessionID = c.req.valid("param").id
+          const body = c.req.valid("json")
+          const msg = await Session.command({ ...body, sessionID })
+          return c.json(msg)
+        },
+      )
+      .post(
         "/session/:id/revert",
         describeRoute({
           description: "Revert a message",

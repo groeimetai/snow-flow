@@ -43,6 +43,8 @@ import { Plugin } from "../plugin"
 import { Agent } from "../agent/agent"
 import { Permission } from "../permission"
 import { Wildcard } from "../util/wildcard"
+import { BashTool } from "../tool/bash"
+import { ulid } from "ulid"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -995,6 +997,96 @@ export namespace Session {
     }
     state().queued.delete(input.sessionID)
     return result
+  }
+
+  export const CommandInput = z.object({
+    sessionID: Identifier.schema("session"),
+    agent: z.string(),
+    command: z.string(),
+  })
+  export type CommandInput = z.infer<typeof CommandInput>
+  export async function command(input: CommandInput) {
+    using abort = lock(input.sessionID)
+    const msg: MessageV2.Assistant = {
+      id: Identifier.ascending("message"),
+      sessionID: input.sessionID,
+      system: [],
+      mode: input.agent,
+      cost: 0,
+      path: {
+        cwd: App.info().path.cwd,
+        root: App.info().path.root,
+      },
+      time: {
+        created: Date.now(),
+      },
+      role: "assistant",
+      tokens: {
+        input: 0,
+        output: 0,
+        reasoning: 0,
+        cache: { read: 0, write: 0 },
+      },
+      modelID: "",
+      providerID: "",
+    }
+    await updateMessage(msg)
+    const part: MessageV2.Part = {
+      type: "tool",
+      id: Identifier.ascending("part"),
+      messageID: msg.id,
+      sessionID: input.sessionID,
+      tool: "bash",
+      callID: ulid(),
+      state: {
+        status: "running",
+        time: {
+          start: Date.now(),
+        },
+        input: {
+          command: input.command,
+        },
+      },
+    }
+    await updatePart(part)
+    const tool = await BashTool.init()
+    const result = await tool.execute(
+      {
+        command: input.command,
+        description: "User command",
+      },
+      {
+        messageID: msg.id,
+        sessionID: input.sessionID,
+        abort: abort.signal,
+        callID: part.callID,
+        agent: input.agent,
+        metadata: async (e) => {
+          if (part.state.status === "running") {
+            part.state.title = e.title
+            part.state.metadata = e.metadata
+            await updatePart(part)
+          }
+        },
+      },
+    )
+    msg.time.completed = Date.now()
+    await updateMessage(msg)
+    if (part.state.status === "running") {
+      part.state = {
+        status: "completed",
+        time: {
+          ...part.state.time,
+          end: Date.now(),
+        },
+        input: part.state.input,
+        title: result.title,
+        metadata: result.metadata,
+        output: result.output,
+      }
+      await updatePart(part)
+    }
+    return { info: msg, parts: [part] }
   }
 
   function createProcessor(assistantMsg: MessageV2.Assistant, model: ModelsDev.Model) {
