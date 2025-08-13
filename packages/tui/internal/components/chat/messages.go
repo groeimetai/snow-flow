@@ -1153,7 +1153,7 @@ func NewMessagesComponent(app *app.App) MessagesComponent {
 	if app.State.ScrollSpeed != nil && *app.State.ScrollSpeed > 0 {
 		vp.MouseWheelDelta = *app.State.ScrollSpeed
 	} else {
-		vp.MouseWheelDelta = 4
+		vp.MouseWheelDelta = 2
 	}
 
 	// Default to showing tool details, hidden thinking blocks
