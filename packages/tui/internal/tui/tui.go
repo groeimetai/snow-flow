@@ -151,6 +151,23 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+		if a.app.IsBashMode {
+			if keyString == "backspace" && a.editor.Length() == 0 {
+				a.app.IsBashMode = false
+				return a, nil
+			}
+
+			if keyString == "enter" || keyString == "esc" || keyString == "ctrl+c" {
+				a.app.IsBashMode = false
+				if keyString == "enter" {
+					updated, cmd := a.editor.SubmitBash()
+					a.editor = updated.(chat.EditorComponent)
+					cmds = append(cmds, cmd)
+				}
+				return a, tea.Batch(cmds...)
+			}
+		}
+
 		// 1. Handle active modal
 		if a.modal != nil {
 			switch keyString {
@@ -189,7 +206,8 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// 3. Handle completions trigger
 		if keyString == "/" &&
 			!a.showCompletionDialog &&
-			a.editor.Value() == "" {
+			a.editor.Value() == "" &&
+			!a.app.IsBashMode {
 			a.showCompletionDialog = true
 
 			updated, cmd := a.editor.Update(msg)
@@ -207,7 +225,8 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Handle file completions trigger
 		if keyString == "@" &&
-			!a.showCompletionDialog {
+			!a.showCompletionDialog &&
+			!a.app.IsBashMode {
 			a.showCompletionDialog = true
 
 			updated, cmd := a.editor.Update(msg)
@@ -221,6 +240,11 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 
 			return a, tea.Sequence(cmds...)
+		}
+
+		if keyString == "!" && a.editor.Value() == "" {
+			a.app.IsBashMode = true
+			return a, nil
 		}
 
 		if a.showCompletionDialog {
@@ -377,6 +401,9 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case app.SendPrompt:
 		a.showCompletionDialog = false
 		a.app, cmd = a.app.SendPrompt(context.Background(), msg)
+		cmds = append(cmds, cmd)
+	case app.SendBash:
+		a.app, cmd = a.app.SendBash(context.Background(), msg.Command)
 		cmds = append(cmds, cmd)
 	case app.SetEditorContentMsg:
 		// Set the editor content without sending

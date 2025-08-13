@@ -46,6 +46,18 @@ func (r *SessionService) New(ctx context.Context, opts ...option.RequestOption) 
 	return
 }
 
+// Update session properties
+func (r *SessionService) Update(ctx context.Context, id string, body SessionUpdateParams, opts ...option.RequestOption) (res *Session, err error) {
+	opts = append(r.Options[:], opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("session/%s", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
+	return
+}
+
 // List all sessions
 func (r *SessionService) List(ctx context.Context, opts ...option.RequestOption) (res *[]Session, err error) {
 	opts = append(r.Options[:], opts...)
@@ -66,18 +78,6 @@ func (r *SessionService) Delete(ctx context.Context, id string, opts ...option.R
 	return
 }
 
-// Update session properties
-func (r *SessionService) Update(ctx context.Context, id string, body SessionUpdateParams, opts ...option.RequestOption) (res *Session, err error) {
-	opts = append(r.Options[:], opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
-		return
-	}
-	path := fmt.Sprintf("session/%s", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
-}
-
 // Abort a session
 func (r *SessionService) Abort(ctx context.Context, id string, opts ...option.RequestOption) (res *bool, err error) {
 	opts = append(r.Options[:], opts...)
@@ -87,6 +87,18 @@ func (r *SessionService) Abort(ctx context.Context, id string, opts ...option.Re
 	}
 	path := fmt.Sprintf("session/%s/abort", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	return
+}
+
+// Run a bash command
+func (r *SessionService) Bash(ctx context.Context, id string, body SessionBashParams, opts ...option.RequestOption) (res *AssistantMessage, err error) {
+	opts = append(r.Options[:], opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("session/%s/bash", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return
 }
 
@@ -976,11 +988,11 @@ type Part struct {
 	// This field can have the runtime type of [[]string].
 	Files interface{} `json:"files"`
 	Hash  string      `json:"hash"`
-	Mime  string      `json:"mime"`
-	Name  string      `json:"name"`
 	// This field can have the runtime type of [map[string]interface{}].
-	ProviderMetadata interface{} `json:"providerMetadata"`
-	Snapshot         string      `json:"snapshot"`
+	Metadata interface{} `json:"metadata"`
+	Mime     string      `json:"mime"`
+	Name     string      `json:"name"`
+	Snapshot string      `json:"snapshot"`
 	// This field can have the runtime type of [FilePartSource], [AgentPartSource].
 	Source interface{} `json:"source"`
 	// This field can have the runtime type of [ToolPartState].
@@ -999,29 +1011,29 @@ type Part struct {
 
 // partJSON contains the JSON metadata for the struct [Part]
 type partJSON struct {
-	ID               apijson.Field
-	MessageID        apijson.Field
-	SessionID        apijson.Field
-	Type             apijson.Field
-	CallID           apijson.Field
-	Cost             apijson.Field
-	Filename         apijson.Field
-	Files            apijson.Field
-	Hash             apijson.Field
-	Mime             apijson.Field
-	Name             apijson.Field
-	ProviderMetadata apijson.Field
-	Snapshot         apijson.Field
-	Source           apijson.Field
-	State            apijson.Field
-	Synthetic        apijson.Field
-	Text             apijson.Field
-	Time             apijson.Field
-	Tokens           apijson.Field
-	Tool             apijson.Field
-	URL              apijson.Field
-	raw              string
-	ExtraFields      map[string]apijson.Field
+	ID          apijson.Field
+	MessageID   apijson.Field
+	SessionID   apijson.Field
+	Type        apijson.Field
+	CallID      apijson.Field
+	Cost        apijson.Field
+	Filename    apijson.Field
+	Files       apijson.Field
+	Hash        apijson.Field
+	Metadata    apijson.Field
+	Mime        apijson.Field
+	Name        apijson.Field
+	Snapshot    apijson.Field
+	Source      apijson.Field
+	State       apijson.Field
+	Synthetic   apijson.Field
+	Text        apijson.Field
+	Time        apijson.Field
+	Tokens      apijson.Field
+	Tool        apijson.Field
+	URL         apijson.Field
+	raw         string
+	ExtraFields map[string]apijson.Field
 }
 
 func (r partJSON) RawJSON() string {
@@ -1175,27 +1187,27 @@ func (r PartType) IsKnown() bool {
 }
 
 type ReasoningPart struct {
-	ID               string                 `json:"id,required"`
-	MessageID        string                 `json:"messageID,required"`
-	SessionID        string                 `json:"sessionID,required"`
-	Text             string                 `json:"text,required"`
-	Type             ReasoningPartType      `json:"type,required"`
-	ProviderMetadata map[string]interface{} `json:"providerMetadata"`
-	Time             ReasoningPartTime      `json:"time"`
-	JSON             reasoningPartJSON      `json:"-"`
+	ID        string                 `json:"id,required"`
+	MessageID string                 `json:"messageID,required"`
+	SessionID string                 `json:"sessionID,required"`
+	Text      string                 `json:"text,required"`
+	Time      ReasoningPartTime      `json:"time,required"`
+	Type      ReasoningPartType      `json:"type,required"`
+	Metadata  map[string]interface{} `json:"metadata"`
+	JSON      reasoningPartJSON      `json:"-"`
 }
 
 // reasoningPartJSON contains the JSON metadata for the struct [ReasoningPart]
 type reasoningPartJSON struct {
-	ID               apijson.Field
-	MessageID        apijson.Field
-	SessionID        apijson.Field
-	Text             apijson.Field
-	Type             apijson.Field
-	ProviderMetadata apijson.Field
-	Time             apijson.Field
-	raw              string
-	ExtraFields      map[string]apijson.Field
+	ID          apijson.Field
+	MessageID   apijson.Field
+	SessionID   apijson.Field
+	Text        apijson.Field
+	Time        apijson.Field
+	Type        apijson.Field
+	Metadata    apijson.Field
+	raw         string
+	ExtraFields map[string]apijson.Field
 }
 
 func (r *ReasoningPart) UnmarshalJSON(data []byte) (err error) {
@@ -1207,20 +1219,6 @@ func (r reasoningPartJSON) RawJSON() string {
 }
 
 func (r ReasoningPart) implementsPart() {}
-
-type ReasoningPartType string
-
-const (
-	ReasoningPartTypeReasoning ReasoningPartType = "reasoning"
-)
-
-func (r ReasoningPartType) IsKnown() bool {
-	switch r {
-	case ReasoningPartTypeReasoning:
-		return true
-	}
-	return false
-}
 
 type ReasoningPartTime struct {
 	Start float64               `json:"start,required"`
@@ -1243,6 +1241,20 @@ func (r *ReasoningPartTime) UnmarshalJSON(data []byte) (err error) {
 
 func (r reasoningPartTimeJSON) RawJSON() string {
 	return r.raw
+}
+
+type ReasoningPartType string
+
+const (
+	ReasoningPartTypeReasoning ReasoningPartType = "reasoning"
+)
+
+func (r ReasoningPartType) IsKnown() bool {
+	switch r {
+	case ReasoningPartTypeReasoning:
+		return true
+	}
+	return false
 }
 
 type Session struct {
@@ -2286,6 +2298,23 @@ func (r sessionMessagesResponseJSON) RawJSON() string {
 	return r.raw
 }
 
+type SessionUpdateParams struct {
+	Title param.Field[string] `json:"title"`
+}
+
+func (r SessionUpdateParams) MarshalJSON() (data []byte, err error) {
+	return apijson.MarshalRoot(r)
+}
+
+type SessionBashParams struct {
+	Agent   param.Field[string] `json:"agent,required"`
+	Command param.Field[string] `json:"command,required"`
+}
+
+func (r SessionBashParams) MarshalJSON() (data []byte, err error) {
+	return apijson.MarshalRoot(r)
+}
+
 type SessionChatParams struct {
 	ModelID    param.Field[string]                       `json:"modelID,required"`
 	Parts      param.Field[[]SessionChatParamsPartUnion] `json:"parts,required"`
@@ -2366,13 +2395,5 @@ type SessionSummarizeParams struct {
 }
 
 func (r SessionSummarizeParams) MarshalJSON() (data []byte, err error) {
-	return apijson.MarshalRoot(r)
-}
-
-type SessionUpdateParams struct {
-	Title param.Field[string] `json:"title"`
-}
-
-func (r SessionUpdateParams) MarshalJSON() (data []byte, err error) {
 	return apijson.MarshalRoot(r)
 }

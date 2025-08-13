@@ -35,6 +35,34 @@ func TestSessionNew(t *testing.T) {
 	}
 }
 
+func TestSessionUpdateWithOptionalParams(t *testing.T) {
+	t.Skip("skipped: tests are disabled for the time being")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := opencode.NewClient(
+		option.WithBaseURL(baseURL),
+	)
+	_, err := client.Session.Update(
+		context.TODO(),
+		"id",
+		opencode.SessionUpdateParams{
+			Title: opencode.F("title"),
+		},
+	)
+	if err != nil {
+		var apierr *opencode.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestSessionList(t *testing.T) {
 	t.Skip("skipped: tests are disabled for the time being")
 	baseURL := "http://localhost:4010"
@@ -92,6 +120,35 @@ func TestSessionAbort(t *testing.T) {
 		option.WithBaseURL(baseURL),
 	)
 	_, err := client.Session.Abort(context.TODO(), "id")
+	if err != nil {
+		var apierr *opencode.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestSessionBash(t *testing.T) {
+	t.Skip("skipped: tests are disabled for the time being")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := opencode.NewClient(
+		option.WithBaseURL(baseURL),
+	)
+	_, err := client.Session.Bash(
+		context.TODO(),
+		"id",
+		opencode.SessionBashParams{
+			Agent:   opencode.F("agent"),
+			Command: opencode.F("command"),
+		},
+	)
 	if err != nil {
 		var apierr *opencode.Error
 		if errors.As(err, &apierr) {

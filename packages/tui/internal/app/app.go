@@ -49,6 +49,7 @@ type App struct {
 	InitialSession    *string
 	compactCancel     context.CancelFunc
 	IsLeaderSequence  bool
+	IsBashMode        bool
 }
 
 func (a *App) Agent() *opencode.Agent {
@@ -79,6 +80,9 @@ type AgentSelectedMsg struct {
 type SessionClearedMsg struct{}
 type CompactSessionMsg struct{}
 type SendPrompt = Prompt
+type SendBash = struct {
+	Command string
+}
 type SetEditorContentMsg struct {
 	Text string
 }
@@ -296,23 +300,41 @@ func (a *App) CycleRecentModel() (*App, tea.Cmd) {
 	}
 	nextIndex := 0
 	for i, recentModel := range recentModels {
-		if a.Provider != nil && a.Model != nil && recentModel.ProviderID == a.Provider.ID && recentModel.ModelID == a.Model.ID {
+		if a.Provider != nil && a.Model != nil && recentModel.ProviderID == a.Provider.ID &&
+			recentModel.ModelID == a.Model.ID {
 			nextIndex = (i + 1) % len(recentModels)
 			break
 		}
 	}
 	for range recentModels {
 		currentRecentModel := recentModels[nextIndex%len(recentModels)]
-		provider, model := findModelByProviderAndModelID(a.Providers, currentRecentModel.ProviderID, currentRecentModel.ModelID)
+		provider, model := findModelByProviderAndModelID(
+			a.Providers,
+			currentRecentModel.ProviderID,
+			currentRecentModel.ModelID,
+		)
 		if provider != nil && model != nil {
 			a.Provider, a.Model = provider, model
-			a.State.AgentModel[a.Agent().Name] = AgentModel{ProviderID: provider.ID, ModelID: model.ID}
-			return a, tea.Sequence(a.SaveState(), toast.NewSuccessToast(fmt.Sprintf("Switched to %s (%s)", model.Name, provider.Name)))
+			a.State.AgentModel[a.Agent().Name] = AgentModel{
+				ProviderID: provider.ID,
+				ModelID:    model.ID,
+			}
+			return a, tea.Sequence(
+				a.SaveState(),
+				toast.NewSuccessToast(
+					fmt.Sprintf("Switched to %s (%s)", model.Name, provider.Name),
+				),
+			)
 		}
-		recentModels = append(recentModels[:nextIndex%len(recentModels)], recentModels[nextIndex%len(recentModels)+1:]...)
+		recentModels = append(
+			recentModels[:nextIndex%len(recentModels)],
+			recentModels[nextIndex%len(recentModels)+1:]...)
 		if len(recentModels) < 2 {
 			a.State.RecentlyUsedModels = recentModels
-			return a, tea.Sequence(a.SaveState(), toast.NewInfoToast("Not enough valid recent models to cycle"))
+			return a, tea.Sequence(
+				a.SaveState(),
+				toast.NewInfoToast("Not enough valid recent models to cycle"),
+			)
 		}
 	}
 	a.State.RecentlyUsedModels = recentModels
@@ -464,10 +486,19 @@ func (a *App) InitializeProvider() tea.Cmd {
 
 	// Priority 3: Current agent's preferred model
 	if selectedProvider == nil && a.Agent().Model.ModelID != "" {
-		if provider, model := findModelByProviderAndModelID(providers, a.Agent().Model.ProviderID, a.Agent().Model.ModelID); provider != nil && model != nil {
+		if provider, model := findModelByProviderAndModelID(providers, a.Agent().Model.ProviderID, a.Agent().Model.ModelID); provider != nil &&
+			model != nil {
 			selectedProvider = provider
 			selectedModel = model
-			slog.Debug("Selected model from current agent", "provider", provider.ID, "model", model.ID, "agent", a.Agent().Name)
+			slog.Debug(
+				"Selected model from current agent",
+				"provider",
+				provider.ID,
+				"model",
+				model.ID,
+				"agent",
+				a.Agent().Name,
+			)
 		} else {
 			slog.Debug("Agent model not found", "provider", a.Agent().Model.ProviderID, "model", a.Agent().Model.ModelID, "agent", a.Agent().Name)
 		}
@@ -715,6 +746,38 @@ func (a *App) SendPrompt(ctx context.Context, prompt Prompt) (*App, tea.Cmd) {
 			errormsg := fmt.Sprintf("failed to send message: %v", err)
 			slog.Error(errormsg)
 			return toast.NewErrorToast(errormsg)()
+		}
+		return nil
+	})
+
+	// The actual response will come through SSE
+	// For now, just return success
+	return a, tea.Batch(cmds...)
+}
+
+func (a *App) SendBash(ctx context.Context, command string) (*App, tea.Cmd) {
+	var cmds []tea.Cmd
+	if a.Session.ID == "" {
+		session, err := a.CreateSession(ctx)
+		if err != nil {
+			return a, toast.NewErrorToast(err.Error())
+		}
+		a.Session = session
+		cmds = append(cmds, util.CmdHandler(SessionCreatedMsg{Session: session}))
+	}
+
+	cmds = append(cmds, func() tea.Msg {
+		_, err := a.Client.Session.Bash(
+			context.Background(),
+			a.Session.ID,
+			opencode.SessionBashParams{
+				Agent:   opencode.F(a.Agent().Name),
+				Command: opencode.F(command),
+			},
+		)
+		if err != nil {
+			slog.Error("Failed to submit bash command", "error", err)
+			return toast.NewErrorToast("Failed to submit bash command")()
 		}
 		return nil
 	})

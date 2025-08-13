@@ -39,6 +39,7 @@ type EditorComponent interface {
 	Focus() (tea.Model, tea.Cmd)
 	Blur()
 	Submit() (tea.Model, tea.Cmd)
+	SubmitBash() (tea.Model, tea.Cmd)
 	Clear() (tea.Model, tea.Cmd)
 	Paste() (tea.Model, tea.Cmd)
 	Newline() (tea.Model, tea.Cmd)
@@ -342,6 +343,14 @@ func (m *editorComponent) Content() string {
 		Padding(0, 0, 0, 1).
 		Bold(true)
 	prompt := promptStyle.Render(">")
+	borderForeground := t.Border()
+	if m.app.IsLeaderSequence {
+		borderForeground = t.Accent()
+	}
+	if m.app.IsBashMode {
+		borderForeground = t.Secondary()
+		prompt = promptStyle.Render("!")
+	}
 
 	m.textarea.SetWidth(width - 6)
 	textarea := lipgloss.JoinHorizontal(
@@ -349,10 +358,6 @@ func (m *editorComponent) Content() string {
 		prompt,
 		m.textarea.View(),
 	)
-	borderForeground := t.Border()
-	if m.app.IsLeaderSequence {
-		borderForeground = t.Accent()
-	}
 	textarea = styles.NewStyle().
 		Background(t.BackgroundElement()).
 		Width(width).
@@ -486,6 +491,16 @@ func (m *editorComponent) Submit() (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	cmds = append(cmds, util.CmdHandler(app.SendPrompt(prompt)))
+	return m, tea.Batch(cmds...)
+}
+
+func (m *editorComponent) SubmitBash() (tea.Model, tea.Cmd) {
+	command := m.textarea.Value()
+	var cmds []tea.Cmd
+	updated, cmd := m.Clear()
+	m = updated.(*editorComponent)
+	cmds = append(cmds, cmd)
+	cmds = append(cmds, util.CmdHandler(app.SendBash{Command: command}))
 	return m, tea.Batch(cmds...)
 }
 

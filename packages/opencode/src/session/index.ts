@@ -1050,14 +1050,15 @@ export namespace Session {
     }
     await updatePart(part)
     const app = App.info()
-    const process = exec(input.command, {
+    const proc = exec(input.command, {
       cwd: app.path.cwd,
       signal: abort.signal,
+      shell: process.env["SHELL"],
     })
 
     let output = ""
 
-    process.stdout?.on("data", (chunk) => {
+    proc.stdout?.on("data", (chunk) => {
       output += chunk.toString()
       if (part.state.status === "running") {
         part.state.metadata = {
@@ -1068,7 +1069,7 @@ export namespace Session {
       }
     })
 
-    process.stderr?.on("data", (chunk) => {
+    proc.stderr?.on("data", (chunk) => {
       output += chunk.toString()
       if (part.state.status === "running") {
         part.state.metadata = {
@@ -1080,7 +1081,7 @@ export namespace Session {
     })
 
     await new Promise<void>((resolve) => {
-      process.on("close", () => {
+      proc.on("close", () => {
         resolve()
       })
     })
