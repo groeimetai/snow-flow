@@ -1,4 +1,5 @@
 import path from "path"
+import { exec } from "child_process"
 import { Decimal } from "decimal.js"
 import { z, ZodSchema } from "zod"
 import {
@@ -43,7 +44,6 @@ import { Plugin } from "../plugin"
 import { Agent } from "../agent/agent"
 import { Permission } from "../permission"
 import { Wildcard } from "../util/wildcard"
-import { BashTool } from "../tool/bash"
 import { ulid } from "ulid"
 
 export namespace Session {
@@ -967,7 +967,7 @@ export namespace Session {
             content: x,
           }),
         ),
-        ...MessageV2.toModelMessage(msgs),
+        ...MessageV2.toModelMessage(msgs.filter((m) => !(m.info.role === "assistant" && m.info.error))),
       ],
       tools: model.info.tool_call === false ? undefined : tools,
       model: wrapLanguageModel({
@@ -1049,27 +1049,41 @@ export namespace Session {
       },
     }
     await updatePart(part)
-    const tool = await BashTool.init()
-    const result = await tool.execute(
-      {
-        command: input.command,
-        description: "User command",
-      },
-      {
-        messageID: msg.id,
-        sessionID: input.sessionID,
-        abort: abort.signal,
-        callID: part.callID,
-        agent: input.agent,
-        metadata: async (e) => {
-          if (part.state.status === "running") {
-            part.state.title = e.title
-            part.state.metadata = e.metadata
-            await updatePart(part)
-          }
-        },
-      },
-    )
+    const app = App.info()
+    const process = exec(input.command, {
+      cwd: app.path.cwd,
+      signal: abort.signal,
+    })
+
+    let output = ""
+
+    process.stdout?.on("data", (chunk) => {
+      output += chunk.toString()
+      if (part.state.status === "running") {
+        part.state.metadata = {
+          output: output,
+          description: "",
+        }
+        updatePart(part)
+      }
+    })
+
+    process.stderr?.on("data", (chunk) => {
+      output += chunk.toString()
+      if (part.state.status === "running") {
+        part.state.metadata = {
+          output: output,
+          description: "",
+        }
+        updatePart(part)
+      }
+    })
+
+    await new Promise<void>((resolve) => {
+      process.on("close", () => {
+        resolve()
+      })
+    })
     msg.time.completed = Date.now()
     await updateMessage(msg)
     if (part.state.status === "running") {
@@ -1080,9 +1094,12 @@ export namespace Session {
           end: Date.now(),
         },
         input: part.state.input,
-        title: result.title,
-        metadata: result.metadata,
-        output: result.output,
+        title: "",
+        metadata: {
+          output,
+          description: "",
+        },
+        output,
       }
       await updatePart(part)
     }
