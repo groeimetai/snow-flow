@@ -95,6 +95,30 @@ Here are all available slash commands:
 
 ---
 
+### Bash commands
+
+Start a line with `!` to run a shell command. The output is added to the conversation as a tool result.
+
+```bash frame="none"
+!ls -la
+```
+
+Commands run in your session's working directory and share state across runs. Environment variables and directory changes persist while the session is open.
+
+```bash frame="none"
+!export FOO=bar
+!echo $FOO
+```
+
+Chain commands with `&&` or `;`, and quote paths with spaces. Use absolute paths when possible for reliability.
+
+```bash frame="none"
+!npm install && npm test
+!python "/path/with spaces/script.py"
+```
+
+---
+
 ### Editor setup
 
 Both the `/editor` and `/export` commands use the editor specified in your `EDITOR` environment variable.
@@ -232,10 +256,10 @@ opencode github run
 
 ##### Flags
 
-| Flag      | Description                                      |
-| --------- | ------------------------------------------------ |
-| `--event` | GitHub mock event to run the agent for           |
-| `--token` | GitHub personal access token  |
+| Flag      | Description                            |
+| --------- | -------------------------------------- |
+| `--event` | GitHub mock event to run the agent for |
+| `--token` | GitHub personal access token           |
 
 ---
 
@@ -289,9 +313,9 @@ This starts an HTTP server that provides API access to opencode functionality wi
 
 #### Flags
 
-| Flag         | Short | Description                                |
-| ------------ | ----- | ------------------------------------------ |
-| `--port`     | `-p`  | Port to listen on          |
+| Flag         | Short | Description           |
+| ------------ | ----- | --------------------- |
+| `--port`     | `-p`  | Port to listen on     |
 | `--hostname` | `-h`  | Hostname to listen on |
 
 ---
@@ -318,8 +342,8 @@ opencode upgrade v0.1.48
 
 #### Flags
 
-| Flag       | Short | Description                                               |
-| ---------- | ----- | --------------------------------------------------------- |
+| Flag       | Short | Description                                                       |
+| ---------- | ----- | ----------------------------------------------------------------- |
 | `--method` | `-m`  | The installation method that was used; curl, npm, pnpm, bun, brew |
 
 ---
@@ -337,5 +361,5 @@ The opencode CLI takes the following global flags.
 | `--prompt`     | `-p`  | Prompt to use                              |
 | `--model`      | `-m`  | Model to use in the form of provider/model |
 | `--mode`       |       | Mode to use                                |
-| `--port`       |       | Port to listen on             |
-| `--hostname`   |       | Hostname to listen on  |
+| `--port`       |       | Port to listen on                          |
+| `--hostname`   |       | Hostname to listen on                      |
