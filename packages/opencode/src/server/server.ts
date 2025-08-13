@@ -593,10 +593,10 @@ export namespace Server {
         },
       )
       .post(
-        "/session/:id/command",
+        "/session/:id/bash",
         describeRoute({
           description: "Run a bash command",
-          operationId: "session.chat",
+          operationId: "session.bash",
           responses: {
             200: {
               description: "Created message",
@@ -618,7 +618,7 @@ export namespace Server {
         async (c) => {
           const sessionID = c.req.valid("param").id
           const body = c.req.valid("json")
-          const msg = await Session.command({ ...body, sessionID })
+          const msg = await Session.bash({ ...body, sessionID })
           return c.json(msg)
         },
       )

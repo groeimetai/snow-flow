@@ -1005,7 +1005,7 @@ export namespace Session {
     command: z.string(),
   })
   export type CommandInput = z.infer<typeof CommandInput>
-  export async function command(input: CommandInput) {
+  export async function bash(input: CommandInput) {
     using abort = lock(input.sessionID)
     const msg: MessageV2.Assistant = {
       id: Identifier.ascending("message"),
