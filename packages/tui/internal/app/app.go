@@ -767,10 +767,10 @@ func (a *App) SendBash(ctx context.Context, command string) (*App, tea.Cmd) {
 	}
 
 	cmds = append(cmds, func() tea.Msg {
-		_, err := a.Client.Session.Bash(
+		_, err := a.Client.Session.Shell(
 			context.Background(),
 			a.Session.ID,
-			opencode.SessionBashParams{
+			opencode.SessionShellParams{
 				Agent:   opencode.F(a.Agent().Name),
 				Command: opencode.F(command),
 			},

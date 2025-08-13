@@ -90,18 +90,6 @@ func (r *SessionService) Abort(ctx context.Context, id string, opts ...option.Re
 	return
 }
 
-// Run a bash command
-func (r *SessionService) Bash(ctx context.Context, id string, body SessionBashParams, opts ...option.RequestOption) (res *AssistantMessage, err error) {
-	opts = append(r.Options[:], opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
-		return
-	}
-	path := fmt.Sprintf("session/%s/bash", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
-}
-
 // Create and send a new message to a session
 func (r *SessionService) Chat(ctx context.Context, id string, body SessionChatParams, opts ...option.RequestOption) (res *AssistantMessage, err error) {
 	opts = append(r.Options[:], opts...)
@@ -175,6 +163,18 @@ func (r *SessionService) Share(ctx context.Context, id string, opts ...option.Re
 	}
 	path := fmt.Sprintf("session/%s/share", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	return
+}
+
+// Run a shell command
+func (r *SessionService) Shell(ctx context.Context, id string, body SessionShellParams, opts ...option.RequestOption) (res *AssistantMessage, err error) {
+	opts = append(r.Options[:], opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("session/%s/shell", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return
 }
 
@@ -2306,15 +2306,6 @@ func (r SessionUpdateParams) MarshalJSON() (data []byte, err error) {
 	return apijson.MarshalRoot(r)
 }
 
-type SessionBashParams struct {
-	Agent   param.Field[string] `json:"agent,required"`
-	Command param.Field[string] `json:"command,required"`
-}
-
-func (r SessionBashParams) MarshalJSON() (data []byte, err error) {
-	return apijson.MarshalRoot(r)
-}
-
 type SessionChatParams struct {
 	ModelID    param.Field[string]                       `json:"modelID,required"`
 	Parts      param.Field[[]SessionChatParamsPartUnion] `json:"parts,required"`
@@ -2386,6 +2377,15 @@ type SessionRevertParams struct {
 }
 
 func (r SessionRevertParams) MarshalJSON() (data []byte, err error) {
+	return apijson.MarshalRoot(r)
+}
+
+type SessionShellParams struct {
+	Agent   param.Field[string] `json:"agent,required"`
+	Command param.Field[string] `json:"command,required"`
+}
+
+func (r SessionShellParams) MarshalJSON() (data []byte, err error) {
 	return apijson.MarshalRoot(r)
 }
 

@@ -1,5 +1,5 @@
 import path from "path"
-import { exec } from "child_process"
+import { spawn } from "child_process"
 import { Decimal } from "decimal.js"
 import { z, ZodSchema } from "zod"
 import {
@@ -670,7 +670,7 @@ export namespace Session {
     const lastSummary = msgs.findLast((msg) => msg.info.role === "assistant" && msg.info.summary === true)
     if (lastSummary) msgs = msgs.filter((msg) => msg.info.id >= lastSummary.info.id)
 
-    if (msgs.length === 1 && !session.parentID && isDefaultTitle(session.title)) {
+    if (msgs.filter((m) => m.info.role === "user").length === 1 && !session.parentID && isDefaultTitle(session.title)) {
       const small = (await Provider.getSmallModel(input.providerID)) ?? model
       generateText({
         maxOutputTokens: small.info.reasoning ? 1024 : 20,
@@ -1005,7 +1005,7 @@ export namespace Session {
     command: z.string(),
   })
   export type CommandInput = z.infer<typeof CommandInput>
-  export async function bash(input: CommandInput) {
+  export async function shell(input: CommandInput) {
     using abort = lock(input.sessionID)
     const msg: MessageV2.Assistant = {
       id: Identifier.ascending("message"),
@@ -1050,10 +1050,18 @@ export namespace Session {
     }
     await updatePart(part)
     const app = App.info()
-    const proc = exec(input.command, {
+    const script = `
+    [[ -f ~/.zshrc ]] && source ~/.zshrc 2>/dev/null || true
+    [[ -f ~/.bashrc ]] && source ~/.bashrc 2>/dev/null || true
+    eval "${input.command}"
+  `
+    const proc = spawn(process.env["SHELL"] ?? "bash", ["-c", "-l", script], {
       cwd: app.path.cwd,
       signal: abort.signal,
-      shell: process.env["SHELL"],
+      env: {
+        ...process.env,
+        TERM: "dumb",
+      },
     })
 
     let output = ""
