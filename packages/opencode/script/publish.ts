@@ -126,7 +126,7 @@ if (!snapshot) {
   //   "",
   // ].join("\n")
 
-  // for (const pkg of ["opencode", "opencode-bin"]) {
+  // for (const pkg of ["opencode"]) {
   //   await $`rm -rf ./dist/aur-${pkg}`
   //   await $`git clone ssh://aur@aur.archlinux.org/${pkg}.git ./dist/aur-${pkg}`
   //   await $`cd ./dist/aur-${pkg} && git checkout master`
