@@ -687,6 +687,8 @@ func renderToolDetails(
 
 func renderToolName(name string) string {
 	switch name {
+	case "bash":
+		return "Shell"
 	case "webfetch":
 		return "Fetch"
 	case "invalid":

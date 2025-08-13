@@ -80,7 +80,7 @@ type AgentSelectedMsg struct {
 type SessionClearedMsg struct{}
 type CompactSessionMsg struct{}
 type SendPrompt = Prompt
-type SendBash = struct {
+type SendShell = struct {
 	Command string
 }
 type SetEditorContentMsg struct {
@@ -755,7 +755,7 @@ func (a *App) SendPrompt(ctx context.Context, prompt Prompt) (*App, tea.Cmd) {
 	return a, tea.Batch(cmds...)
 }
 
-func (a *App) SendBash(ctx context.Context, command string) (*App, tea.Cmd) {
+func (a *App) SendShell(ctx context.Context, command string) (*App, tea.Cmd) {
 	var cmds []tea.Cmd
 	if a.Session.ID == "" {
 		session, err := a.CreateSession(ctx)
@@ -776,8 +776,8 @@ func (a *App) SendBash(ctx context.Context, command string) (*App, tea.Cmd) {
 			},
 		)
 		if err != nil {
-			slog.Error("Failed to submit bash command", "error", err)
-			return toast.NewErrorToast("Failed to submit bash command")()
+			slog.Error("Failed to submit shell command", "error", err)
+			return toast.NewErrorToast("Failed to submit shell command")()
 		}
 		return nil
 	})

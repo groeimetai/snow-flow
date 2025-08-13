@@ -402,8 +402,8 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.showCompletionDialog = false
 		a.app, cmd = a.app.SendPrompt(context.Background(), msg)
 		cmds = append(cmds, cmd)
-	case app.SendBash:
-		a.app, cmd = a.app.SendBash(context.Background(), msg.Command)
+	case app.SendShell:
+		a.app, cmd = a.app.SendShell(context.Background(), msg.Command)
 		cmds = append(cmds, cmd)
 	case app.SetEditorContentMsg:
 		// Set the editor content without sending

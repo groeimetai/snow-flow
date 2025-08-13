@@ -500,7 +500,7 @@ func (m *editorComponent) SubmitBash() (tea.Model, tea.Cmd) {
 	updated, cmd := m.Clear()
 	m = updated.(*editorComponent)
 	cmds = append(cmds, cmd)
-	cmds = append(cmds, util.CmdHandler(app.SendBash{Command: command}))
+	cmds = append(cmds, util.CmdHandler(app.SendShell{Command: command}))
 	return m, tea.Batch(cmds...)
 }
 
