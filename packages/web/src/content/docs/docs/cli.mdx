@@ -103,20 +103,6 @@ Start a line with `!` to run a shell command. The output is added to the convers
 !ls -la
 ```
 
-Commands run in your session's working directory and share state across runs. Environment variables and directory changes persist while the session is open.
-
-```bash frame="none"
-!export FOO=bar
-!echo $FOO
-```
-
-Chain commands with `&&` or `;`, and quote paths with spaces. Use absolute paths when possible for reliability.
-
-```bash frame="none"
-!npm install && npm test
-!python "/path/with spaces/script.py"
-```
-
 ---
 
 ### Editor setup
