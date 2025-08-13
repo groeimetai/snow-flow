@@ -525,6 +525,7 @@ export namespace Session {
                     abort: new AbortController().signal,
                     agent: input.agent!,
                     messageID: userMsg.id,
+                    extra: { bypassCwdCheck: true },
                     metadata: async () => {},
                   }),
                 )

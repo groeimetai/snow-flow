@@ -24,7 +24,7 @@ export const ReadTool = Tool.define("read", {
       filepath = path.join(process.cwd(), filepath)
     }
     const app = App.info()
-    if (!Filesystem.contains(app.path.cwd, filepath)) {
+    if (!ctx.extra?.["bypassCwdCheck"] && !Filesystem.contains(app.path.cwd, filepath)) {
       throw new Error(`File ${filepath} is not in the current working directory`)
     }
 
@@ -98,8 +98,6 @@ function isImageFile(filePath: string): string | false {
       return "GIF"
     case ".bmp":
       return "BMP"
-    case ".svg":
-      return "SVG"
     case ".webp":
       return "WebP"
     default:
