@@ -1456,6 +1456,30 @@ export type SessionMessageResponses = {
 
 export type SessionMessageResponse = SessionMessageResponses[keyof SessionMessageResponses]
 
+export type SessionShellData = {
+  body?: {
+    agent: string
+    command: string
+  }
+  path: {
+    /**
+     * Session ID
+     */
+    id: string
+  }
+  query?: never
+  url: "/session/{id}/shell"
+}
+
+export type SessionShellResponses = {
+  /**
+   * Created message
+   */
+  200: AssistantMessage
+}
+
+export type SessionShellResponse = SessionShellResponses[keyof SessionShellResponses]
+
 export type SessionRevertData = {
   body?: {
     messageID: string

@@ -37,6 +37,8 @@ import type {
   SessionChatResponses,
   SessionMessageData,
   SessionMessageResponses,
+  SessionShellData,
+  SessionShellResponses,
   SessionRevertData,
   SessionRevertResponses,
   SessionUnrevertData,
@@ -329,6 +331,20 @@ class Session extends _HeyApiClient {
     return (options.client ?? this._client).get<SessionMessageResponses, unknown, ThrowOnError>({
       url: "/session/{id}/message/{messageID}",
       ...options,
+    })
+  }
+
+  /**
+   * Run a shell command
+   */
+  public shell<ThrowOnError extends boolean = false>(options: Options<SessionShellData, ThrowOnError>) {
+    return (options.client ?? this._client).post<SessionShellResponses, unknown, ThrowOnError>({
+      url: "/session/{id}/shell",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
     })
   }
 
