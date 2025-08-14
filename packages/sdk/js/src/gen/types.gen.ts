@@ -23,17 +23,14 @@ export type Event =
       type: "storage.write"
     } & EventStorageWrite)
   | ({
-      type: "file.edited"
-    } & EventFileEdited)
-  | ({
-      type: "server.connected"
-    } & EventServerConnected)
-  | ({
       type: "permission.updated"
     } & EventPermissionUpdated)
   | ({
       type: "permission.replied"
     } & EventPermissionReplied)
+  | ({
+      type: "file.edited"
+    } & EventFileEdited)
   | ({
       type: "session.updated"
     } & EventSessionUpdated)
@@ -46,6 +43,9 @@ export type Event =
   | ({
       type: "session.error"
     } & EventSessionError)
+  | ({
+      type: "server.connected"
+    } & EventServerConnected)
   | ({
       type: "file.watcher.updated"
     } & EventFileWatcherUpdated)
@@ -425,20 +425,6 @@ export type EventStorageWrite = {
   }
 }
 
-export type EventFileEdited = {
-  type: "file.edited"
-  properties: {
-    file: string
-  }
-}
-
-export type EventServerConnected = {
-  type: "server.connected"
-  properties: {
-    [key: string]: unknown
-  }
-}
-
 export type EventPermissionUpdated = {
   type: "permission.updated"
   properties: Permission
@@ -466,6 +452,13 @@ export type EventPermissionReplied = {
     sessionID: string
     permissionID: string
     response: string
+  }
+}
+
+export type EventFileEdited = {
+  type: "file.edited"
+  properties: {
+    file: string
   }
 }
 
@@ -527,6 +520,13 @@ export type EventSessionError = {
       | ({
           name: "MessageAbortedError"
         } & MessageAbortedError)
+  }
+}
+
+export type EventServerConnected = {
+  type: "server.connected"
+  properties: {
+    [key: string]: unknown
   }
 }
 
