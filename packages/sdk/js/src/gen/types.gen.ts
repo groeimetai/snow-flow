@@ -1105,6 +1105,35 @@ export type Agent = {
   }
 }
 
+export type Auth =
+  | ({
+      type: "oauth"
+    } & OAuth)
+  | ({
+      type: "api"
+    } & ApiAuth)
+  | ({
+      type: "wellknown"
+    } & WellKnownAuth)
+
+export type OAuth = {
+  type: "oauth"
+  refresh: string
+  access: string
+  expires: number
+}
+
+export type ApiAuth = {
+  type: "api"
+  key: string
+}
+
+export type WellKnownAuth = {
+  type: "wellknown"
+  key: string
+  token: string
+}
+
 export type EventSubscribeData = {
   body?: never
   path?: never
@@ -1857,6 +1886,33 @@ export type TuiExecuteCommandResponses = {
 }
 
 export type TuiExecuteCommandResponse = TuiExecuteCommandResponses[keyof TuiExecuteCommandResponses]
+
+export type AuthSetData = {
+  body?: Auth
+  path: {
+    id: string
+  }
+  query?: never
+  url: "/auth/{id}"
+}
+
+export type AuthSetErrors = {
+  /**
+   * Bad request
+   */
+  400: _Error
+}
+
+export type AuthSetError = AuthSetErrors[keyof AuthSetErrors]
+
+export type AuthSetResponses = {
+  /**
+   * Successfully set authentication credentials
+   */
+  200: boolean
+}
+
+export type AuthSetResponse = AuthSetResponses[keyof AuthSetResponses]
 
 export type ClientOptions = {
   baseUrl: `${string}://${string}` | (string & {})
