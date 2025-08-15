@@ -802,6 +802,14 @@ export type KeybindsConfig = {
    */
   session_compact: string
   /**
+   * Cycle to next child session
+   */
+  session_child_cycle: string
+  /**
+   * Cycle to previous child session
+   */
+  session_child_cycle_reverse: string
+  /**
    * Scroll messages up by one page
    */
   messages_page_up: string
@@ -1239,7 +1247,10 @@ export type SessionListResponses = {
 export type SessionListResponse = SessionListResponses[keyof SessionListResponses]
 
 export type SessionCreateData = {
-  body?: never
+  body?: {
+    parentID?: string
+    title?: string
+  }
   path?: never
   query?: never
   url: "/session"
