@@ -23,7 +23,6 @@ import (
 	"github.com/sst/opencode/internal/components/chat"
 	cmdcomp "github.com/sst/opencode/internal/components/commands"
 	"github.com/sst/opencode/internal/components/dialog"
-	"github.com/sst/opencode/internal/components/fileviewer"
 	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/components/status"
 	"github.com/sst/opencode/internal/components/toast"
@@ -78,7 +77,6 @@ type Model struct {
 	interruptKeyState    InterruptKeyState
 	exitKeyState         ExitKeyState
 	messagesRight        bool
-	fileViewer           fileviewer.Model
 }
 
 func (a Model) Init() tea.Cmd {
@@ -94,13 +92,6 @@ func (a Model) Init() tea.Cmd {
 	cmds = append(cmds, a.status.Init())
 	cmds = append(cmds, a.completions.Init())
 	cmds = append(cmds, a.toastManager.Init())
-	cmds = append(cmds, a.fileViewer.Init())
-
-	// Check if we should show the init dialog
-	cmds = append(cmds, func() tea.Msg {
-		shouldShow := a.app.Info.Git && a.app.Info.Time.Initialized > 0
-		return dialog.ShowInitDialogMsg{Show: shouldShow}
-	})
 
 	return tea.Batch(cmds...)
 }
@@ -586,12 +577,6 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			slog.Error("Server error", "name", err.Name, "message", err.Data.Message)
 			return a, toast.NewErrorToast(err.Data.Message, toast.WithTitle(string(err.Name)))
 		}
-	case opencode.EventListResponseEventFileWatcherUpdated:
-		if a.fileViewer.HasFile() {
-			if a.fileViewer.Filename() == msg.Properties.File {
-				return a.openFile(msg.Properties.File)
-			}
-		}
 	case tea.WindowSizeMsg:
 		msg.Height -= 2 // Make space for the status bar
 		a.width, a.height = msg.Width, msg.Height
@@ -653,8 +638,6 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Reset exit key state after timeout
 		a.exitKeyState = ExitKeyIdle
 		a.editor.SetExitKeyInDebounce(false)
-	case dialog.FindSelectedMsg:
-		return a.openFile(msg.FilePath)
 	case tea.PasteMsg, tea.ClipboardMsg:
 		// Paste events: prioritize modal if active, otherwise editor
 		if a.modal != nil {
@@ -753,10 +736,6 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
-	fv, cmd := a.fileViewer.Update(msg)
-	a.fileViewer = fv
-	cmds = append(cmds, cmd)
-
 	return a, tea.Batch(cmds...)
 }
 
@@ -804,26 +783,6 @@ func (a Model) View() (string, *tea.Cursor) {
 
 func (a Model) Cleanup() {
 	a.status.Cleanup()
-}
-
-func (a Model) openFile(filepath string) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	response, err := a.app.Client.File.Read(
-		context.Background(),
-		opencode.FileReadParams{
-			Path: opencode.F(filepath),
-		},
-	)
-	if err != nil {
-		slog.Error("Failed to read file", "error", err)
-		return a, toast.NewErrorToast("Failed to read file")
-	}
-	a.fileViewer, cmd = a.fileViewer.SetFile(
-		filepath,
-		response.Content,
-		response.Type == "patch",
-	)
-	return a, cmd
 }
 
 func (a Model) home() (string, int, int) {
@@ -1014,11 +973,11 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 	case commands.AppHelpCommand:
 		helpDialog := dialog.NewHelpDialog(a.app)
 		a.modal = helpDialog
-	case commands.SwitchAgentCommand:
+	case commands.AgentCycleCommand:
 		updated, cmd := a.app.SwitchAgent()
 		a.app = updated
 		cmds = append(cmds, cmd)
-	case commands.SwitchAgentReverseCommand:
+	case commands.AgentCycleReverseCommand:
 		updated, cmd := a.app.SwitchAgentReverse()
 		a.app = updated
 		cmds = append(cmds, cmd)
@@ -1197,21 +1156,6 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 	case commands.ThemeListCommand:
 		themeDialog := dialog.NewThemeDialog()
 		a.modal = themeDialog
-	// case commands.FileListCommand:
-	// 	a.editor.Blur()
-	// 	findDialog := dialog.NewFindDialog(a.fileProvider)
-	// 	cmds = append(cmds, findDialog.Init())
-	// 	a.modal = findDialog
-	case commands.FileCloseCommand:
-		a.fileViewer, cmd = a.fileViewer.Clear()
-		cmds = append(cmds, cmd)
-	case commands.FileDiffToggleCommand:
-		a.fileViewer, cmd = a.fileViewer.ToggleDiff()
-		cmds = append(cmds, cmd)
-		a.app.State.SplitDiff = a.fileViewer.DiffStyle() == fileviewer.DiffStyleSplit
-		cmds = append(cmds, a.app.SaveState())
-	case commands.FileSearchCommand:
-		return a, nil
 	case commands.ProjectInitCommand:
 		cmds = append(cmds, a.app.InitializeProject(context.Background()))
 	case commands.InputClearCommand:
@@ -1242,42 +1186,21 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 		a.messages = updated.(chat.MessagesComponent)
 		cmds = append(cmds, cmd)
 	case commands.MessagesPageUpCommand:
-		if a.fileViewer.HasFile() {
-			a.fileViewer, cmd = a.fileViewer.PageUp()
-			cmds = append(cmds, cmd)
-		} else {
-			updated, cmd := a.messages.PageUp()
-			a.messages = updated.(chat.MessagesComponent)
-			cmds = append(cmds, cmd)
-		}
+		updated, cmd := a.messages.PageUp()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
 	case commands.MessagesPageDownCommand:
-		if a.fileViewer.HasFile() {
-			a.fileViewer, cmd = a.fileViewer.PageDown()
-			cmds = append(cmds, cmd)
-		} else {
-			updated, cmd := a.messages.PageDown()
-			a.messages = updated.(chat.MessagesComponent)
-			cmds = append(cmds, cmd)
-		}
+		updated, cmd := a.messages.PageDown()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
 	case commands.MessagesHalfPageUpCommand:
-		if a.fileViewer.HasFile() {
-			a.fileViewer, cmd = a.fileViewer.HalfPageUp()
-			cmds = append(cmds, cmd)
-		} else {
-			updated, cmd := a.messages.HalfPageUp()
-			a.messages = updated.(chat.MessagesComponent)
-			cmds = append(cmds, cmd)
-		}
+		updated, cmd := a.messages.HalfPageUp()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
 	case commands.MessagesHalfPageDownCommand:
-		if a.fileViewer.HasFile() {
-			a.fileViewer, cmd = a.fileViewer.HalfPageDown()
-			cmds = append(cmds, cmd)
-		} else {
-			updated, cmd := a.messages.HalfPageDown()
-			a.messages = updated.(chat.MessagesComponent)
-			cmds = append(cmds, cmd)
-		}
-
+		updated, cmd := a.messages.HalfPageDown()
+		a.messages = updated.(chat.MessagesComponent)
+		cmds = append(cmds, cmd)
 	case commands.MessagesCopyCommand:
 		updated, cmd := a.messages.CopyLastMessage()
 		a.messages = updated.(chat.MessagesComponent)
@@ -1327,8 +1250,6 @@ func NewModel(app *app.App) tea.Model {
 		toastManager:         toast.NewToastManager(),
 		interruptKeyState:    InterruptKeyIdle,
 		exitKeyState:         ExitKeyIdle,
-		fileViewer:           fileviewer.New(app),
-		messagesRight:        app.State.MessagesRight,
 	}
 
 	return model

@@ -347,10 +347,10 @@ export type ToolStateError = {
   input: {
     [key: string]: unknown
   }
-  metadata: {
+  error: string
+  metadata?: {
     [key: string]: unknown
   }
-  error: string
   time: {
     start: number
     end: number
@@ -750,25 +750,29 @@ export type KeybindsConfig = {
    */
   app_help: string
   /**
-   * @deprecated use switch_agent. Next mode
+   * Exit the application
    */
-  switch_mode: string
-  /**
-   * @deprecated use switch_agent_reverse. Previous mode
-   */
-  switch_mode_reverse: string
-  /**
-   * Next agent
-   */
-  switch_agent: string
-  /**
-   * Previous agent
-   */
-  switch_agent_reverse: string
+  app_exit: string
   /**
    * Open external editor
    */
   editor_open: string
+  /**
+   * List available themes
+   */
+  theme_list: string
+  /**
+   * Create/update AGENTS.md
+   */
+  project_init: string
+  /**
+   * Toggle tool details
+   */
+  tool_details: string
+  /**
+   * Toggle thinking blocks
+   */
+  thinking_blocks: string
   /**
    * Export session to editor
    */
@@ -798,41 +802,65 @@ export type KeybindsConfig = {
    */
   session_compact: string
   /**
-   * Toggle tool details
+   * Scroll messages up by one page
    */
-  tool_details: string
+  messages_page_up: string
   /**
-   * Toggle thinking blocks
+   * Scroll messages down by one page
    */
-  thinking_blocks: string
+  messages_page_down: string
+  /**
+   * Scroll messages up by half page
+   */
+  messages_half_page_up: string
+  /**
+   * Scroll messages down by half page
+   */
+  messages_half_page_down: string
+  /**
+   * Navigate to first message
+   */
+  messages_first: string
+  /**
+   * Navigate to last message
+   */
+  messages_last: string
+  /**
+   * Copy message
+   */
+  messages_copy: string
+  /**
+   * Undo message
+   */
+  messages_undo: string
+  /**
+   * Redo message
+   */
+  messages_redo: string
   /**
    * List available models
    */
   model_list: string
   /**
-   * List available themes
+   * Next recent model
    */
-  theme_list: string
+  model_cycle_recent: string
   /**
-   * List files
+   * Previous recent model
    */
-  file_list: string
+  model_cycle_recent_reverse: string
   /**
-   * Close file
+   * List agents
    */
-  file_close: string
+  agent_list: string
   /**
-   * Search file
+   * Next agent
    */
-  file_search: string
+  agent_cycle: string
   /**
-   * Split/unified diff
+   * Previous agent
    */
-  file_diff_toggle: string
-  /**
-   * Create/update AGENTS.md
-   */
-  project_init: string
+  agent_cycle_reverse: string
   /**
    * Clear input field
    */
@@ -850,61 +878,53 @@ export type KeybindsConfig = {
    */
   input_newline: string
   /**
-   * Scroll messages up by one page
+   * @deprecated use agent_cycle. Next mode
    */
-  messages_page_up: string
+  switch_mode: string
   /**
-   * Scroll messages down by one page
+   * @deprecated use agent_cycle_reverse. Previous mode
    */
-  messages_page_down: string
+  switch_mode_reverse: string
   /**
-   * Scroll messages up by half page
+   * @deprecated use agent_cycle. Next agent
    */
-  messages_half_page_up: string
+  switch_agent: string
   /**
-   * Scroll messages down by half page
+   * @deprecated use agent_cycle_reverse. Previous agent
    */
-  messages_half_page_down: string
+  switch_agent_reverse: string
   /**
-   * Navigate to previous message
+   * @deprecated Currently not available. List files
+   */
+  file_list: string
+  /**
+   * @deprecated Close file
+   */
+  file_close: string
+  /**
+   * @deprecated Search file
+   */
+  file_search: string
+  /**
+   * @deprecated Split/unified diff
+   */
+  file_diff_toggle: string
+  /**
+   * @deprecated Navigate to previous message
    */
   messages_previous: string
   /**
-   * Navigate to next message
+   * @deprecated Navigate to next message
    */
   messages_next: string
   /**
-   * Navigate to first message
-   */
-  messages_first: string
-  /**
-   * Navigate to last message
-   */
-  messages_last: string
-  /**
-   * Toggle layout
+   * @deprecated Toggle layout
    */
   messages_layout_toggle: string
-  /**
-   * Copy message
-   */
-  messages_copy: string
   /**
    * @deprecated use messages_undo. Revert message
    */
   messages_revert: string
-  /**
-   * Undo message
-   */
-  messages_undo: string
-  /**
-   * Redo message
-   */
-  messages_redo: string
-  /**
-   * Exit the application
-   */
-  app_exit: string
 }
 
 export type AgentConfig = {
@@ -1086,6 +1106,7 @@ export type Agent = {
   name: string
   description?: string
   mode: "subagent" | "primary" | "all"
+  builtIn: boolean
   topP?: number
   temperature?: number
   permission: {

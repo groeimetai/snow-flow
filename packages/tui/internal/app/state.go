@@ -35,8 +35,6 @@ type State struct {
 	Agent              string                `toml:"agent"`
 	RecentlyUsedModels []ModelUsage          `toml:"recently_used_models"`
 	RecentlyUsedAgents []AgentUsage          `toml:"recently_used_agents"`
-	MessagesRight      bool                  `toml:"messages_right"`
-	SplitDiff          bool                  `toml:"split_diff"`
 	MessageHistory     []Prompt              `toml:"message_history"`
 	ShowToolDetails    *bool                 `toml:"show_tool_details"`
 	ShowThinkingBlocks *bool                 `toml:"show_thinking_blocks"`

@@ -1099,7 +1099,7 @@ export namespace Server {
       .post(
         "/tui/execute-command",
         describeRoute({
-          description: "Execute a TUI command (e.g. switch_agent)",
+          description: "Execute a TUI command (e.g. agent_cycle)",
           operationId: "tui.executeCommand",
           responses: {
             200: {

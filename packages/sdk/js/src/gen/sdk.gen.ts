@@ -506,7 +506,7 @@ class Tui extends _HeyApiClient {
   }
 
   /**
-   * Execute a TUI command (e.g. switch_agent)
+   * Execute a TUI command (e.g. agent_cycle)
    */
   public executeCommand<ThrowOnError extends boolean = false>(options?: Options<TuiExecuteCommandData, ThrowOnError>) {
     return (options?.client ?? this._client).post<TuiExecuteCommandResponses, unknown, ThrowOnError>({

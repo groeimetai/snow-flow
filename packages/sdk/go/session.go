@@ -2025,9 +2025,9 @@ func (r toolStateCompletedTimeJSON) RawJSON() string {
 type ToolStateError struct {
 	Error    string                 `json:"error,required"`
 	Input    map[string]interface{} `json:"input,required"`
-	Metadata map[string]interface{} `json:"metadata"`
 	Status   ToolStateErrorStatus   `json:"status,required"`
 	Time     ToolStateErrorTime     `json:"time,required"`
+	Metadata map[string]interface{} `json:"metadata"`
 	JSON     toolStateErrorJSON     `json:"-"`
 }
 
@@ -2035,9 +2035,9 @@ type ToolStateError struct {
 type toolStateErrorJSON struct {
 	Error       apijson.Field
 	Input       apijson.Field
-	Metadata    apijson.Field
 	Status      apijson.Field
 	Time        apijson.Field
+	Metadata    apijson.Field
 	raw         string
 	ExtraFields map[string]apijson.Field
 }

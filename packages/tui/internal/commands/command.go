@@ -108,9 +108,12 @@ func (r CommandRegistry) Matches(msg tea.KeyPressMsg, leader bool) []Command {
 
 const (
 	AppHelpCommand                 CommandName = "app_help"
-	SwitchAgentCommand             CommandName = "switch_agent"
-	SwitchAgentReverseCommand      CommandName = "switch_agent_reverse"
+	AppExitCommand                 CommandName = "app_exit"
+	ThemeListCommand               CommandName = "theme_list"
+	ProjectInitCommand             CommandName = "project_init"
 	EditorOpenCommand              CommandName = "editor_open"
+	ToolDetailsCommand             CommandName = "tool_details"
+	ThinkingBlocksCommand          CommandName = "thinking_blocks"
 	SessionNewCommand              CommandName = "session_new"
 	SessionListCommand             CommandName = "session_list"
 	SessionShareCommand            CommandName = "session_share"
@@ -118,34 +121,25 @@ const (
 	SessionInterruptCommand        CommandName = "session_interrupt"
 	SessionCompactCommand          CommandName = "session_compact"
 	SessionExportCommand           CommandName = "session_export"
-	ToolDetailsCommand             CommandName = "tool_details"
-	ThinkingBlocksCommand          CommandName = "thinking_blocks"
-	ModelListCommand               CommandName = "model_list"
-	AgentListCommand               CommandName = "agent_list"
-	ModelCycleRecentCommand        CommandName = "model_cycle_recent"
-	ModelCycleRecentReverseCommand CommandName = "model_cycle_recent_reverse"
-	ThemeListCommand               CommandName = "theme_list"
-	FileListCommand                CommandName = "file_list"
-	FileCloseCommand               CommandName = "file_close"
-	FileSearchCommand              CommandName = "file_search"
-	FileDiffToggleCommand          CommandName = "file_diff_toggle"
-	ProjectInitCommand             CommandName = "project_init"
-	InputClearCommand              CommandName = "input_clear"
-	InputPasteCommand              CommandName = "input_paste"
-	InputSubmitCommand             CommandName = "input_submit"
-	InputNewlineCommand            CommandName = "input_newline"
 	MessagesPageUpCommand          CommandName = "messages_page_up"
 	MessagesPageDownCommand        CommandName = "messages_page_down"
 	MessagesHalfPageUpCommand      CommandName = "messages_half_page_up"
 	MessagesHalfPageDownCommand    CommandName = "messages_half_page_down"
-
-	MessagesFirstCommand CommandName = "messages_first"
-	MessagesLastCommand  CommandName = "messages_last"
-
-	MessagesCopyCommand CommandName = "messages_copy"
-	MessagesUndoCommand CommandName = "messages_undo"
-	MessagesRedoCommand CommandName = "messages_redo"
-	AppExitCommand      CommandName = "app_exit"
+	MessagesFirstCommand           CommandName = "messages_first"
+	MessagesLastCommand            CommandName = "messages_last"
+	MessagesCopyCommand            CommandName = "messages_copy"
+	MessagesUndoCommand            CommandName = "messages_undo"
+	MessagesRedoCommand            CommandName = "messages_redo"
+	ModelListCommand               CommandName = "model_list"
+	ModelCycleRecentCommand        CommandName = "model_cycle_recent"
+	ModelCycleRecentReverseCommand CommandName = "model_cycle_recent_reverse"
+	AgentListCommand               CommandName = "agent_list"
+	AgentCycleCommand              CommandName = "agent_cycle"
+	AgentCycleReverseCommand       CommandName = "agent_cycle_reverse"
+	InputClearCommand              CommandName = "input_clear"
+	InputPasteCommand              CommandName = "input_paste"
+	InputSubmitCommand             CommandName = "input_submit"
+	InputNewlineCommand            CommandName = "input_newline"
 )
 
 func (k Command) Matches(msg tea.KeyPressMsg, leader bool) bool {
@@ -183,16 +177,6 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 			Description: "show help",
 			Keybindings: parseBindings("<leader>h"),
 			Trigger:     []string{"help"},
-		},
-		{
-			Name:        SwitchAgentCommand,
-			Description: "next agent",
-			Keybindings: parseBindings("tab"),
-		},
-		{
-			Name:        SwitchAgentReverseCommand,
-			Description: "previous agent",
-			Keybindings: parseBindings("shift+tab"),
 		},
 		{
 			Name:        EditorOpenCommand,
@@ -259,12 +243,6 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 			Trigger:     []string{"models"},
 		},
 		{
-			Name:        AgentListCommand,
-			Description: "list agents",
-			Keybindings: parseBindings("<leader>a"),
-			Trigger:     []string{"agents"},
-		},
-		{
 			Name:        ModelCycleRecentCommand,
 			Description: "next recent model",
 			Keybindings: parseBindings("f2"),
@@ -275,31 +253,26 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 			Keybindings: parseBindings("shift+f2"),
 		},
 		{
+			Name:        AgentListCommand,
+			Description: "list agents",
+			Keybindings: parseBindings("<leader>a"),
+			Trigger:     []string{"agents"},
+		},
+		{
+			Name:        AgentCycleCommand,
+			Description: "next agent",
+			Keybindings: parseBindings("tab"),
+		},
+		{
+			Name:        AgentCycleReverseCommand,
+			Description: "previous agent",
+			Keybindings: parseBindings("shift+tab"),
+		},
+		{
 			Name:        ThemeListCommand,
 			Description: "list themes",
 			Keybindings: parseBindings("<leader>t"),
 			Trigger:     []string{"themes"},
-		},
-		// {
-		// 	Name:        FileListCommand,
-		// 	Description: "list files",
-		// 	Keybindings: parseBindings("<leader>f"),
-		// 	Trigger:     []string{"files"},
-		// },
-		{
-			Name:        FileCloseCommand,
-			Description: "close file",
-			Keybindings: parseBindings("esc"),
-		},
-		{
-			Name:        FileSearchCommand,
-			Description: "search file",
-			Keybindings: parseBindings("<leader>/"),
-		},
-		{
-			Name:        FileDiffToggleCommand,
-			Description: "split/unified diff",
-			Keybindings: parseBindings("<leader>v"),
 		},
 		{
 			Name:        ProjectInitCommand,
