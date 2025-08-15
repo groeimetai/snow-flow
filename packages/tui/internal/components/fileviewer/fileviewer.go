@@ -99,7 +99,6 @@ func (m Model) View() string {
 	if m.isDiff == nil || *m.isDiff == false {
 		diffToggle = ""
 	}
-	layoutToggle := m.app.Key(commands.MessagesLayoutToggleCommand)
 
 	background := t.Background()
 	footer := layout.Render(
@@ -114,9 +113,7 @@ func (m Model) View() string {
 		layout.FlexItem{
 			View: close,
 		},
-		layout.FlexItem{
-			View: layoutToggle,
-		},
+
 		layout.FlexItem{
 			View: diffToggle,
 		},

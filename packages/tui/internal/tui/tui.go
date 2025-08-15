@@ -1277,10 +1277,7 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 			a.messages = updated.(chat.MessagesComponent)
 			cmds = append(cmds, cmd)
 		}
-	case commands.MessagesLayoutToggleCommand:
-		a.messagesRight = !a.messagesRight
-		a.app.State.MessagesRight = a.messagesRight
-		cmds = append(cmds, a.app.SaveState())
+
 	case commands.MessagesCopyCommand:
 		updated, cmd := a.messages.CopyLastMessage()
 		a.messages = updated.(chat.MessagesComponent)

@@ -138,15 +138,14 @@ const (
 	MessagesPageDownCommand        CommandName = "messages_page_down"
 	MessagesHalfPageUpCommand      CommandName = "messages_half_page_up"
 	MessagesHalfPageDownCommand    CommandName = "messages_half_page_down"
-	MessagesPreviousCommand        CommandName = "messages_previous"
-	MessagesNextCommand            CommandName = "messages_next"
-	MessagesFirstCommand           CommandName = "messages_first"
-	MessagesLastCommand            CommandName = "messages_last"
-	MessagesLayoutToggleCommand    CommandName = "messages_layout_toggle"
-	MessagesCopyCommand            CommandName = "messages_copy"
-	MessagesUndoCommand            CommandName = "messages_undo"
-	MessagesRedoCommand            CommandName = "messages_redo"
-	AppExitCommand                 CommandName = "app_exit"
+
+	MessagesFirstCommand CommandName = "messages_first"
+	MessagesLastCommand  CommandName = "messages_last"
+
+	MessagesCopyCommand CommandName = "messages_copy"
+	MessagesUndoCommand CommandName = "messages_undo"
+	MessagesRedoCommand CommandName = "messages_redo"
+	AppExitCommand      CommandName = "app_exit"
 )
 
 func (k Command) Matches(msg tea.KeyPressMsg, leader bool) bool {
@@ -348,16 +347,7 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 			Description: "half page down",
 			Keybindings: parseBindings("ctrl+alt+d"),
 		},
-		{
-			Name:        MessagesPreviousCommand,
-			Description: "previous message",
-			Keybindings: parseBindings("ctrl+up"),
-		},
-		{
-			Name:        MessagesNextCommand,
-			Description: "next message",
-			Keybindings: parseBindings("ctrl+down"),
-		},
+
 		{
 			Name:        MessagesFirstCommand,
 			Description: "first message",
@@ -368,11 +358,7 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 			Description: "last message",
 			Keybindings: parseBindings("ctrl+alt+g"),
 		},
-		{
-			Name:        MessagesLayoutToggleCommand,
-			Description: "toggle layout",
-			Keybindings: parseBindings("<leader>p"),
-		},
+
 		{
 			Name:        MessagesCopyCommand,
 			Description: "copy message",

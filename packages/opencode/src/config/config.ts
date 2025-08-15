@@ -199,12 +199,6 @@ export namespace Config {
     .object({
       leader: z.string().optional().default("ctrl+x").describe("Leader key for keybind combinations"),
       app_help: z.string().optional().default("<leader>h").describe("Show help dialog"),
-      switch_mode: z.string().optional().default("none").describe("@deprecated use switch_agent. Next mode"),
-      switch_mode_reverse: z
-        .string()
-        .optional()
-        .default("none")
-        .describe("@deprecated use switch_agent_reverse. Previous mode"),
       switch_agent: z.string().optional().default("tab").describe("Next agent"),
       switch_agent_reverse: z.string().optional().default("shift+tab").describe("Previous agent"),
       editor_open: z.string().optional().default("<leader>e").describe("Open external editor"),
@@ -222,10 +216,6 @@ export namespace Config {
       model_cycle_recent: z.string().optional().default("f2").describe("Next recent model"),
       model_cycle_recent_reverse: z.string().optional().default("shift+f2").describe("Previous recent model"),
       theme_list: z.string().optional().default("<leader>t").describe("List available themes"),
-      file_list: z.string().optional().default("none").describe("@deprecated Currently not available. List files"),
-      file_close: z.string().optional().default("none").describe("@deprecated Close file"),
-      file_search: z.string().optional().default("none").describe("@deprecated Search file"),
-      file_diff_toggle: z.string().optional().default("none").describe("@deprecated Split/unified diff"),
       project_init: z.string().optional().default("<leader>i").describe("Create/update AGENTS.md"),
       input_clear: z.string().optional().default("ctrl+c").describe("Clear input field"),
       input_paste: z.string().optional().default("ctrl+v").describe("Paste from clipboard"),
@@ -239,16 +229,27 @@ export namespace Config {
         .optional()
         .default("ctrl+alt+d")
         .describe("Scroll messages down by half page"),
-      messages_previous: z.string().optional().default("ctrl+up").describe("Navigate to previous message"),
-      messages_next: z.string().optional().default("ctrl+down").describe("Navigate to next message"),
       messages_first: z.string().optional().default("ctrl+g").describe("Navigate to first message"),
       messages_last: z.string().optional().default("ctrl+alt+g").describe("Navigate to last message"),
-      messages_layout_toggle: z.string().optional().default("<leader>p").describe("Toggle layout"),
       messages_copy: z.string().optional().default("<leader>y").describe("Copy message"),
-      messages_revert: z.string().optional().default("none").describe("@deprecated use messages_undo. Revert message"),
       messages_undo: z.string().optional().default("<leader>u").describe("Undo message"),
       messages_redo: z.string().optional().default("<leader>r").describe("Redo message"),
       app_exit: z.string().optional().default("ctrl+c,<leader>q").describe("Exit the application"),
+      // Deprecated commands
+      switch_mode: z.string().optional().default("none").describe("@deprecated use switch_agent. Next mode"),
+      switch_mode_reverse: z
+        .string()
+        .optional()
+        .default("none")
+        .describe("@deprecated use switch_agent_reverse. Previous mode"),
+      file_list: z.string().optional().default("none").describe("@deprecated Currently not available. List files"),
+      file_close: z.string().optional().default("none").describe("@deprecated Close file"),
+      file_search: z.string().optional().default("none").describe("@deprecated Search file"),
+      file_diff_toggle: z.string().optional().default("none").describe("@deprecated Split/unified diff"),
+      messages_previous: z.string().optional().default("none").describe("@deprecated Navigate to previous message"),
+      messages_next: z.string().optional().default("none").describe("@deprecated Navigate to next message"),
+      messages_layout_toggle: z.string().optional().default("none").describe("@deprecated Toggle layout"),
+      messages_revert: z.string().optional().default("none").describe("@deprecated use messages_undo. Revert message"),
     })
     .strict()
     .openapi({
