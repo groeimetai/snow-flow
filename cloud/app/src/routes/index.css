@@ -136,9 +136,6 @@
     align-items: start;
     gap: var(--space-3);
 
-    &:nth-child(1) {
-    }
-
     &:nth-child(2) {
       border-left: 2px solid var(--color-border);
     }
@@ -180,7 +177,7 @@
 
       img {
         width: 100%;
-        height: "auto";
+        height: auto;
       }
     }
 
@@ -209,7 +206,7 @@
 
       img {
         width: 80%;
-        height: "auto";
+        height: auto;
       }
     }
   }
