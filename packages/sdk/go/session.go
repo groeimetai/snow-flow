@@ -102,6 +102,30 @@ func (r *SessionService) Chat(ctx context.Context, id string, body SessionChatPa
 	return
 }
 
+// Get a session's children
+func (r *SessionService) Children(ctx context.Context, id string, opts ...option.RequestOption) (res *[]Session, err error) {
+	opts = append(r.Options[:], opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("session/%s/children", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return
+}
+
+// Get session
+func (r *SessionService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *Session, err error) {
+	opts = append(r.Options[:], opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("session/%s", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return
+}
+
 // Analyze the app and create an AGENTS.md file
 func (r *SessionService) Init(ctx context.Context, id string, body SessionInitParams, opts ...option.RequestOption) (res *bool, err error) {
 	opts = append(r.Options[:], opts...)

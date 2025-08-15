@@ -21,6 +21,8 @@ import type {
   SessionGetResponses,
   SessionUpdateData,
   SessionUpdateResponses,
+  SessionChildrenData,
+  SessionChildrenResponses,
   SessionInitData,
   SessionInitResponses,
   SessionAbortData,
@@ -244,6 +246,16 @@ class Session extends _HeyApiClient {
         "Content-Type": "application/json",
         ...options.headers,
       },
+    })
+  }
+
+  /**
+   * Get a session's children
+   */
+  public children<ThrowOnError extends boolean = false>(options: Options<SessionChildrenData, ThrowOnError>) {
+    return (options.client ?? this._client).get<SessionChildrenResponses, unknown, ThrowOnError>({
+      url: "/session/{id}/children",
+      ...options,
     })
   }
 

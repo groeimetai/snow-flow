@@ -248,6 +248,34 @@ export namespace Server {
           return c.json(session)
         },
       )
+      .get(
+        "/session/:id/children",
+        describeRoute({
+          description: "Get a session's children",
+          operationId: "session.children",
+          responses: {
+            200: {
+              description: "List of children",
+              content: {
+                "application/json": {
+                  schema: resolver(Session.Info.array()),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "param",
+          z.object({
+            id: z.string(),
+          }),
+        ),
+        async (c) => {
+          const sessionID = c.req.valid("param").id
+          const session = await Session.children(sessionID)
+          return c.json(session)
+        },
+      )
       .post(
         "/session",
         describeRoute({

@@ -1319,6 +1319,24 @@ export type SessionUpdateResponses = {
 
 export type SessionUpdateResponse = SessionUpdateResponses[keyof SessionUpdateResponses]
 
+export type SessionChildrenData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: "/session/{id}/children"
+}
+
+export type SessionChildrenResponses = {
+  /**
+   * List of children
+   */
+  200: Array<Session>
+}
+
+export type SessionChildrenResponse = SessionChildrenResponses[keyof SessionChildrenResponses]
+
 export type SessionInitData = {
   body?: {
     messageID: string
