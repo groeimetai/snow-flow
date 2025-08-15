@@ -705,6 +705,45 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			updated, cmd := a.executeCommand(commands.Command(command))
 			a = updated.(Model)
 			cmds = append(cmds, cmd)
+		case "/tui/show-toast":
+			var body struct {
+				Title   string `json:"title,omitempty"`
+				Message string `json:"message"`
+				Variant string `json:"variant"`
+			}
+			json.Unmarshal((msg.Body), &body)
+
+			var toastCmd tea.Cmd
+			switch body.Variant {
+			case "info":
+				if body.Title != "" {
+					toastCmd = toast.NewInfoToast(body.Message, toast.WithTitle(body.Title))
+				} else {
+					toastCmd = toast.NewInfoToast(body.Message)
+				}
+			case "success":
+				if body.Title != "" {
+					toastCmd = toast.NewSuccessToast(body.Message, toast.WithTitle(body.Title))
+				} else {
+					toastCmd = toast.NewSuccessToast(body.Message)
+				}
+			case "warning":
+				if body.Title != "" {
+					toastCmd = toast.NewErrorToast(body.Message, toast.WithTitle(body.Title))
+				} else {
+					toastCmd = toast.NewErrorToast(body.Message)
+				}
+			case "error":
+				if body.Title != "" {
+					toastCmd = toast.NewErrorToast(body.Message, toast.WithTitle(body.Title))
+				} else {
+					toastCmd = toast.NewErrorToast(body.Message)
+				}
+			default:
+				slog.Error("Invalid toast variant", "variant", body.Variant)
+				return a, nil
+			}
+			cmds = append(cmds, toastCmd)
 
 		default:
 			break

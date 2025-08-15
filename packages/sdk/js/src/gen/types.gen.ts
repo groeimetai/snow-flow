@@ -1911,6 +1911,26 @@ export type TuiExecuteCommandResponses = {
 
 export type TuiExecuteCommandResponse = TuiExecuteCommandResponses[keyof TuiExecuteCommandResponses]
 
+export type TuiShowToastData = {
+  body?: {
+    title?: string
+    message: string
+    variant: "info" | "success" | "warning" | "error"
+  }
+  path?: never
+  query?: never
+  url: "/tui/show-toast"
+}
+
+export type TuiShowToastResponses = {
+  /**
+   * Toast notification shown successfully
+   */
+  200: boolean
+}
+
+export type TuiShowToastResponse = TuiShowToastResponses[keyof TuiShowToastResponses]
+
 export type AuthSetData = {
   body?: Auth
   path: {

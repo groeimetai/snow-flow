@@ -77,6 +77,8 @@ import type {
   TuiClearPromptResponses,
   TuiExecuteCommandData,
   TuiExecuteCommandResponses,
+  TuiShowToastData,
+  TuiShowToastResponses,
   AuthSetData,
   AuthSetResponses,
   AuthSetErrors,
@@ -511,6 +513,20 @@ class Tui extends _HeyApiClient {
   public executeCommand<ThrowOnError extends boolean = false>(options?: Options<TuiExecuteCommandData, ThrowOnError>) {
     return (options?.client ?? this._client).post<TuiExecuteCommandResponses, unknown, ThrowOnError>({
       url: "/tui/execute-command",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+      },
+    })
+  }
+
+  /**
+   * Show a toast notification in the TUI
+   */
+  public showToast<ThrowOnError extends boolean = false>(options?: Options<TuiShowToastData, ThrowOnError>) {
+    return (options?.client ?? this._client).post<TuiShowToastResponses, unknown, ThrowOnError>({
+      url: "/tui/show-toast",
       ...options,
       headers: {
         "Content-Type": "application/json",

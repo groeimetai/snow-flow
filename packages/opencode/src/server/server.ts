@@ -1120,6 +1120,32 @@ export namespace Server {
         ),
         async (c) => c.json(await callTui(c)),
       )
+      .post(
+        "/tui/show-toast",
+        describeRoute({
+          description: "Show a toast notification in the TUI",
+          operationId: "tui.showToast",
+          responses: {
+            200: {
+              description: "Toast notification shown successfully",
+              content: {
+                "application/json": {
+                  schema: resolver(z.boolean()),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "json",
+          z.object({
+            title: z.string().optional(),
+            message: z.string(),
+            variant: z.enum(["info", "success", "warning", "error"]),
+          }),
+        ),
+        async (c) => c.json(await callTui(c)),
+      )
       .route("/tui/control", TuiRoute)
       .put(
         "/auth/:id",

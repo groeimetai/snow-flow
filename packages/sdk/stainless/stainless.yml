@@ -146,6 +146,7 @@ resources:
       openThemes: post /tui/open-themes
       openModels: post /tui/open-models
       executeCommand: post /tui/execute-command
+      showToast: post /tui/show-toast
 
 settings:
   disable_mock_tests: true
