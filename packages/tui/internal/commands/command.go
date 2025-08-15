@@ -107,39 +107,41 @@ func (r CommandRegistry) Matches(msg tea.KeyPressMsg, leader bool) []Command {
 }
 
 const (
-	AppHelpCommand                 CommandName = "app_help"
-	AppExitCommand                 CommandName = "app_exit"
-	ThemeListCommand               CommandName = "theme_list"
-	ProjectInitCommand             CommandName = "project_init"
-	EditorOpenCommand              CommandName = "editor_open"
-	ToolDetailsCommand             CommandName = "tool_details"
-	ThinkingBlocksCommand          CommandName = "thinking_blocks"
-	SessionNewCommand              CommandName = "session_new"
-	SessionListCommand             CommandName = "session_list"
-	SessionShareCommand            CommandName = "session_share"
-	SessionUnshareCommand          CommandName = "session_unshare"
-	SessionInterruptCommand        CommandName = "session_interrupt"
-	SessionCompactCommand          CommandName = "session_compact"
-	SessionExportCommand           CommandName = "session_export"
-	MessagesPageUpCommand          CommandName = "messages_page_up"
-	MessagesPageDownCommand        CommandName = "messages_page_down"
-	MessagesHalfPageUpCommand      CommandName = "messages_half_page_up"
-	MessagesHalfPageDownCommand    CommandName = "messages_half_page_down"
-	MessagesFirstCommand           CommandName = "messages_first"
-	MessagesLastCommand            CommandName = "messages_last"
-	MessagesCopyCommand            CommandName = "messages_copy"
-	MessagesUndoCommand            CommandName = "messages_undo"
-	MessagesRedoCommand            CommandName = "messages_redo"
-	ModelListCommand               CommandName = "model_list"
-	ModelCycleRecentCommand        CommandName = "model_cycle_recent"
-	ModelCycleRecentReverseCommand CommandName = "model_cycle_recent_reverse"
-	AgentListCommand               CommandName = "agent_list"
-	AgentCycleCommand              CommandName = "agent_cycle"
-	AgentCycleReverseCommand       CommandName = "agent_cycle_reverse"
-	InputClearCommand              CommandName = "input_clear"
-	InputPasteCommand              CommandName = "input_paste"
-	InputSubmitCommand             CommandName = "input_submit"
-	InputNewlineCommand            CommandName = "input_newline"
+	AppHelpCommand                  CommandName = "app_help"
+	AppExitCommand                  CommandName = "app_exit"
+	ThemeListCommand                CommandName = "theme_list"
+	ProjectInitCommand              CommandName = "project_init"
+	EditorOpenCommand               CommandName = "editor_open"
+	ToolDetailsCommand              CommandName = "tool_details"
+	ThinkingBlocksCommand           CommandName = "thinking_blocks"
+	SessionNewCommand               CommandName = "session_new"
+	SessionListCommand              CommandName = "session_list"
+	SessionShareCommand             CommandName = "session_share"
+	SessionUnshareCommand           CommandName = "session_unshare"
+	SessionInterruptCommand         CommandName = "session_interrupt"
+	SessionCompactCommand           CommandName = "session_compact"
+	SessionExportCommand            CommandName = "session_export"
+	SessionChildCycleCommand        CommandName = "session_child_cycle"
+	SessionChildCycleReverseCommand CommandName = "session_child_cycle_reverse"
+	MessagesPageUpCommand           CommandName = "messages_page_up"
+	MessagesPageDownCommand         CommandName = "messages_page_down"
+	MessagesHalfPageUpCommand       CommandName = "messages_half_page_up"
+	MessagesHalfPageDownCommand     CommandName = "messages_half_page_down"
+	MessagesFirstCommand            CommandName = "messages_first"
+	MessagesLastCommand             CommandName = "messages_last"
+	MessagesCopyCommand             CommandName = "messages_copy"
+	MessagesUndoCommand             CommandName = "messages_undo"
+	MessagesRedoCommand             CommandName = "messages_redo"
+	ModelListCommand                CommandName = "model_list"
+	ModelCycleRecentCommand         CommandName = "model_cycle_recent"
+	ModelCycleRecentReverseCommand  CommandName = "model_cycle_recent_reverse"
+	AgentListCommand                CommandName = "agent_list"
+	AgentCycleCommand               CommandName = "agent_cycle"
+	AgentCycleReverseCommand        CommandName = "agent_cycle_reverse"
+	InputClearCommand               CommandName = "input_clear"
+	InputPasteCommand               CommandName = "input_paste"
+	InputSubmitCommand              CommandName = "input_submit"
+	InputNewlineCommand             CommandName = "input_newline"
 )
 
 func (k Command) Matches(msg tea.KeyPressMsg, leader bool) bool {
@@ -223,6 +225,16 @@ func LoadFromConfig(config *opencode.Config) CommandRegistry {
 			Description: "compact the session",
 			Keybindings: parseBindings("<leader>c"),
 			Trigger:     []string{"compact", "summarize"},
+		},
+		{
+			Name:        SessionChildCycleCommand,
+			Description: "cycle to next child session",
+			Keybindings: parseBindings("ctrl+right"),
+		},
+		{
+			Name:        SessionChildCycleReverseCommand,
+			Description: "cycle to previous child session",
+			Keybindings: parseBindings("ctrl+left"),
 		},
 		{
 			Name:        ToolDetailsCommand,

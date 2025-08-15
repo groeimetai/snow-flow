@@ -180,6 +180,8 @@ func (m *messagesComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.tail = true
 			return m, m.renderView()
 		}
+	case app.SessionSelectedMsg:
+		m.viewport.GotoBottom()
 	case app.MessageRevertedMsg:
 		if msg.Session.ID == m.app.Session.ID {
 			m.cache.Clear()
@@ -782,8 +784,17 @@ func (m *messagesComponent) renderHeader() string {
 	headerWidth := m.width
 
 	t := theme.CurrentTheme()
-	base := styles.NewStyle().Foreground(t.Text()).Background(t.Background()).Render
-	muted := styles.NewStyle().Foreground(t.TextMuted()).Background(t.Background()).Render
+	bgColor := t.Background()
+	borderColor := t.BackgroundElement()
+
+	isChildSession := m.app.Session.ParentID != ""
+	if isChildSession {
+		bgColor = t.BackgroundElement()
+		borderColor = t.Accent()
+	}
+
+	base := styles.NewStyle().Foreground(t.Text()).Background(bgColor).Render
+	muted := styles.NewStyle().Foreground(t.TextMuted()).Background(bgColor).Render
 
 	sessionInfo := ""
 	tokens := float64(0)
@@ -815,20 +826,44 @@ func (m *messagesComponent) renderHeader() string {
 	sessionInfoText := formatTokensAndCost(tokens, contextWindow, cost, isSubscriptionModel)
 	sessionInfo = styles.NewStyle().
 		Foreground(t.TextMuted()).
-		Background(t.Background()).
+		Background(bgColor).
 		Render(sessionInfoText)
 
 	shareEnabled := m.app.Config.Share != opencode.ConfigShareDisabled
+
+	navHint := ""
+	if isChildSession {
+		navHint = base(" "+m.app.Keybind(commands.SessionChildCycleReverseCommand)) + muted(" back")
+	}
+
 	headerTextWidth := headerWidth
-	if !shareEnabled {
-		// +1 is to ensure there is always at least one space between header and session info
-		headerTextWidth -= len(sessionInfoText) + 1
+	if isChildSession {
+		headerTextWidth -= lipgloss.Width(navHint)
+	} else if !shareEnabled {
+		headerTextWidth -= lipgloss.Width(sessionInfoText)
 	}
 	headerText := util.ToMarkdown(
 		"# "+m.app.Session.Title,
 		headerTextWidth,
-		t.Background(),
+		bgColor,
 	)
+	if isChildSession {
+		headerText = layout.Render(
+			layout.FlexOptions{
+				Background: &bgColor,
+				Direction:  layout.Row,
+				Justify:    layout.JustifySpaceBetween,
+				Align:      layout.AlignStretch,
+				Width:      headerTextWidth,
+			},
+			layout.FlexItem{
+				View: headerText,
+			},
+			layout.FlexItem{
+				View: navHint,
+			},
+		)
+	}
 
 	var items []layout.FlexItem
 	if shareEnabled {
@@ -841,10 +876,9 @@ func (m *messagesComponent) renderHeader() string {
 		items = []layout.FlexItem{{View: headerText}, {View: sessionInfo}}
 	}
 
-	background := t.Background()
 	headerRow := layout.Render(
 		layout.FlexOptions{
-			Background: &background,
+			Background: &bgColor,
 			Direction:  layout.Row,
 			Justify:    layout.JustifySpaceBetween,
 			Align:      layout.AlignStretch,
@@ -860,14 +894,14 @@ func (m *messagesComponent) renderHeader() string {
 
 	header := strings.Join(headerLines, "\n")
 	header = styles.NewStyle().
-		Background(t.Background()).
+		Background(bgColor).
 		Width(headerWidth).
 		PaddingLeft(2).
 		PaddingRight(2).
 		BorderLeft(true).
 		BorderRight(true).
 		BorderBackground(t.Background()).
-		BorderForeground(t.BackgroundElement()).
+		BorderForeground(borderColor).
 		BorderStyle(lipgloss.ThickBorder()).
 		Render(header)
 
@@ -914,7 +948,7 @@ func formatTokensAndCost(
 
 	formattedCost := fmt.Sprintf("$%.2f", cost)
 	return fmt.Sprintf(
-		"%s/%d%% (%s)",
+		" %s/%d%% (%s)",
 		formattedTokens,
 		int(percentage),
 		formattedCost,
@@ -923,20 +957,22 @@ func formatTokensAndCost(
 
 func (m *messagesComponent) View() string {
 	t := theme.CurrentTheme()
+	bgColor := t.Background()
+
 	if m.loading {
 		return lipgloss.Place(
 			m.width,
 			m.height,
 			lipgloss.Center,
 			lipgloss.Center,
-			styles.NewStyle().Background(t.Background()).Render(""),
-			styles.WhitespaceStyle(t.Background()),
+			styles.NewStyle().Background(bgColor).Render(""),
+			styles.WhitespaceStyle(bgColor),
 		)
 	}
 
 	viewport := m.viewport.View()
 	return styles.NewStyle().
-		Background(t.Background()).
+		Background(bgColor).
 		Render(m.header + "\n" + viewport)
 }
 

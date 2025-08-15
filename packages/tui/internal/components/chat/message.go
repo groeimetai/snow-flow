@@ -14,6 +14,7 @@ import (
 	"github.com/muesli/reflow/truncate"
 	"github.com/sst/opencode-sdk-go"
 	"github.com/sst/opencode/internal/app"
+	"github.com/sst/opencode/internal/commands"
 	"github.com/sst/opencode/internal/components/diff"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -479,6 +480,8 @@ func renderToolDetails(
 	backgroundColor := t.BackgroundPanel()
 	borderColor := t.BackgroundPanel()
 	defaultStyle := styles.NewStyle().Background(backgroundColor).Width(width - 6).Render
+	baseStyle := styles.NewStyle().Background(backgroundColor).Foreground(t.Text()).Render
+	mutedStyle := styles.NewStyle().Background(backgroundColor).Foreground(t.TextMuted()).Render
 
 	permissionContent := ""
 	if permission.ID != "" {
@@ -602,14 +605,15 @@ func renderToolDetails(
 				}
 			}
 		case "bash":
-			command := toolInputMap["command"].(string)
-			body = fmt.Sprintf("```console\n$ %s\n", command)
-			output := metadata["output"]
-			if output != nil {
-				body += ansi.Strip(fmt.Sprintf("%s", output))
+			if command, ok := toolInputMap["command"].(string); ok {
+				body = fmt.Sprintf("```console\n$ %s\n", command)
+				output := metadata["output"]
+				if output != nil {
+					body += ansi.Strip(fmt.Sprintf("%s", output))
+				}
+				body += "```"
+				body = util.ToMarkdown(body, width, backgroundColor)
 			}
-			body += "```"
-			body = util.ToMarkdown(body, width, backgroundColor)
 		case "webfetch":
 			if format, ok := toolInputMap["format"].(string); ok && result != nil {
 				body = *result
@@ -653,6 +657,12 @@ func renderToolDetails(
 					steps = append(steps, step)
 				}
 				body = strings.Join(steps, "\n")
+
+				body += "\n\n"
+				body += baseStyle(app.Keybind(commands.SessionChildCycleCommand)) +
+					mutedStyle(", ") +
+					baseStyle(app.Keybind(commands.SessionChildCycleReverseCommand)) +
+					mutedStyle(" navigate child sessions")
 			}
 			body = defaultStyle(body)
 		default:

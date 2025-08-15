@@ -391,11 +391,41 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, toast.NewErrorToast(msg.Error())
 	case app.SendPrompt:
 		a.showCompletionDialog = false
-		a.app, cmd = a.app.SendPrompt(context.Background(), msg)
-		cmds = append(cmds, cmd)
+		// If we're in a child session, switch back to parent before sending prompt
+		if a.app.Session.ParentID != "" {
+			parentSession, err := a.app.Client.Session.Get(context.Background(), a.app.Session.ParentID)
+			if err != nil {
+				slog.Error("Failed to get parent session", "error", err)
+				return a, toast.NewErrorToast("Failed to get parent session")
+			}
+			a.app.Session = parentSession
+			a.app, cmd = a.app.SendPrompt(context.Background(), msg)
+			cmds = append(cmds, tea.Sequence(
+				util.CmdHandler(app.SessionSelectedMsg(parentSession)),
+				cmd,
+			))
+		} else {
+			a.app, cmd = a.app.SendPrompt(context.Background(), msg)
+			cmds = append(cmds, cmd)
+		}
 	case app.SendShell:
-		a.app, cmd = a.app.SendShell(context.Background(), msg.Command)
-		cmds = append(cmds, cmd)
+		// If we're in a child session, switch back to parent before sending prompt
+		if a.app.Session.ParentID != "" {
+			parentSession, err := a.app.Client.Session.Get(context.Background(), a.app.Session.ParentID)
+			if err != nil {
+				slog.Error("Failed to get parent session", "error", err)
+				return a, toast.NewErrorToast("Failed to get parent session")
+			}
+			a.app.Session = parentSession
+			a.app, cmd = a.app.SendShell(context.Background(), msg.Command)
+			cmds = append(cmds, tea.Sequence(
+				util.CmdHandler(app.SessionSelectedMsg(parentSession)),
+				cmd,
+			))
+		} else {
+			a.app, cmd = a.app.SendShell(context.Background(), msg.Command)
+			cmds = append(cmds, cmd)
+		}
 	case app.SetEditorContentMsg:
 		// Set the editor content without sending
 		a.editor.SetValueWithAttachments(msg.Text)
@@ -1111,6 +1141,122 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 		}
 		// TODO: block until compaction is complete
 		a.app.CompactSession(context.Background())
+	case commands.SessionChildCycleCommand:
+		if a.app.Session.ID == "" {
+			return a, nil
+		}
+		cmds = append(cmds, func() tea.Msg {
+			parentSessionID := a.app.Session.ID
+			var parentSession *opencode.Session
+			if a.app.Session.ParentID != "" {
+				parentSessionID = a.app.Session.ParentID
+				session, err := a.app.Client.Session.Get(context.Background(), parentSessionID)
+				if err != nil {
+					slog.Error("Failed to get parent session", "error", err)
+					return toast.NewErrorToast("Failed to get parent session")
+				}
+				parentSession = session
+			} else {
+				parentSession = a.app.Session
+			}
+
+			children, err := a.app.Client.Session.Children(context.Background(), parentSessionID)
+			if err != nil {
+				slog.Error("Failed to get session children", "error", err)
+				return toast.NewErrorToast("Failed to get session children")
+			}
+
+			// Reverse sort the children (newest first)
+			slices.Reverse(*children)
+
+			// Create combined array: [parent, child1, child2, ...]
+			sessions := []*opencode.Session{parentSession}
+			for i := range *children {
+				sessions = append(sessions, &(*children)[i])
+			}
+
+			if len(sessions) == 1 {
+				return toast.NewInfoToast("No child sessions available")
+			}
+
+			// Find current session index in combined array
+			currentIndex := -1
+			for i, session := range sessions {
+				if session.ID == a.app.Session.ID {
+					currentIndex = i
+					break
+				}
+			}
+
+			// If session not found, default to parent (shouldn't happen)
+			if currentIndex == -1 {
+				currentIndex = 0
+			}
+
+			// Cycle to next session (parent or child)
+			nextIndex := (currentIndex + 1) % len(sessions)
+			nextSession := sessions[nextIndex]
+
+			return app.SessionSelectedMsg(nextSession)
+		})
+	case commands.SessionChildCycleReverseCommand:
+		if a.app.Session.ID == "" {
+			return a, nil
+		}
+		cmds = append(cmds, func() tea.Msg {
+			parentSessionID := a.app.Session.ID
+			var parentSession *opencode.Session
+			if a.app.Session.ParentID != "" {
+				parentSessionID = a.app.Session.ParentID
+				session, err := a.app.Client.Session.Get(context.Background(), parentSessionID)
+				if err != nil {
+					slog.Error("Failed to get parent session", "error", err)
+					return toast.NewErrorToast("Failed to get parent session")
+				}
+				parentSession = session
+			} else {
+				parentSession = a.app.Session
+			}
+
+			children, err := a.app.Client.Session.Children(context.Background(), parentSessionID)
+			if err != nil {
+				slog.Error("Failed to get session children", "error", err)
+				return toast.NewErrorToast("Failed to get session children")
+			}
+
+			// Reverse sort the children (newest first)
+			slices.Reverse(*children)
+
+			// Create combined array: [parent, child1, child2, ...]
+			sessions := []*opencode.Session{parentSession}
+			for i := range *children {
+				sessions = append(sessions, &(*children)[i])
+			}
+
+			if len(sessions) == 1 {
+				return toast.NewInfoToast("No child sessions available")
+			}
+
+			// Find current session index in combined array
+			currentIndex := -1
+			for i, session := range sessions {
+				if session.ID == a.app.Session.ID {
+					currentIndex = i
+					break
+				}
+			}
+
+			// If session not found, default to parent (shouldn't happen)
+			if currentIndex == -1 {
+				currentIndex = 0
+			}
+
+			// Cycle to previous session (parent or child)
+			nextIndex := (currentIndex - 1 + len(sessions)) % len(sessions)
+			nextSession := sessions[nextIndex]
+
+			return app.SessionSelectedMsg(nextSession)
+		})
 	case commands.SessionExportCommand:
 		if a.app.Session.ID == "" {
 			return a, toast.NewErrorToast("No active session to export.")

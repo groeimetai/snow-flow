@@ -163,12 +163,12 @@ export namespace Session {
     },
   )
 
-  export async function create(parentID?: string) {
+  export async function create(parentID?: string, title?: string) {
     const result: Info = {
       id: Identifier.descending("session"),
       version: Installation.VERSION,
       parentID,
-      title: createDefaultTitle(!!parentID),
+      title: title ?? createDefaultTitle(!!parentID),
       time: {
         created: Date.now(),
         updated: Date.now(),

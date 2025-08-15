@@ -293,8 +293,18 @@ export namespace Server {
             },
           },
         }),
+        zValidator(
+          "json",
+          z
+            .object({
+              parentID: z.string().optional(),
+              title: z.string().optional(),
+            })
+            .optional(),
+        ),
         async (c) => {
-          const session = await Session.create()
+          const body = c.req.valid("json") ?? {}
+          const session = await Session.create(body.parentID, body.title)
           return c.json(session)
         },
       )
