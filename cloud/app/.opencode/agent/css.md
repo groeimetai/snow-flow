@@ -97,4 +97,53 @@ CSS maintains clean hierarchy regardless of DOM nesting:
 }
 ```
 
+## Reusable Components
+
+If a component is reused across multiple sections of the same page, define it at the page level:
+
+```jsx
+<!-- Used in multiple places on the same page -->
+<section data-component="install">
+  <div data-component="method">
+    <h3 data-component="title">npm</h3>
+  </div>
+  <div data-component="method">
+    <h3 data-component="title">bun</h3>
+  </div>
+</section>
+
+<section data-component="screenshots">
+  <div data-slot="left">
+    <div data-component="title">Screenshot Title</div>
+  </div>
+</section>
+```
+
+```css
+[data-page="home"] {
+  /* Reusable title component defined at page level since it's used in multiple components */
+  [data-component="title"] {
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  [data-component="install"] {
+    /* install-specific styles */
+  }
+
+  [data-component="screenshots"] {
+    /* screenshots-specific styles */
+  }
+}
+```
+
+This is correct because the `title` component has consistent styling and behavior across the page.
+
+## Key Clarifications
+
+1. **JSX Nesting is Flexible**: Components can be nested inside slots, slots can contain components - whatever makes semantic sense
+2. **CSS Hierarchy is Strict**: Follow pages → components → slots structure in CSS
+3. **Reusable Components**: Define at the appropriate level where they're shared (page level if used across the page, component level if only used within that component)
+4. **DOM vs CSS Structure**: These don't need to match - optimize each for its purpose
+
 See ./src/routes/index.css and ./src/routes/index.tsx for a complete example.
