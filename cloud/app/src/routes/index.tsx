@@ -22,7 +22,6 @@ export default function Home() {
     for (const button of commands) {
       const callback = () => {
         const text = button.textContent
-        alert(text)
         if (text) {
           navigator.clipboard.writeText(text)
           button.setAttribute("data-copied", "")
