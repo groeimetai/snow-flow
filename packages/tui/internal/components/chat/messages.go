@@ -373,10 +373,8 @@ func (m *messagesComponent) renderView() tea.Cmd {
 						)
 
 						author := m.app.Config.Username
-						if casted.ID > lastAssistantMessage {
-							author += " [queued]"
-						}
-						key := m.cache.GenerateKey(casted.ID, part.Text, width, files, author)
+						isQueued := casted.ID > lastAssistantMessage
+						key := m.cache.GenerateKey(casted.ID, part.Text, width, files, author, isQueued)
 						content, cached = m.cache.Get(key)
 						if !cached {
 							content = renderText(
@@ -388,6 +386,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 								width,
 								files,
 								false,
+								isQueued,
 								fileParts,
 								agentParts,
 							)
@@ -463,6 +462,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 									width,
 									"",
 									false,
+									false,
 									[]opencode.FilePart{},
 									[]opencode.AgentPart{},
 									toolCallParts...,
@@ -478,6 +478,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 								m.showToolDetails,
 								width,
 								"",
+								false,
 								false,
 								[]opencode.FilePart{},
 								[]opencode.AgentPart{},
@@ -558,6 +559,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 								width,
 								"",
 								true,
+								false,
 								[]opencode.FilePart{},
 								[]opencode.AgentPart{},
 							)
@@ -590,6 +592,7 @@ func (m *messagesComponent) renderView() tea.Cmd {
 						m.showToolDetails,
 						width,
 						"",
+						false,
 						false,
 						[]opencode.FilePart{},
 						[]opencode.AgentPart{},

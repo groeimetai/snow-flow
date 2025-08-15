@@ -211,6 +211,7 @@ func renderText(
 	width int,
 	extra string,
 	isThinking bool,
+	isQueued bool,
 	fileParts []opencode.FilePart,
 	agentParts []opencode.AgentPart,
 	toolCalls ...opencode.ToolPart,
@@ -331,6 +332,10 @@ func renderText(
 		wrappedText := ansi.WordwrapWc(styledText, width-6, " ")
 		wrappedText = strings.ReplaceAll(wrappedText, "\u2011", "-")
 		content = base.Width(width - 6).Render(wrappedText)
+		if isQueued {
+			queuedStyle := styles.NewStyle().Background(t.Accent()).Foreground(t.BackgroundPanel()).Bold(true).Padding(0, 1)
+			content = queuedStyle.Render("QUEUED") + "\n\n" + content
+		}
 	}
 
 	timestamp := ts.
@@ -400,12 +405,16 @@ func renderText(
 
 	switch message.(type) {
 	case opencode.UserMessage:
+		borderColor := t.Secondary()
+		if isQueued {
+			borderColor = t.Accent()
+		}
 		return renderContentBlock(
 			app,
 			content,
 			width,
 			WithTextColor(t.Text()),
-			WithBorderColor(t.Secondary()),
+			WithBorderColor(borderColor),
 		)
 	case opencode.AssistantMessage:
 		if isThinking {
