@@ -1268,6 +1268,7 @@ export namespace Session {
                       status: "error",
                       input: value.input,
                       error: (value.error as any).toString(),
+                      metadata: value.error instanceof Permission.RejectedError ? value.error.metadata : undefined,
                       time: {
                         start: match.state.time.start,
                         end: Date.now(),

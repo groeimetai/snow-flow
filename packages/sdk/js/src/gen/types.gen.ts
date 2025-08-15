@@ -347,6 +347,9 @@ export type ToolStateError = {
   input: {
     [key: string]: unknown
   }
+  metadata: {
+    [key: string]: unknown
+  }
   error: string
   time: {
     start: number

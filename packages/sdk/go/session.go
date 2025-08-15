@@ -2023,17 +2023,19 @@ func (r toolStateCompletedTimeJSON) RawJSON() string {
 }
 
 type ToolStateError struct {
-	Error  string                 `json:"error,required"`
-	Input  map[string]interface{} `json:"input,required"`
-	Status ToolStateErrorStatus   `json:"status,required"`
-	Time   ToolStateErrorTime     `json:"time,required"`
-	JSON   toolStateErrorJSON     `json:"-"`
+	Error    string                 `json:"error,required"`
+	Input    map[string]interface{} `json:"input,required"`
+	Metadata map[string]interface{} `json:"metadata"`
+	Status   ToolStateErrorStatus   `json:"status,required"`
+	Time     ToolStateErrorTime     `json:"time,required"`
+	JSON     toolStateErrorJSON     `json:"-"`
 }
 
 // toolStateErrorJSON contains the JSON metadata for the struct [ToolStateError]
 type toolStateErrorJSON struct {
 	Error       apijson.Field
 	Input       apijson.Field
+	Metadata    apijson.Field
 	Status      apijson.Field
 	Time        apijson.Field
 	raw         string
