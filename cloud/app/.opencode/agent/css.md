@@ -21,14 +21,21 @@ pages can break down into components using `data-component`
 
 components can break down into slots using `data-slot`
 
-structure things so that this hierarchy is followed - you should rarely need to
+structure things so that this hierarchy is followed IN YOUR CSS - you should rarely need to
 nest components inside other components. you should NEVER nest components inside
 slots. you should NEVER nest slots inside other slots.
 
-thei hierarchy in css file does NOT have to match the hierarchy in the dom - you
-can put components or slots at the same level even if one goes inside another.
+**IMPORTANT: This hierarchy rule applies to CSS structure, NOT JSX/DOM structure.**
 
-it is more important to follow the pages -> components -> slots structure
+The hierarchy in css file does NOT have to match the hierarchy in the dom - you
+can put components or slots at the same level in CSS even if one goes inside another in the DOM.
+
+Your JSX can nest however makes semantic sense - components can be inside slots,
+slots can contain components, etc. The DOM structure should be whatever makes the most
+semantic and functional sense.
+
+It is more important to follow the pages -> components -> slots structure IN YOUR CSS,
+while keeping your JSX/DOM structure logical and semantic.
 
 use data attributes to represent different states of the component
 
@@ -59,3 +66,35 @@ page specific styles should go next to the page they are styling so
 `./src/routes/about.tsx` should have its styles in `./src/routes/about.css`
 
 `about.css` should be scoped using `data-page="about"`
+
+## Example of correct implementation
+
+JSX can nest however makes sense semantically:
+
+```jsx
+<div data-slot="left">
+  <div data-component="title">Section Title</div>
+  <div data-slot="content">Content here</div>
+</div>
+```
+
+CSS maintains clean hierarchy regardless of DOM nesting:
+
+```css
+[data-page="home"] {
+  [data-component="screenshots"] {
+    [data-slot="left"] {
+      /* styles */
+    }
+    [data-slot="content"] {
+      /* styles */
+    }
+  }
+
+  [data-component="title"] {
+    /* can be at same level even though nested in DOM */
+  }
+}
+```
+
+See ./src/routes/index.css and ./src/routes/index.tsx for a complete example.
