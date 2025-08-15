@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea/v2"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/muesli/reflow/truncate"
 	"github.com/sst/opencode-sdk-go"
 	"github.com/sst/opencode/internal/app"
@@ -49,17 +50,18 @@ func (n navigationItem) Render(
 	baseStyle styles.Style,
 ) string {
 	t := theme.CurrentTheme()
+	infoStyle := baseStyle.Background(t.BackgroundPanel()).Foreground(t.Info()).Render
+	textStyle := baseStyle.Background(t.BackgroundPanel()).Foreground(t.Text()).Render
 
 	// Format timestamp - only apply color when not selected
 	var timeStr string
 	var timeVisualLen int
 	if selected {
-		timeStr = n.timestamp.Format("15:04")
-		timeVisualLen = len(timeStr)
+		timeStr = n.timestamp.Format("15:04") + " "
+		timeVisualLen = lipgloss.Width(timeStr)
 	} else {
-		infoStyle := styles.NewStyle().Foreground(t.Info()).Render
-		timeStr = infoStyle(n.timestamp.Format("15:04"))
-		timeVisualLen = len(n.timestamp.Format("15:04")) // Visual length without color codes
+		timeStr = infoStyle(n.timestamp.Format("15:04") + " ")
+		timeVisualLen = lipgloss.Width(timeStr)
 	}
 
 	// Tool count display (fixed width for alignment) - only apply color when not selected
@@ -70,45 +72,53 @@ func (n navigationItem) Render(
 		if selected {
 			toolInfo = toolInfoText
 		} else {
-			infoStyle := styles.NewStyle().Foreground(t.Info()).Render
 			toolInfo = infoStyle(toolInfoText)
 		}
-		toolInfoVisualLen = len(toolInfoText) // Use the visual length, not the styled length
+		toolInfoVisualLen = lipgloss.Width(toolInfo)
 	}
 
 	// Calculate available space for content
 	// Reserve space for: timestamp + space + toolInfo + padding + some buffer
 	reservedSpace := timeVisualLen + 1 + toolInfoVisualLen + 4
-	contentWidth := width - reservedSpace
-	if contentWidth < 8 {
-		contentWidth = 8
-	}
+	contentWidth := max(width-reservedSpace, 8)
 
-	truncatedContent := truncate.StringWithTail(n.content, uint(contentWidth), "...")
+	truncatedContent := truncate.StringWithTail(
+		strings.Split(n.content, "\n")[0],
+		uint(contentWidth),
+		"...",
+	)
 
 	// Apply normal text color to content for non-selected items
 	var styledContent string
 	if selected {
 		styledContent = truncatedContent
 	} else {
-		textStyle := styles.NewStyle().Foreground(t.Text()).Render
 		styledContent = textStyle(truncatedContent)
 	}
 
 	// Create the line with proper spacing - content left-aligned, tools right-aligned
 	var text string
+	text = timeStr + styledContent
 	if toolInfo != "" {
-		// Calculate spacing to right-align the tool count
-		contentPart := fmt.Sprintf("%s %s", timeStr, styledContent)
-		totalContentLen := timeVisualLen + 1 + len(truncatedContent) // Use visual length for content
-		availableWidth := width - 2                                  // Account for padding
-		spacingNeeded := availableWidth - totalContentLen - toolInfoVisualLen
-		if spacingNeeded < 1 {
-			spacingNeeded = 1
+		bgColor := t.BackgroundPanel()
+		if selected {
+			bgColor = t.Primary()
 		}
-		text = fmt.Sprintf("%s%s%s", contentPart, strings.Repeat(" ", spacingNeeded), toolInfo)
-	} else {
-		text = fmt.Sprintf("%s %s", timeStr, styledContent)
+		text = layout.Render(
+			layout.FlexOptions{
+				Background: &bgColor,
+				Direction:  layout.Row,
+				Justify:    layout.JustifySpaceBetween,
+				Align:      layout.AlignStretch,
+				Width:      width - 2,
+			},
+			layout.FlexItem{
+				View: text,
+			},
+			layout.FlexItem{
+				View: toolInfo,
+			},
+		)
 	}
 
 	var itemStyle styles.Style
@@ -119,8 +129,7 @@ func (n navigationItem) Render(
 			Width(width).
 			PaddingLeft(1)
 	} else {
-		itemStyle = baseStyle.
-			PaddingLeft(1)
+		itemStyle = baseStyle.PaddingLeft(1)
 	}
 
 	return itemStyle.Render(text)
@@ -190,10 +199,22 @@ func (n *navigationDialog) Render(background string) string {
 	listView := n.list.View()
 
 	t := theme.CurrentTheme()
-	keyStyle := styles.NewStyle().Foreground(t.Warning()).Background(t.BackgroundPanel()).Render
+	keyStyle := styles.NewStyle().
+		Foreground(t.Text()).
+		Background(t.BackgroundPanel()).
+		Bold(true).
+		Render
 	mutedStyle := styles.NewStyle().Foreground(t.TextMuted()).Background(t.BackgroundPanel()).Render
 
-	helpText := keyStyle("↑/↓") + mutedStyle(" jump") + "   " + keyStyle("r") + mutedStyle(" restore")
+	helpText := keyStyle(
+		"↑/↓",
+	) + mutedStyle(
+		" jump   ",
+	) + keyStyle(
+		"r",
+	) + mutedStyle(
+		" restore",
+	)
 
 	bgColor := t.BackgroundPanel()
 	helpView := styles.NewStyle().
