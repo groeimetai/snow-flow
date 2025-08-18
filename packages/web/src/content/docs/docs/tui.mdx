@@ -159,7 +159,11 @@ Start a new session. _Alias_: `/clear`
 
 ### redo
 
-Redo a previously undone message. Only available after using `/undo`. **Any file changes that were reverted will also be restored.**
+Redo a previously undone message. Only available after using `/undo`.
+
+:::tip
+Any file changes will also be restored.
+:::
 
 ```bash frame="none"
 /redo
@@ -207,7 +211,11 @@ List available themes.
 
 ### undo
 
-Undo last message in the conversation. Removes the most recent user message and all subsequent responses. **Any file changes made during the undone messages will also be reverted.**
+Undo last message in the conversation. Removes the most recent user message, all subsequent responses, and any file changes.
+
+:::tip
+Any file changes made will also be reverted.
+:::
 
 ```bash frame="none"
 /undo
