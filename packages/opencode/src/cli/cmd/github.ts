@@ -185,7 +185,11 @@ export const GithubInstallCommand = cmd({
         }
 
         // Get repo info
-        const info = await $`git remote get-url origin`.quiet().nothrow().text()
+        const info = await $`git remote get-url origin`
+          .quiet()
+          .nothrow()
+          .text()
+          .then((text) => text.trim())
         // match https or git pattern
         // ie. https://github.com/sst/opencode.git
         // ie. https://github.com/sst/opencode
