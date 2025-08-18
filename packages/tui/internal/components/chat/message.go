@@ -787,7 +787,7 @@ func renderToolTitle(
 		title := renderToolAction(toolCall.Tool)
 		t := theme.CurrentTheme()
 		shiny := util.Shimmer(title, t.BackgroundPanel(), t.TextMuted(), t.Accent())
-		return styles.NewStyle().Width(width - 6).Render(shiny)
+		return styles.NewStyle().Background(t.BackgroundPanel()).Width(width - 6).Render(shiny)
 	}
 
 	toolArgs := ""
