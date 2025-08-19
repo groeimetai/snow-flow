@@ -746,16 +746,18 @@ func (m *messagesComponent) renderView() tea.Cmd {
 			} else {
 				for _, part := range response.Parts {
 					if part.CallID == m.app.CurrentPermission.CallID {
-						content := renderToolDetails(
-							m.app,
-							part.AsUnion().(opencode.ToolPart),
-							m.app.CurrentPermission,
-							width,
-						)
-						if content != "" {
-							partCount++
-							lineCount += lipgloss.Height(content) + 1
-							blocks = append(blocks, content)
+						if toolPart, ok := part.AsUnion().(opencode.ToolPart); ok {
+							content := renderToolDetails(
+								m.app,
+								toolPart,
+								m.app.CurrentPermission,
+								width,
+							)
+							if content != "" {
+								partCount++
+								lineCount += lipgloss.Height(content) + 1
+								blocks = append(blocks, content)
+							}
 						}
 					}
 				}
