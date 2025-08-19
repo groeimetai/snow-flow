@@ -67,13 +67,7 @@ export default defineConfig({
 
         {
           label: "Usage",
-          items: [
-            "docs/tui",
-            "docs/cli",
-            "docs/ide",
-            "docs/share",
-            "docs/github"
-          ],
+          items: ["docs/tui", "docs/cli", "docs/ide", "docs/share", "docs/github"],
         },
 
         {
@@ -93,10 +87,7 @@ export default defineConfig({
 
         {
           label: "Develop",
-          items: [
-            "docs/server",
-            "docs/plugins",
-          ],
+          items: ["docs/sdk", "docs/server", "docs/plugins"],
         },
       ],
       components: {
