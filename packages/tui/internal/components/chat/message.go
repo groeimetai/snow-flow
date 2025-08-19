@@ -903,7 +903,9 @@ func renderArgs(args *map[string]any, titleKey string) string {
 			continue
 		}
 		if key == "filePath" || key == "path" {
-			value = util.Relative(value.(string))
+			if strValue, ok := value.(string); ok {
+				value = util.Relative(strValue)
+			}
 		}
 		if key == titleKey {
 			title = fmt.Sprintf("%s", value)
