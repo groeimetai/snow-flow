@@ -8,6 +8,8 @@ export const typesUrl = `${config.github}/blob/dev/packages/sdk/js/src/gen/types
 
 The opencode [JS/TS SDK](https://www.npmjs.com/package/@opencode-ai/sdk) provides a type-safe client for interacting with the opencode server. You can use it to build custom integrations and control opencode programmatically.
 
+[Learn more](/docs/server) about how the opencode server works.
+
 ---
 
 ## Install
@@ -69,6 +71,20 @@ import type { Session, Message, Part } from "@opencode-ai/sdk"
 ```
 
 All types are generated from the server's OpenAPI specification and available in the <a href={typesUrl}>types file</a>.
+
+---
+
+## Errors
+
+The SDK throws typed errors that you can catch and handle:
+
+```typescript
+try {
+  const session = await client.session.get({ id: "invalid-id" })
+} catch (error) {
+  console.error("Failed to get session:", error.message)
+}
+```
 
 ---
 
@@ -282,19 +298,5 @@ await client.auth.set({
 const eventStream = await client.event.subscribe()
 for await (const event of eventStream) {
   console.log("Event:", event.type, event.properties)
-}
-```
-
----
-
-## Error handling
-
-The SDK throws typed errors that you can catch and handle:
-
-```typescript
-try {
-  const session = await client.session.get({ id: "invalid-id" })
-} catch (error) {
-  console.error("Failed to get session:", error.message)
 }
 ```
