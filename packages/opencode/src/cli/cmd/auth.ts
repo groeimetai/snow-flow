@@ -159,9 +159,6 @@ export const AuthLoginCommand = cmd({
           const authorize = await method.authorize()
 
           if (authorize.url) {
-            try {
-              await open(authorize.url)
-            } catch (e) {}
             prompts.log.info("Go to: " + authorize.url)
           }
 
