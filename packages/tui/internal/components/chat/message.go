@@ -671,10 +671,22 @@ func renderToolDetails(
 				body = strings.Join(steps, "\n")
 
 				body += "\n\n"
-				body += baseStyle(app.Keybind(commands.SessionChildCycleCommand)) +
-					mutedStyle(", ") +
-					baseStyle(app.Keybind(commands.SessionChildCycleReverseCommand)) +
-					mutedStyle(" navigate child sessions")
+
+				// Build navigation hint with proper spacing
+				cycleKeybind := app.Keybind(commands.SessionChildCycleCommand)
+				cycleReverseKeybind := app.Keybind(commands.SessionChildCycleReverseCommand)
+
+				var navParts []string
+				if cycleKeybind != "" {
+					navParts = append(navParts, baseStyle(cycleKeybind))
+				}
+				if cycleReverseKeybind != "" {
+					navParts = append(navParts, baseStyle(cycleReverseKeybind))
+				}
+
+				if len(navParts) > 0 {
+					body += strings.Join(navParts, mutedStyle(", ")) + mutedStyle(" navigate child sessions")
+				}
 			}
 			body = defaultStyle(body)
 		default:
