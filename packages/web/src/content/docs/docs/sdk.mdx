@@ -167,7 +167,7 @@ const message = await client.session.chat({
   id: session.id,
   providerID: "anthropic",
   modelID: "claude-3-5-sonnet-20241022",
-  parts: [{ type: "text", text: "Hello!" }],
+  parts: [{ type: "text", text: "Hello!" }]
 })
 ```
 
@@ -210,7 +210,7 @@ const content = await client.file.read({ path: "src/index.ts" })
 await client.log.write({
   service: "my-app",
   level: "info",
-  message: "Operation completed",
+  message: "Operation completed"
 })
 ```
 
@@ -257,7 +257,7 @@ const agents = await client.agent.list()
 await client.tui.appendPrompt({ text: "Add this to prompt" })
 await client.tui.showToast({
   message: "Task completed",
-  variant: "success",
+  variant: "success"
 })
 ```
 
@@ -277,7 +277,7 @@ await client.tui.showToast({
 await client.auth.set({
   id: "anthropic",
   type: "api",
-  key: "your-api-key",
+  key: "your-api-key"
 })
 ```
 
