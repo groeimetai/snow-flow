@@ -957,6 +957,13 @@ export namespace Session {
           toolName: "invalid",
         }
       },
+      headers:
+        input.providerID === "opencode"
+          ? {
+              "x-opencode-session": input.sessionID,
+              "x-opencode-request": userMsg.id,
+            }
+          : undefined,
       maxRetries: 3,
       activeTools: Object.keys(tools).filter((x) => x !== "invalid"),
       maxOutputTokens: outputLimit,

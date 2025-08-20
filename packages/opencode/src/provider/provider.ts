@@ -36,6 +36,12 @@ export namespace Provider {
         },
       }
     },
+    async opencode() {
+      return {
+        autoload: true,
+        options: {},
+      }
+    },
     openai: async () => {
       return {
         autoload: false,
