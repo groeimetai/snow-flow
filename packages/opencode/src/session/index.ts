@@ -1680,7 +1680,7 @@ export namespace Session {
     const tokens = {
       input: usage.inputTokens ?? 0,
       output: usage.outputTokens ?? 0,
-      reasoning: 0,
+      reasoning: usage?.reasoningTokens ?? 0,
       cache: {
         write: (metadata?.["anthropic"]?.["cacheCreationInputTokens"] ??
           // @ts-expect-error
