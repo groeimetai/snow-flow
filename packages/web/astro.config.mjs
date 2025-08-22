@@ -82,6 +82,7 @@ export default defineConfig({
             "docs/permissions",
             "docs/lsp",
             "docs/mcp-servers",
+            "docs/commands",
           ],
         },
 
