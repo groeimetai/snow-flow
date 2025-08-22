@@ -26,7 +26,7 @@
     },
     "cloud/core": {
       "name": "@opencode/cloud-core",
-      "version": "0.5.13",
+      "version": "0.5.15",
       "dependencies": {
         "@aws-sdk/client-sts": "3.782.0",
         "drizzle-orm": "0.41.0",
@@ -40,7 +40,7 @@
     },
     "cloud/function": {
       "name": "@opencode/cloud-function",
-      "version": "0.5.13",
+      "version": "0.5.15",
       "dependencies": {
         "@ai-sdk/anthropic": "2.0.0",
         "@ai-sdk/openai": "2.0.2",
@@ -60,7 +60,7 @@
     },
     "cloud/web": {
       "name": "@opencode/cloud-web",
-      "version": "0.5.13",
+      "version": "0.5.15",
       "dependencies": {
         "@kobalte/core": "0.13.9",
         "@openauthjs/solid": "0.0.0-20250322224806",
@@ -79,7 +79,7 @@
     },
     "packages/function": {
       "name": "@opencode/function",
-      "version": "0.5.13",
+      "version": "0.5.15",
       "dependencies": {
         "@octokit/auth-app": "8.0.1",
         "@octokit/rest": "22.0.0",
@@ -94,7 +94,7 @@
     },
     "packages/opencode": {
       "name": "opencode",
-      "version": "0.5.13",
+      "version": "0.5.15",
       "bin": {
         "opencode": "./bin/opencode",
       },
@@ -144,7 +144,7 @@
     },
     "packages/plugin": {
       "name": "@opencode-ai/plugin",
-      "version": "0.5.13",
+      "version": "0.5.15",
       "dependencies": {
         "@opencode-ai/sdk": "workspace:*",
       },
@@ -156,16 +156,25 @@
     },
     "packages/sdk/js": {
       "name": "@opencode-ai/sdk",
-      "version": "0.5.13",
+      "version": "0.5.15",
+      "dependencies": {
+        "@hey-api/openapi-ts": "0.80.1",
+      },
       "devDependencies": {
         "@hey-api/openapi-ts": "0.80.1",
         "@tsconfig/node22": "catalog:",
         "typescript": "catalog:",
       },
     },
+    "packages/tmp": {
+      "name": "@opencode-ai/tmp",
+      "dependencies": {
+        "@opencode-ai/sdk": "workspace:",
+      },
+    },
     "packages/web": {
       "name": "@opencode/web",
-      "version": "0.5.13",
+      "version": "0.5.15",
       "dependencies": {
         "@astrojs/cloudflare": "12.6.3",
         "@astrojs/markdown-remark": "6.3.1",
@@ -677,6 +686,8 @@
     "@opencode-ai/plugin": ["@opencode-ai/plugin@workspace:packages/plugin"],
 
     "@opencode-ai/sdk": ["@opencode-ai/sdk@workspace:packages/sdk/js"],
+
+    "@opencode-ai/tmp": ["@opencode-ai/tmp@workspace:packages/tmp"],
 
     "@opencode/cloud-app": ["@opencode/cloud-app@workspace:cloud/app"],
 
