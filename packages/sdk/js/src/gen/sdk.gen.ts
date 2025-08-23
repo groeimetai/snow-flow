@@ -123,7 +123,7 @@ class Event extends _HeyApiClient {
    * Get events
    */
   public subscribe<ThrowOnError extends boolean = false>(options?: Options<EventSubscribeData, ThrowOnError>) {
-    return (options?.client ?? this._client).get.sse<EventSubscribeResponses, unknown, ThrowOnError>({
+    return (options?.client ?? this._client).get<EventSubscribeResponses, unknown, ThrowOnError>({
       url: "/event",
       ...options,
     })
