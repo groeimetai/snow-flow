@@ -166,7 +166,14 @@ if (!snapshot) {
     ["opencode", sourcePkgbuild],
   ]) {
     await $`rm -rf ./dist/aur-${pkg}`
-    await $`git clone ssh://aur@aur.archlinux.org/${pkg}.git ./dist/aur-${pkg}`
+    while (true) {
+      try {
+        await $`git clone ssh://aur@aur.archlinux.org/${pkg}.git ./dist/aur-${pkg}`
+        break
+      } catch (e) {
+        continue
+      }
+    }
     await $`cd ./dist/aur-${pkg} && git checkout master`
     await Bun.file(`./dist/aur-${pkg}/PKGBUILD`).write(pkgbuild)
     await $`cd ./dist/aur-${pkg} && makepkg --printsrcinfo > .SRCINFO`
