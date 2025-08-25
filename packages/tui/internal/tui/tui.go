@@ -972,7 +972,7 @@ func (a Model) home() (string, int, int) {
 		styles.WhitespaceStyle(t.Background()),
 	)
 
-	grok := highlight("Try Grok Code free for a limited time")
+	grok := highlight("Grok Code is free for a limited time")
 	grok = lipgloss.PlaceHorizontal(
 		effectiveWidth,
 		lipgloss.Center,
