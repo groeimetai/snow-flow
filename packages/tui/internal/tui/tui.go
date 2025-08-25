@@ -953,9 +953,9 @@ func (a Model) home() (string, int, int) {
 	)
 
 	// Use limit of 4 for vscode, 6 for others
-	limit := 4
+	limit := 6
 	if util.IsVSCode() {
-		limit = 2
+		limit = 4
 	}
 
 	showVscode := util.IsVSCode()
@@ -986,8 +986,6 @@ func (a Model) home() (string, int, int) {
 	lines = append(lines, "")
 	lines = append(lines, cmds)
 	lines = append(lines, "")
-	lines = append(lines, "")
-	lines = append(lines, grok)
 	lines = append(lines, "")
 
 	mainHeight := lipgloss.Height(strings.Join(lines, "\n"))
