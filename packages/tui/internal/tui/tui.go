@@ -918,6 +918,7 @@ func (a Model) home() (string, int, int) {
 	baseStyle := styles.NewStyle().Foreground(t.Text()).Background(t.Background())
 	base := baseStyle.Render
 	muted := styles.NewStyle().Foreground(t.TextMuted()).Background(t.Background()).Render
+	highlight := styles.NewStyle().Foreground(t.Accent()).Background(t.Background()).Render
 
 	open := `
 █▀▀█ █▀▀█ █▀▀ █▀▀▄ 
@@ -952,9 +953,9 @@ func (a Model) home() (string, int, int) {
 	)
 
 	// Use limit of 4 for vscode, 6 for others
-	limit := 6
+	limit := 4
 	if util.IsVSCode() {
-		limit = 4
+		limit = 2
 	}
 
 	showVscode := util.IsVSCode()
@@ -971,14 +972,22 @@ func (a Model) home() (string, int, int) {
 		styles.WhitespaceStyle(t.Background()),
 	)
 
+	grok := highlight("Try Grok Code free for a limited time")
+	grok = lipgloss.PlaceHorizontal(
+		effectiveWidth,
+		lipgloss.Center,
+		grok,
+		styles.WhitespaceStyle(t.Background()),
+	)
+
 	lines := []string{}
-	lines = append(lines, "")
 	lines = append(lines, "")
 	lines = append(lines, logoAndVersion)
 	lines = append(lines, "")
-	lines = append(lines, "")
 	lines = append(lines, cmds)
 	lines = append(lines, "")
+	lines = append(lines, "")
+	lines = append(lines, grok)
 	lines = append(lines, "")
 
 	mainHeight := lipgloss.Height(strings.Join(lines, "\n"))
