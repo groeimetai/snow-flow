@@ -59,7 +59,7 @@ Run the command with arguments:
 
 ## Inject shell output
 
-Use `!command` to inject shell command output into your prompt.
+Use !`command` to inject shell command output into your prompt.
 
 Create `.opencode/command/analyze-coverage.md`:
 
@@ -69,7 +69,7 @@ description: Analyze test coverage
 ---
 
 Here are the current test results:
-`!npm test`
+!`npm test`
 
 Based on these results, suggest improvements to increase coverage.
 ```
@@ -82,7 +82,7 @@ description: Review recent changes
 ---
 
 Recent git commits:
-`!git log --oneline -10`
+!`git log --oneline -10`
 
 Review these changes and suggest any improvements.
 ```
