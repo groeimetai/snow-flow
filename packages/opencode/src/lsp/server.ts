@@ -148,6 +148,7 @@ export namespace LSPServer {
     async spawn(app, root) {
       const eslint = await Bun.resolve("eslint", app.path.cwd).catch(() => {})
       if (!eslint) return
+      log.info("spawning eslint server")
       const serverPath = path.join(Global.Path.bin, "vscode-eslint", "server", "out", "eslintServer.js")
       if (!(await Bun.file(serverPath).exists())) {
         if (Flag.OPENCODE_DISABLE_LSP_DOWNLOAD) return
@@ -164,7 +165,9 @@ export namespace LSPServer {
         const extractedPath = path.join(Global.Path.bin, "vscode-eslint-main")
         const finalPath = path.join(Global.Path.bin, "vscode-eslint")
 
-        if (await Bun.file(finalPath).exists()) {
+        const stats = await fs.stat(finalPath).catch(() => undefined)
+        if (stats) {
+          log.info("removing old eslint installation", { path: finalPath })
           await fs.rm(finalPath, { force: true, recursive: true })
         }
         await fs.rename(extractedPath, finalPath)
