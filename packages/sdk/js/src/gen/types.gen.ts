@@ -585,6 +585,9 @@ export type Config = {
      */
     scroll_speed: number
   }
+  /**
+   * Command configuration, see https://opencode.ai/docs/commands
+   */
   command?: {
     [key: string]: {
       template: string
