@@ -339,7 +339,10 @@ export namespace Config {
       theme: z.string().optional().describe("Theme name to use for the interface"),
       keybinds: Keybinds.optional().describe("Custom keybind configurations"),
       tui: TUI.optional().describe("TUI specific settings"),
-      command: z.record(z.string(), Command).optional(),
+      command: z
+        .record(z.string(), Command)
+        .optional()
+        .describe("Command configuration, see https://opencode.ai/docs/commands"),
       plugin: z.string().array().optional(),
       snapshot: z.boolean().optional(),
       share: z
