@@ -3,7 +3,13 @@ title: Commands
 description: Create custom commands for repetitive tasks.
 ---
 
-Define custom commands to automate repetitive coding tasks.
+Custom commands let you specify a prompt you want to run when that command is executed in the TUI.
+
+```bash frame="none"
+/my-command
+```
+
+Custom commands are in addition to the built-in commands like `/init`, `/undo`, `/redo`, `/share`, `/help`. [Learn more](/docs/tui#commands).
 
 ---
 
@@ -34,11 +40,77 @@ Use the command by typing `/` followed by the command name.
 
 ---
 
-## Use arguments
+## Configure
+
+You can add custom commands through the opencode config or by creating markdown files in the `command/` directory.
+
+---
+
+### JSON
+
+Use the `command` option in your opencode [config](/docs/config):
+
+```json title="opencode.jsonc" {4-12}
+{
+  "$schema": "https://opencode.ai/config.json",
+  "command": {
+    // This becomes the name of the command
+    "test": {
+      // This is the prompt that will be sent to the LLM
+      "template": "Run the full test suite with coverage report and show any failures.\nFocus on the failing tests and suggest fixes.",
+      // This is show as the description in the TUI
+      "description": "Run tests with coverage",
+      "agent": "build",
+      "model": "anthropic/claude-3-5-sonnet-20241022"
+    },
+  }
+}
+```
+
+Now you can run this command in the TUI:
+
+```bash frame="none"
+/test
+```
+
+---
+
+### Markdown
+
+You can also define commands using markdown files. Place them in:
+
+- Global: `~/.config/opencode/command/`
+- Per-project: `.opencode/command/`
+
+```markdown title="~/.config/opencode/command/test.md"
+---
+description: Run tests with coverage
+agent: build
+model: anthropic/claude-3-5-sonnet-20241022
+---
+
+Run the full test suite with coverage report and show any failures.
+Focus on the failing tests and suggest fixes.
+```
+
+The markdown file name becomes the command name. For example, `test.md` lets
+you run:
+
+```bash frame="none"
+/test
+```
+
+---
+
+## Prompt config
+
+The prompts for the custom commands support several special placeholders and syntax.
+
+---
+
+### Arguments
 
 Pass arguments to commands using the `$ARGUMENTS` placeholder.
-
-Create `.opencode/command/component.md`:
 
 ```md title=".opencode/command/component.md"
 ---
@@ -52,16 +124,18 @@ Include proper typing and basic structure.
 Run the command with arguments:
 
 ```bash frame="none"
-"/component Button"
+/component Button
 ```
+
+And `$ARGUMENTS` will be replaced with `Button`.
 
 ---
 
-## Inject shell output
+### Shell output
 
-Use !`command` to inject shell command output into your prompt.
+Use _!`command`_ to inject [bash command](/docs/tui#bash-commands) output into your prompt.
 
-Create `.opencode/command/analyze-coverage.md`:
+For example, to create a custom command that analyzes test coverage:
 
 ```md title=".opencode/command/analyze-coverage.md"
 ---
@@ -74,7 +148,7 @@ Here are the current test results:
 Based on these results, suggest improvements to increase coverage.
 ```
 
-Create `.opencode/command/review-changes.md`:
+Or to review recent changes:
 
 ```md title=".opencode/command/review-changes.md"
 ---
@@ -91,11 +165,9 @@ Commands run in your project's root directory and their output becomes part of t
 
 ---
 
-## Reference files
+### File references
 
 Include files in your command using `@` followed by the filename.
-
-Create `.opencode/command/review-component.md`:
 
 ```md title=".opencode/command/review-component.md"
 ---
@@ -110,47 +182,90 @@ The file content gets included in the prompt automatically.
 
 ---
 
-## Command properties
+## Options
 
-Configure commands with these optional frontmatter properties:
+Let's look at the configuration options in detail.
 
-- **description**: Brief explanation of what the command does
-- **agent**: Agent to use (defaults to "build")
-- **model**: Specific model to use for this command
-
-Create `.opencode/command/code-review.md`:
-
-```md title=".opencode/command/code-review.md"
----
-description: Code review assistant
-agent: build
-model: anthropic/claude-3-5-sonnet-20241022
 ---
 
-Review the code for best practices and suggest improvements.
+### Template
+
+The `template` option defines the prompt that will be sent to the LLM when the command is executed.
+
+```json title="opencode.json"
+{
+  "command": {
+    "test": {
+      "template": "Run the full test suite with coverage report and show any failures.\nFocus on the failing tests and suggest fixes."
+    }
+  }
+}
 ```
 
----
-
-## Command directory
-
-Store command files in these locations:
-
-- `.opencode/command/` - Project-specific commands
-- `command/` - Global commands in config directory
-
-Project commands take precedence over global ones.
+This is a **required** config option.
 
 ---
 
-## Built-in commands
+### Description
 
-opencode includes several built-in commands:
+Use the `description` option to provide a brief description of what the command does.
 
-- `/init` - Initialize project and create AGENTS.md
-- `/undo` - Revert the last changes
-- `/redo` - Restore reverted changes
-- `/share` - Share the current conversation
-- `/help` - Show available commands and keybinds
+```json title="opencode.json"
+{
+  "command": {
+    "test": {
+      "description": "Run tests with coverage"
+    }
+  }
+}
+```
 
-Use `/help` to see all available commands in your setup.
+This is shown as the description in the TUI when you type in the command.
+
+---
+
+### Agent
+
+Use the `agent` config to optionally specify which [agent](/docs/agents) should execute this command.
+
+```json title="opencode.json"
+{
+  "command": {
+    "review": {
+      "agent": "plan"
+    }
+  }
+}
+```
+
+This is an **optional** config option. If not specified, defaults to "build".
+
+---
+
+### Model
+
+Use the `model` config to override the default model for this command.
+
+```json title="opencode.json"
+{
+  "command": {
+    "analyze": {
+      "model": "anthropic/claude-3-5-sonnet-20241022"
+    }
+  }
+}
+```
+
+This is an **optional** config option.
+
+---
+
+## Built-in
+
+opencode includes several built-in commands like `/init`, `/undo`, `/redo`, `/share`, `/help`; [learn more](/docs/tui#commands).
+
+:::note
+Custom commands can override built-in commands.
+:::
+
+If you define a custom command with the same name, it will override the built-in command.
