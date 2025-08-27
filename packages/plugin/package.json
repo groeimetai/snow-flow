@@ -19,7 +19,6 @@
     "@opencode-ai/sdk": "workspace:*"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "0.81.0",
     "@tsconfig/node22": "catalog:",
     "typescript": "catalog:"
   }

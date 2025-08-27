@@ -29,6 +29,6 @@
     "@tsconfig/node22": "catalog:"
   },
   "dependencies": {
-    "@hey-api/openapi-ts": "0.80.1"
+    "@hey-api/openapi-ts": "0.81.0"
   }
 }
