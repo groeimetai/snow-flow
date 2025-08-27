@@ -938,6 +938,34 @@ export namespace Server {
       .get(
         "/file",
         describeRoute({
+          description: "List files and directories",
+          operationId: "file.list",
+          responses: {
+            200: {
+              description: "Files and directories",
+              content: {
+                "application/json": {
+                  schema: resolver(File.Node.array()),
+                },
+              },
+            },
+          },
+        }),
+        zValidator(
+          "query",
+          z.object({
+            path: z.string(),
+          }),
+        ),
+        async (c) => {
+          const path = c.req.valid("query").path
+          const content = await File.list(path)
+          return c.json(content)
+        },
+      )
+      .get(
+        "/file/content",
+        describeRoute({
           description: "Read a file",
           operationId: "file.read",
           responses: {
@@ -965,10 +993,6 @@ export namespace Server {
         async (c) => {
           const path = c.req.valid("query").path
           const content = await File.read(path)
-          log.info("read file", {
-            path,
-            content: content.content,
-          })
           return c.json(content)
         },
       )

@@ -1138,6 +1138,12 @@ export type Symbol = {
   }
 }
 
+export type FileNode = {
+  name: string
+  path: string
+  type: "file" | "directory"
+}
+
 export type File = {
   path: string
   added: number
@@ -1804,13 +1810,31 @@ export type FindSymbolsResponses = {
 
 export type FindSymbolsResponse = FindSymbolsResponses[keyof FindSymbolsResponses]
 
-export type FileReadData = {
+export type FileListData = {
   body?: never
   path?: never
   query: {
     path: string
   }
   url: "/file"
+}
+
+export type FileListResponses = {
+  /**
+   * Files and directories
+   */
+  200: Array<FileNode>
+}
+
+export type FileListResponse = FileListResponses[keyof FileListResponses]
+
+export type FileReadData = {
+  body?: never
+  path?: never
+  query: {
+    path: string
+  }
+  url: "/file/content"
 }
 
 export type FileReadResponses = {

@@ -59,6 +59,8 @@ import type {
   FindFilesResponses,
   FindSymbolsData,
   FindSymbolsResponses,
+  FileListData,
+  FileListResponses,
   FileReadData,
   FileReadResponses,
   FileStatusData,
@@ -458,11 +460,21 @@ class Find extends _HeyApiClient {
 
 class File extends _HeyApiClient {
   /**
+   * List files and directories
+   */
+  public list<ThrowOnError extends boolean = false>(options: Options<FileListData, ThrowOnError>) {
+    return (options.client ?? this._client).get<FileListResponses, unknown, ThrowOnError>({
+      url: "/file",
+      ...options,
+    })
+  }
+
+  /**
    * Read a file
    */
   public read<ThrowOnError extends boolean = false>(options: Options<FileReadData, ThrowOnError>) {
     return (options.client ?? this._client).get<FileReadResponses, unknown, ThrowOnError>({
-      url: "/file",
+      url: "/file/content",
       ...options,
     })
   }
