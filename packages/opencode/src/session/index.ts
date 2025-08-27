@@ -1183,6 +1183,10 @@ export namespace Session {
 
     let template = command.template.replace("$ARGUMENTS", input.arguments)
 
+    // intentionally doing match regex doing bash regex replacements
+    // this is because bash commands can output "@" references
+    const fileMatches = template.matchAll(fileRegex)
+
     const bash = Array.from(template.matchAll(bashRegex))
     if (bash.length > 0) {
       const results = await Promise.all(
@@ -1205,10 +1209,9 @@ export namespace Session {
       },
     ] as ChatInput["parts"]
 
-    const matches = template.matchAll(fileRegex)
     const app = App.info()
 
-    for (const match of matches) {
+    for (const match of fileMatches) {
       const file = path.join(app.path.cwd, match[1])
       parts.push({
         type: "file",
