@@ -21,11 +21,8 @@ export const getActor = query(async (): Promise<Actor.Info> => {
   const url = new URL(evt!.request.headers.get("referer") ?? evt!.request.url)
   const auth = await useAuthSession()
   const [workspaceHint] = url.pathname.split("/").filter((x) => x.length > 0)
-  console.log("here1")
   if (!workspaceHint) {
-    console.log("here2")
     if (auth.data.current) {
-      console.log("here3")
       const current = auth.data.account[auth.data.current]
       return {
         type: "account",
@@ -102,6 +99,10 @@ export function useAuthSession() {
   return useSession<AuthSession>({
     password: "0".repeat(32),
     name: "auth",
+    cookie: {
+      secure: false,
+      httpOnly: true,
+    },
   })
 }
 
