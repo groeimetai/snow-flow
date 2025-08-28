@@ -3,7 +3,7 @@ import { Resource } from "sst"
 export * from "drizzle-orm"
 import postgres from "postgres"
 
-const createClient = () => {
+const init = () => {
   const client = postgres({
     idle_timeout: 30000,
     connect_timeout: 30000,
@@ -19,6 +19,8 @@ const createClient = () => {
   })
   return drizzle(client, {})
 }
+
+const createClient = "NODE_ENV" in process.env ? init : memo(init)
 
 import { PgTransaction, type PgTransactionConfig } from "drizzle-orm/pg-core"
 import type { ExtractTablesWithRelations } from "drizzle-orm"
