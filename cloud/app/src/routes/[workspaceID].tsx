@@ -1,7 +1,7 @@
 import { Billing } from "@opencode/cloud-core/billing.js"
 import { Key } from "@opencode/cloud-core/key.js"
 import { action, createAsync, revalidate, query, useAction, useSubmission } from "@solidjs/router"
-import { createSignal, For, Show } from "solid-js"
+import { createEffect, createSignal, For, onMount, Show } from "solid-js"
 import { getActor, withActor } from "~/context/auth"
 
 /////////////////////////////////////
@@ -42,17 +42,16 @@ const createCheckoutUrl = action(async (successUrl: string, cancelUrl: string) =
   return withActor(() => Billing.generateCheckoutUrl({ successUrl, cancelUrl }))
 }, "checkoutUrl")
 
-const createPortalUrl = action(async (returnUrl: string) => {
-  "use server"
-  return withActor(() => Billing.generatePortalUrl({ returnUrl }))
-}, "portalUrl")
-
 //export const route = {
 //  preload: () => listKeys(),
 //}
 
 export default function () {
   const actor = createAsync(() => getActor())
+
+  /////////////////
+  // Keys section
+  /////////////////
   const keys = createAsync(() => listKeys())
   const createKeyAction = useAction(createKey)
   const removeKeyAction = useAction(removeKey)
@@ -100,6 +99,51 @@ export default function () {
       revalidate("keys")
     } catch (error) {
       console.error("Failed to delete API key:", error)
+    }
+  }
+
+  /////////////////
+  // Billing section
+  /////////////////
+  const billingInfo = createAsync(() => getBillingInfo())
+  const [isLoading, setIsLoading] = createSignal(false)
+  const createCheckoutUrlAction = useAction(createCheckoutUrl)
+
+  // Run once on component mount to check URL parameters
+  onMount(() => {
+    const url = new URL(window.location.href)
+    const result = url.hash
+
+    console.log("STRIPE RESULT", result)
+
+    if (url.hash === "#success") {
+      setIsLoading(true)
+      // Remove the hash from the URL
+      window.history.replaceState(null, "", window.location.pathname + window.location.search)
+    }
+  })
+
+  createEffect((old?: number) => {
+    if (old && old !== billingInfo()?.billing?.balance) {
+      setIsLoading(false)
+    }
+    return billingInfo()?.billing?.balance
+  })
+
+  const handleBuyCredits = async () => {
+    try {
+      setIsLoading(true)
+      const baseUrl = window.location.href
+      const successUrl = new URL(baseUrl)
+      successUrl.hash = "success"
+
+      const checkoutUrl = await createCheckoutUrlAction(successUrl.toString(), baseUrl)
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl
+      }
+    } catch (error) {
+      console.error("Failed to get checkout URL:", error)
+      setIsLoading(false)
     }
   }
 
@@ -182,6 +226,48 @@ export default function () {
           )}
         </For>
       </div>
+
+      <h1>Balance</h1>
+      <p>Manage your billing and add credits to your account.</p>
+      <p>
+        {(() => {
+          const balanceStr = ((billingInfo()?.billing?.balance ?? 0) / 100000000).toFixed(2)
+          return `$${balanceStr === "-0.00" ? "0.00" : balanceStr}`
+        })()}
+      </p>
+      <button color="primary" disabled={isLoading()} onClick={handleBuyCredits}>
+        {isLoading() ? "Loading..." : "Buy Credits"}
+      </button>
+
+      <h1>Payments History</h1>
+      <p>Your recent payment transactions.</p>
+      <For each={billingInfo()?.payments} fallback={<p>No payments found.</p>}>
+        {(payment) => (
+          <div data-slot="payment-item">
+            <span data-slot="payment-id">{payment.id}</span>
+            {"  |  "}
+            <span data-slot="payment-amount">${((payment.amount ?? 0) / 100000000).toFixed(2)}</span>
+            {"  |  "}
+            <span data-slot="payment-date">{new Date(payment.timeCreated).toLocaleDateString()}</span>
+          </div>
+        )}
+      </For>
+
+      <h1>Usage History</h1>
+      <p>Your recent API usage and costs.</p>
+      <For each={billingInfo()?.usage} fallback={<p>No usage found.</p>}>
+        {(usage) => (
+          <div data-slot="usage-item">
+            <span data-slot="usage-model">{usage.model}</span>
+            {"  |  "}
+            <span data-slot="usage-tokens">{usage.inputTokens + usage.outputTokens} tokens</span>
+            {"  |  "}
+            <span data-slot="usage-cost">${((usage.cost ?? 0) / 100000000).toFixed(4)}</span>
+            {"  |  "}
+            <span data-slot="usage-date">{new Date(usage.timeCreated).toLocaleDateString()}</span>
+          </div>
+        )}
+      </For>
     </div>
   )
 }
