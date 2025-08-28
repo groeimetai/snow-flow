@@ -826,7 +826,7 @@ func (a *App) SendCommand(ctx context.Context, command string, args string) (*Ap
 		)
 		if err != nil {
 			slog.Error("Failed to execute command", "error", err)
-			return toast.NewErrorToast("Failed to execute command")
+			return toast.NewErrorToast("Failed to execute command")()
 		}
 		return nil
 	})
