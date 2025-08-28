@@ -552,6 +552,7 @@ export type App = {
   hostname: string
   git: boolean
   path: {
+    home: string
     config: string
     data: string
     root: string
