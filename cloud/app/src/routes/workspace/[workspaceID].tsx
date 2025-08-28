@@ -42,11 +42,12 @@ const createCheckoutUrl = action(async (successUrl: string, cancelUrl: string) =
   return withActor(() => Billing.generateCheckoutUrl({ successUrl, cancelUrl }))
 }, "checkoutUrl")
 
-//export const route = {
-//  preload: () => listKeys(),
-//}
+const createPortalUrl = action(async (returnUrl: string) => {
+  "use server"
+  return withActor(() => Billing.generatePortalUrl({ returnUrl }))
+}, "portalUrl")
 
-export default function () {
+export default function() {
   const actor = createAsync(() => getActor())
 
   /////////////////
