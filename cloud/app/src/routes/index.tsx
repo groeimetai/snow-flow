@@ -23,6 +23,7 @@ function CopyStatus() {
 const isLoggedIn = query(async () => {
   "use server"
   const actor = await getActor()
+  console.log(actor)
   if (actor.type === "account") {
     const workspaces = await withActor(() => Account.workspaces())
     throw redirect("/" + workspaces[0].id)
