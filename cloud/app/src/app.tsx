@@ -1,4 +1,4 @@
-import { MetaProvider, Title } from "@solidjs/meta";
+import { MetaProvider, Title, Meta } from "@solidjs/meta";
 import { Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
 import { ErrorBoundary, Suspense } from "solid-js";
@@ -11,6 +11,7 @@ export default function App() {
       root={props => (
         <MetaProvider>
           <Title>opencode</Title>
+          <Meta name="description" content="opencode - The AI coding agent built for the terminal." />
           <ErrorBoundary fallback={<div>Something went wrong</div>}>
             <Suspense>{props.children}</Suspense>
           </ErrorBoundary>
