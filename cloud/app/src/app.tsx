@@ -12,9 +12,7 @@ export default function App() {
         <MetaProvider>
           <Title>opencode</Title>
           <Meta name="description" content="opencode - The AI coding agent built for the terminal." />
-          <ErrorBoundary fallback={<div>Something went wrong</div>}>
-            <Suspense>{props.children}</Suspense>
-          </ErrorBoundary>
+          <Suspense>{props.children}</Suspense>
         </MetaProvider>
       )}
     >

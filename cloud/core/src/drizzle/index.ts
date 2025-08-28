@@ -20,7 +20,7 @@ const init = () => {
   return drizzle(client, {})
 }
 
-const createClient = "NODE_ENV" in process.env ? init : memo(init)
+const createClient = "NODE_ENV" in process.env ? memo(init) : init
 
 import { PgTransaction, type PgTransactionConfig } from "drizzle-orm/pg-core"
 import type { ExtractTablesWithRelations } from "drizzle-orm"
