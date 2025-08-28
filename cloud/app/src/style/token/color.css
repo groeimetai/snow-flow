@@ -47,7 +47,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     /* OpenCode dark theme colors */
-    /*--color-bg: #0c0c0e;*/
+    --color-bg: #0c0c0e;
     --color-bg-surface: #161618;
     --color-bg-elevated: #1c1c1f;
 

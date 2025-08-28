@@ -1,0 +1,10 @@
+[data-page="workspace"] {
+  font-family: var(--font-mono);
+
+  @media (prefers-color-scheme: dark) {
+  }
+}
+
+[data-page="workspace"] {
+  font-family: var(--font-mono);
+}
