@@ -1142,6 +1142,7 @@ export type FileNode = {
   name: string
   path: string
   type: "file" | "directory"
+  ignored: boolean
 }
 
 export type File = {
