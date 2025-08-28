@@ -7,7 +7,7 @@ import IMG_SPLASH from "../asset/lander/screenshot-splash.png"
 import IMG_VSCODE from "../asset/lander/screenshot-vscode.png"
 import IMG_GITHUB from "../asset/lander/screenshot-github.png"
 import { IconCopy, IconCheck } from "../component/icon"
-import { createAsync, query, redirect, RouteDefinition } from "@solidjs/router"
+import { A, createAsync, query, redirect } from "@solidjs/router"
 import { getActor, withActor } from "~/context/auth"
 import { Account } from "@opencode/cloud-core/account.js"
 
@@ -23,18 +23,18 @@ function CopyStatus() {
 const isLoggedIn = query(async () => {
   "use server"
   const actor = await getActor()
-  console.log(actor)
   if (actor.type === "account") {
     const workspaces = await withActor(() => Account.workspaces())
-    throw redirect("/" + workspaces[0].id)
+    return workspaces[0].id
+    // throw redirect("/" + workspaces[0].id)
   }
-  return
+  return false
 }, "isLoggedIn")
 
 
 
 export default function Home() {
-  createAsync(() => isLoggedIn(), {
+  const workspaceId = createAsync(() => isLoggedIn(), {
     deferStream: true,
   })
   onMount(() => {
@@ -71,7 +71,7 @@ export default function Home() {
           <div data-slot="left">
             <a href="/docs">Get Started</a>
           </div>
-          <div data-slot="right">
+          <div data-slot="center">
             <button data-copy data-slot="command">
               <span>
                 <span>curl -fsSL&nbsp;</span>
@@ -81,6 +81,12 @@ export default function Home() {
               </span>
               <CopyStatus />
             </button>
+          </div>
+          <div data-slot="right">
+            {workspaceId()
+              ? <A href={`/workspace/${workspaceId()}`}>Dashboard</A>
+              : <A href="/auth/authorize">Login</A>
+            }
           </div>
         </section>
 
