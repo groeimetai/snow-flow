@@ -23,7 +23,6 @@ function CopyStatus() {
 const isLoggedIn = query(async () => {
   "use server"
   const actor = await getActor()
-  console.log(actor)
   if (actor.type === "account") {
     const workspaces = await withActor(() => Account.workspaces())
     throw redirect(`/workspace/${workspaces[0].id}`)
@@ -34,7 +33,7 @@ const isLoggedIn = query(async () => {
 
 
 export default function Home() {
-  const workspaceId = createAsync(() => isLoggedIn(), {
+  createAsync(() => isLoggedIn(), {
     deferStream: true,
   })
   onMount(() => {
