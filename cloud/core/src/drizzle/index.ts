@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js"
-import { Resource } from "sst"
+import { Resource } from "../util/resource"
 export * from "drizzle-orm"
 import postgres from "postgres"
 

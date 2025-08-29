@@ -31,8 +31,6 @@ const isLoggedIn = query(async () => {
   return false
 }, "isLoggedIn")
 
-
-
 export default function Home() {
   createAsync(() => isLoggedIn(), {
     deferStream: true,
@@ -83,7 +81,9 @@ export default function Home() {
             </button>
           </div>
           <div data-slot="right">
-            <a href="/auth/authorize" target="_self">Login</a>
+            <a href="/auth/authorize" target="_self">
+              Login
+            </a>
           </div>
         </section>
 

@@ -1,6 +1,5 @@
 import { WebhookEndpoint } from "pulumi-stripe"
 import { domain } from "./stage"
-import { web } from "./app"
 
 ////////////////
 // DATABASE
@@ -106,23 +105,9 @@ export const gateway = new sst.cloudflare.Worker("GatewayApi", {
 // CONSOLE
 ////////////////
 
-/*
-export const console = new sst.cloudflare.x.StaticSite("Console", {
+export const console = new sst.cloudflare.x.SolidStart("Console", {
   domain: `console.${domain}`,
-  path: "cloud/web",
-  build: {
-    command: "bun run build",
-    output: "dist/client",
-  },
-  environment: {
-    VITE_DOCS_URL: web.url.apply((url) => url!),
-    VITE_API_URL: gateway.url.apply((url) => url!),
-    VITE_AUTH_URL: auth.url.apply((url) => url!),
-  },
-})
-*/
-
-new sst.x.DevCommand("Solid", {
+  path: "cloud/app",
   link: [
     database,
     AUTH_API_URL,
@@ -132,11 +117,19 @@ new sst.x.DevCommand("Solid", {
     OPENAI_API_KEY,
     ZHIPU_API_KEY,
   ],
-  dev: {
-    directory: "cloud/app",
-    command: "bun dev",
-  },
   environment: {
+    //VITE_DOCS_URL: web.url.apply((url) => url!),
+    //VITE_API_URL: gateway.url.apply((url) => url!),
     VITE_AUTH_URL: auth.url.apply((url) => url!),
   },
 })
+
+//new sst.x.DevCommand("Solid", {
+//  dev: {
+//    directory: "cloud/app",
+//    command: "bun dev",
+//  },
+//  environment: {
+//    VITE_AUTH_URL: auth.url.apply((url) => url!),
+//  },
+//})

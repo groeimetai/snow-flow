@@ -1,5 +1,5 @@
 import { defineConfig } from "drizzle-kit"
-import { Resource } from "sst"
+import { Resource } from "./src/util/resource"
 
 export default defineConfig({
   out: "./migrations/",
