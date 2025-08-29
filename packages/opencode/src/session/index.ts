@@ -705,32 +705,6 @@ export namespace Session {
               parts: userParts,
             },
           ]),
-          // When dealing with huge blocks of context sometimes the llm will lose sight of
-          // parts of system prompt, you can usually get around this by just adding an additional
-          // reference after large context block that references instructions from system prompt
-          // and llm will "remember" it needs to do X or Y
-          ...MessageV2.toModelMessage([
-            {
-              info: {
-                id: Identifier.ascending("message"),
-                role: "user",
-                sessionID: input.sessionID,
-                time: {
-                  created: Date.now(),
-                },
-              },
-              parts: [
-                {
-                  type: "text",
-                  id: Identifier.ascending("part"),
-                  messageID: userMsg.id,
-                  sessionID: input.sessionID,
-                  text: "Output only a title for this conversation. No responses to content.",
-                  synthetic: true,
-                },
-              ],
-            },
-          ]),
         ],
         model: small.language,
       })
@@ -742,7 +716,9 @@ export namespace Session {
               draft.title = title.trim()
             })
         })
-        .catch(() => {})
+        .catch((error) => {
+          log.error("failed to generate title", { error, model: small.info.id })
+        })
     }
 
     const agent = await Agent.get(inputAgent)
