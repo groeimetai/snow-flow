@@ -25,6 +25,7 @@ declare module "sst" {
       "type": "sst.cloudflare.Kv"
     }
     "Bucket": {
+      "name": string
       "type": "sst.cloudflare.Bucket"
     }
     "DATABASE_PASSWORD": {
