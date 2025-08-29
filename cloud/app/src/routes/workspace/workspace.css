@@ -1,9 +1,5 @@
 [data-page="workspace"] {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
   line-height: 1;
-  padding: var(--space-6);
 
   @media (max-width: 30rem) {
     padding: var(--space-4);
@@ -19,8 +15,6 @@
     justify-content: space-between;
     align-items: center;
     padding: var(--space-4) var(--space-4);
-    margin: calc(-1 * var(--space-6));
-    margin-bottom: var(--space-6);
     border-bottom: 1px solid var(--color-border);
     background-color: var(--color-bg);
 
