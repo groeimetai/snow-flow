@@ -4,6 +4,7 @@ import { action, createAsync, revalidate, query, useAction, useSubmission } from
 import { createEffect, createSignal, For, onMount, Show } from "solid-js"
 import { getActor } from "~/context/auth"
 import { withActor } from "~/context/auth.withActor"
+import "./index.css"
 
 /////////////////////////////////////
 // Keys related queries and actions
@@ -48,7 +49,7 @@ const createPortalUrl = action(async (returnUrl: string) => {
   return withActor(() => Billing.generatePortalUrl({ returnUrl }))
 }, "portalUrl")
 
-export default function () {
+export default function() {
   const actor = createAsync(() => getActor())
   onMount(() => {
     console.log("MOUNTED", actor())
