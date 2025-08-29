@@ -102,7 +102,35 @@ const dummyUsageData = [
   },
 ]
 
-export default function() {
+const dummyPaymentData = [
+  {
+    id: "pay_1Ab2Cd3Ef4Gh5678",
+    amount: 2000000000,
+    timeCreated: new Date("2025-01-28T14:32:00Z"),
+  },
+  {
+    id: "pay_9Ij8Kl7Mn6Op5432",
+    amount: 1000000000,
+    timeCreated: new Date("2025-01-25T09:18:00Z"),
+  },
+  {
+    id: "pay_5Qr4St3Uv2Wx1098",
+    amount: 5000000000,
+    timeCreated: new Date("2025-01-20T16:45:00Z"),
+  },
+  {
+    id: "pay_7Yz6Ab5Cd4Ef3210",
+    amount: 1500000000,
+    timeCreated: new Date("2025-01-15T11:22:00Z"),
+  },
+  {
+    id: "pay_3Gh2Ij1Kl0Mn9876",
+    amount: 3000000000,
+    timeCreated: new Date("2025-01-10T13:55:00Z"),
+  },
+]
+
+export default function () {
   const actor = createAsync(() => getActor())
   onMount(() => {
     console.log("MOUNTED", actor())
@@ -354,24 +382,40 @@ export default function() {
         </section>
 
         {/* Payments Section */}
-        <Show when={billingInfo() && billingInfo()!.payments.length > 0}>
+        <Show when={dummyPaymentData.length > 0}>
+          {/* Real data condition: billingInfo() && billingInfo()!.payments.length > 0 */}
           <section data-slot="payments-section">
             <div data-slot="section-title">
               <h2>Payments History</h2>
-              <p>Your recent payment transactions.</p>
+              <p>Recent payment transactions.</p>
             </div>
-            <div data-slot="payments-list">
-              <For each={billingInfo()?.payments}>
-                {(payment) => (
-                  <div data-slot="payment-item">
-                    <span data-slot="payment-id">{payment.id}</span>
-                    {"  |  "}
-                    <span data-slot="payment-amount">${((payment.amount ?? 0) / 100000000).toFixed(2)}</span>
-                    {"  |  "}
-                    <span data-slot="payment-date">{new Date(payment.timeCreated).toLocaleDateString()}</span>
-                  </div>
-                )}
-              </For>
+            <div data-slot="payments-table">
+              <table data-slot="payments-table-element">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Payment ID</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <For each={dummyPaymentData}>
+                    {/* Real data: billingInfo()?.payments */}
+                    {(payment) => {
+                      const date = new Date(payment.timeCreated)
+                      return (
+                        <tr>
+                          <td data-slot="payment-date" title={formatDateUTC(date)}>
+                            {formatDateForTable(date)}
+                          </td>
+                          <td data-slot="payment-id">{payment.id}</td>
+                          <td data-slot="payment-amount">${((payment.amount ?? 0) / 100000000).toFixed(2)}</td>
+                        </tr>
+                      )
+                    }}
+                  </For>
+                </tbody>
+              </table>
             </div>
           </section>
         </Show>
@@ -380,7 +424,7 @@ export default function() {
         <section data-slot="usage-section">
           <div data-slot="section-title">
             <h2>Usage History</h2>
-            <p>Your recent API usage and costs.</p>
+            <p>Recent API usage and costs.</p>
           </div>
           <div data-slot="usage-table">
             <Show
