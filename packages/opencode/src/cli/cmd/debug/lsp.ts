@@ -16,7 +16,7 @@ const DiagnosticsCommand = cmd({
   async handler(args) {
     await bootstrap({ cwd: process.cwd() }, async () => {
       await LSP.touchFile(args.file, true)
-      console.log(await LSP.diagnostics())
+      console.log(JSON.stringify(await LSP.diagnostics(), null, 2))
     })
   },
 })
