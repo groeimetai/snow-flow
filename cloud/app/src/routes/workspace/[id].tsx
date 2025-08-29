@@ -1,10 +1,12 @@
 import { Billing } from "@opencode/cloud-core/billing.js"
 import { Key } from "@opencode/cloud-core/key.js"
-import { action, createAsync, revalidate, query, useAction, useSubmission } from "@solidjs/router"
+import { action, createAsync, revalidate, query, useAction, useSubmission, json } from "@solidjs/router"
 import { createEffect, createSignal, For, onMount, Show } from "solid-js"
 import { getActor } from "~/context/auth"
 import { withActor } from "~/context/auth.withActor"
 import "./index.css"
+import { User } from "@opencode/cloud-core/user.js"
+import { Actor } from "@opencode/cloud-core/actor.js"
 
 /////////////////////////////////////
 // Keys related queries and actions
@@ -17,12 +19,18 @@ const listKeys = query(async () => {
 
 const createKey = action(async (name: string) => {
   "use server"
-  return withActor(() => Key.create({ name }))
+  return json(
+    withActor(() => Key.create({ name })),
+    { revalidate: "keys" },
+  )
 }, "createKey")
 
 const removeKey = action(async (id: string) => {
   "use server"
-  return withActor(() => Key.remove({ id }))
+  return json(
+    withActor(() => Key.remove({ id })),
+    { revalidate: "keys" },
+  )
 }, "removeKey")
 
 /////////////////////////////////////
@@ -32,10 +40,14 @@ const removeKey = action(async (id: string) => {
 const getBillingInfo = query(async () => {
   "use server"
   return withActor(async () => {
-    const billing = await Billing.get()
-    const payments = await Billing.payments()
-    const usage = await Billing.usages()
-    return { billing, payments, usage }
+    const actor = Actor.assert("user")
+    const [user, billing, payments, usage] = await Promise.all([
+      User.fromID(actor.properties.userID),
+      Billing.get(),
+      Billing.payments(),
+      Billing.usages(),
+    ])
+    return { user, billing, payments, usage }
   })
 }, "billingInfo")
 
@@ -130,7 +142,7 @@ const dummyPaymentData = [
   },
 ]
 
-export default function() {
+export default function () {
   const actor = createAsync(() => getActor())
   onMount(() => {
     console.log("MOUNTED", actor())
@@ -194,7 +206,6 @@ export default function() {
 
     try {
       await createKeyAction(keyName().trim())
-      revalidate("keys")
       setKeyName("")
       setShowCreateForm(false)
     } catch (error) {
@@ -209,7 +220,6 @@ export default function() {
 
     try {
       await removeKeyAction(keyId)
-      revalidate("keys")
     } catch (error) {
       console.error("Failed to delete API key:", error)
     }
