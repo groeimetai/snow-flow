@@ -8,7 +8,8 @@ import IMG_VSCODE from "../asset/lander/screenshot-vscode.png"
 import IMG_GITHUB from "../asset/lander/screenshot-github.png"
 import { IconCopy, IconCheck } from "../component/icon"
 import { createAsync, query, redirect } from "@solidjs/router"
-import { getActor, withActor } from "~/context/auth"
+import { getActor } from "~/context/auth"
+import { withActor } from "~/context/auth.withActor"
 import { Account } from "@opencode/cloud-core/account.js"
 
 function CopyStatus() {
