@@ -130,7 +130,7 @@ const dummyPaymentData = [
   },
 ]
 
-export default function () {
+export default function() {
   const actor = createAsync(() => getActor())
   onMount(() => {
     console.log("MOUNTED", actor())
@@ -366,15 +366,26 @@ export default function () {
         <section data-slot="balance-section">
           <div data-slot="section-title">
             <h2>Balance</h2>
-            <p>Manage your billing and add credits to your account.</p>
+            <p>Add credits to your account.</p>
           </div>
           <div data-slot="balance">
-            <p>
-              {(() => {
-                const balanceStr = ((billingInfo()?.billing?.balance ?? 0) / 100000000).toFixed(2)
-                return `$${balanceStr === "-0.00" ? "0.00" : balanceStr}`
-              })()}
-            </p>
+            <div
+              data-slot="amount"
+              classList={{
+                danger: (() => {
+                  const balanceStr = ((billingInfo()?.billing?.balance ?? 0) / 100000000).toFixed(2)
+                  return balanceStr === "0.00" || balanceStr === "-0.00"
+                })(),
+              }}
+            >
+              <span data-slot="currency">$</span>
+              <span data-slot="value">
+                {(() => {
+                  const balanceStr = ((billingInfo()?.billing?.balance ?? 0) / 100000000).toFixed(2)
+                  return balanceStr === "-0.00" ? "0.00" : balanceStr
+                })()}
+              </span>
+            </div>
             <button color="primary" disabled={isLoading()} onClick={handleBuyCredits}>
               {isLoading() ? "Loading..." : "Buy Credits"}
             </button>
