@@ -814,15 +814,18 @@ func (a *App) SendCommand(ctx context.Context, command string, args string) (*Ap
 	}
 
 	cmds = append(cmds, func() tea.Msg {
+		params := opencode.SessionCommandParams{
+			Command:   opencode.F(command),
+			Arguments: opencode.F(args),
+			Agent:     opencode.F(a.Agents[a.AgentIndex].Name),
+		}
+		if a.Provider != nil && a.Model != nil {
+			params.Model = opencode.F(a.Provider.ID + "/" + a.Model.ID)
+		}
 		_, err := a.Client.Session.Command(
 			context.Background(),
 			a.Session.ID,
-			opencode.SessionCommandParams{
-				Command:   opencode.F(command),
-				Arguments: opencode.F(args),
-				Agent:     opencode.F(a.Agents[a.AgentIndex].Name),
-				Model:     opencode.F(a.State.Provider + "/" + a.State.Model),
-			},
+			params,
 		)
 		if err != nil {
 			slog.Error("Failed to execute command", "error", err)
