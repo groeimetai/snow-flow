@@ -16,9 +16,7 @@ export default function WorkspaceLayout(props: RouteSectionProps) {
           <a href="/logout">Logout</a>
         </div>
       </header>
-      <div data-slot="content">
-        {props.children}
-      </div>
+      <div data-slot="content">{props.children}</div>
     </main>
   )
 }

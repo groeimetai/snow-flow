@@ -46,7 +46,7 @@ export const auth = new sst.cloudflare.Worker("AuthApi", {
 ////////////////
 
 export const stripeWebhook = new WebhookEndpoint("StripeWebhook", {
-  url: $interpolate`https://api.gateway.${domain}/stripe/webhook`,
+  url: $interpolate`https://console.${domain}/stripe/webhook`,
   enabledEvents: [
     "checkout.session.async_payment_failed",
     "checkout.session.async_payment_succeeded",
@@ -123,13 +123,3 @@ export const console = new sst.cloudflare.x.SolidStart("Console", {
     VITE_AUTH_URL: auth.url.apply((url) => url!),
   },
 })
-
-//new sst.x.DevCommand("Solid", {
-//  dev: {
-//    directory: "cloud/app",
-//    command: "bun dev",
-//  },
-//  environment: {
-//    VITE_AUTH_URL: auth.url.apply((url) => url!),
-//  },
-//})
