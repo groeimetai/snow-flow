@@ -4,6 +4,7 @@ import { action, createAsync, revalidate, query, useAction, useSubmission, json 
 import { createEffect, createSignal, For, onMount, Show } from "solid-js"
 import { getActor } from "~/context/auth"
 import { withActor } from "~/context/auth.withActor"
+import { IconCopy, IconCheck } from "~/component/icon"
 import "./index.css"
 import { User } from "@opencode/cloud-core/user.js"
 import { Actor } from "@opencode/cloud-core/actor.js"
@@ -142,7 +143,31 @@ const dummyPaymentData = [
   },
 ]
 
-export default function () {
+const dummyApiKeyData = [
+  {
+    id: "key_1Ab2Cd3Ef4Gh5678",
+    name: "Production API",
+    key: "oc_live_sk_1Ab2Cd3Ef4Gh567890123456789012345678901234567890",
+    timeCreated: new Date("2025-01-28T14:32:00Z"),
+    timeUsed: new Date("2025-01-29T09:15:00Z"),
+  },
+  {
+    id: "key_9Ij8Kl7Mn6Op5432",
+    name: "Development Key",
+    key: "oc_test_sk_9Ij8Kl7Mn6Op543210987654321098765432109876543210",
+    timeCreated: new Date("2025-01-25T09:18:00Z"),
+    timeUsed: null,
+  },
+  {
+    id: "key_5Qr4St3Uv2Wx1098",
+    name: "CI/CD Pipeline",
+    key: "oc_live_sk_5Qr4St3Uv2Wx109876543210987654321098765432109876",
+    timeCreated: new Date("2025-01-20T16:45:00Z"),
+    timeUsed: new Date("2025-01-28T12:30:00Z"),
+  },
+]
+
+export default function() {
   const actor = createAsync(() => getActor())
   onMount(() => {
     console.log("MOUNTED", actor())
@@ -157,6 +182,7 @@ export default function () {
   const createKeySubmission = useSubmission(createKey)
   const [showCreateForm, setShowCreateForm] = createSignal(false)
   const [keyName, setKeyName] = createSignal("")
+  const [copiedKeyId, setCopiedKeyId] = createSignal<string | null>(null)
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString()
@@ -201,6 +227,16 @@ export default function () {
     }
   }
 
+  const copyKeyToClipboard = async (text: string, keyId: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedKeyId(keyId)
+      setTimeout(() => setCopiedKeyId(null), 1500)
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error)
+    }
+  }
+
   const handleCreateKey = async () => {
     if (!keyName().trim()) return
 
@@ -214,7 +250,7 @@ export default function () {
   }
 
   const handleDeleteKey = async (keyId: string) => {
-    if (!confirm("Are you sure you want to delete this API key? This action cannot be undone.")) {
+    if (!confirm("Are you sure you want to delete this API key?")) {
       return
     }
 
@@ -291,7 +327,7 @@ export default function () {
         </section>
 
         {/* API Keys Section */}
-        <section data-slot="keys-section">
+        <section data-slot="api-keys-section">
           <div data-slot="section-title">
             <h2>API Keys</h2>
             <p>Manage your API keys for accessing opencode services.</p>
@@ -339,36 +375,55 @@ export default function () {
               Create API Key
             </button>
           </Show>
-          <div data-slot="key-list">
-            <For
-              each={keys()}
+          <div data-slot="api-keys-table">
+            <Show
+              when={dummyApiKeyData.length > 0}
               fallback={
                 <div data-slot="empty-state">
-                  <p>Create an API key to access opencode gateway</p>
+                  <p>Create an opencode Gateway API key</p>
                 </div>
               }
             >
-              {(key) => (
-                <div data-slot="key-item">
-                  <div data-slot="key-info">
-                    <div data-slot="key-name">{key.name}</div>
-                    <div data-slot="key-value">{formatKey(key.key)}</div>
-                    <div data-slot="key-meta">
-                      Created: {formatDate(key.timeCreated)}
-                      {key.timeUsed && ` • Last used: ${formatDate(key.timeUsed)}`}
-                    </div>
-                  </div>
-                  <div data-slot="key-actions">
-                    <button color="ghost" onClick={() => copyToClipboard(key.key)} title="Copy API key">
-                      Copy
-                    </button>
-                    <button color="ghost" onClick={() => handleDeleteKey(key.id)} title="Delete API key">
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              )}
-            </For>
+              <table data-slot="api-keys-table-element">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Key</th>
+                    <th>Created</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <For each={dummyApiKeyData}>
+                    {/* Real data: keys() */}
+                    {(key) => (
+                      <tr>
+                        <td data-slot="key-name">{key.name}</td>
+                        <td data-slot="key-value">
+                          <div onClick={() => copyKeyToClipboard(key.key, key.id)} title="Click to copy API key">
+                            <span>{formatKey(key.key)}</span>
+                            <Show
+                              when={copiedKeyId() === key.id}
+                              fallback={<IconCopy style={{ width: "14px", height: "14px" }} />}
+                            >
+                              <IconCheck style={{ width: "14px", height: "14px" }} />
+                            </Show>
+                          </div>
+                        </td>
+                        <td data-slot="key-date" title={formatDateUTC(key.timeCreated)}>
+                          {formatDateForTable(key.timeCreated)}
+                        </td>
+                        <td data-slot="key-actions">
+                          <button color="ghost" onClick={() => handleDeleteKey(key.id)} title="Delete API key">
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                  </For>
+                </tbody>
+              </table>
+            </Show>
           </div>
         </section>
 
