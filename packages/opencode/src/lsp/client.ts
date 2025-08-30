@@ -60,7 +60,7 @@ export namespace LSPClient {
       return null
     })
     connection.onRequest("workspace/configuration", async () => {
-      return [{}]
+      return [input.server.initialization ?? {}]
     })
     connection.listen()
 
@@ -108,6 +108,12 @@ export namespace LSPClient {
     })
 
     await connection.sendNotification("initialized", {})
+
+    if (input.server.initialization) {
+      await connection.sendNotification("workspace/didChangeConfiguration", {
+        settings: input.server.initialization,
+      })
+    }
 
     const files: {
       [path: string]: number
