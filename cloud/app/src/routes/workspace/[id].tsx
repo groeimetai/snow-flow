@@ -265,44 +265,18 @@ export default function() {
   // Billing section
   /////////////////
   const billingInfo = createAsync(() => getBillingInfo())
-  const [isLoading, setIsLoading] = createSignal(false)
   const createCheckoutUrlAction = useAction(createCheckoutUrl)
-
-  // Run once on component mount to check URL parameters
-  onMount(() => {
-    const url = new URL(window.location.href)
-    const result = url.hash
-
-    console.log("STRIPE RESULT", result)
-
-    if (url.hash === "#success") {
-      setIsLoading(true)
-      // Remove the hash from the URL
-      window.history.replaceState(null, "", window.location.pathname + window.location.search)
-    }
-  })
-
-  createEffect((old?: number) => {
-    if (old && old !== billingInfo()?.billing?.balance) {
-      setIsLoading(false)
-    }
-    return billingInfo()?.billing?.balance
-  })
+  const createCheckoutUrlSubmission = useSubmission(createCheckoutUrl)
 
   const handleBuyCredits = async () => {
     try {
-      setIsLoading(true)
       const baseUrl = window.location.href
-      const successUrl = new URL(baseUrl)
-      successUrl.hash = "success"
-
-      const checkoutUrl = await createCheckoutUrlAction(successUrl.toString(), baseUrl)
+      const checkoutUrl = await createCheckoutUrlAction(baseUrl, baseUrl)
       if (checkoutUrl) {
         window.location.href = checkoutUrl
       }
     } catch (error) {
       console.error("Failed to get checkout URL:", error)
-      setIsLoading(false)
     }
   }
 
@@ -451,8 +425,8 @@ export default function() {
                 })()}
               </span>
             </div>
-            <button color="primary" disabled={isLoading()} onClick={handleBuyCredits}>
-              {isLoading() ? "Loading..." : "Buy Credits"}
+            <button color="primary" disabled={createCheckoutUrlSubmission.pending} onClick={handleBuyCredits}>
+              {createCheckoutUrlSubmission.pending ? "Loading..." : "Buy Credits"}
             </button>
           </div>
         </section>
