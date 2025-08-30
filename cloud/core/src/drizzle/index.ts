@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js"
-import { Resource } from "../util/resource"
+import { Resource } from "@opencode/cloud-resource"
 export * from "drizzle-orm"
 import postgres from "postgres"
 

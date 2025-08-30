@@ -1,5 +1,4 @@
 import { Hono, MiddlewareHandler } from "hono"
-import { Resource } from "@opencode/cloud-core/util/resource.js"
 import { type ProviderMetadata, type LanguageModelUsage } from "ai"
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { createOpenAI } from "@ai-sdk/openai"
@@ -10,6 +9,7 @@ import { Actor } from "@opencode/cloud-core/actor.js"
 import { Database, eq, sql } from "@opencode/cloud-core/drizzle/index.js"
 import { KeyTable } from "@opencode/cloud-core/schema/key.sql.js"
 import { Billing } from "@opencode/cloud-core/billing.js"
+import { Resource } from "@opencode/cloud-resource"
 
 type Env = {}
 

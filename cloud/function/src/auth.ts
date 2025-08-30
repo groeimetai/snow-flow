@@ -9,7 +9,7 @@ import { CloudflareStorage } from "@openauthjs/openauth/storage/cloudflare"
 import { Account } from "@opencode/cloud-core/account.js"
 import { Workspace } from "@opencode/cloud-core/workspace.js"
 import { Actor } from "@opencode/cloud-core/actor.js"
-import { Resource } from "@opencode/cloud-core/util/resource.js"
+import { Resource } from "@opencode/cloud-resource"
 
 type Env = {
   AuthStorage: KVNamespace

@@ -1,4 +1,4 @@
-import { Resource } from "@opencode/cloud-core/util/resource.js"
+import { Resource } from "@opencode/cloud-resource"
 import { Billing } from "@opencode/cloud-core/billing.js"
 import type { APIEvent } from "@solidjs/start/server"
 import { Database, eq, sql } from "@opencode/cloud-core/drizzle/index.js"

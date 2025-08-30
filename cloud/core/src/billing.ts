@@ -7,7 +7,7 @@ import { z } from "zod"
 import { Identifier } from "./identifier"
 import { centsToMicroCents } from "./util/price"
 import { User } from "./user"
-import { Resource } from "./util/resource"
+import { Resource } from "@opencode/cloud-resource"
 
 export namespace Billing {
   export const stripe = () =>

@@ -29,6 +29,7 @@
       "version": "0.5.28",
       "dependencies": {
         "@aws-sdk/client-sts": "3.782.0",
+        "@opencode/cloud-resource": "workspace:*",
         "drizzle-orm": "0.41.0",
         "postgres": "3.4.7",
         "stripe": "18.0.0",
@@ -56,6 +57,12 @@
         "@types/node": "catalog:",
         "openai": "5.11.0",
         "typescript": "catalog:",
+      },
+    },
+    "cloud/resource": {
+      "name": "@opencode/cloud-resource",
+      "dependencies": {
+        "@cloudflare/workers-types": "^4.20250830.0",
       },
     },
     "packages/function": {
@@ -651,6 +658,8 @@
     "@opencode/cloud-core": ["@opencode/cloud-core@workspace:cloud/core"],
 
     "@opencode/cloud-function": ["@opencode/cloud-function@workspace:cloud/function"],
+
+    "@opencode/cloud-resource": ["@opencode/cloud-resource@workspace:cloud/resource"],
 
     "@opencode/function": ["@opencode/function@workspace:packages/function"],
 
@@ -3033,6 +3042,8 @@
     "@openauthjs/openauth/aws4fetch": ["aws4fetch@1.0.20", "", {}, "sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g=="],
 
     "@openauthjs/openauth/jose": ["jose@5.9.6", "", {}, "sha512-AMlnetc9+CV9asI19zHmrgS/WYsWUwCn2R7RzlbJWD7F9eWYUTGyBmU9o6PxngtLGOiDGPRu+Uc4fhKzbpteZQ=="],
+
+    "@opencode/cloud-resource/@cloudflare/workers-types": ["@cloudflare/workers-types@4.20250830.0", "", {}, "sha512-uAGZFqEBFnCiwIokxMnrrtjIkT8qyGT1LACSScEUyW7nKmtD0Viykp9QZWrIlssyEp/MDB6XsdALF8y6upxpcg=="],
 
     "@opentelemetry/instrumentation-grpc/@opentelemetry/semantic-conventions": ["@opentelemetry/semantic-conventions@1.27.0", "", {}, "sha512-sAay1RrB+ONOem0OZanAR1ZI/k7yDpnOQSQmTMuGImUQb2y8EbSaCJ94FQluM74xoU03vlb2d2U90hZluL6nQg=="],
 
