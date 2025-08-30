@@ -1,7 +1,20 @@
 import "./workspace.css"
 import { useAuthSession } from "~/context/auth.session"
 import { IconLogo } from "../component/icon"
-import { action, redirect, RouteSectionProps } from "@solidjs/router"
+import { withActor } from "~/context/auth.withActor"
+import "./workspace.css"
+import { query, action, redirect, createAsync, RouteSectionProps } from "@solidjs/router"
+import { User } from "@opencode/cloud-core/user.js"
+import { Actor } from "@opencode/cloud-core/actor.js"
+
+const getUserInfo = query(async () => {
+  "use server"
+  return withActor(async () => {
+    const actor = Actor.assert("user")
+    const user = await User.fromID(actor.properties.userID)
+    return { user }
+  })
+}, "userInfo")
 
 const logout = action(async () => {
   "use server"
@@ -17,6 +30,7 @@ const logout = action(async () => {
 })
 
 export default function WorkspaceLayout(props: RouteSectionProps) {
+  const userInfo = createAsync(() => getUserInfo())
   return (
     <main data-page="workspace">
       <header data-component="workspace-header">
@@ -26,7 +40,9 @@ export default function WorkspaceLayout(props: RouteSectionProps) {
           </a>
         </div>
         <div data-slot="header-actions">
-          <span>name@example.com</span>
+          {userInfo() &&
+            <span>{userInfo()!.user.email}</span>
+          }
           <form action={logout} method="post">
             <button type="submit" formaction={logout}>Logout</button>
           </form>

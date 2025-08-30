@@ -63,116 +63,8 @@ const createPortalUrl = action(async (returnUrl: string) => {
   return withActor(() => Billing.generatePortalUrl({ returnUrl }))
 }, "portalUrl")
 
-const dummyUsageData = [
-  {
-    model: "claude-3-5-sonnet-20241022",
-    inputTokens: 1250,
-    outputTokens: 890,
-    reasoningTokens: 150,
-    cacheReadTokens: 0,
-    cacheWriteTokens: 45,
-    cost: 12340000,
-    timeCreated: new Date("2025-01-28T10:30:00Z"),
-  },
-  {
-    model: "claude-3-haiku-20240307",
-    inputTokens: 2100,
-    outputTokens: 450,
-    reasoningTokens: null,
-    cacheReadTokens: 120,
-    cacheWriteTokens: 0,
-    cost: 5670000,
-    timeCreated: new Date("2025-01-27T15:22:00Z"),
-  },
-  {
-    model: "claude-3-5-sonnet-20241022",
-    inputTokens: 850,
-    outputTokens: 1200,
-    reasoningTokens: 220,
-    cacheReadTokens: 30,
-    cacheWriteTokens: 15,
-    cost: 18990000,
-    timeCreated: new Date("2025-01-27T09:15:00Z"),
-  },
-  {
-    model: "claude-3-opus-20240229",
-    inputTokens: 3200,
-    outputTokens: 1800,
-    reasoningTokens: 400,
-    cacheReadTokens: 0,
-    cacheWriteTokens: 100,
-    cost: 45670000,
-    timeCreated: new Date("2025-01-26T14:45:00Z"),
-  },
-  {
-    model: "claude-3-haiku-20240307",
-    inputTokens: 650,
-    outputTokens: 280,
-    reasoningTokens: null,
-    cacheReadTokens: 200,
-    cacheWriteTokens: 0,
-    cost: 2340000,
-    timeCreated: new Date("2025-01-25T16:18:00Z"),
-  },
-]
-
-const dummyPaymentData = [
-  {
-    id: "pay_1Ab2Cd3Ef4Gh5678",
-    amount: 2000000000,
-    timeCreated: new Date("2025-01-28T14:32:00Z"),
-  },
-  {
-    id: "pay_9Ij8Kl7Mn6Op5432",
-    amount: 1000000000,
-    timeCreated: new Date("2025-01-25T09:18:00Z"),
-  },
-  {
-    id: "pay_5Qr4St3Uv2Wx1098",
-    amount: 5000000000,
-    timeCreated: new Date("2025-01-20T16:45:00Z"),
-  },
-  {
-    id: "pay_7Yz6Ab5Cd4Ef3210",
-    amount: 1500000000,
-    timeCreated: new Date("2025-01-15T11:22:00Z"),
-  },
-  {
-    id: "pay_3Gh2Ij1Kl0Mn9876",
-    amount: 3000000000,
-    timeCreated: new Date("2025-01-10T13:55:00Z"),
-  },
-]
-
-const dummyApiKeyData = [
-  {
-    id: "key_1Ab2Cd3Ef4Gh5678",
-    name: "Production API",
-    key: "oc_live_sk_1Ab2Cd3Ef4Gh567890123456789012345678901234567890",
-    timeCreated: new Date("2025-01-28T14:32:00Z"),
-    timeUsed: new Date("2025-01-29T09:15:00Z"),
-  },
-  {
-    id: "key_9Ij8Kl7Mn6Op5432",
-    name: "Development Key",
-    key: "oc_test_sk_9Ij8Kl7Mn6Op543210987654321098765432109876543210",
-    timeCreated: new Date("2025-01-25T09:18:00Z"),
-    timeUsed: null,
-  },
-  {
-    id: "key_5Qr4St3Uv2Wx1098",
-    name: "CI/CD Pipeline",
-    key: "oc_live_sk_5Qr4St3Uv2Wx109876543210987654321098765432109876",
-    timeCreated: new Date("2025-01-20T16:45:00Z"),
-    timeUsed: new Date("2025-01-28T12:30:00Z"),
-  },
-]
-
 export default function() {
   const actor = createAsync(() => getActor())
-  onMount(() => {
-    console.log("MOUNTED", actor())
-  })
 
   /////////////////
   // Keys section
@@ -342,9 +234,8 @@ export default function() {
             </button>
           </Show>
           <div data-slot="api-keys-table">
-            {/* when={keys()?.length */}
             <Show
-              when={dummyApiKeyData.length > 0}
+              when={keys()?.length}
               fallback={
                 <div data-slot="empty-state">
                   <p>Create an opencode Gateway API key</p>
@@ -361,8 +252,7 @@ export default function() {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={dummyApiKeyData}>
-                    {/* Real data: keys() */}
+                  <For each={keys()!}>
                     {(key) => (
                       <tr>
                         <td data-slot="key-name">{key.name}</td>
@@ -424,45 +314,6 @@ export default function() {
           </div>
         </section>
 
-        {/* Payments Section */}
-        <Show when={dummyPaymentData.length > 0}>
-          {/* Real data condition: billingInfo() && billingInfo()!.payments.length > 0 */}
-          <section data-slot="payments-section">
-            <div data-slot="section-title">
-              <h2>Payments History</h2>
-              <p>Recent payment transactions.</p>
-            </div>
-            <div data-slot="payments-table">
-              <table data-slot="payments-table-element">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Payment ID</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <For each={dummyPaymentData}>
-                    {/* Real data: billingInfo()?.payments */}
-                    {(payment) => {
-                      const date = new Date(payment.timeCreated)
-                      return (
-                        <tr>
-                          <td data-slot="payment-date" title={formatDateUTC(date)}>
-                            {formatDateForTable(date)}
-                          </td>
-                          <td data-slot="payment-id">{payment.id}</td>
-                          <td data-slot="payment-amount">${((payment.amount ?? 0) / 100000000).toFixed(2)}</td>
-                        </tr>
-                      )
-                    }}
-                  </For>
-                </tbody>
-              </table>
-            </div>
-          </section>
-        </Show>
-
         {/* Usage Section */}
         <section data-slot="usage-section">
           <div data-slot="section-title">
@@ -471,7 +322,7 @@ export default function() {
           </div>
           <div data-slot="usage-table">
             <Show
-              when={dummyUsageData.length > 0}
+              when={billingInfo() && billingInfo()!.usage.length > 0}
               fallback={
                 <div data-slot="empty-state">
                   <p>Make your first API call to get started.</p>
@@ -488,7 +339,7 @@ export default function() {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={dummyUsageData}>
+                  <For each={billingInfo()!.usage}>
                     {(usage) => {
                       const totalTokens = usage.inputTokens + usage.outputTokens + (usage.reasoningTokens || 0)
                       const date = new Date(usage.timeCreated)
@@ -509,6 +360,44 @@ export default function() {
             </Show>
           </div>
         </section>
+
+        {/* Payments Section */}
+        <Show when={billingInfo() && billingInfo()!.payments.length > 0}>
+          <section data-slot="payments-section">
+            <div data-slot="section-title">
+              <h2>Payments History</h2>
+              <p>Recent payment transactions.</p>
+            </div>
+            <div data-slot="payments-table">
+              <table data-slot="payments-table-element">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Payment ID</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <For each={billingInfo()!.payments}>
+                    {(payment) => {
+                      const date = new Date(payment.timeCreated)
+                      return (
+                        <tr>
+                          <td data-slot="payment-date" title={formatDateUTC(date)}>
+                            {formatDateForTable(date)}
+                          </td>
+                          <td data-slot="payment-id">{payment.id}</td>
+                          <td data-slot="payment-amount">${((payment.amount ?? 0) / 100000000).toFixed(2)}</td>
+                        </tr>
+                      )
+                    }}
+                  </For>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </Show>
+
       </div>
     </div>
   )
