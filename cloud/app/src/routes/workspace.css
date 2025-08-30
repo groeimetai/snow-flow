@@ -52,7 +52,10 @@
       color: var(--color-text-muted);
     }
 
-    a {
+    a,
+    button {
+      border: none;
+      padding: 0;
       color: var(--color-text);
       text-decoration: underline;
       text-underline-offset: var(--space-0-75);
