@@ -17,8 +17,8 @@ export const AuthClient = createClient({
 export const getActor = query(async (): Promise<Actor.Info> => {
   "use server"
   const evt = getRequestEvent()
-  console.log(evt?.request.url)
-  const url = new URL(evt!.request.headers.get("referer") ?? evt!.request.url)
+  if (!evt) throw new Error("No request event")
+  const url = new URL(evt.request.headers.has("x-server-id") ? evt.request.headers.get("referer")! : evt.request.url)
   const auth = await useAuthSession()
   const splits = url.pathname.split("/").filter(Boolean)
   if (splits[0] !== "workspace") {

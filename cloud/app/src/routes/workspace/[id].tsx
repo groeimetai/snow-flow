@@ -167,7 +167,7 @@ const dummyApiKeyData = [
   },
 ]
 
-export default function() {
+export default function () {
   const actor = createAsync(() => getActor())
   onMount(() => {
     console.log("MOUNTED", actor())
@@ -351,7 +351,7 @@ export default function() {
           </Show>
           <div data-slot="api-keys-table">
             <Show
-              when={dummyApiKeyData.length > 0}
+              when={keys()?.length}
               fallback={
                 <div data-slot="empty-state">
                   <p>Create an opencode Gateway API key</p>
@@ -368,7 +368,7 @@ export default function() {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={dummyApiKeyData}>
+                  <For each={keys()!}>
                     {/* Real data: keys() */}
                     {(key) => (
                       <tr>
