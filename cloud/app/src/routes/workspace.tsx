@@ -1,6 +1,6 @@
+import "./workspace.css"
 import { useAuthSession } from "~/context/auth.session"
 import { IconLogo } from "../component/icon"
-import "./workspace.css"
 import { action, redirect, RouteSectionProps } from "@solidjs/router"
 
 const logout = action(async () => {

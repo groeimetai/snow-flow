@@ -13,26 +13,27 @@ import { Actor } from "@opencode/cloud-core/actor.js"
 // Keys related queries and actions
 /////////////////////////////////////
 
-const listKeys = query(async () => {
+
+const listKeys = query(() => {
   "use server"
   return withActor(() => Key.list())
-}, "keys")
+}, "key.list")
 
 const createKey = action(async (name: string) => {
   "use server"
   return json(
     withActor(() => Key.create({ name })),
-    { revalidate: "keys" },
+    { revalidate: listKeys.key },
   )
-}, "createKey")
+}, "key.create")
 
 const removeKey = action(async (id: string) => {
   "use server"
   return json(
     withActor(() => Key.remove({ id })),
-    { revalidate: "keys" },
+    { revalidate: listKeys.key },
   )
-}, "removeKey")
+}, "key.remove")
 
 /////////////////////////////////////
 // Billing related queries and actions
