@@ -64,6 +64,11 @@ export const RunCommand = cmd({
 
     if (!process.stdin.isTTY) message += "\n" + (await Bun.stdin.text())
 
+    if (message.trim().length === 0) {
+      UI.error("Message cannot be empty")
+      return
+    }
+
     await bootstrap({ cwd: process.cwd() }, async () => {
       const session = await (async () => {
         if (args.continue) {
