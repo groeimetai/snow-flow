@@ -168,7 +168,7 @@ const dummyApiKeyData = [
   },
 ]
 
-export default function () {
+export default function() {
   const actor = createAsync(() => getActor())
   onMount(() => {
     console.log("MOUNTED", actor())
@@ -292,15 +292,6 @@ export default function () {
       </section>
 
       <div data-slot="sections">
-        {/* Actor Section */}
-        <section data-slot="actor-section">
-          <div data-slot="section-title">
-            <h2>Actor</h2>
-            <p>Current authenticated user information and session details.</p>
-          </div>
-          <div>{JSON.stringify(actor())}</div>
-        </section>
-
         {/* API Keys Section */}
         <section data-slot="api-keys-section">
           <div data-slot="section-title">
@@ -321,14 +312,7 @@ export default function () {
                 />
                 <div data-slot="form-actions">
                   <button
-                    color="primary"
-                    disabled={createKeySubmission.pending || !keyName().trim()}
-                    onClick={handleCreateKey}
-                  >
-                    {createKeySubmission.pending ? "Creating..." : "Create"}
-                  </button>
-                  <button
-                    color="ghost"
+                    data-color="ghost"
                     onClick={() => {
                       setShowCreateForm(false)
                       setKeyName("")
@@ -336,12 +320,19 @@ export default function () {
                   >
                     Cancel
                   </button>
+                  <button
+                    data-color="primary"
+                    disabled={createKeySubmission.pending || !keyName().trim()}
+                    onClick={handleCreateKey}
+                  >
+                    {createKeySubmission.pending ? "Creating..." : "Create"}
+                  </button>
                 </div>
               </div>
             }
           >
             <button
-              color="primary"
+              data-color="primary"
               onClick={() => {
                 console.log("clicked")
                 setShowCreateForm(true)
@@ -351,8 +342,9 @@ export default function () {
             </button>
           </Show>
           <div data-slot="api-keys-table">
+            {/* when={keys()?.length */}
             <Show
-              when={keys()?.length}
+              when={dummyApiKeyData.length > 0}
               fallback={
                 <div data-slot="empty-state">
                   <p>Create an opencode Gateway API key</p>
@@ -369,7 +361,7 @@ export default function () {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={keys()!}>
+                  <For each={dummyApiKeyData}>
                     {/* Real data: keys() */}
                     {(key) => (
                       <tr>
@@ -389,7 +381,7 @@ export default function () {
                           {formatDateForTable(key.timeCreated)}
                         </td>
                         <td data-slot="key-actions">
-                          <button color="ghost" onClick={() => handleDeleteKey(key.id)} title="Delete API key">
+                          <button data-color="ghost" onClick={() => handleDeleteKey(key.id)} title="Delete API key">
                             Delete
                           </button>
                         </td>
@@ -426,7 +418,7 @@ export default function () {
                 })()}
               </span>
             </div>
-            <button color="primary" disabled={createCheckoutUrlSubmission.pending} onClick={handleBuyCredits}>
+            <button data-color="primary" disabled={createCheckoutUrlSubmission.pending} onClick={handleBuyCredits}>
               {createCheckoutUrlSubmission.pending ? "Loading..." : "Buy Credits"}
             </button>
           </div>
