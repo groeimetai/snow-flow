@@ -298,6 +298,23 @@ export namespace LSPServer {
         args.push(...["run", js])
       }
       args.push("--stdio")
+
+      const initialization: Record<string, string> = {}
+
+      const potentialVenvPaths = [process.env["VIRTUAL_ENV"], path.join(root, ".venv"), path.join(root, "venv")].filter(
+        (p): p is string => p !== undefined,
+      )
+      for (const venvPath of potentialVenvPaths) {
+        const isWindows = process.platform === "win32"
+        const potentialPythonPath = isWindows
+          ? path.join(venvPath, "Scripts", "python.exe")
+          : path.join(venvPath, "bin", "python")
+        if (await Bun.file(potentialPythonPath).exists()) {
+          initialization["pythonPath"] = potentialPythonPath
+          break
+        }
+      }
+
       const proc = spawn(binary, args, {
         cwd: root,
         env: {
@@ -307,6 +324,7 @@ export namespace LSPServer {
       })
       return {
         process: proc,
+        initialization,
       }
     },
   }
