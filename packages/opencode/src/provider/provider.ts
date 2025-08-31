@@ -320,9 +320,16 @@ export namespace Provider {
       const pkg = provider.npm ?? provider.id
       const mod = await import(await BunProc.install(pkg, "latest"))
       const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!]
+      let options = { ...s.providers[provider.id]?.options }
+      if (options["timeout"] !== undefined) {
+        // Only override fetch if user explicitly sets timeout
+        options["fetch"] = async (input: any, init?: any) => {
+          return await fetch(input, { ...init, timeout: options["timeout"] })
+        }
+      }
       const loaded = fn({
         name: provider.id,
-        ...s.providers[provider.id]?.options,
+        ...options,
       })
       s.sdk.set(provider.id, loaded)
       return loaded as SDK
