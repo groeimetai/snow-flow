@@ -1,9 +1,13 @@
 import type { APIEvent } from "@solidjs/start/server"
-import { Resource } from "@opencode/cloud-resource"
 import { json } from "@solidjs/router"
+import { Database } from "@opencode/cloud-core/drizzle/index.js"
+import { UserTable } from "@opencode/cloud-core/schema/user.sql.js"
 
 export async function GET(evt: APIEvent) {
   return json({
-    data: Resource.Database.host,
+    data: Database.use(async (tx) => {
+      const result = await tx.$count(UserTable)
+      return result
+    }),
   })
 }
