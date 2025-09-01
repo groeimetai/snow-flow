@@ -43,12 +43,10 @@ const getBillingInfo = query(async () => {
   "use server"
   return withActor(async () => {
     const actor = Actor.assert("user")
-    const [user, billing, payments, usage] = await Promise.all([
-      User.fromID(actor.properties.userID),
-      Billing.get(),
-      Billing.payments(),
-      Billing.usages(),
-    ])
+    const user = await User.fromID(actor.properties.userID)
+    const billing = await Billing.get()
+    const payments = await Billing.payments()
+    const usage = await Billing.usages()
     return { user, billing, payments, usage }
   })
 }, "billingInfo")
