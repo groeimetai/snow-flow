@@ -115,7 +115,9 @@ export namespace Storage {
     for (let index = migration; index < MIGRATIONS.length; index++) {
       log.info("running migration", { index })
       const migration = MIGRATIONS[index]
-      await migration(dir)
+      await migration(dir).catch((e) => {
+        log.error("failed to run migration", { error: e, index })
+      })
       await Bun.write(path.join(dir, "migration"), (index + 1).toString())
     }
     return {
