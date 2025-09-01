@@ -47,6 +47,7 @@ const getBillingInfo = query(async () => {
     const billing = await Billing.get()
     const payments = await Billing.payments()
     const usage = await Billing.usages()
+    console.log({ user, billing, payments, usage })
     return { user, billing, payments, usage }
   })
 }, "billingInfo")
