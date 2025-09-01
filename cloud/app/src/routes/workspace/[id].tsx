@@ -42,20 +42,13 @@ const removeKey = action(async (id: string) => {
 const getBillingInfo = query(async () => {
   "use server"
   return withActor(async () => {
-    const now = Date.now()
-    console.log("getting actor")
     const actor = Actor.assert("user")
-    console.log("getting user")
-    const user = await User.fromID(actor.properties.userID)
-    console.log("getting billing")
-    const billing = await Billing.get()
-    console.log("getting payments")
-    const payments = await Billing.payments()
-    console.log("getting usage")
-    const usage = await Billing.usages()
-    console.log("getBillingInfo", {
-      duration: Date.now() - now,
-    })
+    const [user, billing, payments, usage] = await Promise.all([
+      User.fromID(actor.properties.userID),
+      Billing.get(),
+      Billing.payments(),
+      Billing.usages(),
+    ])
     return { user, billing, payments, usage }
   })
 }, "billingInfo")
