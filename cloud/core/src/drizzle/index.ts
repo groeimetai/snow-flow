@@ -15,7 +15,7 @@ const init = () => {
     ssl: {
       rejectUnauthorized: false,
     },
-    max: 1,
+    max: 3,
   })
   return drizzle(client, {})
 }
