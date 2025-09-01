@@ -5,7 +5,7 @@ import { UserTable } from "@opencode/cloud-core/schema/user.sql.js"
 
 export async function GET(evt: APIEvent) {
   return json({
-    data: Database.use(async (tx) => {
+    data: await Database.use(async (tx) => {
       const result = await tx.$count(UserTable)
       return result
     }),
