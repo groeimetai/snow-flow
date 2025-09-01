@@ -63,13 +63,14 @@ const createPortalUrl = action(async (returnUrl: string) => {
   return withActor(() => Billing.generatePortalUrl({ returnUrl }))
 }, "portalUrl")
 
-export default function() {
-  const actor = createAsync(() => getActor())
+export default function () {
 
   /////////////////
   // Keys section
   /////////////////
-  const keys = createAsync(() => listKeys())
+  const keys = createAsync(() => listKeys(), {
+    deferStream: true,
+  })
   const createKeyAction = useAction(createKey)
   const removeKeyAction = useAction(removeKey)
   const createKeySubmission = useSubmission(createKey)
@@ -157,7 +158,9 @@ export default function() {
   /////////////////
   // Billing section
   /////////////////
-  const billingInfo = createAsync(() => getBillingInfo())
+  const billingInfo = createAsync(() => getBillingInfo(), {
+    deferStream: true,
+  })
   const createCheckoutUrlAction = useAction(createCheckoutUrl)
   const createCheckoutUrlSubmission = useSubmission(createCheckoutUrl)
 
