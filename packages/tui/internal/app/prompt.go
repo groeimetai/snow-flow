@@ -43,6 +43,9 @@ func (p Prompt) ToMessage(
 	}
 	for _, att := range textAttachments {
 		if source, ok := att.GetTextSource(); ok {
+			if att.StartIndex > att.EndIndex || att.EndIndex > len(text) {
+				continue
+			}
 			text = text[:att.StartIndex] + source.Value + text[att.EndIndex:]
 		}
 	}
