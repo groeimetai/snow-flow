@@ -204,8 +204,8 @@ func (m Message) ToPrompt() (*Prompt, error) {
 	return nil, errors.New("unknown message type")
 }
 
-func (m Message) ToSessionChatParams() []opencode.SessionChatParamsPartUnion {
-	parts := []opencode.SessionChatParamsPartUnion{}
+func (m Message) ToSessionChatParams() []opencode.SessionPromptParamsPartUnion {
+	parts := []opencode.SessionPromptParamsPartUnion{}
 	for _, part := range m.Parts {
 		switch p := part.(type) {
 		case opencode.TextPart:

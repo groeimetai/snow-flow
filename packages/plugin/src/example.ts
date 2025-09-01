@@ -1,6 +1,6 @@
 import { Plugin } from "./index"
 
-export const ExamplePlugin: Plugin = async ({ app, client, $ }) => {
+export const ExamplePlugin: Plugin = async ({ client, $ }) => {
   return {
     permission: {},
     async "chat.params"(input, output) {
