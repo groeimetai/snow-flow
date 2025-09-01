@@ -13,7 +13,7 @@ export const database = new sst.Linkable("Database", {
     database: "postgres",
     username: DATABASE_USERNAME.value,
     password: DATABASE_PASSWORD.value,
-    port: 5432,
+    port: 6432,
   },
 })
 
