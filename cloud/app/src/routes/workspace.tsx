@@ -30,7 +30,9 @@ const logout = action(async () => {
 })
 
 export default function WorkspaceLayout(props: RouteSectionProps) {
-  const userInfo = createAsync(() => getUserInfo())
+  const userInfo = createAsync(() => getUserInfo(), {
+    deferStream: true,
+  })
   return (
     <main data-page="workspace">
       <header data-component="workspace-header">
