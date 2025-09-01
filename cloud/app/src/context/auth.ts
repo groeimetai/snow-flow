@@ -52,7 +52,7 @@ export const getActor = query(async (): Promise<Actor.Info> => {
     }
   }
   const workspaceHint = splits[1]
-  const accounts = Object.keys(auth.data.account)
+  const accounts = Object.keys(auth.data.account ?? {})
   const result = await Database.transaction(async (tx) => {
     return await tx
       .select({
