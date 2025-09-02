@@ -89,11 +89,7 @@ export default function Home() {
           </span>
           <span data-slot="divider">&nbsp;/&nbsp;</span>
           <a
-            href={
-              workspaceId()
-                ? `/workspace/${workspaceId()}`
-                : "/auth/authorize"
-            }
+            href="/auth"
             target="_self"
           >
             Sign in
