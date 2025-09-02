@@ -7,6 +7,7 @@
   "dependencies": {
     "@aws-sdk/client-sts": "3.782.0",
     "@opencode/cloud-resource": "workspace:*",
+    "@planetscale/database": "1.19.0",
     "drizzle-orm": "0.41.0",
     "postgres": "3.4.7",
     "stripe": "18.0.0",
@@ -19,6 +20,7 @@
     "db": "sst shell drizzle-kit"
   },
   "devDependencies": {
-    "drizzle-kit": "0.30.5"
+    "drizzle-kit": "0.30.5",
+    "mysql2": "3.14.4"
   }
 }

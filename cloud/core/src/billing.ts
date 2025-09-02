@@ -80,14 +80,12 @@ export namespace Billing {
           cacheWriteTokens: input.cacheWriteTokens,
           cost,
         })
-        const [updated] = await tx
+        await tx
           .update(BillingTable)
           .set({
             balance: sql`${BillingTable.balance} - ${cost}`,
           })
           .where(eq(BillingTable.workspaceID, workspaceID))
-          .returning()
-        return updated.balance
       })
     },
   )
