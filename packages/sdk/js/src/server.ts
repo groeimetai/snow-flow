@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process"
-import { Config } from "./gen/types.gen.js"
+import { type Config } from "./gen/types.gen.js"
 
 export type ServerOptions = {
   hostname?: string
