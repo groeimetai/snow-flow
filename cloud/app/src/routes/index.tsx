@@ -151,7 +151,7 @@ export default function Home() {
         </section>
 
         <section data-component="screenshots">
-          <div class="left">
+          <div data-slot="left">
             <figure>
               <figcaption>opencode TUI with the tokyonight theme</figcaption>
               <a href="/docs/cli">
@@ -159,8 +159,8 @@ export default function Home() {
               </a>
             </figure>
           </div>
-          <div class="right">
-            <div class="row1">
+          <div data-slot="right">
+            <div data-slot="row1">
               <figure>
                 <figcaption>opencode in VS Code</figcaption>
                 <a href="/docs/ide">
@@ -168,7 +168,7 @@ export default function Home() {
                 </a>
               </figure>
             </div>
-            <div class="row2">
+            <div data-slot="row2">
               <figure>
                 <figcaption>opencode in GitHub</figcaption>
                 <a href="/docs/github">
