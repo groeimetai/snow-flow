@@ -11,6 +11,7 @@ import { createAsync, query, redirect } from "@solidjs/router"
 import { getActor } from "~/context/auth"
 import { withActor } from "~/context/auth.withActor"
 import { Account } from "@opencode/cloud-core/account.js"
+import { Show } from "solid-js"
 
 function CopyStatus() {
   return (
@@ -26,13 +27,13 @@ const isLoggedIn = query(async () => {
   const actor = await getActor()
   if (actor.type === "account") {
     const workspaces = await withActor(() => Account.workspaces())
-    throw redirect(`/workspace/${workspaces[0].id}`)
+    return workspaces[0].id
+    // throw redirect(`/workspace/${workspaces[0].id}`)
   }
-  return false
 }, "isLoggedIn")
 
 export default function Home() {
-  createAsync(() => isLoggedIn(), {
+  const workspaceId = createAsync(() => isLoggedIn(), {
     deferStream: true,
   })
   onMount(() => {
@@ -69,7 +70,7 @@ export default function Home() {
           <div data-slot="left">
             <a href="/docs">Get Started</a>
           </div>
-          <div data-slot="center">
+          <div data-slot="right">
             <button data-copy data-slot="command">
               <span>
                 <span>curl -fsSL&nbsp;</span>
@@ -80,12 +81,27 @@ export default function Home() {
               <CopyStatus />
             </button>
           </div>
-          <div data-slot="right">
-            <a href="/auth/authorize" target="_self">
-              Login
-            </a>
-          </div>
         </section>
+
+        <Show when={false}>
+          <section data-component="zen">
+            <a href="/docs/zen">opencode zen</a>
+            <span data-slot="description">
+              , a curated list of models provided by opencode
+            </span>
+            <span data-slot="divider">&nbsp;/&nbsp;</span>
+            <a
+              href={
+                workspaceId()
+                  ? `/workspace/${workspaceId()}`
+                  : "/auth/authorize"
+              }
+              target="_self"
+            >
+              Sign in
+            </a>
+          </section>
+        </Show>
 
         <section data-component="features">
           <ul data-slot="list">
