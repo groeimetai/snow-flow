@@ -17,7 +17,8 @@
     "./*": "./src/*"
   },
   "scripts": {
-    "db": "sst shell drizzle-kit"
+    "db": "sst shell drizzle-kit",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "drizzle-kit": "0.30.5",

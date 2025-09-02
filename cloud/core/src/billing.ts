@@ -71,7 +71,6 @@ export namespace Billing {
         await tx.insert(UsageTable).values({
           workspaceID,
           id: Identifier.create("usage"),
-          requestID: input.requestID,
           model: input.model,
           inputTokens: input.inputTokens,
           outputTokens: input.outputTokens,
