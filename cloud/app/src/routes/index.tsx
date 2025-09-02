@@ -11,7 +11,6 @@ import { createAsync, query, redirect } from "@solidjs/router"
 import { getActor } from "~/context/auth"
 import { withActor } from "~/context/auth.withActor"
 import { Account } from "@opencode/cloud-core/account.js"
-import { Show } from "solid-js"
 
 function CopyStatus() {
   return (
@@ -83,25 +82,23 @@ export default function Home() {
           </div>
         </section>
 
-        <Show when={false}>
-          <section data-component="zen">
-            <a href="/docs/zen">opencode zen</a>
-            <span data-slot="description">
-              , a curated list of models provided by opencode
-            </span>
-            <span data-slot="divider">&nbsp;/&nbsp;</span>
-            <a
-              href={
-                workspaceId()
-                  ? `/workspace/${workspaceId()}`
-                  : "/auth/authorize"
-              }
-              target="_self"
-            >
-              Sign in
-            </a>
-          </section>
-        </Show>
+        <section data-component="zen">
+          <a href="/docs/zen">opencode zen</a>
+          <span data-slot="description">
+            , a curated list of models provided by opencode
+          </span>
+          <span data-slot="divider">&nbsp;/&nbsp;</span>
+          <a
+            href={
+              workspaceId()
+                ? `/workspace/${workspaceId()}`
+                : "/auth/authorize"
+            }
+            target="_self"
+          >
+            Sign in
+          </a>
+        </section>
 
         <section data-component="features">
           <ul data-slot="list">
