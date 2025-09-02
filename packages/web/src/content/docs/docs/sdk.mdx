@@ -65,6 +65,31 @@ console.log(`Server running at ${server.url}`)
 server.close()
 ```
 
+You can also pass a configuration object to customize the server behavior:
+
+```javascript
+import { createOpencodeServer } from "@opencode-ai/sdk"
+
+const server = await createOpencodeServer({
+  hostname: "127.0.0.1",
+  port: 4096,
+  config: {
+    theme: "dark",
+    model: "anthropic/claude-3-5-sonnet-20241022",
+    agent: {
+      general: {
+        temperature: 0.7,
+        model: "anthropic/claude-3-5-sonnet-20241022",
+      },
+    },
+  },
+})
+
+console.log(`Server running at ${server.url}`)
+
+server.close()
+```
+
 #### Options
 
 | Option     | Type          | Description                    | Default     |
@@ -73,6 +98,7 @@ server.close()
 | `port`     | `number`      | Server port                    | `4096`      |
 | `signal`   | `AbortSignal` | Abort signal for cancellation  | `undefined` |
 | `timeout`  | `number`      | Timeout in ms for server start | `5000`      |
+| `config`   | `Config`      | Configuration object           | `{}`        |
 
 ---
 
