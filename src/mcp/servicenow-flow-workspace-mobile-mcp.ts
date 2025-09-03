@@ -291,6 +291,37 @@ class ServiceNowFlowWorkspaceMobileMCP {
           }
         },
         
+        // COMPREHENSIVE TOOL HEALTH CHECKING
+        {
+          name: 'snow_test_all_workspace_tools',
+          description: 'Test all workspace and UI Builder tools to check availability, permissions, and functionality. Provides comprehensive status report with detailed feedback.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              include_ui_builder: { type: 'boolean', default: true, description: 'Test UI Builder tools' },
+              include_workspace: { type: 'boolean', default: true, description: 'Test workspace creation tools' },
+              include_mobile: { type: 'boolean', default: true, description: 'Test mobile tools' },
+              include_flow: { type: 'boolean', default: true, description: 'Test flow tools' },
+              detailed_errors: { type: 'boolean', default: true, description: 'Include detailed error information' }
+            }
+          }
+        },
+        
+        {
+          name: 'snow_check_plugin_availability',
+          description: 'Check availability and licensing status of all ServiceNow plugins required for workspace and UI Builder functionality.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              check_ui_builder: { type: 'boolean', default: true, description: 'Check UI Builder plugin' },
+              check_uxf: { type: 'boolean', default: true, description: 'Check Now Experience Framework' },
+              check_agent_workspace: { type: 'boolean', default: true, description: 'Check Agent Workspace plugin' },
+              check_mobile: { type: 'boolean', default: true, description: 'Check Mobile Publishing' },
+              include_recommendations: { type: 'boolean', default: true, description: 'Include setup recommendations' }
+            }
+          }
+        },
+        
         // Mobile Tools
         {
           name: 'snow_configure_mobile_app',
@@ -864,6 +895,12 @@ class ServiceNowFlowWorkspaceMobileMCP {
             break;
           case 'snow_validate_workspace_configuration':
             result = await this.validateWorkspaceConfiguration(args);
+            break;
+          case 'snow_test_all_workspace_tools':
+            result = await this.testAllWorkspaceTools(args);
+            break;
+          case 'snow_check_plugin_availability':
+            result = await this.checkPluginAvailability(args);
             break;
             
             
@@ -2051,12 +2088,37 @@ ${configList}${layoutsText}${offlineText}
         throw new Error(`Failed to create component: ${componentResponse.error}`);
       }
       
-      this.logger.info('✅ UI Builder component created successfully');
+      // VERIFICATION: Confirm both records were created
+      const componentVerification = await this.client.getRecord('sys_ux_lib_component', componentResponse.data.result.sys_id);
+      const sourceVerification = await this.client.getRecord('sys_ux_lib_source_script', sourceResponse.data.result.sys_id);
+      
+      if (!componentVerification.success || !sourceVerification.success) {
+        return {
+          success: false,
+          error: 'Component creation reported success but records not found in tables',
+          suggestion: 'Component creation may have been rolled back due to validation errors',
+          verification_failed: true
+        };
+      }
+      
+      this.logger.info(`✅ UI Builder component created and verified: ${componentResponse.data.result.sys_id}`);
+      
       return {
         success: true,
-        component: componentResponse.data,
-        source_script: sourceResponse.data,
-        message: `Custom UI Builder component '${args.name}' created successfully`
+        verified: true,
+        component_sys_id: componentResponse.data.result.sys_id,
+        source_script_sys_id: sourceResponse.data.result.sys_id,
+        component_name: args.name,
+        category: args.category || 'custom',
+        created_at: new Date().toISOString(),
+        message: `✅ Custom UI Builder component '${args.name}' created and verified successfully`,
+        detailed_confirmation: {
+          operation: 'CREATE UI Builder Component',
+          component_sys_id: componentResponse.data.result.sys_id,
+          source_script_sys_id: sourceResponse.data.result.sys_id,
+          verified_in_tables: ['sys_ux_lib_component', 'sys_ux_lib_source_script'],
+          verification_timestamp: new Date().toISOString()
+        }
       };
     } catch (error) {
       this.logger.error('Failed to create UI Builder component:', error);
@@ -2916,17 +2978,57 @@ ${configList}${layoutsText}${offlineText}
       
       const result = await this.client.createRecord('sys_ux_experience', experienceData);
       
+      // ENHANCED FEEDBACK SYSTEM
       if (result.success && result.data && result.data.result && result.data.result.sys_id) {
-        this.logger.info(`✅ UX Experience created with sys_id: ${result.data.result.sys_id}`);
+        const sys_id = result.data.result.sys_id;
+        
+        // VERIFICATION: Confirm record actually exists
+        const verification = await this.client.getRecord('sys_ux_experience', sys_id);
+        if (!verification.success) {
+          return {
+            success: false,
+            error: `UX Experience creation reported success but record not found in sys_ux_experience table`,
+            suggestion: 'Record creation may have failed silently or been rolled back due to permissions',
+            reported_sys_id: sys_id,
+            verification_failed: true
+          };
+        }
+        
+        this.logger.info(`✅ UX Experience created and verified with sys_id: ${sys_id}`);
+        
         return {
           success: true,
-          experience_sys_id: result.data.result.sys_id,
-          message: `Experience '${args.name}' created successfully`,
-          next_step: "Create App Configuration using this experience_sys_id"
+          verified: true,
+          experience_sys_id: sys_id,
+          experience_name: args.name,
+          shell_macroponent: shellSysId ? 'Linked to app shell' : 'No shell linked',
+          created_at: new Date().toISOString(),
+          table: 'sys_ux_experience',
+          message: `✅ UX Experience '${args.name}' created and verified successfully`,
+          detailed_confirmation: {
+            operation: 'CREATE UX Experience',
+            sys_id: sys_id,
+            name: args.name,
+            active: true,
+            verified_in_table: 'sys_ux_experience',
+            verification_timestamp: new Date().toISOString()
+          },
+          next_step: `Create App Configuration using experience_sys_id: ${sys_id}`
         };
       } else {
         const error = (result.data && result.data.error) || (result.error) || 'Unknown error creating experience';
-        throw new Error(`Failed to create experience: ${error}`);
+        return {
+          success: false,
+          error: `Failed to create UX Experience: ${error}`,
+          suggestion: this.getErrorSuggestion(error),
+          operation_attempted: 'CREATE sys_ux_experience',
+          debug_info: {
+            result_success: result.success,
+            has_data: !!(result.data),
+            has_result: !!(result.data && result.data.result),
+            has_sys_id: !!(result.data && result.data.result && result.data.result.sys_id)
+          }
+        };
       }
     } catch (error) {
       this.logger.error('Failed to create UX experience:', error);
@@ -3596,6 +3698,238 @@ ${configList}${layoutsText}${offlineText}
   }
   
   /**
+   * COMPREHENSIVE TOOL HEALTH TESTING
+   * Tests all workspace tools and provides detailed status report
+   */
+  async testAllWorkspaceTools(args: any): Promise<any> {
+    try {
+      this.logger.info('🛠️ Starting comprehensive tool health test...');
+      
+      const testResults = {
+        test_timestamp: new Date().toISOString(),
+        tools_tested: 0,
+        tools_working: 0,
+        tools_failing: 0,
+        tools_unclear: 0,
+        detailed_results: [],
+        plugin_status: {},
+        recommendations: []
+      };
+      
+      // Test critical plugins first
+      const pluginTests = [
+        { name: 'UI Builder', table: 'sys_ux_page', description: 'UI Builder functionality' },
+        { name: 'Now Experience Framework', table: 'sys_ux_experience', description: 'UX Workspace creation' },
+        { name: 'Agent Workspace', table: 'sys_ux_app_route', description: 'Configurable Agent Workspaces' },
+        { name: 'Mobile Publishing', table: 'sys_push_notif_msg', description: 'Mobile app management' },
+        { name: 'Flow Designer', table: 'sys_hub_flow', description: 'Flow automation' }
+      ];
+      
+      for (const plugin of pluginTests) {
+        const pluginTest = await this.client.searchRecords(plugin.table, '', 1);
+        testResults.plugin_status[plugin.name] = {
+          available: pluginTest.success,
+          table: plugin.table,
+          description: plugin.description,
+          status: pluginTest.success ? '✅ Available' : '❌ Not Available'
+        };
+      }
+      
+      // Test individual tools
+      const toolTests = [
+        // UX Experience tools
+        {
+          name: 'snow_create_ux_experience',
+          test: () => this.snow_create_ux_experience({ name: 'Health Test Experience' }),
+          category: 'UX Experience',
+          expects_sys_id: true
+        },
+        
+        // UI Builder tools  
+        {
+          name: 'snow_discover_uib_pages',
+          test: () => this.discoverUIBuilderPages({}),
+          category: 'UI Builder',
+          expects_sys_id: false
+        },
+        
+        // Mobile tools
+        {
+          name: 'snow_configure_mobile_app',
+          test: () => this.configureMobileApp({ app_name: 'Health Test App' }),
+          category: 'Mobile',
+          expects_sys_id: true
+        }
+      ];
+      
+      for (const toolTest of toolTests) {
+        try {
+          testResults.tools_tested++;
+          
+          const testStart = Date.now();
+          const result = await toolTest.test();
+          const testDuration = Date.now() - testStart;
+          
+          let status = '❌ FAILED';
+          let feedback = 'No response';
+          
+          if (result && result.success === true) {
+            if (toolTest.expects_sys_id && result.sys_id) {
+              status = '✅ WORKING';
+              feedback = `Created record with sys_id: ${result.sys_id}`;
+              testResults.tools_working++;
+            } else if (!toolTest.expects_sys_id) {
+              status = '✅ WORKING';
+              feedback = 'Operation completed successfully';
+              testResults.tools_working++;
+            } else {
+              status = '⚠️ UNCLEAR';
+              feedback = 'Success reported but no sys_id returned';
+              testResults.tools_unclear++;
+            }
+          } else if (result && result.success === false) {
+            status = '❌ FAILED';
+            feedback = result.error || 'Unknown error';
+            testResults.tools_failing++;
+          } else {
+            status = '⚠️ UNCLEAR';
+            feedback = 'No clear success/failure indication';
+            testResults.tools_unclear++;
+          }
+          
+          testResults.detailed_results.push({
+            tool: toolTest.name,
+            category: toolTest.category,
+            status: status,
+            feedback: feedback,
+            execution_time_ms: testDuration,
+            expects_sys_id: toolTest.expects_sys_id,
+            actual_result: result
+          });
+          
+        } catch (error) {
+          testResults.tools_tested++;
+          testResults.tools_failing++;
+          
+          testResults.detailed_results.push({
+            tool: toolTest.name,
+            category: toolTest.category,
+            status: '❌ FAILED',
+            feedback: `Exception: ${error}`,
+            execution_time_ms: 0,
+            error_type: 'EXCEPTION'
+          });
+        }
+      }
+      
+      // Generate recommendations
+      if (testResults.tools_working === 0) {
+        testResults.recommendations.push('No tools are working - check authentication and instance setup');
+      }
+      
+      if (testResults.tools_unclear > 0) {
+        testResults.recommendations.push('Some tools have unclear status - implement better response validation');
+      }
+      
+      this.logger.info(`✅ Tool health test completed: ${testResults.tools_working}/${testResults.tools_tested} working`);
+      
+      return {
+        success: true,
+        test_summary: testResults,
+        message: `Tool health test completed: ${testResults.tools_working}/${testResults.tools_tested} tools working properly`,
+        detailed_report: testResults.detailed_results
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to test workspace tools:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * CHECK PLUGIN AVAILABILITY
+   * Comprehensive plugin and licensing status check
+   */
+  async checkPluginAvailability(args: any): Promise<any> {
+    try {
+      this.logger.info('🔌 Checking ServiceNow plugin availability...');
+      
+      const pluginChecks = [];
+      
+      if (args.check_ui_builder) {
+        const uiBuilderCheck = await this.client.searchRecords('sys_ux_page', '', 1);
+        pluginChecks.push({
+          name: 'UI Builder',
+          table: 'sys_ux_page',
+          available: uiBuilderCheck.success,
+          error: uiBuilderCheck.success ? null : uiBuilderCheck.error,
+          status: uiBuilderCheck.success ? '✅ Available' : '❌ Not Available',
+          recommendation: uiBuilderCheck.success ? 'UI Builder tools should work' : 'Install UI Builder plugin from ServiceNow Store'
+        });
+      }
+      
+      if (args.check_uxf) {
+        const uxfCheck = await this.client.searchRecords('sys_ux_experience', '', 1);
+        pluginChecks.push({
+          name: 'Now Experience Framework',
+          table: 'sys_ux_experience',
+          available: uxfCheck.success,
+          error: uxfCheck.success ? null : uxfCheck.error,
+          status: uxfCheck.success ? '✅ Available' : '❌ Not Available',
+          recommendation: uxfCheck.success ? 'UX workspace creation should work' : 'Enable Now Experience Framework in instance'
+        });
+      }
+      
+      if (args.check_agent_workspace) {
+        const agentCheck = await this.client.searchRecords('sys_ux_screen_type', '', 1);
+        pluginChecks.push({
+          name: 'Agent Workspace',
+          table: 'sys_ux_screen_type',
+          available: agentCheck.success,
+          error: agentCheck.success ? null : agentCheck.error,
+          status: agentCheck.success ? '✅ Available' : '❌ Not Available',
+          recommendation: agentCheck.success ? 'Agent workspace tools should work' : 'Install Agent Workspace plugin'
+        });
+      }
+      
+      if (args.check_mobile) {
+        const mobileCheck = await this.client.searchRecords('sys_push_notif_msg', '', 1);
+        pluginChecks.push({
+          name: 'Mobile Publishing',
+          table: 'sys_push_notif_msg',
+          available: mobileCheck.success,
+          error: mobileCheck.success ? null : mobileCheck.error,
+          status: mobileCheck.success ? '✅ Available' : '❌ Not Available',
+          recommendation: mobileCheck.success ? 'Mobile tools should work' : 'Install Mobile Publishing plugin (requires additional licensing)'
+        });
+      }
+      
+      const availableCount = pluginChecks.filter(p => p.available).length;
+      const totalCount = pluginChecks.length;
+      
+      this.logger.info(`✅ Plugin check completed: ${availableCount}/${totalCount} plugins available`);
+      
+      return {
+        success: true,
+        plugin_summary: {
+          total_checked: totalCount,
+          available: availableCount,
+          unavailable: totalCount - availableCount,
+          percentage: Math.round((availableCount / totalCount) * 100)
+        },
+        plugins: pluginChecks,
+        message: `Plugin availability check: ${availableCount}/${totalCount} plugins available`,
+        overall_status: availableCount === totalCount ? 'All plugins available' : 
+                       availableCount > 0 ? 'Partial plugin availability' : 'No plugins available'
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to check plugin availability:', error);
+      throw error;
+    }
+  }
+  
+  /**
    * CONFIGURABLE AGENT WORKSPACE: Create using UX App architecture
    */
   async snow_create_configurable_agent_workspace(args: any): Promise<any> {
@@ -3713,6 +4047,160 @@ ${configList}${layoutsText}${offlineText}
       .replace(/--+/g, '-')            // Multiple hyphens -> single
       .replace(/^-|-$/g, '')           // Trim leading/trailing hyphens
       .substring(0, 80);               // Max 80 chars (ServiceNow field limit)
+  }
+  
+  /**
+   * ENHANCED RESPONSE VALIDATION SYSTEM
+   * Provides comprehensive feedback for all tool operations
+   */
+  private async validateAndConfirmOperation(operationType: string, result: any, details: any): Promise<any> {
+    try {
+      // Standard validation for ServiceNow API responses
+      if (!result || typeof result !== 'object') {
+        return {
+          success: false,
+          error: `No response received from ServiceNow API for ${operationType}`,
+          suggestion: 'Check ServiceNow instance connectivity and authentication',
+          validation_result: 'NO_RESPONSE'
+        };
+      }
+      
+      // Check for API success/failure
+      if (result.success === false) {
+        return {
+          success: false,
+          error: result.error || `${operationType} operation failed`,
+          suggestion: this.getErrorSuggestion(result.error || ''),
+          validation_result: 'API_FAILURE'
+        };
+      }
+      
+      // Validate response data structure
+      if (result.success && (!result.data || !result.data.result)) {
+        return {
+          success: false,
+          error: `${operationType} succeeded but returned invalid data structure`,
+          suggestion: 'Check ServiceNow table permissions and field access',
+          validation_result: 'INVALID_DATA_STRUCTURE'
+        };
+      }
+      
+      // Extract sys_id for verification
+      const sys_id = result.data?.result?.sys_id;
+      if (result.success && !sys_id) {
+        return {
+          success: false,
+          error: `${operationType} succeeded but no sys_id returned`,
+          suggestion: 'Record may have been created but sys_id is not accessible',
+          validation_result: 'MISSING_SYS_ID'
+        };
+      }
+      
+      // VERIFICATION STEP: Confirm record actually exists
+      if (sys_id && details.table) {
+        const verification = await this.client.getRecord(details.table, sys_id);
+        if (!verification.success) {
+          return {
+            success: false,
+            error: `${operationType} reported success but record not found in ${details.table}`,
+            suggestion: 'Record creation may have failed silently or been rolled back',
+            validation_result: 'RECORD_NOT_FOUND',
+            reported_sys_id: sys_id
+          };
+        }
+        
+        // SUCCESS with verification!
+        return {
+          success: true,
+          sys_id: sys_id,
+          verified: true,
+          operation_type: operationType,
+          table: details.table,
+          message: `${operationType} completed successfully`,
+          confirmation: `Record verified in ${details.table} with sys_id: ${sys_id}`,
+          validation_result: 'VERIFIED_SUCCESS'
+        };
+      }
+      
+      // Success without verification (no sys_id or table)
+      return {
+        success: true,
+        operation_type: operationType,
+        message: `${operationType} completed`,
+        validation_result: 'SUCCESS_NO_VERIFICATION'
+      };
+      
+    } catch (error) {
+      this.logger.error('Validation error:', error);
+      return {
+        success: false,
+        error: `Validation failed for ${operationType}: ${error}`,
+        suggestion: 'Check ServiceNow connectivity and permissions',
+        validation_result: 'VALIDATION_ERROR'
+      };
+    }
+  }
+  
+  /**
+   * Get actionable suggestions based on error type
+   */
+  private getErrorSuggestion(error: string): string {
+    const errorLower = error.toLowerCase();
+    
+    if (errorLower.includes('403') || errorLower.includes('forbidden')) {
+      return 'Check user permissions. May need ui_builder_admin or workspace_admin roles.';
+    }
+    
+    if (errorLower.includes('404') || errorLower.includes('not found')) {
+      return 'Table/endpoint not available. Check if required plugin is installed and activated.';
+    }
+    
+    if (errorLower.includes('400') || errorLower.includes('bad request')) {
+      return 'Invalid parameters or missing required fields. Check API documentation.';
+    }
+    
+    if (errorLower.includes('401') || errorLower.includes('unauthorized')) {
+      return 'Authentication issue. Run snow-flow auth login to re-authenticate.';
+    }
+    
+    if (errorLower.includes('plugin') || errorLower.includes('license')) {
+      return 'Required plugin not installed. Check ServiceNow Store for required plugins.';
+    }
+    
+    return 'Check ServiceNow system logs for detailed error information.';
+  }
+  
+  /**
+   * Enhanced tool execution wrapper with comprehensive feedback
+   */
+  private async executeWithFeedback(operationType: string, operation: () => Promise<any>, details: any): Promise<any> {
+    try {
+      this.logger.info(`🔄 Executing ${operationType}...`);
+      
+      const startTime = Date.now();
+      const result = await operation();
+      const executionTime = Date.now() - startTime;
+      
+      const validation = await this.validateAndConfirmOperation(operationType, result, details);
+      
+      return {
+        ...validation,
+        execution_time_ms: executionTime,
+        timestamp: new Date().toISOString()
+      };
+      
+    } catch (error) {
+      this.logger.error(`❌ ${operationType} failed:`, error);
+      
+      return {
+        success: false,
+        operation_type: operationType,
+        error: error instanceof Error ? error.message : String(error),
+        suggestion: this.getErrorSuggestion(String(error)),
+        validation_result: 'EXECUTION_ERROR',
+        timestamp: new Date().toISOString()
+      };
+    }
   }
   
   /**
