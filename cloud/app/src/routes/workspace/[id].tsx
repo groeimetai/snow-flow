@@ -42,12 +42,14 @@ const getBillingInfo = query(async () => {
   "use server"
   return withActor(async () => {
     const actor = Actor.assert("user")
+    const now = Date.now()
     const [user, billing, payments, usage] = await Promise.all([
       User.fromID(actor.properties.userID),
       Billing.get(),
       Billing.payments(),
       Billing.usages(),
     ])
+    console.log("duration", Date.now() - now)
     return { user, billing, payments, usage }
   })
 }, "billingInfo")
@@ -67,9 +69,7 @@ export default function () {
   /////////////////
   // Keys section
   /////////////////
-  const keys = createAsync(() => listKeys(), {
-    deferStream: true,
-  })
+  const keys = createAsync(() => listKeys())
   const createKeyAction = useAction(createKey)
   const removeKeyAction = useAction(removeKey)
   const createKeySubmission = useSubmission(createKey)
