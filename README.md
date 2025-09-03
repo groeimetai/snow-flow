@@ -9,6 +9,11 @@
 
 ---
 
+TO FIX TEMP CLAUDE CODE INK ERROR, RUN BEFORE SWARM COMMAND: 
+```bash
+npm install -g @anthropic-ai/claude-code@1.0.95 --save-exact
+```
+
 ## What is Snow-Flow?
 
 Snow-Flow is a conversational ServiceNow development platform that bridges Claude Code with ServiceNow through specialized MCP (Model Context Protocol) servers. Instead of navigating ServiceNow's web interface, you develop through natural conversation with Claude Code, which orchestrates multi-agent workflows to handle complex ServiceNow operations.
