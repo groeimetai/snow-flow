@@ -11,8 +11,6 @@ Use it to build integrations and control opencode programmatically.
 
 [Learn more](/docs/server) about how the server works.
 
-> Note: Most endpoints accept a directory query parameter for working directory context.
-
 ---
 
 ## Install
@@ -295,7 +293,7 @@ const result = await client.session.prompt({
 ```javascript
 // Search and read files
 const textResults = await client.find.text({
-  query: { pattern: "function.*opencode", directory: "/path/to/project" },
+  query: { pattern: "function.*opencode" },
 })
 
 const files = await client.find.files({
