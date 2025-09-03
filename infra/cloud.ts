@@ -131,4 +131,15 @@ new sst.cloudflare.x.SolidStart("Console", {
     //VITE_API_URL: gateway.url.apply((url) => url!),
     VITE_AUTH_URL: auth.url.apply((url) => url!),
   },
+  transform: {
+    server: {
+      transform: {
+        worker: {
+          placement: {
+            mode: "smart",
+          },
+        },
+      },
+    },
+  },
 })
