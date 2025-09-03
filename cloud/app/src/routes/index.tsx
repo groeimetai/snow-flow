@@ -32,7 +32,7 @@ const isLoggedIn = query(async () => {
 }, "isLoggedIn")
 
 export default function Home() {
-  const auth = createAsync(() => isLoggedIn(), {
+  const workspaceId = createAsync(() => isLoggedIn(), {
     deferStream: true,
   })
   onMount(() => {
@@ -92,7 +92,7 @@ export default function Home() {
             href="/auth"
             target="_self"
           >
-            {auth() ? "Dashboard" : "Sign in"}
+            Sign in
           </a>
         </section>
 
