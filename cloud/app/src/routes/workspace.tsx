@@ -22,8 +22,8 @@ const logout = action(async () => {
   const current = auth.data.current
   if (current)
     await auth.update((val) => {
-      delete val.account[current]
-      const first = Object.keys(val.account)[0]
+      delete val.account?.[current]
+      const first = Object.keys(val.account ?? {})[0]
       val.current = first
       return val
     })
@@ -43,8 +43,10 @@ export default function WorkspaceLayout(props: RouteSectionProps) {
         </div>
         <div data-slot="header-actions">
           <span>{userInfo()?.user.email}</span>
-          <form onSubmit={() => location.href = "/"} action={logout} method="post">
-            <button type="submit" formaction={logout}>Logout</button>
+          <form onSubmit={() => (location.href = "/")} action={logout} method="post">
+            <button type="submit" formaction={logout}>
+              Logout
+            </button>
           </form>
         </div>
       </header>

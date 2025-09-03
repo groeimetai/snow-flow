@@ -20,13 +20,10 @@ export const getActor = async (): Promise<Actor.Info> => {
   if (!evt) throw new Error("No request event")
   const url = new URL(evt.request.headers.has("x-server-id") ? evt.request.headers.get("referer")! : evt.request.url)
   const auth = await useAuthSession()
+  auth.data.account = auth.data.account ?? {}
   const splits = url.pathname.split("/").filter(Boolean)
   if (splits[0] !== "workspace") {
-    // TODO
-    console.log("before current")
-    console.log(`current: ${auth.data.current}`)
     const current = auth.data.account[auth.data.current ?? ""]
-    console.log("after current")
     if (current) {
       return {
         type: "account",
