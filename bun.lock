@@ -26,7 +26,7 @@
     },
     "cloud/core": {
       "name": "@opencode/cloud-core",
-      "version": "0.6.3",
+      "version": "0.6.4",
       "dependencies": {
         "@aws-sdk/client-sts": "3.782.0",
         "@opencode/cloud-resource": "workspace:*",
@@ -43,7 +43,7 @@
     },
     "cloud/function": {
       "name": "@opencode/cloud-function",
-      "version": "0.6.3",
+      "version": "0.6.4",
       "dependencies": {
         "@ai-sdk/anthropic": "2.0.0",
         "@ai-sdk/openai": "2.0.2",
@@ -67,9 +67,21 @@
         "@cloudflare/workers-types": "^4.20250830.0",
       },
     },
+    "cloud/scripts": {
+      "name": "@opencode/cloud-scripts",
+      "version": "0.6.4",
+      "dependencies": {
+        "@opencode/cloud-core": "workspace:*",
+        "tsx": "4.20.5",
+      },
+      "devDependencies": {
+        "@types/node": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/function": {
       "name": "@opencode/function",
-      "version": "0.6.3",
+      "version": "0.6.4",
       "dependencies": {
         "@octokit/auth-app": "8.0.1",
         "@octokit/rest": "22.0.0",
@@ -84,7 +96,7 @@
     },
     "packages/opencode": {
       "name": "opencode",
-      "version": "0.6.3",
+      "version": "0.6.4",
       "bin": {
         "opencode": "./bin/opencode",
       },
@@ -134,7 +146,7 @@
     },
     "packages/plugin": {
       "name": "@opencode-ai/plugin",
-      "version": "0.6.3",
+      "version": "0.6.4",
       "dependencies": {
         "@opencode-ai/sdk": "workspace:*",
       },
@@ -145,7 +157,7 @@
     },
     "packages/sdk/js": {
       "name": "@opencode-ai/sdk",
-      "version": "0.6.3",
+      "version": "0.6.4",
       "dependencies": {
         "@hey-api/openapi-ts": "0.81.0",
       },
@@ -157,7 +169,7 @@
     },
     "packages/web": {
       "name": "@opencode/web",
-      "version": "0.6.3",
+      "version": "0.6.4",
       "dependencies": {
         "@astrojs/cloudflare": "12.6.3",
         "@astrojs/markdown-remark": "6.3.1",
@@ -665,6 +677,8 @@
     "@opencode/cloud-function": ["@opencode/cloud-function@workspace:cloud/function"],
 
     "@opencode/cloud-resource": ["@opencode/cloud-resource@workspace:cloud/resource"],
+
+    "@opencode/cloud-scripts": ["@opencode/cloud-scripts@workspace:cloud/scripts"],
 
     "@opencode/function": ["@opencode/function@workspace:packages/function"],
 
@@ -2755,6 +2769,8 @@
     "tsconfck": ["tsconfck@3.1.6", "", { "peerDependencies": { "typescript": "^5.0.0" }, "optionalPeers": ["typescript"], "bin": { "tsconfck": "bin/tsconfck.js" } }, "sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w=="],
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
+
+    "tsx": ["tsx@4.20.5", "", { "dependencies": { "esbuild": "~0.25.0", "get-tsconfig": "^4.7.5" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "bin": { "tsx": "dist/cli.mjs" } }, "sha512-+wKjMNU9w/EaQayHXb7WA7ZaHY6hN8WgfvHNQ3t1PnU91/7O8TcTnIhCDYTZwnt8JsO9IBqZ30Ln1r7pPF52Aw=="],
 
     "tuf-js": ["tuf-js@2.2.1", "", { "dependencies": { "@tufjs/models": "2.0.1", "debug": "^4.3.4", "make-fetch-happen": "^13.0.1" } }, "sha512-GwIJau9XaA8nLVbUXsN3IlFi7WmQ48gBUrl3FTkkL/XLu/POhBzfmX9hd33FNMX1qAsfl6ozO1iMmW9NC8YniA=="],
 
