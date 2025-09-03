@@ -85,7 +85,9 @@ export default function Home() {
         </section>
 
         <section data-component="zen">
-          <a href="/docs/zen">opencode zen</a>
+          <a target="_self" href="/docs/zen">
+            opencode zen
+          </a>
           <span data-slot="description">, a curated list of models provided by opencode</span>
           <span data-slot="divider">&nbsp;/&nbsp;</span>
           <a href="/auth" target="_self">
