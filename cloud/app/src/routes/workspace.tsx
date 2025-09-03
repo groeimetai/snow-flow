@@ -4,6 +4,7 @@ import { withActor } from "~/context/auth.withActor"
 import { query, action, redirect, createAsync, RouteSectionProps, Navigate, useNavigate, useParams, A } from "@solidjs/router"
 import { User } from "@opencode/cloud-core/user.js"
 import { Actor } from "@opencode/cloud-core/actor.js"
+import { getRequestEvent } from "solid-js/web"
 
 const getUserInfo = query(async (workspaceID: string) => {
   "use server"
@@ -17,12 +18,14 @@ const getUserInfo = query(async (workspaceID: string) => {
 const logout = action(async () => {
   "use server"
   const auth = await useAuthSession()
+  const event = getRequestEvent()
   const current = auth.data.current
   if (current)
     await auth.update((val) => {
       delete val.account?.[current]
       const first = Object.keys(val.account ?? {})[0]
       val.current = first
+      event!.locals.actor = undefined
       return val
     })
 })
