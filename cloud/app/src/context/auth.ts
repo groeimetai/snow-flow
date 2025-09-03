@@ -14,17 +14,14 @@ export const AuthClient = createClient({
   issuer: import.meta.env.VITE_AUTH_URL,
 })
 
-export const getActor = async (): Promise<Actor.Info> => {
+export const getActor = async (workspace?: string): Promise<Actor.Info> => {
   "use server"
   const evt = getRequestEvent()
   if (!evt) throw new Error("No request event")
   if (evt.locals.actor) return evt.locals.actor
   evt.locals.actor = (async () => {
-    console.log("getActor")
-    const url = new URL(evt.request.headers.has("x-server-id") ? evt.request.headers.get("referer")! : evt.request.url)
     const auth = await useAuthSession()
-    const splits = url.pathname.split("/").filter(Boolean)
-    if (splits[0] !== "workspace") {
+    if (!workspace) {
       const account = auth.data.account ?? {}
       const current = account[auth.data.current ?? ""]
       if (current) {
@@ -55,7 +52,6 @@ export const getActor = async (): Promise<Actor.Info> => {
         properties: {},
       }
     }
-    const workspaceHint = splits[1]
     const accounts = Object.keys(auth.data.account ?? {})
     if (accounts.length) {
       const result = await Database.transaction(async (tx) => {
@@ -66,7 +62,7 @@ export const getActor = async (): Promise<Actor.Info> => {
           .from(AccountTable)
           .innerJoin(UserTable, and(eq(UserTable.email, AccountTable.email)))
           .innerJoin(WorkspaceTable, eq(WorkspaceTable.id, UserTable.workspaceID))
-          .where(and(inArray(AccountTable.id, accounts), eq(WorkspaceTable.id, workspaceHint)))
+          .where(and(inArray(AccountTable.id, accounts), eq(WorkspaceTable.id, workspace)))
           .limit(1)
           .execute()
           .then((x) => x[0])

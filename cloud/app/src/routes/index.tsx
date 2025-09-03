@@ -7,7 +7,7 @@ import IMG_SPLASH from "../asset/lander/screenshot-splash.png"
 import IMG_VSCODE from "../asset/lander/screenshot-vscode.png"
 import IMG_GITHUB from "../asset/lander/screenshot-github.png"
 import { IconCopy, IconCheck } from "../component/icon"
-import { createAsync, query, redirect } from "@solidjs/router"
+import { createAsync, query, redirect, A } from "@solidjs/router"
 import { getActor } from "~/context/auth"
 import { withActor } from "~/context/auth.withActor"
 import { Account } from "@opencode/cloud-core/account.js"
@@ -21,20 +21,17 @@ function CopyStatus() {
   )
 }
 
-const isLoggedIn = query(async () => {
+const defaultWorkspace = query(async () => {
   "use server"
   const actor = await getActor()
   if (actor.type === "account") {
     const workspaces = await withActor(() => Account.workspaces())
     return workspaces[0].id
-    // throw redirect(`/workspace/${workspaces[0].id}`)
   }
-}, "isLoggedIn")
+}, "defaultWorkspace")
 
 export default function Home() {
-  const auth = createAsync(() => isLoggedIn(), {
-    deferStream: true,
-  })
+  const workspace = createAsync(() => defaultWorkspace())
   onMount(() => {
     const commands = document.querySelectorAll("[data-copy]")
     for (const button of commands) {
@@ -90,9 +87,9 @@ export default function Home() {
           </a>
           <span data-slot="description">, a curated list of models provided by opencode</span>
           <span data-slot="divider">&nbsp;/&nbsp;</span>
-          <a target="_self" data-slot="cta" href="/auth">
-            {auth() ? "Dashboard" : "Sign in"}
-          </a>
+          <A href={workspace() ? "/workspace/" + workspace() : "/auth/authorize"}>
+            {workspace() ? "Dashboard" : "Sign in"}
+          </A>
         </section>
 
         <section data-component="features">

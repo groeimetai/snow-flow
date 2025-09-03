@@ -1,7 +1,7 @@
 import "./[id].css"
 import { Billing } from "@opencode/cloud-core/billing.js"
 import { Key } from "@opencode/cloud-core/key.js"
-import { action, createAsync, query, useAction, useSubmission, json } from "@solidjs/router"
+import { action, createAsync, query, useAction, useSubmission, json, useParams } from "@solidjs/router"
 import { createSignal, For, Show } from "solid-js"
 import { withActor } from "~/context/auth.withActor"
 import { IconCopy, IconCheck } from "~/component/icon"
@@ -13,23 +13,23 @@ import { Actor } from "@opencode/cloud-core/actor.js"
 /////////////////////////////////////
 
 
-const listKeys = query(async () => {
+const listKeys = query(async (workspaceID: string) => {
   "use server"
-  return withActor(() => Key.list())
+  return withActor(() => Key.list(), workspaceID)
 }, "key.list")
 
-const createKey = action(async (name: string) => {
+const createKey = action(async (workspaceID: string, name: string) => {
   "use server"
   return json(
-    withActor(() => Key.create({ name })),
+    withActor(() => Key.create({ name }), workspaceID),
     { revalidate: listKeys.key },
   )
 }, "key.create")
 
-const removeKey = action(async (id: string) => {
+const removeKey = action(async (workspaceID: string, id: string) => {
   "use server"
   return json(
-    withActor(() => Key.remove({ id })),
+    withActor(() => Key.remove({ id }), workspaceID),
     { revalidate: listKeys.key },
   )
 }, "key.remove")
@@ -38,7 +38,7 @@ const removeKey = action(async (id: string) => {
 // Billing related queries and actions
 /////////////////////////////////////
 
-const getBillingInfo = query(async () => {
+const getBillingInfo = query(async (workspaceID: string) => {
   "use server"
   return withActor(async () => {
     const actor = Actor.assert("user")
@@ -51,25 +51,26 @@ const getBillingInfo = query(async () => {
     ])
     console.log("duration", Date.now() - now)
     return { user, billing, payments, usage }
-  })
+  }, workspaceID)
 }, "billingInfo")
 
-const createCheckoutUrl = action(async (successUrl: string, cancelUrl: string) => {
+const createCheckoutUrl = action(async (workspaceID: string, successUrl: string, cancelUrl: string) => {
   "use server"
-  return withActor(() => Billing.generateCheckoutUrl({ successUrl, cancelUrl }))
+  return withActor(() => Billing.generateCheckoutUrl({ successUrl, cancelUrl }), workspaceID)
 }, "checkoutUrl")
 
-const createPortalUrl = action(async (returnUrl: string) => {
+const createPortalUrl = action(async (workspaceID: string, returnUrl: string) => {
   "use server"
-  return withActor(() => Billing.generatePortalUrl({ returnUrl }))
+  return withActor(() => Billing.generatePortalUrl({ returnUrl }), workspaceID)
 }, "portalUrl")
 
 export default function () {
+  const params = useParams()
 
   /////////////////
   // Keys section
   /////////////////
-  const keys = createAsync(() => listKeys())
+  const keys = createAsync(() => listKeys(params.id))
   const createKeyAction = useAction(createKey)
   const removeKeyAction = useAction(removeKey)
   const createKeySubmission = useSubmission(createKey)
@@ -134,7 +135,7 @@ export default function () {
     if (!keyName().trim()) return
 
     try {
-      await createKeyAction(keyName().trim())
+      await createKeyAction(params.id, keyName().trim())
       setKeyName("")
       setShowCreateForm(false)
     } catch (error) {
@@ -148,7 +149,7 @@ export default function () {
     }
 
     try {
-      await removeKeyAction(keyId)
+      await removeKeyAction(params.id, keyId)
     } catch (error) {
       console.error("Failed to delete API key:", error)
     }
@@ -157,16 +158,14 @@ export default function () {
   /////////////////
   // Billing section
   /////////////////
-  const billingInfo = createAsync(() => getBillingInfo(), {
-    deferStream: true,
-  })
+  const billingInfo = createAsync(() => getBillingInfo(params.id))
   const createCheckoutUrlAction = useAction(createCheckoutUrl)
   const createCheckoutUrlSubmission = useSubmission(createCheckoutUrl)
 
   const handleBuyCredits = async () => {
     try {
       const baseUrl = window.location.href
-      const checkoutUrl = await createCheckoutUrlAction(baseUrl, baseUrl)
+      const checkoutUrl = await createCheckoutUrlAction(params.id, baseUrl, baseUrl)
       if (checkoutUrl) {
         window.location.href = checkoutUrl
       }
