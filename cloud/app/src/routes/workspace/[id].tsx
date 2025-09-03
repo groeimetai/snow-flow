@@ -2,7 +2,7 @@ import "./[id].css"
 import { Billing } from "@opencode/cloud-core/billing.js"
 import { Key } from "@opencode/cloud-core/key.js"
 import { action, createAsync, query, useAction, useSubmission, json, useParams } from "@solidjs/router"
-import { createSignal, For, Show } from "solid-js"
+import { createMemo, createSignal, For, Show } from "solid-js"
 import { withActor } from "~/context/auth.withActor"
 import { IconCopy, IconCheck } from "~/component/icon"
 import { User } from "@opencode/cloud-core/user.js"
@@ -335,22 +335,23 @@ export default function () {
                   <tr>
                     <th>Date</th>
                     <th>Model</th>
-                    <th>Tokens</th>
+                    <th>Input</th>
+                    <th>Output</th>
                     <th>Cost</th>
                   </tr>
                 </thead>
                 <tbody>
                   <For each={billingInfo()!.usage}>
                     {(usage) => {
-                      const totalTokens = usage.inputTokens + usage.outputTokens + (usage.reasoningTokens || 0)
-                      const date = new Date(usage.timeCreated)
+                      const date = createMemo(() => new Date(usage.timeCreated))
                       return (
                         <tr>
-                          <td data-slot="usage-date" title={formatDateUTC(date)}>
-                            {formatDateForTable(date)}
+                          <td data-slot="usage-date" title={formatDateUTC(date())}>
+                            {formatDateForTable(date())}
                           </td>
                           <td data-slot="usage-model">{usage.model}</td>
-                          <td data-slot="usage-tokens">{totalTokens.toLocaleString()}</td>
+                          <td data-slot="usage-tokens">{usage.inputTokens}</td>
+                          <td data-slot="usage-tokens">{usage.outputTokens}</td>
                           <td data-slot="usage-cost">${((usage.cost ?? 0) / 100000000).toFixed(4)}</td>
                         </tr>
                       )
