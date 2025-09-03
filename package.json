@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "4.5.48",
+  "version": "4.5.49",
   "description": "Conversational ServiceNow development platform using Claude Code. Multi-agent orchestration with 20+ MCP servers providing 245+ ServiceNow tools including complete UX + Agent Workspace creation with official APIs.",
   "main": "dist/index.js",
   "type": "commonjs",
