@@ -1,6 +1,3 @@
-/**
- * @deprecated Use zen/v1/chat/completions instead
- */
 import { Resource } from "@opencode/cloud-resource"
 import type { APIEvent } from "@solidjs/start/server"
 import { Database, eq, sql } from "@opencode/cloud-core/drizzle/index.js"
