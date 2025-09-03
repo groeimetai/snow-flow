@@ -57,10 +57,7 @@ const MODELS = {
 }
 
 const FREE_WORKSPACES = [
-  "wrk_01K47W3MEXPJZQ8J14B1NNPS9Z", // adam
-  "wrk_01K46F9BS6S1RC2W49CH6KSMDN", // dax
   "wrk_01K46JDFR0E75SG2Q8K172KF3Y", // frank
-  "wrk_01K484AYAZ8RA7G32ZB93VZX6M", // jay
 ]
 
 class AuthError extends Error {}
