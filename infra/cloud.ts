@@ -69,7 +69,7 @@ export const auth = new sst.cloudflare.Worker("AuthApi", {
 ////////////////
 
 export const stripeWebhook = new WebhookEndpoint("StripeWebhook", {
-  url: $interpolate`https://console.${domain}/stripe/webhook`,
+  url: $interpolate`https://${domain}/stripe/webhook`,
   enabledEvents: [
     "checkout.session.async_payment_failed",
     "checkout.session.async_payment_succeeded",
