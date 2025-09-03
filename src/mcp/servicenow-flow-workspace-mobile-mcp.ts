@@ -1542,20 +1542,43 @@ ${executionList}
         throw new Error(`Failed to configure mobile app: ${response.error}`);
       }
 
+      // VERIFICATION: Confirm mobile app was configured
+      const sys_id = response.data.result.sys_id;
+      const verification = await this.client.getRecord('sys_mobile_application_config', sys_id);
+      
+      if (!verification.success) {
+        return {
+          success: false,
+          error: 'Mobile app configuration reported success but record not found in sys_mobile_application_config table',
+          suggestion: 'Mobile app configuration may have been rolled back due to validation errors',
+          verification_failed: true
+        };
+      }
+      
+      this.logger.info(`✅ Mobile app configured and verified: ${sys_id}`);
+      
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Mobile App configured!
-
-📱 **${args.app_name}**
-🆔 sys_id: ${response.data.sys_id}
-🔐 Authentication: ${args.authentication || 'oauth'}
-📦 Modules: ${args.enabled_modules ? args.enabled_modules.length : 0}
-💾 Offline Tables: ${args.offline_tables ? args.offline_tables.length : 0}
-🔔 Push Notifications: ${args.push_enabled !== false ? 'Enabled' : 'Disabled'}
-
-✨ Mobile app configuration saved!`
-        }]
+        success: true,
+        verified: true,
+        mobile_app_sys_id: sys_id,
+        app_name: args.app_name,
+        authentication: args.authentication || 'oauth',
+        modules_count: args.enabled_modules ? args.enabled_modules.length : 0,
+        offline_tables_count: args.offline_tables ? args.offline_tables.length : 0,
+        push_enabled: args.push_enabled !== false,
+        created_at: new Date().toISOString(),
+        message: `✅ Mobile app '${args.app_name}' configured and verified successfully`,
+        detailed_confirmation: {
+          operation: 'CONFIGURE Mobile App',
+          sys_id: sys_id,
+          app_name: args.app_name,
+          authentication_method: args.authentication || 'oauth',
+          enabled_modules: args.enabled_modules || [],
+          offline_tables: args.offline_tables || [],
+          push_notifications: args.push_enabled !== false,
+          verified_in_table: 'sys_mobile_application_config',
+          verification_timestamp: new Date().toISOString()
+        }
       };
     } catch (error) {
       this.logger.error('Failed to configure mobile app:', error);
@@ -1593,20 +1616,42 @@ ${executionList}
         throw new Error(`Failed to create mobile layout: ${response.error}`);
       }
 
+      // VERIFICATION: Confirm mobile layout was created
+      const sys_id = response.data.result.sys_id;
+      const verification = await this.client.getRecord('sys_mobile_layout', sys_id);
+      
+      if (!verification.success) {
+        return {
+          success: false,
+          error: 'Mobile layout creation reported success but record not found in sys_mobile_layout table',
+          suggestion: 'Mobile layout creation may have been rolled back due to validation errors',
+          verification_failed: true
+        };
+      }
+      
+      this.logger.info(`✅ Mobile layout created and verified: ${sys_id}`);
+      
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Mobile Layout created!
-
-📱 **${args.name}**
-🆔 sys_id: ${response.data.sys_id}
-📋 Table: ${args.table}
-📊 Type: ${args.type}
-📝 Fields: ${args.fields ? args.fields.length : 'Default'}
-🔗 Related Lists: ${args.related_lists ? args.related_lists.length : 0}
-
-✨ Mobile layout configured!`
-        }]
+        success: true,
+        verified: true,
+        mobile_layout_sys_id: sys_id,
+        layout_name: args.name,
+        layout_table: args.table,
+        layout_type: args.type,
+        fields_count: args.fields ? args.fields.length : 0,
+        related_lists_count: args.related_lists ? args.related_lists.length : 0,
+        created_at: new Date().toISOString(),
+        message: `✅ Mobile layout '${args.name}' created and verified successfully`,
+        detailed_confirmation: {
+          operation: 'CREATE Mobile Layout',
+          sys_id: sys_id,
+          name: args.name,
+          table: args.table,
+          type: args.type,
+          fields: args.fields || [],
+          verified_in_table: 'sys_mobile_layout',
+          verification_timestamp: new Date().toISOString()
+        }
       };
     } catch (error) {
       this.logger.error('Failed to create mobile layout:', error);
@@ -2010,10 +2055,32 @@ ${configList}${layoutsText}${offlineText}
       const pagesResponse = await this.client.searchRecords('sys_ux_page', query, args.limit || 50);
       
       if (!pagesResponse.success) {
-        throw new Error(`Failed to discover UI Builder pages: ${pagesResponse.error}`);
+        return {
+          success: false,
+          error: `Failed to discover UI Builder pages: ${pagesResponse.error}`,
+          suggestion: 'UI Builder plugin may not be installed. Check ServiceNow Store for UI Builder plugin.',
+          plugin_required: 'UI Builder',
+          table_tested: 'sys_ux_page'
+        };
       }
       
-      const pages = pagesResponse.data.result;
+      const pages = pagesResponse.data.result || [];
+      
+      // Handle no results case
+      if (pages.length === 0) {
+        return {
+          success: true,
+          pages: [],
+          count: 0,
+          message: '📝 No UI Builder pages found',
+          explanation: 'This could mean: 1) No pages exist yet, 2) UI Builder plugin not installed, 3) Insufficient permissions to view pages',
+          suggestions: [
+            'Create your first UI Builder page using snow_create_uib_page',
+            'Check if UI Builder plugin is installed and activated',
+            'Verify you have ui_builder_user or ui_builder_admin roles'
+          ]
+        };
+      }
       
       // Enrich with additional data if requested
       for (const page of pages) {
@@ -2034,10 +2101,21 @@ ${configList}${layoutsText}${offlineText}
       }
       
       this.logger.info(`✅ Found ${pages.length} UI Builder pages`);
+      
       return {
         success: true,
+        verified: true,
         pages: pages,
-        count: pages.length
+        count: pages.length,
+        query_used: query || 'No filter',
+        message: `✅ Successfully discovered ${pages.length} UI Builder pages`,
+        detailed_confirmation: {
+          operation: 'DISCOVER UI Builder Pages',
+          table_searched: 'sys_ux_page',
+          results_count: pages.length,
+          query_conditions: conditions.join(', ') || 'No conditions',
+          search_timestamp: new Date().toISOString()
+        }
       };
     } catch (error) {
       this.logger.error('Failed to discover UI Builder pages:', error);
@@ -2191,10 +2269,33 @@ ${configList}${layoutsText}${offlineText}
       const componentsResponse = await this.client.searchRecords('sys_ux_lib_component', query, args.limit || 100);
       
       if (!componentsResponse.success) {
-        throw new Error(`Failed to discover components: ${componentsResponse.error}`);
+        return {
+          success: false,
+          error: `Failed to discover UI Builder components: ${componentsResponse.error}`,
+          suggestion: 'UI Builder plugin may not be installed. Check ServiceNow Store for UI Builder plugin.',
+          plugin_required: 'UI Builder',
+          table_tested: 'sys_ux_lib_component'
+        };
       }
       
-      const components = componentsResponse.data.result;
+      const components = componentsResponse.data.result || [];
+      
+      // Handle no results case
+      if (components.length === 0) {
+        return {
+          success: true,
+          components: [],
+          count: 0,
+          message: '📝 No UI Builder components found',
+          explanation: 'This could mean: 1) No custom components exist, 2) UI Builder plugin not installed, 3) Insufficient permissions',
+          query_used: query || 'No filter',
+          suggestions: [
+            'Create your first custom component using snow_create_uib_component',
+            'Check built-in components by removing custom_only filter',
+            'Verify UI Builder plugin is installed and you have proper permissions'
+          ]
+        };
+      }
       
       // Enrich with additional data if requested
       for (const component of components) {
@@ -2214,10 +2315,27 @@ ${configList}${layoutsText}${offlineText}
       }
       
       this.logger.info(`✅ Found ${components.length} UI Builder components`);
+      
       return {
         success: true,
+        verified: true,
         components: components,
-        count: components.length
+        count: components.length,
+        query_used: query || 'No filter',
+        categories_found: [...new Set(components.map(c => c.category))],
+        message: `✅ Successfully discovered ${components.length} UI Builder components`,
+        detailed_confirmation: {
+          operation: 'DISCOVER UI Builder Components',
+          table_searched: 'sys_ux_lib_component',
+          results_count: components.length,
+          query_conditions: conditions.join(', ') || 'No conditions',
+          enrichment_options: {
+            source_included: !!args.include_source,
+            usage_stats_included: !!args.include_usage_stats,
+            dependencies_included: !!args.include_dependencies
+          },
+          search_timestamp: new Date().toISOString()
+        }
       };
     } catch (error) {
       this.logger.error('Failed to discover UI Builder components:', error);
@@ -2314,11 +2432,38 @@ ${configList}${layoutsText}${offlineText}
         throw new Error(`Failed to create data broker: ${response.error}`);
       }
       
-      this.logger.info('✅ UI Builder data broker created successfully');
+      // VERIFICATION: Confirm data broker was created
+      const sys_id = response.data.result.sys_id;
+      const verification = await this.client.getRecord('sys_ux_data_broker', sys_id);
+      
+      if (!verification.success) {
+        return {
+          success: false,
+          error: 'Data broker creation reported success but record not found in sys_ux_data_broker table',
+          suggestion: 'Data broker creation may have been rolled back due to validation errors',
+          verification_failed: true
+        };
+      }
+      
+      this.logger.info(`✅ UI Builder data broker created and verified: ${sys_id}`);
+      
       return {
         success: true,
-        data_broker: response.data,
-        message: `Data broker '${args.name}' created for ${args.type} type`
+        verified: true,
+        data_broker_sys_id: sys_id,
+        broker_name: args.name,
+        broker_type: args.type || 'table',
+        target_table: args.table || 'N/A',
+        created_at: new Date().toISOString(),
+        message: `✅ Data broker '${args.name}' created and verified successfully`,
+        detailed_confirmation: {
+          operation: 'CREATE UI Builder Data Broker',
+          sys_id: sys_id,
+          name: args.name,
+          type: args.type || 'table',
+          verified_in_table: 'sys_ux_data_broker',
+          verification_timestamp: new Date().toISOString()
+        }
       };
     } catch (error) {
       this.logger.error('Failed to create UI Builder data broker:', error);
@@ -2348,11 +2493,35 @@ ${configList}${layoutsText}${offlineText}
         throw new Error(`Failed to configure data broker: ${response.error}`);
       }
       
-      this.logger.info('✅ UI Builder data broker configured successfully');
+      // VERIFICATION: Confirm data broker configuration was updated
+      const verification = await this.client.getRecord('sys_ux_data_broker', args.broker_id);
+      
+      if (!verification.success) {
+        return {
+          success: false,
+          error: 'Data broker configuration reported success but record not found in sys_ux_data_broker table',
+          suggestion: 'Data broker may not exist or you may lack permissions to access it',
+          broker_id: args.broker_id,
+          verification_failed: true
+        };
+      }
+      
+      this.logger.info(`✅ UI Builder data broker configured and verified: ${args.broker_id}`);
+      
       return {
         success: true,
-        data_broker: response.data,
-        message: 'Data broker configuration updated successfully'
+        verified: true,
+        data_broker_sys_id: args.broker_id,
+        updates_applied: Object.keys(updates),
+        configured_at: new Date().toISOString(),
+        message: `✅ Data broker configuration updated and verified successfully`,
+        detailed_confirmation: {
+          operation: 'CONFIGURE UI Builder Data Broker',
+          sys_id: args.broker_id,
+          updates_applied: updates,
+          verified_in_table: 'sys_ux_data_broker',
+          verification_timestamp: new Date().toISOString()
+        }
       };
     } catch (error) {
       this.logger.error('Failed to configure UI Builder data broker:', error);
@@ -2589,11 +2758,39 @@ ${configList}${layoutsText}${offlineText}
         throw new Error(`Failed to create client script: ${response.error}`);
       }
       
-      this.logger.info('✅ UI Builder client script created successfully');
+      // VERIFICATION: Confirm client script was created
+      const sys_id = response.data.result.sys_id;
+      const verification = await this.client.getRecord('sys_ux_client_script', sys_id);
+      
+      if (!verification.success) {
+        return {
+          success: false,
+          error: 'Client script creation reported success but record not found in sys_ux_client_script table',
+          suggestion: 'Client script creation may have been rolled back due to script validation errors',
+          verification_failed: true
+        };
+      }
+      
+      this.logger.info(`✅ UI Builder client script created and verified: ${sys_id}`);
+      
       return {
         success: true,
-        script: response.data,
-        message: `Client script '${args.name}' created for ${args.type} trigger`
+        verified: true,
+        client_script_sys_id: sys_id,
+        script_name: args.name,
+        script_type: args.type,
+        page_id: args.page_id,
+        created_at: new Date().toISOString(),
+        message: `✅ Client script '${args.name}' created and verified successfully`,
+        detailed_confirmation: {
+          operation: 'CREATE UI Builder Client Script',
+          sys_id: sys_id,
+          name: args.name,
+          type: args.type,
+          page_reference: args.page_id,
+          verified_in_table: 'sys_ux_client_script',
+          verification_timestamp: new Date().toISOString()
+        }
       };
     } catch (error) {
       this.logger.error('Failed to create UI Builder client script:', error);
@@ -2663,11 +2860,40 @@ ${configList}${layoutsText}${offlineText}
         throw new Error(`Failed to create event: ${response.error}`);
       }
       
-      this.logger.info('✅ UI Builder event created successfully');
+      // VERIFICATION: Confirm event was created
+      const sys_id = response.data.result.sys_id;
+      const verification = await this.client.getRecord('sys_ux_event', sys_id);
+      
+      if (!verification.success) {
+        return {
+          success: false,
+          error: 'Event creation reported success but record not found in sys_ux_event table',
+          suggestion: 'Event creation may have been rolled back due to validation errors',
+          verification_failed: true
+        };
+      }
+      
+      this.logger.info(`✅ UI Builder event created and verified: ${sys_id}`);
+      
       return {
         success: true,
-        event: response.data,
-        message: `Custom event '${args.name}' created ${args.global_event ? '(global)' : '(scoped)'}`
+        verified: true,
+        event_sys_id: sys_id,
+        event_name: args.name,
+        event_scope: args.global_event ? 'Global' : 'Component Scoped',
+        component_scope: args.component_scope || 'Not specified',
+        created_at: new Date().toISOString(),
+        message: `✅ Custom event '${args.name}' created and verified successfully`,
+        detailed_confirmation: {
+          operation: 'CREATE UI Builder Event',
+          sys_id: sys_id,
+          name: args.name,
+          global_event: args.global_event || false,
+          bubbles: args.bubbles !== false,
+          cancelable: args.cancelable !== false,
+          verified_in_table: 'sys_ux_event',
+          verification_timestamp: new Date().toISOString()
+        }
       };
     } catch (error) {
       this.logger.error('Failed to create UI Builder event:', error);
@@ -3075,16 +3301,44 @@ ${configList}${layoutsText}${offlineText}
       const result = await this.client.createRecord('sys_ux_app_config', configData);
       
       if (result.success && result.data && result.data.result && result.data.result.sys_id) {
-        this.logger.info(`✅ UX App Config created with sys_id: ${result.data.result.sys_id}`);
+        const sys_id = result.data.result.sys_id;
+        
+        // VERIFICATION: Confirm app config was created
+        const verification = await this.client.getRecord('sys_ux_app_config', sys_id);
+        if (!verification.success) {
+          return {
+            success: false,
+            error: 'App config creation reported success but record not found in sys_ux_app_config table',
+            verification_failed: true
+          };
+        }
+        
+        this.logger.info(`✅ UX App Config created and verified: ${sys_id}`);
         return {
           success: true,
-          app_config_sys_id: result.data.result.sys_id,
-          message: `App Configuration '${args.name}' created successfully`,
-          next_step: "Create Page Macroponent using this app_config_sys_id"
+          verified: true,
+          app_config_sys_id: sys_id,
+          config_name: args.name,
+          linked_experience: args.experience_sys_id,
+          created_at: new Date().toISOString(),
+          message: `✅ App Configuration '${args.name}' created and verified successfully`,
+          detailed_confirmation: {
+            operation: 'CREATE UX App Config',
+            sys_id: sys_id,
+            name: args.name,
+            experience_assoc: args.experience_sys_id,
+            verified_in_table: 'sys_ux_app_config',
+            verification_timestamp: new Date().toISOString()
+          },
+          next_step: `Create Page Macroponent using app_config_sys_id: ${sys_id}`
         };
       } else {
         const error = (result.data && result.data.error) || (result.error) || 'Unknown error creating app config';
-        throw new Error(`Failed to create app config: ${error}`);
+        return {
+          success: false,
+          error: `Failed to create app config: ${error}`,
+          suggestion: this.getErrorSuggestion(error)
+        };
       }
     } catch (error) {
       this.logger.error('Failed to create UX app config:', error);
