@@ -90,7 +90,7 @@ export default function Home() {
           </a>
           <span data-slot="description">, a curated list of models provided by opencode</span>
           <span data-slot="divider">&nbsp;/&nbsp;</span>
-          <a href="/auth">
+          <a data-slot="cta" href="/auth">
             {auth() ? "Dashboard" : "Sign in"}
           </a>
         </section>
