@@ -69,7 +69,7 @@ export async function POST(input: APIEvent) {
     await checkCredits()
 
     // Request to model provider
-    const res = await fetch(new URL(url.pathname.replace(/^\/gateway/, "") + url.search, MODEL.api), {
+    const res = await fetch(new URL(url.pathname.replace(/^\/zen/, "") + url.search, MODEL.api), {
       method: "POST",
       headers: (() => {
         const headers = input.request.headers
