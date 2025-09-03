@@ -36,7 +36,7 @@ const MODELS = {
     },
     headerMappings: {},
   },
-  "x-ai/grok-code-fast-1": {
+  "grok-code": {
     id: "x-ai/grok-code-fast-1",
     auth: false,
     api: "https://api.x.ai",
