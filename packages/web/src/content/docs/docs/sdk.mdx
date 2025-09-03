@@ -146,13 +146,10 @@ await client.app.log({
     level: "info",
     message: "Operation completed",
   },
-  query: { directory: "/path/to/project" },
 })
 
 // List available agents
-const agents = await client.app.agents({
-  query: { directory: "/path/to/project" },
-})
+const agents = await client.app.agents()
 ```
 
 ---
@@ -170,14 +167,10 @@ const agents = await client.app.agents({
 
 ```javascript
 // List all projects
-const projects = await client.project.list({
-  query: { directory: "/path/to/project" },
-})
+const projects = await client.project.list()
 
 // Get current project
-const currentProject = await client.project.current({
-  query: { directory: "/path/to/project" },
-})
+const currentProject = await client.project.current()
 ```
 
 ---
@@ -194,9 +187,7 @@ const currentProject = await client.project.current({
 
 ```javascript
 // Get current path information
-const pathInfo = await client.path.get({
-  query: { directory: "/path/to/project" },
-})
+const pathInfo = await client.path.get()
 ```
 
 ---
@@ -213,13 +204,9 @@ const pathInfo = await client.path.get({
 #### Examples
 
 ```javascript
-const config = await client.config.get({
-  query: { directory: "/path/to/project" },
-})
+const config = await client.config.get()
 
-const { providers, default: defaults } = await client.config.providers({
-  query: { directory: "/path/to/project" },
-})
+const { providers, default: defaults } = await client.config.providers()
 ```
 
 ---
@@ -256,12 +243,9 @@ const { providers, default: defaults } = await client.config.providers({
 // Create and manage sessions
 const session = await client.session.create({
   body: { title: "My session" },
-  query: { directory: "/path/to/project" },
 })
 
-const sessions = await client.session.list({
-  query: { directory: "/path/to/project" },
-})
+const sessions = await client.session.list()
 
 // Send a prompt message
 const result = await client.session.prompt({
@@ -270,7 +254,6 @@ const result = await client.session.prompt({
     model: { providerID: "anthropic", modelID: "claude-3-5-sonnet-20241022" },
     parts: [{ type: "text", text: "Hello!" }],
   },
-  query: { directory: "/path/to/project" },
 })
 ```
 
@@ -297,11 +280,11 @@ const textResults = await client.find.text({
 })
 
 const files = await client.find.files({
-  query: { query: "*.ts", directory: "/path/to/project" },
+  query: { query: "*.ts" },
 })
 
 const content = await client.file.read({
-  query: { path: "src/index.ts", directory: "/path/to/project" },
+  query: { path: "src/index.ts" },
 })
 ```
 
@@ -352,7 +335,6 @@ await client.tui.showToast({
 await client.auth.set({
   path: { id: "anthropic" },
   body: { type: "api", key: "your-api-key" },
-  query: { directory: "/path/to/project" },
 })
 ```
 
@@ -370,9 +352,7 @@ await client.auth.set({
 
 ```javascript
 // Listen to real-time events
-const events = await client.event.subscribe({
-  query: { directory: "/path/to/project" },
-})
+const events = await client.event.subscribe()
 for await (const event of events.stream) {
   console.log("Event:", event.type, event.properties)
 }
