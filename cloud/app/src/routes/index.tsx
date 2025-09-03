@@ -24,6 +24,8 @@ function CopyStatus() {
 const isLoggedIn = query(async () => {
   "use server"
   const actor = await getActor()
+  // TODO
+  console.log(actor)
   if (actor.type === "account") {
     const workspaces = await withActor(() => Account.workspaces())
     return workspaces[0].id
@@ -67,7 +69,9 @@ export default function Home() {
 
         <section data-component="cta">
           <div data-slot="left">
-            <a target="_self" href="/docs">Get Started</a>
+            <a target="_self" href="/docs">
+              Get Started
+            </a>
           </div>
           <div data-slot="right">
             <button data-copy data-slot="command">
@@ -84,14 +88,9 @@ export default function Home() {
 
         <section data-component="zen">
           <a href="/docs/zen">opencode zen</a>
-          <span data-slot="description">
-            , a curated list of models provided by opencode
-          </span>
+          <span data-slot="description">, a curated list of models provided by opencode</span>
           <span data-slot="divider">&nbsp;/&nbsp;</span>
-          <a
-            href="/auth"
-            target="_self"
-          >
+          <a href="/auth" target="_self">
             {auth() ? "Dashboard" : "Sign in"}
           </a>
         </section>
