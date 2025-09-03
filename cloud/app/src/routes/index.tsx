@@ -64,7 +64,7 @@ export default function Home() {
 
         <section data-component="cta">
           <div data-slot="left">
-            <a target="_self" href="/docs">
+            <a href="/docs">
               Get Started
             </a>
           </div>
@@ -82,7 +82,7 @@ export default function Home() {
         </section>
 
         <section data-component="zen">
-          <a target="_self" href="/docs/zen">
+          <a href="/docs/zen">
             opencode zen
           </a>
           <span data-slot="description">, a curated list of models provided by opencode</span>
@@ -94,7 +94,7 @@ export default function Home() {
               </A>
             </Match>
             <Match when={true}>
-              <a target="_self" href="/auth/authorize">Sign in</a>
+              <a href="/auth/authorize">Sign in</a>
             </Match>
           </Switch>
         </section>
@@ -166,7 +166,7 @@ export default function Home() {
           <div data-slot="left">
             <figure>
               <figcaption>opencode TUI with the tokyonight theme</figcaption>
-              <a target="_self" href="/docs/cli">
+              <a href="/docs/cli">
                 <img src={IMG_SPLASH} alt="opencode TUI with tokyonight theme" />
               </a>
             </figure>
@@ -175,7 +175,7 @@ export default function Home() {
             <div data-slot="row1">
               <figure>
                 <figcaption>opencode in VS Code</figcaption>
-                <a target="_self" href="/docs/ide">
+                <a href="/docs/ide">
                   <img src={IMG_VSCODE} alt="opencode in VS Code" />
                 </a>
               </figure>
@@ -183,7 +183,7 @@ export default function Home() {
             <div data-slot="row2">
               <figure>
                 <figcaption>opencode in GitHub</figcaption>
-                <a target="_self" href="/docs/github">
+                <a href="/docs/github">
                   <img src={IMG_GITHUB} alt="opencode in GitHub" />
                 </a>
               </figure>
