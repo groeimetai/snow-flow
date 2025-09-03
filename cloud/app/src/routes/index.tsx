@@ -166,7 +166,7 @@ export default function Home() {
           <div data-slot="left">
             <figure>
               <figcaption>opencode TUI with the tokyonight theme</figcaption>
-              <a href="/docs/cli">
+              <a target="_self" href="/docs/cli">
                 <img src={IMG_SPLASH} alt="opencode TUI with tokyonight theme" />
               </a>
             </figure>
@@ -175,7 +175,7 @@ export default function Home() {
             <div data-slot="row1">
               <figure>
                 <figcaption>opencode in VS Code</figcaption>
-                <a href="/docs/ide">
+                <a target="_self" href="/docs/ide">
                   <img src={IMG_VSCODE} alt="opencode in VS Code" />
                 </a>
               </figure>
@@ -183,7 +183,7 @@ export default function Home() {
             <div data-slot="row2">
               <figure>
                 <figcaption>opencode in GitHub</figcaption>
-                <a href="/docs/github">
+                <a target="_self" href="/docs/github">
                   <img src={IMG_GITHUB} alt="opencode in GitHub" />
                 </a>
               </figure>
