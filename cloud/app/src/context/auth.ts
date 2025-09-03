@@ -22,7 +22,11 @@ export const getActor = async (): Promise<Actor.Info> => {
   const auth = await useAuthSession()
   const splits = url.pathname.split("/").filter(Boolean)
   if (splits[0] !== "workspace") {
+    // TODO
+    console.log("before current")
+    console.log(`current: ${auth.data.current}`)
     const current = auth.data.account[auth.data.current ?? ""]
+    console.log("after current")
     if (current) {
       return {
         type: "account",
