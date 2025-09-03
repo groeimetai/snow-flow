@@ -81,6 +81,7 @@ export default function Home() {
           </div>
         </section>
 
+        {/*
         <section data-component="zen">
           <a href="/docs/zen">
             opencode zen
@@ -98,6 +99,7 @@ export default function Home() {
             </Match>
           </Switch>
         </section>
+        */ }
 
         <section data-component="features">
           <ul data-slot="list">
