@@ -1,6 +1,4 @@
 import "./index.css"
-import "./workspace.css"
-import "./workspace/[id].css"
 import { Title } from "@solidjs/meta"
 import { Match, onCleanup, onMount, Switch } from "solid-js"
 import logoLight from "../asset/logo-ornate-light.svg"

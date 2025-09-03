@@ -1,3 +1,4 @@
+import "./workspace.css"
 import { useAuthSession } from "~/context/auth.session"
 import { IconLogo } from "../component/icon"
 import { withActor } from "~/context/auth.withActor"
@@ -28,6 +29,7 @@ const logout = action(async () => {
       event!.locals.actor = undefined
       return val
     })
+  throw redirect("/")
 })
 
 export default function WorkspaceLayout(props: RouteSectionProps) {
@@ -43,7 +45,7 @@ export default function WorkspaceLayout(props: RouteSectionProps) {
         </div>
         <div data-slot="header-actions">
           <span>{userInfo()?.user.email}</span>
-          <form onSubmit={() => (location.href = "/")} action={logout} method="post">
+          <form action={logout} method="post">
             <button type="submit" formaction={logout}>
               Logout
             </button>

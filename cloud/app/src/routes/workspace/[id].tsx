@@ -1,3 +1,4 @@
+import "./[id].css"
 import { Billing } from "@opencode/cloud-core/billing.js"
 import { Key } from "@opencode/cloud-core/key.js"
 import { action, createAsync, query, useAction, useSubmission, json, useParams } from "@solidjs/router"
