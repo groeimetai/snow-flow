@@ -34,7 +34,7 @@ export const api = new sst.cloudflare.Worker("Api", {
 })
 
 export const web = new sst.cloudflare.x.Astro("Web", {
-  domain,
+  domain: "docs." + domain,
   path: "packages/web",
   environment: {
     // For astro config
