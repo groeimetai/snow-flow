@@ -1,5 +1,5 @@
 import { Title } from "@solidjs/meta"
-import { onCleanup, onMount } from "solid-js"
+import { Match, onCleanup, onMount, Switch } from "solid-js"
 import "./index.css"
 import logoLight from "../asset/logo-ornate-light.svg"
 import logoDark from "../asset/logo-ornate-dark.svg"
@@ -87,9 +87,16 @@ export default function Home() {
           </a>
           <span data-slot="description">, a curated list of models provided by opencode</span>
           <span data-slot="divider">&nbsp;/&nbsp;</span>
-          <A href={workspace() ? "/workspace/" + workspace() : "/auth/authorize"}>
-            {workspace() ? "Dashboard" : "Sign in"}
-          </A>
+          <Switch>
+            <Match when={workspace()}>
+              <A href={"/workspace/" + workspace()}>
+                Dashboard
+              </A>
+            </Match>
+            <Match when={true}>
+              <a target="_self" href="/auth/authorize">Sign in</a>
+            </Match>
+          </Switch>
         </section>
 
         <section data-component="features">
