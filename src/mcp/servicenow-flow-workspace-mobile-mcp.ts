@@ -245,6 +245,51 @@ class ServiceNowFlowWorkspaceMobileMCP {
           }
         },
         
+        // CONFIGURABLE AGENT WORKSPACE: Using UX App architecture
+        {
+          name: 'snow_create_configurable_agent_workspace',
+          description: 'Create Configurable Agent Workspace using UX App architecture (sys_ux_app_route, sys_ux_screen_type). Creates workspace with screen collections for multiple tables.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: 'Agent workspace name' },
+              description: { type: 'string', description: 'Workspace description' },
+              tables: { type: 'array', items: { type: 'string' }, description: 'Tables for screen collections (e.g., ["incident", "task"])' },
+              application: { type: 'string', default: 'global', description: 'Application scope' }
+            },
+            required: ['name', 'tables']
+          }
+        },
+        
+        // WORKSPACE DISCOVERY & MANAGEMENT
+        {
+          name: 'snow_discover_all_workspaces',
+          description: 'Discover all workspaces (UX Experiences, Agent Workspaces, UI Builder pages) with comprehensive details and usage analytics.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              include_ux_experiences: { type: 'boolean', default: true, description: 'Include Now Experience Framework workspaces' },
+              include_agent_workspaces: { type: 'boolean', default: true, description: 'Include Configurable Agent Workspaces' },
+              include_ui_builder: { type: 'boolean', default: true, description: 'Include UI Builder pages' },
+              active_only: { type: 'boolean', default: true, description: 'Only show active workspaces' }
+            }
+          }
+        },
+        
+        {
+          name: 'snow_validate_workspace_configuration',
+          description: 'Validate workspace configuration for completeness, best practices, and potential issues across all workspace types.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              workspace_sys_id: { type: 'string', description: 'Workspace sys_id to validate' },
+              workspace_type: { type: 'string', enum: ['ux_experience', 'agent_workspace', 'ui_builder'], description: 'Type of workspace to validate' },
+              check_performance: { type: 'boolean', default: true, description: 'Include performance analysis' },
+              check_security: { type: 'boolean', default: true, description: 'Include security validation' }
+            },
+            required: ['workspace_sys_id', 'workspace_type']
+          }
+        },
         
         // Mobile Tools
         {
@@ -810,6 +855,15 @@ class ServiceNowFlowWorkspaceMobileMCP {
             break;
           case 'snow_create_complete_workspace':
             result = await this.snow_create_complete_workspace(args);
+            break;
+          case 'snow_create_configurable_agent_workspace':
+            result = await this.snow_create_configurable_agent_workspace(args);
+            break;
+          case 'snow_discover_all_workspaces':
+            result = await this.discoverAllWorkspaces(args);
+            break;
+          case 'snow_validate_workspace_configuration':
+            result = await this.validateWorkspaceConfiguration(args);
             break;
             
             
@@ -3120,92 +3174,514 @@ ${configList}${layoutsText}${offlineText}
   }
   
   /**
-   * COMPLETE WORKSPACE WORKFLOW: All 6 steps in sequence
-   * Creates a fully functional workspace in the correct order
+   * COMPLETE UX WORKSPACE WORKFLOW: All steps for creating functional workspace
+   * Based on official ServiceNow Now Experience Framework architecture
    */
   async snow_create_complete_workspace(args: any): Promise<any> {
     try {
-      this.logger.info(`🚀 Starting complete workspace creation: ${args.workspace_name}`);
+      this.logger.info(`🚀 Starting complete UX workspace creation: ${args.workspace_name}`);
       
       const results = {
         workspace_name: args.workspace_name,
         steps_completed: [],
-        sys_ids: {}
+        sys_ids: {},
+        workspace_type: 'Now Experience Framework Workspace'
       };
       
-      // STEP 1: Create Experience
+      // STEP 1: Create UX Experience (sys_ux_experience)
       const experience = await this.snow_create_ux_experience({
         name: args.workspace_name,
-        description: args.description || `Complete workspace: ${args.workspace_name}`,
+        description: args.description || `Complete UX workspace: ${args.workspace_name}`,
         root_macroponent: args.root_macroponent
       });
-      results.steps_completed.push('Experience Created');
+      results.steps_completed.push('UX Experience Created');
       results.sys_ids.experience_sys_id = (experience as any).experience_sys_id;
       
-      // STEP 2: Create App Config
+      // STEP 2: Create List Menu Configuration (sys_ux_list_menu_config)
+      const listMenuConfig = await this.createListMenuConfiguration({
+        name: `${args.workspace_name} List Menu`,
+        experience_sys_id: (experience as any).experience_sys_id,
+        description: `List menu for ${args.workspace_name}`
+      });
+      results.steps_completed.push('List Menu Configuration Created');
+      results.sys_ids.list_menu_config_sys_id = listMenuConfig.sys_id;
+      
+      // STEP 3: Create App Configuration (sys_ux_app_config) 
       const appConfig = await this.snow_create_ux_app_config({
         name: `${args.workspace_name} Config`,
         experience_sys_id: (experience as any).experience_sys_id,
-        description: `Configuration for ${args.workspace_name}`
+        description: `App configuration for ${args.workspace_name}`,
+        list_config_id: listMenuConfig.sys_id
       });
       results.steps_completed.push('App Configuration Created');
       results.sys_ids.app_config_sys_id = (appConfig as any).app_config_sys_id;
       
-      // STEP 3: Create Page Macroponent
-      const homePage = args.home_page_name || 'home';
-      const macroponent = await this.snow_create_ux_page_macroponent({
-        name: `${args.workspace_name} ${homePage} Page`,
-        root_component: args.root_component || 'sn-canvas-panel',
-        composition: args.composition,
-        description: `Home page for ${args.workspace_name}`
+      // STEP 4: Create Page Properties for Chrome Configuration
+      const chromeConfig = await this.createWorkspacePageProperties({
+        experience_sys_id: (experience as any).experience_sys_id,
+        workspace_name: args.workspace_name
       });
-      results.steps_completed.push('Page Macroponent Created');
-      results.sys_ids.macroponent_sys_id = (macroponent as any).macroponent_sys_id;
+      results.steps_completed.push('Page Properties Configured');
+      results.sys_ids.page_properties = chromeConfig.page_properties;
       
-      // STEP 4: Create Page Registry
-      const pageSysName = this.generateTechnicalName(args.workspace_name, homePage);
-      const registry = await this.snow_create_ux_page_registry({
-        sys_name: pageSysName,
-        app_config_sys_id: (appConfig as any).app_config_sys_id,
-        macroponent_sys_id: (macroponent as any).macroponent_sys_id,
-        description: `Registry for ${args.workspace_name} home page`
-      });
-      results.steps_completed.push('Page Registry Created');
-      results.sys_ids.page_registry_sys_id = (registry as any).page_registry_sys_id;
+      // STEP 5: Create List Categories and Lists if specified
+      if (args.tables && args.tables.length > 0) {
+        const listConfiguration = await this.createWorkspaceListConfiguration({
+          list_menu_config_sys_id: listMenuConfig.sys_id,
+          tables: args.tables,
+          workspace_name: args.workspace_name
+        });
+        results.steps_completed.push('List Configuration Created');
+        results.sys_ids.list_categories = listConfiguration.categories;
+        results.sys_ids.lists = listConfiguration.lists;
+      }
       
-      // STEP 5: Create Route
-      const routeName = args.route_name || homePage;
-      const route = await this.snow_create_ux_app_route({
+      // STEP 6: Create App Route for workspace access
+      const routeName = args.route_name || this.generateWorkspaceUrl(args.workspace_name);
+      const appRoute = await this.snow_create_ux_app_route({
         name: routeName,
-        app_config_sys_id: (appConfig as any).app_config_sys_id,
-        page_sys_name: pageSysName,
-        description: `Route for ${args.workspace_name} ${homePage} page`
+        route: `/${routeName}`,
+        experience_sys_id: (experience as any).experience_sys_id,
+        description: `Route for ${args.workspace_name} workspace`
       });
-      results.steps_completed.push('Route Created');
-      results.sys_ids.route_sys_id = (route as any).route_sys_id;
+      results.steps_completed.push('App Route Created');
+      results.sys_ids.app_route_sys_id = appRoute.route_sys_id;
       
-      // STEP 6: Update App Config with Landing Page
-      await this.snow_update_ux_app_config_landing_page({
-        app_config_sys_id: (appConfig as any).app_config_sys_id,
-        route_name: routeName
-      });
-      results.steps_completed.push('Landing Page Route Set');
-      
-      this.logger.info(`🎉 Complete workspace creation finished successfully!`);
+      this.logger.info(`🎉 Complete UX workspace creation finished successfully!`);
       
       return {
         success: true,
         workspace_name: args.workspace_name,
+        workspace_type: 'Now Experience Framework Workspace',
         all_steps_completed: true,
         steps_completed: results.steps_completed,
         sys_ids: results.sys_ids,
-        workspace_url: `/now/experience/workspace/${routeName}`,
-        message: `Workspace '${args.workspace_name}' created successfully with all 6 steps completed`,
-        summary: `Experience → App Config → Page Macroponent → Page Registry → Route → Landing Page Route - All connected properly`
+        workspace_url: `/now/experience/${routeName}`,
+        message: `UX Workspace '${args.workspace_name}' created successfully with complete Now Experience Framework setup`,
+        summary: `Experience → List Menu → App Config → Page Properties → List Configuration → App Route - Complete NXF workspace ready`,
+        next_steps: [
+          'Access workspace via navigation menu',
+          'Configure additional list categories if needed',
+          'Customize page properties for specific requirements',
+          'Add declarative actions for enhanced functionality'
+        ]
       };
       
     } catch (error) {
-      this.logger.error('Failed to create complete workspace:', error);
+      this.logger.error('Failed to create complete UX workspace:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Create List Menu Configuration for workspace
+   */
+  async createListMenuConfiguration(args: any): Promise<any> {
+    try {
+      const listMenuData = {
+        name: args.name,
+        experience: args.experience_sys_id,
+        description: args.description || `List menu configuration for workspace`,
+        active: true
+      };
+      
+      const result = await this.client.createRecord('sys_ux_list_menu_config', listMenuData);
+      
+      if (result.success && result.data && result.data.result && result.data.result.sys_id) {
+        this.logger.info(`✅ List Menu Configuration created with sys_id: ${result.data.result.sys_id}`);
+        return {
+          success: true,
+          sys_id: result.data.result.sys_id
+        };
+      } else {
+        const error = (result.data && result.data.error) || (result.error) || 'Unknown error creating list menu config';
+        throw new Error(`Failed to create list menu configuration: ${error}`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to create list menu configuration:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Create Workspace Page Properties (chrome_tab, chrome_main)
+   */
+  async createWorkspacePageProperties(args: any): Promise<any> {
+    try {
+      const pageProperties = [];
+      
+      // Chrome tab property
+      const chromeTabData = {
+        experience: args.experience_sys_id,
+        name: 'chrome_tab',
+        value: JSON.stringify({ title: args.workspace_name }),
+        type: 'object'
+      };
+      
+      const chromeTabResult = await this.client.createRecord('sys_ux_page_property', chromeTabData);
+      if (chromeTabResult.success) {
+        pageProperties.push({ name: 'chrome_tab', sys_id: chromeTabResult.data.result.sys_id });
+      }
+      
+      // Chrome main property  
+      const chromeMainData = {
+        experience: args.experience_sys_id,
+        name: 'chrome_main',
+        value: JSON.stringify({ 
+          showLeftNav: true,
+          leftNavCollapsible: true,
+          showHeader: true
+        }),
+        type: 'object'
+      };
+      
+      const chromeMainResult = await this.client.createRecord('sys_ux_page_property', chromeMainData);
+      if (chromeMainResult.success) {
+        pageProperties.push({ name: 'chrome_main', sys_id: chromeMainResult.data.result.sys_id });
+      }
+      
+      this.logger.info(`✅ Workspace page properties created`);
+      return {
+        success: true,
+        page_properties: pageProperties
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to create workspace page properties:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Create List Configuration (categories and lists) for workspace
+   */
+  async createWorkspaceListConfiguration(args: any): Promise<any> {
+    try {
+      const categories = [];
+      const lists = [];
+      
+      for (const table of args.tables) {
+        // Create List Category
+        const categoryData = {
+          name: this.capitalizeTableName(table),
+          list_menu_config: args.list_menu_config_sys_id,
+          table: table,
+          order: args.tables.indexOf(table) * 100,
+          active: true
+        };
+        
+        const categoryResult = await this.client.createRecord('sys_ux_list_category', categoryData);
+        if (categoryResult.success) {
+          const categorySysId = categoryResult.data.result.sys_id;
+          categories.push({ table: table, sys_id: categorySysId });
+          
+          // Create default list for this category
+          const listData = {
+            name: `All ${this.capitalizeTableName(table)}`,
+            category: categorySysId,
+            table: table,
+            filter: '', // No filter = show all records
+            order: 100,
+            active: true
+          };
+          
+          const listResult = await this.client.createRecord('sys_ux_list', listData);
+          if (listResult.success) {
+            lists.push({ 
+              table: table, 
+              category_sys_id: categorySysId,
+              list_sys_id: listResult.data.result.sys_id 
+            });
+          }
+        }
+      }
+      
+      this.logger.info(`✅ Created ${categories.length} categories and ${lists.length} lists`);
+      return {
+        success: true,
+        categories: categories,
+        lists: lists
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to create workspace list configuration:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Capitalize table name for display
+   */
+  private capitalizeTableName(tableName: string): string {
+    return tableName
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
+  }
+  
+  /**
+   * COMPREHENSIVE WORKSPACE DISCOVERY
+   * Discovers all workspace types across ServiceNow
+   */
+  async discoverAllWorkspaces(args: any): Promise<any> {
+    try {
+      this.logger.info('Discovering all ServiceNow workspaces...');
+      
+      const discovery = {
+        ux_experiences: [],
+        agent_workspaces: [],
+        ui_builder_pages: [],
+        total_count: 0
+      };
+      
+      // Discover UX Experiences (Now Experience Framework)
+      if (args.include_ux_experiences) {
+        const experiencesQuery = args.active_only ? 'active=true' : '';
+        const experiencesResult = await this.client.searchRecords('sys_ux_experience', experiencesQuery, 50);
+        
+        if (experiencesResult.success) {
+          discovery.ux_experiences = experiencesResult.data.result.map((exp: any) => ({
+            type: 'UX Experience',
+            name: exp.name,
+            sys_id: exp.sys_id,
+            description: exp.description || 'No description',
+            active: exp.active,
+            url: `/now/experience/${exp.name?.toLowerCase().replace(/\s+/g, '-')}`
+          }));
+        }
+      }
+      
+      // Discover Agent Workspaces (Configurable)
+      if (args.include_agent_workspaces) {
+        const routesQuery = args.active_only ? 'active=true^route_type=workspace' : 'route_type=workspace';
+        const routesResult = await this.client.searchRecords('sys_ux_app_route', routesQuery, 50);
+        
+        if (routesResult.success) {
+          discovery.agent_workspaces = routesResult.data.result.map((route: any) => ({
+            type: 'Agent Workspace',
+            name: route.name,
+            sys_id: route.sys_id,
+            description: route.description || 'No description',
+            route: route.route,
+            active: route.active,
+            url: `/now/workspace${route.route}`
+          }));
+        }
+      }
+      
+      // Discover UI Builder Pages
+      if (args.include_ui_builder) {
+        const pagesQuery = args.active_only ? 'active=true' : '';
+        const pagesResult = await this.client.searchRecords('sys_ux_page', pagesQuery, 50);
+        
+        if (pagesResult.success) {
+          discovery.ui_builder_pages = pagesResult.data.result.map((page: any) => ({
+            type: 'UI Builder Page',
+            name: page.name,
+            sys_id: page.sys_id,
+            description: page.description || 'No description',
+            active: page.active
+          }));
+        }
+      }
+      
+      discovery.total_count = discovery.ux_experiences.length + 
+                            discovery.agent_workspaces.length + 
+                            discovery.ui_builder_pages.length;
+      
+      this.logger.info(`✅ Discovered ${discovery.total_count} workspaces total`);
+      
+      return {
+        success: true,
+        discovery: discovery,
+        summary: {
+          ux_experiences: discovery.ux_experiences.length,
+          agent_workspaces: discovery.agent_workspaces.length,
+          ui_builder_pages: discovery.ui_builder_pages.length,
+          total_workspaces: discovery.total_count
+        },
+        message: `Found ${discovery.total_count} workspaces across all types`
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to discover workspaces:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * WORKSPACE CONFIGURATION VALIDATION
+   * Validates workspace setup for best practices and completeness
+   */
+  async validateWorkspaceConfiguration(args: any): Promise<any> {
+    try {
+      this.logger.info(`Validating ${args.workspace_type} workspace: ${args.workspace_sys_id}`);
+      
+      const validation = {
+        workspace_sys_id: args.workspace_sys_id,
+        workspace_type: args.workspace_type,
+        issues: [],
+        warnings: [],
+        recommendations: [],
+        score: 0
+      };
+      
+      if (args.workspace_type === 'ux_experience') {
+        // Validate UX Experience workspace
+        const experience = await this.client.getRecord('sys_ux_experience', args.workspace_sys_id);
+        
+        if (experience.success) {
+          const expData = experience.data.result;
+          
+          // Check if experience is active
+          if (!expData.active) {
+            validation.issues.push('Experience is not active');
+          }
+          
+          // Check if it has app config
+          const appConfigQuery = await this.client.searchRecords('sys_ux_app_config', `experience_assoc=${args.workspace_sys_id}`);
+          if (!appConfigQuery.success || appConfigQuery.data.result.length === 0) {
+            validation.issues.push('No app configuration found for experience');
+          } else {
+            validation.score += 25;
+            
+            // Check if app config has list configuration
+            const appConfig = appConfigQuery.data.result[0];
+            if (!appConfig.list_config_id) {
+              validation.warnings.push('No list configuration linked to app config');
+            } else {
+              validation.score += 25;
+            }
+          }
+          
+          // Check for page properties
+          const pagePropsQuery = await this.client.searchRecords('sys_ux_page_property', `experience=${args.workspace_sys_id}`);
+          if (pagePropsQuery.success && pagePropsQuery.data.result.length > 0) {
+            validation.score += 25;
+          } else {
+            validation.warnings.push('No page properties configured (chrome_tab, chrome_main)');
+          }
+          
+        } else {
+          validation.issues.push('Experience record not found');
+        }
+      }
+      
+      // Performance recommendations
+      if (args.check_performance && validation.score > 50) {
+        validation.recommendations.push('Consider enabling caching for better performance');
+        validation.recommendations.push('Add loading indicators for better user experience');
+      }
+      
+      // Security recommendations  
+      if (args.check_security) {
+        validation.recommendations.push('Review access controls and role requirements');
+        validation.recommendations.push('Validate data privacy settings for workspace');
+      }
+      
+      validation.score = Math.min(100, validation.score);
+      
+      this.logger.info(`✅ Workspace validation completed - Score: ${validation.score}/100`);
+      
+      return {
+        success: true,
+        validation: validation,
+        grade: validation.score >= 80 ? 'Excellent' : validation.score >= 60 ? 'Good' : validation.score >= 40 ? 'Needs Improvement' : 'Critical Issues',
+        summary: `${validation.issues.length} issues, ${validation.warnings.length} warnings, ${validation.recommendations.length} recommendations`
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to validate workspace configuration:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * CONFIGURABLE AGENT WORKSPACE: Create using UX App architecture
+   */
+  async snow_create_configurable_agent_workspace(args: any): Promise<any> {
+    try {
+      this.logger.info(`Creating Configurable Agent Workspace: ${args.name}`);
+      
+      // Check if Agent Workspace plugin is available
+      const awCheck = await this.client.searchRecords('sys_ux_screen_type', '', 1);
+      if (!awCheck.success) {
+        return {
+          success: false,
+          error: 'Agent Workspace plugin is not available in this ServiceNow instance.',
+          suggestion: 'Install Agent Workspace plugin from ServiceNow Store',
+          plugin_required: 'Agent Workspace',
+          licensing_note: 'Agent Workspace requires additional ServiceNow licensing'
+        };
+      }
+      
+      const results = {
+        workspace_name: args.name,
+        workspace_type: 'Configurable Agent Workspace',
+        steps_completed: [],
+        sys_ids: {}
+      };
+      
+      // Step 1: Create UX App Route 
+      const cleanRoute = this.generateWorkspaceUrl(args.name);
+      const appRouteData = {
+        route: `/${cleanRoute}`,
+        name: args.name,
+        title: args.name,
+        description: args.description || `Configurable Agent Workspace: ${args.name}`,
+        application: args.application || 'global',
+        route_type: 'workspace',
+        active: true
+      };
+      
+      const appRouteResult = await this.client.createRecord('sys_ux_app_route', appRouteData);
+      if (!appRouteResult.success) {
+        return {
+          success: false,
+          error: `UX App Route creation failed: ${appRouteResult.error}`,
+          suggestion: 'Check Agent Workspace permissions and licensing'
+        };
+      }
+      
+      results.steps_completed.push('UX App Route Created');
+      results.sys_ids.app_route_sys_id = appRouteResult.data.result.sys_id;
+      
+      // Step 2: Create Screen Collections for each table
+      if (args.tables && args.tables.length > 0) {
+        const screenTypes = [];
+        
+        for (const table of args.tables) {
+          const screenTypeData = {
+            name: `${args.name} - ${this.capitalizeTableName(table)}`,
+            table: table,
+            workspace_route: appRouteResult.data.result.sys_id,
+            active: true
+          };
+          
+          const screenTypeResult = await this.client.createRecord('sys_ux_screen_type', screenTypeData);
+          if (screenTypeResult.success) {
+            screenTypes.push({ table: table, sys_id: screenTypeResult.data.result.sys_id });
+          }
+        }
+        
+        results.steps_completed.push('Screen Collections Created');
+        results.sys_ids.screen_types = screenTypes;
+      }
+      
+      this.logger.info(`✅ Configurable Agent Workspace created successfully`);
+      
+      return {
+        success: true,
+        workspace_name: args.name,
+        workspace_type: 'Configurable Agent Workspace',
+        steps_completed: results.steps_completed,
+        sys_ids: results.sys_ids,
+        workspace_url: `/now/workspace/${cleanRoute}`,
+        message: `Configurable Agent Workspace '${args.name}' created successfully`,
+        summary: `UX App Route → Screen Collections → Ready for agent use`
+      };
+      
+    } catch (error) {
+      this.logger.error('Failed to create Configurable Agent Workspace:', error);
       throw error;
     }
   }

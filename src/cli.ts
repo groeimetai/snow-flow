@@ -421,7 +421,7 @@ program
         }
       }
       
-      console.log(chalk.blue('\n🚀 Starting Claude Code with 240+ ServiceNow tools including complete UX Workspace creation...'));
+      console.log(chalk.blue('\n🚀 Starting Claude Code with 245+ ServiceNow tools including complete UX Workspace creation...'));
       
       // Try to execute Claude Code directly with the prompt
       const success = await executeClaudeCode(orchestrationPrompt);
