@@ -6,14 +6,26 @@
 
 **❌ INFINITE LOOP (PROHIBITED):**
 ```
-Task("Create configurable workspace")  
-Task("Create configurable workspace")  
-Task("Create configurable workspace")  // ← CAUSES INFINITE LOOP!
+Task("UI Builder Tools Tester", "Test UI Builder tools");
+Task("UI Builder Tools Tester", "Test UI Builder tools");  // ← DUPLICATE AGENT TYPE!
+Task("Workspace Tools Tester", "Test workspace tools");
+Task("Workspace Tools Tester", "Test workspace tools");  // ← CAUSES INFINITE LOOP!
+
+// This pattern causes MCP server spam:
+// • Task(UI Builder Tools Tester) → snow_validate_uib_page_structure (repeated 100x)
+// • Task(Workspace Tools Tester) → snow_execute_script_with_output (repeated 100x)
 ```
 
 **✅ CORRECT (Single Agent):**
-```  
-Task("workspace-specialist", "Create ONE Configurable Agent Workspace named 'IT Support Hub' using snow_create_workspace with UX App architecture. Verify creation and store sys_id in Memory.")
+```
+// UNIQUE agent names prevent loops:
+Task("workspace-architect", "Create ONE UX workspace for IT support using snow_create_complete_workspace. Store all sys_ids in Memory.");
+Task("ui-specialist", "Design UI components AFTER workspace-architect completes. Use Memory to get workspace sys_ids.");
+Task("testing-validator", "Test workspace functionality AFTER ui-specialist completes. No duplicate testing!");
+
+// NEVER use generic names like:
+// Task("Tester", ...) - TOO GENERIC, CAUSES LOOPS!
+// Task("UI Builder Tools Tester", ...) - EXACTLY what caused the infinite loop!
 ```
 
 **🎯 Anti-Loop Rules:**

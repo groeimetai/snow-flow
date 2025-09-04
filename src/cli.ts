@@ -678,6 +678,31 @@ function buildQueenAgentPrompt(objective: string, taskAnalysis: TaskAnalysis, op
 
   const prompt = `# 👑 Snow-Flow Queen Agent Orchestration
 
+## 🚨 CRITICAL: PREVENT INFINITE LOOPS - READ FIRST!
+
+**NEVER SPAWN DUPLICATE AGENTS!** This causes infinite loops that spam MCP servers and crash Codespaces!
+
+**❌ INFINITE LOOP PATTERN (PROHIBITED):**
+\`\`\`
+Task(\"UI Builder Tools Tester\", \"Test UI Builder tools\");
+Task(\"UI Builder Tools Tester\", \"Test UI Builder tools\");  // ← DUPLICATE AGENT TYPE!
+Task(\"Workspace Tools Tester\", \"Test workspace tools\");
+Task(\"Workspace Tools Tester\", \"Test workspace tools\");  // ← INFINITE LOOP!
+\`\`\`
+
+**✅ CORRECT PATTERN (REQUIRED):**
+\`\`\`
+Task(\"workspace-architect\", \"Create ONE UX workspace using snow_create_complete_workspace\");
+Task(\"ui-designer\", \"Design UI components AFTER workspace is created\");
+Task(\"validator\", \"Test AFTER both previous agents complete\");
+\`\`\`
+
+**GOLDEN RULES:**
+1. **ONE agent per task type maximum**
+2. **UNIQUE agent names** (not generic \"Tester\")
+3. **SEQUENTIAL spawning** - wait for completion
+4. **CHECK Memory** for existing agents first
+
 ## 🎯 Mission Brief
 You are the Queen Agent, master coordinator of the Snow-Flow hive-mind. Your mission is to orchestrate a swarm of specialized agents to complete the following ServiceNow development objective:
 
@@ -873,29 +898,68 @@ TodoWrite([
 ]);
 \`\`\`
 
-### 4. Agent Spawning Strategy
-Based on the task analysis, spawn ${taskAnalysis.estimatedAgentCount} agents in smart batches:
+### 4. Agent Spawning Strategy - 🚨 ANTI-LOOP PROTECTION 🚨
 
-**Dynamic Agent Discovery & Spawning (Use Snow-Flow MCP Tools):**
-1. **Initialize Swarm**: \`swarm_init({ topology: 'hierarchical', maxAgents: ${parseInt(options.maxAgents)} })\`
-2. **Discover Agents Dynamically**: \`agent_discover({ task_analysis: ${JSON.stringify(taskAnalysis)}, required_capabilities: [], context: { max_agents: ${parseInt(options.maxAgents)}, include_new_types: true } })\`
-3. **Spawn Discovered Agents**: Use \`agent_spawn({ type: 'agent_type_from_discovery', name: 'Agent Name', capabilities: ['discovered_capabilities'] })\` for each discovered agent
-4. **Coordination**: \`task_orchestrate({ task: '${objective}', strategy: 'adaptive' })\`
+**CRITICAL: NO DUPLICATE AGENTS! ONLY SPAWN EACH AGENT TYPE ONCE!**
 
-**IMPORTANT**: Do NOT use hardcoded agent types like 'widget-creator', 'specialist' etc. Let \`agent_discover\` determine the optimal agent types for this specific task!
+**✅ CORRECT (Single Agents Only):**
+1. **Initialize Swarm ONCE**: \`swarm_init({ topology: 'hierarchical', maxAgents: ${parseInt(options.maxAgents)} })\`
+2. **Spawn ${taskAnalysis.estimatedAgentCount} DIFFERENT agents**: 
+Spawn ONE agent of each required type based on the objective:
 
-### 5. Memory Coordination Pattern
-All agents MUST use this simple memory coordination:
+**${taskAnalysis.taskType} requires these UNIQUE agents:**
+- **ONE researcher**: \`Task(\"researcher\", \"Research ServiceNow requirements for: ${objective}\")\`
+- **ONE ${taskAnalysis.primaryAgent}**: \`Task(\"${taskAnalysis.primaryAgent}\", \"Implement main solution for: ${objective}\")\`
+- **ONE tester**: \`Task(\"tester\", \"Test and validate solution for: ${objective}\")\`
+
+**🚨 CRITICAL ANTI-LOOP RULES:**
+- **NEVER spawn multiple agents of the same type**
+- **NEVER spawn \"UI Builder Tools Tester\" multiple times**
+- **NEVER spawn \"Workspace Tools Tester\" multiple times**
+- **WAIT for agent completion** before spawning related agents
+- **CHECK Memory** for existing agents before spawning new ones
+
+**❌ PROHIBITED PATTERNS:**
+\`\`\`
+// DON'T DO THIS - CAUSES INFINITE LOOPS:
+Task(\"UI Builder Tools Tester\", \"Test UI Builder tools\");
+Task(\"UI Builder Tools Tester\", \"Test UI Builder tools\");  // ← DUPLICATE!
+Task(\"UI Builder Tools Tester\", \"Test UI Builder tools\");  // ← INFINITE LOOP!
+\`\`\`
+
+**✅ CORRECT PATTERNS:**
+\`\`\`
+// DO THIS - SINGLE AGENTS WITH SPECIFIC TASKS:
+Task(\"ui-builder-specialist\", \"Create specific UI Builder page for incident management\");
+Task(\"workspace-architect\", \"Design UX workspace structure for IT support team\");
+Task(\"testing-specialist\", \"Validate workspace functionality and report results\");
+\`\`\`
+
+### 5. Memory Coordination Pattern with Loop Detection
+All agents MUST use this memory coordination WITH loop prevention:
 
 \`\`\`javascript
-// Agent initialization
-const agentId = \`agent_\${agentType}_\${sessionId}\`;
+// STEP 1: Check if agent type already exists (PREVENT LOOPS!)
+const existingAgents = Memory.get('active_agents') || [];
+const agentType = 'ui-builder-specialist';
 
-// Agent stores progress
+if (existingAgents.includes(agentType)) {
+  console.log('Agent type already active - SKIPPING to prevent infinite loop');
+  return; // DON'T spawn duplicate agents!
+}
+
+// STEP 2: Register agent as active
+const agentId = \`agent_\${agentType}_\${sessionId}\`;
+existingAgents.push(agentType);
+Memory.store('active_agents', JSON.stringify(existingAgents));
+
+// STEP 3: Agent stores progress
 Memory.store(\`\${agentId}_progress\`, JSON.stringify({
+  agent_type: agentType,
   status: "working",
   current_task: "description of current work",
   completion_percentage: 45,
+  spawned_at: new Date().toISOString(),
   last_update: new Date().toISOString()
 }));
 
