@@ -71,10 +71,10 @@ export default function Home() {
           <div data-slot="right">
             <button data-copy data-slot="command">
               <span>
-                <span>curl -fsSL&nbsp;</span>
+                <span>curl -fsSL </span>
                 <span data-slot="protocol">https://</span>
                 <span data-slot="highlight">opencode.ai/install</span>
-                &nbsp;| bash
+                <span> | bash</span>
               </span>
               <CopyStatus />
             </button>
