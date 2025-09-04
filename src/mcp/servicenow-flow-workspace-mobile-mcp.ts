@@ -162,10 +162,10 @@ class ServiceNowFlowWorkspaceMobileMCP {
         
         // 🏗️ COMPLETE UX WORKSPACE CREATION (6-Step Workflow)
         
-        // STEP 1: Experience Record (sys_ux_experience)
+        // STEP 1: Experience Record (sys_ux_experience) - REQUIRES NOW EXPERIENCE FRAMEWORK
         {
           name: 'snow_create_ux_experience',
-          description: 'STEP 1: Create UX Experience Record (sys_ux_experience) - The top-level container for the workspace. This is the first step in the 6-step workspace creation process.',
+          description: 'STEP 1: Create UX Experience Record (sys_ux_experience) - The top-level container for the workspace. ⚠️ REQUIRES: Now Experience Framework (UXF) enabled. ALTERNATIVE: Use traditional form/list configurations if UXF unavailable.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -391,10 +391,10 @@ class ServiceNowFlowWorkspaceMobileMCP {
         // Official ServiceNow sys_ux_* APIs for conversational UI Builder development
         // ==========================================
         
-        // UI Builder Page Management (sys_ux_page)
+        // UI Builder Page Management (sys_ux_page) - REQUIRES UI BUILDER PLUGIN
         {
           name: 'snow_create_uib_page',
-          description: 'Creates a new UI Builder page in the Now Experience Framework using official ServiceNow sys_ux_page API. Enables conversational page creation with full UXF integration.',
+          description: 'Creates a new UI Builder page in the Now Experience Framework using official ServiceNow sys_ux_page API. ⚠️ REQUIRES: UI Builder plugin + ui_builder_admin role. ALTERNATIVE: Use Service Portal pages if plugin unavailable.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -862,33 +862,33 @@ class ServiceNowFlowWorkspaceMobileMCP {
             result = await this.importFlowFromXml(args);
             break;
             
-          // 🏗️ UX WORKSPACE CREATION (6-Step Workflow)
+          // 🏗️ UX WORKSPACE CREATION (SAFE EXECUTION)
           case 'snow_create_ux_experience':
-            result = await this.snow_create_ux_experience(args);
+            result = await this.safeToolExecution('snow_create_ux_experience', () => this.snow_create_ux_experience(args), 'now_experience_framework');
             break;
           case 'snow_create_ux_app_config':
-            result = await this.snow_create_ux_app_config(args);
+            result = await this.safeToolExecution('snow_create_ux_app_config', () => this.snow_create_ux_app_config(args), 'now_experience_framework');
             break;
           case 'snow_create_ux_page_macroponent':
-            result = await this.snow_create_ux_page_macroponent(args);
+            result = await this.safeToolExecution('snow_create_ux_page_macroponent', () => this.snow_create_ux_page_macroponent(args), 'now_experience_framework');
             break;
           case 'snow_create_ux_page_registry':
-            result = await this.snow_create_ux_page_registry(args);
+            result = await this.safeToolExecution('snow_create_ux_page_registry', () => this.snow_create_ux_page_registry(args), 'now_experience_framework');
             break;
           case 'snow_create_ux_app_route':
-            result = await this.snow_create_ux_app_route(args);
+            result = await this.safeToolExecution('snow_create_ux_app_route', () => this.snow_create_ux_app_route(args), 'now_experience_framework');
             break;
           case 'snow_update_ux_app_config_landing_page':
-            result = await this.snow_update_ux_app_config_landing_page(args);
+            result = await this.safeToolExecution('snow_update_ux_app_config_landing_page', () => this.snow_update_ux_app_config_landing_page(args), 'now_experience_framework');
             break;
           case 'snow_create_complete_workspace':
-            result = await this.snow_create_complete_workspace(args);
+            result = await this.safeToolExecution('snow_create_complete_workspace', () => this.snow_create_complete_workspace(args), 'now_experience_framework');
             break;
           case 'snow_create_configurable_agent_workspace':
-            result = await this.snow_create_configurable_agent_workspace(args);
+            result = await this.safeToolExecution('snow_create_configurable_agent_workspace', () => this.snow_create_configurable_agent_workspace(args), 'agent_workspace');
             break;
           case 'snow_discover_all_workspaces':
-            result = await this.discoverAllWorkspaces(args);
+            result = await this.safeToolExecution('snow_discover_all_workspaces', () => this.discoverAllWorkspaces(args), 'now_experience_framework');
             break;
           case 'snow_validate_workspace_configuration':
             result = await this.validateWorkspaceConfiguration(args);
@@ -909,32 +909,32 @@ class ServiceNowFlowWorkspaceMobileMCP {
             result = await this.configureOfflineSync(args);
             break;
 
-          // UI Builder Page Management
+          // UI Builder Page Management (SAFE EXECUTION)
           case 'snow_create_uib_page':
-            result = await this.createUIBPage(args);
+            result = await this.safeToolExecution('snow_create_uib_page', () => this.createUIBPage(args), 'ui_builder');
             break;
           case 'snow_update_uib_page':
-            result = await this.updateUIBPage(args);
+            result = await this.safeToolExecution('snow_update_uib_page', () => this.updateUIBPage(args), 'ui_builder');
             break;
           case 'snow_delete_uib_page':
-            result = await this.deleteUIBPage(args);
+            result = await this.safeToolExecution('snow_delete_uib_page', () => this.deleteUIBPage(args), 'ui_builder');
             break;
           case 'snow_discover_uib_pages':
-            result = await this.discoverUIBPages(args);
+            result = await this.safeToolExecution('snow_discover_uib_pages', () => this.discoverUIBPages(args), 'ui_builder');
             break;
 
-          // UI Builder Component Management
+          // UI Builder Component Management (SAFE EXECUTION)
           case 'snow_create_uib_component':
-            result = await this.createUIBComponent(args);
+            result = await this.safeToolExecution('snow_create_uib_component', () => this.createUIBComponent(args), 'ui_builder');
             break;
           case 'snow_update_uib_component':
-            result = await this.updateUIBComponent(args);
+            result = await this.safeToolExecution('snow_update_uib_component', () => this.updateUIBComponent(args), 'ui_builder');
             break;
           case 'snow_discover_uib_components':
-            result = await this.discoverUIBComponents(args);
+            result = await this.safeToolExecution('snow_discover_uib_components', () => this.discoverUIBComponents(args), 'ui_builder');
             break;
           case 'snow_clone_uib_component':
-            result = await this.cloneUIBComponent(args);
+            result = await this.safeToolExecution('snow_clone_uib_component', () => this.cloneUIBComponent(args), 'ui_builder');
             break;
 
           // UI Builder Data Broker Management
@@ -1985,10 +1985,12 @@ ${configList}${layoutsText}${offlineText}
   }
 
   /**
-   * Discover UI Builder Pages
+   * Discover UI Builder Pages - ENHANCED with mandatory feedback
    */
   async discoverUIBPages(args: any): Promise<any> {
     try {
+      // MANDATORY: Always log start of operation
+      this.logger.info(`🔍 Starting UI Builder pages discovery...`);
       this.logger.info('🔍 Discovering UI Builder pages...');
       
       const conditions = [];
@@ -2032,7 +2034,20 @@ ${configList}${layoutsText}${offlineText}
       };
     } catch (error) {
       this.logger.error('Failed to discover UI Builder pages:', error);
-      throw error;
+      
+      // NEVER throw - always return error object for MCP
+      return {
+        success: false,
+        error: `UI Builder pages discovery failed: ${error}`,
+        suggestion: 'UI Builder plugin not installed or insufficient permissions (need ui_builder_admin role)',
+        plugin_required: 'UI Builder',
+        table_attempted: 'sys_ux_page',
+        operation_type: 'DISCOVERY',
+        debug_info: {
+          error_type: error instanceof Error ? error.constructor.name : 'Unknown',
+          error_message: String(error)
+        }
+      };
     }
   }
 
@@ -2051,9 +2066,28 @@ ${configList}${layoutsText}${offlineText}
         active: true
       };
       
+      // PRE-CHECK: Verify UI Builder is available
+      const uiBuilderCheck = await this.client.searchRecords('sys_ux_lib_source_script', '', 1);
+      if (!uiBuilderCheck.success) {
+        return {
+          success: false,
+          error: 'UI Builder plugin not available - sys_ux_lib_source_script table not accessible',
+          suggestion: 'Install UI Builder plugin from ServiceNow Store. Requires ui_builder_admin role.',
+          plugin_required: 'UI Builder',
+          table_tested: 'sys_ux_lib_source_script',
+          alternative: 'Use Service Portal widgets instead of UI Builder components'
+        };
+      }
+      
       const sourceResponse = await this.client.createRecord('sys_ux_lib_source_script', sourceData);
       if (!sourceResponse.success) {
-        throw new Error(`Failed to create component source: ${sourceResponse.error}`);
+        return {
+          success: false,
+          error: `Failed to create component source: ${sourceResponse.error}`,
+          suggestion: 'Check UI Builder permissions and source script syntax',
+          operation_attempted: 'CREATE sys_ux_lib_source_script',
+          source_data_attempted: sourceData
+        };
       }
       
       // Then create the component definition
@@ -2075,8 +2109,19 @@ ${configList}${layoutsText}${offlineText}
       const componentResponse = await this.client.createRecord('sys_ux_lib_component', componentData);
       if (!componentResponse.success) {
         // Cleanup source script on failure
-        await this.client.deleteRecord('sys_ux_lib_source_script', sourceResponse.data.sys_id);
-        throw new Error(`Failed to create component: ${componentResponse.error}`);
+        const sourceId = sourceResponse.data?.sys_id || sourceResponse.data?.result?.sys_id;
+        if (sourceId) {
+          await this.client.deleteRecord('sys_ux_lib_source_script', sourceId);
+        }
+        
+        return {
+          success: false,
+          error: `Failed to create UI Builder component: ${componentResponse.error}`,
+          suggestion: 'Check UI Builder permissions, component definition syntax, and plugin availability',
+          operation_attempted: 'CREATE sys_ux_lib_component',
+          component_data_attempted: componentData,
+          cleanup_performed: !!sourceId
+        };
       }
       
       this.logger.info('✅ UI Builder component created successfully');
@@ -2139,10 +2184,12 @@ ${configList}${layoutsText}${offlineText}
   }
 
   /**
-   * Discover UI Builder Components
+   * Discover UI Builder Components - ENHANCED with mandatory feedback
    */
   async discoverUIBComponents(args: any): Promise<any> {
     try {
+      // MANDATORY: Always log start of operation
+      this.logger.info(`🔍 Starting UI Builder components discovery...`);
       this.logger.info('🔍 Discovering UI Builder components...');
       
       const conditions = [];
@@ -2187,7 +2234,20 @@ ${configList}${layoutsText}${offlineText}
       };
     } catch (error) {
       this.logger.error('Failed to discover UI Builder components:', error);
-      throw error;
+      
+      // NEVER throw - always return error object for MCP
+      return {
+        success: false,
+        error: `UI Builder components discovery failed: ${error}`,
+        suggestion: 'UI Builder plugin not installed or insufficient permissions (need ui_builder_admin role)',
+        plugin_required: 'UI Builder',
+        table_attempted: 'sys_ux_lib_component',
+        operation_type: 'DISCOVERY',
+        debug_info: {
+          error_type: error instanceof Error ? error.constructor.name : 'Unknown',
+          error_message: String(error)
+        }
+      };
     }
   }
 
@@ -3746,6 +3806,124 @@ ${configList}${layoutsText}${offlineText}
   /**
    * Validate workspace configuration (fix from user feedback)
    */
+  /**
+   * COMPREHENSIVE PLUGIN DETECTION SYSTEM
+   * Checks all required plugins before tool execution
+   */
+  private async checkPluginAvailabilityForTool(toolType: string): Promise<{ available: boolean, error?: string, suggestion?: string, alternative?: string }> {
+    try {
+      switch (toolType) {
+        case 'ui_builder':
+          const uiBuilderCheck = await this.client.searchRecords('sys_ux_page', '', 1);
+          if (!uiBuilderCheck.success) {
+            return {
+              available: false,
+              error: 'UI Builder plugin not installed or not accessible',
+              suggestion: 'Install UI Builder plugin from ServiceNow Store. Requires ui_builder_admin + ui_builder_user roles.',
+              alternative: 'Use Service Portal widgets for custom UI development instead'
+            };
+          }
+          break;
+          
+        case 'now_experience_framework':
+          const uxfCheck = await this.client.searchRecords('sys_ux_experience', '', 1);
+          if (!uxfCheck.success) {
+            return {
+              available: false,
+              error: 'Now Experience Framework (UXF) not available',
+              suggestion: 'Enable Now Experience Framework in ServiceNow instance. May require additional licensing.',
+              alternative: 'Use traditional ServiceNow interface development instead'
+            };
+          }
+          break;
+          
+        case 'agent_workspace':
+          const agentWorkspaceCheck = await this.client.searchRecords('sys_ux_screen_type', '', 1);
+          if (!agentWorkspaceCheck.success) {
+            return {
+              available: false,
+              error: 'Agent Workspace plugin not installed',
+              suggestion: 'Install Agent Workspace plugin from ServiceNow Store. Requires workspace_admin role.',
+              alternative: 'Use traditional forms and lists for agent interfaces'
+            };
+          }
+          break;
+          
+        case 'mobile_publishing':
+          const mobileCheck = await this.client.searchRecords('sys_push_notif_msg', '', 1);
+          if (!mobileCheck.success) {
+            return {
+              available: false,
+              error: 'Mobile Publishing plugin not available',
+              suggestion: 'Install Mobile Publishing plugin from ServiceNow Store. Requires additional licensing and mobile_admin role.',
+              alternative: 'Use responsive Service Portal pages for mobile interfaces'
+            };
+          }
+          break;
+      }
+      
+      return { available: true };
+      
+    } catch (error) {
+      return {
+        available: false,
+        error: `Plugin check failed: ${error}`,
+        suggestion: 'Check ServiceNow connectivity and basic table access permissions'
+      };
+    }
+  }
+  
+  /**
+   * SAFE TOOL EXECUTION WRAPPER
+   * Ensures all tools return proper feedback instead of throwing
+   */
+  private async safeToolExecution(toolName: string, operation: () => Promise<any>, pluginType: string): Promise<any> {
+    try {
+      this.logger.info(`🛠️ Executing tool: ${toolName}`);
+      
+      // Step 1: Check plugin availability
+      const pluginCheck = await this.checkPluginAvailabilityForTool(pluginType);
+      if (!pluginCheck.available) {
+        this.logger.warn(`⚠️ Plugin check failed for ${toolName}`);
+        return {
+          success: false,
+          tool_name: toolName,
+          plugin_type: pluginType,
+          ...pluginCheck
+        };
+      }
+      
+      // Step 2: Execute operation
+      const result = await operation();
+      
+      this.logger.info(`✅ Tool ${toolName} executed successfully`);
+      
+      return {
+        ...result,
+        tool_name: toolName,
+        plugin_verified: true,
+        execution_timestamp: new Date().toISOString()
+      };
+      
+    } catch (error) {
+      this.logger.error(`❌ Tool ${toolName} failed with exception:`, error);
+      
+      // NEVER throw - always return error object
+      return {
+        success: false,
+        tool_name: toolName,
+        error: `Tool execution failed: ${error}`,
+        suggestion: 'Check ServiceNow connectivity, permissions, and plugin installation',
+        execution_type: 'EXCEPTION_CAUGHT',
+        debug_info: {
+          error_type: error instanceof Error ? error.constructor.name : 'Unknown',
+          error_message: String(error),
+          stack_trace: error instanceof Error ? error.stack : undefined
+        }
+      };
+    }
+  }
+  
   private validateWorkspaceConfig(config: any): string[] {
     const errors: string[] = [];
 
