@@ -1542,9 +1542,29 @@ ${executionList}
         throw new Error(`Failed to configure mobile app: ${response.error}`);
       }
 
-      // VERIFICATION: Confirm mobile app was configured
-      const sys_id = response.data.result.sys_id;
-      const verification = await this.client.getRecord('sys_mobile_application_config', sys_id);
+      // VERIFICATION: Confirm mobile app was configured (fix sys_id access)
+      const sys_id = response.data?.result?.sys_id || response.data?.sys_id;
+      
+      if (!sys_id) {
+        return {
+          success: false,
+          error: 'Mobile app configuration succeeded but no sys_id returned in response',
+          debug_info: {
+            has_data: !!response.data,
+            has_result: !!(response.data && response.data.result),
+            response_structure: typeof response.data
+          },
+          suggestion: 'ServiceNow API response format may be different than expected'
+        };
+      }
+      // Note: Mobile app config table name may vary - try common variations
+      let verification = await this.client.getRecord('sys_mobile_app_config', sys_id);
+      if (!verification.success) {
+        verification = await this.client.getRecord('sys_mobile_application', sys_id);
+      }
+      if (!verification.success) {
+        verification = await this.client.getRecord('sys_push_app', sys_id);
+      }
       
       if (!verification.success) {
         return {
@@ -1616,9 +1636,29 @@ ${executionList}
         throw new Error(`Failed to create mobile layout: ${response.error}`);
       }
 
-      // VERIFICATION: Confirm mobile layout was created
-      const sys_id = response.data.result.sys_id;
-      const verification = await this.client.getRecord('sys_mobile_layout', sys_id);
+      // VERIFICATION: Confirm mobile layout was created (fix sys_id access)
+      const sys_id = response.data?.result?.sys_id || response.data?.sys_id;
+      
+      if (!sys_id) {
+        return {
+          success: false,
+          error: 'Mobile layout creation succeeded but no sys_id returned in response',
+          debug_info: {
+            has_data: !!response.data,
+            has_result: !!(response.data && response.data.result),
+            response_structure: typeof response.data
+          },
+          suggestion: 'ServiceNow API response format may be different than expected'
+        };
+      }
+      // Note: Mobile layout table name may vary - try common variations
+      let verification = await this.client.getRecord('sys_mobile_form_layout', sys_id);
+      if (!verification.success) {
+        verification = await this.client.getRecord('sys_mobile_list_layout', sys_id);
+      }
+      if (!verification.success) {
+        verification = await this.client.getRecord('sys_ui_form_section', sys_id);
+      }
       
       if (!verification.success) {
         return {
@@ -2119,7 +2159,13 @@ ${configList}${layoutsText}${offlineText}
       };
     } catch (error) {
       this.logger.error('Failed to discover UI Builder pages:', error);
-      throw error;
+      return {
+        success: false,
+        error: `Failed to discover UI Builder pages: ${error}`,
+        suggestion: 'UI Builder plugin may not be installed or you may lack permissions',
+        table_tested: 'sys_ux_page',
+        operation_attempted: 'DISCOVER UI Builder Pages'
+      };
     }
   }
 
@@ -2339,7 +2385,13 @@ ${configList}${layoutsText}${offlineText}
       };
     } catch (error) {
       this.logger.error('Failed to discover UI Builder components:', error);
-      throw error;
+      return {
+        success: false,
+        error: `Failed to discover UI Builder components: ${error}`,
+        suggestion: 'UI Builder plugin may not be installed or you may lack permissions',
+        table_tested: 'sys_ux_lib_component',
+        operation_attempted: 'DISCOVER UI Builder Components'
+      };
     }
   }
 
@@ -2410,6 +2462,18 @@ ${configList}${layoutsText}${offlineText}
     try {
       this.logger.info(`🔗 Creating UI Builder data broker: ${args.name}`);
       
+      // FIRST: Check if UI Builder is available
+      const uiBuilderCheck = await this.client.searchRecords('sys_ux_data_broker', '', 1);
+      if (!uiBuilderCheck.success) {
+        return {
+          success: false,
+          error: 'UI Builder data broker table (sys_ux_data_broker) not accessible',
+          suggestion: 'UI Builder plugin may not be installed or you may lack ui_builder_admin permissions',
+          plugin_required: 'UI Builder',
+          table_tested: 'sys_ux_data_broker'
+        };
+      }
+      
       const brokerData = {
         name: args.name,
         label: args.label,
@@ -2429,11 +2493,30 @@ ${configList}${layoutsText}${offlineText}
       const response = await this.client.createRecord('sys_ux_data_broker', brokerData);
       
       if (!response.success) {
-        throw new Error(`Failed to create data broker: ${response.error}`);
+        return {
+          success: false,
+          error: `Failed to create data broker: ${response.error || response}`,
+          suggestion: this.getErrorSuggestion(String(response.error || response)),
+          operation_attempted: 'CREATE sys_ux_data_broker',
+          broker_data: brokerData
+        };
       }
       
-      // VERIFICATION: Confirm data broker was created
-      const sys_id = response.data.result.sys_id;
+      // VERIFICATION: Confirm data broker was created (fix sys_id access)
+      const sys_id = response.data?.result?.sys_id || response.data?.sys_id;
+      
+      if (!sys_id) {
+        return {
+          success: false,
+          error: 'Data broker creation succeeded but no sys_id returned in response',
+          debug_info: {
+            has_data: !!response.data,
+            has_result: !!(response.data && response.data.result),
+            response_structure: typeof response.data
+          },
+          suggestion: 'ServiceNow API response format may be different than expected'
+        };
+      }
       const verification = await this.client.getRecord('sys_ux_data_broker', sys_id);
       
       if (!verification.success) {
@@ -2758,8 +2841,21 @@ ${configList}${layoutsText}${offlineText}
         throw new Error(`Failed to create client script: ${response.error}`);
       }
       
-      // VERIFICATION: Confirm client script was created
-      const sys_id = response.data.result.sys_id;
+      // VERIFICATION: Confirm client script was created (fix sys_id access)
+      const sys_id = response.data?.result?.sys_id || response.data?.sys_id;
+      
+      if (!sys_id) {
+        return {
+          success: false,
+          error: 'Client script creation succeeded but no sys_id returned in response',
+          debug_info: {
+            has_data: !!response.data,
+            has_result: !!(response.data && response.data.result),
+            response_structure: typeof response.data
+          },
+          suggestion: 'ServiceNow API response format may be different than expected'
+        };
+      }
       const verification = await this.client.getRecord('sys_ux_client_script', sys_id);
       
       if (!verification.success) {
@@ -2860,8 +2956,21 @@ ${configList}${layoutsText}${offlineText}
         throw new Error(`Failed to create event: ${response.error}`);
       }
       
-      // VERIFICATION: Confirm event was created
-      const sys_id = response.data.result.sys_id;
+      // VERIFICATION: Confirm event was created (fix sys_id access)
+      const sys_id = response.data?.result?.sys_id || response.data?.sys_id;
+      
+      if (!sys_id) {
+        return {
+          success: false,
+          error: 'Event creation succeeded but no sys_id returned in response',
+          debug_info: {
+            has_data: !!response.data,
+            has_result: !!(response.data && response.data.result),
+            response_structure: typeof response.data
+          },
+          suggestion: 'ServiceNow API response format may be different than expected'
+        };
+      }
       const verification = await this.client.getRecord('sys_ux_event', sys_id);
       
       if (!verification.success) {
@@ -4096,7 +4205,12 @@ ${configList}${layoutsText}${offlineText}
       
     } catch (error) {
       this.logger.error('Failed to test workspace tools:', error);
-      throw error;
+      return {
+        success: false,
+        error: `Failed to test workspace tools: ${error}`,
+        suggestion: 'Check ServiceNow connectivity and authentication',
+        operation_attempted: 'TEST All Workspace Tools'
+      };
     }
   }
   
@@ -4179,7 +4293,12 @@ ${configList}${layoutsText}${offlineText}
       
     } catch (error) {
       this.logger.error('Failed to check plugin availability:', error);
-      throw error;
+      return {
+        success: false,
+        error: `Failed to check plugin availability: ${error}`,
+        suggestion: 'Check ServiceNow connectivity and basic table access permissions',
+        operation_attempted: 'CHECK Plugin Availability'
+      };
     }
   }
   
@@ -4396,32 +4515,36 @@ ${configList}${layoutsText}${offlineText}
   }
   
   /**
-   * Get actionable suggestions based on error type
+   * Get actionable suggestions based on error type with specific tool guidance
    */
   private getErrorSuggestion(error: string): string {
     const errorLower = error.toLowerCase();
     
     if (errorLower.includes('403') || errorLower.includes('forbidden')) {
-      return 'Check user permissions. May need ui_builder_admin or workspace_admin roles.';
+      return 'PERMISSIONS ISSUE: You need specific roles. For UI Builder: ui_builder_admin + ui_builder_user. For Workspaces: workspace_admin. For Mobile: mobile_admin. Contact your ServiceNow admin.';
     }
     
     if (errorLower.includes('404') || errorLower.includes('not found')) {
-      return 'Table/endpoint not available. Check if required plugin is installed and activated.';
+      return 'PLUGIN/TABLE MISSING: Required ServiceNow plugin not installed. UI Builder requires "UI Builder" plugin. Workspaces require "Agent Workspace" or "Now Experience Framework". Check ServiceNow Store.';
     }
     
     if (errorLower.includes('400') || errorLower.includes('bad request')) {
-      return 'Invalid parameters or missing required fields. Check API documentation.';
+      return 'INVALID DATA: Check required fields and data formats. Some tools need valid sys_ids from previous steps in the workflow.';
     }
     
     if (errorLower.includes('401') || errorLower.includes('unauthorized')) {
-      return 'Authentication issue. Run snow-flow auth login to re-authenticate.';
+      return 'AUTHENTICATION EXPIRED: Run "snow-flow auth login" to re-authenticate with ServiceNow.';
+    }
+    
+    if (errorLower.includes('sys_id')) {
+      return 'SYS_ID ERROR: Invalid or missing sys_id in API response. This usually means the record creation failed silently.';
     }
     
     if (errorLower.includes('plugin') || errorLower.includes('license')) {
-      return 'Required plugin not installed. Check ServiceNow Store for required plugins.';
+      return 'LICENSING ISSUE: Required ServiceNow plugin/license not available. Contact ServiceNow admin for proper licensing.';
     }
     
-    return 'Check ServiceNow system logs for detailed error information.';
+    return 'UNKNOWN ERROR: Check ServiceNow system logs (System Logs > System Log > All) for detailed error information.';
   }
   
   /**
