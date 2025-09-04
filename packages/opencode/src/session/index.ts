@@ -527,10 +527,10 @@ export namespace Session {
                         break
                       }
                     }
-                    offset = Math.max(start - 2, 0)
-                    if (end) {
-                      limit = end - offset + 2
-                    }
+                  }
+                  offset = Math.max(start - 1, 0)
+                  if (end) {
+                    limit = end - offset
                   }
                 }
                 const args = { filePath, offset, limit }
