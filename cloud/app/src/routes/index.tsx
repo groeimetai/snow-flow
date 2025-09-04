@@ -81,26 +81,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/*
-        <section data-component="zen">
-          <a href="/docs/zen">
-            opencode zen
-          </a>
-          <span data-slot="description">, a curated list of models provided by opencode</span>
-          <span data-slot="divider">&nbsp;/&nbsp;</span>
-          <Switch>
-            <Match when={workspace()}>
-              <A href={"/workspace/" + workspace()}>
-                Dashboard
-              </A>
-            </Match>
-            <Match when={true}>
-              <a href="/auth/authorize">Sign in</a>
-            </Match>
-          </Switch>
-        </section>
-        */ }
-
         <section data-component="features">
           <ul data-slot="list">
             <li>
@@ -168,32 +148,12 @@ export default function Home() {
         </section>
 
         <section data-component="screenshots">
-          <div data-slot="left">
-            <figure>
-              <figcaption>opencode TUI with the tokyonight theme</figcaption>
-              <a href="/docs/cli">
-                <img src={IMG_SPLASH} alt="opencode TUI with tokyonight theme" />
-              </a>
-            </figure>
-          </div>
-          <div data-slot="right">
-            <div data-slot="row1">
-              <figure>
-                <figcaption>opencode in VS Code</figcaption>
-                <a href="/docs/ide">
-                  <img src={IMG_VSCODE} alt="opencode in VS Code" />
-                </a>
-              </figure>
-            </div>
-            <div data-slot="row2">
-              <figure>
-                <figcaption>opencode in GitHub</figcaption>
-                <a href="/docs/github">
-                  <img src={IMG_GITHUB} alt="opencode in GitHub" />
-                </a>
-              </figure>
-            </div>
-          </div>
+          <figure>
+            <figcaption>opencode TUI with the tokyonight theme</figcaption>
+            <a href="/docs/cli">
+              <img src={IMG_SPLASH} alt="opencode TUI with tokyonight theme" />
+            </a>
+          </figure>
         </section>
 
         <footer data-component="footer">
