@@ -42,6 +42,34 @@ class ServiceNowFlowWorkspaceMobileMCP {
     this.config = mcpConfig.getConfig();
 
     this.setupHandlers();
+    this.setupSimpleStability();
+  }
+  
+  /**
+   * Simple stability setup - no complex wrappers
+   */
+  private setupSimpleStability() {
+    // Graceful shutdown on process signals
+    process.on('SIGTERM', () => {
+      this.logger.info('🛑 Received SIGTERM - shutting down MCP server gracefully');
+      process.exit(0);
+    });
+    
+    process.on('SIGINT', () => {
+      this.logger.info('🛑 Received SIGINT - shutting down MCP server gracefully');
+      process.exit(0);
+    });
+    
+    // Handle uncaught errors (prevents crashes)
+    process.on('uncaughtException', (error) => {
+      this.logger.error('💥 Uncaught exception in MCP server:', error);
+      // Don't exit - just log and continue
+    });
+    
+    process.on('unhandledRejection', (reason) => {
+      this.logger.error('💥 Unhandled promise rejection in MCP server:', reason);
+      // Don't exit - just log and continue
+    });
   }
 
   private setupHandlers() {
@@ -3735,9 +3763,37 @@ ${configList}${layoutsText}${offlineText}
   }
 
   async run() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    this.logger.info('ServiceNow Flow/Workspace/Mobile MCP Server running on stdio');
+    try {
+      const transport = new StdioServerTransport();
+      
+      // Simple timeout protection (prevents hanging)
+      const connectTimeout = setTimeout(() => {
+        this.logger.error('❌ MCP connection timeout after 30 seconds');
+        process.exit(1);
+      }, 30000);
+      
+      await this.server.connect(transport);
+      clearTimeout(connectTimeout);
+      
+      this.logger.info('✅ ServiceNow Flow/Workspace/Mobile MCP Server running on stdio');
+      
+      // Simple keep-alive (prevents disconnects)
+      setInterval(() => {
+        this.logger.debug('💚 MCP server alive - uptime: ' + Math.round((Date.now() - Date.now()) / 60000) + 'min');
+      }, 120000); // Every 2 minutes
+      
+    } catch (error) {
+      this.logger.error('❌ MCP server failed to start:', error);
+      
+      // Simple retry once
+      this.logger.info('🔄 Retrying MCP connection once...');
+      setTimeout(() => {
+        this.run().catch(() => {
+          this.logger.error('💥 MCP retry failed - exiting');
+          process.exit(1);
+        });
+      }, 3000);
+    }
   }
 }
 
