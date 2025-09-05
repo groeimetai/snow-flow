@@ -1,0 +1,220 @@
+{
+  "mcpServers": {
+    "servicenow-deployment": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-deployment-mcp.js"
+      ],
+      "description": "Widget and artifact deployment with COHERENCE VALIDATION - ensures HTML template, client script, server script work together perfectly. Tools: snow_deploy, snow_update, snow_validate_deployment, snow_rollback_deployment, snow_deployment_status, snow_export_artifact, snow_import_artifact, snow_preview_widget, snow_widget_test, snow_create_solution_package",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
+        "SNOW_DEPLOYMENT_TIMEOUT": "${SNOW_DEPLOYMENT_TIMEOUT}",
+        "MCP_DEPLOYMENT_TIMEOUT": "${MCP_DEPLOYMENT_TIMEOUT}"
+      }
+    },
+    "servicenow-operations": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-operations-mcp.js"
+      ],
+      "description": "Core ServiceNow operations - universal table query (snow_query_table), CRUD operations, incident/request/problem management, CMDB search, user/group management, catalog items, knowledge search, field discovery (snow_discover_table_fields), get by sys_id",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-automation": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-automation-mcp.js"
+      ],
+      "description": "Script execution with output capture (snow_execute_script_with_output), scheduled jobs, event rules, notifications, SLA definitions, workflow activities, script history, REST testing, system logs (snow_get_logs), execution tracing, background scripts with autoConfirm option",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-platform-development": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-platform-development-mcp.js"
+      ],
+      "description": "Platform development - create UI pages, script includes, business rules, client scripts, UI policies/actions, ACLs, dictionary entries, catalog items, workflows, transform maps",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-integration": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-integration-mcp.js"
+      ],
+      "description": "Integration management - REST messages, SOAP messages, transform maps, import sets, web services, email configuration, OAuth providers, endpoint discovery, integration testing",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-system-properties": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-system-properties-mcp.js"
+      ],
+      "description": "System property management - get/set/list/delete properties (snow_property_get, snow_property_set), bulk operations, import/export JSON, validate values, search by pattern, categories, audit history",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-update-set": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-update-set-mcp.js"
+      ],
+      "description": "Update set management - create/switch/complete update sets, preview changes, export/import XML, ensure active update set, add artifacts to sets, batch operations",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-development-assistant": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-development-assistant-mcp.js"
+      ],
+      "description": "Development assistance - code generation, best practices, pattern recommendations, code review, performance optimization, ES5 conversion, documentation generation, requirement analysis (snow_find_artifact, snow_edit_artifact, snow_analyze_artifact)",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-security-compliance": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-security-compliance-mcp.js"
+      ],
+      "description": "Security and compliance - security policies, compliance rules (SOX/GDPR/HIPAA), audit trails, access control review, vulnerability scanning, risk assessment, encryption settings",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-reporting-analytics": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-reporting-analytics-mcp.js"
+      ],
+      "description": "Reporting and analytics - create reports/dashboards/KPIs, data visualization, performance analytics, scheduled reports, data quality analysis, metrics collection, trend analysis",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-machine-learning": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-machine-learning-mcp.js"
+      ],
+      "description": "Machine learning - train/classify incidents (snow_train_classifier), change risk prediction, anomaly detection, forecast incidents, sentiment analysis, process optimization, hybrid recommendations with TensorFlow.js",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-knowledge-catalog": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-knowledge-catalog-mcp.js"
+      ],
+      "description": "Knowledge and catalog management - CORRECTED v3.6.10 with proper catalog UI policy creation (2-table system: policy with embedded conditions string, separate actions table). Create/search/update knowledge articles, catalog items, variables, UI policies with conditions as query string and actions array",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-change-virtualagent-pa": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-change-virtualagent-pa-mcp.js"
+      ],
+      "description": "Change management, Virtual Agent, and Performance Analytics - create/manage change requests, CAB meetings, VA topics/blocks, conversations, PA indicators/widgets/breakdowns, thresholds, data collection",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-flow-workspace-mobile": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-flow-workspace-mobile-mcp.js"
+      ],
+      "description": "Flow Designer, Workspace, and Mobile - create flows/actions/subflows/triggers, test flows, workspaces/tabs/lists, contextual panels, mobile app config, layouts, push notifications, offline sync",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-cmdb-event-hr-csm-devops": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-cmdb-event-hr-csm-devops-mcp.js"
+      ],
+      "description": "CMDB, Event Management, HR, CSM, and DevOps - create CIs/relationships, discovery, impact analysis, events/alerts, HR cases/onboarding, customer cases/accounts, DevOps pipelines/deployments",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-advanced-features": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/advanced/servicenow-advanced-features-mcp.js"
+      ],
+      "description": "Advanced features - batch API operations (80% reduction), table relationships analysis, query optimization, field usage analysis, code pattern detection, process discovery, workflow analysis, documentation generation",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "servicenow-local-development": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/servicenow-local-development-mcp.js"
+      ],
+      "description": "UNIVERSAL ARTIFACT DETECTION v3.6.6 - finds ANY ServiceNow record by sys_id using sys_metadata! Pull any artifact (even custom tables) to local files with Claude Code native tools. Supports all tables, generic artifact creation for unknown types, smart chunking, ES5 validation, coherence checking. Tools: snow_pull_artifact, snow_push_artifact, snow_validate_artifact_coherence",
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}"
+      }
+    },
+    "snow-flow": {
+      "command": "node",
+      "args": [
+        "/Users/nielsvanderwerf/.nvm/versions/node/v20.15.0/lib/node_modules/snow-flow/dist/mcp/snow-flow-mcp.js"
+      ],
+      "description": "Snow-Flow orchestration - swarm init/status, agent spawn/discover, task orchestrate/categorize, neural train/patterns (TensorFlow.js), memory store/search (timeout-protected), performance reports, token usage tracking",
+      "env": {
+        "SNOW_FLOW_ENV": "${SNOW_FLOW_ENV}"
+      }
+    }
+  }
+}

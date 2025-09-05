@@ -1839,6 +1839,7 @@ program
 📋 Available Commands:
   swarm <objective>     Execute multi-agent orchestration
   spawn <type>          Spawn specific agent types
+  export                Export MCP configuration to Claude Desktop
   status                Show system status
   monitor               Real-time monitoring dashboard
   memory <action>       Memory operations
@@ -3548,6 +3549,75 @@ program
       await queen.shutdown();
     } catch (error) {
       console.error('❌ Insights failed:', (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+// ===================================================
+// 📤 CLAUDE DESKTOP EXPORT COMMAND
+// ===================================================
+
+program
+  .command('export')
+  .description('📤 Export Snow-Flow MCP configuration to Claude Desktop with automatic credential injection')
+  .option('--output <path>', 'Custom output path for Claude Desktop config')
+  .option('--backup', 'Backup existing Claude Desktop config before overwriting', true)
+  .option('--merge', 'Merge with existing Claude Desktop config instead of overwriting')
+  .option('--dry-run', 'Preview the export without writing files')
+  .action(async (options) => {
+    console.log(`\n📤 Snow-Flow Claude Desktop Export v${VERSION}`);
+    console.log('🎯 Exporting all 22 MCP servers with 245+ tools to Claude Desktop...\n');
+    
+    try {
+      const { exportToClaudeDesktop } = await import('./utils/claude-desktop-exporter.js');
+      
+      const result = await exportToClaudeDesktop({
+        outputPath: options.output,
+        backup: options.backup,
+        merge: options.merge,
+        dryRun: options.dryRun
+      });
+      
+      if (result.success) {
+        console.log('✅ Claude Desktop export completed successfully!\n');
+        
+        if (result.configPath) {
+          console.log(`📝 Configuration written to: ${result.configPath}`);
+        }
+        
+        if (result.backupPath) {
+          console.log(`💾 Backup created at: ${result.backupPath}`);
+        }
+        
+        if (result.merged) {
+          console.log(`🔗 Merged with existing configuration (${result.existingServers} existing servers preserved)`);
+        }
+        
+        console.log(`🔑 Credentials automatically injected from .env file`);
+        console.log(`🌍 Instance: ${result.credentials.instance}`);
+        console.log(`🔐 Authentication: OAuth configured`);
+        
+        console.log('\n🚀 Next steps:');
+        console.log('1. Restart Claude Desktop to load the new MCP servers');
+        console.log('2. Open Claude Desktop chat');
+        console.log('3. Try: "Create UX workspace for IT support using snow_create_complete_workspace"');
+        console.log('\n💡 All 245+ Snow-Flow tools are now available in Claude Desktop!');
+      } else {
+        console.error('\n❌ Export failed:', result.error);
+        
+        if (result.missingCredentials) {
+          console.error('\n🔑 Missing credentials in .env file:');
+          result.missingCredentials.forEach(cred => {
+            console.error(`   • ${cred}`);
+          });
+          console.error('\nRun: snow-flow auth login');
+        }
+        
+        process.exit(1);
+      }
+      
+    } catch (error) {
+      console.error('\n💥 Export error:', (error as Error).message);
       process.exit(1);
     }
   });
