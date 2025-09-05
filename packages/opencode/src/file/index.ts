@@ -156,10 +156,10 @@ export namespace File {
       const diff = await $`git diff ${file}`.cwd(Instance.directory).quiet().nothrow().text()
       if (diff.trim()) {
         const original = await $`git show HEAD:${file}`.cwd(Instance.directory).quiet().nothrow().text()
-        const diff = structuredPatch(file, file, original, content, "old", "new", {
+        const patch = structuredPatch(file, file, original, content, "old", "new", {
           context: Infinity,
         })
-        const patch = formatPatch(diff)
+        const diff = formatPatch(patch)
         return { content, patch, diff }
       }
     }
