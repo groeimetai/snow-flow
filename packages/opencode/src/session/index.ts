@@ -1297,18 +1297,26 @@ export namespace Session {
       }),
     )
 
+    const model = await (async () => {
+      if (command.model) {
+        return Provider.parseModel(command.model)
+      }
+      if (command.agent) {
+        const agent = await Agent.get(command.agent)
+        if (agent.model) {
+          return agent.model
+        }
+      }
+      if (input.model) {
+        return Provider.parseModel(input.model)
+      }
+      return undefined
+    })()
+
     return prompt({
       sessionID: input.sessionID,
       messageID: input.messageID,
-      model: (() => {
-        if (input.model) {
-          return Provider.parseModel(input.model)
-        }
-        if (command.model) {
-          return Provider.parseModel(command.model)
-        }
-        return undefined
-      })(),
+      model,
       agent,
       parts,
     })
