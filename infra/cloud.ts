@@ -1,5 +1,6 @@
 import { WebhookEndpoint } from "pulumi-stripe"
 import { domain } from "./stage"
+import log from "../packages/web/dist/_worker.js/chunks/log_GHQSQ8rj.mjs"
 
 ////////////////
 // DATABASE
@@ -7,7 +8,7 @@ import { domain } from "./stage"
 
 const cluster = planetscale.getDatabaseOutput({
   name: "opencode",
-  organization: "sst",
+  organization: "anomalyco",
 })
 
 const branch =
@@ -103,6 +104,7 @@ const ANTHROPIC_API_KEY = new sst.Secret("ANTHROPIC_API_KEY")
 const XAI_API_KEY = new sst.Secret("XAI_API_KEY")
 const BASETEN_API_KEY = new sst.Secret("BASETEN_API_KEY")
 const STRIPE_SECRET_KEY = new sst.Secret("STRIPE_SECRET_KEY")
+const HONEYCOMB_API_KEY = new sst.Secret("HONEYCOMB_API_KEY")
 const AUTH_API_URL = new sst.Linkable("AUTH_API_URL", {
   properties: { value: auth.url.apply((url) => url!) },
 })
@@ -113,6 +115,14 @@ const STRIPE_WEBHOOK_SECRET = new sst.Linkable("STRIPE_WEBHOOK_SECRET", {
 ////////////////
 // CONSOLE
 ////////////////
+
+let logProcessor
+if ($app.stage === "production" || $app.stage === "frank") {
+  logProcessor = new sst.cloudflare.Worker("LogProcessor", {
+    handler: "cloud/function/src/log-processor.ts",
+    link: [HONEYCOMB_API_KEY],
+  })
+}
 
 new sst.cloudflare.x.SolidStart("Console", {
   domain,
@@ -135,9 +145,8 @@ new sst.cloudflare.x.SolidStart("Console", {
     server: {
       transform: {
         worker: {
-          placement: {
-            mode: "smart",
-          },
+          placement: { mode: "smart" },
+          tailConsumers: logProcessor ? [{ service: logProcessor.nodes.worker.scriptName }] : [],
         },
       },
     },
