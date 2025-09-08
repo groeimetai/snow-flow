@@ -1,6 +1,5 @@
 import { WebhookEndpoint } from "pulumi-stripe"
 import { domain } from "./stage"
-import log from "../packages/web/dist/_worker.js/chunks/log_GHQSQ8rj.mjs"
 
 ////////////////
 // DATABASE
