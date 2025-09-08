@@ -103,7 +103,6 @@ const ANTHROPIC_API_KEY = new sst.Secret("ANTHROPIC_API_KEY")
 const XAI_API_KEY = new sst.Secret("XAI_API_KEY")
 const BASETEN_API_KEY = new sst.Secret("BASETEN_API_KEY")
 const STRIPE_SECRET_KEY = new sst.Secret("STRIPE_SECRET_KEY")
-const HONEYCOMB_API_KEY = new sst.Secret("HONEYCOMB_API_KEY")
 const AUTH_API_URL = new sst.Linkable("AUTH_API_URL", {
   properties: { value: auth.url.apply((url) => url!) },
 })
@@ -117,6 +116,7 @@ const STRIPE_WEBHOOK_SECRET = new sst.Linkable("STRIPE_WEBHOOK_SECRET", {
 
 let logProcessor
 if ($app.stage === "production" || $app.stage === "frank") {
+  const HONEYCOMB_API_KEY = new sst.Secret("HONEYCOMB_API_KEY")
   logProcessor = new sst.cloudflare.Worker("LogProcessor", {
     handler: "cloud/function/src/log-processor.ts",
     link: [HONEYCOMB_API_KEY],
