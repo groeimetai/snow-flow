@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "4.6.0",
-  "description": "Conversational ServiceNow development platform using Claude Code. Multi-agent orchestration with 20+ MCP servers providing 245+ ServiceNow tools including complete UX + Agent Workspace creation with official APIs.",
+  "version": "4.6.1",
+  "description": "CLAUDE CODE VERSION PINNING - v4.6.1 adds automatic Claude Code 1.0.95 installation to swarm command. Prevents hanging operations caused by bugs in newer versions. Ensures reliable swarm execution with version check, auto-install, and verification.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
