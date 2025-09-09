@@ -287,7 +287,6 @@ export namespace Provider {
     for (const [providerID, provider] of configProviders) {
       mergeProvider(providerID, provider.options ?? {}, "config")
     }
-    console.log("!@#!@#", Flag.OPENCODE_ENABLE_EXPERIMENTAL_MODELS)
 
     for (const [providerID, provider] of Object.entries(providers)) {
       const filteredModels = Object.fromEntries(
