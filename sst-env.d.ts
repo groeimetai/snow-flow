@@ -71,6 +71,10 @@ declare module "sst" {
     "LogProcessor": {
       "type": "sst.cloudflare.Worker"
     }
+    "OPENAI_API_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "STRIPE_SECRET_KEY": {
       "type": "sst.sst.Secret"
       "value": string
