@@ -1,0 +1,70 @@
+/* =========================================
+   NAVBAR HERO-INSPIRED STYLING
+   ========================================= */
+
+/* Navbar gets hero glass effect and consistency */
+.navbar {
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  position: fixed !important;
+  top: 0 !important;
+  width: 100% !important;
+  z-index: 900 !important;
+  transition: all 0.3s ease !important;
+}
+
+.navbar.scrolled {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(25px) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Navbar logo styling */
+.navbar-logo {
+  color: var(--white) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 700 !important;
+  font-size: var(--font-xl) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.logo-mountain {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)) !important;
+}
+
+/* Navbar version tag - hero inspired */
+.navbar .version-tag {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: var(--white) !important;
+  padding: var(--space-1) var(--space-2) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: var(--font-xs) !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  margin-left: var(--space-2) !important;
+}
+
+/* Navigation links */
+.navbar-menu a {
+  color: var(--gray-200) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+  transition: all 0.3s ease !important;
+}
+
+.navbar-menu a:hover {
+  color: var(--white) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Mobile menu hero styling */
+.navbar-menu.active {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--radius-xl) !important;
+}

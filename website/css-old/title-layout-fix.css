@@ -1,0 +1,58 @@
+/* =========================================
+   TITLE LAYOUT EMERGENCY FIX
+   ========================================= */
+
+/* Override ALL conflicting CSS to force horizontal layout */
+.hero-title {
+  /* Reset to normal heading behavior */
+  display: block !important;
+  text-align: center !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  /* Remove any flexbox behavior that could stack vertically */
+  flex-direction: unset !important;
+  align-items: unset !important;
+  justify-content: unset !important;
+}
+
+/* Force letters to display horizontally inline - TIGHT SPACING */
+.title-letter {
+  /* CRITICAL: inline-block allows horizontal layout with animations */
+  display: inline-block !important;
+  /* Never let these become block or flex */
+  flex-direction: unset !important;
+  /* Keep letters side by side */
+  float: none !important;
+  /* TIGHTER letter spacing to fit in container */
+  margin-right: 0.02em !important; /* Much tighter spacing */
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  /* White color for visibility */
+  color: var(--white) !important;
+  /* Strong text shadow for contrast */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
+  /* RESPONSIVE: Scale with container */
+  transform: scale(1) !important;
+}
+
+/* Override any parent containers that might affect layout */
+.hero-content {
+  text-align: center !important;
+  /* Don't let flex affect title layout */
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Specifically target title to prevent inheritance issues */
+h1.hero-title {
+  line-height: 1.2 !important;
+  white-space: nowrap !important; /* Prevent text wrapping */
+}
+
+/* Version badge positioning fix */
+.version-badge {
+  /* Keep badge inline with title but slightly offset */
+  display: inline-block !important;
+  margin-left: 1rem !important;
+  vertical-align: top !important;
+}

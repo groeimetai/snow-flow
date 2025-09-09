@@ -1,0 +1,60 @@
+/* =========================================
+   HERO COMPACT SPACING ADJUSTMENTS
+   ========================================= */
+
+/* Reduce excessive top spacing in hero */
+.hero {
+  padding-top: 100pxik !important;
+  padding-bottom: var(--space-16) !important; /* Some bottom space for stats */
+}
+
+/* Mountain logo positioning - closer to navbar */
+.hero-logo-container {
+  margin-top: var(--space-4) !important; /* Much less top margin */
+  margin-bottom: var(--space-6) !important; /* Less bottom margin */
+}
+
+/* Title positioning - tighter spacing */
+.hero-title {
+  margin-top: var(--space-4) !important; /* Less space after logo */
+  margin-bottom: var(--space-4) !important; /* Less space before subtitle */
+}
+
+/* Subtitle tighter spacing */
+.hero-subtitle {
+  margin-bottom: var(--space-6) !important; /* Less space before pills */
+}
+
+/* Feature pills tighter spacing */
+.feature-pills {
+  margin: var(--space-4) 0 var(--space-6) !important; /* Compact margins */
+}
+
+/* CTA buttons tighter spacing */
+.hero-actions {
+  margin: var(--space-6) 0 !important; /* Less margin around buttons */
+}
+
+/* Overall hero content compactness + CONTAINER FIX */
+.hero-content {
+  max-width: 80% !important; /* CRITICAL: Stay within viewport */
+  width: 100% !important; /* Full available width */
+  padding: var(--space-12) var(--space-4) var(--space-8) !important; /* Side padding to prevent overflow */
+  box-sizing: border-box !important; /* Include padding in width calculation */
+}
+
+/* Mobile adjustments for compact layout */
+@media (max-width: 768px) {
+  .hero-content {
+    padding-top: var(--space-8) !important;
+  }
+  
+  .hero-title {
+    margin-top: var(--space-2) !important;
+    margin-bottom: var(--space-3) !important;
+  }
+  
+  .hero-actions {
+    margin: var(--space-4) 0 !important;
+  }
+}

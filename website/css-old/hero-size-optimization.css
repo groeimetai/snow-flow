@@ -1,0 +1,146 @@
+/* =========================================
+   HERO SIZE OPTIMIZATION - Compact & Clean
+   ========================================= */
+
+/* SNOW-FLOW title - even smaller for better proportion */
+.hero-title {
+  font-size: clamp(var(--font-3xl), 5vw, var(--font-5xl)) !important; /* Further reduced for better balance */
+  margin-bottom: var(--space-4) !important; /* Reduced from space-6 */
+  letter-spacing: -0.03em !important; /* Tighter letter spacing */
+}
+
+/* Title letters - tighter spacing */
+.title-letter {
+  margin-right: 0.05em !important; /* Even tighter spacing */
+  font-size: inherit !important;
+}
+
+/* Version badge - more proportional */
+.version-badge {
+  font-size: var(--font-base) !important; /* Reduced from font-xl */
+  padding: var(--space-2) var(--space-4) !important; /* Reduced padding */
+  transform: rotate(-3deg) scale(1) !important; /* Reduced from scale(1.2) */
+  top: -15px !important; /* Adjusted position */
+  right: -20px !important;
+}
+
+/* Hero subtitle - more compact */
+.hero-subtitle {
+  font-size: clamp(var(--font-base), 1.5vw, var(--font-xl)) !important; /* Reduced from 2vw/2xl */
+  margin-bottom: var(--space-6) !important; /* Reduced from space-10 */
+  line-height: var(--leading-snug) !important; /* Tighter line height */
+}
+
+/* Feature pills - smaller and more compact */
+.feature-pills {
+  gap: var(--space-2) !important; /* Reduced gap */
+  margin: var(--space-4) 0 var(--space-6) !important; /* Reduced margins */
+}
+
+.pill {
+  font-size: var(--font-sm) !important; /* Reduced from font-base */
+  padding: var(--space-2) var(--space-4) !important; /* Reduced padding */
+  border-radius: var(--radius-full) !important;
+}
+
+.pill-icon {
+  font-size: var(--font-base) !important; /* Slightly smaller icons */
+}
+
+/* CTA buttons - more proportional */
+.btn-hero-primary,
+.btn-hero-secondary {
+  font-size: var(--font-base) !important; /* Reduced from font-lg */
+  padding: var(--space-3) var(--space-6) !important; /* Reduced padding */
+  border-radius: var(--radius-xl) !important; /* Slightly smaller radius */
+}
+
+.hero-actions {
+  gap: var(--space-3) !important; /* Reduced gap between buttons */
+  margin: var(--space-6) 0 var(--space-8) !important; /* Adjusted margins */
+}
+
+/* Hero stats - more compact with icon styling */
+.hero-stats {
+  padding: var(--space-4) var(--space-6) !important; /* Reduced padding */
+  margin: var(--space-8) auto var(--space-6) !important; /* Reduced margins */
+  max-width: 650px !important; /* Even more compact */
+}
+
+.stat-icon {
+  font-size: var(--font-xl) !important; /* Nice sized icons */
+  margin-bottom: var(--space-1) !important;
+  display: block !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)) !important;
+}
+
+.stat-number {
+  font-size: var(--font-3xl) !important; /* Reduced from font-4xl */
+  margin-bottom: var(--space-1) !important;
+}
+
+.stat-label {
+  font-size: var(--font-xs) !important; /* Smaller labels */
+  margin-top: var(--space-1) !important;
+}
+
+.stat-divider {
+  height: 45px !important; /* Shorter dividers */
+}
+
+.stat-item {
+  text-align: center !important;
+  padding: var(--space-2) !important; /* Reduced padding */
+}
+
+/* Hero content overall spacing */
+.hero-content {
+  padding: var(--space-10) var(--space-4) var(--space-6) !important; /* More compact padding */
+  max-width: 90% !important; /* Slightly more contained */
+}
+
+/* Mountain logo - smaller */
+.hero-logo-container {
+  margin-top: var(--space-2) !important; /* Reduced top margin */
+  margin-bottom: var(--space-3) !important; /* Reduced bottom margin */
+}
+
+.hero-mountain {
+  font-size: var(--font-5xl) !important; /* Reduced from larger size */
+}
+
+/* Responsive adjustments for compact design */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: clamp(var(--font-2xl), 4vw, var(--font-4xl)) !important; /* Even smaller on mobile */
+  }
+  
+  .hero-subtitle {
+    font-size: var(--font-base) !important;
+    margin-bottom: var(--space-4) !important;
+  }
+  
+  .feature-pills {
+    gap: var(--space-1) !important;
+  }
+  
+  .pill {
+    font-size: var(--font-xs) !important;
+    padding: var(--space-1) var(--space-3) !important;
+  }
+  
+  .hero-actions {
+    flex-direction: column !important;
+    gap: var(--space-2) !important;
+  }
+  
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    width: 100% !important;
+    max-width: 280px !important;
+  }
+  
+  .stat-number {
+    font-size: var(--font-2xl) !important;
+  }
+}
