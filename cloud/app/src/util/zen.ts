@@ -110,17 +110,6 @@ const FREE_WORKSPACES = [
   "wrk_01K46JDFR0E75SG2Q8K172KF3Y", // frank
 ]
 
-const logger = {
-  metric: (values: Record<string, any>) => {
-    console.log(`_metric:${JSON.stringify(values)}`)
-  },
-  log: console.log,
-  debug: (message: string) => {
-    if (Resource.App.stage === "production") return
-    console.debug(message)
-  },
-}
-
 export async function handler(
   input: APIEvent,
   opts: {
@@ -135,6 +124,17 @@ export async function handler(
     }
   },
 ) {
+  const logger = {
+    metric: (values: Record<string, any>) => {
+      console.log(`_metric:${JSON.stringify(values)}`)
+    },
+    log: console.log,
+    debug: (message: string) => {
+      if (Resource.App.stage === "production") return
+      console.debug(message)
+    },
+  }
+
   try {
     const url = new URL(input.request.url)
     const body = await input.request.json()
