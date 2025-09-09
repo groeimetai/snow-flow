@@ -133,6 +133,7 @@ new sst.cloudflare.x.SolidStart("Console", {
     STRIPE_WEBHOOK_SECRET,
     STRIPE_SECRET_KEY,
     ANTHROPIC_API_KEY,
+    OPENAI_API_KEY,
     XAI_API_KEY,
     BASETEN_API_KEY,
   ],
