@@ -36,6 +36,21 @@ const MODELS = {
     },
     headerMappings: {},
   },
+  "moonshotai/kimi-k2": {
+    id: "moonshotai/kimi-k2" as const,
+    auth: true,
+    api: "https://inference.baseten.co",
+    apiKey: Resource.BASETEN_API_KEY.value,
+    model: "moonshotai/Kimi-K2-Instruct-0905",
+    cost: {
+      input: 0.0000006,
+      output: 0.0000025,
+      reasoning: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+    },
+    headerMappings: {},
+  },
   "grok-code": {
     id: "x-ai/grok-code-fast-1" as const,
     auth: false,
