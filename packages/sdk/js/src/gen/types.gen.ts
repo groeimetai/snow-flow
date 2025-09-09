@@ -641,6 +641,9 @@ export type Config = {
           options?: {
             [key: string]: unknown
           }
+          provider?: {
+            npm: string
+          }
         }
       }
       options?: {
@@ -1008,6 +1011,9 @@ export type Model = {
   experimental?: boolean
   options: {
     [key: string]: unknown
+  }
+  provider?: {
+    npm: string
   }
 }
 
