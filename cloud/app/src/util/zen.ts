@@ -6,110 +6,6 @@ import { centsToMicroCents } from "@opencode/cloud-core/util/price.js"
 import { Identifier } from "@opencode/cloud-core/identifier.js"
 import { Resource } from "@opencode/cloud-resource"
 
-class AuthError extends Error {}
-class CreditsError extends Error {}
-class ModelError extends Error {}
-
-const MODELS = {
-  //  "anthropic/claude-sonnet-4": {
-  //    auth: true,
-  //    api: "https://api.anthropic.com",
-  //    apiKey: Resource.ANTHROPIC_API_KEY.value,
-  //    model: "claude-sonnet-4-20250514",
-  //    cost: {
-  //      input: 0.0000015,
-  //      output: 0.000006,
-  //      reasoning: 0.0000015,
-  //      cacheRead: 0.0000001,
-  //      cacheWrite: 0.0000001,
-  //    },
-  //    headerMappings: {},
-  //  },
-  "gpt-5": {
-    id: "gpt-5" as const,
-    auth: true,
-    api: "https://api.openai.com",
-    apiKey: Resource.OPENAI_API_KEY.value,
-    model: "gpt-5",
-    cost: {
-      input: 0.00000125,
-      output: 0.00001,
-      reasoning: 0.00001,
-      cacheRead: 0.000000125,
-      cacheWrite: 0,
-    },
-    headerMappings: {},
-  },
-  "qwen3-coder": {
-    id: "qwen3-coder" as const,
-    auth: true,
-    api: "https://inference.baseten.co",
-    apiKey: Resource.BASETEN_API_KEY.value,
-    model: "Qwen/Qwen3-Coder-480B-A35B-Instruct",
-    cost: {
-      input: 0.00000038,
-      output: 0.00000153,
-      reasoning: 0,
-      cacheRead: 0,
-      cacheWrite: 0,
-    },
-    headerMappings: {},
-  },
-  "kimi-k2": {
-    id: "kimi-k2" as const,
-    auth: true,
-    api: "https://inference.baseten.co",
-    apiKey: Resource.BASETEN_API_KEY.value,
-    model: "moonshotai/Kimi-K2-Instruct-0905",
-    cost: {
-      input: 0.0000006,
-      output: 0.0000025,
-      reasoning: 0,
-      cacheRead: 0,
-      cacheWrite: 0,
-    },
-    headerMappings: {},
-  },
-  "grok-code": {
-    id: "grok-code" as const,
-    auth: false,
-    api: "https://api.x.ai",
-    apiKey: Resource.XAI_API_KEY.value,
-    model: "grok-code",
-    cost: {
-      input: 0,
-      output: 0,
-      reasoning: 0,
-      cacheRead: 0,
-      cacheWrite: 0,
-    },
-    headerMappings: {
-      "x-grok-conv-id": "x-opencode-session",
-      "x-grok-req-id": "x-opencode-request",
-    },
-  },
-  // deprecated
-  "qwen/qwen3-coder": {
-    id: "qwen/qwen3-coder" as const,
-    auth: true,
-    api: "https://inference.baseten.co",
-    apiKey: Resource.BASETEN_API_KEY.value,
-    model: "Qwen/Qwen3-Coder-480B-A35B-Instruct",
-    cost: {
-      input: 0.00000038,
-      output: 0.00000153,
-      reasoning: 0,
-      cacheRead: 0,
-      cacheWrite: 0,
-    },
-    headerMappings: {},
-  },
-}
-
-const FREE_WORKSPACES = [
-  "wrk_01K46JDFR0E75SG2Q8K172KF3Y", // frank
-]
-
 export async function handler(
   input: APIEvent,
   opts: {
@@ -124,6 +20,110 @@ export async function handler(
     }
   },
 ) {
+  class AuthError extends Error {}
+  class CreditsError extends Error {}
+  class ModelError extends Error {}
+
+  const MODELS = {
+    //  "anthropic/claude-sonnet-4": {
+    //    auth: true,
+    //    api: "https://api.anthropic.com",
+    //    apiKey: Resource.ANTHROPIC_API_KEY.value,
+    //    model: "claude-sonnet-4-20250514",
+    //    cost: {
+    //      input: 0.0000015,
+    //      output: 0.000006,
+    //      reasoning: 0.0000015,
+    //      cacheRead: 0.0000001,
+    //      cacheWrite: 0.0000001,
+    //    },
+    //    headerMappings: {},
+    //  },
+    "gpt-5": {
+      id: "gpt-5" as const,
+      auth: true,
+      api: "https://api.openai.com",
+      apiKey: Resource.OPENAI_API_KEY.value,
+      model: "gpt-5",
+      cost: {
+        input: 0.00000125,
+        output: 0.00001,
+        reasoning: 0.00001,
+        cacheRead: 0.000000125,
+        cacheWrite: 0,
+      },
+      headerMappings: {},
+    },
+    "qwen3-coder": {
+      id: "qwen3-coder" as const,
+      auth: true,
+      api: "https://inference.baseten.co",
+      apiKey: Resource.BASETEN_API_KEY.value,
+      model: "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+      cost: {
+        input: 0.00000038,
+        output: 0.00000153,
+        reasoning: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      headerMappings: {},
+    },
+    "kimi-k2": {
+      id: "kimi-k2" as const,
+      auth: true,
+      api: "https://inference.baseten.co",
+      apiKey: Resource.BASETEN_API_KEY.value,
+      model: "moonshotai/Kimi-K2-Instruct-0905",
+      cost: {
+        input: 0.0000006,
+        output: 0.0000025,
+        reasoning: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      headerMappings: {},
+    },
+    "grok-code": {
+      id: "grok-code" as const,
+      auth: false,
+      api: "https://api.x.ai",
+      apiKey: Resource.XAI_API_KEY.value,
+      model: "grok-code",
+      cost: {
+        input: 0,
+        output: 0,
+        reasoning: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      headerMappings: {
+        "x-grok-conv-id": "x-opencode-session",
+        "x-grok-req-id": "x-opencode-request",
+      },
+    },
+    // deprecated
+    "qwen/qwen3-coder": {
+      id: "qwen/qwen3-coder" as const,
+      auth: true,
+      api: "https://inference.baseten.co",
+      apiKey: Resource.BASETEN_API_KEY.value,
+      model: "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+      cost: {
+        input: 0.00000038,
+        output: 0.00000153,
+        reasoning: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      headerMappings: {},
+    },
+  }
+
+  const FREE_WORKSPACES = [
+    "wrk_01K46JDFR0E75SG2Q8K172KF3Y", // frank
+  ]
+
   const logger = {
     metric: (values: Record<string, any>) => {
       console.log(`_metric:${JSON.stringify(values)}`)
