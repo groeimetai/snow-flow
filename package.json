@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "4.6.2",
-  "description": "PERSISTENT MCP SERVERS - v4.6.2 disables automatic MCP server shutdown for persistent operation. Servers now run indefinitely instead of auto-terminating after timeout periods. Fixes MCP server stability issues with permanent server lifecycle.",
+  "version": "4.6.5",
+  "description": "BULLETPROOF MCP PERSISTENCE - v4.6.5 implements comprehensive protection against ALL MCP server shutdown mechanisms. Added MCPPersistentGuard with process.kill override, disabled all queen.shutdown calls, and eliminated cleanup timers for truly eternal server operation.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
