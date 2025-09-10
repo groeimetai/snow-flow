@@ -1095,6 +1095,10 @@ function($scope) {
   }
 
   async shutdown(): Promise<void> {
+    this.logger.info('🛑 DISABLED: ServiceNow Queen shutdown disabled for persistence');
+    this.logger.info('🔄 Queen Agent and MCP servers will continue running indefinitely');
+    // DISABLED: All shutdown logic for persistent operation
+    /*
     if (this.config.debugMode) {
       this.logger.info('🛑 Shutting down ServiceNow Queen Agent');
     }
@@ -1109,6 +1113,7 @@ function($scope) {
     if (this.mcpBridge) {
       await this.mcpBridge.shutdown();
     }
+    */
     
     // Close memory system
     this.memory.close();
