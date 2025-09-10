@@ -9,14 +9,18 @@ import { Resource } from "@opencode/cloud-resource"
 export async function handler(
   input: APIEvent,
   opts: {
-    transformBody?: (body: any) => any
-    parseUsageChunk: (chunk: string) => string | undefined
-    buildUsage: (body: any) => {
+    modifyBody?: (body: any) => any
+    setAuthHeader: (headers: Headers, apiKey: string) => void
+    parseApiKey: (headers: Headers) => string | undefined
+    onStreamPart: (chunk: string) => void
+    getStreamUsage: () => any
+    normalizeUsage: (body: any) => {
       inputTokens: number
       outputTokens: number
-      reasoningTokens: number
+      reasoningTokens?: number
       cacheReadTokens: number
-      cacheWriteTokens: number
+      cacheWrite5mTokens?: number
+      cacheWrite1hTokens?: number
     }
   },
 ) {
@@ -25,20 +29,63 @@ export async function handler(
   class ModelError extends Error {}
 
   const MODELS = {
-    //  "anthropic/claude-sonnet-4": {
-    //    auth: true,
-    //    api: "https://api.anthropic.com",
-    //    apiKey: Resource.ANTHROPIC_API_KEY.value,
-    //    model: "claude-sonnet-4-20250514",
-    //    cost: {
-    //      input: 0.0000015,
-    //      output: 0.000006,
-    //      reasoning: 0.0000015,
-    //      cacheRead: 0.0000001,
-    //      cacheWrite: 0.0000001,
-    //    },
-    //    headerMappings: {},
-    //  },
+    "claude-opus-4-1": {
+      id: "claude-opus-4-1" as const,
+      auth: true,
+      api: "https://api.anthropic.com",
+      apiKey: Resource.ANTHROPIC_API_KEY.value,
+      model: "claude-opus-4-1-20250805",
+      cost: {
+        input: 0.000015,
+        output: 0.000075,
+        cacheRead: 0.0000015,
+        cacheWrite5m: 0.00001875,
+        cacheWrite1h: 0.00003,
+      },
+      headerMappings: {},
+    },
+    "claude-sonnet-4": {
+      id: "claude-sonnet-4" as const,
+      auth: true,
+      api: "https://api.anthropic.com",
+      apiKey: Resource.ANTHROPIC_API_KEY.value,
+      model: "claude-sonnet-4-20250514",
+      cost: (usage: any) => {
+        const totalInputTokens =
+          usage.inputTokens + usage.cacheReadTokens + usage.cacheWrite5mTokens + usage.cacheWrite1hTokens
+        return totalInputTokens <= 200_000
+          ? {
+              input: 0.000003,
+              output: 0.000015,
+              cacheRead: 0.0000003,
+              cacheWrite5m: 0.00000375,
+              cacheWrite1h: 0.000006,
+            }
+          : {
+              input: 0.000006,
+              output: 0.0000225,
+              cacheRead: 0.0000006,
+              cacheWrite5m: 0.0000075,
+              cacheWrite1h: 0.000012,
+            }
+      },
+      headerMappings: {},
+    },
+    "claude-3-5-haiku": {
+      id: "claude-3-5-haiku" as const,
+      auth: true,
+      api: "https://api.anthropic.com",
+      apiKey: Resource.ANTHROPIC_API_KEY.value,
+      model: "claude-3-5-haiku-20241022",
+      cost: {
+        input: 0.0000008,
+        output: 0.000004,
+        cacheRead: 0.00000008,
+        cacheWrite5m: 0.000001,
+        cacheWrite1h: 0.0000016,
+      },
+      headerMappings: {},
+    },
     "gpt-5": {
       id: "gpt-5" as const,
       auth: true,
@@ -48,9 +95,9 @@ export async function handler(
       cost: {
         input: 0.00000125,
         output: 0.00001,
-        reasoning: 0.00001,
         cacheRead: 0.000000125,
-        cacheWrite: 0,
+        cacheWrite5m: 0,
+        cacheWrite1h: 0,
       },
       headerMappings: {},
     },
@@ -63,9 +110,9 @@ export async function handler(
       cost: {
         input: 0.00000038,
         output: 0.00000153,
-        reasoning: 0,
         cacheRead: 0,
-        cacheWrite: 0,
+        cacheWrite5m: 0,
+        cacheWrite1h: 0,
       },
       headerMappings: {},
     },
@@ -78,9 +125,9 @@ export async function handler(
       cost: {
         input: 0.0000006,
         output: 0.0000025,
-        reasoning: 0,
         cacheRead: 0,
-        cacheWrite: 0,
+        cacheWrite5m: 0,
+        cacheWrite1h: 0,
       },
       headerMappings: {},
     },
@@ -93,9 +140,9 @@ export async function handler(
       cost: {
         input: 0,
         output: 0,
-        reasoning: 0,
         cacheRead: 0,
-        cacheWrite: 0,
+        cacheWrite5m: 0,
+        cacheWrite1h: 0,
       },
       headerMappings: {
         "x-grok-conv-id": "x-opencode-session",
@@ -112,9 +159,9 @@ export async function handler(
       cost: {
         input: 0.00000038,
         output: 0.00000153,
-        reasoning: 0,
         cacheRead: 0,
-        cacheWrite: 0,
+        cacheWrite5m: 0,
+        cacheWrite1h: 0,
       },
       headerMappings: {},
     },
@@ -156,14 +203,14 @@ export async function handler(
         const headers = input.request.headers
         headers.delete("host")
         headers.delete("content-length")
-        headers.set("authorization", `Bearer ${MODEL.apiKey}`)
+        opts.setAuthHeader(headers, MODEL.apiKey)
         Object.entries(MODEL.headerMappings ?? {}).forEach(([k, v]) => {
           headers.set(k, headers.get(v)!)
         })
         return headers
       })(),
       body: JSON.stringify({
-        ...(opts.transformBody?.(body) ?? body),
+        ...(opts.modifyBody?.(body) ?? body),
         model: MODEL.model,
       }),
     })
@@ -199,32 +246,31 @@ export async function handler(
         let buffer = ""
         let responseLength = 0
         let startTimestamp = Date.now()
-        let receivedFirstByte = false
 
         function pump(): Promise<void> {
           return (
             reader?.read().then(async ({ done, value }) => {
               if (done) {
                 logger.metric({ response_length: responseLength })
+                const usage = opts.getStreamUsage()
+                if (usage) await trackUsage(usage)
                 c.close()
                 return
               }
 
-              if (!receivedFirstByte) {
-                receivedFirstByte = true
+              if (responseLength === 0) {
                 logger.metric({ time_to_first_byte: Date.now() - startTimestamp })
               }
+              responseLength += value.length
 
               buffer += decoder.decode(value, { stream: true })
-              responseLength += value.length
 
               const parts = buffer.split("\n\n")
               buffer = parts.pop() ?? ""
 
               for (const part of parts) {
                 logger.debug(part)
-                const usage = opts.parseUsageChunk(part.trim())
-                if (usage) await trackUsage(usage)
+                opts.onStreamPart(part.trim())
               }
 
               c.enqueue(value)
@@ -255,10 +301,9 @@ export async function handler(
 
     async function authenticate() {
       try {
-        const authHeader = input.request.headers.get("authorization")
-        if (!authHeader || !authHeader.startsWith("Bearer ")) throw new AuthError("Missing API key.")
+        const apiKey = opts.parseApiKey(input.request.headers)
+        if (!apiKey) throw new AuthError("Missing API key.")
 
-        const apiKey = authHeader.split(" ")[1]
         const key = await Database.use((tx) =>
           tx
             .select({
@@ -300,26 +345,38 @@ export async function handler(
     }
 
     async function trackUsage(usage: any) {
-      const { inputTokens, outputTokens, reasoningTokens, cacheReadTokens, cacheWriteTokens } = opts.buildUsage(usage)
+      const { inputTokens, outputTokens, reasoningTokens, cacheReadTokens, cacheWrite5mTokens, cacheWrite1hTokens } =
+        opts.normalizeUsage(usage)
 
-      const inputCost = MODEL.cost.input * inputTokens * 100
-      const outputCost = MODEL.cost.output * outputTokens * 100
-      const reasoningCost = MODEL.cost.reasoning * reasoningTokens * 100
-      const cacheReadCost = MODEL.cost.cacheRead * cacheReadTokens * 100
-      const cacheWriteCost = MODEL.cost.cacheWrite * cacheWriteTokens * 100
-      const totalCostInCent = inputCost + outputCost + reasoningCost + cacheReadCost + cacheWriteCost
+      const modelCost = typeof MODEL.cost === "function" ? MODEL.cost(usage) : MODEL.cost
+
+      const inputCost = modelCost.input * inputTokens * 100
+      const outputCost = modelCost.output * outputTokens * 100
+      const reasoningCost = reasoningTokens ? modelCost.output * reasoningTokens * 100 : undefined
+      const cacheReadCost = modelCost.cacheRead * cacheReadTokens * 100
+      const cacheWrite5mCost = cacheWrite5mTokens ? modelCost.cacheWrite5m * cacheWrite5mTokens * 100 : undefined
+      const cacheWrite1hCost = cacheWrite1hTokens ? modelCost.cacheWrite1h * cacheWrite1hTokens * 100 : undefined
+      const totalCostInCent =
+        inputCost +
+        outputCost +
+        (reasoningCost ?? 0) +
+        cacheReadCost +
+        (cacheWrite5mCost ?? 0) +
+        (cacheWrite1hCost ?? 0)
 
       logger.metric({
         "tokens.input": inputTokens,
         "tokens.output": outputTokens,
         "tokens.reasoning": reasoningTokens,
         "tokens.cache_read": cacheReadTokens,
-        "tokens.cache_write": cacheWriteTokens,
+        "tokens.cache_write_5m": cacheWrite5mTokens,
+        "tokens.cache_write_1h": cacheWrite1hTokens,
         "cost.input": Math.round(inputCost),
         "cost.output": Math.round(outputCost),
-        "cost.reasoning": Math.round(reasoningCost),
+        "cost.reasoning": reasoningCost ? Math.round(reasoningCost) : undefined,
         "cost.cache_read": Math.round(cacheReadCost),
-        "cost.cache_write": Math.round(cacheWriteCost),
+        "cost.cache_write_5m": cacheWrite5mCost ? Math.round(cacheWrite5mCost) : undefined,
+        "cost.cache_write_1h": cacheWrite1hCost ? Math.round(cacheWrite1hCost) : undefined,
         "cost.total": Math.round(totalCostInCent),
       })
 
@@ -335,7 +392,7 @@ export async function handler(
           outputTokens,
           reasoningTokens,
           cacheReadTokens,
-          cacheWriteTokens,
+          cacheWriteTokens: (cacheWrite5mTokens ?? 0) + (cacheWrite1hTokens ?? 0),
           cost,
         })
         await tx

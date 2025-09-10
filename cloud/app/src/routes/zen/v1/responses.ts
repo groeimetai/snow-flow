@@ -2,8 +2,13 @@ import type { APIEvent } from "@solidjs/start/server"
 import { handler } from "~/util/zen"
 
 export function POST(input: APIEvent) {
+  let usage: any
   return handler(input, {
-    parseUsageChunk: (chunk: string) => {
+    setAuthHeader: (headers: Headers, apiKey: string) => {
+      headers.set("authorization", `Bearer ${apiKey}`)
+    },
+    parseApiKey: (headers: Headers) => headers.get("authorization")?.split(" ")[1],
+    onStreamPart: (chunk: string) => {
       const [event, data] = chunk.split("\n")
       if (event !== "event: response.completed") return
       if (!data.startsWith("data: ")) return
@@ -15,9 +20,11 @@ export function POST(input: APIEvent) {
         return
       }
 
-      return json.response?.usage
+      if (!json.response?.usage) return
+      usage = json.response.usage
     },
-    buildUsage: (usage: any) => {
+    getStreamUsage: () => usage,
+    normalizeUsage: (usage: any) => {
       const inputTokens = usage.input_tokens ?? 0
       const outputTokens = usage.output_tokens ?? 0
       const reasoningTokens = usage.output_tokens_details?.reasoning_tokens ?? 0
@@ -27,7 +34,6 @@ export function POST(input: APIEvent) {
         outputTokens: outputTokens - reasoningTokens,
         reasoningTokens,
         cacheReadTokens,
-        cacheWriteTokens: 0,
       }
     },
   })
