@@ -1007,6 +1007,17 @@ export namespace Session {
         }
       },
       async experimental_repairToolCall(input) {
+        const lower = input.toolCall.toolName.toLowerCase()
+        if (lower !== input.toolCall.toolName && tools[lower]) {
+          log.info("repairing tool call", {
+            tool: input.toolCall.toolName,
+            repaired: lower,
+          })
+          return {
+            ...input.toolCall,
+            toolName: lower,
+          }
+        }
         return {
           ...input.toolCall,
           input: JSON.stringify({
