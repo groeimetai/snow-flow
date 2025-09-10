@@ -52,6 +52,7 @@ import { ulid } from "ulid"
 import { defer } from "../util/defer"
 import { Command } from "../command"
 import { $ } from "bun"
+import { ListTool } from "../tool/ls"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -576,7 +577,45 @@ export namespace Session {
                 ]
               }
 
-              let file = Bun.file(filePath)
+              if (part.mime === "application/x-directory") {
+                const args = { path: filePath }
+                const result = await ListTool.init().then((t) =>
+                  t.execute(args, {
+                    sessionID: input.sessionID,
+                    abort: new AbortController().signal,
+                    agent: input.agent!,
+                    messageID: userMsg.id,
+                    extra: { bypassCwdCheck: true },
+                    metadata: async () => {},
+                  }),
+                )
+                return [
+                  {
+                    id: Identifier.ascending("part"),
+                    messageID: userMsg.id,
+                    sessionID: input.sessionID,
+                    type: "text",
+                    synthetic: true,
+                    text: `Called the list tool with the following input: ${JSON.stringify(args)}`,
+                  },
+                  {
+                    id: Identifier.ascending("part"),
+                    messageID: userMsg.id,
+                    sessionID: input.sessionID,
+                    type: "text",
+                    synthetic: true,
+                    text: result.output,
+                  },
+                  {
+                    ...part,
+                    id: part.id ?? Identifier.ascending("part"),
+                    messageID: userMsg.id,
+                    sessionID: input.sessionID,
+                  },
+                ]
+              }
+
+              const file = Bun.file(filePath)
               FileTime.read(input.sessionID, filePath)
               return [
                 {
@@ -1318,7 +1357,15 @@ export namespace Session {
           return
         }
 
-        if (stats.isDirectory()) return
+        if (stats.isDirectory()) {
+          parts.push({
+            type: "file",
+            url: `file://${filepath}`,
+            filename: name,
+            mime: "application/x-directory",
+          })
+          return
+        }
 
         parts.push({
           type: "file",

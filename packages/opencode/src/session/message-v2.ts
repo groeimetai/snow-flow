@@ -487,8 +487,8 @@ export namespace MessageV2 {
                   text: part.text,
                 },
               ]
-            // text/plain files are converted into text parts, ignore them
-            if (part.type === "file" && part.mime !== "text/plain")
+            // text/plain and directory files are converted into text parts, ignore them
+            if (part.type === "file" && part.mime !== "text/plain" && part.mime !== "application/x-directory")
               return [
                 {
                   type: "file",
