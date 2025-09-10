@@ -4,14 +4,14 @@ run-name: "${{ format('v{0}', inputs.version) }}"
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Version to publish"
+      bump:
+        description: "Bump major, minor, or patch"
         required: true
-        type: string
-      title:
-        description: "Custom title for this run"
-        required: false
-        type: string
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -65,8 +65,9 @@ jobs:
 
       - name: Publish
         run: |
-          OPENCODE_VERSION=${{ inputs.version }} ./script/publish.ts
+          ./script/publish.ts
         env:
+          OPENCODE_BUMP: ${{ inputs.bump }}
           GITHUB_TOKEN: ${{ secrets.SST_GITHUB_TOKEN }}
           AUR_KEY: ${{ secrets.AUR_KEY }}
           NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
