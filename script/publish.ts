@@ -2,6 +2,10 @@
 
 import { $ } from "bun"
 
+if (process.versions.bun !== "1.2.21") {
+  throw new Error("This script requires bun@1.2.21")
+}
+
 console.log("=== publishing ===\n")
 
 const snapshot = process.env["OPENCODE_SNAPSHOT"] === "true"
