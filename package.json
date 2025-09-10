@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "4.6.8",
-  "description": "RESTORED CLAUDE CODE VERSION PINNING - v4.6.8 restores automatic Claude Code 1.0.95 installation to swarm command that was lost during refactoring. Now properly integrated in TypeScript source with bulletproof MCP persistence and clean repository structure.",
+  "version": "4.6.9",
+  "description": "ENHANCED SCRIPT OUTPUT CAPTURE - v4.6.9 adds UnifiedScriptExecutor to capture complete script output including gs.print, gs.info, gs.warn, gs.error and script results. Solves the 'not getting actual output' problem with comprehensive output capture system.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
