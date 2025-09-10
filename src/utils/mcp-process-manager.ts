@@ -19,21 +19,17 @@ export class MCPProcessManager {
   private readonly MAX_MCP_SERVERS = parseInt(process.env.SNOW_MAX_MCP_SERVERS || '30'); // Increased from 10
   private readonly MAX_MEMORY_MB = parseInt(process.env.SNOW_MCP_MEMORY_LIMIT || '3000'); // Increased from 1500
   
-  // DISABLED AUTOMATIC CLEANUP BY DEFAULT
-  private readonly CLEANUP_ENABLED = process.env.SNOW_MCP_CLEANUP_ENABLED === 'true'; // Off by default
-  private readonly CLEANUP_INTERVAL = parseInt(process.env.SNOW_MCP_CLEANUP_INTERVAL || '300000'); // 5 minutes instead of 1
+  // PERMANENTLY DISABLED AUTOMATIC CLEANUP FOR PERSISTENT SERVERS
+  private readonly CLEANUP_ENABLED = false; // Permanently disabled - servers should run forever
+  private readonly CLEANUP_INTERVAL = Infinity; // Never cleanup
   
   private cleanupTimer?: NodeJS.Timeout;
   private isCleaningUp = false;
   
   private constructor() {
-    // Only start cleanup if explicitly enabled
-    if (this.CLEANUP_ENABLED) {
-      logger.warn('⚠️ MCP cleanup is ENABLED - monitor for memory issues');
-      this.startPeriodicCleanup();
-    } else {
-      logger.info('✅ MCP cleanup is DISABLED for stability');
-    }
+    // Never start cleanup - servers should be persistent
+    logger.info('✅ MCP cleanup is PERMANENTLY DISABLED - servers will run forever');
+    logger.info('🔄 MCP servers are now persistent and will not auto-shutdown');
   }
   
   static getInstance(): MCPProcessManager {

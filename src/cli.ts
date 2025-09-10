@@ -19,6 +19,10 @@ import { VERSION } from './version.js';
 import { snowFlowSystem } from './snow-flow-system.js';
 import { Logger } from './utils/logger.js';
 import chalk from 'chalk';
+// Load MCP Persistent Guard for bulletproof server protection
+import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
+// Activate protection immediately
+MCPPersistentGuard.getInstance();
 // Removed provider-agnostic imports - using Claude Code directly
 import { registerAuthCommands } from './cli/auth.js';
 import { registerSessionCommands } from './cli/session.js';
