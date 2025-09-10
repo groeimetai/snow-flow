@@ -766,8 +766,8 @@ export namespace Session {
       })
     }
 
-    const lastAssistantMsg = msgs.filter((x) => x.info.role === "assistant").at(-1)?.info as MessageV2.Assistant
-    if (lastAssistantMsg?.mode === "plan" && agent.name === "build") {
+    const wasPlan = msgs.some((msg) => msg.info.role === "assistant" && msg.info.mode === "plan")
+    if (wasPlan && agent.name === "build") {
       msgs.at(-1)?.parts.push({
         id: Identifier.ascending("part"),
         messageID: userMsg.id,
