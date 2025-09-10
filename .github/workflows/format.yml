@@ -24,6 +24,6 @@ jobs:
         run: bun install
 
       - name: Run format
-        run: bun run format
+        run: ./script/format.ts
         env:
           CI: true
