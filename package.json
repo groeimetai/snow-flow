@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "4.6.6",
-  "description": "BULLETPROOF MCP PERSISTENCE - v4.6.6 implements comprehensive protection against ALL MCP server shutdown mechanisms. Added MCPPersistentGuard with process.kill override, disabled all shutdown methods in TypeScript source, eliminated cleanup timers for truly eternal server operation.",
+  "version": "4.6.7",
+  "description": "CLEAN SOURCE REPOSITORY - v4.6.7 removes all built dist/ files from git for proper source code transparency. Only TypeScript source code tracked in git, dist/ built during NPM publish via prepublishOnly. Maintains bulletproof MCP persistence features.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc --noEmitOnError false || true",
+    "prepublishOnly": "npm run build",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "jest",
