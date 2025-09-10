@@ -1,5 +1,5 @@
 name: publish
-run-name: "${{ format('v{0}', inputs.version) }}"
+run-name: "${{ format('release {0}', inputs.bump) }}"
 
 on:
   workflow_dispatch:
