@@ -9,5 +9,5 @@ if (process.env["CI"] && (await $`git status --porcelain`.text())) {
   await $`git config --local user.name "GitHub Action"`
   await $`git add -A`
   await $`git commit -m "chore: format code"`
-  await $`git push`
+  await $`git push --no-verify`
 }
