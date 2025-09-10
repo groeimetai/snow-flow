@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "4.6.7",
-  "description": "CLEAN SOURCE REPOSITORY - v4.6.7 removes all built dist/ files from git for proper source code transparency. Only TypeScript source code tracked in git, dist/ built during NPM publish via prepublishOnly. Maintains bulletproof MCP persistence features.",
+  "version": "4.6.8",
+  "description": "RESTORED CLAUDE CODE VERSION PINNING - v4.6.8 restores automatic Claude Code 1.0.95 installation to swarm command that was lost during refactoring. Now properly integrated in TypeScript source with bulletproof MCP persistence and clean repository structure.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
