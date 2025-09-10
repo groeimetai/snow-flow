@@ -33,7 +33,7 @@ Check out the [**GitLab docs**](https://docs.gitlab.com/user/duo_agent_platform/
 6. Create a flow config file, here's an example:
 
    <details>
-     <summary>Flow configuration</summary>
+  <summary>Flow configuration</summary>
 
    ```yaml
    image: node:22-slim
@@ -67,17 +67,17 @@ Check out the [**GitLab docs**](https://docs.gitlab.com/user/duo_agent_platform/
      - |
        opencode run "
        You are an AI assistant helping with GitLab operations.
-   
+
        Context: $AI_FLOW_CONTEXT
        Task: $AI_FLOW_INPUT
        Event: $AI_FLOW_EVENT
-   
+
        Please execute the requested task using the available GitLab tools.
        Be thorough in your analysis and provide clear explanations.
-   
+
        <important>
        Please use the glab CLI to access data from GitLab. The glab CLI has already been authenticated. You can run the corresponding commands.
-   
+
        If you are asked to summarise an MR or issue or asked to provide more information then please post back a note to the MR/Issue so that the user can see it.
        You don't need to commit or push up changes, those will be done automatically based on the file changes you make.
        </important>
