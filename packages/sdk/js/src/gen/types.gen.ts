@@ -744,6 +744,7 @@ export type Config = {
         }
       }>
     }
+    disable_paste_summary?: boolean
   }
 }
 
