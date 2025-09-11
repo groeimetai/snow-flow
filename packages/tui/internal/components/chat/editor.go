@@ -668,6 +668,11 @@ func (m *editorComponent) shouldSummarizePastedText(text string) bool {
 	if m.app.IsBashMode {
 		return false
 	}
+
+	if m.app.Config != nil && m.app.Config.Experimental.DisablePasteSummary {
+		return false
+	}
+
 	lines := strings.Split(text, "\n")
 	lineCount := len(lines)
 	charCount := len(text)
