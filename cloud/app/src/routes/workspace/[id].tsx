@@ -551,7 +551,7 @@ function NewUserSection() {
   )
 }
 
-export default function() {
+export default function () {
   const params = useParams()
   const keys = createAsync(() => listKeys(params.id))
   const usage = createAsync(() => getUsageInfo(params.id))
