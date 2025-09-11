@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"log/slog"
 
@@ -653,15 +654,22 @@ func getDefaultModel(
 }
 
 func (a *App) IsBusy() bool {
-	if a.Session.Time.Compacting > 0 {
-		return true
-	}
 	if len(a.Messages) == 0 {
 		return false
+	}
+	if a.IsCompacting() {
+		return true
 	}
 	lastMessage := a.Messages[len(a.Messages)-1]
 	if casted, ok := lastMessage.Info.(opencode.AssistantMessage); ok {
 		return casted.Time.Completed == 0
+	}
+	return false
+}
+
+func (a *App) IsCompacting() bool {
+	if time.Since(time.UnixMilli(int64(a.Session.Time.Compacting))) < time.Second*30 {
+		return true
 	}
 	return false
 }

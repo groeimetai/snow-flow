@@ -385,7 +385,7 @@ func (m *editorComponent) Content() string {
 	} else if m.app.IsBusy() {
 		keyText := m.getInterruptKeyText()
 		status := "working"
-		if m.app.Session.Time.Compacting > 0 {
+		if m.app.IsCompacting() {
 			status = "compacting"
 		}
 		if m.app.CurrentPermission.ID != "" {
