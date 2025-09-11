@@ -53,16 +53,23 @@ export default function Home() {
   return (
     <main data-page="home">
       <Title>opencode | AI coding agent built for the terminal</Title>
+
       <div data-component="content">
         <section data-component="top">
           <img data-slot="logo light" src={logoLight} alt="opencode logo light" />
           <img data-slot="logo dark" src={logoDark} alt="opencode logo dark" />
           <h1 data-slot="title">The AI coding agent built for the terminal</h1>
+          <div data-slot="login">
+            <a href="/auth">opencode zen</a>
+          </div>
         </section>
 
         <section data-component="cta">
           <div data-slot="left">
             <a href="/docs">Get Started</a>
+          </div>
+          <div data-slot="center">
+            <a href="/auth">opencode zen</a>
           </div>
           <div data-slot="right">
             <button data-copy data-slot="command">
@@ -165,6 +172,7 @@ export default function Home() {
           </div>
         </footer>
       </div>
+
       <div data-component="legal">
         <span>
           ©2025 <a href="https://anoma.ly">Anomaly Innovations</a>
