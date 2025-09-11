@@ -237,7 +237,12 @@ function KeysSection() {
                   <tr>
                     <td data-slot="key-name">{key.name}</td>
                     <td data-slot="key-value">
-                      <div onClick={() => copyKeyToClipboard(key.key, key.id)} title="Click to copy API key">
+                      <button
+                        data-color="ghost"
+                        disabled={copiedId() === key.id}
+                        onClick={() => copyKeyToClipboard(key.key, key.id)}
+                        title="Copy API key"
+                      >
                         <span>{formatKey(key.key)}</span>
                         <Show
                           when={copiedId() === key.id}
@@ -245,7 +250,7 @@ function KeysSection() {
                         >
                           <IconCheck style={{ width: "14px", height: "14px" }} />
                         </Show>
-                      </div>
+                      </button>
                     </td>
                     <td data-slot="key-date" title={formatDateUTC(key.timeCreated)}>
                       {formatDateForTable(key.timeCreated)}
@@ -464,7 +469,99 @@ function PaymentsSection() {
   )
 }
 
-export default function () {
+function NewUserSection() {
+  const params = useParams()
+  const keys = createAsync(() => listKeys(params.id))
+  const [copiedKey, setCopiedKey] = createSignal(false)
+
+  async function copyKeyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedKey(true)
+      setTimeout(() => setCopiedKey(false), 2000)
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error)
+    }
+  }
+
+  return (
+    <div data-slot="new-user-sections">
+      <div data-component="feature-grid">
+        <div data-slot="feature">
+          <h3>Tested & Verified Models</h3>
+          <p>We've benchmarked and tested models specifically for coding agents to ensure the best performance.</p>
+        </div>
+        <div data-slot="feature">
+          <h3>Highest Quality</h3>
+          <p>Access models configured for optimal performance - no downgrades or routing to cheaper providers.</p>
+        </div>
+        <div data-slot="feature">
+          <h3>No Lock-in</h3>
+          <p>Use Zen with any coding agent, and continue using other providers with opencode whenever you want.</p>
+        </div>
+      </div>
+
+      <div data-component="api-key-highlight">
+        <div data-slot="section-title">
+          <h2>Your API Key</h2>
+        </div>
+
+        <Show when={keys()?.length}>
+          <div data-slot="key-display">
+            <div data-slot="key-container">
+              <code data-slot="key-value">{keys()![0].key}</code>
+              <button
+                data-color="primary"
+                disabled={copiedKey()}
+                onClick={() => copyKeyToClipboard(keys()![0].key)}
+                title="Copy API key"
+              >
+                <Show
+                  when={copiedKey()}
+                  fallback={
+                    <>
+                      <IconCopy style={{ width: "16px", height: "16px" }} /> Copy Key
+                    </>
+                  }
+                >
+                  <IconCheck style={{ width: "16px", height: "16px" }} /> Copied!
+                </Show>
+              </button>
+            </div>
+          </div>
+        </Show>
+      </div>
+
+      <div data-component="next-steps">
+        <div data-slot="section-title">
+          <h2>Next Steps</h2>
+        </div>
+        <ol>
+          <li>Copy your API key above</li>
+          <li>
+            Run <code>opencode auth login</code> and select opencode
+          </li>
+          <li>Paste your API key when prompted</li>
+          <li>
+            Run <code>/models</code> to see available models
+          </li>
+        </ol>
+      </div>
+    </div>
+  )
+}
+
+export default function() {
+  const params = useParams()
+  const keys = createAsync(() => listKeys(params.id))
+  const usage = createAsync(() => getUsageInfo(params.id))
+
+  const isNewUser = createMemo(() => {
+    const keysList = keys()
+    const usageList = usage()
+    return keysList?.length === 1 && (!usageList || usageList.length === 0)
+  })
+
   return (
     <div data-page="workspace-[id]">
       <section data-component="title-section">
@@ -478,12 +575,14 @@ export default function () {
         </p>
       </section>
 
-      <div data-slot="sections">
-        <KeysSection />
-        <BalanceSection />
-        <UsageSection />
-        <PaymentsSection />
-      </div>
+      <Show when={!isNewUser()} fallback={<NewUserSection />}>
+        <div data-slot="sections">
+          <KeysSection />
+          <BalanceSection />
+          <UsageSection />
+          <PaymentsSection />
+        </div>
+      </Show>
     </div>
   )
 }
