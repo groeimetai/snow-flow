@@ -1,6 +1,6 @@
 import type { APIEvent } from "@solidjs/start/server"
 import path from "node:path"
-import { Database, eq, sql } from "@opencode/cloud-core/drizzle/index.js"
+import { and, Database, eq, isNull, sql } from "@opencode/cloud-core/drizzle/index.js"
 import { KeyTable } from "@opencode/cloud-core/schema/key.sql.js"
 import { BillingTable, UsageTable } from "@opencode/cloud-core/schema/billing.sql.js"
 import { centsToMicroCents } from "@opencode/cloud-core/util/price.js"
@@ -390,7 +390,7 @@ export async function handler(
               workspaceID: KeyTable.workspaceID,
             })
             .from(KeyTable)
-            .where(eq(KeyTable.key, apiKey))
+            .where(and(eq(KeyTable.key, apiKey), isNull(KeyTable.timeDeleted)))
             .then((rows) => rows[0]),
         )
 

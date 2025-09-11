@@ -15,6 +15,20 @@
       "when": 1756871639102,
       "tag": "0001_serious_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1757597611832,
+      "tag": "0002_violet_loners",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1757600397194,
+      "tag": "0003_dusty_clint_barton",
+      "breakpoints": true
     }
   ]
 }

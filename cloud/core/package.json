@@ -18,6 +18,7 @@
   },
   "scripts": {
     "db": "sst shell drizzle-kit",
+    "db-prod": "sst shell --stage production -- drizzle-kit",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
