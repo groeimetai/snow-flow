@@ -474,6 +474,7 @@ export async function handler(
           workspaceID: apiKey.workspaceID,
           id: Identifier.create("usage"),
           model: MODEL.id,
+          provider: providerName,
           inputTokens,
           outputTokens,
           reasoningTokens,

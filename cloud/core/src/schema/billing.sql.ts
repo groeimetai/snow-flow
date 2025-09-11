@@ -34,6 +34,7 @@ export const UsageTable = mysqlTable(
     ...workspaceColumns,
     ...timestamps,
     model: varchar("model", { length: 255 }).notNull(),
+    provider: varchar("provider", { length: 255 }),
     inputTokens: int("input_tokens").notNull(),
     outputTokens: int("output_tokens").notNull(),
     reasoningTokens: int("reasoning_tokens"),
