@@ -653,6 +653,9 @@ func getDefaultModel(
 }
 
 func (a *App) IsBusy() bool {
+	if a.Session.Time.Compacting > 0 {
+		return true
+	}
 	if len(a.Messages) == 0 {
 		return false
 	}
