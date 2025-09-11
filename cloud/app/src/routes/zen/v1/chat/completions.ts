@@ -6,9 +6,7 @@ export function POST(input: APIEvent) {
   return handler(input, {
     modifyBody: (body: any) => ({
       ...body,
-      stream_options: {
-        include_usage: true,
-      },
+      ...(body.stream ? { stream_options: { include_usage: true } } : {}),
     }),
     setAuthHeader: (headers: Headers, apiKey: string) => {
       headers.set("authorization", `Bearer ${apiKey}`)
