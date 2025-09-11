@@ -507,7 +507,10 @@ func (m *editorComponent) Submit() (tea.Model, tea.Cmd) {
 		commandName := strings.Split(expandedValue, " ")[0]
 		command := m.app.Commands[commands.CommandName(commandName)]
 		if command.Custom {
-			args := strings.TrimPrefix(expandedValue, command.PrimaryTrigger()+" ")
+			args := ""
+			if strings.HasPrefix(expandedValue, command.PrimaryTrigger()+" ") {
+				args = strings.TrimPrefix(expandedValue, command.PrimaryTrigger()+" ")
+			}
 			cmds = append(
 				cmds,
 				util.CmdHandler(app.SendCommand{Command: string(command.Name), Args: args}),
