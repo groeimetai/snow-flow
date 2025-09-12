@@ -478,6 +478,10 @@ export type Session = {
   }
   title: string
   version: string
+  compaction?: {
+    full?: string
+    micro?: string
+  }
   time: {
     created: number
     updated: number
