@@ -52,8 +52,8 @@ const createKey = action(async (form: FormData) => {
     await withActor(
       () =>
         Key.create({ name })
-          .then((data) => ({ data }))
-          .catch((e) => ({ error: e.message })),
+          .then((data) => ({ error: undefined, data }))
+          .catch((e) => ({ error: e.message as string })),
       workspaceID,
     ),
     { revalidate: listKeys.key },
@@ -193,8 +193,7 @@ function KeyCreateForm() {
   let input: HTMLInputElement
 
   createEffect(() => {
-    // @ts-expect-error
-    if (!submission.pending && submission.result?.data) {
+    if (!submission.pending && submission.result && !submission.result.error) {
       hide()
     }
   })
@@ -205,7 +204,7 @@ function KeyCreateForm() {
     //  2. Put in a key name and creates the key => form hides
     //  3. Click add key button again => form shows with the same error if
     //     submission.clear() is called only once
-    for (let i = 0; i < 3; i++) {
+    while (true) {
       submission.clear()
       if (!submission.result) break
     }
@@ -229,10 +228,8 @@ function KeyCreateForm() {
       <form action={createKey} method="post" data-slot="create-form">
         <div data-slot="input-container">
           <input ref={(r) => (input = r)} data-component="input" name="name" type="text" placeholder="Enter key name" />
-          {/* @ts-expect-error */}
-          <Show when={submission.result?.error}>
-            {/* @ts-expect-error */}
-            <div data-slot="form-error">{submission.result.error}</div>
+          <Show when={submission.result && submission.result.error}>
+            {(err) => <div data-slot="form-error">{err()}</div>}
           </Show>
         </div>
         <input type="hidden" name="workspaceID" value={params.id} />
