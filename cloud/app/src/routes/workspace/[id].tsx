@@ -49,7 +49,13 @@ const createKey = action(async (form: FormData) => {
   const workspaceID = form.get("workspaceID")?.toString()
   if (!workspaceID) return { error: "Workspace ID is required" }
   return json(
-    withActor(() => Key.create({ name }), workspaceID),
+    withActor(
+      () =>
+        Key.create({ name })
+          .then((data) => ({ data }))
+          .catch((e) => ({ error: e.message })),
+      workspaceID,
+    ),
     { revalidate: listKeys.key },
   )
 }, "key.create")
@@ -185,19 +191,27 @@ function KeySection() {
 function KeyCreateForm() {
   const params = useParams()
   const submission = useSubmission(createKey)
-  const [store, setStore] = createStore({
-    show: false,
-  })
+  const [store, setStore] = createStore({ show: false })
 
   let input: HTMLInputElement
 
   createEffect(() => {
-    if (!submission.pending && submission.result) {
+    // @ts-expect-error
+    if (!submission.pending && submission.result?.data) {
       hide()
     }
   })
 
   function show() {
+    // submission.clear() does not clear the result in some cases, ie.
+    //  1. Create key with empty name => error shows
+    //  2. Put in a key name and creates the key => form hides
+    //  3. Click add key button again => form shows with the same error if
+    //     submission.clear() is called only once
+    for (let i = 0; i < 3; i++) {
+      submission.clear()
+      if (!submission.result) break
+    }
     setStore("show", true)
     input.focus()
   }
@@ -216,7 +230,14 @@ function KeyCreateForm() {
       }
     >
       <form action={createKey} method="post" data-slot="create-form">
-        <input ref={(r) => (input = r)} data-component="input" name="name" type="text" placeholder="Enter key name" />
+        <div data-slot="input-container">
+          <input ref={(r) => (input = r)} data-component="input" name="name" type="text" placeholder="Enter key name" />
+          {/* @ts-expect-error */}
+          <Show when={submission.result?.error}>
+            {/* @ts-expect-error */}
+            <div data-slot="form-error">{submission.result.error}</div>
+          </Show>
+        </div>
         <input type="hidden" name="workspaceID" value={params.id} />
         <div data-slot="form-actions">
           <button type="reset" data-color="ghost" onClick={() => hide()}>

@@ -41,7 +41,11 @@ export namespace Key {
         key: secretKey,
         timeUsed: null,
       }),
-    )
+    ).catch((e: any) => {
+      if (e.message.match(/Duplicate entry '.*' for key 'key.name'/))
+        throw new Error("A key with this name already exists. Please choose a different name.")
+      throw e
+    })
 
     return keyID
   })
