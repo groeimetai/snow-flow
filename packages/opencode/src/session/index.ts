@@ -996,7 +996,8 @@ export namespace Session {
           needsCompaction({
             tokens: getUsage(model.info, step.usage, step.providerMetadata).tokens,
             model: model.info,
-          })
+          }) &&
+          false
         ) {
           await processor.end()
           const msg = await Session.summarize({
@@ -1005,7 +1006,7 @@ export namespace Session {
             modelID: model.info.id,
           })
           await processor.next()
-          pointer = messages.length - 1
+          pointer = messages.length
           messages.push(...MessageV2.toModelMessage([msg]))
         }
 
