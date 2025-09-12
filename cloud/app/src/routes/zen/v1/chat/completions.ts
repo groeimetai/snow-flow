@@ -1,5 +1,5 @@
 import type { APIEvent } from "@solidjs/start/server"
-import { handler } from "~/util/zen"
+import { handler } from "~/routes/zen/handler"
 
 type Usage = {
   prompt_tokens?: number
