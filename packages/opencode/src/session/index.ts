@@ -84,12 +84,6 @@ export namespace Session {
         .optional(),
       title: z.string(),
       version: z.string(),
-      compaction: z
-        .object({
-          full: z.string().optional(),
-          micro: z.string().optional(),
-        })
-        .optional(),
       time: z.object({
         created: z.number(),
         updated: z.number(),
@@ -726,12 +720,7 @@ export namespace Session {
       return Provider.defaultModel()
     })().then((x) => Provider.getModel(x.providerID, x.modelID))
 
-    let msgs = await messages(input.sessionID)
-    const lastSummary = Math.max(
-      0,
-      msgs.findLastIndex((msg) => msg.info.role === "assistant" && msg.info.summary === true),
-    )
-    msgs = msgs.slice(lastSummary)
+    let msgs = await messages(input.sessionID).then((x) => sinceSummary(x))
 
     const lastAssistant = msgs.findLast((msg) => msg.info.role === "assistant")
     if (
@@ -1001,9 +990,6 @@ export namespace Session {
         })
       },
       async prepareStep({ messages, steps }) {
-        log.info("search", {
-          length: messages.length,
-        })
         const step = steps.at(-1)
         if (
           step &&
@@ -1130,6 +1116,7 @@ export namespace Session {
       item.callback(result)
     }
     state().queued.delete(input.sessionID)
+    Session.microcompact(input)
     return result
   }
 
@@ -1814,13 +1801,7 @@ export namespace Session {
         draft.time.compacting = undefined
       })
     })
-    const msgs = await messages(input.sessionID)
-    const start = Math.max(
-      0,
-      msgs.findLastIndex((msg) => msg.info.role === "assistant" && msg.info.summary === true),
-    )
-    log.info("summarizing", { start })
-    const toSummarize = msgs.slice(start)
+    const toSummarize = await messages(input.sessionID).then((x) => sinceSummary(x))
     const model = await Provider.getModel(input.providerID, input.modelID)
     const system = [
       ...SystemPrompt.summarize(model.providerID),
@@ -1901,24 +1882,42 @@ export namespace Session {
     }
   }
 
+  function sinceSummary(msgs: { info: MessageV2.Info; parts: MessageV2.Part[] }[]) {
+    const result = []
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const msg = msgs[i]
+      result.push(msg)
+      if (msg.info.role === "assistant" && msg.info.summary) break
+    }
+    return result.toReversed()
+  }
+
   function needsCompaction(input: { tokens: MessageV2.Assistant["tokens"]; model: ModelsDev.Model }) {
     const count = input.tokens.input + input.tokens.cache.read + input.tokens.output
     const output = Math.min(input.model.limit.output, OUTPUT_TOKEN_MAX) || OUTPUT_TOKEN_MAX
     const usable = input.model.limit.context - output
-    return count > usable / 2
+    return count > usable
   }
 
   export async function microcompact(input: { sessionID: string }) {
     const msgs = await messages(input.sessionID)
     let sum = 0
-    for (let msgIndex = msgs.length - 1; msgIndex >= 0; msgIndex--) {
+    for (let msgIndex = msgs.length - 2; msgIndex >= 0; msgIndex--) {
       const msg = msgs[msgIndex]
+      if (msg.info.role === "assistant" && msg.info.summary) return
       for (let partIndex = msg.parts.length - 1; partIndex >= 0; partIndex--) {
         const part = msg.parts[partIndex]
         if (part.type === "tool")
           if (part.state.status === "completed") {
+            if (part.state.time.compacted) return
             sum += Token.estimate(part.state.output)
             if (sum > 40_000) {
+              log.info("microcompacting", {
+                sum,
+                id: part.id,
+              })
+              part.state.time.compacted = Date.now()
+              await updatePart(part)
             }
           }
       }

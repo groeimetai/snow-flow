@@ -52,6 +52,7 @@ export namespace MessageV2 {
       time: z.object({
         start: z.number(),
         end: z.number(),
+        compacted: z.number().optional(),
       }),
     })
     .openapi({
@@ -528,7 +529,7 @@ export namespace MessageV2 {
                     state: "output-available",
                     toolCallId: part.callID,
                     input: part.state.input,
-                    output: part.state.output,
+                    output: part.state.time.compacted ? "[Old tool result content cleared]" : part.state.output,
                   },
                 ]
               if (part.state.status === "error")
