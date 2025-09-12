@@ -49,7 +49,7 @@ const createKey = action(async (form: FormData) => {
   const workspaceID = form.get("workspaceID")?.toString()
   if (!workspaceID) return { error: "Workspace ID is required" }
   return json(
-    withActor(
+    await withActor(
       () =>
         Key.create({ name })
           .then((data) => ({ data }))
@@ -67,7 +67,7 @@ const removeKey = action(async (form: FormData) => {
   const workspaceID = form.get("workspaceID")?.toString()
   if (!workspaceID) return { error: "Workspace ID is required" }
   return json(
-    withActor(() => Key.remove({ id }), workspaceID),
+    await withActor(() => Key.remove({ id }), workspaceID),
     { revalidate: listKeys.key },
   )
 }, "key.remove")
