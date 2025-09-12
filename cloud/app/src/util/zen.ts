@@ -482,7 +482,6 @@ export async function handler(
           outputTokens,
           reasoningTokens,
           cacheReadTokens,
-          cacheWriteTokens: (cacheWrite5mTokens ?? 0) + (cacheWrite1hTokens ?? 0),
           cacheWrite5mTokens,
           cacheWrite1hTokens,
           cost,

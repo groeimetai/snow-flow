@@ -50,6 +50,13 @@
       "when": 1757643108507,
       "tag": "0006_parallel_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1757693869142,
+      "tag": "0007_familiar_nightshade",
+      "breakpoints": true
     }
   ]
 }

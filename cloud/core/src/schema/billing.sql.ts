@@ -39,7 +39,6 @@ export const UsageTable = mysqlTable(
     outputTokens: int("output_tokens").notNull(),
     reasoningTokens: int("reasoning_tokens"),
     cacheReadTokens: int("cache_read_tokens"),
-    cacheWriteTokens: int("cache_write_tokens"),
     cacheWrite5mTokens: int("cache_write_5m_tokens"),
     cacheWrite1hTokens: int("cache_write_1h_tokens"),
     cost: bigint("cost", { mode: "number" }).notNull(),
