@@ -1116,7 +1116,7 @@ export namespace Session {
       item.callback(result)
     }
     state().queued.delete(input.sessionID)
-    Session.microcompact(input)
+    Session.prune(input)
     return result
   }
 
@@ -1899,7 +1899,10 @@ export namespace Session {
     return count > usable
   }
 
-  export async function microcompact(input: { sessionID: string }) {
+  // goes backwards through parts until there are 40_000 tokens worth of tool
+  // calls. then erases output of previous tool calls. idea is to throw away old
+  // tool calls that are no longer relevant.
+  export async function prune(input: { sessionID: string }) {
     const msgs = await messages(input.sessionID)
     let sum = 0
     for (let msgIndex = msgs.length - 2; msgIndex >= 0; msgIndex--) {
@@ -1912,7 +1915,7 @@ export namespace Session {
             if (part.state.time.compacted) return
             sum += Token.estimate(part.state.output)
             if (sum > 40_000) {
-              log.info("microcompacting", {
+              log.info("pruning", {
                 sum,
                 id: part.id,
               })
