@@ -66,10 +66,7 @@ const removeKey = action(async (form: FormData) => {
   if (!id) return { error: "ID is required" }
   const workspaceID = form.get("workspaceID")?.toString()
   if (!workspaceID) return { error: "Workspace ID is required" }
-  return json(
-    await withActor(() => Key.remove({ id }), workspaceID),
-    { revalidate: listKeys.key },
-  )
+  return json(await withActor(() => Key.remove({ id }), workspaceID), { revalidate: listKeys.key })
 }, "key.remove")
 
 /////////////////////////////////////
