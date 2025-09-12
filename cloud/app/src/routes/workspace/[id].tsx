@@ -474,7 +474,7 @@ function NewUserSection() {
   )
 }
 
-export default function() {
+export default function () {
   return (
     <div data-page="workspace-[id]">
       <section data-component="title-section">
