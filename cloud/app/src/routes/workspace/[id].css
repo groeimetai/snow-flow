@@ -467,10 +467,15 @@
   [data-slot="new-user-sections"] {
     display: flex;
     flex-direction: column;
-    gap: var(--space-16);
+    gap: var(--space-8);
+    padding: var(--space-6);
+    background-color: var(--color-bg-surface);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--border-radius-sm);
 
     @media (max-width: 30rem) {
       gap: var(--space-8);
+      padding: var(--space-4);
     }
 
     [data-component="feature-grid"] {
@@ -490,7 +495,6 @@
         padding: var(--space-4);
         border: 1px solid var(--color-border);
         border-radius: var(--border-radius-sm);
-        background-color: var(--color-bg-surface);
 
         h3 {
           font-size: var(--font-size-sm);
@@ -546,7 +550,6 @@
           padding: var(--space-4);
           border: 2px solid var(--color-accent);
           border-radius: var(--border-radius-sm);
-          background-color: var(--color-bg-surface);
           align-items: center;
 
           @media (max-width: 40rem) {
@@ -599,26 +602,6 @@
       flex-direction: column;
       gap: var(--space-6);
 
-      [data-slot="section-title"] {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1);
-
-        h2 {
-          font-size: var(--font-size-md);
-          font-weight: 600;
-          line-height: 1.2;
-          letter-spacing: -0.03125rem;
-          margin: 0;
-          color: var(--color-text-secondary);
-          text-transform: uppercase;
-
-          @media (max-width: 30rem) {
-            font-size: var(--font-size-md);
-          }
-        }
-      }
-
       ol {
         margin: 0;
         padding-left: 0;
@@ -628,15 +611,14 @@
         list-style-position: inside;
 
         li {
-          font-size: var(--font-size-sm);
+          font-size: var(--font-size-md);
           line-height: 1.5;
-          color: var(--color-text-muted);
+          color: var(--color-text-secondary);
 
           code {
             font-family: var(--font-mono);
-            font-size: var(--font-size-xs);
+            font-size: var(--font-size-sm);
             padding: var(--space-1) var(--space-2);
-            background-color: var(--color-bg-surface);
             border: 1px solid var(--color-border);
             border-radius: var(--border-radius-sm);
             color: var(--color-text);

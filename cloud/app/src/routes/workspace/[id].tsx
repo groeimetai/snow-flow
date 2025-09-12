@@ -427,10 +427,6 @@ function NewUserSection() {
         </div>
 
         <div data-component="api-key-highlight">
-          <div data-slot="section-title">
-            <h2>Your API Key</h2>
-          </div>
-
           <Show when={defaultKey()}>
             <div data-slot="key-display">
               <div data-slot="key-container">
@@ -462,15 +458,12 @@ function NewUserSection() {
         </div>
 
         <div data-component="next-steps">
-          <div data-slot="section-title">
-            <h2>Next Steps</h2>
-          </div>
           <ol>
-            <li>Copy your API key above</li>
             <li>
               Run <code>opencode auth login</code> and select opencode
             </li>
-            <li>Paste your API key when prompted</li>
+            <li>Paste your API key</li>
+            <li>Start opencode</li>
             <li>
               Run <code>/models</code> to see available models
             </li>
@@ -481,7 +474,7 @@ function NewUserSection() {
   )
 }
 
-export default function () {
+export default function() {
   return (
     <div data-page="workspace-[id]">
       <section data-component="title-section">
