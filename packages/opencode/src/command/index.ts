@@ -10,6 +10,7 @@ export namespace Command {
       agent: z.string().optional(),
       model: z.string().optional(),
       template: z.string(),
+      subtask: z.boolean().optional(),
     })
     .openapi({
       ref: "Command",
@@ -28,6 +29,7 @@ export namespace Command {
         model: command.model,
         description: command.description,
         template: command.template,
+        subtask: command.subtask,
       }
     }
 

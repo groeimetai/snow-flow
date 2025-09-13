@@ -38,6 +38,7 @@ import { MCP } from "../mcp"
 import { LSP } from "../lsp"
 import { ReadTool } from "../tool/read"
 import { ListTool } from "../tool/ls"
+import { TaskTool } from "../tool/task"
 import { FileTime } from "../file/time"
 import { Permission } from "../permission"
 import { Snapshot } from "../snapshot"
@@ -1315,7 +1316,7 @@ export namespace SessionPrompt {
   export async function command(input: CommandInput) {
     log.info("command", input)
     const command = await Command.get(input.command)
-    const agent = command.agent ?? input.agent ?? "build"
+    const agentName = command.agent ?? input.agent ?? "build"
 
     let template = command.template.replace("$ARGUMENTS", input.arguments)
 
@@ -1385,22 +1386,134 @@ export namespace SessionPrompt {
         return Provider.parseModel(command.model)
       }
       if (command.agent) {
-        const agent = await Agent.get(command.agent)
-        if (agent.model) {
-          return agent.model
+        const cmdAgent = await Agent.get(command.agent)
+        if (cmdAgent.model) {
+          return cmdAgent.model
         }
       }
       if (input.model) {
         return Provider.parseModel(input.model)
       }
-      return undefined
+      return await Provider.defaultModel()
     })()
+
+    const agent = await Agent.get(agentName)
+    if (agent.mode === "subagent" || command.subtask) {
+      using abort = lock(input.sessionID)
+
+      const userMsg: MessageV2.User = {
+        id: Identifier.ascending("message"),
+        sessionID: input.sessionID,
+        time: {
+          created: Date.now(),
+        },
+        role: "user",
+      }
+      await Session.updateMessage(userMsg)
+      const userPart: MessageV2.Part = {
+        type: "text",
+        id: Identifier.ascending("part"),
+        messageID: userMsg.id,
+        sessionID: input.sessionID,
+        text: "The following tool was executed by the user",
+        synthetic: true,
+      }
+      await Session.updatePart(userPart)
+
+      const assistantMsg: MessageV2.Assistant = {
+        id: Identifier.ascending("message"),
+        sessionID: input.sessionID,
+        system: [],
+        mode: agentName,
+        cost: 0,
+        path: {
+          cwd: Instance.directory,
+          root: Instance.worktree,
+        },
+        time: {
+          created: Date.now(),
+        },
+        role: "assistant",
+        tokens: {
+          input: 0,
+          output: 0,
+          reasoning: 0,
+          cache: { read: 0, write: 0 },
+        },
+        modelID: model.modelID,
+        providerID: model.providerID,
+      }
+      await Session.updateMessage(assistantMsg)
+
+      const args = {
+        description: "Consulting " + agent.name,
+        subagent_type: agent.name,
+        prompt: template,
+      }
+      const toolPart: MessageV2.ToolPart = {
+        type: "tool",
+        id: Identifier.ascending("part"),
+        messageID: assistantMsg.id,
+        sessionID: input.sessionID,
+        tool: "task",
+        callID: ulid(),
+        state: {
+          status: "running",
+          time: {
+            start: Date.now(),
+          },
+          input: {
+            description: args.description,
+            subagent_type: args.subagent_type,
+            // truncate prompt to preserve context
+            prompt: args.prompt.length > 100 ? args.prompt.substring(0, 97) + "..." : args.prompt,
+          },
+        },
+      }
+      await Session.updatePart(toolPart)
+
+      const result = await TaskTool.init().then((t) =>
+        t.execute(args, {
+          sessionID: input.sessionID,
+          abort: abort.signal,
+          agent: agent.name,
+          messageID: assistantMsg.id,
+          extra: {},
+          metadata: async (metadata) => {
+            if (toolPart.state.status === "running") {
+              toolPart.state.metadata = metadata.metadata
+              toolPart.state.title = metadata.title
+              await Session.updatePart(toolPart)
+            }
+          },
+        }),
+      )
+
+      assistantMsg.time.completed = Date.now()
+      await Session.updateMessage(assistantMsg)
+      if (toolPart.state.status === "running") {
+        toolPart.state = {
+          status: "completed",
+          time: {
+            ...toolPart.state.time,
+            end: Date.now(),
+          },
+          input: toolPart.state.input,
+          title: "",
+          metadata: result.metadata,
+          output: result.output,
+        }
+        await Session.updatePart(toolPart)
+      }
+
+      return { info: assistantMsg, parts: [toolPart] }
+    }
 
     return prompt({
       sessionID: input.sessionID,
       messageID: input.messageID,
       model,
-      agent,
+      agent: agentName,
       parts,
     })
   }
