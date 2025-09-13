@@ -278,7 +278,11 @@ export namespace SessionPrompt {
               content: x,
             }),
           ),
-          ...MessageV2.toModelMessage(msgs.filter((m) => !(m.info.role === "assistant" && m.info.error))),
+          ...MessageV2.toModelMessage(
+            msgs.filter(
+              (m) => !(m.info.role === "assistant" && m.info.error && !MessageV2.AbortedError.isInstance(m.info.error)),
+            ),
+          ),
         ],
         tools: model.info.tool_call === false ? undefined : tools,
         model: wrapLanguageModel({
