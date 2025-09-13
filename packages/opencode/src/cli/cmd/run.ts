@@ -11,6 +11,7 @@ import { MessageV2 } from "../../session/message-v2"
 import { Identifier } from "../../id/id"
 import { Agent } from "../../agent/agent"
 import { Command } from "../../command"
+import { SessionPrompt } from "../../session/prompt"
 
 const TOOL: Record<string, [string, string]> = {
   todowrite: ["Todo", UI.Style.TEXT_WARNING_BOLD],
@@ -185,7 +186,7 @@ export const RunCommand = cmd({
       })
 
       if (args.command) {
-        await Session.command({
+        await SessionPrompt.command({
           messageID: Identifier.ascending("message"),
           sessionID: session.id,
           agent: agent.name,
@@ -197,7 +198,7 @@ export const RunCommand = cmd({
       }
 
       const messageID = Identifier.ascending("message")
-      const result = await Session.prompt({
+      const result = await SessionPrompt.prompt({
         sessionID: session.id,
         messageID,
         model: {

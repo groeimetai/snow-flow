@@ -331,6 +331,12 @@ export namespace MessageV2 {
     ),
   }
 
+  export const WithParts = z.object({
+    info: Info,
+    parts: z.array(Part),
+  })
+  export type WithParts = z.infer<typeof WithParts>
+
   export function fromV1(v1: Message.Info) {
     if (v1.role === "assistant") {
       const info: Assistant = {
@@ -551,5 +557,11 @@ export namespace MessageV2 {
     }
 
     return convertToModelMessages(result)
+  }
+
+  export function filterSummarized(msgs: { info: MessageV2.Info; parts: MessageV2.Part[] }[]) {
+    const i = msgs.findLastIndex((m) => m.info.role === "assistant" && !!m.info.summary)
+    if (i === -1) return msgs.slice()
+    return msgs.slice(i)
   }
 }
