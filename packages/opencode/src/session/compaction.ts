@@ -25,7 +25,7 @@ export namespace SessionCompaction {
     const count = input.tokens.input + input.tokens.cache.read + input.tokens.output
     const output = Math.min(input.model.limit.output, SessionPrompt.OUTPUT_TOKEN_MAX) || SessionPrompt.OUTPUT_TOKEN_MAX
     const usable = input.model.limit.context - output
-    return count > usable / 2
+    return count > usable
   }
 
   export async function run(input: { sessionID: string; providerID: string; modelID: string }) {
