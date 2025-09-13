@@ -10,6 +10,7 @@ import { Bus } from "../bus"
 import z from "zod"
 import type { ModelsDev } from "../provider/models"
 import { SessionPrompt } from "./prompt"
+import { Flag } from "../flag/flag"
 
 export namespace SessionCompaction {
   export const Event = {
@@ -22,6 +23,7 @@ export namespace SessionCompaction {
   }
 
   export function isOverflow(input: { tokens: MessageV2.Assistant["tokens"]; model: ModelsDev.Model }) {
+    if (Flag.OPENCODE_DISABLE_AUTOCOMPACT) return false
     const count = input.tokens.input + input.tokens.cache.read + input.tokens.output
     const output = Math.min(input.model.limit.output, SessionPrompt.OUTPUT_TOKEN_MAX) || SessionPrompt.OUTPUT_TOKEN_MAX
     const usable = input.model.limit.context - output
