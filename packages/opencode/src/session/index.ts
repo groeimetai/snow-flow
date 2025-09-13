@@ -735,7 +735,7 @@ export namespace Session {
         providerID: model.providerID,
         modelID: model.info.id,
       })
-      msgs = [msg]
+      msgs = [msg, { info: userMsg, parts: userParts }]
     }
 
     const outputLimit = Math.min(model.info.limit.output, OUTPUT_TOKEN_MAX) || OUTPUT_TOKEN_MAX
