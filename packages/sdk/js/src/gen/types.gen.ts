@@ -30,6 +30,9 @@ export type Event =
       type: "message.part.removed"
     } & EventMessagePartRemoved)
   | ({
+      type: "session.compacted"
+    } & EventSessionCompacted)
+  | ({
       type: "permission.updated"
     } & EventPermissionUpdated)
   | ({
@@ -39,20 +42,17 @@ export type Event =
       type: "file.edited"
     } & EventFileEdited)
   | ({
+      type: "session.idle"
+    } & EventSessionIdle)
+  | ({
       type: "session.updated"
     } & EventSessionUpdated)
   | ({
       type: "session.deleted"
     } & EventSessionDeleted)
   | ({
-      type: "session.idle"
-    } & EventSessionIdle)
-  | ({
       type: "session.error"
     } & EventSessionError)
-  | ({
-      type: "session.compacted"
-    } & EventSessionCompacted)
   | ({
       type: "server.connected"
     } & EventServerConnected)
@@ -425,6 +425,13 @@ export type EventMessagePartRemoved = {
   }
 }
 
+export type EventSessionCompacted = {
+  type: "session.compacted"
+  properties: {
+    sessionID: string
+  }
+}
+
 export type EventPermissionUpdated = {
   type: "permission.updated"
   properties: Permission
@@ -459,6 +466,13 @@ export type EventFileEdited = {
   type: "file.edited"
   properties: {
     file: string
+  }
+}
+
+export type EventSessionIdle = {
+  type: "session.idle"
+  properties: {
+    sessionID: string
   }
 }
 
@@ -499,13 +513,6 @@ export type EventSessionDeleted = {
   }
 }
 
-export type EventSessionIdle = {
-  type: "session.idle"
-  properties: {
-    sessionID: string
-  }
-}
-
 export type EventSessionError = {
   type: "session.error"
   properties: {
@@ -523,13 +530,6 @@ export type EventSessionError = {
       | ({
           name: "MessageAbortedError"
         } & MessageAbortedError)
-  }
-}
-
-export type EventSessionCompacted = {
-  type: "session.compacted"
-  properties: {
-    sessionID: string
   }
 }
 
@@ -571,6 +571,7 @@ export type Config = {
       description?: string
       agent?: string
       model?: string
+      subtask?: boolean
     }
   }
   plugin?: Array<string>
@@ -1156,6 +1157,7 @@ export type Command = {
   agent?: string
   model?: string
   template: string
+  subtask?: boolean
 }
 
 export type Symbol = {
