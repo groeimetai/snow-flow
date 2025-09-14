@@ -28,7 +28,6 @@ export const WebFetchTool = Tool.define("webfetch", {
     if (cfg.permission?.webfetch === "ask")
       await Permission.ask({
         type: "webfetch",
-        pattern: params.url,
         sessionID: ctx.sessionID,
         messageID: ctx.messageID,
         callID: ctx.callID,
