@@ -278,140 +278,122 @@ function KeyCreateForm() {
   )
 }
 
-function BalanceSection() {
+function BillingSection() {
   const params = useParams()
   const balanceInfo = createAsync(() => getBillingInfo(params.id))
   const createCheckoutUrlAction = useAction(createCheckoutUrl)
   const createCheckoutUrlSubmission = useSubmission(createCheckoutUrl)
+  const createSessionUrlAction = useAction(createSessionUrl)
+  const createSessionUrlSubmission = useSubmission(createSessionUrl)
   const disableReloadSubmission = useSubmission(disableReload)
   const reloadSubmission = useSubmission(reload)
 
+  const balanceAmount = createMemo(() => {
+    return ((balanceInfo()?.balance ?? 0) / 100000000).toFixed(2)
+  })
+
   return (
-    <section data-component="balance-section">
+    <section data-component="billing-section">
       <div data-slot="section-title">
-        <h2>Balance</h2>
-        <p>Add credits to your account.</p>
+        <h2>Billing</h2>
+        <p>Manage the payment method for your account.</p>
       </div>
-      <div data-slot="balance">
-        <div
-          data-slot="amount"
-          data-state={(() => {
-            const balanceStr = ((balanceInfo()?.balance ?? 0) / 100000000).toFixed(2)
-            return balanceStr === "0.00" || balanceStr === "-0.00" ? "danger" : undefined
-          })()}
-        >
-          <span data-slot="currency">$</span>
-          <span data-slot="value">
-            {(() => {
-              const balanceStr = ((balanceInfo()?.balance ?? 0) / 100000000).toFixed(2)
-              return balanceStr === "-0.00" ? "0.00" : balanceStr
-            })()}
-          </span>
-        </div>
-        <Show
-          when={balanceInfo()?.reload}
-          fallback={
-            <>
+      <div data-slot="section-content">
+        <Show when={balanceInfo()?.reloadError}>
+          <div data-slot="reload-error">
+            <p>
+              Reload failed at{" "}
+              {balanceInfo()?.timeReloadError!.toLocaleString("en-US", {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit",
+              })}{" "}
+              . Reason: {balanceInfo()?.reloadError?.replace(/\.$/, "")}. Please update your payment method and try
+              again.
+            </p>
+            <form action={reload} method="post" data-slot="create-form">
+              <input type="hidden" name="workspaceID" value={params.id} />
+              <button data-color="primary" type="submit" disabled={reloadSubmission.pending}>
+                {reloadSubmission.pending ? "Reloading..." : "Reload"}
+              </button>
+            </form>
+          </div>
+        </Show>
+        <div data-slot="payment">
+          <div data-slot="credit-card">
+            <div data-slot="card-icon">
+              <IconCreditCard style={{ width: "32px", height: "32px" }} />
+            </div>
+            <div data-slot="card-details">
+              <Show when={balanceInfo()?.paymentMethodLast4} fallback={<span data-slot="number">----</span>}>
+                <span data-slot="secret">••••</span>
+                <span data-slot="number">{balanceInfo()?.paymentMethodLast4}</span>
+              </Show>
+            </div>
+          </div>
+          <div data-slot="button-row">
+            <Show
+              when={balanceInfo()?.reload}
+              fallback={
+                <button
+                  data-color="primary"
+                  disabled={createCheckoutUrlSubmission.pending}
+                  onClick={async () => {
+                    const baseUrl = window.location.href
+                    const checkoutUrl = await createCheckoutUrlAction(params.id, baseUrl, baseUrl)
+                    if (checkoutUrl) {
+                      window.location.href = checkoutUrl
+                    }
+                  }}
+                >
+                  {createCheckoutUrlSubmission.pending ? "Loading..." : "Enable Billing"}
+                </button>
+              }
+            >
               <button
                 data-color="primary"
-                disabled={createCheckoutUrlSubmission.pending}
+                disabled={createSessionUrlSubmission.pending}
                 onClick={async () => {
                   const baseUrl = window.location.href
-                  const checkoutUrl = await createCheckoutUrlAction(params.id, baseUrl, baseUrl)
-                  if (checkoutUrl) {
-                    window.location.href = checkoutUrl
+                  const sessionUrl = await createSessionUrlAction(params.id, baseUrl)
+                  if (sessionUrl) {
+                    window.location.href = sessionUrl
                   }
                 }}
               >
-                {createCheckoutUrlSubmission.pending ? "Loading..." : "Enable Billing"}
+                {createSessionUrlSubmission.pending ? "Loading..." : "Manage Payment Methods"}
               </button>
-              <p>You can continue using the API with the remaining credits.</p>
-            </>
-          }
-        >
-          <>
-            <div>
-              <p>
-                You will be automatically reloading <b>$20</b> (+$1.23 processing fee) when your balance reaches{" "}
-                <b>$5</b>.
-              </p>
-              <p>You will be able to continue using the API with the remaining credits after disabling billing.</p>
               <form action={disableReload} method="post" data-slot="create-form">
                 <input type="hidden" name="workspaceID" value={params.id} />
-                <button data-color="primary" type="submit" disabled={disableReloadSubmission.pending}>
-                  {disableReloadSubmission.pending ? "Disabling..." : "Disable Billing"}
+                <button data-color="ghost" type="submit" disabled={disableReloadSubmission.pending}>
+                  {disableReloadSubmission.pending ? "Disabling..." : "Disable"}
                 </button>
               </form>
-              <Show when={balanceInfo()?.reloadError}>
-                <>
-                  <p>
-                    Reload failed at{" "}
-                    {balanceInfo()?.timeReloadError!.toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      second: "2-digit",
-                    })}{" "}
-                    . Reason: {balanceInfo()?.reloadError?.replace(/\.$/, "")}. Please update your payment method and
-                    try again.
-                  </p>
-                  <form action={reload} method="post" data-slot="create-form">
-                    <input type="hidden" name="workspaceID" value={params.id} />
-                    <button data-color="primary" type="submit" disabled={reloadSubmission.pending}>
-                      {reloadSubmission.pending ? "Reloading..." : "Retry Reload"}
-                    </button>
-                  </form>
-                </>
-              </Show>
-            </div>
-          </>
-        </Show>
+            </Show>
+          </div>
+        </div>
+        <div data-slot="usage">
+          <Show when={!balanceInfo()?.reload && !(balanceAmount() === "0.00" || balanceAmount() === "-0.00")}>
+            <p>
+              You have <b data-slot="value">${balanceAmount() === "-0.00" ? "0.00" : balanceAmount()}</b> remaining in
+              your account. You can continue using the API with your remaining balance.
+            </p>
+          </Show>
+          <Show when={balanceInfo()?.reload && !balanceInfo()?.reloadError}>
+            <p>
+              Your current balance is <b data-slot="value">${balanceAmount() === "-0.00" ? "0.00" : balanceAmount()}</b>
+              . It'll be reloaded to <b>$20</b> (+$1.23 processing fee) when it reaches <b>$5</b>.
+            </p>
+          </Show>
+        </div>
       </div>
-      <Show when={balanceInfo()?.reload}>
-        <BalancePaymentForm />
-        <BalanceLimitForm />
-      </Show>
     </section>
   )
 }
 
-function BalancePaymentForm() {
-  const params = useParams()
-  const createSessionUrlAction = useAction(createSessionUrl)
-  const createSessionUrlSubmission = useSubmission(createSessionUrl)
-  const balanceInfo = createAsync(() => getBillingInfo(params.id))
-
-  return (
-    <>
-      <div data-slot="section-title">
-        <h2>Payment Method</h2>
-      </div>
-      <div data-slot="balance">
-        <div data-slot="amount">
-          <IconCreditCard style={{ width: "32px", height: "32px" }} />
-          <span data-slot="currency">••••</span>
-          <span data-slot="value">{balanceInfo()?.paymentMethodLast4}</span>
-        </div>
-        <button
-          data-color="primary"
-          disabled={createSessionUrlSubmission.pending}
-          onClick={async () => {
-            const baseUrl = window.location.href
-            const sessionUrl = await createSessionUrlAction(params.id, baseUrl)
-            if (sessionUrl) {
-              window.location.href = sessionUrl
-            }
-          }}
-        >
-          {createSessionUrlSubmission.pending ? "Loading..." : "Manage Payment Methods"}
-        </button>
-      </div>
-    </>
-  )
-}
-
-function BalanceLimitForm() {
+function MonthlyLimitSection() {
   const params = useParams()
   const submission = useSubmission(setMonthlyLimit)
   const [store, setStore] = createStore({ show: false })
@@ -444,19 +426,47 @@ function BalanceLimitForm() {
   }
 
   return (
-    <>
+    <section data-component="monthly-limit-section">
       <div data-slot="section-title">
         <h2>Monthly Limit</h2>
+        <p>Set a monthly spending limit for your account.</p>
       </div>
-      <div data-slot="balance">
-        <div data-slot="amount">
-          <span data-slot="currency">$</span>
-          <span data-slot="value">{balanceInfo()?.monthlyLimit ?? "-"}</span>
+      <div data-slot="section-content">
+        <div data-slot="balance">
+          <div data-slot="amount">
+            {balanceInfo()?.monthlyLimit ? <span data-slot="currency">$</span> : null}
+            <span data-slot="value">{balanceInfo()?.monthlyLimit ?? "-"}</span>
+          </div>
+          <Show
+            when={!store.show}
+            fallback={
+              <form action={setMonthlyLimit} method="post" data-slot="create-form">
+                <div data-slot="input-container">
+                  <input ref={(r) => (input = r)} data-component="input" name="limit" type="number" placeholder="50" />
+                  <Show when={submission.result && submission.result.error}>
+                    {(err) => <div data-slot="form-error">{err()}</div>}
+                  </Show>
+                </div>
+                <input type="hidden" name="workspaceID" value={params.id} />
+                <div data-slot="form-actions">
+                  <button type="reset" data-color="ghost" onClick={() => hide()}>
+                    Cancel
+                  </button>
+                  <button type="submit" data-color="primary" disabled={submission.pending}>
+                    {submission.pending ? "Setting..." : "Set"}
+                  </button>
+                </div>
+              </form>
+            }
+          >
+            <button data-color="primary" onClick={() => show()}>
+              {balanceInfo()?.monthlyLimit ? "Edit Limit" : "Set Limit"}
+            </button>
+          </Show>
         </div>
-        <Show when={balanceInfo()?.monthlyLimit} fallback={<p>No spending limit set.</p>}>
-          <p>
-            Current usage for the month of {new Date().toLocaleDateString("en-US", { month: "long", timeZone: "UTC" })}{" "}
-            is $
+        <Show when={balanceInfo()?.monthlyLimit} fallback={<p data-slot="usage-status">No spending limit set.</p>}>
+          <p data-slot="usage-status">
+            Current usage for {new Date().toLocaleDateString("en-US", { month: "long", timeZone: "UTC" })} is $
             {(() => {
               const dateLastUsed = balanceInfo()?.timeMonthlyUsageUpdated
               if (!dateLastUsed) return "0"
@@ -474,42 +484,11 @@ function BalanceLimitForm() {
               if (current !== lastUsed) return "0"
               return ((balanceInfo()?.monthlyUsage ?? 0) / 100000000).toFixed(2)
             })()}
+            .
           </p>
         </Show>
       </div>
-      <Show
-        when={store.show}
-        fallback={
-          <button data-color="primary" onClick={() => show()}>
-            {balanceInfo()?.monthlyLimit ? "Edit Spending Limit" : "Set Spending Limit"}
-          </button>
-        }
-      >
-        <form action={setMonthlyLimit} method="post" data-slot="create-form">
-          <div data-slot="input-container">
-            <input
-              ref={(r) => (input = r)}
-              data-component="input"
-              name="limit"
-              type="number"
-              placeholder="Enter limit"
-            />
-            <Show when={submission.result && submission.result.error}>
-              {(err) => <div data-slot="form-error">{err()}</div>}
-            </Show>
-          </div>
-          <input type="hidden" name="workspaceID" value={params.id} />
-          <div data-slot="form-actions">
-            <button type="reset" data-color="ghost" onClick={() => hide()}>
-              Cancel
-            </button>
-            <button type="submit" data-color="primary" disabled={submission.pending}>
-              {submission.pending ? "Setting..." : "Set"}
-            </button>
-          </div>
-        </form>
-      </Show>
-    </>
+    </section>
   )
 }
 
@@ -570,7 +549,6 @@ function UsageSection() {
 function PaymentSection() {
   const params = useParams()
   const payments = createAsync(() => getPaymentsInfo(params.id))
-  console.log("!#!@", payments())
 
   return (
     payments() &&
@@ -675,13 +653,13 @@ function NewUserSection() {
 
         <div data-component="next-steps">
           <ol>
+            <li>Enable billing</li>
             <li>
               Run <code>opencode auth login</code> and select opencode
             </li>
             <li>Paste your API key</li>
-            <li>Start opencode</li>
             <li>
-              Run <code>/models</code> to see available models
+              Start opencode and run <code>/models</code> to select a model
             </li>
           </ol>
         </div>
@@ -690,7 +668,9 @@ function NewUserSection() {
   )
 }
 
-export default function () {
+export default function() {
+  const params = useParams()
+
   return (
     <div data-page="workspace-[id]">
       <section data-component="title-section">
@@ -707,7 +687,10 @@ export default function () {
       <div data-slot="sections">
         <NewUserSection />
         <KeySection />
-        <BalanceSection />
+        <BillingSection />
+        <Show when={createAsync(() => getBillingInfo(params.id))()?.reload}>
+          <MonthlyLimitSection />
+        </Show>
         <UsageSection />
         <PaymentSection />
       </div>
