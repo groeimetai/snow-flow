@@ -334,7 +334,7 @@ export type EventSessionCompacted = {
 export type Permission = {
   id: string
   type: string
-  pattern?: string
+  pattern?: string | Array<string>
   sessionID: string
   messageID: string
   callID?: string
