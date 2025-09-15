@@ -296,7 +296,7 @@ function BillingSection() {
     <section data-component="billing-section">
       <div data-slot="section-title">
         <h2>Billing</h2>
-        <p>Manage the payment method for your account.</p>
+        <p>Manage payments methods. <a href="mailto:contact@anoma.ly">Contact us</a> if you have any questions.</p>
       </div>
       <div data-slot="section-content">
         <Show when={balanceInfo()?.reloadError}>
@@ -384,7 +384,7 @@ function BillingSection() {
           <Show when={balanceInfo()?.reload && !balanceInfo()?.reloadError}>
             <p>
               Your current balance is <b data-slot="value">${balanceAmount() === "-0.00" ? "0.00" : balanceAmount()}</b>
-              . It'll be reloaded to <b>$20</b> (+$1.23 processing fee) when it reaches <b>$5</b>.
+              . We'll automatically reload <b>$20</b> (+$1.23 processing fee) when it reaches <b>$5</b>.
             </p>
           </Show>
         </div>
