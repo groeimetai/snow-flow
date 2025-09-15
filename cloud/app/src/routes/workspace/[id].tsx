@@ -672,6 +672,7 @@ function NewUserSection() {
 
 export default function () {
   const params = useParams()
+  const balanceInfo = createAsync(() => getBillingInfo(params.id))
 
   return (
     <div data-page="workspace-[id]">
@@ -690,7 +691,7 @@ export default function () {
         <NewUserSection />
         <KeySection />
         <BillingSection />
-        <Show when={createAsync(() => getBillingInfo(params.id))()?.reload}>
+        <Show when={balanceInfo()?.reload}>
           <MonthlyLimitSection />
         </Show>
         <UsageSection />
