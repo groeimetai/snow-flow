@@ -311,7 +311,7 @@ function BillingSection() {
                 hour: "numeric",
                 minute: "2-digit",
                 second: "2-digit",
-              })}{" "}
+              })}
               . Reason: {balanceInfo()?.reloadError?.replace(/\.$/, "")}. Please update your payment method and try
               again.
             </p>
