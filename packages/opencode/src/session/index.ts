@@ -1,5 +1,5 @@
 import { Decimal } from "decimal.js"
-import { z } from "zod"
+import z from "zod/v4"
 import { type LanguageModelUsage, type ProviderMetadata } from "ai"
 
 import PROMPT_INITIALIZE from "../session/prompt/initialize.txt"
@@ -56,7 +56,7 @@ export namespace Session {
         })
         .optional(),
     })
-    .openapi({
+    .meta({
       ref: "Session",
     })
   export type Info = z.output<typeof Info>
@@ -66,7 +66,7 @@ export namespace Session {
       secret: z.string(),
       url: z.string(),
     })
-    .openapi({
+    .meta({
       ref: "SessionShare",
     })
   export type ShareInfo = z.output<typeof ShareInfo>

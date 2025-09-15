@@ -1,4 +1,4 @@
-import { z } from "zod"
+import z from "zod/v4"
 import { Bus } from "../bus"
 import { Log } from "../util/log"
 import { Identifier } from "../id/id"
@@ -27,12 +27,12 @@ export namespace Permission {
       messageID: z.string(),
       callID: z.string().optional(),
       title: z.string(),
-      metadata: z.record(z.any()),
+      metadata: z.record(z.string(), z.any()),
       time: z.object({
         created: z.number(),
       }),
     })
-    .openapi({
+    .meta({
       ref: "Permission",
     })
   export type Info = z.infer<typeof Info>

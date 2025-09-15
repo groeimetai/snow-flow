@@ -1,7 +1,7 @@
 import { Log } from "../util/log"
 import path from "path"
 import os from "os"
-import { z } from "zod"
+import z from "zod/v4"
 import { Filesystem } from "../util/filesystem"
 import { ModelsDev } from "../provider/models"
 import { mergeDeep, pipe } from "remeda"
@@ -217,7 +217,7 @@ export namespace Config {
       enabled: z.boolean().optional().describe("Enable or disable the MCP server on startup"),
     })
     .strict()
-    .openapi({
+    .meta({
       ref: "McpLocalConfig",
     })
 
@@ -229,7 +229,7 @@ export namespace Config {
       headers: z.record(z.string(), z.string()).optional().describe("Headers to send with the request"),
     })
     .strict()
-    .openapi({
+    .meta({
       ref: "McpRemoteConfig",
     })
 
@@ -267,7 +267,7 @@ export namespace Config {
         .optional(),
     })
     .catchall(z.any())
-    .openapi({
+    .meta({
       ref: "AgentConfig",
     })
   export type Agent = z.infer<typeof Agent>
@@ -342,7 +342,7 @@ export namespace Config {
       messages_revert: z.string().optional().default("none").describe("@deprecated use messages_undo. Revert message"),
     })
     .strict()
-    .openapi({
+    .meta({
       ref: "KeybindsConfig",
     })
 
@@ -350,7 +350,7 @@ export namespace Config {
     scroll_speed: z.number().min(1).optional().default(2).describe("TUI scroll speed"),
   })
 
-  export const Layout = z.enum(["auto", "stretch"]).openapi({
+  export const Layout = z.enum(["auto", "stretch"]).meta({
     ref: "LayoutConfig",
   })
   export type Layout = z.infer<typeof Layout>
@@ -407,9 +407,10 @@ export namespace Config {
         .describe("Agent configuration, see https://opencode.ai/docs/agent"),
       provider: z
         .record(
+          z.string(),
           ModelsDev.Provider.partial()
             .extend({
-              models: z.record(ModelsDev.Model.partial()).optional(),
+              models: z.record(z.string(), ModelsDev.Model.partial()).optional(),
               options: z
                 .object({
                   apiKey: z.string().optional(),
@@ -505,7 +506,7 @@ export namespace Config {
         .optional(),
     })
     .strict()
-    .openapi({
+    .meta({
       ref: "Config",
     })
 
@@ -644,7 +645,7 @@ export namespace Config {
     "ConfigInvalidError",
     z.object({
       path: z.string(),
-      issues: z.custom<z.ZodIssue[]>().optional(),
+      issues: z.custom<z.core.$ZodIssue[]>().optional(),
       message: z.string().optional(),
     }),
   )

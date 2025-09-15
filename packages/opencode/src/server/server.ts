@@ -1,11 +1,10 @@
 import { Log } from "../util/log"
 import { Bus } from "../bus"
-import { describeRoute, generateSpecs, openAPISpecs } from "hono-openapi"
+import { describeRoute, generateSpecs, validator, resolver, openAPIRouteHandler } from "hono-openapi"
 import { Hono } from "hono"
 import { streamSSE } from "hono/streaming"
 import { Session } from "../session"
-import { resolver, validator as zValidator } from "hono-openapi/zod"
-import { z } from "zod"
+import z from "zod/v4"
 import { Provider } from "../provider/provider"
 import { mapValues } from "remeda"
 import { NamedError } from "../util/error"
@@ -39,7 +38,7 @@ const ERRORS = {
             .object({
               data: z.record(z.string(), z.any()),
             })
-            .openapi({
+            .meta({
               ref: "Error",
             }),
         ),
@@ -59,7 +58,7 @@ export namespace Server {
       optional: z.boolean().optional(),
       items: z.enum(["string", "number", "boolean"]).optional(),
     })
-    .openapi({ ref: "HttpParamSpec" })
+    .meta({ ref: "HttpParamSpec" })
 
   const HttpToolRegistration = z
     .object({
@@ -67,12 +66,12 @@ export namespace Server {
       description: z.string(),
       parameters: z.object({
         type: z.literal("object"),
-        properties: z.record(HttpParamSpec),
+        properties: z.record(z.string(), HttpParamSpec),
       }),
       callbackUrl: z.string(),
       headers: z.record(z.string(), z.string()).optional(),
     })
-    .openapi({ ref: "HttpToolRegistration" })
+    .meta({ ref: "HttpToolRegistration" })
 
   export const Event = {
     Connected: Bus.event("server.connected", z.object({})),
@@ -115,10 +114,9 @@ export namespace Server {
         return next()
       })
     })
-    .use(zValidator("query", z.object({ directory: z.string().optional() })))
     .get(
       "/doc",
-      openAPISpecs(app, {
+      openAPIRouteHandler(app, {
         documentation: {
           info: {
             title: "opencode",
@@ -129,6 +127,7 @@ export namespace Server {
         },
       }),
     )
+    .use(validator("query", z.object({ directory: z.string().optional() })))
     .route("/project", ProjectRoute)
     .get(
       "/event",
@@ -141,7 +140,7 @@ export namespace Server {
             content: {
               "text/event-stream": {
                 schema: resolver(
-                  Bus.payloads().openapi({
+                  Bus.payloads().meta({
                     ref: "Event",
                   }),
                 ),
@@ -211,7 +210,7 @@ export namespace Server {
           ...ERRORS,
         },
       }),
-      zValidator("json", HttpToolRegistration),
+      validator("json", HttpToolRegistration),
       async (c) => {
         ToolRegistry.registerHTTP(c.req.valid("json"))
         return c.json(true)
@@ -227,7 +226,7 @@ export namespace Server {
             description: "Tool IDs",
             content: {
               "application/json": {
-                schema: resolver(z.array(z.string()).openapi({ ref: "ToolIDs" })),
+                schema: resolver(z.array(z.string()).meta({ ref: "ToolIDs" })),
               },
             },
           },
@@ -257,9 +256,9 @@ export namespace Server {
                           description: z.string(),
                           parameters: z.any(),
                         })
-                        .openapi({ ref: "ToolListItem" }),
+                        .meta({ ref: "ToolListItem" }),
                     )
-                    .openapi({ ref: "ToolList" }),
+                    .meta({ ref: "ToolList" }),
                 ),
               },
             },
@@ -267,7 +266,7 @@ export namespace Server {
           ...ERRORS,
         },
       }),
-      zValidator(
+      validator(
         "query",
         z.object({
           provider: z.string(),
@@ -305,7 +304,7 @@ export namespace Server {
                       worktree: z.string(),
                       directory: z.string(),
                     })
-                    .openapi({
+                    .meta({
                       ref: "Path",
                     }),
                 ),
@@ -361,7 +360,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
@@ -389,7 +388,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
@@ -418,7 +417,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "json",
         z
           .object({
@@ -449,7 +448,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
@@ -476,13 +475,13 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
         }),
       ),
-      zValidator(
+      validator(
         "json",
         z.object({
           title: z.string().optional(),
@@ -517,13 +516,13 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
-          id: z.string().openapi({ description: "Session ID" }),
+          id: z.string().meta({ description: "Session ID" }),
         }),
       ),
-      zValidator(
+      validator(
         "json",
         z.object({
           messageID: z.string(),
@@ -554,7 +553,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
@@ -580,7 +579,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
@@ -609,7 +608,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
@@ -638,13 +637,13 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
-          id: z.string().openapi({ description: "Session ID" }),
+          id: z.string().meta({ description: "Session ID" }),
         }),
       ),
-      zValidator(
+      validator(
         "json",
         z.object({
           providerID: z.string(),
@@ -674,10 +673,10 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
-          id: z.string().openapi({ description: "Session ID" }),
+          id: z.string().meta({ description: "Session ID" }),
         }),
       ),
       async (c) => {
@@ -706,11 +705,11 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
-          id: z.string().openapi({ description: "Session ID" }),
-          messageID: z.string().openapi({ description: "Message ID" }),
+          id: z.string().meta({ description: "Session ID" }),
+          messageID: z.string().meta({ description: "Message ID" }),
         }),
       ),
       async (c) => {
@@ -740,13 +739,13 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
-          id: z.string().openapi({ description: "Session ID" }),
+          id: z.string().meta({ description: "Session ID" }),
         }),
       ),
-      zValidator("json", SessionPrompt.PromptInput.omit({ sessionID: true })),
+      validator("json", SessionPrompt.PromptInput.omit({ sessionID: true })),
       async (c) => {
         const sessionID = c.req.valid("param").id
         const body = c.req.valid("json")
@@ -775,13 +774,13 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
-          id: z.string().openapi({ description: "Session ID" }),
+          id: z.string().meta({ description: "Session ID" }),
         }),
       ),
-      zValidator("json", SessionPrompt.CommandInput.omit({ sessionID: true })),
+      validator("json", SessionPrompt.CommandInput.omit({ sessionID: true })),
       async (c) => {
         const sessionID = c.req.valid("param").id
         const body = c.req.valid("json")
@@ -805,13 +804,13 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
-          id: z.string().openapi({ description: "Session ID" }),
+          id: z.string().meta({ description: "Session ID" }),
         }),
       ),
-      zValidator("json", SessionPrompt.ShellInput.omit({ sessionID: true })),
+      validator("json", SessionPrompt.ShellInput.omit({ sessionID: true })),
       async (c) => {
         const sessionID = c.req.valid("param").id
         const body = c.req.valid("json")
@@ -835,13 +834,13 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
         }),
       ),
-      zValidator("json", SessionRevert.RevertInput.omit({ sessionID: true })),
+      validator("json", SessionRevert.RevertInput.omit({ sessionID: true })),
       async (c) => {
         const id = c.req.valid("param").id
         log.info("revert", c.req.valid("json"))
@@ -865,7 +864,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
@@ -892,14 +891,14 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
           permissionID: z.string(),
         }),
       ),
-      zValidator("json", z.object({ response: Permission.Response })),
+      validator("json", z.object({ response: Permission.Response })),
       async (c) => {
         const params = c.req.valid("param")
         const id = params.id
@@ -974,7 +973,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "query",
         z.object({
           pattern: z.string(),
@@ -1006,7 +1005,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "query",
         z.object({
           query: z.string(),
@@ -1038,7 +1037,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "query",
         z.object({
           query: z.string(),
@@ -1066,7 +1065,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "query",
         z.object({
           path: z.string(),
@@ -1094,7 +1093,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "query",
         z.object({
           path: z.string(),
@@ -1143,16 +1142,16 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "json",
         z.object({
-          service: z.string().openapi({ description: "Service name for the log entry" }),
-          level: z.enum(["debug", "info", "error", "warn"]).openapi({ description: "Log level" }),
-          message: z.string().openapi({ description: "Log message" }),
+          service: z.string().meta({ description: "Service name for the log entry" }),
+          level: z.enum(["debug", "info", "error", "warn"]).meta({ description: "Log level" }),
+          message: z.string().meta({ description: "Log message" }),
           extra: z
             .record(z.string(), z.any())
             .optional()
-            .openapi({ description: "Additional metadata for the log entry" }),
+            .meta({ description: "Additional metadata for the log entry" }),
         }),
       ),
       async (c) => {
@@ -1214,7 +1213,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "json",
         z.object({
           text: z.string(),
@@ -1346,7 +1345,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "json",
         z.object({
           command: z.string(),
@@ -1370,7 +1369,7 @@ export namespace Server {
           },
         },
       }),
-      zValidator(
+      validator(
         "json",
         z.object({
           title: z.string().optional(),
@@ -1398,13 +1397,13 @@ export namespace Server {
           ...ERRORS,
         },
       }),
-      zValidator(
+      validator(
         "param",
         z.object({
           id: z.string(),
         }),
       ),
-      zValidator("json", Auth.Info),
+      validator("json", Auth.Info),
       async (c) => {
         const id = c.req.valid("param").id
         const info = c.req.valid("json")

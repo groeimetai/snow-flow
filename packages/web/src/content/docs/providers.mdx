@@ -89,7 +89,6 @@ To use Amazon Bedrock with opencode:
    :::
 
 1. You'll need either to set one of the following environment variables:
-
    - `AWS_ACCESS_KEY_ID`: You can get this by creating an IAM user and generating
      an access key for it.
    - `AWS_PROFILE`: First login through AWS IAM Identity Center (or AWS SSO) using
@@ -166,7 +165,6 @@ Or if you already have an API key, you can select **Manually enter API Key** and
 ### Azure OpenAI
 
 1. Head over to the [Azure portal](https://portal.azure.com/) and create an **Azure OpenAI** resource. You'll need:
-
    - **Resource name**: This becomes part of your API endpoint (`https://RESOURCE_NAME.openai.azure.com/`)
    - **API key**: Either `KEY 1` or `KEY 2` from your resource
 
@@ -823,7 +821,6 @@ You can use any OpenAI-compatible provider with opencode. Most modern AI provide
    ```
 
    Here are the configuration options:
-
    - **npm**: AI SDK package to use, `@ai-sdk/openai-compatible` for OpenAI-compatible providers
    - **name**: Display name in UI.
    - **models**: Available models.
@@ -879,7 +876,6 @@ If you are having trouble with configuring a provider, check the following:
    This doesn't apply to providers like Amazon Bedrock, that rely on environment variables for their auth.
 
 2. For custom providers, check the opencode config and:
-
    - Make sure the provider ID used in `opencode auth login` matches the ID in your opencode config.
    - The right npm package is used for the provider. For example, use `@ai-sdk/cerebras` for Cerebras. And for all other OpenAI-compatible providers, use `@ai-sdk/openai-compatible`.
    - Check correct API endpoint is used in the `options.baseURL` field.

@@ -1,7 +1,7 @@
 import path from "path"
 import os from "os"
 import fs from "fs/promises"
-import z, { ZodSchema } from "zod"
+import z from "zod/v4"
 import { Identifier } from "../id/id"
 import { MessageV2 } from "./message-v2"
 import { Log } from "../util/log"
@@ -19,6 +19,7 @@ import {
   type StreamTextResult,
   LoadAPIKeyError,
   stepCountIs,
+  jsonSchema,
 } from "ai"
 import { SessionCompaction } from "./compaction"
 import { Instance } from "../project/instance"
@@ -95,7 +96,7 @@ export namespace SessionPrompt {
       .optional(),
     agent: z.string().optional(),
     system: z.string().optional(),
-    tools: z.record(z.boolean()).optional(),
+    tools: z.record(z.string(), z.boolean()).optional(),
     parts: z.array(
       z.discriminatedUnion("type", [
         MessageV2.TextPart.omit({
@@ -105,7 +106,7 @@ export namespace SessionPrompt {
           .partial({
             id: true,
           })
-          .openapi({
+          .meta({
             ref: "TextPartInput",
           }),
         MessageV2.FilePart.omit({
@@ -115,7 +116,7 @@ export namespace SessionPrompt {
           .partial({
             id: true,
           })
-          .openapi({
+          .meta({
             ref: "FilePartInput",
           }),
         MessageV2.AgentPart.omit({
@@ -125,7 +126,7 @@ export namespace SessionPrompt {
           .partial({
             id: true,
           })
-          .openapi({
+          .meta({
             ref: "AgentPartInput",
           }),
       ]),
@@ -393,10 +394,11 @@ export namespace SessionPrompt {
     )
     for (const item of await ToolRegistry.tools(input.providerID, input.modelID)) {
       if (Wildcard.all(item.id, enabledTools) === false) continue
+      const schema = ProviderTransform.schema(input.providerID, input.modelID, z.toJSONSchema(item.parameters))
       tools[item.id] = tool({
         id: item.id as any,
         description: item.description,
-        inputSchema: item.parameters as ZodSchema,
+        inputSchema: jsonSchema(schema as any),
         async execute(args, options) {
           await Plugin.trigger(
             "tool.execute.before",

@@ -1,4 +1,4 @@
-import { z } from "zod"
+import z from "zod/v4"
 import { Bus } from "../bus"
 import { $ } from "bun"
 import { formatPatch, structuredPatch } from "diff"
@@ -18,7 +18,7 @@ export namespace File {
       removed: z.number().int(),
       status: z.enum(["added", "deleted", "modified"]),
     })
-    .openapi({
+    .meta({
       ref: "File",
     })
 
@@ -32,7 +32,7 @@ export namespace File {
       type: z.enum(["file", "directory"]),
       ignored: z.boolean(),
     })
-    .openapi({
+    .meta({
       ref: "FileNode",
     })
   export type Node = z.infer<typeof Node>
@@ -60,7 +60,7 @@ export namespace File {
         })
         .optional(),
     })
-    .openapi({
+    .meta({
       ref: "FileContent",
     })
   export type Content = z.infer<typeof Content>

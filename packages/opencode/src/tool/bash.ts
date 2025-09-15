@@ -1,4 +1,4 @@
-import { z } from "zod"
+import z from "zod/v4"
 import { exec } from "child_process"
 
 import { Tool } from "./tool"
