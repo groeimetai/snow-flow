@@ -53,9 +53,6 @@
     "tree-sitter-bash",
     "web-tree-sitter"
   ],
-  "overrides": {
-    "zod": "4.1.8"
-  },
   "patchedDependencies": {
     "@solidjs/start@1.1.7": "patches/@solidjs%2Fstart@1.1.7.patch"
   }
