@@ -1,5 +1,5 @@
-import { bigint, boolean, int, mysqlTable, varchar, json } from "drizzle-orm/mysql-core"
-import { timestamps, workspaceColumns } from "../drizzle/types"
+import { bigint, boolean, int, mysqlTable, uniqueIndex, varchar } from "drizzle-orm/mysql-core"
+import { timestamps, utc, workspaceColumns } from "../drizzle/types"
 import { workspaceIndexes } from "./workspace.sql"
 
 export const BillingTable = mysqlTable(
@@ -11,9 +11,15 @@ export const BillingTable = mysqlTable(
     paymentMethodID: varchar("payment_method_id", { length: 255 }),
     paymentMethodLast4: varchar("payment_method_last4", { length: 4 }),
     balance: bigint("balance", { mode: "number" }).notNull(),
+    monthlyLimit: int("monthly_limit"),
+    monthlyUsage: bigint("monthly_usage", { mode: "number" }),
+    timeMonthlyUsageUpdated: utc("time_monthly_usage_updated"),
     reload: boolean("reload"),
+    reloadError: varchar("reload_error", { length: 255 }),
+    timeReloadError: utc("time_reload_error"),
+    timeReloadLockedTill: utc("time_reload_locked_till"),
   },
-  (table) => [...workspaceIndexes(table)],
+  (table) => [...workspaceIndexes(table), uniqueIndex("global_customer_id").on(table.customerID)],
 )
 
 export const PaymentTable = mysqlTable(

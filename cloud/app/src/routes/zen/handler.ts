@@ -1,11 +1,13 @@
 import type { APIEvent } from "@solidjs/start/server"
 import path from "node:path"
-import { and, Database, eq, isNull, sql } from "@opencode/cloud-core/drizzle/index.js"
+import { and, Database, eq, isNull, lt, or, sql } from "@opencode/cloud-core/drizzle/index.js"
 import { KeyTable } from "@opencode/cloud-core/schema/key.sql.js"
-import { BillingTable, UsageTable } from "@opencode/cloud-core/schema/billing.sql.js"
+import { BillingTable, PaymentTable, UsageTable } from "@opencode/cloud-core/schema/billing.sql.js"
 import { centsToMicroCents } from "@opencode/cloud-core/util/price.js"
 import { Identifier } from "@opencode/cloud-core/identifier.js"
 import { Resource } from "@opencode/cloud-resource"
+import { Billing } from "../../../../core/src/billing"
+import { Actor } from "@opencode/cloud-core/actor.js"
 
 type ModelCost = {
   input: number
@@ -51,6 +53,7 @@ export async function handler(
 ) {
   class AuthError extends Error {}
   class CreditsError extends Error {}
+  class MonthlyLimitError extends Error {}
   class ModelError extends Error {}
 
   const MODELS: Record<string, Model> = {
@@ -259,7 +262,7 @@ export async function handler(
     const MODEL = validateModel()
     const apiKey = await authenticate()
     const isFree = FREE_WORKSPACES.includes(apiKey?.workspaceID ?? "")
-    await checkCredits()
+    await checkCreditsAndLimit()
     const providerName = selectProvider()
     const providerData = MODEL.providers[providerName]
     logger.metric({ provider: providerName })
@@ -300,6 +303,7 @@ export async function handler(
       logger.metric({ response_length: body.length })
       logger.debug(body)
       await trackUsage(json.usage)
+      await reload()
       return new Response(body, {
         status: res.status,
         statusText: res.statusText,
@@ -321,7 +325,10 @@ export async function handler(
               if (done) {
                 logger.metric({ response_length: responseLength })
                 const usage = opts.getStreamUsage()
-                if (usage) await trackUsage(usage)
+                if (usage) {
+                  await trackUsage(usage)
+                  await reload()
+                }
                 c.close()
                 return
               }
@@ -395,13 +402,16 @@ export async function handler(
       }
     }
 
-    async function checkCredits() {
+    async function checkCreditsAndLimit() {
       if (!apiKey || !MODEL.auth || isFree) return
 
       const billing = await Database.use((tx) =>
         tx
           .select({
             balance: BillingTable.balance,
+            monthlyLimit: BillingTable.monthlyLimit,
+            monthlyUsage: BillingTable.monthlyUsage,
+            timeMonthlyUsageUpdated: BillingTable.timeMonthlyUsageUpdated,
           })
           .from(BillingTable)
           .where(eq(BillingTable.workspaceID, apiKey.workspaceID))
@@ -409,6 +419,20 @@ export async function handler(
       )
 
       if (billing.balance <= 0) throw new CreditsError("Insufficient balance")
+      if (
+        billing.monthlyLimit &&
+        billing.monthlyUsage &&
+        billing.timeMonthlyUsageUpdated &&
+        billing.monthlyUsage >= centsToMicroCents(billing.monthlyLimit * 100)
+      ) {
+        const now = new Date()
+        const currentYear = now.getUTCFullYear()
+        const currentMonth = now.getUTCMonth()
+        const dateYear = billing.timeMonthlyUsageUpdated.getUTCFullYear()
+        const dateMonth = billing.timeMonthlyUsageUpdated.getUTCMonth()
+        if (currentYear === dateYear && currentMonth === dateMonth)
+          throw new MonthlyLimitError(`You have reached your monthly spending limit of $${billing.monthlyLimit}.`)
+      }
     }
 
     function selectProvider() {
@@ -490,6 +514,13 @@ export async function handler(
           .update(BillingTable)
           .set({
             balance: sql`${BillingTable.balance} - ${cost}`,
+            monthlyUsage: sql`
+              CASE
+                WHEN MONTH(${BillingTable.timeMonthlyUsageUpdated}) = MONTH(now()) AND YEAR(${BillingTable.timeMonthlyUsageUpdated}) = YEAR(now()) THEN ${BillingTable.monthlyUsage} + ${cost}
+                ELSE ${cost}
+              END
+            `,
+            timeMonthlyUsageUpdated: sql`now()`,
           })
           .where(eq(BillingTable.workspaceID, apiKey.workspaceID))
       })
@@ -501,6 +532,31 @@ export async function handler(
           .where(eq(KeyTable.id, apiKey.id)),
       )
     }
+
+    async function reload() {
+      if (!apiKey) return
+
+      // acquire reload lock
+      const lock = await Database.use((tx) =>
+        tx
+          .update(BillingTable)
+          .set({
+            timeReloadLockedTill: sql`now() + interval 1 minute`,
+          })
+          .where(
+            and(
+              eq(BillingTable.workspaceID, apiKey.workspaceID),
+              lt(BillingTable.balance, centsToMicroCents(Billing.CHARGE_THRESHOLD)),
+              or(isNull(BillingTable.timeReloadLockedTill), lt(BillingTable.timeReloadLockedTill, sql`now()`)),
+            ),
+          ),
+      )
+      if (lock.rowsAffected === 0) return
+
+      await Actor.provide("system", { workspaceID: apiKey.workspaceID }, async () => {
+        await Billing.reload()
+      })
+    }
   } catch (error: any) {
     logger.metric({
       "error.type": error.constructor.name,
@@ -508,7 +564,12 @@ export async function handler(
     })
 
     // Note: both top level "type" and "error.type" fields are used by the @ai-sdk/anthropic client to render the error message.
-    if (error instanceof AuthError || error instanceof CreditsError || error instanceof ModelError)
+    if (
+      error instanceof AuthError ||
+      error instanceof CreditsError ||
+      error instanceof MonthlyLimitError ||
+      error instanceof ModelError
+    )
       return new Response(
         JSON.stringify({
           type: "error",
