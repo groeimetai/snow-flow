@@ -283,8 +283,6 @@ function BalanceSection() {
   const balanceInfo = createAsync(() => getBillingInfo(params.id))
   const createCheckoutUrlAction = useAction(createCheckoutUrl)
   const createCheckoutUrlSubmission = useSubmission(createCheckoutUrl)
-  const createSessionUrlAction = useAction(createSessionUrl)
-  const createSessionUrlSubmission = useSubmission(createSessionUrl)
   const disableReloadSubmission = useSubmission(disableReload)
   const reloadSubmission = useSubmission(reload)
 
@@ -337,13 +335,13 @@ function BalanceSection() {
                 You will be automatically reloading <b>$20</b> (+$1.23 processing fee) when your balance reaches{" "}
                 <b>$5</b>.
               </p>
+              <p>You will be able to continue using the API with the remaining credits after disabling billing.</p>
               <form action={disableReload} method="post" data-slot="create-form">
                 <input type="hidden" name="workspaceID" value={params.id} />
                 <button data-color="primary" type="submit" disabled={disableReloadSubmission.pending}>
                   {disableReloadSubmission.pending ? "Disabling..." : "Disable Billing"}
                 </button>
               </form>
-              <p>You will be able to continue using the API with the remaining credits after disabling billing.</p>
               <Show when={balanceInfo()?.reloadError}>
                 <>
                   <p>
@@ -367,54 +365,49 @@ function BalanceSection() {
                 </>
               </Show>
             </div>
-            <hr />
-            <div data-slot="amount">
-              <IconCreditCard style={{ width: "32px", height: "32px" }} />
-              <span data-slot="currency">••••</span>
-              <span data-slot="value">{balanceInfo()?.paymentMethodLast4}</span>
-            </div>
-            <button
-              data-color="primary"
-              disabled={createSessionUrlSubmission.pending}
-              onClick={async () => {
-                const baseUrl = window.location.href
-                const sessionUrl = await createSessionUrlAction(params.id, baseUrl)
-                if (sessionUrl) {
-                  window.location.href = sessionUrl
-                }
-              }}
-            >
-              {createSessionUrlSubmission.pending ? "Loading..." : "Manage Payment Methods"}
-            </button>
-            <hr />
-            <Show when={balanceInfo()?.monthlyLimit} fallback={<p>No spending limit set.</p>}>
-              <p>
-                Spending limit is ${balanceInfo()?.monthlyLimit ?? 0}. Current usage for the month of{" "}
-                {new Date().toLocaleDateString("en-US", { month: "long", timeZone: "UTC" })} is $
-                {(() => {
-                  const dateLastUsed = balanceInfo()?.timeMonthlyUsageUpdated
-                  if (!dateLastUsed) return "0"
-
-                  const current = new Date().toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    timeZone: "UTC",
-                  })
-                  const lastUsed = dateLastUsed.toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    timeZone: "UTC",
-                  })
-                  if (current !== lastUsed) return "0"
-                  return ((balanceInfo()?.monthlyUsage ?? 0) / 100000000).toFixed(2)
-                })()}
-              </p>
-            </Show>
-            <BalanceLimitForm />
           </>
         </Show>
       </div>
+      <Show when={balanceInfo()?.reload}>
+        <BalancePaymentForm />
+        <BalanceLimitForm />
+      </Show>
     </section>
+  )
+}
+
+function BalancePaymentForm() {
+  const params = useParams()
+  const createSessionUrlAction = useAction(createSessionUrl)
+  const createSessionUrlSubmission = useSubmission(createSessionUrl)
+  const balanceInfo = createAsync(() => getBillingInfo(params.id))
+
+  return (
+    <>
+      <div data-slot="section-title">
+        <h2>Payment Method</h2>
+      </div>
+      <div data-slot="balance">
+        <div data-slot="amount">
+          <IconCreditCard style={{ width: "32px", height: "32px" }} />
+          <span data-slot="currency">••••</span>
+          <span data-slot="value">{balanceInfo()?.paymentMethodLast4}</span>
+        </div>
+        <button
+          data-color="primary"
+          disabled={createSessionUrlSubmission.pending}
+          onClick={async () => {
+            const baseUrl = window.location.href
+            const sessionUrl = await createSessionUrlAction(params.id, baseUrl)
+            if (sessionUrl) {
+              window.location.href = sessionUrl
+            }
+          }}
+        >
+          {createSessionUrlSubmission.pending ? "Loading..." : "Manage Payment Methods"}
+        </button>
+      </div>
+    </>
   )
 }
 
@@ -451,32 +444,72 @@ function BalanceLimitForm() {
   }
 
   return (
-    <Show
-      when={store.show}
-      fallback={
-        <button data-color="primary" onClick={() => show()}>
-          {balanceInfo()?.monthlyLimit ? "Edit Spending Limit" : "Set Spending Limit"}
-        </button>
-      }
-    >
-      <form action={setMonthlyLimit} method="post" data-slot="create-form">
-        <div data-slot="input-container">
-          <input ref={(r) => (input = r)} data-component="input" name="limit" type="number" placeholder="Enter limit" />
-          <Show when={submission.result && submission.result.error}>
-            {(err) => <div data-slot="form-error">{err()}</div>}
-          </Show>
+    <>
+      <div data-slot="section-title">
+        <h2>Monthly Limit</h2>
+      </div>
+      <div data-slot="balance">
+        <div data-slot="amount">
+          <span data-slot="currency">$</span>
+          <span data-slot="value">{balanceInfo()?.monthlyLimit ?? "-"}</span>
         </div>
-        <input type="hidden" name="workspaceID" value={params.id} />
-        <div data-slot="form-actions">
-          <button type="reset" data-color="ghost" onClick={() => hide()}>
-            Cancel
+        <Show when={balanceInfo()?.monthlyLimit} fallback={<p>No spending limit set.</p>}>
+          <p>
+            Current usage for the month of {new Date().toLocaleDateString("en-US", { month: "long", timeZone: "UTC" })}{" "}
+            is $
+            {(() => {
+              const dateLastUsed = balanceInfo()?.timeMonthlyUsageUpdated
+              if (!dateLastUsed) return "0"
+
+              const current = new Date().toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                timeZone: "UTC",
+              })
+              const lastUsed = dateLastUsed.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                timeZone: "UTC",
+              })
+              if (current !== lastUsed) return "0"
+              return ((balanceInfo()?.monthlyUsage ?? 0) / 100000000).toFixed(2)
+            })()}
+          </p>
+        </Show>
+      </div>
+      <Show
+        when={store.show}
+        fallback={
+          <button data-color="primary" onClick={() => show()}>
+            {balanceInfo()?.monthlyLimit ? "Edit Spending Limit" : "Set Spending Limit"}
           </button>
-          <button type="submit" data-color="primary" disabled={submission.pending}>
-            {submission.pending ? "Setting..." : "Set"}
-          </button>
-        </div>
-      </form>
-    </Show>
+        }
+      >
+        <form action={setMonthlyLimit} method="post" data-slot="create-form">
+          <div data-slot="input-container">
+            <input
+              ref={(r) => (input = r)}
+              data-component="input"
+              name="limit"
+              type="number"
+              placeholder="Enter limit"
+            />
+            <Show when={submission.result && submission.result.error}>
+              {(err) => <div data-slot="form-error">{err()}</div>}
+            </Show>
+          </div>
+          <input type="hidden" name="workspaceID" value={params.id} />
+          <div data-slot="form-actions">
+            <button type="reset" data-color="ghost" onClick={() => hide()}>
+              Cancel
+            </button>
+            <button type="submit" data-color="primary" disabled={submission.pending}>
+              {submission.pending ? "Setting..." : "Set"}
+            </button>
+          </div>
+        </form>
+      </Show>
+    </>
   )
 }
 
