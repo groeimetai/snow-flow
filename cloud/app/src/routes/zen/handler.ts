@@ -409,6 +409,7 @@ export async function handler(
         tx
           .select({
             balance: BillingTable.balance,
+            paymentMethodID: BillingTable.paymentMethodID,
             monthlyLimit: BillingTable.monthlyLimit,
             monthlyUsage: BillingTable.monthlyUsage,
             timeMonthlyUsageUpdated: BillingTable.timeMonthlyUsageUpdated,
@@ -418,6 +419,7 @@ export async function handler(
           .then((rows) => rows[0]),
       )
 
+      if (!billing.paymentMethodID) throw new CreditsError("No payment method")
       if (billing.balance <= 0) throw new CreditsError("Insufficient balance")
       if (
         billing.monthlyLimit &&
