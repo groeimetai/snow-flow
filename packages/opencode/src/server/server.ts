@@ -2,6 +2,7 @@ import { Log } from "../util/log"
 import { Bus } from "../bus"
 import { describeRoute, generateSpecs, validator, resolver, openAPIRouteHandler } from "hono-openapi"
 import { Hono } from "hono"
+import { cors } from "hono/cors"
 import { streamSSE } from "hono/streaming"
 import { Session } from "../session"
 import z from "zod/v4"
@@ -114,6 +115,7 @@ export namespace Server {
         return next()
       })
     })
+    .use(cors())
     .get(
       "/doc",
       openAPIRouteHandler(app, {
