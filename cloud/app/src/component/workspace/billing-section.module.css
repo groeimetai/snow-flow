@@ -39,6 +39,10 @@
     min-width: 14.5rem;
     width: fit-content;
 
+    @media (max-width: 30rem) {
+      width: 100%;
+    }
+
     [data-slot="credit-card"] {
       padding: var(--space-3-5) var(--space-4);
       background-color: var(--color-bg-surface);
@@ -50,6 +54,7 @@
       [data-slot="card-icon"] {
         display: flex;
         align-items: center;
+        color: var(--color-text-muted);
       }
 
       [data-slot="card-details"] {
@@ -77,6 +82,14 @@
       display: flex;
       gap: var(--space-2);
       align-items: center;
+
+      @media (max-width: 30rem) {
+        flex-direction: column;
+
+        > button {
+          width: 100%;
+        }
+      }
 
       [data-slot="create-form"] {
         margin: 0;

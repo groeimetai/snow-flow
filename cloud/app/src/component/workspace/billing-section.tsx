@@ -38,6 +38,7 @@ const getBillingInfo = query(async (workspaceID: string) => {
 
 export function BillingSection() {
   const params = useParams()
+  // ORIGINAL CODE - COMMENTED OUT FOR TESTING
   const balanceInfo = createAsync(() => getBillingInfo(params.id))
   const createCheckoutUrlAction = useAction(createCheckoutUrl)
   const createCheckoutUrlSubmission = useSubmission(createCheckoutUrl)
@@ -45,6 +46,44 @@ export function BillingSection() {
   const createSessionUrlSubmission = useSubmission(createSessionUrl)
   const disableReloadSubmission = useSubmission(disableReload)
   const reloadSubmission = useSubmission(reload)
+
+  // DUMMY DATA FOR TESTING - UNCOMMENT ONE OF THE SCENARIOS BELOW
+
+  // Scenario 1: User has not added billing details and has no balance
+  // const balanceInfo = () => ({
+  //   balance: 0,
+  //   paymentMethodLast4: null as string | null,
+  //   reload: false,
+  //   reloadError: null as string | null,
+  //   timeReloadError: null as Date | null,
+  // })
+
+  // Scenario 2: User has not added billing details but has a balance
+  // const balanceInfo = () => ({
+  //   balance: 1500000000, // $15.00
+  //   paymentMethodLast4: null as string | null,
+  //   reload: false,
+  //   reloadError: null as string | null,
+  //   timeReloadError: null as Date | null
+  // })
+
+  // Scenario 3: User has added billing details (reload enabled)
+  // const balanceInfo = () => ({
+  //   balance: 750000000, // $7.50
+  //   paymentMethodLast4: "4242",
+  //   reload: true,
+  //   reloadError: null as string | null,
+  //   timeReloadError: null as Date | null
+  // })
+
+  // Scenario 4: User has billing details but reload failed
+  // const balanceInfo = () => ({
+  //   balance: 250000000, // $2.50
+  //   paymentMethodLast4: "4242",
+  //   reload: true,
+  //   reloadError: "Your card was declined." as string,
+  //   timeReloadError: new Date(Date.now() - 3600000) as Date // 1 hour ago
+  // })
 
   const balanceAmount = createMemo(() => {
     return ((balanceInfo()?.balance ?? 0) / 100000000).toFixed(2)

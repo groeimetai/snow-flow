@@ -38,7 +38,8 @@ export default function () {
         <NewUserSection />
         <KeySection />
         <BillingSection />
-        <Show when={balanceInfo()?.reload}>
+        <Show when={true}>
+        {/*<Show when={balanceInfo()?.reload}>*/}
           <MonthlyLimitSection />
         </Show>
         <UsageSection />
