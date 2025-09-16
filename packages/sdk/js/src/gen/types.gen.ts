@@ -768,6 +768,9 @@ export type Config = {
       subtask?: boolean
     }
   }
+  watcher?: {
+    ignore?: Array<string>
+  }
   plugin?: Array<string>
   snapshot?: boolean
   /**
