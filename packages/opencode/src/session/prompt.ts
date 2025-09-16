@@ -321,7 +321,7 @@ export namespace SessionPrompt {
         item.callback(result)
       }
       state().queued.delete(input.sessionID)
-      // Session.prune(input)
+      SessionCompaction.prune(input)
       return result
     }
   }
