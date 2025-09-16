@@ -87,7 +87,7 @@ You can also install it with the following:
   npm install -g opencode-ai
   ```
 
-Support for installing opencode on Windows using the bun package manager is currently in progress.
+Support for installing opencode on Windows using Bun is currently in progress.
 
 You can also grab the binary from the [Releases](https://github.com/sst/opencode/releases).
 
@@ -101,19 +101,22 @@ If you are new to using LLM providers, we recommend using [opencode zen](/docs/z
 It's a curated list of models that have been tested and verified by the opencode
 team.
 
-1. Sign in to **<a href={console}>opencode zen</a>** and put in your billing
-   details.
-2. Copy your API key.
-3. Run `opencode auth login`, select opencode, and add your API key.
+1. Run `opencode auth login`, select opencode, and head to [opencode.ai/auth](https://opencode.ai/auth).
+2. Sign in, add your billing details, and copy your API key.
+3. Paste your API key.
 
    ```bash
    $ opencode auth login
 
    ┌  Add credential
    │
-   ◆  Select provider
-   │  ● opencode
-   │  ...
+   ◇  Select provider
+   │  opencode
+   │
+   ●  Create an api key at https://opencode.ai/auth
+   │
+   ◆  Enter your API key
+   │  _
    └
    ```
 
