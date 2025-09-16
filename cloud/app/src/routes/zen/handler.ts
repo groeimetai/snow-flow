@@ -538,7 +538,6 @@ export async function handler(
     async function reload() {
       if (!apiKey) return
 
-      // acquire reload lock
       const lock = await Database.use((tx) =>
         tx
           .update(BillingTable)

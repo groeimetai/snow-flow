@@ -224,4 +224,21 @@ export namespace Billing {
       return session.url
     },
   )
+
+  export const generateReceiptUrl = fn(
+    z.object({
+      paymentID: z.string(),
+    }),
+    async (input) => {
+      const { paymentID } = input
+
+      const intent = await Billing.stripe().paymentIntents.retrieve(paymentID)
+      if (!intent.latest_charge) throw new Error("No charge found")
+
+      const charge = await Billing.stripe().charges.retrieve(intent.latest_charge as string)
+      if (!charge.receipt_url) throw new Error("No receipt URL found")
+
+      return charge.receipt_url
+    },
+  )
 }
