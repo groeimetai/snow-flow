@@ -23,5 +23,3 @@ export function formatDateUTC(date: Date) {
   }
   return date.toLocaleDateString("en-US", options)
 }
-
-
