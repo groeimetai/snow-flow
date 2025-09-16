@@ -268,7 +268,7 @@ export namespace SessionPrompt {
         maxOutputTokens: ProviderTransform.maxOutputTokens(model.providerID, outputLimit, params.options),
         abortSignal: abort.signal,
         providerOptions: {
-          [model.providerID]: params.options,
+          [model.npm === "@ai-sdk/openai" ? "openai" : model.providerID]: params.options,
         },
         stopWhen: stepCountIs(1),
         temperature: params.temperature,
