@@ -3,6 +3,7 @@ import { createEffect, createMemo, createSignal, For, Show } from "solid-js"
 import { Billing } from "@opencode/cloud-core/billing.js"
 import { withActor } from "~/context/auth.withActor"
 import { IconCreditCard } from "~/component/icon"
+import styles from "./billing-section.module.css"
 
 const createCheckoutUrl = action(async (workspaceID: string, successUrl: string, cancelUrl: string) => {
   "use server"
@@ -50,7 +51,7 @@ export function BillingSection() {
   })
 
   return (
-    <section data-component="billing-section">
+    <section class={styles.root}>
       <div data-slot="section-title">
         <h2>Billing</h2>
         <p>

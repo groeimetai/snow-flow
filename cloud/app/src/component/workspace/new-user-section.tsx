@@ -4,6 +4,7 @@ import { IconCopy, IconCheck } from "~/component/icon"
 import { Key } from "@opencode/cloud-core/key.js"
 import { Billing } from "@opencode/cloud-core/billing.js"
 import { withActor } from "~/context/auth.withActor"
+import styles from "./new-user-section.module.css"
 
 const getUsageInfo = query(async (workspaceID: string) => {
   "use server"
@@ -31,7 +32,7 @@ export function NewUserSection() {
 
   return (
     <Show when={isNew()}>
-      <div data-slot="new-user-sections">
+      <div class={styles.root}>
         <div data-component="feature-grid">
           <div data-slot="feature">
             <h3>Tested & Verified Models</h3>

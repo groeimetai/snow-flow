@@ -3,6 +3,7 @@ import { createEffect, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { withActor } from "~/context/auth.withActor"
 import { Billing } from "@opencode/cloud-core/billing.js"
+import styles from "./monthly-limit-section.module.css"
 
 const getBillingInfo = query(async (workspaceID: string) => {
   "use server"
@@ -62,7 +63,7 @@ export function MonthlyLimitSection() {
   }
 
   return (
-    <section data-component="monthly-limit-section">
+    <section class={styles.root}>
       <div data-slot="section-title">
         <h2>Monthly Limit</h2>
         <p>Set a monthly spending limit for your account.</p>

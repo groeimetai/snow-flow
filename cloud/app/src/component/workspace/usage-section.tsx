@@ -3,6 +3,7 @@ import { query, useParams, createAsync } from "@solidjs/router"
 import { createMemo, For, Show } from "solid-js"
 import { formatDateUTC, formatDateForTable } from "./common"
 import { withActor } from "~/context/auth.withActor"
+import styles from "./usage-section.module.css"
 
 const getUsageInfo = query(async (workspaceID: string) => {
   "use server"
@@ -16,7 +17,7 @@ export function UsageSection() {
   const usage = createAsync(() => getUsageInfo(params.id))
 
   return (
-    <section data-component="usage-section">
+    <section class={styles.root}>
       <div data-slot="section-title">
         <h2>Usage History</h2>
         <p>Recent API usage and costs.</p>

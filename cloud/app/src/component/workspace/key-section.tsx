@@ -5,6 +5,7 @@ import { Key } from "@opencode/cloud-core/key.js"
 import { withActor } from "~/context/auth.withActor"
 import { createStore } from "solid-js/store"
 import { formatDateUTC, formatDateForTable } from "./common"
+import styles from "./key-section.module.css"
 
 const removeKey = action(async (form: FormData) => {
   "use server"
@@ -109,7 +110,7 @@ export function KeySection() {
   }
 
   return (
-    <section data-component="api-keys-section">
+    <section class={styles.root}>
       <div data-slot="section-title">
         <h2>API Keys</h2>
         <p>Manage your API keys for accessing opencode services.</p>

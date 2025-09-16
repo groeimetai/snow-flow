@@ -3,6 +3,7 @@ import { query, useParams, createAsync } from "@solidjs/router"
 import { For } from "solid-js"
 import { withActor } from "~/context/auth.withActor"
 import { formatDateUTC, formatDateForTable } from "./common"
+import styles from "./payment-section.module.css"
 
 const getPaymentsInfo = query(async (workspaceID: string) => {
   "use server"
@@ -18,7 +19,7 @@ export function PaymentSection() {
   return (
     payments() &&
     payments()!.length > 0 && (
-      <section data-component="payments-section">
+      <section class={styles.root}>
         <div data-slot="section-title">
           <h2>Payments History</h2>
           <p>Recent payment transactions.</p>
