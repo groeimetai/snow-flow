@@ -548,6 +548,7 @@ export async function handler(
           .where(
             and(
               eq(BillingTable.workspaceID, apiKey.workspaceID),
+              eq(BillingTable.reload, true),
               lt(BillingTable.balance, centsToMicroCents(Billing.CHARGE_THRESHOLD)),
               or(isNull(BillingTable.timeReloadLockedTill), lt(BillingTable.timeReloadLockedTill, sql`now()`)),
             ),
