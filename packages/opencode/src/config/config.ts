@@ -365,6 +365,11 @@ export namespace Config {
         .record(z.string(), Command)
         .optional()
         .describe("Command configuration, see https://opencode.ai/docs/commands"),
+      watcher: z
+        .object({
+          ignore: z.array(z.string()).optional(),
+        })
+        .optional(),
       plugin: z.string().array().optional(),
       snapshot: z.boolean().optional(),
       share: z
