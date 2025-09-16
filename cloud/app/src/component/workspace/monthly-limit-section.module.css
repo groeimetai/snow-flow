@@ -84,7 +84,6 @@
       [data-slot="form-error"] {
         color: var(--color-danger);
         font-size: var(--font-size-sm);
-        margin-top: var(--space-1);
         line-height: 1.4;
       }
     }

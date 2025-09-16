@@ -15,13 +15,15 @@ const getBillingInfo = query(async (workspaceID: string) => {
 const setMonthlyLimit = action(async (form: FormData) => {
   "use server"
   const limit = form.get("limit")?.toString()
-  if (!limit) return { error: "Limit is required" }
+  if (!limit) return { error: "Limit is required." }
+  const numericLimit = parseInt(limit)
+  if (numericLimit < 0) return { error: "Set a valid monthly limit." }
   const workspaceID = form.get("workspaceID")?.toString()
-  if (!workspaceID) return { error: "Workspace ID is required" }
+  if (!workspaceID) return { error: "Workspace ID is required." }
   return json(
     await withActor(
       () =>
-        Billing.setMonthlyLimit(parseInt(limit))
+        Billing.setMonthlyLimit(numericLimit)
           .then((data) => ({ error: undefined, data }))
           .catch((e) => ({ error: e.message as string })),
       workspaceID,
@@ -79,7 +81,14 @@ export function MonthlyLimitSection() {
             fallback={
               <form action={setMonthlyLimit} method="post" data-slot="create-form">
                 <div data-slot="input-container">
-                  <input ref={(r) => (input = r)} data-component="input" name="limit" type="number" placeholder="50" />
+                  <input
+                    required
+                    ref={(r) => (input = r)}
+                    data-component="input"
+                    name="limit"
+                    type="number"
+                    placeholder="50"
+                  />
                   <Show when={submission.result && submission.result.error}>
                     {(err) => <div data-slot="form-error">{err()}</div>}
                   </Show>

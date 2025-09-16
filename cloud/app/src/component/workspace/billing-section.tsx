@@ -1,5 +1,5 @@
 import { json, query, action, useParams, useAction, createAsync, useSubmission } from "@solidjs/router"
-import { createEffect, createMemo, createSignal, For, Show } from "solid-js"
+import { createMemo, Show } from "solid-js"
 import { Billing } from "@opencode/cloud-core/billing.js"
 import { withActor } from "~/context/auth.withActor"
 import { IconCreditCard } from "~/component/icon"
