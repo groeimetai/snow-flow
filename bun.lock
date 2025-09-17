@@ -27,7 +27,7 @@
     },
     "cloud/core": {
       "name": "@opencode/cloud-core",
-      "version": "0.9.10",
+      "version": "0.9.11",
       "dependencies": {
         "@aws-sdk/client-sts": "3.782.0",
         "@opencode/cloud-resource": "workspace:*",
@@ -44,7 +44,7 @@
     },
     "cloud/function": {
       "name": "@opencode/cloud-function",
-      "version": "0.9.10",
+      "version": "0.9.11",
       "dependencies": {
         "@ai-sdk/anthropic": "2.0.0",
         "@ai-sdk/openai": "2.0.2",
@@ -70,7 +70,7 @@
     },
     "cloud/scripts": {
       "name": "@opencode/cloud-scripts",
-      "version": "0.9.10",
+      "version": "0.9.11",
       "dependencies": {
         "@opencode/cloud-core": "workspace:*",
         "tsx": "4.20.5",
@@ -82,7 +82,7 @@
     },
     "packages/app": {
       "name": "@opencode/app",
-      "version": "0.9.10",
+      "version": "0.9.11",
       "dependencies": {
         "@kobalte/core": "0.13.11",
         "@opencode-ai/sdk": "workspace:*",
@@ -114,7 +114,7 @@
     },
     "packages/function": {
       "name": "@opencode/function",
-      "version": "0.9.10",
+      "version": "0.9.11",
       "dependencies": {
         "@octokit/auth-app": "8.0.1",
         "@octokit/rest": "22.0.0",
@@ -129,7 +129,7 @@
     },
     "packages/opencode": {
       "name": "opencode",
-      "version": "0.9.10",
+      "version": "0.9.11",
       "bin": {
         "opencode": "./bin/opencode",
       },
@@ -180,7 +180,7 @@
     },
     "packages/plugin": {
       "name": "@opencode-ai/plugin",
-      "version": "0.9.10",
+      "version": "0.9.11",
       "dependencies": {
         "@opencode-ai/sdk": "workspace:*",
       },
@@ -191,7 +191,7 @@
     },
     "packages/sdk/js": {
       "name": "@opencode-ai/sdk",
-      "version": "0.9.10",
+      "version": "0.9.11",
       "dependencies": {
         "@hey-api/openapi-ts": "0.81.0",
       },
@@ -203,7 +203,7 @@
     },
     "packages/web": {
       "name": "@opencode/web",
-      "version": "0.9.10",
+      "version": "0.9.11",
       "dependencies": {
         "@astrojs/cloudflare": "12.6.3",
         "@astrojs/markdown-remark": "6.3.1",
