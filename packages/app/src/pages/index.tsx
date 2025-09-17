@@ -1,4 +1,4 @@
-import { FileIcon, Icon, IconButton, Tooltip } from "@/ui"
+import { FileIcon, Icon, IconButton, Logo, Tooltip } from "@/ui"
 import { Tabs } from "@/ui/tabs"
 import FileTree from "@/components/file-tree"
 import { createSignal, For, Match, onCleanup, onMount, Show, Switch } from "solid-js"
@@ -324,8 +324,14 @@ export default function Page() {
         </div>
       </Show>
       <div
+        class="relative"
         style={`margin-left: ${local.layout.leftWidth()}px; margin-right: ${local.layout.rightPane() ? local.layout.rightWidth() : 0}px`}
       >
+        <Logo
+          size={64}
+          variant="ornate"
+          class="absolute top-2/5 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+        />
         <DragDropProvider
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
@@ -453,11 +459,14 @@ export default function Page() {
         </DragDropProvider>
         <form
           onSubmit={handleSubmit}
-          class="peer/editor absolute bottom-8 z-50 flex items-center justify-center"
-          style={`left: ${local.layout.leftWidth() + 40}px; right: ${local.layout.rightPane() ? local.layout.rightWidth() + 40 : 40}px`}
+          class="peer/editor absolute inset-x-4 z-50 flex items-center justify-center"
+          classList={{
+            "bottom-8": !!local.file.active(),
+            "bottom-2/5": local.file.active() === undefined,
+          }}
         >
           <div
-            class="w-full max-w-2xl min-w-1/2 p-2 mx-auto rounded-lg isolate backdrop-blur-xs
+            class="w-full max-w-xl min-w-0 p-2 mx-auto rounded-lg isolate backdrop-blur-xs
                    flex flex-col gap-1
                    bg-gradient-to-b from-background-panel/90 to-background/90
                    ring-1 ring-border-active/50 border border-transparent
