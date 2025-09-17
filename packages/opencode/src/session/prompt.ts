@@ -873,7 +873,6 @@ export namespace SessionPrompt {
                 if (value.id in reasoningMap) {
                   const part = reasoningMap[value.id]
                   part.text = part.text.trimEnd()
-
                   part.time = {
                     ...part.time,
                     end: Date.now(),
@@ -891,6 +890,7 @@ export namespace SessionPrompt {
                   type: "tool",
                   tool: value.toolName,
                   callID: value.id,
+                  metadata: value.providerMetadata,
                   state: {
                     status: "pending",
                   },
@@ -910,6 +910,7 @@ export namespace SessionPrompt {
                   const part = await Session.updatePart({
                     ...match,
                     tool: value.toolName,
+                    metadata: match.metadata,
                     state: {
                       status: "running",
                       input: value.input,
@@ -1016,6 +1017,7 @@ export namespace SessionPrompt {
                   sessionID: assistantMsg.sessionID,
                   type: "text",
                   text: "",
+                  metadata: value.providerMetadata,
                   time: {
                     start: Date.now(),
                   },
@@ -1025,6 +1027,7 @@ export namespace SessionPrompt {
               case "text-delta":
                 if (currentText) {
                   currentText.text += value.text
+                  if (value.providerMetadata) currentText.metadata = value.providerMetadata
                   if (currentText.text) await Session.updatePart(currentText)
                 }
                 break
@@ -1032,6 +1035,7 @@ export namespace SessionPrompt {
               case "text-end":
                 if (currentText) {
                   currentText.text = currentText.text.trimEnd()
+                  if (value.providerMetadata) currentText.metadata = value.providerMetadata
                   currentText.time = {
                     start: Date.now(),
                     end: Date.now(),
