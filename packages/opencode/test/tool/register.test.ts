@@ -31,7 +31,7 @@ describe("HTTP tool registration API", () => {
       }
 
       // Register
-      const registerRes = await Server.App.fetch(
+      const registerRes = await Server.App().fetch(
         makeRequest("POST", "http://localhost:4096/experimental/tool/register", toolSpec),
       )
       expect(registerRes.status).toBe(200)
@@ -39,13 +39,13 @@ describe("HTTP tool registration API", () => {
       expect(ok).toBe(true)
 
       // IDs should include the new tool
-      const idsRes = await Server.App.fetch(makeRequest("GET", "http://localhost:4096/experimental/tool/ids"))
+      const idsRes = await Server.App().fetch(makeRequest("GET", "http://localhost:4096/experimental/tool/ids"))
       expect(idsRes.status).toBe(200)
       const ids = (await idsRes.json()) as string[]
       expect(ids).toContain("http-echo")
 
       // List tools for a provider/model and check JSON Schema shape
-      const listRes = await Server.App.fetch(
+      const listRes = await Server.App().fetch(
         makeRequest("GET", "http://localhost:4096/experimental/tool?provider=openai&model=gpt-4o"),
       )
       expect(listRes.status).toBe(200)
@@ -105,7 +105,7 @@ describe("Plugin tool.register hook", () => {
       expect(allIDs).toContain("from-plugin")
 
       // Also verify via the HTTP surface
-      const idsRes = await Server.App.fetch(makeRequest("GET", "http://localhost:4096/experimental/tool/ids"))
+      const idsRes = await Server.App().fetch(makeRequest("GET", "http://localhost:4096/experimental/tool/ids"))
       expect(idsRes.status).toBe(200)
       const ids = (await idsRes.json()) as string[]
       expect(ids).toContain("from-plugin")
@@ -168,7 +168,7 @@ test("Multiple plugins can each register tools", async () => {
     expect(ids).toContain("alpha-tool")
     expect(ids).toContain("beta-tool")
 
-    const res = await Server.App.fetch(new Request("http://localhost:4096/experimental/tool/ids"))
+    const res = await Server.App().fetch(new Request("http://localhost:4096/experimental/tool/ids"))
     expect(res.status).toBe(200)
     const httpIds = (await res.json()) as string[]
     expect(httpIds).toContain("alpha-tool")
@@ -241,14 +241,14 @@ test("Plugin registers native/local tool with function execution", async () => {
     expect(ids).toContain("http-tool-from-same-plugin")
 
     // Verify via HTTP endpoint
-    const res = await Server.App.fetch(new Request("http://localhost:4096/experimental/tool/ids"))
+    const res = await Server.App().fetch(new Request("http://localhost:4096/experimental/tool/ids"))
     expect(res.status).toBe(200)
     const httpIds = (await res.json()) as string[]
     expect(httpIds).toContain("my-native-tool")
     expect(httpIds).toContain("http-tool-from-same-plugin")
 
     // Get tool details to verify native tool has proper structure
-    const toolsRes = await Server.App.fetch(
+    const toolsRes = await Server.App().fetch(
       new Request("http://localhost:4096/experimental/tool?provider=anthropic&model=claude"),
     )
     expect(toolsRes.status).toBe(200)
@@ -290,7 +290,7 @@ test("Plugin without tool.register is handled gracefully", async () => {
     const ids = ToolRegistry.ids()
     expect(ids).not.toContain("malformed-tool")
 
-    const res = await Server.App.fetch(new Request("http://localhost:4096/experimental/tool/ids"))
+    const res = await Server.App().fetch(new Request("http://localhost:4096/experimental/tool/ids"))
     expect(res.status).toBe(200)
     const httpIds = (await res.json()) as string[]
     expect(httpIds).not.toContain("malformed-tool")

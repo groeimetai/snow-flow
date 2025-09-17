@@ -20,7 +20,7 @@ export interface Config<T extends ClientOptions = ClientOptions>
    *
    * @default globalThis.fetch
    */
-  fetch?: (request: Request) => ReturnType<typeof fetch>
+  fetch?: typeof fetch
   /**
    * Please don't use the Fetch client for Next.js applications. The `next`
    * options won't have any effect.
@@ -128,7 +128,7 @@ export interface ClientOptions {
   throwOnError?: boolean
 }
 
-type MethodFnBase = <
+type MethodFn = <
   TData = unknown,
   TError = unknown,
   ThrowOnError extends boolean = false,
@@ -137,7 +137,7 @@ type MethodFnBase = <
   options: Omit<RequestOptions<TData, TResponseStyle, ThrowOnError>, "method">,
 ) => RequestResult<TData, TError, ThrowOnError, TResponseStyle>
 
-type MethodFnServerSentEvents = <
+type SseFn = <
   TData = unknown,
   TError = unknown,
   ThrowOnError extends boolean = false,
@@ -145,10 +145,6 @@ type MethodFnServerSentEvents = <
 >(
   options: Omit<RequestOptions<TData, TResponseStyle, ThrowOnError>, "method">,
 ) => Promise<ServerSentEventsResult<TData, TError>>
-
-type MethodFn = MethodFnBase & {
-  sse: MethodFnServerSentEvents
-}
 
 type RequestFn = <
   TData = unknown,
@@ -171,7 +167,7 @@ type BuildUrlFn = <
   options: Pick<TData, "url"> & Options<TData>,
 ) => string
 
-export type Client = CoreClient<RequestFn, Config, MethodFn, BuildUrlFn> & {
+export type Client = CoreClient<RequestFn, Config, MethodFn, BuildUrlFn, SseFn> & {
   interceptors: Middleware<Request, Response, unknown, ResolvedRequestOptions>
 }
 

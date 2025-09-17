@@ -6,8 +6,6 @@ import type {
   ProjectListResponses,
   ProjectCurrentData,
   ProjectCurrentResponses,
-  EventSubscribeData,
-  EventSubscribeResponses,
   ConfigGetData,
   ConfigGetResponses,
   ToolRegisterData,
@@ -101,6 +99,8 @@ import type {
   AuthSetData,
   AuthSetResponses,
   AuthSetErrors,
+  EventSubscribeData,
+  EventSubscribeResponses,
 } from "./types.gen.js"
 import { client as _heyApiClient } from "./client.gen.js"
 
@@ -148,18 +148,6 @@ class Project extends _HeyApiClient {
   public current<ThrowOnError extends boolean = false>(options?: Options<ProjectCurrentData, ThrowOnError>) {
     return (options?.client ?? this._client).get<ProjectCurrentResponses, unknown, ThrowOnError>({
       url: "/project/current",
-      ...options,
-    })
-  }
-}
-
-class Event extends _HeyApiClient {
-  /**
-   * Get events
-   */
-  public subscribe<ThrowOnError extends boolean = false>(options?: Options<EventSubscribeData, ThrowOnError>) {
-    return (options?.client ?? this._client).get.sse<EventSubscribeResponses, unknown, ThrowOnError>({
-      url: "/event",
       ...options,
     })
   }
@@ -671,6 +659,18 @@ class Auth extends _HeyApiClient {
   }
 }
 
+class Event extends _HeyApiClient {
+  /**
+   * Get events
+   */
+  public subscribe<ThrowOnError extends boolean = false>(options?: Options<EventSubscribeData, ThrowOnError>) {
+    return (options?.client ?? this._client).sse.get<EventSubscribeResponses, unknown, ThrowOnError>({
+      url: "/event",
+      ...options,
+    })
+  }
+}
+
 export class OpencodeClient extends _HeyApiClient {
   /**
    * Respond to a permission request
@@ -688,7 +688,6 @@ export class OpencodeClient extends _HeyApiClient {
     })
   }
   project = new Project({ client: this._client })
-  event = new Event({ client: this._client })
   config = new Config({ client: this._client })
   tool = new Tool({ client: this._client })
   path = new Path({ client: this._client })
@@ -699,4 +698,5 @@ export class OpencodeClient extends _HeyApiClient {
   app = new App({ client: this._client })
   tui = new Tui({ client: this._client })
   auth = new Auth({ client: this._client })
+  event = new Event({ client: this._client })
 }

@@ -10,440 +10,6 @@ export type Project = {
   }
 }
 
-export type EventInstallationUpdated = {
-  type: "installation.updated"
-  properties: {
-    version: string
-  }
-}
-
-export type EventLspClientDiagnostics = {
-  type: "lsp.client.diagnostics"
-  properties: {
-    serverID: string
-    path: string
-  }
-}
-
-export type UserMessage = {
-  id: string
-  sessionID: string
-  role: "user"
-  time: {
-    created: number
-  }
-}
-
-export type ProviderAuthError = {
-  name: "ProviderAuthError"
-  data: {
-    providerID: string
-    message: string
-  }
-}
-
-export type UnknownError = {
-  name: "UnknownError"
-  data: {
-    message: string
-  }
-}
-
-export type MessageOutputLengthError = {
-  name: "MessageOutputLengthError"
-  data: {
-    [key: string]: unknown
-  }
-}
-
-export type MessageAbortedError = {
-  name: "MessageAbortedError"
-  data: {
-    message: string
-  }
-}
-
-export type AssistantMessage = {
-  id: string
-  sessionID: string
-  role: "assistant"
-  time: {
-    created: number
-    completed?: number
-  }
-  error?: ProviderAuthError | UnknownError | MessageOutputLengthError | MessageAbortedError
-  system: Array<string>
-  modelID: string
-  providerID: string
-  mode: string
-  path: {
-    cwd: string
-    root: string
-  }
-  summary?: boolean
-  cost: number
-  tokens: {
-    input: number
-    output: number
-    reasoning: number
-    cache: {
-      read: number
-      write: number
-    }
-  }
-}
-
-export type Message = UserMessage | AssistantMessage
-
-export type EventMessageUpdated = {
-  type: "message.updated"
-  properties: {
-    info: Message
-  }
-}
-
-export type EventMessageRemoved = {
-  type: "message.removed"
-  properties: {
-    sessionID: string
-    messageID: string
-  }
-}
-
-export type TextPart = {
-  id: string
-  sessionID: string
-  messageID: string
-  type: "text"
-  text: string
-  synthetic?: boolean
-  time?: {
-    start: number
-    end?: number
-  }
-}
-
-export type ReasoningPart = {
-  id: string
-  sessionID: string
-  messageID: string
-  type: "reasoning"
-  text: string
-  metadata?: {
-    [key: string]: unknown
-  }
-  time: {
-    start: number
-    end?: number
-  }
-}
-
-export type FilePartSourceText = {
-  value: string
-  start: number
-  end: number
-}
-
-export type FileSource = {
-  text: FilePartSourceText
-  type: "file"
-  path: string
-}
-
-export type Range = {
-  start: {
-    line: number
-    character: number
-  }
-  end: {
-    line: number
-    character: number
-  }
-}
-
-export type SymbolSource = {
-  text: FilePartSourceText
-  type: "symbol"
-  path: string
-  range: Range
-  name: string
-  kind: number
-}
-
-export type FilePartSource = FileSource | SymbolSource
-
-export type FilePart = {
-  id: string
-  sessionID: string
-  messageID: string
-  type: "file"
-  mime: string
-  filename?: string
-  url: string
-  source?: FilePartSource
-}
-
-export type ToolStatePending = {
-  status: "pending"
-}
-
-export type ToolStateRunning = {
-  status: "running"
-  input: unknown
-  title?: string
-  metadata?: {
-    [key: string]: unknown
-  }
-  time: {
-    start: number
-  }
-}
-
-export type ToolStateCompleted = {
-  status: "completed"
-  input: {
-    [key: string]: unknown
-  }
-  output: string
-  title: string
-  metadata: {
-    [key: string]: unknown
-  }
-  time: {
-    start: number
-    end: number
-    compacted?: number
-  }
-}
-
-export type ToolStateError = {
-  status: "error"
-  input: {
-    [key: string]: unknown
-  }
-  error: string
-  metadata?: {
-    [key: string]: unknown
-  }
-  time: {
-    start: number
-    end: number
-  }
-}
-
-export type ToolState = ToolStatePending | ToolStateRunning | ToolStateCompleted | ToolStateError
-
-export type ToolPart = {
-  id: string
-  sessionID: string
-  messageID: string
-  type: "tool"
-  callID: string
-  tool: string
-  state: ToolState
-}
-
-export type StepStartPart = {
-  id: string
-  sessionID: string
-  messageID: string
-  type: "step-start"
-}
-
-export type StepFinishPart = {
-  id: string
-  sessionID: string
-  messageID: string
-  type: "step-finish"
-  cost: number
-  tokens: {
-    input: number
-    output: number
-    reasoning: number
-    cache: {
-      read: number
-      write: number
-    }
-  }
-}
-
-export type SnapshotPart = {
-  id: string
-  sessionID: string
-  messageID: string
-  type: "snapshot"
-  snapshot: string
-}
-
-export type PatchPart = {
-  id: string
-  sessionID: string
-  messageID: string
-  type: "patch"
-  hash: string
-  files: Array<string>
-}
-
-export type AgentPart = {
-  id: string
-  sessionID: string
-  messageID: string
-  type: "agent"
-  name: string
-  source?: {
-    value: string
-    start: number
-    end: number
-  }
-}
-
-export type Part =
-  | TextPart
-  | ReasoningPart
-  | FilePart
-  | ToolPart
-  | StepStartPart
-  | StepFinishPart
-  | SnapshotPart
-  | PatchPart
-  | AgentPart
-
-export type EventMessagePartUpdated = {
-  type: "message.part.updated"
-  properties: {
-    part: Part
-  }
-}
-
-export type EventMessagePartRemoved = {
-  type: "message.part.removed"
-  properties: {
-    sessionID: string
-    messageID: string
-    partID: string
-  }
-}
-
-export type EventSessionCompacted = {
-  type: "session.compacted"
-  properties: {
-    sessionID: string
-  }
-}
-
-export type Permission = {
-  id: string
-  type: string
-  pattern?: string | Array<string>
-  sessionID: string
-  messageID: string
-  callID?: string
-  title: string
-  metadata: {
-    [key: string]: unknown
-  }
-  time: {
-    created: number
-  }
-}
-
-export type EventPermissionUpdated = {
-  type: "permission.updated"
-  properties: Permission
-}
-
-export type EventPermissionReplied = {
-  type: "permission.replied"
-  properties: {
-    sessionID: string
-    permissionID: string
-    response: string
-  }
-}
-
-export type EventFileEdited = {
-  type: "file.edited"
-  properties: {
-    file: string
-  }
-}
-
-export type EventSessionIdle = {
-  type: "session.idle"
-  properties: {
-    sessionID: string
-  }
-}
-
-export type Session = {
-  id: string
-  projectID: string
-  directory: string
-  parentID?: string
-  share?: {
-    url: string
-  }
-  title: string
-  version: string
-  time: {
-    created: number
-    updated: number
-    compacting?: number
-  }
-  revert?: {
-    messageID: string
-    partID?: string
-    snapshot?: string
-    diff?: string
-  }
-}
-
-export type EventSessionUpdated = {
-  type: "session.updated"
-  properties: {
-    info: Session
-  }
-}
-
-export type EventSessionDeleted = {
-  type: "session.deleted"
-  properties: {
-    info: Session
-  }
-}
-
-export type EventSessionError = {
-  type: "session.error"
-  properties: {
-    sessionID?: string
-    error?: ProviderAuthError | UnknownError | MessageOutputLengthError | MessageAbortedError
-  }
-}
-
-export type EventServerConnected = {
-  type: "server.connected"
-  properties: {
-    [key: string]: unknown
-  }
-}
-
-export type Event =
-  | EventInstallationUpdated
-  | EventLspClientDiagnostics
-  | EventMessageUpdated
-  | EventMessageRemoved
-  | EventMessagePartUpdated
-  | EventMessagePartRemoved
-  | EventSessionCompacted
-  | EventPermissionUpdated
-  | EventPermissionReplied
-  | EventFileEdited
-  | EventSessionIdle
-  | EventSessionUpdated
-  | EventSessionDeleted
-  | EventSessionError
-  | EventServerConnected
-
 /**
  * Custom keybind configurations
  */
@@ -983,6 +549,297 @@ export type Path = {
   directory: string
 }
 
+export type Session = {
+  id: string
+  projectID: string
+  directory: string
+  parentID?: string
+  share?: {
+    url: string
+  }
+  title: string
+  version: string
+  time: {
+    created: number
+    updated: number
+    compacting?: number
+  }
+  revert?: {
+    messageID: string
+    partID?: string
+    snapshot?: string
+    diff?: string
+  }
+}
+
+export type UserMessage = {
+  id: string
+  sessionID: string
+  role: "user"
+  time: {
+    created: number
+  }
+}
+
+export type ProviderAuthError = {
+  name: "ProviderAuthError"
+  data: {
+    providerID: string
+    message: string
+  }
+}
+
+export type UnknownError = {
+  name: "UnknownError"
+  data: {
+    message: string
+  }
+}
+
+export type MessageOutputLengthError = {
+  name: "MessageOutputLengthError"
+  data: {
+    [key: string]: unknown
+  }
+}
+
+export type MessageAbortedError = {
+  name: "MessageAbortedError"
+  data: {
+    message: string
+  }
+}
+
+export type AssistantMessage = {
+  id: string
+  sessionID: string
+  role: "assistant"
+  time: {
+    created: number
+    completed?: number
+  }
+  error?: ProviderAuthError | UnknownError | MessageOutputLengthError | MessageAbortedError
+  system: Array<string>
+  modelID: string
+  providerID: string
+  mode: string
+  path: {
+    cwd: string
+    root: string
+  }
+  summary?: boolean
+  cost: number
+  tokens: {
+    input: number
+    output: number
+    reasoning: number
+    cache: {
+      read: number
+      write: number
+    }
+  }
+}
+
+export type Message = UserMessage | AssistantMessage
+
+export type TextPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "text"
+  text: string
+  synthetic?: boolean
+  time?: {
+    start: number
+    end?: number
+  }
+}
+
+export type ReasoningPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "reasoning"
+  text: string
+  metadata?: {
+    [key: string]: unknown
+  }
+  time: {
+    start: number
+    end?: number
+  }
+}
+
+export type FilePartSourceText = {
+  value: string
+  start: number
+  end: number
+}
+
+export type FileSource = {
+  text: FilePartSourceText
+  type: "file"
+  path: string
+}
+
+export type Range = {
+  start: {
+    line: number
+    character: number
+  }
+  end: {
+    line: number
+    character: number
+  }
+}
+
+export type SymbolSource = {
+  text: FilePartSourceText
+  type: "symbol"
+  path: string
+  range: Range
+  name: string
+  kind: number
+}
+
+export type FilePartSource = FileSource | SymbolSource
+
+export type FilePart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "file"
+  mime: string
+  filename?: string
+  url: string
+  source?: FilePartSource
+}
+
+export type ToolStatePending = {
+  status: "pending"
+}
+
+export type ToolStateRunning = {
+  status: "running"
+  input: unknown
+  title?: string
+  metadata?: {
+    [key: string]: unknown
+  }
+  time: {
+    start: number
+  }
+}
+
+export type ToolStateCompleted = {
+  status: "completed"
+  input: {
+    [key: string]: unknown
+  }
+  output: string
+  title: string
+  metadata: {
+    [key: string]: unknown
+  }
+  time: {
+    start: number
+    end: number
+    compacted?: number
+  }
+}
+
+export type ToolStateError = {
+  status: "error"
+  input: {
+    [key: string]: unknown
+  }
+  error: string
+  metadata?: {
+    [key: string]: unknown
+  }
+  time: {
+    start: number
+    end: number
+  }
+}
+
+export type ToolState = ToolStatePending | ToolStateRunning | ToolStateCompleted | ToolStateError
+
+export type ToolPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "tool"
+  callID: string
+  tool: string
+  state: ToolState
+}
+
+export type StepStartPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "step-start"
+}
+
+export type StepFinishPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "step-finish"
+  cost: number
+  tokens: {
+    input: number
+    output: number
+    reasoning: number
+    cache: {
+      read: number
+      write: number
+    }
+  }
+}
+
+export type SnapshotPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "snapshot"
+  snapshot: string
+}
+
+export type PatchPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "patch"
+  hash: string
+  files: Array<string>
+}
+
+export type AgentPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "agent"
+  name: string
+  source?: {
+    value: string
+    start: number
+    end: number
+  }
+}
+
+export type Part =
+  | TextPart
+  | ReasoningPart
+  | FilePart
+  | ToolPart
+  | StepStartPart
+  | StepFinishPart
+  | SnapshotPart
+  | PatchPart
+  | AgentPart
+
 export type TextPartInput = {
   id?: string
   type: "text"
@@ -1151,6 +1008,166 @@ export type WellKnownAuth = {
 
 export type Auth = OAuth | ApiAuth | WellKnownAuth
 
+export type EventInstallationUpdated = {
+  type: "installation.updated"
+  properties: {
+    version: string
+  }
+}
+
+export type EventLspClientDiagnostics = {
+  type: "lsp.client.diagnostics"
+  properties: {
+    serverID: string
+    path: string
+  }
+}
+
+export type EventMessageUpdated = {
+  type: "message.updated"
+  properties: {
+    info: Message
+  }
+}
+
+export type EventMessageRemoved = {
+  type: "message.removed"
+  properties: {
+    sessionID: string
+    messageID: string
+  }
+}
+
+export type EventMessagePartUpdated = {
+  type: "message.part.updated"
+  properties: {
+    part: Part
+  }
+}
+
+export type EventMessagePartRemoved = {
+  type: "message.part.removed"
+  properties: {
+    sessionID: string
+    messageID: string
+    partID: string
+  }
+}
+
+export type EventSessionCompacted = {
+  type: "session.compacted"
+  properties: {
+    sessionID: string
+  }
+}
+
+export type Permission = {
+  id: string
+  type: string
+  pattern?: string | Array<string>
+  sessionID: string
+  messageID: string
+  callID?: string
+  title: string
+  metadata: {
+    [key: string]: unknown
+  }
+  time: {
+    created: number
+  }
+}
+
+export type EventPermissionUpdated = {
+  type: "permission.updated"
+  properties: Permission
+}
+
+export type EventPermissionReplied = {
+  type: "permission.replied"
+  properties: {
+    sessionID: string
+    permissionID: string
+    response: string
+  }
+}
+
+export type EventFileEdited = {
+  type: "file.edited"
+  properties: {
+    file: string
+  }
+}
+
+export type EventSessionIdle = {
+  type: "session.idle"
+  properties: {
+    sessionID: string
+  }
+}
+
+export type EventSessionUpdated = {
+  type: "session.updated"
+  properties: {
+    info: Session
+  }
+}
+
+export type EventSessionDeleted = {
+  type: "session.deleted"
+  properties: {
+    info: Session
+  }
+}
+
+export type EventSessionError = {
+  type: "session.error"
+  properties: {
+    sessionID?: string
+    error?: ProviderAuthError | UnknownError | MessageOutputLengthError | MessageAbortedError
+  }
+}
+
+export type EventServerConnected = {
+  type: "server.connected"
+  properties: {
+    [key: string]: unknown
+  }
+}
+
+export type EventFileWatcherUpdated = {
+  type: "file.watcher.updated"
+  properties: {
+    file: string
+    event: "add" | "change" | "unlink"
+  }
+}
+
+export type EventIdeInstalled = {
+  type: "ide.installed"
+  properties: {
+    ide: string
+  }
+}
+
+export type Event =
+  | EventInstallationUpdated
+  | EventLspClientDiagnostics
+  | EventMessageUpdated
+  | EventMessageRemoved
+  | EventMessagePartUpdated
+  | EventMessagePartRemoved
+  | EventSessionCompacted
+  | EventPermissionUpdated
+  | EventPermissionReplied
+  | EventFileEdited
+  | EventSessionIdle
+  | EventSessionUpdated
+  | EventSessionDeleted
+  | EventSessionError
+  | EventServerConnected
+  | EventFileWatcherUpdated
+  | EventIdeInstalled
+
 export type ProjectListData = {
   body?: never
   path?: never
@@ -1186,24 +1203,6 @@ export type ProjectCurrentResponses = {
 }
 
 export type ProjectCurrentResponse = ProjectCurrentResponses[keyof ProjectCurrentResponses]
-
-export type EventSubscribeData = {
-  body?: never
-  path?: never
-  query?: {
-    directory?: string
-  }
-  url: "/event"
-}
-
-export type EventSubscribeResponses = {
-  /**
-   * Event stream
-   */
-  200: Event
-}
-
-export type EventSubscribeResponse = EventSubscribeResponses[keyof EventSubscribeResponses]
 
 export type ConfigGetData = {
   body?: never
@@ -2209,6 +2208,24 @@ export type AuthSetResponses = {
 }
 
 export type AuthSetResponse = AuthSetResponses[keyof AuthSetResponses]
+
+export type EventSubscribeData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/event"
+}
+
+export type EventSubscribeResponses = {
+  /**
+   * Event stream
+   */
+  200: Event
+}
+
+export type EventSubscribeResponse = EventSubscribeResponses[keyof EventSubscribeResponses]
 
 export type ClientOptions = {
   baseUrl: `${string}://${string}` | (string & {})
