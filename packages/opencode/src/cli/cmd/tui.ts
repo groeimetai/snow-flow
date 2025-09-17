@@ -15,7 +15,6 @@ import { Ide } from "../../ide"
 
 import { Flag } from "../../flag/flag"
 import { Session } from "../../session"
-import { Instance } from "../../project/instance"
 import { $ } from "bun"
 
 declare global {
@@ -151,7 +150,6 @@ export const TuiCommand = cmd({
             ...process.env,
             CGO_ENABLED: "0",
             OPENCODE_SERVER: server.url.toString(),
-            OPENCODE_PROJECT: JSON.stringify(Instance.project),
           },
           onExit: () => {
             server.stop()
