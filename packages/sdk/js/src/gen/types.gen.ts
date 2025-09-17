@@ -649,6 +649,9 @@ export type TextPart = {
   type: "text"
   text: string
   synthetic?: boolean
+  metadata?: {
+    [key: string]: unknown
+  }
   time?: {
     start: number
     end?: number
@@ -773,6 +776,9 @@ export type ToolPart = {
   callID: string
   tool: string
   state: ToolState
+  metadata?: {
+    [key: string]: unknown
+  }
 }
 
 export type StepStartPart = {
@@ -845,6 +851,9 @@ export type TextPartInput = {
   type: "text"
   text: string
   synthetic?: boolean
+  metadata?: {
+    [key: string]: unknown
+  }
   time?: {
     start: number
     end?: number
