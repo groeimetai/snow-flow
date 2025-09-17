@@ -281,9 +281,19 @@ export namespace SessionPrompt {
             }),
           ),
           ...MessageV2.toModelMessage(
-            msgs.filter(
-              (m) => !(m.info.role === "assistant" && m.info.error && !MessageV2.AbortedError.isInstance(m.info.error)),
-            ),
+            msgs.filter((m) => {
+              if (m.info.role !== "assistant" || m.info.error === undefined) {
+                return true
+              }
+              if (
+                MessageV2.AbortedError.isInstance(m.info.error) &&
+                m.parts.some((part) => part.type !== "step-start" && part.type !== "reasoning")
+              ) {
+                return true
+              }
+
+              return false
+            }),
           ),
         ],
         tools: model.info.tool_call === false ? undefined : tools,
