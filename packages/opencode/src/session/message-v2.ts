@@ -109,7 +109,6 @@ export namespace MessageV2 {
     type: z.literal("text"),
     text: z.string(),
     synthetic: z.boolean().optional(),
-    metadata: z.record(z.string(), z.any()).optional(),
     time: z
       .object({
         start: z.number(),
@@ -139,7 +138,6 @@ export namespace MessageV2 {
     callID: z.string(),
     tool: z.string(),
     state: ToolState,
-    metadata: z.record(z.string(), z.any()).optional(),
   }).meta({
     ref: "ToolPart",
   })
@@ -521,7 +519,6 @@ export namespace MessageV2 {
                 {
                   type: "text",
                   text: part.text,
-                  providerMetadata: part.metadata,
                 },
               ]
             if (part.type === "step-start")
@@ -539,7 +536,6 @@ export namespace MessageV2 {
                     toolCallId: part.callID,
                     input: part.state.input,
                     output: part.state.time.compacted ? "[Old tool result content cleared]" : part.state.output,
-                    callProviderMetadata: part.metadata,
                   },
                 ]
               if (part.state.status === "error")
