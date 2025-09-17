@@ -6,7 +6,7 @@
   "packageManager": "bun@1.2.21",
   "scripts": {
     "dev": "bun run --conditions=development packages/opencode/src/index.ts",
-    "typecheck": "bun run --filter='*' typecheck",
+    "typecheck": "bun turbo typecheck",
     "generate": "(cd packages/sdk && ./js/script/generate.ts) && (cd packages/sdk/stainless && ./generate.ts)",
     "postinstall": "./script/hooks"
   },
@@ -34,7 +34,8 @@
   },
   "devDependencies": {
     "prettier": "3.6.2",
-    "sst": "3.17.13"
+    "sst": "3.17.13",
+    "turbo": "2.5.6"
   },
   "repository": {
     "type": "git",
