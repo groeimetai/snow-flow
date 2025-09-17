@@ -179,14 +179,14 @@ export async function handler(
           api: "https://inference.baseten.co",
           apiKey: Resource.BASETEN_API_KEY.value,
           model: "moonshotai/Kimi-K2-Instruct-0905",
-          weight: 4,
+          //weight: 4,
         },
-        fireworks: {
-          api: "https://api.fireworks.ai/inference",
-          apiKey: Resource.FIREWORKS_API_KEY.value,
-          model: "accounts/fireworks/models/kimi-k2-instruct-0905",
-          weight: 1,
-        },
+        //fireworks: {
+        //  api: "https://api.fireworks.ai/inference",
+        //  apiKey: Resource.FIREWORKS_API_KEY.value,
+        //  model: "accounts/fireworks/models/kimi-k2-instruct-0905",
+        //  weight: 1,
+        //},
       },
     },
     "grok-code": {
