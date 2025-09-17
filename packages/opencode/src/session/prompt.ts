@@ -1548,7 +1548,7 @@ export namespace SessionPrompt {
       ...ProviderTransform.options(small.providerID, small.modelID, input.session.id),
       ...small.info.options,
     }
-    if (small.providerID === "openai") {
+    if (small.providerID === "openai" || small.modelID.includes("gpt-5")) {
       options["reasoningEffort"] = "minimal"
     }
     if (small.providerID === "google") {
