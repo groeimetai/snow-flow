@@ -13,7 +13,7 @@
   "workspaces": {
     "packages": [
       "packages/*",
-      "packages/cloud/*",
+      "packages/console/*",
       "packages/sdk/js"
     ],
     "catalog": {
