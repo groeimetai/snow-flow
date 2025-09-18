@@ -3,7 +3,7 @@
 /* eslint-disable */
 /* deno-fmt-ignore-file */
 
-/// <reference path="../../sst-env.d.ts" />
+/// <reference path="../../../sst-env.d.ts" />
 
 import "sst"
 export {}

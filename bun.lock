@@ -12,74 +12,6 @@
         "turbo": "2.5.6",
       },
     },
-    "cloud/app": {
-      "name": "@opencode/cloud-app",
-      "dependencies": {
-        "@ibm/plex": "6.4.1",
-        "@openauthjs/openauth": "0.0.0-20250322224806",
-        "@opencode/cloud-core": "workspace:*",
-        "@solidjs/meta": "^0.29.4",
-        "@solidjs/router": "^0.15.0",
-        "@solidjs/start": "^1.1.0",
-        "solid-js": "catalog:",
-        "vinxi": "^0.5.7",
-      },
-    },
-    "cloud/core": {
-      "name": "@opencode/cloud-core",
-      "version": "0.9.11",
-      "dependencies": {
-        "@aws-sdk/client-sts": "3.782.0",
-        "@opencode/cloud-resource": "workspace:*",
-        "@planetscale/database": "1.19.0",
-        "drizzle-orm": "0.41.0",
-        "postgres": "3.4.7",
-        "stripe": "18.0.0",
-        "ulid": "3.0.0",
-      },
-      "devDependencies": {
-        "drizzle-kit": "0.30.5",
-        "mysql2": "3.14.4",
-      },
-    },
-    "cloud/function": {
-      "name": "@opencode/cloud-function",
-      "version": "0.9.11",
-      "dependencies": {
-        "@ai-sdk/anthropic": "2.0.0",
-        "@ai-sdk/openai": "2.0.2",
-        "@ai-sdk/openai-compatible": "1.0.1",
-        "@hono/zod-validator": "catalog:",
-        "@openauthjs/openauth": "0.0.0-20250322224806",
-        "ai": "catalog:",
-        "hono": "catalog:",
-        "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@cloudflare/workers-types": "4.20250522.0",
-        "@types/node": "catalog:",
-        "openai": "5.11.0",
-        "typescript": "catalog:",
-      },
-    },
-    "cloud/resource": {
-      "name": "@opencode/cloud-resource",
-      "dependencies": {
-        "@cloudflare/workers-types": "^4.20250830.0",
-      },
-    },
-    "cloud/scripts": {
-      "name": "@opencode/cloud-scripts",
-      "version": "0.9.11",
-      "dependencies": {
-        "@opencode/cloud-core": "workspace:*",
-        "tsx": "4.20.5",
-      },
-      "devDependencies": {
-        "@types/node": "catalog:",
-        "typescript": "catalog:",
-      },
-    },
     "packages/app": {
       "name": "@opencode/app",
       "version": "0.9.11",
@@ -110,6 +42,74 @@
         "vite": "^6.0.0",
         "vite-plugin-icons-spritesheet": "3.0.1",
         "vite-plugin-solid": "^2.11.6",
+      },
+    },
+    "packages/cloud/app": {
+      "name": "@opencode/cloud-app",
+      "dependencies": {
+        "@ibm/plex": "6.4.1",
+        "@openauthjs/openauth": "0.0.0-20250322224806",
+        "@opencode/cloud-core": "workspace:*",
+        "@solidjs/meta": "^0.29.4",
+        "@solidjs/router": "^0.15.0",
+        "@solidjs/start": "^1.1.0",
+        "solid-js": "catalog:",
+        "vinxi": "^0.5.7",
+      },
+    },
+    "packages/cloud/core": {
+      "name": "@opencode/cloud-core",
+      "version": "0.9.11",
+      "dependencies": {
+        "@aws-sdk/client-sts": "3.782.0",
+        "@opencode/cloud-resource": "workspace:*",
+        "@planetscale/database": "1.19.0",
+        "drizzle-orm": "0.41.0",
+        "postgres": "3.4.7",
+        "stripe": "18.0.0",
+        "ulid": "3.0.0",
+      },
+      "devDependencies": {
+        "drizzle-kit": "0.30.5",
+        "mysql2": "3.14.4",
+      },
+    },
+    "packages/cloud/function": {
+      "name": "@opencode/cloud-function",
+      "version": "0.9.11",
+      "dependencies": {
+        "@ai-sdk/anthropic": "2.0.0",
+        "@ai-sdk/openai": "2.0.2",
+        "@ai-sdk/openai-compatible": "1.0.1",
+        "@hono/zod-validator": "catalog:",
+        "@openauthjs/openauth": "0.0.0-20250322224806",
+        "ai": "catalog:",
+        "hono": "catalog:",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@cloudflare/workers-types": "4.20250522.0",
+        "@types/node": "catalog:",
+        "openai": "5.11.0",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/cloud/resource": {
+      "name": "@opencode/cloud-resource",
+      "dependencies": {
+        "@cloudflare/workers-types": "^4.20250830.0",
+      },
+    },
+    "packages/cloud/scripts": {
+      "name": "@opencode/cloud-scripts",
+      "version": "0.9.11",
+      "dependencies": {
+        "@opencode/cloud-core": "workspace:*",
+        "tsx": "4.20.5",
+      },
+      "devDependencies": {
+        "@types/node": "catalog:",
+        "typescript": "catalog:",
       },
     },
     "packages/function": {
@@ -693,15 +693,15 @@
 
     "@opencode/app": ["@opencode/app@workspace:packages/app"],
 
-    "@opencode/cloud-app": ["@opencode/cloud-app@workspace:cloud/app"],
+    "@opencode/cloud-app": ["@opencode/cloud-app@workspace:packages/cloud/app"],
 
-    "@opencode/cloud-core": ["@opencode/cloud-core@workspace:cloud/core"],
+    "@opencode/cloud-core": ["@opencode/cloud-core@workspace:packages/cloud/core"],
 
-    "@opencode/cloud-function": ["@opencode/cloud-function@workspace:cloud/function"],
+    "@opencode/cloud-function": ["@opencode/cloud-function@workspace:packages/cloud/function"],
 
-    "@opencode/cloud-resource": ["@opencode/cloud-resource@workspace:cloud/resource"],
+    "@opencode/cloud-resource": ["@opencode/cloud-resource@workspace:packages/cloud/resource"],
 
-    "@opencode/cloud-scripts": ["@opencode/cloud-scripts@workspace:cloud/scripts"],
+    "@opencode/cloud-scripts": ["@opencode/cloud-scripts@workspace:packages/cloud/scripts"],
 
     "@opencode/function": ["@opencode/function@workspace:packages/function"],
 

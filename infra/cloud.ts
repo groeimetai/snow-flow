@@ -44,7 +44,7 @@ new sst.x.DevCommand("Studio", {
   link: [database],
   dev: {
     command: "bun db studio",
-    directory: "cloud/core",
+    directory: "packages/cloud/core",
     autostart: true,
   },
 })
@@ -59,7 +59,7 @@ const GOOGLE_CLIENT_ID = new sst.Secret("GOOGLE_CLIENT_ID")
 const authStorage = new sst.cloudflare.Kv("AuthStorage")
 export const auth = new sst.cloudflare.Worker("AuthApi", {
   domain: `auth.${domain}`,
-  handler: "cloud/function/src/auth.ts",
+  handler: "packages/cloud/function/src/auth.ts",
   url: true,
   link: [database, authStorage, GITHUB_CLIENT_ID_CONSOLE, GITHUB_CLIENT_SECRET_CONSOLE, GOOGLE_CLIENT_ID],
 })
@@ -120,14 +120,14 @@ let logProcessor
 if ($app.stage === "production" || $app.stage === "frank") {
   const HONEYCOMB_API_KEY = new sst.Secret("HONEYCOMB_API_KEY")
   logProcessor = new sst.cloudflare.Worker("LogProcessor", {
-    handler: "cloud/function/src/log-processor.ts",
+    handler: "packages/cloud/function/src/log-processor.ts",
     link: [HONEYCOMB_API_KEY],
   })
 }
 
 new sst.cloudflare.x.SolidStart("Console", {
   domain,
-  path: "cloud/app",
+  path: "packages/cloud/app",
   link: [
     database,
     AUTH_API_URL,
