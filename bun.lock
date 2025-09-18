@@ -183,6 +183,7 @@
       "version": "0.9.11",
       "dependencies": {
         "@opencode-ai/sdk": "workspace:*",
+        "zod": "catalog:",
       },
       "devDependencies": {
         "@tsconfig/node22": "catalog:",
