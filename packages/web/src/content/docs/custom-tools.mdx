@@ -1,0 +1,105 @@
+---
+title: Custom tools
+description: Create custom tools to extend opencode capabilities.
+---
+
+Custom tools are functions you create that the LLM can call during conversations. They work alongside opencode's built-in tools like `read`, `write`, and `bash`.
+
+---
+
+## Tool structure
+
+The easiest way to create tools is using the `tool()` helper which provides type safety and validation:
+
+```ts title=".opencode/tool/database.ts"
+import { tool } from "@opencode-ai/plugin"
+
+export default tool((z) => ({
+  description: "Query the project database",
+  args: {
+    query: z.string().describe("SQL query to execute"),
+  },
+  async execute(args) {
+    // Your database logic here
+    return `Executed query: ${args.query}`
+  },
+}))
+```
+
+You can also import Zod directly and return a plain object:
+
+```ts
+import z from "zod/v4"
+
+export default {
+  description: "Tool description",
+  args: {
+    param: z.string().describe("Parameter description"),
+  },
+  async execute(args, context) {
+    // Tool implementation
+    return "result"
+  },
+}
+```
+
+The filename becomes the tool name. This creates a `database` tool.
+
+---
+
+## Arguments
+
+Use the `z` parameter to define tool arguments with validation and descriptions:
+
+```ts title=".opencode/tool/calculator.ts"
+import { tool } from "@opencode-ai/plugin"
+
+export default tool((z) => ({
+  description: "Perform mathematical calculations",
+  args: {
+    expression: z.string().describe("Mathematical expression to evaluate"),
+    precision: z.number().optional().describe("Decimal precision"),
+  },
+  async execute(args) {
+    // Your calculation logic here
+    return `Result: ${eval(args.expression).toFixed(args.precision || 2)}`
+  },
+}))
+```
+
+---
+
+## Context
+
+Tools receive context about the current session:
+
+```ts title=".opencode/tool/project.ts"
+import { tool } from "@opencode-ai/plugin"
+
+export default tool((z) => ({
+  description: "Get project information",
+  args: {},
+  async execute(args, context) {
+    // Access context information
+    const { project, directory, worktree } = context
+    return `Project: ${project.name}, Directory: ${directory}`
+  },
+}))
+```
+
+---
+
+## Tool locations
+
+Custom tools are loaded from:
+
+- Project: `.opencode/tool/`
+- Global: `~/.config/opencode/tool/`
+
+Files must use `.js` or `.ts` extensions.
+
+---
+
+## Built-in tools
+
+opencode includes several built-in tools: `read`, `write`, `edit`, `bash`, `glob`, `grep`, `list`, `patch`, `todo`, and `task`. [Learn more](/docs/tui#tools).

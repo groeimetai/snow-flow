@@ -1,6 +1,6 @@
-import z from "zod/v4"
+import { tool } from "@opencode-ai/plugin"
 
-export default {
+export default tool((z) => ({
   description: "foo tool for fooing",
   args: {
     foo: z.string().describe("foo"),
@@ -8,4 +8,4 @@ export default {
   async execute() {
     return "Hey fuck you!"
   },
-}
+}))
