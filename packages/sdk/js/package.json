@@ -16,7 +16,6 @@
       "development": "./src/client.ts",
       "import": "./dist/client.js",
       "types": "./dist/client.d.ts"
-
     },
     "./server": {
       "development": "./src/server.ts",
