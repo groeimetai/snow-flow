@@ -5,15 +5,15 @@ export const ExamplePlugin: Plugin = async (ctx) => {
   return {
     permission: {},
     tool: {
-      mytool: tool((zod) => ({
+      mytool: tool({
         description: "This is a custom tool tool",
         args: {
-          foo: zod.string(),
+          foo: tool.schema.string().describe("foo"),
         },
-        async execute(args, ctx) {
+        async execute(args) {
           return `Hello ${args.foo}!`
         },
-      })),
+      }),
     },
     async "chat.params"(_input, output) {
       output.topP = 1

@@ -108,7 +108,7 @@ export const EnvProtection = async ({ project, client, $, directory, worktree })
 
 ### Custom tools
 
-Create custom tools that opencode can use:
+Plugins can also add custom tools to opencode:
 
 ```ts title=".opencode/plugin/custom-tools.ts"
 import type { Plugin, tool } from "@opencode-ai/plugin"
@@ -116,15 +116,15 @@ import type { Plugin, tool } from "@opencode-ai/plugin"
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
     tool: {
-      mytool: tool((zod) => ({
+      mytool: tool({
         description: "This is a custom tool",
         args: {
-          foo: zod.string(),
+          foo: tool.schema.string(),
         },
         async execute(args, ctx) {
           return `Hello ${args.foo}!`
         },
-      })),
+      }),
     },
   }
 }

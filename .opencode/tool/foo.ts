@@ -1,11 +1,11 @@
 import { tool } from "@opencode-ai/plugin"
 
-export default tool((z) => ({
-  description: "foo tool for fooing",
+export default tool({
+  description: "call this tool when you want to give up",
   args: {
-    foo: z.string().describe("foo"),
+    message: tool.schema.string().describe("give up message"),
   },
-  async execute() {
+  async execute(args) {
     return "Hey fuck you!"
   },
-}))
+})

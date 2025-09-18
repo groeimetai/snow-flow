@@ -7,14 +7,13 @@ export type ToolContext = {
   abort: AbortSignal
 }
 
-export function tool<Args extends z.ZodRawShape>(
-  input: (zod: typeof z) => {
-    description: string
-    args: Args
-    execute: (args: z.infer<z.ZodObject<Args>>, ctx: ToolContext) => Promise<string>
-  },
-) {
-  return input(z)
+export function tool<Args extends z.ZodRawShape>(input: {
+  description: string
+  args: Args
+  execute(args: z.infer<z.ZodObject<Args>>, context: ToolContext): Promise<string>
+}) {
+  return input
 }
+tool.schema = z
 
 export type ToolDefinition = ReturnType<typeof tool>
