@@ -1445,7 +1445,7 @@ export namespace SessionPrompt {
     })()
 
     const agent = await Agent.get(agentName)
-    if (agent.mode === "subagent" || command.subtask) {
+    if ((agent.mode === "subagent" && command.subtask !== false) || command.subtask === true) {
       using abort = lock(input.sessionID)
 
       const userMsg: MessageV2.User = {
