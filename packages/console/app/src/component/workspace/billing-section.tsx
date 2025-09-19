@@ -178,7 +178,9 @@ export function BillingSection() {
             <Show
               when={!(balanceAmount() === "0.00" || balanceAmount() === "-0.00")}
               fallback={
-                <p>We'll load <b>$20</b> (+$1.23 processing fee) and reload it when it reaches <b>$5</b>.</p>
+                <p>
+                  We'll load <b>$20</b> (+$1.23 processing fee) and reload it when it reaches <b>$5</b>.
+                </p>
               }
             >
               <p>
