@@ -64,9 +64,6 @@ export function Select<T>(props: SelectProps<T>) {
 
   return (
     <KobalteSelect<T, { category: string; options: T[] }>
-      allowDuplicateSelectionEvents={false}
-      disallowEmptySelection={true}
-      closeOnSelection={false}
       value={props.current}
       options={grouped()}
       optionValue={(x) => (props.value ? props.value(x) : (x as string))}
@@ -158,27 +155,25 @@ export function Select<T>(props: SelectProps<T>) {
           }}
         >
           <Show when={props.filter}>
-            <form>
-              <input
-                ref={(el) => (inputRef = el)}
-                id="select-filter"
-                type="text"
-                placeholder={props.filter ? props.filter.placeholder : "Filter items"}
-                value={store.filter}
-                onInput={(e) => setStore("filter", e.currentTarget.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Escape") {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    listboxRef?.focus()
-                  }
-                }}
-                classList={{
-                  "w-full": true,
-                  "px-2 pb-2 text-text font-light placeholder-text-muted/70 text-xs focus:outline-none": true,
-                }}
-              />
-            </form>
+            <input
+              ref={(el) => (inputRef = el)}
+              id="select-filter"
+              type="text"
+              placeholder={props.filter ? props.filter.placeholder : "Filter items"}
+              value={store.filter}
+              onInput={(e) => setStore("filter", e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Escape") {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  listboxRef?.focus()
+                }
+              }}
+              classList={{
+                "w-full": true,
+                "px-2 pb-2 text-text font-light placeholder-text-muted/70 text-xs focus:outline-none": true,
+              }}
+            />
           </Show>
           <KobalteSelect.Listbox
             ref={(el) => (listboxRef = el)}
