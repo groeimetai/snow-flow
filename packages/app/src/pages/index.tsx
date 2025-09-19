@@ -2,7 +2,7 @@ import { FileIcon, Icon, IconButton, Logo, Tooltip } from "@/ui"
 import { Tabs } from "@/ui/tabs"
 import { Select } from "@/components/select"
 import FileTree from "@/components/file-tree"
-import { createSignal, For, Match, onCleanup, onMount, Show, Switch } from "solid-js"
+import { For, Match, onCleanup, onMount, Show, Switch } from "solid-js"
 import { useLocal, useSDK } from "@/context"
 import { Code } from "@/components/code"
 import {
@@ -18,15 +18,17 @@ import type { DragEvent, Transformer } from "@thisbeyond/solid-dnd"
 import type { LocalFile } from "@/context/local"
 import SessionList from "@/components/session-list"
 import SessionTimeline from "@/components/session-timeline"
+import { createStore } from "solid-js/store"
 
 export default function Page() {
   const sdk = useSDK()
   const local = useLocal()
-  const [clickTimer, setClickTimer] = createSignal<number | undefined>()
-  const [activeItem, setActiveItem] = createSignal<string | undefined>(undefined)
-  const [inputValue, setInputValue] = createSignal("")
-  const [isDragging, setIsDragging] = createSignal<"left" | "right" | undefined>(undefined)
-  const [leftScrolled, setLeftScrolled] = createSignal(false)
+  const [store, setStore] = createStore({
+    clickTimer: undefined as number | undefined,
+    activeItem: undefined as string | undefined,
+    prompt: "",
+    dragging: undefined as "left" | "right" | undefined,
+  })
 
   let inputRef: HTMLInputElement | undefined = undefined
 
@@ -78,20 +80,20 @@ export default function Page() {
   }
 
   const resetClickTimer = () => {
-    if (!clickTimer()) return
-    clearTimeout(clickTimer())
-    setClickTimer(undefined)
+    if (!store.clickTimer) return
+    clearTimeout(store.clickTimer)
+    setStore("clickTimer", undefined)
   }
 
   const startClickTimer = () => {
     const newClickTimer = setTimeout(() => {
-      setClickTimer(undefined)
+      setStore("clickTimer", undefined)
     }, 300)
-    setClickTimer(newClickTimer as unknown as number)
+    setStore("clickTimer", newClickTimer as unknown as number)
   }
 
   const handleFileClick = async (file: LocalFile) => {
-    if (clickTimer()) {
+    if (store.clickTimer) {
       resetClickTimer()
       local.file.update(file.path, { ...file, pinned: true })
     } else {
@@ -109,7 +111,7 @@ export default function Page() {
   }
 
   const onDragStart = (event: any) => {
-    setActiveItem(event.draggable.id as string)
+    setStore("activeItem", event.draggable.id as string)
   }
 
   const onDragOver = (event: DragEvent) => {
@@ -125,12 +127,12 @@ export default function Page() {
   }
 
   const onDragEnd = () => {
-    setActiveItem(undefined)
+    setStore("activeItem", undefined)
   }
 
   const handleLeftDragStart = (e: MouseEvent) => {
     e.preventDefault()
-    setIsDragging("left")
+    setStore("dragging", "left")
     const startX = e.clientX
     const startWidth = local.layout.leftWidth()
 
@@ -141,7 +143,7 @@ export default function Page() {
     }
 
     const handleMouseUp = () => {
-      setIsDragging(undefined)
+      setStore("dragging", undefined)
       document.removeEventListener("mousemove", handleMouseMove)
       document.removeEventListener("mouseup", handleMouseUp)
     }
@@ -152,7 +154,7 @@ export default function Page() {
 
   const handleRightDragStart = (e: MouseEvent) => {
     e.preventDefault()
-    setIsDragging("right")
+    setStore("dragging", "right")
     const startX = e.clientX
     const startWidth = local.layout.rightWidth()
 
@@ -163,7 +165,7 @@ export default function Page() {
     }
 
     const handleMouseUp = () => {
-      setIsDragging(undefined)
+      setStore("dragging", undefined)
       document.removeEventListener("mousemove", handleMouseMove)
       document.removeEventListener("mouseup", handleMouseUp)
     }
@@ -174,8 +176,8 @@ export default function Page() {
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault()
-    const prompt = inputValue()
-    setInputValue("")
+    const prompt = store.prompt
+    setStore("prompt", "")
     inputRef?.blur()
 
     const session =
@@ -238,24 +240,8 @@ export default function Page() {
               </Tabs.Trigger>
             </Tabs.List>
           </div>
-          <Tabs.Content
-            value="files"
-            class="grow min-h-0 py-2 bg-background"
-            onScroll={(e: Event & { currentTarget: HTMLDivElement }) => setLeftScrolled(e.currentTarget.scrollTop > 0)}
-          >
+          <Tabs.Content value="files" class="grow min-h-0 py-2 bg-background">
             <FileTree path="" onFileClick={handleFileClick} />
-            <Show when={leftScrolled()}>
-              <div
-                class="pointer-events-none sticky top-20 left-px h-4 
-                       bg-gradient-to-t from-transparent to-background"
-                style={`width: ${local.layout.leftWidth() - 2}px`}
-              />
-            </Show>
-            <div
-              class="pointer-events-none fixed bottom-0 left-px h-4
-                     bg-gradient-to-b from-transparent to-background"
-              style={`width: ${local.layout.leftWidth() - 2}px`}
-            />
           </Tabs.Content>
           <Tabs.Content value="changes" class="grow min-h-0 py-2 bg-background">
             <div class="px-2 text-xs text-text-muted">No changes yet</div>
@@ -268,9 +254,9 @@ export default function Page() {
         onMouseDown={(e) => handleLeftDragStart(e)}
       >
         <div
-          class="w-0.5 h-full bg-transparent group-hover:bg-border-active transition-colors"
           classList={{
-            "bg-border-active": isDragging() === "left",
+            "w-0.5 h-full bg-transparent group-hover:bg-border-active transition-colors": true,
+            "bg-border-active!": store.dragging === "left",
           }}
         />
       </div>
@@ -302,16 +288,6 @@ export default function Page() {
                 </div>
               )}
             </Show>
-            <div
-              class="pointer-events-none fixed top-0 right-px h-4 
-                   bg-gradient-to-t from-transparent to-background"
-              style={`width: ${local.layout.rightWidth() - 2}px`}
-            />
-            <div
-              class="pointer-events-none fixed bottom-0 right-px h-4
-                   bg-gradient-to-b from-transparent to-background"
-              style={`width: ${local.layout.rightWidth() - 2}px`}
-            />
           </div>
         </div>
         <div
@@ -320,8 +296,10 @@ export default function Page() {
           onMouseDown={(e) => handleRightDragStart(e)}
         >
           <div
-            class="w-0.5 h-full bg-transparent group-hover:bg-border-active transition-colors"
-            classList={{ "bg-border-active": isDragging() === "right" }}
+            classList={{
+              "w-0.5 h-full bg-transparent group-hover:bg-border-active transition-colors": true,
+              "bg-border-active!": store.dragging === "right",
+            }}
           />
         </div>
       </Show>
@@ -443,9 +421,9 @@ export default function Page() {
             </For>
           </Tabs>
           <DragOverlay>
-            {activeItem() &&
+            {store.activeItem &&
               (() => {
-                const draggedFile = local.file.node(activeItem()!)
+                const draggedFile = local.file.node(store.activeItem!)
                 return (
                   <div
                     class="relative px-3 h-8 flex items-center 
@@ -490,8 +468,8 @@ export default function Page() {
             <input
               ref={(el) => (inputRef = el)}
               type="text"
-              value={inputValue()}
-              onInput={(e) => setInputValue(e.currentTarget.value)}
+              value={store.prompt}
+              onInput={(e) => setStore("prompt", e.currentTarget.value)}
               placeholder="It all starts with a prompt..."
               class="w-full p-1 pb-4 text-text font-light placeholder-text-muted/70 text-sm focus:outline-none"
             />
