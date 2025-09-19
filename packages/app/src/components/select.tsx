@@ -30,7 +30,6 @@ export interface SelectProps<T> {
 export function Select<T>(props: SelectProps<T>) {
   let inputRef: HTMLInputElement | undefined = undefined
   let listboxRef: HTMLUListElement | undefined = undefined
-  let contentRef: HTMLDivElement | undefined = undefined
   const [store, setStore] = createStore({
     filter: "",
   })
@@ -144,7 +143,6 @@ export function Select<T>(props: SelectProps<T>) {
       </KobalteSelect.Trigger>
       <KobalteSelect.Portal>
         <KobalteSelect.Content
-          ref={(el) => (contentRef = el)}
           onKeyDown={(e) => {
             if (!props.filter) return
             if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Escape") {
