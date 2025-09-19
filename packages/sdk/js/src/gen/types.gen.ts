@@ -1105,18 +1105,18 @@ export type EventSessionError = {
   }
 }
 
-export type EventServerConnected = {
-  type: "server.connected"
-  properties: {
-    [key: string]: unknown
-  }
-}
-
 export type EventFileWatcherUpdated = {
   type: "file.watcher.updated"
   properties: {
     file: string
     event: "add" | "change" | "unlink"
+  }
+}
+
+export type EventServerConnected = {
+  type: "server.connected"
+  properties: {
+    [key: string]: unknown
   }
 }
 
@@ -1142,8 +1142,8 @@ export type Event =
   | EventSessionUpdated
   | EventSessionDeleted
   | EventSessionError
-  | EventServerConnected
   | EventFileWatcherUpdated
+  | EventServerConnected
   | EventIdeInstalled
 
 export type ProjectListData = {
