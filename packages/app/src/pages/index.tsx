@@ -1,5 +1,6 @@
 import { FileIcon, Icon, IconButton, Logo, Tooltip } from "@/ui"
 import { Tabs } from "@/ui/tabs"
+import { Select } from "@/components/select"
 import FileTree from "@/components/file-tree"
 import { createSignal, For, Match, onCleanup, onMount, Show, Switch } from "solid-js"
 import { useLocal, useSDK } from "@/context"
@@ -48,6 +49,10 @@ export default function Page() {
       if (e.key === "Escape") {
         inputRef?.blur()
       }
+      return
+    }
+
+    if (document.activeElement?.id === "select-filter") {
       return
     }
 
@@ -228,10 +233,10 @@ export default function Page() {
         <Tabs class="relative flex flex-col h-full" defaultValue="files">
           <div class="sticky top-0 shrink-0 flex">
             <Tabs.List class="grow w-full after:hidden">
-              <Tabs.Trigger value="files" class="flex-1 justify-center">
+              <Tabs.Trigger value="files" class="flex-1 justify-center text-xs">
                 Files
               </Tabs.Trigger>
-              <Tabs.Trigger value="changes" class="flex-1 justify-center">
+              <Tabs.Trigger value="changes" class="flex-1 justify-center text-xs">
                 Changes
               </Tabs.Trigger>
             </Tabs.List>
@@ -256,7 +261,7 @@ export default function Page() {
             />
           </Tabs.Content>
           <Tabs.Content value="changes" class="grow min-h-0 py-2 bg-background">
-            <div class="px-2 text-sm text-text-muted">No changes yet</div>
+            <div class="px-2 text-xs text-text-muted">No changes yet</div>
           </Tabs.Content>
         </Tabs>
       </div>
@@ -493,11 +498,28 @@ export default function Page() {
               placeholder="It all starts with a prompt..."
               class="w-full p-1 pb-4 text-text font-light placeholder-text-muted/70 text-sm focus:outline-none"
             />
-            <div class="px-1 flex justify-between items-center text-xs text-text-muted">
-              <span>
-                <span class="text-primary uppercase">{local.agent.current()?.name ?? "unknown"}</span> /{" "}
-                {local.model.parsed().provider} / {local.model.parsed().model}
-              </span>
+            <div class="flex justify-between items-center text-xs text-text-muted">
+              <div class="flex gap-2 items-center">
+                <Select
+                  options={local.agent.list().map((a) => a.name)}
+                  current={local.agent.current().name}
+                  onSelect={local.agent.set}
+                  size="sm"
+                  class="uppercase"
+                />
+                <Select
+                  options={local.model.list()}
+                  current={local.model.current()}
+                  onSelect={local.model.set}
+                  label={(x) => x.modelID}
+                  value={(x) => `${x.providerID}.${x.modelID}`}
+                  filterKeys={["providerID", "modelID"]}
+                  groupBy={(x) => x.providerID}
+                  size="sm"
+                  class="uppercase"
+                />
+                <span class="text-text-muted/70">{local.model.parsed().provider}</span>
+              </div>
               <div class="flex gap-1 items-center">
                 <IconButton class="text-text-muted" size="xs" variant="ghost">
                   <Icon name="photo" size={16} />
