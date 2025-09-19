@@ -2,11 +2,15 @@ import "./[id].css"
 import { MonthlyLimitSection } from "~/component/workspace/monthly-limit-section"
 import { NewUserSection } from "~/component/workspace/new-user-section"
 import { BillingSection } from "~/component/workspace/billing-section"
+import { PrivacySection } from "~/component/workspace/privacy-section"
 import { PaymentSection } from "~/component/workspace/payment-section"
 import { UsageSection } from "~/component/workspace/usage-section"
 import { KeySection } from "~/component/workspace/key-section"
+import { Show } from "solid-js"
+import { useParams } from "@solidjs/router"
 
 export default function () {
+  const params = useParams()
   return (
     <div data-page="workspace-[id]">
       <section data-component="title-section">
@@ -25,9 +29,20 @@ export default function () {
         <KeySection />
         <BillingSection />
         <MonthlyLimitSection />
+        <Show when={isBeta(params.id)}>
+          <PrivacySection />
+        </Show>
         <UsageSection />
         <PaymentSection />
       </div>
     </div>
   )
+}
+
+export function isBeta(workspaceID: string) {
+  return [
+    "wrk_01K46JDFR0E75SG2Q8K172KF3Y", // production
+    "wrk_01K4NFRR5P7FSYWH88307B4DDS", // dev
+    "wrk_01K4PJRKJ2WPQZN3FFYRV4673F", // frank
+  ].includes(workspaceID)
 }

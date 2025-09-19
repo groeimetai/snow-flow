@@ -12,12 +12,13 @@
   "dependencies": {
     "@ibm/plex": "6.4.1",
     "@openauthjs/openauth": "0.0.0-20250322224806",
+    "@opencode/console-core": "workspace:*",
     "@solidjs/meta": "^0.29.4",
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.1.0",
     "solid-js": "catalog:",
     "vinxi": "^0.5.7",
-    "@opencode/console-core": "workspace:*"
+    "zod": "catalog:"
   },
   "engines": {
     "node": ">=22"
