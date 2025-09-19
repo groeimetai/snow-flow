@@ -29,6 +29,7 @@ import { SessionPrompt } from "../session/prompt"
 import { SessionCompaction } from "../session/compaction"
 import { SessionRevert } from "../session/revert"
 import { lazy } from "../util/lazy"
+import { InstanceBootstrap } from "../project/bootstrap"
 
 const ERRORS = {
   400: {
@@ -90,8 +91,12 @@ export namespace Server {
       })
       .use(async (c, next) => {
         const directory = c.req.query("directory") ?? process.cwd()
-        return Instance.provide(directory, async () => {
-          return next()
+        return Instance.provide({
+          directory,
+          init: InstanceBootstrap,
+          async fn() {
+            return next()
+          },
         })
       })
       .use(cors())
