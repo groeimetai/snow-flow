@@ -286,8 +286,8 @@ export default function Page() {
             <Show when={local.session.active()} fallback={<SessionList />}>
               {(activeSession) => (
                 <div class="relative">
-                  <div class="sticky top-0 bg-background z-50 p-2 h-9 border-b border-border-subtle/30">
-                    <div class="flex items-center gap-2">
+                  <div class="sticky top-0 bg-background z-50 px-2 h-8 border-b border-border-subtle/30">
+                    <div class="h-full flex items-center gap-2">
                       <IconButton
                         size="xs"
                         variant="ghost"
@@ -451,7 +451,7 @@ export default function Page() {
                 const draggedFile = local.file.node(activeItem()!)
                 return (
                   <div
-                    class="relative px-3 h-9 flex items-center 
+                    class="relative px-3 h-8 flex items-center 
                            text-sm font-medium text-text whitespace-nowrap
                            shrink-0 bg-background-panel 
                            border-x border-border-subtle/40 border-b border-b-transparent"
@@ -582,7 +582,7 @@ const SortableTab = (props: {
             <TabVisual file={props.file} />
           </Tabs.Trigger>
           <IconButton
-            class="absolute right-1 top-2 opacity-0 text-text-muted/60
+            class="absolute right-1 top-1.5 opacity-0 text-text-muted/60
                    peer-data-[selected]/tab:opacity-100 peer-data-[selected]/tab:text-text
                    peer-data-[selected]/tab:hover:bg-border-subtle
                    hover:opacity-100 peer-hover/tab:opacity-100"
