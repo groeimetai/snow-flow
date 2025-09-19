@@ -28,9 +28,6 @@ export default function Page() {
   const [isDragging, setIsDragging] = createSignal<"left" | "right" | undefined>(undefined)
   const [leftScrolled, setLeftScrolled] = createSignal(false)
 
-  // TODO: remove
-  local.model.set({ providerID: "opencode", modelID: "grok-code" })
-
   let inputRef: HTMLInputElement | undefined = undefined
 
   const MOD = typeof navigator === "object" && /(Mac|iPod|iPhone|iPad)/.test(navigator.platform) ? "Meta" : "Control"
