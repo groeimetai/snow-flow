@@ -513,7 +513,10 @@ export default function Page() {
                   onSelect={local.model.set}
                   label={(x) => x.modelID}
                   value={(x) => `${x.providerID}.${x.modelID}`}
-                  filterKeys={["providerID", "modelID"]}
+                  filter={{
+                    keys: ["providerID", "modelID"],
+                    placeholder: "Filter models",
+                  }}
                   groupBy={(x) => x.providerID}
                   size="sm"
                   class="uppercase"

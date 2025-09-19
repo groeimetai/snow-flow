@@ -1,5 +1,5 @@
 import { Select as KobalteSelect } from "@kobalte/core/select"
-import { createEffect, createMemo } from "solid-js"
+import { createEffect, createMemo, Show } from "solid-js"
 import type { ComponentProps } from "solid-js"
 import { Icon } from "@/ui/icon"
 import fuzzysort from "fuzzysort"
@@ -10,12 +10,17 @@ export interface SelectProps<T> {
   variant?: "default" | "outline"
   size?: "sm" | "md" | "lg"
   placeholder?: string
+  filter?:
+    | false
+    | {
+        placeholder?: string
+        keys: string[]
+      }
   options: T[]
   current?: T
   value?: (x: T) => string
   label?: (x: T) => string
   groupBy?: (x: T) => string
-  filterKeys: string[]
   onFilter?: (query: string) => void
   onSelect?: (value: T | undefined) => void
   class?: ComponentProps<"div">["class"]
@@ -33,7 +38,10 @@ export function Select<T>(props: SelectProps<T>) {
     const needle = store.filter.toLowerCase()
     const result = pipe(
       props.options,
-      (x) => (!needle ? x : fuzzysort.go(needle, x, { keys: props.filterKeys }).map((x) => x.obj)),
+      (x) =>
+        !needle || !props.filter
+          ? x
+          : fuzzysort.go(needle, x, { keys: props.filter && props.filter.keys }).map((x) => x.obj),
       groupBy((x) => (props.groupBy ? props.groupBy(x) : "")),
       // mapValues((x) => x.sort((a, b) => a.title.localeCompare(b.title))),
       entries(),
@@ -138,6 +146,7 @@ export function Select<T>(props: SelectProps<T>) {
         <KobalteSelect.Content
           ref={(el) => (contentRef = el)}
           onKeyDown={(e) => {
+            if (!props.filter) return
             if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Escape") {
               return
             }
@@ -150,27 +159,29 @@ export function Select<T>(props: SelectProps<T>) {
             "data-[expanded]:animate-in data-[expanded]:fade-in-0 data-[expanded]:zoom-in-95": true,
           }}
         >
-          <form>
-            <input
-              ref={(el) => (inputRef = el)}
-              id="select-filter"
-              type="text"
-              placeholder="Filter models"
-              value={store.filter}
-              onInput={(e) => setStore("filter", e.currentTarget.value)}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Escape") {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  listboxRef?.focus()
-                }
-              }}
-              classList={{
-                "w-full": true,
-                "px-2 pb-2 text-text font-light placeholder-text-muted/70 text-xs focus:outline-none": true,
-              }}
-            />
-          </form>
+          <Show when={props.filter}>
+            <form>
+              <input
+                ref={(el) => (inputRef = el)}
+                id="select-filter"
+                type="text"
+                placeholder={props.filter ? props.filter.placeholder : "Filter items"}
+                value={store.filter}
+                onInput={(e) => setStore("filter", e.currentTarget.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Escape") {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    listboxRef?.focus()
+                  }
+                }}
+                classList={{
+                  "w-full": true,
+                  "px-2 pb-2 text-text font-light placeholder-text-muted/70 text-xs focus:outline-none": true,
+                }}
+              />
+            </form>
+          </Show>
           <KobalteSelect.Listbox
             ref={(el) => (listboxRef = el)}
             classList={{
