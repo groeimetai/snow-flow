@@ -174,11 +174,18 @@ export function BillingSection() {
           </div>
         </div>
         <div data-slot="usage">
-          <Show when={!balanceInfo()?.reload && !(balanceAmount() === "0.00" || balanceAmount() === "-0.00")}>
-            <p>
-              You have <b data-slot="value">${balanceAmount() === "-0.00" ? "0.00" : balanceAmount()}</b> remaining in
-              your account. You can continue using the API with your remaining balance.
-            </p>
+          <Show when={!balanceInfo()?.reload}>
+            <Show
+              when={!(balanceAmount() === "0.00" || balanceAmount() === "-0.00")}
+              fallback={
+                <p>We'll load <b>$20</b> (+$1.23 processing fee) and reload it when it reaches <b>$5</b>.</p>
+              }
+            >
+              <p>
+                You have <b data-slot="value">${balanceAmount() === "-0.00" ? "0.00" : balanceAmount()}</b> remaining in
+                your account. You can continue using the API with your remaining balance.
+              </p>
+            </Show>
           </Show>
           <Show when={balanceInfo()?.reload && !balanceInfo()?.reloadError}>
             <p>

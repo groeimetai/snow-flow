@@ -95,7 +95,6 @@ export function PaymentSection() {
                             }
                           }}
                           data-slot="receipt-button"
-                          style="cursor: pointer;"
                         >
                           view
                         </button>
