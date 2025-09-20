@@ -88,6 +88,7 @@ export async function handler(
     const authInfo = await authenticate()
     const modelInfo = validateModel(body.model, authInfo)
     const providerInfo = selectProvider(modelInfo, authInfo)
+    if (authInfo && !providerInfo.allowAnonymous) validateBilling(authInfo)
     logger.metric({ provider: providerInfo.id })
 
     // Request to model provider
@@ -250,30 +251,40 @@ export async function handler(
     })
 
     const isFree = FREE_WORKSPACES.includes(data.workspaceID)
-    if (!isFree) {
-      if (!data.paymentMethodID) throw new CreditsError("No payment method")
-      if (data.balance <= 0) throw new CreditsError("Insufficient balance")
-      if (
-        data.monthlyLimit &&
-        data.monthlyUsage &&
-        data.timeMonthlyUsageUpdated &&
-        data.monthlyUsage >= centsToMicroCents(data.monthlyLimit * 100)
-      ) {
-        const now = new Date()
-        const currentYear = now.getUTCFullYear()
-        const currentMonth = now.getUTCMonth()
-        const dateYear = data.timeMonthlyUsageUpdated.getUTCFullYear()
-        const dateMonth = data.timeMonthlyUsageUpdated.getUTCMonth()
-        if (currentYear === dateYear && currentMonth === dateMonth)
-          throw new MonthlyLimitError(`You have reached your monthly spending limit of $${data.monthlyLimit}.`)
-      }
-    }
 
     return {
       apiKeyId: data.apiKey,
       workspaceID: data.workspaceID,
       dataShare: data.dataShare,
+      billing: {
+        paymentMethodID: data.paymentMethodID,
+        balance: data.balance,
+        monthlyLimit: data.monthlyLimit,
+        monthlyUsage: data.monthlyUsage,
+        timeMonthlyUsageUpdated: data.timeMonthlyUsageUpdated,
+      },
       isFree,
+    }
+  }
+
+  function validateBilling(authInfo: Awaited<ReturnType<typeof authenticate>>) {
+    if (!authInfo || authInfo.isFree) return
+    const billing = authInfo.billing
+    if (!billing.paymentMethodID) throw new CreditsError("No payment method")
+    if (billing.balance <= 0) throw new CreditsError("Insufficient balance")
+    if (
+      billing.monthlyLimit &&
+      billing.monthlyUsage &&
+      billing.timeMonthlyUsageUpdated &&
+      billing.monthlyUsage >= centsToMicroCents(billing.monthlyLimit * 100)
+    ) {
+      const now = new Date()
+      const currentYear = now.getUTCFullYear()
+      const currentMonth = now.getUTCMonth()
+      const dateYear = billing.timeMonthlyUsageUpdated.getUTCFullYear()
+      const dateMonth = billing.timeMonthlyUsageUpdated.getUTCMonth()
+      if (currentYear === dateYear && currentMonth === dateMonth)
+        throw new MonthlyLimitError(`You have reached your monthly spending limit of $${billing.monthlyLimit}.`)
     }
   }
 
