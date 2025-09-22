@@ -32,12 +32,12 @@ import { tool } from "@opencode-ai/plugin"
 export default tool({
   description: "Query the project database",
   args: {
-    query: tool.schema.string().describe("SQL query to execute")
+    query: tool.schema.string().describe("SQL query to execute"),
   },
   async execute(args) {
     // Your database logic here
     return `Executed query: ${args.query}`
-  }
+  },
 })
 ```
 
@@ -63,7 +63,7 @@ import { z } from "zod"
 export default {
   description: "Tool description",
   args: {
-    param: z.string().describe("Parameter description")
+    param: z.string().describe("Parameter description"),
   },
   async execute(args, context) {
     // Tool implementation
@@ -105,22 +105,22 @@ export const add = tool({
   description: "Add two numbers",
   args: {
     a: tool.schema.number().describe("First number"),
-    b: tool.schema.number().describe("Second number")
+    b: tool.schema.number().describe("Second number"),
   },
   async execute(args) {
     return args.a + args.b
-  }
+  },
 })
 
 export const multiply = tool({
   description: "Multiply two numbers",
   args: {
     a: tool.schema.number().describe("First number"),
-    b: tool.schema.number().describe("Second number")
+    b: tool.schema.number().describe("Second number"),
   },
   async execute(args) {
     return args.a * args.b
-  }
+  },
 })
 ```
 
