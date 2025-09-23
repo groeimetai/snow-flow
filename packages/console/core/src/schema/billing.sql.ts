@@ -30,6 +30,7 @@ export const PaymentTable = mysqlTable(
     customerID: varchar("customer_id", { length: 255 }),
     paymentID: varchar("payment_id", { length: 255 }),
     amount: bigint("amount", { mode: "number" }).notNull(),
+    timeRefunded: utc("time_refunded"),
   },
   (table) => [...workspaceIndexes(table)],
 )
