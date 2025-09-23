@@ -1,9 +1,8 @@
 import { createStore, produce, reconcile } from "solid-js/store"
 import { batch, createContext, createEffect, createMemo, useContext, type ParentProps } from "solid-js"
-import { useSync } from "./sync"
 import { uniqueBy } from "remeda"
 import type { FileContent, FileNode } from "@opencode-ai/sdk"
-import { useSDK } from "./sdk"
+import { useSDK, useEvent, useSync } from "@/context"
 
 export type LocalFile = FileNode &
   Partial<{
@@ -165,17 +164,19 @@ function init() {
       })
     }
 
-    const load = async (path: string) =>
-      sdk.file.read({ query: { path } }).then((x) => {
+    const load = async (path: string) => {
+      const relative = path.replace(sync.data.path.directory + "/", "")
+      sdk.file.read({ query: { path: relative } }).then((x) => {
         setStore(
           "node",
-          path,
+          relative,
           produce((draft) => {
             draft.loaded = true
             draft.content = x.data
           }),
         )
       })
+    }
 
     const open = async (path: string) => {
       const relative = path.replace(sync.data.path.directory + "/", "")
@@ -213,27 +214,27 @@ function init() {
       })
     }
 
-    sdk.event.subscribe().then(async (events) => {
-      for await (const event of events.stream) {
-        switch (event.type) {
-          case "message.part.updated":
-            const part = event.properties.part
-            if (part.type === "tool" && part.state.status === "completed") {
-              switch (part.tool) {
-                case "read":
-                  console.log("read", part.state.input)
-                  break
-                case "edit":
-                  const absolute = part.state.input["filePath"] as string
-                  const path = absolute.replace(sync.data.path.directory + "/", "")
-                  load(path)
-                  break
-                default:
-                  break
-              }
+    const bus = useEvent()
+    bus.listen((event) => {
+      switch (event.type) {
+        case "message.part.updated":
+          const part = event.properties.part
+          if (part.type === "tool" && part.state.status === "completed") {
+            switch (part.tool) {
+              case "read":
+                console.log("read", part.state.input)
+                break
+              case "edit":
+                load(part.state.input["filePath"] as string)
+                break
+              default:
+                break
             }
-            break
-        }
+          }
+          break
+        case "file.watcher.updated":
+          load(event.properties.file)
+          break
       }
     })
 
