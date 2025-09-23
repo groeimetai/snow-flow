@@ -12,7 +12,11 @@ export function Code(props: Props) {
   const ctx = useLocal()
   const highlighter = useShiki()
   const [local, others] = splitProps(props, ["class", "classList", "code", "path"])
-  const lang = createMemo(() => getFileExtension(local.path))
+  const lang = createMemo(() => {
+    const ext = getFileExtension(local.path)
+    if (ext in bundledLanguages) return ext
+    return "text"
+  })
 
   let container: HTMLDivElement | undefined
   let isProgrammaticSelection = false

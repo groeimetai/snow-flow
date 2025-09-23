@@ -2,12 +2,15 @@ import { createContext, useContext, type ParentProps } from "solid-js"
 import { useShiki } from "@/context"
 import { marked } from "marked"
 import markedShiki from "marked-shiki"
-import type { BundledLanguage } from "shiki"
+import { bundledLanguages, type BundledLanguage } from "shiki"
 
 function init(highlighter: ReturnType<typeof useShiki>) {
   return marked.use(
     markedShiki({
       async highlight(code, lang) {
+        if (!(lang in bundledLanguages)) {
+          lang = "text"
+        }
         if (!highlighter.getLoadedLanguages().includes(lang)) {
           await highlighter.loadLanguage(lang as BundledLanguage)
         }
