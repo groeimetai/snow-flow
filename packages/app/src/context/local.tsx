@@ -124,11 +124,12 @@ function init() {
       return store.node[store.active]
     })
     const opened = createMemo(() => store.opened.map((x) => store.node[x]))
-    const changes = createMemo(() => new Set(sync.data.changes.map((f) => f.path)))
+    const changeset = createMemo(() => new Set(sync.data.changes.map((f) => f.path)))
+    const changes = createMemo(() => Array.from(changeset()).sort((a, b) => a.localeCompare(b)))
     const status = (path: string) => sync.data.changes.find((f) => f.path === path)
 
     const changed = (path: string) => {
-      const set = changes()
+      const set = changeset()
       if (set.has(path)) return true
       for (const p of set) {
         if (p.startsWith(path ? path + "/" : "")) return true

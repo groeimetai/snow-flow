@@ -259,9 +259,12 @@ export default function Page() {
             <FileTree path="" onFileClick={handleFileClick} />
           </Tabs.Content>
           <Tabs.Content value="changes" class="grow min-h-0 py-2 bg-background">
-            <div class="text-xs text-text-muted">
+            <Show
+              when={local.file.changes().length}
+              fallback={<div class="px-2 text-xs text-text-muted">No changes yet</div>}
+            >
               <ul class="">
-                <For each={[...local.file.changes()]}>
+                <For each={local.file.changes()}>
                   {(path) => (
                     <li>
                       <button
@@ -278,7 +281,7 @@ export default function Page() {
                   )}
                 </For>
               </ul>
-            </div>
+            </Show>
           </Tabs.Content>
         </Tabs>
       </div>
