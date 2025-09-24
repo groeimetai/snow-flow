@@ -183,7 +183,6 @@ export function SelectDialog<T>(props: SelectDialogProps<T>) {
                               "w-full px-3 py-2 flex items-center gap-3": true,
                               "rounded-md text-left transition-colors group": true,
                               "bg-background-element": props.key(item) === list.active(),
-                              "hover:bg-background-element": true,
                             }}
                           >
                             {props.render(item)}
