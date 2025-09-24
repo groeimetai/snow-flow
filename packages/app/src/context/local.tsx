@@ -163,7 +163,7 @@ function init() {
       })
     }
 
-    const open = async (path: string) => {
+    const open = async (path: string, options?: { pin?: boolean }) => {
       const relative = path.replace(sync.data.path.directory + "/", "")
       if (!store.node[relative]) {
         const parent = relative.split("/").slice(0, -1).join("/")
@@ -181,6 +181,7 @@ function init() {
         ]
       })
       setStore("active", relative)
+      if (options?.pin) setStore("node", path, "pinned", true)
       if (store.node[relative].loaded) return
       return load(relative)
     }
@@ -198,6 +199,8 @@ function init() {
         )
       })
     }
+
+    const search = (query: string) => sdk.find.files({ query: { query } }).then((x) => x.data!)
 
     const bus = useEvent()
     bus.listen((event) => {
@@ -303,6 +306,7 @@ function init() {
             !x.path.replace(new RegExp(`^${path + "/"}`), "").includes("/"),
         )
       },
+      search,
     }
   })()
 

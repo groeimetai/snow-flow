@@ -20,6 +20,7 @@ import type { LocalFile } from "@/context/local"
 import SessionList from "@/components/session-list"
 import SessionTimeline from "@/components/session-timeline"
 import { createStore } from "solid-js/store"
+import { getDirectory, getFilename } from "@/utils"
 
 export default function Page() {
   const sdk = useSDK()
@@ -30,6 +31,7 @@ export default function Page() {
     prompt: "",
     dragging: undefined as "left" | "right" | undefined,
     modelSelectOpen: false,
+    fileSelectOpen: false,
   })
 
   let inputRef: HTMLInputElement | undefined = undefined
@@ -47,12 +49,12 @@ export default function Page() {
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.getModifierState(MOD) && e.shiftKey && e.key.toLowerCase() === "p") {
       e.preventDefault()
-      setStore("modelSelectOpen", true)
+      // TODO: command palette
       return
     }
     if (e.getModifierState(MOD) && e.key.toLowerCase() === "p") {
       e.preventDefault()
-      setStore("modelSelectOpen", true)
+      setStore("fileSelectOpen", true)
       return
     }
 
@@ -554,12 +556,30 @@ export default function Page() {
               </div>
             </div>
           )}
-          filter={{
-            keys: ["provider.name", "name", "id"],
-          }}
+          filter={["provider.name", "name", "id"]}
           groupBy={(x) => x.provider.name}
           onClose={() => setStore("modelSelectOpen", false)}
           onSelect={(x) => local.model.set(x ? { modelID: x.id, providerID: x.provider.id } : undefined)}
+        />
+      </Show>
+      <Show when={store.fileSelectOpen}>
+        <SelectDialog
+          items={local.file.search}
+          key={(x) => x}
+          render={(i) => (
+            <div class="w-full flex items-center justify-between">
+              <div class="flex items-center gap-x-2 text-text-muted grow min-w-0">
+                <FileIcon node={{ path: i, type: "file" }} class="shrink-0 size-4" />
+                <span class="text-xs text-text whitespace-nowrap">{getFilename(i)}</span>
+                <span class="text-xs text-text-muted/80 whitespace-nowrap overflow-hidden overflow-ellipsis truncate min-w-0">
+                  {getDirectory(i)}
+                </span>
+              </div>
+              <div class="flex items-center gap-x-1 text-text-muted/40 shrink-0"></div>
+            </div>
+          )}
+          onClose={() => setStore("fileSelectOpen", false)}
+          onSelect={(x) => (x ? local.file.open(x, { pin: true }) : undefined)}
         />
       </Show>
     </div>

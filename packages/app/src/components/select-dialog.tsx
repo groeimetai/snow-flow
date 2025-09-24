@@ -1,22 +1,18 @@
-import { createEffect, Show, For, createMemo, type JSX } from "solid-js"
+import { createEffect, Show, For, createMemo, type JSX, createResource } from "solid-js"
 import { Dialog } from "@kobalte/core/dialog"
 import { Icon, IconButton } from "@/ui"
 import { createStore } from "solid-js/store"
-import { entries, flatMap, groupBy, map, mapValues, pipe } from "remeda"
+import { entries, flatMap, groupBy, map, pipe } from "remeda"
 import { createList } from "solid-list"
 import fuzzysort from "fuzzysort"
 
 interface SelectDialogProps<T> {
-  items: T[]
+  items: T[] | ((filter: string) => Promise<T[]>)
   key: (item: T) => string
   render: (item: T) => JSX.Element
+  filter?: string[]
   current?: T
   placeholder?: string
-  filter?:
-    | false
-    | {
-        keys: string[]
-      }
   groupBy?: (x: T) => string
   onSelect?: (value: T | undefined) => void
   onClose?: () => void
@@ -29,24 +25,31 @@ export function SelectDialog<T>(props: SelectDialogProps<T>) {
     mouseActive: false,
   })
 
-  const grouped = createMemo(() => {
-    const needle = store.filter.toLowerCase()
-    const result = pipe(
-      props.items,
-      (x) =>
-        !needle || !props.filter
-          ? x
-          : fuzzysort.go(needle, x, { keys: props.filter && props.filter.keys }).map((x) => x.obj),
-      groupBy((x) => (props.groupBy ? props.groupBy(x) : "")),
-      mapValues((x) => x.sort((a, b) => props.key(a).localeCompare(props.key(b)))),
-      entries(),
-      map(([k, v]) => ({ category: k, items: v })),
-    )
-    return result
-  })
+  const [grouped] = createResource(
+    () => store.filter,
+    async (filter) => {
+      const needle = filter.toLowerCase()
+      const all = (typeof props.items === "function" ? await props.items(needle) : props.items) || []
+      const result = pipe(
+        all,
+        (x) => {
+          if (!needle) return x
+          if (!props.filter && Array.isArray(x) && x.every((e) => typeof e === "string")) {
+            return fuzzysort.go(needle, x).map((x) => x.target) as T[]
+          }
+          return fuzzysort.go(needle, x, { keys: props.filter! }).map((x) => x.obj)
+        },
+        groupBy((x) => (props.groupBy ? props.groupBy(x) : "")),
+        // mapValues((x) => x.sort((a, b) => props.key(a).localeCompare(props.key(b)))),
+        entries(),
+        map(([k, v]) => ({ category: k, items: v })),
+      )
+      return result
+    },
+  )
   const flat = createMemo(() => {
     return pipe(
-      grouped(),
+      grouped() || [],
       flatMap((x) => x.items),
     )
   })
@@ -55,7 +58,11 @@ export function SelectDialog<T>(props: SelectDialogProps<T>) {
     initialActive: props.current ? props.key(props.current) : undefined,
     loop: true,
   })
-  const resetSelection = () => list.setActive(props.key(flat()[0]))
+  const resetSelection = () => {
+    const all = flat()
+    if (all.length === 0) return
+    list.setActive(props.key(all[0]))
+  }
 
   createEffect(() => {
     store.filter
@@ -64,8 +71,9 @@ export function SelectDialog<T>(props: SelectDialogProps<T>) {
   })
 
   createEffect(() => {
-    if (store.mouseActive) return
-    if (list.active() === props.key(flat()[0])) {
+    const all = flat()
+    if (store.mouseActive || all.length === 0) return
+    if (list.active() === props.key(all[0])) {
       scrollRef?.scrollTo(0, 0)
       return
     }
@@ -156,9 +164,11 @@ export function SelectDialog<T>(props: SelectDialogProps<T>) {
               <For each={grouped()}>
                 {(group) => (
                   <>
-                    <div class="top-0 sticky z-10 bg-background-panel p-2 text-xs text-text-muted/60 tracking-wider uppercase">
-                      {group.category}
-                    </div>
+                    <Show when={group.category}>
+                      <div class="top-0 sticky z-10 bg-background-panel p-2 text-xs text-text-muted/60 tracking-wider uppercase">
+                        {group.category}
+                      </div>
+                    </Show>
                     <div class="p-2">
                       <For each={group.items}>
                         {(item) => (
