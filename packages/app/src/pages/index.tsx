@@ -259,7 +259,26 @@ export default function Page() {
             <FileTree path="" onFileClick={handleFileClick} />
           </Tabs.Content>
           <Tabs.Content value="changes" class="grow min-h-0 py-2 bg-background">
-            <div class="px-2 text-xs text-text-muted">No changes yet</div>
+            <div class="text-xs text-text-muted">
+              <ul class="">
+                <For each={[...local.file.changes()]}>
+                  {(path) => (
+                    <li>
+                      <button
+                        onClick={() => local.file.open(path, { view: "diff-unified", pinned: true })}
+                        class="w-full flex items-center px-2 py-0.5 gap-x-2 text-text-muted grow min-w-0 cursor-pointer hover:bg-background-element"
+                      >
+                        <FileIcon node={{ path, type: "file" }} class="shrink-0 size-3" />
+                        <span class="text-xs text-text whitespace-nowrap">{getFilename(path)}</span>
+                        <span class="text-xs text-text-muted/60 whitespace-nowrap truncate min-w-0">
+                          {getDirectory(path)}
+                        </span>
+                      </button>
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </div>
           </Tabs.Content>
         </Tabs>
       </div>
@@ -579,7 +598,7 @@ export default function Page() {
             </div>
           )}
           onClose={() => setStore("fileSelectOpen", false)}
-          onSelect={(x) => (x ? local.file.open(x, { pin: true }) : undefined)}
+          onSelect={(x) => (x ? local.file.open(x, { pinned: true }) : undefined)}
         />
       </Show>
     </div>

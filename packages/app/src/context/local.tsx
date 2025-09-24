@@ -163,7 +163,7 @@ function init() {
       })
     }
 
-    const open = async (path: string, options?: { pin?: boolean }) => {
+    const open = async (path: string, options?: { pinned?: boolean; view?: LocalFile["view"] }) => {
       const relative = path.replace(sync.data.path.directory + "/", "")
       if (!store.node[relative]) {
         const parent = relative.split("/").slice(0, -1).join("/")
@@ -181,7 +181,8 @@ function init() {
         ]
       })
       setStore("active", relative)
-      if (options?.pin) setStore("node", path, "pinned", true)
+      if (options?.pinned) setStore("node", path, "pinned", true)
+      if (options?.view && store.node[relative].view === undefined) setStore("node", path, "view", options.view)
       if (store.node[relative].loaded) return
       return load(relative)
     }
@@ -297,6 +298,7 @@ function init() {
         setStore("node", path, "selectedChange", index)
       },
       changed,
+      changes,
       status,
       children(path: string) {
         return Object.values(store.node).filter(
