@@ -956,13 +956,17 @@ func (a Model) home() (string, int, int) {
 	muted := styles.NewStyle().Foreground(t.TextMuted()).Background(t.Background()).Render
 
 	open := `
-█▀▀█ █▀▀█ █▀▀ █▀▀▄ 
-█░░█ █░░█ █▀▀ █░░█ 
-▀▀▀▀ █▀▀▀ ▀▀▀ ▀  ▀ `
+
+█▀▀█ █▀▀█ █▀▀█ █▀▀▄
+█░░█ █░░█ █▀▀▀ █░░█
+▀▀▀▀ █▀▀▀ ▀▀▀▀ ▀  ▀`
+
 	code := `
-█▀▀ █▀▀█ █▀▀▄ █▀▀
-█░░ █░░█ █░░█ █▀▀
-▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀`
+             ▄
+█▀▀▀ █▀▀█ █▀▀█ █▀▀█
+█░░░ █░░█ █░░█ █▀▀▀
+▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀`
+
 
 	logo := lipgloss.JoinHorizontal(
 		lipgloss.Top,
