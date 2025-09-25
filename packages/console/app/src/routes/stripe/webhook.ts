@@ -41,12 +41,14 @@ export async function POST(input: APIEvent) {
     const workspaceID = body.data.object.metadata?.workspaceID
     const customerID = body.data.object.customer as string
     const paymentID = body.data.object.payment_intent as string
+    const invoiceID = body.data.object.invoice as string
     const amount = body.data.object.amount_total
 
     if (!workspaceID) throw new Error("Workspace ID not found")
     if (!customerID) throw new Error("Customer ID not found")
     if (!amount) throw new Error("Amount not found")
     if (!paymentID) throw new Error("Payment ID not found")
+    if (!invoiceID) throw new Error("Invoice ID not found")
 
     await Actor.provide("system", { workspaceID }, async () => {
       const customer = await Billing.get()
@@ -86,6 +88,7 @@ export async function POST(input: APIEvent) {
           id: Identifier.create("payment"),
           amount: centsToMicroCents(Billing.CHARGE_AMOUNT),
           paymentID,
+          invoiceID,
           customerID,
         })
       })
