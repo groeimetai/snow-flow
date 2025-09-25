@@ -147,7 +147,10 @@ export async function handler(
           return (
             reader?.read().then(async ({ done, value }) => {
               if (done) {
-                logger.metric({ response_length: responseLength })
+                logger.metric({
+                  response_length: responseLength,
+                  "timestamp.last_byte": Date.now(),
+                })
                 const usage = opts.getStreamUsage()
                 if (usage) {
                   await trackUsage(authInfo, modelInfo, providerInfo.id, usage)
@@ -158,7 +161,11 @@ export async function handler(
               }
 
               if (responseLength === 0) {
-                logger.metric({ time_to_first_byte: Date.now() - startTimestamp })
+                const now = Date.now()
+                logger.metric({
+                  time_to_first_byte: now - startTimestamp,
+                  "timestamp.first_byte": now,
+                })
               }
               responseLength += value.length
               buffer += decoder.decode(value, { stream: true })
