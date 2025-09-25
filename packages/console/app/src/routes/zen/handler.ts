@@ -161,7 +161,6 @@ export async function handler(
                 logger.metric({ time_to_first_byte: Date.now() - startTimestamp })
               }
               responseLength += value.length
-              console.log(decoder.decode(value, { stream: true }))
               buffer += decoder.decode(value, { stream: true })
 
               const parts = buffer.split("\n\n")
