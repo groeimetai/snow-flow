@@ -631,6 +631,9 @@ export type TextPart = {
     start: number
     end?: number
   }
+  metadata?: {
+    [key: string]: unknown
+  }
 }
 
 export type ReasoningPart = {
@@ -751,6 +754,9 @@ export type ToolPart = {
   callID: string
   tool: string
   state: ToolState
+  metadata?: {
+    [key: string]: unknown
+  }
 }
 
 export type StepStartPart = {
@@ -826,6 +832,9 @@ export type TextPartInput = {
   time?: {
     start: number
     end?: number
+  }
+  metadata?: {
+    [key: string]: unknown
   }
 }
 
