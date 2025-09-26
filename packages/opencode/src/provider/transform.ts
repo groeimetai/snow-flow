@@ -98,8 +98,8 @@ export namespace ProviderTransform {
       }
       if (providerID === "opencode") {
         result["promptCacheKey"] = sessionID
-        // result["include"] = ["reasoning.encrypted_content"]
-        // result["reasoningSummary"] = "auto"
+        result["include"] = ["reasoning.encrypted_content"]
+        result["reasoningSummary"] = "auto"
       }
     }
     return result
