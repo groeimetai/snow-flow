@@ -686,6 +686,13 @@ export namespace Config {
     return state().then((x) => x.config)
   }
 
+  export async function update(config: Info) {
+    const filepath = path.join(Instance.directory, "config.json")
+    const existing = await loadFile(filepath)
+    await Bun.write(filepath, JSON.stringify(mergeDeep(existing, config), null, 2))
+    await Instance.dispose()
+  }
+
   export async function directories() {
     return state().then((x) => x.directories)
   }
