@@ -1,4 +1,3 @@
-import { WebhookEndpoint } from "pulumi-stripe"
 import { domain } from "./stage"
 
 ////////////////
@@ -68,7 +67,7 @@ export const auth = new sst.cloudflare.Worker("AuthApi", {
 // GATEWAY
 ////////////////
 
-export const stripeWebhook = new WebhookEndpoint("StripeWebhookEndpoint", {
+export const stripeWebhook = new stripe.WebhookEndpoint("StripeWebhookEndpoint", {
   url: $interpolate`https://${domain}/stripe/webhook`,
   enabledEvents: [
     "checkout.session.async_payment_failed",
