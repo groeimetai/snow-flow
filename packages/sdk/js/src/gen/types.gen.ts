@@ -504,13 +504,13 @@ export type Config = {
   }
 }
 
-export type ToolIds = Array<string>
-
 export type _Error = {
   data: {
     [key: string]: unknown
   }
 }
+
+export type ToolIds = Array<string>
 
 export type ToolListItem = {
   id: string
@@ -1208,6 +1208,33 @@ export type ConfigGetResponses = {
 }
 
 export type ConfigGetResponse = ConfigGetResponses[keyof ConfigGetResponses]
+
+export type ConfigUpdateData = {
+  body?: Config
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/config"
+}
+
+export type ConfigUpdateErrors = {
+  /**
+   * Bad request
+   */
+  400: _Error
+}
+
+export type ConfigUpdateError = ConfigUpdateErrors[keyof ConfigUpdateErrors]
+
+export type ConfigUpdateResponses = {
+  /**
+   * Successfully updated config
+   */
+  200: Config
+}
+
+export type ConfigUpdateResponse = ConfigUpdateResponses[keyof ConfigUpdateResponses]
 
 export type ToolIdsData = {
   body?: never
