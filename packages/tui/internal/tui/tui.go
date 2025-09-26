@@ -991,9 +991,9 @@ func (a Model) home() (string, int, int) {
 	)
 
 	// Use limit of 4 for vscode, 6 for others
-	limit := 6
+	limit := 5
 	if util.IsVSCode() {
-		limit = 4
+		limit = 3
 	}
 
 	showVscode := util.IsVSCode()
@@ -1043,8 +1043,10 @@ func (a Model) home() (string, int, int) {
 
 	editorX := max(0, (effectiveWidth-editorWidth)/2)
 	editorY := (a.height / 2) + (mainHeight / 2) - 3
+	editorYDelta := 3
 
 	if editorLines > 1 {
+		editorYDelta = 2
 		content := a.editor.Content()
 		editorHeight := lipgloss.Height(content)
 
@@ -1073,7 +1075,7 @@ func (a Model) home() (string, int, int) {
 		)
 	}
 
-	return mainLayout, editorX + 5, editorY + 3
+	return mainLayout, editorX + 5, editorY + editorYDelta
 }
 
 func (a Model) chat() (string, int, int) {
