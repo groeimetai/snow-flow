@@ -60,7 +60,7 @@ export namespace Config {
     ]
 
     for (const dir of directories) {
-      await assertValid(dir)
+      await assertValid(dir).catch(() => {})
       result.command = mergeDeep(result.command ?? {}, await loadCommand(dir))
       result.agent = mergeDeep(result.agent, await loadAgent(dir))
       result.agent = mergeDeep(result.agent, await loadMode(dir))
