@@ -118,7 +118,7 @@ export namespace Config {
   })
 
   async function assertValid(dir: string) {
-    const ALLOWED_DIRS = new Set(["agent", "command", "mode", "plugin"])
+    const ALLOWED_DIRS = new Set(["agent", "command", "mode", "plugin", "tool"])
     const UNEXPECTED_DIR_GLOB = new Bun.Glob("*/")
     for await (const item of UNEXPECTED_DIR_GLOB.scan({ absolute: true, cwd: dir, onlyFiles: false })) {
       const dirname = path.basename(item)
