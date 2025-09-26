@@ -1073,7 +1073,7 @@ func (a Model) home() (string, int, int) {
 		)
 	}
 
-	return mainLayout, editorX + 5, editorY + 2
+	return mainLayout, editorX + 5, editorY + 3
 }
 
 func (a Model) chat() (string, int, int) {
