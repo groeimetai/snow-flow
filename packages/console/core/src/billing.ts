@@ -206,9 +206,6 @@ export namespace Billing {
               customer_email: user.email,
               customer_creation: "always",
             }),
-        metadata: {
-          workspaceID: Actor.workspace(),
-        },
         currency: "usd",
         invoice_creation: {
           enabled: true,
@@ -219,6 +216,16 @@ export namespace Billing {
         payment_method_types: ["card"],
         payment_method_data: {
           allow_redisplay: "always",
+        },
+        customer_update: {
+          name: "auto",
+          address: "auto",
+        },
+        tax_id_collection: {
+          enabled: true,
+        },
+        metadata: {
+          workspaceID: Actor.workspace(),
         },
         success_url: successUrl,
         cancel_url: cancelUrl,
