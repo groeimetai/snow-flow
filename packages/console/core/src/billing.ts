@@ -217,13 +217,6 @@ export namespace Billing {
         payment_method_data: {
           allow_redisplay: "always",
         },
-        customer_update: {
-          name: "auto",
-          address: "auto",
-        },
-        tax_id_collection: {
-          enabled: true,
-        },
         metadata: {
           workspaceID: Actor.workspace(),
         },
