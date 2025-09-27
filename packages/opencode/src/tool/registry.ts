@@ -21,21 +21,23 @@ import { Plugin } from "../plugin"
 
 export namespace ToolRegistry {
   // Built-in tools that ship with opencode
-  const BUILTIN = [
-    InvalidTool,
-    BashTool,
-    EditTool,
-    WebFetchTool,
-    GlobTool,
-    GrepTool,
-    ListTool,
-    PatchTool,
-    ReadTool,
-    WriteTool,
-    TodoWriteTool,
-    TodoReadTool,
-    TaskTool,
-  ]
+  function builtin() {
+    return [
+      InvalidTool,
+      BashTool,
+      EditTool,
+      WebFetchTool,
+      GlobTool,
+      GrepTool,
+      ListTool,
+      PatchTool,
+      ReadTool,
+      WriteTool,
+      TodoWriteTool,
+      TodoReadTool,
+      TaskTool,
+    ]
+  }
 
   export const state = Instance.state(async () => {
     const custom = [] as Tool.Info[]
@@ -91,7 +93,7 @@ export namespace ToolRegistry {
 
   async function all(): Promise<Tool.Info[]> {
     const custom = await state().then((x) => x.custom)
-    return [...BUILTIN, ...custom]
+    return [...builtin(), ...custom]
   }
 
   export async function ids() {

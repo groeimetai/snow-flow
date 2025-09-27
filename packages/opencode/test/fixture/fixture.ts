@@ -2,12 +2,12 @@ import { $ } from "bun"
 import os from "os"
 import path from "path"
 
-type TmpDirOptions<Init extends Record<string, any>> = {
+type TmpDirOptions<T> = {
   git?: boolean
-  init?: (dir: string) => Promise<Init>
-  dispose?: (dir: string) => Promise<void>
+  init?: (dir: string) => Promise<T>
+  dispose?: (dir: string) => Promise<T>
 }
-export async function tmpdir<Init extends Record<string, any>>(options?: TmpDirOptions<Init>) {
+export async function tmpdir<T>(options?: TmpDirOptions<T>) {
   const dirpath = path.join(os.tmpdir(), "opencode-test-" + Math.random().toString(36).slice(2))
   await $`mkdir -p ${dirpath}`.quiet()
   if (options?.git) await $`git init`.cwd(dirpath).quiet()
@@ -18,7 +18,7 @@ export async function tmpdir<Init extends Record<string, any>>(options?: TmpDirO
       await $`rm -rf ${dirpath}`.quiet()
     },
     path: dirpath,
-    extra: extra as Init,
+    extra: extra as T,
   }
   return result
 }
