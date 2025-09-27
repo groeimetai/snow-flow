@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test": "bun test",
     "build": "./script/build.ts",
     "dev": "bun run --conditions=development ./src/index.ts"
   },
