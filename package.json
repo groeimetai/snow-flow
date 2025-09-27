@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "bun@1.2.21",
   "scripts": {
-    "dev": "bun run --conditions=development packages/opencode/src/index.ts",
+    "dev": "bun run packages/opencode/src/index.ts",
     "typecheck": "bun turbo typecheck",
     "prepare": "husky"
   },
