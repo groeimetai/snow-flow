@@ -9,7 +9,7 @@ on:
       - production
   workflow_dispatch:
 jobs:
-  format:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
