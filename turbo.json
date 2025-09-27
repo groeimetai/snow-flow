@@ -9,6 +9,10 @@
     "opencode#test": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "@opencode/web#test": {
+      "dependsOn": [],
+      "cache": false
     }
   }
 }
