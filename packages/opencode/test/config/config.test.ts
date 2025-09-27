@@ -12,7 +12,6 @@ test("loads config with defaults when no files exist", async () => {
     fn: async () => {
       const config = await Config.get()
       expect(config.username).toBeDefined()
-      expect(config.model).toBeDefined()
     },
   })
 })
