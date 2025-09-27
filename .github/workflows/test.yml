@@ -24,6 +24,8 @@ jobs:
 
       - name: run
         run: |
+          git config --global user.email "bot@opencode.ai"
+          git config --global user.name "opencode"
           bun install
           bun turbo test
         env:
