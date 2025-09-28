@@ -15,7 +15,7 @@ export const UserTable = mysqlTable(
     timeSeen: utc("time_seen"),
     timeJoined: utc("time_joined"),
     color: int("color"),
-    role: mysqlEnum("role", ["admin", "member"]),
+    role: mysqlEnum("role", ["admin", "member"]).notNull(),
   },
   (table) => [...workspaceIndexes(table), uniqueIndex("user_email").on(table.workspaceID, table.email)],
 )
