@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { fn } from "./util/fn"
 import { Actor } from "./actor"
-import { Database, eq } from "./drizzle"
+import { Database, sql } from "./drizzle"
 import { Identifier } from "./identifier"
 import { UserTable } from "./schema/user.sql"
 import { BillingTable } from "./schema/billing.sql"
@@ -21,6 +21,8 @@ export namespace Workspace {
         id: Identifier.create("user"),
         email: account.properties.email,
         name: "",
+        role: "admin",
+        timeJoined: sql`now()`,
       })
       await tx.insert(BillingTable).values({
         workspaceID,
@@ -39,19 +41,4 @@ export namespace Workspace {
     )
     return workspaceID
   })
-
-  export async function list() {
-    const account = Actor.assert("account")
-    return Database.use(async (tx) => {
-      return tx
-        .select({
-          id: WorkspaceTable.id,
-          slug: WorkspaceTable.slug,
-          name: WorkspaceTable.name,
-        })
-        .from(UserTable)
-        .innerJoin(WorkspaceTable, eq(UserTable.workspaceID, WorkspaceTable.id))
-        .where(eq(UserTable.email, account.properties.email))
-    })
-  }
 }
