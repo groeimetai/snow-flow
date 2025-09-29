@@ -7,10 +7,11 @@ import { $ } from "bun"
 
 await import("./build")
 
-const pkg = await import("../package.json")
+const pkg = await import("../package.json").then((m) => m.default)
+// @ts-expect-error
+delete pkg["devDependencies"]
 for (const [key, value] of Object.entries(pkg.exports)) {
   const file = value.replace("./src/", "./").replace(".ts", "")
-  // @ts-expect-error
   pkg.exports[key] = {
     import: file + ".js",
     types: file + ".d.ts",
