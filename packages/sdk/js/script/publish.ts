@@ -21,9 +21,9 @@ await Bun.write("package.json", JSON.stringify(pkg, null, 2))
 const snapshot = process.env["OPENCODE_SNAPSHOT"] === "true"
 
 if (snapshot) {
-  await $`bun publish --tag snapshot --access public`.cwd("./dist")
+  await $`bun publish --tag snapshot --access public`
 }
 if (!snapshot) {
-  await $`bun publish --access public`.cwd("./dist")
+  await $`bun publish --access public`
 }
 await Bun.write("package.json", JSON.stringify(original, null, 2))

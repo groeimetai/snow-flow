@@ -147,6 +147,7 @@ if (!snapshot) {
     await $`cd ./dist/aur-${pkg} && git push`
   }
 
+  /*
   // Homebrew formula
   const homebrewFormula = [
     "# typed: false",
@@ -204,4 +205,5 @@ if (!snapshot) {
   await $`cd ./dist/homebrew-tap && git add opencode.rb`
   await $`cd ./dist/homebrew-tap && git commit -m "Update to v${version}"`
   await $`cd ./dist/homebrew-tap && git push`
+  */
 }
