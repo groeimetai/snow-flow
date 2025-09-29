@@ -21,7 +21,7 @@ export namespace Actor {
     properties: {
       userID: string
       workspaceID: string
-      role: UserRole
+      role: (typeof UserRole)[number]
     }
   }
 

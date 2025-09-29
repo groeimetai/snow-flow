@@ -141,6 +141,13 @@
       "when": 1759103696975,
       "tag": "0019_dazzling_cable",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1759169697658,
+      "tag": "0020_supreme_jack_power",
+      "breakpoints": true
     }
   ]
 }

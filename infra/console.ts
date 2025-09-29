@@ -1,4 +1,5 @@
 import { domain } from "./stage"
+import { EMAILOCTOPUS_API_KEY } from "./app"
 
 ////////////////
 // DATABASE
@@ -121,7 +122,7 @@ if ($app.stage === "production" || $app.stage === "frank") {
 new sst.cloudflare.x.SolidStart("Console", {
   domain,
   path: "packages/console/app",
-  link: [database, AUTH_API_URL, STRIPE_WEBHOOK_SECRET, STRIPE_SECRET_KEY, ZEN_MODELS],
+  link: [database, AUTH_API_URL, STRIPE_WEBHOOK_SECRET, STRIPE_SECRET_KEY, ZEN_MODELS, EMAILOCTOPUS_API_KEY],
   environment: {
     //VITE_DOCS_URL: web.url.apply((url) => url!),
     //VITE_API_URL: gateway.url.apply((url) => url!),

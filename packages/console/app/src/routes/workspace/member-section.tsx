@@ -5,7 +5,7 @@ import { createStore } from "solid-js/store"
 import { formatDateUTC, formatDateForTable } from "./common"
 import styles from "./member-section.module.css"
 import { and, Database, eq, sql } from "@opencode/console-core/drizzle/index.js"
-import { UserTable } from "@opencode/console-core/schema/user.sql.js"
+import { UserTable, UserRole } from "@opencode/console-core/schema/user.sql.js"
 import { Identifier } from "@opencode/console-core/identifier.js"
 
 const removeMember = action(async (form: FormData) => {
@@ -31,10 +31,12 @@ const removeMember = action(async (form: FormData) => {
 
 const inviteMember = action(async (form: FormData) => {
   "use server"
-  const name = form.get("name")?.toString().trim()
-  if (!name) return { error: "Name is required" }
+  const email = form.get("email")?.toString().trim()
+  if (!email) return { error: "Email is required" }
   const workspaceID = form.get("workspaceID")?.toString()
   if (!workspaceID) return { error: "Workspace ID is required" }
+  const role = form.get("role")?.toString() as (typeof UserRole)[number]
+  if (!role) return { error: "Role is required" }
   return json(
     await withActor(
       () =>
@@ -44,12 +46,10 @@ const inviteMember = action(async (form: FormData) => {
             .values({
               id: Identifier.create("user"),
               name: "",
-              email: name,
+              email,
               workspaceID,
-              role: "member",
-              timeJoined: sql`now()`,
+              role,
             })
-            .onDuplicateKeyUpdate({ set: { timeJoined: sql`now()` } })
             .then((data) => ({ error: undefined, data }))
             .catch((e) => ({ error: e.message as string })),
         ),
@@ -109,7 +109,23 @@ export function MemberCreateForm() {
     >
       <form action={inviteMember} method="post" data-slot="create-form">
         <div data-slot="input-container">
-          <input ref={(r) => (input = r)} data-component="input" name="name" type="text" placeholder="Enter email" />
+          <input ref={(r) => (input = r)} data-component="input" name="email" type="text" placeholder="Enter email" />
+          <div data-slot="role-selector">
+            <label>
+              <input type="radio" name="role" value="admin" checked />
+              <div>
+                <strong>Admin</strong>
+                <p>Can manage models, members, and billing</p>
+              </div>
+            </label>
+            <label>
+              <input type="radio" name="role" value="member" />
+              <div>
+                <strong>Member</strong>
+                <p>Can only generate API keys for themselves</p>
+              </div>
+            </label>
+          </div>
           <Show when={submission.result && submission.result.error}>
             {(err) => <div data-slot="form-error">{err()}</div>}
           </Show>
@@ -160,15 +176,15 @@ export function MemberSection() {
             <tbody>
               <For each={members()!}>
                 {(member) => {
-                  const [copied, setCopied] = createSignal(false)
-                  // const submission = useSubmission(removeKey, ([fd]) => fd.get("id")?.toString() === key.id)
                   return (
                     <tr>
                       <td data-slot="member-email">{member.email}</td>
                       <td data-slot="member-role">{member.role}</td>
-                      <td data-slot="member-joined" title={formatDateUTC(member.timeJoined!)}>
-                        {formatDateForTable(member.timeJoined!)}
-                      </td>
+                      <Show when={member.timeSeen} fallback={<td data-slot="member-joined">invited</td>}>
+                        <td data-slot="member-joined" title={formatDateUTC(member.timeSeen!)}>
+                          {formatDateForTable(member.timeSeen!)}
+                        </td>
+                      </Show>
                       <td data-slot="member-actions">
                         <form action={removeMember} method="post">
                           <input type="hidden" name="id" value={member.id} />
