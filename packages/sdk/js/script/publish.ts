@@ -11,6 +11,7 @@ const pkg = await import("../package.json").then((m) => m.default)
 const original = JSON.parse(JSON.stringify(pkg))
 for (const [key, value] of Object.entries(pkg.exports)) {
   const file = value.replace("./src/", "./dist/").replace(".ts", "")
+  /// @ts-expect-error
   pkg.exports[key] = {
     import: file + ".js",
     types: file + ".d.ts",
