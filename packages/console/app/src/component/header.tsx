@@ -34,7 +34,7 @@ export function Header(props: { zen?: boolean }) {
             </A>
           </li>
           <li>
-            <A href="/docs">Docs</A>
+            <a href="/docs">Docs</a>
           </li>
           <li>
             <Switch>

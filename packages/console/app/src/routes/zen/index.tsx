@@ -211,7 +211,7 @@ export default function Home() {
 
           <section data-component="testimonials">
             {/*Dax*/}
-            <a href="https://x.com/iamdavidhill/status/1971693263498141817">
+            <a href="https://x.com/thdxr/status/1973531687629017227">
               <div data-slot="testimonial">
                 <div data-slot="name">
                   <img src={avatarDax} alt="" />
@@ -219,8 +219,7 @@ export default function Home() {
                   <span>ex-CEO, Terminal Products</span>
                 </div>
                 <div data-slot="quote">
-                  It's clear from using <span>@OpenCode</span> Zen that the team behind it are smart, funny, and
-                  excellent lovers.
+                  <span>@OpenCode</span> Zen has been life changing, it's truly a no-brainer
                 </div>
               </div>
             </a>
