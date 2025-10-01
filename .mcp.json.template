@@ -1,5 +1,5 @@
 {
-  "mcpServers": {
+  "servers": {
     "servicenow-unified": {
       "command": "node",
       "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-mcp-unified/index.js"],
