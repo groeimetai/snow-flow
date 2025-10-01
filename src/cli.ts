@@ -604,7 +604,7 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
     // SDK automatically initializes MCP servers from configuration
     if (hasMcpConfig) {
       console.log(chalk.blue('ℹ️  MCP servers managed by Claude Agent SDK v0.1.1'));
-      console.log(chalk.green('✅ 448 ServiceNow tools available via SDK integration'));
+      console.log(chalk.green('✅ 235+ ServiceNow tools available via unified MCP server'));
     }
     
     // Launch Claude Code with MCP config and skip permissions to avoid raw mode issues
@@ -1836,25 +1836,25 @@ program
       console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
       console.log('\n📋 Created Snow-Flow configuration:');
       console.log('   ✓ .claude/ - Claude Code MCP configuration');
-      console.log('   ✓ .mcp.json - 20+ ServiceNow MCP servers (240+ tools including complete UX Workspace workflow)');
+      console.log('   ✓ .mcp.json - 2 unified MCP servers (235+ tools including complete UX Workspace workflow)');
       console.log('   ✓ CLAUDE.md - Complete development guide');
       console.log('   ✓ README.md - Current capabilities documentation');
       console.log('   ✓ .snow-flow/ - Project workspace and memory');
-      
+
       if (!options.skipMcp) {
         // NOTE: MCP servers now managed by Claude Agent SDK (v4.7.0+)
         console.log(chalk.blue('\nℹ️  MCP servers now managed by Claude Agent SDK v0.1.1'));
-        console.log(chalk.green('✅ 448 ServiceNow tools automatically available via SDK'));
+        console.log(chalk.green('✅ 235+ ServiceNow tools automatically available via unified server'));
         console.log(chalk.blue('📋 SDK handles MCP server lifecycle automatically'));
       }
-      
+
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
       console.log(chalk.red.bold('⚠️  IMPORTANT: Ensure Claude Code is running first!'));
       console.log('1. Start Claude Code: ' + chalk.cyan('claude --dangerously-skip-permissions'));
       console.log('2. Authenticate Snow-Flow: ' + chalk.cyan('snow-flow auth login'));
       console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
       console.log('\n📚 Complete documentation: ' + chalk.blue('https://snow-flow.dev'));
-      console.log('💡 Complete 6-step UX Workspace creation, UI Builder, and 240+ tools now available');
+      console.log('💡 Complete UX Workspace creation, UI Builder, and 235+ unified tools now available');
       
       // Force exit to prevent hanging
       process.exit(0);
