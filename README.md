@@ -80,16 +80,31 @@ snow-flow auth status
 
 #### ServiceNow OAuth Configuration
 
-To set up OAuth in your ServiceNow instance:
+⚠️ **IMPORTANT:** Snow-Flow uses OAuth 2.0 Authorization Code Flow with browser authentication. Follow these exact steps:
 
-1. **Navigate to System OAuth → Application Registry**
-2. **Click "New" → "Create an OAuth API endpoint"** (not client credentials)
-3. **Fill required fields:**
-   - Name: `Snow-Flow Integration`
-   - Client ID: `snow-flow-client`  
-   - Redirect URL: `http://localhost:3000/callback`
-4. **Save and copy the Client ID and Client Secret**
-5. **Run `snow-flow auth login`** - this opens browser for authentication
+1. **Navigate to:** System OAuth → Application Registry
+2. **Click:** New → **"Create an OAuth API endpoint for external clients"**
+3. **Configure OAuth Application:**
+   - **Name:** `Snow-Flow Integration` (or any name you prefer)
+   - **Redirect URL:** `http://localhost:3005/callback` ⚠️ **MUST be exactly this!**
+   - **Refresh Token Lifespan:** `0` (unlimited - recommended)
+   - **Access Token Lifespan:** `1800` (30 minutes)
+4. **Save** - ServiceNow will auto-generate:
+   - Client ID (copy this)
+   - Client Secret (copy this - shown only once!)
+5. **Create `.env` file** in your project with:
+   ```bash
+   SNOW_INSTANCE=your-instance.service-now.com
+   SNOW_CLIENT_ID=<your_client_id>
+   SNOW_CLIENT_SECRET=<your_client_secret>
+   ```
+6. **Run:** `snow-flow auth login`
+   - Opens browser automatically for ServiceNow login
+   - Redirects to `http://localhost:3005/callback` after authentication
+   - Stores OAuth tokens locally for future use
+
+**Why this exact redirect URL?**
+Snow-Flow starts a local OAuth callback server on port 3005. ServiceNow must redirect to **exactly** `http://localhost:3005/callback` - any mismatch (wrong port, missing `/callback`) will cause "Invalid redirect_uri" errors.
 
 #### Common Authentication Issues
 
