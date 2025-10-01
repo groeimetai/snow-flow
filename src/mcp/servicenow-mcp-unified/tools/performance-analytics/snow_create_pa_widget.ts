@@ -1,0 +1,54 @@
+/**
+ * snow_create_pa_widget - Create PA dashboard widgets
+ */
+
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
+import { getAuthenticatedClient } from '../../shared/auth.js';
+import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+
+export const toolDefinition: MCPToolDefinition = {
+  name: 'snow_create_pa_widget',
+  description: 'Creates a Performance Analytics dashboard widget for visualizing indicators',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'Widget name' },
+      type: { type: 'string', description: 'Widget type: time_series, scorecard, dial, column, pie' },
+      indicator: { type: 'string', description: 'Indicator sys_id to display' },
+      breakdown: { type: 'string', description: 'Breakdown field for grouping' },
+      time_range: { type: 'string', description: 'Time range: 7days, 30days, 90days, 1year' },
+      dashboard: { type: 'string', description: 'Dashboard to add widget to' },
+      size_x: { type: 'number', description: 'Widget width', default: 4 },
+      size_y: { type: 'number', description: 'Widget height', default: 3 }
+    },
+    required: ['name', 'type', 'indicator']
+  }
+};
+
+export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
+  const { name, type, indicator, breakdown, time_range, dashboard, size_x, size_y } = args;
+  try {
+    const client = await getAuthenticatedClient(context);
+    const widgetData: any = {
+      name,
+      type,
+      indicator,
+      time_range: time_range || '30days',
+      size_x: size_x || 4,
+      size_y: size_y || 3
+    };
+    if (breakdown) widgetData.breakdown = breakdown;
+    if (dashboard) widgetData.dashboard = dashboard;
+
+    const response = await client.post('/api/now/table/pa_widgets', widgetData);
+    return createSuccessResult({
+      created: true,
+      widget: response.data.result,
+      message: `PA widget ${name} created successfully`
+    });
+  } catch (error: any) {
+    return createErrorResult(error.message);
+  }
+}
+
+export const version = '1.0.0';

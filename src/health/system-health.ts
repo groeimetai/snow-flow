@@ -5,12 +5,13 @@
 
 import { EventEmitter } from 'events';
 import { MemorySystem } from '../memory/memory-system';
-import { MCPServerManager } from '../utils/mcp-server-manager';
 import { ServiceNowClient } from '../utils/servicenow-client';
 import { Logger } from '../utils/logger';
 import os from 'os';
 import fs from 'fs';
 import { execSync } from 'child_process';
+
+// Note: MCPServerManager deprecated - MCP servers now managed by Claude Agent SDK
 
 export interface HealthCheckResult {
   component: string;
@@ -63,7 +64,7 @@ export interface HealthThresholds {
 
 interface HealthConfig {
   memory: MemorySystem;
-  mcpManager: MCPServerManager;
+  mcpManager?: any; // Optional: SDK manages MCP servers now
   config: {
     checks: {
       memory: boolean;
@@ -77,7 +78,7 @@ interface HealthConfig {
 
 export class SystemHealth extends EventEmitter {
   private memory: MemorySystem;
-  private mcpManager: MCPServerManager;
+  private mcpManager?: any; // Optional: SDK manages MCP servers now
   private logger: Logger;
   private config: HealthConfig['config'];
   private serviceNowClient?: ServiceNowClient;
@@ -236,11 +237,12 @@ export class SystemHealth extends EventEmitter {
    * Get health history
    */
   async getHealthHistory(limit: number = 100): Promise<HealthCheckResult[]> {
-    return this.memory.query<HealthCheckResult>(`
-      SELECT * FROM health_checks 
-      ORDER BY timestamp DESC 
-      LIMIT ?
-    `, [limit]);
+    const results = await this.memory.query?.(`
+      SELECT * FROM health_checks
+      ORDER BY timestamp DESC
+      LIMIT ${limit}
+    `);
+    return results || [];
   }
 
   /**
@@ -434,16 +436,16 @@ export class SystemHealth extends EventEmitter {
     
     try {
       // Check active queen sessions
-      const activeSessions = await this.memory.query<any>(`
-        SELECT COUNT(*) as count FROM swarm_sessions 
+      const activeSessions = await this.memory.query?.(`
+        SELECT COUNT(*) as count FROM swarm_sessions
         WHERE status = 'active'
-      `);
-      
+      `) || [];
+
       // Check agent coordination
-      const activeAgents = await this.memory.query<any>(`
-        SELECT COUNT(*) as count FROM agent_coordination 
+      const activeAgents = await this.memory.query?.(`
+        SELECT COUNT(*) as count FROM agent_coordination
         WHERE status IN ('spawned', 'active')
-      `);
+      `) || [];
       
       const responseTime = Date.now() - startTime;
       
@@ -563,15 +565,16 @@ export class SystemHealth extends EventEmitter {
     
     try {
       // Get recent performance metrics
-      const recentMetrics = await this.memory.query<any>(`
-        SELECT 
+      const fiveMinutesAgo = Date.now() - 300000;
+      const recentMetrics = await this.memory.query?.(`
+        SELECT
           COUNT(*) as total_operations,
           SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful_operations,
           AVG(duration) as avg_duration,
           MAX(duration) as max_duration
         FROM performance_metrics
-        WHERE start_time > ?
-      `, [Date.now() - 300000]); // Last 5 minutes
+        WHERE start_time > ${fiveMinutesAgo}
+      `);
       
       const metrics = recentMetrics[0] || {};
       const errorRate = metrics.total_operations > 0 

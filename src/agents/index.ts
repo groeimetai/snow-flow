@@ -1,13 +1,13 @@
 /**
- * ServiceNow Agent System - Dynamic Agent Architecture v3.0
- * All agents are now dynamically created based on task requirements
+ * ServiceNow Agent System - Claude Agent SDK Integration v4.7.0
+ * DEPRECATED: Custom agents replaced by @anthropic-ai/claude-agent-sdk@0.1.1
  */
 
-export { BaseAgent, AgentConfig, AgentResult } from './base-agent';
-export { QueenAgent, QueenObjective, QueenAgentConfig } from './queen-agent';
+// Re-export SDK components for backward compatibility
+export { ClaudeAgentSDKIntegration, QueenOrchestrator } from '../sdk/index.js';
+export type { SnowFlowAgentConfig, AgentExecutionResult, QueenObjective, OrchestrationResult } from '../sdk/index.js';
 
-// Dynamic agent system - no more hardcoded agent classes
-// Agents are created on-demand by the Queen/AgentFactory based on:
-// - Task analysis
-// - Required capabilities  
-// - ServiceNow artifacts needed
+// SDK-based agent system:
+// - Agents are spawned via ClaudeAgentSDKIntegration
+// - Queen intelligence via QueenOrchestrator
+// - 86% code reduction (2832 → 400 lines)

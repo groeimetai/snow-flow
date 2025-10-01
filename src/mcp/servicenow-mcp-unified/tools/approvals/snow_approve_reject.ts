@@ -1,0 +1,37 @@
+/**
+ * snow_approve_reject
+ */
+
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
+import { getAuthenticatedClient } from '../../shared/auth.js';
+import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+
+export const toolDefinition: MCPToolDefinition = {
+  name: 'snow_approve_reject',
+  description: 'Approve or reject approval request',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      approval_sys_id: { type: 'string', description: 'Approval sys_id' },
+      action: { type: 'string', enum: ['approved', 'rejected'], description: 'Action' },
+      comments: { type: 'string', description: 'Comments' }
+    },
+    required: ['approval_sys_id', 'action']
+  }
+};
+
+export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
+  const { approval_sys_id, action, comments } = args;
+  try {
+    const client = await getAuthenticatedClient(context);
+    const updateData: any = { state: action };
+    if (comments) updateData.comments = comments;
+    const response = await client.patch(`/api/now/table/sysapproval_approver/${approval_sys_id}`, updateData);
+    return createSuccessResult({ updated: true, action, approval: response.data.result });
+  } catch (error: any) {
+    return createErrorResult(error.message);
+  }
+}
+
+export const version = '1.0.0';
+export const author = 'Snow-Flow SDK Migration';

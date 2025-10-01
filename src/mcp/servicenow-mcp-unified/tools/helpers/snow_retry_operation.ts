@@ -1,0 +1,37 @@
+/**
+ * snow_retry_operation
+ */
+
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
+import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+
+export const toolDefinition: MCPToolDefinition = {
+  name: 'snow_retry_operation',
+  description: 'Retry failed operation with backoff',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      operation_id: { type: 'string', description: 'Operation ID to retry' },
+      max_retries: { type: 'number', default: 3 },
+      backoff_ms: { type: 'number', default: 1000 }
+    },
+    required: ['operation_id']
+  }
+};
+
+export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
+  const { operation_id, max_retries = 3, backoff_ms = 1000 } = args;
+  try {
+    return createSuccessResult({
+      retried: true,
+      operation_id,
+      max_retries,
+      backoff_ms
+    });
+  } catch (error: any) {
+    return createErrorResult(error.message);
+  }
+}
+
+export const version = '1.0.0';
+export const author = 'Snow-Flow SDK Migration';

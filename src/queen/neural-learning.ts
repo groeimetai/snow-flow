@@ -176,7 +176,11 @@ export class NeuralLearning {
       portal_page: complexity > 0.7
         ? ['researcher', 'widget-creator', 'page-designer', 'tester']
         : ['widget-creator', 'page-designer', 'tester'],
-      
+
+      workspace: complexity > 0.7
+        ? ['researcher', 'workspace-specialist', 'ui-builder-expert', 'tester']
+        : ['workspace-specialist', 'ui-builder-expert'],
+
       unknown: ['researcher', 'widget-creator'] // Default fallback
     };
 
@@ -266,6 +270,7 @@ export class NeuralLearning {
       application: ['snow_deploy', 'snow_create_table', 'snow_create_ui_policy'],
       integration: ['snow_create_rest_message', 'snow_test_integration'],
       portal_page: ['snow_deploy', 'snow_preview_widget', 'snow_widget_test'],
+      workspace: ['snow_create_complete_workspace', 'snow_create_ux_app_route', 'snow_create_uib_page'],
       unknown: ['snow_find_artifact', 'snow_analyze_requirements']
     };
 

@@ -230,11 +230,11 @@ export class PerformanceTracker extends EventEmitter {
    * Get metrics for a specific session
    */
   async getSessionMetrics(sessionId: string): Promise<SessionMetrics> {
-    const metrics = await this.memory.query<PerformanceMetric>(`
-      SELECT * FROM performance_metrics 
-      WHERE session_id = ?
+    const metrics = await this.memory.query?.(`
+      SELECT * FROM performance_metrics
+      WHERE session_id = '${sessionId}'
       ORDER BY start_time
-    `, [sessionId]);
+    `) || [];
     
     if (metrics.length === 0) {
       return {
@@ -278,12 +278,12 @@ export class PerformanceTracker extends EventEmitter {
    */
   async getAggregateMetrics(operation: string, timeframe?: number): Promise<AggregateMetrics> {
     const since = timeframe ? Date.now() - timeframe : 0;
-    
-    const metrics = await this.memory.query<PerformanceMetric>(`
-      SELECT * FROM performance_metrics 
-      WHERE operation = ? AND start_time > ?
+
+    const metrics = await this.memory.query?.(`
+      SELECT * FROM performance_metrics
+      WHERE operation = '${operation}' AND start_time > ${since}
       ORDER BY duration
-    `, [operation, since]);
+    `) || [];
     
     if (metrics.length === 0) {
       return {
@@ -329,12 +329,12 @@ export class PerformanceTracker extends EventEmitter {
   async generateReport(period: 'hour' | 'day' | 'week' | 'month' = 'day'): Promise<PerformanceReport> {
     const timeframe = this.getTimeframe(period);
     const since = Date.now() - timeframe;
-    
+
     // Get all metrics for the period
-    const allMetrics = await this.memory.query<PerformanceMetric>(`
-      SELECT * FROM performance_metrics 
-      WHERE start_time > ?
-    `, [since]);
+    const allMetrics = await this.memory.query?.(`
+      SELECT * FROM performance_metrics
+      WHERE start_time > ${since}
+    `) || [];
     
     // Get unique operations
     const operations = [...new Set(allMetrics.map(m => m.operation))];
@@ -582,10 +582,11 @@ export class PerformanceTracker extends EventEmitter {
 
   private async aggregateMetrics(): Promise<void> {
     // Aggregate metrics for different time periods
-    const operations = await this.memory.query<{ operation: string }>(`
+    const cutoff = Date.now() - this.config.aggregationInterval;
+    const operations = await this.memory.query?.(`
       SELECT DISTINCT operation FROM performance_metrics
-      WHERE start_time > ?
-    `, [Date.now() - this.config.aggregationInterval]);
+      WHERE start_time > ${cutoff}
+    `) || [];
     
     for (const { operation } of operations) {
       const aggregate = await this.getAggregateMetrics(operation, this.config.aggregationInterval);
@@ -605,14 +606,14 @@ export class PerformanceTracker extends EventEmitter {
 
   private async cleanupOldMetrics(): Promise<void> {
     const cutoff = Date.now() - this.config.metricsRetention;
-    
-    await this.memory.execute(`
-      DELETE FROM performance_metrics WHERE start_time < ?
-    `, [cutoff]);
-    
-    await this.memory.execute(`
-      DELETE FROM performance_aggregates WHERE timestamp < ?
-    `, [cutoff]);
+
+    await this.memory.execute?.(`
+      DELETE FROM performance_metrics WHERE start_time < ${cutoff}
+    `);
+
+    await this.memory.execute?.(`
+      DELETE FROM performance_aggregates WHERE timestamp < ${cutoff}
+    `);
   }
 
   private checkPerformanceThresholds(metric: PerformanceMetric): void {
@@ -693,10 +694,10 @@ export class PerformanceTracker extends EventEmitter {
   }
 
   private async countSessionArtifacts(sessionId: string): Promise<number> {
-    const result = await this.memory.query<{ count: number }>(`
-      SELECT COUNT(*) as count FROM servicenow_artifacts 
-      WHERE session_id = ?
-    `, [sessionId]);
+    const result = await this.memory.query?.(`
+      SELECT COUNT(*) as count FROM servicenow_artifacts
+      WHERE session_id = '${sessionId}'
+    `) || [];
     
     return result[0]?.count || 0;
   }

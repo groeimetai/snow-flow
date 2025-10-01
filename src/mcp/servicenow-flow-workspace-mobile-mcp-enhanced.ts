@@ -670,19 +670,6 @@ Modern Agent Workspaces use UX Pages (sys_ux_*) for tab configuration.
 3. Configure through UI Builder instead of legacy tables`
       }]
     };
-
-    if (!response.success) {
-      return this.createResponse(`❌ Failed to add tab: ${response.error}`);
-    }
-
-    this.logger.info('✅ Tab configured');
-    return this.createResponse(
-      `✅ Workspace tab added!
-📑 Label: ${args.label}
-🔗 URL: ${args.url || 'Default'}
-📊 Order: ${args.order || 100}
-🆔 sys_id: ${response.data.sys_id}`
-    );
   }
 
   private async addWorkspaceList(args: any): Promise<MCPToolResult> {
@@ -715,19 +702,6 @@ Use UI Builder list components for workspace lists.
 - snow_add_uib_page_element: Add list to workspace page`
       }]
     };
-
-    if (!response.success) {
-      return this.createResponse(`❌ Failed to add list: ${response.error}`);
-    }
-
-    this.logger.info('✅ List added');
-    return this.createResponse(
-      `✅ Workspace list added!
-📋 Table: ${args.table}
-🔍 Filter: ${args.filter || 'None'}
-📊 Columns: ${args.columns?.length || 'Default'}
-🆔 sys_id: ${response.data.sys_id}`
-    );
   }
 
   private async createWorkspaceForm(args: any): Promise<MCPToolResult> {
@@ -759,19 +733,6 @@ Use UI Builder form components for workspace forms.
 - Standard ServiceNow form designer for record forms`
       }]
     };
-
-    if (!response.success) {
-      return this.createResponse(`❌ Failed to create form: ${response.error}`);
-    }
-
-    this.logger.info('✅ Form created');
-    return this.createResponse(
-      `✅ Workspace form created!
-📋 Table: ${args.table}
-📑 Sections: ${args.sections?.length || 0}
-📝 Fields: ${args.fields?.length || 'Default'}
-🆔 sys_id: ${response.data.sys_id}`
-    );
   }
 
   private async configureWorkspaceUIAction(args: any): Promise<MCPToolResult> {
@@ -800,23 +761,10 @@ Use UI Builder action components for workspace actions.
 
 🛠️ **Recommended Tools:**
 - snow_create_uib_component: Create custom action components
-- Standard ServiceNow UI Actions for record actions  
+- Standard ServiceNow UI Actions for record actions
 - UI Builder event system for custom interactions`
       }]
     };
-
-    if (!response.success) {
-      return this.createResponse(`❌ Failed to add UI action: ${response.error}`);
-    }
-
-    this.logger.info('✅ UI action configured');
-    return this.createResponse(
-      `✅ UI Action added!
-⚡ Name: ${args.name}
-🏷️ Label: ${args.label}
-🔧 Condition: ${args.condition || 'Always'}
-🆔 sys_id: ${response.data.sys_id}`
-    );
   }
 
   private async deployWorkspace(args: any): Promise<MCPToolResult> {

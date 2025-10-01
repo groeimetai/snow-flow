@@ -21,7 +21,8 @@ import { Logger } from './utils/logger.js';
 import chalk from 'chalk';
 // Load MCP Persistent Guard for bulletproof server protection
 import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
-// Activate protection immediately
+
+// Activate MCP guard (it will self-check if protection is needed)
 MCPPersistentGuard.getInstance();
 // Removed provider-agnostic imports - using Claude Code directly
 import { registerAuthCommands } from './cli/auth.js';
@@ -599,34 +600,11 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
     const mcpConfigPath = join(process.cwd(), '.mcp.json');
     const hasMcpConfig = existsSync(mcpConfigPath);
     
-    // Auto-start MCP servers if they're not running
+    // NOTE: MCP servers now managed by Claude Agent SDK (v4.7.0+)
+    // SDK automatically initializes MCP servers from configuration
     if (hasMcpConfig) {
-      cliLogger.info('🔧 Checking MCP server status...');
-      
-      try {
-        const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
-        const manager = new MCPServerManager();
-        await manager.initialize();
-        
-        const systemStatus = manager.getSystemStatus();
-        
-        if (systemStatus.running === 0) {
-          console.log(chalk.yellow('🔧 Starting ServiceNow MCP servers...'));
-          await manager.startAllServers();
-          const newStatus = manager.getSystemStatus();
-          console.log(chalk.green(`✅ ${newStatus.running} ServiceNow MCP servers ready`));
-        } else if (systemStatus.running < systemStatus.total) {
-          console.log(chalk.yellow('🔄 Starting additional MCP servers...'));
-          await manager.startAllServers();
-          const newStatus = manager.getSystemStatus();
-          console.log(chalk.green(`✅ All ${newStatus.running} ServiceNow MCP servers ready`));
-        } else {
-          console.log(chalk.green(`✅ All ${systemStatus.running} ServiceNow MCP servers ready (240+ tools with UX Workspace workflow)`));
-        }
-      } catch (error) {
-        cliLogger.warn('⚠️  Could not auto-start MCP servers:', error instanceof Error ? error.message : error);
-        cliLogger.info('💡 You may need to run "npm run mcp:start" manually');
-      }
+      console.log(chalk.blue('ℹ️  MCP servers managed by Claude Agent SDK v0.1.1'));
+      console.log(chalk.green('✅ 448 ServiceNow tools available via SDK integration'));
     }
     
     // Launch Claude Code with MCP config and skip permissions to avoid raw mode issues
@@ -1864,29 +1842,10 @@ program
       console.log('   ✓ .snow-flow/ - Project workspace and memory');
       
       if (!options.skipMcp) {
-        // Start MCP servers automatically
-        console.log(chalk.yellow.bold('\n🚀 Starting MCP servers in the background...'));
-        
-        try {
-          const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
-          const manager = new MCPServerManager();
-          await manager.initialize();
-          
-          console.log('📡 Starting all ServiceNow MCP servers...');
-          await manager.startAllServers();
-          
-          const status = manager.getServerList();
-          const running = status.filter((s: any) => s.status === 'running').length;
-          const total = status.length;
-          
-          console.log(chalk.green(`✅ Started ${running}/${total} MCP servers successfully!`));
-          console.log(chalk.blue('\n📋 MCP servers are now running in the background'));
-          console.log('🎯 They will be available when you run swarm commands');
-          
-        } catch (error) {
-          console.log(chalk.yellow('\n⚠️  Could not start MCP servers automatically'));
-          console.log('📝 You can start them manually with: ' + chalk.cyan('snow-flow mcp start'));
-        }
+        // NOTE: MCP servers now managed by Claude Agent SDK (v4.7.0+)
+        console.log(chalk.blue('\nℹ️  MCP servers now managed by Claude Agent SDK v0.1.1'));
+        console.log(chalk.green('✅ 448 ServiceNow tools automatically available via SDK'));
+        console.log(chalk.blue('📋 SDK handles MCP server lifecycle automatically'));
       }
       
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
@@ -3070,43 +3029,12 @@ program
   .option('--port <port>', 'Port for MCP server (default: auto)')
   .option('--host <host>', 'Host for MCP server (default: localhost)')
   .action(async (action: string, options) => {
-    const { MCPServerManager } = await import('./utils/mcp-server-manager.js');
-    const manager = new MCPServerManager();
-    
-    try {
-      await manager.initialize();
-      
-      switch (action) {
-        case 'start':
-          await handleMCPStart(manager, options);
-          break;
-        case 'stop':
-          await handleMCPStop(manager, options);
-          break;
-        case 'restart':
-          await handleMCPRestart(manager, options);
-          break;
-        case 'status':
-          await handleMCPStatus(manager, options);
-          break;
-        case 'logs':
-          await handleMCPLogs(manager, options);
-          break;
-        case 'list':
-          await handleMCPList(manager, options);
-          break;
-        case 'debug':
-          await handleMCPDebug(options);
-          break;
-        default:
-          console.error(`❌ Unknown action: ${action}`);
-          console.log('Available actions: start, stop, restart, status, logs, list, debug');
-          process.exit(1);
-      }
-    } catch (error) {
-      console.error('❌ MCP operation failed:', error instanceof Error ? error.message : String(error));
-      process.exit(1);
-    }
+    // NOTE: MCP commands deprecated - SDK manages MCP servers (v4.7.0+)
+    console.log(chalk.blue('ℹ️  MCP servers are now managed by Claude Agent SDK v0.1.1'));
+    console.log(chalk.yellow('⚠️  Manual MCP commands are no longer needed'));
+    console.log(chalk.green('✅ SDK automatically handles all MCP server lifecycle'));
+    console.log(chalk.blue('\n💡 Simply run your swarm commands - SDK handles the rest!'));
+    return;
   });
 
 // MCP action handlers

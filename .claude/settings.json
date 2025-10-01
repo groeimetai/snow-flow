@@ -1,177 +1,42 @@
 {
-  "enabledMcpjsonServers": [
-    "snow-flow",
-    "servicenow-deployment",
-    "servicenow-operations",
-    "servicenow-automation",
-    "servicenow-platform-development",
-    "servicenow-integration",
-    "servicenow-system-properties",
-    "servicenow-update-set",
-    "servicenow-development-assistant",
-    "servicenow-local-development",
-    "servicenow-security-compliance",
-    "servicenow-reporting-analytics",
-    "servicenow-machine-learning",
-    "servicenow-knowledge-catalog",
-    "servicenow-change-virtualagent-pa",
-    "servicenow-flow-workspace-mobile",
-    "servicenow-cmdb-event-hr-csm-devops",
-    "servicenow-advanced-features"
-  ],
-  "permissions": {
-    "allow": [
-      "Bash(npx snow-flow *)",
-      "Bash(snow-flow *)",
-      "Bash(./snow-flow *)",
-      "Bash(npm run *)",
-      "Bash(npm install *)",
-      "Bash(npm update *)",
-      "Bash(npm test *)",
-      "Bash(npm run lint)",
-      "Bash(npm run build)",
-      "Bash(npm run dev)",
-      "Bash(npm start)",
-      "Bash(yarn *)",
-      "Bash(pnpm *)",
-      "Bash(git status)",
-      "Bash(git diff *)",
-      "Bash(git log *)",
-      "Bash(git add *)",
-      "Bash(git commit *)",
-      "Bash(git push *)",
-      "Bash(git pull *)",
-      "Bash(git branch *)",
-      "Bash(git checkout *)",
-      "Bash(git merge *)",
-      "Bash(git config *)",
-      "Bash(git remote *)",
-      "Bash(gh *)",
-      "Bash(node *)",
-      "Bash(npm *)",
-      "Bash(npx *)",
-      "Bash(which *)",
-      "Bash(pwd)",
-      "Bash(ls *)",
-      "Bash(cd *)",
-      "Bash(mkdir *)",
-      "Bash(rm *)",
-      "Bash(cp *)",
-      "Bash(mv *)",
-      "Bash(find *)",
-      "Bash(grep *)",
-      "Bash(cat *)",
-      "Bash(head *)",
-      "Bash(tail *)",
-      "Bash(less *)",
-      "Bash(more *)",
-      "Bash(curl *)",
-      "Bash(wget *)",
-      "Bash(ping *)",
-      "Bash(telnet *)",
-      "Bash(nc *)",
-      "Bash(netstat *)",
-      "Bash(jq *)",
-      "Bash(awk *)",
-      "Bash(sed *)",
-      "Bash(sort *)",
-      "Bash(uniq *)",
-      "Bash(wc *)",
-      "Bash(ps *)",
-      "Bash(top)",
-      "Bash(htop)",
-      "Bash(lsof *)",
-      "Bash(df *)",
-      "Bash(du *)",
-      "Bash(free *)",
-      "Bash(uptime)",
-      "Bash(env)",
-      "Bash(export *)",
-      "Bash(echo *)",
-      "Bash(printenv *)",
-      "Bash(docker *)",
-      "Bash(docker-compose *)",
-      "Bash(sn *)",
-      "Bash(snc *)",
-      "Read(*)",
-      "Write(*)",
-      "Edit(*)",
-      "MultiEdit(*)",
-      "Glob(*)",
-      "Grep(*)",
-      "LS(*)",
-      "NotebookEdit(*)",
-      "NotebookRead(*)",
-      "WebFetch(*)",
-      "WebSearch(*)",
-      "TodoRead",
-      "TodoWrite",
-      "Task(*)",
-      "ListMcpResourcesTool",
-      "ReadMcpResourceTool",
-      "mcp__servicenow-*",
-      "mcp__snow-flow__*"
-    ],
-    "deny": [
-      "Bash(rm -rf /)",
-      "Bash(sudo rm *)",
-      "Bash(sudo *)"
-    ]
+  "agent": {
+    "model": "claude-sonnet-4.5",
+    "contextManagement": "auto",
+    "subagents": true,
+    "maxConcurrentSubagents": 5
   },
-  "autoCompactThreshold": 0.65,
-  "compactMode": "aggressive",
-  "contextPreservation": {
-    "preserveMCPState": true,
-    "preserveToolResults": true,
-    "preserveRecentContext": 5000,
-    "prioritizeServiceNowOperations": true
+  "mcp": {
+    "servers": {
+      "servicenow-unified": {
+        "command": "node",
+        "args": ["dist/mcp/servicenow-mcp-unified/index.js"],
+        "description": "Unified ServiceNow MCP server with 235+ tools"
+      }
+    }
   },
   "hooks": {
-    "PreCompact": [
-      {
-        "matcher": "manual",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/bin/bash -c 'INPUT=$(cat); CUSTOM=$(echo \"$INPUT\" | jq -r \".custom_instructions // \\\"\\\"\"); echo \"🔄 PreCompact Guidance:\"; echo \"📋 IMPORTANT: Review CLAUDE.md in project root for:\"; echo \"   • 18+ MCP servers and snow_pull_artifact for widget debugging\"; echo \"   • Swarm coordination strategies (hierarchical, mesh, adaptive)\"; echo \"   • SPARC methodology workflows with batchtools optimization\"; echo \"   • Critical concurrent execution rules (GOLDEN RULE: 1 MESSAGE = ALL OPERATIONS)\"; if [ -n \"$CUSTOM\" ]; then echo \"🎯 Custom compact instructions: $CUSTOM\"; fi; echo \"✅ Ready for compact operation\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "auto",
-        "threshold": 0.65,
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/bin/bash -c 'echo \"⚡ EARLY Auto-Compact triggered at 65% context usage\"; echo \"🔔 Compacting BEFORE API calls fail\"; echo \"📋 Preserving critical Snow-Flow context:\"; echo \"   • Active MCP connections and tool state\"; echo \"   • Recent ServiceNow operations and results\"; echo \"   • Current artifact sync status\"; echo \"   • Authentication and session data\"; echo \"⚠️ This prevents mid-operation failures\"; echo \"✅ Safe compact at 65% threshold\"'"
-          }
-        ]
-      }
-    ]
+    "pre-tool": {
+      "snow_deploy": ".claude/hooks/pre-deployment-validation.sh",
+      "snow_execute_script_with_output": ".claude/hooks/validate-es5-syntax.sh"
+    },
+    "post-tool": {
+      "snow_deploy": ".claude/hooks/post-deployment-tracking.sh",
+      "snow_create_update_set": ".claude/hooks/sync-update-set-context.sh"
+    },
+    "on-error": {
+      "*": ".claude/hooks/error-recovery.sh",
+      "snow_deploy": ".claude/hooks/deployment-rollback.sh"
+    }
   },
-  "env": {
-    "BASH_DEFAULT_TIMEOUT_MS": "0",
-    "BASH_MAX_TIMEOUT_MS": "0",
-    "BASH_MAX_OUTPUT_LENGTH": "500000",
-    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "true",
-    "MAX_THINKING_TOKENS": "50000",
-    "MCP_TIMEOUT": "0",
-    "MCP_TOOL_TIMEOUT": "0",
-    "DISABLE_COST_WARNINGS": "1",
-    "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "0",
-    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "32000",
-    "CLAUDE_CODE_TIMEOUT": "0",
-    "CLAUDE_CODE_SESSION_TIMEOUT": "0",
-    "CLAUDE_CODE_EXECUTION_TIMEOUT": "0",
-    "CLAUDE_CODE_EARLY_COMPACT": "true",
-    "CLAUDE_CODE_COMPACT_THRESHOLD": "0.65",
-    "CLAUDE_CODE_PRESERVE_MCP_STATE": "true",
-    "CLAUDE_CODE_CONTEXT_WINDOW_BUFFER": "35",
-    "SNOW_FLOW_DEBUG": "false",
-    "SNOW_FLOW_LOG_LEVEL": "info",
-    "MCP_DEBUG": "false",
-    "NODE_ENV": "development"
+  "retryPolicy": {
+    "maxAttempts": 3,
+    "backoff": "exponential",
+    "initialDelay": 1000,
+    "maxDelay": 10000
   },
-  "cleanupPeriodDays": 90,
-  "includeCoAuthoredBy": true
+  "performance": {
+    "promptCaching": true,
+    "contextCompaction": "auto",
+    "maxContextWindow": 200000
+  }
 }

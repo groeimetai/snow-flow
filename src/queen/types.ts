@@ -6,7 +6,7 @@
 export interface ServiceNowTask {
   id: string;
   objective: string;
-  type: 'widget' | 'portal_page' | 'flow' | 'script' | 'application' | 'integration' | 'unknown';
+  type: 'widget' | 'portal_page' | 'flow' | 'script' | 'application' | 'integration' | 'workspace' | 'unknown';
   artifacts: string[];
   status: 'analyzing' | 'planning' | 'executing' | 'completed' | 'failed';
   result?: any;
@@ -25,7 +25,7 @@ export interface Agent {
   startTime?: number;
 }
 
-export type AgentType = 
+export type AgentType =
   | 'widget-creator'
   | 'flow-builder'
   | 'script-writer'
@@ -41,7 +41,10 @@ export type AgentType =
   | 'backend-specialist'
   | 'frontend-specialist'
   | 'performance-specialist'
-  | 'page-designer';
+  | 'page-designer'
+  | 'workspace-specialist'
+  | 'ui-builder-expert'
+  | 'deployment-specialist';
 
 export interface DeploymentPattern {
   taskType: string;
