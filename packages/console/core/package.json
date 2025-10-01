@@ -8,6 +8,7 @@
     "@aws-sdk/client-sts": "3.782.0",
     "@opencode/console-resource": "workspace:*",
     "@planetscale/database": "1.19.0",
+    "aws4fetch": "1.0.20",
     "drizzle-orm": "0.41.0",
     "postgres": "3.4.7",
     "stripe": "18.0.0",
