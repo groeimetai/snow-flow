@@ -219,12 +219,12 @@ export default function Home() {
                   <span>ex-CEO, Terminal Products</span>
                 </div>
                 <div data-slot="quote">
-                  <span>@OpenCode</span> Zen has been life changing, it's truly a no-brainer
+                  OpenCode Zen has been life changing, it's truly a no-brainer
                 </div>
               </div>
             </a>
             {/*Jay*/}
-            <a href="https://x.com/iamdavidhill/status/1971693263498141817">
+            <a href="https://x.com/jayair/status/1973530190870618456">
               <div data-slot="testimonial">
                 <div data-slot="name">
                   <img src={avatarJay} alt="" />
@@ -232,12 +232,12 @@ export default function Home() {
                   <span>ex-Founder, SEED, PM, Melt, Pop, Dapt, Cadmus, and ViewPoint</span>
                 </div>
                 <div data-slot="quote">
-                  4 out 5 people on our team love using <span>@OpenCode</span> Zen.
+                  4 out of 5 people on our team love using <span>@OpenCode</span> Zen.
                 </div>
               </div>
             </a>
             {/*Adam*/}
-            <a href="https://x.com/iamdavidhill/status/1971693263498141817">
+            <a href="#">
               <div data-slot="testimonial">
                 <div data-slot="name">
                   <img src={avatarAdam} alt="" />
@@ -250,7 +250,7 @@ export default function Home() {
               </div>
             </a>
             {/*David*/}
-            <a href="https://x.com/iamdavidhill/status/1971693263498141817">
+            <a href="https://x.com/iamdavidhill/status/1973530568773214622">
               <div data-slot="testimonial">
                 <div data-slot="name">
                   <img src={avatarDavid} alt="" />
@@ -263,7 +263,7 @@ export default function Home() {
               </div>
             </a>
             {/*Frank*/}
-            <a href="https://x.com/iamdavidhill/status/1971693263498141817">
+            <a href="https://x.com/fanjiewang/status/1973530092736487756">
               <div data-slot="testimonial">
                 <div data-slot="name">
                   <img src={avatarFrank} alt="" />
