@@ -39,7 +39,7 @@ export function Header(props: { zen?: boolean }) {
           <li>
             <Switch>
               <Match when={props.zen}>
-                <A href="/auth">Login</A>
+                <a href="/auth">Login</a>
               </Match>
               <Match when={!props.zen}>
                 <A href="/zen">Zen</A>
