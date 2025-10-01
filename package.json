@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "5.0.0",
-  "description": "CLAUDE AGENT SDK INTEGRATION - v4.7.0 migrates to @anthropic-ai/claude-agent-sdk@0.1.1 with 86% code reduction (2832→400 lines) while maintaining unique intelligence. Features: SDK-native execution, intelligent orchestration, 448 ServiceNow tools, advanced memory, 2.8-4.4x parallelization speedup.",
+  "version": "5.0.1",
+  "description": "CLAUDE AGENT SDK INTEGRATION - v5.0.1 with @anthropic-ai/claude-agent-sdk@0.1.2 featuring 86% code reduction (2832→400 lines), unified MCP server (235+ tools), SDK-native execution, intelligent orchestration, advanced memory, and 2.8-4.4x parallelization speedup.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
@@ -457,7 +457,7 @@
     "npm": ">=8.0.0"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.1.1",
+    "@anthropic-ai/claude-agent-sdk": "^0.1.2",
     "@anthropic-ai/sdk": "^0.65.0",
     "@modelcontextprotocol/sdk": "^1.15.1",
     "@tensorflow/tfjs-node": "^4.22.0",
