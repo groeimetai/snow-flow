@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ibm/plex": "6.4.1",
+    "@kobalte/core": "catalog:",
     "@jsx-email/render": "1.1.1",
     "@openauthjs/openauth": "0.0.0-20250322224806",
     "@opencode/console-core": "workspace:*",
