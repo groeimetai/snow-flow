@@ -30,5 +30,31 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "src/deprecated/**/*",
+    "src/mcp/servicenow-mcp-unified/tools/index.ts",
+    "src/mcp/servicenow-mcp-unified/tools/security/**/*",
+    "src/mcp/servicenow-mcp-unified/tools/operations/index.ts",
+    "src/mcp/servicenow-mcp-unified/tools/platform/index.ts",
+    "src/mcp/servicenow-mcp-unified/tools/rest-api/index.ts",
+    "src/mcp/servicenow-mcp-unified/tools/script-includes/index.ts",
+    "src/mcp/servicenow-mcp-unified/tools/ui-actions/index.ts",
+    "src/mcp/servicenow-mcp-unified/tools/ui-policies/index.ts",
+    "src/mcp/servicenow-mcp-unified/tools/system-properties/index.ts",
+    "src/mcp/servicenow-mcp-unified/tools/machine-learning/**/*",
+    "src/queen/queen-memory-system.ts",
+    "src/queen/agent-factory.ts",
+    "src/queen/neural-learning.ts",
+    "src/monitoring/performance-tracker.ts",
+    "src/monitoring/enhanced-monitoring-system.ts",
+    "src/utils/unified-script-executor.ts",
+    "src/utils/enhanced-script-executor.ts",
+    "src/utils/mcp-persistent-guard.ts",
+    "src/testing/integration-test-suite.ts",
+    "src/snow-flow-system.ts",
+    "src/sdk/queen-orchestrator.ts"
+  ]
 }

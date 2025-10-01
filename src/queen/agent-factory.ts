@@ -6,7 +6,6 @@
 import { Agent, AgentType, ServiceNowTask, AgentMessage } from './types';
 import { QueenMemorySystem } from './queen-memory';
 import * as crypto from 'crypto';
-import { BaseAgent } from '../agents';
 
 interface AgentBlueprint {
   type: AgentType;
@@ -277,13 +276,17 @@ export class AgentFactory {
       application: complexity > 0.8
         ? ['researcher', 'app-architect', 'script-writer', 'widget-creator', 'tester']
         : ['app-architect', 'script-writer', 'tester'],
-      
+
       integration: ['researcher', 'integration-specialist', 'tester'],
-      
+
       portal_page: complexity > 0.7
         ? ['researcher', 'widget-creator', 'page-designer', 'tester']
         : ['widget-creator', 'page-designer', 'tester'],
-      
+
+      workspace: complexity > 0.7
+        ? ['researcher', 'workspace-specialist', 'ui-builder-expert', 'tester']
+        : ['workspace-specialist', 'ui-builder-expert'],
+
       unknown: ['researcher', 'widget-creator'] // Safe default
     };
 
@@ -479,6 +482,30 @@ export class AgentFactory {
         'NAVIGATION INTEGRATION: Ensure clear navigation paths and consistent user experience',
         'CROSS-BROWSER TESTING: Validate consistent experience across all browsers and device types',
         'USABILITY VALIDATION: Test with real users to ensure the page meets their needs effectively'
+      ],
+
+      'workspace-specialist': (instr) => [
+        'WORKSPACE REQUIREMENTS: Analyze workspace needs and user workflows',
+        'UX FRAMEWORK DESIGN: Plan Now Experience Framework architecture',
+        'COMPONENT DESIGN: Design workspace components and data integration',
+        'IMPLEMENTATION: Create workspace using appropriate MCP tools',
+        'VALIDATION: Test workspace functionality and user experience'
+      ],
+
+      'ui-builder-expert': (instr) => [
+        'UI BUILDER ANALYSIS: Determine required UI Builder components',
+        'PAGE DESIGN: Design page layout and component structure',
+        'DATA INTEGRATION: Configure data brokers and connections',
+        'IMPLEMENTATION: Create UI Builder pages with proper configuration',
+        'TESTING: Validate functionality and user experience'
+      ],
+
+      'deployment-specialist': (instr) => [
+        'DEPLOYMENT PLANNING: Analyze artifacts and plan deployment',
+        'DEPENDENCY CHECK: Verify all prerequisites and dependencies',
+        'DEPLOYMENT EXECUTION: Execute deployment using MCP tools',
+        'VALIDATION: Test deployed artifacts thoroughly',
+        'MONITORING: Ensure deployment success and establish monitoring'
       ]
     };
 

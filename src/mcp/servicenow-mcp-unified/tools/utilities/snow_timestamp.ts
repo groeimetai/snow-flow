@@ -1,0 +1,50 @@
+/**
+ * snow_timestamp
+ */
+
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
+import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+
+export const toolDefinition: MCPToolDefinition = {
+  name: 'snow_timestamp',
+  description: 'Get current timestamp in various formats',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      format: { type: 'string', enum: ['iso', 'unix', 'unix_ms', 'date', 'time'], default: 'iso' }
+    }
+  }
+};
+
+export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
+  const { format = 'iso' } = args;
+  try {
+    const now = new Date();
+    let timestamp: any;
+
+    switch (format) {
+      case 'iso':
+        timestamp = now.toISOString();
+        break;
+      case 'unix':
+        timestamp = Math.floor(now.getTime() / 1000);
+        break;
+      case 'unix_ms':
+        timestamp = now.getTime();
+        break;
+      case 'date':
+        timestamp = now.toISOString().split('T')[0];
+        break;
+      case 'time':
+        timestamp = now.toISOString().split('T')[1];
+        break;
+    }
+
+    return createSuccessResult({ timestamp, format });
+  } catch (error: any) {
+    return createErrorResult(error.message);
+  }
+}
+
+export const version = '1.0.0';
+export const author = 'Snow-Flow SDK Migration';

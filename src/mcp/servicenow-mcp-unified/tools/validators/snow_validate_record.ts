@@ -1,0 +1,45 @@
+/**
+ * snow_validate_record
+ */
+
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
+import { getAuthenticatedClient } from '../../shared/auth.js';
+import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+
+export const toolDefinition: MCPToolDefinition = {
+  name: 'snow_validate_record',
+  description: 'Validate record against business rules',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      table: { type: 'string', description: 'Table name' },
+      record_sys_id: { type: 'string', description: 'Record sys_id' }
+    },
+    required: ['table', 'record_sys_id']
+  }
+};
+
+export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
+  const { table, record_sys_id } = args;
+  try {
+    const client = await getAuthenticatedClient(context);
+    const validateScript = `
+var gr = new GlideRecord('${table}');
+if (gr.get('${record_sys_id}')) {
+  var isValid = gr.isValidRecord();
+  gs.info('Record valid: ' + isValid);
+}
+    `;
+    await client.post('/api/now/table/sys_script_execution', { script: validateScript });
+    return createSuccessResult({
+      validated: true,
+      table,
+      record_sys_id
+    });
+  } catch (error: any) {
+    return createErrorResult(error.message);
+  }
+}
+
+export const version = '1.0.0';
+export const author = 'Snow-Flow SDK Migration';

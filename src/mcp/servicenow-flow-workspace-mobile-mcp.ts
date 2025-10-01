@@ -3269,7 +3269,20 @@ ${configList}${layoutsText}${offlineText}
     try {
       this.logger.info(`🚀 Starting complete UX workspace creation: ${args.workspace_name}`);
       
-      const results = {
+      const results: {
+        workspace_name: string;
+        steps_completed: string[];
+        sys_ids: {
+          experience_sys_id?: string;
+          list_menu_config_sys_id?: string;
+          app_config_sys_id?: string;
+          page_properties?: any;
+          list_categories?: any;
+          lists?: any;
+          app_route_sys_id?: string;
+        };
+        workspace_type: string;
+      } = {
         workspace_name: args.workspace_name,
         steps_completed: [],
         sys_ids: {},
@@ -3702,7 +3715,15 @@ ${configList}${layoutsText}${offlineText}
         };
       }
       
-      const results = {
+      const results: {
+        workspace_name: string;
+        workspace_type: string;
+        steps_completed: string[];
+        sys_ids: {
+          app_route_sys_id?: string;
+          screen_types?: any;
+        };
+      } = {
         workspace_name: args.name,
         workspace_type: 'Configurable Agent Workspace',
         steps_completed: [],

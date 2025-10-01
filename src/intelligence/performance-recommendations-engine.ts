@@ -12,7 +12,7 @@
  */
 
 import { Logger } from '../utils/logger.js';
-import { MemorySystem } from '../memory/memory-system.js';
+import { MemorySystem, BasicMemorySystem } from '../memory/memory-system.js';
 
 export interface DatabaseIndexRecommendation {
   table: string;
@@ -319,10 +319,7 @@ export class PerformanceRecommendationsEngine {
 
   constructor(memory?: MemorySystem) {
     this.logger = new Logger('PerformanceRecommendationsEngine');
-    this.memory = memory || new MemorySystem({
-      dbPath: './.snow-flow/memory/performance_engine.db',
-      cache: { enabled: true, maxSize: 1000, ttl: 300000 }
-    });
+    this.memory = memory || new BasicMemorySystem();
     
     // Initialize AI-powered capabilities
     this.initializeAICapabilities();

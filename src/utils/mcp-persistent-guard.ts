@@ -19,17 +19,28 @@ export class MCPPersistentGuard {
         this.logger = new Logger('MCPPersistentGuard');
         this.originalProcessKill = process.kill;
         this.originalProcessExit = process.exit;
+
+        // Check if this is a read-only command
+        const args = process.argv.slice(2);
+        const isReadOnly = args.some(arg =>
+            ['--version', '-V', '--help', '-h', 'help', 'version'].includes(arg)
+        );
+
+        if (!isReadOnly) {
+            this.logger.info('🛡️ MCP Persistent Guard activated - servers protected from shutdown');
+        }
         
-        this.logger.info('🛡️ MCP Persistent Guard activated - servers protected from shutdown');
-        
-        // Override process.kill to protect MCP servers
-        this.installProcessProtection();
-        
-        // Override process.exit to warn about shutdowns
-        this.installExitProtection();
-        
-        // Monitor for shutdown attempts
-        this.startShutdownMonitoring();
+        // Only install protection for non-read-only commands
+        if (!isReadOnly) {
+            // Override process.kill to protect MCP servers
+            this.installProcessProtection();
+
+            // Override process.exit to warn about shutdowns
+            this.installExitProtection();
+
+            // Monitor for shutdown attempts
+            this.startShutdownMonitoring();
+        }
     }
     
     static getInstance(): MCPPersistentGuard {
@@ -43,14 +54,14 @@ export class MCPPersistentGuard {
      * Protect MCP processes from being killed
      */
     private installProcessProtection(): void {
-        process.kill = (pid: number, signal: string | number = 'SIGTERM') => {
+        process.kill = (pid: number, signal: string | number = 'SIGTERM'): true => {
             // Check if this is an MCP process
             const isMcpProcess = this.isMCPProcess(pid);
-            
+
             if (isMcpProcess && (signal === 'SIGTERM' || signal === 'SIGKILL')) {
                 this.logger.warn(`🛡️ BLOCKED: Attempted to kill MCP server process ${pid} with ${signal}`);
                 this.logger.info('🔄 MCP servers are configured for persistent operation');
-                return false;
+                return true;
             }
             
             // Allow non-MCP process kills

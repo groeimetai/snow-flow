@@ -5,9 +5,8 @@
 
 import { EventEmitter } from 'events';
 import { SnowFlowConfig, ISnowFlowConfig } from './config/snow-flow-config';
-import { ServiceNowQueen } from './queen/servicenow-queen';
-import { MemorySystem } from './memory/memory-system';
-import { MCPServerManager } from './utils/mcp-server-manager';
+import { QueenOrchestrator } from './sdk/queen-orchestrator.js';
+import { MemorySystem, BasicMemorySystem } from './memory/memory-system';
 import { PerformanceTracker } from './monitoring/performance-tracker';
 import { SystemHealth } from './health/system-health';
 import { ErrorRecovery } from './utils/error-recovery';
@@ -39,9 +38,8 @@ export interface AgentInfo {
 
 export class SnowFlowSystem extends EventEmitter {
   private config: SnowFlowConfig;
-  private queen?: ServiceNowQueen;
+  private queen?: QueenOrchestrator;
   private memory?: MemorySystem;
-  private mcpManager?: MCPServerManager;
   private performanceTracker?: PerformanceTracker;
   private systemHealth?: SystemHealth;
   private errorRecovery: ErrorRecovery;
@@ -70,17 +68,14 @@ export class SnowFlowSystem extends EventEmitter {
       
       // 1. Initialize Memory System
       await this.initializeMemory();
-      
-      // 2. Initialize MCP Servers
-      await this.initializeMCPServers();
-      
-      // 3. Initialize Queen Agent System
+
+      // 2. Initialize Queen Orchestrator (SDK-based)
       await this.initializeQueen();
-      
-      // 4. Initialize Performance Tracking
+
+      // 3. Initialize Performance Tracking
       await this.initializePerformanceTracking();
-      
-      // 5. Initialize System Health Monitoring
+
+      // 4. Initialize System Health Monitoring
       await this.initializeHealthMonitoring();
       
       this.initialized = true;
@@ -110,72 +105,40 @@ export class SnowFlowSystem extends EventEmitter {
       'snow-flow.db'
     );
     
-    this.memory = new MemorySystem({
-      dbPath,
-      schema: { version: '1.0.0', autoMigrate: true, ...(this.config.memory.schema || {}) },
-      ttl: { default: 86400000, session: 3600000, artifact: 86400000, metric: 3600000, ...(this.config.memory.ttl || {}) }
-    });
+    this.memory = new BasicMemorySystem();
     
     await this.memory.initialize();
     this.emit('memory:initialized');
   }
 
   /**
-   * Initialize MCP Server Manager
-   */
-  private async initializeMCPServers(): Promise<void> {
-    this.logger.info('Initializing MCP Servers...');
-    
-    this.mcpManager = new MCPServerManager(JSON.stringify(this.config.mcp));
-    
-    // Start all required MCP servers
-    const servers = [
-      'servicenow-deployment',
-      'servicenow-intelligent',
-      'servicenow-operations',
-      'servicenow-platform-development',
-      'servicenow-integration',
-      'servicenow-automation',
-      'servicenow-security-compliance',
-      'servicenow-reporting-analytics',
-      'servicenow-graph-memory',
-      'servicenow-update-set'
-    ];
-    
-    for (const server of servers) {
-      try {
-        await this.mcpManager.startServer(server);
-        this.logger.info(`Started MCP server: ${server}`);
-      } catch (error) {
-        this.logger.error(`Failed to start MCP server ${server}:`, error);
-        // Continue with other servers even if one fails
-      }
-    }
-    
-    this.emit('mcp:initialized');
-  }
-
-  /**
-   * Initialize Queen Agent System
+   * Initialize Queen Orchestrator (SDK-based)
+   * NOTE: MCP servers are now automatically managed by Claude Agent SDK
    */
   private async initializeQueen(): Promise<void> {
-    this.logger.info('Initializing Queen Agent System...');
-    
-    if (!this.memory || !this.mcpManager) {
-      throw new Error('Memory and MCP must be initialized before Queen');
+    this.logger.info('Initializing Queen Orchestrator (SDK-based)...');
+
+    if (!this.memory) {
+      throw new Error('Memory must be initialized before Queen Orchestrator');
     }
-    
-    this.queen = new ServiceNowQueen({
-      memoryPath: this.config.memory?.dbPath,
-      maxConcurrentAgents: (this.config.agents?.queen as any)?.maxConcurrentAgents || 5,
-      learningRate: (this.config.agents?.queen as any)?.learningRate || 0.1,
-      debugMode: (this.config as any).debugMode || false,
-      autoPermissions: (this.config.agents?.queen as any)?.autoPermissions || false
+
+    // Create new SDK-based Queen Orchestrator
+    this.queen = new QueenOrchestrator(this.memory);
+
+    // Setup event forwarding from Queen to System
+    this.queen.on('orchestration:started', (objective) => {
+      this.emit('queen:orchestration-started', objective);
     });
-    
-    // ServiceNowQueen is ready to use after construction
-    // No initialize method or event handlers available
-    
+
+    this.queen.on('orchestration:completed', (result) => {
+      this.emit('queen:orchestration-completed', result);
+    });
+
+    this.queen.on('orchestration:failed', ({ objective, error }) => {
+      this.emit('queen:orchestration-failed', { objective, error });
+    });
+
+    this.logger.info('✅ Queen Orchestrator initialized with Claude Agent SDK v0.1.1');
     this.emit('queen:initialized');
   }
 
@@ -209,30 +172,30 @@ export class SnowFlowSystem extends EventEmitter {
    */
   private async initializeHealthMonitoring(): Promise<void> {
     this.logger.info('Initializing System Health Monitoring...');
-    
-    if (!this.memory || !this.mcpManager) {
-      throw new Error('Memory and MCP must be initialized before Health Monitoring');
+
+    if (!this.memory) {
+      throw new Error('Memory must be initialized before Health Monitoring');
     }
-    
+
     this.systemHealth = new SystemHealth({
       memory: this.memory,
-      mcpManager: this.mcpManager,
+      mcpManager: undefined, // SDK manages MCP servers now
       config: {
-        checks: { memory: true, mcp: true, servicenow: true, queen: true },
+        checks: { memory: true, mcp: false, servicenow: true, queen: true }, // Disable MCP check
         thresholds: { memoryUsage: 85, responseTime: 5000, queueSize: 100, cpuUsage: 80, errorRate: 5 }
       }
     });
-    
+
     await this.systemHealth.initialize();
-    
+
     // Set up health monitoring
     this.systemHealth.on('health:check', (status) => {
       this.emit('health:status', status);
     });
-    
+
     // Start periodic health checks
     await this.systemHealth.startMonitoring();
-    
+
     this.emit('health:initialized');
   }
 
@@ -266,50 +229,41 @@ export class SnowFlowSystem extends EventEmitter {
         objective
       });
       
-      // Execute objective using Queen's main method
-      const queenResult = await this.queen!.executeObjective(objective);
-      const _analysis = { 
-        complexity: 0.5, 
-        type: 'unknown', 
-        estimatedDuration: 30000,
-        queenId: 'main-queen',
-        estimatedTasks: 1
-      };
-      
-      session.queenAgentId = _analysis.queenId;
-      session.totalTasks = _analysis.estimatedTasks;
-      session.status = 'active';
-      
-      // Execute swarm with Queen coordination (MCP-FIRST workflow)
-      console.log(`🚨 SWARM EXECUTING WITH MCP-FIRST WORKFLOW`);
-      console.log(`🎯 Objective: ${objective}`);
-      
-      const executionResult = await this.queen!.executeObjective(objective);
-      
-      // Update session with swarm-specific progress tracking
-      session.completedTasks = 1; // Queen completed the objective
-      session.status = 'completed' as any;
-      this.emit('swarm:progress', { 
-        sessionId, 
-        progress: { 
-          completed: 1, 
-          total: 1, 
-          status: 'completed',
-          mcpFirst: true,
-          realServiceNow: true
-        } 
+      // Execute objective using new Queen Orchestrator (SDK-based)
+      this.logger.info(`🎯 Starting SDK-based orchestration for: ${objective}`);
+
+      const queenResult = await this.queen!.orchestrate({
+        id: sessionId,
+        description: objective,
+        priority: 'high'
       });
-      
+
+      session.queenAgentId = sessionId;
+      session.totalTasks = queenResult.todos.length;
+      session.status = 'active';
+      session.completedTasks = queenResult.todos.filter(t => t.status === 'completed').length;
+
+      this.emit('swarm:progress', {
+        sessionId,
+        progress: {
+          completed: session.completedTasks,
+          total: session.totalTasks,
+          status: 'completed',
+          sdkBased: true,
+          agentsSpawned: queenResult.agentsSpawned
+        }
+      });
+
       session.status = 'completed';
       await this.performanceTracker?.endOperation('swarm_execution', {
-        success: true
+        success: queenResult.success
       });
-      
+
       return {
         sessionId,
-        success: true,
-        artifacts: queenResult.artifacts || [],
-        summary: queenResult.deploymentResult || queenResult,
+        success: queenResult.success,
+        artifacts: queenResult.artifactsCreated,
+        summary: `Orchestration completed: ${queenResult.agentsSpawned} agents spawned, ${queenResult.artifactsCreated.length} artifacts created`,
         metrics: await this.performanceTracker?.getSessionMetrics(sessionId) || {}
       };
       
@@ -384,13 +338,7 @@ export class SnowFlowSystem extends EventEmitter {
       // Shutdown components in reverse order
       await this.systemHealth?.stopMonitoring();
       await this.performanceTracker?.shutdown();
-      await this.queen?.shutdown();
-      // Use available shutdown method
-      if (this.mcpManager && typeof (this.mcpManager as any).shutdownAll === 'function') {
-        await (this.mcpManager as any).shutdownAll();
-      } else if (this.mcpManager && typeof (this.mcpManager as any).shutdown === 'function') {
-        await (this.mcpManager as any).shutdown();
-      }
+      await this.queen?.shutdown(); // SDK-based shutdown
       await this.memory?.close();
       
       this.initialized = false;
@@ -431,10 +379,10 @@ export class SnowFlowSystem extends EventEmitter {
   }
 
   /**
-   * Get MCP manager instance
+   * Get Queen Orchestrator instance
    */
-  getMCPManager(): MCPServerManager | undefined {
-    return this.mcpManager;
+  getQueenOrchestrator(): QueenOrchestrator | undefined {
+    return this.queen;
   }
 
   /**
