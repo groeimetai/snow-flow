@@ -956,12 +956,11 @@ export namespace Server {
         ),
         async (c) => {
           const query = c.req.valid("query").query
-          const result = await Ripgrep.files({
-            cwd: Instance.directory,
+          const results = await File.search({
             query,
             limit: 10,
           })
-          return c.json(result)
+          return c.json(results)
         },
       )
       .get(

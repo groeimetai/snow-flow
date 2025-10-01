@@ -7,6 +7,8 @@ import fs from "fs"
 import ignore from "ignore"
 import { Log } from "../util/log"
 import { Instance } from "../project/instance"
+import { Ripgrep } from "./ripgrep"
+import fuzzysort from "fuzzysort"
 
 export namespace File {
   const log = Log.create({ service: "file" })
@@ -73,6 +75,43 @@ export namespace File {
       }),
     ),
   }
+
+  const state = Instance.state(async () => {
+    type Entry = { files: string[]; dirs: string[] }
+    let cache: Entry = { files: [], dirs: [] }
+    let fetching = false
+    const fn = async (result: Entry) => {
+      fetching = true
+      const set = new Set<string>()
+      for await (const file of Ripgrep.files({ cwd: Instance.directory })) {
+        result.files.push(file)
+        let current = file
+        while (true) {
+          const dir = path.dirname(current)
+          if (dir === current) break
+          current = dir
+          if (set.has(dir)) continue
+          set.add(dir)
+          result.dirs.push(dir + "/")
+        }
+      }
+      cache = result
+      fetching = false
+    }
+    fn(cache)
+
+    return {
+      async files() {
+        if (!fetching) {
+          fn({
+            files: [],
+            dirs: [],
+          })
+        }
+        return cache
+      },
+    }
+  })
 
   export async function status() {
     const project = Instance.project
@@ -200,5 +239,13 @@ export namespace File {
       }
       return a.name.localeCompare(b.name)
     })
+  }
+
+  export async function search(input: { query: string; limit?: number }) {
+    const limit = input.limit ?? 100
+    const result = await state().then((x) => x.files())
+    const items = input.query ? [...result.files, ...result.dirs] : [...result.dirs]
+    const sorted = fuzzysort.go(input.query, items, { limit: limit }).map((r) => r.target)
+    return sorted
   }
 }

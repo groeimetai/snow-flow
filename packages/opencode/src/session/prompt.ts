@@ -581,9 +581,15 @@ export namespace SessionPrompt {
               }
               break
             case "file:":
+              log.info("file", { mime: part.mime })
               // have to normalize, symbol search returns absolute paths
               // Decode the pathname since URL constructor doesn't automatically decode it
-              const filePath = decodeURIComponent(url.pathname)
+              const filepath = decodeURIComponent(url.pathname)
+              const stat = await Bun.file(filepath).stat()
+
+              if (stat.isDirectory()) {
+                part.mime = "application/x-directory"
+              }
 
               if (part.mime === "text/plain") {
                 let offset: number | undefined = undefined
@@ -620,7 +626,7 @@ export namespace SessionPrompt {
                     limit = end - offset
                   }
                 }
-                const args = { filePath, offset, limit }
+                const args = { filePath: filepath, offset, limit }
                 const result = await ReadTool.init().then((t) =>
                   t.execute(args, {
                     sessionID: input.sessionID,
@@ -658,7 +664,7 @@ export namespace SessionPrompt {
               }
 
               if (part.mime === "application/x-directory") {
-                const args = { path: filePath }
+                const args = { path: filepath }
                 const result = await ListTool.init().then((t) =>
                   t.execute(args, {
                     sessionID: input.sessionID,
@@ -695,15 +701,15 @@ export namespace SessionPrompt {
                 ]
               }
 
-              const file = Bun.file(filePath)
-              FileTime.read(input.sessionID, filePath)
+              const file = Bun.file(filepath)
+              FileTime.read(input.sessionID, filepath)
               return [
                 {
                   id: Identifier.ascending("part"),
                   messageID: info.id,
                   sessionID: input.sessionID,
                   type: "text",
-                  text: `Called the Read tool with the following input: {\"filePath\":\"${filePath}\"}`,
+                  text: `Called the Read tool with the following input: {\"filePath\":\"${filepath}\"}`,
                   synthetic: true,
                 },
                 {
