@@ -116,7 +116,7 @@ export default function Home() {
                   </svg>
                 </div>
               </div>
-              <A href="/auth">
+              <a href="/auth">
                 <span>Get started with Zen </span>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -126,7 +126,7 @@ export default function Home() {
                     stroke-linecap="square"
                   />
                 </svg>
-              </A>
+              </a>
             </div>
             <div data-slot="pricing-copy">
               <p>
@@ -302,7 +302,7 @@ export default function Home() {
                 <Faq question="How much does Zen cost?">
                   Zen <a href="/docs/zen/#pricing">charges per request</a> with zero markups, so you pay exactly what
                   the model provider charges. Your total cost depends on usage, and you can set monthly spend limits in
-                  your <A href="/auth">account</A>. To cover costs, OpenCode adds only a small payment processing fee of
+                  your <a href="/auth">account</a>. To cover costs, OpenCode adds only a small payment processing fee of
                   $1.23 per $20 balance top-up.
                 </Faq>
               </li>
