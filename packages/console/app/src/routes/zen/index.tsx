@@ -6,10 +6,10 @@ import zenLogoDark from "../../asset/zen-ornate-dark.svg"
 import compareVideo from "../../asset/lander/opencode-comparison-min.mp4"
 import compareVideoPoster from "../../asset/lander/opencode-comparison-poster.png"
 import avatarDax from "../../asset/lander/avatar-dax.png"
-import avatarJay from "../../asset/lander/avatar-Jay.png"
-import avatarFrank from "../../asset/lander/avatar-Frank.png"
-import avatarAdam from "../../asset/lander/avatar-Adam.png"
-import avatarDavid from "../../asset/lander/avatar-David.png"
+import avatarJay from "../../asset/lander/avatar-jay.png"
+import avatarFrank from "../../asset/lander/avatar-frank.png"
+import avatarAdam from "../../asset/lander/avatar-adam.png"
+import avatarDavid from "../../asset/lander/avatar-david.png"
 import { A, createAsync, query } from "@solidjs/router"
 import { getActor } from "~/context/auth"
 import { withActor } from "~/context/auth.withActor"
@@ -183,7 +183,8 @@ export default function Home() {
               <li>
                 <span>[2]</span>
                 <div>
-                  <strong>Use Zen with transparent pricing</strong> - <a href="/docs/zen/#pricing">pay per request</a> with zero markups
+                  <strong>Use Zen with transparent pricing</strong> - <a href="/docs/zen/#pricing">pay per request</a>{" "}
+                  with zero markups
                 </div>
               </li>
               <li>
@@ -300,9 +301,10 @@ export default function Home() {
               </li>
               <li>
                 <Faq question="How much does Zen cost?">
-                  Zen <a href="/docs/zen/#pricing">charges per request</a> with zero markups, so you pay exactly what the model provider charges. Your
-                  total cost depends on usage, and you can set monthly spend limits in your <A href="/auth">account</A>.
-                  To cover costs, OpenCode adds only a small payment processing fee of $1.23 per $20 balance top-up.
+                  Zen <a href="/docs/zen/#pricing">charges per request</a> with zero markups, so you pay exactly what
+                  the model provider charges. Your total cost depends on usage, and you can set monthly spend limits in
+                  your <A href="/auth">account</A>. To cover costs, OpenCode adds only a small payment processing fee of
+                  $1.23 per $20 balance top-up.
                 </Faq>
               </li>
               <li>
