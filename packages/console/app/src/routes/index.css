@@ -29,6 +29,10 @@
   --color-icon: hsl(0, 1%, 55%);
 }
 
+body {
+  background: var(--color-background);
+}
+
 [data-page="opencode"] {
   @media (prefers-color-scheme: dark) {
     --color-background: hsl(0, 9%, 7%);
