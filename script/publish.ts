@@ -76,6 +76,10 @@ if (!snapshot) {
         id: session.data!.id,
       },
       body: {
+        model: {
+          providerID: "opencode",
+          modelID: "kimi-k2",
+        },
         parts: [
           {
             type: "text",
@@ -113,7 +117,6 @@ if (!snapshot) {
       notes.push(line)
     }
   }
-
   server.close()
   await $`gh release create v${version} --title "v${version}" --notes ${notes.join("\n") ?? "No notable changes"} ./packages/opencode/dist/*.zip`
 }
