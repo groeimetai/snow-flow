@@ -6,6 +6,8 @@ if (process.versions.bun !== "1.2.21") {
   throw new Error("This script requires bun@1.2.21")
 }
 
+let notes = []
+
 console.log("=== publishing ===\n")
 
 const snapshot = process.env["OPENCODE_SNAPSHOT"] === "true"
@@ -25,40 +27,7 @@ const version = await (async () => {
 process.env["OPENCODE_VERSION"] = version
 console.log("version:", version)
 
-const pkgjsons = await Array.fromAsync(
-  new Bun.Glob("**/package.json").scan({
-    absolute: true,
-  }),
-).then((arr) => arr.filter((x) => !x.includes("node_modules") && !x.includes("dist")))
-
-const tree = await $`git add . && git write-tree`.text().then((x) => x.trim())
-for (const file of pkgjsons) {
-  let pkg = await Bun.file(file).text()
-  pkg = pkg.replaceAll(/"version": "[^"]+"/g, `"version": "${version}"`)
-  console.log("updated:", file)
-  await Bun.file(file).write(pkg)
-}
-await $`bun install`
-
-console.log("\n=== opencode ===\n")
-await import(`../packages/opencode/script/publish.ts`)
-
-console.log("\n=== sdk ===\n")
-await import(`../packages/sdk/js/script/publish.ts`)
-
-console.log("\n=== plugin ===\n")
-await import(`../packages/plugin/script/publish.ts`)
-
-const dir = new URL("..", import.meta.url).pathname
-process.chdir(dir)
-
 if (!snapshot) {
-  await $`git commit -am "release: v${version}"`
-  await $`git tag v${version}`
-  await $`git fetch origin`
-  await $`git cherry-pick HEAD..origin/dev`.nothrow()
-  await $`git push origin HEAD --tags --no-verify --force`
-
   const previous = await fetch("https://api.github.com/repos/sst/opencode/releases/latest")
     .then((res) => {
       if (!res.ok) throw new Error(res.statusText)
@@ -110,14 +79,48 @@ if (!snapshot) {
       },
     })
     .then((x) => x.data?.parts?.find((y) => y.type === "text")?.text)
-
-  const notes = []
   for (const line of raw?.split("\n") ?? []) {
     if (line.startsWith("- ")) {
       notes.push(line)
     }
   }
   server.close()
+}
+
+const pkgjsons = await Array.fromAsync(
+  new Bun.Glob("**/package.json").scan({
+    absolute: true,
+  }),
+).then((arr) => arr.filter((x) => !x.includes("node_modules") && !x.includes("dist")))
+
+const tree = await $`git add . && git write-tree`.text().then((x) => x.trim())
+for (const file of pkgjsons) {
+  let pkg = await Bun.file(file).text()
+  pkg = pkg.replaceAll(/"version": "[^"]+"/g, `"version": "${version}"`)
+  console.log("updated:", file)
+  await Bun.file(file).write(pkg)
+}
+await $`bun install`
+
+console.log("\n=== opencode ===\n")
+await import(`../packages/opencode/script/publish.ts`)
+
+console.log("\n=== sdk ===\n")
+await import(`../packages/sdk/js/script/publish.ts`)
+
+console.log("\n=== plugin ===\n")
+await import(`../packages/plugin/script/publish.ts`)
+
+const dir = new URL("..", import.meta.url).pathname
+process.chdir(dir)
+
+if (!snapshot) {
+  await $`git commit -am "release: v${version}"`
+  await $`git tag v${version}`
+  await $`git fetch origin`
+  await $`git cherry-pick HEAD..origin/dev`.nothrow()
+  await $`git push origin HEAD --tags --no-verify --force`
+
   await $`gh release create v${version} --title "v${version}" --notes ${notes.join("\n") ?? "No notable changes"} ./packages/opencode/dist/*.zip`
 }
 if (snapshot) {
