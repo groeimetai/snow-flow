@@ -56,12 +56,18 @@ body {
   }
 }
 
+
+@supports (background: -webkit-named-image(i)) {
+  [data-page="opencode"] {
+    border-top: 1px solid var(--color-border-weak);
+  }
+}
+
 [data-page="opencode"] {
   background: var(--color-background);
   --padding: 5rem;
   --vertical-padding: 4rem;
   --heading-font-size: 1.375rem;
-  border-top: 1px solid var(--color-border-weak);
 
   @media (max-width: 60rem) {
     --padding: 1.5rem;
