@@ -63,9 +63,8 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      -name: Install OpenCode
-        run:
-          curl -fsSL https://opencode.ai/install | bash
+      - name: Install OpenCode
+        run: curl -fsSL https://opencode.ai/install | bash
 
       - name: Publish
         run: |
