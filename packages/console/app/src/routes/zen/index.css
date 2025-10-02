@@ -149,6 +149,14 @@
       }
     }
 
+    [data-component="nav-mobile"] {
+      button > svg {
+        color: var(--color-icon);
+      }
+    }
+
+
+
     [data-component="nav-mobile-toggle"] {
       border: none;
       background: none;
@@ -607,7 +615,7 @@
       flex-direction: column;
       gap: 12px;
 
-      @media (max-width: 60rem) {
+      @media (max-width: 30rem) {
         flex-direction: column-reverse;
         gap: 24px;
         padding: 24px 48px;
