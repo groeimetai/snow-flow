@@ -329,7 +329,6 @@ export default function Home() {
             </ul>
           </section>
 
-          <EmailSignup />
           <Footer />
         </div>
       </div>
