@@ -218,9 +218,7 @@ export default function Home() {
                   <strong>Dax Raad</strong>
                   <span>ex-CEO, Terminal Products</span>
                 </div>
-                <div data-slot="quote">
-                  OpenCode Zen has been life changing, it's truly a no-brainer
-                </div>
+                <div data-slot="quote">OpenCode Zen has been life changing, it's truly a no-brainer</div>
               </div>
             </a>
             {/*Jay*/}
@@ -237,7 +235,7 @@ export default function Home() {
               </div>
             </a>
             {/*Adam*/}
-            <a href="#">
+            <a href="https://x.com/adamdotdev/status/1973732040718860563">
               <div data-slot="testimonial">
                 <div data-slot="name">
                   <img src={avatarAdam} alt="" />
