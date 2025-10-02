@@ -50,6 +50,10 @@
   }
 }
 
+body {
+  background: var(--color-background);
+}
+
 [data-page="zen"] {
   background: var(--color-background);
   --padding: 5rem;
