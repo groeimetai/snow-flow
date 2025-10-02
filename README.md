@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/node/v/snow-flow.svg?style=for-the-badge&logo=node.js&color=339933)](https://nodejs.org)
 
-**Talk to your ServiceNow instance through Claude Code • 20+ MCP Servers • 240+ ServiceNow Tools • Complete UX Workspace Creation • Multi-Agent Orchestration**
+**Talk to your ServiceNow instance through Claude Code • 2 Unified MCP Servers • 411 ServiceNow Tools • Complete UX Workspace Creation • Claude Agent SDK Integration**
 
 ---
 
@@ -15,8 +15,8 @@ Snow-Flow is a conversational ServiceNow development platform that bridges Claud
 
 ### Core Architecture
 
-- **Multi-Agent Orchestration**: Specialized agents coordinate parallel ServiceNow operations
-- **MCP Server Integration**: 20+ servers provide direct ServiceNow API access through Claude Code
+- **Claude Agent SDK Integration**: Powered by @anthropic-ai/claude-agent-sdk for orchestration
+- **Unified MCP Servers**: 2 consolidated servers with 411 tools for complete ServiceNow access
 - **Local Development Bridge**: Edit ServiceNow artifacts locally with native development tools
 - **Machine Learning**: TensorFlow.js neural networks for ServiceNow data analysis
 - **Conversational Interface**: Develop ServiceNow solutions through natural language
@@ -25,9 +25,9 @@ Snow-Flow is a conversational ServiceNow development platform that bridges Claud
 
 - **Universal ServiceNow Operations**: Query any table, manage incidents, deploy widgets
 - **Local Artifact Editing**: Pull ServiceNow artifacts to local files, edit with native tools, push back
-- **Multi-Agent Coordination**: Complex tasks handled by coordinated specialist agents
+- **Claude Agent SDK Coordination**: Orchestration managed by official Anthropic SDK
 - **Real Machine Learning**: Neural networks for incident classification and anomaly detection
-- **Comprehensive API Coverage**: 200+ tools across all major ServiceNow modules
+- **Comprehensive API Coverage**: 411 tools across all major ServiceNow modules
 
 ## Quick Start
 
@@ -160,14 +160,9 @@ snow-flow ml detect-anomalies --monitor incidents
 
 ### MCP Server Architecture
 
-**20+ Specialized MCP Servers:**
-- **Operations**: Universal queries, incident management, CMDB search
-- **Local Development**: Pull/push ServiceNow artifacts for local editing
-- **Deployment**: Widget and artifact deployment with validation
-- **Machine Learning**: TensorFlow.js neural network training and inference
-- **Security & Compliance**: Automated security scanning and compliance checks
-- **Integration**: REST/SOAP endpoints, transform maps, import sets
-- **Advanced Features**: Process mining, batch operations, analytics
+**2 Unified MCP Servers (411 Tools):**
+- **ServiceNow Unified Server (235+ tools)**: Complete ServiceNow operations including deployment, automation, platform dev, integrations, properties, security, reporting, ML, knowledge, catalog, change management, virtual agent, flows, workspaces, mobile, UI Builder, CMDB, events, HR, CSM, DevOps, and local development
+- **Snow-Flow Orchestration Server (176+ tools)**: Swarm coordination, agent spawning, task orchestration, neural training (TensorFlow.js), memory management, and performance tracking
 
 **Essential Tools:**
 - `snow_query_table` - Query any ServiceNow table with flexible filtering
@@ -203,23 +198,21 @@ snow_push_artifact({ sys_id: 'widget_sys_id' })
 
 ## Architecture
 
-### Multi-Agent Coordination
+### Claude Agent SDK Orchestration
 
 ```
-Queen Agent (Coordinator)
-├── Widget Creator Agent
-├── Security Specialist Agent  
-├── ML Specialist Agent
-└── Performance Optimizer Agent
+Claude Agent SDK (@anthropic-ai/claude-agent-sdk@0.1.1)
+├── Manages MCP server lifecycle
+├── Handles agent coordination
+├── Provides intelligent task routing
+└── Ensures resource optimization
 ```
 
 ### MCP Server Integration
 
-Snow-Flow integrates 16 specialized MCP servers:
-- **Core**: Operations, deployment, automation
-- **Platform**: Development, integration, properties
-- **Intelligence**: Machine learning, analytics, security
-- **Enterprise**: Compliance, reporting, knowledge management
+Snow-Flow uses 2 unified MCP servers (411 tools total):
+- **ServiceNow Unified**: All ServiceNow operations, deployment, automation, development, integrations, and advanced features
+- **Snow-Flow Orchestration**: Swarm coordination, neural networks, memory management, and performance analytics
 
 ## Examples
 

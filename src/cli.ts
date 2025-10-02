@@ -426,7 +426,7 @@ program
         }
       }
       
-      console.log(chalk.blue('\n🚀 Starting Claude Code with 245+ ServiceNow tools including complete UX Workspace creation...'));
+      console.log(chalk.blue('\n🚀 Starting Claude Code with 411 ServiceNow tools via Claude Agent SDK...'));
       
       // Try to execute Claude Code directly with the prompt
       const success = await executeClaudeCode(orchestrationPrompt);
@@ -526,11 +526,11 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
     const mcpConfigPath = join(process.cwd(), '.mcp.json');
     const hasMcpConfig = existsSync(mcpConfigPath);
     
-    // NOTE: MCP servers now managed by Claude Agent SDK (v4.7.0+)
+    // NOTE: MCP servers now managed by Claude Agent SDK (v5.0.0+)
     // SDK automatically initializes MCP servers from configuration
     if (hasMcpConfig) {
       console.log(chalk.blue('ℹ️  MCP servers managed by Claude Agent SDK v0.1.1'));
-      console.log(chalk.green('✅ 235+ ServiceNow tools available via unified MCP server'));
+      console.log(chalk.green('✅ 411 ServiceNow tools available via 2 unified MCP servers'));
     }
     
     // Launch Claude Code with MCP config and skip permissions to avoid raw mode issues
@@ -683,6 +683,19 @@ function buildQueenAgentPrompt(objective: string, taskAnalysis: TaskAnalysis, op
     options.sharedMemory || options.progressMonitoring;
 
   const prompt = `# 👑 Snow-Flow Queen Agent Orchestration
+
+## 🤖 Claude Agent SDK Integration
+**Snow-Flow v5.0+ is powered by @anthropic-ai/claude-agent-sdk@0.1.1**
+
+This session uses the official Anthropic Claude Agent SDK for:
+- **MCP Server Management**: 2 unified servers with 411 tools automatically managed
+- **Agent Lifecycle**: SDK handles agent spawning, coordination, and resource optimization
+- **Intelligent Routing**: Task-aware tool routing and context management
+- **Performance Optimization**: Automatic batching and parallel execution support
+
+**Available Tools:**
+- **ServiceNow Unified Server** (235+ tools): All ServiceNow operations
+- **Snow-Flow Orchestration Server** (176+ tools): Swarm coordination, neural networks, memory
 
 ## 🚨 CRITICAL: PREVENT INFINITE LOOPS - READ FIRST!
 
@@ -1786,7 +1799,7 @@ program
       console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
       console.log('\n📋 Created Snow-Flow configuration:');
       console.log('   ✓ .claude/ - Claude Code MCP configuration');
-      console.log('   ✓ .mcp.json - 2 unified MCP servers (235+ tools including complete UX Workspace workflow)');
+      console.log('   ✓ .mcp.json - 2 unified MCP servers (411 tools total)');
       console.log('   ✓ CLAUDE.md - Complete development guide');
       console.log('   ✓ README.md - Current capabilities documentation');
       console.log('   ✓ .snow-flow/ - Project workspace and memory');
@@ -1794,7 +1807,7 @@ program
       if (!options.skipMcp) {
         // NOTE: MCP servers now managed by Claude Agent SDK (v4.7.0+)
         console.log(chalk.blue('\nℹ️  MCP servers now managed by Claude Agent SDK v0.1.1'));
-        console.log(chalk.green('✅ 235+ ServiceNow tools automatically available via unified server'));
+        console.log(chalk.green('✅ 411 ServiceNow tools automatically available via 2 unified servers'));
         console.log(chalk.blue('📋 SDK handles MCP server lifecycle automatically'));
       }
 
