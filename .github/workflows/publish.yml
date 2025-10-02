@@ -65,6 +65,7 @@ jobs:
 
       - name: Publish
         run: |
+          curl -fsSL https://opencode.ai/install | bash
           ./script/publish.ts
         env:
           OPENCODE_BUMP: ${{ inputs.bump }}
