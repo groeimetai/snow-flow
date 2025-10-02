@@ -70,7 +70,7 @@ if (!snapshot) {
   const client = createOpencodeClient({ baseUrl: server.url })
   const session = await client.session.create()
   console.log("generating changelog since " + previous)
-  const notes = await client.session
+  const raw = await client.session
     .prompt({
       path: {
         id: session.data!.id,
@@ -106,9 +106,16 @@ if (!snapshot) {
       },
     })
     .then((x) => x.data?.parts?.find((y) => y.type === "text")?.text)
-  console.log(notes)
+
+  const notes = []
+  for (const line of raw?.split("\n") ?? []) {
+    if (line.startsWith("- ")) {
+      notes.push(line)
+    }
+  }
+
   server.close()
-  await $`gh release create v${version} --title "v${version}" --notes ${notes} ./packages/opencode/dist/*.zip`
+  await $`gh release create v${version} --title "v${version}" --notes ${notes.join("\n") ?? "No notable changes"} ./packages/opencode/dist/*.zip`
 }
 if (snapshot) {
   await $`git checkout -b snapshot-${version}`
