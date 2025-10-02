@@ -23,7 +23,7 @@ export function Faq(props: ParentProps & { question: string }) {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path d="M5 11.5H19V12.5H5Z" fill="#6D717D" />
+          <path d="M5 11.5H19V12.5H5Z" fill="currentColor" />
         </svg>
         <div data-slot="faq-question-text">{props.question}</div>
       </Collapsible.Trigger>
