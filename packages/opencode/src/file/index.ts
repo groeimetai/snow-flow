@@ -250,7 +250,7 @@ export namespace File {
     log.info("search", { query: input.query })
     const limit = input.limit ?? 100
     const result = await state().then((x) => x.files())
-    if (!input.query) return result.dirs.toSorted()
+    if (!input.query) return result.dirs.toSorted().slice(0, limit)
     const items = [...result.files, ...result.dirs]
     const sorted = fuzzysort.go(input.query, items, { limit: limit }).map((r) => r.target)
     log.info("search", { query: input.query, results: sorted.length })
