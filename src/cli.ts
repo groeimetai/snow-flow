@@ -46,77 +46,6 @@ registerAuthCommands(program);
 // Register session inspection commands
 registerSessionCommands(program);
 
-// Claude Code version management - ensure 1.0.95 is installed
-async function ensureClaudeCodeVersion(): Promise<void> {
-  try {
-    cliLogger.info('🔧 Checking Claude Code version compatibility...');
-    
-    // Check if Claude Code is installed and get version
-    const { execSync } = await import('child_process');
-    const checkVersionResult = execSync('claude --version 2>/dev/null || echo "not_installed"', {
-      encoding: 'utf8',
-      timeout: 10000
-    }).trim();
-    
-    const currentVersion = checkVersionResult.includes('not_installed') ? null : 
-      checkVersionResult.match(/(\d+\.\d+\.\d+)/)?.[1];
-        
-    cliLogger.info(`🔍 Current Claude Code version: ${currentVersion || 'not installed'}`);
-    
-    // Target version that works correctly
-    const targetVersion = '1.0.95';
-    
-    if (currentVersion !== targetVersion) {
-      cliLogger.info(`⚠️  Version mismatch detected. Installing Claude Code ${targetVersion}...`);
-      cliLogger.info('📥 This prevents bugs in newer versions that cause hanging operations');
-      
-      try {
-        // Install the specific version
-        cliLogger.info('🔄 Running: npm install -g @anthropic-ai/claude-code@1.0.95');
-        execSync('npm install -g @anthropic-ai/claude-code@1.0.95', {
-          stdio: 'inherit',
-          timeout: 120000 // 2 minutes timeout
-        });
-        
-        // Verify installation
-        const verifyResult = execSync('claude --version', {
-          encoding: 'utf8',
-          timeout: 10000
-        }).trim();
-        
-        const installedVersion = verifyResult.match(/(\d+\.\d+\.\d+)/)?.[1];
-        
-        if (installedVersion === targetVersion) {
-          cliLogger.info(`✅ Claude Code ${targetVersion} installed successfully!`);
-        } else {
-          cliLogger.warn(`⚠️  Installation completed but version verification shows: ${installedVersion}`);
-        }
-      } catch (installError: any) {
-        cliLogger.error('❌ Failed to install Claude Code 1.0.95');
-        cliLogger.error('Please install manually: npm install -g @anthropic-ai/claude-code@1.0.95');
-        throw new Error(`Claude Code installation failed: ${installError.message}`);
-      }
-    } else {
-      cliLogger.info(`✅ Claude Code ${targetVersion} is already installed`);
-    }
-    
-    cliLogger.info('🚀 Claude Code version check completed successfully');
-    
-  } catch (error: any) {
-    cliLogger.error('❌ Claude Code version check failed:', error.message);
-    
-    // Provide fallback guidance
-    cliLogger.info('');
-    cliLogger.info('🔧 Manual installation instructions:');
-    cliLogger.info('   npm install -g @anthropic-ai/claude-code@1.0.95');
-    cliLogger.info('');
-    cliLogger.info('⚠️  Note: Version 1.0.95 is required to avoid hanging operations in swarm mode');
-    
-    // Don't fail completely, but warn user
-    cliLogger.warn('⚠️  Continuing with potentially incompatible Claude Code version');
-  }
-}
-
 // Flow deprecation handler - check for flow-related commands
 function checkFlowDeprecation(command: string, objective?: string) {
   const flowKeywords = ['flow', 'create-flow', 'xml-flow', 'flow-designer'];
@@ -203,10 +132,7 @@ program
   .action(async (objective: string, options) => {
     // Check for flow deprecation first
     checkFlowDeprecation('swarm', objective);
-    
-    // Ensure Claude Code version 1.0.95 is installed before proceeding
-    await ensureClaudeCodeVersion();
-    
+
     // Set debug levels based on options
     if (options.debugAll) {
       process.env.DEBUG = '*';
