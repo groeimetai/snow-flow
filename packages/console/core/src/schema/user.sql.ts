@@ -1,6 +1,7 @@
-import { mysqlTable, uniqueIndex, varchar, int, mysqlEnum } from "drizzle-orm/mysql-core"
+import { mysqlTable, uniqueIndex, varchar, int, mysqlEnum, foreignKey } from "drizzle-orm/mysql-core"
 import { timestamps, ulid, utc, workspaceColumns } from "../drizzle/types"
 import { workspaceIndexes } from "./workspace.sql"
+import { AccountTable } from "./account.sql"
 
 export const UserRole = ["admin", "member"] as const
 
@@ -22,5 +23,10 @@ export const UserTable = mysqlTable(
     ...workspaceIndexes(table),
     uniqueIndex("user_account_id").on(table.workspaceID, table.accountID),
     uniqueIndex("user_email").on(table.workspaceID, table.email),
+    foreignKey({
+      columns: [table.accountID],
+      foreignColumns: [AccountTable.id],
+      name: "global_account_id",
+    }),
   ],
 )

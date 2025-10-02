@@ -29,7 +29,7 @@ export const subjects = createSubjects({
 
 const MY_THEME: Theme = {
   ...THEME_OPENAUTH,
-  logo: "https://opencode.ai/favicon.svg",
+  logo: "https://opencode.ai/favicon-zen.svg",
 }
 
 export default {

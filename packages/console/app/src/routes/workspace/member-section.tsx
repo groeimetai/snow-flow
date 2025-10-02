@@ -169,7 +169,7 @@ function MemberRow(props: { member: any; workspaceID: string; currentUserID: str
       when={editing()}
       fallback={
         <tr>
-          <td data-slot="member-email">{props.member.email}</td>
+          <td data-slot="member-email">{props.member.accountEmail ?? props.member.email}</td>
           <td data-slot="member-role">{props.member.role}</td>
           <Show when={!props.member.timeSeen} fallback={<td data-slot="member-joined"></td>}>
             <td data-slot="member-joined">invited</td>
@@ -192,7 +192,7 @@ function MemberRow(props: { member: any; workspaceID: string; currentUserID: str
       <tr>
         <td colspan="4">
           <form action={updateMemberRole} method="post">
-            <div data-slot="edit-member-email">{props.member.email}</div>
+            <div data-slot="edit-member-email">{props.member.accountEmail ?? props.member.email}</div>
             <input type="hidden" name="id" value={props.member.id} />
             <input type="hidden" name="workspaceID" value={props.workspaceID} />
             <Show when={!isCurrentUser()} fallback={<div data-slot="current-user-role">Role: {props.member.role}</div>}>

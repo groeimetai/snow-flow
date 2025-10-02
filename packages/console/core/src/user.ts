@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { and, eq, isNull, sql } from "drizzle-orm"
+import { and, eq, getTableColumns, isNull, sql } from "drizzle-orm"
 import { fn } from "./util/fn"
 import { Database } from "./drizzle"
 import { UserRole, UserTable } from "./schema/user.sql"
@@ -9,6 +9,7 @@ import { render } from "@jsx-email/render"
 import { InviteEmail } from "@opencode/console-mail/InviteEmail.jsx"
 import { AWS } from "./aws"
 import { Account } from "./account"
+import { AccountTable } from "./schema/account.sql"
 
 export namespace User {
   const assertAdmin = async () => {
@@ -29,8 +30,12 @@ export namespace User {
   export const list = fn(z.void(), () =>
     Database.use((tx) =>
       tx
-        .select()
+        .select({
+          ...getTableColumns(UserTable),
+          accountEmail: AccountTable.email,
+        })
         .from(UserTable)
+        .leftJoin(AccountTable, eq(UserTable.accountID, AccountTable.id))
         .where(and(eq(UserTable.workspaceID, Actor.workspace()), isNull(UserTable.timeDeleted))),
     ),
   )
@@ -159,19 +164,22 @@ export namespace User {
     await assertAdmin()
     assertNotSelf(id)
 
-    return await Database.use(async (tx) => {
-      const email = await tx
-        .select({ email: UserTable.email })
-        .from(UserTable)
-        .where(and(eq(UserTable.id, id), eq(UserTable.workspaceID, Actor.workspace())))
-        .then((rows) => rows[0]?.email)
-      if (!email) throw new Error("User not found")
+    return await Database.transaction(async (tx) => {
+      const user = await fromID(id)
+      if (!user) throw new Error("User not found")
 
       await tx
         .update(UserTable)
         .set({
-          oldEmail: email,
-          email: null,
+          ...(user.email
+            ? {
+                oldEmail: user.email,
+                email: null,
+              }
+            : {
+                oldAccountID: user.accountID,
+                accountID: null,
+              }),
           timeDeleted: sql`now()`,
         })
         .where(and(eq(UserTable.id, id), eq(UserTable.workspaceID, Actor.workspace())))
