@@ -84,6 +84,10 @@ body {
 
   p {
     line-height: 200%;
+
+    @media (max-width: 60rem) {
+      line-height: 180%;
+    }
   }
 
   @media (max-width: 60rem) {
@@ -246,6 +250,7 @@ body {
       height: 40px;
       width: 40px;
       cursor: pointer;
+      margin-right: -8px;
     }
 
     [data-component="nav-mobile-toggle"]:hover {
@@ -568,9 +573,6 @@ body {
     margin-bottom: 24px;
     max-width: 100%;
 
-    @media (max-width: 30Rem) {
-      margin-bottom: 0;
-    }
 
     div {
       display: flex;
@@ -580,6 +582,10 @@ body {
     span {
       color: var(--color-icon);
       line-height: 200%;
+
+      @media (max-width: 60rem) {
+        line-height: 180%;
+      }
     }
 
     h3 {
@@ -613,6 +619,10 @@ body {
         display: flex;
         gap: 12px;
         line-height: 200%;
+
+        @media (max-width: 60rem) {
+          line-height: 180%;
+        }
 
         span {
           color: var(--color-icon);
@@ -1060,6 +1070,10 @@ body {
 
     [data-slot="cell"] + [data-slot="cell"] {
       border-left: 1px solid var(--color-border-weak);
+
+      @media (max-width: 40rem) {
+        border-left: none;
+      }
     }
 
     /* Mobile: third column on its own row */

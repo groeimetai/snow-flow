@@ -81,6 +81,10 @@ body {
 
   p {
     line-height: 200%;
+
+    @media (max-width: 60rem) {
+      line-height: 180%;
+    }
   }
 
   @media (max-width: 60rem) {
@@ -454,6 +458,10 @@ body {
       span {
         color: var(--color-icon);
         line-height: 200%;
+
+        @media (max-width: 60rem) {
+          line-height: 180%;
+        }
       }
 
       div {
@@ -559,6 +567,10 @@ body {
         list-style: none;
         margin-bottom: 24px;
         line-height: 200%;
+
+        @media (max-width: 60rem) {
+          line-height: 180%;
+        }
       }
     }
 
@@ -773,6 +785,10 @@ body {
 
     [data-slot="cell"] + [data-slot="cell"] {
       border-left: 1px solid var(--color-border-weak);
+
+      @media (max-width: 40rem) {
+        border-left: none;
+      }
     }
 
     /* Mobile: third column on its own row */
