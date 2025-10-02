@@ -48,11 +48,9 @@
       "name": "@opencode/console-app",
       "dependencies": {
         "@ibm/plex": "6.4.1",
-        "@jsx-email/render": "1.1.1",
         "@kobalte/core": "catalog:",
         "@openauthjs/openauth": "0.0.0-20250322224806",
         "@opencode/console-core": "workspace:*",
-        "@opencode/console-mail": "workspace:*",
         "@solidjs/meta": "^0.29.4",
         "@solidjs/router": "^0.15.0",
         "@solidjs/start": "^1.1.0",
@@ -66,6 +64,8 @@
       "version": "0.14.0",
       "dependencies": {
         "@aws-sdk/client-sts": "3.782.0",
+        "@jsx-email/render": "1.1.1",
+        "@opencode/console-mail": "workspace:*",
         "@opencode/console-resource": "workspace:*",
         "@planetscale/database": "1.19.0",
         "aws4fetch": "1.0.20",

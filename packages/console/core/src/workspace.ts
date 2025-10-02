@@ -19,6 +19,7 @@ export namespace Workspace {
       await tx.insert(UserTable).values({
         workspaceID,
         id: Identifier.create("user"),
+        accountID: account.properties.accountID,
         email: account.properties.email,
         name: "",
         role: "admin",
