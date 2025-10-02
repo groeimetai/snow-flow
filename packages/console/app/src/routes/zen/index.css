@@ -567,6 +567,9 @@ body {
 
       [data-slot="faq-icon-plus"] {
         flex-shrink: 0;
+        color: var(--color-text-weak);
+        margin-top: 2px;
+
         [data-closed] & {
           display: block;
         }
@@ -576,6 +579,9 @@ body {
       }
       [data-slot="faq-icon-minus"] {
         flex-shrink: 0;
+        color: var(--color-text-weak);
+        margin-top: 2px;
+
         [data-closed] & {
           display: none;
         }
@@ -602,14 +608,10 @@ body {
     flex-direction: column;
     gap: 20px;
 
-    @media (max-width: 60rem) {
-      --padding: 1rem;
-      --vertical-padding: 1rem;
-    }
-
     a {
       text-decoration: none;
     }
+
     [data-slot="testimonial"] {
       background: var(--color-background-weak);
       border-radius: 6px;
@@ -622,7 +624,6 @@ body {
       @media (max-width: 30rem) {
         flex-direction: column-reverse;
         gap: 24px;
-        padding: 24px 48px;
       }
 
       [data-slot="name"] {
@@ -631,13 +632,14 @@ body {
 
         strong {
           font-weight: 500;
+          flex: 0 0 auto;
         }
 
         span {
           color: var(--color-text);
         }
 
-        @media (max-width: 60rem) {
+        @media (max-width: 30rem) {
           flex-direction: column;
           gap: 8px;
         }
@@ -656,7 +658,7 @@ body {
       [data-slot="quote"] {
         margin-left: 40px;
 
-        @media (max-width: 60rem) {
+        @media (max-width: 30rem) {
           margin-left: 0;
         }
         span {

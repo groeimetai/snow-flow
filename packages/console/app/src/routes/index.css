@@ -860,6 +860,9 @@ body {
 
       [data-slot="faq-icon-plus"] {
         flex-shrink: 0;
+        color: var(--color-text-weak);
+        margin-top: 2px;
+
         [data-closed] & {
           display: block;
         }
@@ -869,6 +872,9 @@ body {
       }
       [data-slot="faq-icon-minus"] {
         flex-shrink: 0;
+        color: var(--color-text-weak);
+        margin-top: 2px;
+
         [data-closed] & {
           display: none;
         }
