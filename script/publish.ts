@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { $ } from "bun"
-
+import { createOpencodeClient, createOpencodeServer } from "@opencode-ai/sdk"
 if (process.versions.bun !== "1.2.21") {
   throw new Error("This script requires bun@1.2.21")
 }
@@ -66,30 +66,48 @@ if (!snapshot) {
     })
     .then((data) => data.tag_name)
 
-  console.log("finding commits between", previous, "and", "HEAD")
-  const commits = await fetch(`https://api.github.com/repos/sst/opencode/compare/${previous}...HEAD`)
-    .then((res) => res.json())
-    .then((data) => data.commits || [])
+  const server = await createOpencodeServer()
+  const client = createOpencodeClient({ baseUrl: server.url })
+  const session = await client.session.create()
+  console.log("generating changelog since " + previous)
+  const notes = await client.session
+    .prompt({
+      path: {
+        id: session.data!.id,
+      },
+      body: {
+        parts: [
+          {
+            type: "text",
+            text: `
+          Analyze the commits between ${previous} and HEAD.
 
-  const raw = commits.map((commit: any) => `- ${commit.commit.message.split("\n").join(" ")}`)
-  console.log(raw)
+          We care about changes to
+          - packages/opencode
+          - packages/sdk
+          - packages/plugin
 
-  const notes =
-    raw
-      .filter((x: string) => {
-        const lower = x.toLowerCase()
-        return (
-          !lower.includes("release:") &&
-          !lower.includes("ignore:") &&
-          !lower.includes("chore:") &&
-          !lower.includes("ci:") &&
-          !lower.includes("wip:") &&
-          !lower.includes("docs:") &&
-          !lower.includes("doc:")
-        )
-      })
-      .join("\n") || "No notable changes"
+          We do not care about anything else
 
+          Return a changelog of all notable user facing changes.
+
+          - Do NOT make general statements about "improvements", be very specific about what was changed.
+          - Do NOT include any information about code changes if they do not affect the user facing changes.
+          
+          IMPORTANT: ONLY return a bulleted list of changes, do not include any other information. Do not include a preamble like "Based on my analysis..."
+
+          <example>
+          - Added ability to @ mention agents
+          - Fixed a bug where the TUI would render improperly on some terminals
+          </example>
+          `,
+          },
+        ],
+      },
+    })
+    .then((x) => x.data?.parts?.find((y) => y.type === "text")?.text)
+  console.log(notes)
+  server.close()
   await $`gh release create v${version} --title "v${version}" --notes ${notes} ./packages/opencode/dist/*.zip`
 }
 if (snapshot) {
