@@ -509,8 +509,17 @@ program
 // Helper function to execute Claude Code directly
 async function executeClaudeCode(prompt: string): Promise<boolean> {
   cliLogger.info('🤖 Preparing Claude Code agent orchestration...');
-  
+
   try {
+    // Check if stdin is a TTY (required for Claude Code interactive mode)
+    const hasTTY = process.stdin.isTTY;
+
+    if (!hasTTY) {
+      cliLogger.warn('⚠️  No TTY detected (Codespaces/SSH/piped environment)');
+      cliLogger.info('📋 Automatic Claude Code launch not available - manual prompt copy required');
+      return false;
+    }
+
     // Check if Claude CLI is available
     const { execSync } = require('child_process');
     try {
@@ -520,24 +529,24 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
       cliLogger.info('📋 Please install Claude Desktop or copy the prompt manually');
       return false;
     }
-    
-    
+
+
     // Check for MCP config
     const mcpConfigPath = join(process.cwd(), '.mcp.json');
     const hasMcpConfig = existsSync(mcpConfigPath);
-    
+
     // NOTE: MCP servers now managed by Claude Agent SDK (v5.0.0+)
     // SDK automatically initializes MCP servers from configuration
     if (hasMcpConfig) {
       console.log(chalk.blue('ℹ️  MCP servers managed by Claude Agent SDK v0.1.1'));
       console.log(chalk.green('✅ 411 ServiceNow tools available via 2 unified MCP servers'));
     }
-    
+
     // Launch Claude Code with MCP config and skip permissions to avoid raw mode issues
-    const claudeArgs = hasMcpConfig 
+    const claudeArgs = hasMcpConfig
       ? ['--mcp-config', '.mcp.json', '--dangerously-skip-permissions']
       : ['--dangerously-skip-permissions'];
-    
+
     // Add debug args if debug is enabled
     if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.LOG_LEVEL === 'debug' || process.env.LOG_LEVEL === 'trace') {
       claudeArgs.push('--verbose');
@@ -545,7 +554,7 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
         claudeArgs.push('--trace');
       }
     }
-    
+
     cliLogger.info('🚀 Launching Claude Code automatically...');
     if (hasMcpConfig) {
       cliLogger.info('🔧 Starting Claude Code with ServiceNow MCP servers...');
@@ -553,7 +562,7 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
         cliLogger.info('🔍 MCP Debug Mode Active - Expect detailed connection logs');
       }
     }
-    
+
     // Debug output if enabled
     if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.VERBOSE === 'true') {
       cliLogger.info(`🔍 Claude Command: claude ${claudeArgs.join(' ')}`);
