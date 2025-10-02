@@ -560,26 +560,35 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
       cliLogger.info(`🔍 Working Directory: ${process.cwd()}`);
       cliLogger.info(`🔍 MCP Config: ${mcpConfigPath}`);
     }
-    
-    // Start Claude Code process in interactive mode with stdin piping
-    const claudeProcess = spawn('claude', claudeArgs, {
-      stdio: ['pipe', 'inherit', 'inherit'], // pipe stdin, inherit stdout/stderr
+
+    // Write prompt to temp file to avoid raw mode issues with newer Claude Code versions
+    const { tmpdir } = await import('os');
+    const { writeFileSync, unlinkSync } = await import('fs');
+    const tmpFile = join(tmpdir(), `snow-flow-prompt-${Date.now()}.txt`);
+    writeFileSync(tmpFile, prompt, 'utf8');
+
+    cliLogger.info('📝 Sending orchestration prompt to Claude Code...');
+    cliLogger.info('🚀 Claude Code interface opening...\n');
+
+    // Start Claude Code via shell with file input redirection to avoid raw mode issues
+    // This allows stdin to be a proper TTY instead of a pipe
+    const claudeCommand = `claude ${claudeArgs.join(' ')} < "${tmpFile}"`;
+    const claudeProcess = spawn('sh', ['-c', claudeCommand], {
+      stdio: 'inherit', // All stdio inherited - Claude Code can use TTY
       cwd: process.cwd(),
       env: { ...process.env }
     });
     
-    // Send the prompt via stdin
-    cliLogger.info('📝 Sending orchestration prompt to Claude Code...');
-    cliLogger.info('🚀 Claude Code interface opening...\n');
-    
-    // Write prompt to stdin
-    claudeProcess.stdin.write(prompt);
-    claudeProcess.stdin.end();
-    
     // Set up process monitoring
     return new Promise((resolve) => {
       claudeProcess.on('close', async (code) => {
-        
+        // Clean up temp file
+        try {
+          unlinkSync(tmpFile);
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+
         if (code === 0) {
           cliLogger.info('\n✅ Claude Code session completed successfully!');
           resolve(true);
@@ -588,18 +597,33 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
           resolve(false);
         }
       });
-      
+
       claudeProcess.on('error', (error) => {
+        // Clean up temp file
+        try {
+          unlinkSync(tmpFile);
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+
         cliLogger.error(`❌ Failed to start Claude Code: ${error.message}`);
         resolve(false);
       });
-      
+
       // Set timeout (configurable via environment variable)
       const timeoutMinutes = parseInt(process.env.SNOW_FLOW_TIMEOUT_MINUTES || '0');
       if (timeoutMinutes > 0) {
         setTimeout(() => {
           cliLogger.warn(`⏱️  Claude Code session timeout (${timeoutMinutes} minutes), terminating...`);
           claudeProcess.kill('SIGTERM');
+
+          // Clean up temp file
+          try {
+            unlinkSync(tmpFile);
+          } catch (e) {
+            // Ignore cleanup errors
+          }
+
           resolve(false);
         }, timeoutMinutes * 60 * 1000);
       }
