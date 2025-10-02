@@ -218,7 +218,9 @@ export default function Home() {
                   <strong>Dax Raad</strong>
                   <span>ex-CEO, Terminal Products</span>
                 </div>
-                <div data-slot="quote">OpenCode Zen has been life changing, it's truly a no-brainer</div>
+                <div data-slot="quote"><span>@OpenCode</span> Zen has been life
+                  changing, it's truly a no-brainer.
+                </div>
               </div>
             </a>
             {/*Jay*/}
