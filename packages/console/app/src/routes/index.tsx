@@ -647,7 +647,7 @@ export default function Home() {
 
                 <p>
                   OpenCode does not store any of your code or context data, so that it can operate in privacy sensitive
-                  environments. Learn more about <a href="/docs/enterprise/ ">privacy and enterprise</a>.
+                  environments. Learn more about <a href="/docs/enterprise/ ">privacy</a>.
                 </p>
               </div>
             </div>

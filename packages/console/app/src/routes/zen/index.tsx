@@ -146,9 +146,7 @@ export default function Home() {
             <div data-slot="section-title">
               <h3>What problem is Zen solving?</h3>
               <p>
-                There are so many models available, but only a few work well with coding agents.
-                <br />
-                Most providers configure them differently with varying results.
+                There are so many models available, but only a few work well with coding agents.  Most providers configure them differently with varying results.
               </p>
             </div>
             <p>We're fixing this for everyone, not just OpenCode users.</p>
