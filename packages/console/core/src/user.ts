@@ -10,6 +10,7 @@ import { AWS } from "./aws"
 import { Account } from "./account"
 import { AccountTable } from "./schema/account.sql"
 import { Key } from "./key"
+import { KeyTable } from "./schema/key.sql"
 
 export namespace User {
   const assertAdmin = async () => {
@@ -70,66 +71,41 @@ export namespace User {
     }),
     async ({ email, role }) => {
       await assertAdmin()
-
       const workspaceID = Actor.workspace()
-      await Database.transaction(async (tx) => {
-        const account = await Account.fromEmail(email)
-        const existing = await tx
-          .select()
-          .from(UserTable)
-          .where(
-            and(
-              eq(UserTable.workspaceID, Actor.workspace()),
-              account ? eq(UserTable.oldAccountID, account.id) : eq(UserTable.oldEmail, email),
-            ),
-          )
-          .then((rows) => rows[0])
 
-        // case: previously invited and removed
-        if (existing) {
-          await tx
-            .update(UserTable)
-            .set({
+      // create user
+      const account = await Account.fromEmail(email)
+      await Database.use((tx) =>
+        tx
+          .insert(UserTable)
+          .values({
+            id: Identifier.create("user"),
+            name: "",
+            ...(account
+              ? {
+                  accountID: account.id,
+                }
+              : {
+                  email,
+                }),
+            workspaceID,
+            role,
+          })
+          .onDuplicateKeyUpdate({
+            set: {
               role,
               timeDeleted: null,
-              ...(account
-                ? {
-                    oldAccountID: null,
-                    accountID: account.id,
-                  }
-                : {
-                    oldEmail: null,
-                    email,
-                  }),
-            })
-            .where(and(eq(UserTable.workspaceID, existing.workspaceID), eq(UserTable.id, existing.id)))
-        }
-        // case: account previously not invited
-        else {
-          await tx
-            .insert(UserTable)
-            .values({
-              id: Identifier.create("user"),
-              name: "",
-              ...(account
-                ? {
-                    accountID: account.id,
-                  }
-                : {
-                    email,
-                  }),
-              workspaceID,
-              role,
-            })
-            .catch((e: any) => {
-              if (e.message.match(/Duplicate entry '.*' for key 'user.user_account_id'/))
-                throw new Error("A user with this email has already been invited.")
-              if (e.message.match(/Duplicate entry '.*' for key 'user.user_email'/))
-                throw new Error("A user with this email has already been invited.")
-              throw e
-            })
-        }
-      })
+            },
+          }),
+      )
+
+      // create api key
+      //if (account) {
+      //  const existing = await Database.use(tx => {
+      //    const key = tx.select().from(KeyTable).where(and(eq(KeyTable.workspaceID, workspaceID), eq(KeyTable, account.id))).then((rows) => rows[0])
+      //    return key
+      //  })
+      //}
 
       // send email, ignore errors
       try {
@@ -208,25 +184,13 @@ export namespace User {
     await assertAdmin()
     assertNotSelf(id)
 
-    return await Database.transaction(async (tx) => {
-      const user = await fromID(id)
-      if (!user) throw new Error("User not found")
-
-      await tx
+    return await Database.use((tx) =>
+      tx
         .update(UserTable)
         .set({
-          ...(user.email
-            ? {
-                oldEmail: user.email,
-                email: null,
-              }
-            : {
-                oldAccountID: user.accountID,
-                accountID: null,
-              }),
           timeDeleted: sql`now()`,
         })
-        .where(and(eq(UserTable.id, id), eq(UserTable.workspaceID, Actor.workspace())))
-    })
+        .where(and(eq(UserTable.id, id), eq(UserTable.workspaceID, Actor.workspace()))),
+    )
   })
 }
