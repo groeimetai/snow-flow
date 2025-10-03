@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
-  "version": "5.0.9",
-  "description": "CLAUDE AGENT SDK INTEGRATION - v5.0.9 with @anthropic-ai/claude-agent-sdk@0.1.1 - Fixed TTY detection for Codespaces environments. Automatic Claude Code launch now detects TTY availability and falls back to manual prompt for non-TTY environments (Codespaces, SSH, piped input).",
+  "version": "5.0.10",
+  "description": "CLAUDE AGENT SDK INTEGRATION - v5.0.10 with @anthropic-ai/claude-agent-sdk@0.1.1 - Reverted incorrect TTY check that broke Codespaces. Shell redirect with temp file works correctly in all environments including Codespaces.",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
