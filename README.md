@@ -61,11 +61,8 @@ snow-flow init
 # Authenticate with ServiceNow
 snow-flow auth login
 
-# Create a ServiceNow widget with AI agents
-snow-flow swarm "create incident dashboard widget with real-time charts" --max-agents 3
-
-# Deploy and test
-snow-flow deploy
+# Create anything in ServiceNow through conversation
+snow-flow swarm "create incident dashboard widget with real-time charts"
 ```
 
 ### Authentication
@@ -139,20 +136,16 @@ Snow-Flow's Queen Agent makes strategic decisions about task execution:
 
 ### Machine Learning Integration
 
-Snow-Flow includes TensorFlow.js neural networks for ServiceNow data analysis:
+Snow-Flow includes TensorFlow.js neural networks for ServiceNow data analysis through the swarm command:
 
 ```bash
-# Train incident classifier using ServiceNow data
-snow-flow ml train-classifier --table incident --features "short_description,category"
-
-# Predict change risks based on historical data
-snow-flow ml predict-risk --change-id CHG0000123
-
-# Detect anomalies in ServiceNow data patterns
-snow-flow ml detect-anomalies --monitor incidents
+# Train ML models and analyze ServiceNow data conversationally
+snow-flow swarm "train incident classifier on last 6 months of data"
+snow-flow swarm "predict change risk for upcoming release"
+snow-flow swarm "detect anomalies in incident patterns"
 ```
 
-**ML Capabilities:**
+**ML Capabilities (via swarm command):**
 - **Incident Classification**: LSTM networks for categorizing incidents
 - **Change Risk Assessment**: Neural networks for change management
 - **Anomaly Detection**: Autoencoder models for identifying unusual patterns
@@ -220,49 +213,26 @@ Snow-Flow uses 2 unified MCP servers (411 tools total):
 
 ```bash
 # Create a complete incident dashboard
-snow-flow swarm "create incident dashboard with:
-- Real-time incident counts by priority
-- ML-powered trend analysis  
-- Interactive charts and filtering
-- Mobile-responsive design" --max-agents 4
+snow-flow swarm "create incident dashboard with real-time incident counts by priority, ML-powered trend analysis, interactive charts and filtering, and mobile-responsive design"
 ```
 
 ### Process Mining
 
 ```bash
 # Discover and optimize incident management process
-snow-flow analyze process incident_management --optimize --ml-insights
+snow-flow swarm "analyze incident management process and provide optimization recommendations"
 ```
 
 ### Security Automation
 
 ```bash
 # Automated compliance audit
-snow-flow audit compliance --framework SOX --auto-remediation
+snow-flow swarm "perform SOX compliance audit and generate remediation plan"
 ```
 
 ## Configuration
 
-### Basic Configuration
-
-Snow-Flow configuration is stored in `snow-flow.config.json`:
-
-```json
-{
-  "servicenow": {
-    "instance": "your-instance.service-now.com",
-    "authentication": "oauth"
-  },
-  "agents": {
-    "maxConcurrent": 5,
-    "defaultStrategy": "parallel"
-  },
-  "ml": {
-    "enableTraining": true,
-    "modelStorage": "local"
-  }
-}
-```
+Snow-Flow configuration is automatically created by `snow-flow init` and stored in `.mcp.json`. All settings are managed through the init command - no manual configuration needed.
 
 ### Environment Variables
 
@@ -273,9 +243,6 @@ SNOW_INSTANCE=your-instance.service-now.com
 # OAuth credentials
 SNOW_CLIENT_ID=your-client-id
 SNOW_CLIENT_SECRET=your-client-secret
-
-# Optional: AI provider settings
-AI_PROVIDER=claude  # or openai, gemini
 ```
 
 ## Use Cases
