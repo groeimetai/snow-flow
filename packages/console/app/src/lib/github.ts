@@ -4,8 +4,18 @@ export const github = query(async () => {
   "use server"
   try {
     const [meta, releases, contributors] = await Promise.all([
-      fetch("https://api.github.com/repos/sst/opencode").then((res) => res.json()),
-      fetch("https://api.github.com/repos/sst/opencode/releases").then((res) => res.json()),
+      fetch("https://api.github.com/repos/sst/opencode").then(async (res) => {
+        const text = await res.text()
+        console.log(text)
+        const json = JSON.parse(text)
+        return json
+      }),
+      fetch("https://api.github.com/repos/sst/opencode/releases").then(async (res) => {
+        const text = await res.text()
+        console.log(text)
+        const json = JSON.parse(text)
+        return json
+      }),
       fetch("https://api.github.com/repos/sst/opencode/contributors?per_page=1"),
     ])
     const [release] = releases
