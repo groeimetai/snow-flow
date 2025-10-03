@@ -511,15 +511,6 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
   cliLogger.info('🤖 Preparing Claude Code agent orchestration...');
 
   try {
-    // Check if stdin is a TTY (required for Claude Code interactive mode)
-    const hasTTY = process.stdin.isTTY;
-
-    if (!hasTTY) {
-      cliLogger.warn('⚠️  No TTY detected (Codespaces/SSH/piped environment)');
-      cliLogger.info('📋 Automatic Claude Code launch not available - manual prompt copy required');
-      return false;
-    }
-
     // Check if Claude CLI is available
     const { execSync } = require('child_process');
     try {
