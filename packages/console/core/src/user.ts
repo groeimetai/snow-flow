@@ -1,15 +1,15 @@
 import { z } from "zod"
-import { and, eq, getTableColumns, isNull, sql } from "drizzle-orm"
+import { and, eq, getTableColumns, inArray, isNull, or, sql } from "drizzle-orm"
 import { fn } from "./util/fn"
 import { Database } from "./drizzle"
 import { UserRole, UserTable } from "./schema/user.sql"
 import { Actor } from "./actor"
 import { Identifier } from "./identifier"
 import { render } from "@jsx-email/render"
-import { InviteEmail } from "@opencode/console-mail/InviteEmail.jsx"
 import { AWS } from "./aws"
 import { Account } from "./account"
 import { AccountTable } from "./schema/account.sql"
+import { Key } from "./key"
 
 export namespace User {
   const assertAdmin = async () => {
@@ -74,71 +74,66 @@ export namespace User {
       const workspaceID = Actor.workspace()
       await Database.transaction(async (tx) => {
         const account = await Account.fromEmail(email)
-        const members = await tx.select().from(UserTable).where(eq(UserTable.workspaceID, Actor.workspace()))
+        const existing = await tx
+          .select()
+          .from(UserTable)
+          .where(
+            and(
+              eq(UserTable.workspaceID, Actor.workspace()),
+              account ? eq(UserTable.oldAccountID, account.id) : eq(UserTable.oldEmail, email),
+            ),
+          )
+          .then((rows) => rows[0])
 
-        await (async () => {
-          if (account) {
-            // case: account previously invited and removed
-            if (members.some((m) => m.oldAccountID === account.id)) {
-              await tx
-                .update(UserTable)
-                .set({
-                  timeDeleted: null,
-                  oldAccountID: null,
-                  accountID: account.id,
-                })
-                .where(and(eq(UserTable.workspaceID, Actor.workspace()), eq(UserTable.accountID, account.id)))
-              return
-            }
-            // case: account previously not invited
-            await tx
-              .insert(UserTable)
-              .values({
-                id: Identifier.create("user"),
-                name: "",
-                accountID: account.id,
-                workspaceID,
-                role,
-              })
-              .catch((e: any) => {
-                if (e.message.match(/Duplicate entry '.*' for key 'user.user_account_id'/))
-                  throw new Error("A user with this email has already been invited.")
-                throw e
-              })
-            return
-          }
-          // case: email previously invited and removed
-          if (members.some((m) => m.oldEmail === email)) {
-            await tx
-              .update(UserTable)
-              .set({
-                timeDeleted: null,
-                oldEmail: null,
-                email,
-              })
-              .where(and(eq(UserTable.workspaceID, Actor.workspace()), eq(UserTable.email, email)))
-            return
-          }
-          // case: email previously not invited
+        // case: previously invited and removed
+        if (existing) {
+          await tx
+            .update(UserTable)
+            .set({
+              role,
+              timeDeleted: null,
+              ...(account
+                ? {
+                    oldAccountID: null,
+                    accountID: account.id,
+                  }
+                : {
+                    oldEmail: null,
+                    email,
+                  }),
+            })
+            .where(and(eq(UserTable.workspaceID, existing.workspaceID), eq(UserTable.id, existing.id)))
+        }
+        // case: account previously not invited
+        else {
           await tx
             .insert(UserTable)
             .values({
               id: Identifier.create("user"),
               name: "",
-              email,
+              ...(account
+                ? {
+                    accountID: account.id,
+                  }
+                : {
+                    email,
+                  }),
               workspaceID,
               role,
             })
             .catch((e: any) => {
+              if (e.message.match(/Duplicate entry '.*' for key 'user.user_account_id'/))
+                throw new Error("A user with this email has already been invited.")
               if (e.message.match(/Duplicate entry '.*' for key 'user.user_email'/))
                 throw new Error("A user with this email has already been invited.")
               throw e
             })
-        })()
+        }
       })
 
       // send email, ignore errors
       try {
+        const { InviteEmail } = await import("@opencode/console-mail/InviteEmail.jsx")
         await AWS.sendEmail({
           to: email,
           subject: `You've been invited to join the ${workspaceID} workspace on OpenCode Zen`,
@@ -155,6 +150,42 @@ export namespace User {
       }
     },
   )
+
+  export const joinInvitedWorkspaces = fn(z.void(), async () => {
+    const account = Actor.assert("account")
+    const invitations = await Database.use(async (tx) => {
+      const invitations = await tx
+        .select({
+          id: UserTable.id,
+          workspaceID: UserTable.workspaceID,
+        })
+        .from(UserTable)
+        .where(eq(UserTable.email, account.properties.email))
+
+      await tx
+        .update(UserTable)
+        .set({
+          accountID: account.properties.accountID,
+          email: null,
+        })
+        .where(eq(UserTable.email, account.properties.email))
+      return invitations
+    })
+
+    await Promise.all(
+      invitations.map((invite) =>
+        Actor.provide(
+          "system",
+          {
+            workspaceID: invite.workspaceID,
+          },
+          () => Key.create({ name: "Default API Key" }),
+        ),
+      ),
+    )
+
+    return invitations.length
+  })
 
   export const updateRole = fn(
     z.object({
