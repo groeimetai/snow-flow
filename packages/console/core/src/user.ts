@@ -50,6 +50,19 @@ export namespace User {
     ),
   )
 
+  export const getAccountEmail = fn(z.string(), (id) =>
+    Database.use((tx) =>
+      tx
+        .select({
+          email: AccountTable.email,
+        })
+        .from(UserTable)
+        .leftJoin(AccountTable, eq(UserTable.accountID, AccountTable.id))
+        .where(and(eq(UserTable.workspaceID, Actor.workspace()), eq(UserTable.id, id)))
+        .then((rows) => rows[0]?.email),
+    ),
+  )
+
   export const invite = fn(
     z.object({
       email: z.string(),

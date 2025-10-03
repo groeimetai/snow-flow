@@ -7,8 +7,7 @@ import { z } from "zod"
 import { Resource } from "@opencode/console-resource"
 import { Identifier } from "./identifier"
 import { centsToMicroCents } from "./util/price"
-import { UserTable } from "./schema/user.sql"
-import { AccountTable } from "./schema/account.sql"
+import { User } from "./user"
 
 export namespace Billing {
   export const CHARGE_NAME = "opencode credits"
@@ -172,16 +171,7 @@ export namespace Billing {
       const user = Actor.assert("user")
       const { successUrl, cancelUrl } = input
 
-      const email = await Database.use((tx) =>
-        tx
-          .select({
-            email: AccountTable.email,
-          })
-          .from(UserTable)
-          .innerJoin(AccountTable, eq(UserTable.accountID, AccountTable.id))
-          .where(and(eq(UserTable.id, user.properties.userID), eq(UserTable.workspaceID, Actor.workspace())))
-          .then((rows) => rows[0]?.email),
-      )
+      const email = await User.getAccountEmail(user.properties.userID)
       const customer = await Billing.get()
       const session = await Billing.stripe().checkout.sessions.create({
         mode: "payment",
@@ -216,7 +206,7 @@ export namespace Billing {
               },
             }
           : {
-              customer_email: email,
+              customer_email: email!,
               customer_creation: "always",
             }),
         currency: "usd",
