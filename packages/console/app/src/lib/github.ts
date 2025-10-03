@@ -23,6 +23,8 @@ export const github = query(async () => {
       },
       contributors: contributorCount,
     }
-  } catch {}
+  } catch (e) {
+    console.error(e)
+  }
   return undefined
 }, "github")
