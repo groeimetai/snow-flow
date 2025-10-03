@@ -1,13 +1,14 @@
 import { Stripe } from "stripe"
-import { Database, eq, sql } from "./drizzle"
+import { and, Database, eq, sql } from "./drizzle"
 import { BillingTable, PaymentTable, UsageTable } from "./schema/billing.sql"
 import { Actor } from "./actor"
 import { fn } from "./util/fn"
 import { z } from "zod"
-import { User } from "./user"
 import { Resource } from "@opencode/console-resource"
 import { Identifier } from "./identifier"
 import { centsToMicroCents } from "./util/price"
+import { UserTable } from "./schema/user.sql"
+import { AccountTable } from "./schema/account.sql"
 
 export namespace Billing {
   export const CHARGE_NAME = "opencode credits"
@@ -168,10 +169,19 @@ export namespace Billing {
       cancelUrl: z.string(),
     }),
     async (input) => {
-      const account = Actor.assert("user")
+      const user = Actor.assert("user")
       const { successUrl, cancelUrl } = input
 
-      const user = await User.fromID(account.properties.userID)
+      const email = await Database.use((tx) =>
+        tx
+          .select({
+            email: AccountTable.email,
+          })
+          .from(UserTable)
+          .innerJoin(AccountTable, eq(UserTable.accountID, AccountTable.id))
+          .where(and(eq(UserTable.id, user.properties.userID), eq(UserTable.workspaceID, Actor.workspace())))
+          .then((rows) => rows[0]?.email),
+      )
       const customer = await Billing.get()
       const session = await Billing.stripe().checkout.sessions.create({
         mode: "payment",
@@ -206,7 +216,7 @@ export namespace Billing {
               },
             }
           : {
-              customer_email: user.email!,
+              customer_email: email,
               customer_creation: "always",
             }),
         currency: "usd",
