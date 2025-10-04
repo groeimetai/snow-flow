@@ -6,6 +6,7 @@ import { withActor } from "~/context/auth.withActor"
 import { createStore } from "solid-js/store"
 import { formatDateUTC, formatDateForTable } from "./common"
 import styles from "./key-section.module.css"
+import { Actor } from "@opencode/console-core/actor.js"
 
 const removeKey = action(async (form: FormData) => {
   "use server"
@@ -25,7 +26,10 @@ const createKey = action(async (form: FormData) => {
   return json(
     await withActor(
       () =>
-        Key.create({ name })
+        Key.create({
+          userID: Actor.assert("user").properties.userID,
+          name,
+        })
           .then((data) => ({ error: undefined, data }))
           .catch((e) => ({ error: e.message as string })),
       workspaceID,

@@ -31,12 +31,11 @@ export namespace Workspace {
       })
     })
     await Actor.provide(
-      "user",
+      "system",
       {
         workspaceID,
-        userID,
       },
-      () => Key.create({ name: "Default API Key" }),
+      () => Key.create({ userID, name: "Default API Key" }),
     )
     return workspaceID
   })

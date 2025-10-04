@@ -190,6 +190,13 @@
       "when": 1759546980316,
       "tag": "0026_numerous_prodigy",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1759553466608,
+      "tag": "0027_hot_wong",
+      "breakpoints": true
     }
   ]
 }

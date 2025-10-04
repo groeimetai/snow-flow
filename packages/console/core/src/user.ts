@@ -100,12 +100,25 @@ export namespace User {
       )
 
       // create api key
-      //if (account) {
-      //  const existing = await Database.use(tx => {
-      //    const key = tx.select().from(KeyTable).where(and(eq(KeyTable.workspaceID, workspaceID), eq(KeyTable, account.id))).then((rows) => rows[0])
-      //    return key
-      //  })
-      //}
+      if (account) {
+        await Database.use(async (tx) => {
+          const user = await tx
+            .select()
+            .from(UserTable)
+            .where(and(eq(UserTable.workspaceID, workspaceID), eq(UserTable.accountID, account.id)))
+            .then((rows) => rows[0])
+
+          const key = await tx
+            .select()
+            .from(KeyTable)
+            .where(and(eq(KeyTable.workspaceID, workspaceID), eq(KeyTable.userID, user.id)))
+            .then((rows) => rows[0])
+
+          if (key) return
+
+          await Key.create({ userID: user.id, name: "Default API Key" })
+        })
+      }
 
       // send email, ignore errors
       try {
@@ -151,12 +164,11 @@ export namespace User {
     await Promise.all(
       invitations.map((invite) =>
         Actor.provide(
-          "user",
+          "system",
           {
             workspaceID: invite.workspaceID,
-            userID: invite.id,
           },
-          () => Key.create({ name: "Default API Key" }),
+          () => Key.create({ userID: invite.id, name: "Default API Key" }),
         ),
       ),
     )
