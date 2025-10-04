@@ -19,7 +19,6 @@ export namespace Key {
   }
 
   export const create = fn(z.object({ name: z.string().min(1).max(255) }), async (input) => {
-    const workspaceID = Actor.workspace()
     const { name } = input
 
     // Generate secret key: sk- + 64 random characters (upper, lower, numbers)
@@ -31,45 +30,32 @@ export namespace Key {
       secretKey += chars[array[i] % chars.length]
     }
     const keyID = Identifier.create("key")
+    const user = Actor.assert("user")
 
     await Database.use((tx) =>
       tx.insert(KeyTable).values({
         id: keyID,
-        workspaceID,
-        actor: Actor.use(),
+        workspaceID: Actor.workspace(),
+        actor: user,
+        userID: user.properties.userID,
         name,
         key: secretKey,
         timeUsed: null,
       }),
-    ).catch((e: any) => {
-      if (e.message.match(/Duplicate entry '.*' for key 'key.name'/))
-        throw new Error("A key with this name already exists. Please choose a different name.")
-      throw e
-    })
+    )
 
     return keyID
   })
 
   export const remove = fn(z.object({ id: z.string() }), async (input) => {
     const workspace = Actor.workspace()
-    await Database.transaction(async (tx) => {
-      const row = await tx
-        .select({
-          name: KeyTable.name,
-        })
-        .from(KeyTable)
-        .where(and(eq(KeyTable.id, input.id), eq(KeyTable.workspaceID, workspace)))
-        .then((rows) => rows[0])
-      if (!row) return
-
-      await tx
+    await Database.transaction((tx) =>
+      tx
         .update(KeyTable)
         .set({
           timeDeleted: sql`now()`,
-          oldName: row.name,
-          name: input.id, // Use the key ID as the name
         })
-        .where(and(eq(KeyTable.id, input.id), eq(KeyTable.workspaceID, workspace)))
-    })
+        .where(and(eq(KeyTable.id, input.id), eq(KeyTable.workspaceID, workspace))),
+    )
   })
 }

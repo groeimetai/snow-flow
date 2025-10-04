@@ -176,6 +176,20 @@
       "when": 1759522925614,
       "tag": "0024_early_black_crow",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1759525451885,
+      "tag": "0025_legal_joseph",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1759546980316,
+      "tag": "0026_numerous_prodigy",
+      "breakpoints": true
     }
   ]
 }

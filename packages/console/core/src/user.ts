@@ -151,9 +151,10 @@ export namespace User {
     await Promise.all(
       invitations.map((invite) =>
         Actor.provide(
-          "system",
+          "user",
           {
             workspaceID: invite.workspaceID,
+            userID: invite.id,
           },
           () => Key.create({ name: "Default API Key" }),
         ),

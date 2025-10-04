@@ -1,5 +1,5 @@
 import { mysqlTable, varchar, uniqueIndex, json } from "drizzle-orm/mysql-core"
-import { timestamps, utc, workspaceColumns } from "../drizzle/types"
+import { timestamps, ulid, utc, workspaceColumns } from "../drizzle/types"
 import { workspaceIndexes } from "./workspace.sql"
 import { Actor } from "../actor"
 
@@ -12,11 +12,8 @@ export const KeyTable = mysqlTable(
     name: varchar("name", { length: 255 }).notNull(),
     oldName: varchar("old_name", { length: 255 }),
     key: varchar("key", { length: 255 }).notNull(),
+    userID: ulid("user_id"),
     timeUsed: utc("time_used"),
   },
-  (table) => [
-    ...workspaceIndexes(table),
-    uniqueIndex("global_key").on(table.key),
-    uniqueIndex("name").on(table.workspaceID, table.name),
-  ],
+  (table) => [...workspaceIndexes(table), uniqueIndex("global_key").on(table.key)],
 )
