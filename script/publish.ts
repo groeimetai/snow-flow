@@ -14,11 +14,13 @@ const snapshot = process.env["OPENCODE_SNAPSHOT"] === "true"
 const version = await (async () => {
   if (snapshot) return `0.0.0-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}`
   if (process.env["OPENCODE_VERSION"]) return process.env["OPENCODE_VERSION"]
-  const [major, minor, patch] = (await $`gh release list --limit 1 --json tagName --jq '.[0].tagName'`.text())
-    .trim()
-    .replace(/^v/, "")
-    .split(".")
-    .map((x) => Number(x) || 0)
+  const npmVersion = await fetch("https://registry.npmjs.org/opencode-ai/latest")
+    .then((res) => {
+      if (!res.ok) throw new Error(res.statusText)
+      return res.json()
+    })
+    .then((data: any) => data.version)
+  const [major, minor, patch] = npmVersion.split(".").map((x: string) => Number(x) || 0)
   const t = process.env["OPENCODE_BUMP"]?.toLowerCase()
   if (t === "major") return `${major + 1}.0.0`
   if (t === "minor") return `${major}.${minor + 1}.0`
@@ -28,12 +30,12 @@ process.env["OPENCODE_VERSION"] = version
 console.log("version:", version)
 
 if (!snapshot) {
-  const previous = await fetch("https://api.github.com/repos/sst/opencode/releases/latest")
+  const previous = await fetch("https://registry.npmjs.org/opencode-ai/latest")
     .then((res) => {
       if (!res.ok) throw new Error(res.statusText)
       return res.json()
     })
-    .then((data) => data.tag_name)
+    .then((data: any) => data.version)
 
   const opencode = await createOpencode()
   const session = await opencode.client.session.create()
