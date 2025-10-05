@@ -1,5 +1,5 @@
 {
-  "name": "@opencode/function",
+  "name": "@opencode-ai/function",
   "version": "0.14.1",
   "$schema": "https://json.schemastore.org/package.json",
   "private": true,

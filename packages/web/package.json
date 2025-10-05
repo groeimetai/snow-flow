@@ -1,5 +1,5 @@
 {
-  "name": "@opencode/web",
+  "name": "@opencode-ai/web",
   "type": "module",
   "version": "0.14.1",
   "scripts": {

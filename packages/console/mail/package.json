@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@opencode/console-mail",
+  "name": "@opencode-ai/console-mail",
   "version": "0.14.1",
   "private": true,
   "type": "module",
