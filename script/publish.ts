@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
 
 import { $ } from "bun"
-import { createOpencodeClient, createOpencodeServer } from "@opencode-ai/sdk"
+import { createOpencode } from "@opencode-ai/sdk"
 if (process.versions.bun !== "1.2.21") {
   throw new Error("This script requires bun@1.2.21")
 }
 
-let notes = []
+const notes = [] as string[]
 
 console.log("=== publishing ===\n")
 
@@ -35,11 +35,10 @@ if (!snapshot) {
     })
     .then((data) => data.tag_name)
 
-  const server = await createOpencodeServer()
-  const client = createOpencodeClient({ baseUrl: server.url })
-  const session = await client.session.create()
+  const opencode = await createOpencode()
+  const session = await opencode.client.session.create()
   console.log("generating changelog since " + previous)
-  const raw = await client.session
+  const raw = await opencode.client.session
     .prompt({
       path: {
         id: session.data!.id,
@@ -85,7 +84,7 @@ if (!snapshot) {
     }
   }
   console.log(notes)
-  server.close()
+  opencode.server.close()
 }
 
 const pkgjsons = await Array.fromAsync(
