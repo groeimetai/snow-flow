@@ -172,8 +172,6 @@ export namespace User {
         ),
       ),
     )
-
-    return invitations.length
   })
 
   export const updateRole = fn(

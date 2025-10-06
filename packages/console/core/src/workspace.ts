@@ -9,34 +9,40 @@ import { WorkspaceTable } from "./schema/workspace.sql"
 import { Key } from "./key"
 
 export namespace Workspace {
-  export const create = fn(z.void(), async () => {
-    const account = Actor.assert("account")
-    const workspaceID = Identifier.create("workspace")
-    const userID = Identifier.create("user")
-    await Database.transaction(async (tx) => {
-      await tx.insert(WorkspaceTable).values({
-        id: workspaceID,
+  export const create = fn(
+    z.object({
+      name: z.string(),
+    }),
+    async ({ name }) => {
+      const account = Actor.assert("account")
+      const workspaceID = Identifier.create("workspace")
+      const userID = Identifier.create("user")
+      await Database.transaction(async (tx) => {
+        await tx.insert(WorkspaceTable).values({
+          id: workspaceID,
+          name,
+        })
+        await tx.insert(UserTable).values({
+          workspaceID,
+          id: userID,
+          accountID: account.properties.accountID,
+          name: "",
+          role: "admin",
+        })
+        await tx.insert(BillingTable).values({
+          workspaceID,
+          id: Identifier.create("billing"),
+          balance: 0,
+        })
       })
-      await tx.insert(UserTable).values({
-        workspaceID,
-        id: userID,
-        accountID: account.properties.accountID,
-        name: "",
-        role: "admin",
-      })
-      await tx.insert(BillingTable).values({
-        workspaceID,
-        id: Identifier.create("billing"),
-        balance: 0,
-      })
-    })
-    await Actor.provide(
-      "system",
-      {
-        workspaceID,
-      },
-      () => Key.create({ userID, name: "Default API Key" }),
-    )
-    return workspaceID
-  })
+      await Actor.provide(
+        "system",
+        {
+          workspaceID,
+        },
+        () => Key.create({ userID, name: "Default API Key" }),
+      )
+      return workspaceID
+    },
+  )
 }
