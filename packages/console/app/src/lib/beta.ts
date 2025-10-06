@@ -1,5 +1,5 @@
 import { query } from "@solidjs/router"
-import { Resource } from "@opencode/console-resource"
+import { Resource } from "@opencode-ai/console-resource"
 
 export const beta = query(async (workspaceID?: string) => {
   "use server"
