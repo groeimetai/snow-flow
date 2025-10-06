@@ -17,6 +17,7 @@ import { MessageV2 } from "./message-v2"
 import { Project } from "../project/project"
 import { Instance } from "../project/instance"
 import { SessionPrompt } from "./prompt"
+import { fn } from "@/util/fn"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -99,6 +100,37 @@ export namespace Session {
       title,
     })
   }
+
+  export const fork = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      messageID: Identifier.schema("message").optional(),
+    }),
+    async (input) => {
+      const session = await createNext({
+        directory: Instance.directory,
+      })
+      const msgs = await messages(input.sessionID)
+      for (const msg of msgs) {
+        if (input.messageID && msg.info.id >= input.messageID) break
+        const cloned = await updateMessage({
+          ...msg.info,
+          sessionID: session.id,
+          id: Identifier.ascending("message"),
+        })
+
+        for (const part of msg.parts) {
+          await updatePart({
+            ...part,
+            id: Identifier.ascending("part"),
+            messageID: cloned.id,
+            sessionID: session.id,
+          })
+        }
+      }
+      return session
+    },
+  )
 
   export async function touch(sessionID: string) {
     await update(sessionID, (draft) => {
@@ -242,12 +274,12 @@ export namespace Session {
     return result
   }
 
-  export async function remove(sessionID: string, emitEvent = true) {
+  export async function remove(sessionID: string) {
     const project = Instance.project
     try {
       const session = await get(sessionID)
       for (const child of await children(sessionID)) {
-        await remove(child.id, false)
+        await remove(child.id)
       }
       await unshare(sessionID).catch(() => {})
       for (const msg of await Storage.list(["message", sessionID])) {
@@ -257,11 +289,9 @@ export namespace Session {
         await Storage.remove(msg)
       }
       await Storage.remove(["session", project.id, sessionID])
-      if (emitEvent) {
-        Bus.publish(Event.Deleted, {
-          info: session,
-        })
-      }
+      Bus.publish(Event.Deleted, {
+        info: session,
+      })
     } catch (e) {
       log.error(e)
     }
