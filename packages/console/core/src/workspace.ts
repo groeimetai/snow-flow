@@ -12,7 +12,7 @@ import { eq } from "drizzle-orm"
 export namespace Workspace {
   export const create = fn(
     z.object({
-      name: z.string(),
+      name: z.string().min(1),
     }),
     async ({ name }) => {
       const account = Actor.assert("account")
