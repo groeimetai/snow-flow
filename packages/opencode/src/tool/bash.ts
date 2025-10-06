@@ -3,22 +3,17 @@ import { exec } from "child_process"
 
 import { Tool } from "./tool"
 import DESCRIPTION from "./bash.txt"
-import { Permission } from "../permission"
-import { Filesystem } from "../util/filesystem"
 import { lazy } from "../util/lazy"
 import { Log } from "../util/log"
-import { Wildcard } from "../util/wildcard"
-import { $ } from "bun"
 import { Instance } from "../project/instance"
-import { Agent } from "../agent/agent"
 
 const MAX_OUTPUT_LENGTH = 30_000
 const DEFAULT_TIMEOUT = 1 * 60 * 1000
 const MAX_TIMEOUT = 10 * 60 * 1000
 
-const log = Log.create({ service: "bash-tool" })
+export const log = Log.create({ service: "bash-tool" })
 
-const parser = lazy(async () => {
+export const parser = lazy(async () => {
   try {
     const { default: Parser } = await import("tree-sitter")
     const Bash = await import("tree-sitter-bash")
@@ -26,8 +21,10 @@ const parser = lazy(async () => {
     p.setLanguage(Bash.language as any)
     return p
   } catch (e) {
-    const { default: Parser } = await import("web-tree-sitter")
-    const { default: treeWasm } = await import("web-tree-sitter/tree-sitter.wasm" as string, { with: { type: "wasm" } })
+    const { Parser, Language } = await import("web-tree-sitter")
+    const { default: treeWasm } = await import("web-tree-sitter/web-tree-sitter.wasm" as string, {
+      with: { type: "wasm" },
+    })
     await Parser.init({
       locateFile() {
         return treeWasm
@@ -36,7 +33,7 @@ const parser = lazy(async () => {
     const { default: bashWasm } = await import("tree-sitter-bash/tree-sitter-bash.wasm" as string, {
       with: { type: "wasm" },
     })
-    const bashLanguage = await Parser.Language.load(bashWasm)
+    const bashLanguage = await Language.load(bashWasm)
     const p = new Parser()
     p.setLanguage(bashLanguage)
     return p
@@ -56,7 +53,11 @@ export const BashTool = Tool.define("bash", {
   }),
   async execute(params, ctx) {
     const timeout = Math.min(params.timeout ?? DEFAULT_TIMEOUT, MAX_TIMEOUT)
+    /*
     const tree = await parser().then((p) => p.parse(params.command))
+    if (!tree) {
+      throw new Error("Failed to parse command")
+    }
     const permissions = await Agent.get(ctx.agent).then((x) => x.permission.bash)
 
     const askPatterns = new Set<string>()
@@ -145,6 +146,7 @@ export const BashTool = Tool.define("bash", {
         },
       })
     }
+    */
 
     const process = exec(params.command, {
       cwd: Instance.directory,
