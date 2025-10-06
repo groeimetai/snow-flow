@@ -24,6 +24,10 @@
   --color-border-weak: hsl(0, 1%, 85%);
 
   --color-icon: hsl(0, 1%, 55%);
+
+  /* For the share component */
+  --sl-color-bg-surface: var(--sl-color-bg-nav);
+  --sl-color-divider: var(--sl-color-gray-5);
 }
 
 
