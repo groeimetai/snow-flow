@@ -7,6 +7,7 @@ import { UserTable } from "./schema/user.sql"
 import { BillingTable } from "./schema/billing.sql"
 import { WorkspaceTable } from "./schema/workspace.sql"
 import { Key } from "./key"
+import { eq } from "drizzle-orm"
 
 export namespace Workspace {
   export const create = fn(
@@ -43,6 +44,23 @@ export namespace Workspace {
         () => Key.create({ userID, name: "Default API Key" }),
       )
       return workspaceID
+    },
+  )
+
+  export const update = fn(
+    z.object({
+      name: z.string().min(1).max(255),
+    }),
+    async ({ name }) => {
+      const workspaceID = Actor.workspace()
+      return await Database.use((tx) =>
+        tx
+          .update(WorkspaceTable)
+          .set({
+            name,
+          })
+          .where(eq(WorkspaceTable.id, workspaceID)),
+      )
     },
   )
 }
