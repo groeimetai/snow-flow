@@ -6,7 +6,7 @@ export const WorkspaceTable = mysqlTable(
   {
     id: ulid("id").notNull().primaryKey(),
     slug: varchar("slug", { length: 255 }),
-    name: varchar("name", { length: 255 }),
+    name: varchar("name", { length: 255 }).notNull(),
     ...timestamps,
   },
   (table) => [uniqueIndex("slug").on(table.slug)],
