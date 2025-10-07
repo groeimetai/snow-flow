@@ -528,6 +528,8 @@ export namespace SessionPrompt {
         )
 
         return {
+          title: "",
+          metadata: {},
           output,
         }
       }
