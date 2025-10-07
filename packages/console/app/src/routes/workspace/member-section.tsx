@@ -58,10 +58,6 @@ const removeMember = action(async (form: FormData) => {
 
 const updateMember = action(async (form: FormData) => {
   "use server"
-  console.log("!@#!@ Form data entries:")
-  for (const [key, value] of form.entries()) {
-    console.log(`!@#!@ ${key}:`, value)
-  }
 
   const id = form.get("id")?.toString()
   if (!id) return { error: "ID is required" }
@@ -72,8 +68,6 @@ const updateMember = action(async (form: FormData) => {
   const limit = form.get("limit")?.toString()
   const monthlyLimit = limit && limit.trim() !== "" ? parseInt(limit) : null
   if (monthlyLimit !== null && monthlyLimit < 0) return { error: "Set a valid monthly limit" }
-
-  console.log({ id, role, monthlyLimit, limit })
 
   return json(
     await withActor(
