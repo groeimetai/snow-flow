@@ -31,6 +31,7 @@ import { SessionRevert } from "../session/revert"
 import { lazy } from "../util/lazy"
 import { Todo } from "../session/todo"
 import { InstanceBootstrap } from "../project/bootstrap"
+import { MCP } from "../mcp"
 
 const ERRORS = {
   400: {
@@ -1181,6 +1182,26 @@ export namespace Server {
         async (c) => {
           const modes = await Agent.list()
           return c.json(modes)
+        },
+      )
+      .get(
+        "/mcp",
+        describeRoute({
+          description: "Get MCP server status",
+          operationId: "mcp.status",
+          responses: {
+            200: {
+              description: "MCP server status",
+              content: {
+                "application/json": {
+                  schema: resolver(z.any()),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          return c.json(await MCP.status())
         },
       )
       .post(

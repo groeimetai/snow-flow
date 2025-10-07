@@ -2070,6 +2070,22 @@ export type AppAgentsResponses = {
 
 export type AppAgentsResponse = AppAgentsResponses[keyof AppAgentsResponses]
 
+export type McpStatusData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/mcp"
+}
+
+export type McpStatusResponses = {
+  /**
+   * MCP server status
+   */
+  200: unknown
+}
+
 export type TuiAppendPromptData = {
   body?: {
     text: string
