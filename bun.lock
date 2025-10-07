@@ -87,11 +87,6 @@
       "version": "0.14.4",
       "dependencies": {
         "@opencode-ai/console-core": "workspace:*",
-        "tsx": "4.20.5",
-      },
-      "devDependencies": {
-        "@types/node": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/desktop": {
