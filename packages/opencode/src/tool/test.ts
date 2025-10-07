@@ -6,7 +6,7 @@ const parser = async () => {
     p.setLanguage(Bash.language as any)
     return p
   } catch (e) {
-    const { Parser, Language } = await import("web-tree-sitter")
+    const { default: Parser } = await import("web-tree-sitter")
     const { default: treeWasm } = await import("web-tree-sitter/web-tree-sitter.wasm" as string, {
       with: { type: "wasm" },
     })
@@ -18,7 +18,7 @@ const parser = async () => {
     const { default: bashWasm } = await import("tree-sitter-bash/tree-sitter-bash.wasm" as string, {
       with: { type: "wasm" },
     })
-    const bashLanguage = await Language.load(bashWasm)
+    const bashLanguage = await Parser.Language.load(bashWasm)
     const p = new Parser()
     p.setLanguage(bashLanguage)
     return p
