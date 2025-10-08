@@ -48,10 +48,12 @@ export default function () {
       <div data-slot="sections">
         <NewUserSection />
         <KeySection />
+        <Show when={isBeta()}>
+          <MemberSection />
+        </Show>
         <Show when={userInfo()?.isAdmin}>
           <Show when={isBeta()}>
             <SettingsSection />
-            <MemberSection />
             <ModelSection />
             <ProviderSection />
           </Show>

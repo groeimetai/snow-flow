@@ -7,11 +7,6 @@ import { createStore } from "solid-js/store"
 import { formatDateUTC, formatDateForTable } from "./common"
 import styles from "./key-section.module.css"
 import { Actor } from "@opencode-ai/console-core/actor.js"
-import { and, Database, eq, isNull, sql } from "@opencode-ai/console-core/drizzle/index.js"
-import { KeyTable } from "@opencode-ai/console-core/schema/key.sql.js"
-import { UserTable } from "@opencode-ai/console-core/schema/user.sql.js"
-import { AccountTable } from "@opencode-ai/console-core/schema/account.sql.js"
-import { User } from "@opencode-ai/console-core/user.js"
 
 const removeKey = action(async (form: FormData) => {
   "use server"

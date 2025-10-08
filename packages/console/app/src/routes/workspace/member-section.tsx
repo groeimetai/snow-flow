@@ -10,10 +10,10 @@ import { User } from "@opencode-ai/console-core/user.js"
 const listMembers = query(async (workspaceID: string) => {
   "use server"
   return withActor(async () => {
-    const actor = Actor.assert("user")
     return {
       members: await User.list(),
-      currentUserID: actor.properties.userID,
+      actorID: Actor.userID(),
+      actorRole: Actor.userRole(),
     }
   }, workspaceID)
 }, "member.list")
@@ -158,10 +158,11 @@ export function MemberCreateForm() {
   )
 }
 
-function MemberRow(props: { member: any; workspaceID: string; currentUserID: string | null }) {
+function MemberRow(props: { member: any; workspaceID: string; actorID: string; actorRole: string }) {
   const [editing, setEditing] = createSignal(false)
   const submission = useSubmission(updateMember)
-  const isCurrentUser = () => props.currentUserID === props.member.id
+  const isCurrentUser = () => props.actorID === props.member.id
+  const isAdmin = () => props.actorRole === "admin"
 
   createEffect(() => {
     if (!submission.pending && submission.result && !submission.result.error) {
@@ -200,19 +201,19 @@ function MemberRow(props: { member: any; workspaceID: string; currentUserID: str
           <td data-slot="member-email">{props.member.accountEmail ?? props.member.email}</td>
           <td data-slot="member-role">{props.member.role}</td>
           <td data-slot="member-usage">{getUsageDisplay()}</td>
-          <Show when={!props.member.timeSeen} fallback={<td data-slot="member-joined"></td>}>
-            <td data-slot="member-joined">invited</td>
-          </Show>
+          <td data-slot="member-joined">{props.member.timeSeen ? "" : "invited"}</td>
           <td data-slot="member-actions">
-            <button data-color="ghost" onClick={() => setEditing(true)}>
-              Edit
-            </button>
-            <Show when={!isCurrentUser()}>
-              <form action={removeMember} method="post">
-                <input type="hidden" name="id" value={props.member.id} />
-                <input type="hidden" name="workspaceID" value={props.workspaceID} />
-                <button data-color="ghost">Delete</button>
-              </form>
+            <Show when={isAdmin()}>
+              <button data-color="ghost" onClick={() => setEditing(true)}>
+                Edit
+              </button>
+              <Show when={!isCurrentUser()}>
+                <form action={removeMember} method="post">
+                  <input type="hidden" name="id" value={props.member.id} />
+                  <input type="hidden" name="workspaceID" value={props.workspaceID} />
+                  <button data-color="ghost">Delete</button>
+                </form>
+              </Show>
             </Show>
           </td>
         </tr>
@@ -293,37 +294,34 @@ export function MemberSection() {
     <section class={styles.root}>
       <div data-slot="section-title">
         <h2>Members</h2>
-        <p>Manage your members for accessing opencode services.</p>
       </div>
-      <MemberCreateForm />
+      <Show when={data()?.actorRole === "admin"}>
+        <MemberCreateForm />
+      </Show>
       <div data-slot="members-table">
-        <Show
-          when={data()?.members.length}
-          fallback={
-            <div data-component="empty-state">
-              <p>Invite a member to your workspace</p>
-            </div>
-          }
-        >
-          <table data-slot="members-table-element">
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Usage</th>
-                <th></th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <For each={data()!.members}>
-                {(member) => (
-                  <MemberRow member={member} workspaceID={params.id} currentUserID={data()!.currentUserID} />
-                )}
-              </For>
-            </tbody>
-          </table>
-        </Show>
+        <table data-slot="members-table-element">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Usage</th>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <For each={data()?.members || []}>
+              {(member) => (
+                <MemberRow
+                  member={member}
+                  workspaceID={params.id}
+                  actorID={data()!.actorID}
+                  actorRole={data()!.actorRole}
+                />
+              )}
+            </For>
+          </tbody>
+        </table>
       </div>
     </section>
   )

@@ -1,4 +1,5 @@
 import { Context } from "./context"
+import { UserRole } from "./schema/user.sql"
 import { Log } from "./util/log"
 
 export namespace Actor {
@@ -21,6 +22,7 @@ export namespace Actor {
       userID: string
       workspaceID: string
       accountID: string
+      role: (typeof UserRole)[number]
     }
   }
 
@@ -79,5 +81,13 @@ export namespace Actor {
       return actor.properties.accountID
     }
     throw new Error(`actor of type "${actor.type}" is not associated with an account`)
+  }
+
+  export function userID() {
+    return Actor.assert("user").properties.userID
+  }
+
+  export function userRole() {
+    return Actor.assert("user").properties.role
   }
 }
