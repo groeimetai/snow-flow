@@ -4,19 +4,45 @@ import { Actor } from "./actor"
 import { and, Database, eq, isNull, sql } from "./drizzle"
 import { Identifier } from "./identifier"
 import { KeyTable } from "./schema/key.sql"
+import { AccountTable } from "./schema/account.sql"
+import { UserTable } from "./schema/user.sql"
+import { User } from "./user"
 
 export namespace Key {
-  export const list = async () => {
-    const workspace = Actor.workspace()
+  export const list = fn(z.void(), async () => {
+    const userID = Actor.assert("user").properties.userID
+    const user = await User.fromID(userID)
     const keys = await Database.use((tx) =>
       tx
-        .select()
+        .select({
+          id: KeyTable.id,
+          name: KeyTable.name,
+          key: KeyTable.key,
+          timeUsed: KeyTable.timeUsed,
+          userID: KeyTable.userID,
+          email: AccountTable.email,
+        })
         .from(KeyTable)
-        .where(and(eq(KeyTable.workspaceID, workspace), isNull(KeyTable.timeDeleted)))
-        .orderBy(sql`${KeyTable.timeCreated} DESC`),
+        .innerJoin(UserTable, and(eq(KeyTable.userID, UserTable.id), eq(KeyTable.workspaceID, UserTable.workspaceID)))
+        .innerJoin(AccountTable, eq(UserTable.accountID, AccountTable.id))
+        .where(
+          and(
+            ...[
+              eq(KeyTable.workspaceID, Actor.workspace()),
+              isNull(KeyTable.timeDeleted),
+              ...(user.role === "admin" ? [] : [eq(KeyTable.userID, userID)]),
+            ],
+          ),
+        )
+        .orderBy(sql`${KeyTable.name} DESC`),
     )
-    return keys
-  }
+    // only return value for user's keys
+    return keys.map((key) => ({
+      ...key,
+      key: key.userID === userID ? key.key : undefined,
+      keyDisplay: `${key.key.slice(0, 7)}...${key.key.slice(-4)}`,
+    }))
+  })
 
   export const create = fn(
     z.object({
