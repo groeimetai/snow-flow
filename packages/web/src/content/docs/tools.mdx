@@ -303,7 +303,7 @@ Internally, tools like `grep`, `glob`, and `list` use [ripgrep](https://github.c
 
 ---
 
-### Override ignore patterns
+### Ignore patterns
 
 To include files that would normally be ignored, create a `.ignore` file in your project root. This file can explicitly allow certain paths.
 
@@ -314,5 +314,3 @@ To include files that would normally be ignored, create a `.ignore` file in your
 ```
 
 For example, this `.ignore` file allows ripgrep to search within `node_modules/`, `dist/`, and `build/` directories even if they're listed in `.gitignore`.
-
-The `.ignore` file follows ripgrep's ignore file syntax. Patterns prefixed with `!` negate the ignore rules from `.gitignore`.
