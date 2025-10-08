@@ -218,6 +218,13 @@
       "when": 1759878278492,
       "tag": "0030_ordinary_ultragirl",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1759940238478,
+      "tag": "0031_outgoing_outlaw_kid",
+      "breakpoints": true
     }
   ]
 }

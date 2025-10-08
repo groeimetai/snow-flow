@@ -8,6 +8,7 @@ import { KeySection } from "./key-section"
 import { MemberSection } from "./member-section"
 import { SettingsSection } from "./settings-section"
 import { ModelSection } from "./model-section"
+import { ProviderSection } from "./provider-section"
 import { Show } from "solid-js"
 import { createAsync, query, useParams } from "@solidjs/router"
 import { Actor } from "@opencode-ai/console-core/actor.js"
@@ -52,6 +53,7 @@ export default function () {
             <SettingsSection />
             <MemberSection />
             <ModelSection />
+            <ProviderSection />
           </Show>
           <BillingSection />
           <MonthlyLimitSection />

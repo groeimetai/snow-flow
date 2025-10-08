@@ -8,6 +8,7 @@ export namespace Identifier {
     key: "key",
     model: "mod",
     payment: "pay",
+    provider: "prv",
     usage: "usg",
     user: "usr",
     workspace: "wrk",
