@@ -211,6 +211,13 @@
       "when": 1759811835558,
       "tag": "0029_panoramic_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1759878278492,
+      "tag": "0030_ordinary_ultragirl",
+      "breakpoints": true
     }
   ]
 }
