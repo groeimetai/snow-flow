@@ -24,7 +24,6 @@ const updateModel = action(async (form: FormData) => {
   const workspaceID = form.get("workspaceID")?.toString()
   if (!workspaceID) return { error: "Workspace ID is required" }
   const enabled = form.get("enabled")?.toString() === "true"
-  console.log({ model, workspaceID, enabled })
   return json(
     withActor(async () => {
       if (enabled) {

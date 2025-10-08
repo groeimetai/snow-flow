@@ -12,6 +12,7 @@ import { Actor } from "@opencode-ai/console-core/actor.js"
 import { WorkspaceTable } from "@opencode-ai/console-core/schema/workspace.sql.js"
 import { ZenModel } from "@opencode-ai/console-core/model.js"
 import { UserTable } from "@opencode-ai/console-core/schema/user.sql.js"
+import { ModelTable } from "@opencode-ai/console-core/schema/model.sql.js"
 
 export async function handler(
   input: APIEvent,
@@ -67,6 +68,7 @@ export async function handler(
     const providerInfo = selectProvider(modelInfo)
     const authInfo = await authenticate(modelInfo)
     validateBilling(modelInfo, authInfo)
+    validateModelSettings(authInfo)
     logger.metric({ provider: providerInfo.id })
 
     // Request to model provider
@@ -222,14 +224,14 @@ export async function handler(
     return { id: modelId, ...modelData }
   }
 
-  function selectProvider(model: Model) {
+  function selectProvider(model: Awaited<ReturnType<typeof validateModel>>) {
     const providers = model.providers
       .filter((provider) => !provider.disabled)
       .flatMap((provider) => Array<typeof provider>(provider.weight ?? 1).fill(provider))
     return providers[Math.floor(Math.random() * providers.length)]
   }
 
-  async function authenticate(model: Model) {
+  async function authenticate(model: Awaited<ReturnType<typeof validateModel>>) {
     const apiKey = opts.parseApiKey(input.request.headers)
     if (!apiKey) {
       if (model.allowAnonymous) return
@@ -241,20 +243,26 @@ export async function handler(
         .select({
           apiKey: KeyTable.id,
           workspaceID: KeyTable.workspaceID,
-          balance: BillingTable.balance,
-          paymentMethodID: BillingTable.paymentMethodID,
-          monthlyLimit: BillingTable.monthlyLimit,
-          monthlyUsage: BillingTable.monthlyUsage,
-          timeMonthlyUsageUpdated: BillingTable.timeMonthlyUsageUpdated,
-          userID: UserTable.id,
-          userMonthlyLimit: UserTable.monthlyLimit,
-          userMonthlyUsage: UserTable.monthlyUsage,
-          timeUserMonthlyUsageUpdated: UserTable.timeMonthlyUsageUpdated,
+          billing: {
+            balance: BillingTable.balance,
+            paymentMethodID: BillingTable.paymentMethodID,
+            monthlyLimit: BillingTable.monthlyLimit,
+            monthlyUsage: BillingTable.monthlyUsage,
+            timeMonthlyUsageUpdated: BillingTable.timeMonthlyUsageUpdated,
+          },
+          user: {
+            id: UserTable.id,
+            monthlyLimit: UserTable.monthlyLimit,
+            monthlyUsage: UserTable.monthlyUsage,
+            timeMonthlyUsageUpdated: UserTable.timeMonthlyUsageUpdated,
+          },
+          timeDisabled: ModelTable.timeCreated,
         })
         .from(KeyTable)
         .innerJoin(WorkspaceTable, eq(WorkspaceTable.id, KeyTable.workspaceID))
         .innerJoin(BillingTable, eq(BillingTable.workspaceID, KeyTable.workspaceID))
         .innerJoin(UserTable, and(eq(UserTable.workspaceID, KeyTable.workspaceID), eq(UserTable.id, KeyTable.userID)))
+        .leftJoin(ModelTable, and(eq(ModelTable.workspaceID, KeyTable.workspaceID), eq(ModelTable.model, model.id)))
         .where(and(eq(KeyTable.key, apiKey), isNull(KeyTable.timeDeleted)))
         .then((rows) => rows[0]),
     )
@@ -265,25 +273,13 @@ export async function handler(
       workspace: data.workspaceID,
     })
 
-    const isFree = FREE_WORKSPACES.includes(data.workspaceID)
-
     return {
       apiKeyId: data.apiKey,
       workspaceID: data.workspaceID,
-      billing: {
-        paymentMethodID: data.paymentMethodID,
-        balance: data.balance,
-        monthlyLimit: data.monthlyLimit,
-        monthlyUsage: data.monthlyUsage,
-        timeMonthlyUsageUpdated: data.timeMonthlyUsageUpdated,
-      },
-      user: {
-        id: data.userID,
-        monthlyLimit: data.userMonthlyLimit,
-        monthlyUsage: data.userMonthlyUsage,
-        timeMonthlyUsageUpdated: data.timeUserMonthlyUsageUpdated,
-      },
-      isFree,
+      billing: data.billing,
+      user: data.user,
+      isFree: FREE_WORKSPACES.includes(data.workspaceID),
+      isDisabled: !!data.timeDisabled,
     }
   }
 
@@ -323,6 +319,11 @@ export async function handler(
       if (currentYear === dateYear && currentMonth === dateMonth)
         throw new UserLimitError(`You have reached your monthly spending limit of $${authInfo.user.monthlyLimit}.`)
     }
+  }
+
+  function validateModelSettings(authInfo: Awaited<ReturnType<typeof authenticate>>) {
+    if (!authInfo) return
+    if (authInfo.isDisabled) throw new ModelError("Model is disabled")
   }
 
   async function trackUsage(
