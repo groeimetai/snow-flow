@@ -46,14 +46,7 @@ export function ModelSection() {
         <p>Manage models for your workspace.</p>
       </div>
       <div data-slot="models-list">
-        <Show
-          when={modelsInfo()}
-          fallback={
-            <div data-component="empty-state">
-              <p>Loading models...</p>
-            </div>
-          }
-        >
+        <Show when={modelsInfo()}>
           <div data-slot="models-table">
             <table data-slot="models-table-element">
               <thead>

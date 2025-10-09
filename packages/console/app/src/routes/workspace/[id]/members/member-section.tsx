@@ -310,16 +310,18 @@ export function MemberSection() {
             </tr>
           </thead>
           <tbody>
-            <For each={data()?.members || []}>
-              {(member) => (
-                <MemberRow
-                  member={member}
-                  workspaceID={params.id}
-                  actorID={data()!.actorID}
-                  actorRole={data()!.actorRole}
-                />
-              )}
-            </For>
+            <Show when={data() && data()!.members.length > 0}>
+              <For each={data()!.members}>
+                {(member) => (
+                  <MemberRow
+                    member={member}
+                    workspaceID={params.id}
+                    actorID={data()!.actorID}
+                    actorRole={data()!.actorRole}
+                  />
+                )}
+              </For>
+            </Show>
           </tbody>
         </table>
       </div>
