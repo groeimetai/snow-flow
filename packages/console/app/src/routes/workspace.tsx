@@ -8,16 +8,16 @@ import { WorkspacePicker } from "./workspace-picker"
 import { withActor } from "~/context/auth.withActor"
 import { User } from "@opencode-ai/console-core/user.js"
 import { Actor } from "@opencode-ai/console-core/actor.js"
-import { beta } from "~/lib/beta"
+import { querySessionInfo } from "./workspace/common"
 
-const getUserInfo = query(async (workspaceID: string) => {
+const getUserEmail = query(async (workspaceID: string) => {
   "use server"
   return withActor(async () => {
     const actor = Actor.assert("user")
     const email = await User.getAccountEmail(actor.properties.userID)
-    return { email }
+    return email
   }, workspaceID)
-}, "userInfo")
+}, "userEmail")
 
 const logout = action(async () => {
   "use server"
@@ -37,8 +37,8 @@ const logout = action(async () => {
 
 export default function WorkspaceLayout(props: RouteSectionProps) {
   const params = useParams()
-  const userInfo = createAsync(() => getUserInfo(params.id))
-  const isBeta = createAsync(() => beta(params.id))
+  const userEmail = createAsync(() => getUserEmail(params.id))
+  const sessionInfo = createAsync(() => querySessionInfo(params.id))
   return (
     <main data-page="workspace">
       <header data-component="workspace-header">
@@ -48,10 +48,10 @@ export default function WorkspaceLayout(props: RouteSectionProps) {
           </A>
         </div>
         <div data-slot="header-actions">
-          <Show when={isBeta()}>
+          <Show when={sessionInfo()?.isBeta}>
             <WorkspacePicker />
           </Show>
-          <span data-slot="user">{userInfo()?.email}</span>
+          <span data-slot="user">{userEmail()}</span>
           <form action={logout} method="post">
             <button type="submit" formaction={logout}>
               Logout
