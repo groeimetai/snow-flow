@@ -45,6 +45,8 @@ export namespace FileIgnore {
 
   const FILE_GLOBS = FILES.map((p) => new Bun.Glob(p))
 
+  export const PATTERNS = [...FILES, ...FOLDERS]
+
   export function match(
     filepath: string,
     opts?: {
