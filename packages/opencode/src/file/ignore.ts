@@ -18,6 +18,10 @@ export namespace FileIgnore {
     ".hg",
     ".vscode",
     ".idea",
+    ".turbo",
+    ".output",
+    "desktop",
+    ".sst",
   ])
 
   const FILES = [
