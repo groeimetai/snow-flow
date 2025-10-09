@@ -25,11 +25,11 @@ export namespace LSPServer {
       const files = Filesystem.up({
         targets: patterns,
         start: path.dirname(file),
-        stop: Instance.worktree,
+        stop: Instance.directory,
       })
       const first = await files.next()
       await files.return()
-      if (!first.value) return Instance.worktree
+      if (!first.value) return Instance.directory
       return path.dirname(first.value)
     }
   }
