@@ -34,6 +34,16 @@ export namespace FileWatcher {
       if (Instance.project.vcs !== "git") return {}
       log.info("init")
       const cfg = await Config.get()
+      const backend = (() => {
+        if (process.platform === "win32") return "windows"
+        if (process.platform === "darwin") return "fs-events"
+        if (process.platform === "linux") return "inotify"
+      })()
+      if (!backend) {
+        log.error("watcher backend not supported", { platform: process.platform })
+        return {}
+      }
+      log.info("watcher backend", { platform: process.platform, backend })
       const sub = await watcher().subscribe(
         Instance.directory,
         (err, evts) => {
@@ -47,7 +57,7 @@ export namespace FileWatcher {
         },
         {
           ignore: [...FileIgnore.PATTERNS, ...(cfg.watcher?.ignore ?? [])],
-          backend: "inotify",
+          backend,
         },
       )
       return { sub }
