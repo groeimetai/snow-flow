@@ -139,9 +139,6 @@ function ProviderRow(props: { provider: Provider }) {
           }
         >
           <div data-slot="form-actions">
-            <button type="reset" data-color="ghost" onClick={() => hide()}>
-              Cancel
-            </button>
             <button
               type="submit"
               data-color="ghost"
@@ -149,6 +146,9 @@ function ProviderRow(props: { provider: Provider }) {
               form={`provider-form-${props.provider.key}`}
             >
               {saveSubmission.pending ? "Saving..." : "Save"}
+            </button>
+            <button type="reset" data-color="ghost" onClick={() => hide()}>
+              Cancel
             </button>
           </div>
         </Show>
