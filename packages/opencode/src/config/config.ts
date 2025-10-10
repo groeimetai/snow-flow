@@ -62,7 +62,7 @@ export namespace Config {
     ]
 
     for (const dir of directories) {
-      await assertValid(dir).catch(() => {})
+      await assertValid(dir)
       installDependencies(dir)
       result.command = mergeDeep(result.command ?? {}, await loadCommand(dir))
       result.agent = mergeDeep(result.agent, await loadAgent(dir))
@@ -120,23 +120,20 @@ export namespace Config {
     }
   })
 
+  const INVALID_DIRS = new Bun.Glob(`{${["agents", "commands", "plugins", "tools"].join(",")}}/`)
   async function assertValid(dir: string) {
-    const ALLOWED_DIRS = new Set(["agent", "command", "mode", "plugin", "tool", "themes"])
-    const UNEXPECTED_DIR_GLOB = new Bun.Glob("*/")
-    for await (const item of UNEXPECTED_DIR_GLOB.scan({
-      absolute: true,
-      followSymlinks: true,
-      dot: true,
-      cwd: dir,
-      onlyFiles: false,
-    })) {
-      const dirname = path.basename(item)
-      if (!ALLOWED_DIRS.has(dirname)) {
-        throw new InvalidError({
-          path: dir,
-          message: `Unexpected directory "${dirname}" found in "${dir}". Only ${ALLOWED_DIRS.values().toArray().join(", ")} directories are allowed.`,
-        })
-      }
+    const invalid = await Array.fromAsync(
+      INVALID_DIRS.scan({
+        onlyFiles: false,
+        cwd: dir,
+      }),
+    )
+    for (const item of invalid) {
+      throw new DirectoryError({
+        path: dir,
+        dir: item,
+        suggestion: item.substring(0, item.length - 1),
+      })
     }
   }
 
@@ -711,6 +708,15 @@ export namespace Config {
     z.object({
       path: z.string(),
       message: z.string().optional(),
+    }),
+  )
+
+  export const DirectoryError = NamedError.create(
+    "ConfigDirectoryError",
+    z.object({
+      path: z.string(),
+      dir: z.string(),
+      suggestion: z.string(),
     }),
   )
 
