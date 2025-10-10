@@ -1,6 +1,6 @@
 [data-page="workspace-[id]"] {
   max-width: 64rem;
-  padding: var(--space-10) var(--space-4);
+  padding: var(--space-2) var(--space-4);
   margin: 0 auto;
   width: 100%;
   display: flex;

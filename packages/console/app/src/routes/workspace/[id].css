@@ -14,26 +14,42 @@
   border-right: 1px solid var(--color-border);
   padding: var(--space-6) var(--space-4);
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  justify-content: flex-end;
 
-  [data-nav-button] {
-    padding: var(--space-3) var(--space-4);
-    border-radius: var(--border-radius-sm);
-    color: var(--color-text-muted);
-    text-decoration: none;
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    transition: all 0.15s ease;
+  [data-component="nav-items"] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
 
-    &:hover {
-      background-color: var(--color-surface-hover);
-      color: var(--color-text);
-    }
+    [data-nav-button] {
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--border-radius-sm);
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      transition: all 0.15s ease;
 
-    &.active {
-      background-color: var(--color-surface-hover);
-      color: var(--color-text);
+      &:hover {
+        color: var(--color-text);
+      }
+
+      &.active {
+        color: var(--color-text);
+        font-weight: 700;
+        position: relative;
+
+        &::before {
+          content: '';
+          position: absolute;
+          left: calc(-1 * var(--space-0-5));
+          top: 0;
+          bottom: 0;
+          width: 2px;
+          background-color: var(--color-text);
+          border-radius: 0 2px 2px 0;
+        }
+      }
     }
   }
 }

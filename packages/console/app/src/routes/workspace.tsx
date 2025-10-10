@@ -1,7 +1,7 @@
 import { Show } from "solid-js"
 import { query, createAsync, RouteSectionProps, useParams, A } from "@solidjs/router"
 import "./workspace.css"
-import { IconLogo, IconWorkspaceLogo } from "../component/icon"
+import { IconWorkspaceLogo } from "../component/icon"
 import { WorkspacePicker } from "./workspace-picker"
 import { UserMenu } from "./user-menu"
 import { withActor } from "~/context/auth.withActor"
