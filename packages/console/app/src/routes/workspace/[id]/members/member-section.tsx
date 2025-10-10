@@ -81,83 +81,6 @@ const updateMember = action(async (form: FormData) => {
   )
 }, "member.update")
 
-export function MemberCreateForm() {
-  const params = useParams()
-  const submission = useSubmission(inviteMember)
-  const [store, setStore] = createStore({ show: false })
-
-  let input: HTMLInputElement
-
-  createEffect(() => {
-    if (!submission.pending && submission.result && !submission.result.error) {
-      hide()
-    }
-  })
-
-  function show() {
-    // submission.clear() does not clear the result in some cases, ie.
-    //  1. Create key with empty name => error shows
-    //  2. Put in a key name and creates the key => form hides
-    //  3. Click add key button again => form shows with the same error if
-    //     submission.clear() is called only once
-    while (true) {
-      submission.clear()
-      if (!submission.result) break
-    }
-    setStore("show", true)
-    input.focus()
-  }
-
-  function hide() {
-    setStore("show", false)
-  }
-
-  return (
-    <Show
-      when={store.show}
-      fallback={
-        <button data-color="primary" onClick={() => show()}>
-          Invite Member
-        </button>
-      }
-    >
-      <form action={inviteMember} method="post" data-slot="create-form">
-        <div data-slot="input-container">
-          <input ref={(r) => (input = r)} data-component="input" name="email" type="text" placeholder="Enter email" />
-          <div data-slot="role-selector">
-            <label>
-              <input type="radio" name="role" value="admin" checked />
-              <div>
-                <strong>Admin</strong>
-                <p>Can manage models, members, and billing</p>
-              </div>
-            </label>
-            <label>
-              <input type="radio" name="role" value="member" />
-              <div>
-                <strong>Member</strong>
-                <p>Can only generate API keys for themselves</p>
-              </div>
-            </label>
-          </div>
-          <Show when={submission.result && submission.result.error}>
-            {(err) => <div data-slot="form-error">{err()}</div>}
-          </Show>
-        </div>
-        <input type="hidden" name="workspaceID" value={params.id} />
-        <div data-slot="form-actions">
-          <button type="reset" data-color="ghost" onClick={() => hide()}>
-            Cancel
-          </button>
-          <button type="submit" data-color="primary" disabled={submission.pending}>
-            {submission.pending ? "Inviting..." : "Invite"}
-          </button>
-        </div>
-      </form>
-    </Show>
-  )
-}
-
 function MemberRow(props: { member: any; workspaceID: string; actorID: string; actorRole: string }) {
   const [editing, setEditing] = createSignal(false)
   const submission = useSubmission(updateMember)
@@ -289,14 +212,77 @@ function MemberRow(props: { member: any; workspaceID: string; actorID: string; a
 export function MemberSection() {
   const params = useParams()
   const data = createAsync(() => listMembers(params.id))
+  const submission = useSubmission(inviteMember)
+  const [store, setStore] = createStore({ show: false })
+
+  let input: HTMLInputElement
+
+  createEffect(() => {
+    if (!submission.pending && submission.result && !submission.result.error) {
+      setStore("show", false)
+    }
+  })
+
+  function show() {
+    while (true) {
+      submission.clear()
+      if (!submission.result) break
+    }
+    setStore("show", true)
+    setTimeout(() => input?.focus(), 0)
+  }
+
+  function hide() {
+    setStore("show", false)
+  }
 
   return (
     <section class={styles.root}>
       <div data-slot="section-title">
         <h2>Members</h2>
+        <div data-slot="title-row">
+          <p>Manage workspace members and their permissions.</p>
+          <Show when={data()?.actorRole === "admin"}>
+            <button data-color="primary" onClick={() => show()}>
+              Invite Member
+            </button>
+          </Show>
+        </div>
       </div>
-      <Show when={data()?.actorRole === "admin"}>
-        <MemberCreateForm />
+      <Show when={store.show}>
+        <form action={inviteMember} method="post" data-slot="create-form">
+          <div data-slot="input-container">
+            <input ref={(r) => (input = r)} data-component="input" name="email" type="text" placeholder="Enter email" />
+            <div data-slot="role-selector">
+              <label>
+                <input type="radio" name="role" value="admin" checked />
+                <div>
+                  <strong>Admin</strong>
+                  <p>Can manage models, members, and billing</p>
+                </div>
+              </label>
+              <label>
+                <input type="radio" name="role" value="member" />
+                <div>
+                  <strong>Member</strong>
+                  <p>Can only generate API keys for themselves</p>
+                </div>
+              </label>
+            </div>
+            <Show when={submission.result && submission.result.error}>
+              {(err) => <div data-slot="form-error">{err()}</div>}
+            </Show>
+          </div>
+          <input type="hidden" name="workspaceID" value={params.id} />
+          <div data-slot="form-actions">
+            <button type="reset" data-color="ghost" onClick={() => hide()}>
+              Cancel
+            </button>
+            <button type="submit" data-color="primary" disabled={submission.pending}>
+              {submission.pending ? "Inviting..." : "Invite"}
+            </button>
+          </div>
+        </form>
       </Show>
       <div data-slot="members-table">
         <table data-slot="members-table-element">
