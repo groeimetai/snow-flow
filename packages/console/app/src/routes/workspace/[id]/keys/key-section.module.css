@@ -1,4 +1,11 @@
 .root {
+  [data-slot="title-row"] {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
   [data-component="empty-state"] {
     padding: var(--space-20) var(--space-6);
     text-align: center;
@@ -150,6 +157,7 @@
     }
 
     @media (max-width: 40rem) {
+
       th,
       td {
         padding: var(--space-2) var(--space-3);
@@ -157,13 +165,19 @@
       }
 
       th {
-        &:nth-child(3) /* Date */ {
+        &:nth-child(3)
+
+        /* Date */
+          {
           display: none;
         }
       }
 
       td {
-        &:nth-child(3) /* Date */ {
+        &:nth-child(3)
+
+        /* Date */
+          {
           display: none;
         }
       }
