@@ -15,6 +15,8 @@ import { Auth } from "../auth"
 import { type ParseError as JsoncParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser"
 import { Instance } from "../project/instance"
 import { LSPServer } from "../lsp/server"
+import { BunProc } from "@/bun"
+import { Installation } from "@/installation"
 
 export namespace Config {
   const log = Log.create({ service: "config" })
@@ -61,6 +63,7 @@ export namespace Config {
 
     for (const dir of directories) {
       await assertValid(dir).catch(() => {})
+      installDependencies(dir)
       result.command = mergeDeep(result.command ?? {}, await loadCommand(dir))
       result.agent = mergeDeep(result.agent, await loadAgent(dir))
       result.agent = mergeDeep(result.agent, await loadMode(dir))
@@ -135,6 +138,17 @@ export namespace Config {
         })
       }
     }
+  }
+
+  async function installDependencies(dir: string) {
+    await Bun.write(path.join(dir, "package.json"), "{}")
+    await Bun.write(path.join(dir, ".gitignore"), ["node_modules", "package.json", "bun.lock", ".gitignore"].join("\n"))
+    await BunProc.run(
+      ["add", "@opencode-ai/plugin@" + (Installation.isDev() ? "latest" : Installation.VERSION), "--exact"],
+      {
+        cwd: dir,
+      },
+    )
   }
 
   const COMMAND_GLOB = new Bun.Glob("command/**/*.md")
