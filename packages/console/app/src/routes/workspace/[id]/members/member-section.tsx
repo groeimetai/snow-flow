@@ -86,16 +86,49 @@ const updateMember = action(async (form: FormData) => {
 }, "member.update")
 
 function MemberRow(props: { member: any; workspaceID: string; actorID: string; actorRole: string }) {
-  const [editing, setEditing] = createSignal(false)
   const submission = useSubmission(updateMember)
   const isCurrentUser = () => props.actorID === props.member.id
   const isAdmin = () => props.actorRole === "admin"
+  const [store, setStore] = createStore({
+    editing: false,
+    selectedRole: props.member.role as (typeof UserRole)[number],
+    showRoleDropdown: false,
+    limit: "",
+  })
+
+  let roleDropdownRef: HTMLDivElement | undefined
 
   createEffect(() => {
     if (!submission.pending && submission.result && !submission.result.error) {
-      setEditing(false)
+      setStore("editing", false)
     }
   })
+
+  createEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (roleDropdownRef && !roleDropdownRef.contains(event.target as Node)) {
+        setStore("showRoleDropdown", false)
+      }
+    }
+
+    document.addEventListener("click", handleClickOutside)
+    onCleanup(() => document.removeEventListener("click", handleClickOutside))
+  })
+
+  function show() {
+    while (true) {
+      submission.clear()
+      if (!submission.result) break
+    }
+    setStore("editing", true)
+    setStore("selectedRole", props.member.role)
+    setStore("limit", props.member.monthlyLimit?.toString() ?? "")
+  }
+
+  function hide() {
+    setStore("editing", false)
+    setStore("showRoleDropdown", false)
+  }
 
   function getUsageDisplay() {
     const currentUsage = (() => {
@@ -120,96 +153,110 @@ function MemberRow(props: { member: any; workspaceID: string; actorID: string; a
     return `$${currentUsage} / ${limit}`
   }
 
-  return (
-    <Show
-      when={editing()}
-      fallback={
-        <tr>
-          <td data-slot="member-email">{props.member.accountEmail ?? props.member.email}</td>
-          <td data-slot="member-role">{props.member.role}</td>
-          <td data-slot="member-usage">{getUsageDisplay()}</td>
-          <td data-slot="member-joined">{props.member.timeSeen ? "" : "invited"}</td>
-          <Show when={isAdmin()}>
-            <td data-slot="member-actions">
-              <button data-color="ghost" onClick={() => setEditing(true)}>
-                Edit
-              </button>
-              <Show when={!isCurrentUser()}>
-                <form action={removeMember} method="post">
-                  <input type="hidden" name="id" value={props.member.id} />
-                  <input type="hidden" name="workspaceID" value={props.workspaceID} />
-                  <button data-color="ghost">Delete</button>
-                </form>
-              </Show>
-            </td>
-          </Show>
-        </tr>
-      }
-    >
-      <tr>
-        <td colspan={isAdmin() ? 5 : 4}>
-          <form action={updateMember} method="post">
-            <div data-slot="edit-member-email">{props.member.accountEmail ?? props.member.email}</div>
-            <input type="hidden" name="id" value={props.member.id} />
-            <input type="hidden" name="workspaceID" value={props.workspaceID} />
+  const roleLabels = {
+    admin: { title: "Admin", description: "Can manage models, members, and billing" },
+    member: { title: "Member", description: "Can only generate API keys for themselves" },
+  }
 
-            <Show
-              when={!isCurrentUser()}
-              fallback={
-                <>
-                  <div data-slot="current-user-role">Role: {props.member.role}</div>
-                  <input type="hidden" name="role" value={props.member.role} />
-                </>
-              }
+  return (
+    <tr>
+      <td data-slot="member-email">{props.member.accountEmail ?? props.member.email}</td>
+      <td data-slot="member-role">
+        <Show when={store.editing && !isCurrentUser()} fallback={<span>{props.member.role}</span>}>
+          <div data-slot="role-selector" ref={roleDropdownRef}>
+            <button
+              data-slot="trigger"
+              type="button"
+              onClick={() => setStore("showRoleDropdown", !store.showRoleDropdown)}
             >
-              <div data-slot="role-selector">
-                <label>
-                  <input type="radio" name="role" value="admin" checked={props.member.role === "admin"} />
+              <span>{roleLabels[store.selectedRole].title}</span>
+              <IconChevron data-slot="chevron" />
+            </button>
+            <Show when={store.showRoleDropdown}>
+              <div data-slot="dropdown">
+                <button
+                  data-slot="item"
+                  data-selected={store.selectedRole === "admin"}
+                  type="button"
+                  onClick={() => {
+                    setStore("selectedRole", "admin")
+                    setStore("showRoleDropdown", false)
+                  }}
+                >
                   <div>
                     <strong>Admin</strong>
-                    <p>Can manage models, members, and billing</p>
+                    <p>{roleLabels.admin.description}</p>
                   </div>
-                </label>
-                <label>
-                  <input type="radio" name="role" value="member" checked={props.member.role === "member"} />
+                </button>
+                <button
+                  data-slot="item"
+                  data-selected={store.selectedRole === "member"}
+                  type="button"
+                  onClick={() => {
+                    setStore("selectedRole", "member")
+                    setStore("showRoleDropdown", false)
+                  }}
+                >
                   <div>
-                    <strong>Member</strong>
-                    <p>Can only generate API keys for themselves</p>
+                    <strong>{roleLabels.member.title}</strong>
+                    <p>{roleLabels.member.description}</p>
                   </div>
-                </label>
+                </button>
               </div>
             </Show>
-
-            <div data-slot="limit-selector">
-              <label>
-                <strong>Monthly Limit</strong>
-                <input
-                  type="number"
-                  name="limit"
-                  value={props.member.monthlyLimit ?? ""}
-                  placeholder="No limit"
-                  min="0"
-                />
-                <p>Set a monthly spending limit for this user</p>
-              </label>
-            </div>
-
-            <Show when={submission.result && submission.result.error}>
-              {(err) => <div data-slot="form-error">{err()}</div>}
-            </Show>
-
-            <div data-slot="form-actions">
-              <button type="button" data-color="ghost" onClick={() => setEditing(false)}>
-                Cancel
-              </button>
-              <button type="submit" data-color="primary" disabled={submission.pending}>
+          </div>
+        </Show>
+      </td>
+      <td data-slot="member-usage">
+        <Show when={store.editing} fallback={<span>{getUsageDisplay()}</span>}>
+          <input
+            data-component="input"
+            type="number"
+            value={store.limit}
+            onInput={(e) => setStore("limit", e.currentTarget.value)}
+            placeholder="No limit"
+            min="0"
+          />
+        </Show>
+      </td>
+      <td data-slot="member-joined">{props.member.timeSeen ? "" : "invited"}</td>
+      <Show when={isAdmin()}>
+        <td data-slot="member-actions">
+          <Show
+            when={store.editing}
+            fallback={
+              <>
+                <button data-color="ghost" onClick={() => show()}>
+                  Edit
+                </button>
+                <Show when={!isCurrentUser()}>
+                  <form action={removeMember} method="post">
+                    <input type="hidden" name="id" value={props.member.id} />
+                    <input type="hidden" name="workspaceID" value={props.workspaceID} />
+                    <button data-color="ghost">Delete</button>
+                  </form>
+                </Show>
+              </>
+            }
+          >
+            <form action={updateMember} method="post" data-slot="inline-edit-form">
+              <input type="hidden" name="id" value={props.member.id} />
+              <input type="hidden" name="workspaceID" value={props.workspaceID} />
+              <input type="hidden" name="role" value={store.selectedRole} />
+              <input type="hidden" name="limit" value={store.limit} />
+              <button type="submit" data-color="ghost" disabled={submission.pending}>
                 {submission.pending ? "Saving..." : "Save"}
               </button>
-            </div>
-          </form>
+              <Show when={!submission.pending}>
+                <button type="button" data-color="ghost" onClick={() => hide()}>
+                  Cancel
+                </button>
+              </Show>
+            </form>
+          </Show>
         </td>
-      </tr>
-    </Show>
+      </Show>
+    </tr>
   )
 }
 
@@ -370,7 +417,7 @@ export function MemberSection() {
             <tr>
               <th>Email</th>
               <th>Role</th>
-              <th>Usage</th>
+              <th>Limit</th>
               <th></th>
               <Show when={data()?.actorRole === "admin"}>
                 <th></th>
