@@ -28,7 +28,7 @@
     },
     "packages/console/core": {
       "name": "@opencode-ai/console-core",
-      "version": "0.14.6",
+      "version": "0.14.7",
       "dependencies": {
         "@aws-sdk/client-sts": "3.782.0",
         "@jsx-email/render": "1.1.1",
@@ -48,7 +48,7 @@
     },
     "packages/console/function": {
       "name": "@opencode-ai/console-function",
-      "version": "0.14.6",
+      "version": "0.14.7",
       "dependencies": {
         "@ai-sdk/anthropic": "2.0.0",
         "@ai-sdk/openai": "2.0.2",
@@ -68,7 +68,7 @@
     },
     "packages/console/mail": {
       "name": "@opencode-ai/console-mail",
-      "version": "0.14.6",
+      "version": "0.14.7",
       "dependencies": {
         "@jsx-email/all": "2.2.3",
         "@jsx-email/cli": "1.4.3",
@@ -84,14 +84,14 @@
     },
     "packages/console/scripts": {
       "name": "@opencode-ai/console-scripts",
-      "version": "0.14.6",
+      "version": "0.14.7",
       "dependencies": {
         "@opencode-ai/console-core": "workspace:*",
       },
     },
     "packages/desktop": {
       "name": "@opencode-ai/desktop",
-      "version": "0.14.6",
+      "version": "0.14.7",
       "dependencies": {
         "@kobalte/core": "catalog:",
         "@opencode-ai/sdk": "workspace:*",
@@ -125,7 +125,7 @@
     },
     "packages/function": {
       "name": "@opencode-ai/function",
-      "version": "0.14.6",
+      "version": "0.14.7",
       "dependencies": {
         "@octokit/auth-app": "8.0.1",
         "@octokit/rest": "22.0.0",
@@ -140,7 +140,7 @@
     },
     "packages/opencode": {
       "name": "opencode",
-      "version": "0.14.6",
+      "version": "0.14.7",
       "bin": {
         "opencode": "./bin/opencode",
       },
@@ -195,7 +195,7 @@
     },
     "packages/plugin": {
       "name": "@opencode-ai/plugin",
-      "version": "0.14.6",
+      "version": "0.14.7",
       "dependencies": {
         "@opencode-ai/sdk": "workspace:*",
         "zod": "catalog:",
@@ -207,7 +207,7 @@
     },
     "packages/sdk/js": {
       "name": "@opencode-ai/sdk",
-      "version": "0.14.6",
+      "version": "0.14.7",
       "devDependencies": {
         "@hey-api/openapi-ts": "0.81.0",
         "@tsconfig/node22": "catalog:",
@@ -216,7 +216,7 @@
     },
     "packages/web": {
       "name": "@opencode-ai/web",
-      "version": "0.14.6",
+      "version": "0.14.7",
       "dependencies": {
         "@astrojs/cloudflare": "12.6.3",
         "@astrojs/markdown-remark": "6.3.1",
