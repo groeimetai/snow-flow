@@ -24,10 +24,10 @@ export default function WorkspaceLayout(props: RouteSectionProps) {
               <A href={`/workspace/${params.id}/billing`} activeClass="active" data-nav-button>
                 Billing
               </A>
+              <A href={`/workspace/${params.id}/settings`} activeClass="active" data-nav-button>
+                Settings
+              </A>
             </Show>
-            <A href={`/workspace/${params.id}/settings`} activeClass="active" data-nav-button>
-              Settings
-            </A>
           </div>
         </nav>
         <div data-component="workspace-content">{props.children}</div>

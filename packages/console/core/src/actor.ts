@@ -69,7 +69,7 @@ export namespace Actor {
 
   export const assertAdmin = () => {
     if (userRole() === "admin") return
-    throw new Error(`Expected admin user, got ${userRole()}`)
+    throw new Error(`Action not allowed. Ask your workspace admin to perform this action.`)
   }
 
   export function workspace() {

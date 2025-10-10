@@ -1,4 +1,4 @@
-import { query, useParams, action, createAsync, redirect } from "@solidjs/router"
+import { query, useParams, action, createAsync, redirect, useSubmission } from "@solidjs/router"
 import { For, Show, createEffect, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 import { withActor } from "~/context/auth.withActor"
@@ -42,6 +42,7 @@ const createWorkspace = action(async (form: FormData) => {
 export function WorkspacePicker() {
   const params = useParams()
   const workspaces = createAsync(() => getWorkspaces())
+  const submission = useSubmission(createWorkspace)
   const [store, setStore] = createStore({
     showForm: false,
     showDropdown: false,
@@ -135,8 +136,8 @@ export function WorkspacePicker() {
               <button type="button" data-color="ghost" onClick={() => setStore("showForm", false)}>
                 Cancel
               </button>
-              <button type="submit" data-color="primary">
-                Create
+              <button type="submit" data-color="primary" disabled={submission.pending}>
+                {submission.pending ? "Creating..." : "Create"}
               </button>
             </div>
           </div>
