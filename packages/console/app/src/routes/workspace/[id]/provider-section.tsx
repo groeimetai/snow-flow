@@ -84,7 +84,7 @@ function ProviderRow(props: { provider: Provider }) {
   }
 
   return (
-    <tr data-slot="provider-row" data-enabled={providerData()}>
+    <tr data-slot="provider-row" data-enabled={!!providerData()}>
       <td data-slot="provider-name">{props.provider.name}</td>
       <td data-slot="provider-status">
         <Show
@@ -116,7 +116,7 @@ function ProviderRow(props: { provider: Provider }) {
           when={store.editing}
           fallback={
             <Show
-              when={providerData()}
+              when={!!providerData()}
               fallback={
                 <button data-color="ghost" onClick={() => show()}>
                   Configure
