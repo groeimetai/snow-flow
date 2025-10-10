@@ -145,8 +145,8 @@ function MemberRow(props: { member: any; workspaceID: string; actorID: string; a
         month: "long",
         timeZone: "UTC",
       })
-      if (current !== lastUsed) return 0
-      return ((props.member.monthlyUsage ?? 0) / 100000000).toFixed(2)
+      const usage = current === lastUsed ? (props.member.monthlyUsage ?? 0) : 0
+      return (usage / 100000000).toFixed(2)
     })()
 
     const limit = props.member.monthlyLimit ? `$${props.member.monthlyLimit}` : "no limit"
@@ -417,7 +417,7 @@ export function MemberSection() {
             <tr>
               <th>Email</th>
               <th>Role</th>
-              <th>Limit</th>
+              <th>Month limit</th>
               <th></th>
               <Show when={data()?.actorRole === "admin"}>
                 <th></th>
