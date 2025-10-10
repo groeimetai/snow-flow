@@ -147,9 +147,11 @@ function ProviderRow(props: { provider: Provider }) {
             >
               {saveSubmission.pending ? "Saving..." : "Save"}
             </button>
-            <button type="reset" data-color="ghost" onClick={() => hide()}>
-              Cancel
-            </button>
+            <Show when={!saveSubmission.pending}>
+              <button type="reset" data-color="ghost" onClick={() => hide()}>
+                Cancel
+              </button>
+            </Show>
           </div>
         </Show>
       </td>

@@ -18,6 +18,14 @@
       font-weight: normal;
       color: var(--color-text-muted);
       text-transform: uppercase;
+
+      &:nth-child(1) {
+        width: 180px;
+      }
+
+      &:nth-child(3) {
+        width: 200px;
+      }
     }
 
     td {
@@ -35,7 +43,6 @@
       &[data-slot="provider-key"] {
         text-align: left;
         color: var(--color-text-secondary);
-        width: 50%;
 
         [data-slot="edit-form"] {
           display: flex;
@@ -82,7 +89,6 @@
       &[data-slot="provider-action"] {
         text-align: left;
         font-family: var(--font-sans);
-        width: 30%;
         white-space: nowrap;
 
         [data-slot="configured-actions"] {
