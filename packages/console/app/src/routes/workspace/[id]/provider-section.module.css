@@ -35,16 +35,19 @@
       &[data-slot="provider-status"] {
         text-align: left;
         color: var(--color-text);
+        width: 50%;
 
         [data-slot="edit-form"] {
           display: flex;
           flex-direction: column;
           gap: var(--space-3);
+          max-width: 100%;
 
           [data-slot="input-wrapper"] {
             display: flex;
             flex-direction: column;
             gap: var(--space-1);
+            max-width: 100%;
 
             input {
               padding: var(--space-2) var(--space-3);
@@ -54,6 +57,8 @@
               color: var(--color-text);
               font-size: var(--font-size-sm);
               font-family: var(--font-mono);
+              width: 100%;
+              box-sizing: border-box;
 
               &:focus {
                 outline: none;
@@ -77,6 +82,8 @@
       &[data-slot="provider-action"] {
         text-align: left;
         font-family: var(--font-sans);
+        width: 30%;
+        white-space: nowrap;
 
         [data-slot="configured-actions"] {
           display: flex;
