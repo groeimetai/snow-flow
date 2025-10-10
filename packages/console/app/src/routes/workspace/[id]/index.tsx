@@ -13,7 +13,7 @@ export default function () {
 
   return (
     <div data-page="workspace-[id]">
-      <section data-component="title-section">
+      <section data-component="header-section">
         <IconLogo />
         <p>
           Curated list of models provided by opencode.{" "}

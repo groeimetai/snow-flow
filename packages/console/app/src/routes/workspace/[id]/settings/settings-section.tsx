@@ -79,7 +79,7 @@ export function SettingsSection() {
       </div>
       <div data-slot="section-content">
         <div data-slot="setting">
-          <p>Workspace Name</p>
+          <p>Workspace name</p>
           <Show
             when={!store.show}
             fallback={
