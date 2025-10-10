@@ -1,11 +1,12 @@
 .root {
+  max-width: 40rem;
+
   [data-slot="setting"] {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
 
     p {
-      font-size: var(--font-size-sm);
       line-height: 1.2;
       margin: 0;
       color: var(--color-text-muted);
@@ -25,7 +26,6 @@
     }
 
     [data-slot="current-value"] {
-      font-size: var(--font-size-sm);
       color: var(--color-text);
       line-height: 1.4;
       margin: 0;
