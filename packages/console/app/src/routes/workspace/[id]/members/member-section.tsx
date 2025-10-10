@@ -282,7 +282,7 @@ export function MemberSection() {
         <form action={inviteMember} method="post" data-slot="create-form">
           <div data-slot="input-row">
             <div data-slot="input-field">
-              <p>Email</p>
+              <p>Invitee</p>
               <input
                 ref={(r) => (input = r)}
                 data-component="input"
@@ -336,10 +336,8 @@ export function MemberSection() {
                 </Show>
               </div>
             </div>
-          </div>
-          <div data-slot="input-row">
             <div data-slot="input-field">
-              <p>Usage limit</p>
+              <p>Monthly spending limit</p>
               <input
                 data-component="input"
                 name="limit"
