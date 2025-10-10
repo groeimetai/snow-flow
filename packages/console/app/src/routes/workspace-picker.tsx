@@ -8,6 +8,7 @@ import { WorkspaceTable } from "@opencode-ai/console-core/schema/workspace.sql.j
 import { UserTable } from "@opencode-ai/console-core/schema/user.sql.js"
 import { Workspace } from "@opencode-ai/console-core/workspace.js"
 import { IconChevron } from "~/component/icon"
+import { Modal } from "~/component/modal"
 import "./workspace-picker.css"
 
 const getWorkspaces = query(async () => {
@@ -46,6 +47,7 @@ export function WorkspacePicker() {
     showDropdown: false,
   })
   let dropdownRef: HTMLDivElement | undefined
+  let inputRef: HTMLInputElement | undefined
 
   const currentWorkspace = () => {
     const ws = workspaces()?.find((w) => w.id === params.id)
@@ -55,6 +57,12 @@ export function WorkspacePicker() {
   const handleWorkspaceNew = () => {
     setStore({ showForm: true, showDropdown: false })
   }
+
+  createEffect(() => {
+    if (store.showForm && inputRef) {
+      setTimeout(() => inputRef?.focus(), 0)
+    }
+  })
 
   const handleSelectWorkspace = (workspaceID: string) => {
     if (workspaceID === params.id) {
@@ -112,26 +120,28 @@ export function WorkspacePicker() {
         </Show>
       </div>
 
-      <Show when={store.showForm}>
+      <Modal open={store.showForm} onClose={() => setStore("showForm", false)} title="Create New Workspace">
         <form data-slot="create-form" action={createWorkspace} method="post">
           <div data-slot="create-input-group">
             <input
+              ref={inputRef}
               data-slot="create-input"
               type="text"
               name="workspaceName"
               placeholder="Enter workspace name"
               required
-              autofocus
             />
-            <button type="submit" data-color="primary">
-              Create
-            </button>
-            <button type="button" onClick={() => setStore("showForm", false)}>
-              Cancel
-            </button>
+            <div data-slot="button-group">
+              <button type="button" data-color="ghost" onClick={() => setStore("showForm", false)}>
+                Cancel
+              </button>
+              <button type="submit" data-color="primary">
+                Create
+              </button>
+            </div>
           </div>
         </form>
-      </Show>
+      </Modal>
     </div>
   )
 }
