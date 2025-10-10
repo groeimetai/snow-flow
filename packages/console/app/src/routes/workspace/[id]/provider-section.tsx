@@ -89,7 +89,7 @@ function ProviderRow(props: { provider: Provider }) {
       <td data-slot="provider-key">
         <Show
           when={store.editing}
-          fallback={<span>{providerData() ? maskCredentials(providerData()!.credentials) : "--"}</span>}
+          fallback={<span>{providerData() ? maskCredentials(providerData()!.credentials) : "-"}</span>}
         >
           <form id={`provider-form-${props.provider.key}`} action={saveProvider} method="post" data-slot="edit-form">
             <div data-slot="input-wrapper">

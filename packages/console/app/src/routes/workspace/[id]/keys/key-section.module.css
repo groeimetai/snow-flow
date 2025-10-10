@@ -147,10 +147,23 @@
 
       &[data-slot="key-actions"] {
         font-family: var(--font-sans);
+
+        button {
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.15s ease;
+        }
       }
     }
 
     tbody tr {
+      &:hover {
+        [data-slot="key-actions"] button {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
+
       &:last-child td {
         border-bottom: none;
       }
