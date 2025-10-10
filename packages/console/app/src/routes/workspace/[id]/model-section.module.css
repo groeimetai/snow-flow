@@ -150,6 +150,12 @@
     &:last-child td {
       border-bottom: none;
     }
+
+    &[data-disabled="true"] {
+      td[data-slot="model-name"] {
+        color: var(--color-text-muted);
+      }
+    }
   }
 }
 

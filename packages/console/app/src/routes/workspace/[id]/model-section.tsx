@@ -65,7 +65,7 @@ export function ModelSection() {
                   {(modelId) => {
                     const isEnabled = createMemo(() => !modelsInfo()!.disabled.includes(modelId))
                     return (
-                      <tr data-slot="model-row">
+                      <tr data-slot="model-row" data-disabled={!isEnabled()}>
                         <td data-slot="model-name">{modelId}</td>
                         <td data-slot="model-toggle">
                           <form action={updateModel} method="post">

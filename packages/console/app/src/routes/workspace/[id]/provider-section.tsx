@@ -84,12 +84,12 @@ function ProviderRow(props: { provider: Provider }) {
   }
 
   return (
-    <tr data-slot="provider-row" data-enabled={!!providerData()}>
+    <tr data-slot="provider-row">
       <td data-slot="provider-name">{props.provider.name}</td>
-      <td data-slot="provider-status">
+      <td data-slot="provider-key">
         <Show
           when={store.editing}
-          fallback={<span>{providerData() ? maskCredentials(providerData()!.credentials) : "Not Configured"}</span>}
+          fallback={<span>{providerData() ? maskCredentials(providerData()!.credentials) : "--"}</span>}
         >
           <form id={`provider-form-${props.provider.key}`} action={saveProvider} method="post" data-slot="edit-form">
             <div data-slot="input-wrapper">

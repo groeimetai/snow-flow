@@ -32,9 +32,9 @@
         font-weight: 500;
       }
 
-      &[data-slot="provider-status"] {
+      &[data-slot="provider-key"] {
         text-align: left;
-        color: var(--color-text);
+        color: var(--color-text-secondary);
         width: 50%;
 
         [data-slot="edit-form"] {
@@ -109,10 +109,6 @@
     }
 
     tbody tr {
-      &[data-enabled="false"] {
-        opacity: 0.6;
-      }
-
       &:hover {
         [data-slot="provider-action"] [data-slot="delete-form"] {
           opacity: 1;
