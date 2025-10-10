@@ -4,6 +4,7 @@
     "": {
       "name": "opencode",
       "devDependencies": {
+        "@tsconfig/bun": "1.0.9",
         "husky": "9.1.7",
         "prettier": "3.6.2",
         "sst": "3.17.13",
@@ -21,7 +22,6 @@
         "@solidjs/meta": "^0.29.4",
         "@solidjs/router": "^0.15.0",
         "@solidjs/start": "^1.1.0",
-        "solid-js": "catalog:",
         "vinxi": "^0.5.7",
         "zod": "catalog:",
       },
@@ -40,8 +40,10 @@
         "postgres": "3.4.7",
         "stripe": "18.0.0",
         "ulid": "3.0.0",
+        "zod": "catalog:",
       },
       "devDependencies": {
+        "@tsconfig/node22": "22.0.2",
         "drizzle-kit": "0.30.5",
         "mysql2": "3.14.4",
       },
@@ -72,6 +74,7 @@
       "dependencies": {
         "@jsx-email/all": "2.2.3",
         "@jsx-email/cli": "1.4.3",
+        "@tsconfig/bun": "1.0.9",
         "@types/react": "18.0.25",
         "react": "18.2.0",
       },
@@ -80,6 +83,9 @@
       "name": "@opencode-ai/console-resource",
       "dependencies": {
         "@cloudflare/workers-types": "^4.20250830.0",
+      },
+      "devDependencies": {
+        "@tsconfig/node22": "22.0.2",
       },
     },
     "packages/console/scripts": {
@@ -108,13 +114,13 @@
         "marked-shiki": "1.2.1",
         "remeda": "catalog:",
         "shiki": "3.9.2",
-        "solid-js": "catalog:",
         "solid-list": "0.3.0",
         "tailwindcss": "4.1.11",
         "virtua": "0.42.3",
       },
       "devDependencies": {
         "@tailwindcss/vite": "4.1.11",
+        "@tsconfig/bun": "1.0.9",
         "@types/luxon": "3.7.1",
         "@types/node": "catalog:",
         "typescript": "catalog:",
@@ -1145,7 +1151,7 @@
 
     "@thisbeyond/solid-dnd": ["@thisbeyond/solid-dnd@0.7.5", "", { "peerDependencies": { "solid-js": "^1.5" } }, "sha512-DfI5ff+yYGpK9M21LhYwIPlbP2msKxN2ARwuu6GF8tT1GgNVDTI8VCQvH4TJFoVApP9d44izmAcTh/iTCH2UUw=="],
 
-    "@tsconfig/bun": ["@tsconfig/bun@1.0.7", "", {}, "sha512-udGrGJBNQdXGVulehc1aWT73wkR9wdaGBtB6yL70RJsqwW/yJhIg6ZbRlPOfIUiFNrnBuYLBi9CSmMKfDC7dvA=="],
+    "@tsconfig/bun": ["@tsconfig/bun@1.0.9", "", {}, "sha512-4M0/Ivfwcpz325z6CwSifOBZYji3DFOEpY6zEUt0+Xi2qRhzwvmqQN9XAHJh3OVvRJuAqVTLU2abdCplvp6mwQ=="],
 
     "@tsconfig/node22": ["@tsconfig/node22@22.0.2", "", {}, "sha512-Kmwj4u8sDRDrMYRoN9FDEcXD8UpBSaPQQ24Gz+Gamqfm7xxn+GBR7ge/Z7pK8OXNGyUzbSwJj+TH6B+DS/epyA=="],
 
@@ -3317,9 +3323,13 @@
 
     "opencode/@openauthjs/openauth": ["@openauthjs/openauth@0.4.3", "", { "dependencies": { "@standard-schema/spec": "1.0.0-beta.3", "aws4fetch": "1.0.20", "jose": "5.9.6" }, "peerDependencies": { "arctic": "^2.2.2", "hono": "^4.0.0" } }, "sha512-RlnjqvHzqcbFVymEwhlUEuac4utA5h4nhSK/i2szZuQmxTIqbGUxZ+nM+avM+VV4Ing+/ZaNLKILoXS3yrkOOw=="],
 
+    "opencode/@tsconfig/bun": ["@tsconfig/bun@1.0.7", "", {}, "sha512-udGrGJBNQdXGVulehc1aWT73wkR9wdaGBtB6yL70RJsqwW/yJhIg6ZbRlPOfIUiFNrnBuYLBi9CSmMKfDC7dvA=="],
+
     "opencode/ulid": ["ulid@3.0.1", "", { "bin": { "ulid": "dist/cli.js" } }, "sha512-dPJyqPzx8preQhqq24bBG1YNkvigm87K8kVEHCD+ruZg24t6IFEFv00xMWfxcC4djmFtiTLdFuADn4+DOz6R7Q=="],
 
     "opencontrol/@modelcontextprotocol/sdk": ["@modelcontextprotocol/sdk@1.6.1", "", { "dependencies": { "content-type": "^1.0.5", "cors": "^2.8.5", "eventsource": "^3.0.2", "express": "^5.0.1", "express-rate-limit": "^7.5.0", "pkce-challenge": "^4.1.0", "raw-body": "^3.0.0", "zod": "^3.23.8", "zod-to-json-schema": "^3.24.1" } }, "sha512-oxzMzYCkZHMntzuyerehK3fV6A2Kwh5BD6CGEJSVDU2QNEhfLOptf2X7esQgaHZXHZY0oHmMsOtIDLP71UJXgA=="],
+
+    "opencontrol/@tsconfig/bun": ["@tsconfig/bun@1.0.7", "", {}, "sha512-udGrGJBNQdXGVulehc1aWT73wkR9wdaGBtB6yL70RJsqwW/yJhIg6ZbRlPOfIUiFNrnBuYLBi9CSmMKfDC7dvA=="],
 
     "opencontrol/hono": ["hono@4.7.4", "", {}, "sha512-Pst8FuGqz3L7tFF+u9Pu70eI0xa5S3LPUmrNd5Jm8nTHze9FxLTK9Kaj5g/k4UcwuJSXTP65SyHOPLrffpcAJg=="],
 

@@ -32,6 +32,7 @@
     }
   },
   "devDependencies": {
+    "@tsconfig/bun": "1.0.9",
     "husky": "9.1.7",
     "prettier": "3.6.2",
     "sst": "3.17.13",
