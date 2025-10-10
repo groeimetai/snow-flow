@@ -1,10 +1,9 @@
 import { Show } from "solid-js"
-import { getRequestEvent } from "solid-js/web"
-import { query, action, redirect, createAsync, RouteSectionProps, useParams, A } from "@solidjs/router"
+import { query, createAsync, RouteSectionProps, useParams, A } from "@solidjs/router"
 import "./workspace.css"
-import { useAuthSession } from "~/context/auth.session"
-import { IconLogo } from "../component/icon"
+import { IconLogo, IconWorkspaceLogo } from "../component/icon"
 import { WorkspacePicker } from "./workspace-picker"
+import { UserMenu } from "./user-menu"
 import { withActor } from "~/context/auth.withActor"
 import { User } from "@opencode-ai/console-core/user.js"
 import { Actor } from "@opencode-ai/console-core/actor.js"
@@ -19,22 +18,6 @@ const getUserEmail = query(async (workspaceID: string) => {
   }, workspaceID)
 }, "userEmail")
 
-const logout = action(async () => {
-  "use server"
-  const auth = await useAuthSession()
-  const event = getRequestEvent()
-  const current = auth.data.current
-  if (current)
-    await auth.update((val) => {
-      delete val.account?.[current]
-      const first = Object.keys(val.account ?? {})[0]
-      val.current = first
-      event!.locals.actor = undefined
-      return val
-    })
-  throw redirect("/zen")
-})
-
 export default function WorkspaceLayout(props: RouteSectionProps) {
   const params = useParams()
   const userEmail = createAsync(() => getUserEmail(params.id))
@@ -44,19 +27,14 @@ export default function WorkspaceLayout(props: RouteSectionProps) {
       <header data-component="workspace-header">
         <div data-slot="header-brand">
           <A href="/" data-component="site-title">
-            <IconLogo />
+            <IconWorkspaceLogo />
           </A>
-        </div>
-        <div data-slot="header-actions">
           <Show when={sessionInfo()?.isBeta}>
             <WorkspacePicker />
           </Show>
-          <span data-slot="user">{userEmail()}</span>
-          <form action={logout} method="post">
-            <button type="submit" formaction={logout}>
-              Logout
-            </button>
-          </form>
+        </div>
+        <div data-slot="header-actions">
+          <UserMenu email={userEmail()} />
         </div>
       </header>
       <div>{props.children}</div>

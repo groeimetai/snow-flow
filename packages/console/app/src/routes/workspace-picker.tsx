@@ -7,6 +7,7 @@ import { and, Database, eq, isNull } from "@opencode-ai/console-core/drizzle/ind
 import { WorkspaceTable } from "@opencode-ai/console-core/schema/workspace.sql.js"
 import { UserTable } from "@opencode-ai/console-core/schema/user.sql.js"
 import { Workspace } from "@opencode-ai/console-core/workspace.js"
+import { IconChevron } from "~/component/icon"
 import "./workspace-picker.css"
 
 const getWorkspaces = query(async () => {
@@ -85,25 +86,17 @@ export function WorkspacePicker() {
   return (
     <div data-component="workspace-picker">
       <div ref={dropdownRef}>
-        <div data-slot="trigger" onClick={() => setStore("showDropdown", !store.showDropdown)}>
+        <button data-slot="trigger" type="button" onClick={() => setStore("showDropdown", !store.showDropdown)}>
           <span>{currentWorkspace()}</span>
-          <svg data-slot="chevron" width="12" height="8" viewBox="0 0 12 8" fill="none">
-            <path
-              d="M1 1L6 6L11 1"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </div>
+          <IconChevron data-slot="chevron" />
+        </button>
 
         <Show when={store.showDropdown}>
           <div data-slot="dropdown">
             <For each={workspaces()}>
               {(workspace) => (
                 <button
-                  data-slot="option"
+                  data-slot="item"
                   data-selected={workspace.id === params.id}
                   type="button"
                   onClick={() => handleSelectWorkspace(workspace.id)}
@@ -112,7 +105,7 @@ export function WorkspacePicker() {
                 </button>
               )}
             </For>
-            <button data-slot="create-option" type="button" onClick={() => handleWorkspaceNew()}>
+            <button data-slot="create-item" type="button" onClick={() => handleWorkspaceNew()}>
               + Create New Workspace
             </button>
           </div>
