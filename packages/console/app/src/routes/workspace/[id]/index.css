@@ -45,7 +45,6 @@
           letter-spacing: -0.03125rem;
           margin: 0;
           color: var(--color-text-secondary);
-          text-transform: uppercase;
 
           @media (max-width: 30rem) {
             font-size: var(--font-size-md);
