@@ -125,8 +125,8 @@ function MemberRow(props: { member: any; workspaceID: string; actorID: string; a
           <td data-slot="member-role">{props.member.role}</td>
           <td data-slot="member-usage">{getUsageDisplay()}</td>
           <td data-slot="member-joined">{props.member.timeSeen ? "" : "invited"}</td>
-          <td data-slot="member-actions">
-            <Show when={isAdmin()}>
+          <Show when={isAdmin()}>
+            <td data-slot="member-actions">
               <button data-color="ghost" onClick={() => setEditing(true)}>
                 Edit
               </button>
@@ -137,13 +137,13 @@ function MemberRow(props: { member: any; workspaceID: string; actorID: string; a
                   <button data-color="ghost">Delete</button>
                 </form>
               </Show>
-            </Show>
-          </td>
+            </td>
+          </Show>
         </tr>
       }
     >
       <tr>
-        <td colspan="5">
+        <td colspan={isAdmin() ? 5 : 4}>
           <form action={updateMember} method="post">
             <div data-slot="edit-member-email">{props.member.accountEmail ?? props.member.email}</div>
             <input type="hidden" name="id" value={props.member.id} />
@@ -292,7 +292,9 @@ export function MemberSection() {
               <th>Role</th>
               <th>Usage</th>
               <th></th>
-              <th></th>
+              <Show when={data()?.actorRole === "admin"}>
+                <th></th>
+              </Show>
             </tr>
           </thead>
           <tbody>

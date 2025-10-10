@@ -187,10 +187,25 @@
 
       &[data-slot="member-actions"] {
         font-family: var(--font-sans);
+        display: flex;
+        gap: var(--space-2);
+
+        form button {
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.15s ease;
+        }
       }
     }
 
     tbody tr {
+      &:hover {
+        [data-slot="member-actions"] form button {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
+
       &:last-child td {
         border-bottom: none;
       }
