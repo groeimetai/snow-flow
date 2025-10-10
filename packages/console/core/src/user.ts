@@ -58,8 +58,9 @@ export namespace User {
     z.object({
       email: z.string(),
       role: z.enum(UserRole),
+      monthlyLimit: z.number().nullable().optional(),
     }),
-    async ({ email, role }) => {
+    async ({ email, role, monthlyLimit }) => {
       Actor.assertAdmin()
       const workspaceID = Actor.workspace()
 
@@ -80,10 +81,12 @@ export namespace User {
                 }),
             workspaceID,
             role,
+            monthlyLimit,
           })
           .onDuplicateKeyUpdate({
             set: {
               role,
+              monthlyLimit,
               timeDeleted: null,
             },
           }),

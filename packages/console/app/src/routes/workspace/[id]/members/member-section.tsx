@@ -1,11 +1,12 @@
 import { json, query, action, useParams, createAsync, useSubmission } from "@solidjs/router"
-import { createEffect, createSignal, For, Show } from "solid-js"
+import { createEffect, createSignal, For, Show, onCleanup } from "solid-js"
 import { withActor } from "~/context/auth.withActor"
 import { createStore } from "solid-js/store"
 import styles from "./member-section.module.css"
 import { UserRole } from "@opencode-ai/console-core/schema/user.sql.js"
 import { Actor } from "@opencode-ai/console-core/actor.js"
 import { User } from "@opencode-ai/console-core/user.js"
+import { IconChevron } from "~/component/icon"
 
 const listMembers = query(async (workspaceID: string) => {
   "use server"
@@ -26,10 +27,13 @@ const inviteMember = action(async (form: FormData) => {
   if (!workspaceID) return { error: "Workspace ID is required" }
   const role = form.get("role")?.toString() as (typeof UserRole)[number]
   if (!role) return { error: "Role is required" }
+  const limit = form.get("limit")?.toString()
+  const monthlyLimit = limit && limit.trim() !== "" ? parseInt(limit) : null
+  if (monthlyLimit !== null && monthlyLimit < 0) return { error: "Set a valid monthly limit" }
   return json(
     await withActor(
       () =>
-        User.invite({ email, role })
+        User.invite({ email, role, monthlyLimit })
           .then((data) => ({ error: undefined, data }))
           .catch((e) => ({ error: e.message as string })),
       workspaceID,
@@ -213,14 +217,31 @@ export function MemberSection() {
   const params = useParams()
   const data = createAsync(() => listMembers(params.id))
   const submission = useSubmission(inviteMember)
-  const [store, setStore] = createStore({ show: false })
+  const [store, setStore] = createStore({
+    show: false,
+    selectedRole: "member" as (typeof UserRole)[number],
+    showRoleDropdown: false,
+    limit: "",
+  })
 
   let input: HTMLInputElement
+  let roleDropdownRef: HTMLDivElement | undefined
 
   createEffect(() => {
     if (!submission.pending && submission.result && !submission.result.error) {
       setStore("show", false)
     }
+  })
+
+  createEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (roleDropdownRef && !roleDropdownRef.contains(event.target as Node)) {
+        setStore("showRoleDropdown", false)
+      }
+    }
+
+    document.addEventListener("click", handleClickOutside)
+    onCleanup(() => document.removeEventListener("click", handleClickOutside))
   })
 
   function show() {
@@ -229,11 +250,19 @@ export function MemberSection() {
       if (!submission.result) break
     }
     setStore("show", true)
+    setStore("selectedRole", "member")
+    setStore("limit", "")
     setTimeout(() => input?.focus(), 0)
   }
 
   function hide() {
     setStore("show", false)
+    setStore("showRoleDropdown", false)
+  }
+
+  const roleLabels = {
+    admin: { title: "Admin", description: "Can manage models, members, and billing" },
+    member: { title: "Member", description: "Can only generate API keys for themselves" },
   }
 
   return (
@@ -251,28 +280,81 @@ export function MemberSection() {
       </div>
       <Show when={store.show}>
         <form action={inviteMember} method="post" data-slot="create-form">
-          <div data-slot="input-container">
-            <input ref={(r) => (input = r)} data-component="input" name="email" type="text" placeholder="Enter email" />
-            <div data-slot="role-selector">
-              <label>
-                <input type="radio" name="role" value="admin" checked />
-                <div>
-                  <strong>Admin</strong>
-                  <p>Can manage models, members, and billing</p>
-                </div>
-              </label>
-              <label>
-                <input type="radio" name="role" value="member" />
-                <div>
-                  <strong>Member</strong>
-                  <p>Can only generate API keys for themselves</p>
-                </div>
-              </label>
+          <div data-slot="input-row">
+            <div data-slot="input-field">
+              <p>Email</p>
+              <input
+                ref={(r) => (input = r)}
+                data-component="input"
+                name="email"
+                type="text"
+                placeholder="Enter email"
+              />
             </div>
-            <Show when={submission.result && submission.result.error}>
-              {(err) => <div data-slot="form-error">{err()}</div>}
-            </Show>
+            <div data-slot="input-field">
+              <p>Role</p>
+              <div data-slot="role-selector" ref={roleDropdownRef}>
+                <button
+                  data-slot="trigger"
+                  type="button"
+                  onClick={() => setStore("showRoleDropdown", !store.showRoleDropdown)}
+                >
+                  <span>{roleLabels[store.selectedRole].title}</span>
+                  <IconChevron data-slot="chevron" />
+                </button>
+                <Show when={store.showRoleDropdown}>
+                  <div data-slot="dropdown">
+                    <button
+                      data-slot="item"
+                      data-selected={store.selectedRole === "admin"}
+                      type="button"
+                      onClick={() => {
+                        setStore("selectedRole", "admin")
+                        setStore("showRoleDropdown", false)
+                      }}
+                    >
+                      <div>
+                        <strong>Admin</strong>
+                        <p>{roleLabels.admin.description}</p>
+                      </div>
+                    </button>
+                    <button
+                      data-slot="item"
+                      data-selected={store.selectedRole === "member"}
+                      type="button"
+                      onClick={() => {
+                        setStore("selectedRole", "member")
+                        setStore("showRoleDropdown", false)
+                      }}
+                    >
+                      <div>
+                        <strong>{roleLabels.member.title}</strong>
+                        <p>{roleLabels.member.description}</p>
+                      </div>
+                    </button>
+                  </div>
+                </Show>
+              </div>
+            </div>
           </div>
+          <div data-slot="input-row">
+            <div data-slot="input-field">
+              <p>Usage limit</p>
+              <input
+                data-component="input"
+                name="limit"
+                type="number"
+                placeholder="No limit"
+                value={store.limit}
+                onInput={(e) => setStore("limit", e.currentTarget.value)}
+                min="0"
+              />
+            </div>
+          </div>
+          <Show when={submission.result && submission.result.error}>
+            {(err) => <div data-slot="form-error">{err()}</div>}
+          </Show>
+          <input type="hidden" name="role" value={store.selectedRole} />
           <input type="hidden" name="workspaceID" value={params.id} />
           <div data-slot="form-actions">
             <button type="reset" data-color="ghost" onClick={() => hide()}>
