@@ -13,11 +13,6 @@ import { Key } from "./key"
 import { KeyTable } from "./schema/key.sql"
 
 export namespace User {
-  const assertAdmin = () => {
-    if (Actor.userRole() === "admin") return
-    throw new Error(`Expected admin user, got ${Actor.userRole()}`)
-  }
-
   const assertNotSelf = (id: string) => {
     if (Actor.userID() !== id) return
     throw new Error(`Expected not self actor, got self actor`)
@@ -65,7 +60,7 @@ export namespace User {
       role: z.enum(UserRole),
     }),
     async ({ email, role }) => {
-      assertAdmin()
+      Actor.assertAdmin()
       const workspaceID = Actor.workspace()
 
       // create user
@@ -176,7 +171,7 @@ export namespace User {
       monthlyLimit: z.number().nullable(),
     }),
     async ({ id, role, monthlyLimit }) => {
-      assertAdmin()
+      Actor.assertAdmin()
       if (role === "member") assertNotSelf(id)
       return await Database.use((tx) =>
         tx
@@ -188,7 +183,7 @@ export namespace User {
   )
 
   export const remove = fn(z.string(), async (id) => {
-    assertAdmin()
+    Actor.assertAdmin()
     assertNotSelf(id)
 
     return await Database.use((tx) =>
