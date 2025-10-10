@@ -1,4 +1,3 @@
-import "./index.css"
 import { KeySection } from "./key-section"
 
 export default function () {

@@ -1,4 +1,3 @@
-import "./index.css"
 import { NewUserSection } from "./new-user-section"
 import { UsageSection } from "./usage-section"
 import { ModelSection } from "./model-section"

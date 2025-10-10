@@ -1,4 +1,3 @@
-import "./index.css"
 import { SettingsSection } from "./settings-section"
 
 export default function () {

@@ -1,4 +1,3 @@
-import "./index.css"
 import { MonthlyLimitSection } from "./monthly-limit-section"
 import { BillingSection } from "./billing-section"
 import { PaymentSection } from "./payment-section"

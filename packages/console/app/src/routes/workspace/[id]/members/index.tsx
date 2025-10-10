@@ -1,4 +1,3 @@
-import "./index.css"
 import { MemberSection } from "./member-section"
 
 export default function () {
