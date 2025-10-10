@@ -123,7 +123,7 @@ test("binary file handling", async () => {
       const before = await Snapshot.track()
       expect(before).toBeTruthy()
 
-      await Bun.write(`${tmp.path}/image.png`, Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+      await Bun.write(`${tmp.path}/image.png`, new Uint8Array([0x89, 0x50, 0x4e, 0x47]))
 
       const patch = await Snapshot.patch(before!)
       expect(patch.files).toContain(`${tmp.path}/image.png`)
