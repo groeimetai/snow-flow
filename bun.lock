@@ -211,6 +211,7 @@
       "devDependencies": {
         "@hey-api/openapi-ts": "0.81.0",
         "@tsconfig/node22": "catalog:",
+        "@types/node": "24.7.1",
         "typescript": "catalog:",
       },
     },
@@ -3129,6 +3130,8 @@
 
     "@opencode-ai/console-resource/@cloudflare/workers-types": ["@cloudflare/workers-types@4.20251001.0", "", {}, "sha512-MXseDjmqL1hIdQCqwHDMG8SE60W4FdwqLsofZjo/KtLH9zFcoQfZkCYyQrdfEJINiSoNJjrup7WR6KsqiFUSsg=="],
 
+    "@opencode-ai/sdk/@types/node": ["@types/node@24.7.1", "", { "dependencies": { "undici-types": "~7.14.0" } }, "sha512-CmyhGZanP88uuC5GpWU9q+fI61j2SkhO3UGMUdfYRE6Bcy0ccyzn1Rqj9YAB/ZY4kOXmNf0ocah5GtphmLMP6Q=="],
+
     "@opencode-ai/web/@shikijs/transformers": ["@shikijs/transformers@3.4.2", "", { "dependencies": { "@shikijs/core": "3.4.2", "@shikijs/types": "3.4.2" } }, "sha512-I5baLVi/ynLEOZoWSAMlACHNnG+yw5HDmse0oe+GW6U1u+ULdEB3UHiVWaHoJSSONV7tlcVxuaMy74sREDkSvg=="],
 
     "@opencode-ai/web/@types/luxon": ["@types/luxon@3.6.2", "", {}, "sha512-R/BdP7OxEMc44l2Ex5lSXHoIXTB2JLNa3y2QISIbr58U/YcsffyQrYW//hZSdrfxrjRZj3GcUoxMPGdO8gSYuw=="],
@@ -3590,6 +3593,8 @@
     "@octokit/request-error/@octokit/types/@octokit/openapi-types": ["@octokit/openapi-types@26.0.0", "", {}, "sha512-7AtcfKtpo77j7Ts73b4OWhOZHTKo/gGY8bB3bNBQz4H+GRSWqx2yvj8TXRsbdTE0eRmYmXOEY66jM7mJ7LzfsA=="],
 
     "@octokit/request/@octokit/types/@octokit/openapi-types": ["@octokit/openapi-types@26.0.0", "", {}, "sha512-7AtcfKtpo77j7Ts73b4OWhOZHTKo/gGY8bB3bNBQz4H+GRSWqx2yvj8TXRsbdTE0eRmYmXOEY66jM7mJ7LzfsA=="],
+
+    "@opencode-ai/sdk/@types/node/undici-types": ["undici-types@7.14.0", "", {}, "sha512-QQiYxHuyZ9gQUIrmPo3IA+hUl4KYk8uSA7cHrcKd/l3p1OTpZcM0Tbp9x7FAtXdAYhlasd60ncPpgu6ihG6TOA=="],
 
     "@opencode-ai/web/@shikijs/transformers/@shikijs/core": ["@shikijs/core@3.4.2", "", { "dependencies": { "@shikijs/types": "3.4.2", "@shikijs/vscode-textmate": "^10.0.2", "@types/hast": "^3.0.4", "hast-util-to-html": "^9.0.5" } }, "sha512-AG8vnSi1W2pbgR2B911EfGqtLE9c4hQBYkv/x7Z+Kt0VxhgQKcW7UNDVYsu9YxwV6u+OJrvdJrMq6DNWoBjihQ=="],
 
