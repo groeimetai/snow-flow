@@ -10,9 +10,10 @@ const getModelsInfo = query(async (workspaceID: string) => {
   "use server"
   return withActor(async () => {
     return {
-      all: Object.keys(ZenModel.list())
-        .filter((model) => !["claude-3-5-haiku", "qwen3-max"].includes(model))
-        .sort(([a], [b]) => a.localeCompare(b)),
+      all: Object.entries(ZenModel.list())
+        .filter(([id, _model]) => !["claude-3-5-haiku", "qwen3-max"].includes(id))
+        .sort(([_idA, modelA], [_idB, modelB]) => modelA.name.localeCompare(modelB.name))
+        .map(([id, model]) => ({ id, name: model.name })),
       disabled: await Model.listDisabled(),
     }
   }, workspaceID)
@@ -62,14 +63,14 @@ export function ModelSection() {
               </thead>
               <tbody>
                 <For each={modelsInfo()!.all}>
-                  {(modelId) => {
-                    const isEnabled = createMemo(() => !modelsInfo()!.disabled.includes(modelId))
+                  {({ id, name }) => {
+                    const isEnabled = createMemo(() => !modelsInfo()!.disabled.includes(id))
                     return (
                       <tr data-slot="model-row" data-disabled={!isEnabled()}>
-                        <td data-slot="model-name">{ZenModel.list()[modelId].name}</td>
+                        <td data-slot="model-name">{name}</td>
                         <td data-slot="model-toggle">
                           <form action={updateModel} method="post">
-                            <input type="hidden" name="model" value={modelId} />
+                            <input type="hidden" name="model" value={id} />
                             <input type="hidden" name="workspaceID" value={params.id} />
                             <input type="hidden" name="enabled" value={isEnabled().toString()} />
                             <label data-slot="model-toggle-label">
