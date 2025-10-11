@@ -36,6 +36,7 @@
     "marked": "16.2.0",
     "marked-shiki": "1.2.1",
     "remeda": "catalog:",
+    "solid-js": "catalog:",
     "shiki": "3.9.2",
     "solid-list": "0.3.0",
     "tailwindcss": "4.1.11",
