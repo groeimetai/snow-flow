@@ -11,6 +11,7 @@ import { Account } from "./account"
 import { AccountTable } from "./schema/account.sql"
 import { Key } from "./key"
 import { KeyTable } from "./schema/key.sql"
+import { WorkspaceTable } from "./schema/workspace.sql"
 
 export namespace User {
   const assertNotSelf = (id: string) => {
@@ -115,6 +116,21 @@ export namespace User {
 
       // send email, ignore errors
       try {
+        const emailInfo = await Database.use((tx) =>
+          tx
+            .select({
+              email: AccountTable.email,
+              workspaceName: WorkspaceTable.name,
+            })
+            .from(UserTable)
+            .innerJoin(AccountTable, eq(UserTable.accountID, AccountTable.id))
+            .innerJoin(WorkspaceTable, eq(WorkspaceTable.id, workspaceID))
+            .where(
+              and(eq(UserTable.workspaceID, workspaceID), eq(UserTable.id, Actor.assert("user").properties.userID)),
+            )
+            .then((rows) => rows[0]),
+        )
+
         const { InviteEmail } = await import("@opencode-ai/console-mail/InviteEmail.jsx")
         await AWS.sendEmail({
           to: email,
@@ -122,8 +138,10 @@ export namespace User {
           body: render(
             // @ts-ignore
             InviteEmail({
+              inviter: emailInfo.email,
               assetsUrl: `https://opencode.ai/email`,
-              workspace: workspaceID,
+              workspaceID: workspaceID,
+              workspaceName: emailInfo.workspaceName,
             }),
           ),
         })
