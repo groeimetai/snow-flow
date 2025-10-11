@@ -11,7 +11,7 @@ const getModelsInfo = query(async (workspaceID: string) => {
   return withActor(async () => {
     return {
       all: Object.keys(ZenModel.list())
-        .filter((model) => !["claude-3-5-haiku", "glm-4.6", "qwen3-max"].includes(model))
+        .filter((model) => !["claude-3-5-haiku", "qwen3-max"].includes(model))
         .sort(([a], [b]) => a.localeCompare(b)),
       disabled: await Model.listDisabled(),
     }
@@ -66,7 +66,7 @@ export function ModelSection() {
                     const isEnabled = createMemo(() => !modelsInfo()!.disabled.includes(modelId))
                     return (
                       <tr data-slot="model-row" data-disabled={!isEnabled()}>
-                        <td data-slot="model-name">{modelId}</td>
+                        <td data-slot="model-name">{ZenModel.list()[modelId].name}</td>
                         <td data-slot="model-toggle">
                           <form action={updateModel} method="post">
                             <input type="hidden" name="model" value={modelId} />
