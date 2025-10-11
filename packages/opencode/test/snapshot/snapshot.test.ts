@@ -502,9 +502,9 @@ test("diff function with various changes", async () => {
       await Bun.write(`${tmp.path}/b.txt`, "modified content")
 
       const diff = await Snapshot.diff(before!)
-      expect(diff).toContain("deleted")
-      expect(diff).toContain("modified")
-      // Note: git diff only shows changes to tracked files, not untracked files like new.txt
+      expect(diff).toContain("a.txt")
+      expect(diff).toContain("b.txt")
+      expect(diff).toContain("new.txt")
     },
   })
 })

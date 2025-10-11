@@ -138,6 +138,7 @@ export namespace Config {
   }
 
   async function installDependencies(dir: string) {
+    if (Installation.isDev()) return
     await Bun.write(path.join(dir, "package.json"), "{}")
     await Bun.write(path.join(dir, ".gitignore"), ["node_modules", "package.json", "bun.lock", ".gitignore"].join("\n"))
     await BunProc.run(
