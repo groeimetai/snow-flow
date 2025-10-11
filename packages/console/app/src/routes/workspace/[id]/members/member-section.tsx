@@ -130,12 +130,11 @@ function MemberRow(props: { member: any; workspaceID: string; actorID: string; a
         month: "long",
         timeZone: "UTC",
       })
-      const usage = current === lastUsed ? (props.member.monthlyUsage ?? 0) : 0
-      return (usage / 100000000).toFixed(2)
+      return current === lastUsed ? (props.member.monthlyUsage ?? 0) : 0
     })()
 
     const limit = props.member.monthlyLimit ? `$${props.member.monthlyLimit}` : "no limit"
-    return `$${currentUsage} / ${limit}`
+    return `$${(currentUsage / 100000000).toFixed(2)} / ${limit}`
   }
 
   return (
