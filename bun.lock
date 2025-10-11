@@ -53,6 +53,7 @@
         "@types/node": "24.7.1",
         "drizzle-kit": "0.30.5",
         "mysql2": "3.14.4",
+        "typescript": "catalog:",
       },
     },
     "packages/console/function": {
