@@ -183,6 +183,8 @@
 
   [data-slot="members-table"] {
     overflow-x: auto;
+    padding-bottom: 200px;
+    margin-bottom: -200px;
   }
 
   [data-slot="members-table-element"] {
