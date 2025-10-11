@@ -108,7 +108,7 @@
           line-height: 1.2;
           letter-spacing: -0.03125rem;
           margin: 0;
-          color: var(--color-text-secondary);
+          color: var(--color-text);
 
           @media (max-width: 30rem) {
             font-size: var(--font-size-md);
@@ -176,7 +176,7 @@
     p {
       line-height: 1.5;
       font-size: var(--font-size-md);
-      color: var(--color-text-muted);
+      color: var(--color-text);
       display: flex;
       align-items: center;
       justify-content: space-between;
