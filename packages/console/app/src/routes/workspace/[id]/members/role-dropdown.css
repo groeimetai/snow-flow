@@ -4,6 +4,12 @@
     background-color: var(--color-bg);
     width: 100%;
     text-transform: capitalize;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    min-width: 0;
 
     &:hover {
       border-color: var(--color-accent);
