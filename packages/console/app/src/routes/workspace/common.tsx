@@ -44,3 +44,8 @@ export const createCheckoutUrl = action(async (workspaceID: string, successUrl: 
   "use server"
   return withActor(() => Billing.generateCheckoutUrl({ successUrl, cancelUrl }), workspaceID)
 }, "checkoutUrl")
+
+export const queryBillingInfo = query(async (workspaceID: string) => {
+  "use server"
+  return withActor(() => Billing.get(), workspaceID)
+}, "billing.get")

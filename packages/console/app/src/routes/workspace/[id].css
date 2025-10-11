@@ -177,9 +177,34 @@
       line-height: 1.5;
       font-size: var(--font-size-md);
       color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+
+      @media (max-width: 48rem) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+      }
 
       a {
         color: var(--color-text-muted);
+      }
+
+      [data-slot="billing-info"] {
+        flex-shrink: 0;
+        margin-left: auto;
+      }
+
+      [data-slot="balance"] {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+
+        b {
+          font-weight: 600;
+          color: var(--color-text);
+        }
       }
     }
   }
