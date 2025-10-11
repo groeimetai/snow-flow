@@ -34,7 +34,7 @@ export const InviteEmail = ({
   workspaceName = "anomaly",
   assetsUrl = LOCAL_ASSETS_URL,
 }: InviteEmailProps) => {
-  const subject = `You were invited to the OpenCode Console`
+  const subject = `You've been invited to join the ${workspaceName} workspace on OpenCode Console`
   const messagePlain = `${inviter} invited you to join the ${workspaceName} workspace (${workspaceID}).`
   const url = `${CONSOLE_URL}workspace/${workspaceID}`
   return (
