@@ -2,7 +2,7 @@ import { Billing } from "@opencode-ai/console-core/billing.js"
 import { query, action, useParams, createAsync, useAction } from "@solidjs/router"
 import { For, Show } from "solid-js"
 import { withActor } from "~/context/auth.withActor"
-import { formatDateUTC, formatDateForTable } from "../common"
+import { formatDateUTC, formatDateForTable } from "../../common"
 import styles from "./payment-section.module.css"
 
 const getPaymentsInfo = query(async (workspaceID: string) => {
