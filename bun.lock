@@ -26,6 +26,9 @@
         "vinxi": "^0.5.7",
         "zod": "catalog:",
       },
+      "devDependencies": {
+        "typescript": "catalog:",
+      },
     },
     "packages/console/core": {
       "name": "@opencode-ai/console-core",

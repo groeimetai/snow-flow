@@ -22,6 +22,9 @@
     "vinxi": "^0.5.7",
     "zod": "catalog:"
   },
+  "devDependencies": {
+    "typescript": "catalog:"
+  },
   "engines": {
     "node": ">=22"
   }
