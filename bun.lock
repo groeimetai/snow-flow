@@ -3,6 +3,9 @@
   "workspaces": {
     "": {
       "name": "opencode",
+      "dependencies": {
+        "@opencode-ai/sdk": "workspace:*",
+      },
       "devDependencies": {
         "@tsconfig/bun": "1.0.9",
         "husky": "9.1.7",
