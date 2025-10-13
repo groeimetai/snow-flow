@@ -18,7 +18,7 @@ export namespace Provider {
 
   type CustomLoader = (provider: ModelsDev.Provider) => Promise<{
     autoload: boolean
-    getModel?: (sdk: any, modelID: string) => Promise<any>
+    getModel?: (sdk: any, modelID: string, options?: Record<string, any>) => Promise<any>
     options?: Record<string, any>
   }>
 
@@ -58,7 +58,7 @@ export namespace Provider {
     openai: async () => {
       return {
         autoload: false,
-        async getModel(sdk: any, modelID: string) {
+        async getModel(sdk: any, modelID: string, options?: Record<string, any>) {
           return sdk.responses(modelID)
         },
         options: {},
@@ -67,8 +67,12 @@ export namespace Provider {
     azure: async () => {
       return {
         autoload: false,
-        async getModel(sdk: any, modelID: string) {
-          return sdk.responses(modelID)
+        async getModel(sdk: any, modelID: string, options?: Record<string, any>) {
+          if (options?.["useCompletionUrls"]) {
+            return sdk.completion(modelID)
+          } else {
+            return sdk.responses(modelID)
+          }
         },
         options: {},
       }
@@ -86,7 +90,7 @@ export namespace Provider {
           region,
           credentialProvider: fromNodeProviderChain(),
         },
-        async getModel(sdk: any, modelID: string) {
+        async getModel(sdk: any, modelID: string, options?: Record<string, any>) {
           let regionPrefix = region.split("-")[0]
 
           switch (regionPrefix) {
@@ -197,7 +201,7 @@ export namespace Provider {
       [providerID: string]: {
         source: Source
         info: ModelsDev.Provider
-        getModel?: (sdk: any, modelID: string) => Promise<any>
+        getModel?: (sdk: any, modelID: string, options?: Record<string, any>) => Promise<any>
         options: Record<string, any>
       }
     } = {}
@@ -213,7 +217,7 @@ export namespace Provider {
       id: string,
       options: Record<string, any>,
       source: Source,
-      getModel?: (sdk: any, modelID: string) => Promise<any>,
+      getModel?: (sdk: any, modelID: string, options?: Record<string, any>) => Promise<any>,
     ) {
       const provider = providers[id]
       if (!provider) {
@@ -432,7 +436,9 @@ export namespace Provider {
     const sdk = await getSDK(provider.info, info)
 
     try {
-      const language = provider.getModel ? await provider.getModel(sdk, modelID) : sdk.languageModel(modelID)
+      const language = provider.getModel
+        ? await provider.getModel(sdk, modelID, provider.options)
+        : sdk.languageModel(modelID)
       log.info("found", { providerID, modelID })
       s.models.set(key, {
         providerID,
