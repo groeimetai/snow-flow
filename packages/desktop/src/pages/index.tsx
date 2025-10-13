@@ -214,9 +214,10 @@ export default function Page() {
   }
 
   return (
-    <div class="relative">
-      <div class="h-screen flex">
-        <div class="shrink-0 w-56">
+    <div class="relative h-screen flex flex-col">
+      <header class="h-10 shrink-0 bg-background-panel"></header>
+      <main class="h-[calc(100vh-2.5rem)] flex">
+        <div class="shrink-0 w-64">
           <SessionList />
         </div>
         <div class="grow w-full min-w-0 overflow-y-auto flex justify-center">
@@ -342,7 +343,7 @@ export default function Page() {
             </Show>
           </div>
         </div>
-      </div>
+      </main>
       <Show when={store.modelSelectOpen}>
         <SelectDialog
           key={(x) => `${x.provider.id}:${x.id}`}

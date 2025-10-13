@@ -467,6 +467,11 @@ function init() {
       return sync.session.get(store.active)
     })
 
+    createEffect(() => {
+      if (!store.active) return
+      sync.session.sync(store.active)
+    })
+
     return {
       active,
       setActive(sessionId: string | undefined) {
