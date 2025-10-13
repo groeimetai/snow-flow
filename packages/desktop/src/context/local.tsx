@@ -202,6 +202,13 @@ function init() {
       }
     }
 
+    const init = async (path: string) => {
+      const relativePath = relative(path)
+      if (!store.node[relativePath]) await fetch(path)
+      if (store.node[relativePath].loaded) return
+      return load(relativePath)
+    }
+
     const open = async (path: string, options?: { pinned?: boolean; view?: LocalFile["view"] }) => {
       const relativePath = relative(path)
       if (!store.node[relativePath]) await fetch(path)
@@ -271,6 +278,7 @@ function init() {
       update: (path: string, node: LocalFile) => setStore("node", path, reconcile(node)),
       open,
       load,
+      init,
       close(path: string) {
         setStore("opened", (opened) => opened.filter((x) => x !== path))
         if (store.active === path) {
@@ -473,11 +481,16 @@ function init() {
   const context = (() => {
     const [store, setStore] = createStore<{
       activeTab: boolean
+      files: string[]
+      activeFile?: string
       items: (ContextItem & { key: string })[]
     }>({
       activeTab: true,
+      files: [],
       items: [],
     })
+    const files = createMemo(() => store.files.map((x) => file.node(x)))
+    const activeFile = createMemo(() => (store.activeFile ? file.node(store.activeFile) : undefined))
 
     return {
       all() {
@@ -504,6 +517,17 @@ function init() {
       },
       remove(key: string) {
         setStore("items", (x) => x.filter((x) => x.key !== key))
+      },
+      files,
+      openFile(path: string) {
+        file.init(path).then(() => {
+          setStore("files", (x) => [...x, path])
+          setStore("activeFile", path)
+        })
+      },
+      activeFile,
+      setActiveFile(path: string | undefined) {
+        setStore("activeFile", path)
       },
     }
   })()
