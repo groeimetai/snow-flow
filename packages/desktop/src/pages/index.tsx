@@ -213,11 +213,22 @@ export default function Page() {
     })
   }
 
+  const plus = (
+    <IconButton
+      class="text-text-muted/60 peer-data-[selected]/tab:opacity-100 peer-data-[selected]/tab:text-text peer-data-[selected]/tab:hover:bg-border-subtle hover:opacity-100 peer-hover/tab:opacity-100"
+      size="xs"
+      variant="secondary"
+      onClick={() => setStore("fileSelectOpen", true)}
+    >
+      <Icon name="plus" size={12} />
+    </IconButton>
+  )
+
   return (
     <div class="relative h-screen flex flex-col">
-      <header class="h-10 shrink-0 bg-background-panel"></header>
-      <main class="h-[calc(100vh-2.5rem)] flex">
-        <div class="shrink-0 w-64">
+      <header class="h-12 shrink-0"></header>
+      <main class="h-[calc(100vh-3rem)] flex">
+        <div class="hidden shrink-0 w-64">
           <SessionList />
         </div>
         <div class="grow w-full min-w-0 overflow-y-auto flex justify-center">
@@ -256,92 +267,15 @@ export default function Page() {
         <div class="hidden grow min-w-0">
           <EditorPane onFileClick={handleFileClick} />
         </div>
-        <div class="absolute bottom-4 right-4 border border-border-subtle/60 p-2 rounded-xl bg-background w-xl flex flex-col gap-2 z-50">
-          <div class="flex items-center gap-2">
-            <Select
-              options={sync.data.session}
-              current={local.session.active()}
-              placeholder="New Session"
-              value={(x) => x.id}
-              label={(x) => x.title}
-              onSelect={(s) => local.session.setActive(s?.id)}
-              class="bg-transparent! max-w-48 pl-0! text-text-muted!"
-            />
-            <Show when={local.session.active()}>
-              <>
-                <div>/</div>
-                <Select
-                  options={sync.data.message[local.session.active()!.id]?.filter((m) => m.role === "user") ?? []}
-                  label={(m) => sync.data.part[m.id].find((p) => p.type === "text")!.text}
-                  class="bg-transparent! max-w-48 pl-0! text-text-muted!"
-                />
-              </>
-            </Show>
-          </div>
-          <div class="h-72 text-xs overflow-x-scroll no-scrollbar w-full min-w-0">
-            <Tabs
-              class="relative grow w-full flex flex-col gap-1 h-full"
-              value={local.context.activeFile()?.path}
-              onChange={local.context.setActiveFile}
-            >
-              <div class="sticky top-0 shrink-0 flex items-center gap-1">
-                <IconButton
-                  class="text-text-muted/60 peer-data-[selected]/tab:opacity-100 peer-data-[selected]/tab:text-text peer-data-[selected]/tab:hover:bg-border-subtle hover:opacity-100 peer-hover/tab:opacity-100"
-                  size="xs"
-                  variant="secondary"
-                  onClick={() => setStore("fileSelectOpen", true)}
-                >
-                  <Icon name="plus" size={12} />
-                </IconButton>
-                <Tabs.List class="grow after:hidden! h-full divide-none! gap-1">
-                  <For each={local.context.files()}>
-                    {(file) => (
-                      <KobalteTabs.Trigger
-                        value={file.path}
-                        class="h-full"
-                        // onClick={() => props.onTabClick(props.file)}
-                      >
-                        <div class="flex items-center gap-x-1 rounded-md bg-background-panel px-2 h-full">
-                          <FileIcon node={file} class="shrink-0 size-3!" />
-                          <span class="text-xs text-text whitespace-nowrap">{getFilename(file.path)}</span>
-                        </div>
-                      </KobalteTabs.Trigger>
-                    )}
-                  </For>
-                </Tabs.List>
-              </div>
-              <For each={local.context.files()}>
-                {(file) => (
-                  <Tabs.Content value={file.path} class="grow h-full pt-1 select-text rounded-md">
-                    <Code path={file.path} code={file.content?.content ?? ""} />
-                  </Tabs.Content>
-                )}
-              </For>
-            </Tabs>
-          </div>
+        <div class="absolute bottom-4 inset-x-0 p-2 flex flex-col justify-center items-center gap-2 z-50">
           <PromptForm
+            class="w-xl"
             onSubmit={handlePromptSubmit}
             onOpenModelSelect={() => setStore("modelSelectOpen", true)}
             onInputRefChange={(element: HTMLTextAreaElement | undefined) => {
               inputRef = element ?? undefined
             }}
           />
-          <div class="hidden relative flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-            <Show when={local.session.active()}>
-              {(activeSession) => (
-                <div class="relative">
-                  <div class="sticky top-0 bg-background z-50 px-2 h-8 border-b border-border-subtle/30">
-                    <div class="h-full flex items-center gap-2">
-                      <h2 class="text-sm font-medium text-text truncate">
-                        {activeSession().title || "Untitled Session"}
-                      </h2>
-                    </div>
-                  </div>
-                  <SessionTimeline session={activeSession().id} />
-                </div>
-              )}
-            </Show>
-          </div>
         </div>
       </main>
       <Show when={store.modelSelectOpen}>
