@@ -5,6 +5,17 @@ import { withActor } from "~/context/auth.withActor"
 import { ZenModel } from "@opencode-ai/console-core/model.js"
 import styles from "./model-section.module.css"
 import { querySessionInfo } from "../common"
+import { IconAlibaba, IconAnthropic, IconMoonshotAI, IconOpenAI, IconStealth, IconXai, IconZai } from "~/component/icon"
+
+const getModelLab = (modelId: string) => {
+  if (modelId.startsWith("claude")) return "Anthropic"
+  if (modelId.startsWith("gpt")) return "OpenAI"
+  if (modelId.startsWith("kimi")) return "Moonshot AI"
+  if (modelId.startsWith("glm")) return "Z.ai"
+  if (modelId.startsWith("qwen")) return "Alibaba"
+  if (modelId.startsWith("grok")) return "xAI"
+  return "Stealth"
+}
 
 const getModelsInfo = query(async (workspaceID: string) => {
   "use server"
@@ -42,6 +53,15 @@ export function ModelSection() {
   const params = useParams()
   const modelsInfo = createAsync(() => getModelsInfo(params.id))
   const userInfo = createAsync(() => querySessionInfo(params.id))
+
+  const modelsWithLab = createMemo(() => {
+    const info = modelsInfo()
+    if (!info) return []
+    return info.all.map((model) => ({
+      ...model,
+      lab: getModelLab(model.id),
+    }))
+  })
   return (
     <section class={styles.root}>
       <div data-slot="section-title">
@@ -57,17 +77,40 @@ export function ModelSection() {
             <table data-slot="models-table-element">
               <thead>
                 <tr>
+                  <th></th>
                   <th>Model</th>
+                  <th></th>
                   <th>Enabled</th>
                 </tr>
               </thead>
               <tbody>
-                <For each={modelsInfo()!.all}>
-                  {({ id, name }) => {
+                <For each={modelsWithLab()}>
+                  {({ id, name, lab }) => {
                     const isEnabled = createMemo(() => !modelsInfo()!.disabled.includes(id))
                     return (
                       <tr data-slot="model-row" data-disabled={!isEnabled()}>
+                        <td data-slot="model-icon">
+                          {(() => {
+                            switch (lab) {
+                              case "OpenAI":
+                                return <IconOpenAI width={16} height={16} />
+                              case "Anthropic":
+                                return <IconAnthropic width={16} height={16} />
+                              case "Moonshot AI":
+                                return <IconMoonshotAI width={16} height={16} />
+                              case "Z.ai":
+                                return <IconZai width={16} height={16} />
+                              case "Alibaba":
+                                return <IconAlibaba width={16} height={16} />
+                              case "xAI":
+                                return <IconXai width={16} height={16} />
+                              default:
+                                return <IconStealth width={16} height={16} />
+                            }
+                          })()}
+                        </td>
                         <td data-slot="model-name">{name}</td>
+                        <td data-slot="model-lab">{lab}</td>
                         <td data-slot="model-toggle">
                           <form action={updateModel} method="post">
                             <input type="hidden" name="model" value={id} />
