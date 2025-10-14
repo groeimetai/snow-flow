@@ -1305,7 +1305,7 @@ export namespace SessionPrompt {
             [[ -f ~/.zshenv ]] && source ~/.zshenv >/dev/null 2>&1 || true
             [[ -f "\${ZDOTDIR:-$HOME}/.zshrc" ]] && source "\${ZDOTDIR:-$HOME}/.zshrc" >/dev/null 2>&1 || true
             ${input.command}
-          `
+          `,
         ],
       },
       bash: {
@@ -1320,15 +1320,11 @@ export namespace SessionPrompt {
       },
       // Fallback: any shell that doesn't match those above
       "": {
-        args: [
-          "-c",
-          "-l",
-          `${input.command}`,
-        ],
+        args: ["-c", "-l", `${input.command}`],
       },
     }
 
-    const matchingInvocation = invocations[shellName] ?? invocations[""];
+    const matchingInvocation = invocations[shellName] ?? invocations[""]
     const args = matchingInvocation?.args
 
     const proc = spawn(shell, args, {

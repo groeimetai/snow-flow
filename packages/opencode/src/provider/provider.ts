@@ -210,6 +210,8 @@ export namespace Provider {
       { providerID: string; modelID: string; info: ModelsDev.Model; language: LanguageModel; npm?: string }
     >()
     const sdk = new Map<number, SDK>()
+    // Maps `${provider}/${key}` to the provider’s actual model ID for custom aliases.
+    const realIdByKey = new Map<string, string>()
 
     log.info("init")
 
@@ -253,7 +255,7 @@ export namespace Provider {
       for (const [modelID, model] of Object.entries(provider.models ?? {})) {
         const existing = parsed.models[modelID]
         const parsedModel: ModelsDev.Model = {
-          id: model.id ?? modelID,
+          id: modelID,
           name: model.name ?? existing?.name ?? modelID,
           release_date: model.release_date ?? existing?.release_date,
           attachment: model.attachment ?? existing?.attachment ?? false,
@@ -289,6 +291,9 @@ export namespace Provider {
               output: ["text"],
             },
           provider: model.provider ?? existing?.provider,
+        }
+        if (model.id && model.id !== modelID) {
+          realIdByKey.set(`${providerID}/${modelID}`, model.id)
         }
         parsed.models[modelID] = parsedModel
       }
@@ -366,6 +371,7 @@ export namespace Provider {
       models,
       providers,
       sdk,
+      realIdByKey,
     }
   })
 
@@ -436,9 +442,11 @@ export namespace Provider {
     const sdk = await getSDK(provider.info, info)
 
     try {
+      const keyReal = `${providerID}/${modelID}`
+      const realID = s.realIdByKey.get(keyReal) ?? info.id
       const language = provider.getModel
-        ? await provider.getModel(sdk, modelID, provider.options)
-        : sdk.languageModel(modelID)
+        ? await provider.getModel(sdk, realID, provider.options)
+        : sdk.languageModel(realID)
       log.info("found", { providerID, modelID })
       s.models.set(key, {
         providerID,
