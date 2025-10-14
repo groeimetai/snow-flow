@@ -7,7 +7,6 @@
     "./*": "./src/*"
   },
   "scripts": {
-    "build": "bun run build.ts",
     "dev": "bun run dev.ts"
   }
 }
