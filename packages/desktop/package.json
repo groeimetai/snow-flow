@@ -17,9 +17,9 @@
     "@types/luxon": "3.7.1",
     "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vite": "^6.0.0",
+    "vite": "catalog:",
     "vite-plugin-icons-spritesheet": "3.0.1",
-    "vite-plugin-solid": "^2.11.6"
+    "vite-plugin-solid": "catalog:"
   },
   "dependencies": {
     "@kobalte/core": "catalog:",
@@ -31,6 +31,7 @@
     "@solidjs/router": "0.15.3",
     "@thisbeyond/solid-dnd": "0.7.5",
     "diff": "catalog:",
+    "@opencode-ai/ui": "workspace:*",
     "fuzzysort": "catalog:",
     "luxon": "catalog:",
     "marked": "16.2.0",

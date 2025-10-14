@@ -146,7 +146,10 @@ function init() {
       }
       for (const p of sync.data.changes) {
         if (store.node[p.path] === undefined) {
-          fetch(p.path).then(() => setStore("node", p.path, "status", p))
+          fetch(p.path).then(() => {
+            if (store.node[p.path] === undefined) return
+            setStore("node", p.path, "status", p)
+          })
         } else {
           setStore("node", p.path, "status", p)
         }
