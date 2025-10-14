@@ -1,3 +1,7 @@
+---
+description: Git commit and push
+---
+
 commit and push
 
 make sure it includes a prefix like
