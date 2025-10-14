@@ -79,11 +79,17 @@ export function Select<T>(props: SelectProps<T> & ButtonProps) {
           }}
         </Kobalte.Value>
         <Kobalte.Icon data-slot="icon">
-          <Icon name="chevron-down" size={16} class="-my-2 group-data-[expanded]:rotate-180" />
+          <Icon name="chevron-down" size={16} />
         </Kobalte.Icon>
       </Kobalte.Trigger>
       <Kobalte.Portal>
-        <Kobalte.Content data-component="select-content">
+        <Kobalte.Content
+          classList={{
+            ...(props.classList ?? {}),
+            [props.class ?? ""]: !!props.class,
+          }}
+          data-component="select-content"
+        >
           <Kobalte.Listbox data-slot="list" />
         </Kobalte.Content>
       </Kobalte.Portal>
