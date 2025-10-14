@@ -1,5 +1,5 @@
 import { App } from "@slack/bolt"
-import { createOpencode } from "@opencode-ai/sdk"
+import { createOpencode, type ToolPart } from "@opencode-ai/sdk"
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
@@ -20,6 +20,35 @@ const opencode = await createOpencode({
 console.log("✅ Opencode server ready")
 
 const sessions = new Map<string, { client: any; server: any; sessionId: string; channel: string; thread: string }>()
+;(async () => {
+  const events = await opencode.client.event.subscribe()
+  for await (const event of events.stream) {
+    if (event.type === "message.part.updated") {
+      const part = event.properties.part
+      if (part.type === "tool") {
+        // Find the session for this tool update
+        for (const [sessionKey, session] of sessions.entries()) {
+          if (session.sessionId === part.sessionID) {
+            handleToolUpdate(part, session.channel, session.thread)
+            break
+          }
+        }
+      }
+    }
+  }
+})()
+
+async function handleToolUpdate(part: ToolPart, channel: string, thread: string) {
+  if (part.state.status !== "completed") return
+  const toolMessage = `*${part.tool}* - ${part.state.title}`
+  await app.client.chat
+    .postMessage({
+      channel,
+      thread_ts: thread,
+      text: toolMessage,
+    })
+    .catch(() => {})
+}
 
 app.use(async ({ next, context }) => {
   console.log("📡 Raw Slack event:", JSON.stringify(context, null, 2))
@@ -57,6 +86,7 @@ app.message(async ({ message, say }) => {
     }
 
     console.log("✅ Created opencode session:", createResult.data.id)
+
     session = { client, server, sessionId: createResult.data.id, channel, thread }
     sessions.set(sessionKey, session)
 
@@ -83,6 +113,8 @@ app.message(async ({ message, say }) => {
   }
 
   const response = result.data
+
+  // Build response text
   const responseText =
     response.info?.content ||
     response.parts
@@ -92,6 +124,8 @@ app.message(async ({ message, say }) => {
     "I received your message but didn't have a response."
 
   console.log("💬 Sending response:", responseText)
+
+  // Send main response (tool updates will come via live events)
   await say({ text: responseText, thread_ts: thread })
 })
 
