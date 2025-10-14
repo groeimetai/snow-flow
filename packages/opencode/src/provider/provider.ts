@@ -526,11 +526,11 @@ export namespace Provider {
             model_id: string
           }[]
         }
-        const models = state?.recently_used_models ?? []
-        if (models.length > 0) {
+        const [model] = state?.recently_used_models ?? []
+        if (model) {
           return {
-            providerID: models[0].provider_id,
-            modelID: models[0].model_id,
+            providerID: model.provider_id,
+            modelID: model.model_id,
           }
         }
       })
