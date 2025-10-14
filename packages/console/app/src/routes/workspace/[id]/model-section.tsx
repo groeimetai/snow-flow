@@ -77,7 +77,6 @@ export function ModelSection() {
             <table data-slot="models-table-element">
               <thead>
                 <tr>
-                  <th></th>
                   <th>Model</th>
                   <th></th>
                   <th>Enabled</th>
@@ -89,27 +88,29 @@ export function ModelSection() {
                     const isEnabled = createMemo(() => !modelsInfo()!.disabled.includes(id))
                     return (
                       <tr data-slot="model-row" data-disabled={!isEnabled()}>
-                        <td data-slot="model-icon">
-                          {(() => {
-                            switch (lab) {
-                              case "OpenAI":
-                                return <IconOpenAI width={16} height={16} />
-                              case "Anthropic":
-                                return <IconAnthropic width={16} height={16} />
-                              case "Moonshot AI":
-                                return <IconMoonshotAI width={16} height={16} />
-                              case "Z.ai":
-                                return <IconZai width={16} height={16} />
-                              case "Alibaba":
-                                return <IconAlibaba width={16} height={16} />
-                              case "xAI":
-                                return <IconXai width={16} height={16} />
-                              default:
-                                return <IconStealth width={16} height={16} />
-                            }
-                          })()}
+                        <td data-slot="model-name">
+                          <div>
+                            {(() => {
+                              switch (lab) {
+                                case "OpenAI":
+                                  return <IconOpenAI width={16} height={16} />
+                                case "Anthropic":
+                                  return <IconAnthropic width={16} height={16} />
+                                case "Moonshot AI":
+                                  return <IconMoonshotAI width={16} height={16} />
+                                case "Z.ai":
+                                  return <IconZai width={16} height={16} />
+                                case "Alibaba":
+                                  return <IconAlibaba width={16} height={16} />
+                                case "xAI":
+                                  return <IconXai width={16} height={16} />
+                                default:
+                                  return <IconStealth width={16} height={16} />
+                              }
+                            })()}
+                            <span>{name}</span>
+                          </div>
                         </td>
-                        <td data-slot="model-name">{name}</td>
                         <td data-slot="model-lab">{lab}</td>
                         <td data-slot="model-toggle">
                           <form action={updateModel} method="post">
