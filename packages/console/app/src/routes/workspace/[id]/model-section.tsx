@@ -67,8 +67,7 @@ export function ModelSection() {
       <div data-slot="section-title">
         <h2>Models</h2>
         <p>
-          Manage which models workspace members can access. Requests will fail if a member tries to use a disabled
-          model.{userInfo()?.isAdmin ? "" : " To use a disabled model, contact your workspace’s admin."}
+          Manage which models workspace members can access. <a href="/docs/zen#pricing ">Learn more</a>.
         </p>
       </div>
       <div data-slot="models-list">
