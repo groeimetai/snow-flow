@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@tsconfig/node22": "catalog:",
-    "@types/node": "24.7.1",
+    "@types/node": "catalog:",
     "typescript": "catalog:"
   }
 }
