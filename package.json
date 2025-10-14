@@ -32,7 +32,9 @@
       "typescript": "5.8.2",
       "zod": "4.1.8",
       "remeda": "2.26.0",
-      "solid-js": "1.9.9"
+      "solid-js": "1.9.9",
+      "tailwindcss": "4.1.11",
+      "@tailwindcss/vite": "4.1.11"
     }
   },
   "devDependencies": {

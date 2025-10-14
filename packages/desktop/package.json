@@ -12,7 +12,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@tailwindcss/vite": "4.1.11",
+    "@tailwindcss/vite": "catalog:",
     "@tsconfig/bun": "1.0.9",
     "@types/luxon": "3.7.1",
     "@types/node": "catalog:",
@@ -39,7 +39,7 @@
     "solid-js": "catalog:",
     "shiki": "3.9.2",
     "solid-list": "0.3.0",
-    "tailwindcss": "4.1.11",
+    "tailwindcss": "catalog:",
     "virtua": "0.42.3"
   },
   "prettier": {
