@@ -38,6 +38,7 @@
     "@modelcontextprotocol/sdk": "1.15.1",
     "@openauthjs/openauth": "catalog:",
     "@opencode-ai/plugin": "workspace:*",
+    "@opencode-ai/script": "workspace:*",
     "@opencode-ai/sdk": "workspace:*",
     "@parcel/watcher": "2.5.1",
     "@standard-schema/spec": "1.0.0",
