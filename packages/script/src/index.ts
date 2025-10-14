@@ -4,8 +4,8 @@ if (process.versions.bun !== "1.3.0") {
   throw new Error("This script requires bun@1.3.0")
 }
 
-const TAG = process.env["OPENCODE_TAG"] ?? (await $`git branch --show-current`.text().then((x) => x.trim()))
-const IS_PREVIEW = TAG !== "latest"
+const CHANNEL = process.env["OPENCODE_CHANNEL"] ?? (await $`git branch --show-current`.text().then((x) => x.trim()))
+const IS_PREVIEW = CHANNEL !== "latest"
 const VERSION = await (async () => {
   if (IS_PREVIEW) return `0.0.0-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}`
   const version = await fetch("https://registry.npmjs.org/opencode-ai/latest")
@@ -22,8 +22,8 @@ const VERSION = await (async () => {
 })()
 
 export const Script = {
-  get tag() {
-    return TAG
+  get channel() {
+    return CHANNEL
   },
   get version() {
     return VERSION

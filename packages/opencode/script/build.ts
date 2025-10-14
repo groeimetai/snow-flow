@@ -49,6 +49,7 @@ for (const [os, arch] of targets) {
     entrypoints: ["./src/index.ts"],
     define: {
       OPENCODE_VERSION: `'${Script.version}'`,
+      OPENCODE_CHANNEL: `'${Script.channel}'`,
       OPENCODE_TUI_PATH: `'../../../dist/${name}/bin/tui'`,
     },
   })
