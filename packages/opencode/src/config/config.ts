@@ -138,7 +138,7 @@ export namespace Config {
   }
 
   async function installDependencies(dir: string) {
-    if (Installation.isDev()) return
+    if (Installation.isLocal()) return
 
     const pkg = path.join(dir, "package.json")
 
@@ -151,7 +151,7 @@ export namespace Config {
     if (!hasGitIgnore) await Bun.write(gitignore, ["node_modules", "package.json", "bun.lock", ".gitignore"].join("\n"))
 
     await BunProc.run(
-      ["add", "@opencode-ai/plugin@" + (Installation.isDev() ? "latest" : Installation.VERSION), "--exact"],
+      ["add", "@opencode-ai/plugin@" + (Installation.isLocal() ? "latest" : Installation.VERSION), "--exact"],
       {
         cwd: dir,
       },

@@ -42,11 +42,11 @@ export namespace Installation {
   }
 
   export function isPreview() {
-    return VERSION.startsWith("0.0.0")
+    return CHANNEL !== "latest"
   }
 
-  export function isDev() {
-    return VERSION === "dev"
+  export function isLocal() {
+    return typeof OPENCODE_CHANNEL !== "string"
   }
 
   export async function method() {
