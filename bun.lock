@@ -4,6 +4,7 @@
     "": {
       "name": "opencode",
       "dependencies": {
+        "@opencode-ai/script": "workspace:*",
         "@opencode-ai/sdk": "workspace:*",
       },
       "devDependencies": {
@@ -209,6 +210,7 @@
         "@ai-sdk/amazon-bedrock": "2.2.10",
         "@ai-sdk/google-vertex": "3.0.16",
         "@octokit/webhooks-types": "7.6.1",
+        "@opencode-ai/script": "workspace:*",
         "@parcel/watcher-win32-x64": "2.5.1",
         "@standard-schema/spec": "1.0.0",
         "@tsconfig/bun": "catalog:",
@@ -231,6 +233,12 @@
         "@tsconfig/node22": "catalog:",
         "@types/node": "catalog:",
         "typescript": "catalog:",
+      },
+    },
+    "packages/script": {
+      "name": "@opencode-ai/script",
+      "devDependencies": {
+        "@types/bun": "catalog:",
       },
     },
     "packages/sdk/js": {
@@ -829,6 +837,8 @@
     "@opencode-ai/function": ["@opencode-ai/function@workspace:packages/function"],
 
     "@opencode-ai/plugin": ["@opencode-ai/plugin@workspace:packages/plugin"],
+
+    "@opencode-ai/script": ["@opencode-ai/script@workspace:packages/script"],
 
     "@opencode-ai/sdk": ["@opencode-ai/sdk@workspace:packages/sdk/js"],
 

@@ -48,7 +48,8 @@
     "turbo": "2.5.6"
   },
   "dependencies": {
-    "@opencode-ai/sdk": "workspace:*"
+    "@opencode-ai/sdk": "workspace:*",
+    "@opencode-ai/script": "workspace:*"
   },
   "repository": {
     "type": "git",
