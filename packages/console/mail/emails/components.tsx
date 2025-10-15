@@ -31,43 +31,23 @@ export function Fonts({ assetsUrl }: { assetsUrl: string }) {
   return (
     <>
       <Font
-        fontFamily="IBM Plex Mono"
+        fontFamily="JetBrains Mono"
         fallbackFontFamily="monospace"
         webFont={{
-          url: `${assetsUrl}/ibm-plex-mono-latin-400.woff2`,
+          url: `${assetsUrl}/JetBrainsMono-Regular.woff2`,
           format: "woff2",
         }}
         fontWeight="400"
         fontStyle="normal"
       />
       <Font
-        fontFamily="IBM Plex Mono"
+        fontFamily="JetBrains Mono"
         fallbackFontFamily="monospace"
         webFont={{
-          url: `${assetsUrl}/ibm-plex-mono-latin-500.woff2`,
+          url: `${assetsUrl}/JetBrainsMono-Medium.woff2`,
           format: "woff2",
         }}
         fontWeight="500"
-        fontStyle="normal"
-      />
-      <Font
-        fontFamily="IBM Plex Mono"
-        fallbackFontFamily="monospace"
-        webFont={{
-          url: `${assetsUrl}/ibm-plex-mono-latin-600.woff2`,
-          format: "woff2",
-        }}
-        fontWeight="600"
-        fontStyle="normal"
-      />
-      <Font
-        fontFamily="IBM Plex Mono"
-        fallbackFontFamily="monospace"
-        webFont={{
-          url: `${assetsUrl}/ibm-plex-mono-latin-700.woff2`,
-          format: "woff2",
-        }}
-        fontWeight="700"
         fontStyle="normal"
       />
       <Font
