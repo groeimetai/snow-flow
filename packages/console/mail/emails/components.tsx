@@ -15,10 +15,6 @@ export function A({ children, ...props }: AProps) {
   return React.createElement("a", props, children)
 }
 
-export function B({ children, ...props }: AProps) {
-  return React.createElement("b", props, children)
-}
-
 export function Span({ children, ...props }: SpanProps) {
   return React.createElement("span", props, children)
 }
