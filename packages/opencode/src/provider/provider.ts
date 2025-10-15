@@ -120,12 +120,17 @@ export namespace Provider {
               break
             }
             case "ap": {
-              const modelRequiresPrefix = ["claude", "nova-lite", "nova-micro", "nova-pro"].some((m) =>
-                modelID.includes(m),
-              )
-              if (modelRequiresPrefix) {
-                regionPrefix = "apac"
-                modelID = `${regionPrefix}.${modelID}`
+              const isAustraliaRegion = ["ap-southeast-2", "ap-southeast-4"].includes(region)
+              if (isAustraliaRegion && modelID.startsWith("anthropic.claude-sonnet-4-5")) {
+                modelID = `au.${modelID}`
+              } else {
+                const modelRequiresPrefix = ["claude", "nova-lite", "nova-micro", "nova-pro"].some((m) =>
+                  modelID.includes(m),
+                )
+                if (modelRequiresPrefix) {
+                  regionPrefix = "apac"
+                  modelID = `${regionPrefix}.${modelID}`
+                }
               }
               break
             }
@@ -265,17 +270,17 @@ export namespace Provider {
           cost:
             !model.cost && !existing?.cost
               ? {
-                  input: 0,
-                  output: 0,
-                  cache_read: 0,
-                  cache_write: 0,
-                }
+                input: 0,
+                output: 0,
+                cache_read: 0,
+                cache_write: 0,
+              }
               : {
-                  cache_read: 0,
-                  cache_write: 0,
-                  ...existing?.cost,
-                  ...model.cost,
-                },
+                cache_read: 0,
+                cache_write: 0,
+                ...existing?.cost,
+                ...model.cost,
+              },
           options: {
             ...existing?.options,
             ...model.options,
