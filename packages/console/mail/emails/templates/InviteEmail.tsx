@@ -61,7 +61,7 @@ export const InviteEmail = ({
               <Button style={button} href={url}>
                 <Text style={buttonText}>
                   Join workspace
-                  <Img width="24" height="24" src={`${assetsUrl}/arrow-right.png`} alt="Arrow right" />
+                  <Img width="24" height="24" src={`${assetsUrl}/right-arrow.png`} alt="Arrow right" />
                 </Text>
               </Button>
             </Section>

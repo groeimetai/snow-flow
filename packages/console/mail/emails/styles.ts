@@ -54,7 +54,7 @@ export const buttonText = {
   padding: 0,
   display: "inline-flex",
   alignItems: "center",
-  gap: "8px",
+  gap: "12px",
 }
 
 export const linkText = {
