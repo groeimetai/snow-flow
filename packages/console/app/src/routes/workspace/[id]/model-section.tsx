@@ -23,6 +23,7 @@ const getModelsInfo = query(async (workspaceID: string) => {
     return {
       all: Object.entries(ZenModel.list())
         .filter(([id, _model]) => !["claude-3-5-haiku", "qwen3-max"].includes(id))
+        .filter(([id, _model]) => !id.startsWith("an-"))
         .sort(([_idA, modelA], [_idB, modelB]) => modelA.name.localeCompare(modelB.name))
         .map(([id, model]) => ({ id, name: model.name })),
       disabled: await Model.listDisabled(),
