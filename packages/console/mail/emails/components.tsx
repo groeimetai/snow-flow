@@ -1,26 +1,10 @@
 // @ts-nocheck
 import React from "react"
-import { Font, Hr as JEHr, Text as JEText, type HrProps, type TextProps } from "@jsx-email/all"
-import { DIVIDER_COLOR, SURFACE_DIVIDER_COLOR, textColor } from "./styles"
+import { Font, Text as JEText, type TextProps } from "@jsx-email/all"
+import { baseText } from "./styles"
 
 export function Text(props: TextProps) {
-  return <JEText {...props} style={{ ...textColor, ...props.style }} />
-}
-
-export function Hr(props: HrProps) {
-  return <JEHr {...props} style={{ borderTop: `1px solid ${DIVIDER_COLOR}`, ...props.style }} />
-}
-
-export function SurfaceHr(props: HrProps) {
-  return (
-    <JEHr
-      {...props}
-      style={{
-        borderTop: `1px solid ${SURFACE_DIVIDER_COLOR}`,
-        ...props.style,
-      }}
-    />
-  )
+  return <JEText {...props} style={{ ...baseText, ...props.style }} />
 }
 
 export function Title({ children }: TitleProps) {
