@@ -145,25 +145,13 @@ export const BashTool = Tool.define("bash", {
       })
     }
 
-    const proc = spawn(params.command, {
+    const process = spawn(params.command, {
       shell: true,
       cwd: Instance.directory,
       signal: ctx.abort,
       stdio: ["ignore", "pipe", "pipe"],
       timeout,
-      detached: process.platform !== "win32",
     })
-
-    if (!ctx.abort.aborted) {
-      ctx.abort.addEventListener("abort", () => {
-        if (!proc.pid) return
-        if (process.platform === "win32") {
-          proc.kill()
-          return
-        }
-        process.kill(-proc.pid)
-      })
-    }
 
     let output = ""
 
@@ -175,7 +163,7 @@ export const BashTool = Tool.define("bash", {
       },
     })
 
-    proc.stdout?.on("data", (chunk) => {
+    process.stdout?.on("data", (chunk) => {
       output += chunk.toString()
       ctx.metadata({
         metadata: {
@@ -185,7 +173,7 @@ export const BashTool = Tool.define("bash", {
       })
     })
 
-    proc.stderr?.on("data", (chunk) => {
+    process.stderr?.on("data", (chunk) => {
       output += chunk.toString()
       ctx.metadata({
         metadata: {
@@ -196,7 +184,7 @@ export const BashTool = Tool.define("bash", {
     })
 
     await new Promise<void>((resolve) => {
-      proc.on("close", () => {
+      process.on("close", () => {
         resolve()
       })
     })
@@ -204,7 +192,7 @@ export const BashTool = Tool.define("bash", {
     ctx.metadata({
       metadata: {
         output: output,
-        exit: proc.exitCode,
+        exit: process.exitCode,
         description: params.description,
       },
     })
@@ -214,7 +202,7 @@ export const BashTool = Tool.define("bash", {
       output += "\n\n(Output was truncated due to length limit)"
     }
 
-    if (proc.signalCode === "SIGTERM" && params.timeout) {
+    if (process.signalCode === "SIGTERM" && params.timeout) {
       output += `\n\n(Command timed out after ${timeout} ms)`
     }
 
@@ -222,7 +210,7 @@ export const BashTool = Tool.define("bash", {
       title: params.command,
       metadata: {
         output,
-        exit: proc.exitCode,
+        exit: process.exitCode,
         description: params.description,
       },
       output,
