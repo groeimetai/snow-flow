@@ -16,6 +16,9 @@ if (!Script.preview) {
     })
     .then((data: any) => data.version)
 
+  const commits =
+    await $`git log v${previous}..HEAD --oneline --format="%h %s" -- packages/opencode packages/sdk packages/plugin`.text()
+
   const opencode = await createOpencode()
   const session = await opencode.client.session.create()
   console.log("generating changelog since " + previous)
@@ -33,16 +36,10 @@ if (!Script.preview) {
           {
             type: "text",
             text: `
-          Analyze the commits between ${previous} and HEAD.
+          Analyze these commits and generate a changelog of all notable user facing changes.
 
-          We care about changes to
-          - packages/opencode
-          - packages/sdk
-          - packages/plugin
-
-          We do not care about anything else
-
-          Return a changelog of all notable user facing changes.
+          Commits between ${previous} and HEAD:
+          ${commits}
 
           - Do NOT make general statements about "improvements", be very specific about what was changed.
           - Do NOT include any information about code changes if they do not affect the user facing changes.
