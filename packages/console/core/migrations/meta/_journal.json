@@ -232,6 +232,13 @@
       "when": 1759976329502,
       "tag": "0032_white_doctor_doom",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1760637384217,
+      "tag": "0033_cynical_jack_flag",
+      "breakpoints": true
     }
   ]
 }

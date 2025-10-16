@@ -10,6 +10,7 @@
     "shell-prod": "sst shell --stage production -- bun"
   },
   "dependencies": {
-    "@opencode-ai/console-core": "workspace:*"
+    "@opencode-ai/console-core": "workspace:*",
+    "@opencode-ai/console-resource": "workspace:*"
   }
 }

@@ -112,6 +112,7 @@
       "version": "0.15.5",
       "dependencies": {
         "@opencode-ai/console-core": "workspace:*",
+        "@opencode-ai/console-resource": "workspace:*",
       },
     },
     "packages/css": {
