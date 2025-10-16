@@ -114,6 +114,9 @@
         "@opencode-ai/console-core": "workspace:*",
         "@opencode-ai/console-resource": "workspace:*",
       },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+      },
     },
     "packages/css": {
       "name": "@opencode-ai/css",
