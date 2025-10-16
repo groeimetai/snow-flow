@@ -146,11 +146,6 @@ export const BashTool = Tool.define("bash", {
       })
     }
 
-    const pause = (ms: number) =>
-      new Promise<void>((resolve) => {
-        setTimeout(resolve, ms)
-      })
-
     const proc = spawn(params.command, {
       shell: true,
       cwd: Instance.directory,
@@ -202,13 +197,13 @@ export const BashTool = Tool.define("bash", {
 
       try {
         process.kill(-pid, "SIGTERM")
-        await pause(SIGKILL_TIMEOUT_MS)
+        await Bun.sleep(SIGKILL_TIMEOUT_MS)
         if (!exited) {
           process.kill(-pid, "SIGKILL")
         }
       } catch (_e) {
         proc.kill("SIGTERM")
-        await pause(SIGKILL_TIMEOUT_MS)
+        await Bun.sleep(SIGKILL_TIMEOUT_MS)
         if (!exited) {
           proc.kill("SIGKILL")
         }
