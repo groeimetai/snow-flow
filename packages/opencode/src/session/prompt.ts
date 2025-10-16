@@ -916,7 +916,7 @@ export namespace SessionPrompt {
                   const part = reasoningMap[value.id]
                   part.text += value.text
                   if (value.providerMetadata) part.metadata = value.providerMetadata
-                  if (part.text) await Session.updatePart(part)
+                  if (part.text.trim()) await Session.updatePart(part)
                 }
                 break
 
@@ -924,13 +924,14 @@ export namespace SessionPrompt {
                 if (value.id in reasoningMap) {
                   const part = reasoningMap[value.id]
                   part.text = part.text.trimEnd()
-
-                  part.time = {
-                    ...part.time,
-                    end: Date.now(),
+                  if (part.text) {
+                    part.time = {
+                      ...part.time,
+                      end: Date.now(),
+                    }
+                    if (value.providerMetadata) part.metadata = value.providerMetadata
+                    await Session.updatePart(part)
                   }
-                  if (value.providerMetadata) part.metadata = value.providerMetadata
-                  await Session.updatePart(part)
                   delete reasoningMap[value.id]
                 }
                 break
@@ -1085,19 +1086,21 @@ export namespace SessionPrompt {
                 if (currentText) {
                   currentText.text += value.text
                   if (value.providerMetadata) currentText.metadata = value.providerMetadata
-                  if (currentText.text) await Session.updatePart(currentText)
+                  if (currentText.text.trim()) await Session.updatePart(currentText)
                 }
                 break
 
               case "text-end":
                 if (currentText) {
                   currentText.text = currentText.text.trimEnd()
-                  currentText.time = {
-                    start: Date.now(),
-                    end: Date.now(),
+                  if (currentText.text) {
+                    currentText.time = {
+                      start: Date.now(),
+                      end: Date.now(),
+                    }
+                    if (value.providerMetadata) currentText.metadata = value.providerMetadata
+                    await Session.updatePart(currentText)
                   }
-                  if (value.providerMetadata) currentText.metadata = value.providerMetadata
-                  await Session.updatePart(currentText)
                 }
                 currentText = undefined
                 break
