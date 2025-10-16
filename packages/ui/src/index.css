@@ -1,8 +1,10 @@
+@import "@opencode-ai/css";
+
 :root {
   body {
     margin: 0;
-    background-color: var(--background-background);
-    color: var(--text-default-text);
+    background-color: var(--background-base);
+    color: var(--text-base);
   }
   main {
     display: flex;
@@ -35,6 +37,6 @@
 }
 
 .dark {
-  background-color: var(--background-background);
-  color: var(--text-default-text);
+  background-color: var(--background-base);
+  color: var(--text-base);
 }

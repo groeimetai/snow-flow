@@ -1,4 +1,6 @@
 export * from "./button"
 export * from "./icon"
+export * from "./fonts"
 export * from "./select"
 export * from "./tabs"
+export * from "./tooltip"

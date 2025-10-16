@@ -9,5 +9,6 @@
 @import "./components/icon.css" layer(components);
 @import "./components/select.css" layer(components);
 @import "./components/tabs.css" layer(components);
+@import "./components/tooltip.css" layer(components);
 
 @import "./utilities.css" layer(utilities);

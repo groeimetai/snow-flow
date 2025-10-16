@@ -1,6 +1,5 @@
 import type { Component } from "solid-js"
-import { Button, Select, Tabs } from "./components"
-import "@opencode-ai/css"
+import { Button, Select, Tabs, Tooltip, Fonts } from "./components"
 import "./index.css"
 
 const App: Component = () => {
@@ -17,6 +16,9 @@ const App: Component = () => {
         <Button variant="ghost" size="normal">
           Normal Ghost
         </Button>
+        <Button variant="secondary" size="normal" disabled>
+          Normal Disabled
+        </Button>
         <Button variant="primary" size="large">
           Large Primary
         </Button>
@@ -25,6 +27,9 @@ const App: Component = () => {
         </Button>
         <Button variant="ghost" size="large">
           Large Ghost
+        </Button>
+        <Button variant="secondary" size="large" disabled>
+          Large Disabled
         </Button>
       </section>
       <h3>Select</h3>
@@ -88,14 +93,35 @@ const App: Component = () => {
           </Tabs.Content>
         </Tabs>
       </section>
+      <h3>Tooltips</h3>
+      <section>
+        <Tooltip value="This is a top tooltip" placement="top">
+          <Button variant="secondary">Top Tooltip</Button>
+        </Tooltip>
+        <Tooltip value="This is a bottom tooltip" placement="bottom">
+          <Button variant="secondary">Bottom Tooltip</Button>
+        </Tooltip>
+        <Tooltip value="This is a left tooltip" placement="left">
+          <Button variant="secondary">Left Tooltip</Button>
+        </Tooltip>
+        <Tooltip value="This is a right tooltip" placement="right">
+          <Button variant="secondary">Right Tooltip</Button>
+        </Tooltip>
+        <Tooltip value={() => `Dynamic tooltip: ${new Date().toLocaleTimeString()}`} placement="top">
+          <Button variant="primary">Dynamic Tooltip</Button>
+        </Tooltip>
+      </section>
     </div>
   )
 
   return (
-    <main>
-      <Content />
-      <Content dark />
-    </main>
+    <>
+      <Fonts />
+      <main>
+        <Content />
+        <Content dark />
+      </main>
+    </>
   )
 }
 

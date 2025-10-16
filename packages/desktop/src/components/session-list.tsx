@@ -1,5 +1,5 @@
 import { useSync, useLocal } from "@/context"
-import { Tooltip } from "@/ui"
+import { Tooltip } from "@opencode-ai/ui"
 import { DateTime } from "luxon"
 import { VList } from "virtua/solid"
 
