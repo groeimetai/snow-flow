@@ -239,6 +239,13 @@
       "when": 1760637384217,
       "tag": "0033_cynical_jack_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1760651120251,
+      "tag": "0034_short_bulldozer",
+      "breakpoints": true
     }
   ]
 }
