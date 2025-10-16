@@ -270,17 +270,17 @@ export namespace Provider {
           cost:
             !model.cost && !existing?.cost
               ? {
-                input: 0,
-                output: 0,
-                cache_read: 0,
-                cache_write: 0,
-              }
+                  input: 0,
+                  output: 0,
+                  cache_read: 0,
+                  cache_write: 0,
+                }
               : {
-                cache_read: 0,
-                cache_write: 0,
-                ...existing?.cost,
-                ...model.cost,
-              },
+                  cache_read: 0,
+                  cache_write: 0,
+                  ...existing?.cost,
+                  ...model.cost,
+                },
           options: {
             ...existing?.options,
             ...model.options,
@@ -361,7 +361,10 @@ export namespace Provider {
               modelID !== "gpt-5-chat-latest" && !(providerID === "openrouter" && modelID === "openai/gpt-5-chat"),
           )
           // Filter out experimental models
-          .filter(([, model]) => !model.experimental || Flag.OPENCODE_ENABLE_EXPERIMENTAL_MODELS),
+          .filter(
+            ([, model]) =>
+              (!model.experimental && model.status !== "alpha") || Flag.OPENCODE_ENABLE_EXPERIMENTAL_MODELS,
+          ),
       )
       provider.info.models = filteredModels
 
