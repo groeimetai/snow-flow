@@ -7,6 +7,11 @@
     "./*": "./src/*"
   },
   "scripts": {
-    "dev": "bun run dev.ts"
+    "dev": "bun run dev.ts",
+    "generate:tailwind": "bun run script/colors.ts"
+  },
+  "dependencies": {
+    "tailwindcss": "catalog:",
+    "@tailwindcss/vite": "catalog:"
   }
 }

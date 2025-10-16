@@ -225,10 +225,10 @@ export default function Page() {
   )
 
   return (
-    <div class="relative h-screen flex flex-col">
-      <header class="h-12 shrink-0"></header>
-      <main class="h-[calc(100vh-3rem)] flex">
-        <div class="hidden shrink-0 w-64">
+    <div class="relative h-screen flex flex-col bg-background-weak">
+      <header class="hidden h-12 shrink-0 bg-background-base border-b border-border-weak-base"></header>
+      <main class="h-[calc(100vh-0rem)] flex">
+        <div class="shrink-0 w-70">
           <SessionList />
         </div>
         <div class="grow w-full min-w-0 overflow-y-auto flex justify-center">
