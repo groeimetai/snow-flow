@@ -118,6 +118,10 @@
     "packages/css": {
       "name": "@opencode-ai/css",
       "version": "0.15.5",
+      "dependencies": {
+        "@tailwindcss/vite": "catalog:",
+        "tailwindcss": "catalog:",
+      },
     },
     "packages/desktop": {
       "name": "@opencode-ai/desktop",
