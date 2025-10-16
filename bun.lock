@@ -128,6 +128,7 @@
       "version": "0.15.4",
       "dependencies": {
         "@kobalte/core": "catalog:",
+        "@opencode-ai/css": "workspace:*",
         "@opencode-ai/sdk": "workspace:*",
         "@opencode-ai/ui": "workspace:*",
         "@shikijs/transformers": "3.9.2",
