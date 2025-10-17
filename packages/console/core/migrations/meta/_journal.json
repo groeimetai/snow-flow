@@ -253,6 +253,13 @@
       "when": 1760666253896,
       "tag": "0035_narrow_blindfold",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1760668952329,
+      "tag": "0036_slimy_energizer",
+      "breakpoints": true
     }
   ]
 }
