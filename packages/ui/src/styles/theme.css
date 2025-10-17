@@ -277,7 +277,7 @@
   --markdown-code-block: #1a1a1a;
   --border-color: #ffffff;
 
-  .dark {
+  @media (prefers-color-scheme: dark) {
     /* OC-1-Dark */
     color-scheme: dark;
     --background-base: var(--smoke-dark-1);

@@ -238,7 +238,12 @@ export default function Page() {
                 New Session
               </Button>
             </div>
-            <List data={sync.data.session} key={(x) => x.id} onSelect={(s) => local.session.setActive(s?.id)}>
+            <List
+              data={sync.data.session}
+              key={(x) => x.id}
+              onSelect={(s) => local.session.setActive(s?.id)}
+              onHover={(s) => (!!s ? sync.session.sync(s?.id) : undefined)}
+            >
               {(session) => (
                 <Tooltip placement="right" value={session.title}>
                   <div>
@@ -264,7 +269,7 @@ export default function Page() {
           </div>
         </div>
         <div class="relative grid grid-cols-2 bg-background-base">
-          <div class="min-w-0 overflow-y-auto no-scrollbar flex justify-center">
+          <div class="pt-1.5 min-w-0 overflow-y-auto no-scrollbar flex justify-center">
             <Show when={local.session.active()}>
               {(activeSession) => <SessionTimeline session={activeSession().id} class="w-full" />}
             </Show>

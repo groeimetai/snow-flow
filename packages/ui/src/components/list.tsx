@@ -9,6 +9,7 @@ export interface ListProps<T> {
   key: (x: T) => string
   current?: T
   onSelect?: (value: T | undefined) => void
+  onHover?: (value: T | undefined) => void
   class?: ComponentProps<"div">["class"]
 }
 
@@ -45,6 +46,7 @@ export function List<T>(props: ListProps<T>) {
   createEffect(() => {
     if (store.mouseActive || props.data.length === 0) return
     const index = props.data.findIndex((x) => props.key(x) === list.active())
+    props.onHover?.(props.data[index])
     if (index === 0) {
       virtualizer()?.scrollTo(0)
       return
