@@ -246,6 +246,13 @@
       "when": 1760651120251,
       "tag": "0034_short_bulldozer",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1760666253896,
+      "tag": "0035_narrow_blindfold",
+      "breakpoints": true
     }
   ]
 }

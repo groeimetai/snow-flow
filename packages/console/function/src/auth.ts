@@ -12,7 +12,7 @@ import { Workspace } from "@opencode-ai/console-core/workspace.js"
 import { Actor } from "@opencode-ai/console-core/actor.js"
 import { Resource } from "@opencode-ai/console-resource"
 import { User } from "@opencode-ai/console-core/user.js"
-import { and, Database, eq, isNull } from "@opencode-ai/console-core/drizzle/index.js"
+import { and, Database, eq, isNull, or } from "@opencode-ai/console-core/drizzle/index.js"
 import { WorkspaceTable } from "@opencode-ai/console-core/schema/workspace.sql.js"
 import { UserTable } from "@opencode-ai/console-core/schema/user.sql.js"
 import { AuthTable } from "@opencode-ai/console-core/schema/auth.sql.js"
@@ -134,28 +134,33 @@ export default {
         if (!subject) throw new Error("No subject found")
 
         if (Resource.App.stage !== "production" && !email.endsWith("@anoma.ly")) {
-          throw new Error("Invalid email")
         }
 
         // Get account
         const accountID = await (async () => {
-          // check provider mapping
-          const idByProvider = await Database.use(async (tx) =>
+          const matches = await Database.use(async (tx) =>
             tx
-              .select({ accountID: AuthTable.accountID })
+              .select({
+                provider: AuthTable.provider,
+                accountID: AuthTable.accountID,
+              })
               .from(AuthTable)
-              .where(and(eq(AuthTable.provider, response.provider), eq(AuthTable.subject, subject)))
-              .then((rows) => rows[0]?.accountID),
+              .where(
+                or(
+                  and(eq(AuthTable.provider, response.provider), eq(AuthTable.subject, subject)),
+                  and(eq(AuthTable.provider, "email"), eq(AuthTable.subject, email)),
+                ),
+              ),
           )
-          // check email mapping
-          const idByEmail = await Account.fromEmail(email).then((x) => x?.id)
+          const idByProvider = matches.find((x) => x.provider === response.provider)?.accountID
+          const idByEmail = matches.find((x) => x.provider === "email")?.accountID
           if (idByProvider && idByEmail) return idByProvider
 
           // create account if not found
           let accountID = idByProvider ?? idByEmail
           if (!accountID) {
             console.log("creating account for", email)
-            accountID = await Account.create({ email: email! })
+            accountID = await Account.create({})
           }
 
           await Database.use(async (tx) =>
