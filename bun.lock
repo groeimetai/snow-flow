@@ -107,20 +107,11 @@
         "@tsconfig/node22": "22.0.2",
       },
     },
-    "packages/css": {
-      "name": "@opencode-ai/css",
-      "version": "0.15.7",
-      "dependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "tailwindcss": "catalog:",
-      },
-    },
     "packages/desktop": {
       "name": "@opencode-ai/desktop",
       "version": "0.15.7",
       "dependencies": {
         "@kobalte/core": "catalog:",
-        "@opencode-ai/css": "workspace:*",
         "@opencode-ai/sdk": "workspace:*",
         "@opencode-ai/ui": "workspace:*",
         "@shikijs/transformers": "3.9.2",
@@ -862,8 +853,6 @@
     "@opencode-ai/console-mail": ["@opencode-ai/console-mail@workspace:packages/console/mail"],
 
     "@opencode-ai/console-resource": ["@opencode-ai/console-resource@workspace:packages/console/resource"],
-
-    "@opencode-ai/css": ["@opencode-ai/css@workspace:packages/css"],
 
     "@opencode-ai/desktop": ["@opencode-ai/desktop@workspace:packages/desktop"],
 
