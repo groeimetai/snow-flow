@@ -134,6 +134,7 @@ export default {
         if (!subject) throw new Error("No subject found")
 
         if (Resource.App.stage !== "production" && !email.endsWith("@anoma.ly")) {
+          throw new Error("Invalid email")
         }
 
         // Get account
