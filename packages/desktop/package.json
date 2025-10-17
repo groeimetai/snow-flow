@@ -42,9 +42,9 @@
     "remeda": "catalog:",
     "solid-js": "catalog:",
     "shiki": "3.9.2",
-    "solid-list": "0.3.0",
+    "solid-list": "catalog:",
     "tailwindcss": "catalog:",
-    "virtua": "0.42.3"
+    "virtua": "catalog:"
   },
   "prettier": {
     "semi": false,
