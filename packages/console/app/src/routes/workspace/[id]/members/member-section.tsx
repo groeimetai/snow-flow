@@ -254,7 +254,7 @@ export function MemberSection() {
         </div>
       </div>
       <div data-slot="beta-notice">
-        Zen is free for teams during the beta.{" "}
+        Workspaces are free for teams during the beta.{" "}
         <a href="/docs/zen/#for-teams" target="_blank" rel="noopener noreferrer">
           Learn more
         </a>
