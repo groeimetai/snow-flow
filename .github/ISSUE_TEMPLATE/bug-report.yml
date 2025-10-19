@@ -11,6 +11,14 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: opencode-version
+    attributes:
+      label: OpenCode version
+      description: What version of OpenCode are you using?
+    validations:
+      required: false
+
   - type: textarea
     id: reproduce
     attributes:
@@ -47,13 +55,5 @@ body:
       label: Terminal
       description: what terminal are you using?
       placeholder: e.g., iTerm2, Ghostty, Alacritty, Windows Terminal
-    validations:
-      required: false
-
-  - type: input
-    id: opencode-version
-    attributes:
-      label: OpenCode version
-      description: What version of OpenCode are you using?
     validations:
       required: false
