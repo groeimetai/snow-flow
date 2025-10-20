@@ -1671,6 +1671,8 @@ program
         await copyCLAUDEmd(targetDir, options.force);
         // Create README files
         await createReadmeFiles(targetDir, options.force);
+        // Copy opencode-config.example.json
+        await copyOpenCodeConfig(targetDir, options.force);
         console.log(chalk_1.default.green.bold('\n✅ Snow-Flow project initialized successfully!'));
         console.log('\n📋 Created Snow-Flow configuration:');
         console.log('   ✓ .claude/ - Claude Code MCP configuration');
@@ -1684,12 +1686,12 @@ program
             console.log(chalk_1.default.green('✅ 411 ServiceNow tools automatically available via 2 unified servers'));
             console.log(chalk_1.default.blue('📋 SDK handles MCP server lifecycle automatically'));
         }
+        // Check and optionally install OpenCode
+        await checkAndInstallOpenCode();
         console.log(chalk_1.default.blue.bold('\n🎯 Next steps:'));
-        console.log(chalk_1.default.red.bold('⚠️  IMPORTANT: Configure OpenCode first!'));
-        console.log('1. Install OpenCode: ' + chalk_1.default.cyan('npm install -g opencode-ai'));
-        console.log('2. Authenticate Snow-Flow: ' + chalk_1.default.cyan('snow-flow auth login'));
-        console.log('3. Import OpenCode config: ' + chalk_1.default.cyan('opencode config import opencode-config.example.json'));
-        console.log('4. Start developing: ' + chalk_1.default.cyan('snow-flow swarm "create incident dashboard"'));
+        console.log('1. Authenticate Snow-Flow: ' + chalk_1.default.cyan('snow-flow auth login'));
+        console.log('2. Import OpenCode config: ' + chalk_1.default.cyan('opencode config import opencode-config.example.json'));
+        console.log('3. Start developing: ' + chalk_1.default.cyan('snow-flow swarm "create incident dashboard"'));
         console.log('\n📚 Complete documentation: ' + chalk_1.default.blue('https://snow-flow.dev'));
         console.log('💡 Complete UX Workspace creation, UI Builder, and 235+ unified tools now available');
         // Force exit to prevent hanging
@@ -1761,6 +1763,47 @@ program
     `);
 });
 // Helper functions for init command
+// Check if OpenCode is installed, and offer to install it
+async function checkAndInstallOpenCode() {
+    const { execSync } = require('child_process');
+    try {
+        // Check if opencode is already installed
+        execSync('which opencode', { stdio: 'ignore' });
+        console.log(chalk_1.default.green('\n✅ OpenCode is already installed!'));
+        return;
+    }
+    catch {
+        // OpenCode not installed
+        console.log(chalk_1.default.yellow('\n⚠️  OpenCode is not installed'));
+        console.log(chalk_1.default.blue('OpenCode is required to use Snow-Flow with any LLM provider'));
+        // Import inquirer dynamically
+        const inquirer = (await Promise.resolve().then(() => __importStar(require('inquirer')))).default;
+        const { shouldInstall } = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'shouldInstall',
+                message: 'Would you like to install OpenCode now? (npm install -g opencode-ai)',
+                default: true
+            }
+        ]);
+        if (!shouldInstall) {
+            console.log(chalk_1.default.yellow('\n⏭️  Skipping OpenCode installation'));
+            console.log(chalk_1.default.blue('You can install it later with: ') + chalk_1.default.cyan('npm install -g opencode-ai'));
+            return;
+        }
+        // Install OpenCode
+        console.log(chalk_1.default.blue('\n📦 Installing OpenCode globally...'));
+        console.log(chalk_1.default.dim('This may take a minute...'));
+        try {
+            execSync('npm install -g opencode-ai', { stdio: 'inherit' });
+            console.log(chalk_1.default.green('\n✅ OpenCode installed successfully!'));
+        }
+        catch (error) {
+            console.log(chalk_1.default.red('\n❌ Failed to install OpenCode'));
+            console.log(chalk_1.default.yellow('Please install it manually: ') + chalk_1.default.cyan('npm install -g opencode-ai'));
+        }
+    }
+}
 async function createDirectoryStructure(targetDir, force = false) {
     const directories = [
         '.claude', '.claude/commands', '.claude/commands/sparc', '.claude/configs',
@@ -2204,6 +2247,54 @@ Built with the power of Claude AI and the ServiceNow platform. Special thanks to
     await fs_1.promises.writeFile((0, path_1.join)(targetDir, 'servicenow/README.md'), '# ServiceNow Artifacts\n\nThis directory contains generated ServiceNow development artifacts.');
 }
 // Helper functions
+async function copyOpenCodeConfig(targetDir, force = false) {
+    try {
+        // Try to find the opencode-config.example.json
+        const sourceFiles = [
+            (0, path_1.join)(__dirname, '..', 'opencode-config.example.json'),
+            (0, path_1.join)(__dirname, 'opencode-config.example.json'),
+            (0, path_1.join)(__dirname, '..', '..', '..', 'opencode-config.example.json'),
+            (0, path_1.join)(__dirname, '..', '..', '..', '..', 'opencode-config.example.json'),
+            (0, path_1.join)(process.cwd(), 'opencode-config.example.json')
+        ];
+        let foundSource = false;
+        let configContent = '';
+        for (const sourcePath of sourceFiles) {
+            try {
+                configContent = await fs_1.promises.readFile(sourcePath, 'utf8');
+                foundSource = true;
+                console.log(`✅ Found opencode-config.example.json at: ${sourcePath}`);
+                break;
+            }
+            catch {
+                // Continue to next path
+            }
+        }
+        if (!foundSource) {
+            console.log('⚠️  Could not find opencode-config.example.json source file');
+            return;
+        }
+        const targetPath = (0, path_1.join)(targetDir, 'opencode-config.example.json');
+        try {
+            await fs_1.promises.access(targetPath);
+            if (force) {
+                console.log('⚠️  opencode-config.example.json already exists, overwriting with --force flag');
+            }
+            else {
+                console.log('✅ opencode-config.example.json already exists');
+                return;
+            }
+        }
+        catch {
+            // File doesn't exist, continue with creation
+        }
+        await fs_1.promises.writeFile(targetPath, configContent);
+        console.log('✅ Created opencode-config.example.json');
+    }
+    catch (error) {
+        console.error('❌ Error copying opencode-config.example.json:', error);
+    }
+}
 async function copyCLAUDEmd(targetDir, force = false) {
     let claudeMdContent = '';
     try {
