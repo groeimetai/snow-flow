@@ -29,17 +29,49 @@ npm install -g @opencode/cli
 npm install -g snow-flow
 ```
 
-### 3. Configure ServiceNow Credentials
+### 3. Configure Environment (.env)
 
 ```bash
 # Copy example environment file
 cp .env.example .env
 
-# Edit .env with your ServiceNow details
-# SNOW_INSTANCE=your-instance.service-now.com
-# SNOW_CLIENT_ID=your-client-id
-# SNOW_CLIENT_SECRET=your-client-secret
+# Edit .env with your details
+nano .env  # or use your preferred editor
 ```
+
+**Required: ServiceNow Credentials**
+```bash
+SNOW_INSTANCE=your-instance.service-now.com
+SNOW_CLIENT_ID=your-client-id
+SNOW_CLIENT_SECRET=your-client-secret
+```
+
+**Required: LLM Provider API Keys** (add at least one)
+```bash
+# Choose your default provider
+DEFAULT_LLM_PROVIDER=anthropic  # Options: anthropic, openai, google, openrouter, ollama
+
+# Anthropic (Claude) - Best for complex ServiceNow logic
+ANTHROPIC_API_KEY=sk-ant-...
+DEFAULT_ANTHROPIC_MODEL=claude-sonnet-4
+
+# OpenAI (GPT) - Good balance of cost/quality
+OPENAI_API_KEY=sk-...
+DEFAULT_OPENAI_MODEL=gpt-4o
+
+# Google (Gemini) - Large context, multimodal
+GOOGLE_API_KEY=...
+DEFAULT_GOOGLE_MODEL=gemini-1.5-pro
+
+# OpenRouter - Access to many models
+OPENROUTER_API_KEY=sk-or-...
+
+# Ollama - Local/offline (FREE!)
+OLLAMA_BASE_URL=http://localhost:11434
+DEFAULT_OLLAMA_MODEL=llama3.1
+```
+
+**💡 Tip:** Start with one provider, add more later as needed.
 
 ### 4. Configure OpenCode for Snow-Flow
 
@@ -105,40 +137,71 @@ In OpenCode, you can now use Snow-Flow tools:
 
 ## Model Selection
 
-OpenCode supports 75+ LLM providers out of the box:
+OpenCode supports 75+ LLM providers out of the box.
 
-### Use Claude (Default)
+### Option A: Set Default in .env (Recommended)
+
+Edit your `.env` file to set the default provider and model:
+
+```bash
+# Set your preferred default
+DEFAULT_LLM_PROVIDER=anthropic
+DEFAULT_ANTHROPIC_MODEL=claude-sonnet-4
+
+# Add the API key
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+OpenCode will use these defaults automatically. Change the `.env` anytime to switch providers.
+
+### Option B: Override via CLI
+
+You can also change the model on-the-fly with OpenCode commands:
+
+**Use Claude:**
 ```bash
 opencode config set model.provider anthropic
 opencode config set model.model claude-sonnet-4
 ```
 
-### Use GPT-4
+**Use GPT-4:**
 ```bash
 opencode config set model.provider openai
 opencode config set model.model gpt-4o
 ```
 
-### Use Gemini
+**Use Gemini:**
 ```bash
 opencode config set model.provider google
-opencode config set model.model gemini-pro
+opencode config set model.model gemini-1.5-pro
 ```
 
-### Use Local Models (Free!)
+**Use Local Models (Free!):**
 ```bash
 # First install Ollama: https://ollama.com
 ollama pull llama3.1
 
+# Then set in .env or via CLI:
 opencode config set model.provider ollama
 opencode config set model.model llama3.1
 ```
 
-### Cost-Optimized Setup
+**Cost-Optimized (GPT-4o-mini):**
 ```bash
-# Use GPT-4o-mini for cost savings (85% cheaper than Claude)
+# 85% cheaper than Claude, still high quality
+opencode config set model.provider openai
 opencode config set model.model gpt-4o-mini
 ```
+
+### Quick Model Comparison
+
+| Model | Cost (per 1M tokens) | Best For |
+|-------|---------------------|----------|
+| **claude-sonnet-4** | $3/$15 | Complex ServiceNow logic |
+| **gpt-4o** | $2.5/$10 | General purpose |
+| **gpt-4o-mini** | $0.15/$0.60 | Cost-effective tasks |
+| **gemini-1.5-pro** | $1.25/$5 | Large context |
+| **llama3.1 (Ollama)** | FREE | Local/offline |
 
 ---
 
