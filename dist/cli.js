@@ -371,20 +371,20 @@ program
             !objective.toLowerCase().includes('workflow') &&
             !objective.toLowerCase().includes('data flow'));
     let xmlFlowResult = null;
-    // Start real Claude Code orchestration
+    // Start OpenCode multi-agent orchestration
     try {
-        // Generate the Queen Agent orchestration prompt
+        // Generate the orchestration prompt
         const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId, isFlowDesignerTask);
         if (options.verbose) {
-            cliLogger.info('\n👑 Initializing Queen Agent orchestration...');
-            cliLogger.info('🎯 Queen Agent will coordinate the following:');
+            cliLogger.info('\n👑 Initializing multi-agent orchestration with OpenCode...');
+            cliLogger.info('🎯 OpenCode will coordinate the following:');
             cliLogger.info(`   - Analyze objective: "${objective}"`);
-            cliLogger.info(`   - Spawn ${taskAnalysis.estimatedAgentCount} specialized agents`);
+            cliLogger.info(`   - Spawn ${taskAnalysis.estimatedAgentCount} specialized agents via Task() system`);
             cliLogger.info(`   - Coordinate through shared memory (session: ${sessionId})`);
             cliLogger.info(`   - Monitor progress and adapt strategy`);
         }
         else {
-            cliLogger.info('\n👑 Launching Queen Agent...');
+            cliLogger.info('\n👑 Launching OpenCode orchestration...');
         }
         // Check if intelligent features are enabled
         const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery ||
@@ -392,7 +392,7 @@ program
             options.sharedMemory || options.progressMonitoring;
         if (options.verbose && hasIntelligentFeatures && isAuthenticated) {
             cliLogger.info('\n🧠 INTELLIGENT ORCHESTRATION MODE ENABLED!');
-            cliLogger.info('✨ Queen Agent will use advanced features:');
+            cliLogger.info('✨ OpenCode will use advanced features:');
             if (options.autoPermissions) {
                 cliLogger.info('  🔐 Automatic permission escalation');
             }
@@ -2330,6 +2330,7 @@ async function copyOpenCodeConfig(targetDir, force = false) {
 }
 async function copyCLAUDEmd(targetDir, force = false) {
     let claudeMdContent = '';
+    let agentsMdContent = '';
     try {
         // First try to find the CLAUDE.md in the source directory (for global installs)
         const sourceClaudeFiles = [
@@ -2337,7 +2338,7 @@ async function copyCLAUDEmd(targetDir, force = false) {
             (0, path_1.join)(__dirname, '..', 'CLAUDE.md'),
             // Try when running directly from src/
             (0, path_1.join)(__dirname, 'CLAUDE.md'),
-            // Try npm global installation paths  
+            // Try npm global installation paths
             (0, path_1.join)(__dirname, '..', '..', '..', 'CLAUDE.md'),
             (0, path_1.join)(__dirname, '..', '..', '..', '..', 'CLAUDE.md'),
             // Try current working directory as fallback
@@ -2361,6 +2362,10 @@ async function copyCLAUDEmd(targetDir, force = false) {
             claudeMdContent = CLAUDE_MD_TEMPLATE;
             console.log('✅ Using built-in CLAUDE.md template');
         }
+        // Import OpenCode AGENTS.md template
+        const { AGENTS_MD_TEMPLATE } = await Promise.resolve().then(() => __importStar(require('./templates/opencode-agents-template.js')));
+        agentsMdContent = AGENTS_MD_TEMPLATE;
+        // Create CLAUDE.md (for backward compatibility)
         const claudeMdPath = (0, path_1.join)(targetDir, 'CLAUDE.md');
         try {
             await fs_1.promises.access(claudeMdPath);
@@ -2374,15 +2379,117 @@ async function copyCLAUDEmd(targetDir, force = false) {
         }
         catch {
             await fs_1.promises.writeFile(claudeMdPath, claudeMdContent);
+            console.log('✅ Created CLAUDE.md (Claude Code compatibility)');
+        }
+        // Create AGENTS.md (OpenCode primary)
+        const agentsMdPath = (0, path_1.join)(targetDir, 'AGENTS.md');
+        try {
+            await fs_1.promises.access(agentsMdPath);
+            if (force) {
+                console.log('⚠️  AGENTS.md already exists, overwriting with --force flag');
+                await fs_1.promises.writeFile(agentsMdPath, agentsMdContent);
+            }
+            else {
+                console.log('⚠️  AGENTS.md already exists, skipping (use --force to overwrite)');
+            }
+        }
+        catch {
+            await fs_1.promises.writeFile(agentsMdPath, agentsMdContent);
+            console.log('✅ Created AGENTS.md (OpenCode primary instructions)');
+        }
+        // Create .opencode/ directory structure
+        const opencodeDir = (0, path_1.join)(targetDir, '.opencode');
+        const agentsDir = (0, path_1.join)(opencodeDir, 'agents');
+        const modesDir = (0, path_1.join)(opencodeDir, 'modes');
+        try {
+            await fs_1.promises.mkdir(opencodeDir, { recursive: true });
+            await fs_1.promises.mkdir(agentsDir, { recursive: true });
+            await fs_1.promises.mkdir(modesDir, { recursive: true });
+            console.log('✅ Created .opencode/ directory structure');
+            // Copy agent files from .claude/ to .opencode/agents/
+            const sourceAgentsDir = (0, path_1.join)(__dirname, '..', '.claude', 'agents');
+            try {
+                const agentFiles = await fs_1.promises.readdir(sourceAgentsDir);
+                for (const file of agentFiles) {
+                    if (file.endsWith('.md')) {
+                        const sourceFile = (0, path_1.join)(sourceAgentsDir, file);
+                        const targetFile = (0, path_1.join)(agentsDir, file);
+                        const content = await fs_1.promises.readFile(sourceFile, 'utf-8');
+                        await fs_1.promises.writeFile(targetFile, content);
+                    }
+                }
+                console.log('✅ Copied agent configurations to .opencode/agents/');
+            }
+            catch (err) {
+                console.log('⚠️  Could not copy agent files, continuing...');
+            }
+            // Create .opencode/opencode.json with both MCP servers
+            const opencodeConfig = {
+                name: "snow-flow",
+                description: "ServiceNow development with OpenCode and multi-LLM support",
+                model: {
+                    provider: "${DEFAULT_LLM_PROVIDER}",
+                    model: "${DEFAULT_ANTHROPIC_MODEL}",
+                    temperature: 1.0
+                },
+                mcp: {
+                    "servicenow-unified": {
+                        type: "local",
+                        command: "node",
+                        args: ["dist/mcp/servicenow-mcp-unified/index.js"],
+                        env: {
+                            SNOW_INSTANCE: "${SNOW_INSTANCE}",
+                            SNOW_CLIENT_ID: "${SNOW_CLIENT_ID}",
+                            SNOW_CLIENT_SECRET: "${SNOW_CLIENT_SECRET}"
+                        },
+                        enabled: true,
+                        description: "Unified ServiceNow MCP server with 235+ tools"
+                    },
+                    "snow-flow": {
+                        type: "local",
+                        command: "node",
+                        args: ["dist/mcp/snow-flow-mcp.js"],
+                        env: {
+                            SNOW_FLOW_ENV: "production"
+                        },
+                        enabled: true,
+                        description: "Snow-Flow orchestration with 176+ tools: swarm coordination, agent spawning, memory, neural learning"
+                    }
+                },
+                tools: {
+                    enabled: true,
+                    requireApproval: false
+                },
+                instructions: [
+                    "AGENTS.md",
+                    "../CLAUDE.md",
+                    "../AGENTS.md"
+                ]
+            };
+            const opencodeConfigPath = (0, path_1.join)(opencodeDir, 'opencode.json');
+            await fs_1.promises.writeFile(opencodeConfigPath, JSON.stringify(opencodeConfig, null, 2));
+            console.log('✅ Created .opencode/opencode.json with both MCP servers');
+            // Also create AGENTS.md in .opencode/
+            const opencodeAgentsMdPath = (0, path_1.join)(opencodeDir, 'AGENTS.md');
+            await fs_1.promises.writeFile(opencodeAgentsMdPath, agentsMdContent);
+            console.log('✅ Created .opencode/AGENTS.md');
+        }
+        catch (error) {
+            console.log('⚠️  Error creating .opencode/ directory:', error instanceof Error ? error.message : String(error));
         }
     }
     catch (error) {
         console.log('⚠️  Error copying CLAUDE.md, creating Snow-Flow specific version');
         // Import the template as fallback
         const { CLAUDE_MD_TEMPLATE } = await Promise.resolve().then(() => __importStar(require('./templates/claude-md-template.js')));
+        const { AGENTS_MD_TEMPLATE } = await Promise.resolve().then(() => __importStar(require('./templates/opencode-agents-template.js')));
         const claudeMdPath = (0, path_1.join)(targetDir, 'CLAUDE.md');
+        const agentsMdPath = (0, path_1.join)(targetDir, 'AGENTS.md');
         if (force || !(0, fs_2.existsSync)(claudeMdPath)) {
             await fs_1.promises.writeFile(claudeMdPath, CLAUDE_MD_TEMPLATE);
+        }
+        if (force || !(0, fs_2.existsSync)(agentsMdPath)) {
+            await fs_1.promises.writeFile(agentsMdPath, AGENTS_MD_TEMPLATE);
         }
     }
 }
