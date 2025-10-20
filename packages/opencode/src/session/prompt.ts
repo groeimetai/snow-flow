@@ -1195,13 +1195,14 @@ export namespace SessionPrompt {
                 throw value.error
 
               case "start-step":
+                snapshot = await Snapshot.track()
                 await Session.updatePart({
                   id: Identifier.ascending("part"),
                   messageID: assistantMsg.id,
                   sessionID: assistantMsg.sessionID,
+                  snapshot,
                   type: "step-start",
                 })
-                snapshot = await Snapshot.track()
                 break
 
               case "finish-step":
@@ -1214,6 +1215,7 @@ export namespace SessionPrompt {
                 assistantMsg.tokens = usage.tokens
                 await Session.updatePart({
                   id: Identifier.ascending("part"),
+                  snapshot: await Snapshot.track(),
                   messageID: assistantMsg.id,
                   sessionID: assistantMsg.sessionID,
                   type: "step-finish",
