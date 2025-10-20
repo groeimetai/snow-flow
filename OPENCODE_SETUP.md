@@ -20,7 +20,7 @@ Snow-Flow provides:
 ### 1. Install OpenCode
 
 ```bash
-npm install -g @opencode/cli
+npm install -g opencode-ai
 ```
 
 ### 2. Install Snow-Flow

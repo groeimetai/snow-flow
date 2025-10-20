@@ -26,7 +26,7 @@ npm link
 ### Step 3: Install OpenCode
 
 ```bash
-npm install -g @opencode/cli
+npm install -g opencode-ai
 ```
 
 ### Step 4: Configure Environment
@@ -130,7 +130,7 @@ snow-flow auth status
 ### "OpenCode CLI not found"
 
 ```bash
-npm install -g @opencode/cli
+npm install -g opencode-ai
 ```
 
 ### "OpenCode configuration not found"

@@ -22,8 +22,12 @@ import chalk from 'chalk';
 // Load MCP Persistent Guard for bulletproof server protection
 import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
 
-// Activate MCP guard (it will self-check if protection is needed)
-MCPPersistentGuard.getInstance();
+// Activate MCP guard only for commands that use MCP servers (not init/version/help)
+const commandsNeedingMCP = ['swarm', 'status', 'monitor'];
+const currentCommand = process.argv[2];
+if (commandsNeedingMCP.includes(currentCommand)) {
+  MCPPersistentGuard.getInstance();
+}
 // Removed provider-agnostic imports - using Claude Code directly
 import { registerAuthCommands } from './cli/auth.js';
 import { registerSessionCommands } from './cli/session.js';
@@ -453,7 +457,7 @@ program
       } else {
         cliLogger.warn('⚠️  OpenCode CLI not found or failed to start');
         cliLogger.info('\n📋 Please ensure OpenCode is installed:');
-        cliLogger.info('   npm install -g @opencode/cli');
+        cliLogger.info('   npm install -g opencode-ai');
         cliLogger.info('\n💡 Or start OpenCode manually:');
         cliLogger.info('   1. Run: opencode');
         cliLogger.info(`   2. Enter objective: ${objective}`);
@@ -493,7 +497,7 @@ async function executeOpenCode(objective: string): Promise<boolean> {
       execSync('which opencode', { stdio: 'ignore' });
     } catch {
       cliLogger.warn('⚠️  OpenCode CLI not found in PATH');
-      cliLogger.info('📋 Please install OpenCode: npm install -g @opencode/cli');
+      cliLogger.info('📋 Please install OpenCode: npm install -g opencode-ai');
       return false;
     }
 
@@ -1785,7 +1789,7 @@ program
 
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
       console.log(chalk.red.bold('⚠️  IMPORTANT: Configure OpenCode first!'));
-      console.log('1. Install OpenCode: ' + chalk.cyan('npm install -g @opencode/cli'));
+      console.log('1. Install OpenCode: ' + chalk.cyan('npm install -g opencode-ai'));
       console.log('2. Authenticate Snow-Flow: ' + chalk.cyan('snow-flow auth login'));
       console.log('3. Import OpenCode config: ' + chalk.cyan('opencode config import opencode-config.example.json'));
       console.log('4. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
@@ -3211,7 +3215,7 @@ async function handleMCPDebug(options: any): Promise<void> {
     console.log('   ✅ OpenCode CLI found');
   } catch {
     console.log('   ❌ OpenCode CLI not found in PATH');
-    console.log('   💡 Install with: npm install -g @opencode/cli');
+    console.log('   💡 Install with: npm install -g opencode-ai');
   }
 
   console.log('\n💡 Tips:');
