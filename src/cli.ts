@@ -1791,12 +1791,16 @@ program
       }
 
       // Check and optionally install OpenCode
-      await checkAndInstallOpenCode();
+      const configImported = await checkAndInstallOpenCode();
 
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
       console.log('1. Authenticate Snow-Flow: ' + chalk.cyan('snow-flow auth login'));
-      console.log('2. Import OpenCode config: ' + chalk.cyan('opencode config import opencode-config.example.json'));
-      console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
+      if (!configImported) {
+        console.log('2. Import OpenCode config: ' + chalk.cyan('opencode config import opencode-config.example.json'));
+        console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
+      } else {
+        console.log('2. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
+      }
       console.log('\n📚 Complete documentation: ' + chalk.blue('https://snow-flow.dev'));
       console.log('💡 Complete UX Workspace creation, UI Builder, and 235+ unified tools now available');
 
@@ -1873,14 +1877,15 @@ program
 // Helper functions for init command
 
 // Check if OpenCode is installed, and offer to install it
-async function checkAndInstallOpenCode(): Promise<void> {
+async function checkAndInstallOpenCode(): Promise<boolean> {
   const { execSync } = require('child_process');
+  let opencodeInstalled = false;
 
   try {
     // Check if opencode is already installed
     execSync('which opencode', { stdio: 'ignore' });
     console.log(chalk.green('\n✅ OpenCode is already installed!'));
-    return;
+    opencodeInstalled = true;
   } catch {
     // OpenCode not installed
     console.log(chalk.yellow('\n⚠️  OpenCode is not installed'));
@@ -1901,7 +1906,7 @@ async function checkAndInstallOpenCode(): Promise<void> {
     if (!shouldInstall) {
       console.log(chalk.yellow('\n⏭️  Skipping OpenCode installation'));
       console.log(chalk.blue('You can install it later with: ') + chalk.cyan('npm install -g opencode-ai'));
-      return;
+      return false;
     }
 
     // Install OpenCode
@@ -1911,11 +1916,40 @@ async function checkAndInstallOpenCode(): Promise<void> {
     try {
       execSync('npm install -g opencode-ai', { stdio: 'inherit' });
       console.log(chalk.green('\n✅ OpenCode installed successfully!'));
+      opencodeInstalled = true;
     } catch (error) {
       console.log(chalk.red('\n❌ Failed to install OpenCode'));
       console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install -g opencode-ai'));
+      return false;
     }
   }
+
+  // If OpenCode is installed, automatically import the config
+  if (opencodeInstalled) {
+    const configPath = join(process.cwd(), 'opencode-config.example.json');
+
+    // Check if config file exists
+    try {
+      await fs.access(configPath);
+
+      console.log(chalk.blue('\n🔧 Importing OpenCode configuration...'));
+
+      try {
+        execSync(`opencode config import "${configPath}"`, { stdio: 'inherit' });
+        console.log(chalk.green('✅ OpenCode configuration imported successfully!'));
+        return true; // Successfully imported
+      } catch (error) {
+        console.log(chalk.yellow('\n⚠️  Could not auto-import OpenCode config'));
+        console.log(chalk.blue('Please import manually: ') + chalk.cyan(`opencode config import opencode-config.example.json`));
+        return false;
+      }
+    } catch {
+      console.log(chalk.yellow('\n⚠️  opencode-config.example.json not found'));
+      console.log(chalk.blue('Config will be available after init completes'));
+      return false;
+    }
+  }
+  return false;
 }
 
 async function createDirectoryStructure(targetDir: string, force: boolean = false) {
