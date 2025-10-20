@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "6.0.6",
+  "version": "6.0.7",
   "description": "BYOLLM (Bring Your Own LLM) - Multi-provider support via OpenCode. Use any LLM (Claude, GPT, Gemini, Ollama) with 411 ServiceNow tools. Conversational ServiceNow development with full BYOLLM flexibility.",
   "main": "dist/index.js",
   "type": "commonjs",
