@@ -1,6 +1,6 @@
 {
   "name": "snow-flow-opencode",
-  "description": "OpenCode configuration for Snow-Flow ServiceNow development",
+  "description": "OpenCode configuration for Snow-Flow ServiceNow development with multi-LLM support",
   "model": {
     "provider": "${DEFAULT_LLM_PROVIDER}",
     "model": "${DEFAULT_ANTHROPIC_MODEL}",
@@ -21,12 +21,29 @@
         "SNOW_PASSWORD": "${SNOW_PASSWORD}"
       },
       "enabled": true,
-      "description": "Unified ServiceNow MCP server with 235+ tools for complete ServiceNow access"
+      "description": "Unified ServiceNow MCP server with 235+ tools for complete ServiceNow access including deployment, operations, UI Builder, automation, local sync, and all ServiceNow modules"
+    },
+    "snow-flow": {
+      "type": "local",
+      "command": "node",
+      "args": [
+        "dist/mcp/snow-flow-mcp.js"
+      ],
+      "env": {
+        "SNOW_FLOW_ENV": "production"
+      },
+      "enabled": true,
+      "description": "Snow-Flow orchestration server with 176+ tools: swarm coordination (swarm_init, agent_spawn), memory management (memory_search, memory_usage), neural learning with TensorFlow.js (neural_train, neural_patterns), performance tracking, and agent discovery"
     }
   },
   "tools": {
     "enabled": true,
     "requireApproval": false
   },
+  "instructions": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".opencode/AGENTS.md"
+  ],
   "cwd": "/path/to/your/snow-flow/installation"
 }
