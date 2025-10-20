@@ -7,6 +7,19 @@
   "bin": {
     "snow-flow": "bin/snow-flow"
   },
+  "files": [
+    "dist/",
+    "bin/",
+    "scripts/postinstall.js",
+    ".env.example",
+    "opencode-config.example.json",
+    "README.md",
+    "README_OPENCODE.md",
+    "OPENCODE_SETUP.md",
+    "TESTING_BYOLLM.md",
+    "CLAUDE.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc --noEmitOnError false || true",
     "prepublishOnly": "npm run build",
