@@ -20,7 +20,7 @@ Snow-Flow now works with **OpenCode** - an open-source AI coding agent that supp
 
 ```bash
 # 1. Install OpenCode
-npm install -g @opencode/cli
+npm install -g opencode-ai
 
 # 2. Install Snow-Flow
 npm install -g snow-flow
