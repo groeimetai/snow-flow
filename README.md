@@ -46,7 +46,7 @@ Snow-Flow is a conversational ServiceNow development platform that bridges Claud
 
 ```bash
 # 1. Install OpenCode
-npm install -g @opencode/cli
+npm install -g opencode-ai
 
 # 2. Install Snow-Flow
 npm install -g snow-flow
@@ -80,7 +80,7 @@ ANTHROPIC_API_KEY=your-key
 
 ```bash
 # 1. Install OpenCode (AI coding agent)
-npm install -g @opencode/cli
+npm install -g opencode-ai
 
 # 2. Install Snow-Flow
 npm install -g snow-flow
