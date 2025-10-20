@@ -426,22 +426,22 @@ program
         }
       }
       
-      console.log(chalk.blue('\n🚀 Starting Claude Code with 411 ServiceNow tools via Claude Agent SDK...'));
-      
-      // Try to execute Claude Code directly with the prompt
-      const success = await executeClaudeCode(orchestrationPrompt);
-      
+      console.log(chalk.blue('\n🚀 Starting OpenCode with 235+ ServiceNow tools via MCP...'));
+
+      // Try to execute OpenCode directly with the objective
+      const success = await executeOpenCode(objective);
+
       if (success) {
-        cliLogger.info('✅ Claude Code launched successfully!');
+        cliLogger.info('✅ OpenCode launched successfully!');
         
         if (options.verbose) {
-          cliLogger.info('👑 Queen Agent is now coordinating your swarm');
+          cliLogger.info('🤖 OpenCode is now executing your objective');
           cliLogger.info(`💾 Monitor progress with session ID: ${sessionId}`);
-          
+
           if (isAuthenticated && options.autoDeploy) {
             cliLogger.info('🚀 Real artifacts will be created in ServiceNow');
           } else {
-            cliLogger.info('📋 Planning mode - _analysis and recommendations only');
+            cliLogger.info('📋 Planning mode - analysis and recommendations only');
           }
         }
         
@@ -451,47 +451,23 @@ program
           launched_at: new Date().toISOString()
         });
       } else {
-        if (options.verbose) {
-          cliLogger.info('\n🚀 SNOW-FLOW ORCHESTRATION COMPLETE!');
-          cliLogger.info('🤖 Now it\'s time for Claude Code agents to do the work...\n');
-          
-          cliLogger.info('👑 QUEEN AGENT ORCHESTRATION PROMPT FOR CLAUDE CODE:');
-          cliLogger.info('=' .repeat(80));
-          cliLogger.info(orchestrationPrompt);
-          cliLogger.info('=' .repeat(80));
-          
-          cliLogger.info('\n✅ Snow-Flow has prepared the orchestration!');
-          cliLogger.info('📊 CRITICAL NEXT STEPS:');
-          cliLogger.info('   1. Copy the ENTIRE prompt above');
-          cliLogger.info('   2. Paste it into Claude Code (the AI assistant)');
-          cliLogger.info('   3. Claude Code will spawn multiple specialized agents as workhorses');
-          cliLogger.info('   4. These agents will implement your flow with all required logic');
-          cliLogger.info('   5. Agents will enhance the basic XML template with real functionality');
-          
-          cliLogger.info('\n🎯 Remember:');
-          cliLogger.info('   - Snow-Flow = Orchestrator (coordinates the work)');
-          cliLogger.info('   - Claude Code = Workhorses (implement the solution)');
-          
-          if (xmlFlowResult) {
-            cliLogger.info(`\n📁 XML template saved at: ${xmlFlowResult.filePath}`);
-            cliLogger.info('   ⚠️  This is just a BASIC template - agents must enhance it!');
-          }
-          
-          if (isAuthenticated && options.autoDeploy) {
-            cliLogger.info('\n🚀 Deployment Mode: Agents will create REAL artifacts in ServiceNow');
-          } else {
-            cliLogger.info('\n📋 Planning Mode: Analysis and recommendations only');
-          }
-          cliLogger.info(`\n💾 Session ID for monitoring: ${sessionId}`);
-        } else {
-          // Non-verbose mode - just show the essential info
-          cliLogger.info('\n📋 Manual Claude Code execution required');
-          cliLogger.info('💡 Run with --verbose to see the full orchestration prompt');
-          
-          if (xmlFlowResult) {
-            cliLogger.info(`📁 XML generated: ${xmlFlowResult.filePath}`);
-          }
+        cliLogger.warn('⚠️  OpenCode CLI not found or failed to start');
+        cliLogger.info('\n📋 Please ensure OpenCode is installed:');
+        cliLogger.info('   npm install -g @opencode/cli');
+        cliLogger.info('\n💡 Or start OpenCode manually:');
+        cliLogger.info('   1. Run: opencode');
+        cliLogger.info(`   2. Enter objective: ${objective}`);
+
+        if (xmlFlowResult) {
+          cliLogger.info(`\n📁 XML template saved at: ${xmlFlowResult.filePath}`);
         }
+
+        if (isAuthenticated && options.autoDeploy) {
+          cliLogger.info('\n🚀 Deployment Mode: Artifacts will be created in ServiceNow');
+        } else {
+          cliLogger.info('\n📋 Planning Mode: Analysis and recommendations only');
+        }
+        cliLogger.info(`\n💾 Session ID: ${sessionId}`);
       }
       
     } catch (error) {
@@ -506,82 +482,78 @@ program
   });
 
 
-// Helper function to execute Claude Code directly
-async function executeClaudeCode(prompt: string): Promise<boolean> {
-  cliLogger.info('🤖 Preparing Claude Code agent orchestration...');
+// Helper function to execute OpenCode directly with the objective
+async function executeOpenCode(objective: string): Promise<boolean> {
+  cliLogger.info('🤖 Preparing OpenCode for ServiceNow development...');
 
   try {
-    // Check if Claude CLI is available
+    // Check if OpenCode CLI is available
     const { execSync } = require('child_process');
     try {
-      execSync('which claude', { stdio: 'ignore' });
+      execSync('which opencode', { stdio: 'ignore' });
     } catch {
-      cliLogger.warn('⚠️  Claude Code CLI not found in PATH');
-      cliLogger.info('📋 Please install Claude Desktop or copy the prompt manually');
+      cliLogger.warn('⚠️  OpenCode CLI not found in PATH');
+      cliLogger.info('📋 Please install OpenCode: npm install -g @opencode/cli');
       return false;
     }
 
+    // Check for OpenCode config
+    const opencodeConfigPath = join(process.cwd(), 'opencode-config.example.json');
+    const hasOpencodeConfig = existsSync(opencodeConfigPath);
 
-    // Check for MCP config
-    const mcpConfigPath = join(process.cwd(), '.mcp.json');
-    const hasMcpConfig = existsSync(mcpConfigPath);
-
-    // NOTE: MCP servers now managed by Claude Agent SDK (v5.0.0+)
-    // SDK automatically initializes MCP servers from configuration
-    if (hasMcpConfig) {
-      console.log(chalk.blue('ℹ️  MCP servers managed by Claude Agent SDK v0.1.1'));
-      console.log(chalk.green('✅ 411 ServiceNow tools available via 2 unified MCP servers'));
+    if (!hasOpencodeConfig) {
+      cliLogger.warn('⚠️  OpenCode configuration not found');
+      cliLogger.info('📋 Please run: opencode config import opencode-config.example.json');
+      cliLogger.info('   Or create opencode-config.example.json in your project directory');
+      return false;
     }
 
-    // Launch Claude Code with MCP config and skip permissions to avoid raw mode issues
-    const claudeArgs = hasMcpConfig
-      ? ['--mcp-config', '.mcp.json', '--dangerously-skip-permissions']
-      : ['--dangerously-skip-permissions'];
+    // Check for .env file with required configuration
+    const envPath = join(process.cwd(), '.env');
+    const hasEnvFile = existsSync(envPath);
 
-    // Add debug args if debug is enabled
-    if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.LOG_LEVEL === 'debug' || process.env.LOG_LEVEL === 'trace') {
-      claudeArgs.push('--verbose');
-      if (process.env.LOG_LEVEL === 'trace') {
-        claudeArgs.push('--trace');
-      }
+    if (!hasEnvFile) {
+      cliLogger.warn('⚠️  .env file not found');
+      cliLogger.info('📋 Please create .env with your configuration:');
+      cliLogger.info('   - ServiceNow credentials (SNOW_INSTANCE, SNOW_CLIENT_ID, etc.)');
+      cliLogger.info('   - LLM provider API keys (ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.)');
+      cliLogger.info('   - Default model (DEFAULT_LLM_PROVIDER, DEFAULT_ANTHROPIC_MODEL, etc.)');
+      return false;
     }
 
-    cliLogger.info('🚀 Launching Claude Code automatically...');
-    if (hasMcpConfig) {
-      cliLogger.info('🔧 Starting Claude Code with ServiceNow MCP servers...');
-      if (process.env.MCP_DEBUG === 'true') {
-        cliLogger.info('🔍 MCP Debug Mode Active - Expect detailed connection logs');
-      }
-    }
+    cliLogger.info('✅ OpenCode configuration found');
+    cliLogger.info('🔧 Starting OpenCode with ServiceNow MCP servers...');
+    console.log(chalk.green('✅ 235+ ServiceNow tools available via MCP'));
 
     // Debug output if enabled
     if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.VERBOSE === 'true') {
-      cliLogger.info(`🔍 Claude Command: claude ${claudeArgs.join(' ')}`);
       cliLogger.info(`🔍 Working Directory: ${process.cwd()}`);
-      cliLogger.info(`🔍 MCP Config: ${mcpConfigPath}`);
+      cliLogger.info(`🔍 OpenCode Config: ${opencodeConfigPath}`);
+      cliLogger.info(`🔍 Environment File: ${envPath}`);
     }
 
-    // Write prompt to temp file to avoid raw mode issues with newer Claude Code versions
+    // Write objective to temp file for OpenCode to read
     const { tmpdir } = await import('os');
     const { writeFileSync, unlinkSync } = await import('fs');
-    const tmpFile = join(tmpdir(), `snow-flow-prompt-${Date.now()}.txt`);
-    writeFileSync(tmpFile, prompt, 'utf8');
+    const tmpFile = join(tmpdir(), `snow-flow-objective-${Date.now()}.txt`);
+    writeFileSync(tmpFile, objective, 'utf8');
 
-    cliLogger.info('📝 Sending orchestration prompt to Claude Code...');
-    cliLogger.info('🚀 Claude Code interface opening...\n');
+    cliLogger.info('📝 Launching OpenCode with your objective...');
+    cliLogger.info('🚀 OpenCode interface opening...\n');
+    cliLogger.info(chalk.blue(`💡 Objective: ${objective}\n`));
 
-    // Start Claude Code via shell with file input redirection to avoid raw mode issues
-    // This allows stdin to be a proper TTY instead of a pipe
-    const claudeCommand = `claude ${claudeArgs.join(' ')} < "${tmpFile}"`;
-    const claudeProcess = spawn('sh', ['-c', claudeCommand], {
-      stdio: 'inherit', // All stdio inherited - Claude Code can use TTY
+    // Start OpenCode with the objective
+    // OpenCode will be started interactively
+    const opencodeCommand = `opencode < "${tmpFile}"`;
+    const opencodeProcess = spawn('sh', ['-c', opencodeCommand], {
+      stdio: 'inherit', // All stdio inherited - OpenCode can use TTY
       cwd: process.cwd(),
       env: { ...process.env }
     });
-    
+
     // Set up process monitoring
     return new Promise((resolve) => {
-      claudeProcess.on('close', async (code) => {
+      opencodeProcess.on('close', async (code) => {
         // Clean up temp file
         try {
           unlinkSync(tmpFile);
@@ -590,15 +562,15 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
         }
 
         if (code === 0) {
-          cliLogger.info('\n✅ Claude Code session completed successfully!');
+          cliLogger.info('\n✅ OpenCode session completed successfully!');
           resolve(true);
         } else {
-          cliLogger.warn(`\n⚠️  Claude Code session ended with code: ${code}`);
+          cliLogger.warn(`\n⚠️  OpenCode session ended with code: ${code}`);
           resolve(false);
         }
       });
 
-      claudeProcess.on('error', (error) => {
+      opencodeProcess.on('error', (error) => {
         // Clean up temp file
         try {
           unlinkSync(tmpFile);
@@ -606,7 +578,7 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
           // Ignore cleanup errors
         }
 
-        cliLogger.error(`❌ Failed to start Claude Code: ${error.message}`);
+        cliLogger.error(`❌ Failed to start OpenCode: ${error.message}`);
         resolve(false);
       });
 
@@ -614,8 +586,8 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
       const timeoutMinutes = parseInt(process.env.SNOW_FLOW_TIMEOUT_MINUTES || '0');
       if (timeoutMinutes > 0) {
         setTimeout(() => {
-          cliLogger.warn(`⏱️  Claude Code session timeout (${timeoutMinutes} minutes), terminating...`);
-          claudeProcess.kill('SIGTERM');
+          cliLogger.warn(`⏱️  OpenCode session timeout (${timeoutMinutes} minutes), terminating...`);
+          opencodeProcess.kill('SIGTERM');
 
           // Clean up temp file
           try {
@@ -628,34 +600,34 @@ async function executeClaudeCode(prompt: string): Promise<boolean> {
         }, timeoutMinutes * 60 * 1000);
       }
     });
-    
+
   } catch (error) {
-    cliLogger.error('❌ Error launching Claude Code:', error instanceof Error ? error.message : String(error));
-    cliLogger.info('📋 Claude Code prompt generated - please copy and paste manually');
+    cliLogger.error('❌ Error launching OpenCode:', error instanceof Error ? error.message : String(error));
+    cliLogger.info('📋 Please start OpenCode manually: opencode');
     return false;
   }
 }
 
-// Real-time monitoring dashboard for Claude Code process
-function startMonitoringDashboard(claudeProcess: ChildProcess): NodeJS.Timeout {
+// Real-time monitoring dashboard for OpenCode process
+function startMonitoringDashboard(opencodeProcess: ChildProcess): NodeJS.Timeout {
   let iterations = 0;
   const startTime = Date.now();
-  
+
   // Show initial dashboard only once
   cliLogger.info(`┌─────────────────────────────────────────────────────────────┐`);
   cliLogger.info(`│               🚀 Snow-Flow Dashboard v${VERSION}            │`);
   cliLogger.info(`├─────────────────────────────────────────────────────────────┤`);
-  cliLogger.info(`│ 🤖 Claude Code Status:  ✅ Starting                          │`);
-  cliLogger.info(`│ 📊 Process ID:          ${claudeProcess.pid || 'N/A'}        │`);
+  cliLogger.info(`│ 🤖 OpenCode Status:     ✅ Starting                          │`);
+  cliLogger.info(`│ 📊 Process ID:          ${opencodeProcess.pid || 'N/A'}        │`);
   cliLogger.info(`│ ⏱️  Session Time:        00:00                               │`);
   cliLogger.info(`│ 🔄 Monitoring Cycles:    0                                   │`);
   cliLogger.info('└─────────────────────────────────────────────────────────────┘');
-  
-  // Silent monitoring - only log to file or memory, don't interfere with Claude Code UI
+
+  // Silent monitoring - only log to file or memory, don't interfere with OpenCode UI
   const monitoringInterval = setInterval(() => {
     iterations++;
     const uptime = Math.floor((Date.now() - startTime) / 1000);
-    
+
     // Silent monitoring - check files but don't output to console
     try {
       const serviceNowDir = join(process.cwd(), 'servicenow');
@@ -668,9 +640,9 @@ function startMonitoringDashboard(claudeProcess: ChildProcess): NodeJS.Timeout {
     } catch (error) {
       // Ignore errors
     }
-    
+
   }, 5000); // Check every 5 seconds silently
-  
+
   return monitoringInterval;
 }
 
@@ -1812,10 +1784,11 @@ program
       }
 
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
-      console.log(chalk.red.bold('⚠️  IMPORTANT: Ensure Claude Code is running first!'));
-      console.log('1. Start Claude Code: ' + chalk.cyan('claude --dangerously-skip-permissions'));
+      console.log(chalk.red.bold('⚠️  IMPORTANT: Configure OpenCode first!'));
+      console.log('1. Install OpenCode: ' + chalk.cyan('npm install -g @opencode/cli'));
       console.log('2. Authenticate Snow-Flow: ' + chalk.cyan('snow-flow auth login'));
-      console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
+      console.log('3. Import OpenCode config: ' + chalk.cyan('opencode config import opencode-config.example.json'));
+      console.log('4. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
       console.log('\n📚 Complete documentation: ' + chalk.blue('https://snow-flow.dev'));
       console.log('💡 Complete UX Workspace creation, UI Builder, and 235+ unified tools now available');
       
@@ -1850,8 +1823,7 @@ program
 🎯 Example Usage:
   snow-flow auth login --instance dev12345.service-now.com --client-id your-id --client-secret your-secret
   snow-flow auth status
-  snow-flow mcp start   # Start MCP servers for Claude Code
-  snow-flow mcp status  # Check MCP server status
+  opencode config import opencode-config.example.json  # Configure OpenCode for Snow-Flow
   snow-flow swarm "create a widget for incident management"
   snow-flow swarm "create approval flow"  # 🔧 Auto-detects Flow Designer and uses XML!
   snow-flow swarm "generate 5000 incidents" --auto-confirm  # 📝 Auto-confirm background scripts
@@ -3231,21 +3203,22 @@ async function handleMCPDebug(options: any): Promise<void> {
   console.log(`   SNOW_CLIENT_ID: ${process.env.SNOW_CLIENT_ID ? '✅ Set' : '❌ Not set'}`);
   console.log(`   SNOW_CLIENT_SECRET: ${process.env.SNOW_CLIENT_SECRET ? '✅ Set' : '❌ Not set'}`);
   
-  // Check Claude Code
-  console.log('\n🤖 Claude Code:');
+  // Check OpenCode
+  console.log('\n🤖 OpenCode:');
   const { execSync } = require('child_process');
   try {
-    execSync('which claude', { stdio: 'ignore' });
-    console.log('   ✅ Claude Code CLI found');
+    execSync('which opencode', { stdio: 'ignore' });
+    console.log('   ✅ OpenCode CLI found');
   } catch {
-    console.log('   ❌ Claude Code CLI not found in PATH');
+    console.log('   ❌ OpenCode CLI not found in PATH');
+    console.log('   💡 Install with: npm install -g @opencode/cli');
   }
-  
+
   console.log('\n💡 Tips:');
-  console.log('   1. Make sure Claude Code is started in this directory');
-  console.log('   2. Check if MCP servers appear with /mcp command in Claude Code');
-  console.log('   3. Approve MCP servers when prompted by Claude Code');
-  console.log('   4. Ensure .env file has valid ServiceNow credentials');
+  console.log('   1. Ensure OpenCode is configured: opencode config import opencode-config.example.json');
+  console.log('   2. Check .env file has valid ServiceNow credentials and LLM API keys');
+  console.log('   3. Start developing: snow-flow swarm "your objective"');
+  console.log('   4. OpenCode will automatically connect to Snow-Flow\'s MCP servers');
 }
 
 

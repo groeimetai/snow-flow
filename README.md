@@ -74,41 +74,46 @@ ANTHROPIC_API_KEY=your-key
 
 ---
 
-## Quick Start (Claude Code)
-
-### Prerequisites 
-
-⚠️ **CRITICAL:** Claude Code must be installed and running BEFORE using Snow-Flow to prevent stdio connection errors!
-
-```bash
-# 1. FIRST: Install Claude Code
-npm install -g @anthropic-ai/claude-code
-
-# 2. Login and start Claude Code
-claude login
-cd /your/project/directory
-claude --dangerously-skip-permissions
-```
+## Quick Start
 
 ### Installation
 
 ```bash
-# 2. THEN: Install Snow-Flow (while Claude Code is running)
+# 1. Install OpenCode (AI coding agent)
+npm install -g @opencode/cli
+
+# 2. Install Snow-Flow
 npm install -g snow-flow
 ```
 
-### Basic Usage
+### Configuration
 
 ```bash
-# Initialize configuration
+# 1. Initialize Snow-Flow
 snow-flow init
 
-# Authenticate with ServiceNow
-snow-flow auth login
+# 2. Configure .env with your credentials
+cp .env.example .env
+# Edit .env with ServiceNow credentials and LLM API keys
 
-# Create anything in ServiceNow through conversation
+# 3. Import OpenCode configuration
+opencode config import opencode-config.example.json
+
+# 4. Authenticate with ServiceNow
+snow-flow auth login
+```
+
+### Start Developing
+
+```bash
+# Use snow-flow swarm to start any ServiceNow development task
 snow-flow swarm "create incident dashboard widget with real-time charts"
 ```
+
+OpenCode will automatically:
+- ✅ Connect to Snow-Flow's 235+ ServiceNow tools
+- ✅ Use your configured LLM (Claude, GPT, Gemini, or local models)
+- ✅ Create real artifacts in ServiceNow
 
 ### Authentication
 
