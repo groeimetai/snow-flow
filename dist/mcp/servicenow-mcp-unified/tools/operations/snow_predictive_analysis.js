@@ -1,0 +1,165 @@
+"use strict";
+/**
+ * snow_predictive_analysis - Predictive analysis
+ *
+ * Provides predictive analysis for incident volumes, system failures, and resource issues based on historical patterns.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.author = exports.version = exports.toolDefinition = void 0;
+exports.execute = execute;
+const auth_js_1 = require("../../shared/auth.js");
+const error_handler_js_1 = require("../../shared/error-handler.js");
+exports.toolDefinition = {
+    name: 'snow_predictive_analysis',
+    description: 'Provides predictive analysis for incident volumes, system failures, and resource issues based on historical patterns',
+    inputSchema: {
+        type: 'object',
+        properties: {
+            prediction_type: {
+                type: 'string',
+                description: 'Type of prediction',
+                enum: ['incident_volume', 'system_failure', 'resource_exhaustion', 'user_impact']
+            },
+            timeframe: {
+                type: 'string',
+                description: 'Prediction timeframe',
+                enum: ['day', 'week', 'month'],
+                default: 'week'
+            }
+        },
+        required: ['prediction_type']
+    }
+};
+function getHistoricalDateFilter(timeframe) {
+    const filters = {
+        day: 'ONLast 7 days@javascript:gs.daysAgoStart(7)@javascript:gs.daysAgoEnd(0)',
+        week: 'ONLast 30 days@javascript:gs.daysAgoStart(30)@javascript:gs.daysAgoEnd(0)',
+        month: 'ONLast 90 days@javascript:gs.daysAgoStart(90)@javascript:gs.daysAgoEnd(0)'
+    };
+    return filters[timeframe] || filters.week;
+}
+async function execute(args, context) {
+    const { prediction_type, timeframe = 'week' } = args;
+    try {
+        const client = await (0, auth_js_1.getAuthenticatedClient)(context);
+        const dateFilter = getHistoricalDateFilter(timeframe);
+        let predictions = {
+            prediction_type,
+            timeframe,
+            generated_at: new Date().toISOString(),
+            analysis_method: 'trend_analysis'
+        };
+        switch (prediction_type) {
+            case 'incident_volume':
+                predictions = { ...predictions, ...(await predictIncidentVolume(client, dateFilter, timeframe)) };
+                break;
+            case 'system_failure':
+                predictions = { ...predictions, ...(await predictSystemFailure(client, dateFilter, timeframe)) };
+                break;
+            case 'resource_exhaustion':
+                predictions = { ...predictions, ...(await predictResourceExhaustion(client, dateFilter, timeframe)) };
+                break;
+            case 'user_impact':
+                predictions = { ...predictions, ...(await predictUserImpact(client, dateFilter, timeframe)) };
+                break;
+            default:
+                return (0, error_handler_js_1.createErrorResult)(`Unknown prediction type: ${prediction_type}`);
+        }
+        return (0, error_handler_js_1.createSuccessResult)({ predictions }, { prediction_type, timeframe });
+    }
+    catch (error) {
+        return (0, error_handler_js_1.createErrorResult)(error.message);
+    }
+}
+async function predictIncidentVolume(client, dateFilter, timeframe) {
+    const response = await client.get('/api/now/table/incident', {
+        params: {
+            sysparm_query: `sys_created_on${dateFilter}`,
+            sysparm_limit: 1000,
+            sysparm_fields: 'sys_created_on,priority'
+        }
+    });
+    const incidents = response.data.result || [];
+    const dailyVolumes = new Map();
+    incidents.forEach((inc) => {
+        if (inc.sys_created_on) {
+            const date = inc.sys_created_on.split(' ')[0];
+            dailyVolumes.set(date, (dailyVolumes.get(date) || 0) + 1);
+        }
+    });
+    const volumes = Array.from(dailyVolumes.values());
+    const avgVolume = volumes.length > 0 ? volumes.reduce((a, b) => a + b, 0) / volumes.length : 0;
+    return {
+        historical_data: {
+            total_incidents: incidents.length,
+            average_daily_volume: Math.round(avgVolume),
+            peak_volume: Math.max(...volumes, 0),
+            low_volume: Math.min(...volumes, 0)
+        },
+        prediction: {
+            expected_volume: Math.round(avgVolume),
+            confidence: volumes.length >= 7 ? 'high' : 'low',
+            interpretation: `Based on ${volumes.length} days of data, expecting approximately ${Math.round(avgVolume)} incidents per ${timeframe}`
+        }
+    };
+}
+async function predictSystemFailure(client, dateFilter, timeframe) {
+    const response = await client.get('/api/now/table/incident', {
+        params: {
+            sysparm_query: `sys_created_on${dateFilter}^priority=1`,
+            sysparm_limit: 500
+        }
+    });
+    const criticalIncidents = response.data.result || [];
+    return {
+        historical_data: {
+            critical_incidents: criticalIncidents.length
+        },
+        prediction: {
+            risk_level: criticalIncidents.length > 10 ? 'high' : 'low',
+            interpretation: `Based on ${criticalIncidents.length} critical incidents, system failure risk is ${criticalIncidents.length > 10 ? 'elevated' : 'normal'}`
+        }
+    };
+}
+async function predictResourceExhaustion(client, dateFilter, timeframe) {
+    const requestsResponse = await client.get('/api/now/table/sc_request', {
+        params: {
+            sysparm_query: `sys_created_on${dateFilter}`,
+            sysparm_limit: 1000
+        }
+    });
+    const requests = requestsResponse.data.result || [];
+    return {
+        historical_data: {
+            total_requests: requests.length
+        },
+        prediction: {
+            risk_level: requests.length > 500 ? 'medium' : 'low',
+            interpretation: `Based on ${requests.length} service requests, resource demand is ${requests.length > 500 ? 'increasing' : 'stable'}`
+        }
+    };
+}
+async function predictUserImpact(client, dateFilter, timeframe) {
+    const response = await client.get('/api/now/table/incident', {
+        params: {
+            sysparm_query: `sys_created_on${dateFilter}`,
+            sysparm_limit: 1000,
+            sysparm_fields: 'caller_id,state'
+        }
+    });
+    const incidents = response.data.result || [];
+    const uniqueUsers = new Set(incidents.map((inc) => inc.caller_id?.value || inc.caller_id).filter(Boolean));
+    return {
+        historical_data: {
+            total_incidents: incidents.length,
+            affected_users: uniqueUsers.size
+        },
+        prediction: {
+            impact_level: uniqueUsers.size > 50 ? 'high' : 'medium',
+            interpretation: `${uniqueUsers.size} unique users affected. User impact is ${uniqueUsers.size > 50 ? 'widespread' : 'localized'}`
+        }
+    };
+}
+exports.version = '1.0.0';
+exports.author = 'Snow-Flow SDK Migration';
+//# sourceMappingURL=snow_predictive_analysis.js.map
