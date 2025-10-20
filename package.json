@@ -33,7 +33,7 @@
     "test:unified": "node dist/mcp/servicenow-mcp-unified/scripts/validate-tools.js",
     "test:integration": "npm run build && node dist/tests/integration-test.js",
     "postbuild-disabled": "npm run setup-mcp",
-    "postinstall": "node scripts/postinstall.js",
+    "postinstall": "node scripts/postinstall.js || true",
     "version": "node scripts/update-version.js && npm run build && git add src/version.ts",
     "postversion": "git push && git push --tags"
   },
