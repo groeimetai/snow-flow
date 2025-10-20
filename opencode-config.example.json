@@ -1,0 +1,32 @@
+{
+  "name": "snow-flow-opencode",
+  "description": "OpenCode configuration for Snow-Flow ServiceNow development",
+  "model": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-4",
+    "temperature": 1.0
+  },
+  "mcp": {
+    "servicenow-unified": {
+      "type": "local",
+      "command": "node",
+      "args": [
+        "dist/mcp/servicenow-mcp-unified/index.js"
+      ],
+      "env": {
+        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
+        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
+        "SNOW_USERNAME": "${SNOW_USERNAME}",
+        "SNOW_PASSWORD": "${SNOW_PASSWORD}"
+      },
+      "enabled": true,
+      "description": "Unified ServiceNow MCP server with 235+ tools for complete ServiceNow access"
+    }
+  },
+  "tools": {
+    "enabled": true,
+    "requireApproval": false
+  },
+  "cwd": "/path/to/your/snow-flow/installation"
+}
