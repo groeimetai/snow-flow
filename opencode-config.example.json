@@ -2,8 +2,8 @@
   "name": "snow-flow-opencode",
   "description": "OpenCode configuration for Snow-Flow ServiceNow development",
   "model": {
-    "provider": "anthropic",
-    "model": "claude-sonnet-4",
+    "provider": "${DEFAULT_LLM_PROVIDER}",
+    "model": "${DEFAULT_ANTHROPIC_MODEL}",
     "temperature": 1.0
   },
   "mcp": {

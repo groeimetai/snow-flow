@@ -29,9 +29,12 @@ npm install -g snow-flow
 cd /path/to/snow-flow
 opencode config import opencode-config.example.json
 
-# 4. Set your ServiceNow credentials
+# 4. Configure .env file
 cp .env.example .env
-# Edit .env with your details
+# Edit .env with:
+#   - ServiceNow credentials (SNOW_INSTANCE, SNOW_CLIENT_ID, etc.)
+#   - LLM provider API keys (ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.)
+#   - Default model (DEFAULT_LLM_PROVIDER, DEFAULT_ANTHROPIC_MODEL, etc.)
 
 # 5. Start developing!
 opencode
@@ -53,19 +56,35 @@ Snow-Flow provides:
 
 ## Choose Your Model
 
+**Method 1: Set in .env (Recommended)**
+
+Edit your `.env` file:
 ```bash
 # Use Claude (expensive, best quality)
+DEFAULT_LLM_PROVIDER=anthropic
+DEFAULT_ANTHROPIC_MODEL=claude-sonnet-4
+ANTHROPIC_API_KEY=sk-ant-...
+
+# OR use GPT-4o-mini (cheap, good quality)
+DEFAULT_LLM_PROVIDER=openai
+DEFAULT_OPENAI_MODEL=gpt-4o-mini
+OPENAI_API_KEY=sk-...
+
+# OR use Gemini (cheap, fast)
+DEFAULT_LLM_PROVIDER=google
+DEFAULT_GOOGLE_MODEL=gemini-1.5-pro
+GOOGLE_API_KEY=...
+
+# OR use Llama locally (FREE!)
+DEFAULT_LLM_PROVIDER=ollama
+DEFAULT_OLLAMA_MODEL=llama3.1
+OLLAMA_BASE_URL=http://localhost:11434
+```
+
+**Method 2: Override via CLI**
+```bash
+opencode config set model.provider anthropic
 opencode config set model.model claude-sonnet-4
-
-# Use GPT-4o-mini (cheap, good quality)
-opencode config set model.model gpt-4o-mini
-
-# Use Gemini (cheap, fast)
-opencode config set model.model gemini-pro
-
-# Use Llama locally (FREE!)
-opencode config set model.provider ollama
-opencode config set model.model llama3.1
 ```
 
 ## Full Documentation

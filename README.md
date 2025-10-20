@@ -55,10 +55,19 @@ npm install -g snow-flow
 cd /path/to/snow-flow
 opencode config import opencode-config.example.json
 
-# 4. Set your ServiceNow credentials (copy .env.example to .env)
+# 4. Configure .env with ServiceNow + LLM API keys
+cp .env.example .env
+# Edit .env with your ServiceNow credentials and LLM provider API keys
 
 # 5. Start developing!
 opencode
+```
+
+**💡 Tip:** Set your preferred model in `.env`:
+```bash
+DEFAULT_LLM_PROVIDER=anthropic  # or openai, google, ollama
+DEFAULT_ANTHROPIC_MODEL=claude-sonnet-4
+ANTHROPIC_API_KEY=your-key
 ```
 
 **📚 Full Documentation:** See [README_OPENCODE.md](./README_OPENCODE.md) and [OPENCODE_SETUP.md](./OPENCODE_SETUP.md) for complete setup instructions.
