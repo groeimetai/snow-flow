@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/node/v/snow-flow.svg?style=for-the-badge&logo=node.js&color=339933)](https://nodejs.org)
 
-**Talk to your ServiceNow instance through Claude Code • 2 Unified MCP Servers • 411 ServiceNow Tools • Complete UX Workspace Creation • Claude Agent SDK Integration**
+**Talk to your ServiceNow instance through Claude Code or OpenCode • 2 Unified MCP Servers • 411 ServiceNow Tools • BYOLLM Support • Complete UX Workspace Creation**
 
 ---
 
@@ -29,7 +29,43 @@ Snow-Flow is a conversational ServiceNow development platform that bridges Claud
 - **Real Machine Learning**: Neural networks for incident classification and anomaly detection
 - **Comprehensive API Coverage**: 411 tools across all major ServiceNow modules
 
-## Quick Start
+## 🆕 BYOLLM: Bring Your Own LLM
+
+**Want to use ANY LLM provider instead of just Claude?** Snow-Flow now supports [OpenCode](https://opencode.ai) - an open-source AI coding agent that works with 75+ LLM providers!
+
+### Why OpenCode?
+
+| Feature | OpenCode | Claude Code |
+|---------|----------|-------------|
+| **LLM Support** | 75+ providers | Claude only |
+| **Models** | Claude, GPT, Gemini, Local | Claude only |
+| **Cost** | Your API costs | $20/month Claude Pro |
+| **Offline** | ✅ Yes (Ollama) | ❌ No |
+
+### Quick Start with OpenCode
+
+```bash
+# 1. Install OpenCode
+npm install -g @opencode/cli
+
+# 2. Install Snow-Flow
+npm install -g snow-flow
+
+# 3. Configure OpenCode for Snow-Flow
+cd /path/to/snow-flow
+opencode config import opencode-config.example.json
+
+# 4. Set your ServiceNow credentials (copy .env.example to .env)
+
+# 5. Start developing!
+opencode
+```
+
+**📚 Full Documentation:** See [README_OPENCODE.md](./README_OPENCODE.md) and [OPENCODE_SETUP.md](./OPENCODE_SETUP.md) for complete setup instructions.
+
+---
+
+## Quick Start (Claude Code)
 
 ### Prerequisites 
 
