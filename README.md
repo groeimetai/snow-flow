@@ -39,8 +39,9 @@ Snow-Flow is a conversational ServiceNow development platform that bridges Claud
 |---------|----------|-------------|
 | **LLM Support** | 75+ providers | Claude only |
 | **Models** | Claude, GPT, Gemini, Local | Claude only |
-| **Cost** | Your API costs | $20/month Claude Pro |
+| **Cost** | Claude Pro OR API costs | $20/month Claude Pro |
 | **Offline** | ✅ Yes (Ollama) | ❌ No |
+| **Flexibility** | ✅ Any provider | ❌ Claude only |
 
 ### Quick Start with OpenCode
 
@@ -63,11 +64,21 @@ cp .env.example .env
 opencode
 ```
 
-**💡 Tip:** Set your preferred model in `.env`:
+**💡 Tip:** Choose your LLM provider in `.env`:
+
+**Option A: Use your existing Claude Pro/Max subscription**
+```bash
+DEFAULT_LLM_PROVIDER=anthropic
+DEFAULT_ANTHROPIC_MODEL=claude-sonnet-4
+# Leave ANTHROPIC_API_KEY empty - OpenCode will prompt you to log in
+ANTHROPIC_API_KEY=
+```
+
+**Option B: Use API keys (pay-per-use)**
 ```bash
 DEFAULT_LLM_PROVIDER=anthropic  # or openai, google, ollama
 DEFAULT_ANTHROPIC_MODEL=claude-sonnet-4
-ANTHROPIC_API_KEY=your-key
+ANTHROPIC_API_KEY=your-api-key
 ```
 
 **📚 Full Documentation:** See [README_OPENCODE.md](./README_OPENCODE.md) and [OPENCODE_SETUP.md](./OPENCODE_SETUP.md) for complete setup instructions.
