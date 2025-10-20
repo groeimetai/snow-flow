@@ -99,7 +99,10 @@ dist/**/*.map
 scripts/*
 !scripts/postinstall.js
 !scripts/update-version.js
-bin/snow-flow.js
+
+# CRITICAL: Include bin/ directory for CLI executable
+!bin/
+!bin/snow-flow
 
 # Examples and assets (keep minimal)
 examples/
