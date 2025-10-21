@@ -150,8 +150,8 @@ Snow-Flow uses OAuth 2.0 for secure ServiceNow access:
 # Create widgets through conversation
 snow-flow swarm "create incident dashboard with priority charts, SLA timers, and mobile-responsive design"
 
-# Build flows naturally
-snow-flow swarm "create approval flow for change requests with 3-tier escalation"
+# Automate data operations
+snow-flow swarm "create business rule to auto-assign incidents based on category and priority"
 
 # Train ML models conversationally
 snow-flow swarm "train incident classifier on last 6 months of data"
@@ -163,8 +163,8 @@ snow-flow swarm "train incident classifier on last 6 months of data"
 - Complete CRUD operations on any table
 - Widget deployment & validation
 - UI Builder components
-- Flow Designer workflows
 - Business rules & client scripts
+- UI actions & policies
 - REST/SOAP integrations
 - Security & compliance
 - ML & predictive analytics
@@ -224,18 +224,18 @@ snow-flow swarm "create incident dashboard with:
 
 ### Process Automation
 ```bash
-snow-flow swarm "create approval flow for change requests with:
-- Auto-routing based on risk level
-- 3-tier escalation (Team Lead → Manager → Director)
-- SLA tracking
-- Email notifications"
+snow-flow swarm "create business rule for incident auto-assignment with:
+- Auto-categorization based on description keywords
+- Priority-based assignment rules
+- Team workload balancing
+- Email notifications to assignees"
 ```
 
 ### Security Automation
 ```bash
 snow-flow swarm "perform SOX compliance audit on:
 - User access controls
-- Change approval workflows
+- Change management ACLs
 - Data encryption settings
 Generate remediation plan for any issues"
 ```
