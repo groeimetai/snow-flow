@@ -3,9 +3,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLAUDE_MD_TEMPLATE_VERSION = exports.CLAUDE_MD_TEMPLATE = void 0;
 exports.CLAUDE_MD_TEMPLATE = `# Snow-Flow ServiceNow Development Framework
 
+## ⚡ QUICK START - READ THIS FIRST!
+
+| What You Want | ❌ WRONG (will fail!) | ✅ CORRECT (works!) |
+|---------------|----------------------|---------------------|
+| Create UI Page | \`node dist/index.js mcp execute ...\` | \`await snow_create_ui_page({...})\` |
+| Create Workspace | \`npx snow-flow-mcp-client ...\` | \`await snow_create_complete_workspace({...})\` |
+| Query Incidents | \`snow-flow mcp execute ...\` | \`await snow_query_incidents({...})\` |
+| Any MCP Tool | Bash/CLI commands | Direct function call |
+
+**🎯 MCP tools are JavaScript functions - call them directly! NO bash/node/npx needed!**
+
+---
+
 ## 🚨 CRITICAL: HOW MCP TOOLS WORK IN OPENCODE
 
-**MCP tools are AUTOMATICALLY AVAILABLE - NO bash/npx needed!**
+**MCP tools are AUTOMATICALLY AVAILABLE - NO bash/npx/node needed!**
 
 \`\`\`javascript
 // ✅ CORRECT - MCP tools are available directly:
@@ -18,23 +31,50 @@ await snow_create_complete_workspace({
   workspace_name: "IT Support",
   tables: ["incident", "task"]
 });
-
-// ❌ WRONG - NEVER use bash to call MCP tools:
-// npx snow-flow-mcp-client servicenow-unified snow_create_ui_page {...}  // DOES NOT EXIST!
-// node ... snow_create_ui_page  // WRONG!
-// Bash('snow_create_ui_page')  // WRONG!
 \`\`\`
 
-**🚨 FORBIDDEN:**
-- Using bash/npx/node to call MCP tools
-- Checking if MCP tools exist with bash commands
-- Using \`snow-flow-mcp-client\` (DOES NOT EXIST!)
-- Writing scripts to "call MCP tools" via CLI
+## 🚫 FORBIDDEN BASH PATTERNS - NEVER DO THIS!
 
-**✅ REQUIRED:**
-- Call MCP tools **DIRECTLY** like any other function
-- MCP tools are **automatically loaded** by OpenCode
-- Available tools: All \`snow_*\` functions listed below
+**❌ THESE COMMANDS DO NOT EXIST AND WILL ALWAYS FAIL:**
+
+\`\`\`bash
+# ❌ WRONG - This file does NOT exist in user's project!
+node dist/index.js mcp execute --server "servicenow-platform-dev" --tool "snow_create_ui_page"
+# ERROR: Cannot find module 'dist/index.js'
+
+# ❌ WRONG - This package does NOT exist!
+npx snow-flow-mcp-client servicenow-unified snow_create_ui_page {...}
+# ERROR: 404 Not Found
+
+# ❌ WRONG - MCP tools are NOT CLI commands!
+snow-flow mcp execute --tool snow_create_ui_page
+# ERROR: No such command
+
+# ❌ WRONG - You cannot "run" MCP tools via bash!
+cd project && node snow_create_ui_page.js
+# ERROR: Wrong approach entirely!
+\`\`\`
+
+**🚨 WHY THESE FAIL:**
+- MCP tools are **functions**, NOT CLI commands
+- They are loaded by OpenCode/Claude Code automatically
+- No \`dist/\` directory exists in user's project
+- No CLI wrapper exists for MCP tools
+
+**✅ CORRECT WAY (the ONLY way that works):**
+
+\`\`\`javascript
+// Just call the function directly - it's already available!
+const result = await snow_create_ui_page({
+  name: "incident_management",
+  title: "Incident Management",
+  html: "...",
+  processing_script: "..."
+});
+\`\`\`
+
+**🎯 KEY RULE:**
+**IF you think you need bash/node/npx to call an MCP tool, you are WRONG! MCP tools are JavaScript functions - call them directly!**
 
 ## 🚨 ABSOLUTE RULES - NO EXCEPTIONS
 
@@ -621,5 +661,5 @@ await snow_execute_background_script({
 ---
 
 **🚨 FINAL REMINDER: Update Sets are MANDATORY. MCP Tools are AUTOMATICALLY available. NO Mock Data. ES5 Only.**`;
-exports.CLAUDE_MD_TEMPLATE_VERSION = '8.1.5-OPTIMIZED';
+exports.CLAUDE_MD_TEMPLATE_VERSION = '8.1.6-ANTI-BASH';
 //# sourceMappingURL=claude-md-template.js.map
