@@ -79,7 +79,7 @@ ANTHROPIC_API_KEY=sk-ant-your-key
 # Option 3: Free local (Ollama)
 DEFAULT_LLM_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
-DEFAULT_OLLAMA_MODEL=llama3.1
+DEFAULT_OLLAMA_MODEL=llama3.3
 ```
 
 ### Authentication
@@ -126,8 +126,8 @@ Snow-Flow works with **75+ LLM providers** through OpenCode and Models.dev. Choo
 **Via OpenCode + Models.dev:**
 - **Anthropic**: Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1
 - **OpenAI**: GPT-5, GPT-4o, GPT-4o-mini
-- **Google**: Gemini 2.0 Flash, Gemini 1.5 Pro, Gemini 1.5 Flash
-- **Meta**: Llama 3.1 (8B, 70B, 405B), Llama 3.2
+- **Google**: Gemini 2.0 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash
+- **Meta**: Llama 3.3 (8B, 70B), Llama 3.2, Llama 3.1 (405B)
 - **Mistral AI**: Mistral Large, Mistral Medium, Mistral Small, Codestral
 - **Cohere**: Command R, Command R+
 - **DeepSeek**: DeepSeek Coder, DeepSeek Chat
@@ -161,7 +161,7 @@ OPENAI_API_KEY=sk-...  # From platform.openai.com
 ```bash
 # Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
-ollama pull llama3.1
+ollama pull llama3.3
 
 # .env
 DEFAULT_LLM_PROVIDER=ollama
@@ -182,10 +182,10 @@ OPENAI_API_KEY=your-key
 |----------|---------------------|-----|
 | **Production ServiceNow Development** | Claude Sonnet 4.5 | Best reasoning, ServiceNow knowledge |
 | **Cost-Optimized Development** | GPT-4o-mini or Claude Haiku 4.5 | 10x cheaper, good quality |
-| **Offline/Private Development** | Ollama (Llama 3.1) | 100% free, runs locally |
+| **Offline/Private Development** | Ollama (Llama 3.3) | 100% free, runs locally |
 | **Code Generation Focus** | DeepSeek Coder | Specialized for coding |
-| **Large Context (200K+ tokens)** | Gemini 1.5 Pro | 2M token context |
-| **Ultra-Fast Prototyping** | Groq (Llama 3.1) | 800+ tokens/sec |
+| **Large Context (200K+ tokens)** | Gemini 2.5 Pro | 2M token context |
+| **Ultra-Fast Prototyping** | Groq (Llama 3.3/Mixtral) | 800+ tokens/sec |
 
 **💡 Pro Tip:** Mix providers! Use cheap models for testing, expensive models for complex widgets.
 
@@ -478,7 +478,7 @@ ANTHROPIC_API_KEY=  # Leave empty for Claude Pro/Max
 OPENAI_API_KEY=your-key
 GOOGLE_API_KEY=your-key
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.1
+OLLAMA_MODEL=llama3.3
 
 # Snow-Flow Features
 LOG_LEVEL=info
