@@ -187,10 +187,12 @@ program
       }
     }
     
-    // Always show essential info
-    cliLogger.info(`\n🚀 Snow-Flow v${VERSION}`);
-    console.log(chalk.blue(`📋 ${objective}`));
-    
+    // Only show header in verbose mode
+    if (options.verbose) {
+      cliLogger.info(`\n🚀 Snow-Flow v${VERSION}`);
+      console.log(chalk.blue(`📋 ${objective}`));
+    }
+
     // Only show detailed config in verbose mode
     if (options.verbose) {
       cliLogger.info(`⚙️  Strategy: ${options.strategy} | Mode: ${options.mode} | Max Agents: ${options.maxAgents}`);
@@ -247,44 +249,6 @@ program
       cliLogger.info(`  🔐 Compliance Monitoring: ${autonomousComplianceActive ? '✅ ACTIVE' : '❌ Disabled'}`);
       cliLogger.info(`  🏥 Self-Healing: ${autonomousHealingActive ? '✅ ACTIVE' : '❌ Disabled'}`);
       cliLogger.info('');
-    } else {
-      // In non-verbose mode, only show critical info
-      if (options.autoDeploy) {
-        console.log(chalk.green(`✅ ServiceNow integration active - will create real artifacts`));
-      }
-      
-      // Calculate autonomous systems for non-verbose mode (same logic as verbose)
-      const noAutonomousAll = options.autonomousAll === false;
-      const forceAutonomousAll = options.autonomousAll === true;
-      
-      const autonomousDocActive = noAutonomousAll ? false : 
-        forceAutonomousAll ? true : 
-        options.autonomousDocumentation !== false;
-      
-      const autonomousCostActive = noAutonomousAll ? false : 
-        forceAutonomousAll ? true : 
-        options.autonomousCostOptimization !== false;
-      
-      const autonomousComplianceActive = noAutonomousAll ? false : 
-        forceAutonomousAll ? true : 
-        options.autonomousCompliance !== false;
-      
-      const autonomousHealingActive = noAutonomousAll ? false : 
-        forceAutonomousAll ? true : 
-        options.autonomousHealing !== false;
-      
-      // Show active autonomous systems
-      const activeSystems = [];
-      if (autonomousDocActive) activeSystems.push('📚 Documentation');
-      if (autonomousCostActive) activeSystems.push('💰 Cost Optimization');
-      if (autonomousComplianceActive) activeSystems.push('🔐 Compliance');
-      if (autonomousHealingActive) activeSystems.push('🏥 Self-Healing');
-      
-      if (activeSystems.length > 0) {
-        cliLogger.info(`🤖 Autonomous Systems: ${activeSystems.join(', ')}`);
-      } else {
-        cliLogger.info(`🤖 Autonomous Systems: ❌ All Disabled`);
-      }
     }
     
     // Snow-Flow uses Claude Code directly - no provider-agnostic layer needed
@@ -338,9 +302,6 @@ program
         cliLogger.warn('🔗 ServiceNow connection: ❌ Not authenticated');
         cliLogger.info('💡 Run "snow-flow auth login" to enable live ServiceNow integration');
       }
-    } else if (!isAuthenticated) {
-      // In non-verbose mode, only warn if not authenticated
-      console.log(chalk.yellow('⚠️  Not authenticated - run ') + chalk.cyan('snow-flow auth login') + chalk.yellow(' first'));
     }
     
     // Initialize Queen Agent memory system
@@ -378,8 +339,6 @@ program
         cliLogger.info(`   - Spawn ${taskAnalysis.estimatedAgentCount} specialized agents via Task() system`);
         cliLogger.info(`   - Coordinate through shared memory (session: ${sessionId})`);
         cliLogger.info(`   - Monitor progress and adapt strategy`);
-      } else {
-        cliLogger.info('\n👑 Launching OpenCode orchestration...');
       }
       
       // Check if intelligent features are enabled
@@ -422,16 +381,13 @@ program
           cliLogger.info('\n🔗 Live ServiceNow integration: ❌ Disabled');
         }
       }
-      
-      console.log(chalk.blue('\n🚀 Starting OpenCode with 235+ ServiceNow tools via MCP...'));
 
       // Try to execute OpenCode directly with the objective
       const success = await executeOpenCode(objective);
 
       if (success) {
-        cliLogger.info('✅ OpenCode launched successfully!');
-        
         if (options.verbose) {
+          cliLogger.info('✅ OpenCode launched successfully!');
           cliLogger.info('🤖 OpenCode is now executing your objective');
           cliLogger.info(`💾 Monitor progress with session ID: ${sessionId}`);
 
@@ -477,8 +433,6 @@ program
 
 // Helper function to execute OpenCode directly with the objective
 async function executeOpenCode(objective: string): Promise<boolean> {
-  cliLogger.info('🤖 Preparing OpenCode for ServiceNow development...');
-
   try {
     // Check if OpenCode CLI is available
     const { execSync } = require('child_process');
@@ -514,10 +468,6 @@ async function executeOpenCode(objective: string): Promise<boolean> {
       return false;
     }
 
-    cliLogger.info('✅ OpenCode configuration found');
-    cliLogger.info('🔧 Starting OpenCode with ServiceNow MCP servers...');
-    console.log(chalk.green('✅ 235+ ServiceNow tools available via MCP'));
-
     // Debug output if enabled
     if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.VERBOSE === 'true') {
       cliLogger.info(`🔍 Working Directory: ${process.cwd()}`);
@@ -531,20 +481,9 @@ async function executeOpenCode(objective: string): Promise<boolean> {
     const tmpFile = join(tmpdir(), `snow-flow-objective-${Date.now()}.txt`);
     writeFileSync(tmpFile, objective, 'utf8');
 
-    cliLogger.info('📝 Launching OpenCode with your objective...');
-    cliLogger.info('🚀 OpenCode interface opening...\n');
-    cliLogger.info(chalk.blue(`💡 Objective: ${objective}\n`));
-
     // Get default model from .env if available
     const defaultModel = process.env.DEFAULT_MODEL;
     const defaultProvider = process.env.DEFAULT_LLM_PROVIDER;
-
-    if (defaultModel) {
-      cliLogger.info(chalk.green(`🤖 Using default model: ${defaultModel}`));
-    }
-    if (defaultProvider) {
-      cliLogger.info(chalk.blue(`🔧 Provider: ${defaultProvider}\n`));
-    }
 
     // Start OpenCode with the objective and default model
     // OpenCode will be started interactively
@@ -576,13 +515,7 @@ async function executeOpenCode(objective: string): Promise<boolean> {
           // Ignore cleanup errors
         }
 
-        if (code === 0) {
-          cliLogger.info('\n✅ OpenCode session completed successfully!');
-          resolve(true);
-        } else {
-          cliLogger.warn(`\n⚠️  OpenCode session ended with code: ${code}`);
-          resolve(false);
-        }
+        resolve(code === 0);
       });
 
       opencodeProcess.on('error', (error) => {
@@ -1913,7 +1846,47 @@ async function checkAndInstallOpenCode(): Promise<boolean> {
 
       try {
         // Copy example config to .opencode/config.json for automatic detection
-        const configContent = await fs.readFile(exampleConfigPath, 'utf-8');
+        let configContent = await fs.readFile(exampleConfigPath, 'utf-8');
+
+        // Ensure the config content has the correct cwd (in case it still has a placeholder)
+        // This is a safety check - the placeholder should already be replaced by copyOpenCodeConfig
+        if (configContent.includes('"/path/to/your/snow-flow/installation"')) {
+          console.log(chalk.yellow('⚠️  Config still contains placeholder, attempting to fix...'));
+
+          // Determine the snow-flow installation directory
+          let snowFlowRoot: string;
+          const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
+                                 __dirname.includes('node_modules/.pnpm') ||
+                                 __dirname.includes('npm/snow-flow');
+
+          if (isGlobalInstall) {
+            const parts = __dirname.split(/node_modules[\/\\]/);
+            snowFlowRoot = parts[0] + 'node_modules/snow-flow';
+          } else {
+            let currentDir = __dirname;
+            while (currentDir !== '/') {
+              try {
+                const packageJsonPath = join(currentDir, 'package.json');
+                const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+                if (packageJson.name === 'snow-flow') {
+                  snowFlowRoot = currentDir;
+                  break;
+                }
+              } catch {
+                // Continue searching up
+              }
+              currentDir = dirname(currentDir);
+            }
+          }
+
+          if (snowFlowRoot) {
+            configContent = configContent.replace(
+              '"/path/to/your/snow-flow/installation"',
+              `"${snowFlowRoot.replace(/\\/g, '/')}"`
+            );
+          }
+        }
+
         await fs.writeFile(opencodeConfigPath, configContent);
         console.log(chalk.green('✅ OpenCode configuration created at .opencode/config.json'));
         console.log(chalk.blue('💡 OpenCode will automatically detect this configuration'));
@@ -1997,8 +1970,43 @@ async function createReadmeFiles(targetDir: string, force: boolean = false) {
 
 async function copyOpenCodeConfig(targetDir: string, force: boolean = false) {
   try {
+    // Determine the snow-flow installation directory
+    let snowFlowRoot: string;
+
+    // Check if we're in a global npm installation
+    const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
+                           __dirname.includes('node_modules/.pnpm') ||
+                           __dirname.includes('npm/snow-flow');
+
+    if (isGlobalInstall) {
+      // For global installs, find the snow-flow package root
+      const parts = __dirname.split(/node_modules[\/\\]/);
+      snowFlowRoot = parts[0] + 'node_modules/snow-flow';
+    } else {
+      // For local development or local install
+      // Find the snow-flow project root by looking for the parent directory with package.json
+      let currentDir = __dirname;
+      while (currentDir !== '/') {
+        try {
+          const packageJsonPath = join(currentDir, 'package.json');
+          const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+          if (packageJson.name === 'snow-flow') {
+            snowFlowRoot = currentDir;
+            break;
+          }
+        } catch {
+          // Continue searching up
+        }
+        currentDir = dirname(currentDir);
+      }
+      if (!snowFlowRoot) {
+        throw new Error('Could not find snow-flow project root');
+      }
+    }
+
     // Try to find the opencode-config.example.json
     const sourceFiles = [
+      join(snowFlowRoot, 'opencode-config.example.json'),
       join(__dirname, '..', 'opencode-config.example.json'),
       join(__dirname, 'opencode-config.example.json'),
       join(__dirname, '..', '..', '..', 'opencode-config.example.json'),
@@ -2025,6 +2033,12 @@ async function copyOpenCodeConfig(targetDir: string, force: boolean = false) {
       return;
     }
 
+    // Replace placeholders with actual snow-flow installation path
+    configContent = configContent.replace(
+      '"/path/to/your/snow-flow/installation"',
+      `"${snowFlowRoot.replace(/\\/g, '/')}"`
+    );
+
     const targetPath = join(targetDir, 'opencode-config.example.json');
 
     try {
@@ -2040,7 +2054,7 @@ async function copyOpenCodeConfig(targetDir: string, force: boolean = false) {
     }
 
     await fs.writeFile(targetPath, configContent);
-    console.log('✅ Created opencode-config.example.json');
+    console.log('✅ Created opencode-config.example.json with correct snow-flow path');
 
   } catch (error) {
     console.error('❌ Error copying opencode-config.example.json:', error);
