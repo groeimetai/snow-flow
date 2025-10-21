@@ -14,11 +14,73 @@ export function registerAuthCommands(program: Command) {
     .description('Authenticate with LLM provider (Claude Pro/Max) and ServiceNow')
     .action(async () => {
       const { execSync } = require('child_process');
+      const fs = require('fs');
+      const path = require('path');
+      const inquirer = require('inquirer');
 
       console.log(); // Empty line for spacing
 
+      // Step 0: Provider selection if not configured
+      let provider = process.env.DEFAULT_LLM_PROVIDER;
+
+      if (!provider || provider.trim() === '') {
+        console.log(chalk.blue('🤖 Select your LLM provider'));
+        console.log(chalk.dim('   (75+ providers supported via OpenCode)\n'));
+
+        const { selectedProvider } = await inquirer.prompt([{
+          type: 'list',
+          name: 'selectedProvider',
+          message: 'Which LLM provider do you want to use?',
+          choices: [
+            { name: 'Anthropic (Claude Pro/Max subscription)', value: 'anthropic' },
+            { name: 'OpenAI (ChatGPT API)', value: 'openai' },
+            { name: 'Google (Gemini API)', value: 'google' },
+            { name: 'Ollama (Free, runs locally)', value: 'ollama' },
+            { name: 'Groq (Ultra-fast inference)', value: 'groq' },
+            { name: 'DeepSeek (Specialized for coding)', value: 'deepseek' },
+            { name: 'Mistral AI', value: 'mistral' },
+            new inquirer.Separator(),
+            { name: 'Other (configure manually in .env)', value: 'other' }
+          ]
+        }]);
+
+        if (selectedProvider === 'other') {
+          console.log(chalk.yellow('\n💡 Please set DEFAULT_LLM_PROVIDER in your .env file'));
+          console.log(chalk.dim('   See .env.example for all 75+ available providers'));
+          return;
+        }
+
+        provider = selectedProvider;
+
+        // Save provider to .env file
+        const envPath = path.join(process.cwd(), '.env');
+        let envContent = '';
+
+        try {
+          envContent = fs.readFileSync(envPath, 'utf8');
+        } catch {
+          // .env doesn't exist yet, use .env.example as template
+          const examplePath = path.join(process.cwd(), '.env.example');
+          if (fs.existsSync(examplePath)) {
+            envContent = fs.readFileSync(examplePath, 'utf8');
+          }
+        }
+
+        // Update DEFAULT_LLM_PROVIDER in .env content
+        if (envContent.includes('DEFAULT_LLM_PROVIDER=')) {
+          envContent = envContent.replace(/DEFAULT_LLM_PROVIDER=.*/g, `DEFAULT_LLM_PROVIDER=${provider}`);
+        } else {
+          envContent += `\nDEFAULT_LLM_PROVIDER=${provider}\n`;
+        }
+
+        fs.writeFileSync(envPath, envContent);
+        console.log(chalk.green(`✅ Provider set to: ${provider}\n`));
+
+        // Reload environment variables
+        process.env.DEFAULT_LLM_PROVIDER = provider;
+      }
+
       // Step 1: Check if Anthropic (Claude Pro/Max) authentication is needed
-      const provider = process.env.DEFAULT_LLM_PROVIDER;
       const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
       if (provider === 'anthropic' && (!anthropicKey || anthropicKey.trim() === '')) {
