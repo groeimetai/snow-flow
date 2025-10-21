@@ -156,9 +156,28 @@ export function registerAuthCommands(program: Command) {
       let clientId = process.env.SNOW_CLIENT_ID;
       let clientSecret = process.env.SNOW_CLIENT_SECRET;
 
-      // If credentials are missing, ask user interactively
-      if (!instance || !clientId || !clientSecret) {
-        console.log(chalk.yellow('\n⚠️  ServiceNow OAuth credentials not found in .env'));
+      // Validate credentials (check if they exist AND are valid)
+      const credentialsValid =
+        instance && instance.trim() !== '' && instance.includes('.service-now.com') &&
+        clientId && clientId.trim() !== '' && clientId.length >= 32 &&
+        clientSecret && clientSecret.trim() !== '' && clientSecret.length >= 32;
+
+      // If credentials are missing or invalid, ask user interactively
+      if (!credentialsValid) {
+        if (instance || clientId || clientSecret) {
+          console.log(chalk.yellow('\n⚠️  Invalid ServiceNow OAuth credentials detected in .env'));
+          if (instance && !instance.includes('.service-now.com')) {
+            console.log(chalk.red('   ❌ Instance URL must be a .service-now.com domain'));
+          }
+          if (clientId && clientId.length < 32) {
+            console.log(chalk.red('   ❌ Client ID too short (expected 32+ characters)'));
+          }
+          if (clientSecret && clientSecret.length < 32) {
+            console.log(chalk.red('   ❌ Client Secret too short (expected 32+ characters)'));
+          }
+        } else {
+          console.log(chalk.yellow('\n⚠️  ServiceNow OAuth credentials not found in .env'));
+        }
         console.log(chalk.dim('   You need to set up OAuth in ServiceNow first\n'));
 
         const { setupNow } = await inquirer.prompt([{
