@@ -2,7 +2,7 @@
 
 **Multi-LLM ServiceNow Development Platform**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![License: Elastic-2.0](https://img.shields.io/badge/License-Elastic--2.0-blue.svg?style=for-the-badge)](https://www.elastic.co/licensing/elastic-license)
 [![Node.js](https://img.shields.io/node/v/snow-flow.svg?style=for-the-badge&logo=node.js&color=339933)](https://nodejs.org)
 
 **Develop ServiceNow through conversation • 411 Tools • 2 MCP Servers • 75+ LLM Providers • Works with ANY AI coding assistant**
@@ -555,9 +555,9 @@ snow-flow auth logout
 
 ## 🏢 Open Source vs Enterprise Features
 
-Snow-Flow follows an **Open Core** business model. The core framework is 100% open source (MIT License), with optional enterprise features available for organizations requiring advanced integrations and support.
+Snow-Flow follows an **Open Core** business model. The core framework is 100% open source (Elastic License 2.0), with optional enterprise features available for organizations requiring advanced integrations and support.
 
-### Open Source (MIT License) - 100% Free Forever
+### Open Source (Elastic License 2.0) - 100% Free Forever
 
 The current Snow-Flow release includes:
 
@@ -680,7 +680,14 @@ See [MONETIZATION_STRATEGY.md](./MONETIZATION_STRATEGY.md) for complete business
 
 ## 📄 License
 
-**Core Framework:** MIT License - see [LICENSE](LICENSE) file for details.
+**Core Framework:** Elastic License 2.0 - see [LICENSE](LICENSE) file for details.
+
+**What this means:**
+- ✅ Free to use, modify, and redistribute
+- ✅ Can be used commercially
+- ✅ Full source code access
+- ⚠️ Cannot provide Snow-Flow as a managed service to third parties
+- ⚠️ Cannot remove or obscure licensing/copyright notices
 
 **Trademark:** "Snow-Flow" name and logo are protected trademarks - see [TRADEMARK.md](./TRADEMARK.md).
 
