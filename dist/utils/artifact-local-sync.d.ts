@@ -1,11 +1,11 @@
 /**
  * Artifact Local Sync System
  *
- * Creates temporary local files from ServiceNow artifacts so Claude Code
- * can use its native tools (search, edit, multi-file operations, etc.)
+ * Creates temporary local files from ServiceNow artifacts so OpenCode
+ * (or Claude Code) can use its native tools (search, edit, multi-file operations, etc.)
  * Then syncs changes back to ServiceNow.
  *
- * THIS IS THE BRIDGE BETWEEN SERVICENOW AND CLAUDE CODE!
+ * THIS IS THE BRIDGE BETWEEN SERVICENOW AND YOUR AI CODING ASSISTANT!
  */
 import { ServiceNowClient } from './servicenow-client.js';
 import { ArtifactTypeConfig, FieldMapping, ValidationResult } from './artifact-sync/artifact-registry';
@@ -48,7 +48,7 @@ export declare class ArtifactLocalSync {
     pullArtifact(tableName: string, sys_id: string): Promise<LocalArtifact>;
     /**
      * Pull a widget from ServiceNow and create local files
-     * This is the magic that lets Claude Code use its native tools!
+     * This is the magic that lets your AI coding assistant use its native tools!
      * (Wrapper for backward compatibility)
      */
     pullWidget(sys_id: string): Promise<LocalArtifact>;

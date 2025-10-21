@@ -1445,7 +1445,7 @@ program
         cliLogger.info(`   - Primary: ${sessionData.taskAnalysis.primaryAgent}`);
         cliLogger.info(`   - Supporting: ${sessionData.taskAnalysis.supportingAgents.join(', ')}`);
         if (launchData && launchData.success) {
-            cliLogger.info(`\n✅ Status: Claude Code launched successfully`);
+            cliLogger.info(`\n✅ Status: OpenCode (or Claude Code) launched successfully`);
             cliLogger.info(`🚀 Launched at: ${launchData.launched_at}`);
         }
         else if (errorData) {
@@ -1454,11 +1454,11 @@ program
             cliLogger.error(`🕐 Failed at: ${errorData.failed_at}`);
         }
         else {
-            cliLogger.info(`\n⏳ Status: Awaiting manual Claude Code execution`);
+            cliLogger.info(`\n⏳ Status: Awaiting manual OpenCode execution`);
         }
         cliLogger.info('\n💡 Tips:');
-        cliLogger.info('   - Check Claude Code for real-time agent progress');
-        cliLogger.info('   - Use Memory.get("swarm_session_' + sessionId + '") in Claude Code');
+        cliLogger.info('   - Check OpenCode for real-time agent progress');
+        cliLogger.info('   - Use Memory.get("swarm_session_' + sessionId + '") in OpenCode');
         cliLogger.info('   - Monitor TodoRead for task completion status');
         if (options.watch) {
             cliLogger.info(`\n👀 Watching for updates every ${options.interval} seconds...`);
@@ -1469,7 +1469,7 @@ program
                 // Re-fetch session data to check for updates
                 const updatedSession = memorySystem.getLearning(`session_${sessionId}`);
                 if (updatedSession) {
-                    cliLogger.info('   Status: Active - Check Claude Code for details');
+                    cliLogger.info('   Status: Active - Check OpenCode for details');
                 }
             }, parseInt(options.interval) * 1000);
             // Handle graceful shutdown
@@ -1568,12 +1568,12 @@ program
         console.log('│ 📋 Recent Activity:                                        │');
         console.log(`│   • ${new Date().toLocaleTimeString()} - System monitoring active     │`);
         cliLogger.info('└─────────────────────────────────────────────────────────────┘');
-        // Check for active Claude Code processes
+        // Check for active OpenCode/Claude Code processes
         try {
             const { execSync } = require('child_process');
-            const processes = execSync('ps aux | grep "claude" | grep -v grep', { encoding: 'utf8' }).toString();
+            const processes = execSync('ps aux | grep "claude\\|opencode" | grep -v grep', { encoding: 'utf8' }).toString();
             if (processes.trim()) {
-                cliLogger.info('\n🤖 Active Claude Code Processes:');
+                cliLogger.info('\n🤖 Active OpenCode/Claude Code Processes:');
                 const lines = processes.trim().split('\n');
                 lines.forEach((line, index) => {
                     if (index < 3) { // Show max 3 processes
@@ -1664,7 +1664,7 @@ program
         console.log('🔐 Creating environment configuration...');
         await createEnvFile(targetDir, options.force);
         // Create MCP configuration - always included now (SPARC is default)
-        console.log('🔧 Setting up MCP servers for Claude Code...');
+        console.log('🔧 Setting up MCP servers for OpenCode (also works with Claude Code)...');
         await createMCPConfig(targetDir, options.force);
         // Copy CLAUDE.md file
         console.log('📚 Creating documentation files...');
@@ -1675,14 +1675,16 @@ program
         await copyOpenCodeConfig(targetDir, options.force);
         console.log(chalk_1.default.green.bold('\n✅ Snow-Flow project initialized successfully!'));
         console.log('\n📋 Created Snow-Flow configuration:');
-        console.log('   ✓ .claude/ - Claude Code MCP configuration');
+        console.log('   ✓ .opencode/ - OpenCode configuration with both MCP servers');
+        console.log('   ✓ .claude/ - Claude Code MCP configuration (backward compatibility)');
         console.log('   ✓ .mcp.json - 2 unified MCP servers (411 tools total)');
-        console.log('   ✓ CLAUDE.md - Complete development guide');
-        console.log('   ✓ README.md - Current capabilities documentation');
+        console.log('   ✓ AGENTS.md - OpenCode primary instructions');
+        console.log('   ✓ CLAUDE.md - Claude Code compatibility');
+        console.log('   ✓ README.md - Complete capabilities documentation');
         console.log('   ✓ .snow-flow/ - Project workspace and memory');
         if (!options.skipMcp) {
-            // NOTE: MCP servers now managed by Claude Agent SDK (v4.7.0+)
-            console.log(chalk_1.default.blue('\nℹ️  MCP servers now managed by Claude Agent SDK v0.1.1'));
+            // NOTE: MCP servers work with OpenCode's native Task() system
+            console.log(chalk_1.default.blue('\nℹ️  MCP servers configured for OpenCode (also compatible with Claude Code)'));
             console.log(chalk_1.default.green('✅ 411 ServiceNow tools automatically available via 2 unified servers'));
             console.log(chalk_1.default.blue('📋 SDK handles MCP server lifecycle automatically'));
         }
@@ -3007,8 +3009,9 @@ program
         console.log('\n📝 Updating MCP configuration...');
         await setupMCPConfig(process.cwd(), instanceUrl, clientId, clientSecret, options.force || false);
         console.log(chalk_1.default.green('\n✅ MCP configuration refreshed successfully!'));
-        console.log('\n📢 IMPORTANT: Restart Claude Code to use the new configuration:');
-        console.log(chalk_1.default.cyan('   claude --mcp-config .mcp.json'));
+        console.log('\n📢 IMPORTANT: Restart OpenCode (or Claude Code) to use the new configuration:');
+        console.log(chalk_1.default.cyan('   OpenCode: opencode'));
+        console.log(chalk_1.default.cyan('   Claude Code: claude --mcp-config .mcp.json'));
         console.log('\n💡 The Local Development server now includes:');
         console.log('   • Universal artifact detection via sys_metadata');
         console.log('   • Support for ANY ServiceNow table (even custom)');
@@ -3038,16 +3041,16 @@ program
 // MCP Server command with subcommands
 program
     .command('mcp <action>')
-    .description('Manage ServiceNow MCP servers for Claude Code integration')
+    .description('Manage ServiceNow MCP servers for OpenCode integration')
     .option('--server <name>', 'Specific server name to manage')
     .option('--port <port>', 'Port for MCP server (default: auto)')
     .option('--host <host>', 'Host for MCP server (default: localhost)')
     .action(async (action, options) => {
-    // NOTE: MCP commands deprecated - SDK manages MCP servers (v4.7.0+)
-    console.log(chalk_1.default.blue('ℹ️  MCP servers are now managed by Claude Agent SDK v0.1.1'));
+    // NOTE: MCP servers work with OpenCode's native Task() system
+    console.log(chalk_1.default.blue('ℹ️  MCP servers configured for OpenCode (also compatible with Claude Code)'));
     console.log(chalk_1.default.yellow('⚠️  Manual MCP commands are no longer needed'));
-    console.log(chalk_1.default.green('✅ SDK automatically handles all MCP server lifecycle'));
-    console.log(chalk_1.default.blue('\n💡 Simply run your swarm commands - SDK handles the rest!'));
+    console.log(chalk_1.default.green('✅ OpenCode automatically handles all MCP server lifecycle'));
+    console.log(chalk_1.default.blue('\n💡 Simply run your swarm commands - OpenCode handles the rest!'));
     return;
 });
 // MCP action handlers
@@ -3072,9 +3075,9 @@ async function handleMCPStart(manager, options) {
         const total = status.length;
         console.log(`\n✅ Started ${running}/${total} MCP servers`);
         if (running === total) {
-            console.log('🎉 All MCP servers are now running and available in Claude Code!');
+            console.log('🎉 All MCP servers are now running and available in OpenCode!');
             console.log('\n📋 Next steps:');
-            console.log('   1. Open Claude Code');
+            console.log('   1. Open OpenCode (or Claude Code)');
             console.log('   2. MCP tools will be automatically available');
             console.log('   3. Use snow_deploy_widget, snow_deploy_flow, etc.');
         }
@@ -3153,7 +3156,7 @@ async function handleMCPStatus(manager, options) {
     const total = servers.length;
     console.log(`📈 Summary: ${running}/${total} servers running`);
     if (running === total) {
-        console.log('🎉 All MCP servers are operational and available in Claude Code!');
+        console.log('🎉 All MCP servers are operational and available in OpenCode (or Claude Code)!');
     }
     else if (running > 0) {
         console.log('⚠️  Some servers are not running. Use "snow-flow mcp start" to start them.');
