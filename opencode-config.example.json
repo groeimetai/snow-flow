@@ -1,4 +1,5 @@
 {
+  "$schema": "https://opencode.ai/config.json",
   "name": "snow-flow-opencode",
   "description": "OpenCode configuration for Snow-Flow ServiceNow development with multi-LLM support",
   "model": {
@@ -9,10 +10,7 @@
   "mcp": {
     "servicenow-unified": {
       "type": "local",
-      "command": "node",
-      "args": [
-        "dist/mcp/servicenow-mcp-unified/index.js"
-      ],
+      "command": ["node", "dist/mcp/servicenow-mcp-unified/index.js"],
       "env": {
         "SNOW_INSTANCE": "${SNOW_INSTANCE}",
         "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
@@ -25,10 +23,7 @@
     },
     "snow-flow": {
       "type": "local",
-      "command": "node",
-      "args": [
-        "dist/mcp/snow-flow-mcp.js"
-      ],
+      "command": ["node", "dist/mcp/snow-flow-mcp.js"],
       "env": {
         "SNOW_FLOW_ENV": "production"
       },
