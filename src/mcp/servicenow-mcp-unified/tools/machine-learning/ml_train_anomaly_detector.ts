@@ -1,12 +1,19 @@
 /**
- * ml_train_anomaly_detector - Train autoencoder neural networks for anomaly detection
+ * ml_train_anomaly_detector - Train autoencoder LOCALLY for anomaly detection
+ *
+ * ⚠️ IMPORTANT: Trains models LOCALLY on your machine, NOT in ServiceNow.
+ * Alternative to ServiceNow Predictive Intelligence (PI) for dev/testing.
  *
  * Trains an autoencoder model to detect anomalies in:
  * - Incident volume patterns
  * - Response time metrics
  * - Resource usage patterns
  *
- * Works without PA/PI licenses using standard table data
+ * How it works:
+ * 1. Fetches metrics from ServiceNow via OAuth2 API
+ * 2. Trains TensorFlow.js autoencoder locally (Node.js)
+ * 3. Saves to .snow-flow/ml-models/
+ * 4. NOT importable to ServiceNow PI
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
@@ -16,7 +23,7 @@ import * as tf from '@tensorflow/tfjs-node';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_train_anomaly_detector',
-  description: 'Trains autoencoder neural networks for anomaly detection in system metrics. Works without PA/PI licenses using standard table data.',
+  description: '⚠️ LOCAL ML TRAINING: Trains autoencoder on your machine using ServiceNow metrics fetched via API. NOT in ServiceNow. Alternative to PI license for dev/testing.',
   inputSchema: {
     type: 'object',
     properties: {

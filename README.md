@@ -30,7 +30,7 @@ Snow-Flow provides:
 - ✅ **75+ LLM Providers**: Claude, GPT-4o, Gemini, Llama, Mistral, DeepSeek, Groq, or ANY provider via OpenCode
 - ✅ **100% Free Option**: Ollama, LM Studio, Jan - run models locally offline
 - ✅ **Local Development**: Pull artifacts to local files, edit with native tools
-- ✅ **Machine Learning**: TensorFlow.js neural networks for ServiceNow data
+- ✅ **Local ML Training**: TensorFlow.js neural networks (runs locally, trains on ServiceNow data)
 - ✅ **Universal Compatibility**: Works with OpenCode, Claude Code, Cursor, Windsurf, Continue.dev, Cline
 
 ---
@@ -232,12 +232,12 @@ snow-flow swarm "train incident classifier on last 6 months of data"
 - UI actions & policies
 - REST/SOAP integrations
 - Security & compliance
-- ML & predictive analytics
+- Native ServiceNow ML & predictive analytics integration
 - Local artifact development
 
 **Snow-Flow Orchestration (176+ tools):**
 - Multi-agent coordination
-- Neural network training (TensorFlow.js)
+- Local ML training (TensorFlow.js - runs on your machine)
 - Memory management
 - Performance tracking
 - Task orchestration
@@ -258,20 +258,49 @@ snow_pull_artifact({ sys_id: 'widget_sys_id', table: 'sp_widget' })
 snow_push_artifact({ sys_id: 'widget_sys_id' })
 ```
 
-### Machine Learning Integration
+### Local ML Training (Alternative to ServiceNow PI)
 
-Real TensorFlow.js neural networks for ServiceNow data:
+**⚠️ Important:** ML training runs **locally on your machine**, not in ServiceNow. This is an alternative to ServiceNow's Predictive Intelligence (PI) license.
 
+**How it works:**
+```
+1. Fetch data from ServiceNow via OAuth2 API
+2. Train TensorFlow.js models locally (Node.js)
+3. Models saved in .snow-flow/ml-models/
+4. Make predictions locally
+5. Write results back to ServiceNow via API
+```
+
+**Examples:**
 ```bash
-# Incident classification with LSTM networks
+# Incident classification with LSTM networks (fetches ~5000 incidents)
 snow-flow swarm "train incident classifier on description and short_description fields"
 
-# Change risk assessment
+# Change risk assessment (fetches historical changes)
 snow-flow swarm "predict change risk for upcoming releases"
 
-# Anomaly detection
+# Anomaly detection (fetches system metrics)
 snow-flow swarm "detect anomalies in incident patterns"
 ```
+
+**Key Differences from ServiceNow PI:**
+
+| Feature | ServiceNow PI (Licensed) | Snow-Flow Local ML (Free) |
+|---------|--------------------------|----------------------------|
+| **Runs Where** | Inside ServiceNow | Locally on your machine |
+| **Cost** | $$$ License required | Free (no license) |
+| **Training** | Automatic in ServiceNow | Manual via CLI |
+| **Models** | Stored in ServiceNow | Stored in .snow-flow/ml-models |
+| **Predictions** | Native in ServiceNow | Via custom API calls |
+| **Import to PI** | N/A | ❌ Not possible |
+| **Auto-retrain** | ✅ Yes | ❌ Manual |
+| **Production Ready** | ✅ Yes | ⚠️ Experimental |
+
+**Best For:**
+- ✅ Development/testing without PI license
+- ✅ One-off analyses and predictions
+- ✅ Learning ML concepts with ServiceNow data
+- ❌ Production deployments (use ServiceNow PI instead)
 
 ---
 
