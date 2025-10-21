@@ -156,6 +156,88 @@ snow_pull_artifact({ sys_id: 'widget_sys_id' })
 ### Rule #5: VERIFY FIRST - Never Assume
 Test before claiming broken. Check resources exist. Validate configurations. Evidence-based fixes only.
 
+## 🔍 TOOL DISCOVERY DECISION TREE - USE THIS EVERY TIME!
+
+**Before doing ANYTHING, follow this decision tree:**
+
+### Step 1: What is the user asking for?
+
+| User Request | Task Category | Go to Step 2 |
+|--------------|---------------|--------------|
+| "Create workspace/UI/widget/rule/etc." | CREATE NEW | → Create Decision |
+| "Fix/update/modify existing X" | UPDATE EXISTING | → Update Decision |
+| "Debug/check/test X" | DEBUG/VERIFY | → Debug Decision |
+| "Show/list/find X" | QUERY DATA | → Query Decision |
+
+### Step 2: Find the Right Tool
+
+**CREATE NEW Decision:**
+- User wants: "Create workspace for IT agents"
+  - Category: Workspace (UX Framework)
+  - Tool: \`snow_create_complete_workspace\`
+  - REMEMBER: Create Update Set FIRST!
+
+- User wants: "Create business rule"
+  - Category: Platform Development
+  - Tool: \`snow_create_business_rule\`
+  - REMEMBER: Create Update Set FIRST!
+
+- User wants: "Create widget"
+  - Category: Deployment
+  - Tool: \`snow_deploy\` (type: 'widget')
+  - REMEMBER: Create Update Set FIRST!
+
+- User wants: "Create UI Builder page"
+  - Category: UI Builder
+  - Tool: \`snow_create_uib_page\`
+  - REMEMBER: Create Update Set FIRST!
+
+**UPDATE EXISTING Decision:**
+- Updating: Widget
+  - Is it debugging? YES: \`snow_pull_artifact\` (local sync)
+  - Simple field update? NO: \`snow_update\` (type: 'widget')
+
+- Updating: Any other artifact
+  - Tool: \`snow_update\` or \`snow_edit_artifact\`
+  - REMEMBER: Ensure Update Set is active!
+
+**DEBUG/VERIFY Decision:**
+- Debugging: Widget not working
+  - ALWAYS: \`snow_pull_artifact\` (get all files locally)
+  - NEVER: \`snow_query_table\` (token limits!)
+
+- Debugging: Script/rule not working
+  - Tool: \`snow_execute_script_with_output\` (test the code)
+
+- Verifying: Table/field exists
+  - Tool: \`snow_execute_script_with_output\` (check with GlideRecord)
+
+**QUERY DATA Decision:**
+- Querying: Widget data
+  - NEVER: \`snow_query_table\` (use \`snow_pull_artifact\` instead!)
+
+- Querying: Table data (incidents, users, etc.)
+  - Tool: \`snow_query_table\` or specific tools (\`snow_query_incidents\`)
+
+- Querying: Multiple tables
+  - Tool: \`snow_batch_api\` (80% faster!)
+
+### Step 3: MANDATORY - Update Set Check!
+
+**🚨 BEFORE calling ANY development tool, ask yourself:**
+
+- ✅ Did I create an Update Set? If NO: STOP! Create one first!
+- ✅ Is the Update Set active? If NO: Call \`snow_ensure_active_update_set\`!
+- ✅ Ready to develop? NOW you can call the tool!
+
+**The Update Set Mantra (repeat before EVERY development task):**
+1. CREATE Update Set (\`snow_create_update_set\`)
+2. ACTIVATE Update Set (\`snow_ensure_active_update_set\`)
+3. DEVELOP (now all changes are tracked!)
+4. COMPLETE Update Set (\`snow_complete_update_set\`)
+
+---
+
 ## 📋 MCP SERVERS & TOOLS (18 Servers, 200+ Tools)
 
 ### 1. **servicenow-local-development** 🔧 Widget/Artifact Sync [USE THIS FOR WIDGETS!]
@@ -464,164 +546,80 @@ memory_search - Search persistent memory
 neural_train - Train neural networks
 \`\`\`
 
-## 🔄 Critical Workflows
+## 🔄 Critical Workflows - Quick Reference
 
-### Widget Debugging (ALWAYS use Local Sync!)
+### Widget Work: ALWAYS Local Sync!
 \`\`\`javascript
-// ✅ CORRECT - Local sync for debugging
+// ✅ CORRECT
 await snow_pull_artifact({ sys_id: 'widget_sys_id' });
-// Edit with native tools (search, multi-file, etc.)
+// ... edit locally ...
 await snow_push_artifact({ sys_id: 'widget_sys_id' });
 
-// ❌ WRONG - Token limit explosion
-await snow_query_table({ table: 'sp_widget', query: 'sys_id=...' });
+// ❌ WRONG - Token limits!
+await snow_query_table({ table: 'sp_widget', ... });
 \`\`\`
 
-### Verification Pattern
+### Development: ALWAYS Update Set First!
 \`\`\`javascript
-// Always verify with REAL data, not placeholders
+// ✅ CORRECT - Update Set workflow
+const updateSet = await snow_create_update_set({ name: "Feature: X" });
+await snow_ensure_active_update_set({ sys_id: updateSet.sys_id });
+// ... develop ...
+await snow_complete_update_set({ sys_id: updateSet.sys_id });
+
+// ❌ WRONG - No Update Set tracking!
+await snow_create_business_rule({ ... }); // Changes NOT tracked!
+\`\`\`
+
+### Verification: Use Scripts for Testing Only
+\`\`\`javascript
+// ✅ For verification/testing
 await snow_execute_script_with_output({
-  script: \`
-    var gr = new GlideRecord('incident');
-    gr.addQuery('active', true);
-    gr.query();
-    gs.info('Found: ' + gr.getRowCount() + ' active incidents');
-    
-    // Test actual property
-    var prop = gs.getProperty('instance_name');
-    gs.info('Instance: ' + prop);
-  \`
+  script: \`var gr = new GlideRecord('incident'); gs.info('Exists: ' + gr.isValid());\`
+});
+
+// ❌ NOT for development!
+await snow_execute_background_script({
+  script: \`var gr = new GlideRecord('sp_widget'); gr.initialize(); ...\` // WRONG!
 });
 \`\`\`
 
-### Complete Widget Creation (NO PLACEHOLDERS)
-\`\`\`javascript
-await snow_deploy({
-  type: 'widget',
-  config: {
-    name: 'my_widget',
-    title: 'Production Widget',
-    template: '<div ng-repeat="item in data.items">{{item.name}}</div>',
-    script: \`
-      (function() {
-        data.items = [];
-        var gr = new GlideRecord('incident');
-        gr.addQuery('active', true);
-        gr.setLimit(10);
-        gr.query();
-        while (gr.next()) {
-          data.items.push({
-            name: gr.getDisplayValue('number'),
-            description: gr.getDisplayValue('short_description')
-          });
-        }
-      })();
-    \`,
-    client_script: \`
-      function($scope) {
-        var c = this;
-        c.refresh = function() {
-          c.server.get().then(function(r) {
-            console.log('Refreshed');
-          });
-        };
-      }
-    \`
-  }
-});
-\`\`\`
+## 🚨 THE UNIVERSAL WORKFLOW - MEMORIZE THIS!
 
-### Catalog UI Policy (v3.6.10 Corrected)
-\`\`\`javascript
-await snow_create_catalog_ui_policy({
-  cat_item: 'catalog_item_sys_id',
-  short_description: 'Dynamic Field Control',
-  // Conditions converted to ServiceNow query string format
-  conditions: [
-    {
-      catalog_variable: 'user_type',  // Can use name or sys_id
-      operation: 'is',  // or 'is not', 'contains', 'is empty', etc.
-      value: 'employee',
-      and_or: 'AND'  // Connect with AND or OR
-    },
-    {
-      catalog_variable: 'department',
-      operation: 'is not empty',
-      value: ''
-    }
-  ],
-  // Actions still create separate records
-  actions: [
-    {
-      catalog_variable: 'manager_approval',
-      visible: true,
-      mandatory: true
-    },
-    {
-      catalog_variable: 'cost_center',
-      mandatory: true
-    }
-  ]
-});
-// Creates policy with conditions as query string in catalog_conditions field
-// Actions created as separate records in catalog_ui_policy_action table
-\`\`\`
+**Every task follows this pattern:**
 
-## ⚡ Command Reference
+1. **📦 UPDATE SET FIRST** - \`snow_create_update_set\` → \`snow_ensure_active_update_set\`
+2. **🔍 FIND RIGHT TOOL** - Use Tool Discovery Decision Tree above
+3. **🛠️ USE MCP TOOL** - Call the dedicated tool (NEVER background scripts for development!)
+4. **✅ TEST/VERIFY** - Use \`snow_execute_script_with_output\` for verification only
+5. **✔️ COMPLETE UPDATE SET** - \`snow_complete_update_set\` when done
 
-### Core Commands
-- \`snow-flow init\` - Initialize project with this CLAUDE.md
-- \`snow-flow auth login\` - Authenticate with ServiceNow
-- \`snow-flow status\` - System status
-- \`snow-flow swarm "<task>"\` - Multi-agent coordination
+**Special Case - Widget Debugging:**
+1. UPDATE SET FIRST
+2. \`snow_pull_artifact\` (get all files locally)
+3. Edit with native tools
+4. \`snow_push_artifact\` (push back to ServiceNow)
+5. COMPLETE UPDATE SET
 
-### 🚨 MANDATORY Development Workflow
+## 🎯 The 4 Absolute Rules
 
-**EVERY development task MUST follow these steps IN ORDER:**
+1. **🔴 UPDATE SETS ALWAYS FIRST** - No development without Update Set tracking!
+2. **🔴 MCP TOOLS ONLY** - Use dedicated tools, NOT background scripts for development
+3. **🔴 NO MOCK DATA** - Everything real, complete, production-ready (no TODOs, no placeholders)
+4. **🔴 ES5 JAVASCRIPT ONLY** - var, function(){}, string concatenation (ServiceNow Rhino engine)
 
-1. **🔍 DISCOVER MCP TOOLS FIRST** - Search for dedicated tools, NEVER assume local approach
-2. **📦 CREATE UPDATE SET** - \`snow_create_update_set\` or \`snow_ensure_active_update_set\`
-3. **✅ VERIFY ACTIVE** - Ensure Update Set is current in ServiceNow
-4. **🛠️ USE MCP TOOLS** - \`snow_deploy\`, \`snow_create_*\`, \`snow_update\` (NOT background scripts!)
-5. **🔍 TEST WITH TOOLS** - \`snow_execute_script_with_output\` for verification ONLY
-6. **✔️ COMPLETE UPDATE SET** - \`snow_complete_update_set\` when done
+## 📊 Quick Troubleshooting
 
-**For Widget Development:**
-1. **📦 CREATE UPDATE SET** (always first!)
-2. **⬇️ PULL ARTIFACT** - \`snow_pull_artifact\` for debugging
-3. **✏️ EDIT LOCALLY** - Use native search/edit tools
-4. **⬆️ PUSH CHANGES** - \`snow_push_artifact\` to ServiceNow
-5. **✅ VALIDATE** - \`snow_check_widget_coherence\`
-6. **✔️ COMPLETE UPDATE SET**
+| Problem | Solution |
+|---------|----------|
+| Widget doesn't work | \`snow_pull_artifact\` + debug locally |
+| Forgot Update Set | \`snow_create_update_set\` → \`snow_ensure_active_update_set\` |
+| Syntax error in script | Check ES5! No const/let/arrows/template literals |
+| Widget too large | Use \`snow_pull_artifact\`, NOT \`snow_query_table\` |
+| Need to test code | \`snow_execute_script_with_output\` (verification only!) |
 
-**For ServiceNow Artifacts (Business Rules, UI Pages, etc.):**
-1. **📦 CREATE UPDATE SET** (always first!)
-2. **🛠️ USE DEDICATED TOOL** - \`snow_create_business_rule\`, \`snow_create_ui_page\`, etc.
-3. **🔍 TEST** - \`snow_execute_script_with_output\` for verification
-4. **✔️ COMPLETE UPDATE SET**
+---
 
-## 🎯 Golden Rules
-
-1. **MCP TOOLS FIRST** - Search for dedicated tools BEFORE any local approach
-2. **UPDATE SETS MANDATORY** - Create BEFORE development, complete AFTER
-3. **NO MOCK DATA** - Everything real, complete, production-ready
-4. **ES5 ONLY** - var, function(){}, no modern JS
-5. **VERIFY FIRST** - Test before assuming
-6. **LOCAL SYNC FOR WIDGETS** - Use snow_pull_artifact, NOT snow_query_table
-7. **COMPLETE CODE** - No TODOs, no placeholders
-8. **DEDICATED TOOLS** - Specific tools > Background scripts
-
-## 📊 Quick Reference
-
-| Issue | Solution |
-|-------|----------|
-| Widget doesn't work | \`snow_pull_artifact\` → debug locally |
-| Script syntax error | ES5 only! var, function(){} |
-| Can't find table | \`snow_discover_table_fields\` |
-| Property missing | \`snow_property_manager\` |
-| Need to test | \`snow_execute_script_with_output\` |
-| Deployment failed | \`snow_rollback_deployment\` |
-
-Remember: TAKE THE TIME. DO IT RIGHT. NO MOCK DATA. NO EXCEPTIONS.`;
-exports.CLAUDE_MD_TEMPLATE_VERSION = '3.6.2-CONSOLIDATED';
+**🚨 FINAL REMINDER: Update Sets are MANDATORY. MCP Tools are AUTOMATICALLY available. NO Mock Data. ES5 Only.**`;
+exports.CLAUDE_MD_TEMPLATE_VERSION = '8.1.5-OPTIMIZED';
 //# sourceMappingURL=claude-md-template.js.map
