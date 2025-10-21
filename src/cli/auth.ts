@@ -88,7 +88,44 @@ export function registerAuthCommands(program: Command) {
             }]);
 
             if (selectedProvider !== 'other') {
-              // Save provider to .env file
+              // Define recommended models per provider
+              const providerModels: Record<string, Array<{name: string, value: string}>> = {
+                'anthropic': [
+                  { name: 'Claude Sonnet 4 (Best balance, 200K context)', value: 'claude-sonnet-4' },
+                  { name: 'Claude Opus 4 (Most capable, 200K context)', value: 'claude-opus-4' },
+                  { name: 'Claude Sonnet 3.5 (Legacy, 200K context)', value: 'claude-3-5-sonnet-20241022' }
+                ],
+                'openai': [
+                  { name: 'GPT-4o (Best balance, 128K context)', value: 'gpt-4o' },
+                  { name: 'GPT-4o-mini (Faster, cheaper, 128K context)', value: 'gpt-4o-mini' },
+                  { name: 'o1 (Advanced reasoning, 200K context)', value: 'o1' },
+                  { name: 'o1-mini (Faster reasoning, 128K context)', value: 'o1-mini' }
+                ],
+                'google': [
+                  { name: 'Gemini 2.0 Flash Exp (Fast, 1M context)', value: 'gemini-2.0-flash-exp' },
+                  { name: 'Gemini 1.5 Pro (Most capable, 2M context)', value: 'gemini-1.5-pro' },
+                  { name: 'Gemini 1.5 Flash (Balanced, 1M context)', value: 'gemini-1.5-flash' }
+                ],
+                'ollama': [
+                  { name: 'Llama 3.3 70B (Best open model)', value: 'llama3.3:70b' },
+                  { name: 'Qwen 2.5 Coder 32B (Best for coding)', value: 'qwen2.5-coder:32b' },
+                  { name: 'DeepSeek R1 (Reasoning model)', value: 'deepseek-r1' }
+                ]
+              };
+
+              // Ask for preferred model
+              let selectedModel = '';
+              if (providerModels[selectedProvider]) {
+                const { chosenModel } = await inquirer.prompt([{
+                  type: 'list',
+                  name: 'chosenModel',
+                  message: `Which ${selectedProvider} model do you want to use by default?`,
+                  choices: providerModels[selectedProvider]
+                }]);
+                selectedModel = chosenModel;
+              }
+
+              // Save provider AND model to .env file
               const envPath = path.join(process.cwd(), '.env');
               let envContent = '';
 
@@ -109,10 +146,27 @@ export function registerAuthCommands(program: Command) {
                 envContent += `\nDEFAULT_LLM_PROVIDER=${selectedProvider}\n`;
               }
 
+              // Update DEFAULT_MODEL in .env content
+              if (selectedModel) {
+                if (envContent.includes('DEFAULT_MODEL=')) {
+                  envContent = envContent.replace(/DEFAULT_MODEL=.*/g, `DEFAULT_MODEL=${selectedModel}`);
+                } else {
+                  envContent += `DEFAULT_MODEL=${selectedModel}\n`;
+                }
+              }
+
               fs.writeFileSync(envPath, envContent);
-              console.log(chalk.green(`✅ Provider saved: ${selectedProvider}\n`));
+              console.log(chalk.green(`✅ Provider saved: ${selectedProvider}`));
+              if (selectedModel) {
+                console.log(chalk.green(`✅ Default model saved: ${selectedModel}\n`));
+              } else {
+                console.log();
+              }
               provider = selectedProvider;
               process.env.DEFAULT_LLM_PROVIDER = provider;
+              if (selectedModel) {
+                process.env.DEFAULT_MODEL = selectedModel;
+              }
             }
           }
         } catch (error: any) {
