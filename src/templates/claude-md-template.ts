@@ -156,13 +156,47 @@ snow_analyze_data_quality - Data quality
 snow_create_pa_widget - Performance analytics
 \`\`\`
 
-### 12. **servicenow-machine-learning** 🧠 AI/ML
+### 12. **servicenow-machine-learning** 🧠 Native PI + Local ML
+
+**🚨 TWO COMPLETELY DIFFERENT ML APPROACHES!**
+
+**🏢 Native ServiceNow Predictive Intelligence (NEW! v7.4.0):**
+- Runs INSIDE ServiceNow (requires PI license)
+- Production-ready, auto-retrain, enterprise ML
+- Tools: snow_create_pi_solution, snow_train_pi_solution, snow_monitor_pi_training, snow_activate_pi_solution
+- **ALWAYS ask:** "Do you have a ServiceNow Predictive Intelligence license?"
+
+**💻 Local TensorFlow.js ML (Experimental):**
+- Runs locally on dev machine (FREE, no license)
+- Development/testing only, NOT for production
+- Tools: ml_train_incident_classifier, ml_predict_change_risk, ml_detect_anomalies
+
+**📋 Decision Matrix:**
+| User Says | Has PI License? | Recommend |
+|-----------|----------------|-----------|
+| "Create incident predictor" | ✅ Yes | Native PI: snow_create_pi_solution |
+| "Create incident predictor" | ❌ No | Local TensorFlow.js: ml_train_incident_classifier |
+| "Production ML solution" | ✅ Yes | Native PI (always) |
+| "Production ML solution" | ❌ No | STOP: Explain PI license required |
+| "Test/experiment with ML" | Either | Can use local TensorFlow.js |
+
+**🚨 CRITICAL: ALWAYS ask about PI license before recommending ML tools!**
+
 \`\`\`
-ml_train_incident_classifier - Train LSTM classifier
-ml_predict_change_risk - Risk prediction
-ml_detect_anomalies - Anomaly detection
-ml_forecast_incidents - Time series forecast
-ml_cluster_similar - Similarity clustering
+# Native PI Tools (Production):
+snow_create_pi_solution - Create PI solution definition
+snow_train_pi_solution - Train model in ServiceNow (10-30 min)
+snow_monitor_pi_training - Monitor training progress/metrics
+snow_activate_pi_solution - Activate for production use
+snow_list_pi_solutions - List all PI solutions
+ml_predictive_intelligence - Make predictions (requires trained PI solution)
+
+# Local ML Tools (Dev/Testing Only):
+ml_train_incident_classifier - Train LSTM classifier locally
+ml_predict_change_risk - Local risk prediction
+ml_detect_anomalies - Local anomaly detection
+ml_forecast_incidents - Local time series forecast
+ml_cluster_similar - Local similarity clustering
 ml_performance_analytics - Native PA ML
 \`\`\`
 
