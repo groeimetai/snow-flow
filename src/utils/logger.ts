@@ -10,7 +10,10 @@ export class Logger {
 
   constructor(agentName: string) {
     const logDir = path.join(process.cwd(), 'logs');
-    
+
+    // Check if verbose mode is enabled
+    const isVerbose = process.env.LOG_LEVEL === 'verbose' || process.env.LOG_LEVEL === 'debug';
+
     this.logger = winston.createLogger({
       level: process.env.LOG_LEVEL || 'info',
       format: winston.format.combine(
@@ -20,12 +23,14 @@ export class Logger {
       ),
       defaultMeta: { agent: agentName },
       transports: [
-        // Console transport - use stderr to keep stdout clean for JSON-RPC
+        // Console transport - clean output in non-verbose mode
         new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.colorize(),
-            winston.format.simple()
-          ),
+          format: isVerbose
+            ? winston.format.combine(
+                winston.format.colorize(),
+                winston.format.simple()
+              )
+            : winston.format.printf((info) => `${info.message}`), // Only show message in non-verbose mode
           stderrLevels: ['error', 'warn', 'info', 'debug', 'verbose', 'silly'] // All levels to stderr
         }),
         // File transport
