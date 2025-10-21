@@ -11,7 +11,7 @@ const servicenow_client_js_1 = require("../../../../utils/servicenow-client.js")
 const mcp_logger_js_1 = require("../../../shared/mcp-logger.js");
 const types_js_1 = require("@modelcontextprotocol/sdk/types.js");
 const schema = zod_1.z.object({
-    properties: zod_1.z.record(zod_1.z.any()).describe('JSON object with property names as keys'),
+    properties: zod_1.z.record(zod_1.z.string(), zod_1.z.any()).describe('JSON object with property names as keys'),
     overwrite: zod_1.z.boolean().optional().default(false).describe('Overwrite existing properties'),
     dry_run: zod_1.z.boolean().optional().default(false).describe('Preview changes without applying'),
 });

@@ -25,7 +25,13 @@ const ConfigSchema = zod_1.z.object({
         maxConcurrentOperations: zod_1.z.number().min(1).max(100).default(10),
         sessionTimeout: zod_1.z.number().min(300000).default(3600000), // 1 hour default
     })
-        .default({}),
+        .default({
+        environment: 'development',
+        logLevel: 'info',
+        dataDir: process.env.SNOW_FLOW_HOME || path_1.default.join(os_1.default.homedir(), '.snow-flow'),
+        maxConcurrentOperations: 10,
+        sessionTimeout: 3600000,
+    }),
     // Agent configuration
     agents: zod_1.z
         .object({
@@ -37,7 +43,13 @@ const ConfigSchema = zod_1.z.object({
             decisionThreshold: zod_1.z.number().min(0).max(1).default(0.7),
             retryAttempts: zod_1.z.number().min(1).max(10).default(3),
         })
-            .default({}),
+            .default({
+            maxWorkerAgents: 10,
+            spawnTimeout: 30000,
+            coordinationInterval: 5000,
+            decisionThreshold: 0.7,
+            retryAttempts: 3,
+        }),
         worker: zod_1.z
             .object({
             heartbeatInterval: zod_1.z.number().min(1000).default(10000),
@@ -45,7 +57,12 @@ const ConfigSchema = zod_1.z.object({
             maxMemoryUsage: zod_1.z.number().min(100).default(500), // MB
             autoShutdownIdle: zod_1.z.number().min(60000).default(600000), // 10 minutes
         })
-            .default({}),
+            .default({
+            heartbeatInterval: 10000,
+            taskTimeout: 300000,
+            maxMemoryUsage: 500,
+            autoShutdownIdle: 600000,
+        }),
         specializations: zod_1.z
             .object({
             widgetCreator: zod_1.z
@@ -56,7 +73,11 @@ const ConfigSchema = zod_1.z.object({
                     .array(zod_1.z.string())
                     .default(['html', 'css', 'javascript', 'servicenow-api']),
             })
-                .default({}),
+                .default({
+                enabled: true,
+                priority: 8,
+                capabilities: ['html', 'css', 'javascript', 'servicenow-api'],
+            }),
             flowBuilder: zod_1.z
                 .object({
                 enabled: zod_1.z.boolean().default(true),
@@ -65,7 +86,11 @@ const ConfigSchema = zod_1.z.object({
                     .array(zod_1.z.string())
                     .default(['flow-designer', 'triggers', 'actions', 'approvals']),
             })
-                .default({}),
+                .default({
+                enabled: true,
+                priority: 8,
+                capabilities: ['flow-designer', 'triggers', 'actions', 'approvals'],
+            }),
             scriptWriter: zod_1.z
                 .object({
                 enabled: zod_1.z.boolean().default(true),
@@ -74,14 +99,22 @@ const ConfigSchema = zod_1.z.object({
                     .array(zod_1.z.string())
                     .default(['business-rules', 'script-includes', 'client-scripts']),
             })
-                .default({}),
+                .default({
+                enabled: true,
+                priority: 7,
+                capabilities: ['business-rules', 'script-includes', 'client-scripts'],
+            }),
             securityAgent: zod_1.z
                 .object({
                 enabled: zod_1.z.boolean().default(true),
                 priority: zod_1.z.number().min(1).max(10).default(9),
                 capabilities: zod_1.z.array(zod_1.z.string()).default(['acl', 'security-scan', 'compliance']),
             })
-                .default({}),
+                .default({
+                enabled: true,
+                priority: 9,
+                capabilities: ['acl', 'security-scan', 'compliance'],
+            }),
             testAgent: zod_1.z
                 .object({
                 enabled: zod_1.z.boolean().default(true),
@@ -90,11 +123,82 @@ const ConfigSchema = zod_1.z.object({
                     .array(zod_1.z.string())
                     .default(['unit-test', 'integration-test', 'performance-test']),
             })
-                .default({}),
+                .default({
+                enabled: true,
+                priority: 6,
+                capabilities: ['unit-test', 'integration-test', 'performance-test'],
+            }),
         })
-            .default({}),
+            .default({
+            widgetCreator: {
+                enabled: true,
+                priority: 8,
+                capabilities: ['html', 'css', 'javascript', 'servicenow-api'],
+            },
+            flowBuilder: {
+                enabled: true,
+                priority: 8,
+                capabilities: ['flow-designer', 'triggers', 'actions', 'approvals'],
+            },
+            scriptWriter: {
+                enabled: true,
+                priority: 7,
+                capabilities: ['business-rules', 'script-includes', 'client-scripts'],
+            },
+            securityAgent: {
+                enabled: true,
+                priority: 9,
+                capabilities: ['acl', 'security-scan', 'compliance'],
+            },
+            testAgent: {
+                enabled: true,
+                priority: 6,
+                capabilities: ['unit-test', 'integration-test', 'performance-test'],
+            },
+        }),
     })
-        .default({}),
+        .default({
+        queen: {
+            maxWorkerAgents: 10,
+            spawnTimeout: 30000,
+            coordinationInterval: 5000,
+            decisionThreshold: 0.7,
+            retryAttempts: 3,
+        },
+        worker: {
+            heartbeatInterval: 10000,
+            taskTimeout: 300000,
+            maxMemoryUsage: 500,
+            autoShutdownIdle: 600000,
+        },
+        specializations: {
+            widgetCreator: {
+                enabled: true,
+                priority: 8,
+                capabilities: ['html', 'css', 'javascript', 'servicenow-api'],
+            },
+            flowBuilder: {
+                enabled: true,
+                priority: 8,
+                capabilities: ['flow-designer', 'triggers', 'actions', 'approvals'],
+            },
+            scriptWriter: {
+                enabled: true,
+                priority: 7,
+                capabilities: ['business-rules', 'script-includes', 'client-scripts'],
+            },
+            securityAgent: {
+                enabled: true,
+                priority: 9,
+                capabilities: ['acl', 'security-scan', 'compliance'],
+            },
+            testAgent: {
+                enabled: true,
+                priority: 6,
+                capabilities: ['unit-test', 'integration-test', 'performance-test'],
+            },
+        },
+    }),
     // Memory system configuration
     memory: zod_1.z
         .object({
@@ -104,14 +208,21 @@ const ConfigSchema = zod_1.z.object({
             version: zod_1.z.string().default('1.0.0'),
             autoMigrate: zod_1.z.boolean().default(true),
         })
-            .default({}),
+            .default({
+            version: '1.0.0',
+            autoMigrate: true,
+        }),
         cache: zod_1.z
             .object({
             enabled: zod_1.z.boolean().default(true),
             maxSize: zod_1.z.number().min(10).default(100), // MB
             ttl: zod_1.z.number().min(60000).default(3600000), // 1 hour
         })
-            .default({}),
+            .default({
+            enabled: true,
+            maxSize: 100,
+            ttl: 3600000,
+        }),
         ttl: zod_1.z
             .object({
             default: zod_1.z.number().min(3600000).default(86400000), // 24 hours
@@ -119,16 +230,46 @@ const ConfigSchema = zod_1.z.object({
             artifact: zod_1.z.number().min(86400000).default(604800000), // 7 days
             metric: zod_1.z.number().min(86400000).default(2592000000), // 30 days
         })
-            .default({}),
+            .default({
+            default: 86400000,
+            session: 86400000,
+            artifact: 604800000,
+            metric: 2592000000,
+        }),
         cleanup: zod_1.z
             .object({
             enabled: zod_1.z.boolean().default(true),
             interval: zod_1.z.number().min(3600000).default(86400000), // 24 hours
             retentionDays: zod_1.z.number().min(7).default(30),
         })
-            .default({}),
+            .default({
+            enabled: true,
+            interval: 86400000,
+            retentionDays: 30,
+        }),
     })
-        .default({}),
+        .default({
+        schema: {
+            version: '1.0.0',
+            autoMigrate: true,
+        },
+        cache: {
+            enabled: true,
+            maxSize: 100,
+            ttl: 3600000,
+        },
+        ttl: {
+            default: 86400000,
+            session: 86400000,
+            artifact: 604800000,
+            metric: 2592000000,
+        },
+        cleanup: {
+            enabled: true,
+            interval: 86400000,
+            retentionDays: 30,
+        },
+    }),
     // MCP server configuration
     mcp: zod_1.z
         .object({
@@ -140,37 +281,83 @@ const ConfigSchema = zod_1.z.object({
                 port: zod_1.z.number().min(3000).max(65535).default(3001),
                 host: zod_1.z.string().default('localhost'),
             })
-                .default({}),
+                .default({
+                enabled: true,
+                port: 3001,
+                host: 'localhost',
+            }),
             intelligent: zod_1.z
                 .object({
                 enabled: zod_1.z.boolean().default(true),
                 port: zod_1.z.number().min(3000).max(65535).default(3002),
                 host: zod_1.z.string().default('localhost'),
             })
-                .default({}),
+                .default({
+                enabled: true,
+                port: 3002,
+                host: 'localhost',
+            }),
             operations: zod_1.z
                 .object({
                 enabled: zod_1.z.boolean().default(true),
                 port: zod_1.z.number().min(3000).max(65535).default(3003),
                 host: zod_1.z.string().default('localhost'),
             })
-                .default({}),
+                .default({
+                enabled: true,
+                port: 3003,
+                host: 'localhost',
+            }),
             flowComposer: zod_1.z
                 .object({
                 enabled: zod_1.z.boolean().default(true),
                 port: zod_1.z.number().min(3000).max(65535).default(3004),
                 host: zod_1.z.string().default('localhost'),
             })
-                .default({}),
+                .default({
+                enabled: true,
+                port: 3004,
+                host: 'localhost',
+            }),
             platformDevelopment: zod_1.z
                 .object({
                 enabled: zod_1.z.boolean().default(true),
                 port: zod_1.z.number().min(3000).max(65535).default(3005),
                 host: zod_1.z.string().default('localhost'),
             })
-                .default({}),
+                .default({
+                enabled: true,
+                port: 3005,
+                host: 'localhost',
+            }),
         })
-            .default({}),
+            .default({
+            deployment: {
+                enabled: true,
+                port: 3001,
+                host: 'localhost',
+            },
+            intelligent: {
+                enabled: true,
+                port: 3002,
+                host: 'localhost',
+            },
+            operations: {
+                enabled: true,
+                port: 3003,
+                host: 'localhost',
+            },
+            flowComposer: {
+                enabled: true,
+                port: 3004,
+                host: 'localhost',
+            },
+            platformDevelopment: {
+                enabled: true,
+                port: 3005,
+                host: 'localhost',
+            },
+        }),
         transport: zod_1.z
             .object({
             type: zod_1.z.enum(['stdio', 'http', 'websocket']).default('stdio'),
@@ -178,15 +365,61 @@ const ConfigSchema = zod_1.z.object({
             retryAttempts: zod_1.z.number().min(1).max(10).default(3),
             retryDelay: zod_1.z.number().min(1000).default(5000),
         })
-            .default({}),
+            .default({
+            type: 'stdio',
+            timeout: 30000,
+            retryAttempts: 3,
+            retryDelay: 5000,
+        }),
         authentication: zod_1.z
             .object({
             required: zod_1.z.boolean().default(true),
             tokenExpiry: zod_1.z.number().min(3600000).default(86400000), // 24 hours
         })
-            .default({}),
+            .default({
+            required: true,
+            tokenExpiry: 86400000,
+        }),
     })
-        .default({}),
+        .default({
+        servers: {
+            deployment: {
+                enabled: true,
+                port: 3001,
+                host: 'localhost',
+            },
+            intelligent: {
+                enabled: true,
+                port: 3002,
+                host: 'localhost',
+            },
+            operations: {
+                enabled: true,
+                port: 3003,
+                host: 'localhost',
+            },
+            flowComposer: {
+                enabled: true,
+                port: 3004,
+                host: 'localhost',
+            },
+            platformDevelopment: {
+                enabled: true,
+                port: 3005,
+                host: 'localhost',
+            },
+        },
+        transport: {
+            type: 'stdio',
+            timeout: 30000,
+            retryAttempts: 3,
+            retryDelay: 5000,
+        },
+        authentication: {
+            required: true,
+            tokenExpiry: 86400000,
+        },
+    }),
     // ServiceNow connection settings
     servicenow: zod_1.z
         .object({
@@ -204,23 +437,54 @@ const ConfigSchema = zod_1.z.object({
             retryDelay: zod_1.z.number().min(1000).default(2000),
             backoffMultiplier: zod_1.z.number().min(1).max(5).default(2),
         })
-            .default({}),
+            .default({
+            maxRetries: 3,
+            retryDelay: 2000,
+            backoffMultiplier: 2,
+        }),
         cache: zod_1.z
             .object({
             enabled: zod_1.z.boolean().default(true),
             ttl: zod_1.z.number().min(60000).default(300000), // 5 minutes
             maxSize: zod_1.z.number().min(10).default(50), // MB
         })
-            .default({}),
+            .default({
+            enabled: true,
+            ttl: 300000,
+            maxSize: 50,
+        }),
         oauth: zod_1.z
             .object({
             redirectHost: zod_1.z.string().default('localhost'),
             redirectPort: zod_1.z.number().min(3000).max(65535).default(3005),
             redirectPath: zod_1.z.string().default('/callback'),
         })
-            .default({}),
+            .default({
+            redirectHost: 'localhost',
+            redirectPort: 3005,
+            redirectPath: '/callback',
+        }),
     })
-        .default({}),
+        .default({
+        authType: 'oauth',
+        apiVersion: 'now',
+        timeout: 120000,
+        retryConfig: {
+            maxRetries: 3,
+            retryDelay: 2000,
+            backoffMultiplier: 2,
+        },
+        cache: {
+            enabled: true,
+            ttl: 300000,
+            maxSize: 50,
+        },
+        oauth: {
+            redirectHost: 'localhost',
+            redirectPort: 3005,
+            redirectPath: '/callback',
+        },
+    }),
     // Monitoring configuration
     monitoring: zod_1.z
         .object({
@@ -231,7 +495,12 @@ const ConfigSchema = zod_1.z.object({
             metricsRetention: zod_1.z.number().min(86400000).default(604800000), // 7 days
             aggregationInterval: zod_1.z.number().min(60000).default(300000), // 5 minutes
         })
-            .default({}),
+            .default({
+            enabled: true,
+            sampleRate: 1,
+            metricsRetention: 604800000,
+            aggregationInterval: 300000,
+        }),
         health: zod_1.z
             .object({
             enabled: zod_1.z.boolean().default(true),
@@ -243,9 +512,22 @@ const ConfigSchema = zod_1.z.object({
                 cpuUsage: zod_1.z.number().min(0).max(1).default(0.8), // 80%
                 errorRate: zod_1.z.number().min(0).max(1).default(0.05), // 5%
             })
-                .default({}),
+                .default({
+                memoryUsage: 0.8,
+                cpuUsage: 0.8,
+                errorRate: 0.05,
+            }),
         })
-            .default({}),
+            .default({
+            enabled: true,
+            checkInterval: 60000,
+            endpoints: [],
+            thresholds: {
+                memoryUsage: 0.8,
+                cpuUsage: 0.8,
+                errorRate: 0.05,
+            },
+        }),
         alerts: zod_1.z
             .object({
             enabled: zod_1.z.boolean().default(true),
@@ -253,9 +535,35 @@ const ConfigSchema = zod_1.z.object({
             webhookUrl: zod_1.z.string().url().optional(),
             severityThreshold: zod_1.z.enum(['info', 'warn', 'error']).default('warn'),
         })
-            .default({}),
+            .default({
+            enabled: true,
+            channels: ['console'],
+            severityThreshold: 'warn',
+        }),
     })
-        .default({}),
+        .default({
+        performance: {
+            enabled: true,
+            sampleRate: 1,
+            metricsRetention: 604800000,
+            aggregationInterval: 300000,
+        },
+        health: {
+            enabled: true,
+            checkInterval: 60000,
+            endpoints: [],
+            thresholds: {
+                memoryUsage: 0.8,
+                cpuUsage: 0.8,
+                errorRate: 0.05,
+            },
+        },
+        alerts: {
+            enabled: true,
+            channels: ['console'],
+            severityThreshold: 'warn',
+        },
+    }),
     // Health check configuration
     health: zod_1.z
         .object({
@@ -266,16 +574,37 @@ const ConfigSchema = zod_1.z.object({
             servicenow: zod_1.z.boolean().default(true),
             queen: zod_1.z.boolean().default(true),
         })
-            .default({}),
+            .default({
+            memory: true,
+            mcp: true,
+            servicenow: true,
+            queen: true,
+        }),
         thresholds: zod_1.z
             .object({
             responseTime: zod_1.z.number().min(100).default(5000), // ms
             memoryUsage: zod_1.z.number().min(100).default(1000), // MB
             queueSize: zod_1.z.number().min(10).default(100),
         })
-            .default({}),
+            .default({
+            responseTime: 5000,
+            memoryUsage: 1000,
+            queueSize: 100,
+        }),
     })
-        .default({}),
+        .default({
+        checks: {
+            memory: true,
+            mcp: true,
+            servicenow: true,
+            queen: true,
+        },
+        thresholds: {
+            responseTime: 5000,
+            memoryUsage: 1000,
+            queueSize: 100,
+        },
+    }),
     // Feature flags
     features: zod_1.z
         .object({
@@ -289,7 +618,17 @@ const ConfigSchema = zod_1.z.object({
         neuralPatterns: zod_1.z.boolean().default(false),
         cognitiveAnalysis: zod_1.z.boolean().default(false),
     })
-        .default({}),
+        .default({
+        autoPermissions: false,
+        smartDiscovery: true,
+        liveTesting: true,
+        autoDeploy: true,
+        autoRollback: true,
+        sharedMemory: true,
+        progressMonitoring: true,
+        neuralPatterns: false,
+        cognitiveAnalysis: false,
+    }),
 });
 class SnowFlowConfig {
     constructor(overrides) {
@@ -304,7 +643,7 @@ class SnowFlowConfig {
         // Validate configuration
         const result = ConfigSchema.safeParse(mergedConfig);
         if (!result.success) {
-            throw new Error(`Invalid configuration: ${JSON.stringify(result.error.errors)}`);
+            throw new Error(`Invalid configuration: ${JSON.stringify(result.error.issues)}`);
         }
         this.config = result.data;
         // Ensure data directories exist
@@ -323,7 +662,7 @@ class SnowFlowConfig {
         const mergedConfig = this.mergeConfigs(this.config, updates);
         const result = ConfigSchema.safeParse(mergedConfig);
         if (!result.success) {
-            throw new Error(`Invalid configuration update: ${JSON.stringify(result.error.errors)}`);
+            throw new Error(`Invalid configuration update: ${JSON.stringify(result.error.issues)}`);
         }
         this.config = result.data;
         this.saveToFile();
