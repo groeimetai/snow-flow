@@ -45,7 +45,7 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { MCPLogger } from './shared/mcp-logger.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowCredentials } from '../utils/snow-oauth.js';
