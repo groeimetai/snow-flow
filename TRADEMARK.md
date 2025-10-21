@@ -67,6 +67,6 @@ For trademark licensing inquiries or permissions:
 
 ---
 
-**Last Updated:** January 2025
+**Last Updated:** Oktober 2025
 **Trademark Status:** Registration pending (Benelux)
 **Copyright:** © 2025 Snow-Flow B.V. All rights reserved.
