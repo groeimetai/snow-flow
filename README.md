@@ -54,7 +54,7 @@ Snow-Flow works with **any LLM provider**. Pick the option that fits your needs:
 
 #### Option 1: Claude Pro/Max Subscription (Recommended if you have it)
 **⭐ Use your EXISTING Claude Pro ($20/month) or Max ($40/month) subscription**
-- ✅ No API key needed - OpenCode logs in with your Anthropic account
+- ✅ No API key needed - authenticate via `opencode auth login`
 - ✅ No additional costs beyond your existing subscription
 - ✅ Same Claude models, same quality, just via OpenCode
 
@@ -62,7 +62,11 @@ Snow-Flow works with **any LLM provider**. Pick the option that fits your needs:
 # .env configuration
 DEFAULT_LLM_PROVIDER=anthropic
 DEFAULT_ANTHROPIC_MODEL=claude-sonnet-4
-ANTHROPIC_API_KEY=  # Leave empty - OpenCode will prompt login
+ANTHROPIC_API_KEY=  # Leave empty, then run: opencode auth login
+
+# After setup, authenticate:
+opencode auth login
+# → Select "Anthropic" → Select "Claude Pro/Max" → Browser login
 ```
 
 #### Option 2: Pay-Per-Use APIs (No subscription)
@@ -160,14 +164,29 @@ cp .env.example .env
 # 3. Import OpenCode configuration (if using OpenCode)
 opencode config import opencode-config.example.json
 
-# 4. Authenticate with ServiceNow
+# 4. Authenticate with Anthropic (if using Claude Pro/Max subscription)
+opencode auth login
+# → Select "Anthropic"
+# → Select "Claude Pro/Max"
+# → Browser opens for authentication
+# → All Claude models now available
+
+# 5. Authenticate with ServiceNow
 snow-flow auth login
 ```
+
+**⚠️ Important:** If you're using **Claude Pro/Max subscription** (Option 1), you MUST run `opencode auth login` first and select the Claude Pro/Max option. This links your Anthropic subscription to OpenCode. Skip this step if you're using API keys or local models.
 
 ### Start Developing
 
 ```bash
-# Use snow-flow swarm for any ServiceNow development task
+# Launch OpenCode with Snow-Flow
+opencode
+
+# Inside OpenCode, use snow-flow commands:
+# (OpenCode has Snow-Flow's 411 tools automatically loaded)
+
+# Or use snow-flow swarm directly from terminal:
 snow-flow swarm "create incident dashboard widget with real-time charts"
 ```
 
