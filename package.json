@@ -494,7 +494,7 @@
     "chalk-animation": "^2.0.3",
     "commander": "14.0.1",
     "conf": "15.0.2",
-    "dotenv": "17.2.3",
+    "dotenv": "^16.6.1",
     "figlet": "1.9.3",
     "gradient-string": "^3.0.0",
     "inquirer": "^8.2.7",
