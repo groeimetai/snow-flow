@@ -1801,15 +1801,14 @@ program
 
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
       console.log('1. Configure your LLM provider in: ' + chalk.cyan('.env'));
-      console.log('2. Authenticate Snow-Flow: ' + chalk.cyan('snow-flow auth login'));
-      if (!configImported) {
-        console.log('3. (Optional) Customize OpenCode config: ' + chalk.cyan('.opencode/config.json'));
-        console.log('4. Start developing: ' + chalk.cyan('opencode') + ' or ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
-      } else {
-        console.log('3. Start developing: ' + chalk.cyan('opencode') + ' or ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
-      }
-      console.log('\n📚 Complete documentation: ' + chalk.blue('https://snow-flow.dev'));
-      console.log('💡 Complete UX Workspace creation, UI Builder, and 235+ unified tools now available');
+      console.log('   - Choose: Claude Pro/Max, OpenAI, Google, Ollama, or local models');
+      console.log('2. Authenticate: ' + chalk.cyan('snow-flow auth login'));
+      console.log('   - Authenticates BOTH your LLM provider AND ServiceNow');
+      console.log('   - For Claude Pro/Max: automatically opens browser for login');
+      console.log('3. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
+      console.log('   - Or launch OpenCode: ' + chalk.cyan('opencode'));
+      console.log('\n📚 Documentation: ' + chalk.blue('https://github.com/groeimetai/snow-flow'));
+      console.log('💡 411 ServiceNow tools • 2 MCP servers • Multi-LLM support');
 
       // Force exit to prevent hanging
       process.exit(0);
@@ -1840,9 +1839,9 @@ program
   help                  Show this help
 
 🎯 Example Usage:
-  snow-flow auth login --instance dev12345.service-now.com --client-id your-id --client-secret your-secret
-  snow-flow auth status
-  opencode config import opencode-config.example.json  # Configure OpenCode for Snow-Flow
+  snow-flow init                           # Initialize project (auto-configures OpenCode)
+  snow-flow auth login                     # Authenticate (handles LLM + ServiceNow)
+  snow-flow auth status                    # Check authentication status
   snow-flow swarm "create a widget for incident management"
   snow-flow swarm "create approval flow"  # 🔧 Auto-detects Flow Designer and uses XML!
   snow-flow swarm "generate 5000 incidents" --auto-confirm  # 📝 Auto-confirm background scripts
