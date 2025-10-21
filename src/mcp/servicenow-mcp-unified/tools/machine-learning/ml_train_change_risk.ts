@@ -20,7 +20,7 @@
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_train_change_risk',

@@ -4,7 +4,7 @@
  * No more fake regex matching!
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { Logger } from '../utils/logger.js';
 
 export interface IncidentData {
