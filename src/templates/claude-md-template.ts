@@ -1,5 +1,38 @@
 export const CLAUDE_MD_TEMPLATE = `# Snow-Flow ServiceNow Development Framework
 
+## 🚨 CRITICAL: HOW MCP TOOLS WORK IN OPENCODE
+
+**MCP tools are AUTOMATICALLY AVAILABLE - NO bash/npx needed!**
+
+\`\`\`javascript
+// ✅ CORRECT - MCP tools are available directly:
+await snow_create_ui_page({
+  name: "incident_dashboard",
+  html: "<div>...</div>"
+});
+
+await snow_create_complete_workspace({
+  workspace_name: "IT Support",
+  tables: ["incident", "task"]
+});
+
+// ❌ WRONG - NEVER use bash to call MCP tools:
+// npx snow-flow-mcp-client servicenow-unified snow_create_ui_page {...}  // DOES NOT EXIST!
+// node ... snow_create_ui_page  // WRONG!
+// Bash('snow_create_ui_page')  // WRONG!
+\`\`\`
+
+**🚨 FORBIDDEN:**
+- Using bash/npx/node to call MCP tools
+- Checking if MCP tools exist with bash commands
+- Using \`snow-flow-mcp-client\` (DOES NOT EXIST!)
+- Writing scripts to "call MCP tools" via CLI
+
+**✅ REQUIRED:**
+- Call MCP tools **DIRECTLY** like any other function
+- MCP tools are **automatically loaded** by OpenCode
+- Available tools: All \`snow_*\` functions listed below
+
 ## 🚨 ABSOLUTE RULES - NO EXCEPTIONS
 
 ### 🔴 RULE #0: MCP TOOLS FIRST - NEVER USE LOCAL APPROACHES!
