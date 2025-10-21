@@ -138,8 +138,6 @@ program
     .option('--no-shared-memory', 'Disable shared memory')
     .option('--progress-monitoring', 'Real-time progress monitoring (default: true)', true)
     .option('--no-progress-monitoring', 'Disable progress monitoring')
-    .option('--xml-first', 'Use XML-first approach for flow creation (MOST RELIABLE!)')
-    .option('--xml-output <path>', 'Save generated XML to specific path (with --xml-first)')
     .option('--autonomous-documentation', 'Enable autonomous documentation system (default: true)', true)
     .option('--no-autonomous-documentation', 'Disable autonomous documentation system')
     .option('--autonomous-cost-optimization', 'Enable autonomous cost optimization engine (default: true)', true)
@@ -367,17 +365,10 @@ program
         started_at: new Date().toISOString(),
         is_authenticated: isAuthenticated
     });
-    // Check if this is a Flow Designer flow request
-    const isFlowDesignerTask = taskAnalysis.taskType === 'flow_development' ||
-        taskAnalysis.primaryAgent === 'flow-builder' ||
-        (objective.toLowerCase().includes('flow') &&
-            !objective.toLowerCase().includes('workflow') &&
-            !objective.toLowerCase().includes('data flow'));
-    let xmlFlowResult = null;
     // Start OpenCode multi-agent orchestration
     try {
         // Generate the orchestration prompt
-        const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId, isFlowDesignerTask);
+        const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId);
         if (options.verbose) {
             cliLogger.info('\n👑 Initializing multi-agent orchestration with OpenCode...');
             cliLogger.info('🎯 OpenCode will coordinate the following:');
@@ -455,9 +446,6 @@ program
             cliLogger.info('\n💡 Or start OpenCode manually:');
             cliLogger.info('   1. Run: opencode');
             cliLogger.info(`   2. Enter objective: ${objective}`);
-            if (xmlFlowResult) {
-                cliLogger.info(`\n📁 XML template saved at: ${xmlFlowResult.filePath}`);
-            }
             if (isAuthenticated && options.autoDeploy) {
                 cliLogger.info('\n🚀 Deployment Mode: Artifacts will be created in ServiceNow');
             }
@@ -624,7 +612,7 @@ function startMonitoringDashboard(opencodeProcess) {
 }
 // Helper function to build Queen Agent orchestration prompt
 // Helper function to build Queen Agent orchestration prompt - CLEANED UP VERSION
-function buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated = false, sessionId, isFlowDesignerTask = false) {
+function buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated = false, sessionId) {
     // Check if intelligent features are enabled
     const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery ||
         options.liveTesting || options.autoDeploy || options.autoRollback ||
@@ -701,35 +689,13 @@ You are the Queen Agent, master coordinator of the Snow-Flow hive-mind. Your mis
 
 **For this objective**: Analyze if the user wants data generation, system building, or a simple operation.
 
-${isFlowDesignerTask ? `## 🔧 Flow Designer Task Detected - Using Enhanced Flow Creation!
-
-**MANDATORY: Use this exact approach for Flow Designer tasks:**
-
-\`\`\`javascript
-// ✅ Complete flow generation with ALL features
-await snow_create_flow({
-  instruction: "your natural language flow description", 
-  deploy_immediately: true,  // 🔥 Automatically deploys to ServiceNow!
-  return_metadata: true     // 📊 Returns complete deployment metadata
-});
-\`\`\`
-
-🎯 **What this does automatically:**
-- ✅ Generates proper flow structure with all components
-- ✅ Uses correct ServiceNow tables and relationships
-- ✅ Deploys directly to your ServiceNow instance
-- ✅ Returns complete metadata (sys_id, URLs, endpoints)
-- ✅ Includes all requested features and logic
-
-` : ''}
-
 ## 📊 Table Discovery Intelligence
 
 The Queen Agent will automatically discover and validate table schemas based on the objective. This ensures agents use correct field names and table structures.
 
 **Table Detection Examples:**
 - "create widget for incident records" → Discovers: incident, sys_user, sys_user_group
-- "build approval flow for u_equipment_request" → Discovers: u_equipment_request, sys_user, sysapproval_approver
+- "build catalog item for equipment requests" → Discovers: sc_cat_item, sc_category, u_equipment_request
 - "create UX workspace for IT support" → Discovers: sys_ux_experience, sys_ux_app_config, sys_ux_macroponent, sys_ux_page_registry, sys_ux_app_route
 - "portal showing catalog items" → Discovers: sc_cat_item, sc_category, sc_request
 - "dashboard with CMDB assets" → Discovers: cmdb_ci, cmdb_rel_ci, sys_user
@@ -1251,20 +1217,15 @@ function getAgentSpawnStrategy(taskAnalysis) {
         'css-specialist': ['widget-creator'],
         'frontend-specialist': ['widget-creator'],
         'backend-specialist': ['architect', 'app-architect'],
-        // Flow agents depend on architecture
-        'flow-builder': ['architect', 'app-architect'],
-        'trigger-specialist': ['flow-builder'],
-        'action-specialist': ['flow-builder'],
-        'approval-specialist': ['flow-builder'],
         // Integration agents can run in parallel with others
         'integration-specialist': ['architect'],
         'api-specialist': ['architect'],
         // Testing/Security agents run last
-        'tester': ['script-writer', 'widget-creator', 'flow-builder', 'frontend-specialist', 'backend-specialist'],
+        'tester': ['script-writer', 'widget-creator', 'frontend-specialist', 'backend-specialist'],
         'security-specialist': ['script-writer', 'api-specialist'],
         'performance-specialist': ['frontend-specialist', 'backend-specialist'],
         // Error handling depends on main implementation
-        'error-handler': ['flow-builder', 'script-writer'],
+        'error-handler': ['script-writer'],
         // Documentation can run in parallel
         'documentation-specialist': [],
         // Specialized agents
@@ -1385,10 +1346,6 @@ function getAgentPromptForBatch(agentType, taskType) {
         'css-specialist': 'You are the CSS specialist. Create responsive styles for the widgets. Read widget structure from Memory.',
         'frontend-specialist': 'You are the frontend specialist. Implement client-side JavaScript. Coordinate with backend via Memory.',
         'backend-specialist': 'You are the backend specialist. Implement server-side logic. Coordinate with frontend via Memory.',
-        'flow-builder': 'You are the flow builder. Create the main flow structure. Store flow design in Memory for specialists.',
-        'trigger-specialist': 'You are the trigger specialist. Configure flow triggers based on the flow design in Memory.',
-        'action-specialist': 'You are the action specialist. Implement flow actions based on the flow design in Memory.',
-        'approval-specialist': 'You are the approval specialist. Set up approval processes in the flow.',
         'integration-specialist': 'You are the integration specialist. Handle external system integrations and APIs.',
         'api-specialist': 'You are the API specialist. Design and implement REST/SOAP endpoints.',
         'tester': 'You are the tester. Test all components created by other agents. Read their outputs from Memory.',
@@ -1502,12 +1459,6 @@ program
         cliLogger.info('   ├── Client script development');
         cliLogger.info('   └── Server script implementation');
     }
-    else if (type === 'workflow-designer') {
-        cliLogger.info('   ├── Flow Designer workflow creation');
-        cliLogger.info('   ├── Process automation');
-        cliLogger.info('   ├── Approval routing');
-        cliLogger.info('   └── Integration orchestration');
-    }
     else {
         cliLogger.info('   ├── Generic ServiceNow development');
         cliLogger.info('   ├── Script generation');
@@ -1530,9 +1481,9 @@ program
     cliLogger.info('🕒 Uptime: 00:05:23');
     cliLogger.info('\n🤖 Agent Types:');
     cliLogger.info('   ├── widget-builder: Available');
-    cliLogger.info('   ├── workflow-designer: Available');
     cliLogger.info('   ├── script-generator: Available');
     cliLogger.info('   ├── ui-builder: Available');
+    cliLogger.info('   ├── security-specialist: Available');
     cliLogger.info('   └── app-creator: Available');
     cliLogger.info('\n⚙️  Configuration:');
     cliLogger.info('   ├── Instance: Not set');
@@ -1735,7 +1686,7 @@ program
   snow-flow auth login                     # Authenticate (handles LLM + ServiceNow)
   snow-flow auth status                    # Check authentication status
   snow-flow swarm "create a widget for incident management"
-  snow-flow swarm "create approval flow"  # 🔧 Auto-detects Flow Designer and uses XML!
+  snow-flow swarm "create business rule for auto-assignment"
   snow-flow swarm "generate 5000 incidents" --auto-confirm  # 📝 Auto-confirm background scripts
   snow-flow spawn widget-builder --name "IncidentWidget"
   snow-flow monitor --duration 120
@@ -1744,8 +1695,8 @@ program
 
 🤖 Agent Types:
   widget-builder       Create Service Portal widgets
-  workflow-designer    Design Flow Designer workflows
   script-generator     Generate scripts and business rules
+  security-specialist  ACL and compliance validation
   ui-builder          Create UI components
   app-creator         Build complete applications
 
@@ -1765,7 +1716,7 @@ program
 
   🔗 Live ServiceNow Integration:
   - Create widgets directly in ServiceNow
-  - Execute workflows in real-time
+  - Execute business rules and scripts
   - Test changes immediately in your instance
 
 🌐 More Info: https://github.com/groeimetai/snow-flow
@@ -1894,21 +1845,7 @@ async function createReadmeFiles(targetDir, force = false) {
 
 Snow-Flow is a powerful multi-agent AI platform that revolutionizes ServiceNow development through intelligent automation, natural language processing, and autonomous deployment capabilities. Built with 11 specialized MCP (Model Context Protocol) servers, Snow-Flow enables developers to create, manage, and deploy ServiceNow artifacts using simple natural language commands.
 
-## 🆕 What's New in v1.1.51
-
-### 🎯 CRITICAL FIXES - All User Issues Resolved!
-- **ROOT CAUSE SOLVED**: Flow Designer validation failures completely eliminated
-- **JSON SCHEMA FLEXIBILITY**: Accepts both "steps" and "activities" arrays with auto-conversion
-- **DOCUMENTATION SYNC**: Init command now creates comprehensive CLAUDE.md (373 lines vs 15)
-- **COMPLETE GUIDE**: New users get full Snow-Flow development environment from day one
-
-### 🧠 Intelligent Error Recovery (v1.1.48-1.1.49)
-- **AUTOMATIC FALLBACKS**: Flow Designer → Business Rule conversion when deployment fails
-- **SMART SESSIONS**: Update Sets auto-create when none exist - no more "no active session" errors
-- **ZERO MANUAL WORK**: All systematic errors from user feedback now automatically handled
-- **COMPREHENSIVE TESTING**: Enhanced flow testing with Business Rule fallback detection
-
-### 🚀 Enhanced Swarm Command (v1.1.42+)
+## 🚀 Enhanced Swarm Command
 Most intelligent features are now **enabled by default** - één command voor alles!
 - **DEFAULT TRUE**: \`--smart-discovery\`, \`--live-testing\`, \`--auto-deploy\`, \`--auto-rollback\`, \`--shared-memory\`, \`--progress-monitoring\`
 - **INTELLIGENT ORCHESTRATION**: Uses \`snow_orchestrate_development\` MCP tool automatically
