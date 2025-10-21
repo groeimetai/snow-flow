@@ -535,13 +535,35 @@ async function executeOpenCode(objective: string): Promise<boolean> {
     cliLogger.info('🚀 OpenCode interface opening...\n');
     cliLogger.info(chalk.blue(`💡 Objective: ${objective}\n`));
 
-    // Start OpenCode with the objective
+    // Get default model from .env if available
+    const defaultModel = process.env.DEFAULT_MODEL;
+    const defaultProvider = process.env.DEFAULT_LLM_PROVIDER;
+
+    if (defaultModel) {
+      cliLogger.info(chalk.green(`🤖 Using default model: ${defaultModel}`));
+    }
+    if (defaultProvider) {
+      cliLogger.info(chalk.blue(`🔧 Provider: ${defaultProvider}\n`));
+    }
+
+    // Start OpenCode with the objective and default model
     // OpenCode will be started interactively
-    const opencodeCommand = `opencode < "${tmpFile}"`;
+    let opencodeCommand = `opencode < "${tmpFile}"`;
+
+    // If we have a default model, pass it to OpenCode
+    if (defaultModel) {
+      opencodeCommand = `opencode --model "${defaultModel}" < "${tmpFile}"`;
+    }
+
     const opencodeProcess = spawn('sh', ['-c', opencodeCommand], {
       stdio: 'inherit', // All stdio inherited - OpenCode can use TTY
       cwd: process.cwd(),
-      env: { ...process.env }
+      env: {
+        ...process.env,
+        // Ensure DEFAULT_MODEL is available to OpenCode
+        DEFAULT_MODEL: defaultModel || '',
+        DEFAULT_LLM_PROVIDER: defaultProvider || ''
+      }
     });
 
     // Set up process monitoring
