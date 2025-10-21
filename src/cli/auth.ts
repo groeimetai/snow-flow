@@ -34,14 +34,41 @@ export function registerAuthCommands(program: Command) {
 
         console.log(chalk.blue('🔐 Authenticating with Anthropic...'));
 
+        // Fix common OpenCode directory issue (agents vs agent)
+        const opencodeDir = process.env.HOME + '/.opencode';
+        const agentsDir = opencodeDir + '/agents';
+        const agentDir = opencodeDir + '/agent';
+
+        try {
+          const fs = require('fs');
+          const path = require('path');
+
+          // Check if problematic 'agents' directory exists
+          if (fs.existsSync(agentsDir) && !fs.existsSync(agentDir)) {
+            console.log(chalk.dim('   Fixing OpenCode directory structure...'));
+            fs.renameSync(agentsDir, agentDir);
+          }
+        } catch (dirError) {
+          // Ignore directory fix errors - OpenCode will handle it
+        }
+
         try {
           // Run opencode auth login interactively
           execSync('opencode auth login', { stdio: 'inherit' });
           console.log(chalk.green('✅ Anthropic authentication completed\n'));
-        } catch (error) {
+        } catch (error: any) {
           console.error(chalk.red('\n❌ Anthropic authentication failed'));
-          console.log(chalk.yellow('💡 You can try again later or use an API key instead'));
-          console.log(chalk.blue('   Add to .env: ') + chalk.cyan('ANTHROPIC_API_KEY=your-api-key'));
+
+          // Check if it's the known OpenCode directory bug
+          const errorMsg = error?.message || error?.toString() || '';
+          if (errorMsg.includes('agents') && errorMsg.includes('agent')) {
+            console.log(chalk.yellow('\n⚠️  OpenCode directory issue detected'));
+            console.log(chalk.blue('   Run this fix: ') + chalk.cyan('mv ~/.opencode/agents ~/.opencode/agent'));
+            console.log(chalk.blue('   Then try: ') + chalk.cyan('snow-flow auth login'));
+          } else {
+            console.log(chalk.yellow('💡 You can try again later or use an API key instead'));
+            console.log(chalk.blue('   Add to .env: ') + chalk.cyan('ANTHROPIC_API_KEY=your-api-key'));
+          }
           return;
         }
       }
