@@ -72,7 +72,7 @@ if (typeof global !== 'undefined') {
 const index_js_1 = require("@modelcontextprotocol/sdk/server/index.js");
 const stdio_js_1 = require("@modelcontextprotocol/sdk/server/stdio.js");
 const types_js_1 = require("@modelcontextprotocol/sdk/types.js");
-const tf = __importStar(require("@tensorflow/tfjs-node"));
+const tf = __importStar(require("@tensorflow/tfjs"));
 const mcp_logger_js_1 = require("./shared/mcp-logger.js");
 const servicenow_client_js_1 = require("../utils/servicenow-client.js");
 const ml_data_fetcher_js_1 = require("../utils/ml-data-fetcher.js");
