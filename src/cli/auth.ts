@@ -15,16 +15,13 @@ export function registerAuthCommands(program: Command) {
     .action(async () => {
       const { execSync } = require('child_process');
 
-      authLogger.info('🔑 Starting Snow-Flow authentication...\n');
+      console.log(); // Empty line for spacing
 
       // Step 1: Check if Anthropic (Claude Pro/Max) authentication is needed
       const provider = process.env.DEFAULT_LLM_PROVIDER;
       const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
       if (provider === 'anthropic' && (!anthropicKey || anthropicKey.trim() === '')) {
-        authLogger.info('🤖 Detected Claude Pro/Max configuration (no API key set)');
-        authLogger.info('📋 Step 1: Authenticate with Anthropic\n');
-
         // Check if opencode is installed
         try {
           execSync('which opencode', { stdio: 'ignore' });
@@ -35,27 +32,22 @@ export function registerAuthCommands(program: Command) {
           return;
         }
 
-        authLogger.info('🔐 Launching Anthropic authentication...');
-        authLogger.info(chalk.dim('   This will open your browser to login with your Anthropic account\n'));
+        console.log(chalk.blue('🔐 Authenticating with Anthropic...'));
 
         try {
           // Run opencode auth login interactively
           execSync('opencode auth login', { stdio: 'inherit' });
-          authLogger.info(chalk.green('\n✅ Anthropic authentication completed!\n'));
+          console.log(chalk.green('✅ Anthropic authentication completed\n'));
         } catch (error) {
           console.error(chalk.red('\n❌ Anthropic authentication failed'));
           console.log(chalk.yellow('💡 You can try again later or use an API key instead'));
           console.log(chalk.blue('   Add to .env: ') + chalk.cyan('ANTHROPIC_API_KEY=your-api-key'));
           return;
         }
-      } else if (provider === 'anthropic' && anthropicKey && anthropicKey.trim() !== '') {
-        authLogger.info(chalk.green('✅ Using Anthropic API key from .env'));
-      } else if (provider !== 'anthropic') {
-        authLogger.info(chalk.blue(`ℹ️  Using ${provider || 'default'} LLM provider`));
       }
 
       // Step 2: ServiceNow OAuth authentication
-      authLogger.info('📋 Step 2: Authenticate with ServiceNow\n');
+      console.log(chalk.blue('🔐 Authenticating with ServiceNow...'));
 
       const oauth = new ServiceNowOAuth();
 
@@ -66,35 +58,30 @@ export function registerAuthCommands(program: Command) {
 
       if (!instance || !clientId || !clientSecret) {
         console.error(chalk.red('❌ Missing required ServiceNow OAuth credentials in .env file'));
-        authLogger.info('\n📝 Please add these to your .env file:');
-        authLogger.info('   SNOW_INSTANCE=your-instance.service-now.com');
-        authLogger.info('   SNOW_CLIENT_ID=your-client-id');
-        authLogger.info('   SNOW_CLIENT_SECRET=your-client-secret');
-        authLogger.info('\n💡 Then run: snow-flow auth login');
+        console.log('\n📝 Please add these to your .env file:');
+        console.log('   SNOW_INSTANCE=your-instance.service-now.com');
+        console.log('   SNOW_CLIENT_ID=your-client-id');
+        console.log('   SNOW_CLIENT_SECRET=your-client-secret');
+        console.log('\n💡 Then run: snow-flow auth login');
         return;
       }
-
-      authLogger.info(`🌐 Instance: ${instance}`);
-      authLogger.info('🚀 Opening ServiceNow OAuth page in browser...\n');
 
       // Start OAuth flow (this opens browser automatically)
       const result = await oauth.authenticate(instance, clientId, clientSecret);
 
       if (result.success) {
-        authLogger.info(chalk.green('\n✅ ServiceNow authentication successful!'));
-        authLogger.info(chalk.green('🎉 Snow-Flow is now fully configured!\n'));
+        console.log(chalk.green('✅ ServiceNow authentication successful!'));
 
         // Test connection
         const client = new ServiceNowClient();
         const testResult = await client.testConnection();
         if (testResult.success) {
-          authLogger.info(`🔍 Connection verified!`);
-          authLogger.info(`👤 Logged in as: ${testResult.data.name} (${testResult.data.user_name})\n`);
+          console.log(chalk.green(`✅ Logged in as: ${testResult.data.name} (${testResult.data.user_name})`));
         }
 
-        authLogger.info(chalk.blue.bold('📋 You\'re ready to start developing!'));
-        authLogger.info(chalk.cyan('   snow-flow swarm "create incident dashboard widget"'));
-        authLogger.info(chalk.dim('   or launch OpenCode directly: ') + chalk.cyan('opencode'));
+        console.log(chalk.blue('\n🎉 Ready to start developing!'));
+        console.log(chalk.cyan('   snow-flow swarm "create incident dashboard"'));
+        console.log(chalk.dim('   or: ') + chalk.cyan('opencode\n'));
       } else {
         console.error(chalk.red(`\n❌ ServiceNow authentication failed: ${result.error}`));
         process.exit(1);
@@ -106,9 +93,8 @@ export function registerAuthCommands(program: Command) {
     .description('Logout from ServiceNow')
     .action(async () => {
       const oauth = new ServiceNowOAuth();
-      authLogger.info('🔓 Logging out from ServiceNow...');
       await oauth.logout();
-      authLogger.info('✅ Logged out successfully');
+      console.log(chalk.green('✅ Logged out successfully'));
     });
 
   auth
@@ -116,8 +102,8 @@ export function registerAuthCommands(program: Command) {
     .description('Show ServiceNow authentication status')
     .action(async () => {
       const oauth = new ServiceNowOAuth();
-      authLogger.info('📊 ServiceNow Authentication Status:');
-      
+      console.log(chalk.blue('\n📊 ServiceNow Authentication Status:'));
+
       const isAuthenticated = await oauth.isAuthenticated();
       const credentials = await oauth.loadCredentials();
       
