@@ -188,6 +188,9 @@ export * from './project/index.js';
 // Performance Analytics (3 tools)
 export * from './performance-analytics/index.js';
 
+// Predictive Intelligence (5 tools)
+export * from './predictive-intelligence/index.js';
+
 // Service Portal (3 tools)
 export * from './service-portal/index.js';
 

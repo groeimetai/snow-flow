@@ -304,6 +304,73 @@ snow-flow swarm "detect anomalies in incident patterns"
 
 ---
 
+### Native ServiceNow PI Solution Builder
+
+**🆕 Build Predictive Intelligence solutions conversationally!** Create, train, and activate production-ready ML models directly in ServiceNow through natural language.
+
+**⚠️ Important:** These tools build **native ServiceNow PI solutions** that run INSIDE ServiceNow. Requires Predictive Intelligence license.
+
+**Complete Workflow:**
+```bash
+# 1. Create PI solution definition
+snow-flow swarm "create predictive intelligence solution to predict incident category based on description"
+
+# 2. Train the model (runs in ServiceNow)
+snow-flow swarm "train the incident category predictor solution"
+
+# 3. Monitor training progress
+snow-flow swarm "check training status of incident category predictor"
+
+# 4. Activate for production use
+snow-flow swarm "activate incident category predictor solution"
+
+# 5. Make predictions
+snow-flow swarm "predict category for incident INC0010001"
+```
+
+**Available PI Tools:**
+- `snow_create_pi_solution` - Create solution definitions (classification, regression, similarity, clustering)
+- `snow_train_pi_solution` - Trigger training (10-30 min in ServiceNow)
+- `snow_monitor_pi_training` - Check training progress and metrics
+- `snow_activate_pi_solution` - Activate for production predictions
+- `snow_list_pi_solutions` - List all PI solutions with metrics
+
+**Example Use Cases:**
+```bash
+# Incident auto-categorization
+snow-flow swarm "build PI solution to auto-categorize incidents based on short_description and description"
+
+# Change risk prediction
+snow-flow swarm "create regression model to predict change implementation duration"
+
+# Similar incident finder
+snow-flow swarm "build similarity solution to find related incidents for knowledge reuse"
+
+# Work assignment optimization
+snow-flow swarm "create PI solution to predict best assignment group for new incidents"
+```
+
+**Key Benefits:**
+- ✅ **Native ServiceNow:** Models run directly in ServiceNow (no external dependencies)
+- ✅ **Production Ready:** Fully integrated with ServiceNow workflows
+- ✅ **Auto-retrain:** Automatic retraining on schedule
+- ✅ **High Performance:** Enterprise-grade ML infrastructure
+- ✅ **Conversational:** Build complex ML solutions through natural language
+
+**Comparison:**
+
+| Feature | Native PI Builder (NEW!) | Local ML Training |
+|---------|-------------------------|-------------------|
+| **Runs Where** | Inside ServiceNow | Locally on your machine |
+| **License** | PI license required | Free (no license) |
+| **Production** | ✅ Yes | ❌ Experimental only |
+| **Auto-retrain** | ✅ Yes | ❌ Manual |
+| **Integration** | ✅ Native | ⚠️ Via API |
+| **Performance** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
+| **Best For** | Production ML in ServiceNow | Dev/testing without license |
+
+---
+
 ## 📋 Examples
 
 ### Widget Development
