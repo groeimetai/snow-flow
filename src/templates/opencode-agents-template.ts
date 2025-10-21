@@ -298,21 +298,79 @@ Widgets need perfect communication between:
 
 ### LLM Provider Selection
 
-You can switch LLM providers per task in your \`.env\`:
+**🎯 You have FIVE main options:**
 
+#### Option 1: Claude Pro/Max Subscription (RECOMMENDED if you have it)
 \`\`\`bash
-# Use Claude for complex reasoning
+# ⭐ Use your EXISTING Claude Pro ($20/month) or Max ($40/month)
+# ✅ No API key needed - OpenCode logs in with your Anthropic account
+# ✅ No additional costs beyond your existing subscription
+# ✅ Same Claude models, same quality, just via OpenCode
+
+# Setup:
 DEFAULT_LLM_PROVIDER=anthropic
 DEFAULT_ANTHROPIC_MODEL=claude-sonnet-4
+ANTHROPIC_API_KEY=  # Leave empty - OpenCode will prompt login
+\`\`\`
 
-# Or use GPT-4o for general tasks
+#### Option 2: Pay-Per-Use API (No subscription)
+\`\`\`bash
+# Use Anthropic API directly (if no Claude Pro/Max)
+DEFAULT_LLM_PROVIDER=anthropic
+DEFAULT_ANTHROPIC_MODEL=claude-sonnet-4
+ANTHROPIC_API_KEY=sk-ant-your-api-key  # Get from console.anthropic.com
+
+# Or OpenAI
 DEFAULT_LLM_PROVIDER=openai
 DEFAULT_OPENAI_MODEL=gpt-4o
+OPENAI_API_KEY=sk-your-api-key
+\`\`\`
 
-# Or local/offline with Ollama
+#### Option 3: 100% Free with Ollama (Offline, Private)
+\`\`\`bash
+# Install: https://ollama.com
+# Setup: ollama pull llama3.1 && ollama serve
+
 DEFAULT_LLM_PROVIDER=ollama
 DEFAULT_OLLAMA_MODEL=llama3.1
+OLLAMA_BASE_URL=http://localhost:11434
+# ✅ FREE • ✅ OFFLINE • ✅ PRIVATE • ✅ No API keys needed
 \`\`\`
+
+#### Option 4: LM Studio (GUI + Local)
+\`\`\`bash
+# Download: https://lmstudio.ai
+# Easiest local option with beautiful GUI
+# Supports: Llama 3.2, Mistral, Phi, Gemma, DeepSeek, Qwen 2.5
+
+DEFAULT_LLM_PROVIDER=openai  # LM Studio mimics OpenAI API
+OPENAI_BASE_URL=http://localhost:1234/v1
+DEFAULT_OPENAI_MODEL=llama-3.1-8b
+# ✅ FREE • ✅ GUI • ✅ No coding needed
+\`\`\`
+
+#### Option 5: High-Performance Local (vLLM, LocalAI)
+\`\`\`bash
+# vLLM - 2-4x faster inference
+# Install: pip install vllm
+# Start: python -m vllm.entrypoints.openai.api_server --model llama3.1
+
+DEFAULT_LLM_PROVIDER=openai
+OPENAI_BASE_URL=http://localhost:8000/v1
+DEFAULT_OPENAI_MODEL=llama3.1
+
+# OR LocalAI - Most versatile, supports images + audio
+# Docker: docker run -p 8080:8080 localai/localai
+LOCALAI_BASE_URL=http://localhost:8080/v1
+\`\`\`
+
+### Quick Decision Guide
+
+**Have Claude Pro/Max?** → Use Option 1 (no extra cost!)
+**Want best quality?** → Use Option 2 (Claude Sonnet 4 or GPT-4o API)
+**Want 100% free?** → Use Option 3 (Ollama) or Option 4 (LM Studio)
+**Want performance?** → Use Option 5 (vLLM)
+**Want offline/private?** → Use Option 3, 4, or 5 (all local)
 
 ### Instructions Priority
 

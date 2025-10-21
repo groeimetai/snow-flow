@@ -1,7 +1,7 @@
 "use strict";
 /**
- * Snow-Flow: ServiceNow Hive-Mind Intelligence Framework
- * Built with Claude Code integration
+ * Snow-Flow: ServiceNow Multi-LLM Development Platform
+ * Built with OpenCode integration (also compatible with Claude Code)
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
