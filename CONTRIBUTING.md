@@ -17,9 +17,10 @@ However, any UI or core product feature must go through a design review with the
 
 Take a look at recent git history to understand what usually lands.
 
-If you are unsure if a PR would be accepted, feel free to ask a maintainer or look for issues with either of the following labels:
+If you are unsure if a PR would be accepted, feel free to ask a maintainer or look for issues with any of the following labels:
 
 - [`help wanted`](https://github.com/sst/opencode/issues?q=is%3Aissue%20state%3Aopen%20label%3Ahelp-wanted)
+- [`good first issue`](https://github.com/sst/opencode/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22)
 - [`bug`](https://github.com/sst/opencode/issues?q=is%3Aissue%20state%3Aopen%20label%3Abug)
 
 > [!NOTE]
