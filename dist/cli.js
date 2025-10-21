@@ -1645,13 +1645,12 @@ program
         // Check and optionally install OpenCode
         const configImported = await checkAndInstallOpenCode();
         console.log(chalk_1.default.blue.bold('\n🎯 Next steps:'));
-        console.log('1. Configure your LLM provider in: ' + chalk_1.default.cyan('.env'));
-        console.log('   - Choose: Claude Pro/Max, OpenAI, Google, Ollama, or local models');
-        console.log('2. Authenticate: ' + chalk_1.default.cyan('snow-flow auth login'));
-        console.log('   - Authenticates BOTH your LLM provider AND ServiceNow');
-        console.log('   - For Claude Pro/Max: automatically opens browser for login');
-        console.log('3. Start developing: ' + chalk_1.default.cyan('snow-flow swarm "create incident dashboard"'));
-        console.log('   - Or launch OpenCode: ' + chalk_1.default.cyan('opencode'));
+        console.log('1. Authenticate: ' + chalk_1.default.cyan('snow-flow auth login'));
+        console.log('   - Authenticates with your LLM provider (Claude/OpenAI/Google/Ollama)');
+        console.log('   - Then authenticates with ServiceNow OAuth');
+        console.log('   - Your provider choice is automatically saved to .env');
+        console.log('2. Start developing: ' + chalk_1.default.cyan('snow-flow swarm "create incident dashboard"'));
+        console.log('   - Or launch OpenCode directly: ' + chalk_1.default.cyan('opencode'));
         console.log('\n📚 Documentation: ' + chalk_1.default.blue('https://github.com/groeimetai/snow-flow'));
         console.log('💡 411 ServiceNow tools • 2 MCP servers • Multi-LLM support');
         // Force exit to prevent hanging
