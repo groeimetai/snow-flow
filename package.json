@@ -497,7 +497,7 @@
     "dotenv": "17.2.3",
     "figlet": "1.9.3",
     "gradient-string": "^3.0.0",
-    "inquirer": "12.10.0",
+    "inquirer": "^8.2.7",
     "neo4j-driver": "6.0.0",
     "ora": "9.0.0",
     "uuid": "13.0.0",
