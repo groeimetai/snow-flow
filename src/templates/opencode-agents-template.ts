@@ -132,11 +132,48 @@ memory_search({ query: 'workspace sys_ids' })
 memory_usage() - Check memory usage
 \`\`\`
 
-**Neural Learning (TensorFlow.js):**
+**🧠 Machine Learning & Predictive Intelligence:**
+
+**🚨 TWO COMPLETELY DIFFERENT ML APPROACHES - ASK USER FIRST!**
+
+**🏢 Native ServiceNow Predictive Intelligence (NEW! v7.4.0):**
+- Runs INSIDE ServiceNow instance (requires PI license)
+- Production-ready, auto-retrain, enterprise ML
+- **ALWAYS ASK:** "Do you have a ServiceNow Predictive Intelligence license?"
+
 \`\`\`
+# Native PI Tools (Production):
+snow_create_pi_solution({ name, table, output_field, solution_type })
+snow_train_pi_solution({ solution_id }) - Trains in ServiceNow (10-30 min)
+snow_monitor_pi_training({ solution_id }) - Monitor progress/accuracy
+snow_activate_pi_solution({ solution_id }) - Activate for production
+snow_list_pi_solutions() - List all PI solutions
+ml_predictive_intelligence({ solution_id, record_id }) - Make predictions
+\`\`\`
+
+**💻 Local TensorFlow.js ML (Experimental, FREE):**
+- Runs locally on dev machine (no ServiceNow license required)
+- Development/testing only, NOT for production
+
+\`\`\`
+# Local ML Tools (Dev/Testing Only):
 neural_train({ type: 'incident_classifier', dataset: [...] })
 neural_patterns() - Get learned patterns
+ml_train_incident_classifier() - Train LSTM locally
+ml_predict_change_risk() - Local risk prediction
+ml_detect_anomalies() - Local anomaly detection
 \`\`\`
+
+**📋 ML Decision Matrix for Agents:**
+| User Request | Has PI License? | Recommend |
+|--------------|----------------|-----------|
+| "Create incident predictor" | ✅ Yes | snow_create_pi_solution + snow_train_pi_solution |
+| "Create incident predictor" | ❌ No | neural_train or ml_train_incident_classifier |
+| "Production ML solution" | ✅ Yes | Native PI (always) |
+| "Production ML solution" | ❌ No | STOP: Explain PI license required for production |
+| "Test/experiment with ML" | Either | Can use local TensorFlow.js tools |
+
+**🚨 CRITICAL: ALWAYS ask "Do you have a ServiceNow Predictive Intelligence license?" before recommending ML tools!**
 
 **Performance Tracking:**
 \`\`\`
