@@ -470,6 +470,106 @@ opencode config import opencode-config.example.json
 cp opencode-config.example.json ~/.opencode/config.json
 ```
 
+### Using Snow-Flow with Other AI Coding Assistants
+
+**Snow-Flow works with ANY AI coding assistant that supports MCP (Model Context Protocol)**. While OpenCode and Claude Code use special instruction files (`AGENTS.md` and `CLAUDE.md`), other AI assistants only need the MCP server configuration.
+
+#### Supported AI Coding Assistants
+
+| AI Assistant | Configuration File | How to Connect |
+|-------------|-------------------|----------------|
+| **Cursor** | `.cursor/mcp.json` | Copy from `.opencode/config.json` |
+| **Windsurf** | `mcp_config.json` | Copy from `.opencode/config.json` |
+| **Continue.dev** | `.continue/mcpServers/*.json` | Copy from `.opencode/config.json` |
+| **Cline** | `.vscode/mcp.json` | Copy from `.opencode/config.json` |
+| **GitHub Copilot** | `.vscode/mcp.json` | Copy from `.opencode/config.json` |
+
+#### Setup Instructions
+
+1. **Install Snow-Flow** and run `snow-flow init`:
+   ```bash
+   npm install -g snow-flow
+   snow-flow init
+   ```
+
+2. **Locate the generated MCP configuration** in `.opencode/config.json`
+
+3. **Copy MCP servers to your AI assistant's config**:
+
+   **For Cursor:**
+   ```bash
+   # Copy to project-specific config
+   cp .opencode/config.json .cursor/mcp.json
+
+   # Or copy to global config
+   cp .opencode/config.json ~/.cursor/mcp.json
+   ```
+
+   **For Windsurf:**
+   ```bash
+   # Copy to Windsurf config
+   cp .opencode/config.json mcp_config.json
+
+   # Or use Windsurf's UI: Click hammer icon → Configure
+   ```
+
+   **For Continue.dev:**
+   ```bash
+   # Create mcpServers directory
+   mkdir -p .continue/mcpServers
+
+   # Copy configuration
+   cp .opencode/config.json .continue/mcpServers/snow-flow.json
+   ```
+
+   **For Cline:**
+   ```bash
+   # Copy to VS Code config
+   mkdir -p .vscode
+   cp .opencode/config.json .vscode/mcp.json
+   ```
+
+4. **Restart your AI coding assistant** to load the MCP servers
+
+5. **Verify connection**:
+   - Cursor: Look for hammer icon (should show tool count)
+   - Windsurf: Click hammer icon (should see Snow-Flow servers)
+   - Continue.dev: Check agent mode for available tools
+   - Cline: Check MCP servers list in settings
+
+#### What You Get
+
+Once connected, your AI coding assistant will have access to:
+- **411 ServiceNow tools** across 2 unified MCP servers
+- **Complete ServiceNow operations** (query, deploy, update, etc.)
+- **Local artifact development** (pull/edit/push ServiceNow artifacts)
+- **Machine learning capabilities** (TensorFlow.js neural networks)
+- **Multi-agent coordination** (for complex workflows)
+
+#### Differences from OpenCode/Claude Code
+
+**OpenCode/Claude Code:**
+- Use instruction files (`AGENTS.md`/`CLAUDE.md`) for workflow guidance, rules, and best practices
+- Get contextual ServiceNow development instructions
+- Have pre-configured agent types and coordination patterns
+
+**Other AI Assistants:**
+- Only connect to MCP servers (tools only, no instruction files)
+- You provide your own prompts and workflows
+- Same 411 tools, but you guide the conversation
+
+#### Example Usage with Cursor
+
+```typescript
+// In Cursor chat, you can now use Snow-Flow tools:
+"Use snow_query_table to get all priority 1 incidents from the last 24 hours"
+
+"Pull the incident dashboard widget to local files using snow_pull_artifact,
+ then help me refactor the client script"
+
+"Deploy this updated widget using snow_deploy with coherence validation"
+```
+
 ---
 
 ## Use Cases
