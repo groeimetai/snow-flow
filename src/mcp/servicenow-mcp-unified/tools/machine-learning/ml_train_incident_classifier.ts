@@ -1,5 +1,8 @@
 /**
- * ml_train_incident_classifier - Train LSTM neural networks on historical incident data
+ * ml_train_incident_classifier - Train LSTM neural networks LOCALLY on ServiceNow incident data
+ *
+ * ⚠️ IMPORTANT: This trains models LOCALLY on your machine, NOT in ServiceNow.
+ * This is an alternative to ServiceNow Predictive Intelligence (PI) for dev/testing.
  *
  * This tool trains a deep learning classifier using TensorFlow.js with:
  * - LSTM layers for sequence processing
@@ -7,17 +10,22 @@
  * - Dropout for regularization
  * - Intelligent data selection and optimization
  *
- * Works without PA/PI licenses using custom neural networks
+ * How it works:
+ * 1. Fetches incident data from ServiceNow via OAuth2 API
+ * 2. Trains TensorFlow.js model locally (Node.js environment)
+ * 3. Saves model to .snow-flow/ml-models/ directory
+ * 4. NOT importable into ServiceNow PI
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { requestApproval, formatFetchSummary } from '../../../../utils/data-fetch-safety.js';
 import * as tf from '@tensorflow/tfjs-node';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_train_incident_classifier',
-  description: 'Trains LSTM neural networks on historical incident data with intelligent data selection. Automatically optimizes dataset size up to 5000 records for best accuracy. Works without PA/PI licenses.',
+  description: '⚠️ LOCAL ML TRAINING: Trains LSTM neural networks on your machine using ServiceNow incident data fetched via API. NOT in ServiceNow. Alternative to PI license for dev/testing. Fetches up to 5000 records.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -129,6 +137,20 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       }
     }
 
+    // Safety check: warn about large data fetches
+    const approval = requestApproval({
+      table: 'incident',
+      estimatedRecords: actualSampleSize,
+      query: query || 'Last 6 months, non-empty category/description',
+      purpose: 'Train LSTM incident classifier locally'
+    });
+
+    if (!approval.approved) {
+      return createErrorResult('Data fetch cancelled by user');
+    }
+
+    const fetchStartTime = Date.now();
+
     // Fetch incident data
     const finalQuery = query || (intelligent_selection ?
       'categoryISNOTEMPTY^descriptionISNOTEMPTY^sys_created_onONLast 6 months' :
@@ -140,6 +162,20 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       limit: actualSampleSize,
       fields: ['short_description', 'description', 'category', 'priority', 'impact', 'urgency']
     });
+
+    const fetchTime = Date.now() - fetchStartTime;
+
+    // Log fetch summary
+    const summary = formatFetchSummary(
+      {
+        table: 'incident',
+        estimatedRecords: actualSampleSize,
+        purpose: 'Train LSTM incident classifier'
+      },
+      fetchTime,
+      incidents.length
+    );
+    console.log(summary);
 
     if (!incidents || incidents.length === 0) {
       return createErrorResult('No incidents found for training');

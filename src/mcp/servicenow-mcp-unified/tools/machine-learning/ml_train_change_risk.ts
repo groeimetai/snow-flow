@@ -1,5 +1,8 @@
 /**
- * ml_train_change_risk - Train neural networks to predict change implementation risks
+ * ml_train_change_risk - Train neural networks LOCALLY for change risk prediction
+ *
+ * ⚠️ IMPORTANT: Trains models LOCALLY on your machine, NOT in ServiceNow.
+ * Alternative to ServiceNow Predictive Intelligence (PI) for dev/testing.
  *
  * Trains a model to predict change risk based on historical change data including:
  * - Change description and category
@@ -7,7 +10,11 @@
  * - Historical success/failure rates
  * - Assignment group patterns
  *
- * Works without PA/PI licenses using custom neural networks
+ * How it works:
+ * 1. Fetches change data from ServiceNow via OAuth2 API
+ * 2. Trains TensorFlow.js model locally (Node.js)
+ * 3. Saves to .snow-flow/ml-models/
+ * 4. NOT importable to ServiceNow PI
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
@@ -17,7 +24,7 @@ import * as tf from '@tensorflow/tfjs-node';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_train_change_risk',
-  description: 'Trains neural networks to predict change implementation risks based on historical change data. Works without PA/PI licenses.',
+  description: '⚠️ LOCAL ML TRAINING: Trains neural networks on your machine using ServiceNow change data fetched via API. NOT in ServiceNow. Alternative to PI license for dev/testing.',
   inputSchema: {
     type: 'object',
     properties: {
