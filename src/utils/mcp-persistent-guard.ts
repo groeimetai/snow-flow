@@ -26,19 +26,12 @@ export class MCPPersistentGuard {
             ['--version', '-V', '--help', '-h', 'help', 'version'].includes(arg)
         );
 
-        if (!isReadOnly) {
-            this.logger.info('🛡️ MCP Persistent Guard activated - servers protected from shutdown');
-        }
-        
         // Only install protection for non-read-only commands
         if (!isReadOnly) {
             // Override process.kill to protect MCP servers
             this.installProcessProtection();
 
-            // Override process.exit to warn about shutdowns
-            this.installExitProtection();
-
-            // Monitor for shutdown attempts
+            // Monitor for shutdown attempts (silent activation)
             this.startShutdownMonitoring();
         }
     }
@@ -70,19 +63,6 @@ export class MCPPersistentGuard {
     }
     
     /**
-     * Warn about process exit attempts
-     */
-    private installExitProtection(): void {
-        process.exit = (code: number = 0) => {
-            this.logger.warn(`⚠️ Process exit attempted with code ${code}`);
-            this.logger.info('🔄 MCP servers remain persistent despite main process exit');
-            
-            // Still allow main process to exit, but log it
-            return this.originalProcessExit(code);
-        };
-    }
-    
-    /**
      * Check if PID belongs to MCP server
      */
     private isMCPProcess(pid: number): boolean {
@@ -109,14 +89,14 @@ export class MCPPersistentGuard {
             if ((global as any)[method] && typeof (global as any)[method] === 'function') {
                 const original = (global as any)[method];
                 (global as any)[method] = (...args: any[]) => {
-                    this.logger.warn(`🛡️ BLOCKED: Attempted global ${method} call`);
-                    this.logger.info('🔄 MCP servers protected by persistent guard');
+                    // Silent protection - only log if actually blocking something
+                    this.logger.debug(`🛡️ BLOCKED: Attempted global ${method} call`);
                     return false;
                 };
             }
         });
-        
-        this.logger.info('🛡️ Persistent guard monitoring active');
+
+        // Silent monitoring - guard is active but quiet
     }
     
     /**
@@ -124,7 +104,8 @@ export class MCPPersistentGuard {
      */
     protectProcess(pid: number, name: string): void {
         this.protectedProcesses.add({ pid, name });
-        this.logger.info(`🛡️ Added protection for ${name} (PID: ${pid})`);
+        // Silent protection - only log at debug level
+        this.logger.debug(`🛡️ Added protection for ${name} (PID: ${pid})`);
     }
     
     /**
@@ -156,5 +137,6 @@ export class MCPPersistentGuard {
     }
 }
 
-// Auto-activate protection when module is loaded
+// Auto-activate protection when module is loaded (silent activation)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const guard = MCPPersistentGuard.getInstance();
