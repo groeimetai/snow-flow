@@ -1,5 +1,11 @@
 /**
  * Snow-Flow: ServiceNow Multi-LLM Development Platform
+ * Copyright (c) 2025 Snow-Flow B.V.
+ *
+ * This file is part of Snow-Flow.
+ * Licensed under the MIT License - see LICENSE file for details.
+ *
+ * Snow-Flow is a trademark of Snow-Flow B.V.
  * Built with OpenCode integration (also compatible with Claude Code)
  */
 export * from './types/index.js';
