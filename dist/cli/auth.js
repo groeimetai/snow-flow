@@ -16,9 +16,63 @@ function registerAuthCommands(program) {
         .description('Authenticate with LLM provider (Claude Pro/Max) and ServiceNow')
         .action(async () => {
         const { execSync } = require('child_process');
+        const fs = require('fs');
+        const path = require('path');
+        const inquirer = require('inquirer');
         console.log(); // Empty line for spacing
+        // Step 0: Provider selection if not configured
+        let provider = process.env.DEFAULT_LLM_PROVIDER;
+        if (!provider || provider.trim() === '') {
+            console.log(chalk_1.default.blue('🤖 Select your LLM provider'));
+            console.log(chalk_1.default.dim('   (75+ providers supported via OpenCode)\n'));
+            const { selectedProvider } = await inquirer.prompt([{
+                    type: 'list',
+                    name: 'selectedProvider',
+                    message: 'Which LLM provider do you want to use?',
+                    choices: [
+                        { name: 'Anthropic (Claude Pro/Max subscription)', value: 'anthropic' },
+                        { name: 'OpenAI (ChatGPT API)', value: 'openai' },
+                        { name: 'Google (Gemini API)', value: 'google' },
+                        { name: 'Ollama (Free, runs locally)', value: 'ollama' },
+                        { name: 'Groq (Ultra-fast inference)', value: 'groq' },
+                        { name: 'DeepSeek (Specialized for coding)', value: 'deepseek' },
+                        { name: 'Mistral AI', value: 'mistral' },
+                        new inquirer.Separator(),
+                        { name: 'Other (configure manually in .env)', value: 'other' }
+                    ]
+                }]);
+            if (selectedProvider === 'other') {
+                console.log(chalk_1.default.yellow('\n💡 Please set DEFAULT_LLM_PROVIDER in your .env file'));
+                console.log(chalk_1.default.dim('   See .env.example for all 75+ available providers'));
+                return;
+            }
+            provider = selectedProvider;
+            // Save provider to .env file
+            const envPath = path.join(process.cwd(), '.env');
+            let envContent = '';
+            try {
+                envContent = fs.readFileSync(envPath, 'utf8');
+            }
+            catch {
+                // .env doesn't exist yet, use .env.example as template
+                const examplePath = path.join(process.cwd(), '.env.example');
+                if (fs.existsSync(examplePath)) {
+                    envContent = fs.readFileSync(examplePath, 'utf8');
+                }
+            }
+            // Update DEFAULT_LLM_PROVIDER in .env content
+            if (envContent.includes('DEFAULT_LLM_PROVIDER=')) {
+                envContent = envContent.replace(/DEFAULT_LLM_PROVIDER=.*/g, `DEFAULT_LLM_PROVIDER=${provider}`);
+            }
+            else {
+                envContent += `\nDEFAULT_LLM_PROVIDER=${provider}\n`;
+            }
+            fs.writeFileSync(envPath, envContent);
+            console.log(chalk_1.default.green(`✅ Provider set to: ${provider}\n`));
+            // Reload environment variables
+            process.env.DEFAULT_LLM_PROVIDER = provider;
+        }
         // Step 1: Check if Anthropic (Claude Pro/Max) authentication is needed
-        const provider = process.env.DEFAULT_LLM_PROVIDER;
         const anthropicKey = process.env.ANTHROPIC_API_KEY;
         if (provider === 'anthropic' && (!anthropicKey || anthropicKey.trim() === '')) {
             // Check if opencode is installed
@@ -32,21 +86,30 @@ function registerAuthCommands(program) {
                 return;
             }
             console.log(chalk_1.default.blue('🔐 Authenticating with Anthropic...'));
-            // Fix common OpenCode directory issue (agents vs agent)
-            const opencodeDir = process.env.HOME + '/.opencode';
-            const agentsDir = opencodeDir + '/agents';
-            const agentDir = opencodeDir + '/agent';
+            // Fix common OpenCode directory issue (agents vs agent) in BOTH global and project directories
             try {
                 const fs = require('fs');
                 const path = require('path');
-                // Check if problematic 'agents' directory exists
-                if (fs.existsSync(agentsDir) && !fs.existsSync(agentDir)) {
-                    console.log(chalk_1.default.dim('   Fixing OpenCode directory structure...'));
-                    fs.renameSync(agentsDir, agentDir);
+                // Fix 1: Global ~/.opencode directory
+                const globalOpencodeDir = process.env.HOME + '/.opencode';
+                const globalAgentsDir = globalOpencodeDir + '/agents';
+                const globalAgentDir = globalOpencodeDir + '/agent';
+                if (fs.existsSync(globalAgentsDir) && !fs.existsSync(globalAgentDir)) {
+                    console.log(chalk_1.default.dim('   Fixing global OpenCode directory structure...'));
+                    fs.renameSync(globalAgentsDir, globalAgentDir);
+                }
+                // Fix 2: Project .opencode directory (in current working directory)
+                const projectOpencodeDir = path.join(process.cwd(), '.opencode');
+                const projectAgentsDir = path.join(projectOpencodeDir, 'agents');
+                const projectAgentDir = path.join(projectOpencodeDir, 'agent');
+                if (fs.existsSync(projectAgentsDir) && !fs.existsSync(projectAgentDir)) {
+                    console.log(chalk_1.default.dim('   Fixing project OpenCode directory structure...'));
+                    fs.renameSync(projectAgentsDir, projectAgentDir);
                 }
             }
             catch (dirError) {
                 // Ignore directory fix errors - OpenCode will handle it
+                console.log(chalk_1.default.dim('   (Directory fix skipped - will auto-correct)'));
             }
             try {
                 // Run opencode auth login interactively
