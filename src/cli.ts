@@ -22,10 +22,14 @@ import chalk from 'chalk';
 // Load MCP Persistent Guard for bulletproof server protection
 import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
 
-// Activate MCP guard only for commands that use MCP servers (not init/version/help)
-const commandsNeedingMCP = ['swarm', 'status', 'monitor'];
+// Activate MCP guard ONLY for commands that actually use MCP servers
+// Explicitly exclude: init, version, help, auth, export, config commands
+const commandsNeedingMCP = ['swarm', 'status', 'monitor', 'mcp'];
+const commandsNotNeedingMCP = ['init', 'version', 'help', 'auth', 'export', '-v', '--version', '-h', '--help'];
 const currentCommand = process.argv[2];
-if (commandsNeedingMCP.includes(currentCommand)) {
+
+// Only activate guard if it's a command that needs MCP AND not explicitly excluded
+if (currentCommand && commandsNeedingMCP.includes(currentCommand) && !commandsNotNeedingMCP.includes(currentCommand)) {
   MCPPersistentGuard.getInstance();
 }
 // Removed provider-agnostic imports - using Claude Code directly
@@ -2548,7 +2552,7 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       await fs.mkdir(modesDir, { recursive: true });
       console.log('✅ Created .opencode/ directory structure');
 
-      // Copy agent files from .claude/ to .opencode/agents/
+      // Copy agent files from .claude/ to .opencode/agents/ (if they exist)
       const sourceAgentsDir = join(__dirname, '..', '.claude', 'agents');
       try {
         const agentFiles = await fs.readdir(sourceAgentsDir);
@@ -2562,7 +2566,7 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
         }
         console.log('✅ Copied agent configurations to .opencode/agents/');
       } catch (err) {
-        console.log('⚠️  Could not copy agent files, continuing...');
+        // Silently continue - agent configs are in opencode.json, not separate files
       }
 
       // Create .opencode/opencode.json with both MCP servers
