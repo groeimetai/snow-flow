@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "7.2.1",
+  "version": "7.2.2",
   "description": "ServiceNow development with OpenCode - 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, Groq, Ollama) • 411 Tools • 2 MCP Servers • Native multi-agent orchestration • Use ANY AI coding assistant",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -15,9 +15,6 @@
     ".mcp.json.template",
     "opencode-config.example.json",
     "README.md",
-    "README_OPENCODE.md",
-    "OPENCODE_SETUP.md",
-    "TESTING_BYOLLM.md",
     "CLAUDE.md",
     "LICENSE"
   ],
