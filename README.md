@@ -553,9 +553,138 @@ snow-flow auth logout
 
 ---
 
+## 🏢 Open Source vs Enterprise Features
+
+Snow-Flow follows an **Open Core** business model. The core framework is 100% open source (MIT License), with optional enterprise features available for organizations requiring advanced integrations and support.
+
+### Open Source (MIT License) - 100% Free Forever
+
+The current Snow-Flow release includes:
+
+- ✅ **411 ServiceNow Tools** - Complete API coverage via 2 MCP servers
+- ✅ **75+ LLM Providers** - Claude, GPT-4o, Gemini, Llama, Ollama, Groq, Mistral, DeepSeek, etc.
+- ✅ **Conversational Development** - Build widgets, flows, workspaces through natural language
+- ✅ **Local Development Bridge** - Pull/push artifacts, edit with native tools
+- ✅ **Local ML Training** - TensorFlow.js neural networks (experimental, runs on your machine)
+- ✅ **Native ServiceNow ML** - Predictive Intelligence solution builder (create/train/activate/predict)
+- ✅ **Widget Deployment & Validation** - Coherence checking, ES5 validation
+- ✅ **UI Builder Integration** - Complete Now Experience Framework development
+- ✅ **Multi-Agent Orchestration** - SPARC methodology, swarm coordination
+- ✅ **Update Set Management** - Full lifecycle, auto-sync current update set
+- ✅ **Background Script Execution** - With output capture and auto-confirm mode
+- ✅ **Universal Compatibility** - Works with OpenCode, Claude Code, Cursor, Windsurf, Continue.dev, Cline
+
+**Use for:** Solo developers, small teams, learning, proof-of-concepts, community projects
+
+### Enterprise Features (Commercial License) 🔒 - Coming Soon
+
+Premium integrations for enterprise ServiceNow teams:
+
+- 🔒 **Jira Backlog Sync** - Bi-directional sync with AI-powered requirement parsing
+  - Auto-import stories/epics from Jira to ServiceNow tasks
+  - Real-time webhook updates (Jira ↔ ServiceNow)
+  - AI extracts acceptance criteria, technical requirements
+  - Developer workflow: `snow-flow dev start SNOW-456` loads full Jira context
+
+- 🔒 **Azure DevOps Integration** - Complete ALM integration
+  - Work item sync (User Stories, Tasks, Bugs)
+  - Pull request tracking to ServiceNow
+  - Build pipeline status integration
+  - Test results auto-documented
+
+- 🔒 **Confluence Documentation Sync** - Auto-sync technical documentation
+  - Confluence pages → ServiceNow knowledge articles
+  - Technical specs → Implementation guides
+  - Architecture diagrams → Attachment sync
+
+- 🔒 **Enterprise SSO/SAML** - Single sign-on integration
+  - SAML 2.0, OAuth 2.0, OIDC
+  - Active Directory/LDAP integration
+  - Role-based access control (RBAC)
+
+- 🔒 **Advanced Audit Logging** - Comprehensive activity tracking
+  - Every AI action logged with audit trail
+  - Compliance reporting (SOX, GDPR, HIPAA)
+  - Tamper-proof log storage
+
+- 🔒 **SLA-Backed Support** - Enterprise support agreements
+  - 24/7 support with 4-hour response SLA
+  - Dedicated technical account manager
+  - Priority feature requests
+  - Custom integration development
+
+- 🔒 **Advanced ML Features** - Enhanced predictive intelligence
+  - Auto-retrain on schedule
+  - A/B testing for ML models
+  - Multi-model ensembles
+  - Custom feature engineering
+
+**Use for:** Enterprise teams (20+ developers), consulting firms (Capgemini/Accenture/Deloitte), ISVs, production deployments
+
+### Pricing (Coming Q2 2025)
+
+Enterprise features will be available via commercial license:
+
+- **Professional:** €499/month (5 developers)
+- **Team:** €999/month (20 developers)
+- **Enterprise:** €1,999/month (unlimited developers)
+
+All tiers include:
+- All open source features
+- Enterprise integrations (Jira/Azure DevOps/Confluence)
+- Enterprise SSO/SAML
+- Audit logging
+- Email support (SLA varies by tier)
+
+**Early Access:** Contact [sales@snow-flow.dev](mailto:sales@snow-flow.dev) for beta access and pilot programs.
+
+**Strategic Partners:** Consulting firms and ISVs - contact us for partnership opportunities.
+
+### Why Open Core?
+
+1. **Community-Driven Innovation** - Core features benefit from community contributions
+2. **Transparent Development** - All core development happens in public
+3. **No Lock-In** - Open source core means you can self-host and modify
+4. **Sustainable Development** - Enterprise revenue funds ongoing development
+5. **Enterprise Confidence** - Commercial license provides support and guarantees
+
+### Roadmap
+
+**Q1 2025** (Current Release - Open Source)
+- ✅ Native ServiceNow Predictive Intelligence tools
+- ✅ UI Builder complete integration
+- ✅ 75+ LLM provider support
+- ✅ Local development bridge
+
+**Q2 2025** (Enterprise Launch)
+- 🔒 Jira Integration (beta)
+- 🔒 Azure DevOps Integration (beta)
+- 🔒 Enterprise SSO/SAML
+- 🔒 Audit logging
+
+**Q3-Q4 2025** (Enterprise Expansion)
+- 🔒 Confluence Integration
+- 🔒 Advanced ML features
+- 🔒 Multi-tenant architecture
+- 🔒 White-label options
+
+**2026+**
+- More enterprise integrations (GitHub, GitLab, Linear, Asana)
+- Advanced compliance features
+- AI-powered code review
+- Automated testing frameworks
+
+See [MONETIZATION_STRATEGY.md](./MONETIZATION_STRATEGY.md) for complete business model details.
+
+---
+
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+**Core Framework:** MIT License - see [LICENSE](LICENSE) file for details.
+
+**Trademark:** "Snow-Flow" name and logo are protected trademarks - see [TRADEMARK.md](./TRADEMARK.md).
+
+**Enterprise Features:** Commercial license required - contact [sales@snow-flow.dev](mailto:sales@snow-flow.dev).
 
 ---
 
