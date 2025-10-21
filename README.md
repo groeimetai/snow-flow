@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/node/v/snow-flow.svg?style=for-the-badge&logo=node.js&color=339933)](https://nodejs.org)
 
-**Develop ServiceNow through conversation • 411 Tools • 2 MCP Servers • Any LLM Provider • Works with ANY AI coding assistant**
+**Develop ServiceNow through conversation • 411 Tools • 2 MCP Servers • 75+ LLM Providers • Works with ANY AI coding assistant**
 
 ---
 
@@ -27,7 +27,8 @@ Traditional ServiceNow development means:
 Snow-Flow provides:
 - ✅ **Conversational Development**: Build through natural language
 - ✅ **411 ServiceNow Tools**: Complete API coverage via 2 unified MCP servers
-- ✅ **Multi-LLM Support**: Claude Pro/Max, GPT-4o, Gemini, Ollama, or any provider
+- ✅ **75+ LLM Providers**: Claude, GPT-4o, Gemini, Llama, Mistral, DeepSeek, Groq, or ANY provider via OpenCode
+- ✅ **100% Free Option**: Ollama, LM Studio, Jan - run models locally offline
 - ✅ **Local Development**: Pull artifacts to local files, edit with native tools
 - ✅ **Machine Learning**: TensorFlow.js neural networks for ServiceNow data
 - ✅ **Universal Compatibility**: Works with OpenCode, Claude Code, Cursor, Windsurf, Continue.dev, Cline
@@ -108,21 +109,85 @@ opencode
 
 ## 💡 LLM Provider Options
 
-Snow-Flow works with **any LLM provider**. Pick what fits your needs:
+Snow-Flow works with **75+ LLM providers** through OpenCode and Models.dev. Choose ANY model that fits your needs!
 
-| Option | Monthly Cost | Best For | Setup |
-|--------|-------------|----------|-------|
-| **Claude Pro/Max** | $20-40 (existing subscription) | Already have subscription | No API key needed |
-| **Claude API** | ~$30-100 (usage-based) | Best quality | Get key from console.anthropic.com |
-| **GPT-4o** | ~$20-80 (usage-based) | OpenAI ecosystem | Get key from platform.openai.com |
-| **Gemini Pro** | ~$10-50 (usage-based) | Large context (2M tokens) | Get key from aistudio.google.com |
-| **Ollama** | $0 (100% free) | Offline/private development | Install from ollama.com |
-| **LM Studio** | $0 (100% free) | Easy local setup (GUI) | Download from lmstudio.ai |
+### 🌟 Popular Providers
 
-**💡 Recommendation:**
-- Have Claude Pro/Max? Use it! (no extra cost)
-- Want free? Start with Ollama or LM Studio
-- Want best quality? Use Claude Sonnet 4 API
+| Category | Providers | Cost | Best For |
+|----------|-----------|------|----------|
+| **🚀 Premium Cloud** | Claude (Anthropic), GPT-4o (OpenAI), Gemini (Google) | $10-100/mo | Best quality, production use |
+| **💰 Cost-Effective** | Claude Haiku, GPT-4o-mini, Gemini Flash | $1-20/mo | High volume, simple tasks |
+| **🆓 100% Free Local** | Ollama, LM Studio, Jan, LocalAI | $0 | Offline, privacy, unlimited use |
+| **⚡ Specialized** | DeepSeek (coding), Perplexity (research), Groq (speed) | $5-50/mo | Specific use cases |
+| **🏢 Enterprise** | Azure OpenAI, AWS Bedrock, GCP Vertex AI | Custom | Enterprise compliance |
+
+### 🔓 Full Provider List (75+)
+
+**Via OpenCode + Models.dev:**
+- **Anthropic**: Claude 3.5 Sonnet, Claude 3.5 Haiku, Claude 3 Opus
+- **OpenAI**: GPT-4o, GPT-4o-mini, GPT-4 Turbo, O1, O1-mini
+- **Google**: Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0
+- **Meta**: Llama 3.1 (8B, 70B, 405B), Llama 3.2
+- **Mistral AI**: Mistral Large, Mistral Medium, Mistral Small, Codestral
+- **Cohere**: Command R, Command R+
+- **DeepSeek**: DeepSeek Coder, DeepSeek Chat
+- **Groq**: Ultra-fast inference for Llama, Mixtral, Gemma
+- **Perplexity**: Web search-enabled models
+- **OpenRouter**: 200+ models aggregator
+- **Local Models**: Ollama, LM Studio, Jan, LocalAI, vLLM
+- **Enterprise**: Azure OpenAI, AWS Bedrock, GCP Vertex AI
+- **+ 60 more providers!** See [Models.dev](https://models.dev) for complete list
+
+### 💡 Quick Setup Examples
+
+**Claude Pro/Max (No API key needed):**
+```bash
+# .env
+DEFAULT_LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=  # Leave empty!
+
+# Authenticate
+snow-flow auth login  # Opens browser automatically
+```
+
+**OpenAI GPT-4o:**
+```bash
+# .env
+DEFAULT_LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...  # From platform.openai.com
+```
+
+**100% Free Local (Ollama):**
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3.1
+
+# .env
+DEFAULT_LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+```
+
+**Custom/Fine-tuned Models:**
+```bash
+# Any OpenAI-compatible endpoint works!
+DEFAULT_LLM_PROVIDER=openai-compatible
+OPENAI_BASE_URL=https://your-endpoint.com/v1
+OPENAI_API_KEY=your-key
+```
+
+### 🎯 Recommendations by Use Case
+
+| Use Case | Recommended Provider | Why |
+|----------|---------------------|-----|
+| **Production ServiceNow Development** | Claude 3.5 Sonnet | Best reasoning, ServiceNow knowledge |
+| **Cost-Optimized Development** | GPT-4o-mini or Claude Haiku | 10x cheaper, good quality |
+| **Offline/Private Development** | Ollama (Llama 3.1) | 100% free, runs locally |
+| **Code Generation Focus** | DeepSeek Coder | Specialized for coding |
+| **Large Context (200K+ tokens)** | Gemini 1.5 Pro | 2M token context |
+| **Ultra-Fast Prototyping** | Groq (Llama 3.1) | 800+ tokens/sec |
+
+**💡 Pro Tip:** Mix providers! Use cheap models for testing, expensive models for complex widgets.
 
 ---
 
@@ -399,7 +464,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ---
 
 **Snow-Flow: Conversational ServiceNow Development**
-• 411 Tools • 2 MCP Servers • Any LLM Provider • Universal Compatibility
+• 411 Tools • 2 MCP Servers • 75+ LLM Providers • Universal Compatibility
 
 **Get started in 3 minutes:**
 ```bash
