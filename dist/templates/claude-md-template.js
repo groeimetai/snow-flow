@@ -5,7 +5,96 @@ exports.CLAUDE_MD_TEMPLATE = `# Snow-Flow ServiceNow Development Framework
 
 ## 🚨 ABSOLUTE RULES - NO EXCEPTIONS
 
-### 🔴 CRITICAL: Widget Debugging MUST Use Local Sync!
+### 🔴 RULE #0: MCP TOOLS FIRST - NEVER USE LOCAL APPROACHES!
+
+**❌ WRONG APPROACH (FORBIDDEN):**
+- Writing local scripts to "test something first"
+- Using background scripts for complex operations instead of MCP tools
+- Creating files locally "to prepare before deployment"
+- Building things locally then deploying to ServiceNow
+- Using generic queries when specific MCP tools exist
+
+**✅ CORRECT APPROACH (MANDATORY):**
+- **ALWAYS search for MCP tools FIRST** before doing anything
+- **Use dedicated MCP tools** for every ServiceNow operation
+- **Create directly in ServiceNow** via MCP tools, never locally first
+- **Dedicated tool > Background script** ALWAYS
+
+**Examples:**
+\`\`\`javascript
+// ❌ WRONG: Using background script for workspace creation
+snow_execute_background_script({
+  script: "var gr = new GlideRecord('sys_ux_app_config')..."
+});
+
+// ✅ CORRECT: Use dedicated MCP tool
+snow_create_complete_workspace({
+  workspace_name: "IT Support Workspace",
+  tables: ["incident", "task"]
+});
+
+// ❌ WRONG: Generic query when specific tool exists
+snow_query_table({ table: 'sp_widget', query: 'sys_id=...' });
+
+// ✅ CORRECT: Use dedicated widget tool
+snow_pull_artifact({ sys_id: 'widget_sys_id' });
+\`\`\`
+
+**MCP Tool Discovery Process:**
+1. **Search**: "Does a tool exist for [task]?" (e.g., snow_create_workspace, snow_deploy_widget)
+2. **Check category**: deployment, operations, ui-builder, workspace, automation
+3. **Use dedicated tool**: ALWAYS prefer specific tools over generic ones
+4. **Background scripts**: ONLY for verification, NEVER for development
+
+### 🔴 RULE #1: UPDATE SET WORKFLOW - MANDATORY FOR ALL DEVELOPMENT!
+
+**🚨 CRITICAL: EVERY development task MUST follow this workflow:**
+
+\`\`\`javascript
+// STEP 1: ALWAYS create/ensure active Update Set FIRST (before ANY development)
+const updateSet = await snow_create_update_set({
+  name: "Feature: [Descriptive Name]",  // e.g., "Feature: Incident Dashboard Widget"
+  description: "Complete description of changes",
+  application: "global"  // or specific app scope
+});
+
+// STEP 2: Ensure it's active (Snow-Flow auto-sets as current in ServiceNow!)
+await snow_ensure_active_update_set({
+  sys_id: updateSet.sys_id
+});
+
+// STEP 3: NOW start development - all changes auto-tracked
+await snow_deploy({
+  type: 'widget',
+  config: { name: 'incident_dashboard', ... }
+});
+
+// STEP 4: Complete Update Set when done
+await snow_complete_update_set({
+  sys_id: updateSet.sys_id,
+  state: 'complete'
+});
+\`\`\`
+
+**❌ FORBIDDEN WORKFLOW:**
+- Starting development without creating Update Set first
+- Creating artifacts then trying to "add them to Update Set later"
+- Assuming changes are being tracked (they're not without active Update Set!)
+- Working across multiple Update Sets for single feature
+
+**✅ MANDATORY WORKFLOW:**
+1. **CREATE Update Set** (descriptive name: "Feature: X" or "Fix: Y")
+2. **ACTIVATE Update Set** (snow_ensure_active_update_set)
+3. **DEVELOP** (all changes auto-tracked in active Update Set)
+4. **COMPLETE Update Set** (mark as complete when done)
+
+**Update Set Best Practices:**
+- **One feature = One Update Set** (clear scope)
+- **Descriptive names**: "Feature: Incident Auto-Assignment" not "Changes"
+- **Complete description**: What, why, affected tables/components
+- **Always check current**: Use snow_sync_current_update_set if unsure
+
+### 🔴 RULE #2: Widget Debugging MUST Use Local Sync!
 
 **When user reports ANY widget issue, ALWAYS use:**
 \`\`\`
@@ -16,22 +105,22 @@ snow_pull_artifact({ sys_id: 'widget_sys_id' })
 
 **Common scenarios requiring snow_pull_artifact:**
 - "Widget skips questions" → snow_pull_artifact
-- "Form doesn't submit" → snow_pull_artifact  
+- "Form doesn't submit" → snow_pull_artifact
 - "Data not displaying" → snow_pull_artifact
 - "Button doesn't work" → snow_pull_artifact
 - "Debug this widget" → snow_pull_artifact
 - "Fix widget issue" → snow_pull_artifact
 - Widget script > 1000 chars → snow_pull_artifact
 
-### Rule #1: NO MOCK DATA - EVERYTHING REAL & COMPLETE
+### Rule #3: NO MOCK DATA - EVERYTHING REAL & COMPLETE
 **FORBIDDEN:** Mock data, placeholders, TODOs, stub implementations, test values, simulations, "this would normally...", partial implementations.
 **REQUIRED:** Complete, production-ready, fully functional code. Take time to implement EVERYTHING properly. Real integrations, comprehensive error handling, full validation.
 
-### Rule #2: ES5 ONLY - ServiceNow Rhino Engine
+### Rule #4: ES5 ONLY - ServiceNow Rhino Engine
 **NEVER USE:** const/let, arrow functions =>, template literals \`\${}\`, destructuring, for...of, default parameters, classes
 **ALWAYS USE:** var, function(){}, string concatenation +, traditional for loops, typeof checks
 
-### Rule #3: VERIFY FIRST - Never Assume
+### Rule #5: VERIFY FIRST - Never Assume
 Test before claiming broken. Check resources exist. Validate configurations. Evidence-based fixes only.
 
 ## 📋 MCP SERVERS & TOOLS (18 Servers, 200+ Tools)
@@ -117,14 +206,50 @@ snow_property_export/import - Export/Import JSON
 snow_property_validate - Validate properties
 \`\`\`
 
-### 8. **servicenow-update-set** 📦 Change Management
+### 8. **servicenow-update-set** 📦 Change Management [MANDATORY FOR ALL DEVELOPMENT!]
 \`\`\`
-snow_update_set_create - Create update set
-snow_update_set_switch - Switch active set
-snow_update_set_complete - Mark complete
-snow_update_set_export - Export as XML
-snow_update_set_preview - Preview changes
-snow_ensure_active_update_set - Auto-create if needed
+snow_create_update_set - Create new update set (ALWAYS FIRST STEP!)
+snow_ensure_active_update_set - Auto-create and activate (sets as current in ServiceNow!)
+snow_sync_current_update_set - Sync Snow-Flow with user's current Update Set
+snow_complete_update_set - Mark complete when done
+snow_export_update_set - Export as XML for deployment
+snow_preview_update_set - Preview changes before committing
+snow_list_update_sets - List all update sets
+snow_get_update_set_changes - View tracked changes
+\`\`\`
+**🚨 CRITICAL:** EVERY development task MUST start with snow_create_update_set or snow_ensure_active_update_set!
+
+**Complete Workflow Example:**
+\`\`\`javascript
+// 1. CREATE UPDATE SET (before ANY development!)
+const updateSet = await snow_create_update_set({
+  name: "Feature: Incident Auto-Assignment",
+  description: "Implements automatic incident assignment based on category and location",
+  application: "global"
+});
+
+// 2. ENSURE IT'S ACTIVE (Snow-Flow auto-sets as current in ServiceNow!)
+await snow_ensure_active_update_set({ sys_id: updateSet.sys_id });
+
+// 3. NOW DEVELOP (all changes auto-tracked)
+await snow_create_business_rule({
+  name: "Auto-assign incidents",
+  table: "incident",
+  when: "before",
+  active: true,
+  script: "var assignment = new IncidentAssignment(); assignment.autoAssign(current);"
+});
+
+await snow_deploy({
+  type: 'widget',
+  config: { name: 'assignment_dashboard', ... }
+});
+
+// 4. COMPLETE UPDATE SET
+await snow_complete_update_set({
+  sys_id: updateSet.sys_id,
+  state: 'complete'
+});
 \`\`\`
 
 ### 9. **servicenow-development-assistant** 🤖 AI Assistant
@@ -417,22 +542,41 @@ await snow_create_catalog_ui_policy({
 - \`snow-flow status\` - System status
 - \`snow-flow swarm "<task>"\` - Multi-agent coordination
 
-### Development Flow
-1. **Pull artifact**: \`snow_pull_artifact\` for local editing
-2. **Edit locally**: Use Claude's native search/edit tools
-3. **Push changes**: \`snow_push_artifact\` to ServiceNow
-4. **Test**: \`snow_execute_script_with_output\` with REAL code
-5. **Deploy**: \`snow_update_set_complete\` when ready
+### 🚨 MANDATORY Development Workflow
+
+**EVERY development task MUST follow these steps IN ORDER:**
+
+1. **🔍 DISCOVER MCP TOOLS FIRST** - Search for dedicated tools, NEVER assume local approach
+2. **📦 CREATE UPDATE SET** - \`snow_create_update_set\` or \`snow_ensure_active_update_set\`
+3. **✅ VERIFY ACTIVE** - Ensure Update Set is current in ServiceNow
+4. **🛠️ USE MCP TOOLS** - \`snow_deploy\`, \`snow_create_*\`, \`snow_update\` (NOT background scripts!)
+5. **🔍 TEST WITH TOOLS** - \`snow_execute_script_with_output\` for verification ONLY
+6. **✔️ COMPLETE UPDATE SET** - \`snow_complete_update_set\` when done
+
+**For Widget Development:**
+1. **📦 CREATE UPDATE SET** (always first!)
+2. **⬇️ PULL ARTIFACT** - \`snow_pull_artifact\` for debugging
+3. **✏️ EDIT LOCALLY** - Use native search/edit tools
+4. **⬆️ PUSH CHANGES** - \`snow_push_artifact\` to ServiceNow
+5. **✅ VALIDATE** - \`snow_check_widget_coherence\`
+6. **✔️ COMPLETE UPDATE SET**
+
+**For ServiceNow Artifacts (Business Rules, UI Pages, etc.):**
+1. **📦 CREATE UPDATE SET** (always first!)
+2. **🛠️ USE DEDICATED TOOL** - \`snow_create_business_rule\`, \`snow_create_ui_page\`, etc.
+3. **🔍 TEST** - \`snow_execute_script_with_output\` for verification
+4. **✔️ COMPLETE UPDATE SET**
 
 ## 🎯 Golden Rules
 
-1. **NO MOCK DATA** - Everything real, complete, production-ready
-2. **ES5 ONLY** - var, function(){}, no modern JS
-3. **VERIFY FIRST** - Test before assuming
-4. **LOCAL SYNC** - Use snow_pull_artifact for widgets
-5. **COMPLETE CODE** - No TODOs, no placeholders
-6. **TOKEN AWARE** - Use batch operations
-7. **UPDATE SETS** - Track all changes
+1. **MCP TOOLS FIRST** - Search for dedicated tools BEFORE any local approach
+2. **UPDATE SETS MANDATORY** - Create BEFORE development, complete AFTER
+3. **NO MOCK DATA** - Everything real, complete, production-ready
+4. **ES5 ONLY** - var, function(){}, no modern JS
+5. **VERIFY FIRST** - Test before assuming
+6. **LOCAL SYNC FOR WIDGETS** - Use snow_pull_artifact, NOT snow_query_table
+7. **COMPLETE CODE** - No TODOs, no placeholders
+8. **DEDICATED TOOLS** - Specific tools > Background scripts
 
 ## 📊 Quick Reference
 
