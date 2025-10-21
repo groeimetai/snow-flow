@@ -1691,13 +1691,14 @@ program
         // Check and optionally install OpenCode
         const configImported = await checkAndInstallOpenCode();
         console.log(chalk_1.default.blue.bold('\n🎯 Next steps:'));
-        console.log('1. Authenticate Snow-Flow: ' + chalk_1.default.cyan('snow-flow auth login'));
+        console.log('1. Configure your LLM provider in: ' + chalk_1.default.cyan('.env'));
+        console.log('2. Authenticate Snow-Flow: ' + chalk_1.default.cyan('snow-flow auth login'));
         if (!configImported) {
-            console.log('2. Import OpenCode config: ' + chalk_1.default.cyan('opencode config import opencode-config.example.json'));
-            console.log('3. Start developing: ' + chalk_1.default.cyan('snow-flow swarm "create incident dashboard"'));
+            console.log('3. (Optional) Customize OpenCode config: ' + chalk_1.default.cyan('.opencode/config.json'));
+            console.log('4. Start developing: ' + chalk_1.default.cyan('opencode') + ' or ' + chalk_1.default.cyan('snow-flow swarm "create incident dashboard"'));
         }
         else {
-            console.log('2. Start developing: ' + chalk_1.default.cyan('snow-flow swarm "create incident dashboard"'));
+            console.log('3. Start developing: ' + chalk_1.default.cyan('opencode') + ' or ' + chalk_1.default.cyan('snow-flow swarm "create incident dashboard"'));
         }
         console.log('\n📚 Complete documentation: ' + chalk_1.default.blue('https://snow-flow.dev'));
         console.log('💡 Complete UX Workspace creation, UI Builder, and 235+ unified tools now available');
@@ -1813,21 +1814,26 @@ async function checkAndInstallOpenCode() {
             return false;
         }
     }
-    // If OpenCode is installed, automatically import the config
+    // If OpenCode is installed, copy config to .opencode/ directory
+    // OpenCode automatically detects config files in project root and .opencode/ directory
     if (opencodeInstalled) {
-        const configPath = (0, path_1.join)(process.cwd(), 'opencode-config.example.json');
-        // Check if config file exists
+        const exampleConfigPath = (0, path_1.join)(process.cwd(), 'opencode-config.example.json');
+        const opencodeConfigPath = (0, path_1.join)(process.cwd(), '.opencode', 'config.json');
+        // Check if example config file exists
         try {
-            await fs_1.promises.access(configPath);
-            console.log(chalk_1.default.blue('\n🔧 Importing OpenCode configuration...'));
+            await fs_1.promises.access(exampleConfigPath);
+            console.log(chalk_1.default.blue('\n🔧 Setting up OpenCode configuration...'));
             try {
-                execSync(`opencode config import "${configPath}"`, { stdio: 'inherit' });
-                console.log(chalk_1.default.green('✅ OpenCode configuration imported successfully!'));
-                return true; // Successfully imported
+                // Copy example config to .opencode/config.json for automatic detection
+                const configContent = await fs_1.promises.readFile(exampleConfigPath, 'utf-8');
+                await fs_1.promises.writeFile(opencodeConfigPath, configContent);
+                console.log(chalk_1.default.green('✅ OpenCode configuration created at .opencode/config.json'));
+                console.log(chalk_1.default.blue('💡 OpenCode will automatically detect this configuration'));
+                return true; // Successfully configured
             }
             catch (error) {
-                console.log(chalk_1.default.yellow('\n⚠️  Could not auto-import OpenCode config'));
-                console.log(chalk_1.default.blue('Please import manually: ') + chalk_1.default.cyan(`opencode config import opencode-config.example.json`));
+                console.log(chalk_1.default.yellow('\n⚠️  Could not create OpenCode config'));
+                console.log(chalk_1.default.blue('You can copy it manually: ') + chalk_1.default.cyan(`cp opencode-config.example.json .opencode/config.json`));
                 return false;
             }
         }
@@ -2496,23 +2502,23 @@ async function copyCLAUDEmd(targetDir, force = false) {
     }
 }
 async function createEnvFile(targetDir, force = false) {
-    // Read content from .env.template file
+    // Read content from .env.example file
     let envContent;
     try {
-        // Try to read from the project's .env.template file
-        const templatePath = (0, path_1.join)(__dirname, '..', '.env.template');
+        // Try to read from the project's .env.example file (npm package location)
+        const templatePath = (0, path_1.join)(__dirname, '..', '.env.example');
         envContent = await fs_1.promises.readFile(templatePath, 'utf-8');
-        console.log('📋 Using .env.template for configuration');
+        console.log('📋 Using .env.example for configuration');
     }
     catch (error) {
         // If template not found, try alternative locations
         try {
-            const alternativePath = (0, path_1.join)(process.cwd(), '.env.template');
+            const alternativePath = (0, path_1.join)(process.cwd(), '.env.example');
             envContent = await fs_1.promises.readFile(alternativePath, 'utf-8');
-            console.log('📋 Using .env.template from current directory');
+            console.log('📋 Using .env.example from current directory');
         }
         catch (fallbackError) {
-            console.warn('⚠️  Could not find .env.template file, using embedded minimal version');
+            console.warn('⚠️  Could not find .env.example file, using embedded minimal version');
             // Last resort: use embedded minimal version with v3.0.1 timeout config
             envContent = `# ServiceNow Configuration
 # ===========================================
