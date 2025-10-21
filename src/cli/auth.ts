@@ -20,70 +20,12 @@ export function registerAuthCommands(program: Command) {
 
       console.log(); // Empty line for spacing
 
-      // Step 0: Provider selection if not configured
+      // Step 0: Check if we need LLM authentication
       let provider = process.env.DEFAULT_LLM_PROVIDER;
-
-      if (!provider || provider.trim() === '') {
-        console.log(chalk.blue('🤖 Select your LLM provider'));
-        console.log(chalk.dim('   (75+ providers supported via OpenCode)\n'));
-
-        const { selectedProvider } = await inquirer.prompt([{
-          type: 'list',
-          name: 'selectedProvider',
-          message: 'Which LLM provider do you want to use?',
-          choices: [
-            { name: 'Anthropic (Claude Pro/Max subscription)', value: 'anthropic' },
-            { name: 'OpenAI (ChatGPT API)', value: 'openai' },
-            { name: 'Google (Gemini API)', value: 'google' },
-            { name: 'Ollama (Free, runs locally)', value: 'ollama' },
-            { name: 'Groq (Ultra-fast inference)', value: 'groq' },
-            { name: 'DeepSeek (Specialized for coding)', value: 'deepseek' },
-            { name: 'Mistral AI', value: 'mistral' },
-            new inquirer.Separator(),
-            { name: 'Other (configure manually in .env)', value: 'other' }
-          ]
-        }]);
-
-        if (selectedProvider === 'other') {
-          console.log(chalk.yellow('\n💡 Please set DEFAULT_LLM_PROVIDER in your .env file'));
-          console.log(chalk.dim('   See .env.example for all 75+ available providers'));
-          return;
-        }
-
-        provider = selectedProvider;
-
-        // Save provider to .env file
-        const envPath = path.join(process.cwd(), '.env');
-        let envContent = '';
-
-        try {
-          envContent = fs.readFileSync(envPath, 'utf8');
-        } catch {
-          // .env doesn't exist yet, use .env.example as template
-          const examplePath = path.join(process.cwd(), '.env.example');
-          if (fs.existsSync(examplePath)) {
-            envContent = fs.readFileSync(examplePath, 'utf8');
-          }
-        }
-
-        // Update DEFAULT_LLM_PROVIDER in .env content
-        if (envContent.includes('DEFAULT_LLM_PROVIDER=')) {
-          envContent = envContent.replace(/DEFAULT_LLM_PROVIDER=.*/g, `DEFAULT_LLM_PROVIDER=${provider}`);
-        } else {
-          envContent += `\nDEFAULT_LLM_PROVIDER=${provider}\n`;
-        }
-
-        fs.writeFileSync(envPath, envContent);
-        console.log(chalk.green(`✅ Provider set to: ${provider}\n`));
-
-        // Reload environment variables
-        process.env.DEFAULT_LLM_PROVIDER = provider;
-      }
-
-      // Step 1: Check if Anthropic (Claude Pro/Max) authentication is needed
       const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
-      if (provider === 'anthropic' && (!anthropicKey || anthropicKey.trim() === '')) {
+      // Only do OpenCode auth if no API key is configured
+      if (!anthropicKey || anthropicKey.trim() === '') {
         // Check if opencode is installed
         try {
           execSync('which opencode', { stdio: 'ignore' });
@@ -128,9 +70,53 @@ export function registerAuthCommands(program: Command) {
         try {
           // Run opencode auth login interactively
           execSync('opencode auth login', { stdio: 'inherit' });
-          console.log(chalk.green('✅ Anthropic authentication completed\n'));
+          console.log(chalk.green('✅ LLM authentication completed\n'));
+
+          // Ask which provider they used and save it
+          if (!provider || provider.trim() === '') {
+            const { selectedProvider } = await inquirer.prompt([{
+              type: 'list',
+              name: 'selectedProvider',
+              message: 'Which provider did you just authenticate with?',
+              choices: [
+                { name: 'Anthropic (Claude)', value: 'anthropic' },
+                { name: 'OpenAI (GPT)', value: 'openai' },
+                { name: 'Google (Gemini)', value: 'google' },
+                { name: 'Ollama (Local)', value: 'ollama' },
+                { name: 'Other', value: 'other' }
+              ]
+            }]);
+
+            if (selectedProvider !== 'other') {
+              // Save provider to .env file
+              const envPath = path.join(process.cwd(), '.env');
+              let envContent = '';
+
+              try {
+                envContent = fs.readFileSync(envPath, 'utf8');
+              } catch {
+                // .env doesn't exist yet, use .env.example as template
+                const examplePath = path.join(process.cwd(), '.env.example');
+                if (fs.existsSync(examplePath)) {
+                  envContent = fs.readFileSync(examplePath, 'utf8');
+                }
+              }
+
+              // Update DEFAULT_LLM_PROVIDER in .env content
+              if (envContent.includes('DEFAULT_LLM_PROVIDER=')) {
+                envContent = envContent.replace(/DEFAULT_LLM_PROVIDER=.*/g, `DEFAULT_LLM_PROVIDER=${selectedProvider}`);
+              } else {
+                envContent += `\nDEFAULT_LLM_PROVIDER=${selectedProvider}\n`;
+              }
+
+              fs.writeFileSync(envPath, envContent);
+              console.log(chalk.green(`✅ Provider saved: ${selectedProvider}\n`));
+              provider = selectedProvider;
+              process.env.DEFAULT_LLM_PROVIDER = provider;
+            }
+          }
         } catch (error: any) {
-          console.error(chalk.red('\n❌ Anthropic authentication failed'));
+          console.error(chalk.red('\n❌ LLM authentication failed'));
 
           // Check if it's the known OpenCode directory bug
           const errorMsg = error?.message || error?.toString() || '';

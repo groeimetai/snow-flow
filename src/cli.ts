@@ -2440,11 +2440,10 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       console.log('✅ Using built-in CLAUDE.md template');
     }
 
-    // Import OpenCode AGENTS.md template
-    const { AGENTS_MD_TEMPLATE } = await import('./templates/opencode-agents-template.js');
-    agentsMdContent = AGENTS_MD_TEMPLATE;
+    // Use same content for AGENTS.md as CLAUDE.md (they should be identical)
+    agentsMdContent = claudeMdContent;
 
-    // Create CLAUDE.md (for backward compatibility)
+    // Create CLAUDE.md (primary instructions for Claude Code)
     const claudeMdPath = join(targetDir, 'CLAUDE.md');
     try {
       await fs.access(claudeMdPath);
@@ -2456,10 +2455,10 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       }
     } catch {
       await fs.writeFile(claudeMdPath, claudeMdContent);
-      console.log('✅ Created CLAUDE.md (Claude Code compatibility)');
+      console.log('✅ Created CLAUDE.md (Primary instructions)');
     }
 
-    // Create AGENTS.md (OpenCode primary)
+    // Create AGENTS.md (identical copy for OpenCode compatibility)
     const agentsMdPath = join(targetDir, 'AGENTS.md');
     try {
       await fs.access(agentsMdPath);
@@ -2471,7 +2470,7 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       }
     } catch {
       await fs.writeFile(agentsMdPath, agentsMdContent);
-      console.log('✅ Created AGENTS.md (OpenCode primary instructions)');
+      console.log('✅ Created AGENTS.md (Identical copy for OpenCode compatibility)');
     }
 
     // Create .opencode/ directory structure
@@ -2563,14 +2562,14 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
     console.log('⚠️  Error copying CLAUDE.md, creating Snow-Flow specific version');
     // Import the template as fallback
     const { CLAUDE_MD_TEMPLATE } = await import('./templates/claude-md-template.js');
-    const { AGENTS_MD_TEMPLATE } = await import('./templates/opencode-agents-template.js');
     const claudeMdPath = join(targetDir, 'CLAUDE.md');
     const agentsMdPath = join(targetDir, 'AGENTS.md');
     if (force || !existsSync(claudeMdPath)) {
       await fs.writeFile(claudeMdPath, CLAUDE_MD_TEMPLATE);
     }
+    // Use same content for AGENTS.md (they should be identical)
     if (force || !existsSync(agentsMdPath)) {
-      await fs.writeFile(agentsMdPath, AGENTS_MD_TEMPLATE);
+      await fs.writeFile(agentsMdPath, CLAUDE_MD_TEMPLATE);
     }
   }
 }
