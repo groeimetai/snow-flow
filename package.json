@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "7.2.2",
+  "version": "7.3.0",
   "description": "ServiceNow development with OpenCode - 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, Groq, Ollama) • 411 Tools • 2 MCP Servers • Native multi-agent orchestration • Use ANY AI coding assistant",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -76,12 +76,14 @@
     "batch-api",
     "deployment",
     "natural-language",
-    "machine-learning",
-    "neural-networks",
-    "tensorflow",
-    "incident-classification",
-    "anomaly-detection",
-    "predictive-analytics"
+    "local-ml",
+    "local-machine-learning",
+    "tensorflow-js",
+    "neural-networks-local",
+    "incident-classification-local",
+    "anomaly-detection-local",
+    "ml-training",
+    "servicenow-data-analysis"
   ],
   "mcpTools": {
     "snow_batch_api": {
