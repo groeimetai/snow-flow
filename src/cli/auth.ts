@@ -22,10 +22,17 @@ export function registerAuthCommands(program: Command) {
 
       // Step 0: Check if we need LLM authentication
       let provider = process.env.DEFAULT_LLM_PROVIDER;
-      const anthropicKey = process.env.ANTHROPIC_API_KEY;
+
+      // Check if ANY provider API key is configured
+      const hasApiKey =
+        (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim() !== '') ||
+        (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim() !== '') ||
+        (process.env.GOOGLE_API_KEY && process.env.GOOGLE_API_KEY.trim() !== '') ||
+        (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim() !== '') ||
+        (process.env.MISTRAL_API_KEY && process.env.MISTRAL_API_KEY.trim() !== '');
 
       // Only do OpenCode auth if no API key is configured
-      if (!anthropicKey || anthropicKey.trim() === '') {
+      if (!hasApiKey) {
         // Check if opencode is installed
         try {
           execSync('which opencode', { stdio: 'ignore' });
@@ -38,29 +45,34 @@ export function registerAuthCommands(program: Command) {
 
         console.log(chalk.blue('🔐 Authenticating with Anthropic...'));
 
-        // Fix common OpenCode directory issue (agents vs agent) in BOTH global and project directories
+        // Fix common OpenCode directory issue (agents vs agent) in ALL possible directories
         try {
           const fs = require('fs');
           const path = require('path');
 
-          // Fix 1: Global ~/.opencode directory
-          const globalOpencodeDir = process.env.HOME + '/.opencode';
-          const globalAgentsDir = globalOpencodeDir + '/agents';
-          const globalAgentDir = globalOpencodeDir + '/agent';
+          const directoriesToFix = [
+            // Fix 1: Global ~/.opencode directory
+            process.env.HOME + '/.opencode',
+            // Fix 2: Current working directory
+            path.join(process.cwd(), '.opencode'),
+            // Fix 3: Parent directory (in case we're in a subdirectory)
+            path.join(process.cwd(), '..', '.opencode'),
+            // Fix 4: Snow-flow package directory (for development)
+            path.join(__dirname, '..', '..', '.opencode')
+          ];
 
-          if (fs.existsSync(globalAgentsDir) && !fs.existsSync(globalAgentDir)) {
-            console.log(chalk.dim('   Fixing global OpenCode directory structure...'));
-            fs.renameSync(globalAgentsDir, globalAgentDir);
-          }
+          for (const opencodeDir of directoriesToFix) {
+            const agentsDir = path.join(opencodeDir, 'agents');
+            const agentDir = path.join(opencodeDir, 'agent');
 
-          // Fix 2: Project .opencode directory (in current working directory)
-          const projectOpencodeDir = path.join(process.cwd(), '.opencode');
-          const projectAgentsDir = path.join(projectOpencodeDir, 'agents');
-          const projectAgentDir = path.join(projectOpencodeDir, 'agent');
-
-          if (fs.existsSync(projectAgentsDir) && !fs.existsSync(projectAgentDir)) {
-            console.log(chalk.dim('   Fixing project OpenCode directory structure...'));
-            fs.renameSync(projectAgentsDir, projectAgentDir);
+            if (fs.existsSync(agentsDir) && !fs.existsSync(agentDir)) {
+              console.log(chalk.dim(`   Fixing OpenCode directory structure in ${opencodeDir}...`));
+              try {
+                fs.renameSync(agentsDir, agentDir);
+              } catch (e) {
+                // Ignore individual rename errors
+              }
+            }
           }
         } catch (dirError) {
           // Ignore directory fix errors - OpenCode will handle it
