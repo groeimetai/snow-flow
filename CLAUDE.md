@@ -633,21 +633,137 @@ Snow-Flow now automatically sets its Update Set as the user's current Update Set
 - KPI management
 - Scheduled delivery
 
-### 11. ServiceNow Machine Learning Server
-**Purpose:** AI/ML capabilities
+### 11. ServiceNow Machine Learning & Predictive Intelligence Server
+**Purpose:** AI/ML capabilities with BOTH native ServiceNow PI and local TensorFlow.js training
 
-**Key Tools:**
-- `snow_train_classifier` - Train incident classifier
-- `snow_predict_change_risk` - Predict change risks
-- `snow_detect_anomalies` - Anomaly detection
-- `snow_forecast_incidents` - Incident forecasting
-- `snow_optimize_process` - Process optimization
+**🚨 CRITICAL: Two COMPLETELY Different ML Approaches!**
+
+Snow-Flow provides TWO distinct machine learning approaches. **YOU MUST ASK THE USER which approach they need based on their requirements!**
+
+---
+
+#### **🏢 Native ServiceNow Predictive Intelligence (NEW! v7.4.0)**
+**Runs:** INSIDE ServiceNow instance (native platform capability)
+**License:** Requires ServiceNow Predictive Intelligence license
+**Use For:** Production ML solutions, enterprise deployments
+**Auto-Retrain:** ✅ Yes (ServiceNow manages lifecycle)
+**Integration:** ✅ Seamless (native ServiceNow tables/records)
+
+**Complete PI Solution Builder (5 Tools):**
+- `snow_create_pi_solution` - Create PI solution definitions (classification, regression, similarity, clustering)
+- `snow_train_pi_solution` - Trigger model training in ServiceNow (10-30 min process)
+- `snow_monitor_pi_training` - Monitor training progress and accuracy metrics
+- `snow_activate_pi_solution` - Activate trained solutions for production use
+- `snow_list_pi_solutions` - List all PI solutions with status and metrics
+
+**Prediction Tools (Use Trained Solutions):**
+- `ml_predictive_intelligence` - Make predictions using activated PI solutions
+- `ml_performance_analytics` - Native Performance Analytics ML integration
+- `ml_hybrid_recommendation` - Hybrid ML recommendations
+
+**When to Recommend Native PI:**
+- ✅ User has Predictive Intelligence license
+- ✅ Production deployment required
+- ✅ Need auto-retrain and lifecycle management
+- ✅ Want native ServiceNow integration
+- ✅ Enterprise scale and support required
+
+**Example Conversation:**
+```
+User: "I need to predict incident categories automatically"
+Agent: "Do you have a ServiceNow Predictive Intelligence license?
+        - If YES: I'll create a native PI solution that trains in ServiceNow
+        - If NO: I can create a local TensorFlow.js model (dev/testing only)"
+```
+
+---
+
+#### **💻 Local TensorFlow.js ML Training (Experimental)**
+**Runs:** Locally on developer machine (NOT in ServiceNow)
+**License:** Free (no ServiceNow license required)
+**Use For:** Development, testing, experimentation
+**Auto-Retrain:** ❌ No (manual process)
+**Integration:** ⚠️ Limited (requires custom deployment)
+
+**Local ML Tools:**
+- `snow_train_classifier` - Train incident classifier locally with TensorFlow.js
+- `snow_predict_change_risk` - Local change risk prediction
+- `snow_detect_anomalies` - Local anomaly detection
+- `snow_forecast_incidents` - Local incident forecasting with time series
+- `snow_optimize_process` - Local process optimization
+
+**When to Recommend Local TensorFlow.js:**
+- ✅ No Predictive Intelligence license available
+- ✅ Development/testing/proof-of-concept only
+- ✅ Want to experiment with ML before buying license
+- ⚠️ NOT for production use (experimental only)
+
+**Example Conversation:**
+```
+User: "I want to try ML but don't have a PI license yet"
+Agent: "Perfect! I can train a local TensorFlow.js model for testing.
+        Note: This is experimental and not for production.
+        When ready for production, you'll need ServiceNow PI license."
+```
+
+---
+
+#### **📋 Decision Matrix for AI Agent**
+
+**Ask yourself when user requests ML:**
+
+| User Says | Has PI License? | Recommend |
+|-----------|----------------|-----------|
+| "Create incident predictor" | ✅ Yes | Native PI: `snow_create_pi_solution` → `snow_train_pi_solution` |
+| "Create incident predictor" | ❌ No | Local TensorFlow.js: `snow_train_classifier` + explain limitations |
+| "Production ML solution" | ✅ Yes | Native PI (always) |
+| "Production ML solution" | ❌ No | **STOP:** Explain PI license required for production |
+| "Test/experiment with ML" | Either | Can use local TensorFlow.js, mention PI for production |
+| "Predict on existing solution" | N/A | `ml_predictive_intelligence` (works with trained PI solutions) |
+
+**🚨 ALWAYS Ask About License:**
+When user requests ML capabilities, ALWAYS ask:
+1. "Do you have a ServiceNow Predictive Intelligence license?"
+2. "Is this for production use or development/testing?"
+
+**Never assume!** Different licenses = completely different tools!
+
+---
+
+#### **Complete ML Workflow Examples**
+
+**Production Workflow (Native PI):**
+```bash
+# 1. Create solution definition
+snow-flow swarm "create PI solution to predict incident category based on description and caller"
+
+# 2. Train in ServiceNow (10-30 min)
+snow-flow swarm "train the incident category predictor"
+
+# 3. Monitor training
+snow-flow swarm "check training progress and accuracy"
+
+# 4. Activate for production
+snow-flow swarm "activate incident category predictor with 80% confidence threshold"
+
+# 5. Make predictions
+snow-flow swarm "predict category for incident INC0010001"
+```
+
+**Development Workflow (Local TensorFlow.js):**
+```bash
+# Train locally (immediate)
+snow-flow swarm "train local incident classifier for testing"
+
+# Note: Deployment requires custom integration work
+# Recommend upgrading to PI license for production
+```
+
+---
 
 **Features:**
-- Predictive analytics
-- Pattern recognition
-- Anomaly detection
-- Process optimization
+- ✅ **Native ServiceNow PI:** Production-ready, licensed, auto-retrain, full lifecycle
+- ⚠️ **Local TensorFlow.js:** Free, experimental, development only, manual deployment
 
 ### 12. ServiceNow Knowledge & Catalog Server
 **Purpose:** Knowledge base and service catalog management
