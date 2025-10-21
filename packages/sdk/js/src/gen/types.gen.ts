@@ -585,8 +585,10 @@ export type Todo = {
 
 export type FileDiff = {
   file: string
-  left: string
-  right: string
+  before: string
+  after: string
+  additions: number
+  deletions: number
 }
 
 export type UserMessage = {
