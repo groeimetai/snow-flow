@@ -21,7 +21,7 @@ import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/t
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
 import { requestApproval, formatFetchSummary } from '../../../../utils/data-fetch-safety.js';
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_train_incident_classifier',
