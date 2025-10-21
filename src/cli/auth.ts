@@ -34,22 +34,33 @@ export function registerAuthCommands(program: Command) {
 
         console.log(chalk.blue('🔐 Authenticating with Anthropic...'));
 
-        // Fix common OpenCode directory issue (agents vs agent)
-        const opencodeDir = process.env.HOME + '/.opencode';
-        const agentsDir = opencodeDir + '/agents';
-        const agentDir = opencodeDir + '/agent';
-
+        // Fix common OpenCode directory issue (agents vs agent) in BOTH global and project directories
         try {
           const fs = require('fs');
           const path = require('path');
 
-          // Check if problematic 'agents' directory exists
-          if (fs.existsSync(agentsDir) && !fs.existsSync(agentDir)) {
-            console.log(chalk.dim('   Fixing OpenCode directory structure...'));
-            fs.renameSync(agentsDir, agentDir);
+          // Fix 1: Global ~/.opencode directory
+          const globalOpencodeDir = process.env.HOME + '/.opencode';
+          const globalAgentsDir = globalOpencodeDir + '/agents';
+          const globalAgentDir = globalOpencodeDir + '/agent';
+
+          if (fs.existsSync(globalAgentsDir) && !fs.existsSync(globalAgentDir)) {
+            console.log(chalk.dim('   Fixing global OpenCode directory structure...'));
+            fs.renameSync(globalAgentsDir, globalAgentDir);
+          }
+
+          // Fix 2: Project .opencode directory (in current working directory)
+          const projectOpencodeDir = path.join(process.cwd(), '.opencode');
+          const projectAgentsDir = path.join(projectOpencodeDir, 'agents');
+          const projectAgentDir = path.join(projectOpencodeDir, 'agent');
+
+          if (fs.existsSync(projectAgentsDir) && !fs.existsSync(projectAgentDir)) {
+            console.log(chalk.dim('   Fixing project OpenCode directory structure...'));
+            fs.renameSync(projectAgentsDir, projectAgentDir);
           }
         } catch (dirError) {
           // Ignore directory fix errors - OpenCode will handle it
+          console.log(chalk.dim('   (Directory fix skipped - will auto-correct)'));
         }
 
         try {
