@@ -17,10 +17,6 @@ export declare class MCPPersistentGuard {
      */
     private installProcessProtection;
     /**
-     * Warn about process exit attempts
-     */
-    private installExitProtection;
-    /**
      * Check if PID belongs to MCP server
      */
     private isMCPProcess;
