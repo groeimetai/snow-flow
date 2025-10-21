@@ -55,10 +55,13 @@ const logger_js_1 = require("./utils/logger.js");
 const chalk_1 = __importDefault(require("chalk"));
 // Load MCP Persistent Guard for bulletproof server protection
 const mcp_persistent_guard_js_1 = require("./utils/mcp-persistent-guard.js");
-// Activate MCP guard only for commands that use MCP servers (not init/version/help)
-const commandsNeedingMCP = ['swarm', 'status', 'monitor'];
+// Activate MCP guard ONLY for commands that actually use MCP servers
+// Explicitly exclude: init, version, help, auth, export, config commands
+const commandsNeedingMCP = ['swarm', 'status', 'monitor', 'mcp'];
+const commandsNotNeedingMCP = ['init', 'version', 'help', 'auth', 'export', '-v', '--version', '-h', '--help'];
 const currentCommand = process.argv[2];
-if (commandsNeedingMCP.includes(currentCommand)) {
+// Only activate guard if it's a command that needs MCP AND not explicitly excluded
+if (currentCommand && commandsNeedingMCP.includes(currentCommand) && !commandsNotNeedingMCP.includes(currentCommand)) {
     mcp_persistent_guard_js_1.MCPPersistentGuard.getInstance();
 }
 // Removed provider-agnostic imports - using Claude Code directly
@@ -2414,7 +2417,7 @@ async function copyCLAUDEmd(targetDir, force = false) {
             await fs_1.promises.mkdir(agentsDir, { recursive: true });
             await fs_1.promises.mkdir(modesDir, { recursive: true });
             console.log('✅ Created .opencode/ directory structure');
-            // Copy agent files from .claude/ to .opencode/agents/
+            // Copy agent files from .claude/ to .opencode/agents/ (if they exist)
             const sourceAgentsDir = (0, path_1.join)(__dirname, '..', '.claude', 'agents');
             try {
                 const agentFiles = await fs_1.promises.readdir(sourceAgentsDir);
@@ -2429,7 +2432,7 @@ async function copyCLAUDEmd(targetDir, force = false) {
                 console.log('✅ Copied agent configurations to .opencode/agents/');
             }
             catch (err) {
-                console.log('⚠️  Could not copy agent files, continuing...');
+                // Silently continue - agent configs are in opencode.json, not separate files
             }
             // Create .opencode/opencode.json with both MCP servers
             const opencodeConfig = {
