@@ -39,7 +39,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.tensorflowML = exports.TensorFlowMLService = void 0;
-const tf = __importStar(require("@tensorflow/tfjs-node"));
+const tf = __importStar(require("@tensorflow/tfjs"));
 const logger_js_1 = require("../utils/logger.js");
 class TensorFlowMLService {
     constructor() {
