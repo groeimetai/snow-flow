@@ -151,19 +151,130 @@ export function registerAuthCommands(program: Command) {
 
       const oauth = new ServiceNowOAuth();
 
-      // Read credentials from .env file automatically
-      const instance = process.env.SNOW_INSTANCE;
-      const clientId = process.env.SNOW_CLIENT_ID;
-      const clientSecret = process.env.SNOW_CLIENT_SECRET;
+      // Read credentials from .env file
+      let instance = process.env.SNOW_INSTANCE;
+      let clientId = process.env.SNOW_CLIENT_ID;
+      let clientSecret = process.env.SNOW_CLIENT_SECRET;
 
+      // If credentials are missing, ask user interactively
       if (!instance || !clientId || !clientSecret) {
-        console.error(chalk.red('❌ Missing required ServiceNow OAuth credentials in .env file'));
-        console.log('\n📝 Please add these to your .env file:');
-        console.log('   SNOW_INSTANCE=your-instance.service-now.com');
-        console.log('   SNOW_CLIENT_ID=your-client-id');
-        console.log('   SNOW_CLIENT_SECRET=your-client-secret');
-        console.log('\n💡 Then run: snow-flow auth login');
-        return;
+        console.log(chalk.yellow('\n⚠️  ServiceNow OAuth credentials not found in .env'));
+        console.log(chalk.dim('   You need to set up OAuth in ServiceNow first\n'));
+
+        const { setupNow } = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'setupNow',
+          message: 'Do you want to enter your ServiceNow OAuth credentials now?',
+          default: true
+        }]);
+
+        if (!setupNow) {
+          console.log(chalk.yellow('\n💡 To set up OAuth credentials manually:'));
+          console.log('   1. Log into ServiceNow as admin');
+          console.log('   2. Navigate to: System OAuth > Application Registry');
+          console.log('   3. Create a new OAuth application');
+          console.log('   4. Add these to your .env file:');
+          console.log('      SNOW_INSTANCE=your-instance.service-now.com');
+          console.log('      SNOW_CLIENT_ID=your-client-id');
+          console.log('      SNOW_CLIENT_SECRET=your-client-secret');
+          console.log('\n   Then run: snow-flow auth login');
+          return;
+        }
+
+        console.log(chalk.blue('\n📋 ServiceNow OAuth Setup'));
+        console.log(chalk.dim('   Need help? See: https://docs.servicenow.com/oauth\n'));
+
+        const credentials = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'instance',
+            message: 'ServiceNow instance (e.g., dev12345.service-now.com):',
+            default: instance,
+            validate: (input: string) => {
+              if (!input || input.trim() === '') {
+                return 'Instance URL is required';
+              }
+              // Remove https:// and trailing slash if present
+              const cleaned = input.replace(/^https?:\/\//, '').replace(/\/$/, '');
+              if (!cleaned.includes('.service-now.com')) {
+                return 'Instance must be a ServiceNow domain (e.g., dev12345.service-now.com)';
+              }
+              return true;
+            },
+            filter: (input: string) => input.replace(/^https?:\/\//, '').replace(/\/$/, '')
+          },
+          {
+            type: 'input',
+            name: 'clientId',
+            message: 'OAuth Client ID:',
+            default: clientId,
+            validate: (input: string) => {
+              if (!input || input.trim() === '') {
+                return 'Client ID is required';
+              }
+              if (input.length < 32) {
+                return 'Client ID seems too short. Expected a 32-character hex string from ServiceNow';
+              }
+              return true;
+            }
+          },
+          {
+            type: 'password',
+            name: 'clientSecret',
+            message: 'OAuth Client Secret:',
+            mask: '*',
+            validate: (input: string) => {
+              if (!input || input.trim() === '') {
+                return 'Client Secret is required';
+              }
+              if (input.length < 32) {
+                return 'Client Secret too short. Expected 32+ character random string from ServiceNow';
+              }
+              return true;
+            }
+          }
+        ]);
+
+        instance = credentials.instance;
+        clientId = credentials.clientId;
+        clientSecret = credentials.clientSecret;
+
+        // Save to .env file
+        const envPath = path.join(process.cwd(), '.env');
+        let envContent = '';
+
+        try {
+          envContent = fs.readFileSync(envPath, 'utf8');
+        } catch {
+          // .env doesn't exist yet, use .env.example as template
+          const examplePath = path.join(process.cwd(), '.env.example');
+          if (fs.existsSync(examplePath)) {
+            envContent = fs.readFileSync(examplePath, 'utf8');
+          }
+        }
+
+        // Update credentials in .env content
+        const updates = [
+          { key: 'SNOW_INSTANCE', value: instance },
+          { key: 'SNOW_CLIENT_ID', value: clientId },
+          { key: 'SNOW_CLIENT_SECRET', value: clientSecret }
+        ];
+
+        for (const { key, value } of updates) {
+          if (envContent.includes(`${key}=`)) {
+            envContent = envContent.replace(new RegExp(`${key}=.*`, 'g'), `${key}=${value}`);
+          } else {
+            envContent += `\n${key}=${value}\n`;
+          }
+        }
+
+        fs.writeFileSync(envPath, envContent);
+        console.log(chalk.green('\n✅ Credentials saved to .env file\n'));
+
+        // Reload environment variables
+        process.env.SNOW_INSTANCE = instance;
+        process.env.SNOW_CLIENT_ID = clientId;
+        process.env.SNOW_CLIENT_SECRET = clientSecret;
       }
 
       // Start OAuth flow (this opens browser automatically)
