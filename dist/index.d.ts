@@ -1,6 +1,6 @@
 /**
- * Snow-Flow: ServiceNow Hive-Mind Intelligence Framework
- * Built with Claude Code integration
+ * Snow-Flow: ServiceNow Multi-LLM Development Platform
+ * Built with OpenCode integration (also compatible with Claude Code)
  */
 export * from './types/index.js';
 export { ServiceNowOAuth } from './utils/snow-oauth.js';
