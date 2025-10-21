@@ -9,7 +9,7 @@ import { MCPLogger } from '../../../shared/mcp-logger.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 
 const schema = z.object({
-  properties: z.record(z.any()).describe('JSON object with property names as keys'),
+  properties: z.record(z.string(), z.any()).describe('JSON object with property names as keys'),
   overwrite: z.boolean().optional().default(false).describe('Overwrite existing properties'),
   dry_run: z.boolean().optional().default(false).describe('Preview changes without applying'),
 });
