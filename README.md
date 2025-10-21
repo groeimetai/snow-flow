@@ -124,9 +124,9 @@ Snow-Flow works with **75+ LLM providers** through OpenCode and Models.dev. Choo
 ### 🔓 Full Provider List (75+)
 
 **Via OpenCode + Models.dev:**
-- **Anthropic**: Claude 3.5 Sonnet, Claude 3.5 Haiku, Claude 3 Opus
-- **OpenAI**: GPT-4o, GPT-4o-mini, GPT-4 Turbo, O1, O1-mini
-- **Google**: Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.0
+- **Anthropic**: Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1
+- **OpenAI**: GPT-5, GPT-4o, GPT-4o-mini
+- **Google**: Gemini 2.0 Flash, Gemini 1.5 Pro, Gemini 1.5 Flash
 - **Meta**: Llama 3.1 (8B, 70B, 405B), Llama 3.2
 - **Mistral AI**: Mistral Large, Mistral Medium, Mistral Small, Codestral
 - **Cohere**: Command R, Command R+
@@ -180,8 +180,8 @@ OPENAI_API_KEY=your-key
 
 | Use Case | Recommended Provider | Why |
 |----------|---------------------|-----|
-| **Production ServiceNow Development** | Claude 3.5 Sonnet | Best reasoning, ServiceNow knowledge |
-| **Cost-Optimized Development** | GPT-4o-mini or Claude Haiku | 10x cheaper, good quality |
+| **Production ServiceNow Development** | Claude Sonnet 4.5 | Best reasoning, ServiceNow knowledge |
+| **Cost-Optimized Development** | GPT-4o-mini or Claude Haiku 4.5 | 10x cheaper, good quality |
 | **Offline/Private Development** | Ollama (Llama 3.1) | 100% free, runs locally |
 | **Code Generation Focus** | DeepSeek Coder | Specialized for coding |
 | **Large Context (200K+ tokens)** | Gemini 1.5 Pro | 2M token context |
