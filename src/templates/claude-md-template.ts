@@ -169,79 +169,69 @@ Test before claiming broken. Check resources exist. Validate configurations. Evi
 ### Step 2: Find the Right Tool
 
 **CREATE NEW Decision:**
-```
-User wants: "Create workspace for IT agents"
-→ Category: Workspace (UX Framework)
-→ Tool: snow_create_complete_workspace
-→ REMEMBER: Create Update Set FIRST!
+- User wants: "Create workspace for IT agents"
+  - Category: Workspace (UX Framework)
+  - Tool: \`snow_create_complete_workspace\`
+  - REMEMBER: Create Update Set FIRST!
 
-User wants: "Create business rule"
-→ Category: Platform Development
-→ Tool: snow_create_business_rule
-→ REMEMBER: Create Update Set FIRST!
+- User wants: "Create business rule"
+  - Category: Platform Development
+  - Tool: \`snow_create_business_rule\`
+  - REMEMBER: Create Update Set FIRST!
 
-User wants: "Create widget"
-→ Category: Deployment
-→ Tool: snow_deploy (type: 'widget')
-→ REMEMBER: Create Update Set FIRST!
+- User wants: "Create widget"
+  - Category: Deployment
+  - Tool: \`snow_deploy\` (type: 'widget')
+  - REMEMBER: Create Update Set FIRST!
 
-User wants: "Create UI Builder page"
-→ Category: UI Builder
-→ Tool: snow_create_uib_page
-→ REMEMBER: Create Update Set FIRST!
-```
+- User wants: "Create UI Builder page"
+  - Category: UI Builder
+  - Tool: \`snow_create_uib_page\`
+  - REMEMBER: Create Update Set FIRST!
 
 **UPDATE EXISTING Decision:**
-```
-Updating: Widget
-→ Is it debugging? → YES: snow_pull_artifact (local sync)
-→ Simple field update? → NO: Use snow_update (type: 'widget')
+- Updating: Widget
+  - Is it debugging? YES: \`snow_pull_artifact\` (local sync)
+  - Simple field update? NO: \`snow_update\` (type: 'widget')
 
-Updating: Any other artifact
-→ Tool: snow_update or snow_edit_artifact
-→ REMEMBER: Ensure Update Set is active!
-```
+- Updating: Any other artifact
+  - Tool: \`snow_update\` or \`snow_edit_artifact\`
+  - REMEMBER: Ensure Update Set is active!
 
 **DEBUG/VERIFY Decision:**
-```
-Debugging: Widget not working
-→ ALWAYS: snow_pull_artifact (get all files locally)
-→ NEVER: snow_query_table (token limits!)
+- Debugging: Widget not working
+  - ALWAYS: \`snow_pull_artifact\` (get all files locally)
+  - NEVER: \`snow_query_table\` (token limits!)
 
-Debugging: Script/rule not working
-→ Tool: snow_execute_script_with_output (test the code)
+- Debugging: Script/rule not working
+  - Tool: \`snow_execute_script_with_output\` (test the code)
 
-Verifying: Table/field exists
-→ Tool: snow_execute_script_with_output (check with GlideRecord)
-```
+- Verifying: Table/field exists
+  - Tool: \`snow_execute_script_with_output\` (check with GlideRecord)
 
 **QUERY DATA Decision:**
-```
-Querying: Widget data
-→ NEVER: snow_query_table (use snow_pull_artifact instead!)
+- Querying: Widget data
+  - NEVER: \`snow_query_table\` (use \`snow_pull_artifact\` instead!)
 
-Querying: Table data (incidents, users, etc.)
-→ Tool: snow_query_table or specific tools (snow_query_incidents)
+- Querying: Table data (incidents, users, etc.)
+  - Tool: \`snow_query_table\` or specific tools (\`snow_query_incidents\`)
 
-Querying: Multiple tables
-→ Tool: snow_batch_api (80% faster!)
-```
+- Querying: Multiple tables
+  - Tool: \`snow_batch_api\` (80% faster!)
 
 ### Step 3: MANDATORY - Update Set Check!
 
 **🚨 BEFORE calling ANY development tool, ask yourself:**
 
-```
-✅ Did I create an Update Set? → If NO: STOP! Create one first!
-✅ Is the Update Set active? → If NO: Call snow_ensure_active_update_set!
-✅ Ready to develop? → NOW you can call the tool!
-```
+- ✅ Did I create an Update Set? If NO: STOP! Create one first!
+- ✅ Is the Update Set active? If NO: Call \`snow_ensure_active_update_set\`!
+- ✅ Ready to develop? NOW you can call the tool!
 
 **The Update Set Mantra (repeat before EVERY development task):**
-1. CREATE Update Set (snow_create_update_set)
-2. ACTIVATE Update Set (snow_ensure_active_update_set)
+1. CREATE Update Set (\`snow_create_update_set\`)
+2. ACTIVATE Update Set (\`snow_ensure_active_update_set\`)
 3. DEVELOP (now all changes are tracked!)
-4. COMPLETE Update Set (snow_complete_update_set)
+4. COMPLETE Update Set (\`snow_complete_update_set\`)
 
 ---
 
