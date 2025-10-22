@@ -510,7 +510,14 @@ export namespace Provider {
 
     const provider = await state().then((state) => state.providers[providerID])
     if (!provider) return
-    const priority = ["claude-haiku-4-5", "anthropic/claude-haiku-4.5", "gemini-2.5-flash", "gpt-5-nano"]
+    const priority = [
+      "claude-haiku-4-5",
+      "anthropic/claude-haiku-4.5",
+      "3-5-haiku",
+      "3.5-haiku",
+      "gemini-2.5-flash",
+      "gpt-5-nano",
+    ]
     for (const item of priority) {
       for (const model of Object.keys(provider.info.models)) {
         if (model.includes(item)) return getModel(providerID, model)
@@ -518,7 +525,7 @@ export namespace Provider {
     }
   }
 
-  const priority = ["gemini-2.5-pro-preview", "gpt-5", "claude-sonnet-4-5"]
+  const priority = ["gemini-2.5-pro-preview", "gpt-5", "claude-sonnet-4"]
   export function sort(models: ModelsDev.Model[]) {
     return sortBy(
       models,
