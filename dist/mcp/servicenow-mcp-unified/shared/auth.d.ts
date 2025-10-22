@@ -27,6 +27,14 @@ export declare class ServiceNowAuthManager {
     private tokenRefreshPromises;
     constructor();
     /**
+     * Load and validate enterprise license (from enterprise package if available)
+     */
+    private loadEnterpriseLicense;
+    /**
+     * Get community (free) license
+     */
+    private getCommunityLicense;
+    /**
      * Get authenticated Axios client for ServiceNow instance
      */
     getAuthenticatedClient(context: ServiceNowContext): Promise<ExtendedAxiosInstance>;

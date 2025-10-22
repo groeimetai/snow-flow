@@ -67,11 +67,61 @@ class ServiceNowAuthManager {
         this.loadTokenCache().catch(err => {
             console.warn('[Auth] Failed to load token cache:', err.message);
         });
+        // Load enterprise license on initialization
+        this.loadEnterpriseLicense();
+    }
+    /**
+     * Load and validate enterprise license (from enterprise package if available)
+     */
+    loadEnterpriseLicense() {
+        try {
+            // Try to load enterprise features (only available in enterprise edition)
+            let loadLicenseFromEnv;
+            try {
+                // Attempt to import from enterprise package
+                loadLicenseFromEnv = require('../../../../enterprise/src/auth/enterprise-validator').loadLicenseFromEnv;
+            }
+            catch (err) {
+                // Enterprise package not installed - use community license
+                console.log('[Auth] Enterprise features not available, using community tier');
+                this._enterpriseLicense = this.getCommunityLicense();
+                return;
+            }
+            const license = loadLicenseFromEnv();
+            console.log('[Auth] Enterprise License:', {
+                tier: license.tier,
+                company: license.companyName || 'N/A',
+                theme: license.theme,
+                features: license.features.length,
+                expiresAt: license.expiresAt?.toISOString() || 'N/A'
+            });
+            // Store license for context enrichment
+            this._enterpriseLicense = license;
+        }
+        catch (error) {
+            console.warn('[Auth] Failed to load enterprise license:', error.message);
+            // Fallback to community license
+            this._enterpriseLicense = this.getCommunityLicense();
+        }
+    }
+    /**
+     * Get community (free) license
+     */
+    getCommunityLicense() {
+        return {
+            tier: 'community',
+            features: [],
+            theme: 'servicenow'
+        };
     }
     /**
      * Get authenticated Axios client for ServiceNow instance
      */
     async getAuthenticatedClient(context) {
+        // Enrich context with enterprise license if not already present
+        if (!context.enterprise && this._enterpriseLicense) {
+            context.enterprise = this._enterpriseLicense;
+        }
         const cacheKey = this.getCacheKey(context.instanceUrl);
         // Return existing client if valid token exists
         if (this.clients.has(cacheKey) && this.isTokenValid(cacheKey)) {

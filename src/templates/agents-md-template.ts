@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CLAUDE_MD_TEMPLATE_VERSION = exports.CLAUDE_MD_TEMPLATE = void 0;
-exports.CLAUDE_MD_TEMPLATE = `# Snow-Flow - ServiceNow Development AI Agent
+export const AGENTS_MD_TEMPLATE = `# Snow-Flow - ServiceNow Development AI Agent
 
 ## What is Snow-Flow?
 
@@ -217,15 +214,6 @@ await snow_create_ui_page({ name: "dashboard", html: "..." });
 
 ---
 
-## Skills & Advanced Features
-
-**Skills** are specialized capabilities you can invoke for complex tasks:
-- Use the Skill tool when available for specialized workflows
-- Skills are invoked by name only (no arguments)
-- Check available_skills in your environment
-
----
-
 ## Quick Reference
 
 | Task | Tool | Notes |
@@ -243,5 +231,5 @@ await snow_create_ui_page({ name: "dashboard", html: "..." });
 
 **Remember:** Update Set → Tool → Verify → Complete. Every. Single. Time.
 `;
-exports.CLAUDE_MD_TEMPLATE_VERSION = '8.3.0-ENTERPRISE-THEMES';
-//# sourceMappingURL=claude-md-template.js.map
+
+export const AGENTS_MD_TEMPLATE_VERSION = '8.3.0-ENTERPRISE-THEMES';
