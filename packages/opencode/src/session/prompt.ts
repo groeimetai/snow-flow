@@ -235,7 +235,7 @@ export namespace SessionPrompt {
           modelID: model.info.id,
         })
       step++
-      await processor.next()
+      await processor.next(msgs.findLast((m) => m.info.role === "user")?.info.id!)
       await using _ = defer(async () => {
         await processor.end()
       })
@@ -900,9 +900,10 @@ export namespace SessionPrompt {
     let snapshot: string | undefined
     let blocked = false
 
-    async function createMessage() {
+    async function createMessage(parentID: string) {
       const msg: MessageV2.Info = {
         id: Identifier.ascending("message"),
+        parentID,
         role: "assistant",
         system: input.system,
         mode: input.agent,
@@ -938,11 +939,11 @@ export namespace SessionPrompt {
           assistantMsg = undefined
         }
       },
-      async next() {
+      async next(parentID: string) {
         if (assistantMsg) {
           throw new Error("end previous assistant message first")
         }
-        assistantMsg = await createMessage()
+        assistantMsg = await createMessage(parentID)
         return assistantMsg
       },
       get message() {
@@ -1424,6 +1425,7 @@ export namespace SessionPrompt {
     const msg: MessageV2.Assistant = {
       id: Identifier.ascending("message"),
       sessionID: input.sessionID,
+      parentID: userMsg.id,
       system: [],
       mode: input.agent,
       cost: 0,
@@ -1696,6 +1698,7 @@ export namespace SessionPrompt {
       const assistantMsg: MessageV2.Assistant = {
         id: Identifier.ascending("message"),
         sessionID: input.sessionID,
+        parentID: userMsg.id,
         system: [],
         mode: agentName,
         cost: 0,

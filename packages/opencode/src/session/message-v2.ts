@@ -278,6 +278,7 @@ export namespace MessageV2 {
       ])
       .optional(),
     system: z.string().array(),
+    parentID: z.string(),
     modelID: z.string(),
     providerID: z.string(),
     mode: z.string(),
@@ -346,6 +347,7 @@ export namespace MessageV2 {
     if (v1.role === "assistant") {
       const info: Assistant = {
         id: v1.id,
+        parentID: "",
         sessionID: v1.metadata.sessionID,
         role: "assistant",
         time: {

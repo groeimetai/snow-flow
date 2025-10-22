@@ -109,6 +109,7 @@ export namespace SessionCompaction {
     const msg = (await Session.updateMessage({
       id: Identifier.ascending("message"),
       role: "assistant",
+      parentID: toSummarize.findLast((m) => m.info.role === "user")?.info.id!,
       sessionID: input.sessionID,
       system,
       mode: "build",
