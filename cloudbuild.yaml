@@ -48,7 +48,7 @@ steps:
 # Substitutions based on branch
 substitutions:
   # Default values (overridden per branch)
-  _REGION: 'europe-west1'
+  _REGION: 'europe-west4'
   _ARTIFACT_REGISTRY_REPO: 'snow-flow-enterprise'
   _SERVICE_NAME: 'snow-flow-license-server-${BRANCH_NAME}'
   _NODE_ENV: 'production'
