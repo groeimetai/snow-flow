@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_send_push_notification',
     description: 'Sends a push notification to mobile devices. Can target specific users, groups, or all users.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'notifications',
+    use_cases: ['push-notifications', 'mobile-alerts', 'notifications'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

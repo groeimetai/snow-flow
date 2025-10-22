@@ -13,6 +13,12 @@ const crypto_1 = __importDefault(require("crypto"));
 exports.toolDefinition = {
     name: 'snow_generate_guid',
     description: 'Generate GUID/UUID',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'advanced',
+    subcategory: 'utilities',
+    use_cases: ['guid-generation', 'identifiers', 'utilities'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

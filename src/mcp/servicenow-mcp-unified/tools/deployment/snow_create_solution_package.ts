@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_solution_package',
   description: 'Creates comprehensive solution packages containing multiple related artifacts (widgets, scripts, rules). Manages dependencies and generates deployment documentation.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'deployment',
+  use_cases: ['deployment', 'packaging', 'solution'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

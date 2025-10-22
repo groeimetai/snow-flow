@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_alert_rule',
     description: 'Create alert rules for automated monitoring and notifications',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'event-management',
+    use_cases: ['alerts', 'rules', 'monitoring'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_validate_sysid',
     description: 'Validates sys_id existence and consistency across tables. Maintains artifact tracking for deployment integrity and rollback capabilities.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'validation',
+    use_cases: ['sysid-validation', 'integrity-check', 'validation'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

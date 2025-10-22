@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_import_set',
     description: 'Create import set for data import',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'import-export',
+    use_cases: ['import', 'data-migration', 'integration'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

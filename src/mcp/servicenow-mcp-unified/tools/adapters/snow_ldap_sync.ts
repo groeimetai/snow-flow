@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_ldap_sync',
   description: 'Trigger LDAP user synchronization',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'adapters',
+  use_cases: ['ldap-sync', 'user-sync', 'authentication'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

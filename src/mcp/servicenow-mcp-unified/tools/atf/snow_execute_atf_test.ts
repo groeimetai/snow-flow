@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_execute_atf_test',
   description: 'Executes an ATF test or test suite and returns the results. Tests run asynchronously in ServiceNow using sys_atf_test_result table.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'testing',
+  use_cases: ['testing', 'atf', 'execution'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

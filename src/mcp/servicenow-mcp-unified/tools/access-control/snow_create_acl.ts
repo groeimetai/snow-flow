@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_acl',
   description: 'Create Access Control List rule',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'access-control',
+  use_cases: ['acl', 'security', 'permissions'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_update',
     description: 'Update existing ServiceNow artifacts (widgets, pages, scripts, flows, etc.)',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'deployment',
+    use_cases: ['deployment', 'update', 'artifacts'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

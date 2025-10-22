@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_predictive_analysis',
     description: 'Provides predictive analysis for incident volumes, system failures, and resource issues based on historical patterns',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ml-analytics',
+    subcategory: 'prediction',
+    use_cases: ['prediction', 'analytics'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

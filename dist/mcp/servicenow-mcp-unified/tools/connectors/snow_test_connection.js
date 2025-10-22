@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_test_connection',
     description: 'Test ServiceNow connection',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'connectors',
+    use_cases: ['connection-test', 'authentication', 'diagnostics'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {}

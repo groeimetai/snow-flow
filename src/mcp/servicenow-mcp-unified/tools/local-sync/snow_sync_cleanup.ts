@@ -12,6 +12,12 @@ import * as path from 'path';
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_sync_cleanup',
   description: 'Clean up local artifact files after sync with retention policies',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'local-sync',
+  use_cases: ['cleanup', 'maintenance', 'local-development'],
+  complexity: 'beginner',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

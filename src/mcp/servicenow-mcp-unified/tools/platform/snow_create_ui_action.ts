@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_ui_action',
   description: 'Create UI Action (button, context menu, form link) with client/server scripts',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'platform',
+  use_cases: ['ui-actions', 'buttons', 'form-controls'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

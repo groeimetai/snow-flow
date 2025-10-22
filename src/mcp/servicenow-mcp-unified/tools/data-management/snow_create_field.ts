@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_field',
   description: 'Create table field/column',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'platform',
+  use_cases: ['fields', 'schema', 'customization'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

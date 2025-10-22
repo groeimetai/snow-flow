@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_batch_request',
     description: 'Execute batch REST requests',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'connectors',
+    use_cases: ['batch-requests', 'bulk-operations', 'performance'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

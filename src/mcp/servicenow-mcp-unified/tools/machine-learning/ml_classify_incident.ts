@@ -15,6 +15,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_classify_incident',
   description: 'Classifies incidents and predicts properties using trained neural networks. Returns category, priority, and assignment recommendations.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'machine-learning',
+  use_cases: ['classification', 'prediction', 'incident-routing'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_custom_api',
     description: 'Call custom API endpoint',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'api',
+    use_cases: ['custom-api', 'rest', 'integration'],
+    complexity: 'advanced',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_graphql_query',
   description: 'Execute GraphQL query',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'graphql',
+  use_cases: ['graphql', 'query', 'data-retrieval'],
+  complexity: 'intermediate',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

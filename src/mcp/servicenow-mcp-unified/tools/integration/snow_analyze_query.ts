@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_analyze_query',
   description: 'Analyze and optimize ServiceNow queries for performance',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'optimization',
+  use_cases: ['integration', 'performance', 'optimization'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

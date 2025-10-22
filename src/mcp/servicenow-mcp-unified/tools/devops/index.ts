@@ -1,4 +1,3 @@
-export { toolDefinition as snow_create_pipeline_def, execute as snow_create_pipeline_exec } from './snow_create_pipeline.js';
 export { toolDefinition as snow_create_devops_change_def, execute as snow_create_devops_change_exec } from './snow_create_devops_change.js';
 export { toolDefinition as snow_create_devops_pipeline_def, execute as snow_create_devops_pipeline_exec } from './snow_create_devops_pipeline.js';
 export { toolDefinition as snow_get_devops_insights_def, execute as snow_get_devops_insights_exec } from './snow_get_devops_insights.js';

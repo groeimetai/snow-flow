@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_analyze_artifact',
   description: 'Performs comprehensive analysis of artifacts including dependencies, usage patterns, and optimization opportunities. Caches results for improved performance.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'analysis',
+  use_cases: ['analysis', 'dependencies', 'optimization'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

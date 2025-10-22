@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_schedule_notification',
     description: 'Schedule future notification delivery with advanced scheduling options',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'notifications',
+    use_cases: ['scheduling', 'notifications', 'automation'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

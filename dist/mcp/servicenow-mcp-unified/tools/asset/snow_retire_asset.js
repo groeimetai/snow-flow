@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_retire_asset',
     description: 'Retire/dispose asset',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'asset-management',
+    subcategory: 'asset-lifecycle',
+    use_cases: ['asset-management', 'retirement', 'lifecycle'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

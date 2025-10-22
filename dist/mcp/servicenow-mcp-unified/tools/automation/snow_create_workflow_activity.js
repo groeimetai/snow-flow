@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_workflow_activity',
     description: 'Creates workflow activities within existing workflows. Configures activity types, conditions, and execution order.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'workflow',
+    use_cases: ['automation', 'workflow', 'activities'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

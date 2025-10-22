@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_schedule_report_delivery',
     description: 'Schedule automated report delivery via email',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'reporting',
+    subcategory: 'scheduling',
+    use_cases: ['scheduling', 'automation', 'delivery'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

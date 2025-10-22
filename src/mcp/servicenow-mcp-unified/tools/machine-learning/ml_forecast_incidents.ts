@@ -15,6 +15,12 @@ import * as tf from '@tensorflow/tfjs';
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_forecast_incidents',
   description: 'Forecasts future incident volumes using LSTM time series models. Supports category-specific predictions.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'machine-learning',
+  use_cases: ['forecasting', 'time-series', 'capacity-planning'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

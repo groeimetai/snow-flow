@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_export_to_xml',
     description: 'Export records to XML format',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'import-export',
+    use_cases: ['export', 'xml', 'backup'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

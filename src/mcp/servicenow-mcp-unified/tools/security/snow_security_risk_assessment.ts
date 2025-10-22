@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_security_risk_assessment',
   description: 'Perform comprehensive security risk assessment analyzing access controls, vulnerabilities, and security posture',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'security',
+  subcategory: 'risk-assessment',
+  use_cases: ['security', 'risk', 'assessment'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

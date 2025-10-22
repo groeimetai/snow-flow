@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_trace_execution',
     description: 'Trace execution flow with real-time tracking of scripts, REST calls, and errors',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'monitoring',
+    use_cases: ['automation', 'tracing', 'debugging'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

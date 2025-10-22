@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_send_email',
     description: 'Send email notification',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'notifications',
+    use_cases: ['email', 'notifications', 'communication'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

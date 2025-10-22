@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_mobile_analytics',
   description: 'Retrieves mobile application usage analytics including active users, sessions, and feature usage.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'reporting',
+  subcategory: 'analytics',
+  use_cases: ['analytics', 'mobile-metrics', 'usage-tracking'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

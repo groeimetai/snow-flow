@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_generate_docs',
     description: 'Generate documentation for ServiceNow artifacts',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'documentation',
+    use_cases: ['integration', 'documentation', 'analysis'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

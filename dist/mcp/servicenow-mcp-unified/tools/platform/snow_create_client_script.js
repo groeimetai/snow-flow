@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_client_script',
     description: 'Create client-side script for form with type and field targeting',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'platform',
+    use_cases: ['client-scripts', 'form-scripts', 'ui-automation'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_get_by_sysid',
     description: 'Retrieves artifacts by sys_id for precise, fast lookups. Auto-detects large responses and suggests efficient field-specific queries using snow_query_table when needed. More reliable than text-based searches when sys_id is known.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'core-operations',
+    subcategory: 'query',
+    use_cases: ['query', 'retrieval', 'sysid-lookup'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

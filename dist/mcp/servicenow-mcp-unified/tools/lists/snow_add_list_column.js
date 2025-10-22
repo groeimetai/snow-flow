@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_add_list_column',
     description: 'Add column to list view',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'ui',
+    use_cases: ['lists', 'views', 'ui-customization'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

@@ -15,6 +15,12 @@ import FormData from 'form-data';
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_attach_file',
   description: 'Attach files to ServiceNow records with validation and content type detection',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'core-operations',
+  subcategory: 'attachments',
+  use_cases: ['attachments', 'files'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

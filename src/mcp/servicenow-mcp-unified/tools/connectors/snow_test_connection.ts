@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_test_connection',
   description: 'Test ServiceNow connection',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'connectors',
+  use_cases: ['connection-test', 'authentication', 'diagnostics'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {}

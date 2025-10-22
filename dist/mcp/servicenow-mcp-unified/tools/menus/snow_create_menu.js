@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_menu',
     description: 'Create application menu',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'ui',
+    use_cases: ['menu-creation', 'navigation', 'ui-development'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

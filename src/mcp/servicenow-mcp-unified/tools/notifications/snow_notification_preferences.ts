@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_notification_preferences',
   description: 'Manage user notification preferences and routing rules',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'notifications',
+  use_cases: ['preferences', 'user-settings', 'configuration'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

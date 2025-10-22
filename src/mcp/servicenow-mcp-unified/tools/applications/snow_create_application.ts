@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_application',
   description: 'Create scoped application',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'applications',
+  use_cases: ['app-development', 'scoped-apps', 'development'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

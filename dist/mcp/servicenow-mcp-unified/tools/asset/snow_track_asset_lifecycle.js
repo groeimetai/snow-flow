@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_track_asset_lifecycle',
     description: 'Track complete asset lifecycle from procurement to disposal',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'asset-management',
+    subcategory: 'asset-lifecycle',
+    use_cases: ['lifecycle', 'tracking', 'audit-trail'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

@@ -12,6 +12,12 @@ import * as path from 'path';
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_sync_status',
   description: 'Get status of locally synced artifacts including changes and validation',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'local-sync',
+  use_cases: ['status', 'monitoring', 'local-development'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

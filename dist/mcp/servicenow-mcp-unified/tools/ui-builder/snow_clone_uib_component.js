@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_clone_uib_component',
     description: 'Clone existing UI Builder component to create customized variant',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ui-frameworks',
+    subcategory: 'ui-builder',
+    use_cases: ['component-cloning', 'ui-builder', 'customization'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

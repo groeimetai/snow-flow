@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_detect_code_patterns',
   description: 'Detect code patterns, anti-patterns, and best practices in ServiceNow scripts',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'code-analysis',
+  use_cases: ['integration', 'code-quality', 'analysis'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

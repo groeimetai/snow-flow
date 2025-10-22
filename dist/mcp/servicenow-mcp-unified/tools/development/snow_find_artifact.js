@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_find_artifact',
     description: 'Finds ServiceNow artifacts using natural language queries. Searches cached memory first for performance, then queries ServiceNow directly if needed.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'search',
+    use_cases: ['search', 'discovery', 'natural-language'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

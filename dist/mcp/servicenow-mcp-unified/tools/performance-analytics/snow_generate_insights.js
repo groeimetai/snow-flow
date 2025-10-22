@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_generate_insights',
     description: 'Generates analytical insights including trends, patterns, anomalies, and actionable recommendations',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'performance-analytics',
+    subcategory: 'analytics',
+    use_cases: ['performance-analytics', 'insights', 'analysis'],
+    complexity: 'advanced',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

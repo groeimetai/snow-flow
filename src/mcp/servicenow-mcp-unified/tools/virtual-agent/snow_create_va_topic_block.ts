@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_va_topic_block',
   description: 'Creates a conversation block within a Virtual Agent topic. Blocks define conversation steps and responses.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'virtual-agent',
+  use_cases: ['virtual-agent', 'conversation-flow', 'topic-blocks'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

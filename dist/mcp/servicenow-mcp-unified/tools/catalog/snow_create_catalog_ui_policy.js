@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_catalog_ui_policy',
     description: 'Creates comprehensive UI policies for catalog items with conditions and actions to control form behavior dynamically.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'service-catalog',
+    use_cases: ['catalog', 'ui-policies', 'form-control'],
+    complexity: 'advanced',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

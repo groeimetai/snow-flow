@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_get_ci_history',
     description: 'Get Configuration Item change history',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'cmdb',
+    subcategory: 'audit',
+    use_cases: ['cmdb', 'audit', 'history'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

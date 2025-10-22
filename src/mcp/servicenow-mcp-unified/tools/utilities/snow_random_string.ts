@@ -9,6 +9,12 @@ import crypto from 'crypto';
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_random_string',
   description: 'Generate random string',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'advanced',
+  subcategory: 'utilities',
+  use_cases: ['random-generation', 'strings', 'utilities'],
+  complexity: 'beginner',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

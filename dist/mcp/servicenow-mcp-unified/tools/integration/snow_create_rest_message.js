@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_rest_message',
     description: 'Create REST message for external API integration',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'rest',
+    use_cases: ['integration', 'rest', 'api'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

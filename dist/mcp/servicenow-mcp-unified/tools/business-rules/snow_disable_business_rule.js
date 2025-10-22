@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_disable_business_rule',
     description: 'Disable business rule',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'platform',
+    use_cases: ['business-rules', 'management', 'configuration'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

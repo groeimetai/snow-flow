@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_get_script_output',
     description: 'Retrieve output from previously executed script using execution ID',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'script-execution',
+    use_cases: ['automation', 'scripts', 'output-retrieval'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

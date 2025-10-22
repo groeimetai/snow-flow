@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_application',
     description: 'Create scoped application',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'applications',
+    use_cases: ['app-development', 'scoped-apps', 'development'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

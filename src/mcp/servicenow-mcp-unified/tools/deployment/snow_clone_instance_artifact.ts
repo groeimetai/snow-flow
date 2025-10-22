@@ -11,6 +11,12 @@ import axios from 'axios';
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_clone_instance_artifact',
   description: 'Clones artifacts directly between ServiceNow instances (dev→test→prod). Handles authentication, dependency resolution, and data migration.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'deployment',
+  use_cases: ['deployment', 'migration', 'clone'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

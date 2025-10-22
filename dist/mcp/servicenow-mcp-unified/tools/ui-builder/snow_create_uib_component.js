@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_uib_component',
     description: 'Create custom UI Builder component with source code',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ui-frameworks',
+    subcategory: 'ui-builder',
+    use_cases: ['component-creation', 'ui-builder', 'reusable-components'],
+    complexity: 'advanced',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

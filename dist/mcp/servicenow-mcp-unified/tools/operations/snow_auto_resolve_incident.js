@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_auto_resolve_incident',
     description: 'Attempts automated resolution of technical incidents based on known patterns and previous solutions. Includes dry-run mode for safety.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'operations',
+    use_cases: ['incidents', 'automation'],
+    complexity: 'advanced',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

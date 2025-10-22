@@ -22,6 +22,12 @@ export interface ServiceNowContext {
 export interface MCPToolDefinition {
   name: string;
   description: string;
+  // Metadata for tool discovery (not sent to LLM)
+  category?: string;
+  subcategory?: string;
+  use_cases?: string[];
+  complexity?: 'beginner' | 'intermediate' | 'advanced';
+  frequency?: 'low' | 'medium' | 'high';
   inputSchema: {
     type: 'object';
     properties: Record<string, any>;

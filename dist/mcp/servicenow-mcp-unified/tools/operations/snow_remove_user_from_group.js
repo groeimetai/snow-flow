@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_remove_user_from_group',
     description: 'Removes a user from a ServiceNow group',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'core-operations',
+    subcategory: 'general',
+    use_cases: ["operations"],
+    complexity: 'beginner',
+    frequency: 'very-high',
     inputSchema: {
         type: 'object',
         properties: {

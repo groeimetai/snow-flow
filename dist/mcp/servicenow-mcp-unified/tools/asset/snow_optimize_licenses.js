@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_optimize_licenses',
     description: 'Analyze license usage and provide optimization recommendations',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'asset-management',
+    subcategory: 'license-management',
+    use_cases: ['optimization', 'cost-reduction', 'sam'],
+    complexity: 'advanced',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

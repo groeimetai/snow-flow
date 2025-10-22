@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_track_asset_lifecycle',
   description: 'Track complete asset lifecycle from procurement to disposal',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'asset-management',
+  subcategory: 'asset-lifecycle',
+  use_cases: ['lifecycle', 'tracking', 'audit-trail'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_validate_live_connection',
   description: 'Validates ServiceNow connection status, authentication tokens, and user permissions. Returns detailed diagnostics with response times.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'diagnostics',
+  use_cases: ['validation', 'diagnostics', 'connection-test'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

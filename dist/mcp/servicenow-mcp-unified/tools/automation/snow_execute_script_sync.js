@@ -15,6 +15,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_execute_script_sync',
     description: 'Synchronously execute script and wait for result (ES5 only - no const/let/arrows/templates)',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'script-execution',
+    use_cases: ['automation', 'scripts', 'synchronous'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

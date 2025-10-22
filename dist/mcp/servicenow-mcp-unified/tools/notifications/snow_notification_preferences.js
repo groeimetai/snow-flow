@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_notification_preferences',
     description: 'Manage user notification preferences and routing rules',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'notifications',
+    use_cases: ['preferences', 'user-settings', 'configuration'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

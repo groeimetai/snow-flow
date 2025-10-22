@@ -13,6 +13,12 @@ const path_1 = require("path");
 exports.toolDefinition = {
     name: 'snow_memory_search',
     description: 'Searches cached ServiceNow artifacts in local memory for instant results without API calls.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'search',
+    use_cases: ['search', 'cache', 'offline'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

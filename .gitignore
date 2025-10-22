@@ -94,7 +94,29 @@ MONETIZATION_STRATEGY.md
 BUSINESS_CHECKLIST.md
 CAPGEMINI_PARTNERSHIP_PROPOSAL.md
 ENTERPRISE_FEATURES_ARCHITECTURE.md
+ENTERPRISE-INTEGRATION.md
+TIER3-FINDINGS.md
+CHANGELOG-v8.2.0-SUMMARY.md
+PHASE2-COMPLETION-SUMMARY.md
+PHASE3-COMPLETION-SUMMARY.md
+THEMES.md
+
+# OpenCode personal configuration (confidential)
+.opencode/
+themes/
+
+# Optimization internals (not needed by users)
+docs/MCP_OPTIMIZATION_STRATEGY.md
+docs/optimization-report.json
+scripts/bulk-optimize-tools.js
+scripts/optimize-mcp-tools.ts
+CHANGELOG-v8.2.0.md
 
 dist/
 
 snow-flow-test-run/
+
+# Enterprise (separate private repository - CRITICAL: NEVER commit!)
+enterprise/
+enterprise/**/*
+.enterprise/

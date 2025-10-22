@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_web_service',
   description: 'Create SOAP web service integration from WSDL definition',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'soap',
+  use_cases: ['integration', 'soap', 'web-service'],
+  complexity: 'intermediate',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_user_lookup',
     description: 'Retrieves user information including roles, groups, and permissions. Supports lookup by ID, email, or name.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'core-operations',
+    subcategory: 'user-management',
+    use_cases: ['users', 'lookup', 'permissions'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

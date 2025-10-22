@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_rest_message_test_suite',
     description: 'Comprehensive testing suite for REST messages including authentication, endpoints, headers, and response validation.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'testing',
+    use_cases: ['automation', 'rest', 'testing'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_monitor_pi_training',
   description: '📊 Monitor ServiceNow Predictive Intelligence training progress. Shows status, metrics, and completion estimate.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'predictive-intelligence',
+  use_cases: ['monitoring', 'training', 'metrics'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

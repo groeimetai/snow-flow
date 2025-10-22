@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_discover_schedules',
     description: 'Discovers schedules (business hours, maintenance windows) in the instance.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'discovery',
+    use_cases: ['automation', 'schedules', 'discovery'],
+    complexity: 'beginner',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

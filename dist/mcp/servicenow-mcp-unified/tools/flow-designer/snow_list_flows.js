@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_list_flows',
     description: 'List Flow Designer flows',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'flow-designer',
+    use_cases: ['discovery', 'listing', 'flow-management'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

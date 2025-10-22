@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_discover_integration_endpoints',
     description: 'Discover existing integration endpoints (REST, SOAP, LDAP, EMAIL)',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'discovery',
+    use_cases: ['integration', 'discovery', 'endpoints'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

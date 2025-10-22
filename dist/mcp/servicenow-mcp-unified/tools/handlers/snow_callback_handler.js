@@ -9,6 +9,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_callback_handler',
     description: 'Create callback handler for async operations',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'callbacks',
+    use_cases: ['callbacks', 'async', 'integration'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

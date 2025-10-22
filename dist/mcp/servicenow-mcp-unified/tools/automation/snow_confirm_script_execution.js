@@ -15,6 +15,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_confirm_script_execution',
     description: '⚡ INTERNAL: Confirms and executes background script after user approval',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'script-execution',
+    use_cases: ['automation', 'scripts', 'execution'],
+    complexity: 'advanced',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

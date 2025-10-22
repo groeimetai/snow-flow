@@ -10,6 +10,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_orchestrate_development',
   description: 'Orchestrates complex development workflows with intelligent agent coordination, shared memory, and real-time progress tracking.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'orchestration',
+  use_cases: ['orchestration', 'workflow', 'coordination'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

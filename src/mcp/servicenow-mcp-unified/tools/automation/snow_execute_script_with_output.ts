@@ -15,6 +15,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_execute_script_with_output',
   description: 'Execute server-side JavaScript with output capture (ES5 only - no const/let/arrow functions)',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'script-execution',
+  use_cases: ['automation', 'scripts', 'output-capture'],
+  complexity: 'advanced',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

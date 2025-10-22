@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_menu_item',
   description: 'Create menu item',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'ui',
+  use_cases: ['menu-items', 'navigation', 'ui-development'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

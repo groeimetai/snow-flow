@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_rest_method',
     description: 'Create REST method for REST message',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'rest-api',
+    use_cases: ['rest-integration', 'api', 'http-methods'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

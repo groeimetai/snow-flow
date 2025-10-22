@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_workflow',
     description: 'Create workflow definition',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'workflow',
+    use_cases: ['workflow', 'process-automation', 'business-logic'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

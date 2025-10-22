@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_event',
     description: 'Create system event for event management',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'event-management',
+    use_cases: ['events', 'automation', 'workflows'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

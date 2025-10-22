@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_flow_connectivity_test',
   description: 'Test flow connectivity and action connections',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'flow-designer',
+  use_cases: ['testing', 'connectivity', 'validation'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

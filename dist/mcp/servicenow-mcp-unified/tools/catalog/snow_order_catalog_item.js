@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_order_catalog_item',
     description: 'Orders a catalog item programmatically, creating a request (RITM) with specified variable values.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'service-catalog',
+    use_cases: ['ordering', 'automation', 'ritm'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

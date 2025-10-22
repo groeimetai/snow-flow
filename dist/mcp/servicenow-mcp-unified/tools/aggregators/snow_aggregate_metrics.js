@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_aggregate_metrics',
     description: 'Aggregate table metrics',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'reporting',
+    subcategory: 'analytics',
+    use_cases: ['aggregation', 'metrics', 'reporting'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

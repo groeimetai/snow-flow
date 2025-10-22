@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_train_va_nlu',
   description: 'Train Virtual Agent NLU model',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'virtual-agent',
+  use_cases: ['virtual-agent', 'nlu-training', 'machine-learning'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

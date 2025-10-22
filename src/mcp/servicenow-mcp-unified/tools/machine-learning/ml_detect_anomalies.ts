@@ -14,6 +14,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_detect_anomalies',
   description: 'Detects anomalies in incident patterns, user behavior, or system performance using autoencoder models.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'machine-learning',
+  use_cases: ['anomaly-detection', 'monitoring', 'pattern-analysis'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

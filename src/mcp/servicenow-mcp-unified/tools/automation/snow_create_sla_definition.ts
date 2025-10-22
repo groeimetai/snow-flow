@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_sla_definition',
   description: 'Creates Service Level Agreement definitions. Sets duration targets, business schedules, and breach conditions.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'sla',
+  use_cases: ['automation', 'sla', 'service-levels'],
+  complexity: 'intermediate',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

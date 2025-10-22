@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_discover_atf_tests',
     description: 'Discovers ATF tests in the instance with filtering and search capabilities.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'testing',
+    use_cases: ['testing', 'atf', 'discovery'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

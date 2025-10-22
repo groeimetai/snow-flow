@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_install_application',
     description: 'Install application from store',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'applications',
+    use_cases: ['app-install', 'store', 'deployment'],
+    complexity: 'beginner',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

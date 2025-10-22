@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_train_va_nlu',
     description: 'Train Virtual Agent NLU model',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'virtual-agent',
+    use_cases: ['virtual-agent', 'nlu-training', 'machine-learning'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

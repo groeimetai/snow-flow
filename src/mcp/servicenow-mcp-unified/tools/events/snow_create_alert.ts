@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_alert',
   description: 'Create system alert for monitoring',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'event-management',
+  use_cases: ['alerts', 'monitoring', 'notifications'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

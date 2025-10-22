@@ -1,13 +1,10 @@
 /**
- * Change Management Tools
+ * Change Management Tools - v8.2.0 Merged Architecture
+ *
+ * Tools merged: 8 → 2 (-6 tools)
+ * - snow_change_manage: Replaces create, update_state, approve, create_task, schedule_cab (5 → 1)
+ * - snow_change_query: Replaces get, search, assess_risk (3 → 1)
  */
-export { toolDefinition as snow_create_change_def, execute as snow_create_change_exec } from './snow_create_change.js';
-export { toolDefinition as snow_schedule_cab_def, execute as snow_schedule_cab_exec } from './snow_schedule_cab.js';
-export { toolDefinition as snow_assess_change_risk_def, execute as snow_assess_change_risk_exec } from './snow_assess_change_risk.js';
-export { toolDefinition as snow_approve_change_def, execute as snow_approve_change_exec } from './snow_approve_change.js';
-export { toolDefinition as snow_create_change_task_def, execute as snow_create_change_task_exec } from './snow_create_change_task.js';
-export { toolDefinition as snow_get_change_request_def, execute as snow_get_change_request_exec } from './snow_get_change_request.js';
-export { toolDefinition as snow_schedule_cab_meeting_def, execute as snow_schedule_cab_meeting_exec } from './snow_schedule_cab_meeting.js';
-export { toolDefinition as snow_search_change_requests_def, execute as snow_search_change_requests_exec } from './snow_search_change_requests.js';
-export { toolDefinition as snow_update_change_state_def, execute as snow_update_change_state_exec } from './snow_update_change_state.js';
+export { toolDefinition as snow_change_manage_def, execute as snow_change_manage_exec } from './snow_change_manage.js';
+export { toolDefinition as snow_change_query_def, execute as snow_change_query_exec } from './snow_change_query.js';
 //# sourceMappingURL=index.d.ts.map

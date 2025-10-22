@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_convert_to_es5',
   description: 'Convert modern JavaScript (ES6+) to ES5 for ServiceNow Rhino engine',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'local-sync',
+  use_cases: ['es5-conversion', 'validation', 'development'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

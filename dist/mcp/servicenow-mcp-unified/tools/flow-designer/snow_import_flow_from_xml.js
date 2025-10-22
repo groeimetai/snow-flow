@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_import_flow_from_xml',
     description: 'Import Flow Designer flows from XML update set',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'flow-designer',
+    use_cases: ['import', 'deployment', 'migration'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

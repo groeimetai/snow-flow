@@ -48,6 +48,12 @@ const path = __importStar(require("path"));
 exports.toolDefinition = {
     name: 'snow_push_artifact',
     description: 'Push locally edited artifact files back to ServiceNow with validation',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'local-sync',
+    use_cases: ['local-development', 'artifact-sync', 'deployment'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

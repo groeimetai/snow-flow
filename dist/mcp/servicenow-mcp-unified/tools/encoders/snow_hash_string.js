@@ -13,6 +13,12 @@ const crypto_1 = __importDefault(require("crypto"));
 exports.toolDefinition = {
     name: 'snow_hash_string',
     description: 'Hash string using various algorithms',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'advanced',
+    subcategory: 'utilities',
+    use_cases: ['hashing', 'cryptography', 'security'],
+    complexity: 'beginner',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

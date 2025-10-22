@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_handoff_to_agent',
   description: 'Initiates handoff from Virtual Agent to a live agent when automated assistance is insufficient.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'virtual-agent',
+  use_cases: ['virtual-agent', 'agent-handoff', 'escalation'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

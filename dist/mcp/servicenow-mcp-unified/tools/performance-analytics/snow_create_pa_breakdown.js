@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_pa_breakdown',
     description: 'Creates a breakdown source for Performance Analytics to segment data by dimensions',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'performance-analytics',
+    subcategory: 'indicators',
+    use_cases: ['performance-analytics', 'breakdown', 'segmentation'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

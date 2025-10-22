@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_export_to_xml',
   description: 'Export records to XML format',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'import-export',
+  use_cases: ['export', 'xml', 'backup'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

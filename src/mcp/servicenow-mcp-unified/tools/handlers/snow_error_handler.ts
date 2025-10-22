@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_error_handler',
   description: 'Create error handler',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'error-handling',
+  use_cases: ['error-handling', 'debugging', 'logging'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

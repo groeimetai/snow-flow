@@ -24,6 +24,12 @@ import * as tf from '@tensorflow/tfjs';
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_train_anomaly_detector',
   description: '⚠️ LOCAL ML TRAINING: Trains autoencoder on your machine using ServiceNow metrics fetched via API. NOT in ServiceNow. Alternative to PI license for dev/testing.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'machine-learning',
+  use_cases: ['training', 'anomaly-detection', 'local-ml'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

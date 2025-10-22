@@ -52,6 +52,12 @@ const form_data_1 = __importDefault(require("form-data"));
 exports.toolDefinition = {
     name: 'snow_attach_file',
     description: 'Attach files to ServiceNow records with validation and content type detection',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'core-operations',
+    subcategory: 'attachments',
+    use_cases: ['attachments', 'files'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {
