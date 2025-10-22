@@ -14,15 +14,31 @@ const db = new LicenseDatabase();
 // ===== MIDDLEWARE =====
 
 /**
- * Authenticate admin requests with ADMIN_KEY
+ * Authenticate admin requests with cookie session or ADMIN_KEY header
  */
 function authenticateAdmin(req: Request, res: Response, next: NextFunction) {
+  // Check for admin session cookie (new web dashboard auth)
+  const adminSessionCookie = req.cookies?.admin_session;
+
+  if (adminSessionCookie) {
+    try {
+      const session = JSON.parse(adminSessionCookie);
+      if (session.type === 'admin') {
+        // Valid admin session
+        return next();
+      }
+    } catch (error) {
+      // Invalid cookie, fall through to header check
+    }
+  }
+
+  // Fallback to ADMIN_KEY header (legacy API auth)
   const adminKey = req.headers['x-admin-key'] || req.query.admin_key;
 
   if (!adminKey || adminKey !== process.env.ADMIN_KEY) {
     return res.status(401).json({
       success: false,
-      error: 'Unauthorized - Invalid or missing ADMIN_KEY'
+      error: 'Unauthorized - Invalid or missing admin authentication'
     });
   }
 
@@ -548,6 +564,60 @@ router.get('/analytics/customers', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get customer analytics'
+    });
+  }
+});
+
+// ===== DASHBOARD STATS ENDPOINT =====
+
+/**
+ * GET /api/admin/stats/dashboard
+ * Get dashboard overview statistics
+ */
+router.get('/stats/dashboard', authenticateAdmin, async (req: Request, res: Response) => {
+  try {
+    // Get customers count from database
+    const stmt = db.database.prepare('SELECT COUNT(*) as total FROM customers');
+    const totalCustomers = (stmt.get() as any).total;
+
+    const activeStmt = db.database.prepare("SELECT COUNT(*) as total FROM customers WHERE status = 'active'");
+    const activeCustomers = (activeStmt.get() as any).total;
+
+    const suspendedStmt = db.database.prepare("SELECT COUNT(*) as total FROM customers WHERE status = 'suspended'");
+    const suspendedCustomers = (suspendedStmt.get() as any).total;
+
+    // Get API stats
+    const apiStats1Day = db.getApiStats(1); // Last 24 hours
+    const apiStats7Days = db.getApiStats(7); // Last 7 days
+    const apiStatsTotal = db.getApiStats(365); // Last year (as total)
+
+    // Get service integrators
+    const serviceIntegrators = db.listServiceIntegrators();
+
+    // Get active instances count
+    const instancesStmt = db.database.prepare(`
+      SELECT COUNT(*) as total FROM customer_instances
+      WHERE last_seen > ?
+    `);
+    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+    const activeInstances = (instancesStmt.get(oneDayAgo) as any).total;
+
+    res.json({
+      totalCustomers,
+      activeCustomers,
+      suspendedCustomers,
+      totalApiCalls: apiStatsTotal.totalRequests,
+      apiCallsToday: apiStats1Day.totalRequests,
+      apiCallsThisWeek: apiStats7Days.totalRequests,
+      activeInstances,
+      totalServiceIntegrators: serviceIntegrators.length,
+      recentActivity: [] // Can be enhanced later
+    });
+  } catch (error) {
+    console.error('Error getting dashboard stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get dashboard statistics'
     });
   }
 });
