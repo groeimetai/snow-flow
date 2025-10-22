@@ -17,6 +17,18 @@ import {
   jiraGetProject,
   jiraLinkIssues
 } from '../integrations/jira-tools.js';
+import {
+  azdoSyncWorkItems,
+  azdoGetWorkItem,
+  azdoCreateWorkItem,
+  azdoUpdateWorkItem,
+  azdoGetPipelineRuns,
+  azdoTriggerPipeline,
+  azdoGetPullRequests,
+  azdoCreatePullRequest,
+  azdoGetReleases,
+  azdoCreateRelease
+} from '../integrations/azdo-tools.js';
 
 const router = Router();
 const db = new LicenseDatabase();
@@ -500,40 +512,169 @@ function registerJiraTools() {
  * Register Azure DevOps integration tools
  */
 function registerAzureDevOpsTools() {
-  const azdoTools = [
-    'snow_azdo_sync_work_items',
-    'snow_azdo_get_work_item',
-    'snow_azdo_create_work_item',
-    'snow_azdo_update_work_item',
-    'snow_azdo_get_pipeline_runs',
-    'snow_azdo_trigger_pipeline',
-    'snow_azdo_get_pull_requests',
-    'snow_azdo_create_pull_request',
-    'snow_azdo_get_releases',
-    'snow_azdo_create_release'
-  ];
-
-  azdoTools.forEach(toolName => {
-    registerTool({
-      name: toolName,
-      description: `${toolName.replace('snow_azdo_', '').replace(/_/g, ' ')} - Azure DevOps integration`,
-      category: 'azdo',
-      inputSchema: {
-        organization: { type: 'string', required: true },
-        project: { type: 'string', required: true }
-      },
-      handler: async (args, customer, credentials) => {
-        return {
-          message: `${toolName} - implementation coming soon`,
-          organization: args.organization,
-          project: args.project,
-          customer: customer.name
-        };
-      }
-    });
+  // Tool 1: Sync Work Items
+  registerTool({
+    name: 'snow_azdo_sync_work_items',
+    description: 'Sync Azure DevOps work items to ServiceNow',
+    category: 'azdo',
+    inputSchema: {
+      organization: { type: 'string', required: true, description: 'Azure DevOps organization' },
+      project: { type: 'string', required: true, description: 'Project name' },
+      states: { type: 'array', required: false, description: 'Work item states to sync' },
+      workItemTypes: { type: 'array', required: false, description: 'Work item types (Bug, User Story, Task, etc.)' },
+      areaPath: { type: 'string', required: false, description: 'Area path filter' },
+      iterationPath: { type: 'string', required: false, description: 'Iteration/sprint filter' },
+      maxResults: { type: 'number', required: false, default: 100, description: 'Max work items to sync' }
+    },
+    handler: azdoSyncWorkItems
   });
 
-  console.log('[MCP] Registered 10 Azure DevOps tools');
+  // Tool 2: Get Work Item
+  registerTool({
+    name: 'snow_azdo_get_work_item',
+    description: 'Get Azure DevOps work item with ServiceNow mapping',
+    category: 'azdo',
+    inputSchema: {
+      organization: { type: 'string', required: true, description: 'Azure DevOps organization' },
+      project: { type: 'string', required: true, description: 'Project name' },
+      workItemId: { type: 'number', required: true, description: 'Work item ID' }
+    },
+    handler: azdoGetWorkItem
+  });
+
+  // Tool 3: Create Work Item
+  registerTool({
+    name: 'snow_azdo_create_work_item',
+    description: 'Create new Azure DevOps work item',
+    category: 'azdo',
+    inputSchema: {
+      organization: { type: 'string', required: true, description: 'Azure DevOps organization' },
+      project: { type: 'string', required: true, description: 'Project name' },
+      workItemType: { type: 'string', required: true, description: 'Work item type (Bug, User Story, Task, etc.)' },
+      title: { type: 'string', required: true, description: 'Work item title' },
+      description: { type: 'string', required: false, description: 'Work item description' },
+      priority: { type: 'number', required: false, description: 'Priority (1-4)' },
+      assignedTo: { type: 'string', required: false, description: 'Assigned user email' },
+      tags: { type: 'string', required: false, description: 'Tags (semicolon separated)' },
+      areaPath: { type: 'string', required: false, description: 'Area path' },
+      iterationPath: { type: 'string', required: false, description: 'Iteration/sprint path' }
+    },
+    handler: azdoCreateWorkItem
+  });
+
+  // Tool 4: Update Work Item
+  registerTool({
+    name: 'snow_azdo_update_work_item',
+    description: 'Update existing Azure DevOps work item',
+    category: 'azdo',
+    inputSchema: {
+      organization: { type: 'string', required: true, description: 'Azure DevOps organization' },
+      project: { type: 'string', required: true, description: 'Project name' },
+      workItemId: { type: 'number', required: true, description: 'Work item ID to update' },
+      title: { type: 'string', required: false, description: 'New title' },
+      description: { type: 'string', required: false, description: 'New description' },
+      state: { type: 'string', required: false, description: 'New state (New, Active, Resolved, Closed, etc.)' },
+      priority: { type: 'number', required: false, description: 'New priority (1-4)' },
+      assignedTo: { type: 'string', required: false, description: 'New assignee email' },
+      tags: { type: 'string', required: false, description: 'New tags' }
+    },
+    handler: azdoUpdateWorkItem
+  });
+
+  // Tool 5: Get Pipeline Runs
+  registerTool({
+    name: 'snow_azdo_get_pipeline_runs',
+    description: 'Get Azure DevOps pipeline build runs',
+    category: 'azdo',
+    inputSchema: {
+      organization: { type: 'string', required: true, description: 'Azure DevOps organization' },
+      project: { type: 'string', required: true, description: 'Project name' },
+      pipelineId: { type: 'number', required: false, description: 'Specific pipeline ID' },
+      branch: { type: 'string', required: false, description: 'Filter by branch' },
+      status: { type: 'string', required: false, description: 'Filter by status (inProgress, completed, etc.)' },
+      maxResults: { type: 'number', required: false, default: 50, description: 'Max runs to return' }
+    },
+    handler: azdoGetPipelineRuns
+  });
+
+  // Tool 6: Trigger Pipeline
+  registerTool({
+    name: 'snow_azdo_trigger_pipeline',
+    description: 'Trigger Azure DevOps pipeline build',
+    category: 'azdo',
+    inputSchema: {
+      organization: { type: 'string', required: true, description: 'Azure DevOps organization' },
+      project: { type: 'string', required: true, description: 'Project name' },
+      pipelineId: { type: 'number', required: true, description: 'Pipeline ID to trigger' },
+      branch: { type: 'string', required: true, description: 'Branch to build' },
+      parameters: { type: 'object', required: false, description: 'Build parameters' }
+    },
+    handler: azdoTriggerPipeline
+  });
+
+  // Tool 7: Get Pull Requests
+  registerTool({
+    name: 'snow_azdo_get_pull_requests',
+    description: 'Get Azure DevOps pull requests',
+    category: 'azdo',
+    inputSchema: {
+      organization: { type: 'string', required: true, description: 'Azure DevOps organization' },
+      project: { type: 'string', required: true, description: 'Project name' },
+      repositoryId: { type: 'string', required: true, description: 'Repository ID or name' },
+      status: { type: 'string', required: false, description: 'PR status (active, completed, abandoned)' },
+      creatorId: { type: 'string', required: false, description: 'Filter by creator' },
+      maxResults: { type: 'number', required: false, default: 50, description: 'Max PRs to return' }
+    },
+    handler: azdoGetPullRequests
+  });
+
+  // Tool 8: Create Pull Request
+  registerTool({
+    name: 'snow_azdo_create_pull_request',
+    description: 'Create Azure DevOps pull request',
+    category: 'azdo',
+    inputSchema: {
+      organization: { type: 'string', required: true, description: 'Azure DevOps organization' },
+      project: { type: 'string', required: true, description: 'Project name' },
+      repositoryId: { type: 'string', required: true, description: 'Repository ID or name' },
+      sourceBranch: { type: 'string', required: true, description: 'Source branch name' },
+      targetBranch: { type: 'string', required: true, description: 'Target branch name' },
+      title: { type: 'string', required: true, description: 'PR title' },
+      description: { type: 'string', required: false, description: 'PR description' }
+    },
+    handler: azdoCreatePullRequest
+  });
+
+  // Tool 9: Get Releases
+  registerTool({
+    name: 'snow_azdo_get_releases',
+    description: 'Get Azure DevOps releases',
+    category: 'azdo',
+    inputSchema: {
+      organization: { type: 'string', required: true, description: 'Azure DevOps organization' },
+      project: { type: 'string', required: true, description: 'Project name' },
+      definitionId: { type: 'number', required: false, description: 'Release definition ID' },
+      maxResults: { type: 'number', required: false, default: 50, description: 'Max releases to return' }
+    },
+    handler: azdoGetReleases
+  });
+
+  // Tool 10: Create Release
+  registerTool({
+    name: 'snow_azdo_create_release',
+    description: 'Create Azure DevOps release',
+    category: 'azdo',
+    inputSchema: {
+      organization: { type: 'string', required: true, description: 'Azure DevOps organization' },
+      project: { type: 'string', required: true, description: 'Project name' },
+      definitionId: { type: 'number', required: true, description: 'Release definition ID' },
+      description: { type: 'string', required: false, description: 'Release description' },
+      artifacts: { type: 'array', required: false, description: 'Build artifacts to deploy' }
+    },
+    handler: azdoCreateRelease
+  });
+
+  console.log('[MCP] Registered 10 Azure DevOps tools (fully implemented)');
 }
 
 /**
