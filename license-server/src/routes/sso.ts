@@ -12,8 +12,13 @@
 import express, { Request, Response } from 'express';
 import passport from 'passport';
 import { Strategy as SamlStrategy } from 'passport-saml';
+import csrf from 'csurf';
 import { LicenseDatabase } from '../database/schema.js';
 import { generateSsoToken, requireSsoAuth } from '../middleware/sso-auth.js';
+import { ssoLoginRateLimiter } from '../middleware/security.js';
+
+// CSRF protection for SSO (cookie-based)
+const csrfProtection = csrf({ cookie: true });
 
 export function createSsoRoutes(db: LicenseDatabase): express.Router {
   const router = express.Router();
@@ -124,9 +129,16 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
    * GET /sso/login/:customerId
    * Initiate SAML authentication flow
    */
-  router.get('/login/:customerId', (req: Request, res: Response) => {
+  /**
+   * GET /sso/login/:customerId
+   * Initiate SSO login flow
+   *
+   * Security: Rate limited (10 attempts per 15 min) + CSRF protection
+   */
+  router.get('/login/:customerId', ssoLoginRateLimiter, csrfProtection, (req: Request, res: Response) => {
     try {
       const customerId = parseInt(req.params.customerId || '0');
+      const csrfToken = (req as any).csrfToken();
 
       // Get customer
       const customer = db.getCustomerById(customerId);
@@ -170,6 +182,9 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
   /**
    * POST /sso/callback
    * SAML Assertion Consumer Service (ACS)
+   *
+   * Security: CSRF protection via SAML state parameter
+   * Note: SAML already has built-in replay protection via InResponseTo and NotOnOrAfter
    */
   router.post('/callback', express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
     try {

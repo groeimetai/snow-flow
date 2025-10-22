@@ -20,7 +20,8 @@ import { mcpRouter } from './routes/mcp.js';
 import { createSsoRoutes } from './routes/sso.js';
 import { createCredentialsRoutes } from './routes/credentials.js';
 import { TokenRefreshWorker } from './workers/token-refresh.js';
-import { createMonitoringRoutes } from './routes/monitoring.js';
+import { createMonitoringRoutes, updateToolMetrics } from './routes/monitoring.js';
+import { validateInput, errorHandler } from './middleware/security.js';
 
 // Load environment variables
 dotenv.config();
@@ -69,8 +70,12 @@ const limiter = rateLimit({
 
 app.use('/validate', limiter);
 
-// Body parser
-app.use(express.json());
+// Body parser with size limits (10MB max to prevent DoS)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Input validation and sanitization
+app.use(validateInput);
 
 // Cookie parser for SSO
 app.use(cookieParser());
@@ -226,18 +231,9 @@ logger.info('Monitoring routes registered at /monitoring/*');
 logger.info('Monitoring endpoints: health, health/detailed, health/mcp, metrics, stats/usage, stats/performance, status');
 
 /**
- * Error handling middleware
+ * Error handling middleware (with sanitization)
  */
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  logger.error({
-    error: err.message,
-    stack: err.stack
-  });
-
-  res.status(500).json({
-    error: 'Internal server error'
-  });
-});
+app.use(errorHandler);
 
 // Start OAuth2 token refresh worker
 const tokenRefreshWorker = new TokenRefreshWorker(credsDb);

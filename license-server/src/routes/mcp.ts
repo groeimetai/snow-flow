@@ -8,6 +8,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { LicenseDatabase, Customer, CustomerInstance } from '../database/schema.js';
 import {
+  mcpRateLimiter,
+  withTimeout,
+  sanitizeError,
+  redactSensitiveFields
+} from '../middleware/security.js';
+import { updateToolMetrics } from './monitoring.js';
+import {
   jiraSyncBacklog,
   jiraGetIssue,
   jiraCreateIssue,
@@ -247,8 +254,10 @@ function getTool(name: string): McpToolDefinition | undefined {
 /**
  * POST /mcp/tools/list
  * List all available MCP tools
+ *
+ * Security: Requires authentication + rate limiting
  */
-router.post('/tools/list', async (req: Request, res: Response) => {
+router.post('/tools/list', authenticateCustomer, mcpRateLimiter, trackInstance, async (req: Request, res: Response) => {
   try {
     const customer = (req as any).customer as Customer;
 
@@ -282,12 +291,15 @@ router.post('/tools/list', async (req: Request, res: Response) => {
 /**
  * POST /mcp/tools/call
  * Execute an MCP tool
+ *
+ * Security: Requires authentication + rate limiting + execution timeout
  */
-router.post('/tools/call', async (req: Request, res: Response) => {
+router.post('/tools/call', authenticateCustomer, mcpRateLimiter, trackInstance, async (req: Request, res: Response) => {
   const startTime = Date.now();
+  const customer = (req as any).customer as Customer;
+  const instance = (req as any).instance as CustomerInstance;
 
   try {
-    const customer = (req as any).customer as Customer;
     const mcpRequest = req.body as McpRequest;
 
     // Validate request
@@ -316,16 +328,44 @@ router.post('/tools/call', async (req: Request, res: Response) => {
       });
     }
 
-    // Execute tool
-    console.log(`[MCP] Executing tool: ${tool.name} for customer: ${customer.name}`);
+    // Log tool execution (with redacted credentials)
+    console.log(`[MCP] Executing tool: ${tool.name} for customer: ${customer.name}`, {
+      customerId: customer.id,
+      toolName: tool.name,
+      category: tool.category,
+      arguments: redactSensitiveFields(mcpRequest.arguments)
+    });
 
-    const result = await tool.handler(
-      mcpRequest.arguments,
-      customer,
-      mcpRequest.credentials || {}
+    // Execute tool with 2-minute timeout
+    const result = await withTimeout(
+      tool.handler(
+        mcpRequest.arguments,
+        customer,
+        mcpRequest.credentials || {}
+      ),
+      120000, // 2 minutes
+      'Tool execution timeout (max 2 minutes)'
     );
 
     const duration = Date.now() - startTime;
+
+    // Log successful execution to database for audit
+    db.logMcpUsage({
+      customerId: customer.id,
+      instanceId: instance.id,
+      toolName: tool.name,
+      toolCategory: tool.category,
+      timestamp: Date.now(),
+      durationMs: duration,
+      success: true,
+      requestParams: JSON.stringify(redactSensitiveFields(mcpRequest.arguments)),
+      ipAddress: req.ip
+    });
+
+    // Update metrics for monitoring
+    if (typeof updateToolMetrics === 'function') {
+      updateToolMetrics(tool.name, true, duration);
+    }
 
     res.json({
       success: true,
@@ -333,23 +373,34 @@ router.post('/tools/call', async (req: Request, res: Response) => {
       result,
       usage: {
         durationMs: duration,
-        timestamp: startTime,
-        customer: customer.name
+        timestamp: startTime
       }
     });
 
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error('Tool execution error:', error);
 
-    res.status(500).json({
+    // Log failed execution to database for audit
+    db.logMcpUsage({
+      customerId: customer.id,
+      instanceId: instance?.id || 0,
+      toolName: req.body.tool || 'unknown',
+      toolCategory: 'unknown' as any,
+      timestamp: Date.now(),
+      durationMs: duration,
       success: false,
-      error: error instanceof Error ? error.message : 'Tool execution failed',
-      usage: {
-        durationMs: duration,
-        timestamp: startTime
-      }
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      requestParams: JSON.stringify(redactSensitiveFields(req.body.arguments || {})),
+      ipAddress: req.ip
     });
+
+    // Update metrics for monitoring
+    if (typeof updateToolMetrics === 'function' && req.body.tool) {
+      updateToolMetrics(req.body.tool, false, duration);
+    }
+
+    // Return sanitized error
+    res.status(500).json(sanitizeError(error as Error));
   }
 });
 
