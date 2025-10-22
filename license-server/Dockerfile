@@ -3,18 +3,22 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy backend package files
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install dependencies (including dev dependencies for build)
+# Install backend dependencies
 RUN npm ci
 
-# Copy source code
+# Copy backend source code
 COPY src ./src
 
-# Build TypeScript
-RUN npm run build
+# Build backend (TypeScript)
+RUN npm run build:backend
+
+# Copy frontend and build it
+COPY frontend ./frontend
+RUN cd frontend && npm ci && npm run build && cd ..
 
 # Production stage
 FROM node:20-alpine
@@ -27,8 +31,11 @@ COPY package*.json ./
 # Install production dependencies only
 RUN npm ci --only=production
 
-# Copy built code from builder
+# Copy built backend from builder
 COPY --from=builder /app/dist ./dist
+
+# Copy built frontend from builder
+COPY --from=builder /app/frontend/dist ./frontend/dist
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data && \
