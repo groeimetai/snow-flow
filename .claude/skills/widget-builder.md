@@ -22,6 +22,26 @@ Creates a complete Service Portal widget with:
 
 ## Step-by-step workflow
 
+### 0. 🚨 CREATE UPDATE SET FIRST (MANDATORY!)
+
+**BEFORE doing ANYTHING, create an Update Set:**
+
+```javascript
+// STEP 0: Create Update Set
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: Widget - [Widget Name]",
+  description: "Create [widget purpose] widget for Service Portal",
+  application: "global"
+});
+
+// Verify it's active
+const current = await snow_update_set_query({ action: 'current' });
+console.log('Active Update Set:', current.name);
+```
+
+**✅ Now all widget development will be tracked in this Update Set!**
+
 ### 1. Gather Requirements
 Ask the user:
 - What should the widget display/do?
@@ -378,11 +398,25 @@ Complete example:
 ## Success Criteria
 
 Widget is complete when:
-1. ✅ All functionality works as expected
-2. ✅ No console errors in browser
-3. ✅ Widget coherence validation passes
-4. ✅ Server script is ES5-only
-5. ✅ Deployed to correct portal
-6. ✅ User can interact with all features
-7. ✅ Data updates correctly
-8. ✅ Styling looks professional
+1. ✅ Update Set created and active
+2. ✅ All functionality works as expected
+3. ✅ No console errors in browser
+4. ✅ Widget coherence validation passes
+5. ✅ Server script is ES5-only
+6. ✅ Deployed to correct portal
+7. ✅ User can interact with all features
+8. ✅ Data updates correctly
+9. ✅ Styling looks professional
+
+### Final Step: Complete Update Set
+
+```javascript
+// Mark Update Set as complete
+await snow_update_set_manage({
+  action: 'complete',
+  update_set_id: updateSet.sys_id,
+  state: 'complete'
+});
+
+console.log('✅ Widget development complete and tracked in Update Set!');
+```

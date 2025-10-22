@@ -31,6 +31,26 @@ Creates data import/export workflows with:
 
 ## Step-by-step Workflow
 
+### 0. 🚨 CREATE UPDATE SET FIRST (MANDATORY!)
+
+**BEFORE starting, create an Update Set:**
+
+```javascript
+// STEP 0: Create Update Set
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: Data Import/Export",
+  description: "Set up data import/export process",
+  application: "global"
+});
+
+// Verify it's active
+const current = await snow_update_set_query({ action: 'current' });
+console.log('Active Update Set:', current.name);
+```
+
+**✅ Now all development will be tracked in this Update Set!**
+
 ### 1. Gather Requirements
 
 Ask user:
@@ -539,3 +559,17 @@ Data import is complete when:
 6. ✅ Test import successful
 7. ✅ Production data loaded
 8. ✅ Import documented
+
+
+### Final Step: Complete Update Set
+
+```javascript
+// After import/export setup, complete the Update Set
+await snow_update_set_manage({
+  action: "complete",
+  update_set_id: updateSet.sys_id,
+  state: "complete"
+});
+
+console.log("✅ Data Import/Export complete and tracked in Update Set!");
+```

@@ -22,6 +22,26 @@ Creates a complete incident analytics dashboard with:
 
 ## Step-by-step Workflow
 
+### 0. 🚨 CREATE UPDATE SET FIRST (MANDATORY!)
+
+**BEFORE starting, create an Update Set:**
+
+```javascript
+// STEP 0: Create Update Set
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: Incident Dashboard",
+  description: "Create incident dashboard for [purpose]",
+  application: "global"
+});
+
+// Verify it's active
+const current = await snow_update_set_query({ action: 'current' });
+console.log('Active Update Set:', current.name);
+```
+
+**✅ Now all development will be tracked in this Update Set!**
+
 ### 1. Define Dashboard Requirements
 
 Ask user:
@@ -599,3 +619,17 @@ Dashboard is complete when:
 6. ✅ Performance is acceptable (< 2s load)
 7. ✅ Mobile-responsive design
 8. ✅ No console errors
+
+
+### Final Step: Complete Update Set
+
+```javascript
+// After dashboard creation, complete the Update Set
+await snow_update_set_manage({
+  action: "complete",
+  update_set_id: updateSet.sys_id,
+  state: "complete"
+});
+
+console.log("✅ Incident Dashboard complete and tracked in Update Set!");
+```

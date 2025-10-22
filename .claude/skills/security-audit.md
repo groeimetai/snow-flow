@@ -25,6 +25,26 @@ Performs complete security audit including:
 
 ## Step-by-step Workflow
 
+### 0. 🚨 CREATE UPDATE SET FIRST (MANDATORY!)
+
+**BEFORE starting, create an Update Set:**
+
+```javascript
+// STEP 0: Create Update Set
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: Security Audit",
+  description: "Perform security audit and implement fixes",
+  application: "global"
+});
+
+// Verify it's active
+const current = await snow_update_set_query({ action: 'current' });
+console.log('Active Update Set:', current.name);
+```
+
+**✅ Now all development will be tracked in this Update Set!**
+
 ### 1. Define Audit Scope
 
 Ask user:
@@ -548,3 +568,17 @@ Security audit is complete when:
 6. ✅ Actionable recommendations given
 7. ✅ Timeline for fixes established
 8. ✅ Report delivered to stakeholders
+
+
+### Final Step: Complete Update Set
+
+```javascript
+// After security fixes, complete the Update Set
+await snow_update_set_manage({
+  action: "complete",
+  update_set_id: updateSet.sys_id,
+  state: "complete"
+});
+
+console.log("✅ Security Audit complete and fixes tracked in Update Set!");
+```
