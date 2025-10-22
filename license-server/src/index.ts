@@ -10,10 +10,13 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import winston from 'winston';
 import dotenv from 'dotenv';
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
 import { LicenseDatabase } from './database/schema.js';
 import { ValidationService, ValidationRequest } from './services/validation.js';
 import { adminRouter } from './routes/admin.js';
 import { mcpRouter } from './routes/mcp.js';
+import { createSsoRoutes } from './routes/sso.js';
 
 // Load environment variables
 dotenv.config();
@@ -63,6 +66,21 @@ app.use('/validate', limiter);
 
 // Body parser
 app.use(express.json());
+
+// Cookie parser for SSO
+app.use(cookieParser());
+
+// Session management for SSO
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'snow-flow-enterprise-session-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 8 * 60 * 60 * 1000 // 8 hours
+  }
+}));
 
 // Request logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -173,12 +191,18 @@ logger.info('Admin API routes registered at /api/admin/*');
  */
 app.use('/mcp', mcpRouter);
 logger.info('MCP HTTP Server routes registered at /mcp/*');
-logger.info('Enterprise MCP tools: 43 tools available');
+logger.info('Enterprise MCP tools: 26 tools available');
 logger.info('  - Jira: 8 tools');
 logger.info('  - Azure DevOps: 10 tools');
 logger.info('  - Confluence: 8 tools');
-logger.info('  - ML/Analytics: 15 tools');
-logger.info('  - SSO/SAML: 2 tools');
+
+/**
+ * SSO/SAML Authentication routes
+ */
+const ssoRouter = createSsoRoutes(db);
+app.use('/sso', ssoRouter);
+logger.info('SSO/SAML routes registered at /sso/*');
+logger.info('SSO endpoints: login, callback, logout, metadata, config, sessions, stats');
 
 /**
  * Error handling middleware

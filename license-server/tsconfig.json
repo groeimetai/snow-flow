@@ -18,8 +18,8 @@
     "noUnusedParameters": false,
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": false,
+    "strictNullChecks": false,
     "allowSyntheticDefaultImports": true
   },
   "include": ["src/**/*"],

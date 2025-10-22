@@ -28,7 +28,8 @@ async function seedLicenses() {
       contactEmail: 'team@test.com',
       maxInstances: 3,
       features: JSON.stringify(['jira']),
-      expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000 // 1 year
+      expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
+      totalApiCalls: 0
     },
     {
       key: `SNOW-PRO-${uuidv4().split('-')[0].toUpperCase()}`,
@@ -38,7 +39,8 @@ async function seedLicenses() {
       contactEmail: 'pro@test.com',
       maxInstances: 10,
       features: JSON.stringify(['jira', 'advanced-ml', 'priority-support']),
-      expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000 // 1 year
+      expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
+      totalApiCalls: 0
     },
     {
       key: `SNOW-ENT-${uuidv4().split('-')[0].toUpperCase()}`,
@@ -48,7 +50,8 @@ async function seedLicenses() {
       contactEmail: 'enterprise@test.com',
       maxInstances: 999,
       features: JSON.stringify(['*']), // All features
-      expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000 // 1 year
+      expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
+      totalApiCalls: 0
     },
     {
       key: `SNOW-EXPIRED-${uuidv4().split('-')[0].toUpperCase()}`,
@@ -58,7 +61,8 @@ async function seedLicenses() {
       contactEmail: 'expired@test.com',
       maxInstances: 1,
       features: JSON.stringify(['jira']),
-      expiresAt: Date.now() - 30 * 24 * 60 * 60 * 1000 // Expired 30 days ago
+      expiresAt: Date.now() - 30 * 24 * 60 * 60 * 1000, // Expired 30 days ago
+      totalApiCalls: 0
     }
   ];
 

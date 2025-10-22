@@ -118,6 +118,42 @@ export interface ValidationLog {
   timestamp: number;
 }
 
+export interface SsoConfig {
+  id: number;
+  customerId: number;
+  enabled: boolean;
+  provider: 'saml' | 'oauth' | 'openid';
+  entryPoint: string; // IdP SSO URL
+  issuer: string; // SP Entity ID
+  cert: string; // IdP Certificate
+  callbackUrl: string; // ACS URL
+  logoutUrl?: string; // SLO URL
+  nameIdFormat?: string;
+  wantAssertionsSigned: boolean;
+  wantAuthnResponseSigned: boolean;
+  signatureAlgorithm?: string;
+  attributeMapping?: string; // JSON mapping
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SsoSession {
+  id: number;
+  customerId: number;
+  userId: string; // From IdP
+  email: string;
+  displayName?: string;
+  sessionToken: string; // JWT token
+  nameId?: string; // SAML NameID
+  sessionIndex?: string; // SAML SessionIndex
+  attributes?: string; // JSON of SAML attributes
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: number;
+  expiresAt: number;
+  lastActivity: number;
+}
+
 export class LicenseDatabase {
   private db: Database.Database;
 
@@ -237,6 +273,58 @@ export class LicenseDatabase {
 
       CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_logs(timestamp);
       CREATE INDEX IF NOT EXISTS idx_api_logs_endpoint ON api_logs(endpoint);
+    `);
+
+    // Create sso_config table (SAML/OAuth/OpenID configuration per customer)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS sso_config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL UNIQUE,
+        enabled INTEGER NOT NULL DEFAULT 0,
+        provider TEXT NOT NULL CHECK(provider IN ('saml', 'oauth', 'openid')),
+        entry_point TEXT NOT NULL,
+        issuer TEXT NOT NULL,
+        cert TEXT NOT NULL,
+        callback_url TEXT NOT NULL,
+        logout_url TEXT,
+        name_id_format TEXT DEFAULT 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
+        want_assertions_signed INTEGER DEFAULT 1,
+        want_authn_response_signed INTEGER DEFAULT 1,
+        signature_algorithm TEXT DEFAULT 'sha256',
+        attribute_mapping TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_sso_config_customer ON sso_config(customer_id);
+      CREATE INDEX IF NOT EXISTS idx_sso_config_enabled ON sso_config(enabled);
+    `);
+
+    // Create sso_sessions table (active SSO sessions with JWT tokens)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS sso_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
+        email TEXT NOT NULL,
+        display_name TEXT,
+        session_token TEXT UNIQUE NOT NULL,
+        name_id TEXT,
+        session_index TEXT,
+        attributes TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        last_activity INTEGER NOT NULL,
+        FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_sso_sessions_customer ON sso_sessions(customer_id);
+      CREATE INDEX IF NOT EXISTS idx_sso_sessions_token ON sso_sessions(session_token);
+      CREATE INDEX IF NOT EXISTS idx_sso_sessions_user ON sso_sessions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_sso_sessions_expires ON sso_sessions(expires_at);
     `);
 
     // Create licenses table (legacy support - will migrate to customers)
@@ -894,6 +982,283 @@ export class LicenseDatabase {
       avgDurationMs: overall.avg_duration_ms || 0,
       errorRate: overall.error_rate || 0,
       topEndpoints
+    };
+  }
+
+  // ===== SSO CONFIG METHODS =====
+
+  /**
+   * Get SSO configuration for customer
+   */
+  getSsoConfig(customerId: number): SsoConfig | undefined {
+    const stmt = this.db.prepare(`
+      SELECT * FROM sso_config WHERE customer_id = ?
+    `);
+    return stmt.get(customerId) as SsoConfig | undefined;
+  }
+
+  /**
+   * Create SSO configuration
+   */
+  createSsoConfig(config: Omit<SsoConfig, 'id' | 'createdAt' | 'updatedAt'>): SsoConfig {
+    const now = Date.now();
+    const stmt = this.db.prepare(`
+      INSERT INTO sso_config (
+        customer_id, enabled, provider, entry_point, issuer, cert,
+        callback_url, logout_url, name_id_format, want_assertions_signed,
+        want_authn_response_signed, signature_algorithm, attribute_mapping,
+        created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const info = stmt.run(
+      config.customerId,
+      config.enabled ? 1 : 0,
+      config.provider,
+      config.entryPoint,
+      config.issuer,
+      config.cert,
+      config.callbackUrl,
+      config.logoutUrl || null,
+      config.nameIdFormat || 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
+      config.wantAssertionsSigned ? 1 : 0,
+      config.wantAuthnResponseSigned ? 1 : 0,
+      config.signatureAlgorithm || 'sha256',
+      config.attributeMapping || null,
+      now,
+      now
+    );
+
+    return {
+      id: info.lastInsertRowid as number,
+      ...config,
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+
+  /**
+   * Update SSO configuration
+   */
+  updateSsoConfig(customerId: number, updates: Partial<SsoConfig>): void {
+    const now = Date.now();
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (updates.enabled !== undefined) {
+      fields.push('enabled = ?');
+      values.push(updates.enabled ? 1 : 0);
+    }
+    if (updates.provider) {
+      fields.push('provider = ?');
+      values.push(updates.provider);
+    }
+    if (updates.entryPoint) {
+      fields.push('entry_point = ?');
+      values.push(updates.entryPoint);
+    }
+    if (updates.issuer) {
+      fields.push('issuer = ?');
+      values.push(updates.issuer);
+    }
+    if (updates.cert) {
+      fields.push('cert = ?');
+      values.push(updates.cert);
+    }
+    if (updates.callbackUrl) {
+      fields.push('callback_url = ?');
+      values.push(updates.callbackUrl);
+    }
+    if (updates.logoutUrl !== undefined) {
+      fields.push('logout_url = ?');
+      values.push(updates.logoutUrl);
+    }
+    if (updates.nameIdFormat) {
+      fields.push('name_id_format = ?');
+      values.push(updates.nameIdFormat);
+    }
+    if (updates.wantAssertionsSigned !== undefined) {
+      fields.push('want_assertions_signed = ?');
+      values.push(updates.wantAssertionsSigned ? 1 : 0);
+    }
+    if (updates.wantAuthnResponseSigned !== undefined) {
+      fields.push('want_authn_response_signed = ?');
+      values.push(updates.wantAuthnResponseSigned ? 1 : 0);
+    }
+    if (updates.signatureAlgorithm) {
+      fields.push('signature_algorithm = ?');
+      values.push(updates.signatureAlgorithm);
+    }
+    if (updates.attributeMapping !== undefined) {
+      fields.push('attribute_mapping = ?');
+      values.push(updates.attributeMapping);
+    }
+
+    fields.push('updated_at = ?');
+    values.push(now);
+    values.push(customerId);
+
+    const stmt = this.db.prepare(`
+      UPDATE sso_config SET ${fields.join(', ')} WHERE customer_id = ?
+    `);
+    stmt.run(...values);
+  }
+
+  /**
+   * Delete SSO configuration
+   */
+  deleteSsoConfig(customerId: number): void {
+    const stmt = this.db.prepare(`
+      DELETE FROM sso_config WHERE customer_id = ?
+    `);
+    stmt.run(customerId);
+  }
+
+  // ===== SSO SESSION METHODS =====
+
+  /**
+   * Create SSO session
+   */
+  createSsoSession(session: Omit<SsoSession, 'id' | 'createdAt'>): SsoSession {
+    const now = Date.now();
+    const stmt = this.db.prepare(`
+      INSERT INTO sso_sessions (
+        customer_id, user_id, email, display_name, session_token,
+        name_id, session_index, attributes, ip_address, user_agent,
+        created_at, expires_at, last_activity
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const info = stmt.run(
+      session.customerId,
+      session.userId,
+      session.email,
+      session.displayName || null,
+      session.sessionToken,
+      session.nameId || null,
+      session.sessionIndex || null,
+      session.attributes || null,
+      session.ipAddress || null,
+      session.userAgent || null,
+      now,
+      session.expiresAt,
+      session.lastActivity
+    );
+
+    return {
+      id: info.lastInsertRowid as number,
+      ...session,
+      createdAt: now
+    };
+  }
+
+  /**
+   * Get SSO session by token
+   */
+  getSsoSession(sessionToken: string): SsoSession | undefined {
+    const stmt = this.db.prepare(`
+      SELECT * FROM sso_sessions WHERE session_token = ?
+    `);
+    return stmt.get(sessionToken) as SsoSession | undefined;
+  }
+
+  /**
+   * Get SSO session by user and customer
+   */
+  getSsoSessionByUser(customerId: number, userId: string): SsoSession | undefined {
+    const stmt = this.db.prepare(`
+      SELECT * FROM sso_sessions
+      WHERE customer_id = ? AND user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `);
+    return stmt.get(customerId, userId) as SsoSession | undefined;
+  }
+
+  /**
+   * Update session last activity
+   */
+  updateSessionActivity(sessionToken: string): void {
+    const stmt = this.db.prepare(`
+      UPDATE sso_sessions
+      SET last_activity = ?
+      WHERE session_token = ?
+    `);
+    stmt.run(Date.now(), sessionToken);
+  }
+
+  /**
+   * Delete SSO session (logout)
+   */
+  deleteSsoSession(sessionToken: string): void {
+    const stmt = this.db.prepare(`
+      DELETE FROM sso_sessions WHERE session_token = ?
+    `);
+    stmt.run(sessionToken);
+  }
+
+  /**
+   * Delete all sessions for customer
+   */
+  deleteSsoSessionsByCustomer(customerId: number): void {
+    const stmt = this.db.prepare(`
+      DELETE FROM sso_sessions WHERE customer_id = ?
+    `);
+    stmt.run(customerId);
+  }
+
+  /**
+   * Clean up expired sessions
+   */
+  cleanupExpiredSessions(): number {
+    const now = Date.now();
+    const stmt = this.db.prepare(`
+      DELETE FROM sso_sessions WHERE expires_at < ?
+    `);
+    const result = stmt.run(now);
+    return result.changes;
+  }
+
+  /**
+   * Get active sessions for customer
+   */
+  getActiveSessions(customerId: number): SsoSession[] {
+    const now = Date.now();
+    const stmt = this.db.prepare(`
+      SELECT * FROM sso_sessions
+      WHERE customer_id = ? AND expires_at > ?
+      ORDER BY last_activity DESC
+    `);
+    return stmt.all(customerId, now) as SsoSession[];
+  }
+
+  /**
+   * Get SSO usage statistics
+   */
+  getSsoStats(customerId: number, days: number = 30): {
+    totalLogins: number;
+    activeUsers: number;
+    avgSessionDuration: number;
+  } {
+    const since = Date.now() - days * 24 * 60 * 60 * 1000;
+
+    const stmt = this.db.prepare(`
+      SELECT
+        COUNT(*) as total_logins,
+        COUNT(DISTINCT user_id) as active_users,
+        AVG(last_activity - created_at) as avg_session_duration
+      FROM sso_sessions
+      WHERE customer_id = ? AND created_at > ?
+    `);
+
+    const result = stmt.get(customerId, since) as any;
+
+    return {
+      totalLogins: result.total_logins || 0,
+      activeUsers: result.active_users || 0,
+      avgSessionDuration: result.avg_session_duration || 0
     };
   }
 }
