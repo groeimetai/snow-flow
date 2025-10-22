@@ -35,24 +35,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       // Check for customer token in localStorage
-      apiClient.loadCustomerToken();
+      const hasCustomerToken = apiClient.loadCustomerToken();
 
-      // Try to get customer session
-      try {
-        const session = await apiClient.getCustomerSession();
-        setCustomerSession(session);
-      } catch (error) {
-        // No valid customer session
-        setCustomerSession(null);
+      // Only check customer session if we have a token
+      if (hasCustomerToken) {
+        try {
+          const session = await apiClient.getCustomerSession();
+          setCustomerSession(session);
+        } catch (error) {
+          // Invalid/expired customer token
+          apiClient.clearAuth();
+          setCustomerSession(null);
+        }
       }
 
-      // Try to get admin session (cookie-based)
-      try {
-        const session = await apiClient.getAdminSession();
-        setAdminSession(session);
-      } catch (error) {
-        // No valid admin session
-        setAdminSession(null);
+      // Only check admin session if we're on an admin route
+      if (window.location.pathname.startsWith('/admin')) {
+        try {
+          const session = await apiClient.getAdminSession();
+          setAdminSession(session);
+        } catch (error) {
+          // No valid admin session
+          setAdminSession(null);
+        }
       }
     } catch (error) {
       console.error('Auth check failed:', error);

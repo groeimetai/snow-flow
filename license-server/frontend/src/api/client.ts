@@ -50,12 +50,17 @@ class ApiClient {
       (response) => response,
       (error: AxiosError<{ error?: string; message?: string }>) => {
         if (error.response?.status === 401) {
-          // Unauthorized - clear tokens and redirect to login
-          this.clearAuth();
-          if (window.location.pathname.startsWith('/admin')) {
-            window.location.href = '/admin/login';
-          } else if (window.location.pathname.startsWith('/portal')) {
-            window.location.href = '/portal/login';
+          // Only redirect if we're not already on a login page
+          const isLoginPage = window.location.pathname.endsWith('/login');
+
+          if (!isLoginPage) {
+            // Unauthorized - clear tokens and redirect to login
+            this.clearAuth();
+            if (window.location.pathname.startsWith('/admin')) {
+              window.location.href = '/admin/login';
+            } else if (window.location.pathname.startsWith('/portal')) {
+              window.location.href = '/portal/login';
+            }
           }
         }
         return Promise.reject(error);
@@ -75,11 +80,13 @@ class ApiClient {
     localStorage.removeItem('customer_token');
   }
 
-  loadCustomerToken() {
+  loadCustomerToken(): boolean {
     const token = localStorage.getItem('customer_token');
     if (token) {
       this.customerToken = token;
+      return true;
     }
+    return false;
   }
 
   // ===== ADMIN AUTHENTICATION =====
