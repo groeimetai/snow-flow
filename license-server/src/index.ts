@@ -12,6 +12,8 @@ import winston from 'winston';
 import dotenv from 'dotenv';
 import { LicenseDatabase } from './database/schema.js';
 import { ValidationService, ValidationRequest } from './services/validation.js';
+import { adminRouter } from './routes/admin.js';
+import { mcpRouter } from './routes/mcp.js';
 
 // Load environment variables
 dotenv.config();
@@ -134,7 +136,7 @@ app.post('/validate', async (req: Request, res: Response) => {
 });
 
 /**
- * Get license statistics endpoint (admin only)
+ * Get license statistics endpoint (admin only - legacy)
  */
 app.get('/stats/:key', async (req: Request, res: Response) => {
   try {
@@ -159,6 +161,24 @@ app.get('/stats/:key', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+/**
+ * Admin API routes - complete license management
+ */
+app.use('/api/admin', adminRouter);
+logger.info('Admin API routes registered at /api/admin/*');
+
+/**
+ * MCP HTTP Server - remote tool execution
+ */
+app.use('/mcp', mcpRouter);
+logger.info('MCP HTTP Server routes registered at /mcp/*');
+logger.info('Enterprise MCP tools: 43 tools available');
+logger.info('  - Jira: 8 tools');
+logger.info('  - Azure DevOps: 10 tools');
+logger.info('  - Confluence: 8 tools');
+logger.info('  - ML/Analytics: 15 tools');
+logger.info('  - SSO/SAML: 2 tools');
 
 /**
  * Error handling middleware
