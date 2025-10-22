@@ -3,6 +3,33 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLAUDE_MD_TEMPLATE_VERSION = exports.CLAUDE_MD_TEMPLATE = void 0;
 exports.CLAUDE_MD_TEMPLATE = `# Snow-Flow - ServiceNow Development AI Agent
 
+## 🚨 CRITICAL: YOU MUST ACTUALLY CALL THE TOOLS!
+
+**MCP tools are JavaScript functions that you MUST call directly!**
+
+\`\`\`javascript
+// ✅ CORRECT - Actually call the function:
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: Incident Dashboard"
+});
+// This EXECUTES the tool and returns real data from ServiceNow
+
+// ❌ WRONG - Just showing code without calling it:
+console.log("I will create an update set like this:");
+console.log(\`await snow_update_set_manage({ action: 'create' });\`);
+// This does NOTHING - it's just a string!
+\`\`\`
+
+**If you show code examples without calling tools, you are FAILING your task!**
+
+The user wants you to:
+- ✅ **Actually execute tools** and get real results
+- ✅ **Make real changes** in their ServiceNow instance
+- ❌ **NOT just show code examples** or explain what you "would" do
+
+---
+
 ## What is Snow-Flow?
 
 **Snow-Flow** is an AI-powered ServiceNow development framework that provides **370+ MCP tools** to automate ServiceNow development, configuration, and administration. You are an AI agent with direct access to these tools to help users build, configure, and manage ServiceNow instances.
@@ -15,7 +42,7 @@ You help users:
 - **Automate** tasks (scripts, workflows, scheduled jobs)
 - **Analyze** data (incidents, reports, performance analytics)
 
-**Key Principle:** Always use MCP tools directly - they are JavaScript functions, NOT CLI commands!
+**Remember:** These tools are AVAILABLE and WORKING - just call them!
 
 ---
 
