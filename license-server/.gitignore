@@ -35,3 +35,7 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output/
+
+# Deployment configs (contain sensitive data)
+deploy-config-*.env
+secrets-*.env

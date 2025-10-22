@@ -167,7 +167,7 @@ router.get('/si/:masterKey', async (req: Request, res: Response) => {
  */
 router.post('/customers', async (req: Request, res: Response) => {
   try {
-    const { serviceIntegratorId, name, contactEmail, company } = req.body;
+    const { serviceIntegratorId, name, contactEmail, company, theme } = req.body;
 
     if (!serviceIntegratorId || !name || !contactEmail) {
       return res.status(400).json({
@@ -185,6 +185,19 @@ router.post('/customers', async (req: Request, res: Response) => {
       });
     }
 
+    // Validate theme if provided
+    if (theme) {
+      const fs = require('fs');
+      const path = require('path');
+      const themePath = path.join(__dirname, '../themes', `${theme}.json`);
+      if (!fs.existsSync(themePath)) {
+        return res.status(400).json({
+          success: false,
+          error: `Theme '${theme}' not found`
+        });
+      }
+    }
+
     // Generate license key: SNOW-ENT-CUSTNAME-XXXXX
     const custPrefix = name.substring(0, 4).toUpperCase().replace(/[^A-Z]/g, '');
     const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -195,6 +208,7 @@ router.post('/customers', async (req: Request, res: Response) => {
       name,
       contactEmail,
       company,
+      theme,
       licenseKey,
       status: 'active'
     });
@@ -289,7 +303,7 @@ router.get('/customers/:id', async (req: Request, res: Response) => {
 router.put('/customers/:id', async (req: Request, res: Response) => {
   try {
     const customerId = parseInt(req.params.id);
-    const { name, contactEmail, company, status } = req.body;
+    const { name, contactEmail, company, status, theme } = req.body;
 
     const customer = db.getCustomerById(customerId);
     if (!customer) {
@@ -299,7 +313,20 @@ router.put('/customers/:id', async (req: Request, res: Response) => {
       });
     }
 
-    db.updateCustomer(customerId, { name, contactEmail, company, status });
+    // Validate theme if provided
+    if (theme !== undefined) {
+      const fs = require('fs');
+      const path = require('path');
+      const themePath = path.join(__dirname, '../themes', `${theme}.json`);
+      if (theme && !fs.existsSync(themePath)) {
+        return res.status(400).json({
+          success: false,
+          error: `Theme '${theme}' not found`
+        });
+      }
+    }
+
+    db.updateCustomer(customerId, { name, contactEmail, company, status, theme });
 
     const updated = db.getCustomerById(customerId);
 

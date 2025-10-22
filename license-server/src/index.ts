@@ -15,13 +15,21 @@ import cookieParser from 'cookie-parser';
 import { LicenseDatabase } from './database/schema.js';
 import { CredentialsDatabase } from './database/credentials-schema.js';
 import { ValidationService, ValidationRequest } from './services/validation.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { adminRouter } from './routes/admin.js';
 import { mcpRouter } from './routes/mcp.js';
 import { createSsoRoutes } from './routes/sso.js';
 import { createCredentialsRoutes } from './routes/credentials.js';
+import { createThemesRoutes } from './routes/themes.js';
+import { createAuthRoutes } from './routes/auth.js';
 import { TokenRefreshWorker } from './workers/token-refresh.js';
 import { createMonitoringRoutes, updateToolMetrics } from './routes/monitoring.js';
 import { validateInput, errorHandler } from './middleware/security.js';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
@@ -231,6 +239,47 @@ logger.info('Monitoring routes registered at /monitoring/*');
 logger.info('Monitoring endpoints: health, health/detailed, health/mcp, metrics, stats/usage, stats/performance, status');
 
 /**
+ * Enterprise Themes API
+ */
+const themesRouter = createThemesRoutes(db);
+app.use('/api/themes', themesRouter);
+logger.info('Themes API routes registered at /api/themes/*');
+logger.info('Themes endpoints: list, :themeName, customer/current, customer/:customerId/assign');
+
+/**
+ * Authentication API (Admin & Customer Login)
+ */
+const authRouter = createAuthRoutes(db);
+app.use('/api/auth', authRouter);
+logger.info('Authentication API routes registered at /api/auth/*');
+logger.info('Auth endpoints: admin/login, customer/login, admin/session, customer/session, logout');
+
+/**
+ * Serve Frontend Static Files (Production)
+ */
+const frontendPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendPath));
+logger.info(`Serving frontend from: ${frontendPath}`);
+
+/**
+ * Client-side routing - serve index.html for all non-API routes
+ */
+app.get('*', (req: Request, res: Response, next: NextFunction) => {
+  // Skip API routes, health checks, and static assets
+  if (req.path.startsWith('/api/') ||
+      req.path.startsWith('/mcp') ||
+      req.path.startsWith('/sso') ||
+      req.path.startsWith('/monitoring') ||
+      req.path.startsWith('/validate') ||
+      req.path.startsWith('/stats') ||
+      req.path.startsWith('/health')) {
+    return next();
+  }
+
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
+/**
  * Error handling middleware (with sanitization)
  */
 app.use(errorHandler);
@@ -250,11 +299,14 @@ const server = app.listen(PORT, () => {
   logger.info('Snow-Flow Enterprise License Server - Ready');
   logger.info('='.repeat(60));
   logger.info(`HTTP Server: http://localhost:${PORT}`);
+  logger.info(`Web Dashboard: http://localhost:${PORT}`);
   logger.info(`Health Check: http://localhost:${PORT}/health`);
   logger.info(`Admin API: http://localhost:${PORT}/api/admin/*`);
+  logger.info(`Auth API: http://localhost:${PORT}/api/auth/*`);
   logger.info(`MCP HTTP: http://localhost:${PORT}/mcp/*`);
   logger.info(`SSO/SAML: http://localhost:${PORT}/sso/*`);
   logger.info(`Credentials: http://localhost:${PORT}/api/credentials/*`);
+  logger.info(`Themes: http://localhost:${PORT}/api/themes/*`);
   logger.info(`Monitoring: http://localhost:${PORT}/monitoring/*`);
   logger.info('='.repeat(60));
   logger.info('Health Checks:');

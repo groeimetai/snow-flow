@@ -6,11 +6,15 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "tsc",
+    "build:frontend": "cd frontend && npm run build && cd ..",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
+    "dev:frontend": "cd frontend && npm run dev",
     "db:init": "node dist/scripts/init-db.js",
-    "db:seed": "node dist/scripts/seed-licenses.js"
+    "db:seed": "node dist/scripts/seed-licenses.js",
+    "install:all": "npm install && cd frontend && npm install && cd .."
   },
   "dependencies": {
     "ajv": "^8.12.0",

@@ -31,6 +31,7 @@ export interface Customer {
   contactEmail: string;
   company?: string;
   licenseKey: string; // SNOW-ENT-CUST-XXXX
+  theme?: string; // Theme name (e.g., 'capgemini', 'ey', 'servicenow')
   createdAt: number;
   updatedAt: number;
   status: 'active' | 'suspended' | 'churned';
@@ -198,6 +199,7 @@ export class LicenseDatabase {
         contact_email TEXT NOT NULL,
         company TEXT,
         license_key TEXT UNIQUE NOT NULL,
+        theme TEXT,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         status TEXT DEFAULT 'active' CHECK(status IN ('active', 'suspended', 'churned')),
@@ -210,6 +212,13 @@ export class LicenseDatabase {
       CREATE INDEX IF NOT EXISTS idx_customers_si ON customers(service_integrator_id);
       CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
     `);
+
+    // Migration: Add theme column if it doesn't exist (for existing databases)
+    try {
+      this.db.exec(`ALTER TABLE customers ADD COLUMN theme TEXT`);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
 
     // Create customer_instances table
     this.db.exec(`
@@ -640,10 +649,10 @@ export class LicenseDatabase {
     const now = Date.now();
     const stmt = this.db.prepare(`
       INSERT INTO customers (
-        service_integrator_id, name, contact_email, company, license_key,
+        service_integrator_id, name, contact_email, company, license_key, theme,
         created_at, updated_at, status, total_api_calls, last_api_call
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NULL)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL)
     `);
 
     const info = stmt.run(
@@ -652,6 +661,7 @@ export class LicenseDatabase {
       customer.contactEmail,
       customer.company || null,
       customer.licenseKey,
+      customer.theme || null,
       now,
       now,
       customer.status
@@ -717,6 +727,10 @@ export class LicenseDatabase {
     if (updates.company !== undefined) {
       fields.push('company = ?');
       values.push(updates.company);
+    }
+    if (updates.theme !== undefined) {
+      fields.push('theme = ?');
+      values.push(updates.theme);
     }
     if (updates.status) {
       fields.push('status = ?');

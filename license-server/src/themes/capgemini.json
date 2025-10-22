@@ -1,0 +1,117 @@
+{
+  "$schema": "https://opencode.ai/theme.json",
+  "name": "Capgemini",
+  "description": "Official Capgemini color scheme - blue corporate branding",
+  "author": "Snow-Flow Team",
+  "version": "1.0.0",
+  "defs": {
+    "capgemini_blue": "#0070AD",
+    "capgemini_blue_light": "#12ABDB",
+    "capgemini_blue_dark": "#005587",
+    "capgemini_teal": "#00B0CA",
+    "capgemini_purple": "#7B519F",
+    "capgemini_green": "#5BB85C",
+    "capgemini_orange": "#FF8C2B",
+    "capgemini_red": "#E53935",
+    "capgemini_gray_darker": "#1A1A1A",
+    "capgemini_gray_dark": "#2B2F33",
+    "capgemini_gray_medium": "#3E4345",
+    "capgemini_gray": "#5F6D7E",
+    "capgemini_gray_light": "#8B95A5",
+    "capgemini_gray_lighter": "#D1D8DD",
+    "capgemini_white": "#FFFFFF",
+    "capgemini_off_white": "#F4F6F8",
+    "capgemini_code_bg": "#282C34",
+    "capgemini_selection": "#264F78"
+  },
+  "theme": {
+    "primary": "capgemini_blue",
+    "secondary": "capgemini_teal",
+    "accent": "capgemini_blue_light",
+    "error": "capgemini_red",
+    "warning": "capgemini_orange",
+    "success": "capgemini_green",
+    "info": "capgemini_teal",
+    "text": {
+      "dark": "capgemini_white",
+      "light": "capgemini_gray_darker"
+    },
+    "textMuted": {
+      "dark": "capgemini_gray_light",
+      "light": "capgemini_gray"
+    },
+    "background": {
+      "dark": "capgemini_gray_dark",
+      "light": "capgemini_white"
+    },
+    "backgroundAlt": {
+      "dark": "capgemini_gray_medium",
+      "light": "capgemini_off_white"
+    },
+    "border": {
+      "dark": "capgemini_gray_medium",
+      "light": "capgemini_gray_lighter"
+    },
+    "borderActive": "capgemini_blue",
+    "selection": "capgemini_selection",
+    "cursor": "capgemini_blue_light",
+    "diffAdded": "capgemini_green",
+    "diffRemoved": "capgemini_red",
+    "diffModified": "capgemini_orange",
+    "syntaxComment": {
+      "dark": "capgemini_gray_light",
+      "light": "capgemini_gray"
+    },
+    "syntaxKeyword": "capgemini_purple",
+    "syntaxString": "capgemini_green",
+    "syntaxNumber": "capgemini_orange",
+    "syntaxFunction": "capgemini_blue_light",
+    "syntaxVariable": {
+      "dark": "capgemini_white",
+      "light": "capgemini_gray_darker"
+    },
+    "syntaxType": "capgemini_teal",
+    "syntaxConstant": "capgemini_orange",
+    "syntaxOperator": "capgemini_purple",
+    "syntaxPunctuation": {
+      "dark": "capgemini_gray_light",
+      "light": "capgemini_gray"
+    },
+    "syntaxAttribute": "capgemini_teal",
+    "syntaxTag": "capgemini_red",
+    "syntaxError": "capgemini_red",
+    "linkText": "capgemini_blue",
+    "linkUnderline": "capgemini_blue",
+    "codeBackground": {
+      "dark": "capgemini_code_bg",
+      "light": "capgemini_off_white"
+    },
+    "codeBlockBackground": {
+      "dark": "capgemini_gray_darker",
+      "light": "capgemini_off_white"
+    },
+    "promptBackground": {
+      "dark": "capgemini_gray_medium",
+      "light": "capgemini_off_white"
+    },
+    "toolCallBackground": {
+      "dark": "capgemini_gray_medium",
+      "light": "capgemini_off_white"
+    },
+    "headerBackground": {
+      "dark": "capgemini_gray_darker",
+      "light": "capgemini_blue"
+    },
+    "headerText": "capgemini_white",
+    "spinnerPrimary": "capgemini_blue",
+    "spinnerSecondary": "capgemini_teal",
+    "scrollbarThumb": {
+      "dark": "capgemini_gray",
+      "light": "capgemini_gray_light"
+    },
+    "scrollbarTrack": {
+      "dark": "capgemini_gray_dark",
+      "light": "capgemini_gray_lighter"
+    }
+  }
+}

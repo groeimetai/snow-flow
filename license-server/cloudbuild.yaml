@@ -1,0 +1,144 @@
+# Cloud Build Configuration for Snow-Flow Enterprise License Server
+#
+# This file builds the Docker image, pushes to Artifact Registry, and deploys to Cloud Run
+#
+# Required substitution variables (set in Cloud Build trigger or via --substitutions):
+#   _REGION: GCP region (e.g., europe-west1, us-central1)
+#   _ARTIFACT_REGISTRY_REPO: Artifact Registry repository name (e.g., snow-flow-enterprise)
+#   _SERVICE_NAME: Cloud Run service name (e.g., license-server)
+#
+# Environment variables (set in Cloud Build trigger or Cloud Run):
+#   ADMIN_KEY: Admin API key for license management
+#   SESSION_SECRET: Secret key for session management
+#   JWT_SECRET: Secret key for JWT token generation
+#   DB_PATH: Path to SQLite database (default: ./data/licenses.db)
+#   NODE_ENV: Environment (production/development)
+#   LOG_LEVEL: Logging level (info/debug/warn/error)
+#   CORS_ORIGIN: CORS allowed origins (default: *)
+#
+# Usage:
+#   Manual trigger:
+#     gcloud builds submit --config cloudbuild.yaml \
+#       --substitutions=_REGION=europe-west1,_ARTIFACT_REGISTRY_REPO=snow-flow-enterprise,_SERVICE_NAME=license-server
+#
+#   Automated trigger:
+#     Configure Cloud Build trigger with substitution variables
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+  substitutionOption: 'ALLOW_LOOSE'
+
+substitutions:
+  _REGION: 'europe-west1'  # Default region
+  _ARTIFACT_REGISTRY_REPO: 'snow-flow-enterprise'  # Default repo name
+  _SERVICE_NAME: 'license-server'  # Default service name
+  _MIN_INSTANCES: '1'  # Minimum instances (0 for scale-to-zero)
+  _MAX_INSTANCES: '10'  # Maximum instances
+  _MEMORY: '512Mi'  # Memory allocation
+  _CPU: '1'  # CPU allocation
+  _CONCURRENCY: '80'  # Request concurrency per instance
+  _TIMEOUT: '300s'  # Request timeout (5 minutes)
+
+steps:
+  # Step 1: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-image'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
+      - '--cache-from'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
+      - '--build-arg'
+      - 'BUILDKIT_INLINE_CACHE=1'
+      - '.'
+    timeout: '600s'
+
+  # Step 2: Push Docker image to Artifact Registry (with SHA tag)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image-sha'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+    waitFor: ['build-image']
+
+  # Step 3: Push Docker image to Artifact Registry (with latest tag)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image-latest'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
+    waitFor: ['build-image']
+
+  # Step 4: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloud-run'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'  # Public endpoint (auth handled by license key)
+      - '--min-instances=${_MIN_INSTANCES}'
+      - '--max-instances=${_MAX_INSTANCES}'
+      - '--memory=${_MEMORY}'
+      - '--cpu=${_CPU}'
+      - '--concurrency=${_CONCURRENCY}'
+      - '--timeout=${_TIMEOUT}'
+      - '--port=8080'
+      - '--set-env-vars=NODE_ENV=production,PORT=8080,LOG_LEVEL=info,DB_PATH=/app/data/licenses.db'
+      # Note: Set secrets via Cloud Run console or gcloud:
+      #   - ADMIN_KEY (from Secret Manager)
+      #   - SESSION_SECRET (from Secret Manager)
+      #   - JWT_SECRET (from Secret Manager)
+    waitFor: ['push-image-sha', 'push-image-latest']
+
+  # Step 5: Verify deployment health
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'verify-deployment'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Get Cloud Run service URL
+        SERVICE_URL=$(gcloud run services describe ${_SERVICE_NAME} \
+          --region=${_REGION} \
+          --format='value(status.url)')
+
+        echo "Service URL: $SERVICE_URL"
+
+        # Wait for service to be ready (max 60 seconds)
+        for i in {1..12}; do
+          echo "Health check attempt $i/12..."
+          if curl -f -s "$SERVICE_URL/health" > /dev/null 2>&1; then
+            echo "✅ Health check passed!"
+            curl -s "$SERVICE_URL/health" | jq .
+            exit 0
+          fi
+          echo "Waiting 5 seconds..."
+          sleep 5
+        done
+
+        echo "❌ Health check failed after 60 seconds"
+        exit 1
+    waitFor: ['deploy-cloud-run']
+
+# Store built images for caching
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
+
+# Build timeout (15 minutes)
+timeout: '900s'
+
+# Tags for build tracking
+tags:
+  - 'snow-flow-enterprise'
+  - 'license-server'
+  - '${_SERVICE_NAME}'
