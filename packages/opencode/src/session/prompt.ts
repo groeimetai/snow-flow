@@ -50,6 +50,7 @@ import { spawn } from "child_process"
 import { Command } from "../command"
 import { $, fileURLToPath } from "bun"
 import { ConfigMarkdown } from "../config/markdown"
+import { MessageSummary } from "./summary"
 
 export namespace SessionPrompt {
   const log = Log.create({ service: "session.prompt" })
@@ -345,6 +346,11 @@ export namespace SessionPrompt {
       }
       state().queued.delete(input.sessionID)
       SessionCompaction.prune(input)
+      MessageSummary.summarize({
+        sessionID: input.sessionID,
+        messageID: result.info.parentID,
+        providerID: model.providerID,
+      })
       return result
     }
   }
@@ -355,7 +361,7 @@ export namespace SessionPrompt {
     providerID: string
     signal: AbortSignal
   }) {
-    let msgs = await Session.messages(input.sessionID).then(MessageV2.filterSummarized)
+    let msgs = await Session.messages(input.sessionID).then(MessageV2.filterCompacted)
     const lastAssistant = msgs.findLast((msg) => msg.info.role === "assistant")
     if (
       lastAssistant?.info.role === "assistant" &&

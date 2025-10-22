@@ -5,6 +5,8 @@ import { Message } from "./message"
 import { convertToModelMessages, type ModelMessage, type UIMessage } from "ai"
 import { Identifier } from "../id/id"
 import { LSP } from "../lsp"
+import { Snapshot } from "@/snapshot"
+import { fn } from "@/util/fn"
 
 export namespace MessageV2 {
   export const OutputLengthError = NamedError.create("MessageOutputLengthError", z.object({}))
@@ -241,6 +243,12 @@ export namespace MessageV2 {
     time: z.object({
       created: z.number(),
     }),
+    summary: z
+      .object({
+        diffs: Snapshot.FileDiff.array(),
+        text: z.string(),
+      })
+      .optional(),
   }).meta({
     ref: "UserMessage",
   })
@@ -597,7 +605,7 @@ export namespace MessageV2 {
     return convertToModelMessages(result)
   }
 
-  export function filterSummarized(msgs: { info: MessageV2.Info; parts: MessageV2.Part[] }[]) {
+  export function filterCompacted(msgs: { info: MessageV2.Info; parts: MessageV2.Part[] }[]) {
     const i = msgs.findLastIndex((m) => m.info.role === "assistant" && !!m.info.summary)
     if (i === -1) return msgs.slice()
     return msgs.slice(i)
