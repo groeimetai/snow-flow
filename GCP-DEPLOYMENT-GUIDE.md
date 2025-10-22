@@ -137,7 +137,7 @@ gcloud builds triggers create github \
   --repo-name="snow-flow-enterprise" \
   --repo-owner="groeimetai" \
   --branch-pattern="^main$" \
-  --build-config="enterprise/cloudbuild.yaml" \
+  --build-config="cloudbuild.yaml" \
   --substitutions="_REGION=$REGION,_SERVICE_NAME=snow-flow-license-server-prod,_NODE_ENV=production"
 ```
 
@@ -149,7 +149,7 @@ gcloud builds triggers create github \
   --repo-name="snow-flow-enterprise" \
   --repo-owner="groeimetai" \
   --branch-pattern="^test$" \
-  --build-config="enterprise/cloudbuild.yaml" \
+  --build-config="cloudbuild.yaml" \
   --substitutions="_REGION=$REGION,_SERVICE_NAME=snow-flow-license-server-test,_NODE_ENV=staging"
 ```
 
@@ -419,26 +419,27 @@ gcloud run domain-mappings create \
 
 **BELANGRIJK:** Cloud Build zoekt naar bestanden vanaf de repo root!
 
+**Repository structuur:**
 ```
-snow-flow-enterprise/           # Repo root
-└── enterprise/                 # Enterprise directory
-    ├── cloudbuild.yaml         # ✅ Build config (BUILD ZOEKT HIER!)
-    └── license-server/         # Server directory
-        ├── Dockerfile          # ✅ Docker build file
-        ├── .dockerignore       # ✅ Docker ignore
-        ├── package.json        # Dependencies
-        ├── tsconfig.json       # TypeScript config
-        └── src/                # Source code
-            └── index.ts        # Main entry point
+groeimetai/snow-flow-enterprise/    # GitHub repo root (= enterprise directory!)
+├── cloudbuild.yaml                 # ✅ Build config
+├── license-server/                 # Server directory
+│   ├── Dockerfile                  # ✅ Docker build file
+│   ├── .dockerignore               # ✅ Docker ignore
+│   ├── package.json                # Dependencies
+│   ├── tsconfig.json               # TypeScript config
+│   └── src/                        # Source code
+│       └── index.ts                # Main entry point
+└── GCP-DEPLOYMENT-GUIDE.md         # Deze guide!
 ```
 
 **In cloudbuild.yaml:**
 ```yaml
 args:
   - '-f'
-  - 'license-server/Dockerfile'  # ✅ Relatief vanaf enterprise/
+  - 'license-server/Dockerfile'  # ✅ Vanaf repo root
   - 'license-server'             # ✅ Build context
-dir: 'enterprise'                 # ✅ Werk directory
+# NO dir: specified - werkt vanaf repo root!
 ```
 
 ## 🎯 Quick Commands Reference

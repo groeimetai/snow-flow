@@ -14,7 +14,6 @@ steps:
       - '-f'
       - 'license-server/Dockerfile'
       - 'license-server'
-    dir: 'enterprise'
 
   # Step 2: Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
