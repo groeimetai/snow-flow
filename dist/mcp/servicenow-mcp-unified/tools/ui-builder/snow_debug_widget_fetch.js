@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_debug_widget_fetch',
     description: 'Debug widget data fetching and server communication issues',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ui-builder',
+    subcategory: 'debugging',
+    use_cases: ['ui-builder', 'debugging', 'widgets'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_run_compliance_scan',
   description: 'Run compliance scans against security frameworks (SOX, GDPR, HIPAA, PCI-DSS)',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'security',
+  subcategory: 'compliance',
+  use_cases: ['security', 'compliance', 'audit'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

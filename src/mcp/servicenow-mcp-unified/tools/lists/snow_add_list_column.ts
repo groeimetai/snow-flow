@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_add_list_column',
   description: 'Add column to list view',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'ui',
+  use_cases: ['lists', 'views', 'ui-customization'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

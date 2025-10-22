@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_web_service',
     description: 'Create SOAP web service integration from WSDL definition',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'soap',
+    use_cases: ['integration', 'soap', 'web-service'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

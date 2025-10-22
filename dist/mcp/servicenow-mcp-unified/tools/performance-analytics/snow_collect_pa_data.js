@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_collect_pa_data',
     description: 'Manually triggers Performance Analytics data collection for specific indicators',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'performance-analytics',
+    subcategory: 'data-collection',
+    use_cases: ['performance-analytics', 'data', 'collection'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

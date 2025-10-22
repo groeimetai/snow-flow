@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_update_knowledge_article',
     description: 'Updates an existing knowledge article. Can modify content, metadata, or workflow state.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'knowledge',
+    use_cases: ['knowledge', 'update', 'edit'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

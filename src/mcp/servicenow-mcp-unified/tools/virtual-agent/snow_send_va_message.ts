@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_send_va_message',
   description: 'Sends a message to Virtual Agent and gets the response. Simulates user interaction with the chatbot.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'virtual-agent',
+  use_cases: ['virtual-agent', 'testing', 'conversation'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

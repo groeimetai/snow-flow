@@ -9,6 +9,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_anomaly_detection',
     description: 'Detect anomalies in data',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'advanced',
+    subcategory: 'analytics',
+    use_cases: ['anomaly-detection', 'data-analysis', 'monitoring'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

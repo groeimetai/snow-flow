@@ -9,6 +9,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_format_text',
     description: 'Format text with various transformations',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'advanced',
+    subcategory: 'utilities',
+    use_cases: ['formatting', 'text', 'transformation'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

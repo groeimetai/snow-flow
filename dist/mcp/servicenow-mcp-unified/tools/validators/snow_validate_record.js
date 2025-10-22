@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_validate_record',
     description: 'Validate record against business rules',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'validation',
+    use_cases: ['record-validation', 'business-rules', 'validation'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

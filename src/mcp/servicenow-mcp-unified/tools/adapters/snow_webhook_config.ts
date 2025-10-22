@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_webhook_config',
   description: 'Configure webhook endpoint',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'adapters',
+  use_cases: ['webhooks', 'http-integration', 'event-notifications'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

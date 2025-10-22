@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_edit_by_sysid',
   description: 'Updates specific fields of an artifact using sys_id. Provides direct field-level modifications with validation.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'editing',
+  use_cases: ['edit', 'update', 'direct-modification'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

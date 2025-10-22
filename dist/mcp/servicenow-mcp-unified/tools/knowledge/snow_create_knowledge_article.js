@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_knowledge_article',
     description: 'Creates a knowledge article in ServiceNow Knowledge Base. Articles can contain solutions, how-to guides, or reference information.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'knowledge',
+    use_cases: ['knowledge'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

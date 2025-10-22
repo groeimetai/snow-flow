@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_form_section',
     description: 'Create form section',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'forms',
+    use_cases: ['forms', 'ui', 'sections'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

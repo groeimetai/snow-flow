@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_impact_analysis',
     description: 'Perform impact analysis to identify affected services when a CI changes',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'cmdb',
+    subcategory: 'impact-analysis',
+    use_cases: ['cmdb', 'impact', 'services'],
+    complexity: 'advanced',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

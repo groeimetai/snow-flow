@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_get_flow_execution_history',
     description: 'Get flow execution history with filtering options',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'flow-designer',
+    use_cases: ['history', 'monitoring', 'troubleshooting'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_hr_case',
   description: 'Create HR service case',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'itsm',
+  subcategory: 'hr',
+  use_cases: ['hr-service-delivery', 'case-management', 'hr'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_discover_mobile_configs',
     description: 'Discovers mobile application configurations including layouts, actions, and offline sync settings.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'core-operations',
+    subcategory: 'discovery',
+    use_cases: ['discovery', 'mobile-config', 'mobile'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

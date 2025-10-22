@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_transfer_asset',
     description: 'Transfer asset to user/location',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'asset-management',
+    subcategory: 'asset-lifecycle',
+    use_cases: ['asset-management', 'transfer', 'relocation'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_preview_widget',
     description: 'Renders widget preview with test data for validation before deployment. Simulates Service Portal environment, checks dependencies, and validates data binding.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'validation',
+    use_cases: ['widget-preview', 'validation', 'testing'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

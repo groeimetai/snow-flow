@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_saml_config',
   description: 'Configure SAML SSO',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'adapters',
+  use_cases: ['saml', 'sso', 'authentication'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

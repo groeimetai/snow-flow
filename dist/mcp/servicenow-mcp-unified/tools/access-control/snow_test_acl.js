@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_test_acl',
     description: 'Test ACL access for user',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'access-control',
+    use_cases: ['acl', 'testing', 'security'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

@@ -8,6 +8,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_diff_objects',
   description: 'Compare two objects and get differences',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'advanced',
+  subcategory: 'data-utilities',
+  use_cases: ['comparison', 'diff', 'data-analysis'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

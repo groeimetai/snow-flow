@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_run_discovery',
   description: 'Trigger CMDB discovery scan',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'cmdb',
+  subcategory: 'discovery',
+  use_cases: ['cmdb', 'discovery', 'scanning'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

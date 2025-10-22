@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_define_kpi',
     description: 'Define Key Performance Indicators for monitoring',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'reporting',
+    subcategory: 'kpi',
+    use_cases: ['kpi', 'monitoring', 'metrics'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

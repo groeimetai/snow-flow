@@ -25,6 +25,12 @@ import * as tf from '@tensorflow/tfjs';
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_train_change_risk',
   description: '⚠️ LOCAL ML TRAINING: Trains neural networks on your machine using ServiceNow change data fetched via API. NOT in ServiceNow. Alternative to PI license for dev/testing.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'machine-learning',
+  use_cases: ['training', 'risk-prediction', 'local-ml'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

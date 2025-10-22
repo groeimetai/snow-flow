@@ -8,6 +8,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_retry_operation',
   description: 'Retry failed operation with backoff',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'advanced',
+  subcategory: 'utilities',
+  use_cases: ['retry', 'error-handling', 'resilience'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

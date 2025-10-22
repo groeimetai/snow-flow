@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_deployment_debug',
     description: 'Provides detailed debugging information including authentication status, permissions, active sessions, and recent deployment logs for troubleshooting.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'deployment',
+    use_cases: ['deployment', 'debugging', 'diagnostics'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {},

@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_manage_software_license',
   description: 'Manage software licenses with compliance tracking and optimization',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'asset-management',
+  subcategory: 'license-management',
+  use_cases: ['licenses', 'compliance', 'sam'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_notification_template',
   description: 'Create reusable notification template with multi-channel support',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'notifications',
+  use_cases: ['templates', 'notifications', 'multi-channel'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

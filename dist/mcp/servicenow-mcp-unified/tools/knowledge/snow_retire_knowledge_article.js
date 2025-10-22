@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_retire_knowledge_article',
     description: 'Retires a knowledge article, making it unavailable for general use while preserving history.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'knowledge',
+    use_cases: ['knowledge', 'retire', 'workflow'],
+    complexity: 'beginner',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

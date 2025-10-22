@@ -1,4 +1,9 @@
-export { toolDefinition as snow_xml_to_json_def, execute as snow_xml_to_json_exec } from './snow_xml_to_json.js';
-export { toolDefinition as snow_json_to_xml_def, execute as snow_json_to_xml_exec } from './snow_json_to_xml.js';
-export { toolDefinition as snow_csv_to_json_def, execute as snow_csv_to_json_exec } from './snow_csv_to_json.js';
-export { toolDefinition as snow_json_to_csv_def, execute as snow_json_to_csv_exec } from './snow_json_to_csv.js';
+/**
+ * Data Conversion Tools - v8.2.0 Merged Architecture
+ *
+ * Phase 3: 4 → 1 (-3 tools)
+ * - snow_data_convert: Replaces csv_to_json, json_to_csv, json_to_xml, xml_to_json (4 → 1)
+ */
+
+// Merged Tools (v8.2.0 Phase 3)
+export { toolDefinition as snow_data_convert_def, execute as snow_data_convert_exec } from './snow_data_convert.js';

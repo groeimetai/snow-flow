@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_get_queue_items',
     description: 'Get items in queue',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'queues',
+    use_cases: ['queue-items', 'work-list', 'assignment'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

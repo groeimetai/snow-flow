@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_related_list',
   description: 'Create related list on form',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'ui',
+  use_cases: ['lists', 'relationships', 'forms'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

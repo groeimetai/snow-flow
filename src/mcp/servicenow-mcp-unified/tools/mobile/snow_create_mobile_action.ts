@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_mobile_action',
   description: 'Creates a mobile action that users can trigger from the mobile app. Actions can navigate, execute scripts, or open forms.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-frameworks',
+  subcategory: 'mobile',
+  use_cases: ['mobile-actions', 'mobile-ui', 'user-interactions'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

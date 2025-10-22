@@ -9,6 +9,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_sleep',
     description: 'Sleep for specified milliseconds',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'advanced',
+    subcategory: 'utilities',
+    use_cases: ['delay', 'timing', 'utilities'],
+    complexity: 'beginner',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

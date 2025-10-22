@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_discover_data_sources',
   description: 'Discover available data sources for integration including import sets and REST endpoints',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'discovery',
+  use_cases: ['integration', 'discovery', 'data-sources'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

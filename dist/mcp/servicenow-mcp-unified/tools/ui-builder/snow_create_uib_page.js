@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_uib_page',
     description: 'Create UI Builder page with automatic routing and configuration',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ui-builder',
+    subcategory: 'pages',
+    use_cases: ['ui-builder', 'pages', 'creation'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

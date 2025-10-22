@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_rollback_deployment',
     description: 'Rollback failed deployment by reverting to previous version or deleting artifact',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'deployment',
+    use_cases: ['deployment', 'rollback', 'recovery'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

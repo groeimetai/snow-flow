@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_error_handler',
     description: 'Create error handler',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'error-handling',
+    use_cases: ['error-handling', 'debugging', 'logging'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

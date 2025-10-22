@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_train_classifier',
     description: 'Train machine learning classifier',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'advanced',
+    subcategory: 'machine-learning',
+    use_cases: ['ml-training', 'classifier', 'ai'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

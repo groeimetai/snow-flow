@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_user_group',
     description: 'Creates a new user group in ServiceNow with specified properties',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'core-operations',
+    subcategory: 'user-management',
+    use_cases: ['groups', 'access-control'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

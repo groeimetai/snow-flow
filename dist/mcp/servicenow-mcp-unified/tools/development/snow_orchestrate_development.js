@@ -11,6 +11,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_orchestrate_development',
     description: 'Orchestrates complex development workflows with intelligent agent coordination, shared memory, and real-time progress tracking.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'orchestration',
+    use_cases: ['orchestration', 'workflow', 'coordination'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

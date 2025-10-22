@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_reconcile_ci',
   description: 'Reconcile CI data from multiple sources',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'cmdb',
+  subcategory: 'reconciliation',
+  use_cases: ['cmdb', 'reconciliation', 'data-quality'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

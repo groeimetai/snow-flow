@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_request_approval',
     description: 'Request approval for record',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'approvals',
+    use_cases: ['approvals', 'workflow', 'requests'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

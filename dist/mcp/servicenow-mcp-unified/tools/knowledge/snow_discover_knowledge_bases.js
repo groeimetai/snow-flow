@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_discover_knowledge_bases',
     description: 'Discovers available knowledge bases and their categories in the ServiceNow instance.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'knowledge',
+    use_cases: ['knowledge', 'discovery', 'query'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

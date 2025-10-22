@@ -8,6 +8,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_ai_classify',
   description: 'Classify text using AI',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'advanced',
+  subcategory: 'machine-learning',
+  use_cases: ['text-classification', 'ai', 'categorization'],
+  complexity: 'intermediate',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

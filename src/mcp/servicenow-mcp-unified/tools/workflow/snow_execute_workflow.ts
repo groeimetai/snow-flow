@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_execute_workflow',
   description: 'Execute workflow on record',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'workflow',
+  use_cases: ['workflow', 'workflow-execution', 'automation'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

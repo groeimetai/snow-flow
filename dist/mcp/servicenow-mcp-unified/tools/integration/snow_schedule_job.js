@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_schedule_job',
     description: 'Create scheduled job with cron expression or repeat interval',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'scheduling',
+    use_cases: ['automation', 'scheduling', 'jobs'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

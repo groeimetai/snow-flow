@@ -46,6 +46,12 @@ const fs = __importStar(require("fs/promises"));
 exports.toolDefinition = {
     name: 'snow_import_artifact',
     description: 'Imports previously exported artifacts from JSON/XML files into ServiceNow. Validates compatibility and handles dependencies automatically.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'deployment',
+    use_cases: ['deployment', 'import', 'migration'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

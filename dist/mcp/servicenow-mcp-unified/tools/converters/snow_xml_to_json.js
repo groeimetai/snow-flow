@@ -9,6 +9,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_xml_to_json',
     description: 'Convert XML to JSON',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'advanced',
+    subcategory: 'specialized',
+    use_cases: ['converters'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

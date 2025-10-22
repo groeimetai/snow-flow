@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_oauth_provider',
     description: 'Create OAuth provider configuration',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'adapters',
+    use_cases: ['oauth', 'authentication', 'sso'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

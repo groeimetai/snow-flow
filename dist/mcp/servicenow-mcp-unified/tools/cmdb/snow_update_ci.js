@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_update_ci',
     description: 'Update Configuration Item attributes',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'cmdb',
+    subcategory: 'crud',
+    use_cases: ['cmdb', 'update', 'configuration-item'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

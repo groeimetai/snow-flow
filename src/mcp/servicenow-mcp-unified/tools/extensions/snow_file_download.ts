@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_file_download',
   description: 'Download file from ServiceNow',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'core-operations',
+  subcategory: 'attachments',
+  use_cases: ['files', 'download', 'attachments'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_pattern_analysis',
   description: 'Analyzes patterns across incidents, requests, and problems to identify trends, common issues, and improvement opportunities',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'reporting',
+  subcategory: 'analytics',
+  use_cases: ['pattern-analysis', 'trends', 'data-analysis'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

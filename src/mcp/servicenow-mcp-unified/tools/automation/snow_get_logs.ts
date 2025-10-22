@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_logs',
   description: 'Retrieve ServiceNow system logs with filtering by level, source, and time range',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'monitoring',
+  use_cases: ['automation', 'logs', 'monitoring'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

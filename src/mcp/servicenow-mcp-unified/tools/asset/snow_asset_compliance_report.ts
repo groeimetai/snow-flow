@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_asset_compliance_report',
   description: 'Generate comprehensive asset compliance reports for auditing',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'asset-management',
+  subcategory: 'reporting',
+  use_cases: ['compliance', 'reporting', 'auditing'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

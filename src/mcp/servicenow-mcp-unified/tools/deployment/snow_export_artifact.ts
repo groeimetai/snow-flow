@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_export_artifact',
   description: 'Exports ServiceNow artifacts (widgets, applications) to JSON/XML format for backup, version control, or migration purposes.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'deployment',
+  use_cases: ['deployment', 'export', 'backup'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

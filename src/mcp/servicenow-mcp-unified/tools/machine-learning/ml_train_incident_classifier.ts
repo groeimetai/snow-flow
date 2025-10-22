@@ -26,6 +26,12 @@ import * as tf from '@tensorflow/tfjs';
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_train_incident_classifier',
   description: '⚠️ LOCAL ML TRAINING: Trains LSTM neural networks on your machine using ServiceNow incident data fetched via API. NOT in ServiceNow. Alternative to PI license for dev/testing. Fetches up to 5000 records.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'machine-learning',
+  use_cases: ['training', 'classification', 'local-ml'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

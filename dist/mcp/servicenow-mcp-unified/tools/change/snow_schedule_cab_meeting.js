@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_schedule_cab_meeting',
     description: 'Schedule a Change Advisory Board (CAB) meeting for change review',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'change',
+    use_cases: ['change'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

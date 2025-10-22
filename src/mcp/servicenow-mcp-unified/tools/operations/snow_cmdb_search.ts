@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_cmdb_search',
   description: 'Searches Configuration Management Database (CMDB) for configuration items with relationship mapping',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'cmdb',
+  subcategory: 'discovery',
+  use_cases: ['cmdb', 'configuration-items'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

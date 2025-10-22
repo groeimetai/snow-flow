@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_edit_artifact',
   description: 'Modifies ServiceNow artifacts using natural language instructions. Includes automatic error handling, retry logic, and validation of changes.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'editing',
+  use_cases: ['edit', 'modify', 'natural-language'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

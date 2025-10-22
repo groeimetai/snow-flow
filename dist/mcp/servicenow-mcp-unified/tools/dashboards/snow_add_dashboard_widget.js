@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_add_dashboard_widget',
     description: 'Add widget to dashboard',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'reporting',
+    subcategory: 'dashboards',
+    use_cases: ['dashboards', 'widgets', 'visualization'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

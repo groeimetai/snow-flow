@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_get_event_queue',
     description: 'Get event queue status and pending events',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'event-management',
+    use_cases: ['events', 'monitoring', 'troubleshooting'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

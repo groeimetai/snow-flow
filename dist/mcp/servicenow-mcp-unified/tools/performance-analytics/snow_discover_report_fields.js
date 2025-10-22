@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_discover_report_fields',
     description: 'Retrieves reportable fields from tables with type filtering and metadata',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'performance-analytics',
+    subcategory: 'discovery',
+    use_cases: ['performance-analytics', 'reports', 'fields'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_purchase_order',
   description: 'Create purchase order',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'itsm',
+  subcategory: 'procurement',
+  use_cases: ['purchase-orders', 'procurement', 'vendor-management'],
+  complexity: 'intermediate',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

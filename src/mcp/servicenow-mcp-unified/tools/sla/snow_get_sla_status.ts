@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_sla_status',
   description: 'Get SLA status for record',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'itsm',
+  subcategory: 'sla',
+  use_cases: ['sla-monitoring', 'status-check', 'service-level'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

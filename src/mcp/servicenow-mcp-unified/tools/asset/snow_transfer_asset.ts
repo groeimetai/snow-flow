@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_transfer_asset',
   description: 'Transfer asset to user/location',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'asset-management',
+  subcategory: 'asset-lifecycle',
+  use_cases: ['asset-management', 'transfer', 'relocation'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

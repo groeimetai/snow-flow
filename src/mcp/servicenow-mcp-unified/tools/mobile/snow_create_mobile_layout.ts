@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_mobile_layout',
   description: 'Creates a custom mobile layout for forms and lists in the mobile app.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-frameworks',
+  subcategory: 'mobile',
+  use_cases: ['mobile-layouts', 'mobile-ui', 'form-layouts'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

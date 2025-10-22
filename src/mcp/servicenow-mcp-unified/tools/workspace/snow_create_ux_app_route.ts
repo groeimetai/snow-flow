@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_ux_app_route',
   description: 'STEP 5: Create Route Record (sys_ux_app_route) - Defines the URL slug that leads to the page.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-frameworks',
+  subcategory: 'workspace',
+  use_cases: ['workspace', 'routing', 'url'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

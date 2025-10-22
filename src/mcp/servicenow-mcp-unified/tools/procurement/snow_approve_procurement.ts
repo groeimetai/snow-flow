@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_approve_procurement',
   description: 'Approve procurement request',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'itsm',
+  subcategory: 'procurement',
+  use_cases: ['procurement', 'approvals', 'purchasing'],
+  complexity: 'intermediate',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

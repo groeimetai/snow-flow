@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_attachments',
   description: 'Get attachments for record',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'core-operations',
+  subcategory: 'attachments',
+  use_cases: ['attachments', 'query', 'file-management'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_uib_page_registry',
   description: 'Configure URL routing and access control for UI Builder pages',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-builder',
+  subcategory: 'routing',
+  use_cases: ['ui-builder', 'routing', 'access-control'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

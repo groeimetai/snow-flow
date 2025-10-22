@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_discover_table_fields',
   description: 'Discover table schema with fields, types, relationships, and metadata',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'schema',
+  use_cases: ['discovery', 'schema'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

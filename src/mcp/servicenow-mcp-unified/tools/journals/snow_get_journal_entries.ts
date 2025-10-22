@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_journal_entries',
   description: 'Get journal entries for record',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'core-operations',
+  subcategory: 'comments',
+  use_cases: ['journals', 'audit', 'history'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

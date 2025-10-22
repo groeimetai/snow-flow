@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_entitlement',
   description: 'Create service entitlement for customer',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'itsm',
+  subcategory: 'customer-service',
+  use_cases: ['csm', 'entitlements', 'sla'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

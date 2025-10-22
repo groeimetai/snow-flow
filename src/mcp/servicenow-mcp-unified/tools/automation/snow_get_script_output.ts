@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_script_output',
   description: 'Retrieve output from previously executed script using execution ID',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'script-execution',
+  use_cases: ['automation', 'scripts', 'output-retrieval'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

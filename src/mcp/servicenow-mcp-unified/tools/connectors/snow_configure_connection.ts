@@ -8,6 +8,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_configure_connection',
   description: 'Configure ServiceNow connection alias',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'connectors',
+  use_cases: ['connection-config', 'multi-instance', 'configuration'],
+  complexity: 'intermediate',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

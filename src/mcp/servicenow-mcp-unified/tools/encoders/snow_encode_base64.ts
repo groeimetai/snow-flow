@@ -8,6 +8,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_encode_base64',
   description: 'Encode string to Base64',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'advanced',
+  subcategory: 'utilities',
+  use_cases: ['encoding', 'base64', 'conversion'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

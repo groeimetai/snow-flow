@@ -8,6 +8,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_field_filter',
   description: 'Create field-based filter',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'advanced',
+  subcategory: 'data-utilities',
+  use_cases: ['filtering', 'field-queries', 'query-building'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

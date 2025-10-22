@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_instance_info',
   description: 'Get ServiceNow instance information',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'core-operations',
+  subcategory: 'discovery',
+  use_cases: ['instance-info', 'version-check', 'diagnostics'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {}

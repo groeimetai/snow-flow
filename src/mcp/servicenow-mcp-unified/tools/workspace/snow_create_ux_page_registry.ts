@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_ux_page_registry',
   description: 'STEP 4: Create Page Registry Record (sys_ux_page_registry) - Registers the page for use within the workspace configuration.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-frameworks',
+  subcategory: 'workspace',
+  use_cases: ['workspace', 'registry', 'configuration'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

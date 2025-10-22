@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_asset_compliance_report',
     description: 'Generate comprehensive asset compliance reports for auditing',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'asset-management',
+    subcategory: 'reporting',
+    use_cases: ['compliance', 'reporting', 'auditing'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

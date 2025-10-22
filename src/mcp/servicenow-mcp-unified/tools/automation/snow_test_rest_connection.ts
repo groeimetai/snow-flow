@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_test_rest_connection',
   description: 'Test REST message connection with full response details and diagnostics',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'testing',
+  use_cases: ['automation', 'rest', 'connection'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_processor',
   description: 'Create script processor (ES5 only!)',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'platform',
+  use_cases: ['processors', 'scripted-rest', 'api'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

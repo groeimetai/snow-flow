@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_export_report_data',
     description: 'Exports report data to CSV, Excel, JSON, or XML formats with configurable row limits',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'performance-analytics',
+    subcategory: 'reporting',
+    use_cases: ['performance-analytics', 'reports', 'export'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_generate_records',
     description: 'Generate multiple test records',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'advanced',
+    subcategory: 'testing',
+    use_cases: ['test-data', 'data-generation', 'testing'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

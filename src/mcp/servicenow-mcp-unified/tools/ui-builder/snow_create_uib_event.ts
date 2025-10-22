@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_uib_event',
   description: 'Create custom events for UI Builder component communication',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-builder',
+  subcategory: 'events',
+  use_cases: ['ui-builder', 'events', 'components'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

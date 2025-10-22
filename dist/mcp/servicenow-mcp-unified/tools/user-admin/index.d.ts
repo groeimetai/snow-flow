@@ -1,7 +1,10 @@
-export { toolDefinition as snow_create_user_def, execute as snow_create_user_exec } from './snow_create_user.js';
-export { toolDefinition as snow_create_group_def, execute as snow_create_group_exec } from './snow_create_group.js';
-export { toolDefinition as snow_add_user_to_group_def, execute as snow_add_user_to_group_exec } from './snow_add_user_to_group.js';
-export { toolDefinition as snow_create_role_def, execute as snow_create_role_exec } from './snow_create_role.js';
-export { toolDefinition as snow_assign_role_def, execute as snow_assign_role_exec } from './snow_assign_role.js';
-export { toolDefinition as snow_deactivate_user_def, execute as snow_deactivate_user_exec } from './snow_deactivate_user.js';
+/**
+ * User Administration Tools - v8.2.0 Merged Architecture
+ *
+ * Tools merged: 5 → 2 (-3 tools)
+ * - snow_user_manage: Replaces create_user, deactivate_user (2 → 1)
+ * - snow_role_group_manage: Replaces create_role, assign_role, create_group (3 → 1)
+ */
+export { toolDefinition as snow_user_manage_def, execute as snow_user_manage_exec } from './snow_user_manage.js';
+export { toolDefinition as snow_role_group_manage_def, execute as snow_role_group_manage_exec } from './snow_role_group_manage.js';
 //# sourceMappingURL=index.d.ts.map

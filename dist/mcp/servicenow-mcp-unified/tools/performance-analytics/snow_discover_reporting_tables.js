@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_discover_reporting_tables',
     description: 'Discovers tables available for reporting with filtering by category and data availability',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'reporting',
+    subcategory: 'discovery',
+    use_cases: ['table-discovery', 'reporting', 'data-sources'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_file_download',
     description: 'Download file from ServiceNow',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'core-operations',
+    subcategory: 'attachments',
+    use_cases: ['files', 'download', 'attachments'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

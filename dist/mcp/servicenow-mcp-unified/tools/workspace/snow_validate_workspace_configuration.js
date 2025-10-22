@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_validate_workspace_configuration',
     description: 'Validate workspace configuration for completeness, best practices, and potential issues across all workspace types.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ui-frameworks',
+    subcategory: 'workspace',
+    use_cases: ['workspace', 'validation', 'quality'],
+    complexity: 'advanced',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

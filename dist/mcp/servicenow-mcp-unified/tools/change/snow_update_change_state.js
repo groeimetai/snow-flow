@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_update_change_state',
     description: 'Update change request state through its lifecycle',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'change',
+    use_cases: ['state-management', 'workflow', 'change-lifecycle'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

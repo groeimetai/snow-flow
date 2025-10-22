@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_metric',
   description: 'Create system metric',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'reporting',
+  subcategory: 'metrics',
+  use_cases: ['metrics', 'analytics', 'monitoring'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

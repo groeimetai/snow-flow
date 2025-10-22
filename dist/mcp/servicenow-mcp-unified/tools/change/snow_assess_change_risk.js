@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_assess_change_risk',
     description: 'Assess change request risk',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'change',
+    use_cases: ['risk-assessment', 'analysis', 'change-management'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

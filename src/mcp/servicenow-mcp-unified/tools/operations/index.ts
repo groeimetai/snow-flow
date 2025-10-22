@@ -8,10 +8,8 @@ export { toolDefinition as snow_discover_table_fields_def, execute as snow_disco
 export { toolDefinition as snow_get_by_sysid_def, execute as snow_get_by_sysid_exec } from './snow_get_by_sysid.js';
 export { toolDefinition as snow_comprehensive_search_def, execute as snow_comprehensive_search_exec } from './snow_comprehensive_search.js';
 
-// Record Operations
-export { toolDefinition as snow_create_record_def, execute as snow_create_record_exec } from './snow_create_record.js';
-export { toolDefinition as snow_update_record_def, execute as snow_update_record_exec } from './snow_update_record.js';
-export { toolDefinition as snow_delete_record_def, execute as snow_delete_record_exec } from './snow_delete_record.js';
+// Record Operations (v8.2.0 Merged: create, update, delete → manage)
+export { toolDefinition as snow_record_manage_def, execute as snow_record_manage_exec } from './snow_record_manage.js';
 export { toolDefinition as snow_bulk_update_def, execute as snow_bulk_update_exec } from './snow_bulk_update.js';
 export { toolDefinition as snow_attach_file_def, execute as snow_attach_file_exec } from './snow_attach_file.js';
 
@@ -33,9 +31,7 @@ export { toolDefinition as snow_cmdb_search_def, execute as snow_cmdb_search_exe
 // User & Group Management
 export { toolDefinition as snow_user_lookup_def, execute as snow_user_lookup_exec } from './snow_user_lookup.js';
 export { toolDefinition as snow_create_user_group_def, execute as snow_create_user_group_exec } from './snow_create_user_group.js';
-export { toolDefinition as snow_assign_user_to_group_def, execute as snow_assign_user_to_group_exec } from './snow_assign_user_to_group.js';
-export { toolDefinition as snow_remove_user_from_group_def, execute as snow_remove_user_from_group_exec } from './snow_remove_user_from_group.js';
-export { toolDefinition as snow_list_group_members_def, execute as snow_list_group_members_exec } from './snow_list_group_members.js';
+export { toolDefinition as snow_manage_group_membership_def, execute as snow_manage_group_membership_exec } from './snow_manage_group_membership.js';
 
 // Analytics & Metrics
 export { toolDefinition as snow_operational_metrics_def, execute as snow_operational_metrics_exec } from './snow_operational_metrics.js';

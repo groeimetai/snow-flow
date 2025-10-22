@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_choice',
   description: 'Create choice list value for field',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'platform',
+  use_cases: ['choices', 'fields', 'customization'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

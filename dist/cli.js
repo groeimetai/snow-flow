@@ -1582,9 +1582,12 @@ program
         await createReadmeFiles(targetDir, options.force);
         // Copy opencode-config.example.json
         await copyOpenCodeConfig(targetDir, options.force);
+        // Copy OpenCode themes
+        await copyOpenCodeThemes(targetDir, options.force);
         console.log(chalk_1.default.green.bold('\n✅ Snow-Flow project initialized successfully!'));
         console.log('\n📋 Created Snow-Flow configuration:');
         console.log('   ✓ .opencode/ - OpenCode configuration with both MCP servers');
+        console.log('   ✓ .opencode/themes/ - ServiceNow custom theme for OpenCode');
         console.log('   ✓ .claude/ - Claude Code MCP configuration (backward compatibility)');
         console.log('   ✓ .mcp.json - 2 unified MCP servers (411 tools total)');
         console.log('   ✓ AGENTS.md - OpenCode primary instructions');
@@ -1920,6 +1923,101 @@ async function copyOpenCodeConfig(targetDir, force = false) {
     }
     catch (error) {
         console.error('❌ Error copying opencode-config.example.json:', error);
+    }
+}
+async function copyOpenCodeThemes(targetDir, force = false) {
+    try {
+        // Determine the snow-flow installation directory (same logic as copyOpenCodeConfig)
+        let snowFlowRoot;
+        const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
+            __dirname.includes('node_modules/.pnpm') ||
+            __dirname.includes('npm/snow-flow');
+        if (isGlobalInstall) {
+            const parts = __dirname.split(/node_modules[\/\\]/);
+            snowFlowRoot = parts[0] + 'node_modules/snow-flow';
+        }
+        else {
+            let currentDir = __dirname;
+            while (currentDir !== '/') {
+                try {
+                    const packageJsonPath = (0, path_1.join)(currentDir, 'package.json');
+                    const packageJson = JSON.parse(await fs_1.promises.readFile(packageJsonPath, 'utf-8'));
+                    if (packageJson.name === 'snow-flow') {
+                        snowFlowRoot = currentDir;
+                        break;
+                    }
+                }
+                catch {
+                    // Continue searching up
+                }
+                currentDir = (0, path_1.dirname)(currentDir);
+            }
+            if (!snowFlowRoot) {
+                throw new Error('Could not find snow-flow project root');
+            }
+        }
+        // Find themes directory
+        const themesSourcePaths = [
+            (0, path_1.join)(snowFlowRoot, 'themes'),
+            (0, path_1.join)(__dirname, '..', 'themes'),
+            (0, path_1.join)(__dirname, 'themes'),
+            (0, path_1.join)(snowFlowRoot, '.opencode', 'themes'),
+            (0, path_1.join)(__dirname, '..', '.opencode', 'themes')
+        ];
+        let themesSourceDir = null;
+        for (const sourcePath of themesSourcePaths) {
+            try {
+                await fs_1.promises.access(sourcePath);
+                themesSourceDir = sourcePath;
+                console.log(`✅ Found themes directory at: ${sourcePath}`);
+                break;
+            }
+            catch {
+                // Continue to next path
+            }
+        }
+        if (!themesSourceDir) {
+            console.log('⚠️  Could not find themes directory, skipping theme installation');
+            return;
+        }
+        // Create target .opencode/themes directory
+        const themesTargetDir = (0, path_1.join)(targetDir, '.opencode', 'themes');
+        await fs_1.promises.mkdir(themesTargetDir, { recursive: true });
+        // Copy all theme files
+        const themeFiles = await fs_1.promises.readdir(themesSourceDir);
+        let copiedCount = 0;
+        for (const themeFile of themeFiles) {
+            const sourcePath = (0, path_1.join)(themesSourceDir, themeFile);
+            const targetPath = (0, path_1.join)(themesTargetDir, themeFile);
+            try {
+                const stats = await fs_1.promises.stat(sourcePath);
+                if (stats.isFile()) {
+                    // Check if file already exists
+                    try {
+                        await fs_1.promises.access(targetPath);
+                        if (!force) {
+                            console.log(`✅ Theme ${themeFile} already exists`);
+                            continue;
+                        }
+                    }
+                    catch {
+                        // File doesn't exist, continue with copy
+                    }
+                    const content = await fs_1.promises.readFile(sourcePath, 'utf8');
+                    await fs_1.promises.writeFile(targetPath, content);
+                    copiedCount++;
+                }
+            }
+            catch (error) {
+                console.log(`⚠️  Could not copy theme ${themeFile}:`, error);
+            }
+        }
+        if (copiedCount > 0) {
+            console.log(`✅ Copied ${copiedCount} OpenCode theme file(s) to .opencode/themes/`);
+        }
+    }
+    catch (error) {
+        console.error('❌ Error copying OpenCode themes:', error);
     }
 }
 async function copyCLAUDEmd(targetDir, force = false) {

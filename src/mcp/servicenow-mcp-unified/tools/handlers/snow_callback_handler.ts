@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_callback_handler',
   description: 'Create callback handler for async operations',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'callbacks',
+  use_cases: ['callbacks', 'async', 'integration'],
+  complexity: 'intermediate',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

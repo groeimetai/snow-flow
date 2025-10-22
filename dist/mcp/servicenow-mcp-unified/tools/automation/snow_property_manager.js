@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_property_manager',
     description: 'Enhanced property management with get, set, and validation in one tool',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'configuration',
+    use_cases: ['automation', 'properties', 'configuration'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

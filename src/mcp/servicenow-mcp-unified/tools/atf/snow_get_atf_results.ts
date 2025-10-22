@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_atf_results',
   description: 'Retrieves ATF test execution results including pass/fail status, error details, and execution time from sys_atf_test_result table.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'testing',
+  use_cases: ['testing', 'atf', 'results'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

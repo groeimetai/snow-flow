@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_analyze_requirements',
   description: 'Analyzes development requirements to identify dependencies, suggest reusable components, and create implementation roadmaps.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'analysis',
+  use_cases: ['requirements', 'planning', 'roadmap'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

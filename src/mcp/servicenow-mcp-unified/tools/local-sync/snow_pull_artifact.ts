@@ -15,6 +15,12 @@ import * as os from 'os';
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_pull_artifact',
   description: 'Pull ServiceNow artifact to local files for editing with native tools',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'local-sync',
+  use_cases: ['local-development', 'artifact-sync', 'editing'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_batch_api',
   description: 'Execute multiple API operations in single request (80% API call reduction)',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'api',
+  use_cases: ['integration', 'api', 'batch'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

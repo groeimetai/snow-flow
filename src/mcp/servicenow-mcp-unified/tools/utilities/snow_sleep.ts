@@ -8,6 +8,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_sleep',
   description: 'Sleep for specified milliseconds',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'advanced',
+  subcategory: 'utilities',
+  use_cases: ['delay', 'timing', 'utilities'],
+  complexity: 'beginner',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

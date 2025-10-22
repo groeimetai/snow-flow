@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_uib_client_state',
   description: 'Create client state management for UI Builder pages',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-builder',
+  subcategory: 'state-management',
+  use_cases: ['ui-builder', 'state', 'persistence'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

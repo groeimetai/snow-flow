@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_by_sysid',
   description: 'Get any ServiceNow record by sys_id with optional field selection',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'core-operations',
+  subcategory: 'crud',
+  use_cases: ['read', 'records'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_discover_uib_page_usage',
     description: 'Discover usage analytics and complexity scoring for UI Builder pages',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ui-builder',
+    subcategory: 'analytics',
+    use_cases: ['ui-builder', 'analytics', 'usage'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

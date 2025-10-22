@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_configure_offline_sync',
   description: 'Configure offline synchronization settings for mobile applications. Controls which data is available offline.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-frameworks',
+  subcategory: 'mobile',
+  use_cases: ['offline-sync', 'mobile', 'data-sync'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

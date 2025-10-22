@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_collect_metric',
     description: 'Collect metric data',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'monitoring',
+    use_cases: ['metrics', 'data-collection', 'monitoring'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

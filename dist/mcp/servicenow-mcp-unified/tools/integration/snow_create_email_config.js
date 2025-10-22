@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_email_config',
     description: 'Create email server configuration for SMTP, POP3, or IMAP',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'email',
+    use_cases: ['integration', 'email', 'configuration'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

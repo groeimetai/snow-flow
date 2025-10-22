@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_debug_widget_fetch',
   description: 'Debug widget data fetching and server communication issues',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-builder',
+  subcategory: 'debugging',
+  use_cases: ['ui-builder', 'debugging', 'widgets'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

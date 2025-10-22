@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_custom_api',
   description: 'Call custom API endpoint',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'api',
+  use_cases: ['custom-api', 'rest', 'integration'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

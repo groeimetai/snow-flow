@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_list_plugins',
     description: 'List installed plugins',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'advanced',
+    subcategory: 'administration',
+    use_cases: ['plugin-discovery', 'plugin-management', 'administration'],
+    complexity: 'beginner',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

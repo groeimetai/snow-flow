@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_auto_resolve_incident',
   description: 'Attempts automated resolution of technical incidents based on known patterns and previous solutions. Includes dry-run mode for safety.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'itsm',
+  subcategory: 'operations',
+  use_cases: ['incidents', 'automation'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

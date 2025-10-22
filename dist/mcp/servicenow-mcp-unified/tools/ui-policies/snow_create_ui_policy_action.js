@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_ui_policy_action',
     description: 'Create UI policy action',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'platform',
+    use_cases: ['ui-policy-actions', 'form-control', 'ui-automation'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

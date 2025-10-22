@@ -1,22 +1,18 @@
 "use strict";
+/**
+ * User Administration Tools - v8.2.0 Merged Architecture
+ *
+ * Tools merged: 5 → 2 (-3 tools)
+ * - snow_user_manage: Replaces create_user, deactivate_user (2 → 1)
+ * - snow_role_group_manage: Replaces create_role, assign_role, create_group (3 → 1)
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.snow_deactivate_user_exec = exports.snow_deactivate_user_def = exports.snow_assign_role_exec = exports.snow_assign_role_def = exports.snow_create_role_exec = exports.snow_create_role_def = exports.snow_add_user_to_group_exec = exports.snow_add_user_to_group_def = exports.snow_create_group_exec = exports.snow_create_group_def = exports.snow_create_user_exec = exports.snow_create_user_def = void 0;
-var snow_create_user_js_1 = require("./snow_create_user.js");
-Object.defineProperty(exports, "snow_create_user_def", { enumerable: true, get: function () { return snow_create_user_js_1.toolDefinition; } });
-Object.defineProperty(exports, "snow_create_user_exec", { enumerable: true, get: function () { return snow_create_user_js_1.execute; } });
-var snow_create_group_js_1 = require("./snow_create_group.js");
-Object.defineProperty(exports, "snow_create_group_def", { enumerable: true, get: function () { return snow_create_group_js_1.toolDefinition; } });
-Object.defineProperty(exports, "snow_create_group_exec", { enumerable: true, get: function () { return snow_create_group_js_1.execute; } });
-var snow_add_user_to_group_js_1 = require("./snow_add_user_to_group.js");
-Object.defineProperty(exports, "snow_add_user_to_group_def", { enumerable: true, get: function () { return snow_add_user_to_group_js_1.toolDefinition; } });
-Object.defineProperty(exports, "snow_add_user_to_group_exec", { enumerable: true, get: function () { return snow_add_user_to_group_js_1.execute; } });
-var snow_create_role_js_1 = require("./snow_create_role.js");
-Object.defineProperty(exports, "snow_create_role_def", { enumerable: true, get: function () { return snow_create_role_js_1.toolDefinition; } });
-Object.defineProperty(exports, "snow_create_role_exec", { enumerable: true, get: function () { return snow_create_role_js_1.execute; } });
-var snow_assign_role_js_1 = require("./snow_assign_role.js");
-Object.defineProperty(exports, "snow_assign_role_def", { enumerable: true, get: function () { return snow_assign_role_js_1.toolDefinition; } });
-Object.defineProperty(exports, "snow_assign_role_exec", { enumerable: true, get: function () { return snow_assign_role_js_1.execute; } });
-var snow_deactivate_user_js_1 = require("./snow_deactivate_user.js");
-Object.defineProperty(exports, "snow_deactivate_user_def", { enumerable: true, get: function () { return snow_deactivate_user_js_1.toolDefinition; } });
-Object.defineProperty(exports, "snow_deactivate_user_exec", { enumerable: true, get: function () { return snow_deactivate_user_js_1.execute; } });
+exports.snow_role_group_manage_exec = exports.snow_role_group_manage_def = exports.snow_user_manage_exec = exports.snow_user_manage_def = void 0;
+// Merged Tools (v8.2.0)
+var snow_user_manage_js_1 = require("./snow_user_manage.js");
+Object.defineProperty(exports, "snow_user_manage_def", { enumerable: true, get: function () { return snow_user_manage_js_1.toolDefinition; } });
+Object.defineProperty(exports, "snow_user_manage_exec", { enumerable: true, get: function () { return snow_user_manage_js_1.execute; } });
+var snow_role_group_manage_js_1 = require("./snow_role_group_manage.js");
+Object.defineProperty(exports, "snow_role_group_manage_def", { enumerable: true, get: function () { return snow_role_group_manage_js_1.toolDefinition; } });
+Object.defineProperty(exports, "snow_role_group_manage_exec", { enumerable: true, get: function () { return snow_role_group_manage_js_1.execute; } });
 //# sourceMappingURL=index.js.map

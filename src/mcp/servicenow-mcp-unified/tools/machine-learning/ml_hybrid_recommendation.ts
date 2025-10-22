@@ -16,6 +16,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_hybrid_recommendation',
   description: 'Provides hybrid ML recommendations combining neural networks, ServiceNow native ML, and rule-based heuristics for optimal accuracy.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'machine-learning',
+  use_cases: ['recommendation', 'ensemble', 'routing'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

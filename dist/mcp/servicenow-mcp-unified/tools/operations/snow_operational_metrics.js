@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_operational_metrics',
     description: 'Provides operational metrics and analytics including incident trends, resolution times, and performance indicators',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ml-analytics',
+    subcategory: 'metrics',
+    use_cases: ['analytics', 'metrics'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

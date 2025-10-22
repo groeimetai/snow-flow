@@ -16,6 +16,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_execute_background_script',
     description: '🚨 REQUIRES USER CONFIRMATION (unless autoConfirm=true): Execute background script with security analysis (ES5 only)',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'script-execution',
+    use_cases: ['automation', 'scripts', 'execution'],
+    complexity: 'advanced',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

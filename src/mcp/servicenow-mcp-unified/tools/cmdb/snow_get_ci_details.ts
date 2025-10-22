@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_ci_details',
   description: 'Retrieve Configuration Item details including relationships and history',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'cmdb',
+  subcategory: 'query',
+  use_cases: ['cmdb', 'query', 'details'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

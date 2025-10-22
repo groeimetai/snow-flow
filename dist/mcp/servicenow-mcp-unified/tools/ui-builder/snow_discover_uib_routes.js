@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_discover_uib_routes',
     description: 'Find all UI Builder page routes with security information',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ui-builder',
+    subcategory: 'routing',
+    use_cases: ['ui-builder', 'routing', 'security'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

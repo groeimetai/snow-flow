@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_record',
     description: 'Create a record in any ServiceNow table with field validation',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'core-operations',
+    subcategory: 'crud',
+    use_cases: ['create', 'records'],
+    complexity: 'beginner',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

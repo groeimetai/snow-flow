@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_pa_widget',
     description: 'Creates a Performance Analytics dashboard widget for visualizing indicators',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'performance-analytics',
+    subcategory: 'widgets',
+    use_cases: ['performance-analytics', 'widgets', 'dashboards'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_kpi',
     description: 'Creates KPIs calculated from LIVE ServiceNow data',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'performance-analytics',
+    subcategory: 'kpi',
+    use_cases: ['performance-analytics', 'kpi', 'metrics'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

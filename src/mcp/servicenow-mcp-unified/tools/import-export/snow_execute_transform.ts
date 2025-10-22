@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_execute_transform',
   description: 'Execute transform map on import set',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'import-export',
+  use_cases: ['data-transformation', 'import', 'processing'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

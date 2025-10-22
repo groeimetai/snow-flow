@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_va_topic',
   description: 'Create Virtual Agent conversation topic',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'virtual-agent',
+  use_cases: ['virtual-agent', 'conversational-ai', 'nlu'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

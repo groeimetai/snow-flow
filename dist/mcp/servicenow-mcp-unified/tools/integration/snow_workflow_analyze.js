@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_workflow_analyze',
     description: 'Analyze workflow executions for performance and errors',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'workflow',
+    use_cases: ['integration', 'workflow', 'analysis'],
+    complexity: 'advanced',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

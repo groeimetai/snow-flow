@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_incident',
     description: 'Create ServiceNow incident with smart defaults and assignment',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'incident',
+    use_cases: ['incident-creation', 'ticket-management', 'auto-assignment'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

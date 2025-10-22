@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_atf_test_suite',
   description: 'Creates an ATF test suite to group and run multiple tests together using sys_atf_test_suite table.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'testing',
+  use_cases: ['testing', 'atf', 'test-suites'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

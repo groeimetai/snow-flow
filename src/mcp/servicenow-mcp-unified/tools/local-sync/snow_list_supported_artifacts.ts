@@ -10,6 +10,12 @@ import { createSuccessResult } from '../../shared/error-handler.js';
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_list_supported_artifacts',
   description: 'List all ServiceNow artifact types supported by local sync',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'local-sync',
+  use_cases: ['local-sync', 'artifact-discovery', 'sync-capabilities'],
+  complexity: 'beginner',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

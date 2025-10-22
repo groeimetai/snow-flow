@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_validate_deployment',
   description: 'Validate artifact before deployment (ES5, coherence, dependencies, security)',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'deployment',
+  use_cases: ['deployment', 'validation', 'quality'],
+  complexity: 'advanced',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

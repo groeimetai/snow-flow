@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_add_schedule_entry',
     description: 'Add entry to schedule',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'scheduling',
+    use_cases: ['schedules', 'work-hours', 'calendar'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

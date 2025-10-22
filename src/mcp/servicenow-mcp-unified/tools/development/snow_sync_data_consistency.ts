@@ -13,6 +13,12 @@ import { join } from 'path';
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_sync_data_consistency',
   description: 'Synchronizes cached data with ServiceNow, validates sys_id mappings, and repairs consistency issues. Includes automatic cache refresh and reindexing.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'synchronization',
+  use_cases: ['sync', 'consistency', 'cache-refresh'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

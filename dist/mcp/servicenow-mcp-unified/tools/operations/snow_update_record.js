@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_update_record',
     description: 'Update a record in any ServiceNow table with validation and audit trail',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'core-operations',
+    subcategory: 'crud',
+    use_cases: ['update', 'records'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

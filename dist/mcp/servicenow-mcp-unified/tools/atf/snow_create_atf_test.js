@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_atf_test',
     description: 'Create Automated Test Framework (ATF) test for automated testing',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'testing',
+    use_cases: ['testing', 'atf', 'automation'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

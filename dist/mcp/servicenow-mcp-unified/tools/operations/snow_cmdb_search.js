@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_cmdb_search',
     description: 'Searches Configuration Management Database (CMDB) for configuration items with relationship mapping',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'cmdb',
+    subcategory: 'discovery',
+    use_cases: ['cmdb', 'configuration-items'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

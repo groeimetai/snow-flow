@@ -14,6 +14,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_predict_change_risk',
   description: 'Predicts implementation risk for change requests using trained neural networks. Provides risk scores and mitigation suggestions.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'machine-learning',
+  use_cases: ['risk-prediction', 'change-management', 'assessment'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

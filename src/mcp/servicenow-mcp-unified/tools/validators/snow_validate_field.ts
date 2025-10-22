@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_validate_field',
   description: 'Validate field value',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'validation',
+  use_cases: ['field-validation', 'data-validation', 'validation'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

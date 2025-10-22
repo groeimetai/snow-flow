@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_atf_test_step',
     description: 'Adds a test step to an existing ATF test. Steps define the actions and assertions for testing using the sys_atf_step table.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'testing',
+    use_cases: ['testing', 'atf', 'test-steps'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_sp_widget',
     description: 'Create Service Portal widget',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ui-frameworks',
+    subcategory: 'service-portal',
+    use_cases: ['portal-widgets', 'service-portal', 'widget-creation'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

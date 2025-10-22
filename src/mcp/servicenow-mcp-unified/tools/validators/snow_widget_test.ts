@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_widget_test',
   description: 'Executes comprehensive widget testing with multiple data scenarios. Validates client/server scripts, API calls, dependencies, and generates coverage reports.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'validation',
+  use_cases: ['widget-testing', 'testing', 'validation'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

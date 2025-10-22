@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_export_artifact',
     description: 'Exports ServiceNow artifacts (widgets, applications) to JSON/XML format for backup, version control, or migration purposes.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'deployment',
+    use_cases: ['deployment', 'export', 'backup'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

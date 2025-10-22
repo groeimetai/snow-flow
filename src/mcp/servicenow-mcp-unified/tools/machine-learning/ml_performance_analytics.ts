@@ -16,6 +16,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'ml_performance_analytics',
   description: 'Accesses ServiceNow Performance Analytics ML for KPI forecasting. Requires Performance Analytics plugin license.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'performance-analytics',
+  use_cases: ['performance-analytics', 'kpi', 'native-ml'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

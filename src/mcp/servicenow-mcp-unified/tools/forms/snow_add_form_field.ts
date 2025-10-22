@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_add_form_field',
   description: 'Add field to form section',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'forms',
+  use_cases: ['forms', 'ui', 'fields'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

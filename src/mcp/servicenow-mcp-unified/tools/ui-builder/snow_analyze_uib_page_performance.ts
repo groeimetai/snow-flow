@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_analyze_uib_page_performance',
   description: 'Analyze UI Builder page performance and get optimization recommendations',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-builder',
+  subcategory: 'analytics',
+  use_cases: ['ui-builder', 'performance', 'optimization'],
+  complexity: 'advanced',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

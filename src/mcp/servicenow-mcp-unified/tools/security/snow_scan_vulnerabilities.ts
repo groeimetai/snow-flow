@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_scan_vulnerabilities',
   description: 'Scan for security vulnerabilities',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'security',
+  subcategory: 'vulnerability-management',
+  use_cases: ['security', 'vulnerabilities', 'scanning'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

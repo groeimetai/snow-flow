@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_update_ux_app_config_landing_page',
     description: 'STEP 6: Update App Configuration with Landing Page Route - Sets the default landing page for the workspace.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ui-frameworks',
+    subcategory: 'workspace',
+    use_cases: ['workspace', 'configuration', 'landing-page'],
+    complexity: 'beginner',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

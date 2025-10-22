@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_ui_policy',
     description: 'Create UI Policy for form field control (visibility, mandatory, readonly)',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'platform',
+    use_cases: ['ui-policies', 'form-control', 'declarative-logic'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

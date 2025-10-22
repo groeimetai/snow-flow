@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_auth_diagnostics',
   description: 'Performs comprehensive authentication and permission diagnostics. Tests OAuth tokens, API access, table permissions, and provides specific remediation steps.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'deployment',
+  use_cases: ['deployment', 'diagnostics', 'authentication'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

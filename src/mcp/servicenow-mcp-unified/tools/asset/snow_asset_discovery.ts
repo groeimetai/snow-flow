@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_asset_discovery',
   description: 'Discover and normalize assets from multiple sources',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'asset-management',
+  subcategory: 'discovery',
+  use_cases: ['discovery', 'asset-management', 'normalization'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

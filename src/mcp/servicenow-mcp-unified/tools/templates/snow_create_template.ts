@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_template',
   description: 'Create record template',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'templates',
+  use_cases: ['template-creation', 'record-templates', 'automation'],
+  complexity: 'beginner',
+  frequency: 'low',
   inputSchema: {
     type: 'object',
     properties: {

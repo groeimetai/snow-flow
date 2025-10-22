@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_scripted_rest_api',
     description: 'Call scripted REST API',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'rest-api',
+    use_cases: ['rest', 'api', 'integration'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

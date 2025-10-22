@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_escalation_rule',
     description: 'Creates escalation rules for time-based actions. Defines escalation timing, conditions, and automated responses.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'rules',
+    use_cases: ['automation', 'escalation', 'rules'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

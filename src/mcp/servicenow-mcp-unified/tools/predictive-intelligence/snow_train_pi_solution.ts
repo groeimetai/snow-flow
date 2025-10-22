@@ -15,6 +15,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_train_pi_solution',
   description: '🎯 Train native ServiceNow Predictive Intelligence solution. Starts ML training INSIDE ServiceNow (requires PI license). Training typically takes 10-30 minutes.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ml-analytics',
+  subcategory: 'predictive-intelligence',
+  use_cases: ['training', 'native-ml', 'model-building'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

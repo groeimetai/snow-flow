@@ -11,6 +11,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_test_integration',
   description: 'Test REST/SOAP integrations and external connections with validation',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'integration',
+  subcategory: 'testing',
+  use_cases: ['integration', 'testing', 'validation'],
+  complexity: 'advanced',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

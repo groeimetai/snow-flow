@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_get_job_history',
   description: 'Get scheduled job execution history',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'scheduling',
+  use_cases: ['job-history', 'monitoring', 'troubleshooting'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

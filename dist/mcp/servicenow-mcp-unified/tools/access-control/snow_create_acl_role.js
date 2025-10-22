@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_acl_role',
     description: 'Create ACL role association',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'access-control',
+    use_cases: ['acl', 'roles', 'security'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

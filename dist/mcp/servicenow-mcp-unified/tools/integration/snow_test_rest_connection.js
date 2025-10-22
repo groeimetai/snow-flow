@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_test_rest_connection',
     description: 'Test REST API connection with timeout and response validation',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'integration',
+    subcategory: 'rest',
+    use_cases: ['integration', 'rest', 'testing'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

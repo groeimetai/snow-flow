@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_pa_threshold',
     description: 'Creates threshold rules for Performance Analytics indicators to trigger alerts',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'performance-analytics',
+    subcategory: 'indicators',
+    use_cases: ['performance-analytics', 'thresholds', 'alerts'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

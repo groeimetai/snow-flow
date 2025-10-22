@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_catalog_client_script',
     description: 'Creates client scripts for catalog items to add custom JavaScript behavior to forms.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'itsm',
+    subcategory: 'service-catalog',
+    use_cases: ['catalog', 'client-scripts', 'form-behavior'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

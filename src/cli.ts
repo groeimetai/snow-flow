@@ -1682,9 +1682,13 @@ program
       // Copy opencode-config.example.json
       await copyOpenCodeConfig(targetDir, options.force);
 
+      // Copy OpenCode themes
+      await copyOpenCodeThemes(targetDir, options.force);
+
       console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
       console.log('\n📋 Created Snow-Flow configuration:');
       console.log('   ✓ .opencode/ - OpenCode configuration with both MCP servers');
+      console.log('   ✓ .opencode/themes/ - ServiceNow custom theme for OpenCode');
       console.log('   ✓ .claude/ - Claude Code MCP configuration (backward compatibility)');
       console.log('   ✓ .mcp.json - 2 unified MCP servers (411 tools total)');
       console.log('   ✓ AGENTS.md - OpenCode primary instructions');
@@ -2058,6 +2062,107 @@ async function copyOpenCodeConfig(targetDir: string, force: boolean = false) {
 
   } catch (error) {
     console.error('❌ Error copying opencode-config.example.json:', error);
+  }
+}
+
+async function copyOpenCodeThemes(targetDir: string, force: boolean = false) {
+  try {
+    // Determine the snow-flow installation directory (same logic as copyOpenCodeConfig)
+    let snowFlowRoot: string;
+    const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
+                           __dirname.includes('node_modules/.pnpm') ||
+                           __dirname.includes('npm/snow-flow');
+
+    if (isGlobalInstall) {
+      const parts = __dirname.split(/node_modules[\/\\]/);
+      snowFlowRoot = parts[0] + 'node_modules/snow-flow';
+    } else {
+      let currentDir = __dirname;
+      while (currentDir !== '/') {
+        try {
+          const packageJsonPath = join(currentDir, 'package.json');
+          const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+          if (packageJson.name === 'snow-flow') {
+            snowFlowRoot = currentDir;
+            break;
+          }
+        } catch {
+          // Continue searching up
+        }
+        currentDir = dirname(currentDir);
+      }
+      if (!snowFlowRoot) {
+        throw new Error('Could not find snow-flow project root');
+      }
+    }
+
+    // Find themes directory
+    const themesSourcePaths = [
+      join(snowFlowRoot, 'themes'),
+      join(__dirname, '..', 'themes'),
+      join(__dirname, 'themes'),
+      join(snowFlowRoot, '.opencode', 'themes'),
+      join(__dirname, '..', '.opencode', 'themes')
+    ];
+
+    let themesSourceDir: string | null = null;
+    for (const sourcePath of themesSourcePaths) {
+      try {
+        await fs.access(sourcePath);
+        themesSourceDir = sourcePath;
+        console.log(`✅ Found themes directory at: ${sourcePath}`);
+        break;
+      } catch {
+        // Continue to next path
+      }
+    }
+
+    if (!themesSourceDir) {
+      console.log('⚠️  Could not find themes directory, skipping theme installation');
+      return;
+    }
+
+    // Create target .opencode/themes directory
+    const themesTargetDir = join(targetDir, '.opencode', 'themes');
+    await fs.mkdir(themesTargetDir, { recursive: true });
+
+    // Copy all theme files
+    const themeFiles = await fs.readdir(themesSourceDir);
+    let copiedCount = 0;
+
+    for (const themeFile of themeFiles) {
+      const sourcePath = join(themesSourceDir, themeFile);
+      const targetPath = join(themesTargetDir, themeFile);
+
+      try {
+        const stats = await fs.stat(sourcePath);
+        if (stats.isFile()) {
+          // Check if file already exists
+          try {
+            await fs.access(targetPath);
+            if (!force) {
+              console.log(`✅ Theme ${themeFile} already exists`);
+              continue;
+            }
+          } catch {
+            // File doesn't exist, continue with copy
+          }
+
+          const content = await fs.readFile(sourcePath, 'utf8');
+          await fs.writeFile(targetPath, content);
+          copiedCount++;
+        }
+      } catch (error) {
+        console.log(`⚠️  Could not copy theme ${themeFile}:`, error);
+      }
+    }
+
+    if (copiedCount > 0) {
+      console.log(`✅ Copied ${copiedCount} OpenCode theme file(s) to .opencode/themes/`);
+    }
+
+  } catch (error) {
+    console.error('❌ Error copying OpenCode themes:', error);
   }
 }
 

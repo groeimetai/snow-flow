@@ -12,6 +12,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_cleanup_test_artifacts',
     description: 'Safely cleanup test artifacts from ServiceNow (dry-run enabled by default for safety)',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'testing',
+    use_cases: ['testing', 'cleanup'],
+    complexity: 'intermediate',
+    frequency: 'low',
     inputSchema: {
         type: 'object',
         properties: {

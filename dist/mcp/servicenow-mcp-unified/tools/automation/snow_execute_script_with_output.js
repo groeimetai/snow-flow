@@ -16,6 +16,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_execute_script_with_output',
     description: 'Execute server-side JavaScript with output capture (ES5 only - no const/let/arrow functions)',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'script-execution',
+    use_cases: ['automation', 'scripts', 'output-capture'],
+    complexity: 'advanced',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

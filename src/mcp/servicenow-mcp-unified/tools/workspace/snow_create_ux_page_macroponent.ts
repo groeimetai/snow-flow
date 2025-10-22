@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_ux_page_macroponent',
   description: 'STEP 3: Create Page Macroponent Record (sys_ux_macroponent) - Defines the actual page content that will be displayed.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-frameworks',
+  subcategory: 'workspace',
+  use_cases: ['workspace', 'page', 'macroponent'],
+  complexity: 'intermediate',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

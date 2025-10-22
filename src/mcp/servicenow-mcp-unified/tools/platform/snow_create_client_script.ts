@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_client_script',
   description: 'Create client-side script for form with type and field targeting',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'development',
+  subcategory: 'platform',
+  use_cases: ['client-scripts', 'form-scripts', 'ui-automation'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_get_va_conversation',
     description: 'Retrieves Virtual Agent conversation history and context for a specific session.',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'automation',
+    subcategory: 'virtual-agent',
+    use_cases: ['virtual-agent', 'conversation-history', 'analytics'],
+    complexity: 'beginner',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

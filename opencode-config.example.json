@@ -11,7 +11,7 @@
     "servicenow-unified": {
       "type": "local",
       "command": ["node", "dist/mcp/servicenow-mcp-unified/index.js"],
-      "environment": {
+      "env": {
         "SNOW_INSTANCE": "${SNOW_INSTANCE}",
         "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
         "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
@@ -24,7 +24,7 @@
     "snow-flow": {
       "type": "local",
       "command": ["node", "dist/mcp/snow-flow-mcp.js"],
-      "environment": {
+      "env": {
         "SNOW_FLOW_ENV": "production"
       },
       "enabled": true,
@@ -35,6 +35,7 @@
     "enabled": true,
     "requireApproval": false
   },
+  "theme": "servicenow",
   "instructions": [
     "AGENTS.md",
     "CLAUDE.md",

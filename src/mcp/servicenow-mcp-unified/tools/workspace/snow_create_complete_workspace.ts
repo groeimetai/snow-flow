@@ -12,6 +12,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_complete_workspace',
   description: 'Create Complete UX Workspace - Executes all 6 steps automatically: Experience → App Config → Page Macroponent → Page Registry → Route → Landing Page Route. Creates a fully functional workspace.',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'ui-frameworks',
+  subcategory: 'workspace',
+  use_cases: ['workspace', 'ux-experience', 'complete-setup'],
+  complexity: 'intermediate',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

@@ -10,6 +10,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_get_event_correlation',
     description: 'Get event correlation results showing how events are grouped into alerts',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'cmdb',
+    subcategory: 'event-management',
+    use_cases: ['cmdb', 'events', 'correlation'],
+    complexity: 'advanced',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

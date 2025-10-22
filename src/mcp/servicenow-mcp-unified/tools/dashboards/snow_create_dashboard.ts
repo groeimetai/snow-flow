@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_dashboard',
   description: 'Create dashboard',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'reporting',
+  subcategory: 'dashboards',
+  use_cases: ['dashboards', 'reporting', 'visualization'],
+  complexity: 'beginner',
+  frequency: 'medium',
   inputSchema: {
     type: 'object',
     properties: {

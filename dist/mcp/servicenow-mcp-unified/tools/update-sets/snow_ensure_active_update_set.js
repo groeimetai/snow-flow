@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_ensure_active_update_set',
     description: 'Ensure Update Set is active and optionally set as current for user',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'development',
+    subcategory: 'update-sets',
+    use_cases: ['update-sets', 'activation', 'change-tracking'],
+    complexity: 'intermediate',
+    frequency: 'high',
     inputSchema: {
         type: 'object',
         properties: {

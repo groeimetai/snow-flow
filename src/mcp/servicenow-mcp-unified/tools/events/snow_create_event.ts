@@ -9,6 +9,12 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_event',
   description: 'Create system event for event management',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'event-management',
+  use_cases: ['events', 'automation', 'workflows'],
+  complexity: 'beginner',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {

@@ -13,6 +13,12 @@ const error_handler_js_1 = require("../../shared/error-handler.js");
 exports.toolDefinition = {
     name: 'snow_create_uib_event',
     description: 'Create custom events for UI Builder component communication',
+    // Metadata for tool discovery (not sent to LLM)
+    category: 'ui-builder',
+    subcategory: 'events',
+    use_cases: ['ui-builder', 'events', 'components'],
+    complexity: 'intermediate',
+    frequency: 'medium',
     inputSchema: {
         type: 'object',
         properties: {

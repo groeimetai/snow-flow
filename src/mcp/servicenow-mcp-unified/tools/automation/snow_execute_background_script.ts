@@ -15,6 +15,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_execute_background_script',
   description: '🚨 REQUIRES USER CONFIRMATION (unless autoConfirm=true): Execute background script with security analysis (ES5 only)',
+  // Metadata for tool discovery (not sent to LLM)
+  category: 'automation',
+  subcategory: 'script-execution',
+  use_cases: ['automation', 'scripts', 'execution'],
+  complexity: 'advanced',
+  frequency: 'high',
   inputSchema: {
     type: 'object',
     properties: {
