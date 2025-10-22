@@ -32,6 +32,26 @@ Creates complete Agent Workspace with:
 
 ## Step-by-step Workflow
 
+### 0. 🚨 CREATE UPDATE SET FIRST (MANDATORY!)
+
+**BEFORE creating workspace, create an Update Set:**
+
+```javascript
+// STEP 0: Create Update Set
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: Workspace - [Workspace Name]",
+  description: "Create [workspace purpose] workspace for [team/function]",
+  application: "global"
+});
+
+// Verify it's active
+const current = await snow_update_set_query({ action: 'current' });
+console.log('Active Update Set:', current.name);
+```
+
+**✅ Now all workspace development will be tracked in this Update Set!**
+
 ### 1. Gather Requirements
 
 Ask user:
@@ -536,3 +556,17 @@ Workspace is complete when:
 8. ✅ Performance is acceptable (< 3s load)
 9. ✅ Mobile/tablet compatible
 10. ✅ User acceptance testing passed
+
+
+### Final Step: Complete Update Set
+
+```javascript
+// After workspace creation, complete the Update Set
+await snow_update_set_manage({
+  action: "complete",
+  update_set_id: updateSet.sys_id,
+  state: "complete"
+});
+
+console.log("✅ Workspace complete and tracked in Update Set!");
+```

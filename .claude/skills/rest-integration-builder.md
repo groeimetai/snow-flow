@@ -28,6 +28,26 @@ Creates comprehensive REST integrations with:
 
 ## Step-by-step Workflow
 
+### 0. 🚨 CREATE UPDATE SET FIRST (MANDATORY!)
+
+**BEFORE creating anything, create an Update Set:**
+
+```javascript
+// STEP 0: Create Update Set
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: REST Integration - [Name]",
+  description: "Create REST integration for [purpose]",
+  application: "global"
+});
+
+// Verify it's active
+const current = await snow_update_set_query({ action: 'current' });
+console.log('Active Update Set:', current.name);
+```
+
+**✅ Now all development will be tracked in this Update Set!**
+
 ### 1. Gather Requirements
 
 Ask user:
@@ -591,3 +611,17 @@ REST integration is complete when:
 6. ✅ Performance acceptable
 7. ✅ Tested with real API
 8. ✅ Documentation complete
+
+
+### Final Step: Complete Update Set
+
+```javascript
+// After REST integration creation, complete the Update Set
+await snow_update_set_manage({
+  action: "complete",
+  update_set_id: updateSet.sys_id,
+  state: "complete"
+});
+
+console.log("✅ REST Integration complete and tracked in Update Set!");
+```

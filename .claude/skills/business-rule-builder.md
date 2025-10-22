@@ -23,6 +23,26 @@ Creates complete Business Rules with:
 
 ## Step-by-step Workflow
 
+### 0. 🚨 CREATE UPDATE SET FIRST (MANDATORY!)
+
+**BEFORE creating anything, create an Update Set:**
+
+```javascript
+// STEP 0: Create Update Set
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: Business Rule - [Name]",
+  description: "Create business rule for [purpose]",
+  application: "global"
+});
+
+// Verify it's active
+const current = await snow_update_set_query({ action: 'current' });
+console.log('Active Update Set:', current.name);
+```
+
+**✅ Now all development will be tracked in this Update Set!**
+
 ### 1. Gather Requirements
 
 Ask user:
@@ -447,3 +467,17 @@ Business Rule is complete when:
 6. ✅ Performance optimized
 7. ✅ Tested with various scenarios
 8. ✅ No infinite loops or recursion
+
+
+### Final Step: Complete Update Set
+
+```javascript
+// After business rule creation, complete the Update Set
+await snow_update_set_manage({
+  action: "complete",
+  update_set_id: updateSet.sys_id,
+  state: "complete"
+});
+
+console.log("✅ Business Rule complete and tracked in Update Set!");
+```

@@ -30,6 +30,26 @@ Creates client scripts with:
 
 ## Step-by-step Workflow
 
+### 0. 🚨 CREATE UPDATE SET FIRST (MANDATORY!)
+
+**BEFORE creating anything, create an Update Set:**
+
+```javascript
+// STEP 0: Create Update Set
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: Client Script - [Name]",
+  description: "Create client script for [purpose]",
+  application: "global"
+});
+
+// Verify it's active
+const current = await snow_update_set_query({ action: 'current' });
+console.log('Active Update Set:', current.name);
+```
+
+**✅ Now all development will be tracked in this Update Set!**
+
 ### 1. Gather Requirements
 
 Ask user:
@@ -446,3 +466,17 @@ Client Script is complete when:
 6. ✅ Performance is acceptable
 7. ✅ Tested across browsers
 8. ✅ GlideAjax calls work (if used)
+
+
+### Final Step: Complete Update Set
+
+```javascript
+// After client script creation, complete the Update Set
+await snow_update_set_manage({
+  action: "complete",
+  update_set_id: updateSet.sys_id,
+  state: "complete"
+});
+
+console.log("✅ Client Script complete and tracked in Update Set!");
+```

@@ -49,6 +49,26 @@ snow_pull_artifact({
 
 ## Step-by-step Debugging Workflow
 
+### 0. 🚨 CREATE UPDATE SET FIRST (MANDATORY!)
+
+**BEFORE debugging, create an Update Set to track any fixes:**
+
+```javascript
+// STEP 0: Create Update Set for fixes
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Fix: Widget - [Widget Name] Debugging",
+  description: "Debug and fix issues in [widget name]",
+  application: "global"
+});
+
+// Verify it's active
+const current = await snow_update_set_query({ action: 'current' });
+console.log('Active Update Set:', current.name);
+```
+
+**✅ Now all widget fixes will be tracked in this Update Set!**
+
 ### 1. Pull Widget to Local Files
 
 ```javascript
@@ -447,3 +467,16 @@ Widget debugging is complete when:
 6. ✅ All buttons/forms work
 7. ✅ Data updates properly after actions
 8. ✅ Widget tested in actual portal
+
+### Final Step: Complete Update Set
+
+```javascript
+// After pushing fixes, complete the Update Set
+await snow_update_set_manage({
+  action: 'complete',
+  update_set_id: updateSet.sys_id,
+  state: 'complete'
+});
+
+console.log('✅ Widget debugging complete and fixes tracked in Update Set!');
+```
