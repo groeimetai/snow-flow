@@ -8,10 +8,10 @@ import HomePage from './pages/Home';
 import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminCustomers from './pages/admin/Customers';
+import AdminServiceIntegrators from './pages/admin/ServiceIntegrators';
+import AdminMonitoring from './pages/admin/Monitoring';
+import AdminThemes from './pages/admin/Themes';
 // import AdminCustomerDetail from './pages/admin/CustomerDetail'; // TODO
-// import AdminServiceIntegrators from './pages/admin/ServiceIntegrators'; // TODO
-// import AdminMonitoring from './pages/admin/Monitoring'; // TODO
-// import AdminThemes from './pages/admin/Themes'; // TODO
 
 // Customer pages (created)
 import CustomerLogin from './pages/customer/Login';
@@ -81,11 +81,32 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/service-integrators"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminServiceIntegrators />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/monitoring"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminMonitoring />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/themes"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminThemes />
+          </ProtectedRoute>
+        }
+      />
       {/* TODO: Add these routes when pages are created
       <Route path="/admin/customers/:id" element={<ProtectedRoute requireAdmin><AdminCustomerDetail /></ProtectedRoute>} />
-      <Route path="/admin/service-integrators" element={<ProtectedRoute requireAdmin><AdminServiceIntegrators /></ProtectedRoute>} />
-      <Route path="/admin/monitoring" element={<ProtectedRoute requireAdmin><AdminMonitoring /></ProtectedRoute>} />
-      <Route path="/admin/themes" element={<ProtectedRoute requireAdmin><AdminThemes /></ProtectedRoute>} />
       */}
 
       {/* Customer Portal Routes */}
