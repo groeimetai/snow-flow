@@ -207,68 +207,115 @@ export class ServiceNowAuthManager {
   }
 
   /**
-   * Refresh access token using refresh token
+   * Refresh access token using refresh token OR username/password
    */
   private async refreshAccessToken(context: ServiceNowContext): Promise<string> {
     const cacheKey = this.getCacheKey(context.instanceUrl);
     console.log('[Auth] Refreshing access token for:', context.instanceUrl);
 
+    // Try OAuth first if refresh token available
+    let refreshToken = context.refreshToken;
+    const cached = this.tokenCache.get(cacheKey);
+    if (!refreshToken && cached) {
+      refreshToken = cached.refreshToken;
+    }
+
+    if (refreshToken) {
+      try {
+        // OAuth token refresh request
+        const tokenUrl = `${context.instanceUrl}/oauth_token.do`;
+        const response = await axios.post<OAuthTokenResponse>(
+          tokenUrl,
+          new URLSearchParams({
+            grant_type: 'refresh_token',
+            client_id: context.clientId,
+            client_secret: context.clientSecret,
+            refresh_token: refreshToken
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            timeout: 10000
+          }
+        );
+
+        const tokenData = response.data;
+
+        // Cache tokens
+        const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000; // 1 min buffer
+        this.tokenCache.set(cacheKey, {
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token,
+          expiresAt,
+          instanceUrl: context.instanceUrl
+        });
+
+        // Persist to disk
+        await this.saveTokenCache();
+
+        console.log('[Auth] Access token refreshed successfully (OAuth)');
+        return tokenData.access_token;
+
+      } catch (error: any) {
+        console.warn('[Auth] OAuth refresh failed, trying username/password...', error.message);
+      }
+    }
+
+    // Fallback to username/password authentication
+    return await this.authenticateWithPassword(context);
+  }
+
+  /**
+   * Authenticate using username and password (fallback method)
+   */
+  private async authenticateWithPassword(context: ServiceNowContext): Promise<string> {
+    const cacheKey = this.getCacheKey(context.instanceUrl);
+
     try {
-      // Get refresh token (from cache or context)
-      let refreshToken = context.refreshToken;
-      const cached = this.tokenCache.get(cacheKey);
-      if (!refreshToken && cached) {
-        refreshToken = cached.refreshToken;
+      // Check if username/password available from environment
+      const username = process.env.SERVICENOW_USERNAME;
+      const password = process.env.SERVICENOW_PASSWORD;
+
+      if (!username || !password) {
+        throw new Error('No username/password available for basic authentication');
       }
 
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
+      console.log('[Auth] Using username/password authentication');
 
-      // OAuth token refresh request
-      const tokenUrl = `${context.instanceUrl}/oauth_token.do`;
-      const response = await axios.post<OAuthTokenResponse>(
-        tokenUrl,
-        new URLSearchParams({
-          grant_type: 'refresh_token',
-          client_id: context.clientId,
-          client_secret: context.clientSecret,
-          refresh_token: refreshToken
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          timeout: 10000
-        }
-      );
+      // Create Basic Auth token
+      const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
+      const accessToken = `Basic ${basicAuth}`;
 
-      const tokenData = response.data;
-
-      // Cache tokens
-      const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000; // 1 min buffer
+      // Cache with long expiry (basic auth doesn't expire)
+      const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
       this.tokenCache.set(cacheKey, {
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token,
+        accessToken,
+        refreshToken: '', // No refresh token for basic auth
         expiresAt,
         instanceUrl: context.instanceUrl
       });
 
-      // Persist to disk
-      await this.saveTokenCache();
+      // Test the credentials with a simple API call
+      try {
+        await axios.get(`${context.instanceUrl}/api/now/table/sys_user?sysparm_limit=1`, {
+          headers: {
+            'Authorization': accessToken,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        });
 
-      console.log('[Auth] Access token refreshed successfully');
-      return tokenData.access_token;
+        console.log('[Auth] Username/password authentication successful');
+        return accessToken;
 
-    } catch (error: any) {
-      console.error('[Auth] Token refresh failed:', error.message);
-
-      if (error.response) {
-        console.error('[Auth] Response status:', error.response.status);
-        console.error('[Auth] Response data:', error.response.data);
+      } catch (testError: any) {
+        throw new Error(`Username/password authentication failed: Invalid credentials`);
       }
 
-      throw new Error(`OAuth token refresh failed: ${error.message}`);
+    } catch (error: any) {
+      console.error('[Auth] Username/password authentication failed:', error.message);
+      throw new Error(`Authentication failed: ${error.message}`);
     }
   }
 

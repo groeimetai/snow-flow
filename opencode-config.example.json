@@ -12,11 +12,11 @@
       "type": "local",
       "command": ["node", "dist/mcp/servicenow-mcp-unified/index.js"],
       "environment": {
-        "SNOW_INSTANCE": "${SNOW_INSTANCE}",
-        "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-        "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
-        "SNOW_USERNAME": "${SNOW_USERNAME}",
-        "SNOW_PASSWORD": "${SNOW_PASSWORD}"
+        "SERVICENOW_INSTANCE_URL": "https://${SNOW_INSTANCE}",
+        "SERVICENOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
+        "SERVICENOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
+        "SERVICENOW_USERNAME": "${SNOW_USERNAME}",
+        "SERVICENOW_PASSWORD": "${SNOW_PASSWORD}"
       },
       "enabled": true
     },
