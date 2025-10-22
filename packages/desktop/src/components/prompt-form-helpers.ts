@@ -7,7 +7,7 @@ export interface PromptTextPart {
 }
 
 export interface PromptAttachmentPart {
-  kind: "attachment"
+  kind: "file"
   token: string
   display: string
   path: string
@@ -106,7 +106,7 @@ export function parsePrompt(value: string, lookup: Map<string, AttachmentCandida
         const start = rangeStart + localIndex
         const end = start + match[0].length
         segments.push({
-          kind: "attachment",
+          kind: "file",
           token,
           display: candidate.display,
           path: candidate.path,
@@ -152,7 +152,7 @@ export function composeDisplaySegments(
     }
     const { start, end, ...part } = segment
     const placeholder = inputValue.slice(start, end)
-    return { kind: "attachment", part: part as PromptAttachmentPart, source: placeholder }
+    return { kind: "file", part: part as PromptAttachmentPart, source: placeholder }
   })
 
   if (interim) {

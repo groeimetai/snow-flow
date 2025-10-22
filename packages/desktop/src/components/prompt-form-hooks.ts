@@ -309,7 +309,7 @@ export function useMentionController(options: MentionControllerOptions) {
     const nextValue = `${leading}${mentionText}${trailingSpacer}${after}`
     const origin = options.getActiveContext()?.path === path ? "active" : "context"
     const part: PromptAttachmentPart = {
-      kind: "attachment",
+      kind: "file",
       token: alias,
       display: createAttachmentDisplay(path, node?.selection),
       path,
