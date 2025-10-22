@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "snow-flow-enterprise": {
+      "command": "node",
+      "args": ["/path/to/snow-flow/enterprise/mcp-proxy/dist/enterprise-proxy.js"],
+      "env": {
+        "SNOW_ENTERPRISE_URL": "https://your-license-server.run.app",
+        "SNOW_LICENSE_KEY": "SNOW-ENT-GLOB-ABC123",
+        "SNOW_INSTANCE_URL": "https://dev123456.service-now.com",
+        "SNOW_USERNAME": "admin",
+        "SNOW_PASSWORD": "your-password",
+        "JIRA_BASE_URL": "https://your-company.atlassian.net",
+        "JIRA_EMAIL": "user@company.com",
+        "JIRA_API_TOKEN": "your-jira-token",
+        "AZDO_ORG_URL": "https://dev.azure.com/your-org",
+        "AZDO_PAT": "your-azure-pat",
+        "CONFLUENCE_BASE_URL": "https://your-company.atlassian.net/wiki",
+        "CONFLUENCE_EMAIL": "user@company.com",
+        "CONFLUENCE_API_TOKEN": "your-confluence-token"
+      }
+    }
+  }
+}

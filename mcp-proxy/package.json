@@ -1,0 +1,37 @@
+{
+  "name": "snow-flow-enterprise-proxy",
+  "version": "1.0.0",
+  "description": "MCP proxy for connecting open source Snow-Flow to Enterprise License Server",
+  "type": "module",
+  "main": "dist/enterprise-proxy.js",
+  "bin": {
+    "snow-flow-enterprise-proxy": "./dist/enterprise-proxy.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/enterprise-proxy.js",
+    "dev": "tsx watch enterprise-proxy.ts",
+    "test": "node dist/enterprise-proxy.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "axios": "^1.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "snow-flow",
+    "mcp",
+    "enterprise",
+    "proxy",
+    "servicenow"
+  ],
+  "author": "Snow-Flow",
+  "license": "MIT"
+}
