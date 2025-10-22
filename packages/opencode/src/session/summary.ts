@@ -4,7 +4,6 @@ import z from "zod"
 import { Session } from "."
 import { generateText } from "ai"
 import { MessageV2 } from "./message-v2"
-import SUMMARIZE_TURN from "./prompt/summarize-turn.txt"
 import { Flag } from "@/flag/flag"
 
 export namespace MessageSummary {
@@ -26,12 +25,17 @@ export namespace MessageSummary {
 
       const result = await generateText({
         model: small.language,
+        maxOutputTokens: 100,
         messages: [
           {
-            role: "system",
-            content: SUMMARIZE_TURN,
+            role: "user",
+            content: `
+            Summarize the following conversation into 2 sentences MAX explaining what happened and why
+            <conversation>
+            ${JSON.stringify(MessageV2.toModelMessage(messages))}
+            </conversation>
+            `,
           },
-          ...MessageV2.toModelMessage(messages),
         ],
       })
 
