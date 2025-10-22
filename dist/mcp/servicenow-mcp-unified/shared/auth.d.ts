@@ -43,9 +43,13 @@ export declare class ServiceNowAuthManager {
      */
     getAccessToken(context: ServiceNowContext): Promise<string>;
     /**
-     * Refresh access token using refresh token
+     * Refresh access token using refresh token OR username/password
      */
     private refreshAccessToken;
+    /**
+     * Authenticate using username and password (fallback method)
+     */
+    private authenticateWithPassword;
     /**
      * Check if cached token is still valid
      */
