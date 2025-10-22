@@ -95,6 +95,18 @@ snow-flow auth login
 3. **ServiceNow**: Browser opens for OAuth authentication
 4. **Done**: You're ready to develop!
 
+### OpenCode Setup
+
+For detailed OpenCode configuration (MCP servers, environment variables, troubleshooting), see:
+
+📖 **[OPENCODE-SETUP.md](OPENCODE-SETUP.md)** - Complete OpenCode configuration guide
+
+**Quick checklist:**
+- ✅ Use `"environment"` (not `"env"`) in `opencode-config.json`
+- ✅ Run `npm run build` to create `dist/` directory
+- ✅ Verify MCP servers load when OpenCode starts
+- ✅ Test tools actually execute (not just show code snippets)
+
 ### Start Developing
 
 ```bash
