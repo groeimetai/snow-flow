@@ -30,7 +30,7 @@ export namespace MessageSummary {
           {
             role: "user",
             content: `
-            Summarize the following conversation into 2 sentences MAX explaining what happened and why
+            Summarize the following conversation into 2 sentences MAX explaining what the assistant did and why. Do not explain the user's input.
             <conversation>
             ${JSON.stringify(MessageV2.toModelMessage(messages))}
             </conversation>
