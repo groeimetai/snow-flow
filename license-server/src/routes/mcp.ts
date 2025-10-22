@@ -29,6 +29,16 @@ import {
   azdoGetReleases,
   azdoCreateRelease
 } from '../integrations/azdo-tools.js';
+import {
+  confluenceSyncPages,
+  confluenceGetPage,
+  confluenceCreatePage,
+  confluenceUpdatePage,
+  confluenceSearchContent,
+  confluenceGetSpace,
+  confluenceCreateSpace,
+  confluenceLinkPages
+} from '../integrations/confluence-tools.js';
 
 const router = Router();
 const db = new LicenseDatabase();
@@ -681,35 +691,108 @@ function registerAzureDevOpsTools() {
  * Register Confluence integration tools
  */
 function registerConfluenceTools() {
-  const confluenceTools = [
-    'snow_confluence_sync_pages',
-    'snow_confluence_get_page',
-    'snow_confluence_create_page',
-    'snow_confluence_update_page',
-    'snow_confluence_search',
-    'snow_confluence_get_space',
-    'snow_confluence_attach_file',
-    'snow_confluence_export_page'
-  ];
-
-  confluenceTools.forEach(toolName => {
-    registerTool({
-      name: toolName,
-      description: `${toolName.replace('snow_confluence_', '').replace(/_/g, ' ')} - Confluence integration`,
-      category: 'confluence',
-      inputSchema: {
-        spaceKey: { type: 'string', required: false }
-      },
-      handler: async (args, customer, credentials) => {
-        return {
-          message: `${toolName} - implementation coming soon`,
-          customer: customer.name
-        };
-      }
-    });
+  // Tool 1: Sync Pages
+  registerTool({
+    name: 'snow_confluence_sync_pages',
+    description: 'Sync Confluence pages to ServiceNow knowledge base',
+    category: 'confluence',
+    inputSchema: {
+      spaceKey: { type: 'string', required: true, description: 'Confluence space key' },
+      limit: { type: 'number', required: false, default: 100, description: 'Max pages to sync' },
+      titleFilter: { type: 'string', required: false, description: 'Filter pages by title substring' }
+    },
+    handler: confluenceSyncPages
   });
 
-  console.log('[MCP] Registered 8 Confluence tools');
+  // Tool 2: Get Page
+  registerTool({
+    name: 'snow_confluence_get_page',
+    description: 'Get Confluence page with ServiceNow mapping',
+    category: 'confluence',
+    inputSchema: {
+      pageId: { type: 'string', required: true, description: 'Page ID' }
+    },
+    handler: confluenceGetPage
+  });
+
+  // Tool 3: Create Page
+  registerTool({
+    name: 'snow_confluence_create_page',
+    description: 'Create new Confluence page',
+    category: 'confluence',
+    inputSchema: {
+      spaceKey: { type: 'string', required: true, description: 'Space key' },
+      title: { type: 'string', required: true, description: 'Page title' },
+      content: { type: 'string', required: true, description: 'Page content (HTML/Storage format)' },
+      parentId: { type: 'string', required: false, description: 'Parent page ID' }
+    },
+    handler: confluenceCreatePage
+  });
+
+  // Tool 4: Update Page
+  registerTool({
+    name: 'snow_confluence_update_page',
+    description: 'Update existing Confluence page',
+    category: 'confluence',
+    inputSchema: {
+      pageId: { type: 'string', required: true, description: 'Page ID' },
+      title: { type: 'string', required: false, description: 'New page title' },
+      content: { type: 'string', required: false, description: 'New page content (HTML/Storage format)' }
+    },
+    handler: confluenceUpdatePage
+  });
+
+  // Tool 5: Search Content
+  registerTool({
+    name: 'snow_confluence_search',
+    description: 'Search Confluence content using CQL',
+    category: 'confluence',
+    inputSchema: {
+      query: { type: 'string', required: true, description: 'Search query text' },
+      spaceKey: { type: 'string', required: false, description: 'Limit search to specific space' },
+      type: { type: 'string', required: false, default: 'page', description: 'Content type (page, blogpost, etc.)' },
+      limit: { type: 'number', required: false, default: 25, description: 'Max results' }
+    },
+    handler: confluenceSearchContent
+  });
+
+  // Tool 6: Get Space
+  registerTool({
+    name: 'snow_confluence_get_space',
+    description: 'Get Confluence space details',
+    category: 'confluence',
+    inputSchema: {
+      spaceKey: { type: 'string', required: true, description: 'Space key' }
+    },
+    handler: confluenceGetSpace
+  });
+
+  // Tool 7: Create Space
+  registerTool({
+    name: 'snow_confluence_create_space',
+    description: 'Create new Confluence space',
+    category: 'confluence',
+    inputSchema: {
+      key: { type: 'string', required: true, description: 'Space key (uppercase, no spaces)' },
+      name: { type: 'string', required: true, description: 'Space name' },
+      description: { type: 'string', required: false, description: 'Space description' }
+    },
+    handler: confluenceCreateSpace
+  });
+
+  // Tool 8: Link Pages
+  registerTool({
+    name: 'snow_confluence_link_pages',
+    description: 'Create link between two Confluence pages',
+    category: 'confluence',
+    inputSchema: {
+      sourcePageId: { type: 'string', required: true, description: 'Source page ID' },
+      targetPageId: { type: 'string', required: true, description: 'Target page ID to link to' }
+    },
+    handler: confluenceLinkPages
+  });
+
+  console.log('[MCP] Registered 8 Confluence tools (fully implemented)');
 }
 
 /**
