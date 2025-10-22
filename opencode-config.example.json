@@ -11,24 +11,22 @@
     "servicenow-unified": {
       "type": "local",
       "command": ["node", "dist/mcp/servicenow-mcp-unified/index.js"],
-      "env": {
+      "environment": {
         "SNOW_INSTANCE": "${SNOW_INSTANCE}",
         "SNOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
         "SNOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
         "SNOW_USERNAME": "${SNOW_USERNAME}",
         "SNOW_PASSWORD": "${SNOW_PASSWORD}"
       },
-      "enabled": true,
-      "description": "Unified ServiceNow MCP server with 235+ tools for complete ServiceNow access including deployment, operations, UI Builder, automation, local sync, and all ServiceNow modules"
+      "enabled": true
     },
     "snow-flow": {
       "type": "local",
       "command": ["node", "dist/mcp/snow-flow-mcp.js"],
-      "env": {
+      "environment": {
         "SNOW_FLOW_ENV": "production"
       },
-      "enabled": true,
-      "description": "Snow-Flow orchestration server with 176+ tools: swarm coordination (swarm_init, agent_spawn), memory management (memory_search, memory_usage), neural learning with TensorFlow.js (neural_train, neural_patterns), performance tracking, and agent discovery"
+      "enabled": true
     }
   },
   "tools": {
