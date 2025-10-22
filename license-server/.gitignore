@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# package-lock.json - MUST be committed for npm ci in Docker builds!
 
 # Build
 dist/
