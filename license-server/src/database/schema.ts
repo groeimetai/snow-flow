@@ -567,6 +567,14 @@ export class LicenseDatabase {
     this.db.close();
   }
 
+  /**
+   * Get underlying database instance
+   * (Used for integrating CredentialsDatabase)
+   */
+  get database(): Database.Database {
+    return this.db;
+  }
+
   // ===== SERVICE INTEGRATOR METHODS =====
 
   /**

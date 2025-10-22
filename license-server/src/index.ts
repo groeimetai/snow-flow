@@ -13,10 +13,14 @@ import dotenv from 'dotenv';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import { LicenseDatabase } from './database/schema.js';
+import { CredentialsDatabase } from './database/credentials-schema.js';
 import { ValidationService, ValidationRequest } from './services/validation.js';
 import { adminRouter } from './routes/admin.js';
 import { mcpRouter } from './routes/mcp.js';
 import { createSsoRoutes } from './routes/sso.js';
+import { createCredentialsRoutes } from './routes/credentials.js';
+import { TokenRefreshWorker } from './workers/token-refresh.js';
+import { createMonitoringRoutes } from './routes/monitoring.js';
 
 // Load environment variables
 dotenv.config();
@@ -39,8 +43,9 @@ const logger = winston.createLogger({
   ]
 });
 
-// Initialize database and validation service
+// Initialize databases and validation service
 const db = new LicenseDatabase(process.env.DB_PATH);
+const credsDb = new CredentialsDatabase(db.database); // Reuse same SQLite database
 const validationService = new ValidationService(db);
 
 // Create Express app
@@ -205,6 +210,22 @@ logger.info('SSO/SAML routes registered at /sso/*');
 logger.info('SSO endpoints: login, callback, logout, metadata, config, sessions, stats');
 
 /**
+ * Self-Service Credentials API
+ */
+const credentialsRouter = createCredentialsRoutes(db, credsDb);
+app.use('/api/credentials', credentialsRouter);
+logger.info('Credentials API routes registered at /api/credentials/*');
+logger.info('Credentials endpoints: list, oauth-init, oauth-callback, store, update, delete, test, refresh');
+
+/**
+ * Monitoring & Health Check routes
+ */
+const monitoringRouter = createMonitoringRoutes(db, credsDb);
+app.use('/monitoring', monitoringRouter);
+logger.info('Monitoring routes registered at /monitoring/*');
+logger.info('Monitoring endpoints: health, health/detailed, health/mcp, metrics, stats/usage, stats/performance, status');
+
+/**
  * Error handling middleware
  */
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
@@ -218,16 +239,41 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
+// Start OAuth2 token refresh worker
+const tokenRefreshWorker = new TokenRefreshWorker(credsDb);
+tokenRefreshWorker.start(5 * 60 * 1000); // Run every 5 minutes
+logger.info('OAuth2 token refresh worker started (runs every 5 minutes)');
+
 // Start server
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   logger.info(`License server running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info('');
+  logger.info('='.repeat(60));
+  logger.info('Snow-Flow Enterprise License Server - Ready');
+  logger.info('='.repeat(60));
+  logger.info(`HTTP Server: http://localhost:${PORT}`);
+  logger.info(`Health Check: http://localhost:${PORT}/health`);
+  logger.info(`Admin API: http://localhost:${PORT}/api/admin/*`);
+  logger.info(`MCP HTTP: http://localhost:${PORT}/mcp/*`);
+  logger.info(`SSO/SAML: http://localhost:${PORT}/sso/*`);
+  logger.info(`Credentials: http://localhost:${PORT}/api/credentials/*`);
+  logger.info(`Monitoring: http://localhost:${PORT}/monitoring/*`);
+  logger.info('='.repeat(60));
+  logger.info('Health Checks:');
+  logger.info(`  Basic: http://localhost:${PORT}/monitoring/health`);
+  logger.info(`  Detailed: http://localhost:${PORT}/monitoring/health/detailed`);
+  logger.info(`  MCP: http://localhost:${PORT}/monitoring/health/mcp`);
+  logger.info(`  Status: http://localhost:${PORT}/monitoring/status`);
+  logger.info(`  Metrics: http://localhost:${PORT}/monitoring/metrics`);
+  logger.info('='.repeat(60));
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM signal received: closing HTTP server');
+  tokenRefreshWorker.stop();
   server.close(() => {
     logger.info('HTTP server closed');
     db.close();
@@ -237,6 +283,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   logger.info('SIGINT signal received: closing HTTP server');
+  tokenRefreshWorker.stop();
   server.close(() => {
     logger.info('HTTP server closed');
     db.close();
@@ -244,4 +291,4 @@ process.on('SIGINT', () => {
   });
 });
 
-export { app, db, validationService };
+export { app, db, credsDb, validationService, tokenRefreshWorker };
