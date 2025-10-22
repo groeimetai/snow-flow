@@ -1,7 +1,7 @@
 # Dependencies
 node_modules/
 npm-debug.log
-package-lock.json
+# package-lock.json - NEEDED for npm ci in Docker build!
 
 # Source files - NEEDED for multi-stage build!
 # src/ and tsconfig.json are required for TypeScript compilation in builder stage
