@@ -5,6 +5,24 @@
 import { z } from 'zod';
 
 /**
+ * Enterprise tier levels
+ */
+export type EnterpriseTier = 'community' | 'professional' | 'team' | 'enterprise';
+
+/**
+ * Enterprise license information
+ */
+export interface EnterpriseLicense {
+  tier: EnterpriseTier;
+  company?: string; // Company identifier (e.g., 'capgemini', 'ey')
+  companyName?: string; // Display name (e.g., 'Capgemini', 'EY')
+  licenseKey?: string; // Format: SNOW-[TIER]-[ORG-ID]-[EXPIRY]-[CHECKSUM]
+  expiresAt?: Date;
+  features: string[]; // Enabled enterprise features
+  theme?: string; // Company-branded theme name
+}
+
+/**
  * ServiceNow instance authentication context
  */
 export interface ServiceNowContext {
@@ -14,6 +32,8 @@ export interface ServiceNowContext {
   refreshToken?: string;
   accessToken?: string;
   tokenExpiry?: number;
+  // Enterprise features
+  enterprise?: EnterpriseLicense;
 }
 
 /**

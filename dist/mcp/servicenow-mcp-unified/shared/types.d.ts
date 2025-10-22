@@ -2,6 +2,22 @@
  * Shared TypeScript types for Unified MCP Server
  */
 /**
+ * Enterprise tier levels
+ */
+export type EnterpriseTier = 'community' | 'professional' | 'team' | 'enterprise';
+/**
+ * Enterprise license information
+ */
+export interface EnterpriseLicense {
+    tier: EnterpriseTier;
+    company?: string;
+    companyName?: string;
+    licenseKey?: string;
+    expiresAt?: Date;
+    features: string[];
+    theme?: string;
+}
+/**
  * ServiceNow instance authentication context
  */
 export interface ServiceNowContext {
@@ -11,6 +27,7 @@ export interface ServiceNowContext {
     refreshToken?: string;
     accessToken?: string;
     tokenExpiry?: number;
+    enterprise?: EnterpriseLicense;
 }
 /**
  * MCP Tool Definition (compliant with Model Context Protocol)
