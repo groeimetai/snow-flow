@@ -3,9 +3,9 @@ node_modules/
 npm-debug.log
 package-lock.json
 
-# Source files (we copy built dist/ instead)
-src/
-tsconfig.json
+# Source files - NEEDED for multi-stage build!
+# src/ and tsconfig.json are required for TypeScript compilation in builder stage
+# (Production stage only copies the built dist/ folder)
 
 # Testing
 coverage/
