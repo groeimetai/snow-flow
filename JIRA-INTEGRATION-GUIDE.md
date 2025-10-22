@@ -8,6 +8,16 @@
 
 The Jira integration provides **8 fully implemented MCP tools** for complete Jira Cloud API integration with ServiceNow. All tools execute server-side on the license server, keeping code private and secure.
 
+**🤖 PRIMARY USE CASE: AUTONOMOUS AGENTS**
+
+These tools enable **AI agents to autonomously manage Jira backlogs**:
+- Agents read backlogs and prioritize work
+- Agents create/update/transition issues automatically
+- Agents execute work and update status in real-time
+- Agents clear backlogs 24/7 without human intervention
+
+**See:** [AGENT-AUTONOMY-GUIDE.md](AGENT-AUTONOMY-GUIDE.md) for complete autonomous workflows.
+
 ## 🏗️ Architecture
 
 ```
@@ -450,6 +460,89 @@ if (existing.length > 0) {
 }
 ```
 
+## 🤖 Agent Use Cases (PRIMARY VALUE!)
+
+### Use Case 1: Autonomous Sprint Execution
+**Agent reads backlog → prioritizes → creates ServiceNow work → executes → updates Jira**
+
+```javascript
+// Agent workflow (runs 24/7)
+const backlog = await snow_jira_sync_backlog({ projectKey: 'PROJ' });
+
+for (const story of backlog.issues) {
+  // Agent analyzes story
+  const analysis = analyzeStory(story);
+
+  // Agent creates ServiceNow work
+  await snow_create_record({
+    table: 'incident',
+    data: story.servicenowMapping
+  });
+
+  // Agent executes work (example: creates UI page)
+  await executeWork(story);
+
+  // Agent updates Jira
+  await snow_jira_transition_issue({
+    issueKey: story.key,
+    transitionIdOrName: 'Done',
+    comment: 'Agent completed autonomously'
+  });
+}
+```
+
+### Use Case 2: Automatic Bug Triage
+**Agent monitors new bugs → analyzes severity → assigns → prioritizes**
+
+```javascript
+const newBugs = await snow_jira_search_issues({
+  jql: 'type = Bug AND status = "To Do"'
+});
+
+for (const bug of newBugs.issues) {
+  const severity = await analyzeBugSeverity(bug);
+
+  await snow_jira_update_issue({
+    issueKey: bug.key,
+    priority: severity.recommendedPriority,
+    assignee: findBestAssignee(bug.fields.components)
+  });
+}
+```
+
+### Use Case 3: Continuous Documentation
+**Agent monitors completed work → generates docs → links to Confluence**
+
+```javascript
+const completed = await snow_jira_search_issues({
+  jql: 'status = Done AND labels != "documented"'
+});
+
+for (const story of completed.issues) {
+  // Generate documentation
+  const docs = generateDocumentation(story);
+
+  // Create Confluence page (Week 3 tool)
+  const page = await snow_confluence_create_page({
+    spaceKey: 'DOCS',
+    title: story.fields.summary,
+    content: docs
+  });
+
+  // Link back to Jira
+  await snow_jira_update_issue({
+    issueKey: story.key,
+    labels: [...story.fields.labels, 'documented']
+  });
+}
+```
+
+**Complete Guide:** See [AGENT-AUTONOMY-GUIDE.md](AGENT-AUTONOMY-GUIDE.md) for:
+- 4 complete agent personas (Backlog Manager, Story Executor, Code Review, DevOps)
+- Multi-agent coordination workflows
+- Safety & governance patterns
+- Human-in-the-loop for critical operations
+
 ## 🎯 Next Steps
 
 ### Immediate (Day 2)
@@ -468,6 +561,7 @@ if (existing.length > 0) {
 - [ ] Implement webhook support (Jira → ServiceNow)
 - [ ] Add sync conflict resolution
 - [ ] Create sync scheduling
+- [ ] Build agent orchestration dashboard
 
 ## 📚 Resources
 
