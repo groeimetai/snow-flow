@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Source files (we copy built dist/ instead)
+src/
+tsconfig.json
+
+# Testing
+coverage/
+.nyc_output/
+*.test.ts
+*.spec.ts
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Database (will be created at runtime)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Logs
+*.log
+logs/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation
+README.md
+docs/
+
+# Cloud Build
+cloudbuild*.yaml
+
+# Misc
+.DS_Store
+Thumbs.db

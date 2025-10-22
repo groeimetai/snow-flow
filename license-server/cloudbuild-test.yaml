@@ -1,0 +1,70 @@
+# Cloud Build configuration for TEST environment
+# Triggers on push to 'test' branch
+# Deploys to: license-server-test
+
+steps:
+  # Step 1: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/license-server:test-$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/license-server:test-latest'
+      - '-f'
+      - 'license-server/Dockerfile'
+      - './license-server'
+
+  # Step 2: Push to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/license-server:test-$SHORT_SHA']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/license-server:test-latest']
+
+  # Step 3: Deploy to Cloud Run (TEST)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'license-server-test'
+      - '--image=gcr.io/$PROJECT_ID/license-server:test-$SHORT_SHA'
+      - '--region=europe-west4'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--min-instances=0'              # Scale to zero (cost efficient!)
+      - '--max-instances=2'               # Max 2 instances for test
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--timeout=60s'
+      - '--concurrency=80'
+      - '--port=8080'
+      - '--set-env-vars=NODE_ENV=test,LOG_LEVEL=debug'
+      - '--set-secrets=ADMIN_KEY=ADMIN_KEY:latest'
+      - '--labels=environment=test,branch=test,managed-by=cloud-build'
+
+  # Step 4: Output deployment URL
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "================================================"
+        echo "🚀 TEST DEPLOYMENT SUCCESSFUL!"
+        echo "================================================"
+        URL=$(gcloud run services describe license-server-test --region=europe-west4 --format="value(status.url)")
+        echo "📍 Test URL: $URL"
+        echo "🏥 Health Check: $URL/health"
+        echo "📊 Logs: https://console.cloud.google.com/run/detail/europe-west4/license-server-test/logs"
+        echo "================================================"
+
+images:
+  - 'gcr.io/$PROJECT_ID/license-server:test-$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/license-server:test-latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'  # Fast builds
+
+timeout: '600s'  # 10 minute timeout
