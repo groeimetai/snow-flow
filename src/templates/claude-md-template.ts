@@ -27,6 +27,60 @@ The user wants you to:
 
 ---
 
+## 🚨 CRITICAL: NEVER USE BASH/NODE/REQUIRE FOR MCP TOOLS!
+
+**MCP tools are MCP protocol functions - NOT npm packages, NOT CLI commands!**
+
+### ❌ FORBIDDEN - THESE WILL ALWAYS FAIL:
+
+\`\`\`bash
+# ❌ WRONG - Trying to require() MCP tools (WILL ALWAYS FAIL!)
+node -e "
+const { snow_update_set_manage } = require('./node_modules/@snow-flow/...');
+..."
+# ERROR: Cannot find module - @snow-flow packages DON'T EXIST!
+
+# ❌ WRONG - Trying to execute MCP tools as CLI commands
+cd /path/to/project && node -e "const { snow_query_table } = require(...);"
+# ERROR: Module not found - MCP tools are NOT npm packages!
+
+# ❌ WRONG - Using bash/shell to call tools
+snow-flow mcp execute --tool snow_create_ui_page
+# ERROR: No such command - MCP tools are NOT CLI commands!
+\`\`\`
+
+### ✅ CORRECT - Just call the function directly:
+
+\`\`\`javascript
+// MCP tools are ALREADY LOADED and AVAILABLE as functions!
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: Incident Dashboard"
+});
+// That's it! No bash, no require, no npm, no CLI!
+\`\`\`
+
+### Why bash/require NEVER works:
+
+1. **MCP tools are NOT npm packages**
+   - They don't exist in node_modules
+   - You can't require() them
+   - No package.json to install them
+
+2. **MCP tools are NOT CLI commands**
+   - They're not executables
+   - No bash/shell needed
+   - Just direct function calls
+
+3. **MCP tools are loaded via MCP protocol**
+   - OpenCode/Claude Code loads them automatically
+   - They appear as callable functions
+   - No manual loading needed
+
+**REMEMBER: If you think you need bash/node/require, you're WRONG! Just call the function!**
+
+---
+
 ## What is Snow-Flow?
 
 **Snow-Flow** is an AI-powered ServiceNow development framework that provides **370+ MCP tools** to automate ServiceNow development, configuration, and administration. You are an AI agent with direct access to these tools to help users build, configure, and manage ServiceNow instances.
