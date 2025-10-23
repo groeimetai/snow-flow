@@ -421,14 +421,14 @@ To use Google Vertex AI with OpenCode:
    You need to have a Google Cloud project with Vertex AI API enabled.
    :::
 
-1. You'll need to set the following environment variables:
+1. Set the required environment variables:
    - `GOOGLE_VERTEX_PROJECT`: Your Google Cloud project ID
-   - `GOOGLE_VERTEX_REGION` (optional): The region for Vertex AI (defaults to us-east5)
-   - One of these authentication options:
+   - `GOOGLE_VERTEX_REGION` (optional): The region for Vertex AI (defaults to `us-east5`)
+   - Authentication (choose one):
      - `GOOGLE_APPLICATION_CREDENTIALS`: Path to your service account JSON key file
-     - Or authenticate using gcloud CLI with `gcloud auth application-default login`
+     - Authenticate using gcloud CLI: `gcloud auth application-default login`
 
-   Once you have these, set them while running opencode.
+   Set them while running opencode.
 
    ```bash
    GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json GOOGLE_VERTEX_PROJECT=your-project-id opencode
