@@ -460,38 +460,54 @@ async function executeOpenCode(objective) {
             cliLogger.info(`🔍 OpenCode Config: ${opencodeConfigPath}`);
             cliLogger.info(`🔍 Environment File: ${envPath}`);
         }
+        // Write objective to temp file for OpenCode to read
+        const { tmpdir } = await Promise.resolve().then(() => __importStar(require('os')));
+        const { writeFileSync, unlinkSync } = await Promise.resolve().then(() => __importStar(require('fs')));
+        const tmpFile = (0, path_1.join)(tmpdir(), `snow-flow-objective-${Date.now()}.txt`);
+        writeFileSync(tmpFile, objective, 'utf8');
         // Get default model from .env if available
         const defaultModel = process.env.DEFAULT_MODEL;
         const defaultProvider = process.env.DEFAULT_LLM_PROVIDER;
-        // Build OpenCode command
-        let opencodeArgs = [];
+        // Start OpenCode with the objective and default model
+        // OpenCode will be started interactively with stdin redirect
+        let opencodeCommand = `opencode < "${tmpFile}"`;
+        // If we have a default model, pass it to OpenCode
         if (defaultModel) {
-            opencodeArgs.push('--model', defaultModel);
+            opencodeCommand = `opencode --model "${defaultModel}" < "${tmpFile}"`;
         }
-        // Store objective in environment variable for OpenCode to read
-        const opencodeEnv = {
-            ...process.env,
-            DEFAULT_MODEL: defaultModel || '',
-            DEFAULT_LLM_PROVIDER: defaultProvider || '',
-            SNOW_FLOW_OBJECTIVE: objective // Pass objective via environment
-        };
         // Spawn OpenCode process - let it run fully interactively
         // OpenCode is a TUI (Terminal User Interface) application that needs full terminal control
-        // We pass the objective via SNOW_FLOW_OBJECTIVE environment variable
-        const opencodeProcess = (0, child_process_1.spawn)('opencode', opencodeArgs, {
-            stdio: 'inherit', // OpenCode gets full terminal access (stdin/stdout/stderr)
+        // We pass the objective via stdin redirect (shell: opencode < tmpfile)
+        const opencodeProcess = (0, child_process_1.spawn)('sh', ['-c', opencodeCommand], {
+            stdio: 'inherit', // All stdio inherited - OpenCode can use TTY
             cwd: process.cwd(),
-            env: opencodeEnv
+            env: {
+                ...process.env,
+                // Ensure DEFAULT_MODEL is available to OpenCode
+                DEFAULT_MODEL: defaultModel || '',
+                DEFAULT_LLM_PROVIDER: defaultProvider || ''
+            }
         });
-        // Note: With stdio: 'inherit', OpenCode writes directly to the terminal
-        // The output interceptor cannot be used with TUI applications
-        // OpenCode will have full control over terminal display
         // Set up process monitoring
         return new Promise((resolve) => {
             opencodeProcess.on('close', async (code) => {
+                // Clean up temp file
+                try {
+                    unlinkSync(tmpFile);
+                }
+                catch (e) {
+                    // Ignore cleanup errors
+                }
                 resolve(code === 0);
             });
             opencodeProcess.on('error', (error) => {
+                // Clean up temp file
+                try {
+                    unlinkSync(tmpFile);
+                }
+                catch (e) {
+                    // Ignore cleanup errors
+                }
                 cliLogger.error(`❌ Failed to start OpenCode: ${error.message}`);
                 resolve(false);
             });
@@ -501,6 +517,13 @@ async function executeOpenCode(objective) {
                 setTimeout(() => {
                     cliLogger.warn(`⏱️  OpenCode session timeout (${timeoutMinutes} minutes), terminating...`);
                     opencodeProcess.kill('SIGTERM');
+                    // Clean up temp file
+                    try {
+                        unlinkSync(tmpFile);
+                    }
+                    catch (e) {
+                        // Ignore cleanup errors
+                    }
                     resolve(false);
                 }, timeoutMinutes * 60 * 1000);
             }
