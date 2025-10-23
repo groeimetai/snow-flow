@@ -2708,36 +2708,22 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       // CRITICAL: Use ABSOLUTE paths so OpenCode can find the servers!
       const distPath = join(snowFlowRoot, 'dist');
 
+      // CRITICAL: OpenCode expects command as array with all parts
+      // Also: environment variables are inherited from parent process (OpenCode reads .env)
       const opencodeConfig = {
+        $schema: "https://opencode.ai/config.json",
         name: "snow-flow",
         description: "ServiceNow development with OpenCode and multi-LLM support",
-        model: {
-          provider: "{env:DEFAULT_LLM_PROVIDER}",
-          model: "{env:DEFAULT_ANTHROPIC_MODEL}",
-          temperature: 1.0
-        },
         mcp: {
           "servicenow-unified": {
             type: "local",
-            command: "node",
-            args: [join(distPath, "mcp/servicenow-mcp-unified/index.js")],
-            env: {
-              SERVICENOW_INSTANCE_URL: "https://{env:SNOW_INSTANCE}",
-              SERVICENOW_CLIENT_ID: "{env:SNOW_CLIENT_ID}",
-              SERVICENOW_CLIENT_SECRET: "{env:SNOW_CLIENT_SECRET}",
-              SERVICENOW_USERNAME: "{env:SNOW_USERNAME}",
-              SERVICENOW_PASSWORD: "{env:SNOW_PASSWORD}"
-            },
+            command: ["node", join(distPath, "mcp/servicenow-mcp-unified/index.js")],
             enabled: true,
             description: "Unified ServiceNow MCP server with 235+ tools"
           },
           "snow-flow": {
             type: "local",
-            command: "node",
-            args: [join(distPath, "mcp/snow-flow-mcp.js")],
-            env: {
-              SNOW_FLOW_ENV: "production"
-            },
+            command: ["node", join(distPath, "mcp/snow-flow-mcp.js")],
             enabled: true,
             description: "Snow-Flow orchestration with 176+ tools: swarm coordination, agent spawning, memory, neural learning"
           }
@@ -2753,9 +2739,15 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
         ]
       };
 
+      // Write both opencode.json AND config.json (Claude uses config.json)
       const opencodeConfigPath = join(opencodeDir, 'opencode.json');
+      const configJsonPath = join(opencodeDir, 'config.json');
+
       await fs.writeFile(opencodeConfigPath, JSON.stringify(opencodeConfig, null, 2));
+      await fs.writeFile(configJsonPath, JSON.stringify(opencodeConfig, null, 2));
+
       console.log('✅ Created .opencode/opencode.json with both MCP servers');
+      console.log('✅ Created .opencode/config.json (for Claude compatibility)');
 
       // Also create AGENTS.md in .opencode/
       const opencodeAgentsMdPath = join(opencodeDir, 'AGENTS.md');
