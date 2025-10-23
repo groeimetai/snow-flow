@@ -1717,15 +1717,30 @@ program
         console.log(chalk.dim('\n🔍 Verifying MCP server configuration...'));
         await verifyMCPServers(targetDir);
 
-        // Start MCP servers using mcp-server-manager.sh
+        // Start MCP servers using the locally copied script
         console.log(chalk.blue('\n🚀 Starting MCP servers...'));
         try {
           const { execSync } = require('child_process');
           const path = require('path');
-          const scriptPath = path.join(__dirname, '..', 'scripts', 'mcp-server-manager.sh');
+          const fs = require('fs');
+
+          // Use the script that was copied to the project directory
+          const localScriptPath = path.join(targetDir, 'scripts', 'mcp-server-manager.sh');
+
+          // Check if the script exists locally
+          if (!fs.existsSync(localScriptPath)) {
+            throw new Error('MCP server manager script not found. Re-run snow-flow init if needed.');
+          }
+
+          // Make script executable
+          try {
+            fs.chmodSync(localScriptPath, '755');
+          } catch (chmodError) {
+            // Ignore chmod errors on Windows
+          }
 
           // Execute and capture output
-          const output = execSync(`bash "${scriptPath}" start`, {
+          const output = execSync(`bash "${localScriptPath}" start`, {
             cwd: targetDir,
             encoding: 'utf-8'
           });
@@ -1744,10 +1759,11 @@ program
             console.log(output);
           }
         } catch (error) {
-          console.log(chalk.red('❌ Failed to start MCP servers automatically'));
-          console.log(chalk.yellow('   MCP servers will start automatically when you launch OpenCode'));
+          console.log(chalk.yellow('⚠️  MCP servers will start automatically when you launch OpenCode'));
           console.log(chalk.dim('   Or start manually: ./scripts/mcp-server-manager.sh start'));
-          console.log(chalk.dim('   Error: ' + (error as Error).message));
+          if ((error as Error).message.includes('No .env file found')) {
+            console.log(chalk.dim('   💡 Tip: Configure .env first, then run: ./scripts/mcp-server-manager.sh start'));
+          }
         }
       }
 
