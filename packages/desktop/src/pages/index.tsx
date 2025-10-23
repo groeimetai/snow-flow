@@ -215,17 +215,14 @@ export default function Page() {
     <div class="relative h-screen flex flex-col">
       <header class="hidden h-12 shrink-0 bg-background-strong border-b border-border-weak-base"></header>
       <main class="h-[calc(100vh-0rem)] flex">
-        <div class="shrink-0 w-70 p-1.5 bg-background-weak border-r border-border-weak-base flex flex-col items-start gap-1.5">
-          <div class="flex flex-col items-start self-stretch px-3 py-1">
-            <span class="text-12-medium overflow-hidden text-ellipsis">{sync.data.path.directory}</span>
+        <div class="w-70 shrink-0 bg-background-weak border-r border-border-weak-base flex flex-col items-start">
+          <div class="h-10 flex items-center self-stretch px-5 border-b border-border-weak-base">
+            <span class="text-14-regular overflow-hidden text-ellipsis">{getFilename(sync.data.path.directory)}</span>
           </div>
-          <div class="flex flex-col items-start gap-4 self-stretch flex-1">
-            <div class="px-3 py-1.5 w-full">
-              <Button class="w-full" size="large" onClick={handleNewSession}>
-                <Icon name="plus" />
-                New Session
-              </Button>
-            </div>
+          <div class="flex flex-col items-start gap-4 self-stretch flex-1 py-4 px-3">
+            <Button class="w-full" size="large" onClick={handleNewSession} icon="edit-small-2">
+              New Session
+            </Button>
             <List
               data={sync.data.session}
               key={(x) => x.id}
