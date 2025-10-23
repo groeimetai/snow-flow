@@ -210,14 +210,17 @@ export interface McpUsage {
 
 export interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
-  checks: {
-    database: string;
-    mcp_servers: string;
-    credentials_store: string;
-  };
+  checks: Record<string, any>;
   version: string;
   uptime: number;
   timestamp: number;
+  summary?: {
+    total: number;
+    healthy: number;
+    warnings: number;
+    critical: number;
+  };
+  totalCheckTime?: number;
 }
 
 export interface SystemMetrics {

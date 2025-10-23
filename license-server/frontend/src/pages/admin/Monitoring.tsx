@@ -25,54 +25,123 @@ export default function AdminMonitoring() {
           </p>
         </div>
 
-        {/* Health Status */}
+        {/* Overall Health Summary */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">System Health</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">System Health Overview</h2>
           {isLoadingHealth ? (
             <div className="flex items-center justify-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
             </div>
           ) : health ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Status:</span>
-                <Badge variant={health.status === 'healthy' ? 'success' : 'danger'}>
-                  {health.status}
-                </Badge>
+            <div className="space-y-4">
+              {/* Status Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Overall Status</div>
+                  <Badge
+                    variant={
+                      health.status === 'healthy' ? 'success' :
+                      health.status === 'degraded' ? 'warning' :
+                      'danger'
+                    }
+                  >
+                    {health.status}
+                  </Badge>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Uptime</div>
+                  <div className="text-sm font-semibold">
+                    {typeof health.uptime === 'number'
+                      ? health.uptime > 3600
+                        ? `${(health.uptime / 3600).toFixed(1)}h`
+                        : `${Math.floor(health.uptime / 60)}m`
+                      : 'N/A'}
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Version</div>
+                  <div className="text-sm font-mono">{health.version || 'N/A'}</div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-1">Health Checks</div>
+                  <div className="text-sm">
+                    {health.summary ? (
+                      <span>
+                        <span className="text-green-600 font-semibold">{health.summary.healthy}</span>
+                        {health.summary.warnings > 0 && (
+                          <span className="text-yellow-600"> / {health.summary.warnings}⚠</span>
+                        )}
+                        {health.summary.critical > 0 && (
+                          <span className="text-red-600"> / {health.summary.critical}❌</span>
+                        )}
+                      </span>
+                    ) : 'N/A'}
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Version:</span>
-                <span className="text-sm font-mono">{health.version}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Uptime:</span>
-                <span className="text-sm">
-                  {typeof health.uptime === 'number'
-                    ? `${Math.floor(health.uptime / 60)} minutes`
-                    : typeof health.uptime === 'object' && health.uptime !== null && 'server' in health.uptime
-                    ? `${Math.floor((health.uptime as any).server / 60)} minutes`
-                    : 'N/A'}
-                </span>
-              </div>
+
+              {/* Detailed Component Checks */}
               {health.checks && (
-                <div className="pt-3 border-t border-gray-200">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Component Checks:</p>
-                  <div className="space-y-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Component Health</h3>
+                  <div className="grid md:grid-cols-2 gap-3">
                     {Object.entries(health.checks).map(([key, value]) => {
                       const checkValue: any = typeof value === 'object' && value !== null ? value : { status: value };
                       const status = checkValue.status || String(value);
                       const message = checkValue.message;
+                      const details = checkValue.details;
+
+                      const getStatusVariant = (s: string) => {
+                        if (s === 'healthy' || s === 'ok') return 'success';
+                        if (s === 'warning') return 'warning';
+                        if (s === 'critical' || s === 'unhealthy') return 'danger';
+                        return 'neutral';
+                      };
+
+                      const formatKey = (k: string) => {
+                        return k
+                          .replace(/([A-Z])/g, ' $1')
+                          .replace(/^./, str => str.toUpperCase())
+                          .trim();
+                      };
 
                       return (
-                        <div key={key} className="bg-gray-50 p-2 rounded">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-gray-700">{key}</span>
-                            <Badge variant={status === 'healthy' || status === 'ok' ? 'success' : 'danger'}>
-                              {status}
-                            </Badge>
+                        <div key={key} className="border border-gray-200 rounded-lg p-3 bg-white">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-900">{formatKey(key)}</h4>
+                              {message && (
+                                <p className="text-xs text-gray-600 mt-1">{message}</p>
+                              )}
+                            </div>
+                            <div className="ml-2">
+                              <Badge variant={getStatusVariant(status)}>
+                                {status}
+                              </Badge>
+                            </div>
                           </div>
-                          {message && (
-                            <p className="text-xs text-gray-600">{message}</p>
+
+                          {/* Show details if available */}
+                          {details && typeof details === 'object' && (
+                            <div className="mt-2 pt-2 border-t border-gray-100">
+                              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                                {Object.entries(details).map(([detailKey, detailValue]) => (
+                                  <div key={detailKey} className="flex justify-between">
+                                    <span className="text-gray-500">{formatKey(detailKey)}:</span>
+                                    <span className="text-gray-900 font-medium">
+                                      {String(detailValue)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Show response time if available */}
+                          {checkValue.responseTime && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              Response: {checkValue.responseTime}ms
+                            </div>
                           )}
                         </div>
                       );

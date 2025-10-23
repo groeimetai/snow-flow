@@ -119,13 +119,26 @@ export function createMonitoringRoutes(db: LicenseDatabase, credsDb: Credentials
     const startTime = Date.now();
     const checks: Record<string, any> = {};
 
-    // Database Check
+    // 1. Main Database Check (License Server DB)
     try {
+      const dbStart = Date.now();
       const serviceIntegrators = db.listServiceIntegrators();
+      const allCustomers: any[] = [];
+      serviceIntegrators.forEach(si => {
+        allCustomers.push(...db.listCustomers(si.id));
+      });
+      const activeCustomers = allCustomers.filter(c => c.status === 'active').length;
+
       checks.database = {
         status: 'healthy',
-        message: `Database accessible (${serviceIntegrators.length} service integrators)`,
-        responseTime: Date.now() - startTime
+        message: `${serviceIntegrators.length} SIs, ${allCustomers.length} customers (${activeCustomers} active)`,
+        responseTime: Date.now() - dbStart,
+        details: {
+          serviceIntegrators: serviceIntegrators.length,
+          totalCustomers: allCustomers.length,
+          activeCustomers,
+          suspendedCustomers: allCustomers.filter(c => c.status === 'suspended').length
+        }
       };
     } catch (error) {
       checks.database = {
@@ -135,15 +148,26 @@ export function createMonitoringRoutes(db: LicenseDatabase, credsDb: Credentials
       };
     }
 
-    // Credentials Database Check
+    // 2. Credentials Database Check
     try {
-      const checkStart = Date.now();
-      // Just verify we can access the database
-      const testCreds = credsDb.listCustomerCredentials(1);
+      const credStart = Date.now();
+      const serviceIntegrators = db.listServiceIntegrators();
+      let totalCreds = 0;
+      serviceIntegrators.forEach(si => {
+        const customers = db.listCustomers(si.id);
+        customers.forEach(c => {
+          totalCreds += credsDb.listCustomerCredentials(c.id).length;
+        });
+      });
+
       checks.credentialsDb = {
         status: 'healthy',
-        message: 'Credentials database accessible',
-        responseTime: Date.now() - checkStart
+        message: `${totalCreds} stored credentials`,
+        responseTime: Date.now() - credStart,
+        details: {
+          totalCredentials: totalCreds,
+          encrypted: true
+        }
       };
     } catch (error) {
       checks.credentialsDb = {
@@ -153,26 +177,141 @@ export function createMonitoringRoutes(db: LicenseDatabase, credsDb: Credentials
       };
     }
 
-    // Memory Check
+    // 3. Memory Check (Comprehensive)
     const memUsage = process.memoryUsage();
-    const memUsagePercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+    const heapPercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+    const rssPercent = (memUsage.rss / (512 * 1024 * 1024)) * 100; // Assume 512MB container
 
     checks.memory = {
-      status: memUsagePercent < 90 ? 'healthy' : 'warning',
-      usedPercent: memUsagePercent.toFixed(2),
-      usedMB: (memUsage.heapUsed / 1024 / 1024).toFixed(2),
-      totalMB: (memUsage.heapTotal / 1024 / 1024).toFixed(2)
+      status: heapPercent > 90 ? 'critical' : heapPercent > 75 ? 'warning' : 'healthy',
+      message: `Heap: ${heapPercent.toFixed(1)}%, RSS: ${(memUsage.rss / 1024 / 1024).toFixed(0)}MB`,
+      details: {
+        heapUsed: (memUsage.heapUsed / 1024 / 1024).toFixed(2) + 'MB',
+        heapTotal: (memUsage.heapTotal / 1024 / 1024).toFixed(2) + 'MB',
+        heapPercent: heapPercent.toFixed(2) + '%',
+        rss: (memUsage.rss / 1024 / 1024).toFixed(2) + 'MB',
+        external: (memUsage.external / 1024 / 1024).toFixed(2) + 'MB'
+      }
     };
 
-    // Overall Status
-    const allHealthy = Object.values(checks).every(check => check.status === 'healthy');
-    const hasWarnings = Object.values(checks).some(check => check.status === 'warning');
+    // 4. MCP Tools Health Check
+    try {
+      let totalMcpCalls = 0;
+      let totalMcpErrors = 0;
+      let totalMcpDuration = 0;
+
+      toolMetrics.forEach(metrics => {
+        totalMcpCalls += metrics.totalCalls;
+        totalMcpErrors += metrics.failedCalls;
+        totalMcpDuration += metrics.totalDuration;
+      });
+
+      const avgDuration = totalMcpCalls > 0 ? totalMcpDuration / totalMcpCalls : 0;
+      const errorRate = totalMcpCalls > 0 ? (totalMcpErrors / totalMcpCalls) * 100 : 0;
+
+      checks.mcpTools = {
+        status: errorRate > 10 ? 'warning' : 'healthy',
+        message: `${totalMcpCalls} calls, ${errorRate.toFixed(1)}% error rate`,
+        details: {
+          totalCalls: totalMcpCalls,
+          successCalls: totalMcpCalls - totalMcpErrors,
+          errorCalls: totalMcpErrors,
+          errorRate: errorRate.toFixed(2) + '%',
+          avgDuration: avgDuration.toFixed(2) + 'ms',
+          activeTools: toolMetrics.size
+        }
+      };
+    } catch (error) {
+      checks.mcpTools = {
+        status: 'unknown',
+        message: 'Unable to gather MCP metrics'
+      };
+    }
+
+    // 5. API Performance Check
+    try {
+      const apiStats = {
+        total: 0,
+        last24h: 0,
+        errors: 0
+      };
+
+      // This is a simplified check - in production you'd query actual API logs
+      toolMetrics.forEach(metrics => {
+        apiStats.total += metrics.totalCalls;
+        apiStats.errors += metrics.failedCalls;
+      });
+
+      const errorRate = apiStats.total > 0 ? (apiStats.errors / apiStats.total) * 100 : 0;
+
+      checks.apiPerformance = {
+        status: errorRate > 5 ? 'warning' : 'healthy',
+        message: `${apiStats.total} requests, ${errorRate.toFixed(1)}% errors`,
+        details: {
+          totalRequests: apiStats.total,
+          successfulRequests: apiStats.total - apiStats.errors,
+          failedRequests: apiStats.errors,
+          errorRate: errorRate.toFixed(2) + '%'
+        }
+      };
+    } catch (error) {
+      checks.apiPerformance = {
+        status: 'unknown',
+        message: 'Unable to gather API metrics'
+      };
+    }
+
+    // 6. Uptime Check
+    const uptimeSeconds = process.uptime();
+    const uptimeHours = uptimeSeconds / 3600;
+
+    checks.uptime = {
+      status: 'healthy',
+      message: uptimeHours < 1
+        ? `${Math.floor(uptimeSeconds / 60)} minutes`
+        : `${uptimeHours.toFixed(1)} hours`,
+      details: {
+        seconds: Math.floor(uptimeSeconds),
+        since: new Date(Date.now() - uptimeSeconds * 1000).toISOString()
+      }
+    };
+
+    // 7. Environment Check
+    checks.environment = {
+      status: 'healthy',
+      message: `${process.env.NODE_ENV || 'development'} mode`,
+      details: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch,
+        environment: process.env.NODE_ENV || 'development'
+      }
+    };
+
+    // Calculate Overall Status
+    const healthyCount = Object.values(checks).filter(c => c.status === 'healthy').length;
+    const warningCount = Object.values(checks).filter(c => c.status === 'warning').length;
+    const criticalCount = Object.values(checks).filter(c => c.status === 'critical' || c.status === 'unhealthy').length;
+
+    let overallStatus = 'healthy';
+    if (criticalCount > 0) {
+      overallStatus = 'unhealthy';
+    } else if (warningCount > 0) {
+      overallStatus = 'degraded';
+    }
 
     res.json({
-      status: allHealthy ? 'healthy' : (hasWarnings ? 'degraded' : 'unhealthy'),
+      status: overallStatus,
       timestamp: Date.now(),
       uptime: process.uptime(),
+      version: process.env.npm_package_version || '1.0.0',
       checks,
+      summary: {
+        total: Object.keys(checks).length,
+        healthy: healthyCount,
+        warnings: warningCount,
+        critical: criticalCount
+      },
       totalCheckTime: Date.now() - startTime
     });
   });
