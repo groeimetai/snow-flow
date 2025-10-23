@@ -1587,6 +1587,9 @@ program
         await copyOpenCodeConfig(targetDir, options.force);
         // Copy OpenCode themes
         await copyOpenCodeThemes(targetDir, options.force);
+        // Copy OpenCode package.json with snowcode-plugin
+        console.log('📦 Configuring OpenCode plugin (snowcode fork)...');
+        await copyOpenCodePackageJson(targetDir, options.force);
         // Copy MCP server management scripts
         console.log('🔧 Setting up MCP server management scripts...');
         await copyMCPServerScripts(targetDir, options.force);
@@ -2080,6 +2083,81 @@ async function copyOpenCodeThemes(targetDir, force = false) {
     }
     catch (error) {
         console.error('❌ Error copying OpenCode themes:', error);
+    }
+}
+async function copyOpenCodePackageJson(targetDir, force = false) {
+    try {
+        // Determine the snow-flow installation directory
+        let snowFlowRoot;
+        const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
+            __dirname.includes('node_modules/.pnpm') ||
+            __dirname.includes('npm/snow-flow');
+        if (isGlobalInstall) {
+            const parts = __dirname.split(/node_modules[\/\\]/);
+            snowFlowRoot = parts[0] + 'node_modules/snow-flow';
+        }
+        else {
+            let currentDir = __dirname;
+            while (currentDir !== '/') {
+                try {
+                    const packageJsonPath = (0, path_1.join)(currentDir, 'package.json');
+                    const packageJson = JSON.parse(await fs_1.promises.readFile(packageJsonPath, 'utf-8'));
+                    if (packageJson.name === 'snow-flow') {
+                        snowFlowRoot = currentDir;
+                        break;
+                    }
+                }
+                catch {
+                    // Continue searching up
+                }
+                currentDir = (0, path_1.dirname)(currentDir);
+            }
+            if (!snowFlowRoot) {
+                throw new Error('Could not find snow-flow project root');
+            }
+        }
+        // Find opencode package.json template
+        const templateSourcePaths = [
+            (0, path_1.join)(snowFlowRoot, 'templates', 'opencode-package.json'),
+            (0, path_1.join)(__dirname, '..', 'templates', 'opencode-package.json'),
+            (0, path_1.join)(__dirname, 'templates', 'opencode-package.json')
+        ];
+        let templatePath = null;
+        for (const sourcePath of templateSourcePaths) {
+            try {
+                await fs_1.promises.access(sourcePath);
+                templatePath = sourcePath;
+                break;
+            }
+            catch {
+                // Continue to next path
+            }
+        }
+        if (!templatePath) {
+            console.log('⚠️  OpenCode package.json template not found, OpenCode will use default plugin');
+            return;
+        }
+        // Create .opencode directory
+        const opencodeDir = (0, path_1.join)(targetDir, '.opencode');
+        await fs_1.promises.mkdir(opencodeDir, { recursive: true });
+        // Copy package.json template
+        const targetPath = (0, path_1.join)(opencodeDir, 'package.json');
+        // Check if file already exists
+        try {
+            await fs_1.promises.access(targetPath);
+            if (!force) {
+                console.log('✅ .opencode/package.json already exists (snowcode-plugin configured)');
+                return;
+            }
+        }
+        catch {
+            // File doesn't exist, we can create it
+        }
+        await fs_1.promises.copyFile(templatePath, targetPath);
+        console.log('✅ Created .opencode/package.json with @groeimetai/snowcode-plugin');
+    }
+    catch (error) {
+        console.error('❌ Error copying OpenCode package.json:', error);
     }
 }
 /**
