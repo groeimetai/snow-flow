@@ -94,7 +94,6 @@ program
   .option('--no-show-reasoning', 'Hide LLM reasoning blocks')
   .option('--save-output <path>', 'Save full assistant output to a file')
   .option('--resume <sessionId>', 'Resume an existing interactive session')
-  .option('--no-interceptor', 'Disable output interceptor (use if swarm hangs)')
   // Provider overrides (optional, config-driven by default)
   .option('--provider <provider>', 'LLM provider override')
   .option('--model <model>', 'Model override')
@@ -386,7 +385,7 @@ program
       }
 
       // Try to execute OpenCode directly with the objective
-      const success = await executeOpenCode(objective, options);
+      const success = await executeOpenCode(objective);
 
       if (success) {
         if (options.verbose) {
@@ -435,7 +434,7 @@ program
 
 
 // Helper function to execute OpenCode directly with the objective
-async function executeOpenCode(objective: string, options?: any): Promise<boolean> {
+async function executeOpenCode(objective: string): Promise<boolean> {
   try {
     // Check if OpenCode CLI is available
     const { execSync } = require('child_process');
@@ -478,85 +477,44 @@ async function executeOpenCode(objective: string, options?: any): Promise<boolea
       cliLogger.info(`🔍 Environment File: ${envPath}`);
     }
 
-    // Write objective to temp file for OpenCode to read
-    const { tmpdir } = await import('os');
-    const { writeFileSync, unlinkSync } = await import('fs');
-    const tmpFile = join(tmpdir(), `snow-flow-objective-${Date.now()}.txt`);
-    writeFileSync(tmpFile, objective, 'utf8');
-
     // Get default model from .env if available
     const defaultModel = process.env.DEFAULT_MODEL;
     const defaultProvider = process.env.DEFAULT_LLM_PROVIDER;
 
-    // Start OpenCode with the objective and default model
-    // OpenCode will be started interactively
-    let opencodeCommand = `opencode < "${tmpFile}"`;
-
-    // If we have a default model, pass it to OpenCode
+    // Build OpenCode command
+    let opencodeArgs = [];
     if (defaultModel) {
-      opencodeCommand = `opencode --model "${defaultModel}" < "${tmpFile}"`;
+      opencodeArgs.push('--model', defaultModel);
     }
 
-    const opencodeProcess = spawn('sh', ['-c', opencodeCommand], {
-      stdio: ['inherit', 'pipe', 'pipe'], // stdin inherited, stdout/stderr piped for interception
+    // Store objective in environment variable for OpenCode to read
+    const opencodeEnv = {
+      ...process.env,
+      DEFAULT_MODEL: defaultModel || '',
+      DEFAULT_LLM_PROVIDER: defaultProvider || '',
+      SNOW_FLOW_OBJECTIVE: objective // Pass objective via environment
+    };
+
+    // Spawn OpenCode process - let it run fully interactively
+    // OpenCode is a TUI (Terminal User Interface) application that needs full terminal control
+    // We pass the objective via SNOW_FLOW_OBJECTIVE environment variable
+    const opencodeProcess = spawn('opencode', opencodeArgs, {
+      stdio: 'inherit', // OpenCode gets full terminal access (stdin/stdout/stderr)
       cwd: process.cwd(),
-      env: {
-        ...process.env,
-        // Ensure DEFAULT_MODEL is available to OpenCode
-        DEFAULT_MODEL: defaultModel || '',
-        DEFAULT_LLM_PROVIDER: defaultProvider || ''
-      }
+      env: opencodeEnv
     });
 
-    // Conditionally use output interceptor based on --no-interceptor flag
-    const useInterceptor = options?.interceptor !== false;
-    const quiet = process.env.QUIET === 'true';
-
-    if (useInterceptor) {
-      // Create output interceptor for beautiful MCP formatting
-      const interceptor = interceptOpenCodeOutput({ quiet });
-
-      // Pipe OpenCode stdout through interceptor to user's stdout
-      if (opencodeProcess.stdout) {
-        opencodeProcess.stdout.pipe(interceptor).pipe(process.stdout);
-      }
-
-      // Pipe OpenCode stderr through interceptor to user's stderr
-      if (opencodeProcess.stderr) {
-        opencodeProcess.stderr.pipe(interceptor).pipe(process.stderr);
-      }
-    } else {
-      // Direct pipe without interceptor (bypass mode)
-      if (opencodeProcess.stdout) {
-        opencodeProcess.stdout.pipe(process.stdout);
-      }
-
-      if (opencodeProcess.stderr) {
-        opencodeProcess.stderr.pipe(process.stderr);
-      }
-    }
+    // Note: With stdio: 'inherit', OpenCode writes directly to the terminal
+    // The output interceptor cannot be used with TUI applications
+    // OpenCode will have full control over terminal display
 
     // Set up process monitoring
     return new Promise((resolve) => {
       opencodeProcess.on('close', async (code) => {
-        // Clean up temp file
-        try {
-          unlinkSync(tmpFile);
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-
         resolve(code === 0);
       });
 
       opencodeProcess.on('error', (error) => {
-        // Clean up temp file
-        try {
-          unlinkSync(tmpFile);
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-
         cliLogger.error(`❌ Failed to start OpenCode: ${error.message}`);
         resolve(false);
       });
@@ -567,14 +525,6 @@ async function executeOpenCode(objective: string, options?: any): Promise<boolea
         setTimeout(() => {
           cliLogger.warn(`⏱️  OpenCode session timeout (${timeoutMinutes} minutes), terminating...`);
           opencodeProcess.kill('SIGTERM');
-
-          // Clean up temp file
-          try {
-            unlinkSync(tmpFile);
-          } catch (e) {
-            // Ignore cleanup errors
-          }
-
           resolve(false);
         }, timeoutMinutes * 60 * 1000);
       }
