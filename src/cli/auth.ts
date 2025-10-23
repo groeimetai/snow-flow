@@ -70,10 +70,14 @@ export function registerAuthCommands(program: Command) {
 
       console.log(); // Empty line for spacing
 
-      // Step 0: Check if we need LLM authentication
+      // Step 1: LLM Provider Authentication (OpenCode-style)
+      console.log(chalk.blue('╭────────────────────────────────────────────╮'));
+      console.log(chalk.blue('│  Add LLM credential                        │'));
+      console.log(chalk.blue('╰────────────────────────────────────────────╯\n'));
+
       let provider = process.env.DEFAULT_LLM_PROVIDER;
 
-      // Check if ANY provider API key is configured
+      // Check if ANY provider API key is already configured
       const hasApiKey =
         (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim() !== '') ||
         (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim() !== '') ||
@@ -81,7 +85,7 @@ export function registerAuthCommands(program: Command) {
         (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim() !== '') ||
         (process.env.MISTRAL_API_KEY && process.env.MISTRAL_API_KEY.trim() !== '');
 
-      // Only do OpenCode auth if no API key is configured
+      // Simplified flow - always ask for provider and API key
       if (!hasApiKey) {
         // Check if opencode is installed
         try {
