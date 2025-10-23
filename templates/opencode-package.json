@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@groeimetai/snowcode-plugin": "0.15.18"
+  }
+}
