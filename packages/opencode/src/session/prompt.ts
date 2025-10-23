@@ -49,7 +49,7 @@ import { spawn } from "child_process"
 import { Command } from "../command"
 import { $, fileURLToPath } from "bun"
 import { ConfigMarkdown } from "../config/markdown"
-import { MessageSummary } from "./summary"
+import { SessionSummary } from "./summary"
 
 export namespace SessionPrompt {
   const log = Log.create({ service: "session.prompt" })
@@ -1292,7 +1292,7 @@ export namespace SessionPrompt {
                   }
                   snapshot = undefined
                 }
-                MessageSummary.summarize({
+                SessionSummary.summarize({
                   sessionID: input.sessionID,
                   messageID: assistantMsg.parentID,
                   providerID: assistantMsg.modelID,

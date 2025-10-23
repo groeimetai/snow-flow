@@ -36,6 +36,11 @@ export namespace Session {
       projectID: z.string(),
       directory: z.string(),
       parentID: Identifier.schema("session").optional(),
+      summary: z
+        .object({
+          diffs: Snapshot.FileDiff.array(),
+        })
+        .optional(),
       share: z
         .object({
           url: z.string(),
