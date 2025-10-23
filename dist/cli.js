@@ -2188,7 +2188,11 @@ async function verifyMCPServers(targetDir) {
             process.stdout.write(chalk_1.default.dim(`   Testing ${serverName}... `));
             try {
                 // Try to spawn the MCP server
-                const serverProcess = spawn(serverConfig.command, serverConfig.args, {
+                // Handle both old format (command: string, args: array) and new format (command: array)
+                const [cmd, ...args] = Array.isArray(serverConfig.command)
+                    ? serverConfig.command
+                    : [serverConfig.command, ...(serverConfig.args || [])];
+                const serverProcess = spawn(cmd, args, {
                     env: { ...process.env, ...serverConfig.env },
                     stdio: ['pipe', 'pipe', 'pipe']
                 });
@@ -2223,7 +2227,8 @@ async function verifyMCPServers(targetDir) {
                 }
                 else if (error.includes('Cannot find module') || error.includes('ENOENT')) {
                     console.log(chalk_1.default.red('✗ (server file not found)'));
-                    console.log(chalk_1.default.yellow(`      Check: ${serverConfig.args[0]}`));
+                    const serverPath = Array.isArray(serverConfig.command) ? serverConfig.command[1] : serverConfig.args?.[0];
+                    console.log(chalk_1.default.yellow(`      Check: ${serverPath}`));
                     failCount++;
                 }
                 else if (error) {
