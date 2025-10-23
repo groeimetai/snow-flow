@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+
+const { execFileSync } = require('child_process');
+const path = require('path');
+
+// Get the path to the nested opencode binary
+const opencodePath = path.join(__dirname, '..', 'node_modules', 'snow-flow-opencode', 'bin', 'opencode');
+
+// Execute the opencode binary with all arguments
+try {
+  execFileSync(opencodePath, process.argv.slice(2), {
+    stdio: 'inherit',
+    cwd: process.cwd()
+  });
+} catch (error) {
+  process.exit(error.status || 1);
+}
