@@ -1,4 +1,4 @@
-import { Button, List, SelectDialog, Tooltip, IconButton, Tabs } from "@opencode-ai/ui"
+import { Button, List, SelectDialog, Tooltip, IconButton, Tabs, Icon } from "@opencode-ai/ui"
 import { FileIcon } from "@/ui"
 import FileTree from "@/components/file-tree"
 import { For, onCleanup, onMount, Show, Match, Switch, createSignal, createEffect } from "solid-js"
@@ -493,9 +493,32 @@ export default function Page() {
                 </div>
               </div>
               <Tabs.Content value="chat" class="select-text flex flex-col flex-1 min-h-0">
-                <Show when={local.session.active()} fallback={<div>No active session</div>}>
-                  {(activeSession) => (
-                    <div class="p-6 pt-12 max-w-[904px] mx-auto flex flex-col flex-1 min-h-0">
+                <div class="p-6 pt-12 max-w-[904px] w-full mx-auto flex flex-col flex-1 min-h-0">
+                  <Show
+                    when={local.session.active()}
+                    fallback={
+                      <div class="flex flex-col pb-36 justify-end items-start gap-4 flex-[1_0_0] self-stretch">
+                        <div class="text-20-medium text-text-weaker">New session</div>
+                        <div class="flex justify-center items-center gap-3">
+                          <Icon name="folder" size="small" />
+                          <div class="text-12-medium text-text-weak">
+                            {getDirectory(sync.data.path.directory)}/
+                            <span class="text-text-strong">{getFilename(sync.data.path.directory)}</span>
+                          </div>
+                        </div>
+                        <div class="flex justify-center items-center gap-3">
+                          <Icon name="pencil-line" size="small" />
+                          <div class="text-12-medium text-text-weak">
+                            Last modified&nbsp;
+                            <span class="text-text-strong">
+                              {DateTime.fromMillis(sync.data.project.time.created).toRelative()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  >
+                    {(activeSession) => (
                       <div class="py-3 flex flex-col flex-1 min-h-0">
                         <div class="flex items-start gap-8 flex-1 min-h-0">
                           <ul role="list" class="w-60 shrink-0 flex flex-col items-start gap-1">
@@ -557,9 +580,9 @@ export default function Page() {
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </Show>
+                    )}
+                  </Show>
+                </div>
               </Tabs.Content>
               {/* <Tabs.Content value="review" class="select-text"></Tabs.Content> */}
               <For each={local.file.opened()}>
