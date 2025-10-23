@@ -1,18 +1,10 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "name": "snow-flow-opencode",
-  "description": "OpenCode configuration for Snow-Flow ServiceNow development with multi-LLM support",
-  "model": {
-    "provider": "${DEFAULT_LLM_PROVIDER}",
-    "model": "${DEFAULT_ANTHROPIC_MODEL}",
-    "temperature": 1.0
-  },
   "mcp": {
     "servicenow-unified": {
       "type": "local",
-      "command": "node",
-      "args": ["dist/mcp/servicenow-mcp-unified/index.js"],
-      "env": {
+      "command": ["node", "dist/mcp/servicenow-mcp-unified/index.js"],
+      "environment": {
         "SERVICENOW_INSTANCE_URL": "https://${SNOW_INSTANCE}",
         "SERVICENOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
         "SERVICENOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
@@ -23,23 +15,11 @@
     },
     "snow-flow": {
       "type": "local",
-      "command": "node",
-      "args": ["dist/mcp/snow-flow-mcp.js"],
-      "env": {
+      "command": ["node", "dist/mcp/snow-flow-mcp.js"],
+      "environment": {
         "SNOW_FLOW_ENV": "production"
       },
       "enabled": true
     }
-  },
-  "tools": {
-    "enabled": true,
-    "requireApproval": false
-  },
-  "theme": "servicenow",
-  "instructions": [
-    "AGENTS.md",
-    "CLAUDE.md",
-    ".opencode/AGENTS.md"
-  ],
-  "cwd": "/path/to/your/snow-flow/installation"
+  }
 }
