@@ -1610,6 +1610,38 @@ program
             // Verify MCP servers can actually start
             console.log(chalk_1.default.dim('\n🔍 Verifying MCP server configuration...'));
             await verifyMCPServers(targetDir);
+            // Start MCP servers using mcp-server-manager.sh
+            console.log(chalk_1.default.blue('\n🚀 Starting MCP servers...'));
+            try {
+                const { execSync } = require('child_process');
+                const path = require('path');
+                const scriptPath = path.join(__dirname, '..', 'scripts', 'mcp-server-manager.sh');
+                // Execute and capture output
+                const output = execSync(`bash "${scriptPath}" start`, {
+                    cwd: targetDir,
+                    encoding: 'utf-8'
+                });
+                // Check if startup was successful
+                if (output.includes('✓ MCP server started')) {
+                    console.log(chalk_1.default.green('✅ MCP servers started successfully'));
+                    const pidMatch = output.match(/PID: (\d+)/);
+                    if (pidMatch) {
+                        console.log(chalk_1.default.dim(`   Server PID: ${pidMatch[1]}`));
+                    }
+                    console.log(chalk_1.default.dim('   Check status: ./scripts/mcp-server-manager.sh status'));
+                    console.log(chalk_1.default.dim('   View logs: ./scripts/mcp-server-manager.sh logs'));
+                }
+                else {
+                    console.log(chalk_1.default.yellow('⚠️  MCP server startup status unclear'));
+                    console.log(output);
+                }
+            }
+            catch (error) {
+                console.log(chalk_1.default.red('❌ Failed to start MCP servers automatically'));
+                console.log(chalk_1.default.yellow('   MCP servers will start automatically when you launch OpenCode'));
+                console.log(chalk_1.default.dim('   Or start manually: ./scripts/mcp-server-manager.sh start'));
+                console.log(chalk_1.default.dim('   Error: ' + error.message));
+            }
         }
         // Check and optionally install OpenCode
         const configImported = await checkAndInstallOpenCode();

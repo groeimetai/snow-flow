@@ -1716,6 +1716,39 @@ program
         // Verify MCP servers can actually start
         console.log(chalk.dim('\n🔍 Verifying MCP server configuration...'));
         await verifyMCPServers(targetDir);
+
+        // Start MCP servers using mcp-server-manager.sh
+        console.log(chalk.blue('\n🚀 Starting MCP servers...'));
+        try {
+          const { execSync } = require('child_process');
+          const path = require('path');
+          const scriptPath = path.join(__dirname, '..', 'scripts', 'mcp-server-manager.sh');
+
+          // Execute and capture output
+          const output = execSync(`bash "${scriptPath}" start`, {
+            cwd: targetDir,
+            encoding: 'utf-8'
+          });
+
+          // Check if startup was successful
+          if (output.includes('✓ MCP server started')) {
+            console.log(chalk.green('✅ MCP servers started successfully'));
+            const pidMatch = output.match(/PID: (\d+)/);
+            if (pidMatch) {
+              console.log(chalk.dim(`   Server PID: ${pidMatch[1]}`));
+            }
+            console.log(chalk.dim('   Check status: ./scripts/mcp-server-manager.sh status'));
+            console.log(chalk.dim('   View logs: ./scripts/mcp-server-manager.sh logs'));
+          } else {
+            console.log(chalk.yellow('⚠️  MCP server startup status unclear'));
+            console.log(output);
+          }
+        } catch (error) {
+          console.log(chalk.red('❌ Failed to start MCP servers automatically'));
+          console.log(chalk.yellow('   MCP servers will start automatically when you launch OpenCode'));
+          console.log(chalk.dim('   Or start manually: ./scripts/mcp-server-manager.sh start'));
+          console.log(chalk.dim('   Error: ' + (error as Error).message));
+        }
       }
 
       // Check and optionally install OpenCode
