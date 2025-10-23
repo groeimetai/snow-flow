@@ -2354,7 +2354,12 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
 
       try {
         // Try to spawn the MCP server
-        const serverProcess = spawn(serverConfig.command, serverConfig.args, {
+        // Handle both old format (command: string, args: array) and new format (command: array)
+        const [cmd, ...args] = Array.isArray(serverConfig.command)
+          ? serverConfig.command
+          : [serverConfig.command, ...(serverConfig.args || [])];
+
+        const serverProcess = spawn(cmd, args, {
           env: { ...process.env, ...serverConfig.env },
           stdio: ['pipe', 'pipe', 'pipe']
         });
@@ -2393,7 +2398,8 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
           successCount++;
         } else if (error.includes('Cannot find module') || error.includes('ENOENT')) {
           console.log(chalk.red('✗ (server file not found)'));
-          console.log(chalk.yellow(`      Check: ${serverConfig.args[0]}`));
+          const serverPath = Array.isArray(serverConfig.command) ? serverConfig.command[1] : serverConfig.args?.[0];
+          console.log(chalk.yellow(`      Check: ${serverPath}`));
           failCount++;
         } else if (error) {
           // Check if stderr contains success messages (some servers log to stderr)
