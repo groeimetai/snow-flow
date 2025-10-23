@@ -2529,8 +2529,8 @@ async function copyCLAUDEmd(targetDir, force = false) {
                 name: "snow-flow",
                 description: "ServiceNow development with OpenCode and multi-LLM support",
                 model: {
-                    provider: "${DEFAULT_LLM_PROVIDER}",
-                    model: "${DEFAULT_ANTHROPIC_MODEL}",
+                    provider: "{env:DEFAULT_LLM_PROVIDER}",
+                    model: "{env:DEFAULT_ANTHROPIC_MODEL}",
                     temperature: 1.0
                 },
                 mcp: {
@@ -2539,11 +2539,11 @@ async function copyCLAUDEmd(targetDir, force = false) {
                         command: "node",
                         args: [(0, path_1.join)(distPath, "mcp/servicenow-mcp-unified/index.js")],
                         env: {
-                            SERVICENOW_INSTANCE_URL: "https://${SNOW_INSTANCE}",
-                            SERVICENOW_CLIENT_ID: "${SNOW_CLIENT_ID}",
-                            SERVICENOW_CLIENT_SECRET: "${SNOW_CLIENT_SECRET}",
-                            SERVICENOW_USERNAME: "${SNOW_USERNAME}",
-                            SERVICENOW_PASSWORD: "${SNOW_PASSWORD}"
+                            SERVICENOW_INSTANCE_URL: "https://{env:SNOW_INSTANCE}",
+                            SERVICENOW_CLIENT_ID: "{env:SNOW_CLIENT_ID}",
+                            SERVICENOW_CLIENT_SECRET: "{env:SNOW_CLIENT_SECRET}",
+                            SERVICENOW_USERNAME: "{env:SNOW_USERNAME}",
+                            SERVICENOW_PASSWORD: "{env:SNOW_PASSWORD}"
                         },
                         enabled: true,
                         description: "Unified ServiceNow MCP server with 235+ tools"
