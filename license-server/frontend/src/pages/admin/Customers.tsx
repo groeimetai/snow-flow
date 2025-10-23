@@ -198,7 +198,7 @@ export default function AdminCustomers() {
                 { value: '', label: 'Select Service Integrator' },
                 ...serviceIntegrators.map((si: any) => ({
                   value: si.id.toString(),
-                  label: si.name,
+                  label: si.companyName || si.name,
                 })),
               ]}
             />
