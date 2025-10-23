@@ -119,7 +119,7 @@ function registerAuthCommands(program) {
                 console.log(chalk_1.default.blue('Or configure an API key in .env: ') + chalk_1.default.cyan('ANTHROPIC_API_KEY=your-key'));
                 return;
             }
-            console.log(chalk_1.default.blue('🔐 Authenticating with Anthropic...'));
+            console.log(chalk_1.default.blue('🔐 Starting authentication flow...\n'));
             // Fix common OpenCode directory issue (agents vs agent) in ALL possible directories
             try {
                 const fs = require('fs');

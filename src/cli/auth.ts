@@ -93,7 +93,7 @@ export function registerAuthCommands(program: Command) {
           return;
         }
 
-        console.log(chalk.blue('🔐 Authenticating with Anthropic...'));
+        console.log(chalk.blue('🔐 Starting authentication flow...\n'));
 
         // Fix common OpenCode directory issue (agents vs agent) in ALL possible directories
         try {
