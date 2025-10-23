@@ -38,6 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerAuthCommands = registerAuthCommands;
 const chalk_1 = __importDefault(require("chalk"));
+const prompts = __importStar(require("@clack/prompts"));
 const snow_oauth_js_1 = require("../utils/snow-oauth.js");
 const servicenow_client_js_1 = require("../utils/servicenow-client.js");
 const logger_js_1 = require("../utils/logger.js");
@@ -119,49 +120,7 @@ function registerAuthCommands(program) {
                 console.log(chalk_1.default.blue('Or configure an API key in .env: ') + chalk_1.default.cyan('ANTHROPIC_API_KEY=your-key'));
                 return;
             }
-            console.log(chalk_1.default.blue('🔐 Starting authentication flow...\n'));
-            // STEP 1: Ask provider FIRST (before OAuth)
-            let selectedProvider = provider;
-            let selectedModel = '';
-            if (!selectedProvider || selectedProvider.trim() === '') {
-                const { chosenProvider } = await inquirer.prompt([{
-                        type: 'list',
-                        name: 'chosenProvider',
-                        message: 'Select your LLM provider:',
-                        choices: [
-                            { name: 'Anthropic (Claude)', value: 'anthropic' },
-                            { name: 'OpenAI (GPT)', value: 'openai' },
-                            { name: 'Google (Gemini)', value: 'google' },
-                            { name: 'Ollama (Local)', value: 'ollama' }
-                        ]
-                    }]);
-                selectedProvider = chosenProvider;
-            }
-            // STEP 2: Ask model IMMEDIATELY after provider (fetch latest from models.dev)
-            if (selectedProvider !== 'ollama') {
-                const { getProviderModels } = await Promise.resolve().then(() => __importStar(require('../utils/dynamic-models.js')));
-                console.log(chalk_1.default.dim(`   Fetching latest ${selectedProvider} models from models.dev...\n`));
-                const models = await getProviderModels(selectedProvider);
-                if (models && models.length > 0) {
-                    const choices = models.map(m => ({
-                        name: `${m.name}${m.contextWindow ? chalk_1.default.dim(` (${m.contextWindow.toLocaleString()} tokens)`) : ''}`,
-                        value: m.value,
-                        short: m.name
-                    }));
-                    const { chosenModel } = await inquirer.prompt([{
-                            type: 'list',
-                            name: 'chosenModel',
-                            message: `Select your default ${selectedProvider} model:`,
-                            choices: choices,
-                            pageSize: 15
-                        }]);
-                    selectedModel = chosenModel;
-                    console.log(chalk_1.default.green(`   ✓ Selected: ${models.find(m => m.value === chosenModel)?.name}\n`));
-                }
-                else {
-                    console.log(chalk_1.default.yellow(`   ⚠️  Could not fetch models, will use provider default\n`));
-                }
-            }
+            prompts.intro('Starting authentication');
             // Fix common OpenCode directory issue (agents vs agent) in ALL possible directories
             try {
                 const fs = require('fs');
@@ -195,51 +154,11 @@ function registerAuthCommands(program) {
                 console.log(chalk_1.default.dim('   (Directory fix skipped - will auto-correct)'));
             }
             try {
-                // STEP 3: Run OAuth with OpenCode
+                // Run OpenCode auth login - it will handle provider and model selection
                 execSync('opencode auth login', { stdio: 'inherit' });
-                console.log(chalk_1.default.green('✅ LLM authentication completed\n'));
-                // STEP 4: Save provider and model to .env (we already know them from earlier!)
-                const envPath = path.join(process.cwd(), '.env');
-                let envContent = '';
-                try {
-                    envContent = fs.readFileSync(envPath, 'utf8');
-                }
-                catch {
-                    // .env doesn't exist yet, use .env.example as template
-                    const examplePath = path.join(process.cwd(), '.env.example');
-                    if (fs.existsSync(examplePath)) {
-                        envContent = fs.readFileSync(examplePath, 'utf8');
-                    }
-                }
-                // Update DEFAULT_LLM_PROVIDER in .env content
-                if (envContent.includes('DEFAULT_LLM_PROVIDER=')) {
-                    envContent = envContent.replace(/DEFAULT_LLM_PROVIDER=.*/g, `DEFAULT_LLM_PROVIDER=${selectedProvider}`);
-                }
-                else {
-                    envContent += `\nDEFAULT_LLM_PROVIDER=${selectedProvider}\n`;
-                }
-                // Update DEFAULT_MODEL in .env content
-                if (selectedModel) {
-                    if (envContent.includes('DEFAULT_MODEL=')) {
-                        envContent = envContent.replace(/DEFAULT_MODEL=.*/g, `DEFAULT_MODEL=${selectedModel}`);
-                    }
-                    else {
-                        envContent += `DEFAULT_MODEL=${selectedModel}\n`;
-                    }
-                }
-                fs.writeFileSync(envPath, envContent);
-                console.log(chalk_1.default.green(`✅ Provider saved: ${selectedProvider}`));
-                if (selectedModel) {
-                    console.log(chalk_1.default.green(`✅ Default model saved: ${selectedModel}\n`));
-                }
-                provider = selectedProvider;
-                process.env.DEFAULT_LLM_PROVIDER = provider;
-                if (selectedModel) {
-                    process.env.DEFAULT_MODEL = selectedModel;
-                }
             }
             catch (error) {
-                console.error(chalk_1.default.red('\n❌ LLM authentication failed'));
+                console.error(chalk_1.default.red('\n❌ Authentication failed'));
                 // Check if it's the known OpenCode directory bug
                 const errorMsg = error?.message || error?.toString() || '';
                 if (errorMsg.includes('agents') && errorMsg.includes('agent')) {
@@ -254,108 +173,67 @@ function registerAuthCommands(program) {
                 return;
             }
         }
-        // Step 2: ServiceNow OAuth authentication
-        console.log(chalk_1.default.blue('🔐 Authenticating with ServiceNow...'));
+        // ServiceNow setup - continue the flow
         const oauth = new snow_oauth_js_1.ServiceNowOAuth();
         // Read credentials from .env file
         let instance = process.env.SNOW_INSTANCE;
         let clientId = process.env.SNOW_CLIENT_ID;
         let clientSecret = process.env.SNOW_CLIENT_SECRET;
-        // Validate credentials (check if they exist AND are valid)
+        // Validate credentials
         const credentialsValid = instance && instance.trim() !== '' && instance.includes('.service-now.com') &&
             clientId && clientId.trim() !== '' && clientId.length >= 32 &&
             clientSecret && clientSecret.trim() !== '' && clientSecret.length >= 32;
-        // If credentials are missing or invalid, ask user interactively
+        // If credentials are missing or invalid, prompt with @clack
         if (!credentialsValid) {
-            if (instance || clientId || clientSecret) {
-                console.log(chalk_1.default.yellow('\n⚠️  Invalid ServiceNow OAuth credentials detected in .env'));
-                if (instance && !instance.includes('.service-now.com')) {
-                    console.log(chalk_1.default.red('   ❌ Instance URL must be a .service-now.com domain'));
-                }
-                if (clientId && clientId.length < 32) {
-                    console.log(chalk_1.default.red('   ❌ Client ID too short (expected 32+ characters)'));
-                }
-                if (clientSecret && clientSecret.length < 32) {
-                    console.log(chalk_1.default.red('   ❌ Client Secret too short (expected 32+ characters)'));
-                }
-            }
-            else {
-                console.log(chalk_1.default.yellow('\n⚠️  ServiceNow OAuth credentials not found in .env'));
-            }
-            console.log(chalk_1.default.dim('   You need to set up OAuth in ServiceNow first\n'));
-            const { setupNow } = await inquirer.prompt([{
-                    type: 'confirm',
-                    name: 'setupNow',
-                    message: 'Do you want to enter your ServiceNow OAuth credentials now?',
-                    default: true
-                }]);
-            if (!setupNow) {
-                console.log(chalk_1.default.yellow('\n💡 To set up OAuth credentials manually:'));
-                console.log('   1. Log into ServiceNow as admin');
-                console.log('   2. Navigate to: System OAuth > Application Registry');
-                console.log('   3. Create a new OAuth application');
-                console.log('   4. Add these to your .env file:');
-                console.log('      SNOW_INSTANCE=your-instance.service-now.com');
-                console.log('      SNOW_CLIENT_ID=your-client-id');
-                console.log('      SNOW_CLIENT_SECRET=your-client-secret');
-                console.log('\n   Then run: snow-flow auth login');
-                return;
-            }
-            console.log(chalk_1.default.blue('\n📋 ServiceNow OAuth Setup'));
-            console.log(chalk_1.default.dim('   Need help? See: https://docs.servicenow.com/oauth\n'));
-            const credentials = await inquirer.prompt([
-                {
-                    type: 'input',
-                    name: 'instance',
-                    message: 'ServiceNow instance (e.g., dev12345.service-now.com):',
-                    default: instance,
-                    validate: (input) => {
-                        if (!input || input.trim() === '') {
-                            return 'Instance URL is required';
-                        }
-                        // Remove https:// and trailing slash if present
-                        const cleaned = input.replace(/^https?:\/\//, '').replace(/\/$/, '');
-                        if (!cleaned.includes('.service-now.com')) {
-                            return 'Instance must be a ServiceNow domain (e.g., dev12345.service-now.com)';
-                        }
-                        return true;
-                    },
-                    filter: (input) => input.replace(/^https?:\/\//, '').replace(/\/$/, '')
-                },
-                {
-                    type: 'input',
-                    name: 'clientId',
-                    message: 'OAuth Client ID:',
-                    default: clientId,
-                    validate: (input) => {
-                        if (!input || input.trim() === '') {
-                            return 'Client ID is required';
-                        }
-                        if (input.length < 32) {
-                            return 'Client ID seems too short. Expected a 32-character hex string from ServiceNow';
-                        }
-                        return true;
-                    }
-                },
-                {
-                    type: 'password',
-                    name: 'clientSecret',
-                    message: 'OAuth Client Secret:',
-                    mask: '*',
-                    validate: (input) => {
-                        if (!input || input.trim() === '') {
-                            return 'Client Secret is required';
-                        }
-                        if (input.length < 32) {
-                            return 'Client Secret too short. Expected 32+ character random string from ServiceNow';
-                        }
-                        return true;
+            // ServiceNow instance
+            instance = await prompts.text({
+                message: 'ServiceNow instance',
+                placeholder: 'dev12345.service-now.com',
+                defaultValue: instance || '',
+                validate: (value) => {
+                    if (!value || value.trim() === '')
+                        return 'Instance URL is required';
+                    const cleaned = value.replace(/^https?:\/\//, '').replace(/\/$/, '');
+                    if (!cleaned.includes('.service-now.com')) {
+                        return 'Must be a ServiceNow domain (e.g., dev12345.service-now.com)';
                     }
                 }
-            ]);
-            instance = credentials.instance;
-            clientId = credentials.clientId;
-            clientSecret = credentials.clientSecret;
+            });
+            if (prompts.isCancel(instance)) {
+                prompts.cancel('Setup cancelled');
+                process.exit(0);
+            }
+            instance = instance.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            // OAuth Client ID
+            clientId = await prompts.text({
+                message: 'OAuth Client ID',
+                placeholder: '32-character hex string from ServiceNow',
+                defaultValue: clientId || '',
+                validate: (value) => {
+                    if (!value || value.trim() === '')
+                        return 'Client ID is required';
+                    if (value.length < 32)
+                        return 'Client ID too short (expected 32+ characters)';
+                }
+            });
+            if (prompts.isCancel(clientId)) {
+                prompts.cancel('Setup cancelled');
+                process.exit(0);
+            }
+            // OAuth Client Secret
+            clientSecret = await prompts.password({
+                message: 'OAuth Client Secret',
+                validate: (value) => {
+                    if (!value || value.trim() === '')
+                        return 'Client Secret is required';
+                    if (value.length < 32)
+                        return 'Client Secret too short (expected 32+ characters)';
+                }
+            });
+            if (prompts.isCancel(clientSecret)) {
+                prompts.cancel('Setup cancelled');
+                process.exit(0);
+            }
             // Save to .env file
             const envPath = path.join(process.cwd(), '.env');
             let envContent = '';
@@ -363,13 +241,12 @@ function registerAuthCommands(program) {
                 envContent = fs.readFileSync(envPath, 'utf8');
             }
             catch {
-                // .env doesn't exist yet, use .env.example as template
                 const examplePath = path.join(process.cwd(), '.env.example');
                 if (fs.existsSync(examplePath)) {
                     envContent = fs.readFileSync(examplePath, 'utf8');
                 }
             }
-            // Update credentials in .env content
+            // Update credentials
             const updates = [
                 { key: 'SNOW_INSTANCE', value: instance },
                 { key: 'SNOW_CLIENT_ID', value: clientId },
@@ -384,28 +261,27 @@ function registerAuthCommands(program) {
                 }
             }
             fs.writeFileSync(envPath, envContent);
-            console.log(chalk_1.default.green('\n✅ Credentials saved to .env file\n'));
-            // Reload environment variables
             process.env.SNOW_INSTANCE = instance;
             process.env.SNOW_CLIENT_ID = clientId;
             process.env.SNOW_CLIENT_SECRET = clientSecret;
         }
-        // Start OAuth flow (this opens browser automatically)
+        // Start OAuth flow
+        const spinner = prompts.spinner();
+        spinner.start('Authenticating with ServiceNow');
         const result = await oauth.authenticate(instance, clientId, clientSecret);
         if (result.success) {
-            console.log(chalk_1.default.green('✅ ServiceNow authentication successful!'));
+            spinner.stop('ServiceNow authentication successful');
             // Test connection
             const client = new servicenow_client_js_1.ServiceNowClient();
             const testResult = await client.testConnection();
             if (testResult.success) {
-                console.log(chalk_1.default.green(`✅ Logged in as: ${testResult.data.name} (${testResult.data.user_name})`));
+                prompts.log.success(`Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
             }
-            console.log(chalk_1.default.blue('\n🎉 Ready to start developing!'));
-            console.log(chalk_1.default.cyan('   snow-flow swarm "create incident dashboard"'));
-            console.log(chalk_1.default.dim('   or: ') + chalk_1.default.cyan('opencode\n'));
+            prompts.outro('Setup complete!');
         }
         else {
-            console.error(chalk_1.default.red(`\n❌ ServiceNow authentication failed: ${result.error}`));
+            spinner.stop('Authentication failed');
+            prompts.cancel(result.error || 'Unknown error');
             process.exit(1);
         }
     });
