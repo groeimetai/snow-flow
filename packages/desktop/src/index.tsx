@@ -3,9 +3,16 @@ import "@/index.css"
 import { render } from "solid-js/web"
 import { Router, Route } from "@solidjs/router"
 import { MetaProvider } from "@solidjs/meta"
-import { EventProvider, SDKProvider, SyncProvider, LocalProvider, ShikiProvider, MarkedProvider } from "@/context"
 import { Fonts } from "@opencode-ai/ui"
+import { ShikiProvider } from "./context/shiki"
+import { MarkedProvider } from "./context/marked"
+import { SDKProvider } from "./context/sdk"
+import { SyncProvider } from "./context/sync"
+import { LocalProvider } from "./context/local"
 import Home from "@/pages"
+
+const host = import.meta.env.VITE_OPENCODE_SERVER_HOST ?? "127.0.0.1"
+const port = import.meta.env.VITE_OPENCODE_SERVER_PORT ?? "4096"
 
 const root = document.getElementById("root")
 if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
@@ -18,19 +25,17 @@ render(
   () => (
     <ShikiProvider>
       <MarkedProvider>
-        <SDKProvider>
-          <EventProvider>
-            <SyncProvider>
-              <LocalProvider>
-                <MetaProvider>
-                  <Fonts />
-                  <Router>
-                    <Route path="/" component={Home} />
-                  </Router>
-                </MetaProvider>
-              </LocalProvider>
-            </SyncProvider>
-          </EventProvider>
+        <SDKProvider url={`http://${host}:${port}`}>
+          <SyncProvider>
+            <LocalProvider>
+              <MetaProvider>
+                <Fonts />
+                <Router>
+                  <Route path="/" component={Home} />
+                </Router>
+              </MetaProvider>
+            </LocalProvider>
+          </SyncProvider>
         </SDKProvider>
       </MarkedProvider>
     </ShikiProvider>

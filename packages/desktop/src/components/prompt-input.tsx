@@ -1,12 +1,11 @@
-import { useLocal } from "@/context"
-import { Button, Icon, IconButton, Select, SelectDialog, Tooltip } from "@opencode-ai/ui"
+import { Button, Icon, IconButton, Select, SelectDialog } from "@opencode-ai/ui"
 import { useFilteredList } from "@opencode-ai/ui/hooks"
-import { createEffect, on, Component, createMemo, Show, Switch, Match, For } from "solid-js"
+import { createEffect, on, Component, createMemo, Show, For } from "solid-js"
 import { createStore } from "solid-js/store"
 import { FileIcon } from "@/ui"
 import { getDirectory, getFilename } from "@/utils"
 import { createFocusSignal } from "@solid-primitives/active-element"
-import { TextSelection } from "@/context/local"
+import { TextSelection, useLocal } from "@/context/local"
 import { DateTime } from "luxon"
 
 interface PartBase {
@@ -245,7 +244,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   }
 
   return (
-    <div class="relative size-full max-w-[640px] _max-h-[320px] flex flex-col gap-3">
+    <div class="relative size-full _max-h-[320px] flex flex-col gap-3">
       <Show when={store.popoverIsOpen}>
         <div class="absolute inset-x-0 -top-3 -translate-y-full origin-bottom-left max-h-[252px] min-h-10 overflow-y-auto flex flex-col p-2 pb-0 rounded-2xl border border-border-base bg-surface-raised-stronger-non-alpha shadow-md">
           <For each={flat()}>

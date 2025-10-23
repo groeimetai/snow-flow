@@ -1,15 +1,26 @@
-import { Button, Icon, List, SelectDialog, Tooltip } from "@opencode-ai/ui"
+import { Button, List, SelectDialog, Tooltip, IconButton, Tabs } from "@opencode-ai/ui"
 import { FileIcon } from "@/ui"
 import FileTree from "@/components/file-tree"
-import EditorPane from "@/components/editor-pane"
-import { For, onCleanup, onMount, Show } from "solid-js"
-import { useSync, useSDK, useLocal } from "@/context"
-import type { LocalFile, TextSelection } from "@/context/local"
-import SessionTimeline from "@/components/session-timeline"
+import { For, onCleanup, onMount, Show, Match, Switch, createSignal, createEffect } from "solid-js"
+import { useLocal, type LocalFile, type TextSelection } from "@/context/local"
 import { createStore } from "solid-js/store"
 import { getDirectory, getFilename } from "@/utils"
 import { ContentPart, PromptInput } from "@/components/prompt-input"
 import { DateTime } from "luxon"
+import {
+  DragDropProvider,
+  DragDropSensors,
+  DragOverlay,
+  SortableProvider,
+  closestCenter,
+  createSortable,
+  useDragDropContext,
+} from "@thisbeyond/solid-dnd"
+import type { DragEvent, Transformer } from "@thisbeyond/solid-dnd"
+import type { JSX } from "solid-js"
+import { Code } from "@/components/code"
+import { useSync } from "@/context/sync"
+import { useSDK } from "@/context/sdk"
 
 export default function Page() {
   const local = useLocal()
@@ -17,10 +28,18 @@ export default function Page() {
   const sdk = useSDK()
   const [store, setStore] = createStore({
     clickTimer: undefined as number | undefined,
-    modelSelectOpen: false,
     fileSelectOpen: false,
   })
   let inputRef!: HTMLDivElement
+  let messageScrollElement!: HTMLDivElement
+  const [activeItem, setActiveItem] = createSignal<string | undefined>(undefined)
+
+  createEffect(() => {
+    if (!local.session.activeMessage()) return
+    if (!messageScrollElement) return
+    const element = messageScrollElement.querySelector(`[data-message="${local.session.activeMessage()?.id}"]`)
+    element?.scrollIntoView({ block: "start", behavior: "instant" })
+  })
 
   const MOD = typeof navigator === "object" && /(Mac|iPod|iPhone|iPad)/.test(navigator.platform) ? "Meta" : "Control"
 
@@ -101,11 +120,50 @@ export default function Page() {
     }
   }
 
+  const navigateChange = (dir: 1 | -1) => {
+    const active = local.file.active()
+    if (!active) return
+    const current = local.file.changeIndex(active.path)
+    const next = current === undefined ? (dir === 1 ? 0 : -1) : current + dir
+    local.file.setChangeIndex(active.path, next)
+  }
+
+  const handleTabChange = (path: string) => {
+    if (path === "chat" || path === "review") return
+    local.file.open(path)
+  }
+
+  const handleTabClose = (file: LocalFile) => {
+    local.file.close(file.path)
+  }
+
+  const handleDragStart = (event: unknown) => {
+    const id = getDraggableId(event)
+    if (!id) return
+    setActiveItem(id)
+  }
+
+  const handleDragOver = (event: DragEvent) => {
+    const { draggable, droppable } = event
+    if (draggable && droppable) {
+      const currentFiles = local.file.opened().map((file) => file.path)
+      const fromIndex = currentFiles.indexOf(draggable.id.toString())
+      const toIndex = currentFiles.indexOf(droppable.id.toString())
+      if (fromIndex !== toIndex) {
+        local.file.move(draggable.id.toString(), toIndex)
+      }
+    }
+  }
+
+  const handleDragEnd = () => {
+    setActiveItem(undefined)
+  }
+
   const handlePromptSubmit = async (parts: ContentPart[]) => {
     const existingSession = local.session.active()
     let session = existingSession
     if (!session) {
-      const created = await sdk.session.create()
+      const created = await sdk.client.session.create()
       session = created.data ?? undefined
     }
     if (!session) return
@@ -187,7 +245,7 @@ export default function Page() {
       }
     })
 
-    await sdk.session.prompt({
+    await sdk.client.session.prompt({
       path: { id: session.id },
       body: {
         agent: local.agent.current()!.name,
@@ -209,6 +267,93 @@ export default function Page() {
   const handleNewSession = () => {
     local.session.setActive(undefined)
     inputRef?.focus()
+  }
+
+  const TabVisual = (props: { file: LocalFile }): JSX.Element => {
+    return (
+      <div class="flex items-center gap-x-1.5">
+        <FileIcon node={props.file} class="_grayscale-100" />
+        <span
+          classList={{
+            "text-14-medium": true,
+            "text-primary": !!props.file.status?.status,
+            italic: !props.file.pinned,
+          }}
+        >
+          {props.file.name}
+        </span>
+        <span class="hidden opacity-70">
+          <Switch>
+            <Match when={props.file.status?.status === "modified"}>
+              <span class="text-primary">M</span>
+            </Match>
+            <Match when={props.file.status?.status === "added"}>
+              <span class="text-success">A</span>
+            </Match>
+            <Match when={props.file.status?.status === "deleted"}>
+              <span class="text-error">D</span>
+            </Match>
+          </Switch>
+        </span>
+      </div>
+    )
+  }
+
+  const SortableTab = (props: {
+    file: LocalFile
+    onTabClick: (file: LocalFile) => void
+    onTabClose: (file: LocalFile) => void
+  }): JSX.Element => {
+    const sortable = createSortable(props.file.path)
+
+    return (
+      // @ts-ignore
+      <div use:sortable classList={{ "h-full": true, "opacity-0": sortable.isActiveDraggable }}>
+        <Tooltip value={props.file.path} placement="bottom" class="h-full">
+          <div class="relative h-full">
+            <Tabs.Trigger value={props.file.path} class="peer/tab pr-7" onClick={() => props.onTabClick(props.file)}>
+              <TabVisual file={props.file} />
+            </Tabs.Trigger>
+            <IconButton
+              icon="close"
+              class="absolute right-1 top-1.5 opacity-0 text-text-muted/60 peer-data-[selected]/tab:opacity-100 peer-data-[selected]/tab:text-text peer-data-[selected]/tab:hover:bg-border-subtle hover:opacity-100 peer-hover/tab:opacity-100"
+              variant="ghost"
+              onClick={() => props.onTabClose(props.file)}
+            />
+          </div>
+        </Tooltip>
+      </div>
+    )
+  }
+
+  const ConstrainDragYAxis = (): JSX.Element => {
+    const context = useDragDropContext()
+    if (!context) return <></>
+    const [, { onDragStart, onDragEnd, addTransformer, removeTransformer }] = context
+    const transformer: Transformer = {
+      id: "constrain-y-axis",
+      order: 100,
+      callback: (transform) => ({ ...transform, y: 0 }),
+    }
+    onDragStart((event) => {
+      const id = getDraggableId(event)
+      if (!id) return
+      addTransformer("draggables", id, transformer)
+    })
+    onDragEnd((event) => {
+      const id = getDraggableId(event)
+      if (!id) return
+      removeTransformer("draggables", id, transformer.id)
+    })
+    return <></>
+  }
+
+  const getDraggableId = (event: unknown): string | undefined => {
+    if (typeof event !== "object" || event === null) return undefined
+    if (!("draggable" in event)) return undefined
+    const draggable = (event as { draggable?: { id?: unknown } }).draggable
+    if (!draggable) return undefined
+    return typeof draggable.id === "string" ? draggable.id : undefined
   }
 
   return (
@@ -253,22 +398,203 @@ export default function Page() {
             </List>
           </div>
         </div>
-        <div class="relative grid grid-cols-2 bg-background-base w-full">
-          <div class="pt-1.5 min-w-0 overflow-y-auto no-scrollbar flex justify-center">
-            <Show when={local.session.active()}>
-              {(activeSession) => <SessionTimeline session={activeSession().id} class="w-full" />}
-            </Show>
-          </div>
-          <div class="p-1.5 pl-px flex flex-col items-center justify-center overflow-y-auto no-scrollbar">
-            <Show when={local.session.active()}>
-              <EditorPane onFileClick={handleFileClick} />
-            </Show>
-          </div>
+        <div class="relative bg-background-base w-full h-full overflow-x-hidden">
+          <DragDropProvider
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            collisionDetector={closestCenter}
+          >
+            <DragDropSensors />
+            <ConstrainDragYAxis />
+            <Tabs onChange={handleTabChange}>
+              <div class="sticky top-0 shrink-0 flex">
+                <Tabs.List>
+                  <Tabs.Trigger value="chat" class="flex gap-x-1.5 items-center">
+                    <div>Chat</div>
+                    <Show when={local.session.active()}>
+                      <div class="flex flex-col h-4 px-2 -mr-2 justify-center items-center rounded-full bg-surface-base text-12-medium text-text-strong">
+                        {local.session.context()}%
+                      </div>
+                    </Show>
+                  </Tabs.Trigger>
+                  {/* <Tabs.Trigger value="review">Review</Tabs.Trigger> */}
+                  <SortableProvider ids={local.file.opened().map((file) => file.path)}>
+                    <For each={local.file.opened()}>
+                      {(file) => <SortableTab file={file} onTabClick={handleFileClick} onTabClose={handleTabClose} />}
+                    </For>
+                  </SortableProvider>
+                  <div class="bg-background-base h-full flex items-center justify-center border-b border-border-weak-base px-3">
+                    <IconButton
+                      icon="plus-small"
+                      variant="ghost"
+                      iconSize="large"
+                      onClick={() => setStore("fileSelectOpen", true)}
+                    />
+                  </div>
+                </Tabs.List>
+                <div class="hidden shrink-0 h-full _flex items-center gap-1 px-2 border-b border-border-subtle/40">
+                  <Show when={local.file.active() && local.file.active()!.content?.diff}>
+                    {(() => {
+                      const activeFile = local.file.active()!
+                      const view = local.file.view(activeFile.path)
+                      return (
+                        <div class="flex items-center gap-1">
+                          <Show when={view !== "raw"}>
+                            <div class="mr-1 flex items-center gap-1">
+                              <Tooltip value="Previous change" placement="bottom">
+                                <IconButton icon="arrow-up" variant="ghost" onClick={() => navigateChange(-1)} />
+                              </Tooltip>
+                              <Tooltip value="Next change" placement="bottom">
+                                <IconButton icon="arrow-down" variant="ghost" onClick={() => navigateChange(1)} />
+                              </Tooltip>
+                            </div>
+                          </Show>
+                          <Tooltip value="Raw" placement="bottom">
+                            <IconButton
+                              icon="file-text"
+                              variant="ghost"
+                              classList={{
+                                "text-text": view === "raw",
+                                "text-text-muted/70": view !== "raw",
+                                "bg-background-element": view === "raw",
+                              }}
+                              onClick={() => local.file.setView(activeFile.path, "raw")}
+                            />
+                          </Tooltip>
+                          <Tooltip value="Unified diff" placement="bottom">
+                            <IconButton
+                              icon="checklist"
+                              variant="ghost"
+                              classList={{
+                                "text-text": view === "diff-unified",
+                                "text-text-muted/70": view !== "diff-unified",
+                                "bg-background-element": view === "diff-unified",
+                              }}
+                              onClick={() => local.file.setView(activeFile.path, "diff-unified")}
+                            />
+                          </Tooltip>
+                          <Tooltip value="Split diff" placement="bottom">
+                            <IconButton
+                              icon="columns"
+                              variant="ghost"
+                              classList={{
+                                "text-text": view === "diff-split",
+                                "text-text-muted/70": view !== "diff-split",
+                                "bg-background-element": view === "diff-split",
+                              }}
+                              onClick={() => local.file.setView(activeFile.path, "diff-split")}
+                            />
+                          </Tooltip>
+                        </div>
+                      )
+                    })()}
+                  </Show>
+                </div>
+              </div>
+              <Tabs.Content value="chat" class="select-text flex flex-col flex-1 min-h-0">
+                <Show when={local.session.active()} fallback={<div>No active session</div>}>
+                  {(activeSession) => (
+                    <div class="p-6 pt-12 max-w-[904px] mx-auto flex flex-col flex-1 min-h-0">
+                      <div class="py-3 flex flex-col flex-1 min-h-0">
+                        <div class="flex items-start gap-8 flex-1 min-h-0">
+                          <ul role="list" class="w-60 shrink-0 flex flex-col items-start gap-1">
+                            <For each={local.session.userMessages()}>
+                              {(message) => (
+                                <li
+                                  class="group/li flex items-center gap-x-2 py-1 self-stretch cursor-default"
+                                  onClick={() => local.session.setActiveMessage(message.id)}
+                                >
+                                  <div class="w-[18px] shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 12" fill="none">
+                                      <g>
+                                        <rect x="0" width="2" height="12" rx="1" fill="#CFCECD" />
+                                        <rect x="4" width="2" height="12" rx="1" fill="#CFCECD" />
+                                        <rect x="8" width="2" height="12" rx="1" fill="#CFCECD" />
+                                        <rect x="12" width="2" height="12" rx="1" fill="#CFCECD" />
+                                        <rect x="16" width="2" height="12" rx="1" fill="#CFCECD" />
+                                      </g>
+                                    </svg>
+                                  </div>
+                                  <div
+                                    data-active={local.session.activeMessage()?.id === message.id}
+                                    classList={{
+                                      "text-14-regular text-text-weak whitespace-nowrap truncate min-w-0": true,
+                                      "text-text-weak data-[active=true]:text-text-strong group-hover/li:text-text-base": true,
+                                    }}
+                                  >
+                                    {local.session.getMessageText(message)}
+                                  </div>
+                                </li>
+                              )}
+                            </For>
+                          </ul>
+                          <div
+                            ref={messageScrollElement}
+                            class="grow min-w-0 h-full overflow-y-auto no-scrollbar snap-y"
+                          >
+                            <div class="flex flex-col items-start gap-50 pb-[800px]">
+                              <For each={local.session.userMessages()}>
+                                {(message) => (
+                                  <div
+                                    data-message={message.id}
+                                    class="flex flex-col items-start self-stretch gap-8 pt-1.5 snap-start"
+                                  >
+                                    <div class="flex flex-col items-start gap-4">
+                                      <div class="text-14-medium text-text-strong overflow-hidden text-ellipsis min-w-0">
+                                        {local.session.getMessageText(message)}
+                                      </div>
+                                      <div class="text-14-regular text-text-base">
+                                        {message.summary?.text ||
+                                          local.session.getMessageText(local.session.activeAssistantMessagesWithText())}
+                                      </div>
+                                    </div>
+                                    <div class=""></div>
+                                  </div>
+                                )}
+                              </For>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </Show>
+              </Tabs.Content>
+              {/* <Tabs.Content value="review" class="select-text"></Tabs.Content> */}
+              <For each={local.file.opened()}>
+                {(file) => (
+                  <Tabs.Content value={file.path} class="select-text">
+                    {(() => {
+                      const view = local.file.view(file.path)
+                      const showRaw = view === "raw" || !file.content?.diff
+                      const code = showRaw ? (file.content?.content ?? "") : (file.content?.diff ?? "")
+                      return <Code path={file.path} code={code} class="[&_code]:pb-60" />
+                    })()}
+                  </Tabs.Content>
+                )}
+              </For>
+            </Tabs>
+            <DragOverlay>
+              {(() => {
+                const id = activeItem()
+                if (!id) return null
+                const draggedFile = local.file.node(id)
+                if (!draggedFile) return null
+                return (
+                  <div class="relative px-3 h-8 flex items-center text-sm font-medium text-text whitespace-nowrap shrink-0 bg-background-panel border-x border-border-subtle/40 border-b border-b-transparent">
+                    <TabVisual file={draggedFile} />
+                  </div>
+                )
+              })()}
+            </DragOverlay>
+          </DragDropProvider>
           <div
             classList={{
-              "absolute inset-x-0 px-8 flex flex-col justify-center items-center z-50": true,
-              "bottom-8": !!local.session.active(),
-              "bottom-1/2 translate-y-1/2": !local.session.active(),
+              "absolute inset-x-0 px-6 max-w-[904px] flex flex-col justify-center items-center z-50 mx-auto": true,
+              "bottom-8": true,
+              // "bottom-8": !!local.session.active(),
+              // "bottom-1/2 translate-y-1/2": !local.session.active(),
             }}
           >
             <PromptInput

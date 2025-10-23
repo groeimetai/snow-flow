@@ -1,5 +1,5 @@
+import { createSimpleContext } from "./helper"
 import { createHighlighter, type ThemeInput } from "shiki"
-import { createContext, useContext, type ParentProps } from "solid-js"
 
 const theme: ThemeInput = {
   colors: {
@@ -559,24 +559,14 @@ const theme: ThemeInput = {
   ],
   type: "dark",
 }
-
 const highlighter = await createHighlighter({
   themes: [theme],
   langs: [],
 })
 
-type ShikiContext = typeof highlighter
-
-const ctx = createContext<ShikiContext>()
-
-export function ShikiProvider(props: ParentProps) {
-  return <ctx.Provider value={highlighter}>{props.children}</ctx.Provider>
-}
-
-export function useShiki() {
-  const value = useContext(ctx)
-  if (!value) {
-    throw new Error("useShiki must be used within a ShikiProvider")
-  }
-  return value
-}
+export const { use: useShiki, provider: ShikiProvider } = createSimpleContext({
+  name: "Shiki",
+  init: () => {
+    return highlighter
+  },
+})
