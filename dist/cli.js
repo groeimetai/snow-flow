@@ -1610,14 +1610,27 @@ program
             // Verify MCP servers can actually start
             console.log(chalk_1.default.dim('\n🔍 Verifying MCP server configuration...'));
             await verifyMCPServers(targetDir);
-            // Start MCP servers using mcp-server-manager.sh
+            // Start MCP servers using the locally copied script
             console.log(chalk_1.default.blue('\n🚀 Starting MCP servers...'));
             try {
                 const { execSync } = require('child_process');
                 const path = require('path');
-                const scriptPath = path.join(__dirname, '..', 'scripts', 'mcp-server-manager.sh');
+                const fs = require('fs');
+                // Use the script that was copied to the project directory
+                const localScriptPath = path.join(targetDir, 'scripts', 'mcp-server-manager.sh');
+                // Check if the script exists locally
+                if (!fs.existsSync(localScriptPath)) {
+                    throw new Error('MCP server manager script not found. Re-run snow-flow init if needed.');
+                }
+                // Make script executable
+                try {
+                    fs.chmodSync(localScriptPath, '755');
+                }
+                catch (chmodError) {
+                    // Ignore chmod errors on Windows
+                }
                 // Execute and capture output
-                const output = execSync(`bash "${scriptPath}" start`, {
+                const output = execSync(`bash "${localScriptPath}" start`, {
                     cwd: targetDir,
                     encoding: 'utf-8'
                 });
@@ -1637,10 +1650,11 @@ program
                 }
             }
             catch (error) {
-                console.log(chalk_1.default.red('❌ Failed to start MCP servers automatically'));
-                console.log(chalk_1.default.yellow('   MCP servers will start automatically when you launch OpenCode'));
+                console.log(chalk_1.default.yellow('⚠️  MCP servers will start automatically when you launch OpenCode'));
                 console.log(chalk_1.default.dim('   Or start manually: ./scripts/mcp-server-manager.sh start'));
-                console.log(chalk_1.default.dim('   Error: ' + error.message));
+                if (error.message.includes('No .env file found')) {
+                    console.log(chalk_1.default.dim('   💡 Tip: Configure .env first, then run: ./scripts/mcp-server-manager.sh start'));
+                }
             }
         }
         // Check and optionally install OpenCode
