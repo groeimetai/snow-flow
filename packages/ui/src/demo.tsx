@@ -1,8 +1,13 @@
 import type { Component } from "solid-js"
-import { Button, Select, Tabs, Tooltip, Fonts, List } from "./components"
+import { createSignal } from "solid-js"
+import { Button, Select, Tabs, Tooltip, Fonts, List, Dialog, Icon, IconButton, Input, SelectDialog } from "./components"
 import "./index.css"
 
 const Demo: Component = () => {
+  const [dialogOpen, setDialogOpen] = createSignal(false)
+  const [selectDialogOpen, setSelectDialogOpen] = createSignal(false)
+  const [inputValue, setInputValue] = createSignal("")
+
   const Content = (props: { dark?: boolean }) => (
     <div class={`${props.dark ? "dark" : ""}`}>
       <h3>Buttons</h3>
@@ -35,9 +40,6 @@ const Demo: Component = () => {
       <h3>Select</h3>
       <section>
         <Select
-          // we have to pass dark bc of the portal,
-          // normally wouldn't be needed bc root element
-          // would have theme class
           class={props.dark ? "dark" : ""}
           variant="primary"
           options={["Option 1", "Option 2", "Option 3"]}
@@ -116,6 +118,67 @@ const Demo: Component = () => {
         <List data={["Item 1", "Item 2", "Item 3"]} key={(x) => x}>
           {(x) => <div>{x}</div>}
         </List>
+      </section>
+      <h3>Input</h3>
+      <section>
+        <Input
+          placeholder="Enter text..."
+          value={inputValue()}
+          onInput={(e: InputEvent & { currentTarget: HTMLInputElement }) => setInputValue(e.currentTarget.value)}
+        />
+        <Input placeholder="Disabled input" disabled />
+        <Input type="password" placeholder="Password input" />
+      </section>
+      <h3>Icons</h3>
+      <section>
+        <Icon name="close" />
+        <Icon name="checkmark" />
+        <Icon name="chevron-down" />
+        <Icon name="chevron-up" />
+        <Icon name="chevron-left" />
+        <Icon name="chevron-right" />
+        <Icon name="search" />
+        <Icon name="loading" />
+      </section>
+      <h3>Icon Buttons</h3>
+      <section>
+        <IconButton icon="close" onClick={() => console.log("Close clicked")} />
+        <IconButton icon="checkmark" onClick={() => console.log("Check clicked")} />
+        <IconButton icon="search" onClick={() => console.log("Search clicked")} disabled />
+      </section>
+      <h3>Dialog</h3>
+      <section>
+        <Button onClick={() => setDialogOpen(true)}>Open Dialog</Button>
+        <Dialog open={dialogOpen()} onOpenChange={setDialogOpen}>
+          <Dialog.Title>Example Dialog</Dialog.Title>
+          <Dialog.Description>This is an example dialog with a title and description.</Dialog.Description>
+          <div style={{ "margin-top": "16px", display: "flex", gap: "8px", "justify-content": "flex-end" }}>
+            <Button variant="ghost" onClick={() => setDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={() => setDialogOpen(false)}>
+              Confirm
+            </Button>
+          </div>
+        </Dialog>
+      </section>
+      <h3>Select Dialog</h3>
+      <section>
+        <Button onClick={() => setSelectDialogOpen(true)}>Open Select Dialog</Button>
+        <SelectDialog
+          title="Select an Option"
+          defaultOpen={selectDialogOpen()}
+          onOpenChange={setSelectDialogOpen}
+          items={["Option 1", "Option 2", "Option 3", "Option 4", "Option 5"]}
+          key={(x) => x}
+          onSelect={(option) => {
+            console.log("Selected:", option)
+            setSelectDialogOpen(false)
+          }}
+          placeholder="Search options..."
+        >
+          {(item) => <div>{item}</div>}
+        </SelectDialog>
       </section>
     </div>
   )
