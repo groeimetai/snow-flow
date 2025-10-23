@@ -35,6 +35,15 @@ await snow_create_complete_workspace({
 **❌ THESE COMMANDS DO NOT EXIST AND WILL ALWAYS FAIL:**
 
 ```bash
+# ❌ WRONG - Trying to require() MCP tools as npm packages (WILL ALWAYS FAIL!)
+node -e "
+const { snow_update_set_manage } = require('./node_modules/@snow-flow/mcp-server-servicenow-update-set/dist/index.js');
+..."
+# ERROR: Cannot find module './node_modules/@snow-flow/mcp-server-servicenow-update-set/dist/index.js'
+# WHY: @snow-flow/mcp-server-servicenow-update-set is NOT an npm package!
+# WHY: MCP tools are NOT installed in node_modules!
+# WHY: MCP tools CANNOT be required() - they are MCP protocol functions!
+
 # ❌ WRONG - This file does NOT exist in user's project!
 node dist/index.js mcp execute --server "servicenow-platform-dev" --tool "snow_create_ui_page"
 # ERROR: Cannot find module 'dist/index.js'
@@ -50,6 +59,10 @@ snow-flow mcp execute --tool snow_create_ui_page
 # ❌ WRONG - You cannot "run" MCP tools via bash!
 cd project && node snow_create_ui_page.js
 # ERROR: Wrong approach entirely!
+
+# ❌ WRONG - Trying to cd into project and require MCP tools
+cd /path/to/project && node -e "const { snow_query_table } = require(...);"
+# ERROR: Module not found - MCP tools are NOT npm packages!
 ```
 
 **🚨 WHY THESE FAIL:**
