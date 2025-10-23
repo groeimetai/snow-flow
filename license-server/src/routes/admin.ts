@@ -175,6 +175,68 @@ router.get('/si/:masterKey', async (req: Request, res: Response) => {
   }
 });
 
+// ===== SERVICE INTEGRATORS ALIASES (for web dashboard) =====
+
+/**
+ * GET /api/admin/service-integrators
+ * Alias for /api/admin/si (web dashboard compatibility)
+ */
+router.get('/service-integrators', async (req: Request, res: Response) => {
+  try {
+    const status = req.query.status as 'active' | 'suspended' | 'churned' | undefined;
+    const integrators = db.listServiceIntegrators(status);
+
+    res.json({
+      success: true,
+      count: integrators.length,
+      service_integrators: integrators
+    });
+  } catch (error) {
+    console.error('Error listing service integrators:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to list service integrators'
+    });
+  }
+});
+
+/**
+ * GET /api/admin/service-integrators/:id
+ * Alias for /api/admin/si/:id (web dashboard compatibility)
+ */
+router.get('/service-integrators/:id', async (req: Request, res: Response) => {
+  try {
+    const integrators = db.listServiceIntegrators();
+    const id = parseInt(req.params.id);
+    const si = integrators.find(s => s.id === id);
+
+    if (!si) {
+      return res.status(404).json({
+        success: false,
+        error: 'Service integrator not found'
+      });
+    }
+
+    // Get customer count
+    const customers = db.listCustomers(si.id);
+
+    res.json({
+      success: true,
+      service_integrator: si,
+      stats: {
+        totalCustomers: customers.length,
+        activeCustomers: customers.filter(c => c.status === 'active').length
+      }
+    });
+  } catch (error) {
+    console.error('Error getting service integrator:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get service integrator'
+    });
+  }
+});
+
 // ===== CUSTOMER ENDPOINTS =====
 
 /**

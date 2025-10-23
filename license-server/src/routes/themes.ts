@@ -19,6 +19,22 @@ const __dirname = path.dirname(__filename);
 export function createThemesRoutes(db: LicenseDatabase): express.Router {
   const router = express.Router();
 
+  // Helper to get themes directory (works in dev and production)
+  function getThemesDir(): string {
+    // Try dist/themes first (production)
+    const distThemes = path.join(__dirname, '../themes');
+    if (fs.existsSync(distThemes)) {
+      return distThemes;
+    }
+    // Fallback to src/themes (should work in both dev and production)
+    const srcThemes = path.join(__dirname, '../../src/themes');
+    if (fs.existsSync(srcThemes)) {
+      return srcThemes;
+    }
+    // Last resort - relative to project root
+    return path.join(process.cwd(), 'src/themes');
+  }
+
   /**
    * GET /themes/list
    * List all available themes
@@ -34,7 +50,7 @@ export function createThemesRoutes(db: LicenseDatabase): express.Router {
    */
   router.get('/list', (req: Request, res: Response) => {
     try {
-      const themesDir = path.join(__dirname, '../themes');
+      const themesDir = getThemesDir();
       const themeFiles = fs.readdirSync(themesDir).filter(f => f.endsWith('.json'));
 
       const themes = themeFiles.map(filename => {
@@ -84,7 +100,7 @@ export function createThemesRoutes(db: LicenseDatabase): express.Router {
         });
       }
 
-      const themePath = path.join(__dirname, '../themes', `${themeName}.json`);
+      const themePath = path.join(getThemesDir(), `${themeName}.json`);
 
       // Check if theme exists
       if (!fs.existsSync(themePath)) {
@@ -154,7 +170,7 @@ export function createThemesRoutes(db: LicenseDatabase): express.Router {
 
       // Get customer's theme (default to 'servicenow' if not set)
       const themeName = customer.theme || 'servicenow';
-      const themePath = path.join(__dirname, '../themes', `${themeName}.json`);
+      const themePath = path.join(getThemesDir(), `${themeName}.json`);
 
       // Check if theme exists
       if (!fs.existsSync(themePath)) {
@@ -227,12 +243,13 @@ export function createThemesRoutes(db: LicenseDatabase): express.Router {
       }
 
       // Check if theme exists
-      const themePath = path.join(__dirname, '../themes', `${theme}.json`);
+      const themesDir = getThemesDir();
+      const themePath = path.join(themesDir, `${theme}.json`);
       if (!fs.existsSync(themePath)) {
         return res.status(404).json({
           success: false,
           error: 'Theme not found',
-          availableThemes: fs.readdirSync(path.join(__dirname, '../themes'))
+          availableThemes: fs.readdirSync(themesDir)
             .filter(f => f.endsWith('.json'))
             .map(f => f.replace('.json', ''))
         });
