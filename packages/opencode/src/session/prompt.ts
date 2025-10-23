@@ -398,11 +398,6 @@ export namespace SessionPrompt {
       }
       state().queued.delete(input.sessionID)
       SessionCompaction.prune(input)
-      MessageSummary.summarize({
-        sessionID: input.sessionID,
-        messageID: result.info.parentID,
-        providerID: model.providerID,
-      })
       return result
     }
   }
@@ -1297,6 +1292,11 @@ export namespace SessionPrompt {
                   }
                   snapshot = undefined
                 }
+                MessageSummary.summarize({
+                  sessionID: input.sessionID,
+                  messageID: assistantMsg.parentID,
+                  providerID: assistantMsg.modelID,
+                })
                 break
 
               case "text-start":

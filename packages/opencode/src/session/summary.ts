@@ -5,6 +5,8 @@ import { Session } from "."
 import { generateText } from "ai"
 import { MessageV2 } from "./message-v2"
 import { Flag } from "@/flag/flag"
+import { Identifier } from "@/id/id"
+import { Snapshot } from "@/snapshot"
 
 export namespace MessageSummary {
   export const summarize = fn(
@@ -14,37 +16,90 @@ export namespace MessageSummary {
       providerID: z.string(),
     }),
     async (input) => {
-      if (!Flag.OPENCODE_EXPERIMENTAL_TURN_SUMMARY) return
       const messages = await Session.messages(input.sessionID).then((msgs) =>
         msgs.filter(
           (m) => m.info.id === input.messageID || (m.info.role === "assistant" && m.info.parentID === input.messageID),
         ),
       )
-      const small = await Provider.getSmallModel(input.providerID)
-      if (!small) return
-
-      const result = await generateText({
-        model: small.language,
-        maxOutputTokens: 100,
-        messages: [
-          {
-            role: "user",
-            content: `
+      const userMsg = messages.find((m) => m.info.id === input.messageID)!
+      const diffs = await computeDiff({ messages })
+      userMsg.info.summary = {
+        diffs,
+        text: "",
+      }
+      if (
+        Flag.OPENCODE_EXPERIMENTAL_TURN_SUMMARY &&
+        messages.every((m) => m.info.role !== "assistant" || m.info.time.completed)
+      ) {
+        const small = await Provider.getSmallModel(input.providerID)
+        if (!small) return
+        const result = await generateText({
+          model: small.language,
+          maxOutputTokens: 100,
+          messages: [
+            {
+              role: "user",
+              content: `
             Summarize the following conversation into 2 sentences MAX explaining what the assistant did and why. Do not explain the user's input.
             <conversation>
             ${JSON.stringify(MessageV2.toModelMessage(messages))}
             </conversation>
             `,
-          },
-        ],
-      })
-
-      const userMsg = messages.find((m) => m.info.id === input.messageID)!
-      userMsg.info.summary = {
-        text: result.text,
-        diffs: [],
+            },
+          ],
+        })
+        userMsg.info.summary = {
+          text: result.text,
+          diffs: [],
+        }
       }
       await Session.updateMessage(userMsg.info)
     },
   )
+
+  export const diff = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      messageID: Identifier.schema("message").optional(),
+    }),
+    async (input) => {
+      let all = await Session.messages(input.sessionID)
+      if (input.messageID)
+        all = all.filter(
+          (x) => x.info.id === input.messageID || (x.info.role === "assistant" && x.info.parentID === input.messageID),
+        )
+
+      return computeDiff({
+        messages: all,
+      })
+    },
+  )
+
+  async function computeDiff(input: { messages: MessageV2.WithParts[] }) {
+    let from: string | undefined
+    let to: string | undefined
+
+    // scan assistant messages to find earliest from and latest to
+    // snapshot
+    for (const item of input.messages) {
+      if (!from) {
+        for (const part of item.parts) {
+          if (part.type === "step-start" && part.snapshot) {
+            from = part.snapshot
+            break
+          }
+        }
+      }
+
+      for (const part of item.parts) {
+        if (part.type === "step-finish" && part.snapshot) {
+          to = part.snapshot
+          break
+        }
+      }
+    }
+
+    if (from && to) return Snapshot.diffFull(from, to)
+    return []
+  }
 }
