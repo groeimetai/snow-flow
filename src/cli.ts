@@ -2263,9 +2263,20 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
           console.log(chalk.yellow(`      Check: ${serverConfig.args[0]}`));
           failCount++;
         } else if (error) {
-          console.log(chalk.red('✗'));
-          console.log(chalk.dim(`      ${error.split('\n')[0].substring(0, 60)}...`));
-          failCount++;
+          // Check if stderr contains success messages (some servers log to stderr)
+          const isSuccessMessage = error.includes('MCP server running') ||
+                                   error.includes('Started on stdio') ||
+                                   error.includes('ServiceNow MCP') ||
+                                   error.includes('Snow-Flow MCP');
+
+          if (isSuccessMessage) {
+            console.log(chalk.green('✓'));
+            successCount++;
+          } else {
+            console.log(chalk.red('✗'));
+            console.log(chalk.dim(`      ${error.split('\n')[0].substring(0, 60)}...`));
+            failCount++;
+          }
         } else {
           console.log(chalk.yellow('⚠ (no response, may need credentials)'));
           // This is actually OK - server started but needs auth
@@ -2534,7 +2545,7 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
 
     // Create .opencode/ directory structure
     const opencodeDir = join(targetDir, '.opencode');
-    const agentsDir = join(opencodeDir, 'agents');
+    const agentsDir = join(opencodeDir, 'agent');  // Singular 'agent' as required by OpenCode
     const modesDir = join(opencodeDir, 'modes');
 
     try {
@@ -2543,7 +2554,7 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       await fs.mkdir(modesDir, { recursive: true });
       console.log('✅ Created .opencode/ directory structure');
 
-      // Copy agent files from .claude/ to .opencode/agents/ (if they exist)
+      // Copy agent files from .claude/ to .opencode/agent/ (if they exist)
       const sourceAgentsDir = join(__dirname, '..', '.claude', 'agents');
       try {
         const agentFiles = await fs.readdir(sourceAgentsDir);
@@ -2555,7 +2566,7 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
             await fs.writeFile(targetFile, content);
           }
         }
-        console.log('✅ Copied agent configurations to .opencode/agents/');
+        console.log('✅ Copied agent configurations to .opencode/agent/');
       } catch (err) {
         // Silently continue - agent configs are in opencode.json, not separate files
       }

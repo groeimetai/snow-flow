@@ -2103,9 +2103,20 @@ async function verifyMCPServers(targetDir) {
                     failCount++;
                 }
                 else if (error) {
-                    console.log(chalk_1.default.red('✗'));
-                    console.log(chalk_1.default.dim(`      ${error.split('\n')[0].substring(0, 60)}...`));
-                    failCount++;
+                    // Check if stderr contains success messages (some servers log to stderr)
+                    const isSuccessMessage = error.includes('MCP server running') ||
+                        error.includes('Started on stdio') ||
+                        error.includes('ServiceNow MCP') ||
+                        error.includes('Snow-Flow MCP');
+                    if (isSuccessMessage) {
+                        console.log(chalk_1.default.green('✓'));
+                        successCount++;
+                    }
+                    else {
+                        console.log(chalk_1.default.red('✗'));
+                        console.log(chalk_1.default.dim(`      ${error.split('\n')[0].substring(0, 60)}...`));
+                        failCount++;
+                    }
                 }
                 else {
                     console.log(chalk_1.default.yellow('⚠ (no response, may need credentials)'));
@@ -2363,14 +2374,14 @@ async function copyCLAUDEmd(targetDir, force = false) {
         }
         // Create .opencode/ directory structure
         const opencodeDir = (0, path_1.join)(targetDir, '.opencode');
-        const agentsDir = (0, path_1.join)(opencodeDir, 'agents');
+        const agentsDir = (0, path_1.join)(opencodeDir, 'agent'); // Singular 'agent' as required by OpenCode
         const modesDir = (0, path_1.join)(opencodeDir, 'modes');
         try {
             await fs_1.promises.mkdir(opencodeDir, { recursive: true });
             await fs_1.promises.mkdir(agentsDir, { recursive: true });
             await fs_1.promises.mkdir(modesDir, { recursive: true });
             console.log('✅ Created .opencode/ directory structure');
-            // Copy agent files from .claude/ to .opencode/agents/ (if they exist)
+            // Copy agent files from .claude/ to .opencode/agent/ (if they exist)
             const sourceAgentsDir = (0, path_1.join)(__dirname, '..', '.claude', 'agents');
             try {
                 const agentFiles = await fs_1.promises.readdir(sourceAgentsDir);
@@ -2382,7 +2393,7 @@ async function copyCLAUDEmd(targetDir, force = false) {
                         await fs_1.promises.writeFile(targetFile, content);
                     }
                 }
-                console.log('✅ Copied agent configurations to .opencode/agents/');
+                console.log('✅ Copied agent configurations to .opencode/agent/');
             }
             catch (err) {
                 // Silently continue - agent configs are in opencode.json, not separate files
