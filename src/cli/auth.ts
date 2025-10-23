@@ -151,21 +151,47 @@ export function registerAuthCommands(program: Command) {
       }
 
       // ServiceNow setup - continue the flow
-      const oauth = new ServiceNowOAuth();
 
       // Read credentials from .env file
       let instance = process.env.SNOW_INSTANCE;
-      let clientId = process.env.SNOW_CLIENT_ID;
-      let clientSecret = process.env.SNOW_CLIENT_SECRET;
+      let authMethod = process.env.SNOW_AUTH_METHOD || 'oauth';
 
-      // Validate credentials
-      const credentialsValid =
-        instance && instance.trim() !== '' && instance.includes('.service-now.com') &&
-        clientId && clientId.trim() !== '' && clientId.length >= 32 &&
-        clientSecret && clientSecret.trim() !== '' && clientSecret.length >= 32;
+      // Check if we need to ask for auth method
+      const hasOAuthCreds = process.env.SNOW_CLIENT_ID && process.env.SNOW_CLIENT_SECRET;
+      const hasBasicCreds = process.env.SNOW_USERNAME && process.env.SNOW_PASSWORD;
 
-      // If credentials are missing or invalid, prompt with @clack
-      if (!credentialsValid) {
+      // If no credentials at all, ask for auth method
+      if (!hasOAuthCreds && !hasBasicCreds) {
+        const method = await prompts.select({
+          message: 'ServiceNow authentication method',
+          options: [
+            { value: 'oauth', label: 'OAuth 2.0', hint: 'recommended' },
+            { value: 'basic', label: 'Basic Auth', hint: 'username/password' }
+          ]
+        });
+
+        if (prompts.isCancel(method)) {
+          prompts.cancel('Setup cancelled');
+          process.exit(0);
+        }
+
+        authMethod = method as string;
+      }
+
+      // OAuth 2.0 Flow
+      if (authMethod === 'oauth') {
+        const oauth = new ServiceNowOAuth();
+        let clientId = process.env.SNOW_CLIENT_ID;
+        let clientSecret = process.env.SNOW_CLIENT_SECRET;
+
+        // Validate OAuth credentials
+        const credentialsValid =
+          instance && instance.trim() !== '' && instance.includes('.service-now.com') &&
+          clientId && clientId.trim() !== '' && clientId.length >= 32 &&
+          clientSecret && clientSecret.trim() !== '' && clientSecret.length >= 32;
+
+        // If credentials are missing or invalid, prompt with @clack
+        if (!credentialsValid) {
         // ServiceNow instance
         instance = await prompts.text({
           message: 'ServiceNow instance',
@@ -230,49 +256,169 @@ export function registerAuthCommands(program: Command) {
           }
         }
 
-        // Update credentials
-        const updates = [
-          { key: 'SNOW_INSTANCE', value: instance },
-          { key: 'SNOW_CLIENT_ID', value: clientId },
-          { key: 'SNOW_CLIENT_SECRET', value: clientSecret }
-        ];
+          // Update credentials
+          const updates = [
+            { key: 'SNOW_INSTANCE', value: instance },
+            { key: 'SNOW_AUTH_METHOD', value: 'oauth' },
+            { key: 'SNOW_CLIENT_ID', value: clientId },
+            { key: 'SNOW_CLIENT_SECRET', value: clientSecret }
+          ];
 
-        for (const { key, value } of updates) {
-          if (envContent.includes(`${key}=`)) {
-            envContent = envContent.replace(new RegExp(`${key}=.*`, 'g'), `${key}=${value}`);
-          } else {
-            envContent += `\n${key}=${value}\n`;
+          for (const { key, value } of updates) {
+            if (envContent.includes(`${key}=`)) {
+              envContent = envContent.replace(new RegExp(`${key}=.*`, 'g'), `${key}=${value}`);
+            } else {
+              envContent += `\n${key}=${value}\n`;
+            }
           }
+
+          fs.writeFileSync(envPath, envContent);
+
+          process.env.SNOW_INSTANCE = instance;
+          process.env.SNOW_AUTH_METHOD = 'oauth';
+          process.env.SNOW_CLIENT_ID = clientId;
+          process.env.SNOW_CLIENT_SECRET = clientSecret;
         }
 
-        fs.writeFileSync(envPath, envContent);
+        // Start OAuth flow
+        const spinner = prompts.spinner();
+        spinner.start('Authenticating with ServiceNow');
 
-        process.env.SNOW_INSTANCE = instance;
-        process.env.SNOW_CLIENT_ID = clientId;
-        process.env.SNOW_CLIENT_SECRET = clientSecret;
+        const result = await oauth.authenticate(instance, clientId, clientSecret);
+
+        if (result.success) {
+          spinner.stop('ServiceNow authentication successful');
+
+          // Test connection
+          const client = new ServiceNowClient();
+          const testResult = await client.testConnection();
+          if (testResult.success) {
+            prompts.log.success(`Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
+          }
+
+          prompts.outro('Setup complete!');
+        } else {
+          spinner.stop('Authentication failed');
+          prompts.cancel(result.error || 'Unknown error');
+          process.exit(1);
+        }
       }
+      // Basic Auth Flow
+      else if (authMethod === 'basic') {
+        let username = process.env.SNOW_USERNAME;
+        let password = process.env.SNOW_PASSWORD;
 
-      // Start OAuth flow
-      const spinner = prompts.spinner();
-      spinner.start('Authenticating with ServiceNow');
+        // Validate Basic Auth credentials
+        const credentialsValid =
+          instance && instance.trim() !== '' && instance.includes('.service-now.com') &&
+          username && username.trim() !== '' &&
+          password && password.trim() !== '';
 
-      const result = await oauth.authenticate(instance, clientId, clientSecret);
+        if (!credentialsValid) {
+          // ServiceNow instance
+          if (!instance || !instance.includes('.service-now.com')) {
+            instance = await prompts.text({
+              message: 'ServiceNow instance',
+              placeholder: 'dev12345.service-now.com',
+              defaultValue: instance || '',
+              validate: (value) => {
+                if (!value || value.trim() === '') return 'Instance URL is required';
+                const cleaned = value.replace(/^https?:\/\//, '').replace(/\/$/, '');
+                if (!cleaned.includes('.service-now.com')) {
+                  return 'Must be a ServiceNow domain (e.g., dev12345.service-now.com)';
+                }
+              }
+            }) as string;
 
-      if (result.success) {
-        spinner.stop('ServiceNow authentication successful');
+            if (prompts.isCancel(instance)) {
+              prompts.cancel('Setup cancelled');
+              process.exit(0);
+            }
 
-        // Test connection
+            instance = instance.replace(/^https?:\/\//, '').replace(/\/$/, '');
+          }
+
+          // Username
+          username = await prompts.text({
+            message: 'ServiceNow username',
+            placeholder: 'admin',
+            defaultValue: username || '',
+            validate: (value) => {
+              if (!value || value.trim() === '') return 'Username is required';
+            }
+          }) as string;
+
+          if (prompts.isCancel(username)) {
+            prompts.cancel('Setup cancelled');
+            process.exit(0);
+          }
+
+          // Password
+          password = await prompts.password({
+            message: 'ServiceNow password',
+            validate: (value) => {
+              if (!value || value.trim() === '') return 'Password is required';
+            }
+          }) as string;
+
+          if (prompts.isCancel(password)) {
+            prompts.cancel('Setup cancelled');
+            process.exit(0);
+          }
+
+          // Save to .env file
+          const envPath = path.join(process.cwd(), '.env');
+          let envContent = '';
+
+          try {
+            envContent = fs.readFileSync(envPath, 'utf8');
+          } catch {
+            const examplePath = path.join(process.cwd(), '.env.example');
+            if (fs.existsSync(examplePath)) {
+              envContent = fs.readFileSync(examplePath, 'utf8');
+            }
+          }
+
+          // Update credentials
+          const updates = [
+            { key: 'SNOW_INSTANCE', value: instance },
+            { key: 'SNOW_AUTH_METHOD', value: 'basic' },
+            { key: 'SNOW_USERNAME', value: username },
+            { key: 'SNOW_PASSWORD', value: password }
+          ];
+
+          for (const { key, value } of updates) {
+            if (envContent.includes(`${key}=`)) {
+              envContent = envContent.replace(new RegExp(`${key}=.*`, 'g'), `${key}=${value}`);
+            } else {
+              envContent += `\n${key}=${value}\n`;
+            }
+          }
+
+          fs.writeFileSync(envPath, envContent);
+
+          process.env.SNOW_INSTANCE = instance;
+          process.env.SNOW_AUTH_METHOD = 'basic';
+          process.env.SNOW_USERNAME = username;
+          process.env.SNOW_PASSWORD = password;
+        }
+
+        // Test Basic Auth connection
+        const spinner = prompts.spinner();
+        spinner.start('Authenticating with ServiceNow');
+
         const client = new ServiceNowClient();
         const testResult = await client.testConnection();
-        if (testResult.success) {
-          prompts.log.success(`Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
-        }
 
-        prompts.outro('Setup complete!');
-      } else {
-        spinner.stop('Authentication failed');
-        prompts.cancel(result.error || 'Unknown error');
-        process.exit(1);
+        if (testResult.success) {
+          spinner.stop('ServiceNow authentication successful');
+          prompts.log.success(`Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
+          prompts.outro('Setup complete!');
+        } else {
+          spinner.stop('Authentication failed');
+          prompts.cancel(testResult.error || 'Invalid credentials');
+          process.exit(1);
+        }
       }
     });
 
