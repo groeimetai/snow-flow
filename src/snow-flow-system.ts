@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'events';
 import { SnowFlowConfig, ISnowFlowConfig } from './config/snow-flow-config';
-import { QueenOrchestrator } from './sdk/queen-orchestrator.js';
+// import { QueenOrchestrator } from './sdk/queen-orchestrator.js'; // REMOVED - Queen architecture deprecated
 import { MemorySystem, BasicMemorySystem } from './memory/memory-system';
 import { PerformanceTracker } from './monitoring/performance-tracker';
 import { SystemHealth } from './health/system-health';
@@ -38,7 +38,7 @@ export interface AgentInfo {
 
 export class SnowFlowSystem extends EventEmitter {
   private config: SnowFlowConfig;
-  private queen?: QueenOrchestrator;
+  // private queen?: QueenOrchestrator; // REMOVED - Queen architecture deprecated
   private memory?: MemorySystem;
   private performanceTracker?: PerformanceTracker;
   private systemHealth?: SystemHealth;
@@ -69,8 +69,8 @@ export class SnowFlowSystem extends EventEmitter {
       // 1. Initialize Memory System
       await this.initializeMemory();
 
-      // 2. Initialize Queen Orchestrator (SDK-based)
-      await this.initializeQueen();
+      // 2. Initialize Queen Orchestrator (SDK-based) - DISABLED (Queen architecture deprecated)
+      // await this.initializeQueen();
 
       // 3. Initialize Performance Tracking
       await this.initializePerformanceTracking();
@@ -112,35 +112,35 @@ export class SnowFlowSystem extends EventEmitter {
   }
 
   /**
-   * Initialize Queen Orchestrator (SDK-based)
-   * NOTE: MCP servers are now automatically managed by Claude Agent SDK
+   * Initialize Queen Orchestrator (SDK-based) - DISABLED
+   * NOTE: Queen architecture has been deprecated
    */
-  private async initializeQueen(): Promise<void> {
-    this.logger.info('Initializing Queen Orchestrator (SDK-based)...');
-
-    if (!this.memory) {
-      throw new Error('Memory must be initialized before Queen Orchestrator');
-    }
-
-    // Create new SDK-based Queen Orchestrator
-    this.queen = new QueenOrchestrator(this.memory);
-
-    // Setup event forwarding from Queen to System
-    this.queen.on('orchestration:started', (objective) => {
-      this.emit('queen:orchestration-started', objective);
-    });
-
-    this.queen.on('orchestration:completed', (result) => {
-      this.emit('queen:orchestration-completed', result);
-    });
-
-    this.queen.on('orchestration:failed', ({ objective, error }) => {
-      this.emit('queen:orchestration-failed', { objective, error });
-    });
-
-    this.logger.info('✅ Queen Orchestrator initialized with Claude Agent SDK v0.1.1');
-    this.emit('queen:initialized');
-  }
+  // private async initializeQueen(): Promise<void> {
+  //   this.logger.info('Initializing Queen Orchestrator (SDK-based)...');
+  //
+  //   if (!this.memory) {
+  //     throw new Error('Memory must be initialized before Queen Orchestrator');
+  //   }
+  //
+  //   // Create new SDK-based Queen Orchestrator
+  //   this.queen = new QueenOrchestrator(this.memory);
+  //
+  //   // Setup event forwarding from Queen to System
+  //   this.queen.on('orchestration:started', (objective) => {
+  //     this.emit('queen:orchestration-started', objective);
+  //   });
+  //
+  //   this.queen.on('orchestration:completed', (result) => {
+  //     this.emit('queen:orchestration-completed', result);
+  //   });
+  //
+  //   this.queen.on('orchestration:failed', ({ objective, error }) => {
+  //     this.emit('queen:orchestration-failed', { objective, error });
+  //   });
+  //
+  //   this.logger.info('✅ Queen Orchestrator initialized with Claude Agent SDK v0.1.1');
+  //   this.emit('queen:initialized');
+  // }
 
   /**
    * Initialize Performance Tracking
@@ -229,14 +229,28 @@ export class SnowFlowSystem extends EventEmitter {
         objective
       });
       
-      // Execute objective using new Queen Orchestrator (SDK-based)
-      this.logger.info(`🎯 Starting SDK-based orchestration for: ${objective}`);
+      // Execute objective using new Queen Orchestrator (SDK-based) - DISABLED
+      this.logger.info(`🎯 Starting orchestration for: ${objective}`);
 
-      const queenResult = await this.queen!.orchestrate({
-        id: sessionId,
-        description: objective,
-        priority: 'high'
-      });
+      // const queenResult = await this.queen!.orchestrate({
+      //   id: sessionId,
+      //   description: objective,
+      //   priority: 'high'
+      // });
+
+      // TEMPORARY: Return mock result until swarm orchestration is properly integrated
+      const queenResult = {
+        success: false,
+        objective: objective,
+        agentsUsed: [],
+        agentsSpawned: 0,
+        tasks: [],
+        artifacts: [],
+        artifactsCreated: 0,
+        todos: [],
+        duration: 0,
+        error: new Error('Queen orchestration is deprecated. Use swarm command instead.')
+      };
 
       session.queenAgentId = sessionId;
       session.totalTasks = queenResult.todos.length;
@@ -262,8 +276,8 @@ export class SnowFlowSystem extends EventEmitter {
       return {
         sessionId,
         success: queenResult.success,
-        artifacts: queenResult.artifactsCreated,
-        summary: `Orchestration completed: ${queenResult.agentsSpawned} agents spawned, ${queenResult.artifactsCreated.length} artifacts created`,
+        artifacts: queenResult.artifacts,
+        summary: `Orchestration completed: ${queenResult.agentsSpawned} agents spawned, ${queenResult.artifactsCreated} artifacts created`,
         metrics: await this.performanceTracker?.getSessionMetrics(sessionId) || {}
       };
       
@@ -338,7 +352,7 @@ export class SnowFlowSystem extends EventEmitter {
       // Shutdown components in reverse order
       await this.systemHealth?.stopMonitoring();
       await this.performanceTracker?.shutdown();
-      await this.queen?.shutdown(); // SDK-based shutdown
+      // await this.queen?.shutdown(); // SDK-based shutdown - DISABLED (Queen architecture deprecated)
       await this.memory?.close();
       
       this.initialized = false;
@@ -379,11 +393,11 @@ export class SnowFlowSystem extends EventEmitter {
   }
 
   /**
-   * Get Queen Orchestrator instance
+   * Get Queen Orchestrator instance - DISABLED (Queen architecture deprecated)
    */
-  getQueenOrchestrator(): QueenOrchestrator | undefined {
-    return this.queen;
-  }
+  // getQueenOrchestrator(): QueenOrchestrator | undefined {
+  //   return this.queen;
+  // }
 
   /**
    * Private helper methods
@@ -416,7 +430,7 @@ export class SnowFlowSystem extends EventEmitter {
     for (const agent of session.activeAgents.values()) {
       if (agent.status === 'active') {
         // Use available shutdown method
-        // await this.queen?.shutdown(); // No per-agent shutdown available
+        // await this.queen?.shutdown(); // No per-agent shutdown available - DISABLED (Queen deprecated)
       }
     }
     

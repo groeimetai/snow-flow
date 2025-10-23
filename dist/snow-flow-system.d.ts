@@ -4,7 +4,6 @@
  */
 import { EventEmitter } from 'events';
 import { ISnowFlowConfig } from './config/snow-flow-config';
-import { QueenOrchestrator } from './sdk/queen-orchestrator.js';
 import { MemorySystem } from './memory/memory-system';
 export interface SwarmSession {
     id: string;
@@ -27,7 +26,6 @@ export interface AgentInfo {
 }
 export declare class SnowFlowSystem extends EventEmitter {
     private config;
-    private queen?;
     private memory?;
     private performanceTracker?;
     private systemHealth?;
@@ -45,10 +43,9 @@ export declare class SnowFlowSystem extends EventEmitter {
      */
     private initializeMemory;
     /**
-     * Initialize Queen Orchestrator (SDK-based)
-     * NOTE: MCP servers are now automatically managed by Claude Agent SDK
+     * Initialize Queen Orchestrator (SDK-based) - DISABLED
+     * NOTE: Queen architecture has been deprecated
      */
-    private initializeQueen;
     /**
      * Initialize Performance Tracking
      */
@@ -84,9 +81,8 @@ export declare class SnowFlowSystem extends EventEmitter {
      */
     getMemory(): MemorySystem | undefined;
     /**
-     * Get Queen Orchestrator instance
+     * Get Queen Orchestrator instance - DISABLED (Queen architecture deprecated)
      */
-    getQueenOrchestrator(): QueenOrchestrator | undefined;
     /**
      * Private helper methods
      */

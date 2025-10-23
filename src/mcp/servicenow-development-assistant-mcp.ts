@@ -23,7 +23,7 @@ import { SelfDocumentingSystem } from '../documentation/self-documenting-system.
 import { CostOptimizationEngine } from '../optimization/cost-optimization-engine.js';
 import { AdvancedComplianceSystem } from '../compliance/advanced-compliance-system.js';
 import { SelfHealingSystem } from '../healing/self-healing-system.js';
-import { QueenMemorySystem } from '../queen/queen-memory.js';
+import { QueenMemorySystem } from '../memory/session-memory.js';
 
 interface ParsedIntent {
   action: 'find' | 'edit' | 'create' | 'clone';

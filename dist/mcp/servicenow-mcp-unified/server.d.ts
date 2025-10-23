@@ -19,6 +19,7 @@ export declare class ServiceNowUnifiedServer {
     constructor();
     /**
      * Load ServiceNow context from environment variables
+     * Note: Server will start even without credentials (unauthenticated mode)
      */
     private loadContext;
     /**

@@ -27,6 +27,8 @@ export interface ServiceNowContext {
     refreshToken?: string;
     accessToken?: string;
     tokenExpiry?: number;
+    username?: string;
+    password?: string;
     enterprise?: EnterpriseLicense;
 }
 /**

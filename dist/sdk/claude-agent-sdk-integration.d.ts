@@ -10,7 +10,10 @@
  */
 import { MemorySystem } from '../memory/memory-system.js';
 import { EventEmitter } from 'events';
-import type { AgentType } from '../queen/types.js';
+/**
+ * Agent specializations for ServiceNow development
+ */
+export type AgentType = 'workspace-specialist' | 'ui-builder-expert' | 'widget-creator' | 'script-writer' | 'integration-specialist' | 'tester' | 'security-specialist' | 'deployment-specialist' | 'researcher' | 'app-architect' | 'page-designer';
 export interface SnowFlowAgentConfig {
     type: AgentType;
     objective: string;
