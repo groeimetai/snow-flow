@@ -1902,7 +1902,7 @@ export namespace SessionPrompt {
       .then((result) => {
         if (result.text)
           return Session.update(input.session.id, (draft) => {
-            const cleaned = result.text.replace(/<think>[\s\S]*?<\/think>\s*/g, "")
+            const cleaned = result.text.replace(/<think>[\s\S]*?<\/think>\s*/g, "").split("\n")[0]
             const title = cleaned.length > 100 ? cleaned.substring(0, 97) + "..." : cleaned
             draft.title = title.trim()
           })
