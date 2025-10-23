@@ -246,17 +246,60 @@ export function createMonitoringRoutes(db: LicenseDatabase, credsDb: Credentials
 
     // Calculate MCP metrics
     let totalMcpCalls = 0;
+    let successMcpCalls = 0;
     let totalMcpDuration = 0;
     let totalMcpErrors = 0;
 
     toolMetrics.forEach(metrics => {
       totalMcpCalls += metrics.totalCalls;
+      successMcpCalls += metrics.successCalls;
       totalMcpDuration += metrics.totalDuration;
       totalMcpErrors += metrics.failedCalls;
     });
 
     const avgMcpDuration = totalMcpCalls > 0 ? totalMcpDuration / totalMcpCalls : 0;
     const mcpErrorRate = totalMcpCalls > 0 ? (totalMcpErrors / totalMcpCalls) * 100 : 0;
+
+    // Check if JSON format is requested (for web dashboard)
+    const acceptHeader = req.headers.accept || '';
+    const wantsJson = acceptHeader.includes('application/json') || req.query.format === 'json';
+
+    if (wantsJson) {
+      // Get customer stats
+      const serviceIntegrators = db.listServiceIntegrators();
+      const allCustomers: any[] = [];
+      serviceIntegrators.forEach(si => {
+        const customers = db.listCustomers(si.id);
+        allCustomers.push(...customers);
+      });
+
+      const byCategory: Record<string, number> = {};
+      toolMetrics.forEach((metricsData, toolName) => {
+        // Extract category from tool name (e.g., "jira_create_issue" -> "jira")
+        const category = toolName.split('_')[0];
+        byCategory[category] = (byCategory[category] || 0) + metricsData.totalCalls;
+      });
+
+      // Return JSON format for web dashboard
+      return res.json({
+        apiCalls: {
+          total: totalMcpCalls,
+          successful: successMcpCalls,
+          failed: totalMcpErrors,
+          avgDuration: Math.round(avgMcpDuration)
+        },
+        mcpTools: {
+          totalCalls: totalMcpCalls,
+          byCategory,
+          avgDuration: Math.round(avgMcpDuration)
+        },
+        customers: {
+          total: allCustomers.length,
+          active: allCustomers.filter((c: any) => c.status === 'active').length,
+          suspended: allCustomers.filter((c: any) => c.status === 'suspended').length
+        }
+      });
+    }
 
     // Prometheus format
     const metrics = [

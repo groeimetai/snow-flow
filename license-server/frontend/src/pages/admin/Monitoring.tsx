@@ -46,20 +46,37 @@ export default function AdminMonitoring() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Uptime:</span>
-                <span className="text-sm">{Math.floor(health.uptime / 60)} minutes</span>
+                <span className="text-sm">
+                  {typeof health.uptime === 'number'
+                    ? `${Math.floor(health.uptime / 60)} minutes`
+                    : typeof health.uptime === 'object' && health.uptime !== null && 'server' in health.uptime
+                    ? `${Math.floor((health.uptime as any).server / 60)} minutes`
+                    : 'N/A'}
+                </span>
               </div>
               {health.checks && (
                 <div className="pt-3 border-t border-gray-200">
                   <p className="text-sm font-medium text-gray-700 mb-2">Component Checks:</p>
-                  <div className="space-y-1">
-                    {Object.entries(health.checks).map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">{key}:</span>
-                        <Badge variant={value === 'ok' ? 'success' : 'danger'}>
-                          {value as string}
-                        </Badge>
-                      </div>
-                    ))}
+                  <div className="space-y-2">
+                    {Object.entries(health.checks).map(([key, value]) => {
+                      const checkValue: any = typeof value === 'object' && value !== null ? value : { status: value };
+                      const status = checkValue.status || String(value);
+                      const message = checkValue.message;
+
+                      return (
+                        <div key={key} className="bg-gray-50 p-2 rounded">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-700">{key}</span>
+                            <Badge variant={status === 'healthy' || status === 'ok' ? 'success' : 'danger'}>
+                              {status}
+                            </Badge>
+                          </div>
+                          {message && (
+                            <p className="text-xs text-gray-600">{message}</p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
