@@ -55,6 +55,8 @@ const logger_js_1 = require("./utils/logger.js");
 const chalk_1 = __importDefault(require("chalk"));
 // Load MCP Persistent Guard for bulletproof server protection
 const mcp_persistent_guard_js_1 = require("./utils/mcp-persistent-guard.js");
+// Load OpenCode output interceptor for beautiful MCP formatting
+const opencode_output_interceptor_js_1 = require("./utils/opencode-output-interceptor.js");
 // Activate MCP guard ONLY for commands that actually use MCP servers
 // Explicitly exclude: init, version, help, auth, export, config commands
 const commandsNeedingMCP = ['swarm', 'status', 'monitor', 'mcp'];
@@ -115,6 +117,7 @@ program
     .option('--no-show-reasoning', 'Hide LLM reasoning blocks')
     .option('--save-output <path>', 'Save full assistant output to a file')
     .option('--resume <sessionId>', 'Resume an existing interactive session')
+    .option('--no-interceptor', 'Disable output interceptor (use if swarm hangs)')
     // Provider overrides (optional, config-driven by default)
     .option('--provider <provider>', 'LLM provider override')
     .option('--model <model>', 'Model override')
@@ -310,8 +313,8 @@ program
     if (options.verbose) {
         cliLogger.info('\n💾 Initializing swarm memory system...');
     }
-    const { QueenMemorySystem } = await Promise.resolve().then(() => __importStar(require('./queen/queen-memory.js')));
-    const memorySystem = new QueenMemorySystem();
+    const { SessionMemorySystem } = await Promise.resolve().then(() => __importStar(require('./memory/session-memory.js')));
+    const memorySystem = new SessionMemorySystem();
     // Generate swarm session ID
     const sessionId = `swarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     // Session ID only in verbose mode
@@ -377,7 +380,7 @@ program
             }
         }
         // Try to execute OpenCode directly with the objective
-        const success = await executeOpenCode(objective);
+        const success = await executeOpenCode(objective, options);
         if (success) {
             if (options.verbose) {
                 cliLogger.info('✅ OpenCode launched successfully!');
@@ -422,7 +425,7 @@ program
     }
 });
 // Helper function to execute OpenCode directly with the objective
-async function executeOpenCode(objective) {
+async function executeOpenCode(objective, options) {
     try {
         // Check if OpenCode CLI is available
         const { execSync } = require('child_process');
@@ -434,13 +437,13 @@ async function executeOpenCode(objective) {
             cliLogger.info('📋 Please install OpenCode: npm install -g opencode-ai');
             return false;
         }
-        // Check for OpenCode config
-        const opencodeConfigPath = (0, path_1.join)(process.cwd(), 'opencode-config.example.json');
+        // Check for OpenCode config (.opencode/opencode.json created by init)
+        const opencodeConfigPath = (0, path_1.join)(process.cwd(), '.opencode', 'opencode.json');
         const hasOpencodeConfig = (0, fs_2.existsSync)(opencodeConfigPath);
         if (!hasOpencodeConfig) {
             cliLogger.warn('⚠️  OpenCode configuration not found');
-            cliLogger.info('📋 Please run: opencode config import opencode-config.example.json');
-            cliLogger.info('   Or create opencode-config.example.json in your project directory');
+            cliLogger.info('📋 Please run: snow-flow init');
+            cliLogger.info('   This will create .opencode/opencode.json with MCP servers configured');
             return false;
         }
         // Check for .env file with required configuration
@@ -476,7 +479,7 @@ async function executeOpenCode(objective) {
             opencodeCommand = `opencode --model "${defaultModel}" < "${tmpFile}"`;
         }
         const opencodeProcess = (0, child_process_1.spawn)('sh', ['-c', opencodeCommand], {
-            stdio: 'inherit', // All stdio inherited - OpenCode can use TTY
+            stdio: ['inherit', 'pipe', 'pipe'], // stdin inherited, stdout/stderr piped for interception
             cwd: process.cwd(),
             env: {
                 ...process.env,
@@ -485,6 +488,30 @@ async function executeOpenCode(objective) {
                 DEFAULT_LLM_PROVIDER: defaultProvider || ''
             }
         });
+        // Conditionally use output interceptor based on --no-interceptor flag
+        const useInterceptor = options?.interceptor !== false;
+        const quiet = process.env.QUIET === 'true';
+        if (useInterceptor) {
+            // Create output interceptor for beautiful MCP formatting
+            const interceptor = (0, opencode_output_interceptor_js_1.interceptOpenCodeOutput)({ quiet });
+            // Pipe OpenCode stdout through interceptor to user's stdout
+            if (opencodeProcess.stdout) {
+                opencodeProcess.stdout.pipe(interceptor).pipe(process.stdout);
+            }
+            // Pipe OpenCode stderr through interceptor to user's stderr
+            if (opencodeProcess.stderr) {
+                opencodeProcess.stderr.pipe(interceptor).pipe(process.stderr);
+            }
+        }
+        else {
+            // Direct pipe without interceptor (bypass mode)
+            if (opencodeProcess.stdout) {
+                opencodeProcess.stdout.pipe(process.stdout);
+            }
+            if (opencodeProcess.stderr) {
+                opencodeProcess.stderr.pipe(process.stderr);
+            }
+        }
         // Set up process monitoring
         return new Promise((resolve) => {
             opencodeProcess.on('close', async (code) => {
@@ -1330,8 +1357,8 @@ program
     .action(async (sessionId, options) => {
     cliLogger.info('\n🔍 Checking swarm status...\n');
     try {
-        const { QueenMemorySystem } = await Promise.resolve().then(() => __importStar(require('./queen/queen-memory.js')));
-        const memorySystem = new QueenMemorySystem();
+        const { SessionMemorySystem } = await Promise.resolve().then(() => __importStar(require('./memory/session-memory.js')));
+        const memorySystem = new SessionMemorySystem();
         if (!sessionId) {
             // List all recent swarm sessions
             cliLogger.info('📋 Recent swarm sessions:');
@@ -1584,33 +1611,45 @@ program
         await copyOpenCodeConfig(targetDir, options.force);
         // Copy OpenCode themes
         await copyOpenCodeThemes(targetDir, options.force);
+        // Copy MCP server management scripts
+        console.log('🔧 Setting up MCP server management scripts...');
+        await copyMCPServerScripts(targetDir, options.force);
         console.log(chalk_1.default.green.bold('\n✅ Snow-Flow project initialized successfully!'));
         console.log('\n📋 Created Snow-Flow configuration:');
         console.log('   ✓ .opencode/ - OpenCode configuration with both MCP servers');
         console.log('   ✓ .opencode/themes/ - ServiceNow custom theme for OpenCode');
         console.log('   ✓ .claude/ - Claude Code MCP configuration (backward compatibility)');
-        console.log('   ✓ .mcp.json - 2 unified MCP servers (411 tools total)');
+        console.log('   ✓ .mcp.json - 2 unified MCP servers (370 tools total)');
+        console.log('   ✓ scripts/ - MCP server management and OpenCode launcher');
         console.log('   ✓ AGENTS.md - OpenCode primary instructions');
         console.log('   ✓ CLAUDE.md - Claude Code compatibility');
         console.log('   ✓ README.md - Complete capabilities documentation');
+        console.log('   ✓ OPENCODE-TROUBLESHOOTING.md - Troubleshooting guide');
         console.log('   ✓ .snow-flow/ - Project workspace and memory');
         if (!options.skipMcp) {
             // NOTE: MCP servers work with OpenCode's native Task() system
             console.log(chalk_1.default.blue('\nℹ️  MCP servers configured for OpenCode (also compatible with Claude Code)'));
             console.log(chalk_1.default.green('✅ 411 ServiceNow tools automatically available via 2 unified servers'));
             console.log(chalk_1.default.blue('📋 SDK handles MCP server lifecycle automatically'));
+            // Verify MCP servers can actually start
+            console.log(chalk_1.default.dim('\n🔍 Verifying MCP server configuration...'));
+            await verifyMCPServers(targetDir);
         }
         // Check and optionally install OpenCode
         const configImported = await checkAndInstallOpenCode();
         console.log(chalk_1.default.blue.bold('\n🎯 Next steps:'));
-        console.log('1. Authenticate: ' + chalk_1.default.cyan('snow-flow auth login'));
+        console.log('1. Configure credentials: Edit ' + chalk_1.default.cyan('.env'));
+        console.log('   - Add your ServiceNow instance URL, username/password or OAuth credentials');
+        console.log('2. Authenticate: ' + chalk_1.default.cyan('snow-flow auth login'));
         console.log('   - Authenticates with your LLM provider (Claude/OpenAI/Google/Ollama)');
         console.log('   - Then authenticates with ServiceNow OAuth');
         console.log('   - Your provider choice is automatically saved to .env');
-        console.log('2. Start developing: ' + chalk_1.default.cyan('snow-flow swarm "create incident dashboard"'));
+        console.log('3. Start developing with OpenCode: ' + chalk_1.default.cyan('./scripts/start-opencode.sh'));
+        console.log('   - Smart launcher with pre-flight checks and MCP server management');
+        console.log('   - Or use swarm: ' + chalk_1.default.cyan('snow-flow swarm "create incident dashboard"'));
         console.log('   - Or launch OpenCode directly: ' + chalk_1.default.cyan('opencode'));
         console.log('\n📚 Documentation: ' + chalk_1.default.blue('https://github.com/groeimetai/snow-flow'));
-        console.log('💡 411 ServiceNow tools • 2 MCP servers • Multi-LLM support');
+        console.log('💡 370+ ServiceNow tools • 2 MCP servers • Multi-LLM support');
         // Force exit to prevent hanging
         process.exit(0);
     }
@@ -1796,7 +1835,8 @@ async function createDirectoryStructure(targetDir, force = false) {
         'memory', 'memory/agents', 'memory/sessions',
         'coordination', 'coordination/memory_bank', 'coordination/subtasks',
         'servicenow', 'servicenow/widgets', 'servicenow/workflows', 'servicenow/scripts',
-        'templates', 'templates/widgets', 'templates/workflows'
+        'templates', 'templates/widgets', 'templates/workflows',
+        'scripts'
     ];
     for (const dir of directories) {
         const dirPath = (0, path_1.join)(targetDir, dir);
@@ -2020,9 +2060,266 @@ async function copyOpenCodeThemes(targetDir, force = false) {
         console.error('❌ Error copying OpenCode themes:', error);
     }
 }
+/**
+ * Verify MCP servers can actually start and respond
+ */
+async function verifyMCPServers(targetDir) {
+    const { spawn } = require('child_process');
+    const path = require('path');
+    const fs = require('fs').promises;
+    try {
+        // Read OpenCode configuration
+        const configPath = path.join(targetDir, '.opencode', 'opencode.json');
+        const configContent = await fs.readFile(configPath, 'utf-8');
+        const config = JSON.parse(configContent);
+        if (!config.mcp) {
+            console.log(chalk_1.default.yellow('   ⚠️  No MCP servers configured'));
+            return;
+        }
+        const serverNames = Object.keys(config.mcp);
+        let successCount = 0;
+        let failCount = 0;
+        for (const serverName of serverNames) {
+            const serverConfig = config.mcp[serverName];
+            if (!serverConfig.enabled) {
+                console.log(chalk_1.default.dim(`   ⊘ ${serverName} (disabled)`));
+                continue;
+            }
+            process.stdout.write(chalk_1.default.dim(`   Testing ${serverName}... `));
+            try {
+                // Try to spawn the MCP server
+                const serverProcess = spawn(serverConfig.command, serverConfig.args, {
+                    env: { ...process.env, ...serverConfig.env },
+                    stdio: ['pipe', 'pipe', 'pipe']
+                });
+                let responded = false;
+                let error = '';
+                // Set timeout for server startup
+                const timeout = setTimeout(() => {
+                    if (!responded) {
+                        serverProcess.kill();
+                    }
+                }, 5000);
+                // Listen for any output (indicates server started)
+                serverProcess.stdout.on('data', (data) => {
+                    responded = true;
+                    clearTimeout(timeout);
+                    serverProcess.kill();
+                });
+                serverProcess.stderr.on('data', (data) => {
+                    error += data.toString();
+                });
+                // Wait for server to respond or timeout
+                await new Promise((resolve) => {
+                    serverProcess.on('close', () => resolve(null));
+                    setTimeout(() => {
+                        if (serverProcess.killed)
+                            resolve(null);
+                    }, 5500);
+                });
+                if (responded) {
+                    console.log(chalk_1.default.green('✓'));
+                    successCount++;
+                }
+                else if (error.includes('Cannot find module') || error.includes('ENOENT')) {
+                    console.log(chalk_1.default.red('✗ (server file not found)'));
+                    console.log(chalk_1.default.yellow(`      Check: ${serverConfig.args[0]}`));
+                    failCount++;
+                }
+                else if (error) {
+                    console.log(chalk_1.default.red('✗'));
+                    console.log(chalk_1.default.dim(`      ${error.split('\n')[0].substring(0, 60)}...`));
+                    failCount++;
+                }
+                else {
+                    console.log(chalk_1.default.yellow('⚠ (no response, may need credentials)'));
+                    // This is actually OK - server started but needs auth
+                    successCount++;
+                }
+            }
+            catch (err) {
+                console.log(chalk_1.default.red('✗'));
+                console.log(chalk_1.default.dim(`      ${err.message}`));
+                failCount++;
+            }
+        }
+        // Summary
+        console.log();
+        if (failCount === 0) {
+            console.log(chalk_1.default.green(`   ✅ All ${successCount} MCP server(s) verified successfully`));
+        }
+        else {
+            console.log(chalk_1.default.yellow(`   ⚠️  ${successCount} verified, ${failCount} failed`));
+            console.log(chalk_1.default.dim('   Run with credentials configured to fully test servers'));
+        }
+    }
+    catch (error) {
+        console.log(chalk_1.default.yellow(`   ⚠️  Could not verify MCP servers: ${error.message}`));
+        console.log(chalk_1.default.dim('   Servers will be tested when OpenCode starts'));
+    }
+}
+async function copyMCPServerScripts(targetDir, force = false) {
+    try {
+        // Determine the snow-flow installation directory (same logic as other copy functions)
+        let snowFlowRoot;
+        const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
+            __dirname.includes('node_modules/.pnpm') ||
+            __dirname.includes('npm/snow-flow');
+        if (isGlobalInstall) {
+            const parts = __dirname.split(/node_modules[\/\\]/);
+            snowFlowRoot = parts[0] + 'node_modules/snow-flow';
+        }
+        else {
+            let currentDir = __dirname;
+            while (currentDir !== '/') {
+                try {
+                    const packageJsonPath = (0, path_1.join)(currentDir, 'package.json');
+                    const packageJson = JSON.parse(await fs_1.promises.readFile(packageJsonPath, 'utf-8'));
+                    if (packageJson.name === 'snow-flow') {
+                        snowFlowRoot = currentDir;
+                        break;
+                    }
+                }
+                catch {
+                    // Continue searching up
+                }
+                currentDir = (0, path_1.dirname)(currentDir);
+            }
+            if (!snowFlowRoot) {
+                throw new Error('Could not find snow-flow project root');
+            }
+        }
+        // Find scripts directory
+        const scriptsSourcePaths = [
+            (0, path_1.join)(snowFlowRoot, 'scripts'),
+            (0, path_1.join)(__dirname, '..', 'scripts'),
+            (0, path_1.join)(__dirname, 'scripts')
+        ];
+        let scriptsSourceDir = null;
+        for (const sourcePath of scriptsSourcePaths) {
+            try {
+                await fs_1.promises.access(sourcePath);
+                scriptsSourceDir = sourcePath;
+                console.log(`✅ Found scripts directory at: ${sourcePath}`);
+                break;
+            }
+            catch {
+                // Continue to next path
+            }
+        }
+        if (!scriptsSourceDir) {
+            console.log('⚠️  Could not find scripts directory, skipping script installation');
+            return;
+        }
+        // Create target scripts directory
+        const scriptsTargetDir = (0, path_1.join)(targetDir, 'scripts');
+        await fs_1.promises.mkdir(scriptsTargetDir, { recursive: true });
+        // Copy specific scripts
+        const scriptFiles = [
+            'mcp-server-manager.sh',
+            'start-opencode.sh'
+        ];
+        let copiedCount = 0;
+        for (const scriptFile of scriptFiles) {
+            const sourcePath = (0, path_1.join)(scriptsSourceDir, scriptFile);
+            const targetPath = (0, path_1.join)(scriptsTargetDir, scriptFile);
+            try {
+                // Check if file already exists
+                try {
+                    await fs_1.promises.access(targetPath);
+                    if (!force) {
+                        console.log(`✅ Script ${scriptFile} already exists`);
+                        continue;
+                    }
+                }
+                catch {
+                    // File doesn't exist, continue with copy
+                }
+                const content = await fs_1.promises.readFile(sourcePath, 'utf8');
+                await fs_1.promises.writeFile(targetPath, content, { mode: 0o755 }); // Make executable
+                copiedCount++;
+            }
+            catch (error) {
+                console.log(`⚠️  Could not copy script ${scriptFile}:`, error);
+            }
+        }
+        if (copiedCount > 0) {
+            console.log(`✅ Copied ${copiedCount} MCP server management script(s) to scripts/`);
+            console.log(`✅ Scripts are executable and ready to use`);
+        }
+        // Also copy OPENCODE-TROUBLESHOOTING.md to project root
+        const troubleshootingSourcePaths = [
+            (0, path_1.join)(snowFlowRoot, 'OPENCODE-TROUBLESHOOTING.md'),
+            (0, path_1.join)(__dirname, '..', 'OPENCODE-TROUBLESHOOTING.md'),
+            (0, path_1.join)(__dirname, 'OPENCODE-TROUBLESHOOTING.md')
+        ];
+        let troubleshootingSourcePath = null;
+        for (const sourcePath of troubleshootingSourcePaths) {
+            try {
+                await fs_1.promises.access(sourcePath);
+                troubleshootingSourcePath = sourcePath;
+                break;
+            }
+            catch {
+                // Continue to next path
+            }
+        }
+        if (troubleshootingSourcePath) {
+            const targetPath = (0, path_1.join)(targetDir, 'OPENCODE-TROUBLESHOOTING.md');
+            try {
+                await fs_1.promises.access(targetPath);
+                if (!force) {
+                    console.log(`✅ OPENCODE-TROUBLESHOOTING.md already exists`);
+                }
+                else {
+                    const content = await fs_1.promises.readFile(troubleshootingSourcePath, 'utf8');
+                    await fs_1.promises.writeFile(targetPath, content);
+                    console.log(`✅ Created OPENCODE-TROUBLESHOOTING.md`);
+                }
+            }
+            catch {
+                const content = await fs_1.promises.readFile(troubleshootingSourcePath, 'utf8');
+                await fs_1.promises.writeFile(targetPath, content);
+                console.log(`✅ Created OPENCODE-TROUBLESHOOTING.md`);
+            }
+        }
+    }
+    catch (error) {
+        console.error('❌ Error copying MCP server scripts:', error);
+    }
+}
 async function copyCLAUDEmd(targetDir, force = false) {
     let claudeMdContent = '';
     let agentsMdContent = '';
+    // Determine the snow-flow installation directory for absolute MCP paths
+    let snowFlowRoot;
+    const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
+        __dirname.includes('node_modules/.pnpm') ||
+        __dirname.includes('npm/snow-flow');
+    if (isGlobalInstall) {
+        const parts = __dirname.split(/node_modules[\/\\]/);
+        snowFlowRoot = parts[0] + 'node_modules/snow-flow';
+    }
+    else {
+        let currentDir = __dirname;
+        while (currentDir !== '/') {
+            try {
+                const packageJsonPath = (0, path_1.join)(currentDir, 'package.json');
+                const packageJson = JSON.parse(await fs_1.promises.readFile(packageJsonPath, 'utf-8'));
+                if (packageJson.name === 'snow-flow') {
+                    snowFlowRoot = currentDir;
+                    break;
+                }
+            }
+            catch {
+                // Continue searching up
+            }
+            currentDir = (0, path_1.dirname)(currentDir);
+        }
+        if (!snowFlowRoot) {
+            throw new Error('Could not find snow-flow project root');
+        }
+    }
     try {
         // First try to find the CLAUDE.md in the source directory (for global installs)
         const sourceClaudeFiles = [
@@ -2115,6 +2412,8 @@ async function copyCLAUDEmd(targetDir, force = false) {
                 // Silently continue - agent configs are in opencode.json, not separate files
             }
             // Create .opencode/opencode.json with both MCP servers
+            // CRITICAL: Use ABSOLUTE paths so OpenCode can find the servers!
+            const distPath = (0, path_1.join)(snowFlowRoot, 'dist');
             const opencodeConfig = {
                 name: "snow-flow",
                 description: "ServiceNow development with OpenCode and multi-LLM support",
@@ -2127,11 +2426,13 @@ async function copyCLAUDEmd(targetDir, force = false) {
                     "servicenow-unified": {
                         type: "local",
                         command: "node",
-                        args: ["dist/mcp/servicenow-mcp-unified/index.js"],
+                        args: [(0, path_1.join)(distPath, "mcp/servicenow-mcp-unified/index.js")],
                         env: {
-                            SNOW_INSTANCE: "${SNOW_INSTANCE}",
-                            SNOW_CLIENT_ID: "${SNOW_CLIENT_ID}",
-                            SNOW_CLIENT_SECRET: "${SNOW_CLIENT_SECRET}"
+                            SERVICENOW_INSTANCE_URL: "https://${SNOW_INSTANCE}",
+                            SERVICENOW_CLIENT_ID: "${SNOW_CLIENT_ID}",
+                            SERVICENOW_CLIENT_SECRET: "${SNOW_CLIENT_SECRET}",
+                            SERVICENOW_USERNAME: "${SNOW_USERNAME}",
+                            SERVICENOW_PASSWORD: "${SNOW_PASSWORD}"
                         },
                         enabled: true,
                         description: "Unified ServiceNow MCP server with 235+ tools"
@@ -2139,7 +2440,7 @@ async function copyCLAUDEmd(targetDir, force = false) {
                     "snow-flow": {
                         type: "local",
                         command: "node",
-                        args: ["dist/mcp/snow-flow-mcp.js"],
+                        args: [(0, path_1.join)(distPath, "mcp/snow-flow-mcp.js")],
                         env: {
                             SNOW_FLOW_ENV: "production"
                         },
@@ -2972,238 +3273,18 @@ async function handleMCPDebug(options) {
     console.log('   3. Start developing: snow-flow swarm "your objective"');
     console.log('   4. OpenCode will automatically connect to Snow-Flow\'s MCP servers');
 }
-// SPARC Detailed Help Command
-program
-    .command('sparc-help')
-    .description('Show detailed SPARC help information')
-    .action(async () => {
-    try {
-        const { displayTeamHelp } = await Promise.resolve().then(() => __importStar(require('./sparc/sparc-help.js')));
-        displayTeamHelp();
-    }
-    catch (error) {
-        console.error('❌ Failed to load SPARC help:', error instanceof Error ? error.message : String(error));
-    }
-});
-// ===================================================
-// 👑 QUEEN AGENT COMMANDS - Elegant Orchestration
-// ===================================================
-/**
- * Main Queen command - replaces complex swarm orchestration
- * Simple, elegant, and intelligent ServiceNow objective execution
- */
-program
-    .command('queen <objective>')
-    .description('🐝 Execute ServiceNow objective with Queen Agent hive-mind intelligence')
-    .option('--learn', 'Enable enhanced learning from execution (default: true)', true)
-    .option('--no-learn', 'Disable learning')
-    .option('--debug', 'Enable debug mode for detailed insights')
-    .option('--dry-run', 'Preview execution plan without deployment')
-    .option('--memory-driven', 'Use memory for optimal workflow patterns')
-    .option('--monitor', 'Show real-time hive-mind monitoring')
-    .option('--type <type>', 'Hint at task type (widget, flow, app, integration)')
-    .action(async (objective, options) => {
-    // Check for flow deprecation first
-    checkFlowDeprecation('queen', objective);
-    console.log(`\n👑 ServiceNow Queen Agent v${version_js_1.VERSION} - Hive-Mind Intelligence`);
-    console.log('🐝 Elegant orchestration replacing complex team coordination\n');
-    try {
-        const { QueenIntegration } = await Promise.resolve().then(() => __importStar(require('./examples/queen/integration-example.js')));
-        const queenIntegration = new QueenIntegration({
-            debugMode: options.debug || false
-        });
-        if (options.dryRun) {
-            console.log('🔍 DRY RUN MODE - Analyzing objective...');
-            // TODO: Add dry run analysis
-            console.log(`📋 Objective: ${objective}`);
-            console.log('🎯 Queen would analyze, spawn agents, coordinate, and deploy');
-            return;
-        }
-        console.log(`🎯 Queen analyzing objective: ${objective}`);
-        const result = await queenIntegration.executeSwarmObjective(objective, {
-            learn: options.learn,
-            memoryDriven: options.memoryDriven,
-            monitor: options.monitor
-        });
-        if (result.success) {
-            console.log('\n✅ Queen Agent completed objective successfully!');
-            console.log(`🐝 Hive-Mind coordination: ${result.queen_managed ? 'ACTIVE' : 'INACTIVE'}`);
-            if (result.hive_mind_status) {
-                console.log(`👥 Active Agents: ${result.hive_mind_status.activeAgents}`);
-                console.log(`📋 Active Tasks: ${result.hive_mind_status.activeTasks}`);
-                console.log(`🧠 Learned Patterns: ${result.hive_mind_status.memoryStats.patterns}`);
-            }
-            if (options.monitor) {
-                console.log('\n📊 HIVE-MIND MONITORING:');
-                queenIntegration.logHiveMindStatus();
-            }
-        }
-        else {
-            console.error('\n❌ Queen Agent execution failed!');
-            if (result.fallback_required) {
-                console.log('🔄 Consider using traditional swarm command as fallback:');
-                console.log(`   snow-flow swarm "${objective}"`);
-            }
-            process.exit(1);
-        }
-        await queenIntegration.shutdown();
-    }
-    catch (error) {
-        console.error('\n💥 Queen Agent error:', error.message);
-        console.log('\n🔄 Fallback to traditional swarm:');
-        console.log(`   snow-flow swarm "${objective}"`);
-        process.exit(1);
-    }
-});
-/**
- * Queen Memory Management
- */
-const queenMemory = program.command('queen-memory');
-queenMemory.description('🧠 Manage Queen Agent hive-mind memory');
-queenMemory
-    .command('export [file]')
-    .description('Export Queen memory to file')
-    .action(async (file = 'queen-memory.json') => {
-    console.log(`\n🧠 Exporting Queen hive-mind memory to ${file}...`);
-    try {
-        const { createServiceNowQueen } = await Promise.resolve().then(() => __importStar(require('./queen/index.js')));
-        const queen = createServiceNowQueen({ debugMode: true });
-        const memoryData = queen.exportMemory();
-        const { promises: fs } = await Promise.resolve().then(() => __importStar(require('fs')));
-        await fs.writeFile(file, memoryData, 'utf-8');
-        console.log(`✅ Memory exported successfully to ${file}`);
-        console.log(`📊 Memory contains learned patterns and successful deployments`);
-        await queen.shutdown();
-    }
-    catch (error) {
-        console.error('❌ Memory export failed:', error.message);
-        process.exit(1);
-    }
-});
-queenMemory
-    .command('import <file>')
-    .description('Import Queen memory from file')
-    .action(async (file) => {
-    console.log(`\n🧠 Importing Queen hive-mind memory from ${file}...`);
-    try {
-        const { promises: fs } = await Promise.resolve().then(() => __importStar(require('fs')));
-        const memoryData = await fs.readFile(file, 'utf-8');
-        const { createServiceNowQueen } = await Promise.resolve().then(() => __importStar(require('./queen/index.js')));
-        const queen = createServiceNowQueen({ debugMode: true });
-        queen.importMemory(memoryData);
-        console.log(`✅ Memory imported successfully from ${file}`);
-        console.log(`🧠 Queen now has access to previous learning patterns`);
-        await queen.shutdown();
-    }
-    catch (error) {
-        console.error('❌ Memory import failed:', error.message);
-        process.exit(1);
-    }
-});
-queenMemory
-    .command('clear')
-    .description('Clear Queen memory (reset learning)')
-    .option('--confirm', 'Confirm memory clearing')
-    .action(async (options) => {
-    if (!options.confirm) {
-        console.log('\n⚠️  This will clear all Queen hive-mind learning!');
-        console.log('Use --confirm to proceed: snow-flow queen-memory clear --confirm');
-        return;
-    }
-    console.log('\n🧠 Clearing Queen hive-mind memory...');
-    try {
-        const { createServiceNowQueen } = await Promise.resolve().then(() => __importStar(require('./queen/index.js')));
-        const queen = createServiceNowQueen({ debugMode: true });
-        queen.clearMemory();
-        console.log('✅ Queen memory cleared successfully');
-        console.log('🔄 Queen will start fresh learning from next execution');
-        await queen.shutdown();
-    }
-    catch (error) {
-        console.error('❌ Memory clear failed:', error.message);
-        process.exit(1);
-    }
-});
-/**
- * Queen Status and Insights
- */
-program
-    .command('queen-status')
-    .description('📊 Show Queen Agent hive-mind status and insights')
-    .option('--detailed', 'Show detailed memory and learning statistics')
-    .action(async (options) => {
-    console.log(`\n👑 ServiceNow Queen Agent Status v${version_js_1.VERSION}`);
-    try {
-        const { createServiceNowQueen } = await Promise.resolve().then(() => __importStar(require('./queen/index.js')));
-        const queen = createServiceNowQueen({ debugMode: true });
-        const status = queen.getHiveMindStatus();
-        console.log('\n🐝 HIVE-MIND STATUS 🐝');
-        console.log('═══════════════════════');
-        console.log(`📋 Active Tasks: ${status.activeTasks}`);
-        console.log(`👥 Active Agents: ${status.activeAgents}`);
-        console.log(`🧠 Learned Patterns: ${status.memoryStats.patterns}`);
-        console.log(`📚 Stored Artifacts: ${status.memoryStats.artifacts}`);
-        console.log(`💡 Learning Insights: ${status.memoryStats.learnings}`);
-        if (status.factoryStats.agentTypeCounts) {
-            console.log('\n👥 AGENT BREAKDOWN:');
-            Object.entries(status.factoryStats.agentTypeCounts).forEach(([type, count]) => {
-                console.log(`   ${type}: ${count}`);
-            });
-        }
-        if (options.detailed) {
-            console.log('\n🔍 DETAILED MEMORY ANALYSIS:');
-            console.log(`   Memory Size: ${status.memoryStats.totalSize || 'Unknown'}`);
-            console.log(`   Success Rate: ${status.memoryStats.successRate || 'Unknown'}%`);
-            console.log(`   Most Effective Pattern: ${status.memoryStats.bestPattern || 'Learning...'}`);
-        }
-        console.log('═══════════════════════\n');
-        await queen.shutdown();
-    }
-    catch (error) {
-        console.error('❌ Status check failed:', error.message);
-        process.exit(1);
-    }
-});
-program
-    .command('queen-insights')
-    .description('💡 Show Queen Agent learning insights and recommendations')
-    .action(async () => {
-    console.log(`\n💡 Queen Agent Learning Insights v${version_js_1.VERSION}`);
-    try {
-        const { createServiceNowQueen } = await Promise.resolve().then(() => __importStar(require('./queen/index.js')));
-        const queen = createServiceNowQueen({ debugMode: true });
-        const insights = queen.getLearningInsights();
-        console.log('\n🧠 LEARNING INSIGHTS 🧠');
-        console.log('═══════════════════════');
-        if (insights.successfulPatterns && insights.successfulPatterns.length > 0) {
-            console.log('\n✅ SUCCESSFUL PATTERNS:');
-            insights.successfulPatterns.forEach((pattern, idx) => {
-                console.log(`   ${idx + 1}. ${pattern.description} (${pattern.successRate}% success)`);
-            });
-        }
-        else {
-            console.log('\n📚 No patterns learned yet - execute objectives to build intelligence');
-        }
-        if (insights.recommendations && insights.recommendations.length > 0) {
-            console.log('\n💡 RECOMMENDATIONS:');
-            insights.recommendations.forEach((rec, idx) => {
-                console.log(`   ${idx + 1}. ${rec}`);
-            });
-        }
-        if (insights.commonTasks && insights.commonTasks.length > 0) {
-            console.log('\n🎯 COMMON TASK TYPES:');
-            insights.commonTasks.forEach((task, idx) => {
-                console.log(`   ${idx + 1}. ${task.type}: ${task.count} executions`);
-            });
-        }
-        console.log('═══════════════════════\n');
-        await queen.shutdown();
-    }
-    catch (error) {
-        console.error('❌ Insights failed:', error.message);
-        process.exit(1);
-    }
-});
+// SPARC Detailed Help Command - DISABLED (sparc-help.js file missing)
+// program
+//   .command('sparc-help')
+//   .description('Show detailed SPARC help information')
+//   .action(async () => {
+//     try {
+//       const { displayTeamHelp } = await import('./sparc/sparc-help.js');
+//       displayTeamHelp();
+//     } catch (error) {
+//       console.error('❌ Failed to load SPARC help:', error instanceof Error ? error.message : String(error));
+//     }
+//   });
 // ===================================================
 // 📤 CLAUDE DESKTOP EXPORT COMMAND
 // ===================================================

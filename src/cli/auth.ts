@@ -9,6 +9,56 @@ const authLogger = new Logger('auth');
 export function registerAuthCommands(program: Command) {
   const auth = program.command('auth').description('ServiceNow authentication management');
 
+  // List available models for a provider
+  auth
+    .command('models')
+    .description('List available models for LLM providers')
+    .option('-p, --provider <provider>', 'Provider to list models for (anthropic, openai, google, ollama)')
+    .action(async (options) => {
+      const { getAllProviderModels, getProviderModels } = await import('../utils/dynamic-models.js');
+
+      console.log(chalk.blue('\n🤖 Available LLM Models\n'));
+
+      if (options.provider) {
+        // List models for specific provider
+        console.log(chalk.cyan(`${options.provider.toUpperCase()}:\n`));
+        const models = await getProviderModels(options.provider);
+
+        if (models.length > 0) {
+          models.forEach((model, i) => {
+            console.log(`  ${i + 1}. ${chalk.white(model.name)}`);
+            console.log(`     ${chalk.dim('ID:')} ${chalk.yellow(model.value)}`);
+            if (model.contextWindow) {
+              console.log(`     ${chalk.dim('Context:')} ${chalk.green(model.contextWindow.toLocaleString() + ' tokens')}`);
+            }
+            console.log();
+          });
+        } else {
+          console.log(chalk.yellow('  No models available for this provider\n'));
+        }
+      } else {
+        // List all providers
+        const allModels = await getAllProviderModels();
+
+        for (const [provider, models] of Object.entries(allModels)) {
+          console.log(chalk.cyan(`${provider.toUpperCase()}:\n`));
+
+          if (models.length > 0) {
+            models.forEach((model, i) => {
+              console.log(`  ${i + 1}. ${chalk.white(model.name)}`);
+              console.log(`     ${chalk.dim('ID:')} ${chalk.yellow(model.value)}`);
+              console.log();
+            });
+          } else {
+            console.log(chalk.yellow('  No models available\n'));
+          }
+        }
+      }
+
+      console.log(chalk.dim('💡 Tip: Use --provider to see models for a specific provider'));
+      console.log(chalk.dim('Example: snow-flow auth models --provider anthropic\n'));
+    });
+
   auth
     .command('login')
     .description('Authenticate with LLM provider (Claude Pro/Max) and ServiceNow')
@@ -100,41 +150,30 @@ export function registerAuthCommands(program: Command) {
             }]);
 
             if (selectedProvider !== 'other') {
-              // Define recommended models per provider
-              const providerModels: Record<string, Array<{name: string, value: string}>> = {
-                'anthropic': [
-                  { name: 'Claude Sonnet 4 (Best balance, 200K context)', value: 'claude-sonnet-4' },
-                  { name: 'Claude Opus 4 (Most capable, 200K context)', value: 'claude-opus-4' },
-                  { name: 'Claude Sonnet 3.5 (Legacy, 200K context)', value: 'claude-3-5-sonnet-20241022' }
-                ],
-                'openai': [
-                  { name: 'GPT-4o (Best balance, 128K context)', value: 'gpt-4o' },
-                  { name: 'GPT-4o-mini (Faster, cheaper, 128K context)', value: 'gpt-4o-mini' },
-                  { name: 'o1 (Advanced reasoning, 200K context)', value: 'o1' },
-                  { name: 'o1-mini (Faster reasoning, 128K context)', value: 'o1-mini' }
-                ],
-                'google': [
-                  { name: 'Gemini 2.0 Flash Exp (Fast, 1M context)', value: 'gemini-2.0-flash-exp' },
-                  { name: 'Gemini 1.5 Pro (Most capable, 2M context)', value: 'gemini-1.5-pro' },
-                  { name: 'Gemini 1.5 Flash (Balanced, 1M context)', value: 'gemini-1.5-flash' }
-                ],
-                'ollama': [
-                  { name: 'Llama 3.3 70B (Best open model)', value: 'llama3.3:70b' },
-                  { name: 'Qwen 2.5 Coder 32B (Best for coding)', value: 'qwen2.5-coder:32b' },
-                  { name: 'DeepSeek R1 (Reasoning model)', value: 'deepseek-r1' }
-                ]
-              };
+              // Dynamically fetch latest models from provider APIs
+              const { getProviderModels } = await import('../utils/dynamic-models.js');
+
+              console.log(chalk.dim(`   Fetching latest ${selectedProvider} models...`));
+
+              const models = await getProviderModels(selectedProvider);
 
               // Ask for preferred model
               let selectedModel = '';
-              if (providerModels[selectedProvider]) {
+              if (models && models.length > 0) {
+                const choices = models.map(m => ({
+                  name: m.name,
+                  value: m.value
+                }));
+
                 const { chosenModel } = await inquirer.prompt([{
                   type: 'list',
                   name: 'chosenModel',
                   message: `Which ${selectedProvider} model do you want to use by default?`,
-                  choices: providerModels[selectedProvider]
+                  choices: choices
                 }]);
                 selectedModel = chosenModel;
+              } else {
+                console.log(chalk.yellow(`   ⚠️  Could not fetch models for ${selectedProvider}, skipping model selection`));
               }
 
               // Save provider AND model to .env file

@@ -10,8 +10,9 @@
   "mcp": {
     "servicenow-unified": {
       "type": "local",
-      "command": ["node", "dist/mcp/servicenow-mcp-unified/index.js"],
-      "environment": {
+      "command": "node",
+      "args": ["dist/mcp/servicenow-mcp-unified/index.js"],
+      "env": {
         "SERVICENOW_INSTANCE_URL": "https://${SNOW_INSTANCE}",
         "SERVICENOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
         "SERVICENOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
@@ -22,8 +23,9 @@
     },
     "snow-flow": {
       "type": "local",
-      "command": ["node", "dist/mcp/snow-flow-mcp.js"],
-      "environment": {
+      "command": "node",
+      "args": ["dist/mcp/snow-flow-mcp.js"],
+      "env": {
         "SNOW_FLOW_ENV": "production"
       },
       "enabled": true

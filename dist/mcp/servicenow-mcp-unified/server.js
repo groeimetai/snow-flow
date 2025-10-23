@@ -39,20 +39,37 @@ class ServiceNowUnifiedServer {
     }
     /**
      * Load ServiceNow context from environment variables
+     * Note: Server will start even without credentials (unauthenticated mode)
      */
     loadContext() {
         const instanceUrl = process.env.SERVICENOW_INSTANCE_URL;
         const clientId = process.env.SERVICENOW_CLIENT_ID;
         const clientSecret = process.env.SERVICENOW_CLIENT_SECRET;
         const refreshToken = process.env.SERVICENOW_REFRESH_TOKEN;
+        const username = process.env.SERVICENOW_USERNAME;
+        const password = process.env.SERVICENOW_PASSWORD;
+        // Allow server to start without credentials (tools will fail gracefully)
         if (!instanceUrl || !clientId || !clientSecret) {
-            throw new Error('Missing required environment variables: SERVICENOW_INSTANCE_URL, SERVICENOW_CLIENT_ID, SERVICENOW_CLIENT_SECRET');
+            console.error('[Auth] Warning: Missing ServiceNow credentials (SERVICENOW_INSTANCE_URL, SERVICENOW_CLIENT_ID, SERVICENOW_CLIENT_SECRET)');
+            console.error('[Auth] Server starting in UNAUTHENTICATED mode - tools will return authentication errors');
+            console.error('[Auth] Configure credentials in .env to enable ServiceNow integration');
+            // Return empty context - tools will fail with clear auth errors
+            return {
+                instanceUrl: instanceUrl || '',
+                clientId: clientId || '',
+                clientSecret: clientSecret || '',
+                refreshToken,
+                username,
+                password
+            };
         }
         return {
             instanceUrl,
             clientId,
             clientSecret,
-            refreshToken
+            refreshToken,
+            username,
+            password
         };
     }
     /**

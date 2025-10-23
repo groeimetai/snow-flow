@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -11,6 +44,52 @@ const logger_js_1 = require("../utils/logger.js");
 const authLogger = new logger_js_1.Logger('auth');
 function registerAuthCommands(program) {
     const auth = program.command('auth').description('ServiceNow authentication management');
+    // List available models for a provider
+    auth
+        .command('models')
+        .description('List available models for LLM providers')
+        .option('-p, --provider <provider>', 'Provider to list models for (anthropic, openai, google, ollama)')
+        .action(async (options) => {
+        const { getAllProviderModels, getProviderModels } = await Promise.resolve().then(() => __importStar(require('../utils/dynamic-models.js')));
+        console.log(chalk_1.default.blue('\n🤖 Available LLM Models\n'));
+        if (options.provider) {
+            // List models for specific provider
+            console.log(chalk_1.default.cyan(`${options.provider.toUpperCase()}:\n`));
+            const models = await getProviderModels(options.provider);
+            if (models.length > 0) {
+                models.forEach((model, i) => {
+                    console.log(`  ${i + 1}. ${chalk_1.default.white(model.name)}`);
+                    console.log(`     ${chalk_1.default.dim('ID:')} ${chalk_1.default.yellow(model.value)}`);
+                    if (model.contextWindow) {
+                        console.log(`     ${chalk_1.default.dim('Context:')} ${chalk_1.default.green(model.contextWindow.toLocaleString() + ' tokens')}`);
+                    }
+                    console.log();
+                });
+            }
+            else {
+                console.log(chalk_1.default.yellow('  No models available for this provider\n'));
+            }
+        }
+        else {
+            // List all providers
+            const allModels = await getAllProviderModels();
+            for (const [provider, models] of Object.entries(allModels)) {
+                console.log(chalk_1.default.cyan(`${provider.toUpperCase()}:\n`));
+                if (models.length > 0) {
+                    models.forEach((model, i) => {
+                        console.log(`  ${i + 1}. ${chalk_1.default.white(model.name)}`);
+                        console.log(`     ${chalk_1.default.dim('ID:')} ${chalk_1.default.yellow(model.value)}`);
+                        console.log();
+                    });
+                }
+                else {
+                    console.log(chalk_1.default.yellow('  No models available\n'));
+                }
+            }
+        }
+        console.log(chalk_1.default.dim('💡 Tip: Use --provider to see models for a specific provider'));
+        console.log(chalk_1.default.dim('Example: snow-flow auth models --provider anthropic\n'));
+    });
     auth
         .command('login')
         .description('Authenticate with LLM provider (Claude Pro/Max) and ServiceNow')
@@ -92,40 +171,27 @@ function registerAuthCommands(program) {
                             ]
                         }]);
                     if (selectedProvider !== 'other') {
-                        // Define recommended models per provider
-                        const providerModels = {
-                            'anthropic': [
-                                { name: 'Claude Sonnet 4 (Best balance, 200K context)', value: 'claude-sonnet-4' },
-                                { name: 'Claude Opus 4 (Most capable, 200K context)', value: 'claude-opus-4' },
-                                { name: 'Claude Sonnet 3.5 (Legacy, 200K context)', value: 'claude-3-5-sonnet-20241022' }
-                            ],
-                            'openai': [
-                                { name: 'GPT-4o (Best balance, 128K context)', value: 'gpt-4o' },
-                                { name: 'GPT-4o-mini (Faster, cheaper, 128K context)', value: 'gpt-4o-mini' },
-                                { name: 'o1 (Advanced reasoning, 200K context)', value: 'o1' },
-                                { name: 'o1-mini (Faster reasoning, 128K context)', value: 'o1-mini' }
-                            ],
-                            'google': [
-                                { name: 'Gemini 2.0 Flash Exp (Fast, 1M context)', value: 'gemini-2.0-flash-exp' },
-                                { name: 'Gemini 1.5 Pro (Most capable, 2M context)', value: 'gemini-1.5-pro' },
-                                { name: 'Gemini 1.5 Flash (Balanced, 1M context)', value: 'gemini-1.5-flash' }
-                            ],
-                            'ollama': [
-                                { name: 'Llama 3.3 70B (Best open model)', value: 'llama3.3:70b' },
-                                { name: 'Qwen 2.5 Coder 32B (Best for coding)', value: 'qwen2.5-coder:32b' },
-                                { name: 'DeepSeek R1 (Reasoning model)', value: 'deepseek-r1' }
-                            ]
-                        };
+                        // Dynamically fetch latest models from provider APIs
+                        const { getProviderModels } = await Promise.resolve().then(() => __importStar(require('../utils/dynamic-models.js')));
+                        console.log(chalk_1.default.dim(`   Fetching latest ${selectedProvider} models...`));
+                        const models = await getProviderModels(selectedProvider);
                         // Ask for preferred model
                         let selectedModel = '';
-                        if (providerModels[selectedProvider]) {
+                        if (models && models.length > 0) {
+                            const choices = models.map(m => ({
+                                name: m.name,
+                                value: m.value
+                            }));
                             const { chosenModel } = await inquirer.prompt([{
                                     type: 'list',
                                     name: 'chosenModel',
                                     message: `Which ${selectedProvider} model do you want to use by default?`,
-                                    choices: providerModels[selectedProvider]
+                                    choices: choices
                                 }]);
                             selectedModel = chosenModel;
+                        }
+                        else {
+                            console.log(chalk_1.default.yellow(`   ⚠️  Could not fetch models for ${selectedProvider}, skipping model selection`));
                         }
                         // Save provider AND model to .env file
                         const envPath = path.join(process.cwd(), '.env');

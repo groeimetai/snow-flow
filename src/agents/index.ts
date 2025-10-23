@@ -4,10 +4,9 @@
  */
 
 // Re-export SDK components for backward compatibility
-export { ClaudeAgentSDKIntegration, QueenOrchestrator } from '../sdk/index.js';
-export type { SnowFlowAgentConfig, AgentExecutionResult, QueenObjective, OrchestrationResult } from '../sdk/index.js';
+export { ClaudeAgentSDKIntegration } from '../sdk/index.js';
+export type { SnowFlowAgentConfig, AgentExecutionResult, AgentType } from '../sdk/index.js';
 
 // SDK-based agent system:
 // - Agents are spawned via ClaudeAgentSDKIntegration
-// - Queen intelligence via QueenOrchestrator
-// - 86% code reduction (2832 → 400 lines)
+// - Queen orchestration deprecated (use swarm command instead)
