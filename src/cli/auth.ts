@@ -95,6 +95,54 @@ export function registerAuthCommands(program: Command) {
 
         console.log(chalk.blue('🔐 Starting authentication flow...\n'));
 
+        // STEP 1: Ask provider FIRST (before OAuth)
+        let selectedProvider = provider;
+        let selectedModel = '';
+
+        if (!selectedProvider || selectedProvider.trim() === '') {
+          const { chosenProvider } = await inquirer.prompt([{
+            type: 'list',
+            name: 'chosenProvider',
+            message: 'Select your LLM provider:',
+            choices: [
+              { name: 'Anthropic (Claude)', value: 'anthropic' },
+              { name: 'OpenAI (GPT)', value: 'openai' },
+              { name: 'Google (Gemini)', value: 'google' },
+              { name: 'Ollama (Local)', value: 'ollama' }
+            ]
+          }]);
+          selectedProvider = chosenProvider;
+        }
+
+        // STEP 2: Ask model IMMEDIATELY after provider (fetch latest from models.dev)
+        if (selectedProvider !== 'ollama') {
+          const { getProviderModels } = await import('../utils/dynamic-models.js');
+
+          console.log(chalk.dim(`   Fetching latest ${selectedProvider} models from models.dev...\n`));
+
+          const models = await getProviderModels(selectedProvider);
+
+          if (models && models.length > 0) {
+            const choices = models.map(m => ({
+              name: `${m.name}${m.contextWindow ? chalk.dim(` (${m.contextWindow.toLocaleString()} tokens)`) : ''}`,
+              value: m.value,
+              short: m.name
+            }));
+
+            const { chosenModel } = await inquirer.prompt([{
+              type: 'list',
+              name: 'chosenModel',
+              message: `Select your default ${selectedProvider} model:`,
+              choices: choices,
+              pageSize: 15
+            }]);
+            selectedModel = chosenModel;
+            console.log(chalk.green(`   ✓ Selected: ${models.find(m => m.value === chosenModel)?.name}\n`));
+          } else {
+            console.log(chalk.yellow(`   ⚠️  Could not fetch models, will use provider default\n`));
+          }
+        }
+
         // Fix common OpenCode directory issue (agents vs agent) in ALL possible directories
         try {
           const fs = require('fs');
@@ -130,95 +178,50 @@ export function registerAuthCommands(program: Command) {
         }
 
         try {
-          // Run opencode auth login interactively
+          // STEP 3: Run OAuth with OpenCode
           execSync('opencode auth login', { stdio: 'inherit' });
           console.log(chalk.green('✅ LLM authentication completed\n'));
 
-          // Ask which provider they used and save it
-          if (!provider || provider.trim() === '') {
-            const { selectedProvider } = await inquirer.prompt([{
-              type: 'list',
-              name: 'selectedProvider',
-              message: 'Which provider did you just authenticate with?',
-              choices: [
-                { name: 'Anthropic (Claude)', value: 'anthropic' },
-                { name: 'OpenAI (GPT)', value: 'openai' },
-                { name: 'Google (Gemini)', value: 'google' },
-                { name: 'Ollama (Local)', value: 'ollama' },
-                { name: 'Other', value: 'other' }
-              ]
-            }]);
+          // STEP 4: Save provider and model to .env (we already know them from earlier!)
+          const envPath = path.join(process.cwd(), '.env');
+          let envContent = '';
 
-            if (selectedProvider !== 'other') {
-              // Dynamically fetch latest models from provider APIs
-              const { getProviderModels } = await import('../utils/dynamic-models.js');
-
-              console.log(chalk.dim(`   Fetching latest ${selectedProvider} models...`));
-
-              const models = await getProviderModels(selectedProvider);
-
-              // Ask for preferred model
-              let selectedModel = '';
-              if (models && models.length > 0) {
-                const choices = models.map(m => ({
-                  name: m.name,
-                  value: m.value
-                }));
-
-                const { chosenModel } = await inquirer.prompt([{
-                  type: 'list',
-                  name: 'chosenModel',
-                  message: `Which ${selectedProvider} model do you want to use by default?`,
-                  choices: choices
-                }]);
-                selectedModel = chosenModel;
-              } else {
-                console.log(chalk.yellow(`   ⚠️  Could not fetch models for ${selectedProvider}, skipping model selection`));
-              }
-
-              // Save provider AND model to .env file
-              const envPath = path.join(process.cwd(), '.env');
-              let envContent = '';
-
-              try {
-                envContent = fs.readFileSync(envPath, 'utf8');
-              } catch {
-                // .env doesn't exist yet, use .env.example as template
-                const examplePath = path.join(process.cwd(), '.env.example');
-                if (fs.existsSync(examplePath)) {
-                  envContent = fs.readFileSync(examplePath, 'utf8');
-                }
-              }
-
-              // Update DEFAULT_LLM_PROVIDER in .env content
-              if (envContent.includes('DEFAULT_LLM_PROVIDER=')) {
-                envContent = envContent.replace(/DEFAULT_LLM_PROVIDER=.*/g, `DEFAULT_LLM_PROVIDER=${selectedProvider}`);
-              } else {
-                envContent += `\nDEFAULT_LLM_PROVIDER=${selectedProvider}\n`;
-              }
-
-              // Update DEFAULT_MODEL in .env content
-              if (selectedModel) {
-                if (envContent.includes('DEFAULT_MODEL=')) {
-                  envContent = envContent.replace(/DEFAULT_MODEL=.*/g, `DEFAULT_MODEL=${selectedModel}`);
-                } else {
-                  envContent += `DEFAULT_MODEL=${selectedModel}\n`;
-                }
-              }
-
-              fs.writeFileSync(envPath, envContent);
-              console.log(chalk.green(`✅ Provider saved: ${selectedProvider}`));
-              if (selectedModel) {
-                console.log(chalk.green(`✅ Default model saved: ${selectedModel}\n`));
-              } else {
-                console.log();
-              }
-              provider = selectedProvider;
-              process.env.DEFAULT_LLM_PROVIDER = provider;
-              if (selectedModel) {
-                process.env.DEFAULT_MODEL = selectedModel;
-              }
+          try {
+            envContent = fs.readFileSync(envPath, 'utf8');
+          } catch {
+            // .env doesn't exist yet, use .env.example as template
+            const examplePath = path.join(process.cwd(), '.env.example');
+            if (fs.existsSync(examplePath)) {
+              envContent = fs.readFileSync(examplePath, 'utf8');
             }
+          }
+
+          // Update DEFAULT_LLM_PROVIDER in .env content
+          if (envContent.includes('DEFAULT_LLM_PROVIDER=')) {
+            envContent = envContent.replace(/DEFAULT_LLM_PROVIDER=.*/g, `DEFAULT_LLM_PROVIDER=${selectedProvider}`);
+          } else {
+            envContent += `\nDEFAULT_LLM_PROVIDER=${selectedProvider}\n`;
+          }
+
+          // Update DEFAULT_MODEL in .env content
+          if (selectedModel) {
+            if (envContent.includes('DEFAULT_MODEL=')) {
+              envContent = envContent.replace(/DEFAULT_MODEL=.*/g, `DEFAULT_MODEL=${selectedModel}`);
+            } else {
+              envContent += `DEFAULT_MODEL=${selectedModel}\n`;
+            }
+          }
+
+          fs.writeFileSync(envPath, envContent);
+          console.log(chalk.green(`✅ Provider saved: ${selectedProvider}`));
+          if (selectedModel) {
+            console.log(chalk.green(`✅ Default model saved: ${selectedModel}\n`));
+          }
+
+          provider = selectedProvider;
+          process.env.DEFAULT_LLM_PROVIDER = provider;
+          if (selectedModel) {
+            process.env.DEFAULT_MODEL = selectedModel;
           }
         } catch (error: any) {
           console.error(chalk.red('\n❌ LLM authentication failed'));
