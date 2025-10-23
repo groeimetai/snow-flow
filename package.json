@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "8.5.2",
+  "version": "8.5.3",
   "description": "ServiceNow development with OpenCode - 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, Groq, Ollama) • 410 Optimized Tools • 2 MCP Servers • Native Predictive Intelligence builder • Multi-agent orchestration • Use ANY AI coding assistant",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -490,7 +490,7 @@
     "@anthropic-ai/claude-agent-sdk": "0.1.1",
     "@anthropic-ai/sdk": "0.67.0",
     "@modelcontextprotocol/sdk": "1.20.1",
-    "snow-flow-opencode": "^0.15.14-snow-flow.1",
+    "snow-flow-opencode": "^0.15.14-snow-flow.2",
     "@tensorflow/tfjs": "^4.22.0",
     "@types/node-fetch": "^2.6.13",
     "axios": "1.12.2",
