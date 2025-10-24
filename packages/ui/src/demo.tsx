@@ -1,6 +1,7 @@
 import type { Component } from "solid-js"
 import { createSignal } from "solid-js"
 import {
+  Accordion,
   Button,
   Select,
   Tabs,
@@ -213,6 +214,41 @@ const Demo: Component = () => {
             </div>
           </Collapsible.Content>
         </Collapsible>
+      </section>
+      <h3>Accordion</h3>
+      <section>
+        <Accordion collapsible>
+          <Accordion.Item value="item-1">
+            <Accordion.Header>
+              <Accordion.Trigger>What is Kobalte?</Accordion.Trigger>
+            </Accordion.Header>
+            <Accordion.Content>
+              <div style={{ padding: "16px" }}>
+                <p>Kobalte is a UI toolkit for building accessible web apps and design systems with SolidJS.</p>
+              </div>
+            </Accordion.Content>
+          </Accordion.Item>
+          <Accordion.Item value="item-2">
+            <Accordion.Header>
+              <Accordion.Trigger>Is it accessible?</Accordion.Trigger>
+            </Accordion.Header>
+            <Accordion.Content>
+              <div style={{ padding: "16px" }}>
+                <p>Yes. It adheres to the WAI-ARIA design patterns.</p>
+              </div>
+            </Accordion.Content>
+          </Accordion.Item>
+          <Accordion.Item value="item-3">
+            <Accordion.Header>
+              <Accordion.Trigger>Can it be animated?</Accordion.Trigger>
+            </Accordion.Header>
+            <Accordion.Content>
+              <div style={{ padding: "16px" }}>
+                <p>Yes! You can animate the content height using CSS animations.</p>
+              </div>
+            </Accordion.Content>
+          </Accordion.Item>
+        </Accordion>
       </section>
     </div>
   )

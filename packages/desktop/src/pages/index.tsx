@@ -1,4 +1,4 @@
-import { Button, List, SelectDialog, Tooltip, IconButton, Tabs, Icon } from "@opencode-ai/ui"
+import { Button, List, SelectDialog, Tooltip, IconButton, Tabs, Icon, Accordion } from "@opencode-ai/ui"
 import { FileIcon } from "@/ui"
 import FileTree from "@/components/file-tree"
 import { For, onCleanup, onMount, Show, Match, Switch, createSignal, createEffect, createMemo } from "solid-js"
@@ -55,7 +55,6 @@ export default function Page() {
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.getModifierState(MOD) && event.shiftKey && event.key.toLowerCase() === "p") {
       event.preventDefault()
-      // TODO: command palette
       return
     }
     if (event.getModifierState(MOD) && event.key.toLowerCase() === "p") {
@@ -571,7 +570,6 @@ export default function Page() {
                             <div class="flex flex-col items-start gap-50 pb-[800px]">
                               <For each={local.session.userMessages()}>
                                 {(message) => {
-                                  console.log(message)
                                   return (
                                     <div
                                       data-message={message.id}
@@ -583,22 +581,55 @@ export default function Page() {
                                         </div>
                                         <div class="text-14-regular text-text-base">{message.summary?.text}</div>
                                       </div>
-                                      <div class="">
-                                        <For each={message.summary?.diffs}>
-                                          {(diff) => (
-                                            <Diff
-                                              before={{
-                                                name: diff.file!,
-                                                contents: diff.before!,
-                                              }}
-                                              after={{
-                                                name: diff.file!,
-                                                contents: diff.after!,
-                                              }}
-                                            />
-                                          )}
-                                        </For>
-                                      </div>
+                                      <Show when={message.summary?.diffs.length}>
+                                        <Accordion class="w-full" multiple>
+                                          <For each={message.summary?.diffs || []}>
+                                            {(diff) => (
+                                              <Accordion.Item value={diff.file}>
+                                                <Accordion.Header>
+                                                  <Accordion.Trigger>
+                                                    <div class="flex items-center justify-between w-full">
+                                                      <div class="flex items-center gap-5">
+                                                        <FileIcon
+                                                          node={{ path: diff.file, type: "file" }}
+                                                          class="shrink-0 size-4"
+                                                        />
+                                                        <div class="flex">
+                                                          <Show when={diff.file.includes("/")}>
+                                                            <span class="text-text-base">
+                                                              {getDirectory(diff.file)}/
+                                                            </span>
+                                                          </Show>
+                                                          <span class="text-text-strong">{getFilename(diff.file)}</span>
+                                                        </div>
+                                                      </div>
+                                                      <div class="flex gap-4 items-center justify-end">
+                                                        <div class="flex gap-2 justify-end items-center">
+                                                          <span class="text-12-mono text-right text-text-diff-add-base">{`+${diff.additions}`}</span>
+                                                          <span class="text-12-mono text-right text-text-diff-delete-base">{`-${diff.deletions}`}</span>
+                                                        </div>
+                                                        <Icon name="chevron-grabber-vertical" size="small" />
+                                                      </div>
+                                                    </div>
+                                                  </Accordion.Trigger>
+                                                </Accordion.Header>
+                                                <Accordion.Content>
+                                                  <Diff
+                                                    before={{
+                                                      name: diff.file!,
+                                                      contents: diff.before!,
+                                                    }}
+                                                    after={{
+                                                      name: diff.file!,
+                                                      contents: diff.after!,
+                                                    }}
+                                                  />
+                                                </Accordion.Content>
+                                              </Accordion.Item>
+                                            )}
+                                          </For>
+                                        </Accordion>
+                                      </Show>
                                     </div>
                                   )
                                 }}

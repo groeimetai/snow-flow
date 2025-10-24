@@ -1,6 +1,6 @@
 import { Button, Icon, IconButton, Select, SelectDialog } from "@opencode-ai/ui"
 import { useFilteredList } from "@opencode-ai/ui/hooks"
-import { createEffect, on, Component, createMemo, Show, For } from "solid-js"
+import { createEffect, on, Component, createMemo, Show, For, onMount, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 import { FileIcon } from "@/ui"
 import { getDirectory, getFilename } from "@/utils"
@@ -45,6 +45,21 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   const isEmpty = createMemo(() => isEqual(store.contentParts, defaultParts))
   const isFocused = createFocusSignal(() => editorRef)
+
+  const handlePaste = (event: ClipboardEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    // @ts-expect-error
+    const plainText = (event.clipboardData || window.clipboardData)?.getData("text/plain") ?? ""
+    addPart({ type: "text", content: plainText })
+  }
+
+  onMount(() => {
+    editorRef.addEventListener("paste", handlePaste)
+  })
+  onCleanup(() => {
+    editorRef.removeEventListener("paste", handlePaste)
+  })
 
   createEffect(() => {
     if (isFocused()) {
@@ -144,16 +159,27 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     const rawText = store.contentParts.map((p) => p.content).join("")
     const textBeforeCursor = rawText.substring(0, cursorPosition)
     const atMatch = textBeforeCursor.match(/@(\S*)$/)
-    if (!atMatch) return
 
-    const startIndex = atMatch.index!
-    const endIndex = cursorPosition
+    const startIndex = atMatch ? atMatch.index! : cursorPosition
+    const endIndex = atMatch ? cursorPosition : cursorPosition
+
+    const pushText = (acc: { parts: ContentPart[] }, value: string) => {
+      if (!value) return
+      const last = acc.parts[acc.parts.length - 1]
+      if (last && last.type === "text") {
+        acc.parts[acc.parts.length - 1] = {
+          type: "text",
+          content: last.content + value,
+        }
+        return
+      }
+      acc.parts.push({ type: "text", content: value })
+    }
 
     const {
       parts: nextParts,
-      cursorIndex,
-      cursorOffset,
       inserted,
+      cursorPositionAfter,
     } = store.contentParts.reduce(
       (acc, item) => {
         if (acc.inserted) {
@@ -180,16 +206,22 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         const head = item.content.slice(0, headLength)
         const tail = item.content.slice(tailLength)
 
-        if (head) acc.parts.push({ type: "text", content: head })
+        pushText(acc, head)
 
-        acc.parts.push(part)
-
-        const rest = /^\s/.test(tail) ? tail : ` ${tail}`
-        if (rest) {
-          acc.cursorIndex = acc.parts.length
-          acc.cursorOffset = Math.min(1, rest.length)
-          acc.parts.push({ type: "text", content: rest })
+        if (part.type === "text") {
+          pushText(acc, part.content)
         }
+        if (part.type !== "text") {
+          acc.parts.push({ ...part })
+        }
+
+        const needsGap = Boolean(atMatch)
+        const rest = needsGap ? (tail ? (/^\s/.test(tail) ? tail : ` ${tail}`) : " ") : tail
+        pushText(acc, rest)
+
+        const baseCursor = startIndex + part.content.length
+        const cursorAddition = needsGap && rest.length > 0 ? 1 : 0
+        acc.cursorPositionAfter = baseCursor + cursorAddition
 
         acc.inserted = true
         acc.runningIndex = nextIndex
@@ -199,29 +231,27 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         parts: [] as ContentPart[],
         runningIndex: 0,
         inserted: false,
-        cursorIndex: null as number | null,
-        cursorOffset: 0,
+        cursorPositionAfter: cursorPosition + part.content.length,
       },
     )
 
-    if (!inserted || cursorIndex === null) return
+    if (!inserted) {
+      const baseParts = store.contentParts.filter((item) => !(item.type === "text" && item.content === ""))
+      const appendedAcc = { parts: [...baseParts] as ContentPart[] }
+      if (part.type === "text") pushText(appendedAcc, part.content)
+      if (part.type !== "text") appendedAcc.parts.push({ ...part })
+      const next = appendedAcc.parts.length > 0 ? appendedAcc.parts : defaultParts
+      setStore("contentParts", next)
+      setStore("popoverIsOpen", false)
+      const nextCursor = rawText.length + part.content.length
+      queueMicrotask(() => setCursorPosition(editorRef, nextCursor))
+      return
+    }
 
     setStore("contentParts", nextParts)
     setStore("popoverIsOpen", false)
 
-    queueMicrotask(() => {
-      const node = editorRef.childNodes[cursorIndex]
-      if (node && node.nodeType === Node.TEXT_NODE) {
-        const range = document.createRange()
-        const selection = window.getSelection()
-        const length = node.textContent ? node.textContent.length : 0
-        const offset = cursorOffset > length ? length : cursorOffset
-        range.setStart(node, offset)
-        range.collapse(true)
-        selection?.removeAllRanges()
-        selection?.addRange(range)
-      }
-    })
+    queueMicrotask(() => setCursorPosition(editorRef, cursorPositionAfter))
   }
 
   const handleKeyDown = (event: KeyboardEvent) => {
