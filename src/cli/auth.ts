@@ -136,9 +136,17 @@ export function registerAuthCommands(program: Command) {
         } catch (error: any) {
           console.error(chalk.red('\n❌ Authentication failed'));
 
-          // Check if it's the known SnowCode directory bug
+          // Check if it's the bun dependency error
           const errorMsg = error?.message || error?.toString() || '';
-          if (errorMsg.includes('agents') && errorMsg.includes('agent')) {
+          if (errorMsg.includes('Cannot find package \'bun\'') || errorMsg.includes('ERR_MODULE_NOT_FOUND')) {
+            console.log(chalk.yellow('\n⚠️  SnowCode dependency issue detected'));
+            console.log(chalk.blue('   This is a known issue with SnowCode versions 0.15.18 and earlier'));
+            console.log(chalk.blue('   Please update SnowCode to the latest version:'));
+            console.log(chalk.cyan('   npm update -g @groeimetai/snowcode'));
+            console.log(chalk.blue('\n   Alternatively, use an API key instead:'));
+            console.log(chalk.cyan('   1. Add to .env: ANTHROPIC_API_KEY=your-api-key'));
+            console.log(chalk.cyan('   2. Then run: snow-flow auth login'));
+          } else if (errorMsg.includes('agents') && errorMsg.includes('agent')) {
             console.log(chalk.yellow('\n⚠️  SnowCode directory issue detected'));
             console.log(chalk.blue('   Run this fix: ') + chalk.cyan('mv ~/.snowcode/agents ~/.snowcode/agent'));
             console.log(chalk.blue('   Then try: ') + chalk.cyan('snow-flow auth login'));
