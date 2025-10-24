@@ -168,9 +168,7 @@ export function registerAuthCommands(program: Command) {
         }
       }
 
-      // ServiceNow setup - continue the flow
-      console.log(chalk.blue('\n📦 ServiceNow Configuration'));
-      console.log(chalk.dim('Connect Snow-Flow to your ServiceNow instance\n'));
+      // ServiceNow setup - continue the flow (maintain @clack/prompts styling)
 
       // Read credentials from .env file
       let instance = process.env.SNOW_INSTANCE;
@@ -188,7 +186,7 @@ export function registerAuthCommands(program: Command) {
         const method = await prompts.select({
           message: 'Choose authentication method',
           options: [
-            { value: 'oauth', label: 'OAuth 2.0', hint: 'recommended for security' },
+            { value: 'oauth', label: 'OAuth 2.0', hint: 'recommended' },
             { value: 'basic', label: 'Basic Auth', hint: 'username/password' }
           ]
         });
@@ -202,7 +200,7 @@ export function registerAuthCommands(program: Command) {
 
         // Ask for ServiceNow instance (common for both methods)
         instance = await prompts.text({
-          message: 'ServiceNow instance URL',
+          message: 'ServiceNow instance',
           placeholder: 'dev12345.service-now.com',
           defaultValue: instance || '',
           validate: (value) => {
