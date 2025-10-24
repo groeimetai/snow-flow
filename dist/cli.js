@@ -1787,6 +1787,24 @@ async function checkAndInstallSnowCode() {
             return false;
         }
     }
+    // ALWAYS install SnowCode locally in the project directory with platform binaries
+    console.log(chalk_1.default.blue('\n📦 Installing SnowCode locally (with platform binaries)...'));
+    console.log(chalk_1.default.dim('Installing @groeimetai/snowcode@0.15.14-snow-flow-3...'));
+    try {
+        const projectDir = process.cwd();
+        execSync('npm install @groeimetai/snowcode@0.15.14-snow-flow-3', {
+            cwd: projectDir,
+            stdio: 'inherit'
+        });
+        console.log(chalk_1.default.green('✅ SnowCode installed locally with platform binaries!'));
+        console.log(chalk_1.default.dim(`   Platform binary: opencode-${process.platform}-${process.arch}`));
+    }
+    catch (error) {
+        console.log(chalk_1.default.red('\n❌ Failed to install SnowCode locally'));
+        console.log(chalk_1.default.yellow('Please install it manually: ') + chalk_1.default.cyan('npm install @groeimetai/snowcode@0.15.14-snow-flow-3'));
+        console.log(chalk_1.default.dim('This is required for the compiled binaries'));
+        return false;
+    }
     // If SnowCode is installed, copy config to .snowcode/ directory
     // SnowCode automatically detects config files in project root and .snowcode/ directory
     if (snowcodeInstalled) {
