@@ -2931,12 +2931,12 @@ async function checkNeo4jAvailability(): Promise<boolean> {
 async function createMCPConfig(targetDir: string, force: boolean = false) {
   // Determine the snow-flow installation directory
   let snowFlowRoot: string;
-  
+
   // Check if we're in a global npm installation
-  const isGlobalInstall = __dirname.includes('node_modules/snow-flow') || 
+  const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
                          __dirname.includes('node_modules/.pnpm') ||
                          __dirname.includes('npm/snow-flow');
-  
+
   if (isGlobalInstall) {
     // For global installs, find the snow-flow package root
     const parts = __dirname.split(/node_modules[\/\\]/);
@@ -2962,31 +2962,75 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       throw new Error('Could not find snow-flow project root');
     }
   }
-  
+
+  // 🔧 FIX: Read actual environment values from .env file
+  // This solves the issue where SnowCode/Claude Code doesn't expand ${...} variables
+  const envPath = join(targetDir, '.env');
+  const envValues: Record<string, string> = {};
+
+  try {
+    const envContent = await fs.readFile(envPath, 'utf-8');
+    // Parse .env file (simple parser - handles KEY=VALUE lines)
+    const lines = envContent.split('\n');
+    for (var line of lines) {
+      line = line.trim();
+      // Skip comments and empty lines
+      if (!line || line.startsWith('#')) continue;
+
+      var equalIndex = line.indexOf('=');
+      if (equalIndex > 0) {
+        var key = line.substring(0, equalIndex).trim();
+        var value = line.substring(equalIndex + 1).trim();
+        // Remove quotes if present
+        if ((value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.substring(1, value.length - 1);
+        }
+        envValues[key] = value;
+      }
+    }
+  } catch (error) {
+    console.log('⚠️  No .env file found - MCP config will use placeholder values');
+    console.log('   Run "snow-flow auth login" after init to configure credentials');
+  }
+
+  // Helper function to get env value with proper URL formatting
+  function getEnvValue(key: string, defaultValue: string = ''): string {
+    var value = envValues[key] || process.env[key] || defaultValue;
+
+    // Special handling for SNOW_INSTANCE - ensure it's a full URL
+    if (key === 'SNOW_INSTANCE' && value && !value.startsWith('http')) {
+      value = 'https://' + value.replace(/^https?:\/\//, '');
+    }
+
+    return value;
+  }
+
   // Read the template file
   const templatePath = join(snowFlowRoot, '.mcp.json.template');
   let templateContent: string;
-  
+
   try {
     templateContent = await fs.readFile(templatePath, 'utf-8');
   } catch (error) {
     console.error('❌ Could not find .mcp.json.template file');
     throw error;
   }
-  
-  // Replace placeholders in template
+
+  // Replace placeholders with ACTUAL values from .env (not ${...} syntax!)
+  // This ensures SnowCode/Claude Code can use the MCP servers immediately
   const distPath = join(snowFlowRoot, 'dist');
   const mcpConfigContent = templateContent
     .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)
-    .replace(/{{SNOW_INSTANCE}}/g, '${SNOW_INSTANCE}')
-    .replace(/{{SNOW_CLIENT_ID}}/g, '${SNOW_CLIENT_ID}')
-    .replace(/{{SNOW_CLIENT_SECRET}}/g, '${SNOW_CLIENT_SECRET}')
-    .replace(/{{SNOW_DEPLOYMENT_TIMEOUT}}/g, '${SNOW_DEPLOYMENT_TIMEOUT}')
-    .replace(/{{MCP_DEPLOYMENT_TIMEOUT}}/g, '${MCP_DEPLOYMENT_TIMEOUT}')
-    .replace(/{{NEO4J_URI}}/g, '${NEO4J_URI}')
-    .replace(/{{NEO4J_USER}}/g, '${NEO4J_USER}')
-    .replace(/{{NEO4J_PASSWORD}}/g, '${NEO4J_PASSWORD}')
-    .replace(/{{SNOW_FLOW_ENV}}/g, '${SNOW_FLOW_ENV}');
+    .replace(/{{SNOW_INSTANCE}}/g, getEnvValue('SNOW_INSTANCE'))
+    .replace(/{{SNOW_CLIENT_ID}}/g, getEnvValue('SNOW_CLIENT_ID'))
+    .replace(/{{SNOW_CLIENT_SECRET}}/g, getEnvValue('SNOW_CLIENT_SECRET'))
+    .replace(/{{SNOW_DEPLOYMENT_TIMEOUT}}/g, getEnvValue('SNOW_DEPLOYMENT_TIMEOUT', '180000'))
+    .replace(/{{MCP_DEPLOYMENT_TIMEOUT}}/g, getEnvValue('MCP_DEPLOYMENT_TIMEOUT', '180000'))
+    .replace(/{{NEO4J_URI}}/g, getEnvValue('NEO4J_URI', ''))
+    .replace(/{{NEO4J_USER}}/g, getEnvValue('NEO4J_USER', ''))
+    .replace(/{{NEO4J_PASSWORD}}/g, getEnvValue('NEO4J_PASSWORD', ''))
+    .replace(/{{SNOW_FLOW_ENV}}/g, getEnvValue('SNOW_FLOW_ENV', 'development'));
   
   // Parse to ensure it's valid JSON
   const mcpConfig = JSON.parse(mcpConfigContent);
@@ -3229,7 +3273,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
 }
 
 // Setup MCP configuration function
-async function setupMCPConfig(
+export async function setupMCPConfig(
   targetDir: string,
   instanceUrl: string,
   clientId: string,
@@ -3238,7 +3282,7 @@ async function setupMCPConfig(
 ): Promise<void> {
   // Find the Snow-Flow installation root
   let snowFlowRoot = '';
-  
+
   // Try different locations to find the Snow-Flow root
   const possiblePaths = [
     join(targetDir, 'node_modules/snow-flow'),
@@ -3246,7 +3290,7 @@ async function setupMCPConfig(
     join(process.env.HOME || '', 'Projects/snow-flow-dev/snow-flow'),
     __dirname.includes('dist') ? resolve(__dirname, '..') : __dirname
   ];
-  
+
   for (const testPath of possiblePaths) {
     try {
       await fs.access(join(testPath, '.mcp.json.template'));
@@ -3256,7 +3300,7 @@ async function setupMCPConfig(
       // Keep trying
     }
   }
-  
+
   if (!snowFlowRoot) {
     // Last resort: assume we're running from the installed package
     snowFlowRoot = resolve(__dirname, '..');
@@ -3267,30 +3311,73 @@ async function setupMCPConfig(
       throw new Error('Could not find snow-flow project root');
     }
   }
-  
+
+  // 🔧 FIX: Read actual environment values from .env file
+  // This solves the issue where SnowCode/Claude Code doesn't expand ${...} variables
+  const envPath = join(targetDir, '.env');
+  const envValues: Record<string, string> = {};
+
+  try {
+    const envContent = await fs.readFile(envPath, 'utf-8');
+    // Parse .env file (simple parser - handles KEY=VALUE lines)
+    const lines = envContent.split('\n');
+    for (var line of lines) {
+      line = line.trim();
+      // Skip comments and empty lines
+      if (!line || line.startsWith('#')) continue;
+
+      var equalIndex = line.indexOf('=');
+      if (equalIndex > 0) {
+        var key = line.substring(0, equalIndex).trim();
+        var value = line.substring(equalIndex + 1).trim();
+        // Remove quotes if present
+        if ((value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.substring(1, value.length - 1);
+        }
+        envValues[key] = value;
+      }
+    }
+  } catch (error) {
+    // .env file doesn't exist yet - that's okay
+  }
+
+  // Helper function to get env value with proper URL formatting
+  function getEnvValue(key: string, defaultValue: string = ''): string {
+    var value = envValues[key] || process.env[key] || defaultValue;
+
+    // Special handling for SNOW_INSTANCE - ensure it's a full URL
+    if (key === 'SNOW_INSTANCE' && value && !value.startsWith('http')) {
+      value = 'https://' + value.replace(/^https?:\/\//, '');
+    }
+
+    return value;
+  }
+
   // Read the template file
   const templatePath = join(snowFlowRoot, '.mcp.json.template');
   let templateContent: string;
-  
+
   try {
     templateContent = await fs.readFile(templatePath, 'utf-8');
   } catch (error) {
     console.error('❌ Could not find .mcp.json.template file');
     throw error;
   }
-  
-  // Replace placeholders in template
+
+  // Replace placeholders with ACTUAL values from .env (not ${...} syntax!)
+  // This ensures SnowCode/Claude Code can use the MCP servers immediately
   const mcpConfigContent = templateContent
     .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)
-    .replace(/{{SNOW_INSTANCE}}/g, '${SNOW_INSTANCE}')
-    .replace(/{{SNOW_CLIENT_ID}}/g, '${SNOW_CLIENT_ID}')
-    .replace(/{{SNOW_CLIENT_SECRET}}/g, '${SNOW_CLIENT_SECRET}')
-    .replace(/{{SNOW_DEPLOYMENT_TIMEOUT}}/g, '${SNOW_DEPLOYMENT_TIMEOUT}')
-    .replace(/{{MCP_DEPLOYMENT_TIMEOUT}}/g, '${MCP_DEPLOYMENT_TIMEOUT}')
-    .replace(/{{NEO4J_URI}}/g, '${NEO4J_URI}')
-    .replace(/{{NEO4J_USER}}/g, '${NEO4J_USER}')
-    .replace(/{{NEO4J_PASSWORD}}/g, '${NEO4J_PASSWORD}')
-    .replace(/{{SNOW_FLOW_ENV}}/g, '${SNOW_FLOW_ENV}');
+    .replace(/{{SNOW_INSTANCE}}/g, getEnvValue('SNOW_INSTANCE'))
+    .replace(/{{SNOW_CLIENT_ID}}/g, getEnvValue('SNOW_CLIENT_ID'))
+    .replace(/{{SNOW_CLIENT_SECRET}}/g, getEnvValue('SNOW_CLIENT_SECRET'))
+    .replace(/{{SNOW_DEPLOYMENT_TIMEOUT}}/g, getEnvValue('SNOW_DEPLOYMENT_TIMEOUT', '180000'))
+    .replace(/{{MCP_DEPLOYMENT_TIMEOUT}}/g, getEnvValue('MCP_DEPLOYMENT_TIMEOUT', '180000'))
+    .replace(/{{NEO4J_URI}}/g, getEnvValue('NEO4J_URI', ''))
+    .replace(/{{NEO4J_USER}}/g, getEnvValue('NEO4J_USER', ''))
+    .replace(/{{NEO4J_PASSWORD}}/g, getEnvValue('NEO4J_PASSWORD', ''))
+    .replace(/{{SNOW_FLOW_ENV}}/g, getEnvValue('SNOW_FLOW_ENV', 'development'));
   
   // Parse to ensure it's valid JSON
   const mcpConfig = JSON.parse(mcpConfigContent);
