@@ -556,7 +556,7 @@ export default function Page() {
                                         "text-text-weak data-[active=true]:text-text-strong group-hover/li:text-text-base": true,
                                       }}
                                     >
-                                      {local.session.getMessageText(message)}
+                                      {message.summary?.title ?? local.session.getMessageText(message)}
                                     </div>
                                   </li>
                                 )}
@@ -570,66 +570,90 @@ export default function Page() {
                             <div class="flex flex-col items-start gap-50 pb-[800px]">
                               <For each={local.session.userMessages()}>
                                 {(message) => {
+                                  const title = message.summary?.title
+                                  const prompt = local.session.getMessageText(message)
+                                  const summary = message.summary?.body
+
                                   return (
                                     <div
                                       data-message={message.id}
-                                      class="flex flex-col items-start self-stretch gap-8 pt-1.5 snap-start"
+                                      class="flex flex-col items-start self-stretch gap-14 pt-1.5 snap-start"
                                     >
-                                      <div class="flex flex-col items-start gap-4">
-                                        <div class="text-14-medium text-text-strong overflow-hidden text-ellipsis min-w-0">
-                                          {local.session.getMessageText(message)}
-                                        </div>
-                                        <div class="text-14-regular text-text-base">{message.summary?.text}</div>
+                                      {/* Title */}
+                                      <div class="flex flex-col items-start gap-2 self-stretch">
+                                        <h1 class="text-14-medium text-text-strong overflow-hidden text-ellipsis min-w-0">
+                                          {title ?? prompt}
+                                        </h1>
+                                        <Show when={title}>
+                                          <div class="text-12-regular text-text-base">{prompt}</div>
+                                        </Show>
                                       </div>
-                                      <Show when={message.summary?.diffs.length}>
-                                        <Accordion class="w-full" multiple>
-                                          <For each={message.summary?.diffs || []}>
-                                            {(diff) => (
-                                              <Accordion.Item value={diff.file}>
-                                                <Accordion.Header>
-                                                  <Accordion.Trigger>
-                                                    <div class="flex items-center justify-between w-full">
-                                                      <div class="flex items-center gap-5">
-                                                        <FileIcon
-                                                          node={{ path: diff.file, type: "file" }}
-                                                          class="shrink-0 size-4"
-                                                        />
-                                                        <div class="flex">
-                                                          <Show when={diff.file.includes("/")}>
-                                                            <span class="text-text-base">
-                                                              {getDirectory(diff.file)}/
+                                      {/* Summary */}
+                                      <div class="w-full flex flex-col gap-6 items-start self-stretch">
+                                        <Show when={summary}>
+                                          <div class="flex flex-col items-start gap-1 self-stretch">
+                                            <h2 class="text-12-medium text-text-weak">Summary</h2>
+                                            <div class="text-14-regular text-text-base self-stretch">{summary}</div>
+                                          </div>
+                                        </Show>
+                                        <Show when={message.summary?.diffs.length}>
+                                          <Accordion class="w-full" multiple>
+                                            <For each={message.summary?.diffs || []}>
+                                              {(diff) => (
+                                                <Accordion.Item value={diff.file}>
+                                                  <Accordion.Header>
+                                                    <Accordion.Trigger>
+                                                      <div class="flex items-center justify-between w-full">
+                                                        <div class="flex items-center gap-5">
+                                                          <FileIcon
+                                                            node={{ path: diff.file, type: "file" }}
+                                                            class="shrink-0 size-4"
+                                                          />
+                                                          <div class="flex">
+                                                            <Show when={diff.file.includes("/")}>
+                                                              <span class="text-text-base">
+                                                                {getDirectory(diff.file)}/
+                                                              </span>
+                                                            </Show>
+                                                            <span class="text-text-strong">
+                                                              {getFilename(diff.file)}
                                                             </span>
-                                                          </Show>
-                                                          <span class="text-text-strong">{getFilename(diff.file)}</span>
+                                                          </div>
+                                                        </div>
+                                                        <div class="flex gap-4 items-center justify-end">
+                                                          <div class="flex gap-2 justify-end items-center">
+                                                            <span class="text-12-mono text-right text-text-diff-add-base">{`+${diff.additions}`}</span>
+                                                            <span class="text-12-mono text-right text-text-diff-delete-base">{`-${diff.deletions}`}</span>
+                                                          </div>
+                                                          <Icon name="chevron-grabber-vertical" size="small" />
                                                         </div>
                                                       </div>
-                                                      <div class="flex gap-4 items-center justify-end">
-                                                        <div class="flex gap-2 justify-end items-center">
-                                                          <span class="text-12-mono text-right text-text-diff-add-base">{`+${diff.additions}`}</span>
-                                                          <span class="text-12-mono text-right text-text-diff-delete-base">{`-${diff.deletions}`}</span>
-                                                        </div>
-                                                        <Icon name="chevron-grabber-vertical" size="small" />
-                                                      </div>
-                                                    </div>
-                                                  </Accordion.Trigger>
-                                                </Accordion.Header>
-                                                <Accordion.Content>
-                                                  <Diff
-                                                    before={{
-                                                      name: diff.file!,
-                                                      contents: diff.before!,
-                                                    }}
-                                                    after={{
-                                                      name: diff.file!,
-                                                      contents: diff.after!,
-                                                    }}
-                                                  />
-                                                </Accordion.Content>
-                                              </Accordion.Item>
-                                            )}
-                                          </For>
-                                        </Accordion>
-                                      </Show>
+                                                    </Accordion.Trigger>
+                                                  </Accordion.Header>
+                                                  <Accordion.Content>
+                                                    <Diff
+                                                      before={{
+                                                        name: diff.file!,
+                                                        contents: diff.before!,
+                                                      }}
+                                                      after={{
+                                                        name: diff.file!,
+                                                        contents: diff.after!,
+                                                      }}
+                                                    />
+                                                  </Accordion.Content>
+                                                </Accordion.Item>
+                                              )}
+                                            </For>
+                                          </Accordion>
+                                        </Show>
+                                      </div>
+                                      {/* Response */}
+                                      <div data-todo="Response (Timeline)">
+                                        <div class="flex flex-col items-start gap-1 self-stretch">
+                                          <h2 class="text-12-medium text-text-weak">Response</h2>
+                                        </div>
+                                      </div>
                                     </div>
                                   )
                                 }}
