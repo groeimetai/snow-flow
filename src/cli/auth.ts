@@ -169,21 +169,26 @@ export function registerAuthCommands(program: Command) {
       }
 
       // ServiceNow setup - continue the flow
+      console.log(chalk.blue('\n📦 ServiceNow Configuration'));
+      console.log(chalk.dim('Connect Snow-Flow to your ServiceNow instance\n'));
 
       // Read credentials from .env file
       let instance = process.env.SNOW_INSTANCE;
-      let authMethod = process.env.SNOW_AUTH_METHOD || 'oauth';
+      let authMethod = process.env.SNOW_AUTH_METHOD;
 
-      // Check if we need to ask for auth method
+      // Check if we have complete credentials for either method
       const hasOAuthCreds = process.env.SNOW_CLIENT_ID && process.env.SNOW_CLIENT_SECRET;
       const hasBasicCreds = process.env.SNOW_USERNAME && process.env.SNOW_PASSWORD;
+      const hasCompleteCredentials =
+        instance && instance.includes('.service-now.com') &&
+        ((authMethod === 'oauth' && hasOAuthCreds) || (authMethod === 'basic' && hasBasicCreds));
 
-      // If no credentials at all, ask for auth method
-      if (!hasOAuthCreds && !hasBasicCreds) {
+      // If no complete credentials, ask for auth method FIRST
+      if (!hasCompleteCredentials) {
         const method = await prompts.select({
-          message: 'ServiceNow authentication method',
+          message: 'Choose authentication method',
           options: [
-            { value: 'oauth', label: 'OAuth 2.0', hint: 'recommended' },
+            { value: 'oauth', label: 'OAuth 2.0', hint: 'recommended for security' },
             { value: 'basic', label: 'Basic Auth', hint: 'username/password' }
           ]
         });
@@ -194,25 +199,10 @@ export function registerAuthCommands(program: Command) {
         }
 
         authMethod = method as string;
-      }
 
-      // OAuth 2.0 Flow
-      if (authMethod === 'oauth') {
-        const oauth = new ServiceNowOAuth();
-        let clientId = process.env.SNOW_CLIENT_ID;
-        let clientSecret = process.env.SNOW_CLIENT_SECRET;
-
-        // Validate OAuth credentials
-        const credentialsValid =
-          instance && instance.trim() !== '' && instance.includes('.service-now.com') &&
-          clientId && clientId.trim() !== '' && clientId.length >= 32 &&
-          clientSecret && clientSecret.trim() !== '' && clientSecret.length >= 32;
-
-        // If credentials are missing or invalid, prompt with @clack
-        if (!credentialsValid) {
-        // ServiceNow instance
+        // Ask for ServiceNow instance (common for both methods)
         instance = await prompts.text({
-          message: 'ServiceNow instance',
+          message: 'ServiceNow instance URL',
           placeholder: 'dev12345.service-now.com',
           defaultValue: instance || '',
           validate: (value) => {
@@ -230,7 +220,19 @@ export function registerAuthCommands(program: Command) {
         }
 
         instance = instance.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      }
 
+      // OAuth 2.0 Flow
+      if (authMethod === 'oauth') {
+        const oauth = new ServiceNowOAuth();
+        let clientId = process.env.SNOW_CLIENT_ID;
+        let clientSecret = process.env.SNOW_CLIENT_SECRET;
+
+        // Check if OAuth credentials need to be collected
+        const needsCredentials = !clientId || !clientSecret || clientId.length < 32 || clientSecret.length < 32;
+
+        // If credentials are missing, prompt for them
+        if (needsCredentials) {
         // OAuth Client ID
         clientId = await prompts.text({
           message: 'OAuth Client ID',
@@ -326,36 +328,10 @@ export function registerAuthCommands(program: Command) {
         let username = process.env.SNOW_USERNAME;
         let password = process.env.SNOW_PASSWORD;
 
-        // Validate Basic Auth credentials
-        const credentialsValid =
-          instance && instance.trim() !== '' && instance.includes('.service-now.com') &&
-          username && username.trim() !== '' &&
-          password && password.trim() !== '';
+        // Check if Basic Auth credentials need to be collected
+        const needsCredentials = !username || !password || username.trim() === '' || password.trim() === '';
 
-        if (!credentialsValid) {
-          // ServiceNow instance
-          if (!instance || !instance.includes('.service-now.com')) {
-            instance = await prompts.text({
-              message: 'ServiceNow instance',
-              placeholder: 'dev12345.service-now.com',
-              defaultValue: instance || '',
-              validate: (value) => {
-                if (!value || value.trim() === '') return 'Instance URL is required';
-                const cleaned = value.replace(/^https?:\/\//, '').replace(/\/$/, '');
-                if (!cleaned.includes('.service-now.com')) {
-                  return 'Must be a ServiceNow domain (e.g., dev12345.service-now.com)';
-                }
-              }
-            }) as string;
-
-            if (prompts.isCancel(instance)) {
-              prompts.cancel('Setup cancelled');
-              process.exit(0);
-            }
-
-            instance = instance.replace(/^https?:\/\//, '').replace(/\/$/, '');
-          }
-
+        if (needsCredentials) {
           // Username
           username = await prompts.text({
             message: 'ServiceNow username',
