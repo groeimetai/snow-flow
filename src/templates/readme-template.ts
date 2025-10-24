@@ -39,7 +39,7 @@ snow-flow auth login
 \`\`\`
 
 This will:
-- ✅ Authenticate with your preferred LLM provider (via OpenCode)
+- ✅ Authenticate with your preferred LLM provider (via SnowCode)
 - ✅ Save your provider choice to .env
 - ✅ Configure ServiceNow OAuth credentials
 - ✅ Test the connection and show your username
@@ -50,8 +50,8 @@ This will:
 # Use the swarm command to build anything in ServiceNow
 snow-flow swarm "create an incident dashboard widget"
 
-# Or use OpenCode/Claude Code directly (MCP servers auto-configured)
-opencode  # All 22 MCP servers available automatically
+# Or use SnowCode/Claude Code directly (MCP servers auto-configured)
+snowcode  # All 22 MCP servers available automatically
 \`\`\`
 
 ## 🎯 Key Features
@@ -92,17 +92,17 @@ The \`swarm\` command coordinates multiple specialized agents to handle complex 
 snow-flow swarm "build a complete incident management workspace with dashboards"
 \`\`\`
 
-### 🎨 OpenCode + Claude Code Support
+### 🎨 SnowCode + Claude Code Support
 
 Snow-Flow works seamlessly with both AI platforms:
 
-- **OpenCode**: Native Task() integration, all 22 MCP servers auto-configured
+- **SnowCode**: Native Task() integration, all 22 MCP servers auto-configured
 - **Claude Code**: Full MCP support via .claude/config.json
 - **Both**: Share the same CLAUDE.md instructions and .env configuration
 
 ### 🔐 Secure Authentication
 
-- **LLM Providers**: Authenticate via OpenCode (supports Claude, OpenAI, Google, Ollama)
+- **LLM Providers**: Authenticate via SnowCode (supports Claude, OpenAI, Google, Ollama)
 - **ServiceNow**: OAuth 2.0 with automatic token refresh
 - **Credentials**: Stored securely in .env (never committed to git)
 
@@ -111,7 +111,7 @@ Snow-Flow works seamlessly with both AI platforms:
 Pull ServiceNow artifacts to local files, edit with your favorite tools, and push back:
 
 \`\`\`bash
-# Example via OpenCode/Claude Code with MCP tools:
+# Example via SnowCode/Claude Code with MCP tools:
 # 1. Pull widget to local files
 snow_pull_artifact({ sys_id: 'widget_sys_id', table: 'sp_widget' })
 
@@ -191,7 +191,7 @@ snow-flow swarm "<task>"  # Multi-agent orchestration for complex tasks
 
 ### Direct AI Usage
 \`\`\`bash
-opencode               # Start OpenCode with all 22 MCP servers
+snowcode               # Start SnowCode with all 22 MCP servers
 claude                 # Start Claude Code with MCP servers (if installed)
 \`\`\`
 
@@ -210,7 +210,7 @@ SNOW_CLIENT_SECRET=your-oauth-client-secret
 # LLM Provider (auto-set by auth login)
 DEFAULT_LLM_PROVIDER=anthropic  # or openai, google, ollama
 
-# Optional: Direct API key (skips OpenCode auth)
+# Optional: Direct API key (skips SnowCode auth)
 ANTHROPIC_API_KEY=sk-ant-...
 \`\`\`
 
@@ -236,9 +236,9 @@ your-project/
 ├── .env                    # Environment configuration (DO NOT COMMIT)
 ├── .env.example            # Example environment template
 ├── CLAUDE.md               # AI instructions (primary)
-├── AGENTS.md               # AI instructions (OpenCode copy)
-├── .opencode/              # OpenCode configuration
-│   └── config.json         # MCP servers for OpenCode
+├── AGENTS.md               # AI instructions (SnowCode copy)
+├── .snowcode/              # SnowCode configuration
+│   └── config.json         # MCP servers for SnowCode
 ├── .claude/                # Claude Code configuration
 │   └── config.json         # MCP servers for Claude Code
 ├── .mcp.json               # Unified MCP server configuration
@@ -273,10 +273,10 @@ your-project/
 
 ## 🐛 Troubleshooting
 
-### "OpenCode is not installed"
+### "SnowCode is not installed"
 
 \`\`\`bash
-npm install -g opencode-ai
+npm install -g snowcode-ai
 \`\`\`
 
 ### "ServiceNow authentication failed"
@@ -289,15 +289,15 @@ npm install -g opencode-ai
 ### "MCP servers not loading"
 
 1. Make sure you ran \`snow-flow init\` in your project directory
-2. Check that .opencode/config.json exists
-3. Restart OpenCode/Claude Code after running init
+2. Check that .snowcode/config.json exists
+3. Restart SnowCode/Claude Code after running init
 
 ### "Widget coherence validation failed"
 
 This means your widget's HTML, client script, and server script don't communicate properly. Use Local Sync to debug:
 
 \`\`\`javascript
-// In OpenCode/Claude Code:
+// In SnowCode/Claude Code:
 snow_pull_artifact({ sys_id: 'your_widget_sys_id', table: 'sp_widget' })
 // Edit locally, then push back
 snow_push_artifact({ sys_id: 'your_widget_sys_id' })
@@ -325,7 +325,7 @@ For full license details: https://www.elastic.co/licensing/elastic-license
 Built with ❤️ using:
 - [ServiceNow Platform](https://www.servicenow.com)
 - [Anthropic Claude](https://www.anthropic.com/claude)
-- [OpenCode AI](https://opencode.ai)
+- [SnowCode AI](https://snowcode.ai)
 - [Model Context Protocol (MCP)](https://modelcontextprotocol.io)
 
 ---

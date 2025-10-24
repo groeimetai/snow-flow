@@ -27,11 +27,11 @@ Traditional ServiceNow development means:
 Snow-Flow provides:
 - ✅ **Conversational Development**: Build through natural language
 - ✅ **411 ServiceNow Tools**: Complete API coverage via 2 unified MCP servers
-- ✅ **75+ LLM Providers**: Claude, GPT-4o, Gemini, Llama, Mistral, DeepSeek, Groq, or ANY provider via OpenCode
+- ✅ **75+ LLM Providers**: Claude, GPT-4o, Gemini, Llama, Mistral, DeepSeek, Groq, or ANY provider via SnowCode
 - ✅ **100% Free Option**: Ollama, LM Studio, Jan - run models locally offline
 - ✅ **Local Development**: Pull artifacts to local files, edit with native tools
 - ✅ **Local ML Training**: TensorFlow.js neural networks (runs locally, trains on ServiceNow data)
-- ✅ **Universal Compatibility**: Works with OpenCode, Claude Code, Cursor, Windsurf, Continue.dev, Cline
+- ✅ **Universal Compatibility**: Works with SnowCode, Claude Code, Cursor, Windsurf, Continue.dev, Cline
 
 ---
 
@@ -48,8 +48,8 @@ snow-flow init
 ```
 
 Snow-Flow will automatically:
-- ✅ Detect and install OpenCode (recommended AI coding platform)
-- ✅ Generate configuration files (`.env`, `.opencode/config.json`)
+- ✅ Detect and install SnowCode (recommended AI coding platform)
+- ✅ Generate configuration files (`.env`, `.snowcode/config.json`)
 - ✅ Set up 2 MCP servers with 411 ServiceNow tools
 - ✅ Create documentation (`AGENTS.md`, `README.md`)
 
@@ -95,16 +95,16 @@ snow-flow auth login
 3. **ServiceNow**: Browser opens for OAuth authentication
 4. **Done**: You're ready to develop!
 
-### OpenCode Setup
+### SnowCode Setup
 
-For detailed OpenCode configuration (MCP servers, environment variables, troubleshooting), see:
+For detailed SnowCode configuration (MCP servers, environment variables, troubleshooting), see:
 
-📖 **[OPENCODE-SETUP.md](OPENCODE-SETUP.md)** - Complete OpenCode configuration guide
+📖 **[SNOWCODE-SETUP.md](SNOWCODE-SETUP.md)** - Complete SnowCode configuration guide
 
 **Quick checklist:**
-- ✅ Use `"environment"` (not `"env"`) in `opencode-config.json`
+- ✅ Use `"environment"` (not `"env"`) in `snowcode-config.json`
 - ✅ Run `npm run build` to create `dist/` directory
-- ✅ Verify MCP servers load when OpenCode starts
+- ✅ Verify MCP servers load when SnowCode starts
 - ✅ Test tools actually execute (not just show code snippets)
 
 ### Start Developing
@@ -113,15 +113,15 @@ For detailed OpenCode configuration (MCP servers, environment variables, trouble
 # Use Snow-Flow swarm for any ServiceNow task
 snow-flow swarm "create incident dashboard widget with real-time charts"
 
-# Or launch OpenCode with Snow-Flow tools pre-loaded
-opencode
+# Or launch SnowCode with Snow-Flow tools pre-loaded
+snowcode
 ```
 
 ---
 
 ## 💡 LLM Provider Options
 
-Snow-Flow works with **75+ LLM providers** through OpenCode and Models.dev. Choose ANY model that fits your needs!
+Snow-Flow works with **75+ LLM providers** through SnowCode and Models.dev. Choose ANY model that fits your needs!
 
 ### 🌟 Popular Providers
 
@@ -135,7 +135,7 @@ Snow-Flow works with **75+ LLM providers** through OpenCode and Models.dev. Choo
 
 ### 🔓 Full Provider List (75+)
 
-**Via OpenCode + Models.dev:**
+**Via SnowCode + Models.dev:**
 - **Anthropic**: Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1
 - **OpenAI**: GPT-5, GPT-4o, GPT-4o-mini
 - **Google**: Gemini 2.0 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash
@@ -426,7 +426,7 @@ Provide optimization recommendations"
 
 ## 🤖 Multi-Agent Coordination
 
-Snow-Flow uses OpenCode's native Task() system for intelligent agent teams:
+Snow-Flow uses SnowCode's native Task() system for intelligent agent teams:
 
 **Available Agent Types:**
 - `widget-creator` - Service Portal widget development
@@ -448,11 +448,11 @@ Snow-Flow works with **any MCP-compatible AI coding assistant**:
 
 | AI Assistant | How to Connect |
 |-------------|----------------|
-| **Cursor** | Copy `.opencode/config.json` → `.cursor/mcp.json` |
-| **Windsurf** | Copy `.opencode/config.json` → `mcp_config.json` |
-| **Continue.dev** | Copy `.opencode/config.json` → `.continue/mcpServers/snow-flow.json` |
-| **Cline** | Copy `.opencode/config.json` → `.vscode/mcp.json` |
-| **GitHub Copilot** | Copy `.opencode/config.json` → `.vscode/mcp.json` |
+| **Cursor** | Copy `.snowcode/config.json` → `.cursor/mcp.json` |
+| **Windsurf** | Copy `.snowcode/config.json` → `mcp_config.json` |
+| **Continue.dev** | Copy `.snowcode/config.json` → `.continue/mcpServers/snow-flow.json` |
+| **Cline** | Copy `.snowcode/config.json` → `.vscode/mcp.json` |
+| **GitHub Copilot** | Copy `.snowcode/config.json` → `.vscode/mcp.json` |
 
 **Quick setup:**
 ```bash
@@ -460,10 +460,10 @@ Snow-Flow works with **any MCP-compatible AI coding assistant**:
 snow-flow init
 
 # For Cursor
-cp .opencode/config.json .cursor/mcp.json
+cp .snowcode/config.json .cursor/mcp.json
 
 # For Windsurf
-cp .opencode/config.json mcp_config.json
+cp .snowcode/config.json mcp_config.json
 
 # Restart your AI assistant → 411 Snow-Flow tools available!
 ```
@@ -550,7 +550,7 @@ snow-flow auth logout
 - **Node.js**: 18.0.0 or higher
 - **ServiceNow**: Any supported version
 - **LLM Provider**: Any of the supported options above
-- **AI Coding Assistant**: OpenCode (auto-installed) or others
+- **AI Coding Assistant**: SnowCode (auto-installed) or others
 - **Memory**: 4GB RAM recommended for ML training
 - **Storage**: 1GB free space for models and artifacts
 
@@ -584,7 +584,7 @@ The current Snow-Flow release includes:
 - ✅ **Multi-Agent Orchestration** - SPARC methodology, swarm coordination
 - ✅ **Update Set Management** - Full lifecycle, auto-sync current update set
 - ✅ **Background Script Execution** - With output capture and auto-confirm mode
-- ✅ **Universal Compatibility** - Works with OpenCode, Claude Code, Cursor, Windsurf, Continue.dev, Cline
+- ✅ **Universal Compatibility** - Works with SnowCode, Claude Code, Cursor, Windsurf, Continue.dev, Cline
 
 **Use for:** Solo developers, small teams, learning, proof-of-concepts, community projects
 

@@ -82,42 +82,42 @@ export function registerAuthCommands(program: Command) {
         (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim() !== '') ||
         (process.env.MISTRAL_API_KEY && process.env.MISTRAL_API_KEY.trim() !== '');
 
-      // Only do OpenCode auth if no API key is configured
+      // Only do SnowCode auth if no API key is configured
       if (!hasApiKey) {
         // Check if opencode is installed
         try {
-          execSync('which opencode', { stdio: 'ignore' });
+          execSync('which snowcode', { stdio: 'ignore' });
         } catch {
-          console.error(chalk.red('❌ OpenCode is not installed'));
-          console.log(chalk.yellow('Please install OpenCode first: ') + chalk.cyan('npm install -g opencode-ai'));
+          console.error(chalk.red('❌ SnowCode is not installed'));
+          console.log(chalk.yellow('Please install SnowCode first: ') + chalk.cyan('npm install -g @snow-flow/snowcode'));
           console.log(chalk.blue('Or configure an API key in .env: ') + chalk.cyan('ANTHROPIC_API_KEY=your-key'));
           return;
         }
 
         prompts.intro('Starting authentication');
 
-        // Fix common OpenCode directory issue (agents vs agent) in ALL possible directories
+        // Fix common SnowCode directory issue (agents vs agent) in ALL possible directories
         try {
           const fs = require('fs');
           const path = require('path');
 
           const directoriesToFix = [
-            // Fix 1: Global ~/.opencode directory
-            process.env.HOME + '/.opencode',
+            // Fix 1: Global ~/.snowcode directory
+            process.env.HOME + '/.snowcode',
             // Fix 2: Current working directory
-            path.join(process.cwd(), '.opencode'),
+            path.join(process.cwd(), '.snowcode'),
             // Fix 3: Parent directory (in case we're in a subdirectory)
-            path.join(process.cwd(), '..', '.opencode'),
+            path.join(process.cwd(), '..', '.snowcode'),
             // Fix 4: Snow-flow package directory (for development)
-            path.join(__dirname, '..', '..', '.opencode')
+            path.join(__dirname, '..', '..', '.snowcode')
           ];
 
-          for (const opencodeDir of directoriesToFix) {
-            const agentsDir = path.join(opencodeDir, 'agents');
-            const agentDir = path.join(opencodeDir, 'agent');
+          for (const snowcodeDir of directoriesToFix) {
+            const agentsDir = path.join(snowcodeDir, 'agents');
+            const agentDir = path.join(snowcodeDir, 'agent');
 
             if (fs.existsSync(agentsDir) && !fs.existsSync(agentDir)) {
-              console.log(chalk.dim(`   Fixing OpenCode directory structure in ${opencodeDir}...`));
+              console.log(chalk.dim(`   Fixing SnowCode directory structure in ${snowcodeDir}...`));
               try {
                 fs.renameSync(agentsDir, agentDir);
               } catch (e) {
@@ -126,21 +126,21 @@ export function registerAuthCommands(program: Command) {
             }
           }
         } catch (dirError) {
-          // Ignore directory fix errors - OpenCode will handle it
+          // Ignore directory fix errors - SnowCode will handle it
           console.log(chalk.dim('   (Directory fix skipped - will auto-correct)'));
         }
 
         try {
-          // Run OpenCode auth login - it will handle provider and model selection
-          execSync('opencode auth login', { stdio: 'inherit' });
+          // Run SnowCode auth login - it will handle provider and model selection
+          execSync('snowcode auth login', { stdio: 'inherit' });
         } catch (error: any) {
           console.error(chalk.red('\n❌ Authentication failed'));
 
-          // Check if it's the known OpenCode directory bug
+          // Check if it's the known SnowCode directory bug
           const errorMsg = error?.message || error?.toString() || '';
           if (errorMsg.includes('agents') && errorMsg.includes('agent')) {
-            console.log(chalk.yellow('\n⚠️  OpenCode directory issue detected'));
-            console.log(chalk.blue('   Run this fix: ') + chalk.cyan('mv ~/.opencode/agents ~/.opencode/agent'));
+            console.log(chalk.yellow('\n⚠️  SnowCode directory issue detected'));
+            console.log(chalk.blue('   Run this fix: ') + chalk.cyan('mv ~/.snowcode/agents ~/.snowcode/agent'));
             console.log(chalk.blue('   Then try: ') + chalk.cyan('snow-flow auth login'));
           } else {
             console.log(chalk.yellow('💡 You can try again later or use an API key instead'));

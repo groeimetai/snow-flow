@@ -1,24 +1,24 @@
-# OpenCode Setup Guide for Snow-Flow
+# SnowCode Setup Guide for Snow-Flow
 
-This guide explains how to properly configure OpenCode to use Snow-Flow's MCP tools.
+This guide explains how to properly configure SnowCode to use Snow-Flow's MCP tools.
 
 ## Quick Start
 
 ### 1. Copy Example Config
 
 ```bash
-cp opencode-config.example.json opencode-config.json
+cp snowcode-config.example.json snowcode-config.json
 ```
 
 ### 2. Update Environment Variables
 
-Edit `opencode-config.json` and replace the `${VARIABLE}` placeholders with your actual values:
+Edit `snowcode-config.json` and replace the `${VARIABLE}` placeholders with your actual values:
 
 ```json
 {
-  "$schema": "https://opencode.ai/config.json",
-  "name": "snow-flow-opencode",
-  "description": "OpenCode configuration for Snow-Flow ServiceNow development",
+  "$schema": "https://snowcode.ai/config.json",
+  "name": "snow-flow-snowcode",
+  "description": "SnowCode configuration for Snow-Flow ServiceNow development",
   "model": {
     "provider": "anthropic",
     "model": "claude-sonnet-4-5-20250929",
@@ -54,7 +54,7 @@ Edit `opencode-config.json` and replace the `${VARIABLE}` placeholders with your
   "instructions": [
     "AGENTS.md",
     "CLAUDE.md",
-    ".opencode/AGENTS.md"
+    ".snowcode/AGENTS.md"
   ],
   "cwd": "/path/to/your/snow-flow/installation"
 }
@@ -68,10 +68,10 @@ npm run build
 
 This creates the `dist/` directory with the MCP server files.
 
-### 4. Start OpenCode
+### 4. Start SnowCode
 
 ```bash
-opencode
+snowcode
 ```
 
 ## Critical Configuration Details
@@ -98,7 +98,7 @@ opencode
 
 3. **Forgetting to build**
    - Always run `npm run build` after pulling updates
-   - The `dist/` directory must exist before starting OpenCode
+   - The `dist/` directory must exist before starting SnowCode
 
 ### Environment Variables
 
@@ -116,7 +116,7 @@ opencode
 
 ### Check Tool Availability
 
-When OpenCode starts, you should see the MCP servers loading in the logs:
+When SnowCode starts, you should see the MCP servers loading in the logs:
 
 ```
 [MCP] Loading servicenow-unified...
@@ -127,7 +127,7 @@ When OpenCode starts, you should see the MCP servers loading in the logs:
 
 ### Test Tool Execution
 
-In OpenCode, try a simple command:
+In SnowCode, try a simple command:
 
 ```
 Create an Update Set named "Test Update Set"
@@ -139,7 +139,7 @@ The agent should:
 3. ✅ Return the Update Set sys_id
 
 **If the agent only shows code snippets instead of calling tools, check:**
-- Is `opencode-config.json` using `"environment"` (not `"env"`)?
+- Is `snowcode-config.json` using `"environment"` (not `"env"`)?
 - Did you run `npm run build` after updating Snow-Flow?
 - Are the MCP servers enabled (`"enabled": true`)?
 - Do the `dist/` files exist?
@@ -187,17 +187,17 @@ The agent should:
 ### Problem: "Tools not available"
 
 **Solution:**
-1. Check `opencode-config.json` exists
+1. Check `snowcode-config.json` exists
 2. Verify `"environment"` key (not `"env"`)
 3. Run `npm run build`
-4. Restart OpenCode
+4. Restart SnowCode
 
 ### Problem: "Agent shows code instead of calling tools"
 
 This usually means the MCP servers aren't loaded correctly.
 
 **Solution:**
-1. Check OpenCode logs for MCP loading errors
+1. Check SnowCode logs for MCP loading errors
 2. Verify `dist/` directory exists
 3. Check command paths in config
 4. Ensure `"enabled": true`
@@ -295,14 +295,14 @@ await snow_query_table({ table: 'sp_widget' });
 
 If you encounter issues:
 
-1. **Check logs**: OpenCode shows detailed MCP loading logs
+1. **Check logs**: SnowCode shows detailed MCP loading logs
 2. **Verify config**: Use `"environment"` (not `"env"`)
 3. **Rebuild**: Always `npm run build` after updates
 4. **GitHub Issues**: https://github.com/your-repo/snow-flow/issues
 
 ## Version Info
 
-- **OpenCode**: Requires OpenCode v1.0+
+- **SnowCode**: Requires SnowCode v1.0+
 - **Snow-Flow**: v8.3.0+
 - **Node.js**: v18+ recommended
 - **MCP Spec**: 1.0.0

@@ -1,6 +1,6 @@
 /**
- * OpenCode Output Interceptor
- * Captures and reformats OpenCode's output to show beautiful MCP tool execution
+ * SnowCode Output Interceptor
+ * Captures and reformats SnowCode's output to show beautiful MCP tool execution
  *
  * Detects patterns like:
  * - Shell Create incident dashboard via MCP server
@@ -22,7 +22,7 @@ interface MCPToolExecution {
   status?: 'pending' | 'executing' | 'success' | 'failed';
 }
 
-export class OpenCodeOutputInterceptor extends Transform {
+export class SnowCodeOutputInterceptor extends Transform {
   private formatter: MCPOutputFormatter;
   private buffer: string = '';
   private inShellBlock: boolean = false;
@@ -299,8 +299,8 @@ export class OpenCodeOutputInterceptor extends Transform {
 }
 
 /**
- * Convenience function to pipe OpenCode output through the interceptor
+ * Convenience function to pipe SnowCode output through the interceptor
  */
-export function interceptOpenCodeOutput(options?: { quiet?: boolean }): OpenCodeOutputInterceptor {
-  return new OpenCodeOutputInterceptor(options);
+export function interceptSnowCodeOutput(options?: { quiet?: boolean }): SnowCodeOutputInterceptor {
+  return new SnowCodeOutputInterceptor(options);
 }
