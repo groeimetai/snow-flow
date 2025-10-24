@@ -167,7 +167,6 @@ export default function Page() {
       session = created.data ?? undefined
     }
     if (!session) return
-    local.session.setActive(session.id)
 
     interface SubmissionAttachment {
       path: string
@@ -262,6 +261,7 @@ export default function Page() {
         ],
       },
     })
+    local.session.setActive(session.id)
   }
 
   const handleNewSession = () => {
