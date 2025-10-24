@@ -67,7 +67,7 @@ cd /path/to/project && node -e "const { snow_query_table } = require(...);"
 
 **🚨 WHY THESE FAIL:**
 - MCP tools are **functions**, NOT CLI commands
-- They are loaded by OpenCode/Claude Code automatically
+- They are loaded by SnowCode/Claude Code automatically
 - No `dist/` directory exists in user's project
 - No CLI wrapper exists for MCP tools
 

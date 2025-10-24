@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# OpenCode Launcher with MCP Server Pre-flight Checks
-# Ensures MCP servers are running before starting OpenCode
+# SnowCode Launcher with MCP Server Pre-flight Checks
+# Ensures MCP servers are running before starting SnowCode
 #
 
 set -e
@@ -18,22 +18,22 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${BLUE}════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}  Snow-Flow OpenCode Launcher${NC}"
+echo -e "${BLUE}  Snow-Flow SnowCode Launcher${NC}"
 echo -e "${BLUE}════════════════════════════════════════════════${NC}"
 echo ""
 
-# Check if opencode is installed
-if ! command -v opencode &> /dev/null; then
-    echo -e "${RED}✗ OpenCode not found!${NC}"
+# Check if snowcode is installed
+if ! command -v snowcode &> /dev/null; then
+    echo -e "${RED}✗ SnowCode not found!${NC}"
     echo ""
-    echo "Install OpenCode:"
-    echo "  npm install -g @opencode-ai/cli"
+    echo "Install SnowCode:"
+    echo "  npm install -g @snowcode-ai/cli"
     echo ""
-    echo "Or visit: https://opencode.ai"
+    echo "Or visit: https://snowcode.ai"
     exit 1
 fi
 
-echo -e "${GREEN}✓ OpenCode found${NC}"
+echo -e "${GREEN}✓ SnowCode found${NC}"
 
 # Check if .env exists
 if [ ! -f "$PROJECT_ROOT/.env" ]; then
@@ -80,37 +80,37 @@ else
     exit 1
 fi
 
-# Check if opencode-config.json exists
-if [ ! -f "$PROJECT_ROOT/opencode-config.json" ]; then
-    echo -e "${YELLOW}Creating opencode-config.json...${NC}"
+# Check if snowcode-config.json exists
+if [ ! -f "$PROJECT_ROOT/snowcode-config.json" ]; then
+    echo -e "${YELLOW}Creating snowcode-config.json...${NC}"
 
-    if [ -f "$PROJECT_ROOT/opencode-config.example.json" ]; then
-        cp "$PROJECT_ROOT/opencode-config.example.json" "$PROJECT_ROOT/opencode-config.json"
+    if [ -f "$PROJECT_ROOT/snowcode-config.example.json" ]; then
+        cp "$PROJECT_ROOT/snowcode-config.example.json" "$PROJECT_ROOT/snowcode-config.json"
 
         # Replace variables in config
         source "$PROJECT_ROOT/.env"
 
-        sed -i.bak "s|\${SNOW_INSTANCE}|${SNOW_INSTANCE}|g" "$PROJECT_ROOT/opencode-config.json"
-        sed -i.bak "s|\${SNOW_CLIENT_ID}|${SNOW_CLIENT_ID}|g" "$PROJECT_ROOT/opencode-config.json"
-        sed -i.bak "s|\${SNOW_CLIENT_SECRET}|${SNOW_CLIENT_SECRET}|g" "$PROJECT_ROOT/opencode-config.json"
-        sed -i.bak "s|\${SNOW_USERNAME}|${SNOW_USERNAME}|g" "$PROJECT_ROOT/opencode-config.json"
-        sed -i.bak "s|\${SNOW_PASSWORD}|${SNOW_PASSWORD}|g" "$PROJECT_ROOT/opencode-config.json"
-        sed -i.bak "s|/path/to/your/snow-flow/installation|${PROJECT_ROOT}|g" "$PROJECT_ROOT/opencode-config.json"
+        sed -i.bak "s|\${SNOW_INSTANCE}|${SNOW_INSTANCE}|g" "$PROJECT_ROOT/snowcode-config.json"
+        sed -i.bak "s|\${SNOW_CLIENT_ID}|${SNOW_CLIENT_ID}|g" "$PROJECT_ROOT/snowcode-config.json"
+        sed -i.bak "s|\${SNOW_CLIENT_SECRET}|${SNOW_CLIENT_SECRET}|g" "$PROJECT_ROOT/snowcode-config.json"
+        sed -i.bak "s|\${SNOW_USERNAME}|${SNOW_USERNAME}|g" "$PROJECT_ROOT/snowcode-config.json"
+        sed -i.bak "s|\${SNOW_PASSWORD}|${SNOW_PASSWORD}|g" "$PROJECT_ROOT/snowcode-config.json"
+        sed -i.bak "s|/path/to/your/snow-flow/installation|${PROJECT_ROOT}|g" "$PROJECT_ROOT/snowcode-config.json"
 
-        rm -f "$PROJECT_ROOT/opencode-config.json.bak"
+        rm -f "$PROJECT_ROOT/snowcode-config.json.bak"
 
-        echo -e "${GREEN}✓ opencode-config.json created${NC}"
+        echo -e "${GREEN}✓ snowcode-config.json created${NC}"
     else
-        echo -e "${RED}✗ opencode-config.example.json not found${NC}"
+        echo -e "${RED}✗ snowcode-config.example.json not found${NC}"
         exit 1
     fi
 fi
 
-echo -e "${GREEN}✓ OpenCode configuration ready${NC}"
+echo -e "${GREEN}✓ SnowCode configuration ready${NC}"
 
-# Start OpenCode
+# Start SnowCode
 echo -e "\n${BLUE}════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}Starting OpenCode...${NC}"
+echo -e "${GREEN}Starting SnowCode...${NC}"
 echo -e "${BLUE}════════════════════════════════════════════════${NC}"
 echo ""
 echo -e "${YELLOW}Tips:${NC}"
@@ -120,4 +120,4 @@ echo -e "  • Check tools: Type ${GREEN}list available tools${NC}"
 echo ""
 
 cd "$PROJECT_ROOT"
-exec opencode "$@"
+exec snowcode "$@"

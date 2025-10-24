@@ -1,4 +1,4 @@
-# OpenCode MCP Troubleshooting Guide
+# SnowCode MCP Troubleshooting Guide
 
 ## Problem: "Tools not available" or Agent Shows Code Instead of Calling Tools
 
@@ -23,7 +23,7 @@ npm install -g snow-flow@latest
 
 # Use the new launcher (handles everything)
 cd your-project
-./node_modules/snow-flow/scripts/start-opencode.sh
+./node_modules/snow-flow/scripts/start-snowcode.sh
 ```
 
 The launcher will:
@@ -31,7 +31,7 @@ The launcher will:
 - ✅ Build Snow-Flow if needed
 - ✅ Start MCP servers automatically
 - ✅ Run health checks
-- ✅ Launch OpenCode with tools pre-loaded
+- ✅ Launch SnowCode with tools pre-loaded
 
 ---
 
@@ -65,9 +65,9 @@ If you prefer OAuth, ensure your ServiceNow OAuth app has:
 
 Go to: **System OAuth** → **Application Registry** → Your OAuth App
 
-### Step 2: Fix OpenCode Configuration
+### Step 2: Fix SnowCode Configuration
 
-Ensure `opencode-config.json` uses `"environment"` (not `"env"`):
+Ensure `snowcode-config.json` uses `"environment"` (not `"env"`):
 
 ```json
 {
@@ -102,14 +102,14 @@ Ensure `opencode-config.json` uses `"environment"` (not `"env"`):
 # Should show: "✓ Health check passed - 370+ tools available"
 ```
 
-### Step 4: Launch OpenCode
+### Step 4: Launch SnowCode
 
 ```bash
 # Option A: Use launcher (recommended)
-./scripts/start-opencode.sh
+./scripts/start-snowcode.sh
 
 # Option B: Manual launch
-opencode
+snowcode
 ```
 
 ---
@@ -223,12 +223,12 @@ SNOW_PASSWORD=your-password
 
 ### Error: "Model tried to call unavailable tool '$functions.snow_update_set_manage'"
 
-**Cause:** MCP tools not loaded in OpenCode
+**Cause:** MCP tools not loaded in SnowCode
 
 **Fix:**
-1. Check `opencode-config.json` uses `"environment"` (not `"env"`)
+1. Check `snowcode-config.json` uses `"environment"` (not `"env"`)
 2. Verify MCP servers are running: `./scripts/mcp-server-manager.sh status`
-3. Restart OpenCode: `./scripts/start-opencode.sh`
+3. Restart SnowCode: `./scripts/start-snowcode.sh`
 
 ### Error: "Connection timeout" or "ECONNREFUSED"
 
@@ -301,15 +301,15 @@ SNOW_PASSWORD=your-password
 
 ---
 
-## OpenCode Launcher Benefits
+## SnowCode Launcher Benefits
 
-Using `./scripts/start-opencode.sh` instead of direct `opencode`:
+Using `./scripts/start-snowcode.sh` instead of direct `snowcode`:
 
 - ✅ Validates .env file exists
 - ✅ Builds Snow-Flow if dist/ missing
 - ✅ Auto-starts MCP servers
 - ✅ Runs pre-flight health checks
-- ✅ Creates opencode-config.json if missing
+- ✅ Creates snowcode-config.json if missing
 - ✅ Replaces ${VARIABLES} with actual values
 - ✅ Shows clear error messages with solutions
 
@@ -323,8 +323,8 @@ Using `./scripts/start-opencode.sh` instead of direct `opencode`:
 # MCP server logs
 ./scripts/mcp-server-manager.sh logs
 
-# OpenCode logs (if available)
-cat ~/.opencode/logs/latest.log
+# SnowCode logs (if available)
+cat ~/.snowcode/logs/latest.log
 ```
 
 ### 2. Test Individual Components
@@ -351,7 +351,7 @@ curl -u "$SNOW_USERNAME:$SNOW_PASSWORD" \
 npm run build
 
 # Start fresh
-./scripts/start-opencode.sh
+./scripts/start-snowcode.sh
 ```
 
 ### 4. Report Issue
@@ -360,7 +360,7 @@ If none of the above works, create a GitHub issue with:
 
 - Snow-Flow version: `npm list -g snow-flow`
 - Node.js version: `node -v`
-- OpenCode version: `opencode --version`
+- SnowCode version: `snowcode --version`
 - Output of: `./scripts/mcp-server-manager.sh health`
 - Relevant logs (without passwords!)
 

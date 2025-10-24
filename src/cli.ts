@@ -21,8 +21,8 @@ import { Logger } from './utils/logger.js';
 import chalk from 'chalk';
 // Load MCP Persistent Guard for bulletproof server protection
 import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
-// Load OpenCode output interceptor for beautiful MCP formatting
-import { interceptOpenCodeOutput } from './utils/opencode-output-interceptor.js';
+// Load SnowCode output interceptor for beautiful MCP formatting
+import { interceptSnowCodeOutput } from './utils/snowcode-output-interceptor.js';
 
 // Activate MCP guard ONLY for commands that actually use MCP servers
 // Explicitly exclude: init, version, help, auth, export, config commands
@@ -329,14 +329,14 @@ program
       is_authenticated: isAuthenticated
     });
 
-    // Start OpenCode multi-agent orchestration
+    // Start SnowCode multi-agent orchestration
     try {
       // Generate the orchestration prompt
       const orchestrationPrompt = buildQueenAgentPrompt(objective, taskAnalysis, options, isAuthenticated, sessionId);
       
       if (options.verbose) {
-        cliLogger.info('\n👑 Initializing multi-agent orchestration with OpenCode...');
-        cliLogger.info('🎯 OpenCode will coordinate the following:');
+        cliLogger.info('\n👑 Initializing multi-agent orchestration with SnowCode...');
+        cliLogger.info('🎯 SnowCode will coordinate the following:');
         cliLogger.info(`   - Analyze objective: "${objective}"`);
         cliLogger.info(`   - Spawn ${taskAnalysis.estimatedAgentCount} specialized agents via Task() system`);
         cliLogger.info(`   - Coordinate through shared memory (session: ${sessionId})`);
@@ -350,7 +350,7 @@ program
       
       if (options.verbose && hasIntelligentFeatures && isAuthenticated) {
         cliLogger.info('\n🧠 INTELLIGENT ORCHESTRATION MODE ENABLED!');
-        cliLogger.info('✨ OpenCode will use advanced features:');
+        cliLogger.info('✨ SnowCode will use advanced features:');
         
         if (options.autoPermissions) {
           cliLogger.info('  🔐 Automatic permission escalation');
@@ -384,13 +384,13 @@ program
         }
       }
 
-      // Try to execute OpenCode directly with the objective
-      const success = await executeOpenCode(objective);
+      // Try to execute SnowCode directly with the objective
+      const success = await executeSnowCode(objective);
 
       if (success) {
         if (options.verbose) {
-          cliLogger.info('✅ OpenCode launched successfully!');
-          cliLogger.info('🤖 OpenCode is now executing your objective');
+          cliLogger.info('✅ SnowCode launched successfully!');
+          cliLogger.info('🤖 SnowCode is now executing your objective');
           cliLogger.info(`💾 Monitor progress with session ID: ${sessionId}`);
 
           if (isAuthenticated && options.autoDeploy) {
@@ -406,10 +406,10 @@ program
           launched_at: new Date().toISOString()
         });
       } else {
-        cliLogger.warn('⚠️  OpenCode CLI not found or failed to start');
-        cliLogger.info('\n📋 Please ensure OpenCode is installed:');
-        cliLogger.info('   npm install -g opencode-ai');
-        cliLogger.info('\n💡 Or start OpenCode manually:');
+        cliLogger.warn('⚠️  SnowCode CLI not found or failed to start');
+        cliLogger.info('\n📋 Please ensure SnowCode is installed:');
+        cliLogger.info('   npm install -g @snow-flow/snowcode');
+        cliLogger.info('\n💡 Or start SnowCode manually:');
         cliLogger.info('   1. Run: opencode');
         cliLogger.info(`   2. Enter objective: ${objective}`);
 
@@ -433,27 +433,27 @@ program
   });
 
 
-// Helper function to execute OpenCode directly with the objective
-async function executeOpenCode(objective: string): Promise<boolean> {
+// Helper function to execute SnowCode directly with the objective
+async function executeSnowCode(objective: string): Promise<boolean> {
   try {
-    // Check if OpenCode CLI is available
+    // Check if SnowCode CLI is available
     const { execSync } = require('child_process');
     try {
-      execSync('which opencode', { stdio: 'ignore' });
+      execSync('which snowcode', { stdio: 'ignore' });
     } catch {
-      cliLogger.warn('⚠️  OpenCode CLI not found in PATH');
-      cliLogger.info('📋 Please install OpenCode: npm install -g opencode-ai');
+      cliLogger.warn('⚠️  SnowCode CLI not found in PATH');
+      cliLogger.info('📋 Please install SnowCode: npm install -g @snow-flow/snowcode');
       return false;
     }
 
-    // Check for OpenCode config (.opencode/opencode.json created by init)
-    const opencodeConfigPath = join(process.cwd(), '.opencode', 'opencode.json');
-    const hasOpencodeConfig = existsSync(opencodeConfigPath);
+    // Check for SnowCode config (.snowcode/snowcode.json created by init)
+    const snowcodeConfigPath = join(process.cwd(), '.snowcode', 'snowcode.json');
+    const hasSnowcodeConfig = existsSync(snowcodeConfigPath);
 
-    if (!hasOpencodeConfig) {
-      cliLogger.warn('⚠️  OpenCode configuration not found');
+    if (!hasSnowcodeConfig) {
+      cliLogger.warn('⚠️  SnowCode configuration not found');
       cliLogger.info('📋 Please run: snow-flow init');
-      cliLogger.info('   This will create .opencode/opencode.json with MCP servers configured');
+      cliLogger.info('   This will create .snowcode/snowcode.json with MCP servers configured');
       return false;
     }
 
@@ -473,11 +473,11 @@ async function executeOpenCode(objective: string): Promise<boolean> {
     // Debug output if enabled
     if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.VERBOSE === 'true') {
       cliLogger.info(`🔍 Working Directory: ${process.cwd()}`);
-      cliLogger.info(`🔍 OpenCode Config: ${opencodeConfigPath}`);
+      cliLogger.info(`🔍 SnowCode Config: ${snowcodeConfigPath}`);
       cliLogger.info(`🔍 Environment File: ${envPath}`);
     }
 
-    // Write objective to temp file for OpenCode to read
+    // Write objective to temp file for SnowCode to read
     const { tmpdir } = await import('os');
     const { writeFileSync, unlinkSync } = await import('fs');
     const tmpFile = join(tmpdir(), `snow-flow-objective-${Date.now()}.txt`);
@@ -487,24 +487,24 @@ async function executeOpenCode(objective: string): Promise<boolean> {
     const defaultModel = process.env.DEFAULT_MODEL;
     const defaultProvider = process.env.DEFAULT_LLM_PROVIDER;
 
-    // Start OpenCode with the objective and default model
-    // OpenCode will be started interactively with stdin redirect
-    let opencodeCommand = `opencode < "${tmpFile}"`;
+    // Start SnowCode with the objective and default model
+    // SnowCode will be started interactively with stdin redirect
+    let snowcodeCommand = `snowcode < "${tmpFile}"`;
 
-    // If we have a default model, pass it to OpenCode
+    // If we have a default model, pass it to SnowCode
     if (defaultModel) {
-      opencodeCommand = `opencode --model "${defaultModel}" < "${tmpFile}"`;
+      snowcodeCommand = `snowcode --model "${defaultModel}" < "${tmpFile}"`;
     }
 
-    // Spawn OpenCode process - let it run fully interactively
-    // OpenCode is a TUI (Terminal User Interface) application that needs full terminal control
-    // We pass the objective via stdin redirect (shell: opencode < tmpfile)
-    const opencodeProcess = spawn('sh', ['-c', opencodeCommand], {
-      stdio: 'inherit', // All stdio inherited - OpenCode can use TTY
+    // Spawn SnowCode process - let it run fully interactively
+    // SnowCode is a TUI (Terminal User Interface) application that needs full terminal control
+    // We pass the objective via stdin redirect (shell: snowcode < tmpfile)
+    const snowcodeProcess = spawn('sh', ['-c', snowcodeCommand], {
+      stdio: 'inherit', // All stdio inherited - SnowCode can use TTY
       cwd: process.cwd(),
       env: {
         ...process.env,
-        // Ensure DEFAULT_MODEL is available to OpenCode
+        // Ensure DEFAULT_MODEL is available to SnowCode
         DEFAULT_MODEL: defaultModel || '',
         DEFAULT_LLM_PROVIDER: defaultProvider || ''
       }
@@ -512,7 +512,7 @@ async function executeOpenCode(objective: string): Promise<boolean> {
 
     // Set up process monitoring
     return new Promise((resolve) => {
-      opencodeProcess.on('close', async (code) => {
+      snowcodeProcess.on('close', async (code) => {
         // Clean up temp file
         try {
           unlinkSync(tmpFile);
@@ -523,7 +523,7 @@ async function executeOpenCode(objective: string): Promise<boolean> {
         resolve(code === 0);
       });
 
-      opencodeProcess.on('error', (error) => {
+      snowcodeProcess.on('error', (error) => {
         // Clean up temp file
         try {
           unlinkSync(tmpFile);
@@ -531,7 +531,7 @@ async function executeOpenCode(objective: string): Promise<boolean> {
           // Ignore cleanup errors
         }
 
-        cliLogger.error(`❌ Failed to start OpenCode: ${error.message}`);
+        cliLogger.error(`❌ Failed to start SnowCode: ${error.message}`);
         resolve(false);
       });
 
@@ -539,8 +539,8 @@ async function executeOpenCode(objective: string): Promise<boolean> {
       const timeoutMinutes = parseInt(process.env.SNOW_FLOW_TIMEOUT_MINUTES || '0');
       if (timeoutMinutes > 0) {
         setTimeout(() => {
-          cliLogger.warn(`⏱️  OpenCode session timeout (${timeoutMinutes} minutes), terminating...`);
-          opencodeProcess.kill('SIGTERM');
+          cliLogger.warn(`⏱️  SnowCode session timeout (${timeoutMinutes} minutes), terminating...`);
+          snowcodeProcess.kill('SIGTERM');
 
           // Clean up temp file
           try {
@@ -555,14 +555,14 @@ async function executeOpenCode(objective: string): Promise<boolean> {
     });
 
   } catch (error) {
-    cliLogger.error('❌ Error launching OpenCode:', error instanceof Error ? error.message : String(error));
-    cliLogger.info('📋 Please start OpenCode manually: opencode');
+    cliLogger.error('❌ Error launching SnowCode:', error instanceof Error ? error.message : String(error));
+    cliLogger.info('📋 Please start SnowCode manually: opencode');
     return false;
   }
 }
 
-// Real-time monitoring dashboard for OpenCode process
-function startMonitoringDashboard(opencodeProcess: ChildProcess): NodeJS.Timeout {
+// Real-time monitoring dashboard for SnowCode process
+function startMonitoringDashboard(snowcodeProcess: ChildProcess): NodeJS.Timeout {
   let iterations = 0;
   const startTime = Date.now();
 
@@ -570,13 +570,13 @@ function startMonitoringDashboard(opencodeProcess: ChildProcess): NodeJS.Timeout
   cliLogger.info(`┌─────────────────────────────────────────────────────────────┐`);
   cliLogger.info(`│               🚀 Snow-Flow Dashboard v${VERSION}            │`);
   cliLogger.info(`├─────────────────────────────────────────────────────────────┤`);
-  cliLogger.info(`│ 🤖 OpenCode Status:     ✅ Starting                          │`);
-  cliLogger.info(`│ 📊 Process ID:          ${opencodeProcess.pid || 'N/A'}        │`);
+  cliLogger.info(`│ 🤖 SnowCode Status:     ✅ Starting                          │`);
+  cliLogger.info(`│ 📊 Process ID:          ${snowcodeProcess.pid || 'N/A'}        │`);
   cliLogger.info(`│ ⏱️  Session Time:        00:00                               │`);
   cliLogger.info(`│ 🔄 Monitoring Cycles:    0                                   │`);
   cliLogger.info('└─────────────────────────────────────────────────────────────┘');
 
-  // Silent monitoring - only log to file or memory, don't interfere with OpenCode UI
+  // Silent monitoring - only log to file or memory, don't interfere with SnowCode UI
   const monitoringInterval = setInterval(() => {
     iterations++;
     const uptime = Math.floor((Date.now() - startTime) / 1000);
@@ -1440,19 +1440,19 @@ program
       cliLogger.info(`   - Supporting: ${sessionData.taskAnalysis.supportingAgents.join(', ')}`);
       
       if (launchData && launchData.success) {
-        cliLogger.info(`\n✅ Status: OpenCode (or Claude Code) launched successfully`);
+        cliLogger.info(`\n✅ Status: SnowCode (or Claude Code) launched successfully`);
         cliLogger.info(`🚀 Launched at: ${launchData.launched_at}`);
       } else if (errorData) {
         cliLogger.error(`\n❌ Status: Error occurred`);
         cliLogger.error(`💥 Error: ${errorData.error}`);
         cliLogger.error(`🕐 Failed at: ${errorData.failed_at}`);
       } else {
-        cliLogger.info(`\n⏳ Status: Awaiting manual OpenCode execution`);
+        cliLogger.info(`\n⏳ Status: Awaiting manual SnowCode execution`);
       }
 
       cliLogger.info('\n💡 Tips:');
-      cliLogger.info('   - Check OpenCode for real-time agent progress');
-      cliLogger.info('   - Use Memory.get("swarm_session_' + sessionId + '") in OpenCode');
+      cliLogger.info('   - Check SnowCode for real-time agent progress');
+      cliLogger.info('   - Use Memory.get("swarm_session_' + sessionId + '") in SnowCode');
       cliLogger.info('   - Monitor TodoRead for task completion status');
       
       if (options.watch) {
@@ -1466,7 +1466,7 @@ program
           // Re-fetch session data to check for updates
           const updatedSession = memorySystem.getLearning(`session_${sessionId}`);
           if (updatedSession) {
-            cliLogger.info('   Status: Active - Check OpenCode for details');
+            cliLogger.info('   Status: Active - Check SnowCode for details');
           }
         }, parseInt(options.interval) * 1000);
         
@@ -1570,12 +1570,12 @@ program
       console.log(`│   • ${new Date().toLocaleTimeString()} - System monitoring active     │`);
       cliLogger.info('└─────────────────────────────────────────────────────────────┘');
       
-      // Check for active OpenCode/Claude Code processes
+      // Check for active SnowCode/Claude Code processes
       try {
         const { execSync } = require('child_process');
         const processes = execSync('ps aux | grep "claude\\|opencode" | grep -v grep', { encoding: 'utf8' }).toString();
         if (processes.trim()) {
-          cliLogger.info('\n🤖 Active OpenCode/Claude Code Processes:');
+          cliLogger.info('\n🤖 Active SnowCode/Claude Code Processes:');
           const lines = processes.trim().split('\n');
           lines.forEach((line: string, index: number) => {
             if (index < 3) { // Show max 3 processes
@@ -1674,7 +1674,7 @@ program
       await createEnvFile(targetDir, options.force);
       
       // Create MCP configuration - always included now (SPARC is default)
-      console.log('🔧 Setting up MCP servers for OpenCode (also works with Claude Code)...');
+      console.log('🔧 Setting up MCP servers for SnowCode (also works with Claude Code)...');
       await createMCPConfig(targetDir, options.force);
 
       // Copy CLAUDE.md file
@@ -1684,15 +1684,15 @@ program
       // Create README files
       await createReadmeFiles(targetDir, options.force);
 
-      // Copy opencode-config.example.json
-      await copyOpenCodeConfig(targetDir, options.force);
+      // Copy snowcode-config.example.json
+      await copySnowCodeConfig(targetDir, options.force);
 
-      // Copy OpenCode themes
-      await copyOpenCodeThemes(targetDir, options.force);
+      // Copy SnowCode themes
+      await copySnowCodeThemes(targetDir, options.force);
 
-      // Copy OpenCode package.json with snowcode-plugin
-      console.log('📦 Configuring OpenCode plugin (snowcode fork)...');
-      await copyOpenCodePackageJson(targetDir, options.force);
+      // Copy SnowCode package.json with snowcode-plugin
+      console.log('📦 Configuring SnowCode plugin (snowcode fork)...');
+      await copySnowCodePackageJson(targetDir, options.force);
 
       // Copy MCP server management scripts
       console.log('🔧 Setting up MCP server management scripts...');
@@ -1700,20 +1700,20 @@ program
 
       console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
       console.log('\n📋 Created Snow-Flow configuration:');
-      console.log('   ✓ .opencode/ - OpenCode configuration with both MCP servers');
-      console.log('   ✓ .opencode/themes/ - ServiceNow custom theme for OpenCode');
+      console.log('   ✓ .snowcode/ - SnowCode configuration with both MCP servers');
+      console.log('   ✓ .snowcode/themes/ - ServiceNow custom theme for SnowCode');
       console.log('   ✓ .claude/ - Claude Code MCP configuration (backward compatibility)');
       console.log('   ✓ .mcp.json - 2 unified MCP servers (370 tools total)');
-      console.log('   ✓ scripts/ - MCP server management and OpenCode launcher');
-      console.log('   ✓ AGENTS.md - OpenCode primary instructions');
+      console.log('   ✓ scripts/ - MCP server management and SnowCode launcher');
+      console.log('   ✓ AGENTS.md - SnowCode primary instructions');
       console.log('   ✓ CLAUDE.md - Claude Code compatibility');
       console.log('   ✓ README.md - Complete capabilities documentation');
-      console.log('   ✓ OPENCODE-TROUBLESHOOTING.md - Troubleshooting guide');
+      console.log('   ✓ SNOWCODE-TROUBLESHOOTING.md - Troubleshooting guide');
       console.log('   ✓ .snow-flow/ - Project workspace and memory');
 
       if (!options.skipMcp) {
-        // NOTE: MCP servers work with OpenCode's native Task() system
-        console.log(chalk.blue('\nℹ️  MCP servers configured for OpenCode (also compatible with Claude Code)'));
+        // NOTE: MCP servers work with SnowCode's native Task() system
+        console.log(chalk.blue('\nℹ️  MCP servers configured for SnowCode (also compatible with Claude Code)'));
         console.log(chalk.green('✅ 411 ServiceNow tools automatically available via 2 unified servers'));
         console.log(chalk.blue('📋 SDK handles MCP server lifecycle automatically'));
 
@@ -1763,7 +1763,7 @@ program
             console.log(output);
           }
         } catch (error) {
-          console.log(chalk.yellow('⚠️  MCP servers will start automatically when you launch OpenCode'));
+          console.log(chalk.yellow('⚠️  MCP servers will start automatically when you launch SnowCode'));
           console.log(chalk.dim('   Or start manually: ./scripts/mcp-server-manager.sh start'));
           if ((error as Error).message.includes('No .env file found')) {
             console.log(chalk.dim('   💡 Tip: Configure .env first, then run: ./scripts/mcp-server-manager.sh start'));
@@ -1771,8 +1771,8 @@ program
         }
       }
 
-      // Check and optionally install OpenCode
-      const configImported = await checkAndInstallOpenCode();
+      // Check and optionally install SnowCode
+      const configImported = await checkAndInstallSnowCode();
 
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
       console.log('1. Configure credentials: Edit ' + chalk.cyan('.env'));
@@ -1781,10 +1781,10 @@ program
       console.log('   - Authenticates with your LLM provider (Claude/OpenAI/Google/Ollama)');
       console.log('   - Then authenticates with ServiceNow OAuth');
       console.log('   - Your provider choice is automatically saved to .env');
-      console.log('3. Start developing with OpenCode: ' + chalk.cyan('./scripts/start-opencode.sh'));
+      console.log('3. Start developing with SnowCode: ' + chalk.cyan('./scripts/start-opencode.sh'));
       console.log('   - Smart launcher with pre-flight checks and MCP server management');
       console.log('   - Or use swarm: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
-      console.log('   - Or launch OpenCode directly: ' + chalk.cyan('opencode'));
+      console.log('   - Or launch SnowCode directly: ' + chalk.cyan('snowcode'));
       console.log('\n📚 Documentation: ' + chalk.blue('https://github.com/groeimetai/snow-flow'));
       console.log('💡 370+ ServiceNow tools • 2 MCP servers • Multi-LLM support');
 
@@ -1817,7 +1817,7 @@ program
   help                  Show this help
 
 🎯 Example Usage:
-  snow-flow init                           # Initialize project (auto-configures OpenCode)
+  snow-flow init                           # Initialize project (auto-configures SnowCode)
   snow-flow auth login                     # Authenticate (handles LLM + ServiceNow)
   snow-flow auth status                    # Check authentication status
   snow-flow swarm "create a widget for incident management"
@@ -1860,20 +1860,20 @@ program
 
 // Helper functions for init command
 
-// Check if OpenCode is installed, and offer to install it
-async function checkAndInstallOpenCode(): Promise<boolean> {
+// Check if SnowCode is installed, and offer to install it
+async function checkAndInstallSnowCode(): Promise<boolean> {
   const { execSync } = require('child_process');
-  let opencodeInstalled = false;
+  let snowcodeInstalled = false;
 
   try {
     // Check if opencode is already installed
-    execSync('which opencode', { stdio: 'ignore' });
-    console.log(chalk.green('\n✅ OpenCode is already installed!'));
-    opencodeInstalled = true;
+    execSync('which snowcode', { stdio: 'ignore' });
+    console.log(chalk.green('\n✅ SnowCode is already installed!'));
+    snowcodeInstalled = true;
   } catch {
-    // OpenCode not installed
-    console.log(chalk.yellow('\n⚠️  OpenCode is not installed'));
-    console.log(chalk.blue('OpenCode is required to use Snow-Flow with any LLM provider'));
+    // SnowCode not installed
+    console.log(chalk.yellow('\n⚠️  SnowCode is not installed'));
+    console.log(chalk.blue('SnowCode is required to use Snow-Flow with any LLM provider'));
 
     // Import inquirer dynamically
     const inquirer = (await import('inquirer')).default;
@@ -1882,50 +1882,50 @@ async function checkAndInstallOpenCode(): Promise<boolean> {
       {
         type: 'confirm',
         name: 'shouldInstall',
-        message: 'Would you like to install OpenCode now? (npm install -g opencode-ai)',
+        message: 'Would you like to install SnowCode now? (npm install -g @snow-flow/snowcode)',
         default: true
       }
     ]);
 
     if (!shouldInstall) {
-      console.log(chalk.yellow('\n⏭️  Skipping OpenCode installation'));
-      console.log(chalk.blue('You can install it later with: ') + chalk.cyan('npm install -g opencode-ai'));
+      console.log(chalk.yellow('\n⏭️  Skipping SnowCode installation'));
+      console.log(chalk.blue('You can install it later with: ') + chalk.cyan('npm install -g @snow-flow/snowcode'));
       return false;
     }
 
-    // Install OpenCode
-    console.log(chalk.blue('\n📦 Installing OpenCode globally...'));
+    // Install SnowCode
+    console.log(chalk.blue('\n📦 Installing SnowCode globally...'));
     console.log(chalk.dim('This may take a minute...'));
 
     try {
-      execSync('npm install -g opencode-ai', { stdio: 'inherit' });
-      console.log(chalk.green('\n✅ OpenCode installed successfully!'));
-      opencodeInstalled = true;
+      execSync('npm install -g @snow-flow/snowcode', { stdio: 'inherit' });
+      console.log(chalk.green('\n✅ SnowCode installed successfully!'));
+      snowcodeInstalled = true;
     } catch (error) {
-      console.log(chalk.red('\n❌ Failed to install OpenCode'));
-      console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install -g opencode-ai'));
+      console.log(chalk.red('\n❌ Failed to install SnowCode'));
+      console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install -g @snow-flow/snowcode'));
       return false;
     }
   }
 
-  // If OpenCode is installed, copy config to .opencode/ directory
-  // OpenCode automatically detects config files in project root and .opencode/ directory
-  if (opencodeInstalled) {
-    const exampleConfigPath = join(process.cwd(), 'opencode-config.example.json');
-    const opencodeConfigPath = join(process.cwd(), '.opencode', 'config.json');
+  // If SnowCode is installed, copy config to .snowcode/ directory
+  // SnowCode automatically detects config files in project root and .snowcode/ directory
+  if (snowcodeInstalled) {
+    const exampleConfigPath = join(process.cwd(), 'snowcode-config.example.json');
+    const snowcodeConfigPath = join(process.cwd(), '.snowcode', 'config.json');
 
     // Check if example config file exists
     try {
       await fs.access(exampleConfigPath);
 
-      console.log(chalk.blue('\n🔧 Setting up OpenCode configuration...'));
+      console.log(chalk.blue('\n🔧 Setting up SnowCode configuration...'));
 
       try {
-        // Copy example config to .opencode/config.json for automatic detection
+        // Copy example config to .snowcode/config.json for automatic detection
         let configContent = await fs.readFile(exampleConfigPath, 'utf-8');
 
         // Ensure the config content has the correct cwd (in case it still has a placeholder)
-        // This is a safety check - the placeholder should already be replaced by copyOpenCodeConfig
+        // This is a safety check - the placeholder should already be replaced by copySnowCodeConfig
         if (configContent.includes('"/path/to/your/snow-flow/installation"')) {
           console.log(chalk.yellow('⚠️  Config still contains placeholder, attempting to fix...'));
 
@@ -1963,17 +1963,17 @@ async function checkAndInstallOpenCode(): Promise<boolean> {
           }
         }
 
-        await fs.writeFile(opencodeConfigPath, configContent);
-        console.log(chalk.green('✅ OpenCode configuration created at .opencode/config.json'));
-        console.log(chalk.blue('💡 OpenCode will automatically detect this configuration'));
+        await fs.writeFile(snowcodeConfigPath, configContent);
+        console.log(chalk.green('✅ SnowCode configuration created at .snowcode/config.json'));
+        console.log(chalk.blue('💡 SnowCode will automatically detect this configuration'));
         return true; // Successfully configured
       } catch (error) {
-        console.log(chalk.yellow('\n⚠️  Could not create OpenCode config'));
-        console.log(chalk.blue('You can copy it manually: ') + chalk.cyan(`cp opencode-config.example.json .opencode/config.json`));
+        console.log(chalk.yellow('\n⚠️  Could not create SnowCode config'));
+        console.log(chalk.blue('You can copy it manually: ') + chalk.cyan(`cp snowcode-config.example.json .snowcode/config.json`));
         return false;
       }
     } catch {
-      console.log(chalk.yellow('\n⚠️  opencode-config.example.json not found'));
+      console.log(chalk.yellow('\n⚠️  snowcode-config.example.json not found'));
       console.log(chalk.blue('Config will be available after init completes'));
       return false;
     }
@@ -2045,7 +2045,7 @@ async function createReadmeFiles(targetDir: string, force: boolean = false) {
 
 // Helper functions
 
-async function copyOpenCodeConfig(targetDir: string, force: boolean = false) {
+async function copySnowCodeConfig(targetDir: string, force: boolean = false) {
   try {
     // Determine the snow-flow installation directory
     let snowFlowRoot: string;
@@ -2081,14 +2081,14 @@ async function copyOpenCodeConfig(targetDir: string, force: boolean = false) {
       }
     }
 
-    // Try to find the opencode-config.example.json
+    // Try to find the snowcode-config.example.json
     const sourceFiles = [
-      join(snowFlowRoot, 'opencode-config.example.json'),
-      join(__dirname, '..', 'opencode-config.example.json'),
-      join(__dirname, 'opencode-config.example.json'),
-      join(__dirname, '..', '..', '..', 'opencode-config.example.json'),
-      join(__dirname, '..', '..', '..', '..', 'opencode-config.example.json'),
-      join(process.cwd(), 'opencode-config.example.json')
+      join(snowFlowRoot, 'snowcode-config.example.json'),
+      join(__dirname, '..', 'snowcode-config.example.json'),
+      join(__dirname, 'snowcode-config.example.json'),
+      join(__dirname, '..', '..', '..', 'snowcode-config.example.json'),
+      join(__dirname, '..', '..', '..', '..', 'snowcode-config.example.json'),
+      join(process.cwd(), 'snowcode-config.example.json')
     ];
 
     let foundSource = false;
@@ -2098,7 +2098,7 @@ async function copyOpenCodeConfig(targetDir: string, force: boolean = false) {
       try {
         configContent = await fs.readFile(sourcePath, 'utf8');
         foundSource = true;
-        console.log(`✅ Found opencode-config.example.json at: ${sourcePath}`);
+        console.log(`✅ Found snowcode-config.example.json at: ${sourcePath}`);
         break;
       } catch {
         // Continue to next path
@@ -2106,7 +2106,7 @@ async function copyOpenCodeConfig(targetDir: string, force: boolean = false) {
     }
 
     if (!foundSource) {
-      console.log('⚠️  Could not find opencode-config.example.json source file');
+      console.log('⚠️  Could not find snowcode-config.example.json source file');
       return;
     }
 
@@ -2116,14 +2116,14 @@ async function copyOpenCodeConfig(targetDir: string, force: boolean = false) {
       `"${snowFlowRoot.replace(/\\/g, '/')}"`
     );
 
-    const targetPath = join(targetDir, 'opencode-config.example.json');
+    const targetPath = join(targetDir, 'snowcode-config.example.json');
 
     try {
       await fs.access(targetPath);
       if (force) {
-        console.log('⚠️  opencode-config.example.json already exists, overwriting with --force flag');
+        console.log('⚠️  snowcode-config.example.json already exists, overwriting with --force flag');
       } else {
-        console.log('✅ opencode-config.example.json already exists');
+        console.log('✅ snowcode-config.example.json already exists');
         return;
       }
     } catch {
@@ -2131,16 +2131,16 @@ async function copyOpenCodeConfig(targetDir: string, force: boolean = false) {
     }
 
     await fs.writeFile(targetPath, configContent);
-    console.log('✅ Created opencode-config.example.json with correct snow-flow path');
+    console.log('✅ Created snowcode-config.example.json with correct snow-flow path');
 
   } catch (error) {
-    console.error('❌ Error copying opencode-config.example.json:', error);
+    console.error('❌ Error copying snowcode-config.example.json:', error);
   }
 }
 
-async function copyOpenCodeThemes(targetDir: string, force: boolean = false) {
+async function copySnowCodeThemes(targetDir: string, force: boolean = false) {
   try {
-    // Determine the snow-flow installation directory (same logic as copyOpenCodeConfig)
+    // Determine the snow-flow installation directory (same logic as copySnowCodeConfig)
     let snowFlowRoot: string;
     const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
                            __dirname.includes('node_modules/.pnpm') ||
@@ -2174,8 +2174,8 @@ async function copyOpenCodeThemes(targetDir: string, force: boolean = false) {
       join(snowFlowRoot, 'themes'),
       join(__dirname, '..', 'themes'),
       join(__dirname, 'themes'),
-      join(snowFlowRoot, '.opencode', 'themes'),
-      join(__dirname, '..', '.opencode', 'themes')
+      join(snowFlowRoot, '.snowcode', 'themes'),
+      join(__dirname, '..', '.snowcode', 'themes')
     ];
 
     let themesSourceDir: string | null = null;
@@ -2195,8 +2195,8 @@ async function copyOpenCodeThemes(targetDir: string, force: boolean = false) {
       return;
     }
 
-    // Create target .opencode/themes directory
-    const themesTargetDir = join(targetDir, '.opencode', 'themes');
+    // Create target .snowcode/themes directory
+    const themesTargetDir = join(targetDir, '.snowcode', 'themes');
     await fs.mkdir(themesTargetDir, { recursive: true });
 
     // Copy all theme files
@@ -2231,15 +2231,15 @@ async function copyOpenCodeThemes(targetDir: string, force: boolean = false) {
     }
 
     if (copiedCount > 0) {
-      console.log(`✅ Copied ${copiedCount} OpenCode theme file(s) to .opencode/themes/`);
+      console.log(`✅ Copied ${copiedCount} SnowCode theme file(s) to .snowcode/themes/`);
     }
 
   } catch (error) {
-    console.error('❌ Error copying OpenCode themes:', error);
+    console.error('❌ Error copying SnowCode themes:', error);
   }
 }
 
-async function copyOpenCodePackageJson(targetDir: string, force: boolean = false) {
+async function copySnowCodePackageJson(targetDir: string, force: boolean = false) {
   try {
     // Determine the snow-flow installation directory
     let snowFlowRoot: string;
@@ -2272,9 +2272,9 @@ async function copyOpenCodePackageJson(targetDir: string, force: boolean = false
 
     // Find opencode package.json template
     const templateSourcePaths = [
-      join(snowFlowRoot, 'templates', 'opencode-package.json'),
-      join(__dirname, '..', 'templates', 'opencode-package.json'),
-      join(__dirname, 'templates', 'opencode-package.json')
+      join(snowFlowRoot, 'templates', 'snowcode-package.json'),
+      join(__dirname, '..', 'templates', 'snowcode-package.json'),
+      join(__dirname, 'templates', 'snowcode-package.json')
     ];
 
     let templatePath: string | null = null;
@@ -2289,22 +2289,22 @@ async function copyOpenCodePackageJson(targetDir: string, force: boolean = false
     }
 
     if (!templatePath) {
-      console.log('⚠️  OpenCode package.json template not found, OpenCode will use default plugin');
+      console.log('⚠️  SnowCode package.json template not found, SnowCode will use default plugin');
       return;
     }
 
-    // Create .opencode directory
-    const opencodeDir = join(targetDir, '.opencode');
-    await fs.mkdir(opencodeDir, { recursive: true });
+    // Create .snowcode directory
+    const snowcodeDir = join(targetDir, '.snowcode');
+    await fs.mkdir(snowcodeDir, { recursive: true });
 
     // Copy package.json template
-    const targetPath = join(opencodeDir, 'package.json');
+    const targetPath = join(snowcodeDir, 'package.json');
 
     // Check if file already exists
     try {
       await fs.access(targetPath);
       if (!force) {
-        console.log('✅ .opencode/package.json already exists (snowcode-plugin configured)');
+        console.log('✅ .snowcode/package.json already exists (snowcode-plugin configured)');
         return;
       }
     } catch {
@@ -2312,10 +2312,10 @@ async function copyOpenCodePackageJson(targetDir: string, force: boolean = false
     }
 
     await fs.copyFile(templatePath, targetPath);
-    console.log('✅ Created .opencode/package.json with @groeimetai/snowcode-plugin');
+    console.log('✅ Created .snowcode/package.json with @groeimetai/snowcode-plugin');
 
   } catch (error) {
-    console.error('❌ Error copying OpenCode package.json:', error);
+    console.error('❌ Error copying SnowCode package.json:', error);
   }
 }
 
@@ -2328,8 +2328,8 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
   const fs = require('fs').promises;
 
   try {
-    // Read OpenCode configuration
-    const configPath = path.join(targetDir, '.opencode', 'opencode.json');
+    // Read SnowCode configuration
+    const configPath = path.join(targetDir, '.snowcode', 'snowcode.json');
     const configContent = await fs.readFile(configPath, 'utf-8');
     const config = JSON.parse(configContent);
 
@@ -2440,7 +2440,7 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
 
   } catch (error: any) {
     console.log(chalk.yellow(`   ⚠️  Could not verify MCP servers: ${error.message}`));
-    console.log(chalk.dim('   Servers will be tested when OpenCode starts'));
+    console.log(chalk.dim('   Servers will be tested when SnowCode starts'));
   }
 }
 
@@ -2540,11 +2540,11 @@ async function copyMCPServerScripts(targetDir: string, force: boolean = false) {
       console.log(`✅ Scripts are executable and ready to use`);
     }
 
-    // Also copy OPENCODE-TROUBLESHOOTING.md to project root
+    // Also copy SNOWCODE-TROUBLESHOOTING.md to project root
     const troubleshootingSourcePaths = [
-      join(snowFlowRoot, 'OPENCODE-TROUBLESHOOTING.md'),
-      join(__dirname, '..', 'OPENCODE-TROUBLESHOOTING.md'),
-      join(__dirname, 'OPENCODE-TROUBLESHOOTING.md')
+      join(snowFlowRoot, 'SNOWCODE-TROUBLESHOOTING.md'),
+      join(__dirname, '..', 'SNOWCODE-TROUBLESHOOTING.md'),
+      join(__dirname, 'SNOWCODE-TROUBLESHOOTING.md')
     ];
 
     let troubleshootingSourcePath: string | null = null;
@@ -2559,20 +2559,20 @@ async function copyMCPServerScripts(targetDir: string, force: boolean = false) {
     }
 
     if (troubleshootingSourcePath) {
-      const targetPath = join(targetDir, 'OPENCODE-TROUBLESHOOTING.md');
+      const targetPath = join(targetDir, 'SNOWCODE-TROUBLESHOOTING.md');
       try {
         await fs.access(targetPath);
         if (!force) {
-          console.log(`✅ OPENCODE-TROUBLESHOOTING.md already exists`);
+          console.log(`✅ SNOWCODE-TROUBLESHOOTING.md already exists`);
         } else {
           const content = await fs.readFile(troubleshootingSourcePath, 'utf8');
           await fs.writeFile(targetPath, content);
-          console.log(`✅ Created OPENCODE-TROUBLESHOOTING.md`);
+          console.log(`✅ Created SNOWCODE-TROUBLESHOOTING.md`);
         }
       } catch {
         const content = await fs.readFile(troubleshootingSourcePath, 'utf8');
         await fs.writeFile(targetPath, content);
-        console.log(`✅ Created OPENCODE-TROUBLESHOOTING.md`);
+        console.log(`✅ Created SNOWCODE-TROUBLESHOOTING.md`);
       }
     }
 
@@ -2667,7 +2667,7 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       console.log('✅ Created CLAUDE.md (Primary instructions)');
     }
 
-    // Create AGENTS.md (identical copy for OpenCode compatibility)
+    // Create AGENTS.md (identical copy for SnowCode compatibility)
     const agentsMdPath = join(targetDir, 'AGENTS.md');
     try {
       await fs.access(agentsMdPath);
@@ -2679,21 +2679,21 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       }
     } catch {
       await fs.writeFile(agentsMdPath, agentsMdContent);
-      console.log('✅ Created AGENTS.md (Identical copy for OpenCode compatibility)');
+      console.log('✅ Created AGENTS.md (Identical copy for SnowCode compatibility)');
     }
 
-    // Create .opencode/ directory structure
-    const opencodeDir = join(targetDir, '.opencode');
-    const agentsDir = join(opencodeDir, 'agent');  // Singular 'agent' as required by OpenCode
-    const modesDir = join(opencodeDir, 'modes');
+    // Create .snowcode/ directory structure
+    const snowcodeDir = join(targetDir, '.snowcode');
+    const agentsDir = join(snowcodeDir, 'agent');  // Singular 'agent' as required by SnowCode
+    const modesDir = join(snowcodeDir, 'modes');
 
     try {
-      await fs.mkdir(opencodeDir, { recursive: true });
+      await fs.mkdir(snowcodeDir, { recursive: true });
       await fs.mkdir(agentsDir, { recursive: true });
       await fs.mkdir(modesDir, { recursive: true });
-      console.log('✅ Created .opencode/ directory structure');
+      console.log('✅ Created .snowcode/ directory structure');
 
-      // Copy agent files from .claude/ to .opencode/agent/ (if they exist)
+      // Copy agent files from .claude/ to .snowcode/agent/ (if they exist)
       const sourceAgentsDir = join(__dirname, '..', '.claude', 'agents');
       try {
         const agentFiles = await fs.readdir(sourceAgentsDir);
@@ -2705,21 +2705,21 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
             await fs.writeFile(targetFile, content);
           }
         }
-        console.log('✅ Copied agent configurations to .opencode/agent/');
+        console.log('✅ Copied agent configurations to .snowcode/agent/');
       } catch (err) {
-        // Silently continue - agent configs are in opencode.json, not separate files
+        // Silently continue - agent configs are in snowcode.json, not separate files
       }
 
-      // Create .opencode/opencode.json with both MCP servers
-      // CRITICAL: Use ABSOLUTE paths so OpenCode can find the servers!
+      // Create .snowcode/snowcode.json with both MCP servers
+      // CRITICAL: Use ABSOLUTE paths so SnowCode can find the servers!
       const distPath = join(snowFlowRoot, 'dist');
 
-      // CRITICAL: OpenCode expects command as array with all parts
-      // Also: environment variables are inherited from parent process (OpenCode reads .env)
-      const opencodeConfig = {
+      // CRITICAL: SnowCode expects command as array with all parts
+      // Also: environment variables are inherited from parent process (SnowCode reads .env)
+      const snowcodeConfig = {
         $schema: "https://opencode.ai/config.json",
         name: "snow-flow",
-        description: "ServiceNow development with OpenCode and multi-LLM support",
+        description: "ServiceNow development with SnowCode and multi-LLM support",
         mcp: {
           "servicenow-unified": {
             type: "local",
@@ -2745,23 +2745,23 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
         ]
       };
 
-      // Write both opencode.json AND config.json (Claude uses config.json)
-      const opencodeConfigPath = join(opencodeDir, 'opencode.json');
-      const configJsonPath = join(opencodeDir, 'config.json');
+      // Write both snowcode.json AND config.json (Claude uses config.json)
+      const snowcodeConfigPath = join(snowcodeDir, 'snowcode.json');
+      const configJsonPath = join(snowcodeDir, 'config.json');
 
-      await fs.writeFile(opencodeConfigPath, JSON.stringify(opencodeConfig, null, 2));
-      await fs.writeFile(configJsonPath, JSON.stringify(opencodeConfig, null, 2));
+      await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
+      await fs.writeFile(configJsonPath, JSON.stringify(snowcodeConfig, null, 2));
 
-      console.log('✅ Created .opencode/opencode.json with both MCP servers');
-      console.log('✅ Created .opencode/config.json (for Claude compatibility)');
+      console.log('✅ Created .snowcode/snowcode.json with both MCP servers');
+      console.log('✅ Created .snowcode/config.json (for Claude compatibility)');
 
-      // Also create AGENTS.md in .opencode/
-      const opencodeAgentsMdPath = join(opencodeDir, 'AGENTS.md');
+      // Also create AGENTS.md in .snowcode/
+      const opencodeAgentsMdPath = join(snowcodeDir, 'AGENTS.md');
       await fs.writeFile(opencodeAgentsMdPath, agentsMdContent);
-      console.log('✅ Created .opencode/AGENTS.md');
+      console.log('✅ Created .snowcode/AGENTS.md');
 
     } catch (error) {
-      console.log('⚠️  Error creating .opencode/ directory:', error instanceof Error ? error.message : String(error));
+      console.log('⚠️  Error creating .snowcode/ directory:', error instanceof Error ? error.message : String(error));
     }
 
   } catch (error) {
@@ -3332,8 +3332,8 @@ program
       await setupMCPConfig(process.cwd(), instanceUrl, clientId, clientSecret, options.force || false);
       
       console.log(chalk.green('\n✅ MCP configuration refreshed successfully!'));
-      console.log('\n📢 IMPORTANT: Restart OpenCode (or Claude Code) to use the new configuration:');
-      console.log(chalk.cyan('   OpenCode: opencode'));
+      console.log('\n📢 IMPORTANT: Restart SnowCode (or Claude Code) to use the new configuration:');
+      console.log(chalk.cyan('   SnowCode: opencode'));
       console.log(chalk.cyan('   Claude Code: claude --mcp-config .mcp.json'));
       console.log('\n💡 The Local Development server now includes:');
       console.log('   • Universal artifact detection via sys_metadata');
@@ -3365,16 +3365,16 @@ program
 // MCP Server command with subcommands
 program
   .command('mcp <action>')
-  .description('Manage ServiceNow MCP servers for OpenCode integration')
+  .description('Manage ServiceNow MCP servers for SnowCode integration')
   .option('--server <name>', 'Specific server name to manage')
   .option('--port <port>', 'Port for MCP server (default: auto)')
   .option('--host <host>', 'Host for MCP server (default: localhost)')
   .action(async (action: string, options) => {
-    // NOTE: MCP servers work with OpenCode's native Task() system
-    console.log(chalk.blue('ℹ️  MCP servers configured for OpenCode (also compatible with Claude Code)'));
+    // NOTE: MCP servers work with SnowCode's native Task() system
+    console.log(chalk.blue('ℹ️  MCP servers configured for SnowCode (also compatible with Claude Code)'));
     console.log(chalk.yellow('⚠️  Manual MCP commands are no longer needed'));
-    console.log(chalk.green('✅ OpenCode automatically handles all MCP server lifecycle'));
-    console.log(chalk.blue('\n💡 Simply run your swarm commands - OpenCode handles the rest!'));
+    console.log(chalk.green('✅ SnowCode automatically handles all MCP server lifecycle'));
+    console.log(chalk.blue('\n💡 Simply run your swarm commands - SnowCode handles the rest!'));
     return;
   });
 
@@ -3402,9 +3402,9 @@ async function handleMCPStart(manager: any, options: any): Promise<void> {
     console.log(`\n✅ Started ${running}/${total} MCP servers`);
 
     if (running === total) {
-      console.log('🎉 All MCP servers are now running and available in OpenCode!');
+      console.log('🎉 All MCP servers are now running and available in SnowCode!');
       console.log('\n📋 Next steps:');
-      console.log('   1. Open OpenCode (or Claude Code)');
+      console.log('   1. Open SnowCode (or Claude Code)');
       console.log('   2. MCP tools will be automatically available');
       console.log('   3. Use snow_deploy_widget, snow_deploy_flow, etc.');
     } else {
@@ -3493,7 +3493,7 @@ async function handleMCPStatus(manager: any, options: any): Promise<void> {
   console.log(`📈 Summary: ${running}/${total} servers running`);
 
   if (running === total) {
-    console.log('🎉 All MCP servers are operational and available in OpenCode (or Claude Code)!');
+    console.log('🎉 All MCP servers are operational and available in SnowCode (or Claude Code)!');
   } else if (running > 0) {
     console.log('⚠️  Some servers are not running. Use "snow-flow mcp start" to start them.');
   } else {
@@ -3609,22 +3609,22 @@ async function handleMCPDebug(options: any): Promise<void> {
   console.log(`   SNOW_CLIENT_ID: ${process.env.SNOW_CLIENT_ID ? '✅ Set' : '❌ Not set'}`);
   console.log(`   SNOW_CLIENT_SECRET: ${process.env.SNOW_CLIENT_SECRET ? '✅ Set' : '❌ Not set'}`);
   
-  // Check OpenCode
-  console.log('\n🤖 OpenCode:');
+  // Check SnowCode
+  console.log('\n🤖 SnowCode:');
   const { execSync } = require('child_process');
   try {
-    execSync('which opencode', { stdio: 'ignore' });
-    console.log('   ✅ OpenCode CLI found');
+    execSync('which snowcode', { stdio: 'ignore' });
+    console.log('   ✅ SnowCode CLI found');
   } catch {
-    console.log('   ❌ OpenCode CLI not found in PATH');
-    console.log('   💡 Install with: npm install -g opencode-ai');
+    console.log('   ❌ SnowCode CLI not found in PATH');
+    console.log('   💡 Install with: npm install -g @snow-flow/snowcode');
   }
 
   console.log('\n💡 Tips:');
-  console.log('   1. Ensure OpenCode is configured: opencode config import opencode-config.example.json');
+  console.log('   1. Ensure SnowCode is configured: opencode config import snowcode-config.example.json');
   console.log('   2. Check .env file has valid ServiceNow credentials and LLM API keys');
   console.log('   3. Start developing: snow-flow swarm "your objective"');
-  console.log('   4. OpenCode will automatically connect to Snow-Flow\'s MCP servers');
+  console.log('   4. SnowCode will automatically connect to Snow-Flow\'s MCP servers');
 }
 
 
