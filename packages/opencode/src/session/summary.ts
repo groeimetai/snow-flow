@@ -2,12 +2,14 @@ import { Provider } from "@/provider/provider"
 import { fn } from "@/util/fn"
 import z from "zod"
 import { Session } from "."
-import { generateText } from "ai"
+import { generateText, type ModelMessage } from "ai"
 import { MessageV2 } from "./message-v2"
 import { Flag } from "@/flag/flag"
 import { Identifier } from "@/id/id"
 import { Snapshot } from "@/snapshot"
-import type { UserMessage } from "@opencode-ai/sdk"
+
+import { ProviderTransform } from "@/provider/transform"
+import { SystemPrompt } from "./system"
 
 export namespace SessionSummary {
   export const summarize = fn(
@@ -38,19 +40,43 @@ export namespace SessionSummary {
     const messages = input.messages.filter(
       (m) => m.info.id === input.messageID || (m.info.role === "assistant" && m.info.parentID === input.messageID),
     )
-    const userMsg = messages.find((m) => m.info.id === input.messageID)!.info as UserMessage
+    const msgWithParts = messages.find((m) => m.info.id === input.messageID)!
+    const userMsg = msgWithParts.info as MessageV2.User
     const diffs = await computeDiff({ messages })
     userMsg.summary = {
+      ...userMsg.summary,
       diffs,
-      text: userMsg.summary?.text ?? "",
     }
-    if (
-      Flag.OPENCODE_EXPERIMENTAL_TURN_SUMMARY &&
-      messages.every((m) => m.info.role !== "assistant" || m.info.time.completed)
-    ) {
-      const assistantMsg = messages.find((m) => m.info.role === "assistant")!.info as MessageV2.Assistant
-      const small = await Provider.getSmallModel(assistantMsg.providerID)
-      if (!small) return
+    await Session.updateMessage(userMsg)
+
+    const assistantMsg = messages.find((m) => m.info.role === "assistant")!.info as MessageV2.Assistant
+    const small = await Provider.getSmallModel(assistantMsg.providerID)
+    if (!small) return
+
+    const textPart = msgWithParts.parts.find((p) => p.type === "text" && p.synthetic === false) as MessageV2.TextPart
+    if (textPart && !userMsg.summary?.title) {
+      const result = await generateText({
+        maxOutputTokens: small.info.reasoning ? 1500 : 20,
+        providerOptions: ProviderTransform.providerOptions(small.npm, small.providerID, {}),
+        messages: [
+          ...SystemPrompt.title(small.providerID).map(
+            (x): ModelMessage => ({
+              role: "system",
+              content: x,
+            }),
+          ),
+          {
+            role: "user" as const,
+            content: textPart?.text ?? "",
+          },
+        ],
+        model: small.language,
+      })
+      userMsg.summary.title = result.text
+      await Session.updateMessage(userMsg)
+    }
+
+    if (messages.every((m) => m.info.role !== "assistant" || m.info.time.completed)) {
       const result = await generateText({
         model: small.language,
         maxOutputTokens: 100,
@@ -66,9 +92,9 @@ export namespace SessionSummary {
           },
         ],
       })
-      userMsg.summary.text = result.text
+      userMsg.summary.body = result.text
+      await Session.updateMessage(userMsg)
     }
-    await Session.updateMessage(userMsg)
   }
 
   export const diff = fn(
