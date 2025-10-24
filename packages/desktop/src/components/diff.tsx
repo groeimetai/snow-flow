@@ -1,4 +1,10 @@
-import { type FileContents, FileDiff, type DiffLineAnnotation, DiffFileRendererOptions } from "@pierre/precision-diffs"
+import {
+  type FileContents,
+  FileDiff,
+  type DiffLineAnnotation,
+  DiffFileRendererOptions,
+  registerCustomTheme,
+} from "@pierre/precision-diffs"
 import { ComponentProps, createEffect, splitProps } from "solid-js"
 
 export type DiffProps<T = {}> = Omit<DiffFileRendererOptions<T>, "themes"> & {
@@ -8,6 +14,9 @@ export type DiffProps<T = {}> = Omit<DiffFileRendererOptions<T>, "themes"> & {
   class?: string
   classList?: ComponentProps<"div">["classList"]
 }
+
+// @ts-expect-error
+registerCustomTheme("opencode", () => import("./theme.json"))
 
 // interface ThreadMetadata {
 //   threadId: string
@@ -40,7 +49,7 @@ export function Diff<T>(props: DiffProps<T>) {
   // annotations and a container element to hold the diff
   createEffect(() => {
     const instance = new FileDiff<T>({
-      theme: "pierre-light",
+      theme: "opencode",
       // Or can also provide a 'themes' prop, which allows the code to adapt
       // to your OS light or dark theme
       // themes: { dark: 'pierre-night', light: 'pierre-light' },
