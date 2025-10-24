@@ -89,7 +89,7 @@ export function registerAuthCommands(program: Command) {
           execSync('which snowcode', { stdio: 'ignore' });
         } catch {
           console.error(chalk.red('❌ SnowCode is not installed'));
-          console.log(chalk.yellow('Please install SnowCode first: ') + chalk.cyan('npm install -g @snow-flow/snowcode'));
+          console.log(chalk.yellow('Please install SnowCode first: ') + chalk.cyan('npm install -g @groeimetai/snowcode'));
           console.log(chalk.blue('Or configure an API key in .env: ') + chalk.cyan('ANTHROPIC_API_KEY=your-key'));
           return;
         }
