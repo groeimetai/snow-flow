@@ -159,6 +159,20 @@ export default function Page() {
     setActiveItem(undefined)
   }
 
+  const scrollDiffItem = (element: HTMLElement) => {
+    element.scrollIntoView({ block: "start", behavior: "instant" })
+  }
+
+  const handleDiffTriggerClick = (event: MouseEvent) => {
+    const target = event.currentTarget as HTMLElement
+    queueMicrotask(() => {
+      if (target.getAttribute("aria-expanded") !== "true") return
+      const item = target.closest('[data-slot="accordion-item"]') as HTMLElement | null
+      if (!item) return
+      scrollDiffItem(item)
+    })
+  }
+
   const handlePromptSubmit = async (parts: ContentPart[]) => {
     const existingSession = local.session.active()
     let session = existingSession
@@ -564,10 +578,7 @@ export default function Page() {
                               </For>
                             </ul>
                           </Show>
-                          <div
-                            ref={messageScrollElement}
-                            class="grow min-w-0 h-full overflow-y-auto no-scrollbar snap-y"
-                          >
+                          <div ref={messageScrollElement} class="grow min-w-0 h-full overflow-y-auto no-scrollbar">
                             <div class="flex flex-col items-start gap-50 pb-[800px]">
                               <For each={local.session.userMessages()}>
                                 {(message) => {
@@ -578,7 +589,7 @@ export default function Page() {
                                   return (
                                     <div
                                       data-message={message.id}
-                                      class="flex flex-col items-start self-stretch gap-14 pt-1.5 snap-start"
+                                      class="flex flex-col items-start self-stretch gap-14 pt-1.5"
                                     >
                                       {/* Title */}
                                       <div class="flex flex-col items-start gap-2 self-stretch">
@@ -603,7 +614,7 @@ export default function Page() {
                                               {(diff) => (
                                                 <Accordion.Item value={diff.file}>
                                                   <Accordion.Header>
-                                                    <Accordion.Trigger>
+                                                    <Accordion.Trigger onClick={handleDiffTriggerClick}>
                                                       <div class="flex items-center justify-between w-full">
                                                         <div class="flex items-center gap-5">
                                                           <FileIcon
