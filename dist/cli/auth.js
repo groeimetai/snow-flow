@@ -318,6 +318,17 @@ function registerAuthCommands(program) {
                 if (testResult.success) {
                     prompts.log.success(`Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
                 }
+                // 🔧 Auto-refresh MCP configuration with new credentials
+                try {
+                    const { setupMCPConfig } = await Promise.resolve().then(() => __importStar(require('../cli.js')));
+                    const spinner2 = prompts.spinner();
+                    spinner2.start('Updating MCP configuration');
+                    await setupMCPConfig(process.cwd(), instance, clientId, clientSecret, true);
+                    spinner2.stop('MCP servers ready for SnowCode/Claude Code');
+                }
+                catch (error) {
+                    console.log(chalk_1.default.yellow('⚠️  Could not update MCP config - run "snow-flow init" to set up'));
+                }
                 prompts.outro('Setup complete!');
             }
             else {
@@ -400,6 +411,17 @@ function registerAuthCommands(program) {
             if (testResult.success) {
                 spinner.stop('ServiceNow authentication successful');
                 prompts.log.success(`Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
+                // 🔧 Auto-refresh MCP configuration with new credentials
+                try {
+                    const { setupMCPConfig } = await Promise.resolve().then(() => __importStar(require('../cli.js')));
+                    const spinner2 = prompts.spinner();
+                    spinner2.start('Updating MCP configuration');
+                    await setupMCPConfig(process.cwd(), instance, username, password, true);
+                    spinner2.stop('MCP servers ready for SnowCode/Claude Code');
+                }
+                catch (error) {
+                    console.log(chalk_1.default.yellow('⚠️  Could not update MCP config - run "snow-flow init" to set up'));
+                }
                 prompts.outro('Setup complete!');
             }
             else {
