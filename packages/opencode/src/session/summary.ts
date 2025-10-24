@@ -7,6 +7,7 @@ import { MessageV2 } from "./message-v2"
 import { Flag } from "@/flag/flag"
 import { Identifier } from "@/id/id"
 import { Snapshot } from "@/snapshot"
+import type { UserMessage } from "@opencode-ai/sdk"
 
 export namespace SessionSummary {
   export const summarize = fn(
@@ -37,11 +38,11 @@ export namespace SessionSummary {
     const messages = input.messages.filter(
       (m) => m.info.id === input.messageID || (m.info.role === "assistant" && m.info.parentID === input.messageID),
     )
-    const userMsg = messages.find((m) => m.info.id === input.messageID)!
+    const userMsg = messages.find((m) => m.info.id === input.messageID)!.info as UserMessage
     const diffs = await computeDiff({ messages })
-    userMsg.info.summary = {
+    userMsg.summary = {
       diffs,
-      text: "",
+      text: userMsg.summary?.text ?? "",
     }
     if (
       Flag.OPENCODE_EXPERIMENTAL_TURN_SUMMARY &&
@@ -65,12 +66,9 @@ export namespace SessionSummary {
           },
         ],
       })
-      userMsg.info.summary = {
-        text: result.text,
-        diffs: [],
-      }
+      userMsg.summary.text = result.text
     }
-    await Session.updateMessage(userMsg.info)
+    await Session.updateMessage(userMsg)
   }
 
   export const diff = fn(
