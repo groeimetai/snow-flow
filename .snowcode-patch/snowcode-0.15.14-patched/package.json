@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "0.15.14-snow-flow-3",
+  "version": "0.15.14-snow-flow-4",
   "name": "@groeimetai/snowcode",
   "description": "SnowCode - AI-powered ServiceNow development CLI (OpenCode fork enhanced for Snow-Flow) - Patched with DevOps features",
   "type": "module",
@@ -81,7 +81,7 @@
     "vscode-jsonrpc": "8.2.1",
     "web-tree-sitter": "0.22.6",
     "xdg-basedir": "5.1.0",
-    "yargs": "18.0.0",
+    "yargs": "17.7.2",
     "zod": "4.1.12"
   },
   "optionalDependencies": {

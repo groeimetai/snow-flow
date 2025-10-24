@@ -1789,10 +1789,10 @@ async function checkAndInstallSnowCode() {
     }
     // ALWAYS install SnowCode locally in the project directory with platform binaries
     console.log(chalk_1.default.blue('\n📦 Installing SnowCode locally (with platform binaries)...'));
-    console.log(chalk_1.default.dim('Installing @groeimetai/snowcode@0.15.14-snow-flow-3...'));
+    console.log(chalk_1.default.dim('Installing @groeimetai/snowcode@0.15.14-snow-flow-4...'));
     try {
         const projectDir = process.cwd();
-        execSync('npm install @groeimetai/snowcode@0.15.14-snow-flow-3', {
+        execSync('npm install @groeimetai/snowcode@0.15.14-snow-flow-4', {
             cwd: projectDir,
             stdio: 'inherit'
         });
@@ -1801,7 +1801,7 @@ async function checkAndInstallSnowCode() {
     }
     catch (error) {
         console.log(chalk_1.default.red('\n❌ Failed to install SnowCode locally'));
-        console.log(chalk_1.default.yellow('Please install it manually: ') + chalk_1.default.cyan('npm install @groeimetai/snowcode@0.15.14-snow-flow-3'));
+        console.log(chalk_1.default.yellow('Please install it manually: ') + chalk_1.default.cyan('npm install @groeimetai/snowcode@0.15.14-snow-flow-4'));
         console.log(chalk_1.default.dim('This is required for the compiled binaries'));
         return false;
     }
