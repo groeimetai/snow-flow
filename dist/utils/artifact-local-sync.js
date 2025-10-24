@@ -2,7 +2,7 @@
 /**
  * Artifact Local Sync System
  *
- * Creates temporary local files from ServiceNow artifacts so OpenCode
+ * Creates temporary local files from ServiceNow artifacts so SnowCode
  * (or Claude Code) can use its native tools (search, edit, multi-file operations, etc.)
  * Then syncs changes back to ServiceNow.
  *
@@ -235,7 +235,7 @@ class ArtifactLocalSync {
         console.log(`📁 Location: ${displayPath}`);
         console.log(`📄 Files created:`);
         files.forEach(f => console.log(`   - ${f.filename} (${f.type})`));
-        console.log(`\n💡 OpenCode (or Claude Code) can now use its native tools on these files!`);
+        console.log(`\n💡 SnowCode (or Claude Code) can now use its native tools on these files!`);
         console.log(`   Edit, search, refactor - then run 'pushArtifact' to sync back.`);
         return artifact;
     }
@@ -524,7 +524,7 @@ ${config.coherenceRules.map(rule => `### ${rule.name}\n${rule.description}`).joi
         const instructions = `
 ## Editing Instructions
 
-1. **Edit files** using your AI coding assistant's native tools (OpenCode, Claude Code, etc.)
+1. **Edit files** using your AI coding assistant's native tools (SnowCode, Claude Code, etc.)
 2. **Maintain coherence** between related files
 ${config.fieldMappings.some(fm => fm.validateES5) ? '3. **Use ES5 only** in server-side scripts (no modern JavaScript)' : ''}
 4. **Test locally** if possible
@@ -609,7 +609,7 @@ ${files.map(f => `- **${f.filename}** - ${f.field}`).join('\n')}
 
 ## Editing Instructions
 
-1. **Edit files** using your AI coding assistant's native tools (OpenCode, Claude Code, etc.)
+1. **Edit files** using your AI coding assistant's native tools (SnowCode, Claude Code, etc.)
 2. **Maintain coherence** between template, scripts, and CSS
 3. **Use ES5 only** in server script (no modern JavaScript)
 4. **Test locally** if possible

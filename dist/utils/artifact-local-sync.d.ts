@@ -1,7 +1,7 @@
 /**
  * Artifact Local Sync System
  *
- * Creates temporary local files from ServiceNow artifacts so OpenCode
+ * Creates temporary local files from ServiceNow artifacts so SnowCode
  * (or Claude Code) can use its native tools (search, edit, multi-file operations, etc.)
  * Then syncs changes back to ServiceNow.
  *
