@@ -134,11 +134,18 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           if (match.found) return store.session[match.index]
           return undefined
         },
-        async sync(sessionID: string) {
+        async sync(sessionID: string, isRetry = false) {
           const [session, messages] = await Promise.all([
             sdk.client.session.get({ path: { id: sessionID } }),
             sdk.client.session.messages({ path: { id: sessionID } }),
           ])
+
+          // If no messages and this might be a new session, retry after a delay
+          if (!isRetry && messages.data!.length === 0) {
+            setTimeout(() => this.sync(sessionID, true), 500)
+            return
+          }
+
           setStore(
             produce((draft) => {
               const match = Binary.search(draft.session, sessionID, (s) => s.id)
