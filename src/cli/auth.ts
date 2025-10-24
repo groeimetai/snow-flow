@@ -131,8 +131,18 @@ export function registerAuthCommands(program: Command) {
         }
 
         try {
-          // Run SnowCode auth login - it will handle provider and model selection
-          execSync('snowcode auth login', { stdio: 'inherit' });
+          // Run SnowCode auth login - prefer local installation (has platform binaries)
+          const localSnowCode = path.join(process.cwd(), 'node_modules', '@groeimetai', 'snowcode', 'bin', 'snowcode');
+          let snowcodeCommand = 'snowcode'; // fallback to global
+
+          if (fs.existsSync(localSnowCode)) {
+            console.log(chalk.dim('   Using local SnowCode installation (with platform binaries)'));
+            snowcodeCommand = `"${localSnowCode}"`;
+          } else {
+            console.log(chalk.dim('   Using global SnowCode installation'));
+          }
+
+          execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
         } catch (error: any) {
           console.error(chalk.red('\n❌ Authentication failed'));
 
