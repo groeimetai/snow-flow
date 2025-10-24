@@ -408,7 +408,7 @@ program
       } else {
         cliLogger.warn('⚠️  SnowCode CLI not found or failed to start');
         cliLogger.info('\n📋 Please ensure SnowCode is installed:');
-        cliLogger.info('   npm install -g @snow-flow/snowcode');
+        cliLogger.info('   npm install -g @groeimetai/snowcode');
         cliLogger.info('\n💡 Or start SnowCode manually:');
         cliLogger.info('   1. Run: opencode');
         cliLogger.info(`   2. Enter objective: ${objective}`);
@@ -442,7 +442,7 @@ async function executeSnowCode(objective: string): Promise<boolean> {
       execSync('which snowcode', { stdio: 'ignore' });
     } catch {
       cliLogger.warn('⚠️  SnowCode CLI not found in PATH');
-      cliLogger.info('📋 Please install SnowCode: npm install -g @snow-flow/snowcode');
+      cliLogger.info('📋 Please install SnowCode: npm install -g @groeimetai/snowcode');
       return false;
     }
 
@@ -1882,14 +1882,14 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
       {
         type: 'confirm',
         name: 'shouldInstall',
-        message: 'Would you like to install SnowCode now? (npm install -g @snow-flow/snowcode)',
+        message: 'Would you like to install SnowCode now? (npm install -g @groeimetai/snowcode)',
         default: true
       }
     ]);
 
     if (!shouldInstall) {
       console.log(chalk.yellow('\n⏭️  Skipping SnowCode installation'));
-      console.log(chalk.blue('You can install it later with: ') + chalk.cyan('npm install -g @snow-flow/snowcode'));
+      console.log(chalk.blue('You can install it later with: ') + chalk.cyan('npm install -g @groeimetai/snowcode'));
       return false;
     }
 
@@ -1898,12 +1898,12 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
     console.log(chalk.dim('This may take a minute...'));
 
     try {
-      execSync('npm install -g @snow-flow/snowcode', { stdio: 'inherit' });
+      execSync('npm install -g @groeimetai/snowcode', { stdio: 'inherit' });
       console.log(chalk.green('\n✅ SnowCode installed successfully!'));
       snowcodeInstalled = true;
     } catch (error) {
       console.log(chalk.red('\n❌ Failed to install SnowCode'));
-      console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install -g @snow-flow/snowcode'));
+      console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install -g @groeimetai/snowcode'));
       return false;
     }
   }
@@ -3617,7 +3617,7 @@ async function handleMCPDebug(options: any): Promise<void> {
     console.log('   ✅ SnowCode CLI found');
   } catch {
     console.log('   ❌ SnowCode CLI not found in PATH');
-    console.log('   💡 Install with: npm install -g @snow-flow/snowcode');
+    console.log('   💡 Install with: npm install -g @groeimetai/snowcode');
   }
 
   console.log('\n💡 Tips:');
