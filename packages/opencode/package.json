@@ -46,6 +46,7 @@
     "@opencode-ai/script": "workspace:*",
     "@opencode-ai/sdk": "workspace:*",
     "@parcel/watcher": "2.5.1",
+    "@pierre/precision-diffs": "0.0.2-alpha.1-1",
     "@standard-schema/spec": "1.0.0",
     "@zip.js/zip.js": "2.7.62",
     "ai": "catalog:",
