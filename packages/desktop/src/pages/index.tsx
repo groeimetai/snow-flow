@@ -571,9 +571,9 @@ export default function Page() {
                             <div class="flex flex-col items-start gap-50 pb-[800px]">
                               <For each={local.session.userMessages()}>
                                 {(message) => {
-                                  const title = message.summary?.title
-                                  const prompt = local.session.getMessageText(message)
-                                  const summary = message.summary?.body
+                                  const title = createMemo(() => message.summary?.title)
+                                  const prompt = createMemo(() => local.session.getMessageText(message))
+                                  const summary = createMemo(() => message.summary?.body)
 
                                   return (
                                     <div
@@ -583,10 +583,10 @@ export default function Page() {
                                       {/* Title */}
                                       <div class="flex flex-col items-start gap-2 self-stretch">
                                         <h1 class="text-14-medium text-text-strong overflow-hidden text-ellipsis min-w-0">
-                                          {title ?? prompt}
+                                          {title() ?? prompt()}
                                         </h1>
                                         <Show when={title}>
-                                          <div class="text-12-regular text-text-base">{prompt}</div>
+                                          <div class="text-12-regular text-text-base">{prompt()}</div>
                                         </Show>
                                       </div>
                                       {/* Summary */}
@@ -594,7 +594,7 @@ export default function Page() {
                                         <Show when={summary}>
                                           <div class="flex flex-col items-start gap-1 self-stretch">
                                             <h2 class="text-12-medium text-text-weak">Summary</h2>
-                                            <div class="text-14-regular text-text-base self-stretch">{summary}</div>
+                                            <div class="text-14-regular text-text-base self-stretch">{summary()}</div>
                                           </div>
                                         </Show>
                                         <Show when={message.summary?.diffs.length}>

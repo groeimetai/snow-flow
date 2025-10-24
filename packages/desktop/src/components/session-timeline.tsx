@@ -387,6 +387,11 @@ export default function SessionTimeline(props: { session: string; class?: string
     }
   }
 
+  createEffect(() => {
+    console.log("WHAT")
+    console.log(JSON.stringify(messagesWithValidParts()))
+  })
+
   return (
     <div
       ref={setRoot}
