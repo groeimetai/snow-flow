@@ -52,9 +52,6 @@ export namespace Agent {
       {
         edit: "deny",
         bash: {
-          "awk -i inplace*": "ask",
-          "awk --inplace*": "ask",
-          "awk*": "allow",
           "cut*": "allow",
           "diff*": "allow",
           "du*": "allow",
@@ -79,9 +76,6 @@ export namespace Agent {
           "more*": "allow",
           "pwd*": "allow",
           "rg*": "allow",
-          "sed --in-place*": "ask",
-          "sed -i*": "ask",
-          "sed -n *": "allow",
           "sort --output=*": "ask",
           "sort -o *": "ask",
           "sort*": "allow",
