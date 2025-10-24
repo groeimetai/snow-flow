@@ -526,7 +526,7 @@
     "typescript": "5.9.3"
   },
   "peerDependencies": {
-    "@groeimetai/snowcode": "^0.15.15"
+    "@groeimetai/snowcode": "^0.15.16"
   },
   "peerDependenciesMeta": {
     "@groeimetai/snowcode": {
