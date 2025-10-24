@@ -84,7 +84,7 @@ export function registerAuthCommands(program: Command) {
 
       // Only do SnowCode auth if no API key is configured
       if (!hasApiKey) {
-        // Check if opencode is installed
+        // Check if snowcode is installed
         try {
           execSync('which snowcode', { stdio: 'ignore' });
         } catch {

@@ -410,7 +410,7 @@ program
         cliLogger.info('\n📋 Please ensure SnowCode is installed:');
         cliLogger.info('   npm install -g @groeimetai/snowcode');
         cliLogger.info('\n💡 Or start SnowCode manually:');
-        cliLogger.info('   1. Run: opencode');
+        cliLogger.info('   1. Run: snowcode');
         cliLogger.info(`   2. Enter objective: ${objective}`);
 
         if (isAuthenticated && options.autoDeploy) {
@@ -556,7 +556,7 @@ async function executeSnowCode(objective: string): Promise<boolean> {
 
   } catch (error) {
     cliLogger.error('❌ Error launching SnowCode:', error instanceof Error ? error.message : String(error));
-    cliLogger.info('📋 Please start SnowCode manually: opencode');
+    cliLogger.info('📋 Please start SnowCode manually: snowcode');
     return false;
   }
 }
@@ -1573,7 +1573,7 @@ program
       // Check for active SnowCode/Claude Code processes
       try {
         const { execSync } = require('child_process');
-        const processes = execSync('ps aux | grep "claude\\|opencode" | grep -v grep', { encoding: 'utf8' }).toString();
+        const processes = execSync('ps aux | grep "claude\\|opencode\\|snowcode" | grep -v grep', { encoding: 'utf8' }).toString();
         if (processes.trim()) {
           cliLogger.info('\n🤖 Active SnowCode/Claude Code Processes:');
           const lines = processes.trim().split('\n');
@@ -1781,7 +1781,7 @@ program
       console.log('   - Authenticates with your LLM provider (Claude/OpenAI/Google/Ollama)');
       console.log('   - Then authenticates with ServiceNow OAuth');
       console.log('   - Your provider choice is automatically saved to .env');
-      console.log('3. Start developing with SnowCode: ' + chalk.cyan('./scripts/start-opencode.sh'));
+      console.log('3. Start developing with SnowCode: ' + chalk.cyan('./scripts/start-snowcode.sh'));
       console.log('   - Smart launcher with pre-flight checks and MCP server management');
       console.log('   - Or use swarm: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
       console.log('   - Or launch SnowCode directly: ' + chalk.cyan('snowcode'));
@@ -1866,7 +1866,7 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
   let snowcodeInstalled = false;
 
   try {
-    // Check if opencode is already installed
+    // Check if snowcode is already installed
     execSync('which snowcode', { stdio: 'ignore' });
     console.log(chalk.green('\n✅ SnowCode is already installed!'));
     snowcodeInstalled = true;
@@ -2270,7 +2270,7 @@ async function copySnowCodePackageJson(targetDir: string, force: boolean = false
       }
     }
 
-    // Find opencode package.json template
+    // Find snowcode package.json template
     const templateSourcePaths = [
       join(snowFlowRoot, 'templates', 'snowcode-package.json'),
       join(__dirname, '..', 'templates', 'snowcode-package.json'),
@@ -2506,7 +2506,7 @@ async function copyMCPServerScripts(targetDir: string, force: boolean = false) {
     // Copy specific scripts
     const scriptFiles = [
       'mcp-server-manager.sh',
-      'start-opencode.sh'
+      'start-snowcode.sh'
     ];
 
     let copiedCount = 0;
@@ -2756,8 +2756,8 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       console.log('✅ Created .snowcode/config.json (for Claude compatibility)');
 
       // Also create AGENTS.md in .snowcode/
-      const opencodeAgentsMdPath = join(snowcodeDir, 'AGENTS.md');
-      await fs.writeFile(opencodeAgentsMdPath, agentsMdContent);
+      const snowcodeAgentsMdPath = join(snowcodeDir, 'AGENTS.md');
+      await fs.writeFile(snowcodeAgentsMdPath, agentsMdContent);
       console.log('✅ Created .snowcode/AGENTS.md');
 
     } catch (error) {
@@ -3333,7 +3333,7 @@ program
       
       console.log(chalk.green('\n✅ MCP configuration refreshed successfully!'));
       console.log('\n📢 IMPORTANT: Restart SnowCode (or Claude Code) to use the new configuration:');
-      console.log(chalk.cyan('   SnowCode: opencode'));
+      console.log(chalk.cyan('   SnowCode: snowcode'));
       console.log(chalk.cyan('   Claude Code: claude --mcp-config .mcp.json'));
       console.log('\n💡 The Local Development server now includes:');
       console.log('   • Universal artifact detection via sys_metadata');
@@ -3621,7 +3621,7 @@ async function handleMCPDebug(options: any): Promise<void> {
   }
 
   console.log('\n💡 Tips:');
-  console.log('   1. Ensure SnowCode is configured: opencode config import snowcode-config.example.json');
+  console.log('   1. Ensure SnowCode is configured: snowcode config import snowcode-config.example.json');
   console.log('   2. Check .env file has valid ServiceNow credentials and LLM API keys');
   console.log('   3. Start developing: snow-flow swarm "your objective"');
   console.log('   4. SnowCode will automatically connect to Snow-Flow\'s MCP servers');
