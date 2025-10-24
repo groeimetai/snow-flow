@@ -2729,40 +2729,74 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
         // Silently continue - agent configs are in snowcode.json, not separate files
       }
 
-      // Create .snowcode/snowcode.json with both MCP servers
-      // CRITICAL: Use ABSOLUTE paths so SnowCode can find the servers!
-      const distPath = join(snowFlowRoot, 'dist');
+      // Create .snowcode/snowcode.json by converting from .mcp.json.template
+      // SINGLE SOURCE OF TRUTH: .mcp.json.template → both Claude and SnowCode formats
+      // CRITICAL: SnowCode/OpenCode does NOT auto-expand ${...} variables
 
-      // CRITICAL: SnowCode expects command as array with all parts
-      // Also: environment variables are inherited from parent process (SnowCode reads .env)
-      const snowcodeConfig = {
-        $schema: "https://opencode.ai/config.json",
-        name: "snow-flow",
-        description: "ServiceNow development with SnowCode and multi-LLM support",
-        mcp: {
-          "servicenow-unified": {
-            type: "local",
-            command: ["node", join(distPath, "mcp/servicenow-mcp-unified/index.js")],
-            enabled: true,
-            description: "Unified ServiceNow MCP server with 235+ tools"
-          },
-          "snow-flow": {
-            type: "local",
-            command: ["node", join(distPath, "mcp/snow-flow-mcp.js")],
-            enabled: true,
-            description: "Snow-Flow orchestration with 176+ tools: swarm coordination, agent spawning, memory, neural learning"
+      // 🔧 Read actual environment values from .env file
+      const envPath = join(targetDir, '.env');
+      const envValues: Record<string, string> = {};
+
+      try {
+        const envContent = await fs.readFile(envPath, 'utf-8');
+        // Parse .env file (simple parser - handles KEY=VALUE lines)
+        const lines = envContent.split('\n');
+        for (var line of lines) {
+          line = line.trim();
+          // Skip comments and empty lines
+          if (!line || line.startsWith('#')) continue;
+
+          var equalIndex = line.indexOf('=');
+          if (equalIndex > 0) {
+            var key = line.substring(0, equalIndex).trim();
+            var value = line.substring(equalIndex + 1).trim();
+            // Remove quotes if present
+            if ((value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith("'") && value.endsWith("'"))) {
+              value = value.substring(1, value.length - 1);
+            }
+            envValues[key] = value;
           }
-        },
-        tools: {
-          enabled: true,
-          requireApproval: false
-        },
-        instructions: [
-          "AGENTS.md",
-          "../CLAUDE.md",
-          "../AGENTS.md"
-        ]
-      };
+        }
+      } catch (error) {
+        console.log('⚠️  No .env file found - SnowCode config will use placeholder values');
+      }
+
+      // Helper function to get env value with proper URL formatting
+      function getEnvValue(key: string, defaultValue: string = ''): string {
+        var value = envValues[key] || process.env[key] || defaultValue;
+
+        // Special handling for SNOW_INSTANCE - ensure it's a full URL
+        if (key === 'SNOW_INSTANCE' && value && !value.startsWith('http')) {
+          value = 'https://' + value.replace(/^https?:\/\//, '');
+        }
+
+        return value;
+      }
+
+      // Read .mcp.json.template (single source of truth for MCP servers)
+      const mcpTemplatePath = join(snowFlowRoot, '.mcp.json.template');
+      let mcpTemplateContent: string;
+
+      try {
+        mcpTemplateContent = await fs.readFile(mcpTemplatePath, 'utf-8');
+      } catch (error) {
+        console.log('⚠️  Could not find .mcp.json.template');
+        throw error;
+      }
+
+      // Replace placeholders with ACTUAL values from .env (not ${...} syntax!)
+      const mcpConfigContent = mcpTemplateContent
+        .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)
+        .replace(/{{SNOW_INSTANCE}}/g, getEnvValue('SNOW_INSTANCE'))
+        .replace(/{{SNOW_CLIENT_ID}}/g, getEnvValue('SNOW_CLIENT_ID'))
+        .replace(/{{SNOW_CLIENT_SECRET}}/g, getEnvValue('SNOW_CLIENT_SECRET'))
+        .replace(/{{SNOW_FLOW_ENV}}/g, getEnvValue('SNOW_FLOW_ENV', 'development'));
+
+      const claudeConfig = JSON.parse(mcpConfigContent);
+
+      // Convert Claude Desktop format to SnowCode format
+      const snowcodeConfig = convertToSnowCodeFormat(claudeConfig);
 
       // Write both snowcode.json AND config.json (Claude uses config.json)
       const snowcodeConfigPath = join(snowcodeDir, 'snowcode.json');
@@ -2771,8 +2805,8 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
       await fs.writeFile(configJsonPath, JSON.stringify(snowcodeConfig, null, 2));
 
-      console.log('✅ Created .snowcode/snowcode.json with both MCP servers');
-      console.log('✅ Created .snowcode/config.json (for Claude compatibility)');
+      console.log('✅ Created .snowcode/snowcode.json (converted from .mcp.json.template → SnowCode format)');
+      console.log('✅ Created .snowcode/config.json (SnowCode format, Claude compatibility)');
 
       // Also create AGENTS.md in .snowcode/
       const snowcodeAgentsMdPath = join(snowcodeDir, 'AGENTS.md');
@@ -2904,6 +2938,44 @@ API_TIMEOUT_MS=1800000
 async function appendToEnvFile(targetDir: string, content: string) {
   const envFilePath = join(targetDir, '.env');
   await fs.appendFile(envFilePath, content);
+}
+
+/**
+ * Converts Claude Desktop MCP config format to SnowCode/OpenCode format
+ * Single source of truth: .mcp.json.template → both .mcp.json and .snowcode/snowcode.json
+ */
+function convertToSnowCodeFormat(claudeConfig: any): any {
+  const snowcodeConfig: any = {
+    "$schema": "https://opencode.ai/config.json",
+    "name": "snow-flow",
+    "description": "ServiceNow development with SnowCode and multi-LLM support",
+    "mcp": {},
+    "tools": {
+      "enabled": true,
+      "requireApproval": false
+    },
+    "instructions": [
+      "AGENTS.md",
+      "../CLAUDE.md",
+      "../AGENTS.md"
+    ]
+  };
+
+  // Convert each server from Claude Desktop format to SnowCode format
+  const servers = claudeConfig.servers || claudeConfig.mcpServers || {};
+
+  for (const [name, server] of Object.entries(servers)) {
+    const s = server as any;
+    snowcodeConfig.mcp[name] = {
+      type: "local",
+      command: s.args ? [s.command, ...s.args] : (Array.isArray(s.command) ? s.command : [s.command]),
+      environment: s.env || s.environment || {},
+      enabled: true,
+      description: s.description || ""
+    };
+  }
+
+  return snowcodeConfig;
 }
 
 async function checkNeo4jAvailability(): Promise<boolean> {
@@ -3057,7 +3129,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   // Also create legacy config in .claude for backward compatibility
   const legacyConfigPath = join(targetDir, '.claude/mcp-config.json');
   await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
-  
+
   // Create comprehensive Claude Code settings file
   // NOTE: Only include properties that Claude Code actually accepts
   // Valid properties: apiKeyHelper, cleanupPeriodDays, env, includeCoAuthoredBy,
