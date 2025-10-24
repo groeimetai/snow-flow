@@ -383,7 +383,7 @@ export default function Page() {
                 return (
                   <Tooltip placement="right" value={session.title}>
                     <div>
-                      <div class="flex items-center self-stretch gap-6">
+                      <div class="flex items-center self-stretch gap-6 justify-between">
                         <span class="text-14-regular text-text-strong overflow-hidden text-ellipsis truncate">
                           {session.title}
                         </span>
