@@ -4,7 +4,7 @@
  * Provides enterprise theme management for Snow-Flow customers.
  * Allows customers to retrieve their assigned theme and admins to manage themes.
  *
- * Themes provide branded CLI/OpenCode experiences with company colors.
+ * Themes provide branded CLI/SnowCode experiences with company colors.
  */
 
 import express, { Request, Response } from 'express';
@@ -86,7 +86,7 @@ export function createThemesRoutes(db: LicenseDatabase): express.Router {
    *
    * Authentication: License key required
    *
-   * Response: Full OpenCode theme JSON
+   * Response: Full SnowCode theme JSON
    */
   router.get('/:themeName', async (req: Request, res: Response) => {
     try {

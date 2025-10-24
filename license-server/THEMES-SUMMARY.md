@@ -7,7 +7,7 @@
 
 ## 🎨 What Was Built
 
-Enterprise branded themes zijn nu volledig geïntegreerd in de license server! Klanten kunnen nu Snow-Flow en OpenCode in hun eigen corporate kleuren gebruiken.
+Enterprise branded themes zijn nu volledig geïntegreerd in de license server! Klanten kunnen nu Snow-Flow en SnowCode in hun eigen corporate kleuren gebruiken.
 
 ### Key Features
 
@@ -161,7 +161,7 @@ const response = await fetch('/api/themes/customer/current', {
   headers: { 'Authorization': `Bearer ${licenseKey}` }
 });
 
-// 3. Apply theme to OpenCode
+// 3. Apply theme to SnowCode
 const { themeConfig } = await response.json();
 applyTheme(themeConfig);
 ```

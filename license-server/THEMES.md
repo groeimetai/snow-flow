@@ -8,7 +8,7 @@
 
 ## Overview
 
-The Enterprise Themes feature allows customers to have Snow-Flow and OpenCode display in their corporate brand colors. This creates a professional, branded experience that builds trust and reinforces company identity.
+The Enterprise Themes feature allows customers to have Snow-Flow and SnowCode display in their corporate brand colors. This creates a professional, branded experience that builds trust and reinforces company identity.
 
 ### Key Benefits
 
@@ -62,7 +62,7 @@ Located in: `src/themes/`
 - `capgemini.json` - Capgemini corporate blue (#0070AD)
 - `ey.json` - EY corporate yellow (#FFE600)
 
-**Theme Structure (OpenCode compatible):**
+**Theme Structure (SnowCode compatible):**
 ```json
 {
   "name": "Capgemini Theme",
@@ -123,7 +123,7 @@ curl https://license-server.snow-flow.com/api/themes/list
 
 **GET** `/api/themes/:themeName`
 
-Retrieves full theme configuration (OpenCode JSON format).
+Retrieves full theme configuration (SnowCode JSON format).
 
 **Example:**
 ```bash
@@ -182,7 +182,7 @@ curl -H "Authorization: Bearer SNOW-ENT-CUST-ABC123" \
 
 **Default Behavior:**
 - If customer has no theme assigned → returns `servicenow` theme
-- Theme is automatically applied in Snow-Flow CLI/OpenCode
+- Theme is automatically applied in Snow-Flow CLI/SnowCode
 
 ---
 
@@ -343,7 +343,7 @@ const response = await fetch('https://license-server/api/themes/customer/current
 
 const { theme, themeConfig } = await response.json();
 
-// Apply theme to OpenCode
+// Apply theme to SnowCode
 applyTheme(themeConfig);
 ```
 
@@ -583,7 +583,7 @@ curl -H "X-Admin-Key: $ADMIN_KEY" \
    - Theme inheritance (base + overrides)
 
 3. **Advanced Branding**
-   - Logo integration in CLI/OpenCode
+   - Logo integration in CLI/SnowCode
    - Custom fonts (if supported by terminal)
    - Splash screen customization
 
