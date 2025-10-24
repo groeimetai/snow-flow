@@ -76,7 +76,7 @@ const updateSet = await snow_update_set_manage({
    - Just direct function calls
 
 3. **MCP tools are loaded via MCP protocol**
-   - OpenCode/Claude Code loads them automatically
+   - SnowCode/Claude Code loads them automatically
    - They appear as callable functions
    - No manual loading needed
 

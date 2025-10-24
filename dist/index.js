@@ -7,7 +7,7 @@
  * Licensed under the MIT License - see LICENSE file for details.
  *
  * Snow-Flow is a trademark of Snow-Flow B.V.
- * Built with OpenCode integration (also compatible with Claude Code)
+ * Built with SnowCode integration (fork of Claude Code)
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;

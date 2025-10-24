@@ -6,7 +6,7 @@
  * Licensed under the MIT License - see LICENSE file for details.
  *
  * Snow-Flow is a trademark of Snow-Flow B.V.
- * Built with OpenCode integration (also compatible with Claude Code)
+ * Built with SnowCode integration (fork of Claude Code)
  */
 export * from './types/index.js';
 export { ServiceNowOAuth } from './utils/snow-oauth.js';
