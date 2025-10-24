@@ -4,9 +4,6 @@
   align-items: flex-start;
   gap: 0px;
   align-self: stretch;
-  border-radius: 8px;
-  border: 1px solid var(--border-weak-base);
-  overflow: clip;
 
   [data-slot="accordion-item"] {
     width: 100%;
@@ -15,6 +12,10 @@
     align-items: flex-start;
     gap: 0px;
     align-self: stretch;
+    border: 1px solid var(--border-weak-base);
+    border-bottom: none;
+    border-top: none;
+    overflow: clip;
 
     [data-slot="accordion-header"] {
       width: 100%;
@@ -36,6 +37,7 @@
 
         background-color: var(--surface-base);
         border-bottom: 1px solid var(--border-weak-base);
+        overflow: clip;
         color: var(--text-strong);
         transition: background-color 0.15s ease;
 
@@ -50,28 +52,69 @@
         &:hover {
           background-color: var(--surface-base);
         }
-
         &:focus-visible {
           outline: none;
         }
-
         &[data-disabled] {
           cursor: not-allowed;
         }
       }
     }
 
-    &:last-child {
-      [data-slot="accordion-trigger"] {
-        border-bottom: none;
+    &[data-expanded] {
+      border: 1px solid var(--border-weak-base);
+      border-bottom: 1px solid var(--border-weak-base);
+      margin-top: 8px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+
+      /* previous */
+      [data-slot="accordion-item"]:has(+ &) {
+        &[data-closed] {
+          border-bottom-left-radius: 8px;
+          border-bottom-right-radius: 8px;
+          [data-slot="accordion-trigger"] {
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+          }
+        }
+        margin-bottom: 8px;
       }
-      &[data-expanded] {
-        border-bottom: none;
+
+      /* next */
+      & + [data-slot="accordion-item"] {
+        border-top: 1px solid var(--border-weak-base);
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        margin-top: 8px;
       }
     }
 
-    &[data-expanded] {
-      border-bottom: 1px solid var(--border-weak-base);
+    &:first-child {
+      margin-top: 0px;
+      border-top: 1px solid var(--border-weak-base);
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+
+      &[data-closed] {
+        [data-slot="accordion-trigger"] {
+          border-top-left-radius: 8px;
+          border-top-right-radius: 8px;
+        }
+      }
+    }
+
+    &:last-child {
+      margin-bottom: 0px;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+
+      &[data-closed] {
+        [data-slot="accordion-trigger"] {
+          border-bottom-left-radius: 8px;
+          border-bottom-right-radius: 8px;
+        }
+      }
     }
 
     [data-slot="accordion-content"] {
