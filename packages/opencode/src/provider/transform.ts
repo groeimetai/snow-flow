@@ -114,6 +114,10 @@ export namespace ProviderTransform {
         return {
           ["openai" as string]: options,
         }
+      case "@ai-sdk/amazon-bedrock":
+        return {
+          ["bedrock" as string]: options,
+        }
       case "@ai-sdk/anthropic":
         return {
           ["anthropic" as string]: options,
