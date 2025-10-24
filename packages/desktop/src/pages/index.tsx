@@ -1,7 +1,7 @@
 import { Button, List, SelectDialog, Tooltip, IconButton, Tabs, Icon } from "@opencode-ai/ui"
 import { FileIcon } from "@/ui"
 import FileTree from "@/components/file-tree"
-import { For, onCleanup, onMount, Show, Match, Switch, createSignal, createEffect } from "solid-js"
+import { For, onCleanup, onMount, Show, Match, Switch, createSignal, createEffect, createMemo } from "solid-js"
 import { useLocal, type LocalFile, type TextSelection } from "@/context/local"
 import { createStore } from "solid-js/store"
 import { getDirectory, getFilename } from "@/utils"
@@ -21,6 +21,7 @@ import type { JSX } from "solid-js"
 import { Code } from "@/components/code"
 import { useSync } from "@/context/sync"
 import { useSDK } from "@/context/sdk"
+import { Diff } from "@/components/diff"
 
 export default function Page() {
   const local = useLocal()
@@ -374,27 +375,36 @@ export default function Page() {
               onSelect={(s) => local.session.setActive(s?.id)}
               onHover={(s) => (!!s ? sync.session.sync(s?.id) : undefined)}
             >
-              {(session) => (
-                <Tooltip placement="right" value={session.title}>
-                  <div>
-                    <div class="flex items-center self-stretch gap-6">
-                      <span class="text-14-regular text-text-strong overflow-hidden text-ellipsis truncate">
-                        {session.title}
-                      </span>
-                      <span class="text-12-regular text-text-weak text-right whitespace-nowrap">
-                        {DateTime.fromMillis(session.time.updated).toRelative()}
-                      </span>
-                    </div>
-                    <div class="flex justify-between items-center self-stretch">
-                      <span class="text-12-regular text-text-weak">2 files changed</span>
-                      <div class="flex gap-2 justify-end items-center">
-                        <span class="text-12-mono text-right text-text-diff-add-base">+43</span>
-                        <span class="text-12-mono text-right text-text-diff-delete-base">-2</span>
+              {(session) => {
+                const diffs = createMemo(() => session.summary?.diffs ?? [])
+                const filesChanged = createMemo(() => diffs().length)
+                const additions = createMemo(() => diffs().reduce((acc, diff) => (acc ?? 0) + (diff.additions ?? 0), 0))
+                const deletions = createMemo(() => diffs().reduce((acc, diff) => (acc ?? 0) + (diff.deletions ?? 0), 0))
+
+                return (
+                  <Tooltip placement="right" value={session.title}>
+                    <div>
+                      <div class="flex items-center self-stretch gap-6">
+                        <span class="text-14-regular text-text-strong overflow-hidden text-ellipsis truncate">
+                          {session.title}
+                        </span>
+                        <span class="text-12-regular text-text-weak text-right whitespace-nowrap">
+                          {DateTime.fromMillis(session.time.updated).toRelative()}
+                        </span>
+                      </div>
+                      <div class="flex justify-between items-center self-stretch">
+                        <span class="text-12-regular text-text-weak">{`${filesChanged() || "No"} file${filesChanged() !== 1 ? "s" : ""} changed`}</span>
+                        <Show when={additions() || deletions()}>
+                          <div class="flex gap-2 justify-end items-center">
+                            <span class="text-12-mono text-right text-text-diff-add-base">{`+${additions()}`}</span>
+                            <span class="text-12-mono text-right text-text-diff-delete-base">{`-${deletions()}`}</span>
+                          </div>
+                        </Show>
                       </div>
                     </div>
-                  </div>
-                </Tooltip>
-              )}
+                  </Tooltip>
+                )
+              }}
             </List>
           </div>
         </div>
@@ -521,60 +531,77 @@ export default function Page() {
                     {(activeSession) => (
                       <div class="py-3 flex flex-col flex-1 min-h-0">
                         <div class="flex items-start gap-8 flex-1 min-h-0">
-                          <ul role="list" class="w-60 shrink-0 flex flex-col items-start gap-1">
-                            <For each={local.session.userMessages()}>
-                              {(message) => (
-                                <li
-                                  class="group/li flex items-center gap-x-2 py-1 self-stretch cursor-default"
-                                  onClick={() => local.session.setActiveMessage(message.id)}
-                                >
-                                  <div class="w-[18px] shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 12" fill="none">
-                                      <g>
-                                        <rect x="0" width="2" height="12" rx="1" fill="#CFCECD" />
-                                        <rect x="4" width="2" height="12" rx="1" fill="#CFCECD" />
-                                        <rect x="8" width="2" height="12" rx="1" fill="#CFCECD" />
-                                        <rect x="12" width="2" height="12" rx="1" fill="#CFCECD" />
-                                        <rect x="16" width="2" height="12" rx="1" fill="#CFCECD" />
-                                      </g>
-                                    </svg>
-                                  </div>
-                                  <div
-                                    data-active={local.session.activeMessage()?.id === message.id}
-                                    classList={{
-                                      "text-14-regular text-text-weak whitespace-nowrap truncate min-w-0": true,
-                                      "text-text-weak data-[active=true]:text-text-strong group-hover/li:text-text-base": true,
-                                    }}
+                          <Show when={local.session.userMessages().length > 1}>
+                            <ul role="list" class="w-60 shrink-0 flex flex-col items-start gap-1">
+                              <For each={local.session.userMessages()}>
+                                {(message) => (
+                                  <li
+                                    class="group/li flex items-center gap-x-2 py-1 self-stretch cursor-default"
+                                    onClick={() => local.session.setActiveMessage(message.id)}
                                   >
-                                    {local.session.getMessageText(message)}
-                                  </div>
-                                </li>
-                              )}
-                            </For>
-                          </ul>
+                                    <div class="w-[18px] shrink-0">
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 12" fill="none">
+                                        <g>
+                                          <rect x="0" width="2" height="12" rx="1" fill="#CFCECD" />
+                                          <rect x="4" width="2" height="12" rx="1" fill="#CFCECD" />
+                                          <rect x="8" width="2" height="12" rx="1" fill="#CFCECD" />
+                                          <rect x="12" width="2" height="12" rx="1" fill="#CFCECD" />
+                                          <rect x="16" width="2" height="12" rx="1" fill="#CFCECD" />
+                                        </g>
+                                      </svg>
+                                    </div>
+                                    <div
+                                      data-active={local.session.activeMessage()?.id === message.id}
+                                      classList={{
+                                        "text-14-regular text-text-weak whitespace-nowrap truncate min-w-0": true,
+                                        "text-text-weak data-[active=true]:text-text-strong group-hover/li:text-text-base": true,
+                                      }}
+                                    >
+                                      {local.session.getMessageText(message)}
+                                    </div>
+                                  </li>
+                                )}
+                              </For>
+                            </ul>
+                          </Show>
                           <div
                             ref={messageScrollElement}
                             class="grow min-w-0 h-full overflow-y-auto no-scrollbar snap-y"
                           >
                             <div class="flex flex-col items-start gap-50 pb-[800px]">
                               <For each={local.session.userMessages()}>
-                                {(message) => (
-                                  <div
-                                    data-message={message.id}
-                                    class="flex flex-col items-start self-stretch gap-8 pt-1.5 snap-start"
-                                  >
-                                    <div class="flex flex-col items-start gap-4">
-                                      <div class="text-14-medium text-text-strong overflow-hidden text-ellipsis min-w-0">
-                                        {local.session.getMessageText(message)}
+                                {(message) => {
+                                  console.log(message)
+                                  return (
+                                    <div
+                                      data-message={message.id}
+                                      class="flex flex-col items-start self-stretch gap-8 pt-1.5 snap-start"
+                                    >
+                                      <div class="flex flex-col items-start gap-4">
+                                        <div class="text-14-medium text-text-strong overflow-hidden text-ellipsis min-w-0">
+                                          {local.session.getMessageText(message)}
+                                        </div>
+                                        <div class="text-14-regular text-text-base">{message.summary?.text}</div>
                                       </div>
-                                      <div class="text-14-regular text-text-base">
-                                        {message.summary?.text ||
-                                          local.session.getMessageText(local.session.activeAssistantMessagesWithText())}
+                                      <div class="">
+                                        <For each={message.summary?.diffs}>
+                                          {(diff) => (
+                                            <Diff
+                                              before={{
+                                                name: diff.file!,
+                                                contents: diff.before!,
+                                              }}
+                                              after={{
+                                                name: diff.file!,
+                                                contents: diff.after!,
+                                              }}
+                                            />
+                                          )}
+                                        </For>
                                       </div>
                                     </div>
-                                    <div class=""></div>
-                                  </div>
-                                )}
+                                  )
+                                }}
                               </For>
                             </div>
                           </div>

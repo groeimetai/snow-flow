@@ -467,11 +467,6 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         )
       })
 
-      const activeAssistantMessagesWithText = createMemo(() => {
-        if (!store.active || !activeAssistantMessages()) return []
-        return activeAssistantMessages()?.filter((m) => sync.data.part[m.id].find((p) => p.type === "text"))
-      })
-
       const model = createMemo(() => {
         if (!last()) return
         const model = sync.data.provider.find((x) => x.id === last().providerID)?.models[last().modelID]
@@ -510,7 +505,6 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         active,
         activeMessage,
         activeAssistantMessages,
-        activeAssistantMessagesWithText,
         lastUserMessage,
         cost,
         last,

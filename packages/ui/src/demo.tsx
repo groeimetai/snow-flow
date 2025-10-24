@@ -1,6 +1,19 @@
 import type { Component } from "solid-js"
 import { createSignal } from "solid-js"
-import { Button, Select, Tabs, Tooltip, Fonts, List, Dialog, Icon, IconButton, Input, SelectDialog } from "./components"
+import {
+  Button,
+  Select,
+  Tabs,
+  Tooltip,
+  Fonts,
+  List,
+  Dialog,
+  Icon,
+  IconButton,
+  Input,
+  SelectDialog,
+  Collapsible,
+} from "./components"
 import "./index.css"
 
 const Demo: Component = () => {
@@ -179,6 +192,27 @@ const Demo: Component = () => {
         >
           {(item) => <div>{item}</div>}
         </SelectDialog>
+      </section>
+      <h3>Collapsible</h3>
+      <section>
+        <Collapsible>
+          <Collapsible.Trigger>
+            <Button variant="secondary">Toggle Content</Button>
+          </Collapsible.Trigger>
+          <Collapsible.Content>
+            <div
+              style={{
+                padding: "16px",
+                "background-color": "var(--surface-base)",
+                "border-radius": "8px",
+                "margin-top": "8px",
+              }}
+            >
+              <p>This is collapsible content that can be toggled open and closed.</p>
+              <p>It animates smoothly using CSS animations.</p>
+            </div>
+          </Collapsible.Content>
+        </Collapsible>
       </section>
     </div>
   )
