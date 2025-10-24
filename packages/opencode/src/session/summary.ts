@@ -18,7 +18,6 @@ export namespace SessionSummary {
     z.object({
       sessionID: z.string(),
       messageID: z.string(),
-      providerID: z.string(),
     }),
     async (input) => {
       const all = await Session.messages(input.sessionID)

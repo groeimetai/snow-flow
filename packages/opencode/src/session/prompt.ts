@@ -227,7 +227,9 @@ export namespace SessionPrompt {
         }),
         (messages) => insertReminders({ messages, agent }),
       )
-      if (step === 0)
+      step++
+      await processor.next(msgs.findLast((m) => m.info.role === "user")?.info.id!)
+      if (step === 1) {
         ensureTitle({
           session,
           history: msgs,
@@ -235,8 +237,11 @@ export namespace SessionPrompt {
           providerID: model.providerID,
           modelID: model.info.id,
         })
-      step++
-      await processor.next(msgs.findLast((m) => m.info.role === "user")?.info.id!)
+        SessionSummary.summarize({
+          sessionID: input.sessionID,
+          messageID: userMsg.info.id,
+        })
+      }
       await using _ = defer(async () => {
         await processor.end()
       })
@@ -1296,7 +1301,6 @@ export namespace SessionPrompt {
                 SessionSummary.summarize({
                   sessionID: input.sessionID,
                   messageID: assistantMsg.parentID,
-                  providerID: assistantMsg.modelID,
                 })
                 break
 
