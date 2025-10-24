@@ -14,6 +14,8 @@ import Home from "@/pages"
 const host = import.meta.env.VITE_OPENCODE_SERVER_HOST ?? "127.0.0.1"
 const port = import.meta.env.VITE_OPENCODE_SERVER_PORT ?? "4096"
 
+const url = new URLSearchParams(document.location.search).get("url") || `http://${host}:${port}`
+
 const root = document.getElementById("root")
 if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
   throw new Error(
@@ -25,7 +27,7 @@ render(
   () => (
     <ShikiProvider>
       <MarkedProvider>
-        <SDKProvider url={`http://${host}:${port}`}>
+        <SDKProvider url={url}>
           <SyncProvider>
             <LocalProvider>
               <MetaProvider>
