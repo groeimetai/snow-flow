@@ -371,6 +371,7 @@ export default function Page() {
             <List
               data={sync.data.session}
               key={(x) => x.id}
+              current={local.session.active()}
               onSelect={(s) => local.session.setActive(s?.id)}
               onHover={(s) => (!!s ? sync.session.sync(s?.id) : undefined)}
             >
