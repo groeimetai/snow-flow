@@ -68,7 +68,6 @@
       margin-bottom: 8px;
       border-radius: 8px;
 
-      /* previous */
       [data-slot="accordion-item"]:has(+ &) {
         &[data-closed] {
           border-bottom-left-radius: 8px;
@@ -81,7 +80,6 @@
         margin-bottom: 8px;
       }
 
-      /* next */
       & + [data-slot="accordion-item"] {
         border-top: 1px solid var(--border-weak-base);
         border-top-left-radius: 8px;
