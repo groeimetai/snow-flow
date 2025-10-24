@@ -4,14 +4,16 @@ import z from "zod"
 import { Session } from "."
 import { generateText, type ModelMessage } from "ai"
 import { MessageV2 } from "./message-v2"
-import { Flag } from "@/flag/flag"
 import { Identifier } from "@/id/id"
 import { Snapshot } from "@/snapshot"
 
 import { ProviderTransform } from "@/provider/transform"
 import { SystemPrompt } from "./system"
+import { Log } from "@/util/log"
 
 export namespace SessionSummary {
+  const log = Log.create({ service: "session.summary" })
+
   export const summarize = fn(
     z.object({
       sessionID: z.string(),
@@ -53,7 +55,7 @@ export namespace SessionSummary {
     const small = await Provider.getSmallModel(assistantMsg.providerID)
     if (!small) return
 
-    const textPart = msgWithParts.parts.find((p) => p.type === "text" && p.synthetic === false) as MessageV2.TextPart
+    const textPart = msgWithParts.parts.find((p) => p.type === "text" && !p.synthetic) as MessageV2.TextPart
     if (textPart && !userMsg.summary?.title) {
       const result = await generateText({
         maxOutputTokens: small.info.reasoning ? 1500 : 20,
@@ -72,19 +74,25 @@ export namespace SessionSummary {
         ],
         model: small.language,
       })
+      log.info("title", { title: result.text })
       userMsg.summary.title = result.text
       await Session.updateMessage(userMsg)
     }
 
-    if (messages.every((m) => m.info.role !== "assistant" || m.info.time.completed)) {
+    if (
+      messages.some(
+        (m) =>
+          m.info.role === "assistant" && m.parts.some((p) => p.type === "step-finish" && p.reason !== "tool-calls"),
+      )
+    ) {
       const result = await generateText({
         model: small.language,
-        maxOutputTokens: 100,
+        maxOutputTokens: 50,
         messages: [
           {
             role: "user",
             content: `
-            Summarize the following conversation into 2 sentences MAX explaining what the assistant did and why. Do not explain the user's input.
+            Summarize the following conversation into 2 sentences MAX explaining what the assistant did and why. Do not explain the user's input. Do not speak in the third person about the assistant.
             <conversation>
             ${JSON.stringify(MessageV2.toModelMessage(messages))}
             </conversation>
@@ -93,6 +101,7 @@ export namespace SessionSummary {
         ],
       })
       userMsg.summary.body = result.text
+      log.info("body", { body: result.text })
       await Session.updateMessage(userMsg)
     }
   }
