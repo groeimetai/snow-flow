@@ -6,6 +6,7 @@
   align-self: stretch;
   border-radius: 8px;
   border: 1px solid var(--border-weak-base);
+  overflow: clip;
 
   [data-slot="accordion-item"] {
     width: 100%;
@@ -62,6 +63,9 @@
 
     &:last-child {
       [data-slot="accordion-trigger"] {
+        border-bottom: none;
+      }
+      &[data-expanded] {
         border-bottom: none;
       }
     }
