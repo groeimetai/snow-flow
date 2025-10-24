@@ -621,6 +621,6 @@ export function replace(content: string, oldString: string, newString: string, r
     throw new Error("oldString not found in content")
   }
   throw new Error(
-    "Found multiple matches for oldString. Include more surrounding code lines in oldString to uniquely identify which occurrence to replace.",
+    "Found multiple matches for oldString. Provide more surrounding lines in oldString to identify the correct match.",
   )
 }
