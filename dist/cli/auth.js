@@ -108,32 +108,80 @@ function registerAuthCommands(program) {
             (process.env.GOOGLE_API_KEY && process.env.GOOGLE_API_KEY.trim() !== '') ||
             (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim() !== '') ||
             (process.env.MISTRAL_API_KEY && process.env.MISTRAL_API_KEY.trim() !== '');
-        // CRITICAL: SnowCode auth has Bun dependency issues in 0.15.20
-        // Skip SnowCode auth entirely and only use API keys
+        // Only do SnowCode auth if no API key is configured
         if (!hasApiKey) {
-            console.log(chalk_1.default.yellow('\n⚠️  LLM API key required'));
-            console.log(chalk_1.default.blue('SnowCode auth is currently unavailable due to dependency issues'));
-            console.log(chalk_1.default.blue('\nPlease configure an API key in your .env file:'));
-            console.log(chalk_1.default.cyan('  ANTHROPIC_API_KEY=sk-ant-...  ') + chalk_1.default.dim('# For Claude'));
-            console.log(chalk_1.default.cyan('  OPENAI_API_KEY=sk-...        ') + chalk_1.default.dim('# For GPT'));
-            console.log(chalk_1.default.cyan('  GOOGLE_API_KEY=...           ') + chalk_1.default.dim('# For Gemini'));
-            console.log(chalk_1.default.cyan('  GROQ_API_KEY=...             ') + chalk_1.default.dim('# For Groq'));
-            console.log(chalk_1.default.dim('\n💡 Get API keys from:'));
-            console.log(chalk_1.default.dim('   Claude: https://console.anthropic.com/'));
-            console.log(chalk_1.default.dim('   OpenAI: https://platform.openai.com/api-keys'));
-            console.log(chalk_1.default.dim('   Google: https://makersuite.google.com/app/apikey'));
-            console.log(chalk_1.default.dim('   Groq: https://console.groq.com/keys'));
-            process.exit(0);
+            // Check if snowcode is installed
+            try {
+                execSync('which snowcode', { stdio: 'ignore' });
+            }
+            catch {
+                console.error(chalk_1.default.red('❌ SnowCode is not installed'));
+                console.log(chalk_1.default.yellow('Please install SnowCode first: ') + chalk_1.default.cyan('npm install -g @groeimetai/snowcode'));
+                console.log(chalk_1.default.blue('Or configure an API key in .env: ') + chalk_1.default.cyan('ANTHROPIC_API_KEY=your-key'));
+                return;
+            }
+            prompts.intro('Starting authentication');
+            // Fix common SnowCode directory issue (agents vs agent) in ALL possible directories
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const directoriesToFix = [
+                    // Fix 1: Global ~/.snowcode directory
+                    process.env.HOME + '/.snowcode',
+                    // Fix 2: Current working directory
+                    path.join(process.cwd(), '.snowcode'),
+                    // Fix 3: Parent directory (in case we're in a subdirectory)
+                    path.join(process.cwd(), '..', '.snowcode'),
+                    // Fix 4: Snow-flow package directory (for development)
+                    path.join(__dirname, '..', '..', '.snowcode')
+                ];
+                for (const snowcodeDir of directoriesToFix) {
+                    const agentsDir = path.join(snowcodeDir, 'agents');
+                    const agentDir = path.join(snowcodeDir, 'agent');
+                    if (fs.existsSync(agentsDir) && !fs.existsSync(agentDir)) {
+                        console.log(chalk_1.default.dim(`   Fixing SnowCode directory structure in ${snowcodeDir}...`));
+                        try {
+                            fs.renameSync(agentsDir, agentDir);
+                        }
+                        catch (e) {
+                            // Ignore individual rename errors
+                        }
+                    }
+                }
+            }
+            catch (dirError) {
+                // Ignore directory fix errors - SnowCode will handle it
+                console.log(chalk_1.default.dim('   (Directory fix skipped - will auto-correct)'));
+            }
+            try {
+                // Run SnowCode auth login - it will handle provider and model selection
+                execSync('snowcode auth login', { stdio: 'inherit' });
+            }
+            catch (error) {
+                console.error(chalk_1.default.red('\n❌ Authentication failed'));
+                // Check if it's the bun dependency error
+                const errorMsg = error?.message || error?.toString() || '';
+                if (errorMsg.includes('Cannot find package \'bun\'') || errorMsg.includes('ERR_MODULE_NOT_FOUND')) {
+                    console.log(chalk_1.default.yellow('\n⚠️  SnowCode dependency issue detected'));
+                    console.log(chalk_1.default.blue('   This is a known issue with SnowCode versions 0.15.18 and earlier'));
+                    console.log(chalk_1.default.blue('   Please update SnowCode to the latest version:'));
+                    console.log(chalk_1.default.cyan('   npm update -g @groeimetai/snowcode'));
+                    console.log(chalk_1.default.blue('\n   Alternatively, use an API key instead:'));
+                    console.log(chalk_1.default.cyan('   1. Add to .env: ANTHROPIC_API_KEY=your-api-key'));
+                    console.log(chalk_1.default.cyan('   2. Then run: snow-flow auth login'));
+                }
+                else if (errorMsg.includes('agents') && errorMsg.includes('agent')) {
+                    console.log(chalk_1.default.yellow('\n⚠️  SnowCode directory issue detected'));
+                    console.log(chalk_1.default.blue('   Run this fix: ') + chalk_1.default.cyan('mv ~/.snowcode/agents ~/.snowcode/agent'));
+                    console.log(chalk_1.default.blue('   Then try: ') + chalk_1.default.cyan('snow-flow auth login'));
+                }
+                else {
+                    console.log(chalk_1.default.yellow('💡 You can try again later or use an API key instead'));
+                    console.log(chalk_1.default.blue('   Add to .env: ') + chalk_1.default.cyan('ANTHROPIC_API_KEY=your-api-key'));
+                }
+                return;
+            }
         }
-        // ===== REMOVED: SnowCode auth login (has Bun dependency issues) =====
-        // All SnowCode auth code has been removed because SnowCode 0.15.20
-        // has hardcoded imports of 'bun' package in multiple files:
-        // - src/ide/index.ts: import { spawn } from "bun"
-        // - src/snapshot/index.ts: import { $ } from "bun"
-        // - src/file/ripgrep.ts: import { $ } from "bun"
-        // - src/file/index.ts: import { $ } from "bun"
-        // This causes ERR_MODULE_NOT_FOUND when running 'snowcode auth login'
-        // =====================================================================
         // ServiceNow setup - continue the flow
         // Read credentials from .env file
         let instance = process.env.SNOW_INSTANCE;
