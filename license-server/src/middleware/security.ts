@@ -12,7 +12,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
-import DOMPurify from 'isomorphic-dompurify';
+// import DOMPurify from 'isomorphic-dompurify'; // Removed - causes jsdom ESM conflict
 import validator from 'validator';
 import winston from 'winston';
 
@@ -132,12 +132,11 @@ export const ssoLoginRateLimiter = rateLimit({
 
 /**
  * Sanitize string input to prevent XSS
+ * Uses validator.escape() instead of DOMPurify to avoid jsdom dependency
  */
 export function sanitizeString(input: string): string {
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: [], // No HTML tags allowed
-    ALLOWED_ATTR: []
-  });
+  // Escape HTML entities to prevent XSS
+  return validator.escape(input);
 }
 
 /**

@@ -97,8 +97,8 @@ async function authenticateCustomer(req: Request, res: Response, next: NextFunct
       });
     }
 
-    // Validate license key format
-    if (!licenseKey.match(/^SNOW-ENT-[A-Z0-9]+-[A-Z0-9]+$/)) {
+    // Validate license key format (SNOW-{TIER}-{HASH} or SNOW-{TIER}-{ORG}-{HASH})
+    if (!licenseKey.match(/^SNOW-(TEAM|PRO|ENT|ENTERPRISE|EXPIRED)-[A-Z0-9]+(-[A-Z0-9]+)?$/i)) {
       return res.status(401).json({
         success: false,
         error: 'Invalid license key format'

@@ -178,6 +178,47 @@ router.get('/si/:masterKey', async (req: Request, res: Response) => {
 // ===== SERVICE INTEGRATORS ALIASES (for web dashboard) =====
 
 /**
+ * POST /api/admin/service-integrators
+ * Create new service integrator (web dashboard compatibility)
+ */
+router.post('/service-integrators', async (req: Request, res: Response) => {
+  try {
+    const { companyName, contactEmail, billingEmail } = req.body;
+
+    if (!companyName || !contactEmail || !billingEmail) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: companyName, contactEmail, billingEmail'
+      });
+    }
+
+    // Generate master license key: SNOW-SI-XXXXX
+    const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const masterLicenseKey = `SNOW-SI-${randomPart}`;
+
+    const si = db.createServiceIntegrator({
+      companyName,
+      contactEmail,
+      billingEmail,
+      masterLicenseKey,
+      whiteLabelEnabled: false,
+      status: 'active'
+    });
+
+    res.json({
+      success: true,
+      service_integrator: si
+    });
+  } catch (error) {
+    console.error('Error creating service integrator:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create service integrator'
+    });
+  }
+});
+
+/**
  * GET /api/admin/service-integrators
  * Alias for /api/admin/si (web dashboard compatibility)
  */
@@ -233,6 +274,69 @@ router.get('/service-integrators/:id', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get service integrator'
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/service-integrators/:id
+ * Update service integrator
+ */
+router.put('/service-integrators/:id', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const updates = req.body;
+
+    const si = db.updateServiceIntegrator(id, updates);
+
+    if (!si) {
+      return res.status(404).json({
+        success: false,
+        error: 'Service integrator not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      service_integrator: si
+    });
+  } catch (error) {
+    console.error('Error updating service integrator:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update service integrator'
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/service-integrators/:id
+ * Delete service integrator
+ */
+router.delete('/service-integrators/:id', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+
+    // Check if SI has customers
+    const customers = db.listCustomers(id);
+    if (customers.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Cannot delete service integrator with ${customers.length} active customers`
+      });
+    }
+
+    db.deleteServiceIntegrator(id);
+
+    res.json({
+      success: true,
+      message: 'Service integrator deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting service integrator:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete service integrator'
     });
   }
 });

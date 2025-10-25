@@ -640,6 +640,59 @@ export class LicenseDatabase {
     return (status ? stmt.all(status) : stmt.all()) as ServiceIntegrator[];
   }
 
+  /**
+   * Update service integrator
+   */
+  updateServiceIntegrator(id: number, updates: Partial<ServiceIntegrator>): ServiceIntegrator | undefined {
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    // Build dynamic UPDATE query
+    if (updates.companyName !== undefined) {
+      fields.push('company_name = ?');
+      values.push(updates.companyName);
+    }
+    if (updates.contactEmail !== undefined) {
+      fields.push('contact_email = ?');
+      values.push(updates.contactEmail);
+    }
+    if (updates.billingEmail !== undefined) {
+      fields.push('billing_email = ?');
+      values.push(updates.billingEmail);
+    }
+    if (updates.status !== undefined) {
+      fields.push('status = ?');
+      values.push(updates.status);
+    }
+    if (updates.whiteLabelEnabled !== undefined) {
+      fields.push('white_label_enabled = ?');
+      values.push(updates.whiteLabelEnabled ? 1 : 0);
+    }
+
+    if (fields.length === 0) {
+      // No updates provided, return current record
+      const stmt = this.db.prepare('SELECT * FROM service_integrators WHERE id = ?');
+      return stmt.get(id) as ServiceIntegrator | undefined;
+    }
+
+    values.push(id);
+    const sql = `UPDATE service_integrators SET ${fields.join(', ')} WHERE id = ?`;
+    const stmt = this.db.prepare(sql);
+    stmt.run(...values);
+
+    // Return updated record
+    const getStmt = this.db.prepare('SELECT * FROM service_integrators WHERE id = ?');
+    return getStmt.get(id) as ServiceIntegrator | undefined;
+  }
+
+  /**
+   * Delete service integrator
+   */
+  deleteServiceIntegrator(id: number): void {
+    const stmt = this.db.prepare('DELETE FROM service_integrators WHERE id = ?');
+    stmt.run(id);
+  }
+
   // ===== CUSTOMER METHODS =====
 
   /**
