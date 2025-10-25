@@ -13,7 +13,6 @@ import axios from 'axios';
 import https from 'https';
 import net from 'net';
 import crypto from 'crypto';
-import chalk from 'chalk';
 import * as prompts from '@clack/prompts';
 import { snowFlowConfig } from '../config/snow-flow-config.js';
 import { unifiedAuthStore } from './unified-auth-store.js';
@@ -76,7 +75,7 @@ export class ServiceNowOAuth {
     
     // Check if within rate limit
     if (this.tokenRequestCount >= this.MAX_TOKEN_REQUESTS_PER_WINDOW) {
-      console.log(chalk.yellow('🔒 Rate limit exceeded: Too many token requests. Please wait before retrying.'));
+      prompts.log.warn('Rate limit exceeded: Too many token requests. Please wait before retrying.');
       return false;
     }
     
@@ -158,12 +157,12 @@ export class ServiceNowOAuth {
       // Validate client secret
       const secretValidation = this.validateClientSecret(clientSecret);
       if (!secretValidation.valid) {
-        console.log(chalk.red('❌ Invalid OAuth Client Secret:'), secretValidation.reason);
-        console.log(chalk.blue('💡 To get a valid OAuth secret:'));
-        console.log(chalk.gray('   1. Log into ServiceNow as admin'));
-        console.log(chalk.gray('   2. Navigate to: System OAuth > Application Registry'));
-        console.log(chalk.gray('   3. Create a new OAuth application'));
-        console.log(chalk.gray('   4. Copy the generated Client Secret (long random string)'));
+        prompts.log.error(`Invalid OAuth Client Secret: ${secretValidation.reason}`);
+        prompts.log.info('To get a valid OAuth secret:');
+        prompts.log.message('   1. Log into ServiceNow as admin');
+        prompts.log.message('   2. Navigate to: System OAuth > Application Registry');
+        prompts.log.message('   3. Create a new OAuth application');
+        prompts.log.message('   4. Copy the generated Client Secret (long random string)');
         return {
           success: false,
           error: secretValidation.reason
@@ -181,9 +180,9 @@ export class ServiceNowOAuth {
         redirectUri
       };
 
-      console.log(chalk.blue('\n🚀 Starting ServiceNow OAuth flow...\n'));
-      console.log(chalk.gray('📋 Instance:'), chalk.cyan(normalizedInstance));
-      console.log(chalk.gray('🔐 Client ID:'), chalk.cyan(clientId));
+      prompts.log.step('Starting ServiceNow OAuth flow');
+      prompts.log.info(`Instance: ${normalizedInstance}`);
+      prompts.log.info(`Client ID: ${clientId}`);
 
       // Generate state parameter and PKCE
       this.stateParameter = this.generateState();
@@ -192,13 +191,11 @@ export class ServiceNowOAuth {
       // Generate authorization URL
       const authUrl = this.generateAuthUrl(this.credentials.instance, clientId, redirectUri);
 
-      console.log(chalk.blue('\n🌐 Authorization URL generated:\n'));
-      console.log(chalk.cyan(authUrl));
-      console.log('');
-
-      // Ask user to open URL and paste code
-      console.log(chalk.yellow('●  Go to: ') + chalk.underline.cyan(authUrl));
-      console.log('');
+      prompts.log.message('');
+      prompts.log.step('Authorization URL generated');
+      prompts.log.message(`\n${authUrl}\n`);
+      prompts.log.warn(`Go to: ${authUrl}`);
+      prompts.log.message('');
 
       const authCode = await prompts.text({
         message: 'Paste the authorization code here',
@@ -210,6 +207,7 @@ export class ServiceNowOAuth {
       }) as string;
 
       if (prompts.isCancel(authCode)) {
+        prompts.cancel('Authentication cancelled');
         return {
           success: false,
           error: 'Authentication cancelled by user'
@@ -226,7 +224,8 @@ export class ServiceNowOAuth {
       }
 
       // Exchange code for tokens
-      console.log(chalk.blue('\n🔄 Exchanging authorization code for tokens...\n'));
+      const spinner = prompts.spinner();
+      spinner.start('Exchanging authorization code for tokens');
       const tokenResult = await this.exchangeCodeForTokens(code);
 
       if (tokenResult.success && tokenResult.accessToken) {
@@ -240,14 +239,16 @@ export class ServiceNowOAuth {
           clientSecret
         });
 
-        console.log(chalk.green('\n✅ Authentication successful!'));
-        console.log(chalk.gray('🔐 Tokens saved securely\n'));
+        spinner.stop('Authentication successful');
+        prompts.log.success('Tokens saved securely');
+      } else {
+        spinner.stop('Token exchange failed');
       }
 
       return tokenResult;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.log(chalk.red('❌ Authentication failed:'), errorMessage);
+      prompts.log.error(`Authentication failed: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage
@@ -265,12 +266,12 @@ export class ServiceNowOAuth {
       // Validate client secret format
       const secretValidation = this.validateClientSecret(clientSecret);
       if (!secretValidation.valid) {
-        console.log(chalk.red('❌ Invalid OAuth Client Secret:'), secretValidation.reason);
-        console.log(chalk.blue('💡 To get a valid OAuth secret:'));
-        console.log(chalk.gray('   1. Log into ServiceNow as admin'));
-        console.log(chalk.gray('   2. Navigate to: System OAuth > Application Registry'));
-        console.log(chalk.gray('   3. Create a new OAuth application'));
-        console.log(chalk.gray('   4. Copy the generated Client Secret (long random string)'));
+        prompts.log.error(`Invalid OAuth Client Secret: ${secretValidation.reason}`);
+        prompts.log.info('To get a valid OAuth secret:');
+        prompts.log.message('   1. Log into ServiceNow as admin');
+        prompts.log.message('   2. Navigate to: System OAuth > Application Registry');
+        prompts.log.message('   3. Create a new OAuth application');
+        prompts.log.message('   4. Copy the generated Client Secret (long random string)');
         return {
           success: false,
           error: secretValidation.reason
@@ -287,8 +288,8 @@ export class ServiceNowOAuth {
       // Check if port is available
       const isPortAvailable = await this.checkPortAvailable(port);
       if (!isPortAvailable) {
-        console.log(chalk.red(`❌ Port ${port} is already in use!`));
-        console.log(chalk.yellow(`💡 Please close any application using port ${port} and try again.`));
+        prompts.log.error(`Port ${port} is already in use!`);
+        prompts.log.warn(`Please close any application using port ${port} and try again.`);
         return {
           success: false,
           error: `Port ${port} is already in use. Please free up the port and try again.`
@@ -303,10 +304,10 @@ export class ServiceNowOAuth {
         redirectUri
       };
 
-      console.log(chalk.blue('\n🚀 Starting ServiceNow OAuth flow...\n'));
-      console.log(chalk.gray('📋 Instance:'), chalk.cyan(normalizedInstance));
-      console.log(chalk.gray('🔐 Client ID:'), chalk.cyan(clientId));
-      console.log(chalk.gray('🔗 Redirect URI:'), chalk.cyan(redirectUri));
+      prompts.log.step('Starting ServiceNow OAuth flow');
+      prompts.log.info(`Instance: ${normalizedInstance}`);
+      prompts.log.info(`Client ID: ${clientId}`);
+      prompts.log.info(`Redirect URI: ${redirectUri}`);
 
       // Generate state parameter for CSRF protection
       this.stateParameter = this.generateState();
@@ -317,9 +318,10 @@ export class ServiceNowOAuth {
       // Generate authorization URL
       const authUrl = this.generateAuthUrl(this.credentials.instance, clientId, redirectUri);
 
-      console.log(chalk.blue('\n🌐 Authorization URL generated:\n'));
-      console.log(chalk.cyan(authUrl));
-      console.log('');
+      prompts.log.step('Authorization URL generated');
+      prompts.log.message('');
+      prompts.log.message(`\n${authUrl}\n`);
+      prompts.log.message('');
 
       // Start local server to handle callback
       const authResult = await this.startCallbackServer(redirectUri, port);
@@ -335,14 +337,14 @@ export class ServiceNowOAuth {
           clientSecret
         });
 
-        console.log(chalk.green('\n✅ Authentication successful!'));
-        console.log(chalk.gray('🔐 Tokens saved securely\n'));
+        prompts.log.success('Authentication successful');
+        prompts.log.success('Tokens saved securely');
       }
 
       return authResult;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.log(chalk.red('❌ Authentication failed:'), errorMessage);
+      prompts.log.error(`Authentication failed: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage
@@ -420,7 +422,8 @@ export class ServiceNowOAuth {
             }
             
             // Exchange code for tokens
-            console.log(chalk.blue('🔄 Exchanging authorization code for tokens...'));
+            const spinner = prompts.spinner();
+            spinner.start('Exchanging authorization code for tokens');
             const tokenResult = await this.exchangeCodeForTokens(code);
             
             if (tokenResult.success) {
@@ -441,7 +444,7 @@ export class ServiceNowOAuth {
             res.end('Not Found');
           }
         } catch (error) {
-          console.log(chalk.red('Callback server error:'), error);
+          prompts.log.error(`Callback server error: ${error}`);
           res.writeHead(500, { 'Content-Type': 'text/plain' });
           res.end('Internal Server Error');
           
@@ -454,9 +457,9 @@ export class ServiceNowOAuth {
       });
       
       server.listen(port, () => {
-        console.log(chalk.blue(`🌐 OAuth callback server started on`), chalk.cyan(`http://${snowFlowConfig.servicenow.oauth.redirectHost}:${port}`));
-        console.log(chalk.yellow('🚀 Please open the authorization URL in your browser...'));
-        console.log(chalk.gray('⏳ Waiting for OAuth callback...'));
+        prompts.log.step(`OAuth callback server started on http://${snowFlowConfig.servicenow.oauth.redirectHost}:${port}`);
+        prompts.log.warn('Please open the authorization URL in your browser');
+        prompts.log.info('Waiting for OAuth callback...');
         
         // Auto-open browser if possible
         // Try to auto-open browser if not in headless environment
@@ -493,7 +496,7 @@ export class ServiceNowOAuth {
                 }
               }
             } else {
-              console.log(chalk.yellow('⚠️  Unknown OS:'), process.platform);
+              prompts.log.warn(`Unknown OS: ${process.platform}`);
             }
             
             // Prevent the spawn from keeping the process alive
@@ -502,21 +505,21 @@ export class ServiceNowOAuth {
             }
           } catch (err) {
             // Silently fail - user can manually open URL
-            console.log(chalk.yellow('\n📋 Browser auto-open failed. Please manually copy and open the URL above.'));
+            prompts.log.warn('Browser auto-open failed. Please manually copy and open the URL above.');
           }
         } else {
-          console.log(chalk.yellow('\n🐳 Running in headless environment (Codespaces/Container/CI)'));
-          console.log(chalk.gray('📋 Please manually copy and open the authorization URL above in your browser.'));
+          prompts.log.warn('Running in headless environment (Codespaces/Container/CI)');
+          prompts.log.message('Please manually copy and open the authorization URL above in your browser.');
 
           if (isCodespaces) {
-            console.log(chalk.blue('\n💡 TIP for GitHub Codespaces:'));
-            console.log(chalk.gray('   1. Copy the authorization URL above'));
-            console.log(chalk.gray('   2. Open it in a new browser tab'));
-            console.log(chalk.gray('   3. After authorizing, you\'ll be redirected to localhost:3005'));
-            console.log(chalk.gray('   4. Copy the FULL redirect URL from your browser'));
-            console.log(chalk.gray('   5. Open a new Codespaces terminal and run:'));
-            console.log(chalk.cyan('      curl "http://localhost:3005/callback?code=YOUR_CODE&state=YOUR_STATE"'));
-            console.log(chalk.gray('   6. Or use port forwarding in Codespaces to make port 3005 accessible'));
+            prompts.log.info('TIP for GitHub Codespaces:');
+            prompts.log.message('   1. Copy the authorization URL above');
+            prompts.log.message('   2. Open it in a new browser tab');
+            prompts.log.message('   3. After authorizing, you\'ll be redirected to localhost:3005');
+            prompts.log.message('   4. Copy the FULL redirect URL from your browser');
+            prompts.log.message('   5. Open a new Codespaces terminal and run:');
+            prompts.log.message('      curl "http://localhost:3005/callback?code=YOUR_CODE&state=YOUR_STATE"');
+            prompts.log.message('   6. Or use port forwarding in Codespaces to make port 3005 accessible');
           }
         }
       });
@@ -573,9 +576,9 @@ export class ServiceNowOAuth {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.log(chalk.red('Token exchange error:'), errorMessage);
+      prompts.log.error(`Token exchange error: ${errorMessage}`);
       if (axios.isAxiosError(error) && error.response) {
-        console.log(chalk.red('Response data:'), error.response.data);
+        prompts.log.error(`Response data: ${JSON.stringify(error.response.data)}`);
       }
       return {
         success: false,
@@ -603,7 +606,7 @@ export class ServiceNowOAuth {
       // Bridge to MCP servers immediately
       await unifiedAuthStore.bridgeToMCP();
     } catch (error) {
-      console.log(chalk.red('Failed to save tokens:'), error);
+      prompts.log.error(`Failed to save tokens: ${error}`);
       throw error;
     }
   }
@@ -651,7 +654,7 @@ export class ServiceNowOAuth {
       
       if (now >= expiresAt && tokens.refreshToken) {
         // Token expired, try to refresh
-        console.log(chalk.yellow('🔄 Token expired, refreshing...'));
+        prompts.log.info('Token expired, refreshing...');
         const refreshResult = await this.refreshAccessToken(tokens);
         
         if (refreshResult.success && refreshResult.accessToken) {
@@ -664,14 +667,14 @@ export class ServiceNowOAuth {
           
           return refreshResult.accessToken;
         } else {
-          console.log(chalk.red('❌ Token refresh failed:'), refreshResult.error);
+          prompts.log.error(`Token refresh failed: ${refreshResult.error}`);
           return null;
         }
       }
 
       return tokens.accessToken;
     } catch (error) {
-      console.log(chalk.red('Failed to get access token:'), error);
+      prompts.log.error(`Failed to get access token: ${error}`);
       return null;
     }
   }
@@ -754,9 +757,9 @@ export class ServiceNowOAuth {
   async logout(): Promise<void> {
     try {
       await fs.unlink(this.tokenPath);
-      console.log(chalk.green('✅ Logged out successfully'));
+      prompts.log.success('Logged out successfully');
     } catch (error) {
-      console.log(chalk.gray('No active session to logout from'));
+      prompts.log.info('No active session to logout from');
     }
   }
 
@@ -780,8 +783,8 @@ export class ServiceNowOAuth {
         if (tokens.clientSecret) {
           const secretValidation = this.validateClientSecret(tokens.clientSecret);
           if (!secretValidation.valid) {
-            console.log(chalk.yellow('⚠️  OAuth Configuration Issue:'), secretValidation.reason);
-            console.log(chalk.blue('💡 Your stored client secret may be incorrect. Re-authenticate with: snow-flow auth login'));
+            prompts.log.warn(`OAuth Configuration Issue: ${secretValidation.reason}`);
+            prompts.log.info('Your stored client secret may be incorrect. Re-authenticate with: snow-flow auth login');
           }
         }
 
@@ -790,7 +793,7 @@ export class ServiceNowOAuth {
         const now = new Date();
 
         if (now < expiresAt) {
-          console.log(chalk.green('✅ Using saved OAuth tokens'));
+          prompts.log.success('Using saved OAuth tokens');
           return {
             instance: tokens.instance,
             clientId: tokens.clientId,
@@ -800,18 +803,18 @@ export class ServiceNowOAuth {
             expiresAt: tokens.expiresAt
           };
         } else {
-          console.log(chalk.yellow('⏰ Saved OAuth token expired, will try refresh...'));
+          prompts.log.warn('Saved OAuth token expired, will try refresh...');
         }
       }
 
       // 🔧 NEW: Fallback to .env file if no valid tokens
-      console.log(chalk.blue('🔍 No valid OAuth tokens found, checking .env file...'));
+      prompts.log.info('No valid OAuth tokens found, checking .env file...');
 
       // Load environment variables with dotenv
       try {
         require('dotenv').config();
       } catch (err) {
-        console.log(chalk.gray('📝 dotenv not available, using process.env directly'));
+        prompts.log.message('dotenv not available, using process.env directly');
       }
       
       const envInstance = process.env.SNOW_INSTANCE;
@@ -819,25 +822,25 @@ export class ServiceNowOAuth {
       const envClientSecret = process.env.SNOW_CLIENT_SECRET;
 
       if (envInstance && envClientId && envClientSecret) {
-        console.log(chalk.green('✅ Found ServiceNow credentials in .env file'));
-        console.log(chalk.gray(`   - Instance: ${envInstance}`));
-        console.log(chalk.gray(`   - Client ID: ${envClientId}`));
-        console.log(chalk.gray('   - Client Secret: ✅ Present'));
+        prompts.log.success('Found ServiceNow credentials in .env file');
+        prompts.log.message(`   - Instance: ${envInstance}`);
+        prompts.log.message(`   - Client ID: ${envClientId}`);
+        prompts.log.message('   - Client Secret: Present');
 
         // Validate client secret
         const secretValidation = this.validateClientSecret(envClientSecret);
         if (!secretValidation.valid) {
-          console.log(chalk.red('❌ Invalid OAuth Client Secret in .env file:'), secretValidation.reason);
-          console.log(chalk.yellow('💡 Please update SNOW_CLIENT_SECRET in .env with proper OAuth secret from ServiceNow'));
+          prompts.log.error(`Invalid OAuth Client Secret in .env file: ${secretValidation.reason}`);
+          prompts.log.warn('Please update SNOW_CLIENT_SECRET in .env with proper OAuth secret from ServiceNow');
           return null;
         }
 
-        console.log('');
-        console.log(chalk.blue('🔐 OAuth Setup Required:'));
-        console.log(chalk.gray('   Your .env has OAuth credentials but no active session.'));
-        console.log(chalk.cyan('   Run: snow-flow auth login'));
-        console.log(chalk.gray('   This will authenticate and create persistent tokens.'));
-        console.log('');
+        prompts.log.message('');
+        prompts.log.info('OAuth Setup Required:');
+        prompts.log.message('   Your .env has OAuth credentials but no active session.');
+        prompts.log.message('   Run: snow-flow auth login');
+        prompts.log.message('   This will authenticate and create persistent tokens.');
+        prompts.log.message('');
 
         // Return credentials without access token - this will trigger auth flow
         return {
@@ -853,36 +856,36 @@ export class ServiceNowOAuth {
       const envPassword = process.env.SNOW_PASSWORD;
 
       if (envInstance && envUsername && envPassword) {
-        console.log(chalk.yellow('⚠️  Found username/password in .env - OAuth is recommended'));
-        console.log(chalk.blue('💡 For better security, set up OAuth credentials:'));
-        console.log(chalk.gray('   1. In ServiceNow: System OAuth > Application Registry > New'));
-        console.log(chalk.gray('   2. Update .env with SNOW_CLIENT_ID and SNOW_CLIENT_SECRET'));
-        console.log(chalk.cyan('   3. Run: snow-flow auth login'));
+        prompts.log.warn('Found username/password in .env - OAuth is recommended');
+        prompts.log.info('For better security, set up OAuth credentials:');
+        prompts.log.message('   1. In ServiceNow: System OAuth > Application Registry > New');
+        prompts.log.message('   2. Update .env with SNOW_CLIENT_ID and SNOW_CLIENT_SECRET');
+        prompts.log.message('   3. Run: snow-flow auth login');
 
         // Don't return username/password - force OAuth setup
         return null;
       }
 
       // No credentials found anywhere
-      console.log(chalk.red('❌ No ServiceNow credentials found!'));
-      console.log('');
-      console.log(chalk.blue('🔧 Setup Instructions:'));
-      console.log(chalk.gray('   1. Create .env file with OAuth credentials:'));
-      console.log(chalk.cyan('      SNOW_INSTANCE=your-instance.service-now.com'));
-      console.log(chalk.cyan('      SNOW_CLIENT_ID=your_oauth_client_id'));
-      console.log(chalk.cyan('      SNOW_CLIENT_SECRET=your_oauth_client_secret'));
-      console.log(chalk.gray('   2. Run:'), chalk.cyan('snow-flow auth login'));
-      console.log('');
-      console.log(chalk.blue('💡 To get OAuth credentials:'));
-      console.log(chalk.gray('   • ServiceNow: System OAuth > Application Registry > New OAuth Application'));
-      console.log(chalk.gray(`   • Redirect URI: http://${snowFlowConfig.servicenow.oauth.redirectHost}:${snowFlowConfig.servicenow.oauth.redirectPort}${snowFlowConfig.servicenow.oauth.redirectPath}`));
-      console.log(chalk.gray('   • Scopes: useraccount write admin'));
-      console.log('');
+      prompts.log.error('No ServiceNow credentials found!');
+      prompts.log.message('');
+      prompts.log.info('Setup Instructions:');
+      prompts.log.message('   1. Create .env file with OAuth credentials:');
+      prompts.log.message('      SNOW_INSTANCE=your-instance.service-now.com');
+      prompts.log.message('      SNOW_CLIENT_ID=your_oauth_client_id');
+      prompts.log.message('      SNOW_CLIENT_SECRET=your_oauth_client_secret');
+      prompts.log.message('   2. Run: snow-flow auth login');
+      prompts.log.message('');
+      prompts.log.info('To get OAuth credentials:');
+      prompts.log.message('   • ServiceNow: System OAuth > Application Registry > New OAuth Application');
+      prompts.log.message(`   • Redirect URI: http://${snowFlowConfig.servicenow.oauth.redirectHost}:${snowFlowConfig.servicenow.oauth.redirectPort}${snowFlowConfig.servicenow.oauth.redirectPath}`);
+      prompts.log.message('   • Scopes: useraccount write admin');
+      prompts.log.message('');
 
       return null;
 
     } catch (error) {
-      console.log(chalk.red('❌ Error loading credentials:'), error);
+      prompts.log.error(`Error loading credentials: ${error}`);
       return null;
     }
   }

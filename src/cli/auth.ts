@@ -1,5 +1,4 @@
 import { Command } from 'commander';
-import chalk from 'chalk';
 import * as prompts from '@clack/prompts';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
@@ -18,46 +17,46 @@ export function registerAuthCommands(program: Command) {
     .action(async (options) => {
       const { getAllProviderModels, getProviderModels } = await import('../utils/dynamic-models.js');
 
-      console.log(chalk.blue('\n🤖 Available LLM Models\n'));
+      prompts.log.step('Available LLM Models');
 
       if (options.provider) {
         // List models for specific provider
-        console.log(chalk.cyan(`${options.provider.toUpperCase()}:\n`));
+        prompts.log.info(`${options.provider.toUpperCase()}:`);
         const models = await getProviderModels(options.provider);
 
         if (models.length > 0) {
           models.forEach((model, i) => {
-            console.log(`  ${i + 1}. ${chalk.white(model.name)}`);
-            console.log(`     ${chalk.dim('ID:')} ${chalk.yellow(model.value)}`);
+            prompts.log.message(`  ${i + 1}. ${model.name}`);
+            prompts.log.message(`     ID: ${model.value}`);
             if (model.contextWindow) {
-              console.log(`     ${chalk.dim('Context:')} ${chalk.green(model.contextWindow.toLocaleString() + ' tokens')}`);
+              prompts.log.message(`     Context: ${model.contextWindow.toLocaleString()} tokens`);
             }
             console.log();
           });
         } else {
-          console.log(chalk.yellow('  No models available for this provider\n'));
+          prompts.log.warn('  No models available for this provider');
         }
       } else {
         // List all providers
         const allModels = await getAllProviderModels();
 
         for (const [provider, models] of Object.entries(allModels)) {
-          console.log(chalk.cyan(`${provider.toUpperCase()}:\n`));
+          prompts.log.info(`${provider.toUpperCase()}:`);
 
           if (models.length > 0) {
             models.forEach((model, i) => {
-              console.log(`  ${i + 1}. ${chalk.white(model.name)}`);
-              console.log(`     ${chalk.dim('ID:')} ${chalk.yellow(model.value)}`);
+              prompts.log.message(`  ${i + 1}. ${model.name}`);
+              prompts.log.message(`     ID: ${model.value}`);
               console.log();
             });
           } else {
-            console.log(chalk.yellow('  No models available\n'));
+            prompts.log.warn('  No models available');
           }
         }
       }
 
-      console.log(chalk.dim('💡 Tip: Use --provider to see models for a specific provider'));
-      console.log(chalk.dim('Example: snow-flow auth models --provider anthropic\n'));
+      prompts.log.message('Tip: Use --provider to see models for a specific provider');
+      prompts.log.message('Example: snow-flow auth models --provider anthropic');
     });
 
   auth
@@ -88,9 +87,9 @@ export function registerAuthCommands(program: Command) {
         try {
           execSync('which snowcode', { stdio: 'ignore' });
         } catch {
-          console.error(chalk.red('❌ SnowCode is not installed'));
-          console.log(chalk.yellow('Please install SnowCode first: ') + chalk.cyan('npm install -g @groeimetai/snowcode'));
-          console.log(chalk.blue('Or configure an API key in .env: ') + chalk.cyan('ANTHROPIC_API_KEY=your-key'));
+          prompts.log.error('SnowCode is not installed');
+          prompts.log.warn('Please install SnowCode first: npm install -g @groeimetai/snowcode');
+          prompts.log.info('Or configure an API key in .env: ANTHROPIC_API_KEY=your-key');
           return;
         }
 
@@ -117,7 +116,7 @@ export function registerAuthCommands(program: Command) {
             const agentDir = path.join(snowcodeDir, 'agent');
 
             if (fs.existsSync(agentsDir) && !fs.existsSync(agentDir)) {
-              console.log(chalk.dim(`   Fixing SnowCode directory structure in ${snowcodeDir}...`));
+              prompts.log.message(`   Fixing SnowCode directory structure in ${snowcodeDir}...`);
               try {
                 fs.renameSync(agentsDir, agentDir);
               } catch (e) {
@@ -127,7 +126,7 @@ export function registerAuthCommands(program: Command) {
           }
         } catch (dirError) {
           // Ignore directory fix errors - SnowCode will handle it
-          console.log(chalk.dim('   (Directory fix skipped - will auto-correct)'));
+          prompts.log.message('   (Directory fix skipped - will auto-correct)');
         }
 
         try {
@@ -136,33 +135,33 @@ export function registerAuthCommands(program: Command) {
           let snowcodeCommand = 'snowcode'; // fallback to global
 
           if (fs.existsSync(localSnowCode)) {
-            console.log(chalk.dim('   Using local SnowCode installation (with platform binaries)'));
+            prompts.log.message('   Using local SnowCode installation (with platform binaries)');
             snowcodeCommand = `"${localSnowCode}"`;
           } else {
-            console.log(chalk.dim('   Using global SnowCode installation'));
+            prompts.log.message('   Using global SnowCode installation');
           }
 
           execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
         } catch (error: any) {
-          console.error(chalk.red('\n❌ Authentication failed'));
+          prompts.log.error('Authentication failed');
 
           // Check if it's the bun dependency error
           const errorMsg = error?.message || error?.toString() || '';
           if (errorMsg.includes('Cannot find package \'bun\'') || errorMsg.includes('ERR_MODULE_NOT_FOUND')) {
-            console.log(chalk.yellow('\n⚠️  SnowCode dependency issue detected'));
-            console.log(chalk.blue('   This is a known issue with SnowCode versions 0.15.18 and earlier'));
-            console.log(chalk.blue('   Please update SnowCode to the latest version:'));
-            console.log(chalk.cyan('   npm update -g @groeimetai/snowcode'));
-            console.log(chalk.blue('\n   Alternatively, use an API key instead:'));
-            console.log(chalk.cyan('   1. Add to .env: ANTHROPIC_API_KEY=your-api-key'));
-            console.log(chalk.cyan('   2. Then run: snow-flow auth login'));
+            prompts.log.warn('SnowCode dependency issue detected');
+            prompts.log.message('   This is a known issue with SnowCode versions 0.15.18 and earlier');
+            prompts.log.message('   Please update SnowCode to the latest version:');
+            prompts.log.message('   npm update -g @groeimetai/snowcode');
+            prompts.log.message('   Alternatively, use an API key instead:');
+            prompts.log.message('   1. Add to .env: ANTHROPIC_API_KEY=your-api-key');
+            prompts.log.message('   2. Then run: snow-flow auth login');
           } else if (errorMsg.includes('agents') && errorMsg.includes('agent')) {
-            console.log(chalk.yellow('\n⚠️  SnowCode directory issue detected'));
-            console.log(chalk.blue('   Run this fix: ') + chalk.cyan('mv ~/.snowcode/agents ~/.snowcode/agent'));
-            console.log(chalk.blue('   Then try: ') + chalk.cyan('snow-flow auth login'));
+            prompts.log.warn('SnowCode directory issue detected');
+            prompts.log.message('   Run this fix: mv ~/.snowcode/agents ~/.snowcode/agent');
+            prompts.log.message('   Then try: snow-flow auth login');
           } else {
-            console.log(chalk.yellow('💡 You can try again later or use an API key instead'));
-            console.log(chalk.blue('   Add to .env: ') + chalk.cyan('ANTHROPIC_API_KEY=your-api-key'));
+            prompts.log.warn('You can try again later or use an API key instead');
+            prompts.log.message('   Add to .env: ANTHROPIC_API_KEY=your-api-key');
           }
           return;
         }
@@ -314,11 +313,12 @@ export function registerAuthCommands(program: Command) {
           // 🔧 Auto-refresh MCP configuration with new credentials
           try {
             const { setupMCPConfig } = await import('../cli.js');
-            console.log(chalk.blue('\n🔄 Updating MCP configuration...'));
+            const spinner2 = prompts.spinner();
+            spinner2.start('Updating MCP configuration');
             await setupMCPConfig(process.cwd(), instance, clientId, clientSecret, true);
-            prompts.log.success('MCP servers ready for SnowCode/Claude Code');
+            spinner2.stop('MCP servers ready for SnowCode/Claude Code');
           } catch (error) {
-            console.log(chalk.yellow('⚠️  Could not update MCP config - run "snow-flow init" to set up'));
+            prompts.log.warn('Could not update MCP config - run "snow-flow init" to set up');
           }
 
           prompts.outro('Setup complete!');
@@ -402,27 +402,30 @@ export function registerAuthCommands(program: Command) {
         }
 
         // Test Basic Auth connection
-        console.log(chalk.blue('\n🔄 Authenticating with ServiceNow...'));
+        const spinner = prompts.spinner();
+        spinner.start('Authenticating with ServiceNow');
 
         const client = new ServiceNowClient();
         const testResult = await client.testConnection();
 
         if (testResult.success) {
-          prompts.log.success('ServiceNow authentication successful');
+          spinner.stop('ServiceNow authentication successful');
           prompts.log.success(`Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
 
           // 🔧 Auto-refresh MCP configuration with new credentials
           try {
             const { setupMCPConfig } = await import('../cli.js');
-            console.log(chalk.blue('\n🔄 Updating MCP configuration...'));
+            const spinner2 = prompts.spinner();
+            spinner2.start('Updating MCP configuration');
             await setupMCPConfig(process.cwd(), instance, username, password, true);
-            prompts.log.success('MCP servers ready for SnowCode/Claude Code');
+            spinner2.stop('MCP servers ready for SnowCode/Claude Code');
           } catch (error) {
-            console.log(chalk.yellow('⚠️  Could not update MCP config - run "snow-flow init" to set up'));
+            prompts.log.warn('Could not update MCP config - run "snow-flow init" to set up');
           }
 
           prompts.outro('Setup complete!');
         } else {
+          spinner.stop('Authentication failed');
           prompts.cancel(testResult.error || 'Invalid credentials');
           process.exit(1);
         }
@@ -435,7 +438,7 @@ export function registerAuthCommands(program: Command) {
     .action(async () => {
       const oauth = new ServiceNowOAuth();
       await oauth.logout();
-      console.log(chalk.green('✅ Logged out successfully'));
+      prompts.log.success('Logged out successfully');
     });
 
   auth
@@ -443,40 +446,43 @@ export function registerAuthCommands(program: Command) {
     .description('Show ServiceNow authentication status')
     .action(async () => {
       const oauth = new ServiceNowOAuth();
-      console.log(chalk.blue('\n📊 ServiceNow Authentication Status:'));
+      prompts.log.step('ServiceNow Authentication Status');
 
       const isAuthenticated = await oauth.isAuthenticated();
       const credentials = await oauth.loadCredentials();
-      
+
       if (isAuthenticated && credentials) {
-        console.log('   ├── Status: ✅ Authenticated');
-        console.log(`   ├── Instance: ${credentials.instance}`);
-        console.log('   ├── Method: OAuth 2.0');
-        console.log(`   ├── Client ID: ${credentials.clientId}`);
-        
+        prompts.log.success('Status: Authenticated');
+        prompts.log.info(`Instance: ${credentials.instance}`);
+        prompts.log.info('Method: OAuth 2.0');
+        prompts.log.info(`Client ID: ${credentials.clientId}`);
+
         if (credentials.expiresAt) {
           const expiresAt = new Date(credentials.expiresAt);
-          console.log(`   └── Token expires: ${expiresAt.toLocaleString()}`);
+          prompts.log.info(`Token expires: ${expiresAt.toLocaleString()}`);
         }
-        
+
         // Test connection
+        const spinner = prompts.spinner();
+        spinner.start('Testing connection');
         const client = new ServiceNowClient();
         const testResult = await client.testConnection();
         if (testResult.success) {
-          console.log(`\n🔍 Connection test: ✅ Success`);
+          spinner.stop('Connection test successful');
           if (testResult.data.message) {
-            console.log(`   ${testResult.data.message}`);
+            prompts.log.message(`   ${testResult.data.message}`);
           }
-          console.log(`🌐 Instance: ${testResult.data.email || credentials.instance}`);
+          prompts.log.info(`Instance: ${testResult.data.email || credentials.instance}`);
         } else {
-          console.log(`\n🔍 Connection test: ❌ Failed`);
-          console.log(`   Error: ${testResult.error}`);
+          spinner.stop('Connection test failed');
+          prompts.log.error(`Error: ${testResult.error}`);
         }
       } else {
-        console.log('   ├── Status: ❌ Not authenticated');
-        console.log('   ├── Instance: Not configured');
-        console.log('   └── Method: Not set');
-        console.log('\n💡 Create .env file and run "snow-flow auth login"');
+        prompts.log.error('Status: Not authenticated');
+        prompts.log.message('Instance: Not configured');
+        prompts.log.message('Method: Not set');
+        prompts.log.message('');
+        prompts.log.info('Create .env file and run "snow-flow auth login"');
       }
     });
 }
