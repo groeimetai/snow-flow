@@ -17,7 +17,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { EnterpriseLicense } from './types';
+import { EnterpriseLicense } from '../auth/types';
 
 /**
  * Theme definition structure (OpenCode format)
