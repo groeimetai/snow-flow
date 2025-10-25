@@ -297,8 +297,8 @@ export function registerAuthCommands(program: Command) {
           process.env.SNOW_CLIENT_SECRET = clientSecret;
         }
 
-        // Start OAuth flow with simplified code paste flow (Claude-style)
-        const result = await oauth.authenticateWithCodePaste(instance, clientId, clientSecret);
+        // Start OAuth flow with localhost callback server
+        const result = await oauth.authenticate(instance, clientId, clientSecret);
 
         if (result.success) {
           prompts.log.success('ServiceNow authentication successful');

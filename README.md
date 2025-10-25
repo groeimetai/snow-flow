@@ -205,7 +205,7 @@ OPENAI_API_KEY=your-key
 
 ## 🎯 ServiceNow OAuth Setup
 
-Snow-Flow uses OAuth 2.0 with out-of-band code flow for secure ServiceNow access (works in headless environments, Codespaces, etc.):
+Snow-Flow uses OAuth 2.0 with localhost callback for secure ServiceNow access:
 
 ### Step 1: Create OAuth Application in ServiceNow
 
@@ -214,7 +214,7 @@ Snow-Flow uses OAuth 2.0 with out-of-band code flow for secure ServiceNow access
 3. **Click:** New → "Create an OAuth API endpoint for external clients"
 4. **Configure the following fields:**
    - **Name:** `Snow-Flow Integration`
-   - **Redirect URL:** `urn:ietf:wg:oauth:2.0:oob` ⚠️ **CRITICAL: Must be exactly this!**
+   - **Redirect URL:** `http://localhost:3005/callback` ⚠️ **CRITICAL: Must be exactly this!**
    - **Refresh Token Lifespan:** `0` (unlimited)
    - **Access Token Lifespan:** `1800` (30 minutes)
 5. **Save** the application
@@ -237,11 +237,11 @@ snow-flow auth login
 ```
 
 **What happens:**
-1. Snow-Flow generates an authorization URL
-2. You visit the URL in your browser
-3. ServiceNow shows the authorization code
-4. You paste the code back into the terminal
-5. Snow-Flow exchanges the code for access tokens
+1. Snow-Flow starts a temporary localhost server on port 3005
+2. Your browser opens automatically to ServiceNow's OAuth page
+3. You click "Allow" to authorize Snow-Flow
+4. ServiceNow redirects back to localhost with the authorization code
+5. Snow-Flow automatically exchanges the code for access tokens
 6. Done! All MCP servers are now authenticated
 
 ### ⚠️ Troubleshooting
@@ -253,19 +253,26 @@ This means the redirect URL in your ServiceNow OAuth application doesn't match. 
 1. Go to: System OAuth → Application Registry
 2. Find your Snow-Flow application (search for the Client ID)
 3. Edit the **Redirect URL** field
-4. Change it to: `urn:ietf:wg:oauth:2.0:oob` (exactly this, no typos!)
+4. Change it to: `http://localhost:3005/callback` (exactly this, no typos!)
 5. Save and try `snow-flow auth login` again
 
-**Why out-of-band (OOB)?**
+**Error: "Port 3005 is already in use"**
 
-The `urn:ietf:wg:oauth:2.0:oob` redirect URI is an OAuth 2.0 standard that works in:
-- ✅ GitHub Codespaces
-- ✅ Remote SSH environments
-- ✅ Docker containers
-- ✅ CI/CD pipelines
-- ✅ Headless servers
+Another application is using port 3005. Fix it:
 
-This is the same flow used by Claude, gcloud, and other modern CLI tools.
+1. Stop any application using port 3005
+2. Or change the port in `.env`:
+   ```bash
+   SNOW_OAUTH_REDIRECT_PORT=3006
+   ```
+3. Update the redirect URL in ServiceNow to match the new port
+
+**Using in GitHub Codespaces or Remote Environments**
+
+The localhost callback works automatically through port forwarding in:
+- ✅ GitHub Codespaces (automatic port forwarding)
+- ✅ VS Code Remote SSH (automatic port forwarding)
+- ✅ Local development (direct localhost access)
 
 ---
 
