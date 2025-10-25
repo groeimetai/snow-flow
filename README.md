@@ -205,17 +205,67 @@ OPENAI_API_KEY=your-key
 
 ## 🎯 ServiceNow OAuth Setup
 
-Snow-Flow uses OAuth 2.0 for secure ServiceNow access:
+Snow-Flow uses OAuth 2.0 with out-of-band code flow for secure ServiceNow access (works in headless environments, Codespaces, etc.):
 
-1. **Navigate to:** System OAuth → Application Registry
-2. **Click:** New → "Create an OAuth API endpoint for external clients"
-3. **Configure:**
+### Step 1: Create OAuth Application in ServiceNow
+
+1. **Log into ServiceNow** as administrator
+2. **Navigate to:** System OAuth → Application Registry
+3. **Click:** New → "Create an OAuth API endpoint for external clients"
+4. **Configure the following fields:**
    - **Name:** `Snow-Flow Integration`
-   - **Redirect URL:** `http://localhost:3005/callback` ⚠️ **Must be exact!**
+   - **Redirect URL:** `urn:ietf:wg:oauth:2.0:oob` ⚠️ **CRITICAL: Must be exactly this!**
    - **Refresh Token Lifespan:** `0` (unlimited)
    - **Access Token Lifespan:** `1800` (30 minutes)
-4. **Save** → Copy Client ID and Client Secret
-5. **Add to `.env`** (see Configuration above)
+5. **Save** the application
+6. **Copy** the generated Client ID and Client Secret
+
+### Step 2: Add Credentials to Environment
+
+Add the credentials to your `.env` file:
+
+```bash
+SNOW_INSTANCE=your-instance.service-now.com
+SNOW_CLIENT_ID=your-client-id-from-step-1
+SNOW_CLIENT_SECRET=your-client-secret-from-step-1
+```
+
+### Step 3: Authenticate
+
+```bash
+snow-flow auth login
+```
+
+**What happens:**
+1. Snow-Flow generates an authorization URL
+2. You visit the URL in your browser
+3. ServiceNow shows the authorization code
+4. You paste the code back into the terminal
+5. Snow-Flow exchanges the code for access tokens
+6. Done! All MCP servers are now authenticated
+
+### ⚠️ Troubleshooting
+
+**Error: "Invalid redirect_uri"**
+
+This means the redirect URL in your ServiceNow OAuth application doesn't match. Fix it:
+
+1. Go to: System OAuth → Application Registry
+2. Find your Snow-Flow application (search for the Client ID)
+3. Edit the **Redirect URL** field
+4. Change it to: `urn:ietf:wg:oauth:2.0:oob` (exactly this, no typos!)
+5. Save and try `snow-flow auth login` again
+
+**Why out-of-band (OOB)?**
+
+The `urn:ietf:wg:oauth:2.0:oob` redirect URI is an OAuth 2.0 standard that works in:
+- ✅ GitHub Codespaces
+- ✅ Remote SSH environments
+- ✅ Docker containers
+- ✅ CI/CD pipelines
+- ✅ Headless servers
+
+This is the same flow used by Claude, gcloud, and other modern CLI tools.
 
 ---
 

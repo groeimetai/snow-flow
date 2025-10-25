@@ -104,13 +104,39 @@ snowcode
 
 **Required for ServiceNow MCP:**
 - `SNOW_INSTANCE` - Your ServiceNow instance URL (e.g., `dev12345.service-now.com`)
-- `SNOW_CLIENT_ID` - OAuth client ID
-- `SNOW_CLIENT_SECRET` - OAuth client secret
+- `SNOW_CLIENT_ID` - OAuth client ID (from ServiceNow Application Registry)
+- `SNOW_CLIENT_SECRET` - OAuth client secret (from ServiceNow Application Registry)
 - `SNOW_USERNAME` - ServiceNow username
 - `SNOW_PASSWORD` - ServiceNow password
 
 **Optional for Snow-Flow MCP:**
 - `SNOW_FLOW_ENV` - Environment (default: `production`)
+
+### OAuth Setup (CRITICAL!)
+
+Before using Snow-Flow, you **MUST** configure OAuth in ServiceNow:
+
+1. **Create OAuth Application** in ServiceNow:
+   - Navigate to: System OAuth → Application Registry
+   - Click: New → "Create an OAuth API endpoint for external clients"
+   - **Redirect URL:** `urn:ietf:wg:oauth:2.0:oob` ⚠️ **MUST be exactly this!**
+   - Save and copy the Client ID and Client Secret
+
+2. **Add credentials** to your environment:
+   - Either in `snowcode-config.json` under `"environment"` section
+   - Or in `.env` file (recommended for security)
+
+3. **Authenticate** using Snow-Flow CLI:
+   ```bash
+   snow-flow auth login
+   ```
+
+**Common Error:** If you get `Invalid redirect_uri` error:
+- The redirect URL in ServiceNow MUST be exactly: `urn:ietf:wg:oauth:2.0:oob`
+- Go to System OAuth → Application Registry → Your Application
+- Edit the "Redirect URL" field to match exactly
+
+📖 **See [README.md - OAuth Setup](README.md#-servicenow-oauth-setup) for detailed instructions**
 
 ## Verifying MCP Tools are Loaded
 
