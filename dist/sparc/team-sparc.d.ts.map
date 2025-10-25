@@ -1,1 +1,0 @@
-{"version":3,"file":"team-sparc.d.ts","sourceRoot":"","sources":["../../src/sparc/team-sparc.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,qBAAa,iBAAiB;WACf,OAAO,CAAC,QAAQ,EAAE,MAAM,EAAE,IAAI,EAAE,MAAM,EAAE,OAAO,GAAE,GAAQ,GAAG,OAAO,CAAC,GAAG,CAAC;WAsCxE,iBAAiB,CAAC,cAAc,EAAE,MAAM,EAAE,IAAI,EAAE,MAAM,EAAE,OAAO,GAAE,GAAQ,GAAG,OAAO,CAAC,GAAG,CAAC;CA2CtG"}

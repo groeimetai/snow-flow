@@ -1,9 +1,0 @@
-/**
- * snow_analyze_requirements - Analyze development requirements
- *
- * Identifies dependencies, suggests reusable components, and creates implementation roadmaps.
- */
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-export declare const toolDefinition: MCPToolDefinition;
-export declare function execute(args: any, context: ServiceNowContext): Promise<ToolResult>;
-//# sourceMappingURL=snow_analyze_requirements.d.ts.map

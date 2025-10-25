@@ -1,1 +1,0 @@
-{"version":3,"file":"servicenow-notifications-mcp.d.ts","sourceRoot":"","sources":["../../src/mcp/servicenow-notifications-mcp.ts"],"names":[],"mappings":";AACA;;;;;;;;;;;GAWG;AASH,OAAO,EAAE,qBAAqB,EAAE,MAAM,sCAAsC,CAAC;AAE7E,qBAAa,0BAA2B,SAAQ,qBAAqB;;IAMnE,OAAO,CAAC,aAAa;YA0KP,gBAAgB;YA+DhB,qBAAqB;YAyBrB,mBAAmB;YAqBnB,oBAAoB;IAsBlC,OAAO,CAAC,kBAAkB;CAmB3B"}
