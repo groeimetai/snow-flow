@@ -25,7 +25,7 @@ Enterprise-grade features for Snow-Flow, providing advanced integrations, securi
 
 **Requirements:**
 - Valid Snow-Flow Enterprise license key
-- Snow-Flow Core ^8.0.0
+- Snow-Flow Core >= 8.5.1 (npm install -g snow-flow@8.5.1)
 - Node.js >= 18.0.0
 
 ```bash
