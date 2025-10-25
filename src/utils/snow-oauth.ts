@@ -595,12 +595,12 @@ export class ServiceNowOAuth {
           prompts.log.info(`2. Navigate to: System OAuth → Application Registry`);
           prompts.log.info(`3. Find your OAuth application (Client ID: ${this.credentials!.clientId})`);
           prompts.log.info('4. Edit the "Redirect URL" field');
-          prompts.log.info('5. Change it to: urn:ietf:wg:oauth:2.0:oob');
+          prompts.log.info('5. Change it to: http://localhost:3005/callback');
           prompts.log.message('   (exactly this - copy/paste to avoid typos!)');
           prompts.log.info('6. Save the application');
           prompts.log.info('7. Run "snow-flow auth login" again');
           prompts.log.message('');
-          prompts.log.warn('The redirect URI MUST be exactly: urn:ietf:wg:oauth:2.0:oob');
+          prompts.log.warn('The redirect URI MUST be exactly: http://localhost:3005/callback');
           prompts.log.message('');
 
           return {

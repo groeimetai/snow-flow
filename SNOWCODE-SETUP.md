@@ -119,7 +119,7 @@ Before using Snow-Flow, you **MUST** configure OAuth in ServiceNow:
 1. **Create OAuth Application** in ServiceNow:
    - Navigate to: System OAuth → Application Registry
    - Click: New → "Create an OAuth API endpoint for external clients"
-   - **Redirect URL:** `urn:ietf:wg:oauth:2.0:oob` ⚠️ **MUST be exactly this!**
+   - **Redirect URL:** `http://localhost:3005/callback` ⚠️ **MUST be exactly this!**
    - Save and copy the Client ID and Client Secret
 
 2. **Add credentials** to your environment:
@@ -132,7 +132,7 @@ Before using Snow-Flow, you **MUST** configure OAuth in ServiceNow:
    ```
 
 **Common Error:** If you get `Invalid redirect_uri` error:
-- The redirect URL in ServiceNow MUST be exactly: `urn:ietf:wg:oauth:2.0:oob`
+- The redirect URL in ServiceNow MUST be exactly: `http://localhost:3005/callback`
 - Go to System OAuth → Application Registry → Your Application
 - Edit the "Redirect URL" field to match exactly
 
