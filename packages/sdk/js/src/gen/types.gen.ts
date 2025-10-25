@@ -836,6 +836,7 @@ export type StepFinishPart = {
   sessionID: string
   messageID: string
   type: "step-finish"
+  reason: string
   snapshot?: string
   cost: number
   tokens: {
@@ -1116,6 +1117,7 @@ export type EventMessagePartUpdated = {
   type: "message.part.updated"
   properties: {
     part: Part
+    delta?: string
   }
 }
 
@@ -1895,10 +1897,6 @@ export type SessionPromptData = {
     system?: string
     tools?: {
       [key: string]: boolean
-    }
-    acpConnection?: {
-      connection: unknown
-      sessionId: string
     }
     parts: Array<TextPartInput | FilePartInput | AgentPartInput>
   }
