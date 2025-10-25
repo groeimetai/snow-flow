@@ -240,9 +240,21 @@ snow-flow auth login
 1. Snow-Flow starts a temporary localhost server on port 3005
 2. Your browser opens automatically to ServiceNow's OAuth page
 3. You click "Allow" to authorize Snow-Flow
-4. ServiceNow redirects back to localhost with the authorization code
-5. Snow-Flow automatically exchanges the code for access tokens
+4. **Choose one option:**
+   - **Option A (Automatic):** Browser redirects back to localhost automatically
+   - **Option B (Manual):** Copy the callback URL from browser and paste it in the terminal
+5. Snow-Flow exchanges the code for access tokens
 6. Done! All MCP servers are now authenticated
+
+**Manual URL paste option:**
+If the browser doesn't redirect automatically, or you prefer manual control:
+1. After clicking "Allow" in ServiceNow, your browser redirects to a URL like:
+   ```
+   http://localhost:3005/callback?code=abc123&state=xyz789
+   ```
+2. Copy this ENTIRE URL from your browser address bar
+3. Paste it in the Snow-Flow terminal when prompted
+4. Snow-Flow will extract the code and complete authentication
 
 ### ⚠️ Troubleshooting
 
