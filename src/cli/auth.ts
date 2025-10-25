@@ -298,14 +298,11 @@ export function registerAuthCommands(program: Command) {
           process.env.SNOW_CLIENT_SECRET = clientSecret;
         }
 
-        // Start OAuth flow
-        const spinner = prompts.spinner();
-        spinner.start('Authenticating with ServiceNow');
-
-        const result = await oauth.authenticate(instance, clientId, clientSecret);
+        // Start OAuth flow with simplified code paste flow (Claude-style)
+        const result = await oauth.authenticateWithCodePaste(instance, clientId, clientSecret);
 
         if (result.success) {
-          spinner.stop('ServiceNow authentication successful');
+          prompts.log.success('ServiceNow authentication successful');
 
           // Test connection
           const client = new ServiceNowClient();
@@ -317,17 +314,15 @@ export function registerAuthCommands(program: Command) {
           // 🔧 Auto-refresh MCP configuration with new credentials
           try {
             const { setupMCPConfig } = await import('../cli.js');
-            const spinner2 = prompts.spinner();
-            spinner2.start('Updating MCP configuration');
+            console.log(chalk.blue('\n🔄 Updating MCP configuration...'));
             await setupMCPConfig(process.cwd(), instance, clientId, clientSecret, true);
-            spinner2.stop('MCP servers ready for SnowCode/Claude Code');
+            prompts.log.success('MCP servers ready for SnowCode/Claude Code');
           } catch (error) {
             console.log(chalk.yellow('⚠️  Could not update MCP config - run "snow-flow init" to set up'));
           }
 
           prompts.outro('Setup complete!');
         } else {
-          spinner.stop('Authentication failed');
           prompts.cancel(result.error || 'Unknown error');
           process.exit(1);
         }
@@ -407,30 +402,27 @@ export function registerAuthCommands(program: Command) {
         }
 
         // Test Basic Auth connection
-        const spinner = prompts.spinner();
-        spinner.start('Authenticating with ServiceNow');
+        console.log(chalk.blue('\n🔄 Authenticating with ServiceNow...'));
 
         const client = new ServiceNowClient();
         const testResult = await client.testConnection();
 
         if (testResult.success) {
-          spinner.stop('ServiceNow authentication successful');
+          prompts.log.success('ServiceNow authentication successful');
           prompts.log.success(`Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
 
           // 🔧 Auto-refresh MCP configuration with new credentials
           try {
             const { setupMCPConfig } = await import('../cli.js');
-            const spinner2 = prompts.spinner();
-            spinner2.start('Updating MCP configuration');
+            console.log(chalk.blue('\n🔄 Updating MCP configuration...'));
             await setupMCPConfig(process.cwd(), instance, username, password, true);
-            spinner2.stop('MCP servers ready for SnowCode/Claude Code');
+            prompts.log.success('MCP servers ready for SnowCode/Claude Code');
           } catch (error) {
             console.log(chalk.yellow('⚠️  Could not update MCP config - run "snow-flow init" to set up'));
           }
 
           prompts.outro('Setup complete!');
         } else {
-          spinner.stop('Authentication failed');
           prompts.cancel(testResult.error || 'Invalid credentials');
           process.exit(1);
         }
