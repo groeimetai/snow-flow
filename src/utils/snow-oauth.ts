@@ -372,10 +372,14 @@ export class ServiceNowOAuth {
 
   /**
    * Start local HTTP server to handle OAuth callback
+   * Also supports manual callback URL paste as fallback
    */
   private async startCallbackServer(redirectUri: string, port: number): Promise<ServiceNowAuthResult> {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
+      let resolved = false;
+
       const server = createServer(async (req, res) => {
+        if (resolved) return;
         try {
           const url = new URL(req.url!, `http://${snowFlowConfig.servicenow.oauth.redirectHost}:${port}`);
           
@@ -388,7 +392,8 @@ export class ServiceNowOAuth {
             if (state !== this.stateParameter) {
               res.writeHead(400, { 'Content-Type': 'text/html' });
               res.end(OAuthTemplates.securityError);
-              
+
+              resolved = true;
               server.close();
               resolve({
                 success: false,
@@ -396,11 +401,12 @@ export class ServiceNowOAuth {
               });
               return;
             }
-            
+
             if (error) {
               res.writeHead(400, { 'Content-Type': 'text/html' });
               res.end(OAuthTemplates.error(error));
-              
+
+              resolved = true;
               server.close();
               resolve({
                 success: false,
@@ -408,11 +414,12 @@ export class ServiceNowOAuth {
               });
               return;
             }
-            
+
             if (!code) {
               res.writeHead(400, { 'Content-Type': 'text/html' });
               res.end(OAuthTemplates.missingCode);
-              
+
+              resolved = true;
               server.close();
               resolve({
                 success: false,
@@ -420,22 +427,23 @@ export class ServiceNowOAuth {
               });
               return;
             }
-            
+
             // Exchange code for tokens
+            resolved = true;
             const spinner = prompts.spinner();
             spinner.start('Exchanging authorization code for tokens');
             const tokenResult = await this.exchangeCodeForTokens(code);
-            
+
             if (tokenResult.success) {
               res.writeHead(200, { 'Content-Type': 'text/html' });
               res.end(OAuthTemplates.success);
-              
+
               server.close();
               resolve(tokenResult);
             } else {
               res.writeHead(500, { 'Content-Type': 'text/html' });
               res.end(OAuthTemplates.tokenExchangeFailed(tokenResult.error || 'Unknown error'));
-              
+
               server.close();
               resolve(tokenResult);
             }
@@ -447,7 +455,8 @@ export class ServiceNowOAuth {
           prompts.log.error(`Callback server error: ${error}`);
           res.writeHead(500, { 'Content-Type': 'text/plain' });
           res.end('Internal Server Error');
-          
+
+          resolved = true;
           server.close();
           resolve({
             success: false,
@@ -507,21 +516,95 @@ export class ServiceNowOAuth {
             // Silently fail - user can manually open URL
             prompts.log.warn('Browser auto-open failed. Please manually copy and open the URL above.');
           }
-        } else {
-          prompts.log.warn('Running in headless environment (Codespaces/Container/CI)');
-          prompts.log.message('Please manually copy and open the authorization URL above in your browser.');
-
-          if (isCodespaces) {
-            prompts.log.info('TIP for GitHub Codespaces:');
-            prompts.log.message('   1. Copy the authorization URL above');
-            prompts.log.message('   2. Open it in a new browser tab');
-            prompts.log.message('   3. After authorizing, you\'ll be redirected to localhost:3005');
-            prompts.log.message('   4. Copy the FULL redirect URL from your browser');
-            prompts.log.message('   5. Open a new Codespaces terminal and run:');
-            prompts.log.message('      curl "http://localhost:3005/callback?code=YOUR_CODE&state=YOUR_STATE"');
-            prompts.log.message('   6. Or use port forwarding in Codespaces to make port 3005 accessible');
-          }
         }
+
+        // Offer manual callback URL paste as alternative
+        prompts.log.message('');
+        prompts.log.info('Alternatively, paste the callback URL here after authorizing:');
+
+        // Start prompt for manual URL paste (race with server callback)
+        (async () => {
+          try {
+            const callbackUrl = await prompts.text({
+              message: 'Paste callback URL (or press Enter to wait for automatic redirect)',
+              placeholder: 'http://localhost:3005/callback?code=...&state=...',
+              validate: (value) => {
+                // Allow empty (waiting for server callback)
+                if (!value || value.trim() === '') return undefined;
+
+                // Validate if URL was pasted
+                if (!value.includes('callback')) return 'Invalid callback URL - must contain "callback"';
+                if (!value.includes('code=')) return 'Invalid callback URL - must contain code parameter';
+              }
+            }) as string;
+
+            // If user pressed Enter without pasting, just wait for server callback
+            if (prompts.isCancel(callbackUrl) || !callbackUrl || callbackUrl.trim() === '') {
+              prompts.log.info('Waiting for browser redirect...');
+              return;
+            }
+
+            // User pasted a URL - parse it
+            if (resolved) return; // Server already handled it
+            resolved = true;
+
+            try {
+              const url = new URL(callbackUrl);
+              const code = url.searchParams.get('code');
+              const state = url.searchParams.get('state');
+              const error = url.searchParams.get('error');
+
+              // Validate state
+              if (state !== this.stateParameter) {
+                server.close();
+                resolve({
+                  success: false,
+                  error: 'Invalid state parameter - security check failed'
+                });
+                return;
+              }
+
+              if (error) {
+                server.close();
+                resolve({
+                  success: false,
+                  error: `OAuth error: ${error}`
+                });
+                return;
+              }
+
+              if (!code) {
+                server.close();
+                resolve({
+                  success: false,
+                  error: 'No authorization code found in URL'
+                });
+                return;
+              }
+
+              // Exchange code for tokens
+              prompts.log.success('Authorization code received from pasted URL');
+              const spinner = prompts.spinner();
+              spinner.start('Exchanging authorization code for tokens');
+              const tokenResult = await this.exchangeCodeForTokens(code);
+              spinner.stop(tokenResult.success ? 'Token exchange successful' : 'Token exchange failed');
+
+              server.close();
+              resolve(tokenResult);
+            } catch (err) {
+              server.close();
+              resolve({
+                success: false,
+                error: 'Invalid callback URL format'
+              });
+            }
+          } catch (err) {
+            // Prompt was cancelled or errored - just wait for server callback
+            if (!resolved) {
+              prompts.log.info('Waiting for browser redirect...');
+            }
+          }
+        })();
       });
     });
   }
