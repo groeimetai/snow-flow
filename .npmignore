@@ -142,4 +142,6 @@ yarn-error.log*
 enterprise/
 enterprise/**/*
 .enterprise/
+../snow-flow-enterprise/
+../snow-flow-enterprise/**/*
 snow-flow-test-run/

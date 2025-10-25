@@ -576,10 +576,46 @@ export class ServiceNowOAuth {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      prompts.log.error(`Token exchange error: ${errorMessage}`);
+
+      // Check for invalid redirect_uri error
       if (axios.isAxiosError(error) && error.response) {
-        prompts.log.error(`Response data: ${JSON.stringify(error.response.data)}`);
+        const responseData = error.response.data;
+        const errorDescription = responseData?.error_description || responseData?.error || '';
+
+        // Special handling for redirect_uri errors
+        if (errorDescription.toLowerCase().includes('redirect_uri') ||
+            errorDescription.toLowerCase().includes('redirect uri')) {
+          prompts.log.error('Invalid redirect_uri configuration');
+          prompts.log.message('');
+          prompts.log.warn('The OAuth application in ServiceNow is not configured correctly.');
+          prompts.log.message('');
+          prompts.log.step('Fix this by following these steps:');
+          prompts.log.message('');
+          prompts.log.info('1. Log into ServiceNow as administrator');
+          prompts.log.info(`2. Navigate to: System OAuth → Application Registry`);
+          prompts.log.info(`3. Find your OAuth application (Client ID: ${this.credentials!.clientId})`);
+          prompts.log.info('4. Edit the "Redirect URL" field');
+          prompts.log.info('5. Change it to: urn:ietf:wg:oauth:2.0:oob');
+          prompts.log.message('   (exactly this - copy/paste to avoid typos!)');
+          prompts.log.info('6. Save the application');
+          prompts.log.info('7. Run "snow-flow auth login" again');
+          prompts.log.message('');
+          prompts.log.warn('The redirect URI MUST be exactly: urn:ietf:wg:oauth:2.0:oob');
+          prompts.log.message('');
+
+          return {
+            success: false,
+            error: 'Invalid redirect_uri - OAuth application not configured. See instructions above.'
+          };
+        }
+
+        // Log other API errors
+        prompts.log.error(`ServiceNow OAuth error: ${errorDescription}`);
+        prompts.log.error(`Response data: ${JSON.stringify(responseData)}`);
+      } else {
+        prompts.log.error(`Token exchange error: ${errorMessage}`);
       }
+
       return {
         success: false,
         error: errorMessage
