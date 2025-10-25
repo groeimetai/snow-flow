@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * ServiceNow OAuth Authentication Utility with Dynamic Port
- * Handles OAuth2 flow for ServiceNow integration
+ * ServiceNow OAuth Authentication Utility with Code Paste Flow
+ * Handles OAuth2 flow for ServiceNow integration (Claude-style)
  */
 export interface ServiceNowAuthResult {
     success: boolean;
@@ -46,12 +46,17 @@ export declare class ServiceNowOAuth {
      */
     private checkPortAvailable;
     /**
-     * Initialize OAuth flow - opens browser and handles callback
-     */
-    /**
      * 🔧 CRIT-002 FIX: Normalize instance URL to prevent trailing slash 400 errors
      */
     private normalizeInstanceUrl;
+    /**
+     * 🎯 NEW: Simplified OAuth flow with code paste (Claude-style)
+     * No local server required - user manually pastes authorization code
+     */
+    authenticateWithCodePaste(instance: string, clientId: string, clientSecret: string): Promise<ServiceNowAuthResult>;
+    /**
+     * Original OAuth flow with local server (fallback)
+     */
     authenticate(instance: string, clientId: string, clientSecret: string): Promise<ServiceNowAuthResult>;
     /**
      * Generate ServiceNow OAuth authorization URL
