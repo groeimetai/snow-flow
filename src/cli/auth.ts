@@ -430,6 +430,275 @@ export function registerAuthCommands(program: Command) {
           process.exit(1);
         }
       }
+
+      // ═══════════════════════════════════════════════════════════════════
+      // 🚀 ENTERPRISE FEATURES SETUP (Optional)
+      // ═══════════════════════════════════════════════════════════════════
+
+      console.log(); // Spacing
+      prompts.log.step('Enterprise Features (Optional)');
+
+      const hasEnterprise = await prompts.confirm({
+        message: 'Do you have a Snow-Flow Enterprise license?',
+        initialValue: false
+      });
+
+      if (prompts.isCancel(hasEnterprise) || !hasEnterprise) {
+        prompts.log.info('Skipping enterprise setup - you can add it later with "snow-flow auth login"');
+        prompts.outro('Setup complete!');
+        return;
+      }
+
+      // Enterprise license key
+      const licenseKey = await prompts.text({
+        message: 'Enterprise license key',
+        placeholder: 'SNOW-ENT-YOURCOMPANY-20261231-ABC123',
+        validate: (value) => {
+          if (!value || value.trim() === '') return 'License key is required';
+          if (!value.startsWith('SNOW-')) return 'Invalid format (should start with SNOW-)';
+          const parts = value.split('-');
+          if (parts.length !== 5) return 'Invalid format (expected: SNOW-TIER-ORG-DATE-HASH)';
+        }
+      }) as string;
+
+      if (prompts.isCancel(licenseKey)) {
+        prompts.log.info('Enterprise setup skipped');
+        prompts.outro('Setup complete!');
+        return;
+      }
+
+      // License server URL (with sensible default)
+      const licenseServerUrl = await prompts.text({
+        message: 'Enterprise license server URL',
+        placeholder: 'https://license.snow-flow.dev',
+        defaultValue: 'https://license.snow-flow.dev',
+        validate: (value) => {
+          if (!value || value.trim() === '') return 'URL is required';
+          if (!value.startsWith('https://')) return 'Must be HTTPS URL';
+        }
+      }) as string;
+
+      if (prompts.isCancel(licenseServerUrl)) {
+        prompts.log.info('Enterprise setup skipped');
+        prompts.outro('Setup complete!');
+        return;
+      }
+
+      // Ask which integrations to configure
+      const integrations = await prompts.multiselect({
+        message: 'Configure integrations (optional)',
+        options: [
+          { value: 'jira', label: 'Jira', hint: 'Atlassian Jira Cloud' },
+          { value: 'azdo', label: 'Azure DevOps', hint: 'Microsoft Azure DevOps' },
+          { value: 'confluence', label: 'Confluence', hint: 'Atlassian Confluence' }
+        ],
+        required: false
+      }) as string[];
+
+      const enterpriseEnv: Record<string, string> = {
+        SNOW_LICENSE_KEY: licenseKey,
+        SNOW_ENTERPRISE_URL: licenseServerUrl
+      };
+
+      // Jira credentials
+      if (integrations && integrations.includes('jira')) {
+        prompts.log.message('Jira Configuration');
+
+        const jiraHost = await prompts.text({
+          message: 'Jira host',
+          placeholder: 'yourcompany.atlassian.net',
+          validate: (v) => v && v.includes('.') ? undefined : 'Invalid host'
+        }) as string;
+
+        if (!prompts.isCancel(jiraHost)) {
+          const jiraEmail = await prompts.text({
+            message: 'Jira email',
+            placeholder: 'you@company.com',
+            validate: (v) => v && v.includes('@') ? undefined : 'Invalid email'
+          }) as string;
+
+          if (!prompts.isCancel(jiraEmail)) {
+            const jiraToken = await prompts.password({
+              message: 'Jira API token',
+              validate: (v) => v && v.length > 10 ? undefined : 'Token required'
+            }) as string;
+
+            if (!prompts.isCancel(jiraToken)) {
+              enterpriseEnv.JIRA_BASE_URL = `https://${jiraHost}`;
+              enterpriseEnv.JIRA_EMAIL = jiraEmail;
+              enterpriseEnv.JIRA_API_TOKEN = jiraToken;
+              prompts.log.success('Jira configured');
+            }
+          }
+        }
+      }
+
+      // Azure DevOps credentials
+      if (integrations && integrations.includes('azdo')) {
+        prompts.log.message('Azure DevOps Configuration');
+
+        const azdoOrg = await prompts.text({
+          message: 'Azure DevOps organization',
+          placeholder: 'yourcompany',
+          validate: (v) => v && v.length > 0 ? undefined : 'Organization required'
+        }) as string;
+
+        if (!prompts.isCancel(azdoOrg)) {
+          const azdoPat = await prompts.password({
+            message: 'Azure DevOps Personal Access Token (PAT)',
+            validate: (v) => v && v.length > 20 ? undefined : 'PAT required'
+          }) as string;
+
+          if (!prompts.isCancel(azdoPat)) {
+            enterpriseEnv.AZDO_ORG_URL = `https://dev.azure.com/${azdoOrg}`;
+            enterpriseEnv.AZDO_PAT = azdoPat;
+            prompts.log.success('Azure DevOps configured');
+          }
+        }
+      }
+
+      // Confluence credentials
+      if (integrations && integrations.includes('confluence')) {
+        prompts.log.message('Confluence Configuration');
+
+        const confluenceHost = await prompts.text({
+          message: 'Confluence host',
+          placeholder: 'yourcompany.atlassian.net',
+          validate: (v) => v && v.includes('.') ? undefined : 'Invalid host'
+        }) as string;
+
+        if (!prompts.isCancel(confluenceHost)) {
+          const confluenceEmail = await prompts.text({
+            message: 'Confluence email',
+            placeholder: 'you@company.com',
+            validate: (v) => v && v.includes('@') ? undefined : 'Invalid email'
+          }) as string;
+
+          if (!prompts.isCancel(confluenceEmail)) {
+            const confluenceToken = await prompts.password({
+              message: 'Confluence API token',
+              validate: (v) => v && v.length > 10 ? undefined : 'Token required'
+            }) as string;
+
+            if (!prompts.isCancel(confluenceToken)) {
+              enterpriseEnv.CONFLUENCE_BASE_URL = `https://${confluenceHost}`;
+              enterpriseEnv.CONFLUENCE_EMAIL = confluenceEmail;
+              enterpriseEnv.CONFLUENCE_API_TOKEN = confluenceToken;
+              prompts.log.success('Confluence configured');
+            }
+          }
+        }
+      }
+
+      // Save enterprise credentials to .env
+      const envPath = path.join(process.cwd(), '.env');
+      let envContent = '';
+
+      try {
+        envContent = fs.readFileSync(envPath, 'utf8');
+      } catch {
+        // File doesn't exist, will create
+      }
+
+      for (const [key, value] of Object.entries(enterpriseEnv)) {
+        if (envContent.includes(`${key}=`)) {
+          envContent = envContent.replace(new RegExp(`${key}=.*`, 'g'), `${key}=${value}`);
+        } else {
+          envContent += `\n${key}=${value}\n`;
+        }
+        process.env[key] = value;
+      }
+
+      fs.writeFileSync(envPath, envContent);
+      prompts.log.success('Enterprise credentials saved to .env');
+
+      // Configure enterprise MCP proxy
+      const spinner3 = prompts.spinner();
+      spinner3.start('Configuring enterprise MCP proxy');
+
+      try {
+        // Find the enterprise proxy path
+        const enterpriseProxyPath = path.join(
+          process.cwd(),
+          '..',
+          'snow-flow-enterprise',
+          'mcp-proxy',
+          'dist',
+          'enterprise-proxy.js'
+        );
+
+        // Check if proxy exists
+        if (!fs.existsSync(enterpriseProxyPath)) {
+          spinner3.stop('Enterprise proxy not found - will use remote server only');
+          prompts.log.warn('Enterprise proxy not built yet');
+          prompts.log.message('   Run: cd ../snow-flow-enterprise/mcp-proxy && npm run build');
+        } else {
+          // Configure for SnowCode (prioritize SnowCode config)
+          const snowcodeConfigPath = path.join(process.env.HOME || '', '.snowcode', 'config.json');
+          const snowcodeConfigDirPath = path.join(process.env.HOME || '', '.snowcode');
+
+          if (!fs.existsSync(snowcodeConfigDirPath)) {
+            fs.mkdirSync(snowcodeConfigDirPath, { recursive: true });
+          }
+
+          let snowcodeConfig: any = { mcpServers: {} };
+
+          if (fs.existsSync(snowcodeConfigPath)) {
+            try {
+              snowcodeConfig = JSON.parse(fs.readFileSync(snowcodeConfigPath, 'utf8'));
+            } catch {
+              snowcodeConfig = { mcpServers: {} };
+            }
+          }
+
+          if (!snowcodeConfig.mcpServers) {
+            snowcodeConfig.mcpServers = {};
+          }
+
+          // Add enterprise MCP server
+          snowcodeConfig.mcpServers['snow-flow-enterprise'] = {
+            command: 'node',
+            args: [enterpriseProxyPath],
+            env: enterpriseEnv
+          };
+
+          fs.writeFileSync(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
+          spinner3.stop('Enterprise MCP proxy configured for SnowCode');
+          prompts.log.success(`Config saved: ${snowcodeConfigPath}`);
+
+          // Also try Claude Code config
+          const claudeConfigPath = path.join(process.env.HOME || '', '.claude', 'settings.json');
+          if (fs.existsSync(path.dirname(claudeConfigPath))) {
+            try {
+              let claudeConfig: any = { mcpServers: {} };
+              if (fs.existsSync(claudeConfigPath)) {
+                claudeConfig = JSON.parse(fs.readFileSync(claudeConfigPath, 'utf8'));
+              }
+
+              if (!claudeConfig.mcpServers) {
+                claudeConfig.mcpServers = {};
+              }
+
+              claudeConfig.mcpServers['snow-flow-enterprise'] = {
+                command: 'node',
+                args: [enterpriseProxyPath],
+                env: enterpriseEnv
+              };
+
+              fs.writeFileSync(claudeConfigPath, JSON.stringify(claudeConfig, null, 2));
+              prompts.log.success('Also configured for Claude Code');
+            } catch {
+              // Claude Code config optional
+            }
+          }
+        }
+      } catch (error: any) {
+        spinner3.stop('Enterprise proxy configuration failed');
+        prompts.log.warn(`Error: ${error.message}`);
+        prompts.log.message('You can configure manually later');
+      }
+
+      prompts.outro('🎉 Enterprise setup complete! Restart your AI coding assistant to use enterprise features.');
     });
 
   auth
