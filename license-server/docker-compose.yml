@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: snow-flow-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: dev-root-password-123
+      MYSQL_DATABASE: licenses
+      MYSQL_USER: snow-flow
+      MYSQL_PASSWORD: dev-password-123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pdev-root-password-123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - snow-flow-network
+
+  # Optional: phpMyAdmin for easy database management
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: snow-flow-phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: dev-root-password-123
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    networks:
+      - snow-flow-network
+
+volumes:
+  mysql-data:
+    driver: local
+
+networks:
+  snow-flow-network:
+    driver: bridge

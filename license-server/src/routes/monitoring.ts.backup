@@ -123,10 +123,11 @@ export function createMonitoringRoutes(db: LicenseDatabase, credsDb: Credentials
     // 1. Main Database Check (License Server DB)
     try {
       const dbStart = Date.now();
-      const serviceIntegrators = await db.listServiceIntegrators();
-      const customerPromises = serviceIntegrators.map(si => db.listCustomers(si.id));
-      const customerArrays = await Promise.all(customerPromises);
-      const allCustomers = customerArrays.flat();
+      const serviceIntegrators = db.listServiceIntegrators();
+      const allCustomers: any[] = [];
+      serviceIntegrators.forEach(si => {
+        allCustomers.push(...db.listCustomers(si.id));
+      });
       const activeCustomers = allCustomers.filter(c => c.status === 'active').length;
 
       checks.database = {
@@ -151,15 +152,14 @@ export function createMonitoringRoutes(db: LicenseDatabase, credsDb: Credentials
     // 2. Credentials Database Check
     try {
       const credStart = Date.now();
-      const serviceIntegrators = await db.listServiceIntegrators();
+      const serviceIntegrators = db.listServiceIntegrators();
       let totalCreds = 0;
-      for (const si of serviceIntegrators) {
-        const customers = await db.listCustomers(si.id);
-        for (const c of customers) {
-          const creds = await credsDb.listCustomerCredentials(c.id);
-          totalCreds += creds.length;
-        }
-      }
+      serviceIntegrators.forEach(si => {
+        const customers = db.listCustomers(si.id);
+        customers.forEach(c => {
+          totalCreds += credsDb.listCustomerCredentials(c.id).length;
+        });
+      });
 
       checks.credentialsDb = {
         status: 'healthy',
@@ -380,7 +380,7 @@ export function createMonitoringRoutes(db: LicenseDatabase, credsDb: Credentials
    * GET /metrics
    * Prometheus-compatible metrics endpoint
    */
-  router.get('/metrics', async (req: Request, res: Response) => {
+  router.get('/metrics', (req: Request, res: Response) => {
     const memUsage = process.memoryUsage();
     const uptime = process.uptime();
 
@@ -406,10 +406,12 @@ export function createMonitoringRoutes(db: LicenseDatabase, credsDb: Credentials
 
     if (wantsJson) {
       // Get customer stats
-      const serviceIntegrators = await db.listServiceIntegrators();
-      const customerPromises = serviceIntegrators.map(si => db.listCustomers(si.id));
-      const customerArrays = await Promise.all(customerPromises);
-      const allCustomers = customerArrays.flat();
+      const serviceIntegrators = db.listServiceIntegrators();
+      const allCustomers: any[] = [];
+      serviceIntegrators.forEach(si => {
+        const customers = db.listCustomers(si.id);
+        allCustomers.push(...customers);
+      });
 
       const byCategory: Record<string, number> = {};
       toolMetrics.forEach((metricsData, toolName) => {
@@ -501,10 +503,13 @@ export function createMonitoringRoutes(db: LicenseDatabase, credsDb: Credentials
       }
 
       // Get all service integrators and their customers
-      const serviceIntegrators = await db.listServiceIntegrators();
-      const customerPromises = serviceIntegrators.map(si => db.listCustomers(si.id));
-      const customerArrays = await Promise.all(customerPromises);
-      const allCustomers = customerArrays.flat();
+      const serviceIntegrators = db.listServiceIntegrators();
+      const allCustomers: any[] = [];
+
+      serviceIntegrators.forEach(si => {
+        const customers = db.listCustomers(si.id);
+        allCustomers.push(...customers);
+      });
 
       const activeCustomers = allCustomers.filter((c: any) => c.status === 'active').length;
       const totalCustomers = allCustomers.length;

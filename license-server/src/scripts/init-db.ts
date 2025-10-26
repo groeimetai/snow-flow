@@ -22,14 +22,14 @@ async function initDatabase() {
     console.log('✓ Created data directory');
   }
 
-  // Initialize database
-  const dbPath = path.join(dataDir, 'licenses.db');
-  const db = new LicenseDatabase(dbPath);
+  // Initialize database (MySQL - no path needed)
+  const db = new LicenseDatabase();
+  await db.initialize();
 
-  console.log('✓ Database initialized at:', dbPath);
-  console.log('✓ Tables created: licenses, license_instances, validation_logs');
+  console.log('✓ Database initialized (MySQL)');
+  console.log('✓ Tables created: service_integrators, customers, customer_instances, etc.');
 
-  db.close();
+  await db.close();
   console.log('✓ Database initialization complete');
 }
 

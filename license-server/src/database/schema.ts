@@ -1,16 +1,14 @@
 /**
  * Database Schema for License Server
  *
- * Uses better-sqlite3 for fast, reliable license validation.
+ * Uses mysql2 with connection pooling for Cloud SQL (MySQL 8.4)
+ * Supports both local Docker MySQL and Cloud SQL production
  */
 
-import Database from 'better-sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import mysql from 'mysql2/promise';
+import { Connector } from '@google-cloud/cloud-sql-connector';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+// TypeScript Interfaces (unchanged from SQLite version)
 export interface ServiceIntegrator {
   id: number;
   companyName: string;
@@ -155,299 +153,153 @@ export interface SsoSession {
   lastActivity: number;
 }
 
-export class LicenseDatabase {
-  private db: Database.Database;
+/**
+ * Helper to convert snake_case database rows to camelCase TypeScript objects
+ */
+function toCamelCase(row: any): any {
+  if (!row) return row;
 
-  constructor(dbPath?: string) {
-    const defaultPath = path.join(__dirname, '../../data/licenses.db');
-    this.db = new Database(dbPath || defaultPath);
-    this.initialize();
+  const camelRow: any = {};
+  for (const key in row) {
+    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    camelRow[camelKey] = row[key];
   }
+  return camelRow;
+}
+
+/**
+ * Helper to convert boolean fields (MySQL returns 0/1)
+ */
+function convertBooleans(row: any, boolFields: string[]): any {
+  if (!row) return row;
+
+  for (const field of boolFields) {
+    if (row[field] !== undefined) {
+      row[field] = Boolean(row[field]);
+    }
+  }
+  return row;
+}
+
+export class LicenseDatabase {
+  private pool!: mysql.Pool;
+  private connector?: Connector;
+  private isInitialized = false;
 
   /**
-   * Initialize database schema
+   * Initialize database connection pool
+   * Call this before using any methods
    */
-  private initialize(): void {
-    // Enable WAL mode for better concurrency
-    this.db.pragma('journal_mode = WAL');
-
-    // Create service_integrators table (Master accounts)
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS service_integrators (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        company_name TEXT NOT NULL,
-        contact_email TEXT NOT NULL,
-        billing_email TEXT NOT NULL,
-        master_license_key TEXT UNIQUE NOT NULL,
-        white_label_enabled INTEGER DEFAULT 0,
-        custom_domain TEXT,
-        logo_url TEXT,
-        created_at INTEGER NOT NULL,
-        status TEXT DEFAULT 'active' CHECK(status IN ('active', 'suspended', 'churned'))
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_si_master_key ON service_integrators(master_license_key);
-      CREATE INDEX IF NOT EXISTS idx_si_status ON service_integrators(status);
-    `);
-
-    // Create customers table (End customers of service integrators)
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS customers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        service_integrator_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        contact_email TEXT NOT NULL,
-        company TEXT,
-        license_key TEXT UNIQUE NOT NULL,
-        theme TEXT,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        status TEXT DEFAULT 'active' CHECK(status IN ('active', 'suspended', 'churned')),
-        total_api_calls INTEGER DEFAULT 0,
-        last_api_call INTEGER,
-        FOREIGN KEY (service_integrator_id) REFERENCES service_integrators(id) ON DELETE CASCADE
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_customers_license_key ON customers(license_key);
-      CREATE INDEX IF NOT EXISTS idx_customers_si ON customers(service_integrator_id);
-      CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
-    `);
-
-    // Migration: Add theme column if it doesn't exist (for existing databases)
-    try {
-      this.db.exec(`ALTER TABLE customers ADD COLUMN theme TEXT`);
-    } catch (error) {
-      // Column already exists, ignore error
+  async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      return;
     }
 
-    // Create customer_instances table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS customer_instances (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        customer_id INTEGER NOT NULL,
-        instance_id TEXT NOT NULL,
-        instance_name TEXT,
-        hostname TEXT,
-        ip_address TEXT,
-        last_seen INTEGER NOT NULL,
-        version TEXT NOT NULL,
-        validation_count INTEGER NOT NULL DEFAULT 1,
-        created_at INTEGER NOT NULL,
-        FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
-        UNIQUE(customer_id, instance_id)
-      );
+    const isProduction = process.env.NODE_ENV === 'production';
+    const useCloudSQL = process.env.USE_CLOUD_SQL === 'true';
 
-      CREATE INDEX IF NOT EXISTS idx_ci_customer ON customer_instances(customer_id);
-      CREATE INDEX IF NOT EXISTS idx_ci_instance ON customer_instances(instance_id);
-    `);
+    if (isProduction && useCloudSQL) {
+      // Production: Cloud SQL with IAM authentication
+      this.connector = new Connector();
 
-    // Create mcp_usage table (track all MCP tool calls)
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS mcp_usage (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        customer_id INTEGER NOT NULL,
-        instance_id INTEGER NOT NULL,
-        tool_name TEXT NOT NULL,
-        tool_category TEXT NOT NULL CHECK(tool_category IN ('jira', 'azdo', 'confluence', 'ml', 'sso')),
-        timestamp INTEGER NOT NULL,
-        duration_ms INTEGER,
-        success INTEGER NOT NULL,
-        error_message TEXT,
-        request_params TEXT,
-        ip_address TEXT,
-        FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
-        FOREIGN KEY (instance_id) REFERENCES customer_instances(id) ON DELETE CASCADE
-      );
+      const clientOpts = await this.connector.getOptions({
+        instanceConnectionName: process.env.INSTANCE_CONNECTION_NAME!, // e.g., 'snow-flow-ai:europe-west4:snow-flow-production-db'
+        ipType: 'PRIVATE' as any // Use Private IP (VPC) - Type assertion needed for Cloud SQL Connector
+      });
 
-      CREATE INDEX IF NOT EXISTS idx_mcp_usage_customer ON mcp_usage(customer_id);
-      CREATE INDEX IF NOT EXISTS idx_mcp_usage_timestamp ON mcp_usage(timestamp);
-      CREATE INDEX IF NOT EXISTS idx_mcp_usage_tool ON mcp_usage(tool_name);
-      CREATE INDEX IF NOT EXISTS idx_mcp_usage_category ON mcp_usage(tool_category);
-    `);
+      this.pool = mysql.createPool({
+        ...clientOpts,
+        user: process.env.DB_USER || 'snow-flow',
+        database: process.env.DB_NAME || 'licenses',
+        password: process.env.DB_PASSWORD, // From Secret Manager
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0
+      });
+    } else {
+      // Local development: Direct MySQL connection
+      this.pool = mysql.createPool({
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT || '3306'),
+        user: process.env.DB_USER || 'snow-flow',
+        password: process.env.DB_PASSWORD || 'dev-password-123',
+        database: process.env.DB_NAME || 'licenses',
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0
+      });
+    }
 
-    // Create api_logs table (track all API requests)
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS api_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        endpoint TEXT NOT NULL,
-        method TEXT NOT NULL,
-        status_code INTEGER NOT NULL,
-        duration_ms INTEGER NOT NULL,
-        timestamp INTEGER NOT NULL,
-        ip_address TEXT,
-        user_agent TEXT,
-        license_key TEXT,
-        error_message TEXT
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_logs(timestamp);
-      CREATE INDEX IF NOT EXISTS idx_api_logs_endpoint ON api_logs(endpoint);
-    `);
-
-    // Create sso_config table (SAML/OAuth/OpenID configuration per customer)
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS sso_config (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        customer_id INTEGER NOT NULL UNIQUE,
-        enabled INTEGER NOT NULL DEFAULT 0,
-        provider TEXT NOT NULL CHECK(provider IN ('saml', 'oauth', 'openid')),
-        entry_point TEXT NOT NULL,
-        issuer TEXT NOT NULL,
-        cert TEXT NOT NULL,
-        callback_url TEXT NOT NULL,
-        logout_url TEXT,
-        name_id_format TEXT DEFAULT 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
-        want_assertions_signed INTEGER DEFAULT 1,
-        want_authn_response_signed INTEGER DEFAULT 1,
-        signature_algorithm TEXT DEFAULT 'sha256',
-        attribute_mapping TEXT,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_sso_config_customer ON sso_config(customer_id);
-      CREATE INDEX IF NOT EXISTS idx_sso_config_enabled ON sso_config(enabled);
-    `);
-
-    // Create sso_sessions table (active SSO sessions with JWT tokens)
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS sso_sessions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        customer_id INTEGER NOT NULL,
-        user_id TEXT NOT NULL,
-        email TEXT NOT NULL,
-        display_name TEXT,
-        session_token TEXT UNIQUE NOT NULL,
-        name_id TEXT,
-        session_index TEXT,
-        attributes TEXT,
-        ip_address TEXT,
-        user_agent TEXT,
-        created_at INTEGER NOT NULL,
-        expires_at INTEGER NOT NULL,
-        last_activity INTEGER NOT NULL,
-        FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_sso_sessions_customer ON sso_sessions(customer_id);
-      CREATE INDEX IF NOT EXISTS idx_sso_sessions_token ON sso_sessions(session_token);
-      CREATE INDEX IF NOT EXISTS idx_sso_sessions_user ON sso_sessions(user_id);
-      CREATE INDEX IF NOT EXISTS idx_sso_sessions_expires ON sso_sessions(expires_at);
-    `);
-
-    // Create licenses table (legacy support - will migrate to customers)
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS licenses (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        key TEXT UNIQUE NOT NULL,
-        tier TEXT NOT NULL CHECK(tier IN ('Team', 'Professional', 'Enterprise')),
-        status TEXT NOT NULL CHECK(status IN ('active', 'expired', 'suspended', 'invalid')),
-        company_name TEXT NOT NULL,
-        contact_email TEXT NOT NULL,
-        customer_id INTEGER,
-        max_instances INTEGER NOT NULL DEFAULT 1,
-        features TEXT NOT NULL,
-        expires_at INTEGER,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        total_api_calls INTEGER DEFAULT 0,
-        last_api_call INTEGER,
-        FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_licenses_key ON licenses(key);
-      CREATE INDEX IF NOT EXISTS idx_licenses_status ON licenses(status);
-      CREATE INDEX IF NOT EXISTS idx_licenses_customer ON licenses(customer_id);
-    `);
-
-    // Create license_instances table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS license_instances (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        license_id INTEGER NOT NULL,
-        instance_id TEXT NOT NULL,
-        version TEXT NOT NULL,
-        last_seen INTEGER NOT NULL,
-        ip_address TEXT,
-        hostname TEXT,
-        validation_count INTEGER NOT NULL DEFAULT 1,
-        created_at INTEGER NOT NULL,
-        FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE CASCADE,
-        UNIQUE(license_id, instance_id)
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_instances_license ON license_instances(license_id);
-      CREATE INDEX IF NOT EXISTS idx_instances_instance_id ON license_instances(instance_id);
-    `);
-
-    // Create validation_logs table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS validation_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        license_id INTEGER NOT NULL,
-        instance_id TEXT NOT NULL,
-        version TEXT NOT NULL,
-        success INTEGER NOT NULL,
-        error_code TEXT,
-        ip_address TEXT,
-        timestamp INTEGER NOT NULL,
-        FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE CASCADE
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_logs_license ON validation_logs(license_id);
-      CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON validation_logs(timestamp);
-    `);
+    // Test connection
+    try {
+      const connection = await this.pool.getConnection();
+      await connection.ping();
+      connection.release();
+      this.isInitialized = true;
+    } catch (error) {
+      throw new Error(`Failed to connect to MySQL: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**
    * Get license by key
    */
-  getLicense(key: string): License | undefined {
-    const stmt = this.db.prepare(`
-      SELECT * FROM licenses WHERE key = ?
-    `);
-    return stmt.get(key) as License | undefined;
+  async getLicense(key: string): Promise<License | undefined> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM licenses WHERE `key` = ?',
+      [key]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    return toCamelCase(rowsArray[0]) as License;
   }
 
   /**
    * Create new license
    */
-  createLicense(license: Omit<License, 'id' | 'createdAt' | 'updatedAt'>): License {
+  async createLicense(license: Omit<License, 'id' | 'createdAt' | 'updatedAt'>): Promise<License> {
     const now = Date.now();
-    const stmt = this.db.prepare(`
-      INSERT INTO licenses (
-        key, tier, status, company_name, contact_email,
-        max_instances, features, expires_at, created_at, updated_at
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
 
-    const info = stmt.run(
-      license.key,
-      license.tier,
-      license.status,
-      license.companyName,
-      license.contactEmail,
-      license.maxInstances,
-      license.features,
-      license.expiresAt,
-      now,
-      now
+    const [result] = await this.pool.execute(
+      `INSERT INTO licenses (
+        \`key\`, tier, status, company_name, contact_email,
+        max_instances, features, expires_at, created_at, updated_at,
+        total_api_calls, last_api_call
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL)`,
+      [
+        license.key,
+        license.tier,
+        license.status,
+        license.companyName,
+        license.contactEmail,
+        license.maxInstances,
+        license.features,
+        license.expiresAt,
+        now,
+        now
+      ]
     );
 
     return {
-      id: info.lastInsertRowid as number,
+      id: (result as any).insertId,
       ...license,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      totalApiCalls: 0
     };
   }
 
   /**
    * Update license
    */
-  updateLicense(key: string, updates: Partial<License>): void {
+  async updateLicense(key: string, updates: Partial<License>): Promise<void> {
     const now = Date.now();
     const fields: string[] = [];
     const values: any[] = [];
@@ -473,115 +325,111 @@ export class LicenseDatabase {
     values.push(now);
     values.push(key);
 
-    const stmt = this.db.prepare(`
-      UPDATE licenses SET ${fields.join(', ')} WHERE key = ?
-    `);
-    stmt.run(...values);
+    await this.pool.execute(
+      `UPDATE licenses SET ${fields.join(', ')} WHERE \`key\` = ?`,
+      values
+    );
   }
 
   /**
    * Get or create license instance (race-condition safe with UPSERT)
    */
-  upsertInstance(
+  async upsertInstance(
     licenseId: number,
     instanceId: string,
     version: string,
     ipAddress?: string,
     hostname?: string
-  ): LicenseInstance {
+  ): Promise<LicenseInstance> {
     const now = Date.now();
 
-    // Use INSERT ... ON CONFLICT to handle race conditions atomically
-    const upsertStmt = this.db.prepare(`
-      INSERT INTO license_instances (
+    // MySQL ON DUPLICATE KEY UPDATE for atomic upsert
+    await this.pool.execute(
+      `INSERT INTO license_instances (
         license_id, instance_id, version, last_seen, ip_address, hostname, validation_count, created_at
       )
       VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-      ON CONFLICT(license_id, instance_id)
-      DO UPDATE SET
-        last_seen = excluded.last_seen,
-        version = excluded.version,
-        ip_address = excluded.ip_address,
-        hostname = excluded.hostname,
-        validation_count = validation_count + 1
-    `);
-
-    upsertStmt.run(licenseId, instanceId, version, now, ipAddress, hostname, now);
+      ON DUPLICATE KEY UPDATE
+        last_seen = VALUES(last_seen),
+        version = VALUES(version),
+        ip_address = VALUES(ip_address),
+        hostname = VALUES(hostname),
+        validation_count = validation_count + 1`,
+      [licenseId, instanceId, version, now, ipAddress, hostname, now]
+    );
 
     // Fetch the final state after upsert
-    const selectStmt = this.db.prepare(`
-      SELECT * FROM license_instances WHERE license_id = ? AND instance_id = ?
-    `);
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM license_instances WHERE license_id = ? AND instance_id = ?',
+      [licenseId, instanceId]
+    );
 
-    return selectStmt.get(licenseId, instanceId) as LicenseInstance;
+    return toCamelCase((rows as any[])[0]) as LicenseInstance;
   }
 
   /**
    * Get instance count for license
    */
-  getInstanceCount(licenseId: number): number {
-    const stmt = this.db.prepare(`
-      SELECT COUNT(*) as count FROM license_instances WHERE license_id = ?
-    `);
-    const result = stmt.get(licenseId) as { count: number };
-    return result.count;
+  async getInstanceCount(licenseId: number): Promise<number> {
+    const [rows] = await this.pool.execute(
+      'SELECT COUNT(*) as count FROM license_instances WHERE license_id = ?',
+      [licenseId]
+    );
+
+    return ((rows as any[])[0]).count;
   }
 
   /**
    * Log validation attempt
    */
-  logValidation(
+  async logValidation(
     licenseId: number,
     instanceId: string,
     version: string,
     success: boolean,
     errorCode?: string,
     ipAddress?: string
-  ): void {
-    const stmt = this.db.prepare(`
-      INSERT INTO validation_logs (
+  ): Promise<void> {
+    await this.pool.execute(
+      `INSERT INTO validation_logs (
         license_id, instance_id, version, success, error_code, ip_address, timestamp
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run(licenseId, instanceId, version, success ? 1 : 0, errorCode, ipAddress, Date.now());
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [licenseId, instanceId, version, success, errorCode, ipAddress, Date.now()]
+    );
   }
 
   /**
    * Get validation statistics
    */
-  getValidationStats(licenseId: number, days: number = 30): {
+  async getValidationStats(licenseId: number, days: number = 30): Promise<{
     total: number;
     successful: number;
     failed: number;
-  } {
+  }> {
     const since = Date.now() - days * 24 * 60 * 60 * 1000;
-    const stmt = this.db.prepare(`
-      SELECT
+
+    const [rows] = await this.pool.execute(
+      `SELECT
         COUNT(*) as total,
         SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful,
         SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failed
       FROM validation_logs
-      WHERE license_id = ? AND timestamp > ?
-    `);
+      WHERE license_id = ? AND timestamp > ?`,
+      [licenseId, since]
+    );
 
-    return stmt.get(licenseId, since) as { total: number; successful: number; failed: number };
+    return (rows as any[])[0];
   }
 
   /**
    * Close database connection
    */
-  close(): void {
-    this.db.close();
-  }
-
-  /**
-   * Get underlying database instance
-   * (Used for integrating CredentialsDatabase)
-   */
-  get database(): Database.Database {
-    return this.db;
+  async close(): Promise<void> {
+    await this.pool.end();
+    if (this.connector) {
+      this.connector.close();
+    }
   }
 
   // ===== SERVICE INTEGRATOR METHODS =====
@@ -589,30 +437,30 @@ export class LicenseDatabase {
   /**
    * Create service integrator (master account)
    */
-  createServiceIntegrator(si: Omit<ServiceIntegrator, 'id' | 'createdAt'>): ServiceIntegrator {
+  async createServiceIntegrator(si: Omit<ServiceIntegrator, 'id' | 'createdAt'>): Promise<ServiceIntegrator> {
     const now = Date.now();
-    const stmt = this.db.prepare(`
-      INSERT INTO service_integrators (
+
+    const [result] = await this.pool.execute(
+      `INSERT INTO service_integrators (
         company_name, contact_email, billing_email, master_license_key,
         white_label_enabled, custom_domain, logo_url, created_at, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const info = stmt.run(
-      si.companyName,
-      si.contactEmail,
-      si.billingEmail,
-      si.masterLicenseKey,
-      si.whiteLabelEnabled ? 1 : 0,
-      si.customDomain || null,
-      si.logoUrl || null,
-      now,
-      si.status
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        si.companyName,
+        si.contactEmail,
+        si.billingEmail,
+        si.masterLicenseKey,
+        si.whiteLabelEnabled,
+        si.customDomain || null,
+        si.logoUrl || null,
+        now,
+        si.status
+      ]
     );
 
     return {
-      id: info.lastInsertRowid as number,
+      id: (result as any).insertId,
       ...si,
       createdAt: now
     };
@@ -621,29 +469,39 @@ export class LicenseDatabase {
   /**
    * Get service integrator by master key
    */
-  getServiceIntegrator(masterLicenseKey: string): ServiceIntegrator | undefined {
-    const stmt = this.db.prepare(`
-      SELECT * FROM service_integrators WHERE master_license_key = ?
-    `);
-    return stmt.get(masterLicenseKey) as ServiceIntegrator | undefined;
+  async getServiceIntegrator(masterLicenseKey: string): Promise<ServiceIntegrator | undefined> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM service_integrators WHERE master_license_key = ?',
+      [masterLicenseKey]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    const row = convertBooleans(toCamelCase(rowsArray[0]), ['whiteLabelEnabled']);
+    return row as ServiceIntegrator;
   }
 
   /**
    * List all service integrators
    */
-  listServiceIntegrators(status?: 'active' | 'suspended' | 'churned'): ServiceIntegrator[] {
+  async listServiceIntegrators(status?: 'active' | 'suspended' | 'churned'): Promise<ServiceIntegrator[]> {
     const sql = status
-      ? `SELECT * FROM service_integrators WHERE status = ? ORDER BY created_at DESC`
-      : `SELECT * FROM service_integrators ORDER BY created_at DESC`;
+      ? 'SELECT * FROM service_integrators WHERE status = ? ORDER BY created_at DESC'
+      : 'SELECT * FROM service_integrators ORDER BY created_at DESC';
 
-    const stmt = this.db.prepare(sql);
-    return (status ? stmt.all(status) : stmt.all()) as ServiceIntegrator[];
+    const params = status ? [status] : [];
+    const [rows] = await this.pool.execute(sql, params);
+
+    return (rows as any[]).map(row =>
+      convertBooleans(toCamelCase(row), ['whiteLabelEnabled']) as ServiceIntegrator
+    );
   }
 
   /**
    * Update service integrator
    */
-  updateServiceIntegrator(id: number, updates: Partial<ServiceIntegrator>): ServiceIntegrator | undefined {
+  async updateServiceIntegrator(id: number, updates: Partial<ServiceIntegrator>): Promise<ServiceIntegrator | undefined> {
     const fields: string[] = [];
     const values: any[] = [];
 
@@ -666,31 +524,44 @@ export class LicenseDatabase {
     }
     if (updates.whiteLabelEnabled !== undefined) {
       fields.push('white_label_enabled = ?');
-      values.push(updates.whiteLabelEnabled ? 1 : 0);
+      values.push(updates.whiteLabelEnabled);
+    }
+    if (updates.customDomain !== undefined) {
+      fields.push('custom_domain = ?');
+      values.push(updates.customDomain);
+    }
+    if (updates.logoUrl !== undefined) {
+      fields.push('logo_url = ?');
+      values.push(updates.logoUrl);
     }
 
     if (fields.length === 0) {
       // No updates provided, return current record
-      const stmt = this.db.prepare('SELECT * FROM service_integrators WHERE id = ?');
-      return stmt.get(id) as ServiceIntegrator | undefined;
+      const [rows] = await this.pool.execute('SELECT * FROM service_integrators WHERE id = ?', [id]);
+      const rowsArray = rows as any[];
+      if (rowsArray.length === 0) return undefined;
+      return convertBooleans(toCamelCase(rowsArray[0]), ['whiteLabelEnabled']) as ServiceIntegrator;
     }
 
     values.push(id);
-    const sql = `UPDATE service_integrators SET ${fields.join(', ')} WHERE id = ?`;
-    const stmt = this.db.prepare(sql);
-    stmt.run(...values);
+    await this.pool.execute(
+      `UPDATE service_integrators SET ${fields.join(', ')} WHERE id = ?`,
+      values
+    );
 
     // Return updated record
-    const getStmt = this.db.prepare('SELECT * FROM service_integrators WHERE id = ?');
-    return getStmt.get(id) as ServiceIntegrator | undefined;
+    const [rows] = await this.pool.execute('SELECT * FROM service_integrators WHERE id = ?', [id]);
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    return convertBooleans(toCamelCase(rowsArray[0]), ['whiteLabelEnabled']) as ServiceIntegrator;
   }
 
   /**
    * Delete service integrator
    */
-  deleteServiceIntegrator(id: number): void {
-    const stmt = this.db.prepare('DELETE FROM service_integrators WHERE id = ?');
-    stmt.run(id);
+  async deleteServiceIntegrator(id: number): Promise<void> {
+    await this.pool.execute('DELETE FROM service_integrators WHERE id = ?', [id]);
   }
 
   // ===== CUSTOMER METHODS =====
@@ -698,30 +569,30 @@ export class LicenseDatabase {
   /**
    * Create customer
    */
-  createCustomer(customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'totalApiCalls'>): Customer {
+  async createCustomer(customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'totalApiCalls'>): Promise<Customer> {
     const now = Date.now();
-    const stmt = this.db.prepare(`
-      INSERT INTO customers (
+
+    const [result] = await this.pool.execute(
+      `INSERT INTO customers (
         service_integrator_id, name, contact_email, company, license_key, theme,
         created_at, updated_at, status, total_api_calls, last_api_call
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL)
-    `);
-
-    const info = stmt.run(
-      customer.serviceIntegratorId,
-      customer.name,
-      customer.contactEmail,
-      customer.company || null,
-      customer.licenseKey,
-      customer.theme || null,
-      now,
-      now,
-      customer.status
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL)`,
+      [
+        customer.serviceIntegratorId,
+        customer.name,
+        customer.contactEmail,
+        customer.company || null,
+        customer.licenseKey,
+        customer.theme || null,
+        now,
+        now,
+        customer.status
+      ]
     );
 
     return {
-      id: info.lastInsertRowid as number,
+      id: (result as any).insertId,
       ...customer,
       createdAt: now,
       updatedAt: now,
@@ -732,39 +603,51 @@ export class LicenseDatabase {
   /**
    * Get customer by license key
    */
-  getCustomer(licenseKey: string): Customer | undefined {
-    const stmt = this.db.prepare(`
-      SELECT * FROM customers WHERE license_key = ?
-    `);
-    return stmt.get(licenseKey) as Customer | undefined;
+  async getCustomer(licenseKey: string): Promise<Customer | undefined> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM customers WHERE license_key = ?',
+      [licenseKey]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    return toCamelCase(rowsArray[0]) as Customer;
   }
 
   /**
    * Get customer by ID
    */
-  getCustomerById(customerId: number): Customer | undefined {
-    const stmt = this.db.prepare(`
-      SELECT * FROM customers WHERE id = ?
-    `);
-    return stmt.get(customerId) as Customer | undefined;
+  async getCustomerById(customerId: number): Promise<Customer | undefined> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM customers WHERE id = ?',
+      [customerId]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    return toCamelCase(rowsArray[0]) as Customer;
   }
 
   /**
    * List customers for a service integrator
    */
-  listCustomers(serviceIntegratorId: number, status?: 'active' | 'suspended' | 'churned'): Customer[] {
+  async listCustomers(serviceIntegratorId: number, status?: 'active' | 'suspended' | 'churned'): Promise<Customer[]> {
     const sql = status
-      ? `SELECT * FROM customers WHERE service_integrator_id = ? AND status = ? ORDER BY created_at DESC`
-      : `SELECT * FROM customers WHERE service_integrator_id = ? ORDER BY created_at DESC`;
+      ? 'SELECT * FROM customers WHERE service_integrator_id = ? AND status = ? ORDER BY created_at DESC'
+      : 'SELECT * FROM customers WHERE service_integrator_id = ? ORDER BY created_at DESC';
 
-    const stmt = this.db.prepare(sql);
-    return (status ? stmt.all(serviceIntegratorId, status) : stmt.all(serviceIntegratorId)) as Customer[];
+    const params = status ? [serviceIntegratorId, status] : [serviceIntegratorId];
+    const [rows] = await this.pool.execute(sql, params);
+
+    return (rows as any[]).map(row => toCamelCase(row) as Customer);
   }
 
   /**
    * Update customer
    */
-  updateCustomer(customerId: number, updates: Partial<Customer>): void {
+  async updateCustomer(customerId: number, updates: Partial<Customer>): Promise<void> {
     const now = Date.now();
     const fields: string[] = [];
     const values: any[] = [];
@@ -794,23 +677,23 @@ export class LicenseDatabase {
     values.push(now);
     values.push(customerId);
 
-    const stmt = this.db.prepare(`
-      UPDATE customers SET ${fields.join(', ')} WHERE id = ?
-    `);
-    stmt.run(...values);
+    await this.pool.execute(
+      `UPDATE customers SET ${fields.join(', ')} WHERE id = ?`,
+      values
+    );
   }
 
   /**
    * Increment customer API call counter
    */
-  incrementCustomerApiCalls(customerId: number): void {
-    const stmt = this.db.prepare(`
-      UPDATE customers
+  async incrementCustomerApiCalls(customerId: number): Promise<void> {
+    await this.pool.execute(
+      `UPDATE customers
       SET total_api_calls = total_api_calls + 1,
           last_api_call = ?
-      WHERE id = ?
-    `);
-    stmt.run(Date.now(), customerId);
+      WHERE id = ?`,
+      [Date.now(), customerId]
+    );
   }
 
   // ===== CUSTOMER INSTANCE METHODS =====
@@ -818,60 +701,62 @@ export class LicenseDatabase {
   /**
    * Upsert customer instance
    */
-  upsertCustomerInstance(
+  async upsertCustomerInstance(
     customerId: number,
     instanceId: string,
     version: string,
     ipAddress?: string,
     hostname?: string,
     instanceName?: string
-  ): CustomerInstance {
+  ): Promise<CustomerInstance> {
     const now = Date.now();
 
-    const upsertStmt = this.db.prepare(`
-      INSERT INTO customer_instances (
+    await this.pool.execute(
+      `INSERT INTO customer_instances (
         customer_id, instance_id, instance_name, hostname, ip_address,
         last_seen, version, validation_count, created_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
-      ON CONFLICT(customer_id, instance_id)
-      DO UPDATE SET
-        last_seen = excluded.last_seen,
-        version = excluded.version,
-        ip_address = excluded.ip_address,
-        hostname = excluded.hostname,
-        instance_name = COALESCE(excluded.instance_name, instance_name),
-        validation_count = validation_count + 1
-    `);
+      ON DUPLICATE KEY UPDATE
+        last_seen = VALUES(last_seen),
+        version = VALUES(version),
+        ip_address = VALUES(ip_address),
+        hostname = VALUES(hostname),
+        instance_name = COALESCE(VALUES(instance_name), instance_name),
+        validation_count = validation_count + 1`,
+      [customerId, instanceId, instanceName, hostname, ipAddress, now, version, now]
+    );
 
-    upsertStmt.run(customerId, instanceId, instanceName, hostname, ipAddress, now, version, now);
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM customer_instances WHERE customer_id = ? AND instance_id = ?',
+      [customerId, instanceId]
+    );
 
-    const selectStmt = this.db.prepare(`
-      SELECT * FROM customer_instances WHERE customer_id = ? AND instance_id = ?
-    `);
-
-    return selectStmt.get(customerId, instanceId) as CustomerInstance;
+    return toCamelCase((rows as any[])[0]) as CustomerInstance;
   }
 
   /**
    * Get customer instance count
    */
-  getCustomerInstanceCount(customerId: number): number {
-    const stmt = this.db.prepare(`
-      SELECT COUNT(*) as count FROM customer_instances WHERE customer_id = ?
-    `);
-    const result = stmt.get(customerId) as { count: number };
-    return result.count;
+  async getCustomerInstanceCount(customerId: number): Promise<number> {
+    const [rows] = await this.pool.execute(
+      'SELECT COUNT(*) as count FROM customer_instances WHERE customer_id = ?',
+      [customerId]
+    );
+
+    return ((rows as any[])[0]).count;
   }
 
   /**
    * List customer instances
    */
-  listCustomerInstances(customerId: number): CustomerInstance[] {
-    const stmt = this.db.prepare(`
-      SELECT * FROM customer_instances WHERE customer_id = ? ORDER BY last_seen DESC
-    `);
-    return stmt.all(customerId) as CustomerInstance[];
+  async listCustomerInstances(customerId: number): Promise<CustomerInstance[]> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM customer_instances WHERE customer_id = ? ORDER BY last_seen DESC',
+      [customerId]
+    );
+
+    return (rows as any[]).map(row => toCamelCase(row) as CustomerInstance);
   }
 
   // ===== MCP USAGE TRACKING =====
@@ -879,80 +764,84 @@ export class LicenseDatabase {
   /**
    * Log MCP tool usage
    */
-  logMcpUsage(usage: Omit<McpUsage, 'id'>): void {
-    const stmt = this.db.prepare(`
-      INSERT INTO mcp_usage (
+  async logMcpUsage(usage: Omit<McpUsage, 'id'>): Promise<void> {
+    await this.pool.execute(
+      `INSERT INTO mcp_usage (
         customer_id, instance_id, tool_name, tool_category, timestamp,
         duration_ms, success, error_message, request_params, ip_address
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run(
-      usage.customerId,
-      usage.instanceId,
-      usage.toolName,
-      usage.toolCategory,
-      usage.timestamp,
-      usage.durationMs,
-      usage.success ? 1 : 0,
-      usage.errorMessage || null,
-      usage.requestParams || null,
-      usage.ipAddress || null
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        usage.customerId,
+        usage.instanceId,
+        usage.toolName,
+        usage.toolCategory,
+        usage.timestamp,
+        usage.durationMs,
+        usage.success,
+        usage.errorMessage || null,
+        usage.requestParams || null,
+        usage.ipAddress || null
+      ]
     );
   }
 
   /**
    * Get MCP usage statistics for customer
    */
-  getMcpUsageStats(customerId: number, days: number = 30): {
+  async getMcpUsageStats(customerId: number, days: number = 30): Promise<{
     totalCalls: number;
     successfulCalls: number;
     failedCalls: number;
     avgDurationMs: number;
     byCategory: Record<string, number>;
     topTools: Array<{ toolName: string; count: number }>;
-  } {
+  }> {
     const since = Date.now() - days * 24 * 60 * 60 * 1000;
 
     // Overall stats
-    const overallStmt = this.db.prepare(`
-      SELECT
+    const [overallRows] = await this.pool.execute(
+      `SELECT
         COUNT(*) as total_calls,
         SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful_calls,
         SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failed_calls,
         AVG(duration_ms) as avg_duration_ms
       FROM mcp_usage
-      WHERE customer_id = ? AND timestamp > ?
-    `);
+      WHERE customer_id = ? AND timestamp > ?`,
+      [customerId, since]
+    );
 
-    const overall = overallStmt.get(customerId, since) as any;
+    const overall = (overallRows as any[])[0];
 
     // By category
-    const categoryStmt = this.db.prepare(`
-      SELECT tool_category, COUNT(*) as count
+    const [categoryRows] = await this.pool.execute(
+      `SELECT tool_category, COUNT(*) as count
       FROM mcp_usage
       WHERE customer_id = ? AND timestamp > ?
-      GROUP BY tool_category
-    `);
+      GROUP BY tool_category`,
+      [customerId, since]
+    );
 
-    const categories = categoryStmt.all(customerId, since) as Array<{ tool_category: string; count: number }>;
     const byCategory: Record<string, number> = {};
-    categories.forEach(c => {
+    (categoryRows as any[]).forEach(c => {
       byCategory[c.tool_category] = c.count;
     });
 
     // Top tools
-    const topToolsStmt = this.db.prepare(`
-      SELECT tool_name, COUNT(*) as count
+    const [topToolsRows] = await this.pool.execute(
+      `SELECT tool_name, COUNT(*) as count
       FROM mcp_usage
       WHERE customer_id = ? AND timestamp > ?
       GROUP BY tool_name
       ORDER BY count DESC
-      LIMIT 10
-    `);
+      LIMIT 10`,
+      [customerId, since]
+    );
 
-    const topTools = topToolsStmt.all(customerId, since) as Array<{ toolName: string; count: number }>;
+    const topTools = (topToolsRows as any[]).map(row => ({
+      toolName: row.tool_name,
+      count: row.count
+    }));
 
     return {
       totalCalls: overall.total_calls || 0,
@@ -967,26 +856,25 @@ export class LicenseDatabase {
   /**
    * Get MCP usage over time (for charts)
    */
-  getMcpUsageTimeseries(customerId: number, days: number = 30, granularity: 'hour' | 'day' = 'day'): Array<{
+  async getMcpUsageTimeseries(customerId: number, days: number = 30, granularity: 'hour' | 'day' = 'day'): Promise<Array<{
     timestamp: number;
     count: number;
-  }> {
+  }>> {
     const since = Date.now() - days * 24 * 60 * 60 * 1000;
     const intervalMs = granularity === 'hour' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
 
-    const stmt = this.db.prepare(`
-      SELECT
-        (timestamp / ?) * ? as bucket,
+    const [rows] = await this.pool.execute(
+      `SELECT
+        FLOOR(timestamp / ?) * ? as bucket,
         COUNT(*) as count
       FROM mcp_usage
       WHERE customer_id = ? AND timestamp > ?
       GROUP BY bucket
-      ORDER BY bucket ASC
-    `);
+      ORDER BY bucket ASC`,
+      [intervalMs, intervalMs, customerId, since]
+    );
 
-    const results = stmt.all(intervalMs, intervalMs, customerId, since) as Array<{ bucket: number; count: number }>;
-
-    return results.map(r => ({
+    return (rows as any[]).map(r => ({
       timestamp: r.bucket,
       count: r.count
     }));
@@ -997,60 +885,61 @@ export class LicenseDatabase {
   /**
    * Log API request
    */
-  logApiRequest(log: Omit<ApiLog, 'id'>): void {
-    const stmt = this.db.prepare(`
-      INSERT INTO api_logs (
+  async logApiRequest(log: Omit<ApiLog, 'id'>): Promise<void> {
+    await this.pool.execute(
+      `INSERT INTO api_logs (
         endpoint, method, status_code, duration_ms, timestamp,
         ip_address, user_agent, license_key, error_message
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run(
-      log.endpoint,
-      log.method,
-      log.statusCode,
-      log.durationMs,
-      log.timestamp,
-      log.ipAddress || null,
-      log.userAgent || null,
-      log.licenseKey || null,
-      log.errorMessage || null
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        log.endpoint,
+        log.method,
+        log.statusCode,
+        log.durationMs,
+        log.timestamp,
+        log.ipAddress || null,
+        log.userAgent || null,
+        log.licenseKey || null,
+        log.errorMessage || null
+      ]
     );
   }
 
   /**
    * Get API statistics
    */
-  getApiStats(days: number = 30): {
+  async getApiStats(days: number = 30): Promise<{
     totalRequests: number;
     avgDurationMs: number;
     errorRate: number;
     topEndpoints: Array<{ endpoint: string; count: number }>;
-  } {
+  }> {
     const since = Date.now() - days * 24 * 60 * 60 * 1000;
 
-    const overallStmt = this.db.prepare(`
-      SELECT
+    const [overallRows] = await this.pool.execute(
+      `SELECT
         COUNT(*) as total_requests,
         AVG(duration_ms) as avg_duration_ms,
-        CAST(SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS REAL) / COUNT(*) as error_rate
+        CAST(SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS DECIMAL(10,4)) / COUNT(*) as error_rate
       FROM api_logs
-      WHERE timestamp > ?
-    `);
+      WHERE timestamp > ?`,
+      [since]
+    );
 
-    const overall = overallStmt.get(since) as any;
+    const overall = (overallRows as any[])[0];
 
-    const topEndpointsStmt = this.db.prepare(`
-      SELECT endpoint, COUNT(*) as count
+    const [topEndpointsRows] = await this.pool.execute(
+      `SELECT endpoint, COUNT(*) as count
       FROM api_logs
       WHERE timestamp > ?
       GROUP BY endpoint
       ORDER BY count DESC
-      LIMIT 10
-    `);
+      LIMIT 10`,
+      [since]
+    );
 
-    const topEndpoints = topEndpointsStmt.all(since) as Array<{ endpoint: string; count: number }>;
+    const topEndpoints = (topEndpointsRows as any[]);
 
     return {
       totalRequests: overall.total_requests || 0,
@@ -1065,48 +954,56 @@ export class LicenseDatabase {
   /**
    * Get SSO configuration for customer
    */
-  getSsoConfig(customerId: number): SsoConfig | undefined {
-    const stmt = this.db.prepare(`
-      SELECT * FROM sso_config WHERE customer_id = ?
-    `);
-    return stmt.get(customerId) as SsoConfig | undefined;
+  async getSsoConfig(customerId: number): Promise<SsoConfig | undefined> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM sso_config WHERE customer_id = ?',
+      [customerId]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    return convertBooleans(
+      toCamelCase(rowsArray[0]),
+      ['enabled', 'wantAssertionsSigned', 'wantAuthnResponseSigned']
+    ) as SsoConfig;
   }
 
   /**
    * Create SSO configuration
    */
-  createSsoConfig(config: Omit<SsoConfig, 'id' | 'createdAt' | 'updatedAt'>): SsoConfig {
+  async createSsoConfig(config: Omit<SsoConfig, 'id' | 'createdAt' | 'updatedAt'>): Promise<SsoConfig> {
     const now = Date.now();
-    const stmt = this.db.prepare(`
-      INSERT INTO sso_config (
+
+    const [result] = await this.pool.execute(
+      `INSERT INTO sso_config (
         customer_id, enabled, provider, entry_point, issuer, cert,
         callback_url, logout_url, name_id_format, want_assertions_signed,
         want_authn_response_signed, signature_algorithm, attribute_mapping,
         created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const info = stmt.run(
-      config.customerId,
-      config.enabled ? 1 : 0,
-      config.provider,
-      config.entryPoint,
-      config.issuer,
-      config.cert,
-      config.callbackUrl,
-      config.logoutUrl || null,
-      config.nameIdFormat || 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
-      config.wantAssertionsSigned ? 1 : 0,
-      config.wantAuthnResponseSigned ? 1 : 0,
-      config.signatureAlgorithm || 'sha256',
-      config.attributeMapping || null,
-      now,
-      now
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        config.customerId,
+        config.enabled,
+        config.provider,
+        config.entryPoint,
+        config.issuer,
+        config.cert,
+        config.callbackUrl,
+        config.logoutUrl || null,
+        config.nameIdFormat || 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
+        config.wantAssertionsSigned,
+        config.wantAuthnResponseSigned,
+        config.signatureAlgorithm || 'sha256',
+        config.attributeMapping || null,
+        now,
+        now
+      ]
     );
 
     return {
-      id: info.lastInsertRowid as number,
+      id: (result as any).insertId,
       ...config,
       createdAt: now,
       updatedAt: now
@@ -1116,14 +1013,14 @@ export class LicenseDatabase {
   /**
    * Update SSO configuration
    */
-  updateSsoConfig(customerId: number, updates: Partial<SsoConfig>): void {
+  async updateSsoConfig(customerId: number, updates: Partial<SsoConfig>): Promise<void> {
     const now = Date.now();
     const fields: string[] = [];
     const values: any[] = [];
 
     if (updates.enabled !== undefined) {
       fields.push('enabled = ?');
-      values.push(updates.enabled ? 1 : 0);
+      values.push(updates.enabled);
     }
     if (updates.provider) {
       fields.push('provider = ?');
@@ -1155,11 +1052,11 @@ export class LicenseDatabase {
     }
     if (updates.wantAssertionsSigned !== undefined) {
       fields.push('want_assertions_signed = ?');
-      values.push(updates.wantAssertionsSigned ? 1 : 0);
+      values.push(updates.wantAssertionsSigned);
     }
     if (updates.wantAuthnResponseSigned !== undefined) {
       fields.push('want_authn_response_signed = ?');
-      values.push(updates.wantAuthnResponseSigned ? 1 : 0);
+      values.push(updates.wantAuthnResponseSigned);
     }
     if (updates.signatureAlgorithm) {
       fields.push('signature_algorithm = ?');
@@ -1174,20 +1071,20 @@ export class LicenseDatabase {
     values.push(now);
     values.push(customerId);
 
-    const stmt = this.db.prepare(`
-      UPDATE sso_config SET ${fields.join(', ')} WHERE customer_id = ?
-    `);
-    stmt.run(...values);
+    await this.pool.execute(
+      `UPDATE sso_config SET ${fields.join(', ')} WHERE customer_id = ?`,
+      values
+    );
   }
 
   /**
    * Delete SSO configuration
    */
-  deleteSsoConfig(customerId: number): void {
-    const stmt = this.db.prepare(`
-      DELETE FROM sso_config WHERE customer_id = ?
-    `);
-    stmt.run(customerId);
+  async deleteSsoConfig(customerId: number): Promise<void> {
+    await this.pool.execute(
+      'DELETE FROM sso_config WHERE customer_id = ?',
+      [customerId]
+    );
   }
 
   // ===== SSO SESSION METHODS =====
@@ -1195,35 +1092,35 @@ export class LicenseDatabase {
   /**
    * Create SSO session
    */
-  createSsoSession(session: Omit<SsoSession, 'id' | 'createdAt'>): SsoSession {
+  async createSsoSession(session: Omit<SsoSession, 'id' | 'createdAt'>): Promise<SsoSession> {
     const now = Date.now();
-    const stmt = this.db.prepare(`
-      INSERT INTO sso_sessions (
+
+    const [result] = await this.pool.execute(
+      `INSERT INTO sso_sessions (
         customer_id, user_id, email, display_name, session_token,
         name_id, session_index, attributes, ip_address, user_agent,
         created_at, expires_at, last_activity
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const info = stmt.run(
-      session.customerId,
-      session.userId,
-      session.email,
-      session.displayName || null,
-      session.sessionToken,
-      session.nameId || null,
-      session.sessionIndex || null,
-      session.attributes || null,
-      session.ipAddress || null,
-      session.userAgent || null,
-      now,
-      session.expiresAt,
-      session.lastActivity
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        session.customerId,
+        session.userId,
+        session.email,
+        session.displayName || null,
+        session.sessionToken,
+        session.nameId || null,
+        session.sessionIndex || null,
+        session.attributes || null,
+        session.ipAddress || null,
+        session.userAgent || null,
+        now,
+        session.expiresAt,
+        session.lastActivity
+      ]
     );
 
     return {
-      id: info.lastInsertRowid as number,
+      id: (result as any).insertId,
       ...session,
       createdAt: now
     };
@@ -1232,103 +1129,115 @@ export class LicenseDatabase {
   /**
    * Get SSO session by token
    */
-  getSsoSession(sessionToken: string): SsoSession | undefined {
-    const stmt = this.db.prepare(`
-      SELECT * FROM sso_sessions WHERE session_token = ?
-    `);
-    return stmt.get(sessionToken) as SsoSession | undefined;
+  async getSsoSession(sessionToken: string): Promise<SsoSession | undefined> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM sso_sessions WHERE session_token = ?',
+      [sessionToken]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    return toCamelCase(rowsArray[0]) as SsoSession;
   }
 
   /**
    * Get SSO session by user and customer
    */
-  getSsoSessionByUser(customerId: number, userId: string): SsoSession | undefined {
-    const stmt = this.db.prepare(`
-      SELECT * FROM sso_sessions
+  async getSsoSessionByUser(customerId: number, userId: string): Promise<SsoSession | undefined> {
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM sso_sessions
       WHERE customer_id = ? AND user_id = ?
       ORDER BY created_at DESC
-      LIMIT 1
-    `);
-    return stmt.get(customerId, userId) as SsoSession | undefined;
+      LIMIT 1`,
+      [customerId, userId]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    return toCamelCase(rowsArray[0]) as SsoSession;
   }
 
   /**
    * Update session last activity
    */
-  updateSessionActivity(sessionToken: string): void {
-    const stmt = this.db.prepare(`
-      UPDATE sso_sessions
-      SET last_activity = ?
-      WHERE session_token = ?
-    `);
-    stmt.run(Date.now(), sessionToken);
+  async updateSessionActivity(sessionToken: string): Promise<void> {
+    await this.pool.execute(
+      'UPDATE sso_sessions SET last_activity = ? WHERE session_token = ?',
+      [Date.now(), sessionToken]
+    );
   }
 
   /**
    * Delete SSO session (logout)
    */
-  deleteSsoSession(sessionToken: string): void {
-    const stmt = this.db.prepare(`
-      DELETE FROM sso_sessions WHERE session_token = ?
-    `);
-    stmt.run(sessionToken);
+  async deleteSsoSession(sessionToken: string): Promise<void> {
+    await this.pool.execute(
+      'DELETE FROM sso_sessions WHERE session_token = ?',
+      [sessionToken]
+    );
   }
 
   /**
    * Delete all sessions for customer
    */
-  deleteSsoSessionsByCustomer(customerId: number): void {
-    const stmt = this.db.prepare(`
-      DELETE FROM sso_sessions WHERE customer_id = ?
-    `);
-    stmt.run(customerId);
+  async deleteSsoSessionsByCustomer(customerId: number): Promise<void> {
+    await this.pool.execute(
+      'DELETE FROM sso_sessions WHERE customer_id = ?',
+      [customerId]
+    );
   }
 
   /**
    * Clean up expired sessions
    */
-  cleanupExpiredSessions(): number {
+  async cleanupExpiredSessions(): Promise<number> {
     const now = Date.now();
-    const stmt = this.db.prepare(`
-      DELETE FROM sso_sessions WHERE expires_at < ?
-    `);
-    const result = stmt.run(now);
-    return result.changes;
+    const [result] = await this.pool.execute(
+      'DELETE FROM sso_sessions WHERE expires_at < ?',
+      [now]
+    );
+
+    return (result as any).affectedRows;
   }
 
   /**
    * Get active sessions for customer
    */
-  getActiveSessions(customerId: number): SsoSession[] {
+  async getActiveSessions(customerId: number): Promise<SsoSession[]> {
     const now = Date.now();
-    const stmt = this.db.prepare(`
-      SELECT * FROM sso_sessions
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM sso_sessions
       WHERE customer_id = ? AND expires_at > ?
-      ORDER BY last_activity DESC
-    `);
-    return stmt.all(customerId, now) as SsoSession[];
+      ORDER BY last_activity DESC`,
+      [customerId, now]
+    );
+
+    return (rows as any[]).map(row => toCamelCase(row) as SsoSession);
   }
 
   /**
    * Get SSO usage statistics
    */
-  getSsoStats(customerId: number, days: number = 30): {
+  async getSsoStats(customerId: number, days: number = 30): Promise<{
     totalLogins: number;
     activeUsers: number;
     avgSessionDuration: number;
-  } {
+  }> {
     const since = Date.now() - days * 24 * 60 * 60 * 1000;
 
-    const stmt = this.db.prepare(`
-      SELECT
+    const [rows] = await this.pool.execute(
+      `SELECT
         COUNT(*) as total_logins,
         COUNT(DISTINCT user_id) as active_users,
         AVG(last_activity - created_at) as avg_session_duration
       FROM sso_sessions
-      WHERE customer_id = ? AND created_at > ?
-    `);
+      WHERE customer_id = ? AND created_at > ?`,
+      [customerId, since]
+    );
 
-    const result = stmt.get(customerId, since) as any;
+    const result = (rows as any[])[0];
 
     return {
       totalLogins: result.total_logins || 0,

@@ -53,10 +53,10 @@ const logger = winston.createLogger({
   ]
 });
 
-// Initialize databases and validation service
-const db = new LicenseDatabase(process.env.DB_PATH);
-const credsDb = new CredentialsDatabase(db.database); // Reuse same SQLite database
-const validationService = new ValidationService(db);
+// Database instances (initialized in async startup)
+let db: LicenseDatabase;
+let credsDb: CredentialsDatabase;
+let validationService: ValidationService;
 
 // Create Express app
 const app = express();
@@ -206,57 +206,11 @@ app.get('/stats/:key', async (req: Request, res: Response) => {
  * Admin API routes - complete license management
  */
 app.use('/api/admin', adminRouter);
-logger.info('Admin API routes registered at /api/admin/*');
 
 /**
  * MCP HTTP Server - remote tool execution
  */
 app.use('/mcp', mcpRouter);
-logger.info('MCP HTTP Server routes registered at /mcp/*');
-logger.info('Enterprise MCP tools: 26 tools available');
-logger.info('  - Jira: 8 tools');
-logger.info('  - Azure DevOps: 10 tools');
-logger.info('  - Confluence: 8 tools');
-
-/**
- * SSO/SAML Authentication routes
- */
-const ssoRouter = createSsoRoutes(db);
-app.use('/sso', ssoRouter);
-logger.info('SSO/SAML routes registered at /sso/*');
-logger.info('SSO endpoints: login, callback, logout, metadata, config, sessions, stats');
-
-/**
- * Self-Service Credentials API
- */
-const credentialsRouter = createCredentialsRoutes(db, credsDb);
-app.use('/api/credentials', credentialsRouter);
-logger.info('Credentials API routes registered at /api/credentials/*');
-logger.info('Credentials endpoints: list, oauth-init, oauth-callback, store, update, delete, test, refresh');
-
-/**
- * Monitoring & Health Check routes
- */
-const monitoringRouter = createMonitoringRoutes(db, credsDb);
-app.use('/monitoring', monitoringRouter);
-logger.info('Monitoring routes registered at /monitoring/*');
-logger.info('Monitoring endpoints: health, health/detailed, health/mcp, metrics, stats/usage, stats/performance, status');
-
-/**
- * Enterprise Themes API
- */
-const themesRouter = createThemesRoutes(db);
-app.use('/api/themes', themesRouter);
-logger.info('Themes API routes registered at /api/themes/*');
-logger.info('Themes endpoints: list, :themeName, customer/current, customer/:customerId/assign');
-
-/**
- * Authentication API (Admin & Customer Login)
- */
-const authRouter = createAuthRoutes(db);
-app.use('/api/auth', authRouter);
-logger.info('Authentication API routes registered at /api/auth/*');
-logger.info('Auth endpoints: admin/login, customer/login, admin/session, customer/session, logout');
 
 /**
  * Serve Frontend Static Files (Production)
@@ -288,59 +242,121 @@ app.get('*', (req: Request, res: Response, next: NextFunction) => {
  */
 app.use(errorHandler);
 
-// Start OAuth2 token refresh worker
-const tokenRefreshWorker = new TokenRefreshWorker(credsDb);
-tokenRefreshWorker.start(5 * 60 * 1000); // Run every 5 minutes
-logger.info('OAuth2 token refresh worker started (runs every 5 minutes)');
+/**
+ * Initialize database and start server
+ */
+async function startServer() {
+  try {
+    // Initialize MySQL database
+    logger.info('Initializing MySQL database connection...');
+    db = new LicenseDatabase();
+    await db.initialize();
+    logger.info('✓ MySQL database connected');
 
-// Start server
-const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
-  logger.info(`License server running on port ${PORT}`);
-  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info('');
-  logger.info('='.repeat(60));
-  logger.info('Snow-Flow Enterprise License Server - Ready');
-  logger.info('='.repeat(60));
-  logger.info(`HTTP Server: http://localhost:${PORT}`);
-  logger.info(`Web Dashboard: http://localhost:${PORT}`);
-  logger.info(`Health Check: http://localhost:${PORT}/health`);
-  logger.info(`Admin API: http://localhost:${PORT}/api/admin/*`);
-  logger.info(`Auth API: http://localhost:${PORT}/api/auth/*`);
-  logger.info(`MCP HTTP: http://localhost:${PORT}/mcp/*`);
-  logger.info(`SSO/SAML: http://localhost:${PORT}/sso/*`);
-  logger.info(`Credentials: http://localhost:${PORT}/api/credentials/*`);
-  logger.info(`Themes: http://localhost:${PORT}/api/themes/*`);
-  logger.info(`Monitoring: http://localhost:${PORT}/monitoring/*`);
-  logger.info('='.repeat(60));
-  logger.info('Health Checks:');
-  logger.info(`  Basic: http://localhost:${PORT}/monitoring/health`);
-  logger.info(`  Detailed: http://localhost:${PORT}/monitoring/health/detailed`);
-  logger.info(`  MCP: http://localhost:${PORT}/monitoring/health/mcp`);
-  logger.info(`  Status: http://localhost:${PORT}/monitoring/status`);
-  logger.info(`  Metrics: http://localhost:${PORT}/monitoring/metrics`);
-  logger.info('='.repeat(60));
-});
+    // Initialize credentials database (TODO: migrate to MySQL in next phase)
+    // For now, temporarily disabled until credentials schema is migrated to MySQL
+    // credsDb = new CredentialsDatabase(db.database);
+    // logger.info('✓ Credentials database initialized');
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  tokenRefreshWorker.stop();
-  server.close(() => {
-    logger.info('HTTP server closed');
-    db.close();
-    process.exit(0);
-  });
-});
+    // Initialize validation service
+    validationService = new ValidationService(db);
+    logger.info('✓ Validation service initialized');
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  tokenRefreshWorker.stop();
-  server.close(() => {
-    logger.info('HTTP server closed');
-    db.close();
-    process.exit(0);
-  });
-});
+    // Register routes AFTER database initialization
+    logger.info('Admin API routes registered at /api/admin/*');
+    logger.info('MCP HTTP Server routes registered at /mcp/*');
+    logger.info('Enterprise MCP tools: 26 tools available');
+    logger.info('  - Jira: 8 tools');
+    logger.info('  - Azure DevOps: 10 tools');
+    logger.info('  - Confluence: 8 tools');
+    const ssoRouter = createSsoRoutes(db);
+    app.use('/sso', ssoRouter);
+    logger.info('SSO/SAML routes registered at /sso/*');
+    logger.info('SSO endpoints: login, callback, logout, metadata, config, sessions, stats');
 
-export { app, db, credsDb, validationService, tokenRefreshWorker };
+    const credentialsRouter = createCredentialsRoutes(db, credsDb);
+    app.use('/api/credentials', credentialsRouter);
+    logger.info('Credentials API routes registered at /api/credentials/*');
+    logger.info('Credentials endpoints: list, oauth-init, oauth-callback, store, update, delete, test, refresh');
+
+    const monitoringRouter = createMonitoringRoutes(db, credsDb);
+    app.use('/monitoring', monitoringRouter);
+    logger.info('Monitoring routes registered at /monitoring/*');
+    logger.info('Monitoring endpoints: health, health/detailed, health/mcp, metrics, stats/usage, stats/performance, status');
+
+    const themesRouter = createThemesRoutes(db);
+    app.use('/api/themes', themesRouter);
+    logger.info('Themes API routes registered at /api/themes/*');
+    logger.info('Themes endpoints: list, :themeName, customer/current, customer/:customerId/assign');
+
+    const authRouter = createAuthRoutes(db);
+    app.use('/api/auth', authRouter);
+    logger.info('Authentication API routes registered at /api/auth/*');
+    logger.info('Auth endpoints: admin/login, customer/login, admin/session, customer/session, logout');
+
+    // Start OAuth2 token refresh worker (TODO: re-enable after credentials DB migration)
+    // const tokenRefreshWorker = new TokenRefreshWorker(credsDb);
+    // tokenRefreshWorker.start(5 * 60 * 1000); // Run every 5 minutes
+    // logger.info('✓ OAuth2 token refresh worker started (runs every 5 minutes)');
+
+    // Start server
+    const PORT = process.env.PORT || 3000;
+    const server = app.listen(PORT, () => {
+      logger.info('');
+      logger.info('='.repeat(60));
+      logger.info('Snow-Flow Enterprise License Server - Ready');
+      logger.info('='.repeat(60));
+      logger.info(`HTTP Server: http://localhost:${PORT}`);
+      logger.info(`Web Dashboard: http://localhost:${PORT}`);
+      logger.info(`Health Check: http://localhost:${PORT}/health`);
+      logger.info(`Admin API: http://localhost:${PORT}/api/admin/*`);
+      logger.info(`Auth API: http://localhost:${PORT}/api/auth/*`);
+      logger.info(`MCP HTTP: http://localhost:${PORT}/mcp/*`);
+      logger.info(`SSO/SAML: http://localhost:${PORT}/sso/*`);
+      logger.info(`Credentials: http://localhost:${PORT}/api/credentials/*`);
+      logger.info(`Themes: http://localhost:${PORT}/api/themes/*`);
+      logger.info(`Monitoring: http://localhost:${PORT}/monitoring/*`);
+      logger.info('='.repeat(60));
+      logger.info('Health Checks:');
+      logger.info(`  Basic: http://localhost:${PORT}/monitoring/health`);
+      logger.info(`  Detailed: http://localhost:${PORT}/monitoring/health/detailed`);
+      logger.info(`  MCP: http://localhost:${PORT}/monitoring/health/mcp`);
+      logger.info(`  Status: http://localhost:${PORT}/monitoring/status`);
+      logger.info(`  Metrics: http://localhost:${PORT}/monitoring/metrics`);
+      logger.info('='.repeat(60));
+      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`Database: MySQL ${process.env.USE_CLOUD_SQL === 'true' ? '(Cloud SQL)' : '(Local)'}`);
+      logger.info('='.repeat(60));
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', async () => {
+      logger.info('SIGTERM signal received: closing HTTP server');
+      server.close(async () => {
+        logger.info('HTTP server closed');
+        await db.close();
+        logger.info('Database connection closed');
+        process.exit(0);
+      });
+    });
+
+    process.on('SIGINT', async () => {
+      logger.info('SIGINT signal received: closing HTTP server');
+      server.close(async () => {
+        logger.info('HTTP server closed');
+        await db.close();
+        logger.info('Database connection closed');
+        process.exit(0);
+      });
+    });
+
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
+
+export { app, db, credsDb, validationService };

@@ -86,7 +86,7 @@ export function createAuthRoutes(db: LicenseDatabase): Router {
       }
 
       // Find customer by license key
-      const customer = await db.getCustomer(licenseKey);
+      const customer = db.getCustomer(licenseKey);
       if (!customer) {
         res.status(401).json({ error: 'Invalid license key' });
         return;
@@ -192,7 +192,7 @@ export function createAuthRoutes(db: LicenseDatabase): Router {
       }
 
       // Get customer data
-      const customer = await db.getCustomerById(decoded.customerId);
+      const customer = db.getCustomerById(decoded.customerId);
       if (!customer) {
         res.status(401).json({ error: 'Customer not found' });
         return;

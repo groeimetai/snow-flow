@@ -85,7 +85,7 @@ export function requireSsoAuth(db: LicenseDatabase) {
       }
 
       // Check session exists in database
-      const session = await db.getSsoSession(token);
+      const session = db.getSsoSession(token);
       if (!session) {
         return res.status(401).json({
           success: false,
@@ -107,7 +107,7 @@ export function requireSsoAuth(db: LicenseDatabase) {
       db.updateSessionActivity(token);
 
       // Get customer
-      const customer = await db.getCustomerById(payload.customerId);
+      const customer = db.getCustomerById(payload.customerId);
       if (!customer) {
         return res.status(403).json({
           success: false,
@@ -170,10 +170,10 @@ export function optionalSsoAuth(db: LicenseDatabase) {
       // Verify and attach if valid
       const payload = verifySsoToken(token);
       if (payload) {
-        const session = await db.getSsoSession(token);
+        const session = db.getSsoSession(token);
         if (session && session.expiresAt > Date.now()) {
           db.updateSessionActivity(token);
-          const customer = await db.getCustomerById(payload.customerId);
+          const customer = db.getCustomerById(payload.customerId);
 
           (req as any).ssoSession = session;
           (req as any).customer = customer;

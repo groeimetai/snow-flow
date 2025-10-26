@@ -29,14 +29,14 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
   /**
    * Get or create SAML strategy for customer
    */
-  async function getSamlStrategy(customerId: number): Promise<SamlStrategy | null> {
+  function getSamlStrategy(customerId: number): SamlStrategy | null {
     // Check cache first
     if (samlStrategies.has(customerId)) {
       return samlStrategies.get(customerId)!;
     }
 
     // Get SSO config from database
-    const ssoConfig = await db.getSsoConfig(customerId);
+    const ssoConfig = db.getSsoConfig(customerId);
     if (!ssoConfig || !ssoConfig.enabled) {
       return null;
     }
@@ -135,13 +135,13 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
    *
    * Security: Rate limited (10 attempts per 15 min) + CSRF protection
    */
-  router.get('/login/:customerId', ssoLoginRateLimiter, csrfProtection, async (req: Request, res: Response) => {
+  router.get('/login/:customerId', ssoLoginRateLimiter, csrfProtection, (req: Request, res: Response) => {
     try {
       const customerId = parseInt(req.params.customerId || '0');
       const csrfToken = (req as any).csrfToken();
 
       // Get customer
-      const customer = await db.getCustomerById(customerId);
+      const customer = db.getCustomerById(customerId);
       if (!customer) {
         return res.status(404).json({
           success: false,
@@ -157,7 +157,7 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
       }
 
       // Get SAML strategy
-      const strategy = await getSamlStrategy(customerId);
+      const strategy = getSamlStrategy(customerId);
       if (!strategy) {
         return res.status(400).json({
           success: false,
@@ -198,7 +198,7 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
       }
 
       // Get SAML strategy
-      const strategy = await getSamlStrategy(customerId);
+      const strategy = getSamlStrategy(customerId);
       if (!strategy) {
         return res.status(400).json({
           success: false,
@@ -282,13 +282,13 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
       }
 
       // Get session
-      const session = await db.getSsoSession(token);
+      const session = db.getSsoSession(token);
       if (session) {
         // Delete session
         db.deleteSsoSession(token);
 
         // Get SSO config to check if we need to do IdP logout
-        const ssoConfig = await db.getSsoConfig(session.customerId);
+        const ssoConfig = db.getSsoConfig(session.customerId);
         if (ssoConfig && ssoConfig.logoutUrl && session.sessionIndex) {
           // TODO: Implement IdP-initiated logout
           // For now just clear local session
@@ -315,12 +315,12 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
    * GET /sso/metadata/:customerId
    * Generate SAML Service Provider metadata XML
    */
-  router.get('/metadata/:customerId', async (req: Request, res: Response) => {
+  router.get('/metadata/:customerId', (req: Request, res: Response) => {
     try {
       const customerId = parseInt(req.params.customerId || '0');
 
       // Get SSO config
-      const ssoConfig = await db.getSsoConfig(customerId);
+      const ssoConfig = db.getSsoConfig(customerId);
       if (!ssoConfig || !ssoConfig.enabled) {
         return res.status(404).json({
           success: false,
@@ -329,7 +329,7 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
       }
 
       // Generate SP metadata XML
-      const strategy = await getSamlStrategy(customerId);
+      const strategy = getSamlStrategy(customerId);
       if (!strategy) {
         return res.status(500).json({
           success: false,
@@ -370,7 +370,7 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
         });
       }
 
-      const customer = await db.getCustomer(licenseKey);
+      const customer = db.getCustomer(licenseKey);
       if (!customer) {
         return res.status(401).json({
           success: false,
@@ -390,7 +390,7 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
       }
 
       // Check if config already exists
-      const existingConfig = await db.getSsoConfig(customer.id);
+      const existingConfig = db.getSsoConfig(customer.id);
 
       if (existingConfig) {
         // Update existing config
@@ -454,11 +454,11 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
    * GET /sso/config
    * Get current SSO configuration
    */
-  router.get('/config', requireSsoAuth(db), async (req: Request, res: Response) => {
+  router.get('/config', requireSsoAuth(db), (req: Request, res: Response) => {
     try {
       const customer = (req as any).customer;
 
-      const ssoConfig = await db.getSsoConfig(customer.id);
+      const ssoConfig = db.getSsoConfig(customer.id);
       if (!ssoConfig) {
         return res.status(404).json({
           success: false,
@@ -519,11 +519,11 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
    * GET /sso/sessions
    * Get active SSO sessions for customer
    */
-  router.get('/sessions', requireSsoAuth(db), async (req: Request, res: Response) => {
+  router.get('/sessions', requireSsoAuth(db), (req: Request, res: Response) => {
     try {
       const customer = (req as any).customer;
 
-      const sessions = await db.getActiveSessions(customer.id);
+      const sessions = db.getActiveSessions(customer.id);
 
       // Don't return session tokens
       const safeSessions = sessions.map((s) => {
@@ -548,12 +548,12 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
    * GET /sso/stats
    * Get SSO usage statistics
    */
-  router.get('/stats', requireSsoAuth(db), async (req: Request, res: Response) => {
+  router.get('/stats', requireSsoAuth(db), (req: Request, res: Response) => {
     try {
       const customer = (req as any).customer;
       const days = parseInt(req.query.days as string) || 30;
 
-      const stats = await db.getSsoStats(customer.id, days);
+      const stats = db.getSsoStats(customer.id, days);
 
       res.json({
         success: true,

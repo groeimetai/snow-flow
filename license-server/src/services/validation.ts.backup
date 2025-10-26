@@ -56,38 +56,38 @@ export class ValidationService {
       }
 
       // Step 3: Get license from database
-      const license = await this.db.getLicense(request.key);
+      const license = this.db.getLicense(request.key);
       if (!license) {
-        await this.db.logValidation(0, request.instanceId, request.version, false, 'LICENSE_NOT_FOUND', ipAddress);
+        this.db.logValidation(0, request.instanceId, request.version, false, 'LICENSE_NOT_FOUND', ipAddress);
         return this.errorResponse('LICENSE_NOT_FOUND', 'License key not found');
       }
 
       // Step 4: Verify HMAC signature
       if (!this.verifySignature(request, license.key)) {
-        await this.db.logValidation(license.id, request.instanceId, request.version, false, 'INVALID_SIGNATURE', ipAddress);
+        this.db.logValidation(license.id, request.instanceId, request.version, false, 'INVALID_SIGNATURE', ipAddress);
         return this.errorResponse('INVALID_SIGNATURE', 'Invalid request signature');
       }
 
       // Step 5: Check license status
       if (license.status !== 'active') {
-        await this.db.logValidation(license.id, request.instanceId, request.version, false, `LICENSE_${license.status.toUpperCase()}`, ipAddress);
+        this.db.logValidation(license.id, request.instanceId, request.version, false, `LICENSE_${license.status.toUpperCase()}`, ipAddress);
         return this.errorResponse(`LICENSE_${license.status.toUpperCase()}`, `License is ${license.status}`);
       }
 
       // Step 6: Check expiration
       if (license.expiresAt && license.expiresAt < now) {
         // Auto-expire license
-        await this.db.updateLicense(license.key, { status: 'expired' });
-        await this.db.logValidation(license.id, request.instanceId, request.version, false, 'LICENSE_EXPIRED', ipAddress);
+        this.db.updateLicense(license.key, { status: 'expired' });
+        this.db.logValidation(license.id, request.instanceId, request.version, false, 'LICENSE_EXPIRED', ipAddress);
         return this.errorResponse('LICENSE_EXPIRED', 'License has expired');
       }
 
       // Step 7: Check instance limit
-      const instanceCount = await this.db.getInstanceCount(license.id);
+      const instanceCount = this.db.getInstanceCount(license.id);
       const warnings: string[] = [];
 
       // If this is a new instance and we're at the limit
-      const existingInstance = await this.db.upsertInstance(
+      const existingInstance = this.db.upsertInstance(
         license.id,
         request.instanceId,
         request.version,
@@ -97,7 +97,7 @@ export class ValidationService {
 
       if (instanceCount >= license.maxInstances && existingInstance.createdAt === existingInstance.lastSeen) {
         // New instance exceeds limit
-        await this.db.logValidation(license.id, request.instanceId, request.version, false, 'INSTANCE_LIMIT_EXCEEDED', ipAddress);
+        this.db.logValidation(license.id, request.instanceId, request.version, false, 'INSTANCE_LIMIT_EXCEEDED', ipAddress);
         return this.errorResponse(
           'INSTANCE_LIMIT_EXCEEDED',
           `Maximum instance limit (${license.maxInstances}) exceeded`
@@ -123,7 +123,7 @@ export class ValidationService {
       const features = JSON.parse(license.features) as string[];
 
       // Step 9: Log successful validation
-      await this.db.logValidation(license.id, request.instanceId, request.version, true, undefined, ipAddress);
+      this.db.logValidation(license.id, request.instanceId, request.version, true, undefined, ipAddress);
 
       // Step 10: Return success response
       return {
@@ -175,13 +175,13 @@ export class ValidationService {
     instances: number;
     validations: { total: number; successful: number; failed: number };
   } | null> {
-    const license = await this.db.getLicense(licenseKey);
+    const license = this.db.getLicense(licenseKey);
     if (!license) {
       return null;
     }
 
-    const instances = await this.db.getInstanceCount(license.id);
-    const validations = await this.db.getValidationStats(license.id, 30);
+    const instances = this.db.getInstanceCount(license.id);
+    const validations = this.db.getValidationStats(license.id, 30);
 
     return {
       license,

@@ -15,8 +15,9 @@ const __dirname = path.dirname(__filename);
 async function seedLicenses() {
   console.log('Seeding test licenses...');
 
-  const dbPath = path.join(__dirname, '../../../data/licenses.db');
-  const db = new LicenseDatabase(dbPath);
+  // MySQL - no path needed
+  const db = new LicenseDatabase();
+  await db.initialize();
 
   // Create test licenses for each tier
   const licenses = [
@@ -71,7 +72,7 @@ async function seedLicenses() {
 
   for (const license of licenses) {
     try {
-      const created = db.createLicense(license);
+      const created = await db.createLicense(license);
       console.log(`✓ ${created.tier} License: ${created.key}`);
       console.log(`  Company: ${created.companyName}`);
       console.log(`  Email: ${created.contactEmail}`);
@@ -84,7 +85,7 @@ async function seedLicenses() {
     }
   }
 
-  db.close();
+  await db.close();
   console.log('✓ License seeding complete');
 }
 

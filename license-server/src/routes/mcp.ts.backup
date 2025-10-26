@@ -106,7 +106,7 @@ async function authenticateCustomer(req: Request, res: Response, next: NextFunct
     }
 
     // Get customer from database
-    const customer = await db.getCustomer(licenseKey);
+    const customer = db.getCustomer(licenseKey);
 
     if (!customer) {
       return res.status(401).json({
@@ -184,7 +184,7 @@ function createUsageLogger() {
         let instanceDbId: number | undefined;
 
         if (instanceId) {
-          const instances = await db.listCustomerInstances(customer.id);
+          const instances = db.listCustomerInstances(customer.id);
           const instance = instances.find(i => i.instanceId === instanceId);
           instanceDbId = instance?.id;
         }

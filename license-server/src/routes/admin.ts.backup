@@ -114,7 +114,7 @@ router.post('/si', async (req: Request, res: Response) => {
     const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
     const masterLicenseKey = `SNOW-SI-${randomPart}`;
 
-    const si = await db.createServiceIntegrator({
+    const si = db.createServiceIntegrator({
       companyName,
       contactEmail,
       billingEmail,
@@ -143,7 +143,7 @@ router.post('/si', async (req: Request, res: Response) => {
 router.get('/si', async (req: Request, res: Response) => {
   try {
     const status = req.query.status as 'active' | 'suspended' | 'churned' | undefined;
-    const integrators = await db.listServiceIntegrators(status);
+    const integrators = db.listServiceIntegrators(status);
 
     res.json({
       success: true,
@@ -166,7 +166,7 @@ router.get('/si', async (req: Request, res: Response) => {
 router.get('/si/:masterKey', async (req: Request, res: Response) => {
   try {
     const { masterKey } = req.params;
-    const si = await db.getServiceIntegrator(masterKey);
+    const si = db.getServiceIntegrator(masterKey);
 
     if (!si) {
       return res.status(404).json({
@@ -176,7 +176,7 @@ router.get('/si/:masterKey', async (req: Request, res: Response) => {
     }
 
     // Get customer count
-    const customers = await db.listCustomers(si.id);
+    const customers = db.listCustomers(si.id);
 
     res.json({
       success: true,
@@ -216,7 +216,7 @@ router.post('/service-integrators', async (req: Request, res: Response) => {
     const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
     const masterLicenseKey = `SNOW-SI-${randomPart}`;
 
-    const si = await db.createServiceIntegrator({
+    const si = db.createServiceIntegrator({
       companyName,
       contactEmail,
       billingEmail,
@@ -245,7 +245,7 @@ router.post('/service-integrators', async (req: Request, res: Response) => {
 router.get('/service-integrators', async (req: Request, res: Response) => {
   try {
     const status = req.query.status as 'active' | 'suspended' | 'churned' | undefined;
-    const integrators = await db.listServiceIntegrators(status);
+    const integrators = db.listServiceIntegrators(status);
 
     res.json({
       success: true,
@@ -267,7 +267,7 @@ router.get('/service-integrators', async (req: Request, res: Response) => {
  */
 router.get('/service-integrators/:id', async (req: Request, res: Response) => {
   try {
-    const integrators = await db.listServiceIntegrators();
+    const integrators = db.listServiceIntegrators();
     const id = parseInt(req.params.id);
     const si = integrators.find(s => s.id === id);
 
@@ -279,7 +279,7 @@ router.get('/service-integrators/:id', async (req: Request, res: Response) => {
     }
 
     // Get customer count
-    const customers = await db.listCustomers(si.id);
+    const customers = db.listCustomers(si.id);
 
     res.json({
       success: true,
@@ -307,7 +307,7 @@ router.put('/service-integrators/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const updates = req.body;
 
-    const si = await db.updateServiceIntegrator(id, updates);
+    const si = db.updateServiceIntegrator(id, updates);
 
     if (!si) {
       return res.status(404).json({
@@ -338,7 +338,7 @@ router.delete('/service-integrators/:id', async (req: Request, res: Response) =>
     const id = parseInt(req.params.id);
 
     // Check if SI has customers
-    const customers = await db.listCustomers(id);
+    const customers = db.listCustomers(id);
     if (customers.length > 0) {
       return res.status(400).json({
         success: false,
@@ -379,8 +379,7 @@ router.post('/customers', async (req: Request, res: Response) => {
     }
 
     // Verify service integrator exists
-    const integrators = await db.listServiceIntegrators();
-    const si = integrators.find(s => s.id === serviceIntegratorId);
+    const si = db.listServiceIntegrators().find(s => s.id === serviceIntegratorId);
     if (!si) {
       return res.status(404).json({
         success: false,
@@ -406,7 +405,7 @@ router.post('/customers', async (req: Request, res: Response) => {
     const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
     const licenseKey = `SNOW-ENT-${custPrefix}-${randomPart}`;
 
-    const customer = await db.createCustomer({
+    const customer = db.createCustomer({
       serviceIntegratorId,
       name,
       contactEmail,
@@ -440,13 +439,11 @@ router.get('/customers', async (req: Request, res: Response) => {
 
     let customers;
     if (serviceIntegratorId) {
-      customers = await db.listCustomers(serviceIntegratorId, status);
+      customers = db.listCustomers(serviceIntegratorId, status);
     } else {
       // Get all customers across all SIs
-      const allSIs = await db.listServiceIntegrators();
-      const customerPromises = allSIs.map(si => db.listCustomers(si.id, status));
-      const customerArrays = await Promise.all(customerPromises);
-      customers = customerArrays.flat();
+      const allSIs = db.listServiceIntegrators();
+      customers = allSIs.flatMap(si => db.listCustomers(si.id, status));
     }
 
     res.json({
@@ -470,7 +467,7 @@ router.get('/customers', async (req: Request, res: Response) => {
 router.get('/customers/:id', async (req: Request, res: Response) => {
   try {
     const customerId = parseInt(req.params.id);
-    const customer = await db.getCustomerById(customerId);
+    const customer = db.getCustomerById(customerId);
 
     if (!customer) {
       return res.status(404).json({
@@ -480,10 +477,10 @@ router.get('/customers/:id', async (req: Request, res: Response) => {
     }
 
     // Get instances
-    const instances = await db.listCustomerInstances(customerId);
+    const instances = db.listCustomerInstances(customerId);
 
     // Get usage stats (last 30 days)
-    const usageStats = await db.getMcpUsageStats(customerId, 30);
+    const usageStats = db.getMcpUsageStats(customerId, 30);
 
     res.json({
       success: true,
@@ -510,7 +507,7 @@ router.put('/customers/:id', async (req: Request, res: Response) => {
     const customerId = parseInt(req.params.id);
     const { name, contactEmail, company, status, theme } = req.body;
 
-    const customer = await db.getCustomerById(customerId);
+    const customer = db.getCustomerById(customerId);
     if (!customer) {
       return res.status(404).json({
         success: false,
@@ -533,7 +530,7 @@ router.put('/customers/:id', async (req: Request, res: Response) => {
 
     db.updateCustomer(customerId, { name, contactEmail, company, status, theme });
 
-    const updated = await db.getCustomerById(customerId);
+    const updated = db.getCustomerById(customerId);
 
     res.json({
       success: true,
@@ -557,7 +554,7 @@ router.get('/customers/:id/usage', async (req: Request, res: Response) => {
     const customerId = parseInt(req.params.id);
     const days = req.query.days ? parseInt(req.query.days as string) : 30;
 
-    const customer = await db.getCustomerById(customerId);
+    const customer = db.getCustomerById(customerId);
     if (!customer) {
       return res.status(404).json({
         success: false,
@@ -565,8 +562,8 @@ router.get('/customers/:id/usage', async (req: Request, res: Response) => {
       });
     }
 
-    const stats = await db.getMcpUsageStats(customerId, days);
-    const timeseries = await db.getMcpUsageTimeseries(customerId, days, 'day');
+    const stats = db.getMcpUsageStats(customerId, days);
+    const timeseries = db.getMcpUsageTimeseries(customerId, days, 'day');
 
     res.json({
       success: true,
@@ -592,7 +589,7 @@ router.get('/customers/:id/instances', async (req: Request, res: Response) => {
   try {
     const customerId = parseInt(req.params.id);
 
-    const customer = await db.getCustomerById(customerId);
+    const customer = db.getCustomerById(customerId);
     if (!customer) {
       return res.status(404).json({
         success: false,
@@ -600,7 +597,7 @@ router.get('/customers/:id/instances', async (req: Request, res: Response) => {
       });
     }
 
-    const instances = await db.listCustomerInstances(customerId);
+    const instances = db.listCustomerInstances(customerId);
 
     res.json({
       success: true,
@@ -625,22 +622,20 @@ router.get('/customers/:id/instances', async (req: Request, res: Response) => {
  */
 router.get('/analytics/overview', async (req: Request, res: Response) => {
   try {
-    const allSIs = await db.listServiceIntegrators();
-    const customerPromises = allSIs.map(si => db.listCustomers(si.id));
-    const customerArrays = await Promise.all(customerPromises);
-    const allCustomers = customerArrays.flat();
+    const allSIs = db.listServiceIntegrators();
+    const allCustomers = allSIs.flatMap(si => db.listCustomers(si.id));
     const activeCustomers = allCustomers.filter(c => c.status === 'active');
 
     // Total API calls across all customers
     const totalApiCalls = allCustomers.reduce((sum, c) => sum + c.totalApiCalls, 0);
 
     // API stats (last 30 days)
-    const apiStats = await db.getApiStats(30);
+    const apiStats = db.getApiStats(30);
 
     // Calculate total instances
-    const instancePromises = activeCustomers.map(c => db.getCustomerInstanceCount(c.id));
-    const instanceCounts = await Promise.all(instancePromises);
-    const totalInstances = instanceCounts.reduce((sum, count) => sum + count, 0);
+    const totalInstances = activeCustomers.reduce((sum, c) => {
+      return sum + db.getCustomerInstanceCount(c.id);
+    }, 0);
 
     res.json({
       success: true,
@@ -674,17 +669,15 @@ router.get('/analytics/overview', async (req: Request, res: Response) => {
 router.get('/analytics/tools', async (req: Request, res: Response) => {
   try {
     const days = req.query.days ? parseInt(req.query.days as string) : 30;
-    const allSIs = await db.listServiceIntegrators();
-    const customerPromises = allSIs.map(si => db.listCustomers(si.id));
-    const customerArrays = await Promise.all(customerPromises);
-    const allCustomers = customerArrays.flat();
+    const allSIs = db.listServiceIntegrators();
+    const allCustomers = allSIs.flatMap(si => db.listCustomers(si.id));
 
     // Aggregate tool usage across all customers
     const toolUsage: Record<string, number> = {};
     const categoryUsage: Record<string, number> = {};
 
-    for (const customer of allCustomers) {
-      const stats = await db.getMcpUsageStats(customer.id, days);
+    allCustomers.forEach(customer => {
+      const stats = db.getMcpUsageStats(customer.id, days);
 
       // Aggregate by tool
       stats.topTools.forEach(tool => {
@@ -695,7 +688,7 @@ router.get('/analytics/tools', async (req: Request, res: Response) => {
       Object.entries(stats.byCategory).forEach(([category, count]) => {
         categoryUsage[category] = (categoryUsage[category] || 0) + count;
       });
-    }
+    });
 
     // Sort tools by usage
     const topTools = Object.entries(toolUsage)
@@ -725,13 +718,11 @@ router.get('/analytics/tools', async (req: Request, res: Response) => {
 router.get('/analytics/customers', async (req: Request, res: Response) => {
   try {
     const days = req.query.days ? parseInt(req.query.days as string) : 30;
-    const allSIs = await db.listServiceIntegrators();
-    const customerPromises = allSIs.map(si => db.listCustomers(si.id));
-    const customerArrays = await Promise.all(customerPromises);
-    const allCustomers = customerArrays.flat();
+    const allSIs = db.listServiceIntegrators();
+    const allCustomers = allSIs.flatMap(si => db.listCustomers(si.id));
 
-    const customerStats = await Promise.all(allCustomers.map(async (customer) => {
-      const stats = await db.getMcpUsageStats(customer.id, days);
+    const customerStats = allCustomers.map(customer => {
+      const stats = db.getMcpUsageStats(customer.id, days);
       return {
         customerId: customer.id,
         customerName: customer.name,
@@ -744,7 +735,7 @@ router.get('/analytics/customers', async (req: Request, res: Response) => {
         avgDurationMs: Math.round(stats.avgDurationMs),
         topTools: stats.topTools.slice(0, 5)
       };
-    }));
+    });
 
     // Sort by recent API calls
     customerStats.sort((a, b) => b.recentCalls - a.recentCalls);
@@ -771,31 +762,31 @@ router.get('/analytics/customers', async (req: Request, res: Response) => {
  */
 router.get('/stats/dashboard', authenticateAdmin, async (req: Request, res: Response) => {
   try {
-    // Get customers count from database (MySQL2)
-    const [totalRows] = await (db as any).pool.query('SELECT COUNT(*) as total FROM customers') as any;
-    const totalCustomers = totalRows[0].total;
+    // Get customers count from database
+    const stmt = db.database.prepare('SELECT COUNT(*) as total FROM customers');
+    const totalCustomers = (stmt.get() as any).total;
 
-    const [activeRows] = await (db as any).pool.query("SELECT COUNT(*) as total FROM customers WHERE status = 'active'") as any;
-    const activeCustomers = activeRows[0].total;
+    const activeStmt = db.database.prepare("SELECT COUNT(*) as total FROM customers WHERE status = 'active'");
+    const activeCustomers = (activeStmt.get() as any).total;
 
-    const [suspendedRows] = await (db as any).pool.query("SELECT COUNT(*) as total FROM customers WHERE status = 'suspended'") as any;
-    const suspendedCustomers = suspendedRows[0].total;
+    const suspendedStmt = db.database.prepare("SELECT COUNT(*) as total FROM customers WHERE status = 'suspended'");
+    const suspendedCustomers = (suspendedStmt.get() as any).total;
 
     // Get API stats
-    const apiStats1Day = await db.getApiStats(1); // Last 24 hours
-    const apiStats7Days = await db.getApiStats(7); // Last 7 days
-    const apiStatsTotal = await db.getApiStats(365); // Last year (as total)
+    const apiStats1Day = db.getApiStats(1); // Last 24 hours
+    const apiStats7Days = db.getApiStats(7); // Last 7 days
+    const apiStatsTotal = db.getApiStats(365); // Last year (as total)
 
     // Get service integrators
-    const serviceIntegrators = await db.listServiceIntegrators();
+    const serviceIntegrators = db.listServiceIntegrators();
 
-    // Get active instances count (MySQL2)
-    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-    const [instanceRows] = await (db as any).pool.query(`
+    // Get active instances count
+    const instancesStmt = db.database.prepare(`
       SELECT COUNT(*) as total FROM customer_instances
       WHERE last_seen > ?
-    `, [oneDayAgo]) as any;
-    const activeInstances = instanceRows[0].total;
+    `);
+    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+    const activeInstances = (instancesStmt.get(oneDayAgo) as any).total;
 
     res.json({
       totalCustomers,
@@ -825,7 +816,7 @@ router.get('/stats/dashboard', authenticateAdmin, async (req: Request, res: Resp
  */
 router.get('/health', async (req: Request, res: Response) => {
   try {
-    const apiStats = await db.getApiStats(1); // Last 24 hours
+    const apiStats = db.getApiStats(1); // Last 24 hours
 
     res.json({
       success: true,
