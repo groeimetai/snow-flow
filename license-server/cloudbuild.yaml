@@ -93,11 +93,8 @@ steps:
       - '--timeout=${_TIMEOUT}'
       - '--port=8080'
       - '--update-env-vars=NODE_ENV=production,PORT=8080,LOG_LEVEL=info,USE_CLOUD_SQL=true,INSTANCE_CONNECTION_NAME=snow-flow-ai:europe-west4:snow-flow-production-db,DB_USER=snow-flow,DB_NAME=licenses,CORS_ORIGIN=*'
-      # Note: Secrets are managed via Secret Manager and persist across deployments:
-      #   - DB_PASSWORD (from Secret Manager: projects/761141808583/secrets/DB_PASSWORD/versions/latest)
-      #   - ADMIN_KEY (from Secret Manager: projects/761141808583/secrets/ADMIN_KEY/versions/latest)
-      #   - SESSION_SECRET (from Secret Manager: projects/761141808583/secrets/SESSION_SECRET/versions/latest)
-      #   - JWT_SECRET (from Secret Manager: projects/761141808583/secrets/JWT_SECRET/versions/latest)
+      # Mount secrets from Secret Manager (these MUST be set or variables disappear!)
+      - '--update-secrets=DB_PASSWORD=DB_PASSWORD:latest,ADMIN_KEY=ADMIN_KEY:latest,SESSION_SECRET=SESSION_SECRET:latest,JWT_SECRET=JWT_SECRET:latest'
     waitFor: ['push-image-sha', 'push-image-latest']
 
   # Step 5: Verify deployment health
