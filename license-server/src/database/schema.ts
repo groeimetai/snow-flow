@@ -895,6 +895,12 @@ export class LicenseDatabase {
    * Log API request
    */
   async logApiRequest(log: Omit<ApiLog, 'id'>): Promise<void> {
+    // Safety check - skip logging if pool not initialized yet
+    if (!this.pool || !this.isInitialized) {
+      console.warn('[DB] Skipping API log - database not initialized yet');
+      return;
+    }
+
     await this.pool.execute(
       `INSERT INTO api_logs (
         endpoint, method, status_code, duration_ms, timestamp,
