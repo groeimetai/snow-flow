@@ -11,6 +11,7 @@ import rateLimit from 'express-rate-limit';
 import winston from 'winston';
 import dotenv from 'dotenv';
 import session from 'express-session';
+import MySQLStoreFactory from 'express-mysql-session';
 import cookieParser from 'cookie-parser';
 import { LicenseDatabase } from './database/schema.js';
 import { CredentialsDatabase } from './database/credentials-schema.js';
@@ -92,17 +93,8 @@ app.use(apiLogger);
 // Cookie parser for SSO
 app.use(cookieParser());
 
-// Session management for SSO
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'snow-flow-enterprise-session-secret-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 8 * 60 * 60 * 1000 // 8 hours
-  }
-}));
+// NOTE: Session middleware configured AFTER database initialization
+// See startServer() function where MySQLStore is created
 
 // Request logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -256,6 +248,37 @@ async function startServer() {
     // Initialize validation service
     validationService = new ValidationService(db);
     logger.info('✓ Validation service initialized');
+
+    // Initialize MySQL session store for production (replaces MemoryStore)
+    const MySQLStore = MySQLStoreFactory(session);
+    const sessionStore = new MySQLStore({
+      clearExpired: true,
+      checkExpirationInterval: 900000, // Clean up expired sessions every 15 minutes
+      expiration: 8 * 60 * 60 * 1000, // Session expiration: 8 hours
+      createDatabaseTable: true, // Auto-create sessions table if not exists
+      schema: {
+        tableName: 'sessions',
+        columnNames: {
+          session_id: 'session_id',
+          expires: 'expires',
+          data: 'data'
+        }
+      }
+    }, (db as any).pool); // Reuse existing MySQL connection pool
+
+    // Configure session middleware with MySQL store
+    app.use(session({
+      secret: process.env.SESSION_SECRET || 'snow-flow-enterprise-session-secret-change-in-production',
+      store: sessionStore,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 8 * 60 * 60 * 1000 // 8 hours
+      }
+    }));
+    logger.info('✓ Session store initialized (MySQL)');
 
     // Initialize admin router with database BEFORE registering routes
     initializeAdminRouter(db);
