@@ -92,8 +92,9 @@ steps:
       - '--concurrency=${_CONCURRENCY}'
       - '--timeout=${_TIMEOUT}'
       - '--port=8080'
-      - '--update-env-vars=NODE_ENV=production,PORT=8080,LOG_LEVEL=info,USE_CLOUD_SQL=true,INSTANCE_CONNECTION_NAME=snow-flow-ai:europe-west4:snow-flow-production-db,DB_USER=snow-flow,DB_NAME=licenses,CORS_ORIGIN=*'
-      # Mount secrets from Secret Manager (these MUST be set or variables disappear!)
+      # Set non-secret environment variables explicitly
+      - '--set-env-vars=NODE_ENV=production,PORT=8080,LOG_LEVEL=info,USE_CLOUD_SQL=true,INSTANCE_CONNECTION_NAME=snow-flow-ai:europe-west4:snow-flow-production-db,DB_USER=snow-flow,DB_NAME=licenses,CORS_ORIGIN=*'
+      # Mount secrets from Secret Manager (secrets are separate from env vars!)
       - '--update-secrets=DB_PASSWORD=DB_PASSWORD:latest,ADMIN_KEY=ADMIN_KEY:latest,SESSION_SECRET=SESSION_SECRET:latest,JWT_SECRET=JWT_SECRET:latest'
     waitFor: ['push-image-sha', 'push-image-latest']
 
