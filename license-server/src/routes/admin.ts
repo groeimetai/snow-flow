@@ -258,7 +258,7 @@ router.get('/service-integrators', async (req: Request, res: Response) => {
     res.json({
       success: true,
       count: integrators.length,
-      service_integrators: integrators.map(formatServiceIntegrator)
+      service_integrators: integrators  // Already camelCase from database layer
     });
   } catch (error) {
     console.error('Error listing service integrators:', error);
@@ -291,7 +291,7 @@ router.get('/service-integrators/:id', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      service_integrator: formatServiceIntegrator(si),
+      service_integrator: si,  // Already camelCase from database layer
       stats: {
         totalCustomers: customers.length,
         activeCustomers: customers.filter(c => c.status === 'active').length
@@ -326,7 +326,7 @@ router.put('/service-integrators/:id', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      service_integrator: formatServiceIntegrator(si)
+      service_integrator: si  // Already camelCase from database layer
     });
   } catch (error) {
     console.error('Error updating service integrator:', error);
