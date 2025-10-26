@@ -199,12 +199,12 @@ export class LicenseDatabase {
     const useCloudSQL = process.env.USE_CLOUD_SQL === 'true';
 
     if (isProduction && useCloudSQL) {
-      // Production: Cloud SQL with IAM authentication
+      // Production: Cloud SQL with Public IP (no VPC connector needed)
       this.connector = new Connector();
 
       const clientOpts = await this.connector.getOptions({
         instanceConnectionName: process.env.INSTANCE_CONNECTION_NAME!, // e.g., 'snow-flow-ai:europe-west4:snow-flow-production-db'
-        ipType: 'PRIVATE' as any // Use Private IP (VPC) - Type assertion needed for Cloud SQL Connector
+        ipType: 'PUBLIC' as any // Use Public IP (no VPC connector required)
       });
 
       this.pool = mysql.createPool({
