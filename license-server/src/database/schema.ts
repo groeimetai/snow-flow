@@ -198,6 +198,15 @@ export class LicenseDatabase {
     const isProduction = process.env.NODE_ENV === 'production';
     const useCloudSQL = process.env.USE_CLOUD_SQL === 'true';
 
+    // Debug logging
+    console.log('[DB] Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      USE_CLOUD_SQL: process.env.USE_CLOUD_SQL,
+      isProduction,
+      useCloudSQL,
+      willUseCloudSQL: isProduction && useCloudSQL
+    });
+
     if (isProduction && useCloudSQL) {
       // Production: Cloud SQL with Public IP (no VPC connector needed)
       this.connector = new Connector();
