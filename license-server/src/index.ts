@@ -17,8 +17,8 @@ import { CredentialsDatabase } from './database/credentials-schema.js';
 import { ValidationService, ValidationRequest } from './services/validation.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { adminRouter } from './routes/admin.js';
-import { mcpRouter } from './routes/mcp.js';
+import { adminRouter, initializeAdminRouter } from './routes/admin.js';
+import { mcpRouter, initializeMcpRouter } from './routes/mcp.js';
 import { createSsoRoutes } from './routes/sso.js';
 import { createCredentialsRoutes } from './routes/credentials.js';
 import { createThemesRoutes } from './routes/themes.js';
@@ -203,14 +203,9 @@ app.get('/stats/:key', async (req: Request, res: Response) => {
 });
 
 /**
- * Admin API routes - complete license management
+ * NOTE: Admin API and MCP routes are registered AFTER database initialization
+ * See startServer() function below (line ~265)
  */
-app.use('/api/admin', adminRouter);
-
-/**
- * MCP HTTP Server - remote tool execution
- */
-app.use('/mcp', mcpRouter);
 
 /**
  * Serve Frontend Static Files (Production)
@@ -261,6 +256,16 @@ async function startServer() {
     // Initialize validation service
     validationService = new ValidationService(db);
     logger.info('✓ Validation service initialized');
+
+    // Initialize admin router with database BEFORE registering routes
+    initializeAdminRouter(db);
+    app.use('/api/admin', adminRouter);
+    logger.info('✓ Admin router initialized with database');
+
+    // Initialize MCP router with database BEFORE registering routes
+    initializeMcpRouter(db);
+    app.use('/mcp', mcpRouter);
+    logger.info('✓ MCP router initialized with database');
 
     // Register routes AFTER database initialization
     logger.info('Admin API routes registered at /api/admin/*');

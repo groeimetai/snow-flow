@@ -48,7 +48,15 @@ import {
 } from '../integrations/confluence-tools.js';
 
 const router = Router();
-const db = new LicenseDatabase();
+let db: LicenseDatabase;
+
+/**
+ * Initialize router with database instance
+ * MUST be called before using the router
+ */
+export function initializeMcpRouter(database: LicenseDatabase) {
+  db = database;
+}
 
 // ===== TYPES =====
 

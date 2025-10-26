@@ -9,7 +9,15 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { LicenseDatabase } from '../database/schema.js';
 
 const router = Router();
-const db = new LicenseDatabase();
+let db: LicenseDatabase;
+
+/**
+ * Initialize router with database instance
+ * MUST be called before using the router
+ */
+export function initializeAdminRouter(database: LicenseDatabase) {
+  db = database;
+}
 
 // ===== HELPER FUNCTIONS =====
 
@@ -771,14 +779,22 @@ router.get('/analytics/customers', async (req: Request, res: Response) => {
  */
 router.get('/stats/dashboard', authenticateAdmin, async (req: Request, res: Response) => {
   try {
+    // Check if database is initialized
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database not initialized'
+      });
+    }
+
     // Get customers count from database (MySQL2)
-    const [totalRows] = await (db as any).pool.query('SELECT COUNT(*) as total FROM customers') as any;
+    const [totalRows] = await (db as any).pool.execute('SELECT COUNT(*) as total FROM customers') as any;
     const totalCustomers = totalRows[0].total;
 
-    const [activeRows] = await (db as any).pool.query("SELECT COUNT(*) as total FROM customers WHERE status = 'active'") as any;
+    const [activeRows] = await (db as any).pool.execute("SELECT COUNT(*) as total FROM customers WHERE status = 'active'") as any;
     const activeCustomers = activeRows[0].total;
 
-    const [suspendedRows] = await (db as any).pool.query("SELECT COUNT(*) as total FROM customers WHERE status = 'suspended'") as any;
+    const [suspendedRows] = await (db as any).pool.execute("SELECT COUNT(*) as total FROM customers WHERE status = 'suspended'") as any;
     const suspendedCustomers = suspendedRows[0].total;
 
     // Get API stats
@@ -791,7 +807,7 @@ router.get('/stats/dashboard', authenticateAdmin, async (req: Request, res: Resp
 
     // Get active instances count (MySQL2)
     const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-    const [instanceRows] = await (db as any).pool.query(`
+    const [instanceRows] = await (db as any).pool.execute(`
       SELECT COUNT(*) as total FROM customer_instances
       WHERE last_seen > ?
     `, [oneDayAgo]) as any;
