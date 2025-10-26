@@ -107,18 +107,18 @@ steps:
       - '-c'
       - |
         # Get Cloud Run service URL
-        SERVICE_URL=$(gcloud run services describe ${_SERVICE_NAME} \
+        SERVICE_URL=$$(gcloud run services describe ${_SERVICE_NAME} \
           --region=${_REGION} \
           --format='value(status.url)')
 
-        echo "Service URL: $SERVICE_URL"
+        echo "Service URL: $$SERVICE_URL"
 
         # Wait for service to be ready (max 60 seconds)
         for i in {1..12}; do
-          echo "Health check attempt $i/12..."
-          if curl -f -s "$SERVICE_URL/health" > /dev/null 2>&1; then
+          echo "Health check attempt $$i/12..."
+          if curl -f -s "$$SERVICE_URL/health" > /dev/null 2>&1; then
             echo "✅ Health check passed!"
-            curl -s "$SERVICE_URL/health" | jq .
+            curl -s "$$SERVICE_URL/health" | jq .
             exit 0
           fi
           echo "Waiting 5 seconds..."
