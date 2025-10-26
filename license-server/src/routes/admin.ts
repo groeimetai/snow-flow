@@ -11,6 +11,26 @@ import { LicenseDatabase } from '../database/schema.js';
 const router = Router();
 const db = new LicenseDatabase();
 
+// ===== HELPER FUNCTIONS =====
+
+/**
+ * Convert service integrator from database (snake_case) to API format (camelCase)
+ */
+function formatServiceIntegrator(si: any): any {
+  return {
+    id: si.id,
+    companyName: si.company_name,
+    contactEmail: si.contact_email,
+    billingEmail: si.billing_email,
+    masterLicenseKey: si.master_license_key,
+    whiteLabelEnabled: Boolean(si.white_label_enabled),
+    customDomain: si.custom_domain,
+    logoUrl: si.logo_url,
+    createdAt: si.created_at,
+    status: si.status
+  };
+}
+
 // ===== MIDDLEWARE =====
 
 /**
@@ -230,7 +250,7 @@ router.get('/service-integrators', async (req: Request, res: Response) => {
     res.json({
       success: true,
       count: integrators.length,
-      service_integrators: integrators
+      service_integrators: integrators.map(formatServiceIntegrator)
     });
   } catch (error) {
     console.error('Error listing service integrators:', error);
@@ -263,7 +283,7 @@ router.get('/service-integrators/:id', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      service_integrator: si,
+      service_integrator: formatServiceIntegrator(si),
       stats: {
         totalCustomers: customers.length,
         activeCustomers: customers.filter(c => c.status === 'active').length
@@ -298,7 +318,7 @@ router.put('/service-integrators/:id', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      service_integrator: si
+      service_integrator: formatServiceIntegrator(si)
     });
   } catch (error) {
     console.error('Error updating service integrator:', error);

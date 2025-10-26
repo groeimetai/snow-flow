@@ -15,6 +15,7 @@ import { LicenseDatabase } from '../database/schema.js';
 import { CredentialsDatabase } from '../database/credentials-schema.js';
 import axios from 'axios';
 import winston from 'winston';
+import { getAPIStats, resetAPIStats } from '../middleware/api-logger.js';
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -662,6 +663,70 @@ export function createMonitoringRoutes(db: LicenseDatabase, credsDb: Credentials
         status: 'error',
         error: 'Failed to retrieve status',
         timestamp: Date.now()
+      });
+    }
+  });
+
+  /**
+   * GET /api-stats
+   * Get API call statistics
+   */
+  router.get('/api-stats', (req: Request, res: Response) => {
+    try {
+      const stats = getAPIStats();
+
+      // Calculate totals
+      const totalCalls = stats.reduce((sum, s) => sum + s.count, 0);
+      const totalErrors = stats.reduce((sum, s) => sum + s.errorCount, 0);
+      const avgDuration = stats.length > 0
+        ? stats.reduce((sum, s) => sum + s.avgDuration, 0) / stats.length
+        : 0;
+
+      res.json({
+        success: true,
+        summary: {
+          totalCalls,
+          totalErrors,
+          errorRate: totalCalls > 0 ? ((totalErrors / totalCalls) * 100).toFixed(2) + '%' : '0%',
+          avgDuration: avgDuration.toFixed(2) + 'ms',
+          endpoints: stats.length
+        },
+        endpoints: stats,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      logger.error('Failed to get API stats', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve API statistics'
+      });
+    }
+  });
+
+  /**
+   * POST /api-stats/reset
+   * Reset API statistics
+   */
+  router.post('/api-stats/reset', (req: Request, res: Response) => {
+    try {
+      resetAPIStats();
+
+      res.json({
+        success: true,
+        message: 'API statistics reset successfully',
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      logger.error('Failed to reset API stats', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to reset API statistics'
       });
     }
   });

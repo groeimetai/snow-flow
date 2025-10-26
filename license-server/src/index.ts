@@ -26,6 +26,7 @@ import { createAuthRoutes } from './routes/auth.js';
 import { TokenRefreshWorker } from './workers/token-refresh.js';
 import { createMonitoringRoutes, updateToolMetrics } from './routes/monitoring.js';
 import { validateInput, errorHandler } from './middleware/security.js';
+import { apiLogger } from './middleware/api-logger.js';
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -84,6 +85,9 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Input validation and sanitization
 app.use(validateInput);
+
+// API request logging
+app.use(apiLogger);
 
 // Cookie parser for SSO
 app.use(cookieParser());
