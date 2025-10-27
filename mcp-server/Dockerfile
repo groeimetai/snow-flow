@@ -37,12 +37,12 @@ RUN mkdir -p /app/data && \
 # Use non-root user
 USER node
 
-# Cloud Run expects port 8080 (we'll use 8081 for MCP server)
-ENV PORT=8081
-EXPOSE 8081
+# Cloud Run expects port 8080
+ENV PORT=8080
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8081/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
+  CMD node -e "require('http').get('http://localhost:8080/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
 
 CMD ["node", "dist/index.js"]
