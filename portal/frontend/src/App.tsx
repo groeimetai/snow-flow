@@ -1,188 +1,82 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './contexts/AuthContext';
+import React from 'react';
 
-// Pages
-import HomePage from './pages/Home';
-
-// Admin pages (created)
-import AdminLogin from './pages/admin/Login';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminCustomers from './pages/admin/Customers';
-import AdminServiceIntegrators from './pages/admin/ServiceIntegrators';
-import AdminMonitoring from './pages/admin/Monitoring';
-import AdminThemes from './pages/admin/Themes';
-// import AdminCustomerDetail from './pages/admin/CustomerDetail'; // TODO
-
-// Customer pages (created)
-import CustomerLogin from './pages/customer/Login';
-import CustomerDashboard from './pages/customer/Dashboard';
-import CustomerCredentials from './pages/customer/Credentials';
-// import CustomerProfile from './pages/customer/Profile'; // TODO
-// import CustomerUsage from './pages/customer/Usage'; // TODO
-
-// Service Integrator pages (created)
-import ServiceIntegratorLogin from './pages/service-integrator/Login';
-import ServiceIntegratorDashboard from './pages/service-integrator/Dashboard';
-
-// Layouts
-import ServiceIntegratorLayout from './components/layout/ServiceIntegratorLayout';
-
-// Protected route wrapper
-function ProtectedRoute({
-  children,
-  requireAdmin,
-  requireServiceIntegrator,
-}: {
-  children: React.ReactNode;
-  requireAdmin?: boolean;
-  requireServiceIntegrator?: boolean;
-}) {
-  const { isAdminAuthenticated, isCustomerAuthenticated, isServiceIntegratorAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-      </div>
-    );
-  }
-
-  if (requireAdmin && !isAdminAuthenticated) {
-    return <Navigate to="/admin/login" replace />;
-  }
-
-  if (requireServiceIntegrator && !isServiceIntegratorAuthenticated) {
-    return <Navigate to="/service-integrator/login" replace />;
-  }
-
-  if (!requireAdmin && !requireServiceIntegrator && !isCustomerAuthenticated) {
-    return <Navigate to="/portal/login" replace />;
-  }
-
-  return <>{children}</>;
-}
-
-export default function App() {
+function App() {
   return (
-    <Routes>
-      {/* Home / Landing */}
-      <Route path="/" element={<HomePage />} />
+    <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+        <h1 style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>Snow-Flow Enterprise Portal</h1>
+        <p style={{ fontSize: '1.25rem', color: '#666' }}>Version 2.0.0</p>
+      </div>
 
-      {/* Admin Routes */}
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/dashboard"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/customers"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AdminCustomers />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/service-integrators"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AdminServiceIntegrators />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/monitoring"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AdminMonitoring />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/themes"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AdminThemes />
-          </ProtectedRoute>
-        }
-      />
-      {/* TODO: Add these routes when pages are created
-      <Route path="/admin/customers/:id" element={<ProtectedRoute requireAdmin><AdminCustomerDetail /></ProtectedRoute>} />
-      */}
+      <div style={{ marginTop: '2rem', padding: '2rem', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+        <h2 style={{ marginTop: 0 }}>🚀 Portal Active</h2>
+        <p>Welcome to the Snow-Flow Enterprise Portal. Configuration interface is under construction.</p>
 
-      {/* Customer Portal Routes */}
-      <Route path="/portal/login" element={<CustomerLogin />} />
-      <Route
-        path="/portal"
-        element={
-          <ProtectedRoute>
-            <CustomerDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/portal/dashboard"
-        element={
-          <ProtectedRoute>
-            <CustomerDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/portal/credentials"
-        element={
-          <ProtectedRoute>
-            <CustomerCredentials />
-          </ProtectedRoute>
-        }
-      />
-      {/* TODO: Add these routes when pages are created
-      <Route path="/portal/profile" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
-      <Route path="/portal/usage" element={<ProtectedRoute><CustomerUsage /></ProtectedRoute>} />
-      */}
+        <h3 style={{ marginTop: '1.5rem' }}>Available Features:</h3>
+        <ul style={{ lineHeight: '1.8' }}>
+          <li><strong>Jira Integration</strong> - Bidirectional sync with advanced analytics (10 tools)</li>
+          <li><strong>Azure DevOps Integration</strong> - Work item management and pipelines (8 tools)</li>
+          <li><strong>Confluence Integration</strong> - Documentation sync and search (8 tools)</li>
+          <li><strong>Theme Customization</strong> - Custom branding for SnowCode IDE</li>
+        </ul>
+      </div>
 
-      {/* Service Integrator Portal Routes */}
-      <Route path="/service-integrator/login" element={<ServiceIntegratorLogin />} />
-      <Route
-        path="/service-integrator"
-        element={
-          <ProtectedRoute requireServiceIntegrator>
-            <ServiceIntegratorLayout>
-              <ServiceIntegratorDashboard />
-            </ServiceIntegratorLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/service-integrator/dashboard"
-        element={
-          <ProtectedRoute requireServiceIntegrator>
-            <ServiceIntegratorLayout>
-              <ServiceIntegratorDashboard />
-            </ServiceIntegratorLayout>
-          </ProtectedRoute>
-        }
-      />
-      {/* TODO: Add these routes when pages are created
-      <Route path="/service-integrator/customers" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorCustomers /></ProtectedRoute>} />
-      <Route path="/service-integrator/white-label" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorWhiteLabel /></ProtectedRoute>} />
-      <Route path="/service-integrator/settings" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorSettings /></ProtectedRoute>} />
-      */}
+      <div style={{ marginTop: '2rem', padding: '2rem', background: '#e8f4fd', borderRadius: '8px', border: '1px solid #93c5fd' }}>
+        <h3 style={{ marginTop: 0 }}>📖 Quick Start Guide</h3>
+        <pre style={{
+          background: '#1e293b',
+          color: '#f1f5f9',
+          padding: '1.5rem',
+          borderRadius: '6px',
+          overflow: 'auto',
+          fontSize: '0.9rem',
+          lineHeight: '1.6'
+        }}>
+{`# Install snow-flow CLI
+npm install -g snow-flow
 
-      {/* 404 */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+# Login with your license key
+snow-flow login SF-ENT-YOUR-LICENSE-KEY
+
+# Check authentication status
+snow-flow status
+
+# Open this portal
+snow-flow portal
+
+# Use enterprise features in development
+snow-flow swarm "Sync Jira backlog to ServiceNow" --verbose
+
+# Logout
+snow-flow logout`}
+        </pre>
+      </div>
+
+      <div style={{ marginTop: '2rem', padding: '2rem', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fcd34d' }}>
+        <h3 style={{ marginTop: 0 }}>🔧 MCP Server Status</h3>
+        <p>Enterprise MCP server is running at:</p>
+        <code style={{ background: '#fff', padding: '0.5rem 1rem', borderRadius: '4px', display: 'inline-block' }}>
+          https://enterprise.snow-flow.dev/mcp/sse
+        </code>
+        <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#92400e' }}>
+          <strong>Note:</strong> 26 enterprise tools available after authentication
+        </p>
+      </div>
+
+      <div style={{ marginTop: '3rem', textAlign: 'center', color: '#666', fontSize: '0.875rem' }}>
+        <p>Snow-Flow Enterprise • Portal v2.0.0 • MCP Server Active</p>
+        <p>
+          <a href="https://github.com/groeimetai/snow-flow" style={{ color: '#2563eb', textDecoration: 'none' }}>
+            GitHub (Open Source)
+          </a>
+          {' • '}
+          <a href="https://www.npmjs.com/package/snow-flow" style={{ color: '#2563eb', textDecoration: 'none' }}>
+            npm Package
+          </a>
+        </p>
+      </div>
+    </div>
   );
 }
+
+export default App;
