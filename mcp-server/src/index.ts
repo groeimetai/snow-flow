@@ -125,7 +125,7 @@ const ENTERPRISE_TOOLS = [
 ];
 
 // Register MCP tools
-mcpServer.setRequestHandler('tools/list', async (request: any) => {
+mcpServer.setRequestHandler('tools/list' as any, async (request: any) => {
   // Get client JWT payload from server context
   const jwtPayload = (mcpServer as any)._clientJwt;
 
@@ -139,7 +139,7 @@ mcpServer.setRequestHandler('tools/list', async (request: any) => {
   ).map(tool => ({
     name: tool.name,
     description: tool.description,
-    inputSchema: tool.handler.inputSchema || {
+    inputSchema: (tool.handler as any).inputSchema || {
       type: 'object',
       properties: {},
       required: []
@@ -150,7 +150,7 @@ mcpServer.setRequestHandler('tools/list', async (request: any) => {
 });
 
 // Handle tool calls
-mcpServer.setRequestHandler('tools/call', async (request: any) => {
+mcpServer.setRequestHandler('tools/call' as any, async (request: any) => {
   const { name, arguments: args } = request.params;
 
   // Get client JWT payload
@@ -180,8 +180,20 @@ mcpServer.setRequestHandler('tools/call', async (request: any) => {
       throw new Error(`No credentials configured for ${tool.feature}. Please configure in portal.`);
     }
 
-    // Execute tool with credentials + args
-    const result = await tool.handler({ ...args, credentials }, { db, credsDb, logger });
+    // Get customer info for context
+    const customer = await db.getCustomerById(jwtPayload.customerId);
+
+    if (!customer) {
+      throw new Error(`Customer ${jwtPayload.customerId} not found`);
+    }
+
+    // Execute tool with proper signature: (args, customer, toolCredentials)
+    // Map credentials to tool-specific format (using any to bypass strict typing)
+    const toolCredentials: any = {
+      [tool.feature]: credentials
+    };
+
+    const result = await tool.handler(args, customer, toolCredentials);
 
     return result;
   } catch (error: any) {
@@ -264,31 +276,13 @@ async function startServer() {
     // Initialize database
     logger.info('🔌 Connecting to database...');
 
-    db = new LicenseDatabase({
-      useCloudSQL: process.env.USE_CLOUD_SQL === 'true',
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : undefined,
-      socketPath: process.env.DB_SOCKET_PATH
-    });
-
-    await db.connect();
+    db = new LicenseDatabase();
+    await db.initialize();
     logger.info('✅ License database connected');
 
     // Initialize credentials database
-    credsDb = new CredentialsDatabase({
-      useCloudSQL: process.env.USE_CLOUD_SQL === 'true',
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : undefined,
-      socketPath: process.env.DB_SOCKET_PATH
-    });
-
-    await credsDb.connect();
+    credsDb = new CredentialsDatabase();
+    await credsDb.initialize();
     logger.info('✅ Credentials database connected');
 
     // Start HTTP server
