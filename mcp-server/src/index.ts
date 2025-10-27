@@ -13,6 +13,7 @@ import winston from 'winston';
 import dotenv from 'dotenv';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { LicenseDatabase } from './database/schema.js';
 import { CredentialsDatabase } from './database/credentials-schema.js';
 import jwt from 'jsonwebtoken';
@@ -125,7 +126,7 @@ const ENTERPRISE_TOOLS = [
 ];
 
 // Register MCP tools
-mcpServer.setRequestHandler('tools/list' as any, async (request: any) => {
+mcpServer.setRequestHandler(ListToolsRequestSchema, async (request) => {
   // Get client JWT payload from server context
   const jwtPayload = (mcpServer as any)._clientJwt;
 
@@ -150,8 +151,13 @@ mcpServer.setRequestHandler('tools/list' as any, async (request: any) => {
 });
 
 // Handle tool calls
-mcpServer.setRequestHandler('tools/call' as any, async (request: any) => {
+mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+
+  // Validate arguments are provided
+  if (!args) {
+    throw new Error(`Tool '${name}' called without required arguments`);
+  }
 
   // Get client JWT payload
   const jwtPayload = (mcpServer as any)._clientJwt;
@@ -193,7 +199,7 @@ mcpServer.setRequestHandler('tools/call' as any, async (request: any) => {
       [tool.feature]: credentials
     };
 
-    const result = await tool.handler(args, customer, toolCredentials);
+    const result = await tool.handler(args as any, customer, toolCredentials);
 
     return result;
   } catch (error: any) {
