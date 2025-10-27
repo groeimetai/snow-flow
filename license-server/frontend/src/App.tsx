@@ -20,15 +20,24 @@ import CustomerCredentials from './pages/customer/Credentials';
 // import CustomerProfile from './pages/customer/Profile'; // TODO
 // import CustomerUsage from './pages/customer/Usage'; // TODO
 
+// Service Integrator pages (created)
+import ServiceIntegratorLogin from './pages/service-integrator/Login';
+import ServiceIntegratorDashboard from './pages/service-integrator/Dashboard';
+
+// Layouts
+import ServiceIntegratorLayout from './components/layout/ServiceIntegratorLayout';
+
 // Protected route wrapper
 function ProtectedRoute({
   children,
   requireAdmin,
+  requireServiceIntegrator,
 }: {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireServiceIntegrator?: boolean;
 }) {
-  const { isAdminAuthenticated, isCustomerAuthenticated, isLoading } = useAuth();
+  const { isAdminAuthenticated, isCustomerAuthenticated, isServiceIntegratorAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -42,7 +51,11 @@ function ProtectedRoute({
     return <Navigate to="/admin/login" replace />;
   }
 
-  if (!requireAdmin && !isCustomerAuthenticated) {
+  if (requireServiceIntegrator && !isServiceIntegratorAuthenticated) {
+    return <Navigate to="/service-integrator/login" replace />;
+  }
+
+  if (!requireAdmin && !requireServiceIntegrator && !isCustomerAuthenticated) {
     return <Navigate to="/portal/login" replace />;
   }
 
@@ -138,6 +151,34 @@ export default function App() {
       {/* TODO: Add these routes when pages are created
       <Route path="/portal/profile" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
       <Route path="/portal/usage" element={<ProtectedRoute><CustomerUsage /></ProtectedRoute>} />
+      */}
+
+      {/* Service Integrator Portal Routes */}
+      <Route path="/service-integrator/login" element={<ServiceIntegratorLogin />} />
+      <Route
+        path="/service-integrator"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorDashboard />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/service-integrator/dashboard"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorDashboard />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
+      {/* TODO: Add these routes when pages are created
+      <Route path="/service-integrator/customers" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorCustomers /></ProtectedRoute>} />
+      <Route path="/service-integrator/white-label" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorWhiteLabel /></ProtectedRoute>} />
+      <Route path="/service-integrator/settings" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorSettings /></ProtectedRoute>} />
       */}
 
       {/* 404 */}

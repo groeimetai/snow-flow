@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiClient } from '../api/client';
-import type { AdminSession, CustomerSession } from '../types';
+import type { AdminSession, CustomerSession, ServiceIntegratorSession } from '../types';
 
 interface AuthContextType {
   // Admin auth
@@ -15,6 +15,12 @@ interface AuthContextType {
   customerLogin: (licenseKey: string) => Promise<void>;
   customerLogout: () => Promise<void>;
 
+  // Service Integrator auth
+  serviceIntegratorSession: ServiceIntegratorSession | null;
+  isServiceIntegratorAuthenticated: boolean;
+  serviceIntegratorLogin: (masterLicenseKey: string) => Promise<void>;
+  serviceIntegratorLogout: () => Promise<void>;
+
   // Loading states
   isLoading: boolean;
 }
@@ -24,6 +30,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
   const [customerSession, setCustomerSession] = useState<CustomerSession | null>(null);
+  const [serviceIntegratorSession, setServiceIntegratorSession] = useState<ServiceIntegratorSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Check for existing sessions on mount
@@ -46,6 +53,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Invalid/expired customer token
           apiClient.clearAuth();
           setCustomerSession(null);
+        }
+      }
+
+      // Check for service integrator token in localStorage
+      const hasServiceIntegratorToken = apiClient.loadServiceIntegratorToken();
+
+      // Only check service integrator session if we have a token
+      if (hasServiceIntegratorToken) {
+        try {
+          const session = await apiClient.getServiceIntegratorSession();
+          setServiceIntegratorSession(session);
+        } catch (error) {
+          // Invalid/expired service integrator token
+          apiClient.clearAuth();
+          setServiceIntegratorSession(null);
         }
       }
 
@@ -108,6 +130,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // ===== SERVICE INTEGRATOR AUTH =====
+
+  async function serviceIntegratorLogin(masterLicenseKey: string) {
+    try {
+      const session = await apiClient.serviceIntegratorLogin(masterLicenseKey);
+      setServiceIntegratorSession(session);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Login failed');
+    }
+  }
+
+  async function serviceIntegratorLogout() {
+    try {
+      await apiClient.serviceIntegratorLogout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setServiceIntegratorSession(null);
+    }
+  }
+
   const value: AuthContextType = {
     adminSession,
     isAdminAuthenticated: !!adminSession,
@@ -118,6 +161,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isCustomerAuthenticated: !!customerSession,
     customerLogin,
     customerLogout,
+
+    serviceIntegratorSession,
+    isServiceIntegratorAuthenticated: !!serviceIntegratorSession,
+    serviceIntegratorLogin,
+    serviceIntegratorLogout,
 
     isLoading,
   };

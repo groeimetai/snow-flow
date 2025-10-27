@@ -17,11 +17,13 @@ import type {
   SystemMetrics,
   AdminSession,
   CustomerSession,
+  ServiceIntegratorSession,
 } from '../types';
 
 class ApiClient {
   private client: AxiosInstance;
   private customerToken?: string;
+  private serviceIntegratorToken?: string;
 
   constructor(baseURL: string = '') {
     this.client = axios.create({
@@ -39,6 +41,10 @@ class ApiClient {
         // Customer token (JWT in localStorage)
         if (this.customerToken && config.url?.startsWith('/api/')) {
           config.headers.Authorization = `Bearer ${this.customerToken}`;
+        }
+        // Service Integrator token (JWT in localStorage)
+        if (this.serviceIntegratorToken && config.url?.startsWith('/api/')) {
+          config.headers.Authorization = `Bearer ${this.serviceIntegratorToken}`;
         }
         return config;
       },
@@ -60,6 +66,8 @@ class ApiClient {
               window.location.href = '/admin/login';
             } else if (window.location.pathname.startsWith('/portal')) {
               window.location.href = '/portal/login';
+            } else if (window.location.pathname.startsWith('/service-integrator')) {
+              window.location.href = '/service-integrator/login';
             }
           }
         }
@@ -75,15 +83,31 @@ class ApiClient {
     localStorage.setItem('customer_token', token);
   }
 
+  setServiceIntegratorToken(token: string) {
+    this.serviceIntegratorToken = token;
+    localStorage.setItem('service_integrator_token', token);
+  }
+
   clearAuth() {
     this.customerToken = undefined;
+    this.serviceIntegratorToken = undefined;
     localStorage.removeItem('customer_token');
+    localStorage.removeItem('service_integrator_token');
   }
 
   loadCustomerToken(): boolean {
     const token = localStorage.getItem('customer_token');
     if (token) {
       this.customerToken = token;
+      return true;
+    }
+    return false;
+  }
+
+  loadServiceIntegratorToken(): boolean {
+    const token = localStorage.getItem('service_integrator_token');
+    if (token) {
+      this.serviceIntegratorToken = token;
       return true;
     }
     return false;
@@ -126,6 +150,26 @@ class ApiClient {
   async getCustomerSession(): Promise<CustomerSession> {
     const { data } = await this.client.get('/api/auth/customer/session');
     return { token: this.customerToken!, customer: data.customer };
+  }
+
+  // ===== SERVICE INTEGRATOR AUTHENTICATION =====
+
+  async serviceIntegratorLogin(masterLicenseKey: string): Promise<ServiceIntegratorSession> {
+    const { data } = await this.client.post('/api/auth/service-integrator/login', {
+      masterLicenseKey,
+    });
+    this.setServiceIntegratorToken(data.token);
+    return { token: data.token, serviceIntegrator: data.serviceIntegrator };
+  }
+
+  async serviceIntegratorLogout(): Promise<void> {
+    await this.client.post('/api/auth/service-integrator/logout');
+    this.clearAuth();
+  }
+
+  async getServiceIntegratorSession(): Promise<ServiceIntegratorSession> {
+    const { data } = await this.client.get('/api/auth/service-integrator/session');
+    return { token: this.serviceIntegratorToken!, serviceIntegrator: data.serviceIntegrator };
   }
 
   // ===== CUSTOMERS (ADMIN) =====
