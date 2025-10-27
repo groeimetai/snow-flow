@@ -93,12 +93,12 @@ async function loginCommand(licenseKey: string): Promise<void> {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json() as { message?: string };
       console.error(chalk.red(`❌ Authentication failed: ${error.message || 'Invalid license key'}`));
       process.exit(1);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { token: string; expiresAt?: string; customer: AuthData['customer'] };
 
     const authData: AuthData = {
       jwt: data.token,
