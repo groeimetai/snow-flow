@@ -156,7 +156,8 @@ function initializeApiRoutes() {
 }
 
 // Serve frontend static files (React app)
-const frontendPath = path.join(__dirname, '../../frontend/dist');
+// In production Docker: __dirname = /app/dist, frontend = /app/frontend/dist
+const frontendPath = path.join(__dirname, '../frontend/dist');
 app.use(express.static(frontendPath));
 
 // Catch-all route for SPA (React Router)
