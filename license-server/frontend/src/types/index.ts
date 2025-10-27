@@ -10,6 +10,11 @@ export interface CustomerSession {
   customer: Customer;
 }
 
+export interface ServiceIntegratorSession {
+  token: string;
+  serviceIntegrator: ServiceIntegrator;
+}
+
 // ===== CUSTOMER =====
 
 export interface Customer {
