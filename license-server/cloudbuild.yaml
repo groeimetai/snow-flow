@@ -54,7 +54,9 @@ steps:
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
       - '--build-arg'
       - 'BUILDKIT_INLINE_CACHE=1'
-      - '.'
+      - '-f'
+      - 'license-server/Dockerfile'
+      - 'license-server'
     timeout: '600s'
 
   # Step 2: Push Docker image to Artifact Registry (with SHA tag)
