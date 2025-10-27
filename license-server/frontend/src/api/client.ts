@@ -363,6 +363,135 @@ class ApiClient {
     return data;
   }
 
+  // ===== SERVICE INTEGRATOR OPERATIONS =====
+
+  async getServiceIntegratorCustomers(status?: string): Promise<Customer[]> {
+    const { data } = await this.client.get<{ customers: Customer[] }>(
+      '/api/service-integrator/customers',
+      { params: status ? { status } : {} }
+    );
+    return data.customers;
+  }
+
+  async getServiceIntegratorCustomer(id: number): Promise<{
+    customer: Customer;
+    instances: number;
+    instanceDetails: CustomerInstance[];
+    usage: UsageStats;
+  }> {
+    const { data } = await this.client.get(
+      `/api/service-integrator/customers/${id}`
+    );
+    return data;
+  }
+
+  async createServiceIntegratorCustomer(customerData: {
+    name: string;
+    contactEmail: string;
+    company?: string;
+    theme?: string;
+  }): Promise<Customer> {
+    const { data } = await this.client.post<{ customer: Customer }>(
+      '/api/service-integrator/customers',
+      customerData
+    );
+    return data.customer;
+  }
+
+  async updateServiceIntegratorCustomer(
+    id: number,
+    updates: Partial<{
+      name: string;
+      contactEmail: string;
+      company: string;
+      status: string;
+      theme: string;
+    }>
+  ): Promise<Customer> {
+    const { data } = await this.client.put<{ customer: Customer }>(
+      `/api/service-integrator/customers/${id}`,
+      updates
+    );
+    return data.customer;
+  }
+
+  async deleteServiceIntegratorCustomer(id: number): Promise<void> {
+    await this.client.delete(`/api/service-integrator/customers/${id}`);
+  }
+
+  async getServiceIntegratorCustomerUsage(id: number, days: number = 30): Promise<UsageStats> {
+    const { data } = await this.client.get<{ usage: UsageStats }>(
+      `/api/service-integrator/customers/${id}/usage`,
+      { params: { days } }
+    );
+    return data.usage;
+  }
+
+  async getServiceIntegratorCustomerInstances(id: number): Promise<CustomerInstance[]> {
+    const { data } = await this.client.get<{ instances: CustomerInstance[] }>(
+      `/api/service-integrator/customers/${id}/instances`
+    );
+    return data.instances;
+  }
+
+  async getServiceIntegratorWhiteLabelConfig(): Promise<{
+    whiteLabelEnabled: boolean;
+    customDomain?: string;
+    logoUrl?: string;
+  }> {
+    const { data } = await this.client.get('/api/service-integrator/white-label');
+    return data;
+  }
+
+  async updateServiceIntegratorWhiteLabelConfig(updates: {
+    whiteLabelEnabled?: boolean;
+    customDomain?: string;
+    logoUrl?: string;
+  }): Promise<ServiceIntegrator> {
+    const { data } = await this.client.put<{ serviceIntegrator: ServiceIntegrator }>(
+      '/api/service-integrator/white-label',
+      updates
+    );
+    return data.serviceIntegrator;
+  }
+
+  async getServiceIntegratorProfile(): Promise<{
+    serviceIntegrator: ServiceIntegrator;
+    customerCount: number;
+  }> {
+    const { data } = await this.client.get('/api/service-integrator/profile');
+    return data;
+  }
+
+  async updateServiceIntegratorProfile(updates: {
+    companyName?: string;
+    contactEmail?: string;
+    billingEmail?: string;
+  }): Promise<ServiceIntegrator> {
+    const { data } = await this.client.put<{ serviceIntegrator: ServiceIntegrator }>(
+      '/api/service-integrator/profile',
+      updates
+    );
+    return data.serviceIntegrator;
+  }
+
+  async getServiceIntegratorStats(): Promise<{
+    totalCustomers: number;
+    activeCustomers: number;
+    suspendedCustomers: number;
+    totalApiCalls: number;
+  }> {
+    const { data } = await this.client.get<{
+      stats: {
+        totalCustomers: number;
+        activeCustomers: number;
+        suspendedCustomers: number;
+        totalApiCalls: number;
+      };
+    }>('/api/service-integrator/stats');
+    return data.stats;
+  }
+
   // ===== MONITORING =====
 
   async getHealth(): Promise<HealthStatus> {

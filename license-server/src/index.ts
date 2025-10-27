@@ -20,6 +20,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { adminRouter, initializeAdminRouter } from './routes/admin.js';
 import { mcpRouter, initializeMcpRouter } from './routes/mcp.js';
+import { serviceIntegratorRouter, initializeServiceIntegratorRouter } from './routes/service-integrator.js';
 import { createSsoRoutes } from './routes/sso.js';
 import { createCredentialsRoutes } from './routes/credentials.js';
 import { createThemesRoutes } from './routes/themes.js';
@@ -290,6 +291,11 @@ async function startServer() {
     app.use('/mcp', mcpRouter);
     logger.info('✓ MCP router initialized with database');
 
+    // Initialize Service Integrator router with database BEFORE registering routes
+    initializeServiceIntegratorRouter(db);
+    app.use('/api/service-integrator', serviceIntegratorRouter);
+    logger.info('✓ Service Integrator router initialized with database');
+
     // Register routes AFTER database initialization
     logger.info('Admin API routes registered at /api/admin/*');
     logger.info('MCP HTTP Server routes registered at /mcp/*');
@@ -320,7 +326,9 @@ async function startServer() {
     const authRouter = createAuthRoutes(db);
     app.use('/api/auth', authRouter);
     logger.info('Authentication API routes registered at /api/auth/*');
-    logger.info('Auth endpoints: admin/login, customer/login, admin/session, customer/session, logout');
+    logger.info('Auth endpoints: admin/login, customer/login, service-integrator/login, sessions, logout');
+    logger.info('Service Integrator API routes registered at /api/service-integrator/*');
+    logger.info('Service Integrator endpoints: customers, white-label, profile, stats');
 
     // Start OAuth2 token refresh worker (TODO: re-enable after credentials DB migration)
     // const tokenRefreshWorker = new TokenRefreshWorker(credsDb);
@@ -339,6 +347,7 @@ async function startServer() {
       logger.info(`Health Check: http://localhost:${PORT}/health`);
       logger.info(`Admin API: http://localhost:${PORT}/api/admin/*`);
       logger.info(`Auth API: http://localhost:${PORT}/api/auth/*`);
+      logger.info(`Service Integrator API: http://localhost:${PORT}/api/service-integrator/*`);
       logger.info(`MCP HTTP: http://localhost:${PORT}/mcp/*`);
       logger.info(`SSO/SAML: http://localhost:${PORT}/sso/*`);
       logger.info(`Credentials: http://localhost:${PORT}/api/credentials/*`);

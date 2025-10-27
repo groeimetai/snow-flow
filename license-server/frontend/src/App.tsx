@@ -23,6 +23,9 @@ import CustomerCredentials from './pages/customer/Credentials';
 // Service Integrator pages (created)
 import ServiceIntegratorLogin from './pages/service-integrator/Login';
 import ServiceIntegratorDashboard from './pages/service-integrator/Dashboard';
+import ServiceIntegratorCustomers from './pages/service-integrator/Customers';
+import ServiceIntegratorWhiteLabel from './pages/service-integrator/WhiteLabel';
+import ServiceIntegratorSettings from './pages/service-integrator/Settings';
 
 // Layouts
 import ServiceIntegratorLayout from './components/layout/ServiceIntegratorLayout';
@@ -175,11 +178,36 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      {/* TODO: Add these routes when pages are created
-      <Route path="/service-integrator/customers" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorCustomers /></ProtectedRoute>} />
-      <Route path="/service-integrator/white-label" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorWhiteLabel /></ProtectedRoute>} />
-      <Route path="/service-integrator/settings" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorSettings /></ProtectedRoute>} />
-      */}
+      <Route
+        path="/service-integrator/customers"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorCustomers />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/service-integrator/white-label"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorWhiteLabel />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/service-integrator/settings"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorSettings />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />
