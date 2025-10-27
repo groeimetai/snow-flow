@@ -17,6 +17,14 @@
       "env": {
         "SNOW_FLOW_ENV": "{{SNOW_FLOW_ENV}}"
       }
+    },
+    "snow-flow-enterprise": {
+      "type": "sse",
+      "url": "https://enterprise.snow-flow.dev/mcp/sse",
+      "description": "Snow-Flow Enterprise - 26 advanced integration tools (Jira, Azure DevOps, Confluence) with bidirectional sync, AI-powered planning, analytics, and automation. Requires enterprise license.",
+      "headers": {
+        "Authorization": "Bearer {{ENTERPRISE_JWT_TOKEN}}"
+      }
     }
   }
 }

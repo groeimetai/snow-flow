@@ -37,6 +37,7 @@ if (currentCommand && commandsNeedingMCP.includes(currentCommand) && !commandsNo
 // Removed provider-agnostic imports - using Claude Code directly
 import { registerAuthCommands } from './cli/auth.js';
 import { registerSessionCommands } from './cli/session.js';
+import { registerEnterpriseCommands } from './cli/enterprise.js';
 
 // Load environment variables
 dotenv.config();
@@ -55,6 +56,8 @@ program
 registerAuthCommands(program);
 // Register session inspection commands
 registerSessionCommands(program);
+// Register enterprise commands (login, status, portal, logout)
+registerEnterpriseCommands(program);
 
 // Flow deprecation handler - check for flow-related commands
 function checkFlowDeprecation(command: string, objective?: string) {
@@ -289,11 +292,11 @@ program
     // Check ServiceNow authentication
     const oauth = new ServiceNowOAuth();
     const isAuthenticated = await oauth.isAuthenticated();
-    
+
     if (options.verbose) {
       if (isAuthenticated) {
         cliLogger.info('🔗 ServiceNow connection: ✅ Authenticated');
-        
+
         // Test ServiceNow connection
         const client = new ServiceNowClient();
         const testResult = await client.testConnection();
@@ -304,6 +307,20 @@ program
         cliLogger.warn('🔗 ServiceNow connection: ❌ Not authenticated');
         cliLogger.info('💡 Run "snow-flow auth login" to enable live ServiceNow integration');
       }
+    }
+
+    // Check Enterprise features
+    const { hasEnterpriseFeatures, getEnterpriseInfo } = await import('./cli/enterprise.js');
+    const enterpriseEnabled = await hasEnterpriseFeatures();
+    const enterpriseInfo = enterpriseEnabled ? await getEnterpriseInfo() : null;
+
+    if (options.verbose && enterpriseEnabled && enterpriseInfo) {
+      cliLogger.info(`\n🌟 Snow-Flow Enterprise: ✅ Active (${enterpriseInfo.tier.toUpperCase()})`);
+      cliLogger.info(`   Organization: ${enterpriseInfo.name}`);
+      cliLogger.info(`   Features: ${enterpriseInfo.features.join(', ')}`);
+    } else if (options.verbose) {
+      cliLogger.info('\n🌟 Snow-Flow Enterprise: ❌ Not active');
+      cliLogger.info('💡 Run "snow-flow login <license-key>" to enable enterprise features');
     }
     
     // Initialize Queen Agent memory system
