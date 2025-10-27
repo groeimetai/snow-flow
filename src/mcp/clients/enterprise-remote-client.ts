@@ -44,11 +44,13 @@ export class EnterpriseRemoteClient {
 
     return new Promise((resolve, reject) => {
       try {
+        // eventsource package (Node.js) supports headers, browser EventSource does not
+        // Cast to any to bypass TypeScript's browser EventSourceInit type
         this.eventSource = new EventSource(this.sseUrl, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
-        });
+        } as any);
 
         this.eventSource.onopen = () => {
           this.connected = true;
