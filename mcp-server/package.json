@@ -1,0 +1,43 @@
+{
+  "name": "snow-flow-enterprise-mcp",
+  "version": "2.0.0",
+  "description": "Snow-Flow Enterprise MCP Server - Remote MCP server for enterprise tools (Jira, Azure DevOps, Confluence)",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@google-cloud/cloud-sql-connector": "^1.8.4",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "axios": "^1.6.5",
+    "azure-devops-node-api": "^12.5.0",
+    "better-sqlite3": "^9.2.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "jira-client": "^8.2.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.15.3",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jira-client": "^7.1.9",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20.10.6",
+    "@types/uuid": "^9.0.7",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

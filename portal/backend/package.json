@@ -1,0 +1,63 @@
+{
+  "name": "snow-flow-portal",
+  "version": "2.0.0",
+  "description": "Snow-Flow Enterprise Portal - License management, integration configuration, and analytics",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "tsc",
+    "build:frontend": "cd ../frontend && npm install && npm run build && cd ../backend",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "dev:frontend": "cd ../frontend && npm run dev",
+    "db:init": "node dist/scripts/init-db.js",
+    "db:seed": "node dist/scripts/seed-licenses.js"
+  },
+  "dependencies": {
+    "@google-cloud/cloud-sql-connector": "^1.8.4",
+    "ajv": "^8.12.0",
+    "axios": "^1.6.5",
+    "better-sqlite3": "^9.2.2",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "csurf": "^1.11.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-mysql-session": "^3.0.3",
+    "express-rate-limit": "^7.1.5",
+    "express-session": "^1.18.0",
+    "helmet": "^7.1.0",
+    "isomorphic-dompurify": "^2.9.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.15.3",
+    "passport": "^0.7.0",
+    "passport-saml": "^3.2.4",
+    "uuid": "^9.0.1",
+    "validator": "^13.11.0",
+    "winston": "^3.11.0",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/cookie-parser": "^1.4.9",
+    "@types/cors": "^2.8.17",
+    "@types/csurf": "^1.11.5",
+    "@types/express": "^4.17.21",
+    "@types/express-mysql-session": "^3.0.7",
+    "@types/express-session": "^1.18.2",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20.10.6",
+    "@types/passport": "^1.0.17",
+    "@types/passport-saml": "^1.1.7",
+    "@types/uuid": "^9.0.7",
+    "@types/validator": "^13.11.7",
+    "@types/xml2js": "^0.4.14",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
