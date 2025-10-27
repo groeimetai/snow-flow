@@ -73,33 +73,49 @@ steps:
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
     waitFor: ['build-image']
 
-  # Step 4: Deploy to Cloud Run
+  # Step 4: Update Cloud Run service with new image (preserves env vars!)
+  # CRITICAL: Using 'services update --image' instead of 'deploy' to preserve env vars
+  # 'gcloud run deploy' creates NEW revision without env vars
+  # 'gcloud run services update --image' ONLY updates image, keeps ALL existing config
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: 'deploy-cloud-run'
+    id: 'update-cloud-run-image'
     entrypoint: 'gcloud'
     args:
       - 'run'
-      - 'deploy'
+      - 'services'
+      - 'update'
       - '${_SERVICE_NAME}'
       - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
       - '--region=${_REGION}'
       - '--platform=managed'
-      - '--allow-unauthenticated'  # Public endpoint (auth handled by license key)
+    waitFor: ['push-image-sha', 'push-image-latest']
+
+  # Step 5: Update service configuration (optional - only if needed)
+  # This step updates performance settings without touching env vars or secrets
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'update-cloud-run-config'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'services'
+      - 'update'
+      - '${_SERVICE_NAME}'
+      - '--region=${_REGION}'
+      - '--platform=managed'
       - '--min-instances=${_MIN_INSTANCES}'
       - '--max-instances=${_MAX_INSTANCES}'
       - '--memory=${_MEMORY}'
       - '--cpu=${_CPU}'
       - '--concurrency=${_CONCURRENCY}'
       - '--timeout=${_TIMEOUT}'
-      - '--port=8080'
-      # NOTE: Environment variables and secrets are managed separately via:
+      # NOTE: Environment variables and secrets are managed MANUALLY via:
       #   gcloud run services update snow-flow-enterprise --region=europe-west4 \
-      #     --set-env-vars=NODE_ENV=production,PORT=8080,LOG_LEVEL=info,USE_CLOUD_SQL=true,... \
+      #     --set-env-vars=NODE_ENV=production,LOG_LEVEL=info,USE_CLOUD_SQL=true,... \
       #     --update-secrets=DB_PASSWORD=DB_PASSWORD:latest,ADMIN_KEY=ADMIN_KEY:latest,...
-      # DO NOT set env vars here - they will overwrite manually configured values!
-    waitFor: ['push-image-sha', 'push-image-latest']
+      # These are set ONCE and preserved across ALL deployments!
+    waitFor: ['update-cloud-run-image']
 
-  # Step 5: Verify deployment health
+  # Step 6: Verify deployment health
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'verify-deployment'
     entrypoint: 'bash'
@@ -127,7 +143,7 @@ steps:
 
         echo "❌ Health check failed after 60 seconds"
         exit 1
-    waitFor: ['deploy-cloud-run']
+    waitFor: ['update-cloud-run-config']
 
 # Store built images for caching
 images:
