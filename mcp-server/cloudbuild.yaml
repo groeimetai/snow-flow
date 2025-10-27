@@ -70,7 +70,8 @@ steps:
       - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
       - '--region=${_REGION}'
       - '--platform=managed'
-      - '--clear-command'
+      - '--command=node'
+      - '--args=dist/index.js'
     waitFor: ['push-image-sha', 'push-image-latest']
 
   # Step 5: Update service configuration
