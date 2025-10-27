@@ -51,6 +51,17 @@ export function createThemesRoutes(db: LicenseDatabase): express.Router {
   router.get('/list', (req: Request, res: Response) => {
     try {
       const themesDir = getThemesDir();
+
+      // Check if themes directory exists
+      if (!fs.existsSync(themesDir)) {
+        // Return empty themes list if directory doesn't exist
+        return res.json({
+          success: true,
+          themes: [],
+          message: 'No themes directory found'
+        });
+      }
+
       const themeFiles = fs.readdirSync(themesDir).filter(f => f.endsWith('.json'));
 
       const themes = themeFiles.map(filename => {

@@ -62,6 +62,9 @@ let validationService: ValidationService | undefined;
 // Create Express app
 const app = express();
 
+// Trust proxy - required for Cloud Run (X-Forwarded-For headers)
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
