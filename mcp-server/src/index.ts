@@ -259,7 +259,7 @@ app.post('/mcp/messages', (req: Request, res: Response) => {
 // Start server
 async function startServer() {
   try {
-    const port = parseInt(process.env.PORT || '8081');
+    const port = parseInt(process.env.PORT || '8080');
 
     // Initialize database
     logger.info('🔌 Connecting to database...');

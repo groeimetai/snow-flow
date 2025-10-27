@@ -89,7 +89,7 @@ steps:
       - '--cpu=${_CPU}'
       - '--concurrency=${_CONCURRENCY}'
       - '--timeout=${_TIMEOUT}'
-      - '--port=8081'
+      - '--port=8080'
     waitFor: ['update-cloud-run-image']
 
   # Step 6: Verify deployment health
