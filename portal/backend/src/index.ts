@@ -26,6 +26,7 @@ import { createThemesRoutes } from './routes/themes.js';
 import { createAuthRoutes } from './routes/auth.js';
 import { TokenRefreshWorker } from './workers/token-refresh.js';
 import { createMonitoringRoutes } from './routes/monitoring.js';
+import { createServiceIntegratorRoutes } from './routes/service-integrator.js';
 import { validateInput, errorHandler } from './middleware/security.js';
 import { apiLogger } from './middleware/api-logger.js';
 
@@ -150,6 +151,9 @@ function initializeApiRoutes() {
 
   // SSO routes (SAML authentication)
   app.use('/api/sso', createSsoRoutes(db));
+
+  // Service Integrator routes (customer management, white-label)
+  app.use('/api/service-integrator', createServiceIntegratorRoutes(db));
 
   // TODO: Monitoring routes (requires credsDb initialization)
   // app.use('/api/monitoring', createMonitoringRoutes(db, credsDb!));

@@ -1,0 +1,272 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import Card from '../../components/common/Card';
+import Button from '../../components/common/Button';
+import Modal from '../../components/common/Modal';
+import Input from '../../components/common/Input';
+import Select from '../../components/common/Select';
+import Badge from '../../components/common/Badge';
+
+interface Customer {
+  id: number;
+  name: string;
+  contactEmail: string;
+  company: string;
+  licenseKey: string;
+  theme: string | null;
+  status: 'active' | 'suspended' | 'churned';
+  totalApiCalls: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export default function ServiceIntegratorCustomers() {
+  const { serviceIntegratorSession } = useAuth();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'active' | 'suspended' | 'churned'>('all');
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    contactEmail: '',
+    company: '',
+    theme: ''
+  });
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [filter]);
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('serviceIntegratorToken');
+      const url = filter === 'all'
+        ? '/api/service-integrator/customers'
+        : `/api/service-integrator/customers?status=${filter}`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setCustomers(data.customers || []);
+      }
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const token = localStorage.getItem('serviceIntegratorToken');
+      const response = await fetch('/api/service-integrator/customers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setShowCreateModal(false);
+        setFormData({ name: '', contactEmail: '', company: '', theme: '' });
+        fetchCustomers();
+      }
+    } catch (error) {
+      console.error('Error creating customer:', error);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, 'success' | 'warning' | 'error'> = {
+      active: 'success',
+      suspended: 'warning',
+      churned: 'error'
+    };
+    return <Badge variant={variants[status] || 'success'}>{status}</Badge>;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
+          <p className="mt-2 text-gray-600">
+            Manage your end-customers and their licenses
+          </p>
+        </div>
+        <Button onClick={() => setShowCreateModal(true)}>
+          Create Customer
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <div className="flex space-x-2">
+          {(['all', 'active', 'suspended', 'churned'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filter === f
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {/* Customers List */}
+      {customers.length === 0 ? (
+        <Card>
+          <div className="text-center py-12">
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No customers</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Get started by creating a new customer.
+            </p>
+            <div className="mt-6">
+              <Button onClick={() => setShowCreateModal(true)}>
+                Create Customer
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-6">
+          {customers.map((customer) => (
+            <Card key={customer.id}>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {customer.name}
+                    </h3>
+                    {getStatusBadge(customer.status)}
+                  </div>
+                  <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Company</p>
+                      <p className="text-sm text-gray-900">{customer.company}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Contact Email</p>
+                      <p className="text-sm text-gray-900">{customer.contactEmail}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">License Key</p>
+                      <p className="text-sm text-gray-900 font-mono">{customer.licenseKey}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">API Calls</p>
+                      <p className="text-sm text-gray-900">{customer.totalApiCalls.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Theme</p>
+                      <p className="text-sm text-gray-900">{customer.theme || 'Default'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Created</p>
+                      <p className="text-sm text-gray-900">
+                        {new Date(customer.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="ml-4 flex space-x-2">
+                  <button className="text-sm text-purple-600 hover:text-purple-700 font-medium">
+                    Edit
+                  </button>
+                  <button className="text-sm text-red-600 hover:text-red-700 font-medium">
+                    Suspend
+                  </button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Create Customer Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Create New Customer"
+      >
+        <form onSubmit={handleCreateCustomer} className="space-y-4">
+          <Input
+            label="Customer Name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+          />
+          <Input
+            label="Contact Email"
+            type="email"
+            value={formData.contactEmail}
+            onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+            required
+          />
+          <Input
+            label="Company Name"
+            value={formData.company}
+            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+            required
+          />
+          <Input
+            label="Theme (optional)"
+            value={formData.theme}
+            onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
+            placeholder="e.g., capgemini, ey"
+          />
+          <div className="flex justify-end space-x-3 mt-6">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowCreateModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">Create Customer</Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}

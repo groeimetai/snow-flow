@@ -23,6 +23,9 @@ import CustomerCredentials from './pages/customer/Credentials';
 // Service Integrator pages (created)
 import ServiceIntegratorLogin from './pages/service-integrator/Login';
 import ServiceIntegratorDashboard from './pages/service-integrator/Dashboard';
+import ServiceIntegratorCustomers from './pages/service-integrator/Customers';
+import ServiceIntegratorWhiteLabel from './pages/service-integrator/WhiteLabel';
+import ServiceIntegratorSettings from './pages/service-integrator/Settings';
 
 // Layouts
 import ServiceIntegratorLayout from './components/layout/ServiceIntegratorLayout';
