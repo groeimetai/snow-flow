@@ -155,22 +155,6 @@ function initializeApiRoutes() {
   logger.info('✅ API routes initialized');
 }
 
-// Serve frontend static files (React app)
-// In production Docker: __dirname = /app/dist, frontend = /app/frontend/dist
-const frontendPath = path.join(__dirname, '../frontend/dist');
-app.use(express.static(frontendPath));
-
-// Catch-all route for SPA (React Router)
-app.get('*', (req: Request, res: Response) => {
-  if (req.path.startsWith('/api')) {
-    // API route not found
-    res.status(404).json({ error: 'API endpoint not found' });
-  } else {
-    // Serve React app
-    res.sendFile(path.join(frontendPath, 'index.html'));
-  }
-});
-
 // Error handler
 app.use(errorHandler);
 
@@ -204,6 +188,22 @@ async function startServer() {
     // const tokenWorker = new TokenRefreshWorker(db);
     // tokenWorker.start();
     logger.info('✅ Token refresh worker (disabled for now)');
+
+    // Serve frontend static files (React app) - AFTER API routes!
+    // In production Docker: __dirname = /app/dist, frontend = /app/frontend/dist
+    const frontendPath = path.join(__dirname, '../frontend/dist');
+    app.use(express.static(frontendPath));
+
+    // Catch-all route for SPA (React Router) - MUST be last!
+    app.get('*', (req: Request, res: Response) => {
+      if (req.path.startsWith('/api')) {
+        // API route not found
+        res.status(404).json({ error: 'API endpoint not found' });
+      } else {
+        // Serve React app
+        res.sendFile(path.join(frontendPath, 'index.html'));
+      }
+    });
 
     // Start HTTP server
     app.listen(port, '0.0.0.0', () => {
