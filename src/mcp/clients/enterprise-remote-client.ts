@@ -1,0 +1,253 @@
+/**
+ * Remote MCP client for Snow-Flow Enterprise
+ * Connects to enterprise.snow-flow.dev MCP server via SSE
+ */
+
+import { EventSource } from 'eventsource';
+import { getEnterpriseToken, ENTERPRISE_MCP_SERVER_URL } from '../../cli/enterprise.js';
+
+interface MCPTool {
+  name: string;
+  description?: string;
+  inputSchema?: any;
+}
+
+interface MCPToolCallResult {
+  content: Array<{ type: string; text: string }>;
+  isError?: boolean;
+}
+
+/**
+ * Enterprise MCP Client
+ * Connects to remote enterprise MCP server for advanced features
+ */
+export class EnterpriseRemoteClient {
+  private sseUrl: string;
+  private eventSource: EventSource | null = null;
+  private tools: MCPTool[] = [];
+  private connected: boolean = false;
+  private messageHandlers: Map<string, (data: any) => void> = new Map();
+
+  constructor() {
+    this.sseUrl = `${ENTERPRISE_MCP_SERVER_URL}/mcp/sse`;
+  }
+
+  /**
+   * Connect to enterprise MCP server
+   */
+  async connect(): Promise<void> {
+    const token = await getEnterpriseToken();
+
+    if (!token) {
+      throw new Error('Not authenticated with Snow-Flow Enterprise. Run: snow-flow login <license-key>');
+    }
+
+    return new Promise((resolve, reject) => {
+      try {
+        this.eventSource = new EventSource(this.sseUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        this.eventSource.onopen = () => {
+          this.connected = true;
+          console.log('🌟 Connected to Snow-Flow Enterprise MCP server');
+          resolve();
+        };
+
+        this.eventSource.onerror = (error) => {
+          this.connected = false;
+          console.error('❌ Enterprise MCP connection error:', error);
+          reject(new Error('Failed to connect to enterprise MCP server'));
+        };
+
+        this.eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            this.handleMessage(data);
+          } catch (err) {
+            console.error('Failed to parse MCP message:', err);
+          }
+        };
+
+        // Request tools list after connection
+        setTimeout(async () => {
+          await this.listTools();
+          resolve();
+        }, 1000);
+
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  /**
+   * Handle incoming SSE messages
+   */
+  private handleMessage(data: any): void {
+    const messageId = data.id;
+
+    if (messageId && this.messageHandlers.has(messageId)) {
+      const handler = this.messageHandlers.get(messageId);
+      if (handler) {
+        handler(data);
+        this.messageHandlers.delete(messageId);
+      }
+    }
+
+    // Handle specific message types
+    if (data.method === 'tools/list' && data.result) {
+      this.tools = data.result.tools || [];
+      console.log(`📋 Loaded ${this.tools.length} enterprise tools`);
+    }
+  }
+
+  /**
+   * Send request to MCP server and wait for response
+   */
+  private async sendRequest(method: string, params?: any): Promise<any> {
+    if (!this.connected || !this.eventSource) {
+      throw new Error('Not connected to enterprise MCP server');
+    }
+
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    return new Promise((resolve, reject) => {
+      // Set up response handler
+      this.messageHandlers.set(messageId, (data) => {
+        if (data.error) {
+          reject(new Error(data.error.message || 'Enterprise MCP error'));
+        } else {
+          resolve(data.result);
+        }
+      });
+
+      // Send request via POST endpoint
+      fetch(`${ENTERPRISE_MCP_SERVER_URL}/mcp/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: messageId,
+          method,
+          params
+        })
+      }).catch((err) => {
+        this.messageHandlers.delete(messageId);
+        reject(err);
+      });
+
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        if (this.messageHandlers.has(messageId)) {
+          this.messageHandlers.delete(messageId);
+          reject(new Error('Request timeout'));
+        }
+      }, 30000);
+    });
+  }
+
+  /**
+   * List available enterprise tools
+   */
+  async listTools(): Promise<MCPTool[]> {
+    if (this.tools.length > 0) {
+      return this.tools;
+    }
+
+    const result = await this.sendRequest('tools/list');
+    this.tools = result.tools || [];
+    return this.tools;
+  }
+
+  /**
+   * Call an enterprise tool
+   */
+  async callTool(toolName: string, args: any): Promise<MCPToolCallResult> {
+    const result = await this.sendRequest('tools/call', {
+      name: toolName,
+      arguments: args
+    });
+
+    return result;
+  }
+
+  /**
+   * Check if tool is available
+   */
+  async hasTool(toolName: string): Promise<boolean> {
+    const tools = await this.listTools();
+    return tools.some(tool => tool.name === toolName);
+  }
+
+  /**
+   * Get all tools by category
+   */
+  async getToolsByCategory(category: 'jira' | 'azure-devops' | 'confluence'): Promise<MCPTool[]> {
+    const tools = await this.listTools();
+    return tools.filter(tool => tool.name.startsWith(category.replace('-', '_')));
+  }
+
+  /**
+   * Disconnect from server
+   */
+  disconnect(): void {
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+      this.connected = false;
+      console.log('🔌 Disconnected from Enterprise MCP server');
+    }
+  }
+
+  /**
+   * Get connection status
+   */
+  isConnected(): boolean {
+    return this.connected;
+  }
+
+  /**
+   * Get available tools list (cached)
+   */
+  getTools(): MCPTool[] {
+    return this.tools;
+  }
+}
+
+/**
+ * Singleton instance
+ */
+let enterpriseClientInstance: EnterpriseRemoteClient | null = null;
+
+/**
+ * Get or create enterprise client instance
+ */
+export async function getEnterpriseClient(): Promise<EnterpriseRemoteClient> {
+  if (!enterpriseClientInstance) {
+    enterpriseClientInstance = new EnterpriseRemoteClient();
+    await enterpriseClientInstance.connect();
+  }
+
+  if (!enterpriseClientInstance.isConnected()) {
+    await enterpriseClientInstance.connect();
+  }
+
+  return enterpriseClientInstance;
+}
+
+/**
+ * Check if enterprise tools are available
+ */
+export async function hasEnterpriseTools(): Promise<boolean> {
+  try {
+    const token = await getEnterpriseToken();
+    return token !== null;
+  } catch (err) {
+    return false;
+  }
+}
