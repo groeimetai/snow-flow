@@ -135,7 +135,7 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
    *
    * Security: Rate limited (10 attempts per 15 min) + CSRF protection
    */
-  router.get('/login/:customerId', ssoLoginRateLimiter, csrfProtection, async (req: Request, res: Response) => {
+  router.get('/login/:customerId', ssoLoginRateLimiter, csrfProtection as any, async (req: Request, res: Response) => {
     try {
       const customerId = parseInt(req.params.customerId || '0');
       const csrfToken = (req as any).csrfToken();
@@ -169,7 +169,7 @@ export function createSsoRoutes(db: LicenseDatabase): express.Router {
       (req.session as any).ssoCustomerId = customerId;
 
       // Initiate SAML login
-      passport.authenticate('saml', { session: false })(req, res);
+      (passport.authenticate('saml', { session: false }) as any)(req, res);
     } catch (error) {
       console.error('SSO login error:', error);
       res.status(500).json({

@@ -10,8 +10,9 @@
  */
 
 import { Router, Request, Response } from 'express';
+import type { Router as ExpressRouter } from 'express';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 /**
  * Health check endpoint

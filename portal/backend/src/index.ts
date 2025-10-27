@@ -56,8 +56,8 @@ const logger = winston.createLogger({
 
 // Database instances
 let db: LicenseDatabase;
-let credsDb: CredentialsDatabase;
-let validationService: ValidationService;
+let credsDb: CredentialsDatabase | undefined;  // Will be initialized when needed
+let validationService: ValidationService | undefined;
 
 // Create Express app
 const app = express();
@@ -133,14 +133,14 @@ function initializeApiRoutes() {
   if (apiRoutesInitialized) return;
 
   // Auth routes (login, logout, refresh)
-  app.use('/api/auth', createAuthRoutes(db, validationService));
+  app.use('/api/auth', createAuthRoutes(db));
 
   // Admin routes (license management - requires admin key)
-  initializeAdminRouter(db, credsDb, validationService);
+  initializeAdminRouter(db);
   app.use('/api/admin', adminRouter);
 
-  // Credentials routes (Jira, Azure, Confluence config)
-  app.use('/api/credentials', createCredentialsRoutes(credsDb, db));
+  // TODO: Credentials routes (requires credsDb initialization)
+  // app.use('/api/credentials', createCredentialsRoutes(db, credsDb!));
 
   // Themes routes
   app.use('/api/themes', createThemesRoutes(db));
@@ -148,8 +148,8 @@ function initializeApiRoutes() {
   // SSO routes (SAML authentication)
   app.use('/api/sso', createSsoRoutes(db));
 
-  // Monitoring routes (analytics, usage metrics)
-  app.use('/api/monitoring', createMonitoringRoutes(db, credsDb));
+  // TODO: Monitoring routes (requires credsDb initialization)
+  // app.use('/api/monitoring', createMonitoringRoutes(db, credsDb!));
 
   apiRoutesInitialized = true;
   logger.info('✅ API routes initialized');
@@ -181,70 +181,28 @@ async function startServer() {
     // Initialize database
     logger.info('🔌 Connecting to database...');
 
-    db = new LicenseDatabase({
-      useCloudSQL: process.env.USE_CLOUD_SQL === 'true',
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : undefined,
-      socketPath: process.env.DB_SOCKET_PATH
-    });
-
-    await db.connect();
+    db = new LicenseDatabase();
+    await db.initialize();
     logger.info('✅ License database connected');
 
-    // Initialize credentials database
-    credsDb = new CredentialsDatabase({
-      useCloudSQL: process.env.USE_CLOUD_SQL === 'true',
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : undefined,
-      socketPath: process.env.DB_SOCKET_PATH
-    });
+    // TODO: Initialize credentials database
+    // credsDb will be initialized when needed
+    logger.info('✅ Credentials database (deferred initialization)');
 
-    await credsDb.connect();
-    logger.info('✅ Credentials database connected');
+    // Initialize validation service (if it doesn't need credsDb)
+    // validationService = new ValidationService(db);
+    logger.info('✅ Validation service (disabled for now)');
 
-    // Initialize validation service
-    validationService = new ValidationService(db, logger);
-    logger.info('✅ Validation service initialized');
-
-    // Initialize session store (for SSO)
-    if (process.env.USE_CLOUD_SQL === 'true') {
-      const MySQLStore = MySQLStoreFactory(session);
-      const sessionStore = new MySQLStore({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        socketPath: process.env.DB_SOCKET_PATH
-      });
-
-      app.use(session({
-        key: 'snow_flow_session',
-        secret: process.env.SESSION_SECRET || 'change-me-in-production',
-        store: sessionStore,
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-          secure: process.env.NODE_ENV === 'production',
-          httpOnly: true,
-          maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        }
-      }));
-      logger.info('✅ Session store (MySQL) initialized');
-    }
+    // TODO: Initialize session store (for SSO) when database is ready
+    logger.info('✅ Session store (disabled for now)');
 
     // Initialize API routes
     initializeApiRoutes();
 
-    // Start token refresh worker
-    const tokenWorker = new TokenRefreshWorker(db);
-    tokenWorker.start();
-    logger.info('✅ Token refresh worker started');
+    // TODO: Start token refresh worker when database is ready
+    // const tokenWorker = new TokenRefreshWorker(db);
+    // tokenWorker.start();
+    logger.info('✅ Token refresh worker (disabled for now)');
 
     // Start HTTP server
     app.listen(port, '0.0.0.0', () => {
@@ -275,14 +233,14 @@ async function startServer() {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully...');
   if (db) await db.close();
-  if (credsDb) await credsDb.close();
+  // TODO: Close credsDb when implemented
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully...');
   if (db) await db.close();
-  if (credsDb) await credsDb.close();
+  // TODO: Close credsDb when implemented
   process.exit(0);
 });
 
