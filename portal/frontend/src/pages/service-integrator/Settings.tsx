@@ -82,7 +82,7 @@ export default function ServiceIntegratorSettings() {
               value={formData.contactEmail}
               onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
               required
-              helpText="Primary contact for technical issues"
+              helperText="Primary contact for technical issues"
             />
             <Input
               label="Billing Email"
@@ -90,7 +90,7 @@ export default function ServiceIntegratorSettings() {
               value={formData.billingEmail}
               onChange={(e) => setFormData({ ...formData, billingEmail: e.target.value })}
               required
-              helpText="Email for invoices and billing-related communication"
+              helperText="Email for invoices and billing-related communication"
             />
           </div>
         </Card>

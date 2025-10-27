@@ -101,7 +101,7 @@ export default function ServiceIntegratorWhiteLabel() {
                 onChange={(e) => setFormData({ ...formData, customDomain: e.target.value })}
                 placeholder="portal.yourcompany.com"
                 disabled={!formData.whiteLabelEnabled}
-                helpText="Your custom domain for the portal (optional)"
+                helperText="Your custom domain for the portal (optional)"
               />
             </div>
 
@@ -113,7 +113,7 @@ export default function ServiceIntegratorWhiteLabel() {
                 onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
                 placeholder="https://yourcompany.com/logo.png"
                 disabled={!formData.whiteLabelEnabled}
-                helpText="URL to your company logo (PNG, SVG, or JPG)"
+                helperText="URL to your company logo (PNG, SVG, or JPG)"
               />
 
               {formData.logoUrl && (

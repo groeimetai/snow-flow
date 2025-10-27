@@ -90,10 +90,10 @@ export default function ServiceIntegratorCustomers() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'success' | 'warning' | 'error'> = {
+    const variants: Record<string, 'success' | 'warning' | 'danger'> = {
       active: 'success',
       suspended: 'warning',
-      churned: 'error'
+      churned: 'danger'
     };
     return <Badge variant={variants[status] || 'success'}>{status}</Badge>;
   };
