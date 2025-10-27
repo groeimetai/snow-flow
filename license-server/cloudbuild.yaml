@@ -19,7 +19,7 @@
 # Usage:
 #   Manual trigger:
 #     gcloud builds submit --config cloudbuild.yaml \
-#       --substitutions=_REGION=europe-west1,_ARTIFACT_REGISTRY_REPO=snow-flow-enterprise,_SERVICE_NAME=license-server
+#       --substitutions=_REGION=europe-west4,_ARTIFACT_REGISTRY_REPO=snow-flow-enterprise,_SERVICE_NAME=snow-flow-enterprise
 #
 #   Automated trigger:
 #     Configure Cloud Build trigger with substitution variables
@@ -30,9 +30,9 @@ options:
   substitutionOption: 'ALLOW_LOOSE'
 
 substitutions:
-  _REGION: 'europe-west1'  # Default region
+  _REGION: 'europe-west4'  # Default region (matches Cloud Run)
   _ARTIFACT_REGISTRY_REPO: 'snow-flow-enterprise'  # Default repo name
-  _SERVICE_NAME: 'license-server'  # Default service name
+  _SERVICE_NAME: 'snow-flow-enterprise'  # Default service name (matches Cloud Run)
   _MIN_INSTANCES: '1'  # Minimum instances (0 for scale-to-zero)
   _MAX_INSTANCES: '10'  # Maximum instances
   _MEMORY: '512Mi'  # Memory allocation
