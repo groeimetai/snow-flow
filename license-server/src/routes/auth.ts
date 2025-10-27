@@ -16,6 +16,13 @@ export interface CustomerSessionPayload {
   licenseKey: string;
 }
 
+export interface ServiceIntegratorSessionPayload {
+  type: 'service-integrator';
+  serviceIntegratorId: number;
+  masterLicenseKey: string;
+  company: string;
+}
+
 export function createAuthRoutes(db: LicenseDatabase): Router {
   const router = Router();
 
@@ -136,6 +143,68 @@ export function createAuthRoutes(db: LicenseDatabase): Router {
   });
 
   /**
+   * POST /api/auth/service-integrator/login
+   * Service Integrator login with master license key
+   */
+  router.post('/service-integrator/login', async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { masterLicenseKey } = req.body;
+
+      if (!masterLicenseKey) {
+        res.status(400).json({ error: 'Master license key is required' });
+        return;
+      }
+
+      // Find service integrator by master license key
+      const serviceIntegrator = await db.getServiceIntegrator(masterLicenseKey);
+      if (!serviceIntegrator) {
+        res.status(401).json({ error: 'Invalid master license key' });
+        return;
+      }
+
+      // Check service integrator status
+      if (serviceIntegrator.status === 'suspended') {
+        res.status(403).json({ error: 'Account suspended' });
+        return;
+      }
+
+      if (serviceIntegrator.status === 'churned') {
+        res.status(403).json({ error: 'Account is no longer active' });
+        return;
+      }
+
+      // Generate JWT token
+      const tokenPayload: ServiceIntegratorSessionPayload = {
+        type: 'service-integrator',
+        serviceIntegratorId: serviceIntegrator.id,
+        masterLicenseKey: serviceIntegrator.masterLicenseKey,
+        company: serviceIntegrator.companyName,
+      };
+
+      const token = jwt.sign(tokenPayload, JWT_SECRET, {
+        expiresIn: JWT_EXPIRES_IN,
+      });
+
+      res.json({
+        success: true,
+        token,
+        serviceIntegrator: {
+          id: serviceIntegrator.id,
+          companyName: serviceIntegrator.companyName,
+          contactEmail: serviceIntegrator.contactEmail,
+          masterLicenseKey: serviceIntegrator.masterLicenseKey,
+          status: serviceIntegrator.status,
+          whiteLabelEnabled: serviceIntegrator.whiteLabelEnabled,
+          createdAt: serviceIntegrator.createdAt,
+        },
+      });
+    } catch (error) {
+      console.error('Service integrator login error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  /**
    * GET /api/auth/admin/session
    * Check admin session (from cookie)
    */
@@ -229,6 +298,64 @@ export function createAuthRoutes(db: LicenseDatabase): Router {
   });
 
   /**
+   * GET /api/auth/service-integrator/session
+   * Verify service integrator JWT token
+   */
+  router.get('/service-integrator/session', async (req: Request, res: Response): Promise<void> => {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).json({ error: 'No token provided' });
+        return;
+      }
+
+      const token = authHeader.substring(7);
+
+      // Verify JWT
+      const decoded = jwt.verify(token, JWT_SECRET) as ServiceIntegratorSessionPayload;
+
+      if (decoded.type !== 'service-integrator') {
+        res.status(401).json({ error: 'Invalid token' });
+        return;
+      }
+
+      // Get service integrator data
+      const serviceIntegrator = await db.getServiceIntegratorById(decoded.serviceIntegratorId);
+      if (!serviceIntegrator) {
+        res.status(401).json({ error: 'Service integrator not found' });
+        return;
+      }
+
+      // Check status
+      if (serviceIntegrator.status !== 'active') {
+        res.status(403).json({ error: 'Account not active' });
+        return;
+      }
+
+      res.json({
+        success: true,
+        serviceIntegrator: {
+          id: serviceIntegrator.id,
+          companyName: serviceIntegrator.companyName,
+          contactEmail: serviceIntegrator.contactEmail,
+          masterLicenseKey: serviceIntegrator.masterLicenseKey,
+          status: serviceIntegrator.status,
+          whiteLabelEnabled: serviceIntegrator.whiteLabelEnabled,
+          createdAt: serviceIntegrator.createdAt,
+        },
+      });
+    } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        res.status(401).json({ error: 'Invalid token' });
+        return;
+      }
+      console.error('Service integrator session check error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  /**
    * POST /api/auth/admin/logout
    * Logout admin
    */
@@ -242,6 +369,14 @@ export function createAuthRoutes(db: LicenseDatabase): Router {
    * Logout customer (client-side token removal, this just confirms)
    */
   router.post('/customer/logout', async (req: Request, res: Response): Promise<void> => {
+    res.json({ success: true });
+  });
+
+  /**
+   * POST /api/auth/service-integrator/logout
+   * Logout service integrator (client-side token removal, this just confirms)
+   */
+  router.post('/service-integrator/logout', async (req: Request, res: Response): Promise<void> => {
     res.json({ success: true });
   });
 

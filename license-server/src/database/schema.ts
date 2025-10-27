@@ -492,6 +492,22 @@ export class LicenseDatabase {
   }
 
   /**
+   * Get service integrator by ID
+   */
+  async getServiceIntegratorById(id: number): Promise<ServiceIntegrator | undefined> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM service_integrators WHERE id = ?',
+      [id]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    const row = convertBooleans(toCamelCase(rowsArray[0]), ['whiteLabelEnabled']);
+    return row as ServiceIntegrator;
+  }
+
+  /**
    * List all service integrators
    */
   async listServiceIntegrators(status?: 'active' | 'suspended' | 'churned'): Promise<ServiceIntegrator[]> {
