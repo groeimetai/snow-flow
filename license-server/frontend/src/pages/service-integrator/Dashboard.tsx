@@ -1,8 +1,10 @@
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import Card from '../../components/common/Card';
 
 export default function ServiceIntegratorDashboard() {
   const { serviceIntegratorSession } = useAuth();
+  const navigate = useNavigate();
   const si = serviceIntegratorSession?.serviceIntegrator;
 
   return (
@@ -89,7 +91,10 @@ export default function ServiceIntegratorDashboard() {
       <Card>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button className="p-4 border border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left">
+          <button
+            onClick={() => navigate('/service-integrator/customers')}
+            className="p-4 border border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
+          >
             <div className="flex items-center">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -97,7 +102,10 @@ export default function ServiceIntegratorDashboard() {
               <span className="ml-3 font-medium text-gray-900">Create End-Customer License</span>
             </div>
           </button>
-          <button className="p-4 border border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left">
+          <button
+            onClick={() => navigate('/service-integrator/white-label')}
+            className="p-4 border border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
+          >
             <div className="flex items-center">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
