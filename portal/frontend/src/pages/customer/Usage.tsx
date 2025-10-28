@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiClient } from '../../api/client';
+import CustomerLayout from '../../components/layout/CustomerLayout';
 import Card from '../../components/common/Card';
 import type { UsageStats } from '../../types';
 
@@ -28,14 +29,17 @@ export default function CustomerUsage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-      </div>
+      <CustomerLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+        </div>
+      </CustomerLayout>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <CustomerLayout>
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -251,6 +255,7 @@ export default function CustomerUsage() {
           </div>
         </div>
       </Card>
-    </div>
+      </div>
+    </CustomerLayout>
   );
 }
