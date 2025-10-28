@@ -246,7 +246,7 @@ export async function getEnterpriseToken(): Promise<string | null> {
  */
 export async function hasEnterpriseFeatures(): Promise<boolean> {
   const auth = await loadAuth();
-  return auth !== null && auth.customer.features.length > 0;
+  return auth !== null && auth.customer !== undefined && auth.customer.features.length > 0;
 }
 
 /**
@@ -254,7 +254,7 @@ export async function hasEnterpriseFeatures(): Promise<boolean> {
  */
 export async function getEnterpriseInfo(): Promise<AuthData['customer'] | null> {
   const auth = await loadAuth();
-  return auth ? auth.customer : null;
+  return (auth && auth.customer) ? auth.customer : null;
 }
 
 /**
