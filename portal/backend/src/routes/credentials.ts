@@ -128,13 +128,18 @@ export function createCredentialsRoutes(db: LicenseDatabase): Router {
         }))
       });
     } catch (error) {
-      logger.error({
+      logger.error('❌ List credentials error:', {
         action: 'list_credentials',
-        error: error instanceof Error ? error.message : String(error)
+        customerId: (req as any).customerId,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        errorCode: (error as any).code,
+        errorSqlMessage: (error as any).sqlMessage
       });
       res.status(500).json({
         success: false,
-        error: 'Failed to list credentials'
+        error: 'Failed to list credentials',
+        details: error instanceof Error ? error.message : String(error)
       });
     }
   };
@@ -208,13 +213,19 @@ export function createCredentialsRoutes(db: LicenseDatabase): Router {
         }
       });
     } catch (error) {
-      logger.error({
+      logger.error('❌ Store credential error:', {
         action: 'store_credential',
-        error: error instanceof Error ? error.message : String(error)
+        customerId: (req as any).customerId,
+        service: req.body.service,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        errorCode: (error as any).code,
+        errorSqlMessage: (error as any).sqlMessage
       });
       res.status(500).json({
         success: false,
-        error: 'Failed to store credential'
+        error: 'Failed to store credential',
+        details: error instanceof Error ? error.message : String(error)
       });
     }
   });
@@ -249,13 +260,19 @@ export function createCredentialsRoutes(db: LicenseDatabase): Router {
         message: `${service} credentials deleted`
       });
     } catch (error) {
-      logger.error({
+      logger.error('❌ Delete credential error:', {
         action: 'delete_credential',
-        error: error instanceof Error ? error.message : String(error)
+        customerId: (req as any).customerId,
+        service: req.params.service,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        errorCode: (error as any).code,
+        errorSqlMessage: (error as any).sqlMessage
       });
       res.status(500).json({
         success: false,
-        error: 'Failed to delete credential'
+        error: 'Failed to delete credential',
+        details: error instanceof Error ? error.message : String(error)
       });
     }
   });
