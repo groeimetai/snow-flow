@@ -126,12 +126,13 @@ export function createCredentialsRoutes(db: LicenseDatabase): Router {
       res.json({
         success: true,
         credentials: credentials.map(cred => ({
-          service: cred.serviceType,
+          service: cred.serviceType === 'azure-devops' ? 'azdo' : cred.serviceType, // Map back to frontend format
           credentialType: cred.credentialType,
           baseUrl: cred.baseUrl,
           email: cred.email,
           username: cred.username,
           enabled: cred.enabled,
+          status: cred.enabled ? 'connected' : 'disabled', // Add status field for dashboard
           expiresAt: cred.expiresAt,
           lastUsed: cred.lastUsed,
           createdAt: cred.createdAt,

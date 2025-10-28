@@ -258,22 +258,29 @@ See [INTEGRATIONS.md#autonomous-agent-workflows](INTEGRATIONS.md#autonomous-agen
 
 ---
 
-## 📊 Pricing Tiers
+## 💼 Licensing
 
-| Feature | Team | Pro | Enterprise |
-|---------|------|-----|------------|
-| **Jira Tools** | 4 basic | 8 full | 8 full |
-| **Azure DevOps** | ❌ | 10 tools | 10 tools |
-| **Confluence** | ❌ | 4 basic | 8 full |
-| **ML & Analytics** | ❌ | 5 basic | 15 full |
-| **Max Instances** | 3 | 10 | Unlimited |
-| **Rate Limit** | 100/15min | 500/15min | 2000/15min |
-| **Support** | Community | Email | 24/7 Priority |
-| **SSO/SAML** | ❌ | ❌ | ✅ |
-| **White-Label** | ❌ | ❌ | ✅ |
-| **Custom Tools** | ❌ | ❌ | ✅ (on request) |
+Snow-Flow is available in two versions:
 
-**Pricing:** Contact sales@snow-flow.dev
+### 🌟 Enterprise Edition (This Repository)
+- ✅ **Fully managed SaaS** - hosted on Google Cloud Platform
+- ✅ **40+ MCP Tools** - Jira (8), Azure DevOps (10), Confluence (8), ML/Analytics (15+)
+- ✅ **Unlimited integrations** - no service limits
+- ✅ **Enterprise security** - Google Cloud KMS encryption, SOC 2/ISO 27001 ready
+- ✅ **White-label portal** - branded customer experience for service integrators
+- ✅ **Autonomous agents** - AI agents manage backlogs 24/7
+- ✅ **Zero maintenance** - automatic updates without customer reinstalls
+- ✅ **24/7 priority support** - dedicated support team
+
+**Pricing:** Custom enterprise pricing. Contact sales@snow-flow.dev
+
+### 🆓 Open Source Edition
+- ✅ **Self-hosted** - run on your own infrastructure
+- ✅ **Core MCP tools** - essential ServiceNow development tools
+- ✅ **Community support** - GitHub issues and community forums
+- ✅ **MIT License** - free for personal and commercial use
+
+**Get started:** https://github.com/your-org/snow-flow-open-source
 
 ---
 

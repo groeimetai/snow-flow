@@ -56,8 +56,9 @@ export default function CustomerDashboard() {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Connected Services</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {connectedServices} / {totalServices}
+                    {connectedServices}
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">No limits</p>
                 </div>
               </div>
             </Card>
@@ -127,9 +128,9 @@ export default function CustomerDashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {credentials.map((credential: any) => (
+              {credentials.map((credential: any, idx: number) => (
                 <div
-                  key={credential.id}
+                  key={`${credential.service}-${idx}`}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                 >
                   <div className="flex items-center">
