@@ -452,12 +452,21 @@ export function registerAuthCommands(program: Command) {
       // Enterprise license key
       const licenseKey = await prompts.text({
         message: 'Enterprise license key',
-        placeholder: 'SNOW-ENT-YOURCOMPANY-20261231-ABC123',
+        placeholder: 'SNOW-ENT-1-ABC123 or SNOW-ENT-SI-ABC123',
         validate: (value) => {
           if (!value || value.trim() === '') return 'License key is required';
           if (!value.startsWith('SNOW-')) return 'Invalid format (should start with SNOW-)';
           const parts = value.split('-');
-          if (parts.length !== 5) return 'Invalid format (expected: SNOW-TIER-ORG-DATE-HASH)';
+          // Accept both formats:
+          // Old: SNOW-TIER-ORG-DATE-HASH (5 parts)
+          // New: SNOW-ENT-CUST-HASH or SNOW-ENT-SI-HASH (4 parts)
+          if (parts.length !== 4 && parts.length !== 5) {
+            return 'Invalid format (expected: SNOW-ENT-1-HASH or SNOW-ENT-SI-HASH)';
+          }
+          // For 4-part format, ensure it's ENT type
+          if (parts.length === 4 && parts[1] !== 'ENT') {
+            return 'Invalid format (second part must be ENT)';
+          }
         }
       }) as string;
 
