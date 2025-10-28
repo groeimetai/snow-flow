@@ -7,6 +7,7 @@
 
 import mysql from 'mysql2/promise';
 import { Connector } from '@google-cloud/cloud-sql-connector';
+import crypto from 'crypto';
 
 // TypeScript Interfaces (unchanged from SQLite version)
 export interface ServiceIntegrator {
@@ -151,6 +152,45 @@ export interface SsoSession {
   createdAt: number;
   expiresAt: number;
   lastActivity: number;
+}
+
+export interface CustomerCredential {
+  id: number;
+  customerId: number;
+  serviceType: 'jira' | 'azure-devops' | 'confluence' | 'servicenow' | 'github' | 'gitlab';
+  credentialType: 'oauth2' | 'api_token' | 'basic_auth' | 'pat';
+
+  // OAuth2 fields (encrypted)
+  accessToken?: string;
+  refreshToken?: string;
+  tokenType?: string;
+  expiresAt?: number;
+  scope?: string;
+
+  // API Token / PAT (encrypted)
+  apiToken?: string;
+
+  // Basic Auth (encrypted)
+  username?: string;
+  password?: string;
+
+  // Service configuration
+  baseUrl: string;
+  email?: string;
+  clientId?: string;
+  configJson?: string;
+
+  // Status
+  enabled: boolean;
+  lastUsed?: number;
+  lastRefreshed?: number;
+  lastTestStatus?: 'success' | 'failed' | 'not_tested';
+  lastTestMessage?: string;
+  lastTestedAt?: number;
+
+  // Timestamps
+  createdAt: number;
+  updatedAt: number;
 }
 
 /**
@@ -1275,5 +1315,403 @@ export class LicenseDatabase {
       activeUsers: result.active_users || 0,
       avgSessionDuration: result.avg_session_duration || 0
     };
+  }
+
+  // ============================================================================
+  // CREDENTIALS MANAGEMENT (AES-256-GCM Encryption)
+  // ============================================================================
+
+  /**
+   * Get encryption key from environment variable
+   * MUST be exactly 32 bytes (256 bits) for AES-256
+   */
+  private getEncryptionKey(): Buffer {
+    const key = process.env.CREDENTIALS_ENCRYPTION_KEY;
+    if (!key) {
+      throw new Error('CREDENTIALS_ENCRYPTION_KEY environment variable not set');
+    }
+    // Ensure exactly 32 bytes
+    return Buffer.from(key.padEnd(32, '0').substring(0, 32), 'utf8');
+  }
+
+  /**
+   * Encrypt credential data using AES-256-GCM
+   * Returns format: iv:authTag:encryptedData (hex-encoded)
+   */
+  private encryptCredential(plaintext: string): string {
+    const iv = crypto.randomBytes(16); // 128-bit IV
+    const key = this.getEncryptionKey();
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+
+    let encrypted = cipher.update(plaintext, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+
+    const authTag = cipher.getAuthTag();
+
+    // Return iv:authTag:encrypted (all hex-encoded)
+    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+  }
+
+  /**
+   * Decrypt credential data
+   * Expects format: iv:authTag:encryptedData (hex-encoded)
+   */
+  private decryptCredential(ciphertext: string): string {
+    const parts = ciphertext.split(':');
+    if (parts.length !== 3) {
+      throw new Error('Invalid ciphertext format');
+    }
+
+    const iv = Buffer.from(parts[0], 'hex');
+    const authTag = Buffer.from(parts[1], 'hex');
+    const encrypted = parts[2];
+
+    const key = this.getEncryptionKey();
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+
+    return decrypted;
+  }
+
+  /**
+   * Create new customer credential (with encryption)
+   */
+  async createCustomerCredential(data: {
+    customerId: number;
+    serviceType: string;
+    credentialType: string;
+    baseUrl: string;
+    accessToken?: string;
+    refreshToken?: string;
+    apiToken?: string;
+    username?: string;
+    password?: string;
+    email?: string;
+    clientId?: string;
+    tokenType?: string;
+    expiresAt?: number;
+    scope?: string;
+    enabled?: boolean;
+  }): Promise<CustomerCredential> {
+    const now = Date.now();
+
+    // Encrypt sensitive fields
+    const encryptedAccessToken = data.accessToken ? this.encryptCredential(data.accessToken) : null;
+    const encryptedRefreshToken = data.refreshToken ? this.encryptCredential(data.refreshToken) : null;
+    const encryptedApiToken = data.apiToken ? this.encryptCredential(data.apiToken) : null;
+    const encryptedPassword = data.password ? this.encryptCredential(data.password) : null;
+
+    const [result] = await this.pool.execute(
+      `INSERT INTO customer_credentials (
+        customer_id, service_type, credential_type, base_url,
+        access_token, refresh_token, api_token, username, password,
+        email, client_id, token_type, expires_at, scope, enabled,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        data.customerId,
+        data.serviceType,
+        data.credentialType,
+        data.baseUrl,
+        encryptedAccessToken,
+        encryptedRefreshToken,
+        encryptedApiToken,
+        data.username || null,
+        encryptedPassword,
+        data.email || null,
+        data.clientId || null,
+        data.tokenType || null,
+        data.expiresAt || null,
+        data.scope || null,
+        data.enabled !== false ? 1 : 0,
+        now,
+        now
+      ]
+    );
+
+    const insertId = (result as any).insertId;
+
+    // Audit log
+    await this.pool.execute(
+      `INSERT INTO customer_credentials_audit (
+        credential_id, customer_id, action, timestamp
+      ) VALUES (?, ?, 'created', ?)`,
+      [insertId, data.customerId, now]
+    );
+
+    // Return created credential (with decrypted values)
+    const created = await this.getCustomerCredential(data.customerId, data.serviceType as any);
+    if (!created) {
+      throw new Error('Failed to retrieve created credential');
+    }
+    return created;
+  }
+
+  /**
+   * Get customer credential by service type (with decryption)
+   */
+  async getCustomerCredential(
+    customerId: number,
+    serviceType: 'jira' | 'azure-devops' | 'confluence' | 'servicenow' | 'github' | 'gitlab'
+  ): Promise<CustomerCredential | null> {
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM customer_credentials WHERE customer_id = ? AND service_type = ?`,
+      [customerId, serviceType]
+    );
+
+    if ((rows as any[]).length === 0) {
+      return null;
+    }
+
+    const row = (rows as any[])[0];
+    const now = Date.now();
+
+    // Update last_used
+    await this.pool.execute(
+      `UPDATE customer_credentials SET last_used = ? WHERE id = ?`,
+      [now, row.id]
+    );
+
+    // Audit log
+    await this.pool.execute(
+      `INSERT INTO customer_credentials_audit (
+        credential_id, customer_id, action, timestamp
+      ) VALUES (?, ?, 'accessed', ?)`,
+      [row.id, customerId, now]
+    );
+
+    // Decrypt sensitive fields
+    const credential: CustomerCredential = {
+      id: row.id,
+      customerId: row.customer_id,
+      serviceType: row.service_type,
+      credentialType: row.credential_type,
+      baseUrl: row.base_url,
+      accessToken: row.access_token ? this.decryptCredential(row.access_token) : undefined,
+      refreshToken: row.refresh_token ? this.decryptCredential(row.refresh_token) : undefined,
+      apiToken: row.api_token ? this.decryptCredential(row.api_token) : undefined,
+      username: row.username || undefined,
+      password: row.password ? this.decryptCredential(row.password) : undefined,
+      email: row.email || undefined,
+      clientId: row.client_id || undefined,
+      tokenType: row.token_type || undefined,
+      expiresAt: row.expires_at || undefined,
+      scope: row.scope || undefined,
+      configJson: row.config_json || undefined,
+      enabled: !!row.enabled,
+      lastUsed: row.last_used || undefined,
+      lastRefreshed: row.last_refreshed || undefined,
+      lastTestStatus: row.last_test_status || undefined,
+      lastTestMessage: row.last_test_message || undefined,
+      lastTestedAt: row.last_tested_at || undefined,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+
+    return credential;
+  }
+
+  /**
+   * List all credentials for customer
+   */
+  async listCustomerCredentials(customerId: number): Promise<CustomerCredential[]> {
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM customer_credentials WHERE customer_id = ? ORDER BY service_type`,
+      [customerId]
+    );
+
+    const credentials: CustomerCredential[] = [];
+
+    for (const row of rows as any[]) {
+      credentials.push({
+        id: row.id,
+        customerId: row.customer_id,
+        serviceType: row.service_type,
+        credentialType: row.credential_type,
+        baseUrl: row.base_url,
+        accessToken: row.access_token ? this.decryptCredential(row.access_token) : undefined,
+        refreshToken: row.refresh_token ? this.decryptCredential(row.refresh_token) : undefined,
+        apiToken: row.api_token ? this.decryptCredential(row.api_token) : undefined,
+        username: row.username || undefined,
+        password: row.password ? this.decryptCredential(row.password) : undefined,
+        email: row.email || undefined,
+        clientId: row.client_id || undefined,
+        tokenType: row.token_type || undefined,
+        expiresAt: row.expires_at || undefined,
+        scope: row.scope || undefined,
+        configJson: row.config_json || undefined,
+        enabled: !!row.enabled,
+        lastUsed: row.last_used || undefined,
+        lastRefreshed: row.last_refreshed || undefined,
+        lastTestStatus: row.last_test_status || undefined,
+        lastTestMessage: row.last_test_message || undefined,
+        lastTestedAt: row.last_tested_at || undefined,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      });
+    }
+
+    return credentials;
+  }
+
+  /**
+   * Update customer credential
+   */
+  async updateCustomerCredential(
+    customerId: number,
+    serviceType: string,
+    updates: Partial<{
+      accessToken: string;
+      refreshToken: string;
+      apiToken: string;
+      password: string;
+      baseUrl: string;
+      email: string;
+      enabled: boolean;
+      expiresAt: number;
+      lastTestStatus: string;
+      lastTestMessage: string;
+    }>
+  ): Promise<void> {
+    const now = Date.now();
+    const setParts: string[] = [];
+    const values: any[] = [];
+
+    // Encrypt sensitive fields before update
+    if (updates.accessToken !== undefined) {
+      setParts.push('access_token = ?');
+      values.push(this.encryptCredential(updates.accessToken));
+    }
+    if (updates.refreshToken !== undefined) {
+      setParts.push('refresh_token = ?');
+      values.push(this.encryptCredential(updates.refreshToken));
+    }
+    if (updates.apiToken !== undefined) {
+      setParts.push('api_token = ?');
+      values.push(this.encryptCredential(updates.apiToken));
+    }
+    if (updates.password !== undefined) {
+      setParts.push('password = ?');
+      values.push(this.encryptCredential(updates.password));
+    }
+    if (updates.baseUrl !== undefined) {
+      setParts.push('base_url = ?');
+      values.push(updates.baseUrl);
+    }
+    if (updates.email !== undefined) {
+      setParts.push('email = ?');
+      values.push(updates.email);
+    }
+    if (updates.enabled !== undefined) {
+      setParts.push('enabled = ?');
+      values.push(updates.enabled ? 1 : 0);
+    }
+    if (updates.expiresAt !== undefined) {
+      setParts.push('expires_at = ?');
+      values.push(updates.expiresAt);
+    }
+    if (updates.lastTestStatus !== undefined) {
+      setParts.push('last_test_status = ?');
+      values.push(updates.lastTestStatus);
+    }
+    if (updates.lastTestMessage !== undefined) {
+      setParts.push('last_test_message = ?');
+      values.push(updates.lastTestMessage);
+    }
+
+    setParts.push('updated_at = ?');
+    values.push(now);
+
+    values.push(customerId, serviceType);
+
+    await this.pool.execute(
+      `UPDATE customer_credentials SET ${setParts.join(', ')} WHERE customer_id = ? AND service_type = ?`,
+      values
+    );
+
+    // Audit log
+    const [credRows] = await this.pool.execute(
+      `SELECT id FROM customer_credentials WHERE customer_id = ? AND service_type = ?`,
+      [customerId, serviceType]
+    );
+
+    if ((credRows as any[]).length > 0) {
+      const credId = (credRows as any[])[0].id;
+      await this.pool.execute(
+        `INSERT INTO customer_credentials_audit (
+          credential_id, customer_id, action, timestamp
+        ) VALUES (?, ?, 'updated', ?)`,
+        [credId, customerId, now]
+      );
+    }
+  }
+
+  /**
+   * Delete customer credential
+   */
+  async deleteCustomerCredential(customerId: number, serviceType: string): Promise<void> {
+    const now = Date.now();
+
+    // Get credential ID for audit
+    const [credRows] = await this.pool.execute(
+      `SELECT id FROM customer_credentials WHERE customer_id = ? AND service_type = ?`,
+      [customerId, serviceType]
+    );
+
+    if ((credRows as any[]).length > 0) {
+      const credId = (credRows as any[])[0].id;
+
+      // Audit log (before delete due to CASCADE)
+      await this.pool.execute(
+        `INSERT INTO customer_credentials_audit (
+          credential_id, customer_id, action, timestamp
+        ) VALUES (?, ?, 'deleted', ?)`,
+        [credId, customerId, now]
+      );
+    }
+
+    // Delete credential (audit records will CASCADE)
+    await this.pool.execute(
+      `DELETE FROM customer_credentials WHERE customer_id = ? AND service_type = ?`,
+      [customerId, serviceType]
+    );
+  }
+
+  /**
+   * Test credential and update test status
+   */
+  async updateCredentialTestStatus(
+    customerId: number,
+    serviceType: string,
+    status: 'success' | 'failed',
+    message?: string
+  ): Promise<void> {
+    const now = Date.now();
+
+    await this.pool.execute(
+      `UPDATE customer_credentials
+       SET last_test_status = ?, last_test_message = ?, last_tested_at = ?, updated_at = ?
+       WHERE customer_id = ? AND service_type = ?`,
+      [status, message || null, now, now, customerId, serviceType]
+    );
+
+    // Audit log
+    const [credRows] = await this.pool.execute(
+      `SELECT id FROM customer_credentials WHERE customer_id = ? AND service_type = ?`,
+      [customerId, serviceType]
+    );
+
+    if ((credRows as any[]).length > 0) {
+      const credId = (credRows as any[])[0].id;
+      await this.pool.execute(
+        `INSERT INTO customer_credentials_audit (
+          credential_id, customer_id, action, success, error_message, timestamp
+        ) VALUES (?, ?, 'tested', ?, ?, ?)`,
+        [credId, customerId, status === 'success' ? 1 : 0, message || null, now]
+      );
+    }
   }
 }
