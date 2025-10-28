@@ -23,8 +23,8 @@ import { createSsoRoutes } from './routes/sso.js';
 import { createCredentialsRoutes } from './routes/credentials.js';
 import { createThemesRoutes } from './routes/themes.js';
 import { createAuthRoutes } from './routes/auth.js';
-import { TokenRefreshWorker } from './workers/token-refresh.js';
-import { createMonitoringRoutes } from './routes/monitoring.js';
+// import { TokenRefreshWorker } from './workers/token-refresh.js'; // TODO: Update for MySQL
+// import { createMonitoringRoutes } from './routes/monitoring.js'; // TODO: Update for MySQL
 import { createServiceIntegratorRoutes } from './routes/service-integrator.js';
 import { createCustomerRoutes } from './routes/customer.js';
 import { validateInput, errorHandler } from './middleware/security.js';
