@@ -3498,6 +3498,44 @@ export async function setupMCPConfig(
   // Also create legacy config in .claude for backward compatibility
   const legacyConfigPath = join(targetDir, '.claude/mcp-config.json');
   await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
+
+  // 🔧 CRITICAL FIX: Also update global SnowCode configuration
+  // SnowCode reads from ~/.snowcode/snowcode.json (or config.json)
+  const snowcodeConfigPath = join(process.env.HOME || '', '.snowcode', 'snowcode.json');
+  const snowcodeConfigDirPath = join(process.env.HOME || '', '.snowcode');
+
+  try {
+    // Ensure directory exists
+    try {
+      await fs.access(snowcodeConfigDirPath);
+    } catch {
+      await fs.mkdir(snowcodeConfigDirPath, { recursive: true });
+    }
+
+    // Read existing SnowCode config or create new one
+    let snowcodeConfig: any = { mcpServers: {} };
+    try {
+      const existingConfig = await fs.readFile(snowcodeConfigPath, 'utf-8');
+      snowcodeConfig = JSON.parse(existingConfig);
+    } catch {
+      // File doesn't exist or is invalid - will create new one
+    }
+
+    // Ensure mcpServers object exists
+    if (!snowcodeConfig.mcpServers) {
+      snowcodeConfig.mcpServers = {};
+    }
+
+    // Update with our MCP servers
+    Object.assign(snowcodeConfig.mcpServers, finalConfig.mcpServers);
+
+    // Write updated config
+    await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
+    console.log(`✅ Global SnowCode config updated: ${snowcodeConfigPath}`);
+  } catch (error) {
+    console.warn(`⚠️  Could not update global SnowCode config: ${error}`);
+    console.warn('   SnowCode will use project-local .mcp.json instead');
+  }
 }
 
 // Refresh MCP configuration command
