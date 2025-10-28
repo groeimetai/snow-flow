@@ -26,6 +26,7 @@ import { createAuthRoutes } from './routes/auth.js';
 // import { TokenRefreshWorker } from './workers/token-refresh.js'; // TODO: Update for MySQL
 // import { createMonitoringRoutes } from './routes/monitoring.js'; // TODO: Update for MySQL
 import { createServiceIntegratorRoutes } from './routes/service-integrator.js';
+import { createSIThemesRoutes } from './routes/si-themes.js';
 import { createCustomerRoutes } from './routes/customer.js';
 import { validateInput, errorHandler } from './middleware/security.js';
 import { apiLogger } from './middleware/api-logger.js';
@@ -248,6 +249,10 @@ function initializeApiRoutes() {
 
   // Service Integrator routes (customer management, white-label)
   app.use('/api/service-integrator', createServiceIntegratorRoutes(db));
+
+  // Service Integrator Theme Management routes
+  app.use('/api/service-integrator/themes', createSIThemesRoutes(db));
+  logger.info('✅ Service Integrator Theme Management routes initialized');
 
   // Customer routes (usage stats, profile)
   app.use('/api/customer', createCustomerRoutes(db));

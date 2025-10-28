@@ -194,6 +194,30 @@ export interface CustomerCredential {
   updatedAt: number;
 }
 
+export interface ServiceIntegratorTheme {
+  id: number;
+  serviceIntegratorId: number;
+  themeName: string;
+  displayName: string;
+  description?: string;
+  themeConfig: any; // JSON object containing SnowCode theme configuration
+  primaryColor: string; // Hex color (e.g., '#0070AD')
+  secondaryColor?: string;
+  accentColor?: string;
+  isActive: boolean;
+  isDefault: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ThemeUsageLog {
+  id: number;
+  customerId: number;
+  themeId: number;
+  action: 'assigned' | 'activated' | 'deactivated' | 'removed';
+  timestamp: number;
+}
+
 /**
  * Helper to convert snake_case database rows to camelCase TypeScript objects
  */
@@ -1763,5 +1787,295 @@ export class LicenseDatabase {
         [credId, customerId, status === 'success' ? 1 : 0, message || null, now]
       );
     }
+  }
+
+  // ============================================================================
+  // CUSTOM THEMES MANAGEMENT (Service Integrator Feature)
+  // ============================================================================
+
+  /**
+   * Create custom theme for service integrator
+   */
+  async createSITheme(theme: Omit<ServiceIntegratorTheme, 'id' | 'createdAt' | 'updatedAt'>): Promise<ServiceIntegratorTheme> {
+    const now = Date.now();
+
+    const [result] = await this.pool.execute(
+      `INSERT INTO service_integrator_themes (
+        service_integrator_id, theme_name, display_name, description,
+        theme_config, primary_color, secondary_color, accent_color,
+        is_active, is_default, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        theme.serviceIntegratorId,
+        theme.themeName,
+        theme.displayName,
+        theme.description || null,
+        JSON.stringify(theme.themeConfig),
+        theme.primaryColor,
+        theme.secondaryColor || null,
+        theme.accentColor || null,
+        theme.isActive !== false ? 1 : 0,
+        theme.isDefault || false ? 1 : 0,
+        now,
+        now
+      ]
+    );
+
+    return {
+      id: (result as any).insertId,
+      ...theme,
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+
+  /**
+   * Get custom theme by ID
+   */
+  async getSITheme(themeId: number): Promise<ServiceIntegratorTheme | null> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM service_integrator_themes WHERE id = ?',
+      [themeId]
+    );
+
+    if ((rows as any[]).length === 0) return null;
+
+    const row = (rows as any[])[0];
+    return {
+      id: row.id,
+      serviceIntegratorId: row.service_integrator_id,
+      themeName: row.theme_name,
+      displayName: row.display_name,
+      description: row.description,
+      themeConfig: typeof row.theme_config === 'string' ? JSON.parse(row.theme_config) : row.theme_config,
+      primaryColor: row.primary_color,
+      secondaryColor: row.secondary_color,
+      accentColor: row.accent_color,
+      isActive: Boolean(row.is_active),
+      isDefault: Boolean(row.is_default),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+
+  /**
+   * Get custom theme by name for a service integrator
+   */
+  async getSIThemeByName(siId: number, themeName: string): Promise<ServiceIntegratorTheme | null> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM service_integrator_themes WHERE service_integrator_id = ? AND theme_name = ?',
+      [siId, themeName]
+    );
+
+    if ((rows as any[]).length === 0) return null;
+
+    const row = (rows as any[])[0];
+    return {
+      id: row.id,
+      serviceIntegratorId: row.service_integrator_id,
+      themeName: row.theme_name,
+      displayName: row.display_name,
+      description: row.description,
+      themeConfig: typeof row.theme_config === 'string' ? JSON.parse(row.theme_config) : row.theme_config,
+      primaryColor: row.primary_color,
+      secondaryColor: row.secondary_color,
+      accentColor: row.accent_color,
+      isActive: Boolean(row.is_active),
+      isDefault: Boolean(row.is_default),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+
+  /**
+   * List all themes for a service integrator
+   */
+  async listSIThemes(siId: number, activeOnly = false): Promise<ServiceIntegratorTheme[]> {
+    const sql = activeOnly
+      ? 'SELECT * FROM service_integrator_themes WHERE service_integrator_id = ? AND is_active = 1 ORDER BY is_default DESC, display_name ASC'
+      : 'SELECT * FROM service_integrator_themes WHERE service_integrator_id = ? ORDER BY is_default DESC, display_name ASC';
+
+    const [rows] = await this.pool.execute(sql, [siId]);
+
+    return (rows as any[]).map(row => ({
+      id: row.id,
+      serviceIntegratorId: row.service_integrator_id,
+      themeName: row.theme_name,
+      displayName: row.display_name,
+      description: row.description,
+      themeConfig: typeof row.theme_config === 'string' ? JSON.parse(row.theme_config) : row.theme_config,
+      primaryColor: row.primary_color,
+      secondaryColor: row.secondary_color,
+      accentColor: row.accent_color,
+      isActive: Boolean(row.is_active),
+      isDefault: Boolean(row.is_default),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+  }
+
+  /**
+   * Update custom theme
+   */
+  async updateSITheme(themeId: number, updates: Partial<ServiceIntegratorTheme>): Promise<void> {
+    const now = Date.now();
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (updates.themeName !== undefined) {
+      fields.push('theme_name = ?');
+      values.push(updates.themeName);
+    }
+    if (updates.displayName !== undefined) {
+      fields.push('display_name = ?');
+      values.push(updates.displayName);
+    }
+    if (updates.description !== undefined) {
+      fields.push('description = ?');
+      values.push(updates.description);
+    }
+    if (updates.themeConfig !== undefined) {
+      fields.push('theme_config = ?');
+      values.push(JSON.stringify(updates.themeConfig));
+    }
+    if (updates.primaryColor !== undefined) {
+      fields.push('primary_color = ?');
+      values.push(updates.primaryColor);
+    }
+    if (updates.secondaryColor !== undefined) {
+      fields.push('secondary_color = ?');
+      values.push(updates.secondaryColor);
+    }
+    if (updates.accentColor !== undefined) {
+      fields.push('accent_color = ?');
+      values.push(updates.accentColor);
+    }
+    if (updates.isActive !== undefined) {
+      fields.push('is_active = ?');
+      values.push(updates.isActive ? 1 : 0);
+    }
+    if (updates.isDefault !== undefined) {
+      fields.push('is_default = ?');
+      values.push(updates.isDefault ? 1 : 0);
+    }
+
+    if (fields.length === 0) return;
+
+    fields.push('updated_at = ?');
+    values.push(now);
+    values.push(themeId);
+
+    await this.pool.execute(
+      `UPDATE service_integrator_themes SET ${fields.join(', ')} WHERE id = ?`,
+      values
+    );
+  }
+
+  /**
+   * Delete custom theme
+   */
+  async deleteSITheme(themeId: number): Promise<void> {
+    await this.pool.execute(
+      'DELETE FROM service_integrator_themes WHERE id = ?',
+      [themeId]
+    );
+  }
+
+  /**
+   * Set default theme for service integrator
+   */
+  async setSIDefaultTheme(siId: number, themeId: number): Promise<void> {
+    // Remove default flag from all themes for this SI
+    await this.pool.execute(
+      'UPDATE service_integrator_themes SET is_default = 0 WHERE service_integrator_id = ?',
+      [siId]
+    );
+
+    // Set new default
+    await this.pool.execute(
+      'UPDATE service_integrator_themes SET is_default = 1, updated_at = ? WHERE id = ?',
+      [Date.now(), themeId]
+    );
+  }
+
+  /**
+   * Get default theme for service integrator
+   */
+  async getSIDefaultTheme(siId: number): Promise<ServiceIntegratorTheme | null> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM service_integrator_themes WHERE service_integrator_id = ? AND is_default = 1 LIMIT 1',
+      [siId]
+    );
+
+    if ((rows as any[]).length === 0) return null;
+
+    const row = (rows as any[])[0];
+    return {
+      id: row.id,
+      serviceIntegratorId: row.service_integrator_id,
+      themeName: row.theme_name,
+      displayName: row.display_name,
+      description: row.description,
+      themeConfig: typeof row.theme_config === 'string' ? JSON.parse(row.theme_config) : row.theme_config,
+      primaryColor: row.primary_color,
+      secondaryColor: row.secondary_color,
+      accentColor: row.accent_color,
+      isActive: Boolean(row.is_active),
+      isDefault: Boolean(row.is_default),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+
+  /**
+   * Log theme usage (when assigned to customer)
+   */
+  async logThemeUsage(customerId: number, themeId: number, action: ThemeUsageLog['action']): Promise<void> {
+    await this.pool.execute(
+      'INSERT INTO theme_usage_logs (customer_id, theme_id, action, timestamp) VALUES (?, ?, ?, ?)',
+      [customerId, themeId, action, Date.now()]
+    );
+  }
+
+  /**
+   * Get theme usage statistics
+   */
+  async getThemeUsageStats(themeId: number, days: number = 30): Promise<{
+    totalAssignments: number;
+    activeCustomers: number;
+    recentActivity: Array<{ customerId: number; action: string; timestamp: number }>;
+  }> {
+    const since = Date.now() - days * 24 * 60 * 60 * 1000;
+
+    // Total assignments
+    const [assignRows] = await this.pool.execute(
+      `SELECT COUNT(DISTINCT customer_id) as total FROM theme_usage_logs
+       WHERE theme_id = ? AND action = 'assigned' AND timestamp > ?`,
+      [themeId, since]
+    );
+
+    // Active customers (currently using this theme)
+    const [activeRows] = await this.pool.execute(
+      `SELECT COUNT(*) as active FROM customers WHERE custom_theme_id = ?`,
+      [themeId]
+    );
+
+    // Recent activity
+    const [activityRows] = await this.pool.execute(
+      `SELECT customer_id, action, timestamp FROM theme_usage_logs
+       WHERE theme_id = ? AND timestamp > ?
+       ORDER BY timestamp DESC LIMIT 10`,
+      [themeId, since]
+    );
+
+    return {
+      totalAssignments: (assignRows as any[])[0].total || 0,
+      activeCustomers: (activeRows as any[])[0].active || 0,
+      recentActivity: (activityRows as any[]).map(row => ({
+        customerId: row.customer_id,
+        action: row.action,
+        timestamp: row.timestamp
+      }))
+    };
   }
 }
