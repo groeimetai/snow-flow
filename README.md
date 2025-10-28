@@ -23,6 +23,7 @@ Snow-Flow Enterprise is a **B2B2C SaaS platform** providing:
 
 | Documentation | Description |
 |---------------|-------------|
+| **[GETTING-STARTED.md](GETTING-STARTED.md)** | ⭐ **Complete setup guide** - Snow-Flow → SnowCode → Enterprise activation |
 | **[INTEGRATIONS.md](INTEGRATIONS.md)** | Complete guide for Jira, Azure DevOps, Confluence integrations |
 | **[MCP-REFERENCE.md](MCP-REFERENCE.md)** | MCP architecture, toolset, and API reference |
 | **[GCP-DEPLOYMENT-GUIDE.md](GCP-DEPLOYMENT-GUIDE.md)** | Production deployment on Google Cloud Platform |
@@ -75,60 +76,56 @@ Snow-Flow Enterprise is a **B2B2C SaaS platform** providing:
 
 ## 🚀 Quick Start
 
-### For Customers
+### Complete Setup Flow
 
-**1. Get License Key**
-- Contact: sales@snow-flow.dev
-- Or purchase: https://snow-flow.dev/pricing
+```
+1. Install Snow-Flow (Open Source)
+   ↓ 350+ ServiceNow MCP Tools
 
-**2. Install MCP Proxy**
+2. Install SnowCode (Code Editor)
+   ↓ Configure BYOLLM (Claude, GPT-4, etc.)
 
-Add to Claude Desktop config (`~/.config/Claude/claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "snow-flow-enterprise": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@snow-flow/mcp-proxy",
-        "--license-key",
-        "SNOW-TEAM-XXXX-XXXX-XXXX-XXXX"
-      ]
-    }
-  }
-}
+3. Setup ServiceNow OAuth
+   ↓ Connect to your ServiceNow instance
+
+4. (Optional) Activate Enterprise License
+   ↓ Unlock Jira/Azure/Confluence tools
+
+5. Start Building!
+   ↓ Autonomous agents + external integrations
 ```
 
-**3. Add Credentials**
+**📖 Follow the complete guide:** [**GETTING-STARTED.md**](./GETTING-STARTED.md)
 
-Login to portal and add service credentials:
-```
-https://portal.snow-flow.dev
-```
+---
 
-**4. Use Tools**
+### Quick Example: Using Enterprise Tools
+
+Once you've completed the setup, you can use tools like:
+
 ```typescript
-// Sync Jira backlog
-await snow_jira_sync_backlog({
-  projectKey: "PROJ",
-  status: ["To Do", "In Progress"],
-  syncToTable: "incident"
+// ServiceNow (Open Source - 350+ tools)
+await snow_create_record({
+  table: "incident",
+  data: { short_description: "Fix login bug", priority: 1 }
 });
 
-// Create Azure DevOps work item
+// Jira (Enterprise)
+await snow_jira_create_issue({
+  projectKey: "PROJ",
+  issueType: "Bug",
+  summary: "Fix login bug"
+});
+
+// Azure DevOps (Enterprise)
 await snow_azdo_create_work_item({
   organization: "myorg",
   project: "MyProject",
   workItemType: "Bug",
-  title: "Fix authentication issue"
+  title: "Fix login bug"
 });
 
-// Sync Confluence to KB
-await snow_confluence_sync_space({
-  spaceKey: "DOCS",
-  syncToKB: "IT"
-});
+// Agents can manage tasks across all platforms!
 ```
 
 ### For Service Integrators
