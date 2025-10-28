@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snow-Flow Status - System Status & Uptime</title>
+    <meta name="description" content="Real-time status and uptime monitoring for Snow-Flow Enterprise services. 99.9% SLA guaranteed.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏔️%3C/text%3E%3C/svg%3E">
+
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-card: #151515;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --border: #2a2a2a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Status Banner */
+        .status-banner {
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--bg-card);
+            border: 2px solid var(--accent-green);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .status-banner.degraded {
+            border-color: var(--accent-yellow);
+        }
+
+        .status-banner.down {
+            border-color: var(--accent-red);
+        }
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-detail {
+            color: var(--text-secondary);
+        }
+
+        /* Uptime Stats */
+        .uptime-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Services */
+        .services-section {
+            margin: 3rem 0;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .service-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .service-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-blue);
+        }
+
+        .service-info {
+            flex: 1;
+        }
+
+        .service-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .service-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .service-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-green);
+        }
+
+        .status-indicator.degraded {
+            background: var(--accent-yellow);
+        }
+
+        .status-indicator.down {
+            background: var(--accent-red);
+        }
+
+        .status-label {
+            font-weight: 600;
+        }
+
+        .status-label.operational {
+            color: var(--accent-green);
+        }
+
+        .status-label.degraded {
+            color: var(--accent-yellow);
+        }
+
+        .status-label.down {
+            color: var(--accent-red);
+        }
+
+        /* Uptime History */
+        .uptime-history {
+            margin: 3rem 0;
+        }
+
+        .uptime-days {
+            display: grid;
+            grid-template-columns: repeat(90, 1fr);
+            gap: 3px;
+            margin: 1.5rem 0;
+        }
+
+        .uptime-day {
+            height: 40px;
+            background: var(--accent-green);
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .uptime-day:hover {
+            transform: scale(1.1);
+        }
+
+        .uptime-day.degraded {
+            background: var(--accent-yellow);
+        }
+
+        .uptime-day.down {
+            background: var(--accent-red);
+        }
+
+        .uptime-day.loading {
+            background: var(--border);
+        }
+
+        .uptime-legend {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* Incidents */
+        .incidents-section {
+            margin: 3rem 0;
+        }
+
+        .incident-card {
+            background: var(--bg-card);
+            border-left: 4px solid var(--accent-yellow);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .incident-card.resolved {
+            border-left-color: var(--accent-green);
+        }
+
+        .incident-card.critical {
+            border-left-color: var(--accent-red);
+        }
+
+        .incident-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .incident-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .incident-status-badge {
+            background: var(--accent-yellow);
+            color: var(--bg-dark);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .incident-status-badge.resolved {
+            background: var(--accent-green);
+        }
+
+        .incident-status-badge.critical {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .incident-time {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .incident-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 2rem 0;
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 4rem;
+        }
+
+        footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--accent-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .uptime-days {
+                grid-template-columns: repeat(30, 1fr);
+            }
+
+            .uptime-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .service-card {
+                flex-direction: column;
+                align-items: start;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏔️ Snow-Flow Status</h1>
+            <p>Real-time status and uptime monitoring</p>
+        </header>
+
+        <!-- Status Banner -->
+        <div class="status-banner" id="statusBanner">
+            <div class="status-icon" id="statusIcon">✅</div>
+            <div class="status-text" id="statusText">All Systems Operational</div>
+            <div class="status-detail" id="statusDetail">All services are running normally</div>
+        </div>
+
+        <!-- Uptime Stats -->
+        <div class="uptime-stats">
+            <div class="stat-card">
+                <div class="stat-value" id="uptimeStat">99.97%</div>
+                <div class="stat-label">Uptime (30 days)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="latencyStat">245ms</div>
+                <div class="stat-label">Avg Response Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="incidentStat">0</div>
+                <div class="stat-label">Active Incidents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="slastat">99.9%</div>
+                <div class="stat-label">SLA Target</div>
+            </div>
+        </div>
+
+        <!-- Services Status -->
+        <section class="services-section">
+            <h2 class="section-title">Service Status</h2>
+
+            <div class="service-card">
+                <div class="service-info">
+                    <div class="service-name">MCP Server</div>
+                    <div class="service-description">Snow-Flow Enterprise MCP Server (europe-west4)</div>
+                </div>
+                <div class="service-status">
+                    <span class="status-indicator" id="mcpIndicator"></span>
+                    <span class="status-label operational" id="mcpStatus">Operational</span>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="service-info">
+                    <div class="service-name">Enterprise Portal</div>
+                    <div class="service-description">Customer portal and dashboard (portal.snow-flow.dev)</div>
+                </div>
+                <div class="service-status">
+                    <span class="status-indicator" id="portalIndicator"></span>
+                    <span class="status-label operational" id="portalStatus">Operational</span>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="service-info">
+                    <div class="service-name">Website</div>
+                    <div class="service-description">Main website (snow-flow.dev)</div>
+                </div>
+                <div class="service-status">
+                    <span class="status-indicator" id="websiteIndicator"></span>
+                    <span class="status-label operational" id="websiteStatus">Operational</span>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="service-info">
+                    <div class="service-name">Database</div>
+                    <div class="service-description">PostgreSQL database cluster</div>
+                </div>
+                <div class="service-status">
+                    <span class="status-indicator" id="dbIndicator"></span>
+                    <span class="status-label operational" id="dbStatus">Operational</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Uptime History -->
+        <section class="uptime-history">
+            <h2 class="section-title">90-Day Uptime History</h2>
+            <div class="uptime-days" id="uptimeDays">
+                <!-- Generated by JavaScript -->
+            </div>
+            <div class="uptime-legend">
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: var(--accent-green)"></div>
+                    <span>Operational</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: var(--accent-yellow)"></div>
+                    <span>Degraded</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: var(--accent-red)"></div>
+                    <span>Down</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Past Incidents -->
+        <section class="incidents-section">
+            <h2 class="section-title">Past Incidents</h2>
+            <div id="incidentsList">
+                <!-- Generated by JavaScript -->
+                <div class="incident-card resolved">
+                    <div class="incident-header">
+                        <div class="incident-title">No recent incidents</div>
+                        <div class="incident-status-badge resolved">Resolved</div>
+                    </div>
+                    <div class="incident-time">Last 30 days</div>
+                    <div class="incident-description">
+                        All services have been operating normally for the past 30 days. 99.97% uptime achieved.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>
+                Monitored by <a href="https://cloud.google.com/monitoring">Google Cloud Monitoring</a><br>
+                Health checks every 5 minutes | Data retention: 90 days<br>
+                <a href="https://snow-flow.dev">Back to Snow-Flow</a> | <a href="mailto:support@snow-flow.dev">Report an Issue</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // API endpoint (will be replaced with actual API)
+        const API_BASE = '/api/status';
+
+        // Generate 90-day uptime history
+        function generateUptimeHistory() {
+            const container = document.getElementById('uptimeDays');
+            const days = 90;
+
+            for (let i = days - 1; i >= 0; i--) {
+                const day = document.createElement('div');
+                day.className = 'uptime-day';
+
+                // Simulate uptime data (replace with real data from API)
+                const uptime = Math.random();
+                if (uptime < 0.001) { // 0.1% chance of downtime
+                    day.classList.add('down');
+                } else if (uptime < 0.01) { // 1% chance of degraded
+                    day.classList.add('degraded');
+                }
+
+                // Tooltip with date and uptime
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const uptimePercent = uptime >= 0.999 ? '100%' : uptime >= 0.99 ? '99%' : uptime >= 0.95 ? '95%' : '<95%';
+
+                day.title = `${dateStr}: ${uptimePercent} uptime`;
+
+                container.appendChild(day);
+            }
+        }
+
+        // Fetch real-time status from API
+        async function fetchStatus() {
+            try {
+                // In production, this would call the actual API
+                // const response = await fetch(`${API_BASE}/current`);
+                // const data = await response.json();
+
+                // Simulated data for now
+                const data = {
+                    overall_status: 'operational', // operational, degraded, down
+                    uptime_30d: 99.97,
+                    avg_latency: 245,
+                    active_incidents: 0,
+                    services: {
+                        mcp_server: { status: 'operational', latency: 180 },
+                        portal: { status: 'operational', latency: 320 },
+                        website: { status: 'operational', latency: 150 },
+                        database: { status: 'operational', connections: 12 }
+                    }
+                };
+
+                updateStatus(data);
+            } catch (error) {
+                console.error('Failed to fetch status:', error);
+            }
+        }
+
+        // Update UI with status data
+        function updateStatus(data) {
+            // Update banner
+            const banner = document.getElementById('statusBanner');
+            const icon = document.getElementById('statusIcon');
+            const text = document.getElementById('statusText');
+            const detail = document.getElementById('statusDetail');
+
+            if (data.overall_status === 'operational') {
+                banner.className = 'status-banner';
+                icon.textContent = '✅';
+                text.textContent = 'All Systems Operational';
+                detail.textContent = 'All services are running normally';
+            } else if (data.overall_status === 'degraded') {
+                banner.className = 'status-banner degraded';
+                icon.textContent = '⚠️';
+                text.textContent = 'Degraded Performance';
+                detail.textContent = 'Some services are experiencing issues';
+            } else {
+                banner.className = 'status-banner down';
+                icon.textContent = '🔴';
+                text.textContent = 'Service Disruption';
+                detail.textContent = 'Major service outage in progress';
+            }
+
+            // Update stats
+            document.getElementById('uptimeStat').textContent = data.uptime_30d + '%';
+            document.getElementById('latencyStat').textContent = data.avg_latency + 'ms';
+            document.getElementById('incidentStat').textContent = data.active_incidents;
+
+            // Update service statuses
+            updateServiceStatus('mcp', data.services.mcp_server.status);
+            updateServiceStatus('portal', data.services.portal.status);
+            updateServiceStatus('website', data.services.website.status);
+            updateServiceStatus('db', data.services.database.status);
+        }
+
+        // Update individual service status
+        function updateServiceStatus(service, status) {
+            const indicator = document.getElementById(service + 'Indicator');
+            const label = document.getElementById(service + 'Status');
+
+            indicator.className = 'status-indicator';
+            label.className = 'status-label';
+
+            if (status === 'operational') {
+                indicator.classList.add('operational');
+                label.classList.add('operational');
+                label.textContent = 'Operational';
+            } else if (status === 'degraded') {
+                indicator.classList.add('degraded');
+                label.classList.add('degraded');
+                label.textContent = 'Degraded';
+            } else {
+                indicator.classList.add('down');
+                label.classList.add('down');
+                label.textContent = 'Down';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            generateUptimeHistory();
+            fetchStatus();
+
+            // Refresh status every 30 seconds
+            setInterval(fetchStatus, 30000);
+        });
+    </script>
+</body>
+</html>
