@@ -8,6 +8,7 @@
 import mysql from 'mysql2/promise';
 import { Connector } from '@google-cloud/cloud-sql-connector';
 import crypto from 'crypto';
+import { KMSEncryptionService } from '../services/kms-encryption.js';
 
 // TypeScript Interfaces (unchanged from SQLite version)
 export interface ServiceIntegrator {
@@ -225,6 +226,7 @@ export class LicenseDatabase {
   public pool!: mysql.Pool; // Public for migration runner access
   private connector?: Connector;
   private isInitialized = false;
+  private kmsService?: KMSEncryptionService; // KMS envelope encryption service
 
   /**
    * Initialize database connection pool
@@ -288,10 +290,31 @@ export class LicenseDatabase {
       const connection = await this.pool.getConnection();
       await connection.ping();
       connection.release();
-      this.isInitialized = true;
     } catch (error) {
       throw new Error(`Failed to connect to MySQL: ${error instanceof Error ? error.message : String(error)}`);
     }
+
+    // Initialize KMS encryption service (if KMS is configured)
+    try {
+      if (process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT) {
+        this.kmsService = new KMSEncryptionService();
+        console.log('✅ KMS encryption enabled for credentials');
+
+        // Test KMS connectivity
+        const kmsTest = await this.kmsService.testConnection();
+        if (!kmsTest) {
+          console.warn('⚠️  KMS test failed - falling back to local encryption');
+          this.kmsService = undefined;
+        }
+      } else {
+        console.log('ℹ️  KMS not configured - using local AES-256-GCM encryption');
+      }
+    } catch (error) {
+      console.warn('⚠️  KMS initialization failed - falling back to local encryption:', error);
+      this.kmsService = undefined;
+    }
+
+    this.isInitialized = true;
   }
 
   /**
@@ -1318,11 +1341,11 @@ export class LicenseDatabase {
   }
 
   // ============================================================================
-  // CREDENTIALS MANAGEMENT (AES-256-GCM Encryption)
+  // CREDENTIALS MANAGEMENT (KMS Envelope Encryption or AES-256-GCM)
   // ============================================================================
 
   /**
-   * Get encryption key from environment variable
+   * Get encryption key from environment variable (fallback when KMS not available)
    * MUST be exactly 32 bytes (256 bits) for AES-256
    */
   private getEncryptionKey(): Buffer {
@@ -1335,45 +1358,57 @@ export class LicenseDatabase {
   }
 
   /**
-   * Encrypt credential data using AES-256-GCM
-   * Returns format: iv:authTag:encryptedData (hex-encoded)
+   * Encrypt credential data
+   * Uses KMS envelope encryption if available, otherwise local AES-256-GCM
    */
-  private encryptCredential(plaintext: string): string {
-    const iv = crypto.randomBytes(16); // 128-bit IV
-    const key = this.getEncryptionKey();
-    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  private async encryptCredential(plaintext: string): Promise<string> {
+    if (this.kmsService) {
+      // KMS envelope encryption (format: encrypted_dek:iv:authTag:encrypted_data)
+      return await this.kmsService.encrypt(plaintext);
+    } else {
+      // Fallback: Local AES-256-GCM (format: iv:authTag:encrypted_data)
+      const iv = crypto.randomBytes(16); // 128-bit IV
+      const key = this.getEncryptionKey();
+      const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 
-    let encrypted = cipher.update(plaintext, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
+      let encrypted = cipher.update(plaintext, 'utf8', 'hex');
+      encrypted += cipher.final('hex');
 
-    const authTag = cipher.getAuthTag();
+      const authTag = cipher.getAuthTag();
 
-    // Return iv:authTag:encrypted (all hex-encoded)
-    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+      return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+    }
   }
 
   /**
    * Decrypt credential data
-   * Expects format: iv:authTag:encryptedData (hex-encoded)
+   * Supports both KMS envelope encryption and local AES-256-GCM
    */
-  private decryptCredential(ciphertext: string): string {
+  private async decryptCredential(ciphertext: string): Promise<string> {
     const parts = ciphertext.split(':');
-    if (parts.length !== 3) {
-      throw new Error('Invalid ciphertext format');
+
+    // KMS format: encrypted_dek:iv:authTag:encrypted_data (4 parts)
+    if (parts.length === 4 && this.kmsService) {
+      return await this.kmsService.decrypt(ciphertext);
     }
 
-    const iv = Buffer.from(parts[0], 'hex');
-    const authTag = Buffer.from(parts[1], 'hex');
-    const encrypted = parts[2];
+    // Local AES-256-GCM format: iv:authTag:encrypted_data (3 parts)
+    if (parts.length === 3) {
+      const iv = Buffer.from(parts[0], 'hex');
+      const authTag = Buffer.from(parts[1], 'hex');
+      const encrypted = parts[2];
 
-    const key = this.getEncryptionKey();
-    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-    decipher.setAuthTag(authTag);
+      const key = this.getEncryptionKey();
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+      decipher.setAuthTag(authTag);
 
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
 
-    return decrypted;
+      return decrypted;
+    }
+
+    throw new Error('Invalid ciphertext format');
   }
 
   /**
@@ -1399,10 +1434,10 @@ export class LicenseDatabase {
     const now = Date.now();
 
     // Encrypt sensitive fields
-    const encryptedAccessToken = data.accessToken ? this.encryptCredential(data.accessToken) : null;
-    const encryptedRefreshToken = data.refreshToken ? this.encryptCredential(data.refreshToken) : null;
-    const encryptedApiToken = data.apiToken ? this.encryptCredential(data.apiToken) : null;
-    const encryptedPassword = data.password ? this.encryptCredential(data.password) : null;
+    const encryptedAccessToken = data.accessToken ? await this.encryptCredential(data.accessToken) : null;
+    const encryptedRefreshToken = data.refreshToken ? await this.encryptCredential(data.refreshToken) : null;
+    const encryptedApiToken = data.apiToken ? await this.encryptCredential(data.apiToken) : null;
+    const encryptedPassword = data.password ? await this.encryptCredential(data.password) : null;
 
     const [result] = await this.pool.execute(
       `INSERT INTO customer_credentials (
@@ -1483,18 +1518,25 @@ export class LicenseDatabase {
       [row.id, customerId, now]
     );
 
-    // Decrypt sensitive fields
+    // Decrypt sensitive fields (parallel for performance)
+    const [accessToken, refreshToken, apiToken, password] = await Promise.all([
+      row.access_token ? this.decryptCredential(row.access_token) : Promise.resolve(undefined),
+      row.refresh_token ? this.decryptCredential(row.refresh_token) : Promise.resolve(undefined),
+      row.api_token ? this.decryptCredential(row.api_token) : Promise.resolve(undefined),
+      row.password ? this.decryptCredential(row.password) : Promise.resolve(undefined)
+    ]);
+
     const credential: CustomerCredential = {
       id: row.id,
       customerId: row.customer_id,
       serviceType: row.service_type,
       credentialType: row.credential_type,
       baseUrl: row.base_url,
-      accessToken: row.access_token ? this.decryptCredential(row.access_token) : undefined,
-      refreshToken: row.refresh_token ? this.decryptCredential(row.refresh_token) : undefined,
-      apiToken: row.api_token ? this.decryptCredential(row.api_token) : undefined,
+      accessToken,
+      refreshToken,
+      apiToken,
       username: row.username || undefined,
-      password: row.password ? this.decryptCredential(row.password) : undefined,
+      password,
       email: row.email || undefined,
       clientId: row.client_id || undefined,
       tokenType: row.token_type || undefined,
@@ -1523,36 +1565,44 @@ export class LicenseDatabase {
       [customerId]
     );
 
-    const credentials: CustomerCredential[] = [];
+    // Decrypt all credentials in parallel for performance
+    const credentials: CustomerCredential[] = await Promise.all(
+      (rows as any[]).map(async (row) => {
+        const [accessToken, refreshToken, apiToken, password] = await Promise.all([
+          row.access_token ? this.decryptCredential(row.access_token) : Promise.resolve(undefined),
+          row.refresh_token ? this.decryptCredential(row.refresh_token) : Promise.resolve(undefined),
+          row.api_token ? this.decryptCredential(row.api_token) : Promise.resolve(undefined),
+          row.password ? this.decryptCredential(row.password) : Promise.resolve(undefined)
+        ]);
 
-    for (const row of rows as any[]) {
-      credentials.push({
-        id: row.id,
-        customerId: row.customer_id,
-        serviceType: row.service_type,
-        credentialType: row.credential_type,
-        baseUrl: row.base_url,
-        accessToken: row.access_token ? this.decryptCredential(row.access_token) : undefined,
-        refreshToken: row.refresh_token ? this.decryptCredential(row.refresh_token) : undefined,
-        apiToken: row.api_token ? this.decryptCredential(row.api_token) : undefined,
-        username: row.username || undefined,
-        password: row.password ? this.decryptCredential(row.password) : undefined,
-        email: row.email || undefined,
-        clientId: row.client_id || undefined,
-        tokenType: row.token_type || undefined,
-        expiresAt: row.expires_at || undefined,
-        scope: row.scope || undefined,
-        configJson: row.config_json || undefined,
-        enabled: !!row.enabled,
-        lastUsed: row.last_used || undefined,
-        lastRefreshed: row.last_refreshed || undefined,
-        lastTestStatus: row.last_test_status || undefined,
-        lastTestMessage: row.last_test_message || undefined,
-        lastTestedAt: row.last_tested_at || undefined,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
-      });
-    }
+        return {
+          id: row.id,
+          customerId: row.customer_id,
+          serviceType: row.service_type,
+          credentialType: row.credential_type,
+          baseUrl: row.base_url,
+          accessToken,
+          refreshToken,
+          apiToken,
+          username: row.username || undefined,
+          password,
+          email: row.email || undefined,
+          clientId: row.client_id || undefined,
+          tokenType: row.token_type || undefined,
+          expiresAt: row.expires_at || undefined,
+          scope: row.scope || undefined,
+          configJson: row.config_json || undefined,
+          enabled: !!row.enabled,
+          lastUsed: row.last_used || undefined,
+          lastRefreshed: row.last_refreshed || undefined,
+          lastTestStatus: row.last_test_status || undefined,
+          lastTestMessage: row.last_test_message || undefined,
+          lastTestedAt: row.last_tested_at || undefined,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at
+        };
+      })
+    );
 
     return credentials;
   }

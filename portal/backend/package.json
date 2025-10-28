@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@google-cloud/cloud-sql-connector": "^1.8.4",
+    "@google-cloud/kms": "^5.2.1",
     "ajv": "^8.12.0",
     "axios": "^1.6.5",
     "better-sqlite3": "^9.2.2",
