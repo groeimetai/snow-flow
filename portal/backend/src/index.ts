@@ -146,6 +146,83 @@ app.get('/health', async (req: Request, res: Response) => {
   }
 });
 
+// Debug endpoint for migrations (admin only)
+app.get('/debug/migrations', async (req: Request, res: Response) => {
+  try {
+    // Check admin key
+    const adminKey = req.headers['x-admin-key'] || req.query.admin_key;
+    if (!adminKey || adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const status = await migrationRunner.getMigrationStatus();
+
+    // Check if customer_credentials table exists
+    let tableExists = false;
+    try {
+      const [rows] = await db.pool.execute(
+        "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'licenses' AND table_name = 'customer_credentials'"
+      );
+      tableExists = (rows as any)[0].count > 0;
+    } catch (err) {
+      // Ignore error
+    }
+
+    // Get migrations_history contents
+    let executedMigrations: any[] = [];
+    try {
+      const [rows] = await db.pool.execute(
+        'SELECT * FROM migrations_history ORDER BY executed_at DESC'
+      );
+      executedMigrations = rows as any[];
+    } catch (err) {
+      // Table might not exist
+    }
+
+    res.json({
+      migrationStatus: status,
+      customerCredentialsTableExists: tableExists,
+      executedMigrations,
+      migrationsDir: '/app/migrations',
+      workingDir: process.cwd()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+  }
+});
+
+// Force re-run migrations (admin only)
+app.post('/debug/migrations/force-run', async (req: Request, res: Response) => {
+  try {
+    // Check admin key
+    const adminKey = req.headers['x-admin-key'] || req.query.admin_key;
+    if (!adminKey || adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Clear migrations_history to force re-run
+    await db.pool.execute('DELETE FROM migrations_history WHERE filename = ?', ['001_add_customer_credentials.sql']);
+
+    // Re-run migrations
+    await migrationRunner.runMigrations();
+
+    res.json({
+      success: true,
+      message: 'Migrations re-executed',
+      status: await migrationRunner.getMigrationStatus()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+  }
+});
+
 // API routes (will be initialized after DB connection)
 let apiRoutesInitialized = false;
 
