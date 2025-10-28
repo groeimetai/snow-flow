@@ -98,14 +98,24 @@ export class MigrationRunner {
       .filter(f => f.endsWith('.sql'))
       .sort(); // Sort alphabetically (001_, 002_, etc.)
 
+    logger.info(`📁 Found ${files.length} migration file(s): ${files.join(', ')}`);
+
     const executed = await this.getExecutedMigrations();
+    logger.info(`✔️  Already executed: ${executed.size} migration(s)`);
+    if (executed.size > 0) {
+      logger.info(`   Executed files: ${Array.from(executed).join(', ')}`);
+    }
+
     const pending: Migration[] = [];
 
     for (const filename of files) {
       if (!executed.has(filename)) {
         const filepath = path.join(this.migrationsDir, filename);
         const sql = fs.readFileSync(filepath, 'utf-8');
+        logger.info(`📝 Pending migration: ${filename} (${sql.length} bytes)`);
         pending.push({ filename, sql });
+      } else {
+        logger.info(`⏭️  Skipping already executed: ${filename}`);
       }
     }
 
@@ -119,24 +129,46 @@ export class MigrationRunner {
     const startTime = Date.now();
 
     logger.info(`🔄 Running migration: ${migration.filename}`);
+    logger.info(`📝 SQL length: ${migration.sql.length} characters`);
 
     try {
+      // Remove multi-line comments /* ... */
+      let cleanedSql = migration.sql.replace(/\/\*[\s\S]*?\*\//g, '');
+
       // Split SQL into individual statements (separated by semicolon)
-      const statements = migration.sql
+      const statements = cleanedSql
         .split(';')
         .map(s => s.trim())
-        .filter(s => s.length > 0 && !s.startsWith('--') && !s.startsWith('/*'));
+        .map(s => {
+          // Remove single-line comments from each statement
+          return s.split('\n')
+            .filter(line => !line.trim().startsWith('--'))
+            .join('\n')
+            .trim();
+        })
+        .filter(s => s.length > 0);
+
+      logger.info(`📋 Found ${statements.length} SQL statement(s) to execute`);
 
       // Execute each statement
+      let statementIndex = 0;
       for (const statement of statements) {
+        statementIndex++;
+        const statementPreview = statement.substring(0, 100).replace(/\s+/g, ' ');
+        logger.info(`  ⚙️  [${statementIndex}/${statements.length}] ${statementPreview}...`);
+
         if (statement.toLowerCase().startsWith('select')) {
           // SELECT statements for verification - just log results
           const [rows] = await this.db.pool.execute(statement);
           if ((rows as any[]).length > 0) {
-            logger.info(`  ℹ️  ${JSON.stringify((rows as any[])[0])}`);
+            logger.info(`  ✅ [${statementIndex}] Query result: ${JSON.stringify((rows as any[])[0])}`);
           }
         } else {
-          await this.db.pool.execute(statement);
+          const [result] = await this.db.pool.execute(statement);
+          logger.info(`  ✅ [${statementIndex}] Statement executed successfully`);
+          if ((result as any).affectedRows !== undefined) {
+            logger.info(`     Affected rows: ${(result as any).affectedRows}`);
+          }
         }
       }
 
@@ -150,7 +182,12 @@ export class MigrationRunner {
 
       logger.info(`✅ Migration completed: ${migration.filename} (${executionTime}ms)`);
     } catch (error) {
-      logger.error(`❌ Migration failed: ${migration.filename}`, error);
+      logger.error(`❌ Migration failed: ${migration.filename}`, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        errorCode: (error as any).code,
+        errorSqlMessage: (error as any).sqlMessage
+      });
       throw error;
     }
   }

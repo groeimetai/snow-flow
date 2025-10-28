@@ -2,8 +2,6 @@
 -- Created: 2025-10-28
 -- Purpose: Store encrypted credentials for customers (Jira, Azure DevOps, Confluence, ServiceNow, etc.)
 
-USE licenses;
-
 -- Customer Credentials Table
 -- Stores encrypted API credentials for external service integrations
 CREATE TABLE IF NOT EXISTS customer_credentials (

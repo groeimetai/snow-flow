@@ -91,7 +91,10 @@ const limiter = rateLimit({
   max: 100,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  validate: {
+    trustProxy: false // Cloud Run handles proxy headers
+  }
 });
 
 app.use('/api', limiter);
