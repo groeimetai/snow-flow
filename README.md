@@ -1,203 +1,376 @@
 # Snow-Flow Enterprise
 
-**Commercial License - Private Repository**
+**Version:** 2.0.0 | **License:** Commercial | **Status:** Production Ready
 
-Enterprise-grade features for Snow-Flow, providing advanced integrations, security, and compliance capabilities for large-scale ServiceNow deployments.
+Enterprise-grade ServiceNow development platform with AI-powered integrations, autonomous agents, and advanced security.
 
-## 🎯 Features
+---
 
-### Integrations
-- **Jira Deep Integration** - Bi-directional sync, backlog management, automated workflows
-- **Azure DevOps Integration** - Work item sync, pipeline integration, release management
-- **Confluence Integration** - Knowledge base sync, automated documentation
+## 🎯 What is Snow-Flow Enterprise?
 
-### Security & Compliance
-- **SSO/SAML Authentication** - Enterprise identity provider integration
-- **Advanced Audit Logging** - Comprehensive activity tracking and compliance reporting
-- **Role-Based Access Control** - Granular permission management
+Snow-Flow Enterprise is a **B2B2C SaaS platform** providing:
 
-### License Management
-- **Automated Validation** - Phone-home license verification
-- **Usage Monitoring** - Track instances and user activity
-- **Grace Period Support** - Continue working during temporary connectivity issues
+- ✅ **40+ MCP Tools** for Jira, Azure DevOps, Confluence, and ML/Analytics
+- ✅ **Remote Execution** - integration code stays on our secure server
+- ✅ **Autonomous Agents** - AI agents manage backlogs 24/7
+- ✅ **Enterprise Security** - Google Cloud KMS encryption, SOC 2/ISO 27001 ready
+- ✅ **White-Label Portal** - branded customer experience for service integrators
+- ✅ **Zero Maintenance** - updates deploy without customer reinstalls
 
-## 📦 Installation
+---
 
-**Requirements:**
-- Valid Snow-Flow Enterprise license key
-- Snow-Flow Core >= 8.5.1 (npm install -g snow-flow@8.5.1)
-- Node.js >= 18.0.0
+## 📋 Quick Links
 
-```bash
-npm install @snow-flow/enterprise
+| Documentation | Description |
+|---------------|-------------|
+| **[INTEGRATIONS.md](INTEGRATIONS.md)** | Complete guide for Jira, Azure DevOps, Confluence integrations |
+| **[MCP-REFERENCE.md](MCP-REFERENCE.md)** | MCP architecture, toolset, and API reference |
+| **[GCP-DEPLOYMENT-GUIDE.md](GCP-DEPLOYMENT-GUIDE.md)** | Production deployment on Google Cloud Platform |
+| **[LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md)** | Commercial licensing terms |
+| **[portal/README.md](portal/README.md)** | Portal documentation (web dashboard) |
+| **[portal/backend/KMS-SETUP.md](portal/backend/KMS-SETUP.md)** | Google Cloud KMS encryption setup |
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     CUSTOMERS                                │
+│  Claude Code + MCP Proxy (local)                            │
+└────────────────────────┬────────────────────────────────────┘
+                         │ HTTPS (license key auth)
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│            SNOW-FLOW ENTERPRISE (GCP Cloud Run)             │
+│  ┌─────────────────┐  ┌──────────────────┐  ┌────────────┐│
+│  │   MCP Server    │  │      Portal      │  │  License   ││
+│  │  (40+ tools)    │  │  (Web Dashboard) │  │  Database  ││
+│  │                 │  │                  │  │  (MySQL)   ││
+│  │ • Jira (8)      │  │ • Credentials    │  │            ││
+│  │ • Azure (10)    │  │ • Analytics      │  │ • Licenses ││
+│  │ • Confluence(8) │  │ • White-label    │  │ • Usage    ││
+│  │ • ML (15+)      │  │ • Admin          │  │ • Audit    ││
+│  └─────────────────┘  └──────────────────┘  └────────────┘│
+│                              │                              │
+│              ┌───────────────┴───────────────┐              │
+│              ↓                               ↓              │
+│     ┌─────────────────┐           ┌──────────────────┐     │
+│     │  Google Cloud   │           │  External APIs   │     │
+│     │      KMS        │           │ • Jira           │     │
+│     │  (Encryption)   │           │ • Azure DevOps   │     │
+│     └─────────────────┘           │ • Confluence     │     │
+│                                   └──────────────────┘     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## 🔑 License Key Setup
+**Key Features:**
+- 🔒 **Credentials** encrypted with Google Cloud KMS (HSM-backed)
+- 📊 **Usage tracking** for every API call
+- 🔄 **Automatic updates** without customer reinstalls
+- 🌍 **Multi-region** (currently: europe-west4, expandable)
+- ⚡ **Serverless** Cloud Run (auto-scales 0 → 1000+)
 
-### Environment Variable (Recommended)
-```bash
-export SNOW_LICENSE_KEY="SNOW-ENT-YOUR-KEY"
-```
+---
 
-### Programmatic Configuration
-```typescript
-import { LicenseValidator } from '@snow-flow/enterprise';
+## 🚀 Quick Start
 
-// Set license key at startup
-LicenseValidator.getInstance().setLicenseKey('SNOW-ENT-YOUR-KEY');
-```
+### For Customers
 
-### Configuration File
+**1. Get License Key**
+- Contact: sales@snow-flow.dev
+- Or purchase: https://snow-flow.dev/pricing
+
+**2. Install MCP Proxy**
+
+Add to Claude Desktop config (`~/.config/Claude/claude_desktop_config.json`):
 ```json
-// .snow-flow-enterprise.json
 {
-  "license": {
-    "key": "SNOW-ENT-YOUR-KEY",
-    "server": "https://license.snow-flow.dev"
+  "mcpServers": {
+    "snow-flow-enterprise": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@snow-flow/mcp-proxy",
+        "--license-key",
+        "SNOW-TEAM-XXXX-XXXX-XXXX-XXXX"
+      ]
+    }
   }
 }
 ```
 
-## 🚀 Quick Start
+**3. Add Credentials**
 
-### Jira Integration Example
+Login to portal and add service credentials:
+```
+https://portal.snow-flow.dev
+```
+
+**4. Use Tools**
 ```typescript
-import { JiraApiClient, JiraSyncEngine } from '@snow-flow/enterprise';
-
-// Initialize Jira client
-const jiraClient = new JiraApiClient({
-  host: 'your-domain.atlassian.net',
-  username: 'your-email@company.com',
-  password: 'your-api-token', // Or API token
-  protocol: 'https',
-  apiVersion: '2',
-  strictSSL: true
-});
-
-// Sync backlog to ServiceNow
-const syncEngine = new JiraSyncEngine(jiraClient);
-const result = await syncEngine.syncBacklog({
-  projectKey: 'SNOW',
-  sprint: 'Sprint 23'
-});
-
-console.log(`✅ Synced ${result.synced} issues`);
-```
-
-### Using MCP Tools (OpenCode/Claude Code)
-```javascript
-// Available MCP tools are automatically registered
+// Sync Jira backlog
 await snow_jira_sync_backlog({
-  projectKey: 'SNOW',
-  sprint: 'Sprint 23'
+  projectKey: "PROJ",
+  status: ["To Do", "In Progress"],
+  syncToTable: "incident"
 });
 
-await snow_jira_get_issue({
-  issueKey: 'SNOW-123'
+// Create Azure DevOps work item
+await snow_azdo_create_work_item({
+  organization: "myorg",
+  project: "MyProject",
+  workItemType: "Bug",
+  title: "Fix authentication issue"
+});
+
+// Sync Confluence to KB
+await snow_confluence_sync_space({
+  spaceKey: "DOCS",
+  syncToKB: "IT"
 });
 ```
 
-## 📚 Documentation
+### For Service Integrators
 
-Full documentation available at: https://docs.snow-flow.dev/enterprise
+**1. Get Master License**
+- Contact: sales@snow-flow.dev
+- Receive: `SNOW-SI-XXXX-XXXX-XXXX-XXXX`
 
-- [Getting Started](https://docs.snow-flow.dev/enterprise/getting-started)
-- [Jira Integration Guide](https://docs.snow-flow.dev/enterprise/jira)
-- [Azure DevOps Integration](https://docs.snow-flow.dev/enterprise/azure-devops)
-- [SSO Configuration](https://docs.snow-flow.dev/enterprise/sso)
-- [License Management](https://docs.snow-flow.dev/enterprise/license)
+**2. Configure White-Label Portal**
+- Custom domain
+- Logo upload
+- Theme customization
 
-## 🔧 Configuration
+**3. Create Customer Licenses**
 
-### Environment Variables
+Via Admin API:
 ```bash
-# License configuration
-SNOW_LICENSE_KEY=<your-license-key>
-SNOW_LICENSE_SERVER=https://license.snow-flow.dev
-
-# Jira configuration
-JIRA_HOST=your-domain.atlassian.net
-JIRA_USERNAME=your-email@company.com
-JIRA_API_TOKEN=your-api-token
-
-# Azure DevOps configuration
-AZURE_DEVOPS_ORG=your-org
-AZURE_DEVOPS_PAT=your-personal-access-token
-
-# Confluence configuration
-CONFLUENCE_HOST=your-domain.atlassian.net
-CONFLUENCE_USERNAME=your-email@company.com
-CONFLUENCE_API_TOKEN=your-api-token
+curl https://portal.snow-flow.dev/api/admin/licenses \
+  -H "X-Admin-Key: YOUR-ADMIN-KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "serviceIntegratorId": 1,
+    "tier": "pro",
+    "customerName": "Acme Corp",
+    "contactEmail": "admin@acme.com"
+  }'
 ```
-
-## 🏢 Enterprise Support
-
-### Support Channels
-- **Email**: support@snow-flow.dev
-- **Phone**: Available to Enterprise tier customers
-- **Slack**: Private enterprise Slack channel
-- **Portal**: https://support.snow-flow.dev
-
-### SLA
-- **Enterprise Tier**: 24/7 support, 4-hour response time
-- **Professional Tier**: Business hours, 24-hour response time
-- **Team Tier**: Email support, 48-hour response time
-
-## 📊 License Tiers
-
-| Feature | Team | Professional | Enterprise |
-|---------|------|--------------|------------|
-| Max Instances | 5 | 25 | 100+ |
-| Jira Integration | ✅ | ✅ | ✅ |
-| Azure DevOps | ❌ | ✅ | ✅ |
-| Confluence | ❌ | ✅ | ✅ |
-| SSO/SAML | ❌ | ❌ | ✅ |
-| Audit Logging | ❌ | ✅ | ✅ |
-| Priority Support | ❌ | ✅ | ✅ |
-| Phone Support | ❌ | ❌ | ✅ |
-| Dedicated Account Manager | ❌ | ❌ | ✅ |
-
-## 🔒 Security
-
-- **Data Encryption**: All data encrypted in transit (TLS 1.3) and at rest (AES-256)
-- **License Validation**: Secure phone-home with JWT tokens
-- **No Data Collection**: Only license validation data transmitted to Snow-Flow servers
-- **SOC 2 Compliant**: Annual security audits available upon request
-
-## 🛠️ Development
-
-```bash
-# Install dependencies
-npm install
-
-# Run tests
-npm test
-
-# Build
-npm run build
-
-# Build for production (includes obfuscation)
-npm run build:prod
-```
-
-## 📝 License
-
-Commercial License - See [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md)
-
-**This software is proprietary and confidential.** Unauthorized use, reproduction, or distribution is strictly prohibited.
-
-## 💼 Sales & Licensing
-
-**Start a trial:**
-https://snow-flow.dev/enterprise/trial
-
-**Request a quote:**
-Email: sales@snow-flow.dev
-
-**Contact sales:**
-Phone: +31 (0)20 123 4567 (Netherlands)
-Phone: +1 (555) 123-4567 (United States)
 
 ---
 
-Copyright © 2025 Snow-Flow B.V. All rights reserved.
+## 📦 Repository Structure
+
+```
+snow-flow-enterprise/
+├── mcp-proxy/              # Local MCP proxy (npm package)
+│   ├── src/index.ts        # stdio ↔ HTTPS bridge
+│   └── package.json        # Published to npm
+│
+├── mcp-server/             # Remote MCP server (Cloud Run)
+│   ├── src/
+│   │   ├── index.ts        # Express server
+│   │   ├── mcp-handler.ts  # MCP protocol
+│   │   ├── integrations/   # Jira, Azure, Confluence
+│   │   └── ml/             # ML models & analytics
+│   └── Dockerfile
+│
+├── portal/                 # Web portal (Cloud Run)
+│   ├── backend/            # Express API
+│   │   ├── src/
+│   │   │   ├── database/   # MySQL schema
+│   │   │   ├── routes/     # API endpoints
+│   │   │   ├── services/   # KMS encryption
+│   │   │   └── migrations/ # DB migrations
+│   │   └── Dockerfile
+│   └── frontend/           # React dashboard
+│       ├── src/
+│       │   ├── pages/      # Customer, SI, Admin views
+│       │   └── components/ # Reusable UI
+│       └── package.json
+│
+├── INTEGRATIONS.md         # ⭐ Integration guide (Jira/Azure/Confluence)
+├── MCP-REFERENCE.md        # ⭐ MCP architecture & toolset
+├── GCP-DEPLOYMENT-GUIDE.md # ⭐ Production deployment
+└── README.md               # This file
+```
+
+---
+
+## 🔐 Security & Compliance
+
+### Encryption
+
+- ✅ **Google Cloud KMS** envelope encryption for credentials
+- ✅ **HSM-backed keys** (Hardware Security Modules)
+- ✅ **Automatic key rotation** (90 days)
+- ✅ **Audit logging** for all key access
+- ✅ **TLS 1.3** for all communication
+
+### Compliance Certifications
+
+- ✅ **SOC 2 Type II** ready
+- ✅ **ISO 27001** ready
+- ✅ **GDPR** compliant
+- ✅ **HIPAA** compatible (with BAA)
+- ✅ **PCI-DSS Level 1** ready
+
+See [portal/backend/KMS-SETUP.md](portal/backend/KMS-SETUP.md) for detailed security setup.
+
+---
+
+## 🤖 Autonomous Agents
+
+Snow-Flow Enterprise enables **AI agents to work autonomously 24/7**:
+
+**Example: Backlog Agent**
+```typescript
+// Agent runs every 15 minutes
+while (true) {
+  // Get high-priority work
+  const issues = await snow_jira_search_issues({
+    jql: "status = 'To Do' AND priority = 'High'",
+    maxResults: 10
+  });
+
+  // Process each issue
+  for (const issue of issues) {
+    await snow_jira_transition_issue({
+      issueKey: issue.key,
+      transition: "In Progress",
+      comment: "🤖 Agent processing"
+    });
+
+    // Do the work...
+
+    await snow_jira_transition_issue({
+      issueKey: issue.key,
+      transition: "Done",
+      comment: "🤖 Agent completed"
+    });
+  }
+
+  await sleep(15 * 60 * 1000);
+}
+```
+
+See [INTEGRATIONS.md#autonomous-agent-workflows](INTEGRATIONS.md#autonomous-agent-workflows) for complete examples.
+
+---
+
+## 📊 Pricing Tiers
+
+| Feature | Team | Pro | Enterprise |
+|---------|------|-----|------------|
+| **Jira Tools** | 4 basic | 8 full | 8 full |
+| **Azure DevOps** | ❌ | 10 tools | 10 tools |
+| **Confluence** | ❌ | 4 basic | 8 full |
+| **ML & Analytics** | ❌ | 5 basic | 15 full |
+| **Max Instances** | 3 | 10 | Unlimited |
+| **Rate Limit** | 100/15min | 500/15min | 2000/15min |
+| **Support** | Community | Email | 24/7 Priority |
+| **SSO/SAML** | ❌ | ❌ | ✅ |
+| **White-Label** | ❌ | ❌ | ✅ |
+| **Custom Tools** | ❌ | ❌ | ✅ (on request) |
+
+**Pricing:** Contact sales@snow-flow.dev
+
+---
+
+## 🚀 Deployment
+
+### Production (Google Cloud Platform)
+
+```bash
+# 1. Setup GCP project
+gcloud projects create snow-flow-enterprise
+gcloud config set project snow-flow-enterprise
+
+# 2. Enable APIs
+gcloud services enable \
+  run.googleapis.com \
+  cloudbuild.googleapis.com \
+  sqladmin.googleapis.com \
+  cloudkms.googleapis.com
+
+# 3. Deploy (automatic via Cloud Build trigger)
+git push origin main
+```
+
+See [GCP-DEPLOYMENT-GUIDE.md](GCP-DEPLOYMENT-GUIDE.md) for complete instructions.
+
+### Local Development
+
+```bash
+# 1. Clone repository
+git clone https://github.com/your-org/snow-flow-enterprise
+cd snow-flow-enterprise
+
+# 2. Start local MySQL
+docker run -d \
+  --name snow-flow-mysql \
+  -e MYSQL_ROOT_PASSWORD=dev-password \
+  -e MYSQL_DATABASE=licenses \
+  -p 3306:3306 \
+  mysql:8.4
+
+# 3. Start MCP server
+cd mcp-server
+npm install
+cp .env.example .env
+npm run dev  # http://localhost:3000
+
+# 4. Start portal
+cd ../portal/backend
+npm install
+cp .env.example .env
+npm run dev  # http://localhost:8080
+```
+
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| **[INTEGRATIONS.md](INTEGRATIONS.md)** | Jira, Azure DevOps, Confluence setup & workflows |
+| **[MCP-REFERENCE.md](MCP-REFERENCE.md)** | MCP architecture, toolset (40+ tools), API reference |
+| **[GCP-DEPLOYMENT-GUIDE.md](GCP-DEPLOYMENT-GUIDE.md)** | Production deployment, Cloud Run, Cloud SQL, KMS |
+| **[portal/README.md](portal/README.md)** | Portal architecture, customer/SI/admin features |
+| **[portal/backend/KMS-SETUP.md](portal/backend/KMS-SETUP.md)** | Google Cloud KMS encryption setup |
+| **[portal/backend/DEPRECATED.md](portal/backend/DEPRECATED.md)** | Migration tracking, deprecated components |
+
+---
+
+## 🆘 Support
+
+- **Documentation**: https://docs.snow-flow.dev
+- **Customer Portal**: https://portal.snow-flow.dev
+- **Email**: support@snow-flow.dev
+- **Sales**: sales@snow-flow.dev
+- **Enterprise Support**: Available 24/7 for Enterprise tier
+
+---
+
+## 📄 License
+
+**Commercial License** - See [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md)
+
+This is proprietary software. Unauthorized copying, distribution, or use is strictly prohibited.
+
+---
+
+## 🙏 Credits
+
+Built with:
+- [Express.js](https://expressjs.com/) - Web framework
+- [React](https://react.dev/) - UI framework
+- [Google Cloud Platform](https://cloud.google.com/) - Infrastructure
+- [MySQL 8.4](https://www.mysql.com/) - Database
+- [Model Context Protocol](https://modelcontextprotocol.io/) - AI integration protocol
+
+---
+
+**Version:** 2.0.0
+**Last Updated:** 2025-10-28
+**Status:** ✅ Production Ready
