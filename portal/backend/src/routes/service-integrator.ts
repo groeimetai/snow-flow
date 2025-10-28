@@ -6,7 +6,17 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import { LicenseDatabase } from '../database/schema.js';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+interface ServiceIntegratorSessionPayload {
+  type: 'service-integrator';
+  serviceIntegratorId: number;
+  masterLicenseKey: string;
+  company: string;
+}
 
 export function createServiceIntegratorRoutes(db: LicenseDatabase): Router {
   const router = Router();
@@ -16,30 +26,55 @@ export function createServiceIntegratorRoutes(db: LicenseDatabase): Router {
    */
   async function authenticateSI(req: Request, res: Response, next: NextFunction) {
     try {
-      const token = req.headers.authorization?.replace('Bearer ', '');
+      const authHeader = req.headers.authorization;
 
-      if (!token) {
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({
           success: false,
           error: 'Missing authentication token'
         });
       }
 
-      // TODO: Verify JWT and extract SI ID
-      // For now, we'll trust the token format
-      const siId = parseInt(token.split('_')[1] || '0');
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
-      if (!siId) {
+      // Verify JWT token
+      const decoded = jwt.verify(token, JWT_SECRET) as ServiceIntegratorSessionPayload;
+
+      // Verify token type
+      if (decoded.type !== 'service-integrator') {
         return res.status(401).json({
           success: false,
-          error: 'Invalid token'
+          error: 'Invalid token type'
+        });
+      }
+
+      // Verify service integrator exists and is active
+      const si = await db.getServiceIntegratorById(decoded.serviceIntegratorId);
+      if (!si) {
+        return res.status(401).json({
+          success: false,
+          error: 'Service integrator not found'
+        });
+      }
+
+      if (si.status !== 'active') {
+        return res.status(403).json({
+          success: false,
+          error: 'Account is not active'
         });
       }
 
       // Attach SI ID to request
-      (req as any).serviceIntegratorId = siId;
+      (req as any).serviceIntegratorId = decoded.serviceIntegratorId;
       next();
     } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid or expired token'
+        });
+      }
+      console.error('Service integrator authentication error:', error);
       res.status(401).json({
         success: false,
         error: 'Authentication failed'
