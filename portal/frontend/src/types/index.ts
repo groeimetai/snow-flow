@@ -138,14 +138,28 @@ export interface ThemeConfig {
 // ===== USAGE & STATISTICS =====
 
 export interface UsageStats {
-  totalCalls: number;
-  callsToday: number;
-  callsThisWeek: number;
-  callsThisMonth: number;
-  apiCallsLast30Days: number;
+  totalCalls?: number;
+  callsToday?: number;
+  callsThisWeek?: number;
+  callsThisMonth?: number;
+  apiCallsLast30Days?: number;
   activeInstances: number;
-  toolBreakdown: ToolUsage[];
-  timeline: UsageDataPoint[];
+  toolBreakdown?: ToolUsage[];
+  timeline?: UsageDataPoint[];
+  // Customer portal usage stats
+  totalApiCalls?: number;
+  avgResponseTime?: number;
+  peakUsageDay?: string;
+  peakUsageCalls?: number;
+  errorRate?: number;
+  totalErrors?: number;
+  instanceUsage?: Array<{
+    instanceUrl: string;
+    apiCalls: number;
+    errors: number;
+    avgResponseTime: number;
+    lastActive: string;
+  }>;
 }
 
 export interface ToolUsage {
