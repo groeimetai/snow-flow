@@ -222,7 +222,7 @@ function convertBooleans(row: any, boolFields: string[]): any {
 }
 
 export class LicenseDatabase {
-  private pool!: mysql.Pool;
+  public pool!: mysql.Pool; // Public for migration runner access
   private connector?: Connector;
   private isInitialized = false;
 

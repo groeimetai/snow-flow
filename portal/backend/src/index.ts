@@ -29,6 +29,7 @@ import { createServiceIntegratorRoutes } from './routes/service-integrator.js';
 import { createCustomerRoutes } from './routes/customer.js';
 import { validateInput, errorHandler } from './middleware/security.js';
 import { apiLogger } from './middleware/api-logger.js';
+import { MigrationRunner } from './migrations/runner.js';
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -58,6 +59,7 @@ const logger = winston.createLogger({
 // Database instances
 let db: LicenseDatabase;
 let validationService: ValidationService | undefined;
+let migrationRunner: MigrationRunner;
 
 // Create Express app
 const app = express();
@@ -119,14 +121,26 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.json({
-    status: 'ok',
-    service: 'snow-flow-portal',
-    timestamp: new Date().toISOString(),
-    database: db ? 'connected' : 'disconnected',
-    credentialsDb: db ? 'mysql_integrated' : 'disconnected'
-  });
+app.get('/health', async (req: Request, res: Response) => {
+  try {
+    const migrationStatus = migrationRunner ? await migrationRunner.getMigrationStatus() : null;
+
+    res.json({
+      status: 'ok',
+      service: 'snow-flow-portal',
+      timestamp: new Date().toISOString(),
+      database: db ? 'connected' : 'disconnected',
+      credentialsDb: db ? 'mysql_integrated' : 'disconnected',
+      migrations: migrationStatus || { status: 'not_initialized' }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      service: 'snow-flow-portal',
+      timestamp: new Date().toISOString(),
+      error: 'Health check failed'
+    });
+  }
 });
 
 // API routes (will be initialized after DB connection)
@@ -179,6 +193,12 @@ async function startServer() {
     db = new LicenseDatabase();
     await db.initialize();
     logger.info('✅ License database connected');
+
+    // Run database migrations
+    logger.info('🔄 Running database migrations...');
+    migrationRunner = new MigrationRunner(db);
+    await migrationRunner.runMigrations();
+    logger.info('✅ Database migrations completed');
     logger.info('✅ Credentials management (MySQL with AES-256-GCM encryption)');
 
     // Initialize validation service (if it doesn't need credsDb)
