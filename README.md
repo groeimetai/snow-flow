@@ -260,27 +260,49 @@ See [INTEGRATIONS.md#autonomous-agent-workflows](INTEGRATIONS.md#autonomous-agen
 
 ## 💼 Licensing
 
-Snow-Flow is available in two versions:
+Snow-Flow is available in two editions:
+
+### 🆓 Open Source Edition (Base)
+The complete ServiceNow development platform with AI-powered automation.
+
+- ✅ **350+ ServiceNow MCP Tools** - comprehensive ServiceNow development toolkit
+- ✅ **Open source code editor/CLI** - dedicated code agent for ServiceNow development
+- ✅ **OAuth connection setup** - secure ServiceNow instance authentication
+- ✅ **Bring Your Own LLM** - use any LLM provider (Claude, GPT-4, etc.)
+- ✅ **Autonomous agents** - AI agents manage ServiceNow workflows 24/7
+- ✅ **Self-hosted** - run on your own infrastructure
+- ✅ **MIT License** - free for personal and commercial use
+- ✅ **Community support** - GitHub issues and community forums
+
+**Get started:** https://github.com/your-org/snow-flow
+
+---
 
 ### 🌟 Enterprise Edition (This Repository)
-- ✅ **Fully managed SaaS** - hosted on Google Cloud Platform
-- ✅ **40+ MCP Tools** - Jira (8), Azure DevOps (10), Confluence (8), ML/Analytics (15+)
-- ✅ **Unlimited integrations** - no service limits
+Everything in Open Source **+** external tool integrations via license key.
+
+**Unlocks 40+ Additional MCP Tools:**
+- 🔷 **Azure DevOps** (10 tools) - sync work items, run pipelines, monitor builds
+- 📋 **Jira** (8 tools) - backlog management, issue tracking, JQL queries
+- 📚 **Confluence** (8 tools) - documentation sync, page management
+- 🤖 **ML & Analytics** (15+ tools) - predictive intelligence, forecasting
+
+**Additional Enterprise Features:**
+- ✅ **Fully managed SaaS** - hosted on Google Cloud Platform (europe-west4)
+- ✅ **License key activation** - same open source project, extra MCP servers unlocked
+- ✅ **Agent task automation** - agents can fetch tasks from Jira/Azure/Confluence
 - ✅ **Enterprise security** - Google Cloud KMS encryption, SOC 2/ISO 27001 ready
 - ✅ **White-label portal** - branded customer experience for service integrators
-- ✅ **Autonomous agents** - AI agents manage backlogs 24/7
 - ✅ **Zero maintenance** - automatic updates without customer reinstalls
+- ✅ **Unlimited integrations** - no service limits
 - ✅ **24/7 priority support** - dedicated support team
 
+**How it works:**
+1. Install the open source Snow-Flow (350+ ServiceNow tools)
+2. Add enterprise license key to unlock Jira/Azure/Confluence MCP servers
+3. Agents can now manage backlogs across ServiceNow + Jira/Azure/Confluence
+
 **Pricing:** Custom enterprise pricing. Contact sales@snow-flow.dev
-
-### 🆓 Open Source Edition
-- ✅ **Self-hosted** - run on your own infrastructure
-- ✅ **Core MCP tools** - essential ServiceNow development tools
-- ✅ **Community support** - GitHub issues and community forums
-- ✅ **MIT License** - free for personal and commercial use
-
-**Get started:** https://github.com/your-org/snow-flow-open-source
 
 ---
 
