@@ -85,6 +85,14 @@ export class MigrationRunner {
    * Get pending migrations (sorted by filename)
    */
   private async getPendingMigrations(): Promise<Migration[]> {
+    // Check if migrations directory exists
+    if (!fs.existsSync(this.migrationsDir)) {
+      logger.warn(`⚠️  Migrations directory not found: ${this.migrationsDir}`);
+      logger.warn(`⚠️  Current working directory: ${process.cwd()}`);
+      logger.warn(`⚠️  Expected migrations at: ${this.migrationsDir}`);
+      throw new Error(`Migrations directory not found: ${this.migrationsDir}. Ensure migrations are copied to Docker image.`);
+    }
+
     // Read all .sql files from migrations directory
     const files = fs.readdirSync(this.migrationsDir)
       .filter(f => f.endsWith('.sql'))
@@ -189,6 +197,16 @@ export class MigrationRunner {
     lastMigration?: { filename: string; executedAt: number };
   }> {
     await this.initMigrationsTable();
+
+    // Check if migrations directory exists
+    if (!fs.existsSync(this.migrationsDir)) {
+      logger.warn(`⚠️  Migrations directory not found during status check: ${this.migrationsDir}`);
+      return {
+        total: 0,
+        executed: 0,
+        pending: 0
+      };
+    }
 
     const files = fs.readdirSync(this.migrationsDir)
       .filter(f => f.endsWith('.sql'));

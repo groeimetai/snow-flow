@@ -33,6 +33,9 @@ COPY --from=builder /app/backend/dist ./dist
 # Copy built frontend from builder
 COPY --from=builder /app/frontend/dist ./frontend/dist
 
+# Copy migrations directory (SQL files for automatic migration runner)
+COPY backend/migrations ./migrations
+
 # Create data directory for SQLite (if needed)
 RUN mkdir -p /app/data && \
     chown -R node:node /app
