@@ -3209,14 +3209,15 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
         if (serverConfig.env) {
           transformedConfig.environment = serverConfig.env;
 
-          // Check if required credentials are present
-          const hasRequiredCreds =
+          // Check if required credentials are present (must return boolean!)
+          const hasRequiredCreds = Boolean(
             (serverName === 'servicenow-unified' &&
              serverConfig.env.SERVICENOW_INSTANCE_URL &&
              serverConfig.env.SERVICENOW_CLIENT_ID &&
              serverConfig.env.SERVICENOW_CLIENT_SECRET) ||
             (serverName === 'snow-flow-orchestration') || // No creds required
-            (serverName !== 'servicenow-unified' && serverName !== 'snow-flow-orchestration');
+            (serverName !== 'servicenow-unified' && serverName !== 'snow-flow-orchestration')
+          );
 
           transformedConfig.enabled = hasRequiredCreds;
         } else {
@@ -3233,9 +3234,11 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
         transformedConfig.url = serverConfig.url;
 
         // Check if Authorization header has a token (not empty string or placeholder)
-        const hasToken = serverConfig.headers?.Authorization &&
-                        !serverConfig.headers.Authorization.includes('{{') &&
-                        serverConfig.headers.Authorization !== 'Bearer ';
+        const hasToken = Boolean(
+          serverConfig.headers?.Authorization &&
+          !serverConfig.headers.Authorization.includes('{{') &&
+          serverConfig.headers.Authorization !== 'Bearer '
+        );
 
         transformedConfig.enabled = hasToken;
 
@@ -3669,14 +3672,15 @@ export async function setupMCPConfig(
         if (serverConfig.env) {
           transformedConfig.environment = serverConfig.env;
 
-          // Check if required credentials are present
-          const hasRequiredCreds =
+          // Check if required credentials are present (must return boolean!)
+          const hasRequiredCreds = Boolean(
             (serverName === 'servicenow-unified' &&
              serverConfig.env.SERVICENOW_INSTANCE_URL &&
              serverConfig.env.SERVICENOW_CLIENT_ID &&
              serverConfig.env.SERVICENOW_CLIENT_SECRET) ||
             (serverName === 'snow-flow-orchestration') || // No creds required
-            (serverName !== 'servicenow-unified' && serverName !== 'snow-flow-orchestration');
+            (serverName !== 'servicenow-unified' && serverName !== 'snow-flow-orchestration')
+          );
 
           transformedConfig.enabled = hasRequiredCreds;
         } else {
@@ -3693,9 +3697,11 @@ export async function setupMCPConfig(
         transformedConfig.url = serverConfig.url;
 
         // Check if Authorization header has a token (not empty string or placeholder)
-        const hasToken = serverConfig.headers?.Authorization &&
-                        !serverConfig.headers.Authorization.includes('{{') &&
-                        serverConfig.headers.Authorization !== 'Bearer ';
+        const hasToken = Boolean(
+          serverConfig.headers?.Authorization &&
+          !serverConfig.headers.Authorization.includes('{{') &&
+          serverConfig.headers.Authorization !== 'Bearer '
+        );
 
         transformedConfig.enabled = hasToken;
 
