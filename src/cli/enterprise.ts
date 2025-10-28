@@ -23,6 +23,15 @@ interface AuthData {
     name: string;
     tier: string;
     features: string[];
+    theme?: string;
+    customTheme?: {
+      themeName: string;
+      displayName: string;
+      themeConfig: any;
+      primaryColor: string;
+      secondaryColor?: string;
+      accentColor?: string;
+    };
   };
 }
 
@@ -113,12 +122,22 @@ async function loginCommand(licenseKey: string): Promise<void> {
     console.log(chalk.bold('Customer:'), authData.customer.name);
     console.log(chalk.bold('License Tier:'), chalk.cyan(authData.customer.tier.toUpperCase()));
     console.log(chalk.bold('Features:'), authData.customer.features.join(', '));
+
+    // Show theme information if available
+    if (authData.customer.customTheme) {
+      console.log(chalk.bold('Custom Theme:'), chalk.magenta(authData.customer.customTheme.displayName));
+      console.log(chalk.gray('  Theme has been synced for your SnowCode CLI'));
+    } else if (authData.customer.theme) {
+      console.log(chalk.bold('Theme:'), chalk.magenta(authData.customer.theme));
+    }
+
     console.log('');
     console.log(chalk.gray('Your credentials have been saved to:'), chalk.gray(AUTH_FILE));
     console.log('');
     console.log(chalk.blue('💡 Enterprise tools are now available!'));
     console.log(chalk.gray('   Run'), chalk.cyan('snow-flow swarm "<task>"'), chalk.gray('to use them.'));
     console.log(chalk.gray('   Run'), chalk.cyan('snow-flow portal'), chalk.gray('to configure integrations.'));
+    console.log(chalk.gray('   Run'), chalk.cyan('snow-flow status'), chalk.gray('to view your account details.'));
   } catch (err: any) {
     console.error(chalk.red('❌ Network error:'), err.message);
     console.error(chalk.gray('Please check your internet connection and try again.'));
@@ -151,6 +170,24 @@ async function statusCommand(): Promise<void> {
     console.log(chalk.gray('  •'), feature);
   });
   console.log('');
+
+  // Show theme information if available
+  if (auth.customer.customTheme) {
+    console.log(chalk.bold('Custom Theme:'), chalk.magenta(auth.customer.customTheme.displayName));
+    console.log(chalk.gray('  Theme ID:'), auth.customer.customTheme.themeName);
+    console.log(chalk.gray('  Primary Color:'), auth.customer.customTheme.primaryColor);
+    if (auth.customer.customTheme.secondaryColor) {
+      console.log(chalk.gray('  Secondary Color:'), auth.customer.customTheme.secondaryColor);
+    }
+    if (auth.customer.customTheme.accentColor) {
+      console.log(chalk.gray('  Accent Color:'), auth.customer.customTheme.accentColor);
+    }
+    console.log('');
+  } else if (auth.customer.theme) {
+    console.log(chalk.bold('Theme:'), chalk.magenta(auth.customer.theme));
+    console.log('');
+  }
+
   console.log(chalk.bold('Token Expires:'), new Date(auth.expiresAt).toLocaleString());
   console.log('');
   console.log(chalk.gray('Configuration stored in:'), chalk.gray(AUTH_FILE));
