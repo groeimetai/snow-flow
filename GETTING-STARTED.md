@@ -179,7 +179,7 @@ Create or edit `~/.snow-flow/config.json`:
 ### 3.3 Test LLM Connection
 
 ```bash
-snow-flow test-llm
+snow-flow auth status
 ```
 
 You should see:
@@ -187,8 +187,11 @@ You should see:
 ✓ LLM connection successful
 ✓ Model: claude-sonnet-4
 ✓ Max tokens: 8192
+✓ ServiceNow connection: Not yet configured
 ✓ Ready to use
 ```
+
+**Note:** This command tests both LLM and ServiceNow connectivity. ServiceNow will show "Not configured" until you complete Step 4.
 
 ---
 
@@ -208,16 +211,16 @@ You should see:
 ### 4.2 Configure OAuth in SnowCode
 
 ```bash
-snow-flow oauth setup
+snow-flow auth login
 ```
 
 Follow the interactive prompts:
 
 ```
-? ServiceNow Instance URL: https://dev123456.service-now.com
+? Choose authentication method: OAuth 2.0 (recommended)
+? ServiceNow instance: dev123456.service-now.com
 ? OAuth Client ID: [paste from step 4.1]
 ? OAuth Client Secret: [paste from step 4.1]
-? Scopes: useraccount,offline_access
 
 ✓ OAuth configuration saved
 ✓ Opening browser for authentication...
@@ -242,15 +245,17 @@ You can now use Snow-Flow with your ServiceNow instance!
 ### 4.4 Verify OAuth Connection
 
 ```bash
-snow-flow test-servicenow
+snow-flow auth status
 ```
 
 You should see:
 ```
-✓ ServiceNow connection successful
+✓ ServiceNow Authentication Status
+✓ Status: Authenticated
 ✓ Instance: dev123456.service-now.com
-✓ User: admin
-✓ API access: enabled
+✓ Method: OAuth 2.0
+✓ Connection test successful
+✓ Logged in as: System Administrator (admin)
 ✓ 350+ MCP tools ready
 ```
 
@@ -273,28 +278,42 @@ You'll receive a license key like: `SNOW-ENT-GLOB-ABC123`
 ### 5.2 Login to Enterprise Portal
 
 ```bash
-snow-flow enterprise login
+snow-flow login SNOW-ENT-GLOB-ABC123
 ```
 
-Follow the interactive prompts:
+The system will authenticate with the portal:
 
 ```
-? Enterprise License Key: SNOW-ENT-GLOB-ABC123
-? Create account password: ********
+🔑 Authenticating with Snow-Flow Enterprise...
 
-✓ License validated
-✓ Account created
-✓ Customer ID: 1
-✓ Login token saved
+✅ Successfully authenticated!
+
+Customer: Your Company Name
+License Tier: ENTERPRISE
+Features: Jira, Azure DevOps, Confluence, ML & Analytics
+
+Your credentials have been saved to: ~/.snow-flow/auth.json
+
+💡 Enterprise tools are now available!
+   Run snow-flow swarm "<task>" to use them.
+   Run snow-flow portal to configure integrations.
 ```
 
 ### 5.3 Configure Service Credentials
 
-**Option A: Via Portal (Recommended)**
+**Via Web Portal (Required)**
 
-1. Open: https://portal.snow-flow.dev
-2. Login with your license key
+1. Open the portal:
+   ```bash
+   snow-flow portal
+   ```
+
+   Or visit directly: https://portal.snow-flow.dev
+
+2. Login with your license key credentials
+
 3. Navigate to **Credentials → Add Service**
+
 4. Configure each service:
 
 **Jira:**
@@ -311,70 +330,36 @@ Follow the interactive prompts:
 - Email: `user@company.com`
 - API Token: (same as Jira)
 
-**Option B: Via CLI**
-
-```bash
-# Add Jira credentials
-snow-flow enterprise add-credential \
-  --service jira \
-  --url https://company.atlassian.net \
-  --email user@company.com \
-  --token YOUR_JIRA_TOKEN
-
-# Add Azure DevOps credentials
-snow-flow enterprise add-credential \
-  --service azdo \
-  --org https://dev.azure.com/org \
-  --token YOUR_AZURE_PAT
-
-# Add Confluence credentials
-snow-flow enterprise add-credential \
-  --service confluence \
-  --url https://company.atlassian.net/wiki \
-  --email user@company.com \
-  --token YOUR_CONFLUENCE_TOKEN
-```
+**Note:** All credentials are encrypted with Google Cloud KMS and stored securely on the enterprise server. They are never stored locally.
 
 ### 5.4 Verify Enterprise Tools
 
 ```bash
-snow-flow enterprise test
+snow-flow status
 ```
 
 You should see:
 ```
-✓ License server connection: OK
-✓ License key valid: SNOW-ENT-GLOB-ABC123
-✓ Customer ID: 1
+✅ Authenticated with Snow-Flow Enterprise
 
-Available Enterprise Tools:
-✓ Jira (8 tools)
-  - snow_jira_create_issue
-  - snow_jira_update_issue
-  - snow_jira_query_issues
-  - snow_jira_get_issue
-  - snow_jira_add_comment
-  - snow_jira_transition_issue
-  - snow_jira_create_sprint
-  - snow_jira_assign_issue
+Customer: Your Company Name
+Customer ID: 1
+License Tier: ENTERPRISE
 
-✓ Azure DevOps (10 tools)
-  - snow_azdo_create_work_item
-  - snow_azdo_update_work_item
-  - snow_azdo_query_work_items
-  - ... (7 more)
+Available Features:
+  • Jira Integration
+  • Azure DevOps Integration
+  • Confluence Integration
+  • ML & Analytics
 
-✓ Confluence (8 tools)
-  - snow_confluence_create_page
-  - snow_confluence_update_page
-  - ... (6 more)
+Token Expires: 2025-12-31 23:59:59
 
-✓ ML & Analytics (15+ tools)
-  - snow_ml_predict_priority
-  - snow_ml_forecast_incidents
-  - ... (13+ more)
+Configuration stored in: ~/.snow-flow/auth.json
+```
 
-Total: 390+ MCP tools available!
+To see available MCP tools, start a swarm task:
+```bash
+snow-flow swarm "list all available enterprise tools"
 ```
 
 ---
@@ -385,46 +370,75 @@ Test the complete setup with a simple workflow:
 
 ### Test ServiceNow Tools (Open Source)
 
+Start a swarm task:
+
 ```bash
-snow-flow
+snow-flow swarm "Create a test incident in ServiceNow"
 ```
 
-In the Snow-Flow prompt:
+You should see:
 
 ```
-You: "Create a test incident in ServiceNow"
+🤖 Snow-Flow Multi-Agent Orchestrator
 
-Snow-Flow: [Uses snow_create_record]
-           "Created incident INC0000123: Test incident
-            Short description: Test incident created by Snow-Flow
-            State: New
-            Priority: 3 - Moderate"
+Spawning widget-builder agent...
+Analyzing task...
+Executing snow_create_record...
+
+✅ Created incident INC0000123: Test incident
+   Short description: Test incident created by Snow-Flow
+   State: New
+   Priority: 3 - Moderate
+
+Task completed successfully!
 ```
 
 ### Test Enterprise Tools (If Activated)
 
+```bash
+snow-flow swarm "Create a Jira ticket for incident INC0000123"
 ```
-You: "Create a Jira ticket for this incident"
 
-Snow-Flow: [Uses snow_jira_create_issue]
-           "Created Jira ticket SNOW-456: Test incident
-            URL: https://company.atlassian.net/browse/SNOW-456
-            Linked to ServiceNow INC0000123"
+You should see:
+
+```
+🤖 Snow-Flow Multi-Agent Orchestrator (Enterprise Mode)
+
+Spawning integration agent...
+Connecting to Jira...
+Executing snow_jira_create_issue...
+
+✅ Created Jira ticket SNOW-456: Test incident
+   URL: https://company.atlassian.net/browse/SNOW-456
+   Linked to ServiceNow INC0000123
+
+Task completed successfully!
 ```
 
 ### Test Autonomous Agents
 
+```bash
+snow-flow swarm "Setup an agent to sync high-priority incidents from ServiceNow to Jira every 15 minutes"
 ```
-You: "Setup an agent to sync high-priority incidents from ServiceNow to Jira"
 
-Snow-Flow: [Creates autonomous agent]
-           "Agent configured:
-            - Monitors ServiceNow incidents (priority 1-2)
-            - Auto-creates Jira tickets
-            - Syncs status updates bi-directionally
-            - Runs every 15 minutes
+You should see:
 
-            Agent is now active!"
+```
+🤖 Snow-Flow Multi-Agent Orchestrator (Enterprise Mode)
+
+Creating autonomous agent...
+Configuring sync workflow...
+- Source: ServiceNow (priority 1-2 incidents)
+- Destination: Jira project SNOW
+- Sync interval: 15 minutes
+- Bi-directional status updates: enabled
+
+✅ Agent configured and activated!
+   Agent ID: agent-sync-001
+   Status: Active
+   Next run: 2025-10-28 22:00:00
+
+Monitor with: snow-flow monitor
 ```
 
 ---
@@ -466,10 +480,10 @@ Snow-Flow: [Creates autonomous agent]
 **Error:** MCP tools list doesn't include Jira/Azure/Confluence
 
 **Solutions:**
-1. Verify enterprise license is activated: `snow-flow enterprise status`
-2. Check credentials are configured in portal
-3. Restart Snow-Flow: `snow-flow restart`
-4. Check license server is accessible: `curl https://snow-flow-enterprise-*.run.app/health`
+1. Verify enterprise license is activated: `snow-flow status`
+2. Check credentials are configured in portal: `snow-flow portal`
+3. Re-authenticate if token expired: `snow-flow login <license-key>`
+4. Check license server is accessible: `curl https://portal.snow-flow.dev/health`
 
 ---
 
