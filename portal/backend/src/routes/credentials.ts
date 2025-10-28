@@ -65,9 +65,45 @@ export function createCredentialsRoutes(db: LicenseDatabase, credsDb: Credential
   router.use(requireSsoAuth(db));
 
   /**
+   * GET /api/credentials/list
    * GET /api/credentials
    * List all configured service integrations for authenticated customer
    */
+  router.get('/list', async (req: Request, res: Response) => {
+    try {
+      const customerId = req.customer.id;
+
+      const credentials = credsDb.listCustomerCredentials(customerId);
+
+      logger.info({
+        action: 'list_credentials',
+        customerId,
+        count: credentials.length
+      });
+
+      res.json({
+        credentials: credentials.map(cred => ({
+          service: cred.service,
+          credentialType: cred.credentialType,
+          baseUrl: cred.baseUrl,
+          email: cred.email,
+          username: cred.username,
+          enabled: cred.enabled,
+          expiresAt: cred.expiresAt,
+          lastUsed: cred.lastUsed,
+          createdAt: cred.createdAt,
+          updatedAt: cred.updatedAt
+        }))
+      });
+    } catch (error) {
+      logger.error({
+        action: 'list_credentials',
+        error: error instanceof Error ? error.message : String(error)
+      });
+      res.status(500).json({ error: 'Failed to list credentials' });
+    }
+  });
+
   router.get('/', async (req: Request, res: Response) => {
     try {
       const customerId = req.customer.id;

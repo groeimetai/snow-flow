@@ -27,6 +27,7 @@ import { createAuthRoutes } from './routes/auth.js';
 import { TokenRefreshWorker } from './workers/token-refresh.js';
 import { createMonitoringRoutes } from './routes/monitoring.js';
 import { createServiceIntegratorRoutes } from './routes/service-integrator.js';
+import { createCustomerRoutes } from './routes/customer.js';
 import { validateInput, errorHandler } from './middleware/security.js';
 import { apiLogger } from './middleware/api-logger.js';
 
@@ -154,6 +155,9 @@ function initializeApiRoutes() {
 
   // Service Integrator routes (customer management, white-label)
   app.use('/api/service-integrator', createServiceIntegratorRoutes(db));
+
+  // Customer routes (usage stats, profile)
+  app.use('/api/customer', createCustomerRoutes(db));
 
   // TODO: Monitoring routes (requires credsDb initialization)
   // app.use('/api/monitoring', createMonitoringRoutes(db, credsDb!));

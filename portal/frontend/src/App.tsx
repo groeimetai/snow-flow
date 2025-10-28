@@ -17,8 +17,8 @@ import AdminThemes from './pages/admin/Themes';
 import CustomerLogin from './pages/customer/Login';
 import CustomerDashboard from './pages/customer/Dashboard';
 import CustomerCredentials from './pages/customer/Credentials';
+import CustomerUsage from './pages/customer/Usage';
 // import CustomerProfile from './pages/customer/Profile'; // TODO
-// import CustomerUsage from './pages/customer/Usage'; // TODO
 
 // Service Integrator pages (created)
 import ServiceIntegratorLogin from './pages/service-integrator/Login';
@@ -151,9 +151,16 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/portal/usage"
+        element={
+          <ProtectedRoute>
+            <CustomerUsage />
+          </ProtectedRoute>
+        }
+      />
       {/* TODO: Add these routes when pages are created
       <Route path="/portal/profile" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
-      <Route path="/portal/usage" element={<ProtectedRoute><CustomerUsage /></ProtectedRoute>} />
       */}
 
       {/* Service Integrator Portal Routes */}
