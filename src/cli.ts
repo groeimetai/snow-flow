@@ -3124,7 +3124,8 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
     .replace(/{{NEO4J_URI}}/g, getEnvValue('NEO4J_URI', ''))
     .replace(/{{NEO4J_USER}}/g, getEnvValue('NEO4J_USER', ''))
     .replace(/{{NEO4J_PASSWORD}}/g, getEnvValue('NEO4J_PASSWORD', ''))
-    .replace(/{{SNOW_FLOW_ENV}}/g, getEnvValue('SNOW_FLOW_ENV', 'development'));
+    .replace(/{{SNOW_FLOW_ENV}}/g, getEnvValue('SNOW_FLOW_ENV', 'development'))
+    .replace(/{{ENTERPRISE_JWT_TOKEN}}/g, getEnvValue('ENTERPRISE_JWT_TOKEN', ''));
   
   // Parse to ensure it's valid JSON
   const mcpConfig = JSON.parse(mcpConfigContent);
@@ -3151,6 +3152,118 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   // Also create legacy config in .claude for backward compatibility
   const legacyConfigPath = join(targetDir, '.claude/mcp-config.json');
   await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
+
+  // 🔧 CRITICAL FIX: Also update global SnowCode configuration
+  // SnowCode/OpenCode reads from ~/.snowcode/snowcode.json
+  const snowcodeConfigPath = join(process.env.HOME || '', '.snowcode', 'snowcode.json');
+  const snowcodeConfigDirPath = join(process.env.HOME || '', '.snowcode');
+
+  try {
+    // Ensure directory exists
+    try {
+      await fs.access(snowcodeConfigDirPath);
+    } catch {
+      await fs.mkdir(snowcodeConfigDirPath, { recursive: true });
+    }
+
+    // Read existing SnowCode config or create new one
+    let snowcodeConfig: any = {
+      "$schema": "https://opencode.ai/config.json",
+      "name": "snow-flow",
+      "description": "ServiceNow development with SnowCode and multi-LLM support",
+      "mcp": {}
+    };
+
+    let isOpenCodeFormat = false;
+
+    try {
+      const existingConfig = await fs.readFile(snowcodeConfigPath, 'utf-8');
+      snowcodeConfig = JSON.parse(existingConfig);
+
+      // Detect OpenCode/SnowCode format (uses "mcp" instead of "mcpServers")
+      if (snowcodeConfig.$schema || snowcodeConfig.mcp) {
+        isOpenCodeFormat = true;
+      }
+    } catch {
+      // File doesn't exist or is invalid - will create new OpenCode-compatible one
+      isOpenCodeFormat = true;
+    }
+
+    // SnowCode/OpenCode uses "mcp" field, NOT "mcpServers"
+    if (!snowcodeConfig.mcp) {
+      snowcodeConfig.mcp = {};
+    }
+
+    // Transform MCP servers from Claude Desktop format to OpenCode/SnowCode format
+    // Claude Desktop: { command: "node", args: ["path"], env: {} }
+    // OpenCode: { type: "local", command: ["node", "path"], environment: {} }
+    for (const [serverName, serverConfig] of Object.entries(finalConfig.mcpServers) as [string, any][]) {
+      const transformedConfig: any = {};
+
+      // Handle local servers (have "command" + "args")
+      if (serverConfig.command && serverConfig.args) {
+        transformedConfig.type = "local";
+        transformedConfig.command = [serverConfig.command, ...serverConfig.args];
+
+        // Transform "env" to "environment"
+        if (serverConfig.env) {
+          transformedConfig.environment = serverConfig.env;
+
+          // Check if required credentials are present
+          const hasRequiredCreds =
+            (serverName === 'servicenow-unified' &&
+             serverConfig.env.SERVICENOW_INSTANCE_URL &&
+             serverConfig.env.SERVICENOW_CLIENT_ID &&
+             serverConfig.env.SERVICENOW_CLIENT_SECRET) ||
+            (serverName === 'snow-flow-orchestration') || // No creds required
+            (serverName !== 'servicenow-unified' && serverName !== 'snow-flow-orchestration');
+
+          transformedConfig.enabled = hasRequiredCreds;
+        } else {
+          transformedConfig.enabled = false; // No env vars = disabled
+        }
+
+        if (serverConfig.description) {
+          transformedConfig.description = serverConfig.description;
+        }
+      }
+      // Handle remote servers (have "type": "sse" or "url")
+      else if (serverConfig.type === 'sse' || serverConfig.url) {
+        transformedConfig.type = "remote";
+        transformedConfig.url = serverConfig.url;
+
+        // Check if Authorization header has a token (not empty string or placeholder)
+        const hasToken = serverConfig.headers?.Authorization &&
+                        !serverConfig.headers.Authorization.includes('{{') &&
+                        serverConfig.headers.Authorization !== 'Bearer ';
+
+        transformedConfig.enabled = hasToken;
+
+        if (serverConfig.headers) {
+          transformedConfig.headers = serverConfig.headers;
+        }
+
+        if (serverConfig.description) {
+          transformedConfig.description = serverConfig.description;
+        }
+      }
+      // Unknown format - copy as-is
+      else {
+        Object.assign(transformedConfig, serverConfig);
+      }
+
+      snowcodeConfig.mcp[serverName] = transformedConfig;
+    }
+
+    // Write updated config
+    await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
+    console.log(`✅ Global SnowCode config updated: ${snowcodeConfigPath}`);
+    console.log(`   Format: OpenCode/SnowCode (type + command/url)`);
+    console.log(`   Servers: ${Object.keys(snowcodeConfig.mcp).join(', ')}`);
+  } catch (error) {
+    console.warn(`⚠️  Could not update global SnowCode config: ${error}`);
+    console.warn('   SnowCode will use project-local .mcp.json instead');
+  }
 
   // Create comprehensive Claude Code settings file
   // NOTE: Only include properties that Claude Code actually accepts
