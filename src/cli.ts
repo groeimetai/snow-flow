@@ -1438,9 +1438,9 @@ program
       }
       
       // Get specific session data
-      const sessionData = memorySystem.getLearning(`session_${sessionId}`);
-      const launchData = memorySystem.getLearning(`launch_${sessionId}`);
-      const errorData = memorySystem.getLearning(`error_${sessionId}`);
+      const sessionData = await memorySystem.getLearning(`session_${sessionId}`);
+      const launchData = await memorySystem.getLearning(`launch_${sessionId}`);
+      const errorData = await memorySystem.getLearning(`error_${sessionId}`);
       
       if (!sessionData) {
         console.error(`❌ No swarm session found with ID: ${sessionId}`);
@@ -1479,9 +1479,9 @@ program
         const watchInterval = setInterval(async () => {
           // In a real implementation, this would query Claude Code's memory
           cliLogger.info(`[${new Date().toLocaleTimeString()}] Checking for updates...`);
-          
+
           // Re-fetch session data to check for updates
-          const updatedSession = memorySystem.getLearning(`session_${sessionId}`);
+          const updatedSession = await memorySystem.getLearning(`session_${sessionId}`);
           if (updatedSession) {
             cliLogger.info('   Status: Active - Check SnowCode for details');
           }
