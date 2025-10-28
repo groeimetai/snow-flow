@@ -1526,7 +1526,7 @@ program
 // Status command
 program
   .command('status')
-  .description('Show orchestrator status')
+  .description('Show Snow-Flow status (orchestrator + enterprise)')
   .action(async () => {
     cliLogger.info('\n🔍 ServiceNow Multi-Agent Orchestrator Status');
     cliLogger.info('=============================================');
@@ -1536,18 +1536,23 @@ program
     cliLogger.info('🔗 ServiceNow Connection: Not configured');
     cliLogger.info('💾 Memory Usage: 45MB');
     cliLogger.info('🕒 Uptime: 00:05:23');
-    
+
     cliLogger.info('\n🤖 Agent Types:');
     cliLogger.info('   ├── widget-builder: Available');
     cliLogger.info('   ├── script-generator: Available');
     cliLogger.info('   ├── ui-builder: Available');
     cliLogger.info('   ├── security-specialist: Available');
     cliLogger.info('   └── app-creator: Available');
-    
+
     cliLogger.info('\n⚙️  Configuration:');
     cliLogger.info('   ├── Instance: Not set');
     cliLogger.info('   ├── Authentication: Not configured');
     cliLogger.info('   └── Mode: Development');
+
+    // Show enterprise status if available
+    cliLogger.info('\n');
+    const { showEnterpriseStatus } = await import('./cli/enterprise.js');
+    await showEnterpriseStatus();
   });
 
 // Monitor command - real-time dashboard

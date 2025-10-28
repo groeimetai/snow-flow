@@ -147,50 +147,51 @@ async function loginCommand(licenseKey: string): Promise<void> {
 
 /**
  * Show authentication status
+ * Exported for use in main status command
  */
-async function statusCommand(): Promise<void> {
+export async function showEnterpriseStatus(): Promise<void> {
   const auth = await loadAuth();
 
   if (!auth) {
-    console.log(chalk.yellow('⚠️  You are not logged in to Snow-Flow Enterprise.'));
+    console.log(chalk.blue('🔐 Snow-Flow Enterprise'));
+    console.log(chalk.yellow('   Status: Not logged in'));
     console.log('');
-    console.log(chalk.gray('To login, run:'), chalk.cyan('snow-flow login <license-key>'));
-    console.log(chalk.gray('Get your license key from:'), chalk.blue(PORTAL_URL));
+    console.log(chalk.gray('   To login: snow-flow login <license-key>'));
+    console.log(chalk.gray('   Get key from:'), chalk.blue(PORTAL_URL));
     return;
   }
 
-  console.log(chalk.green('✅ Authenticated with Snow-Flow Enterprise'));
+  console.log(chalk.blue('🔐 Snow-Flow Enterprise'));
+  console.log(chalk.green('   Status: ✅ Authenticated'));
   console.log('');
-  console.log(chalk.bold('Customer:'), auth.customer.name);
-  console.log(chalk.bold('Customer ID:'), auth.customer.id);
-  console.log(chalk.bold('License Tier:'), chalk.cyan(auth.customer.tier.toUpperCase()));
+  console.log(chalk.bold('   Customer:'), auth.customer.name);
+  console.log(chalk.bold('   Customer ID:'), auth.customer.id);
+  console.log(chalk.bold('   License Tier:'), chalk.cyan(auth.customer.tier.toUpperCase()));
   console.log('');
-  console.log(chalk.bold('Available Features:'));
+  console.log(chalk.bold('   Features:'));
   auth.customer.features.forEach(feature => {
-    console.log(chalk.gray('  •'), feature);
+    console.log(chalk.gray('      •'), feature);
   });
-  console.log('');
 
   // Show theme information if available
   if (auth.customer.customTheme) {
-    console.log(chalk.bold('Custom Theme:'), chalk.magenta(auth.customer.customTheme.displayName));
-    console.log(chalk.gray('  Theme ID:'), auth.customer.customTheme.themeName);
-    console.log(chalk.gray('  Primary Color:'), auth.customer.customTheme.primaryColor);
+    console.log('');
+    console.log(chalk.bold('   Custom Theme:'), chalk.magenta(auth.customer.customTheme.displayName));
+    console.log(chalk.gray('      Theme ID:'), auth.customer.customTheme.themeName);
+    console.log(chalk.gray('      Primary:'), auth.customer.customTheme.primaryColor);
     if (auth.customer.customTheme.secondaryColor) {
-      console.log(chalk.gray('  Secondary Color:'), auth.customer.customTheme.secondaryColor);
+      console.log(chalk.gray('      Secondary:'), auth.customer.customTheme.secondaryColor);
     }
     if (auth.customer.customTheme.accentColor) {
-      console.log(chalk.gray('  Accent Color:'), auth.customer.customTheme.accentColor);
+      console.log(chalk.gray('      Accent:'), auth.customer.customTheme.accentColor);
     }
-    console.log('');
   } else if (auth.customer.theme) {
-    console.log(chalk.bold('Theme:'), chalk.magenta(auth.customer.theme));
     console.log('');
+    console.log(chalk.bold('   Theme:'), chalk.magenta(auth.customer.theme));
   }
 
-  console.log(chalk.bold('Token Expires:'), new Date(auth.expiresAt).toLocaleString());
   console.log('');
-  console.log(chalk.gray('Configuration stored in:'), chalk.gray(AUTH_FILE));
+  console.log(chalk.bold('   Token Expires:'), new Date(auth.expiresAt).toLocaleString());
 }
 
 /**
@@ -268,13 +269,7 @@ export function registerEnterpriseCommands(program: Command): void {
       await loginCommand(licenseKey);
     });
 
-  // Status command
-  program
-    .command('status')
-    .description('Show Snow-Flow Enterprise authentication status')
-    .action(async () => {
-      await statusCommand();
-    });
+  // Status command removed - enterprise status is now shown via getEnterpriseInfo() in main status command
 
   // Portal command
   program
