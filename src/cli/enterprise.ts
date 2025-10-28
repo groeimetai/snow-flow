@@ -8,7 +8,6 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
-import open from 'open';
 
 const SNOW_FLOW_DIR = join(homedir(), '.snow-flow');
 const AUTH_FILE = join(SNOW_FLOW_DIR, 'auth.json');
@@ -201,6 +200,8 @@ async function portalCommand(): Promise<void> {
   console.log(chalk.blue('🌐 Opening Snow-Flow Enterprise Portal...'));
 
   try {
+    // Dynamic import for ESM compatibility
+    const { default: open } = await import('open');
     await open(PORTAL_URL);
     console.log(chalk.green('✅ Portal opened in your default browser'));
     console.log('');
