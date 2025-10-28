@@ -12,6 +12,17 @@ import winston from 'winston';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
+// Service name mapping: frontend → database ENUM
+const SERVICE_NAME_MAPPING: Record<string, string> = {
+  'jira': 'jira',
+  'azdo': 'azure-devops',
+  'azure-devops': 'azure-devops',
+  'confluence': 'confluence',
+  'servicenow': 'servicenow',
+  'github': 'github',
+  'gitlab': 'gitlab'
+};
+
 interface CustomerSessionPayload {
   type: 'customer';
   customerId: number;
@@ -163,6 +174,15 @@ export function createCredentialsRoutes(db: LicenseDatabase): Router {
         });
       }
 
+      // Map frontend service name to database ENUM value
+      const mappedService = SERVICE_NAME_MAPPING[service.toLowerCase()];
+      if (!mappedService) {
+        return res.status(400).json({
+          success: false,
+          error: `Unknown service: ${service}. Supported: ${Object.keys(SERVICE_NAME_MAPPING).join(', ')}`
+        });
+      }
+
       let credentialType: 'api_token' | 'basic_auth';
       if (apiToken) {
         credentialType = 'api_token';
@@ -175,10 +195,10 @@ export function createCredentialsRoutes(db: LicenseDatabase): Router {
         });
       }
 
-      const existing = await db.getCustomerCredential(customerId, service);
+      const existing = await db.getCustomerCredential(customerId, mappedService as any);
 
       if (existing) {
-        await db.updateCustomerCredential(customerId, service, {
+        await db.updateCustomerCredential(customerId, mappedService as any, {
           baseUrl: instanceUrl,
           apiToken: credentialType === 'api_token' ? apiToken : undefined,
           password: credentialType === 'basic_auth' ? password : undefined
@@ -186,7 +206,7 @@ export function createCredentialsRoutes(db: LicenseDatabase): Router {
       } else {
         await db.createCustomerCredential({
           customerId,
-          serviceType: service,
+          serviceType: mappedService,
           credentialType,
           baseUrl: instanceUrl,
           apiToken: credentialType === 'api_token' ? apiToken : undefined,
