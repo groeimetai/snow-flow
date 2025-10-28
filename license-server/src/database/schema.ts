@@ -7,6 +7,62 @@
 
 import mysql from 'mysql2/promise';
 import { Connector } from '@google-cloud/cloud-sql-connector';
+import crypto from 'crypto';
+
+// ===== ENCRYPTION UTILITIES =====
+
+// Encryption key from environment (MUST be set in production!)
+const ENCRYPTION_KEY = process.env.CREDENTIALS_ENCRYPTION_KEY || 'dev-key-change-in-production-32b';
+
+/**
+ * Get encryption key as 32-byte Buffer for AES-256
+ */
+function getEncryptionKey(): Buffer {
+  const key = Buffer.from(ENCRYPTION_KEY.padEnd(32, '0').substring(0, 32));
+  return key;
+}
+
+/**
+ * Encrypt sensitive data using AES-256-GCM
+ * Returns format: iv:authTag:encrypted (all hex-encoded)
+ */
+export function encryptCredential(plaintext: string): string {
+  const iv = crypto.randomBytes(16);
+  const key = getEncryptionKey();
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+
+  let encrypted = cipher.update(plaintext, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+
+  const authTag = cipher.getAuthTag();
+
+  // Format: iv:authTag:encrypted
+  return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
+}
+
+/**
+ * Decrypt sensitive data encrypted with AES-256-GCM
+ * Expects format: iv:authTag:encrypted (all hex-encoded)
+ */
+export function decryptCredential(ciphertext: string): string {
+  const parts = ciphertext.split(':');
+  if (parts.length !== 3) {
+    throw new Error('Invalid encrypted data format');
+  }
+
+  const iv = Buffer.from(parts[0], 'hex');
+  const authTag = Buffer.from(parts[1], 'hex');
+  const encrypted = parts[2];
+
+  const key = getEncryptionKey();
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(authTag);
+
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+
+  return decrypted;
+}
 
 // TypeScript Interfaces (unchanged from SQLite version)
 export interface ServiceIntegrator {
@@ -151,6 +207,62 @@ export interface SsoSession {
   createdAt: number;
   expiresAt: number;
   lastActivity: number;
+}
+
+export interface ServiceIntegratorCredential {
+  id: number;
+  serviceIntegratorId: number;
+  serviceType: 'jira' | 'azure-devops' | 'confluence' | 'servicenow' | 'github' | 'gitlab';
+  credentialType: 'oauth2' | 'api_token' | 'basic_auth' | 'pat';
+
+  // OAuth2 fields (encrypted)
+  accessToken?: string;
+  refreshToken?: string;
+  tokenType?: string;
+  expiresAt?: number;
+  scope?: string;
+
+  // API Token / PAT (encrypted)
+  apiToken?: string;
+
+  // Basic Auth (encrypted)
+  username?: string;
+  password?: string;
+
+  // Service configuration
+  baseUrl: string;
+  email?: string;
+
+  // OAuth2 app config (NOT encrypted)
+  clientId?: string;
+
+  // Configuration metadata
+  configJson?: string; // JSON string
+
+  // Status and metadata
+  enabled: boolean;
+  lastUsed?: number;
+  lastRefreshed?: number;
+  lastTestStatus?: 'success' | 'failed' | 'not_tested';
+  lastTestMessage?: string;
+  lastTestedAt?: number;
+
+  // Timestamps
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ServiceIntegratorCredentialAudit {
+  id: number;
+  credentialId: number;
+  serviceIntegratorId: number;
+  action: 'created' | 'updated' | 'accessed' | 'deleted' | 'tested' | 'refreshed';
+  performedBy?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  success: boolean;
+  errorMessage?: string;
+  timestamp: number;
 }
 
 /**
@@ -1275,5 +1387,372 @@ export class LicenseDatabase {
       activeUsers: result.active_users || 0,
       avgSessionDuration: result.avg_session_duration || 0
     };
+  }
+
+  // ===== SERVICE INTEGRATOR CREDENTIALS METHODS =====
+
+  /**
+   * Create service integrator credential (encrypts sensitive fields)
+   */
+  async createServiceIntegratorCredential(
+    cred: Omit<ServiceIntegratorCredential, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<ServiceIntegratorCredential> {
+    const now = Date.now();
+
+    const [result] = await this.pool.execute(
+      `INSERT INTO service_integrator_credentials (
+        service_integrator_id, service_type, credential_type,
+        access_token, refresh_token, token_type, expires_at, scope,
+        api_token, username, password,
+        base_url, email, client_id, config_json,
+        enabled, last_used, last_refreshed,
+        last_test_status, last_test_message, last_tested_at,
+        created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        cred.serviceIntegratorId,
+        cred.serviceType,
+        cred.credentialType,
+        cred.accessToken ? encryptCredential(cred.accessToken) : null,
+        cred.refreshToken ? encryptCredential(cred.refreshToken) : null,
+        cred.tokenType || null,
+        cred.expiresAt || null,
+        cred.scope || null,
+        cred.apiToken ? encryptCredential(cred.apiToken) : null,
+        cred.username || null,
+        cred.password ? encryptCredential(cred.password) : null,
+        cred.baseUrl,
+        cred.email || null,
+        cred.clientId || null,
+        cred.configJson || null,
+        cred.enabled,
+        cred.lastUsed || null,
+        cred.lastRefreshed || null,
+        cred.lastTestStatus || 'not_tested',
+        cred.lastTestMessage || null,
+        cred.lastTestedAt || null,
+        now,
+        now
+      ]
+    );
+
+    return {
+      id: (result as any).insertId,
+      ...cred,
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+
+  /**
+   * Get service integrator credential (decrypts sensitive fields)
+   */
+  async getServiceIntegratorCredential(
+    serviceIntegratorId: number,
+    serviceType: string
+  ): Promise<ServiceIntegratorCredential | undefined> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM service_integrator_credentials WHERE service_integrator_id = ? AND service_type = ?',
+      [serviceIntegratorId, serviceType]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    const row = rowsArray[0];
+
+    // Decrypt sensitive fields
+    return {
+      id: row.id,
+      serviceIntegratorId: row.service_integrator_id,
+      serviceType: row.service_type,
+      credentialType: row.credential_type,
+      accessToken: row.access_token ? decryptCredential(row.access_token) : undefined,
+      refreshToken: row.refresh_token ? decryptCredential(row.refresh_token) : undefined,
+      tokenType: row.token_type,
+      expiresAt: row.expires_at,
+      scope: row.scope,
+      apiToken: row.api_token ? decryptCredential(row.api_token) : undefined,
+      username: row.username,
+      password: row.password ? decryptCredential(row.password) : undefined,
+      baseUrl: row.base_url,
+      email: row.email,
+      clientId: row.client_id,
+      configJson: row.config_json,
+      enabled: Boolean(row.enabled),
+      lastUsed: row.last_used,
+      lastRefreshed: row.last_refreshed,
+      lastTestStatus: row.last_test_status,
+      lastTestMessage: row.last_test_message,
+      lastTestedAt: row.last_tested_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+
+  /**
+   * Get service integrator credential by ID
+   */
+  async getServiceIntegratorCredentialById(id: number): Promise<ServiceIntegratorCredential | undefined> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM service_integrator_credentials WHERE id = ?',
+      [id]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return undefined;
+
+    const row = rowsArray[0];
+
+    // Decrypt sensitive fields
+    return {
+      id: row.id,
+      serviceIntegratorId: row.service_integrator_id,
+      serviceType: row.service_type,
+      credentialType: row.credential_type,
+      accessToken: row.access_token ? decryptCredential(row.access_token) : undefined,
+      refreshToken: row.refresh_token ? decryptCredential(row.refresh_token) : undefined,
+      tokenType: row.token_type,
+      expiresAt: row.expires_at,
+      scope: row.scope,
+      apiToken: row.api_token ? decryptCredential(row.api_token) : undefined,
+      username: row.username,
+      password: row.password ? decryptCredential(row.password) : undefined,
+      baseUrl: row.base_url,
+      email: row.email,
+      clientId: row.client_id,
+      configJson: row.config_json,
+      enabled: Boolean(row.enabled),
+      lastUsed: row.last_used,
+      lastRefreshed: row.last_refreshed,
+      lastTestStatus: row.last_test_status,
+      lastTestMessage: row.last_test_message,
+      lastTestedAt: row.last_tested_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+
+  /**
+   * List all credentials for a service integrator
+   */
+  async listServiceIntegratorCredentials(serviceIntegratorId: number): Promise<ServiceIntegratorCredential[]> {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM service_integrator_credentials WHERE service_integrator_id = ? ORDER BY service_type ASC',
+      [serviceIntegratorId]
+    );
+
+    return (rows as any[]).map(row => ({
+      id: row.id,
+      serviceIntegratorId: row.service_integrator_id,
+      serviceType: row.service_type,
+      credentialType: row.credential_type,
+      // Don't decrypt tokens for list view (security)
+      accessToken: row.access_token ? '[ENCRYPTED]' : undefined,
+      refreshToken: row.refresh_token ? '[ENCRYPTED]' : undefined,
+      tokenType: row.token_type,
+      expiresAt: row.expires_at,
+      scope: row.scope,
+      apiToken: row.api_token ? '[ENCRYPTED]' : undefined,
+      username: row.username,
+      password: row.password ? '[ENCRYPTED]' : undefined,
+      baseUrl: row.base_url,
+      email: row.email,
+      clientId: row.client_id,
+      configJson: row.config_json,
+      enabled: Boolean(row.enabled),
+      lastUsed: row.last_used,
+      lastRefreshed: row.last_refreshed,
+      lastTestStatus: row.last_test_status,
+      lastTestMessage: row.last_test_message,
+      lastTestedAt: row.last_tested_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    } as ServiceIntegratorCredential));
+  }
+
+  /**
+   * Update service integrator credential
+   */
+  async updateServiceIntegratorCredential(
+    id: number,
+    updates: Partial<ServiceIntegratorCredential>
+  ): Promise<void> {
+    const now = Date.now();
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (updates.accessToken !== undefined) {
+      fields.push('access_token = ?');
+      values.push(updates.accessToken ? encryptCredential(updates.accessToken) : null);
+    }
+    if (updates.refreshToken !== undefined) {
+      fields.push('refresh_token = ?');
+      values.push(updates.refreshToken ? encryptCredential(updates.refreshToken) : null);
+    }
+    if (updates.tokenType !== undefined) {
+      fields.push('token_type = ?');
+      values.push(updates.tokenType);
+    }
+    if (updates.expiresAt !== undefined) {
+      fields.push('expires_at = ?');
+      values.push(updates.expiresAt);
+    }
+    if (updates.scope !== undefined) {
+      fields.push('scope = ?');
+      values.push(updates.scope);
+    }
+    if (updates.apiToken !== undefined) {
+      fields.push('api_token = ?');
+      values.push(updates.apiToken ? encryptCredential(updates.apiToken) : null);
+    }
+    if (updates.password !== undefined) {
+      fields.push('password = ?');
+      values.push(updates.password ? encryptCredential(updates.password) : null);
+    }
+    if (updates.baseUrl !== undefined) {
+      fields.push('base_url = ?');
+      values.push(updates.baseUrl);
+    }
+    if (updates.email !== undefined) {
+      fields.push('email = ?');
+      values.push(updates.email);
+    }
+    if (updates.configJson !== undefined) {
+      fields.push('config_json = ?');
+      values.push(updates.configJson);
+    }
+    if (updates.enabled !== undefined) {
+      fields.push('enabled = ?');
+      values.push(updates.enabled);
+    }
+    if (updates.lastUsed !== undefined) {
+      fields.push('last_used = ?');
+      values.push(updates.lastUsed);
+    }
+    if (updates.lastRefreshed !== undefined) {
+      fields.push('last_refreshed = ?');
+      values.push(updates.lastRefreshed);
+    }
+    if (updates.lastTestStatus !== undefined) {
+      fields.push('last_test_status = ?');
+      values.push(updates.lastTestStatus);
+    }
+    if (updates.lastTestMessage !== undefined) {
+      fields.push('last_test_message = ?');
+      values.push(updates.lastTestMessage);
+    }
+    if (updates.lastTestedAt !== undefined) {
+      fields.push('last_tested_at = ?');
+      values.push(updates.lastTestedAt);
+    }
+
+    if (fields.length === 0) return;
+
+    fields.push('updated_at = ?');
+    values.push(now);
+    values.push(id);
+
+    await this.pool.execute(
+      `UPDATE service_integrator_credentials SET ${fields.join(', ')} WHERE id = ?`,
+      values
+    );
+  }
+
+  /**
+   * Delete service integrator credential
+   */
+  async deleteServiceIntegratorCredential(id: number): Promise<void> {
+    await this.pool.execute(
+      'DELETE FROM service_integrator_credentials WHERE id = ?',
+      [id]
+    );
+  }
+
+  /**
+   * Log credential access/modification audit
+   */
+  async logCredentialAudit(audit: Omit<ServiceIntegratorCredentialAudit, 'id'>): Promise<void> {
+    await this.pool.execute(
+      `INSERT INTO service_integrator_credentials_audit (
+        credential_id, service_integrator_id, action,
+        performed_by, ip_address, user_agent,
+        success, error_message, timestamp
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        audit.credentialId,
+        audit.serviceIntegratorId,
+        audit.action,
+        audit.performedBy || null,
+        audit.ipAddress || null,
+        audit.userAgent || null,
+        audit.success,
+        audit.errorMessage || null,
+        audit.timestamp
+      ]
+    );
+  }
+
+  /**
+   * Get credential audit log
+   */
+  async getCredentialAuditLog(
+    credentialId: number,
+    limit: number = 100
+  ): Promise<ServiceIntegratorCredentialAudit[]> {
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM service_integrator_credentials_audit
+      WHERE credential_id = ?
+      ORDER BY timestamp DESC
+      LIMIT ?`,
+      [credentialId, limit]
+    );
+
+    return (rows as any[]).map(row => toCamelCase(row) as ServiceIntegratorCredentialAudit);
+  }
+
+  /**
+   * Get credentials expiring soon (for OAuth2 token refresh)
+   */
+  async getExpiringCredentials(withinMs: number = 5 * 60 * 1000): Promise<ServiceIntegratorCredential[]> {
+    const expiresAt = Date.now() + withinMs;
+
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM service_integrator_credentials
+      WHERE credential_type = 'oauth2'
+        AND expires_at IS NOT NULL
+        AND expires_at < ?
+        AND refresh_token IS NOT NULL
+        AND enabled = 1
+      ORDER BY expires_at ASC`,
+      [expiresAt]
+    );
+
+    // Decrypt for token refresh
+    return (rows as any[]).map(row => ({
+      id: row.id,
+      serviceIntegratorId: row.service_integrator_id,
+      serviceType: row.service_type,
+      credentialType: row.credential_type,
+      accessToken: row.access_token ? decryptCredential(row.access_token) : undefined,
+      refreshToken: row.refresh_token ? decryptCredential(row.refresh_token) : undefined,
+      tokenType: row.token_type,
+      expiresAt: row.expires_at,
+      scope: row.scope,
+      baseUrl: row.base_url,
+      email: row.email,
+      clientId: row.client_id,
+      configJson: row.config_json,
+      enabled: Boolean(row.enabled),
+      lastUsed: row.last_used,
+      lastRefreshed: row.last_refreshed,
+      lastTestStatus: row.last_test_status,
+      lastTestMessage: row.last_test_message,
+      lastTestedAt: row.last_tested_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    } as ServiceIntegratorCredential));
   }
 }
