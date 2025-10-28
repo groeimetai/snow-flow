@@ -759,90 +759,32 @@ See [MONETIZATION_STRATEGY.md](./MONETIZATION_STRATEGY.md) for complete business
 
 ---
 
-## 🏢 Snow-Flow Enterprise
+## 🌟 Enterprise Edition
 
-**Enterprise-grade features for large-scale ServiceNow development**
+Everything in Open Source **+** external tool integrations via license key.
 
-### Available Now in Beta
+**Unlocks 40+ Additional MCP Tools:**
+- 🔷 **Azure DevOps** (10 tools) - sync work items, run pipelines, monitor builds
+- 🟦 **Jira** (8 tools) - backlog management, issue tracking, JQL queries
+- 📚 **Confluence** (8 tools) - documentation sync, page management
+- 🤖 **ML & Analytics** (15+ tools) - predictive intelligence, forecasting
 
-Snow-Flow Enterprise adds advanced capabilities for enterprise teams:
+**Additional Enterprise Features:**
+- ✅ **Fully managed SaaS** - hosted on Google Cloud Platform (europe-west4)
+- ✅ **License key activation** - same open source project, extra MCP servers unlocked
+- ✅ **Agent task automation** - agents can fetch tasks from Jira/Azure/Confluence
+- ✅ **Enterprise security** - Google Cloud KMS encryption, SOC 2/ISO 27001 ready
+- ✅ **White-label portal** - branded customer experience for service integrators
+- ✅ **Zero maintenance** - automatic updates without customer reinstalls
+- ✅ **Unlimited integrations** - no service limits
+- ✅ **24/7 priority support** - dedicated support team
 
-#### 🔗 Jira Integration
-- **Bidirectional Sync**: Keep Jira and ServiceNow in perfect sync
-- **Automated Workflows**: Trigger actions across both platforms
-- **Field Mapping**: Customize data transformation
-- **Comment Sync**: Unified communication across teams
-- **Attachment Support**: Share files seamlessly
+**How it works:**
+1. Install the open source Snow-Flow (350+ ServiceNow tools)
+2. Add enterprise license key to unlock Jira/Azure/Confluence MCP servers
+3. Agents can now manage backlogs across ServiceNow + Jira/Azure/Confluence
 
-#### 🤖 Advanced ML Models
-- **Deep Learning**: LSTM, CNN, transformer-based models
-- **Auto-ML**: Automatic model selection and tuning
-- **Model Versioning**: Track and manage model lifecycles
-- **Explainable AI**: SHAP/LIME analysis for predictions
-- **A/B Testing**: Compare models in production
-
-#### 🎯 Priority Support
-- **4-24 hour response times** based on tier
-- **Dedicated account manager** (Enterprise tier)
-- **On-site training** available
-- **Custom integration development**
-- **SLA guarantees** (99.9% uptime)
-
-### License Tiers
-
-| Feature | Team<br/>$49/mo | Professional<br/>$199/mo | Enterprise<br/>$999/mo |
-|---------|---------|--------------|------------|
-| **Installations** | 3 | 10 | Unlimited |
-| **Jira Integration** | Basic | Full | Full |
-| **Advanced ML** | ❌ | ✅ | ✅ |
-| **Priority Support** | ❌ | ✅ | ✅ |
-| **Response Time** | 48h | 24h | 4h |
-| **Custom Integrations** | ❌ | ❌ | ✅ |
-| **SLA Guarantees** | ❌ | ❌ | ✅ |
-
-### Quick Start
-
-```bash
-# Install enterprise package
-npm install -g @snow-flow/enterprise
-
-# Configure license
-export SNOW_LICENSE_KEY="SNOW-ENT-XXXXX"
-
-# Verify installation
-snow-flow license status
-
-# Start using enterprise features
-snow-flow swarm "Sync Jira project PROJ to ServiceNow"
-```
-
-### Example: Jira Sync
-
-```bash
-# Sync entire backlog
-snow-flow swarm "Sync all issues from PROJ project in Jira to ServiceNow"
-
-# Search and sync
-snow-flow swarm "Find all high-priority bugs in Jira and create ServiceNow incidents"
-
-# Add comments
-snow-flow swarm "Add comment to Jira PROJ-123: Resolved in ServiceNow INC0010001"
-```
-
-### Documentation
-
-- **[Enterprise Documentation](./enterprise/ENTERPRISE.md)** - Complete guide
-- **[Quick Start Guide](./enterprise/QUICKSTART.md)** - Get started in 5 minutes
-- **[License Agreement](./enterprise/LICENSE-COMMERCIAL.md)** - Commercial terms
-- **[MCP Tools Reference](./enterprise/ENTERPRISE.md#mcp-tools-reference)** - Enterprise tools
-
-### Get Enterprise Access
-
-**30-Day Free Trial** available for all tiers!
-
-- 📧 **Email**: [sales@snow-flow.dev](mailto:sales@snow-flow.dev)
-- 💬 **Schedule Demo**: [calendly.com/snow-flow](https://calendly.com/snow-flow)
-- 📞 **Call**: +1 (555) 123-4567
+**Pricing:** Custom enterprise pricing. Contact sales@snow-flow.dev
 
 ---
 
