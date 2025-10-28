@@ -135,6 +135,56 @@ export interface ThemeConfig {
   };
 }
 
+// ===== CUSTOM THEMES (SERVICE INTEGRATOR) =====
+
+export interface CustomTheme {
+  id: number;
+  serviceIntegratorId: number;
+  themeName: string;
+  displayName: string;
+  description?: string;
+  themeConfig: any; // Full SnowCode theme JSON configuration
+  primaryColor: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  isActive: boolean;
+  isDefault: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface CreateCustomThemeDto {
+  themeName: string;
+  displayName: string;
+  description?: string;
+  themeConfig: any;
+  primaryColor: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateCustomThemeDto {
+  displayName?: string;
+  description?: string;
+  themeConfig?: any;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  isActive?: boolean;
+  isDefault?: boolean;
+}
+
+export interface ThemeUsageStats {
+  totalAssignments: number;
+  activeCustomers: number;
+  recentActivity: Array<{
+    customerId: number;
+    action: string;
+    timestamp: number;
+  }>;
+}
+
 // ===== USAGE & STATISTICS =====
 
 export interface UsageStats {

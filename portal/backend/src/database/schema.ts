@@ -32,6 +32,7 @@ export interface Customer {
   company?: string;
   licenseKey: string; // SNOW-ENT-CUST-XXXX
   theme?: string; // Theme name (e.g., 'capgemini', 'ey', 'servicenow')
+  customThemeId?: number; // FK to service_integrator_themes
   createdAt: number;
   updatedAt: number;
   status: 'active' | 'suspended' | 'churned';

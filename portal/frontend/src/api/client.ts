@@ -306,6 +306,61 @@ class ApiClient {
     await this.client.delete(`/api/themes/customer/${customerId}/theme`);
   }
 
+  // ===== CUSTOM THEMES (SERVICE INTEGRATOR) =====
+
+  async getSIThemes(activeOnly: boolean = false): Promise<CustomTheme[]> {
+    const { data } = await this.client.get<{ themes: CustomTheme[] }>(
+      '/api/service-integrator/themes',
+      { params: { active: activeOnly } }
+    );
+    return data.themes;
+  }
+
+  async getSITheme(id: number): Promise<{ theme: CustomTheme; usage: ThemeUsageStats }> {
+    const { data } = await this.client.get<{ theme: CustomTheme; usage: ThemeUsageStats }>(
+      `/api/service-integrator/themes/${id}`
+    );
+    return data;
+  }
+
+  async createSITheme(themeData: CreateCustomThemeDto): Promise<CustomTheme> {
+    const { data } = await this.client.post<{ theme: CustomTheme }>(
+      '/api/service-integrator/themes',
+      themeData
+    );
+    return data.theme;
+  }
+
+  async updateSITheme(id: number, updates: UpdateCustomThemeDto): Promise<CustomTheme> {
+    const { data } = await this.client.put<{ theme: CustomTheme }>(
+      `/api/service-integrator/themes/${id}`,
+      updates
+    );
+    return data.theme;
+  }
+
+  async deleteSITheme(id: number): Promise<void> {
+    await this.client.delete(`/api/service-integrator/themes/${id}`);
+  }
+
+  async setSIDefaultTheme(id: number): Promise<void> {
+    await this.client.post(`/api/service-integrator/themes/${id}/set-default`);
+  }
+
+  async assignSIThemeToCustomer(themeId: number, customerId: number): Promise<void> {
+    await this.client.post(`/api/service-integrator/themes/${themeId}/assign-customer`, {
+      customerId
+    });
+  }
+
+  async getSIThemeUsage(id: number, days: number = 30): Promise<ThemeUsageStats> {
+    const { data } = await this.client.get<{ stats: ThemeUsageStats }>(
+      `/api/service-integrator/themes/${id}/usage`,
+      { params: { days } }
+    );
+    return data.stats;
+  }
+
   // ===== CREDENTIALS (CUSTOMER) =====
 
   async getCredentials(): Promise<CredentialDisplay[]> {

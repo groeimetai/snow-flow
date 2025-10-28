@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiClient } from '../../api/client';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
 import Badge from '../../components/common/Badge';
+import { CustomTheme } from '../../types';
 
 interface Customer {
   id: number;
@@ -14,6 +16,7 @@ interface Customer {
   company: string;
   licenseKey: string;
   theme: string | null;
+  customThemeId?: number;
   status: 'active' | 'suspended' | 'churned';
   totalApiCalls: number;
   createdAt: number;
@@ -23,9 +26,13 @@ interface Customer {
 export default function ServiceIntegratorCustomers() {
   const { serviceIntegratorSession } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [themes, setThemes] = useState<CustomTheme[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAssignThemeModal, setShowAssignThemeModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'suspended' | 'churned'>('all');
+  const [error, setError] = useState<string>('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -35,13 +42,18 @@ export default function ServiceIntegratorCustomers() {
     theme: ''
   });
 
+  // Theme assignment state
+  const [selectedThemeId, setSelectedThemeId] = useState<number | null>(null);
+
   useEffect(() => {
     fetchCustomers();
+    fetchThemes();
   }, [filter]);
 
   const fetchCustomers = async () => {
     try {
       setLoading(true);
+      setError('');
       const token = localStorage.getItem('service_integrator_token');
       const url = filter === 'all'
         ? '/api/service-integrator/customers'
@@ -59,9 +71,42 @@ export default function ServiceIntegratorCustomers() {
       }
     } catch (error) {
       console.error('Error fetching customers:', error);
+      setError('Failed to load customers');
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchThemes = async () => {
+    try {
+      const themesData = await apiClient.getSIThemes(true); // Get active themes only
+      setThemes(themesData);
+    } catch (error) {
+      console.error('Error fetching themes:', error);
+    }
+  };
+
+  const handleAssignTheme = async () => {
+    if (!selectedCustomer || !selectedThemeId) return;
+
+    setError('');
+
+    try {
+      await apiClient.assignSIThemeToCustomer(selectedThemeId, selectedCustomer.id);
+      setShowAssignThemeModal(false);
+      setSelectedCustomer(null);
+      setSelectedThemeId(null);
+      fetchCustomers();
+    } catch (err: any) {
+      console.error('Error assigning theme:', err);
+      setError(err.response?.data?.error || 'Failed to assign theme');
+    }
+  };
+
+  const openAssignThemeModal = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setSelectedThemeId(null);
+    setShowAssignThemeModal(true);
   };
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
@@ -209,8 +254,14 @@ export default function ServiceIntegratorCustomers() {
                     </div>
                   </div>
                 </div>
-                <div className="ml-4 flex space-x-2">
-                  <button className="text-sm text-purple-600 hover:text-purple-700 font-medium">
+                <div className="ml-4 flex flex-col space-y-2">
+                  <button
+                    onClick={() => openAssignThemeModal(customer)}
+                    className="text-sm text-purple-600 hover:text-purple-700 font-medium whitespace-nowrap"
+                  >
+                    Assign Theme
+                  </button>
+                  <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                     Edit
                   </button>
                   <button className="text-sm text-red-600 hover:text-red-700 font-medium">
@@ -266,6 +317,117 @@ export default function ServiceIntegratorCustomers() {
             <Button type="submit">Create Customer</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Assign Theme Modal */}
+      <Modal
+        isOpen={showAssignThemeModal}
+        onClose={() => {
+          setShowAssignThemeModal(false);
+          setSelectedCustomer(null);
+          setSelectedThemeId(null);
+        }}
+        title="Assign Custom Theme"
+      >
+        <div className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          <p className="text-sm text-gray-600">
+            Assign a custom branded theme to{' '}
+            <span className="font-semibold">{selectedCustomer?.name}</span>
+          </p>
+
+          {themes.length === 0 ? (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-sm text-yellow-800">
+                No custom themes available. Please create a theme first in the Themes page.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Select Theme
+              </label>
+              <div className="space-y-2">
+                {themes.map((theme) => (
+                  <button
+                    key={theme.id}
+                    onClick={() => setSelectedThemeId(theme.id)}
+                    className={`w-full text-left p-4 border-2 rounded-lg transition-colors ${
+                      selectedThemeId === theme.id
+                        ? 'border-purple-600 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <h4 className="font-semibold text-gray-900">
+                            {theme.displayName}
+                          </h4>
+                          {theme.isDefault && (
+                            <Badge variant="success">Default</Badge>
+                          )}
+                        </div>
+                        {theme.description && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            {theme.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex space-x-2 ml-4">
+                        <div
+                          className="w-6 h-6 rounded border border-gray-300"
+                          style={{ backgroundColor: theme.primaryColor }}
+                          title={`Primary: ${theme.primaryColor}`}
+                        />
+                        {theme.secondaryColor && (
+                          <div
+                            className="w-6 h-6 rounded border border-gray-300"
+                            style={{ backgroundColor: theme.secondaryColor }}
+                            title={`Secondary: ${theme.secondaryColor}`}
+                          />
+                        )}
+                        {theme.accentColor && (
+                          <div
+                            className="w-6 h-6 rounded border border-gray-300"
+                            style={{ backgroundColor: theme.accentColor }}
+                            title={`Accent: ${theme.accentColor}`}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-3 mt-6">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setShowAssignThemeModal(false);
+                setSelectedCustomer(null);
+                setSelectedThemeId(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleAssignTheme}
+              disabled={!selectedThemeId}
+            >
+              Assign Theme
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

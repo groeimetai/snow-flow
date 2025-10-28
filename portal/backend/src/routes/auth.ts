@@ -121,6 +121,22 @@ export function createAuthRoutes(db: LicenseDatabase): Router {
         expiresIn: JWT_EXPIRES_IN,
       });
 
+      // Fetch custom theme if assigned
+      let customTheme = null;
+      if (customer.customThemeId) {
+        const theme = await db.getSITheme(customer.customThemeId);
+        if (theme && theme.isActive) {
+          customTheme = {
+            themeName: theme.themeName,
+            displayName: theme.displayName,
+            themeConfig: theme.themeConfig,
+            primaryColor: theme.primaryColor,
+            secondaryColor: theme.secondaryColor,
+            accentColor: theme.accentColor,
+          };
+        }
+      }
+
       res.json({
         success: true,
         token,
@@ -131,6 +147,7 @@ export function createAuthRoutes(db: LicenseDatabase): Router {
           company: customer.company,
           licenseKey: customer.licenseKey,
           theme: customer.theme,
+          customTheme: customTheme,
           status: customer.status,
           totalApiCalls: customer.totalApiCalls,
           createdAt: customer.createdAt,

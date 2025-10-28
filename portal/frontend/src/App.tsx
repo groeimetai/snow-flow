@@ -26,6 +26,7 @@ import ServiceIntegratorDashboard from './pages/service-integrator/Dashboard';
 import ServiceIntegratorCustomers from './pages/service-integrator/Customers';
 import ServiceIntegratorWhiteLabel from './pages/service-integrator/WhiteLabel';
 import ServiceIntegratorSettings from './pages/service-integrator/Settings';
+import ServiceIntegratorThemes from './pages/service-integrator/Themes';
 
 // Layouts
 import ServiceIntegratorLayout from './components/layout/ServiceIntegratorLayout';
@@ -211,6 +212,16 @@ export default function App() {
           <ProtectedRoute requireServiceIntegrator>
             <ServiceIntegratorLayout>
               <ServiceIntegratorSettings />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/service-integrator/themes"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorThemes />
             </ServiceIntegratorLayout>
           </ProtectedRoute>
         }

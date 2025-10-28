@@ -15,7 +15,8 @@ export default function ServiceIntegratorLayout({ children }: ServiceIntegratorL
   const navigation = [
     { name: 'Dashboard', path: '/service-integrator/dashboard', icon: '🏠' },
     { name: 'Customers', path: '/service-integrator/customers', icon: '👥' },
-    { name: 'White-Label', path: '/service-integrator/white-label', icon: '🎨' },
+    { name: 'Themes', path: '/service-integrator/themes', icon: '🎨' },
+    { name: 'White-Label', path: '/service-integrator/white-label', icon: '🏷️' },
     { name: 'Settings', path: '/service-integrator/settings', icon: '⚙️' },
   ];
 
