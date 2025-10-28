@@ -3,8 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snow-Flow | Conversational ServiceNow Development</title>
-    <meta name="description" content="Snow-Flow: Conversational ServiceNow development platform powered by Claude Code. 411 tools across 2 unified MCP servers for ServiceNow development.">
+    <title>Snow-Flow | Enterprise ServiceNow Development Platform</title>
+    <meta name="description" content="Enterprise ServiceNow development platform with 350+ AI-powered tools, managed SaaS infrastructure, and 99.9% SLA. Jira, Azure DevOps, and Confluence integrations for service integrators.">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Snow-Flow | Enterprise ServiceNow Development Platform">
+    <meta property="og:description" content="Enterprise ServiceNow development with AI, managed SaaS, and 99.9% SLA">
+    <meta property="og:image" content="https://snow-flow.dev/og-image.png">
+
     <style>
         * {
             margin: 0;
@@ -19,6 +26,9 @@
             --text-secondary: #a0a0a0;
             --accent-blue: #3b82f6;
             --accent-purple: #8b5cf6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-gold: #f59e0b;
             --border: #2a2a2a;
             --spacing: 1.5rem;
         }
@@ -40,7 +50,7 @@
         nav {
             position: sticky;
             top: 0;
-            background: rgba(10, 10, 10, 0.9);
+            background: rgba(10, 10, 10, 0.95);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border);
             padding: 1rem 0;
@@ -64,16 +74,31 @@
             display: flex;
             gap: 2rem;
             list-style: none;
+            align-items: center;
         }
 
         .nav-links a {
             color: var(--text-secondary);
             text-decoration: none;
             transition: color 0.2s;
+            font-weight: 500;
         }
 
         .nav-links a:hover {
             color: var(--text-primary);
+        }
+
+        .nav-cta {
+            background: var(--accent-blue);
+            color: white !important;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .nav-cta:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
         }
 
         /* Hero Section */
@@ -96,6 +121,9 @@
             font-size: 1.5rem;
             color: var(--text-secondary);
             margin-bottom: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .hero-buttons {
@@ -103,6 +131,7 @@
             gap: 1rem;
             justify-content: center;
             flex-wrap: wrap;
+            margin-bottom: 4rem;
         }
 
         .btn {
@@ -111,6 +140,7 @@
             text-decoration: none;
             font-weight: 600;
             transition: all 0.2s;
+            display: inline-block;
         }
 
         .btn-primary {
@@ -121,6 +151,7 @@
         .btn-primary:hover {
             background: #2563eb;
             transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
         }
 
         .btn-secondary {
@@ -131,6 +162,18 @@
 
         .btn-secondary:hover {
             border-color: var(--accent-blue);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.1);
         }
 
         /* Stats */
@@ -147,6 +190,12 @@
             background: var(--bg-card);
             border-radius: 0.5rem;
             border: 1px solid var(--border);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stat:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
         }
 
         .stat-number {
@@ -158,6 +207,7 @@
 
         .stat-label {
             color: var(--text-secondary);
+            font-size: 0.9rem;
         }
 
         /* Section */
@@ -168,8 +218,18 @@
         .section-title {
             font-size: 2.5rem;
             font-weight: 700;
-            margin-bottom: 3rem;
+            margin-bottom: 1rem;
             text-align: center;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         /* Features Grid */
@@ -185,10 +245,16 @@
             background: var(--bg-card);
             border-radius: 0.5rem;
             border: 1px solid var(--border);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
         }
 
         .feature-icon {
-            font-size: 2rem;
+            font-size: 2.5rem;
             margin-bottom: 1rem;
         }
 
@@ -203,31 +269,97 @@
             line-height: 1.7;
         }
 
-        /* Code Block */
-        .code-block {
-            background: #0d0d0d;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            border: 1px solid var(--border);
-            overflow-x: auto;
+        .feature-card ul {
+            margin-top: 1rem;
+            padding-left: 1.5rem;
+            color: var(--text-secondary);
         }
 
-        .code-block pre {
-            font-family: 'Monaco', 'Menlo', monospace;
+        .feature-card ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Pricing Section */
+        .pricing-tiers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .pricing-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            position: relative;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--accent-blue);
+            transform: scale(1.05);
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.05) translateY(-5px);
+        }
+
+        .tier-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-card.featured .tier-badge {
+            background: linear-gradient(135deg, var(--accent-gold), #f97316);
+        }
+
+        .pricing-card h3 {
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin: 1rem 0;
+        }
+
+        .price span {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        .price-note {
             font-size: 0.9rem;
-            color: #e0e0e0;
+            color: var(--text-secondary);
+            margin-top: -0.5rem;
+            margin-bottom: 1rem;
         }
 
-        .code-comment {
-            color: #6a9955;
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 2rem 0;
         }
 
-        .code-string {
-            color: #ce9178;
-        }
-
-        .code-keyword {
-            color: #569cd6;
+        .features-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
         }
 
         /* Comparison Table */
@@ -258,28 +390,370 @@
             color: var(--text-secondary);
         }
 
+        /* ROI Section */
+        .roi-comparison {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 2rem;
+            align-items: center;
+            margin: 3rem 0;
+        }
+
+        .roi-column {
+            padding: 2rem;
+            background: var(--bg-card);
+            border-radius: 0.5rem;
+            border: 2px solid var(--border);
+        }
+
+        .roi-column h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .roi-column ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .roi-column ul li {
+            padding: 0.75rem 0;
+            color: var(--text-secondary);
+        }
+
+        .roi-without {
+            border-color: var(--accent-red);
+        }
+
+        .roi-with {
+            border-color: var(--accent-green);
+        }
+
+        .roi-arrow {
+            font-size: 3rem;
+            color: var(--accent-blue);
+        }
+
+        .roi-result {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border-radius: 0.5rem;
+            border: 2px solid var(--accent-blue);
+            margin: 2rem 0;
+        }
+
+        .roi-result h3 {
+            font-size: 1.75rem;
+            color: var(--accent-blue);
+        }
+
+        /* Economics Grid */
+        .economics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .economics-card {
+            padding: 2rem;
+            background: var(--bg-card);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .economics-card.highlight {
+            border-color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .economics-card h4 {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .big-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .economics-card.highlight .big-number {
+            color: var(--accent-green);
+        }
+
+        .big-number span {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        .detail {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        /* Reliability Section */
+        .reliability-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            background: var(--bg-card);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .stat-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .stat-detail {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Status Badges */
+        .status-badges {
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid var(--accent-green);
+            border-radius: 0.5rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .badge-icon {
+            font-size: 1.5rem;
+        }
+
+        .status-link {
+            display: block;
+            color: var(--accent-blue);
+            text-decoration: none;
+            margin-top: 1rem;
+        }
+
+        .status-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Monitoring Grid */
+        .monitoring-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .monitoring-item {
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .monitoring-item strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--accent-blue);
+        }
+
+        .monitoring-item p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Suite Components */
+        .suite-components {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .suite-card {
+            padding: 2rem;
+            background: var(--bg-card);
+            border-radius: 0.5rem;
+            border: 2px solid var(--border);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .suite-card.featured {
+            border-color: var(--accent-blue);
+        }
+
+        .suite-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+        }
+
+        .suite-badge {
+            display: inline-block;
+            background: var(--accent-purple);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .suite-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .suite-card p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .suite-card ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .suite-card ul li {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #0d0d0d;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            color: #e0e0e0;
+        }
+
+        .code-comment {
+            color: #6a9955;
+        }
+
+        .code-string {
+            color: #ce9178;
+        }
+
+        /* CTA Sections */
+        .cta-enterprise {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 3rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border-radius: 0.5rem;
+            border: 1px solid var(--accent-blue);
+        }
+
+        .cta-enterprise h3 {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-large {
+            padding: 1.25rem 3rem;
+            font-size: 1.125rem;
+        }
+
         /* Footer */
         footer {
             border-top: 1px solid var(--border);
-            padding: 3rem 0;
-            text-align: center;
-            color: var(--text-secondary);
+            padding: 4rem 0 2rem;
+            margin-top: 6rem;
         }
 
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
+        .footer-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            margin-bottom: 3rem;
         }
 
-        .footer-links a {
+        .footer-section h4 {
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-section a {
             color: var(--text-secondary);
             text-decoration: none;
+            transition: color 0.2s;
         }
 
-        .footer-links a:hover {
+        .footer-section a:hover {
             color: var(--text-primary);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .footer-badges {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-badges .badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.85rem;
         }
 
         /* Responsive */
@@ -299,6 +773,18 @@
             .comparison {
                 grid-template-columns: 1fr;
             }
+
+            .roi-comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .roi-arrow {
+                transform: rotate(90deg);
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
         }
     </style>
 </head>
@@ -310,9 +796,12 @@
                 <a href="#" class="logo">🏔️ Snow-Flow</a>
                 <ul class="nav-links">
                     <li><a href="#features">Features</a></li>
-                    <li><a href="#install">Install</a></li>
-                    <li><a href="#docs">Documentation</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#enterprise">Enterprise</a></li>
+                    <li><a href="#reliability">Reliability</a></li>
+                    <li><a href="#suite">Suite</a></li>
                     <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
+                    <li><a href="https://portal.snow-flow.dev" class="nav-cta">Customer Portal</a></li>
                 </ul>
             </div>
         </div>
@@ -321,25 +810,30 @@
     <!-- Hero -->
     <section class="hero">
         <div class="container">
-            <h1>Snow-Flow</h1>
-            <p class="hero-subtitle">Conversational ServiceNow Development Platform</p>
+            <h1>Enterprise ServiceNow<br>Development Platform</h1>
+            <p class="hero-subtitle">AI-powered development with 350+ tools, enterprise integrations, and managed SaaS infrastructure. Built for service integrators and development teams.</p>
             <div class="hero-buttons">
-                <a href="#install" class="btn btn-primary">Get Started</a>
-                <a href="https://github.com/groeimetai/snow-flow" class="btn btn-secondary">View on GitHub</a>
+                <a href="https://github.com/groeimetai/snow-flow" class="btn btn-primary">Start Free</a>
+                <a href="#pricing" class="btn btn-secondary">View Pricing</a>
+                <a href="mailto:sales@snow-flow.dev" class="btn btn-outline">Enterprise Demo</a>
             </div>
 
             <div class="stats">
                 <div class="stat">
-                    <div class="stat-number">2</div>
-                    <div class="stat-label">Unified MCP Servers</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">411</div>
+                    <div class="stat-number">350+</div>
                     <div class="stat-label">ServiceNow Tools</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-number">100%</div>
-                    <div class="stat-label">Conversational</div>
+                    <div class="stat-number">99.9%</div>
+                    <div class="stat-label">Uptime SLA</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Monitoring</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">40-50%</div>
+                    <div class="stat-label">Faster Delivery</div>
                 </div>
             </div>
         </div>
@@ -349,14 +843,14 @@
     <section id="what" class="section">
         <div class="container">
             <h2 class="section-title">What is Snow-Flow?</h2>
-            <p style="text-align: center; max-width: 800px; margin: 0 auto 3rem; color: var(--text-secondary); font-size: 1.125rem;">
-                A conversational ServiceNow development platform that integrates with Claude Code through MCP servers.
+            <p class="section-subtitle">
+                A conversational ServiceNow development platform that integrates with AI assistants through MCP.
                 Develop ServiceNow solutions through natural language instead of navigating web interfaces.
             </p>
 
             <div class="comparison">
                 <div class="comparison-side">
-                    <div class="comparison-title" style="color: #ef4444;">Traditional ServiceNow</div>
+                    <div class="comparison-title" style="color: var(--accent-red);">Traditional ServiceNow</div>
                     <div class="comparison-item">• Web-based development</div>
                     <div class="comparison-item">• Limited browser editing</div>
                     <div class="comparison-item">• Manual table queries</div>
@@ -364,7 +858,7 @@
                     <div class="comparison-item">• Steep learning curve</div>
                 </div>
                 <div class="comparison-side">
-                    <div class="comparison-title" style="color: #10b981;">With Snow-Flow</div>
+                    <div class="comparison-title" style="color: var(--accent-green);">With Snow-Flow</div>
                     <div class="comparison-item">• Natural language development</div>
                     <div class="comparison-item">• Native code editing</div>
                     <div class="comparison-item">• Conversational queries</div>
@@ -375,7 +869,383 @@
         </div>
     </section>
 
-    <!-- Features -->
+    <!-- Pricing -->
+    <section id="pricing" class="section" style="background: var(--bg-card);">
+        <div class="container">
+            <h2 class="section-title">Simple, Transparent Pricing</h2>
+            <p class="section-subtitle">Choose the plan that fits your needs. All plans include 350+ ServiceNow tools.</p>
+
+            <div class="pricing-tiers">
+                <!-- Free Tier -->
+                <div class="pricing-card">
+                    <div class="tier-badge">Open Source</div>
+                    <h3>Free Forever</h3>
+                    <div class="price">$0<span>/month</span></div>
+                    <ul class="features-list">
+                        <li>✅ 350+ ServiceNow MCP tools</li>
+                        <li>✅ Self-hosted (local servers)</li>
+                        <li>✅ Unlimited ServiceNow instances</li>
+                        <li>✅ Community support</li>
+                        <li>❌ Enterprise integrations</li>
+                        <li>❌ Managed SaaS</li>
+                    </ul>
+                    <a href="https://github.com/groeimetai/snow-flow" class="btn btn-outline" style="width: 100%;">Get Started</a>
+                </div>
+
+                <!-- Individual Tier -->
+                <div class="pricing-card featured">
+                    <div class="tier-badge">Most Popular</div>
+                    <h3>Individual</h3>
+                    <div class="price">$99<span>/month</span></div>
+                    <ul class="features-list">
+                        <li>✅ 350+ ServiceNow + 40+ Enterprise tools</li>
+                        <li>✅ Fully Managed SaaS (Google Cloud)</li>
+                        <li>✅ Jira, Azure DevOps, Confluence</li>
+                        <li>✅ ML & Analytics tools</li>
+                        <li>✅ 99.9% SLA, 24/7 monitoring</li>
+                        <li>✅ Email support (24h response)</li>
+                    </ul>
+                    <a href="https://portal.snow-flow.dev" class="btn btn-primary" style="width: 100%;">Start Trial</a>
+                </div>
+
+                <!-- Teams Tier -->
+                <div class="pricing-card">
+                    <div class="tier-badge">Best Value</div>
+                    <h3>Teams</h3>
+                    <div class="price">$79<span>/user/month</span></div>
+                    <div class="price-note">Minimum 3 users • Save 20%</div>
+                    <ul class="features-list">
+                        <li>✅ Everything in Individual</li>
+                        <li>✅ Team Dashboard</li>
+                        <li>✅ Usage Analytics</li>
+                        <li>✅ Priority Support (4h response)</li>
+                        <li>✅ Slack channel</li>
+                        <li>✅ Volume discounts</li>
+                    </ul>
+                    <a href="https://portal.snow-flow.dev" class="btn btn-primary" style="width: 100%;">Start Trial</a>
+                </div>
+
+                <!-- Enterprise Tier -->
+                <div class="pricing-card">
+                    <div class="tier-badge">Service Integrators</div>
+                    <h3>Enterprise</h3>
+                    <div class="price">$49<span>/seat/month</span></div>
+                    <div class="price-note">Wholesale pricing • Resell at $69-79</div>
+                    <ul class="features-list">
+                        <li>✅ Everything in Teams</li>
+                        <li>✅ White-Label Portal</li>
+                        <li>✅ Partner Margins (40-75%)</li>
+                        <li>✅ 24/7 Priority Support</li>
+                        <li>✅ Custom Integrations</li>
+                        <li>✅ SOC 2 / ISO 27001 ready</li>
+                    </ul>
+                    <a href="mailto:sales@snow-flow.dev" class="btn btn-outline" style="width: 100%;">Contact Sales</a>
+                </div>
+            </div>
+
+            <div style="margin-top: 3rem; text-align: center;">
+                <h3 style="margin-bottom: 1.5rem;">What is "Managed SaaS"?</h3>
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <div class="comparison">
+                        <div class="comparison-side">
+                            <div class="comparison-title">Self-Hosted (Free)</div>
+                            <div class="comparison-item">• Run MCP servers locally</div>
+                            <div class="comparison-item">• Manual updates & configuration</div>
+                            <div class="comparison-item">• No monthly cost</div>
+                            <div class="comparison-item">• Technical setup required</div>
+                        </div>
+                        <div class="comparison-side">
+                            <div class="comparison-title" style="color: var(--accent-blue);">Managed SaaS (Paid)</div>
+                            <div class="comparison-item">• Cloud-hosted on Google Cloud</div>
+                            <div class="comparison-item">• Automatic updates, zero downtime</div>
+                            <div class="comparison-item">• Just add license key</div>
+                            <div class="comparison-item">• Enterprise tools activate instantly</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Enterprise Features -->
+    <section id="enterprise" class="section">
+        <div class="container">
+            <h2 class="section-title">Enterprise-Grade Infrastructure</h2>
+            <p class="section-subtitle">Production-ready SaaS platform built on Google Cloud</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">☁️</div>
+                    <h3 class="feature-title">Fully Managed SaaS</h3>
+                    <p class="feature-description">
+                        Cloud-hosted MCP servers on Google Cloud (europe-west4). Zero server setup, automatic updates, instant activation with license key.
+                    </p>
+                    <ul>
+                        <li>Google Cloud Run (serverless containers)</li>
+                        <li>GDPR-compliant EU hosting</li>
+                        <li>Automatic scaling</li>
+                        <li>Zero downtime deployments</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">99.9% SLA & 24/7 Monitoring</h3>
+                    <p class="feature-description">
+                        Enterprise reliability with automated monitoring, health checks every 5 minutes, and instant incident alerts.
+                    </p>
+                    <ul>
+                        <li>Uptime checks every 5 minutes</li>
+                        <li>Email/SMS/Slack alerts</li>
+                        <li>15-min response for CRITICAL issues</li>
+                        <li>Real-time status page</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🏢</div>
+                    <h3 class="feature-title">White-Label Portal</h3>
+                    <p class="feature-description">
+                        Service integrators can rebrand the customer portal with their own logo, colors, and domain.
+                    </p>
+                    <ul>
+                        <li>Custom branding & domain</li>
+                        <li>Client-specific licensing</li>
+                        <li>Partner margin tracking</li>
+                        <li>Multi-tenant architecture</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3 class="feature-title">Enterprise Security</h3>
+                    <p class="feature-description">
+                        SOC 2 / ISO 27001 compliance ready with encrypted connections and JWT authentication.
+                    </p>
+                    <ul>
+                        <li>HTTPS/TLS encryption</li>
+                        <li>JWT authentication</li>
+                        <li>CORS & Helmet.js security</li>
+                        <li>Audit logging (90-day retention)</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔌</div>
+                    <h3 class="feature-title">Enterprise Integrations</h3>
+                    <p class="feature-description">
+                        40+ tools for Jira, Azure DevOps, and Confluence with bidirectional sync.
+                    </p>
+                    <ul>
+                        <li>Jira backlog sync (8 tools)</li>
+                        <li>Azure DevOps pipelines (10 tools)</li>
+                        <li>Confluence documentation (8 tools)</li>
+                        <li>ML & Analytics (15+ tools)</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3 class="feature-title">Usage Analytics</h3>
+                    <p class="feature-description">
+                        Track tool usage, team performance, and cost allocation across your organization.
+                    </p>
+                    <ul>
+                        <li>Tool usage metrics</li>
+                        <li>Team performance analytics</li>
+                        <li>Cost tracking per client</li>
+                        <li>Custom dashboards</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Service Integrator ROI -->
+    <section id="roi" class="section" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));">
+        <div class="container">
+            <h2 class="section-title">Built for Service Integrators</h2>
+            <p class="section-subtitle">Accelerate ServiceNow projects with AI-powered development and enterprise tools</p>
+
+            <div class="roi-comparison">
+                <div class="roi-column roi-without">
+                    <h3>❌ Without Snow-Flow</h3>
+                    <ul>
+                        <li>Manual Update Set tracking</li>
+                        <li>ES5 syntax errors in production</li>
+                        <li>Consultants forget best practices</li>
+                        <li>Jira/ServiceNow context switching</li>
+                        <li><strong>8 hours dev + 2 hours fixes</strong></li>
+                    </ul>
+                </div>
+
+                <div class="roi-arrow">→</div>
+
+                <div class="roi-column roi-with">
+                    <h3>✅ With Snow-Flow Enterprise</h3>
+                    <ul>
+                        <li>Automatic Update Set management</li>
+                        <li>ES5 validation during development</li>
+                        <li>Built-in best practices guidance</li>
+                        <li>Unified backlog (Jira → ServiceNow)</li>
+                        <li><strong>4 hours dev + 0.5 hours fixes</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="roi-result">
+                <h3>🚀 Result: 40-50% Faster Delivery per Consultant</h3>
+            </div>
+
+            <div class="partner-economics" style="margin-top: 4rem;">
+                <h3 style="text-align: center; margin-bottom: 2rem;">Partner Economics Example</h3>
+                <div class="economics-grid">
+                    <div class="economics-card">
+                        <h4>Revenue</h4>
+                        <p class="big-number">$7,900<span>/month</span></p>
+                        <p class="detail">100 consultants × $79/seat retail</p>
+                    </div>
+                    <div class="economics-card">
+                        <h4>Wholesale Cost</h4>
+                        <p class="big-number">$4,900<span>/month</span></p>
+                        <p class="detail">100 consultants × $49/seat</p>
+                    </div>
+                    <div class="economics-card highlight">
+                        <h4>Partner Profit</h4>
+                        <p class="big-number">$3,000<span>/month</span></p>
+                        <p class="detail">38% margin • $36K/year</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cta-enterprise">
+                <h3>Ready to accelerate your ServiceNow delivery?</h3>
+                <a href="mailto:sales@snow-flow.dev" class="btn btn-primary btn-large">Contact Enterprise Sales</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reliability & Status -->
+    <section id="reliability" class="section" style="background: var(--bg-card);">
+        <div class="container">
+            <h2 class="section-title">Enterprise Reliability You Can Trust</h2>
+
+            <div class="reliability-stats">
+                <div class="stat-card">
+                    <div class="stat-number">99.9%</div>
+                    <div class="stat-label">Uptime SLA</div>
+                    <div class="stat-detail">Less than 8 hours downtime/year</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-number">5 min</div>
+                    <div class="stat-label">Health Checks</div>
+                    <div class="stat-detail">Automated uptime monitoring</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-number">15 min</div>
+                    <div class="stat-label">CRITICAL Response</div>
+                    <div class="stat-detail">Incident response time</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Monitoring</div>
+                    <div class="stat-detail">Google Cloud Monitoring</div>
+                </div>
+            </div>
+
+            <div class="status-badges">
+                <a href="https://status.snow-flow.dev" class="status-badge">
+                    <span class="badge-icon">✅</span>
+                    <span class="badge-text">All Systems Operational</span>
+                </a>
+                <a href="https://status.snow-flow.dev" class="status-link">View Status Page →</a>
+            </div>
+
+            <div class="monitoring-features" style="margin-top: 4rem;">
+                <h3 style="text-align: center; margin-bottom: 2rem;">What We Monitor</h3>
+                <div class="monitoring-grid">
+                    <div class="monitoring-item">
+                        <strong>Uptime Alerts</strong>
+                        <p>Service down detection within 5 minutes</p>
+                    </div>
+                    <div class="monitoring-item">
+                        <strong>Performance</strong>
+                        <p>P95 latency < 1s, response time tracking</p>
+                    </div>
+                    <div class="monitoring-item">
+                        <strong>Error Rates</strong>
+                        <p>Alert on >5% error rate, auth failures</p>
+                    </div>
+                    <div class="monitoring-item">
+                        <strong>Resources</strong>
+                        <p>CPU/Memory usage, auto-scaling triggers</p>
+                    </div>
+                    <div class="monitoring-item">
+                        <strong>Database</strong>
+                        <p>Connection pool, slow queries, errors</p>
+                    </div>
+                    <div class="monitoring-item">
+                        <strong>Cost Tracking</strong>
+                        <p>Budget alerts at 50%, 75%, 90%, 100%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Snow-Flow Suite -->
+    <section id="suite" class="section">
+        <div class="container">
+            <h2 class="section-title">The Complete Snow-Flow Suite</h2>
+            <p class="section-subtitle">A comprehensive ServiceNow development platform</p>
+
+            <div class="suite-components">
+                <div class="suite-card">
+                    <div class="suite-badge">MCP Framework</div>
+                    <h3>Snow-Flow</h3>
+                    <p>350+ MCP tools for ServiceNow development. Open source, works with any AI IDE.</p>
+                    <ul>
+                        <li>Core ServiceNow operations</li>
+                        <li>Widget & UI Builder development</li>
+                        <li>Update Set management</li>
+                        <li>Flow Designer integration</li>
+                    </ul>
+                    <a href="https://github.com/groeimetai/snow-flow" class="btn btn-outline">View on GitHub</a>
+                </div>
+
+                <div class="suite-card featured">
+                    <div class="suite-badge">AI-Powered IDE</div>
+                    <h3>SnowCode</h3>
+                    <p>Terminal-based AI coding assistant with deep ServiceNow integration. Fork of OpenCode optimized for ServiceNow.</p>
+                    <ul>
+                        <li>Terminal-based workflow</li>
+                        <li>ES5 validation for Rhino engine</li>
+                        <li>Widget coherence checking</li>
+                        <li>Auto-completion for ServiceNow APIs</li>
+                    </ul>
+                    <a href="https://github.com/groeimetai/snowcode" class="btn btn-primary">Get SnowCode</a>
+                </div>
+
+                <div class="suite-card">
+                    <div class="suite-badge">SaaS Platform</div>
+                    <h3>Enterprise Edition</h3>
+                    <p>Fully managed cloud platform with enterprise integrations and white-label capabilities.</p>
+                    <ul>
+                        <li>Jira, Azure, Confluence tools</li>
+                        <li>Managed SaaS (Google Cloud)</li>
+                        <li>White-label portal</li>
+                        <li>24/7 support & 99.9% SLA</li>
+                    </ul>
+                    <a href="mailto:sales@snow-flow.dev" class="btn btn-outline">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Features -->
     <section id="features" class="section" style="background: var(--bg-card);">
         <div class="container">
             <h2 class="section-title">Core Features</h2>
@@ -383,17 +1253,17 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🤖</div>
-                    <h3 class="feature-title">Claude AI Integration</h3>
+                    <h3 class="feature-title">AI Integration</h3>
                     <p class="feature-description">
-                        Uses Claude Code as the development interface. Talk to your ServiceNow instance through natural conversation.
+                        Uses Claude Code and other AI assistants. Talk to your ServiceNow instance through natural conversation via MCP protocol.
                     </p>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">🏗️</div>
-                    <h3 class="feature-title">Unified MCP Servers</h3>
+                    <h3 class="feature-title">350+ Tools</h3>
                     <p class="feature-description">
-                        Two MCP servers provide 411 ServiceNow tools: servicenow-unified (235+ tools for all ServiceNow operations) and snow-flow-orchestration (176+ tools for swarm coordination, memory, neural).
+                        Comprehensive MCP server with tools for deployment, operations, automation, UI Builder, workspaces, CMDB, and more.
                     </p>
                 </div>
 
@@ -417,7 +1287,7 @@
                     <div class="feature-icon">🧠</div>
                     <h3 class="feature-title">Machine Learning</h3>
                     <p class="feature-description">
-                        TensorFlow.js neural networks for incident classification, anomaly detection, and ServiceNow data analysis.
+                        Native ServiceNow Predictive Intelligence integration plus local TensorFlow.js for incident classification and anomaly detection.
                     </p>
                 </div>
 
@@ -432,176 +1302,59 @@
         </div>
     </section>
 
-    <!-- Installation -->
-    <section id="install" class="section">
-        <div class="container">
-            <h2 class="section-title">Installation</h2>
-
-            <div class="code-block">
-                <pre><span class="code-comment"># Install Claude Code first (required)</span>
-npm install -g @anthropic-ai/claude-code
-
-<span class="code-comment"># Then install Snow-Flow</span>
-npm install -g snow-flow
-
-<span class="code-comment"># Initialize configuration</span>
-snow-flow init
-
-<span class="code-comment"># Authenticate with ServiceNow</span>
-snow-flow auth login
-
-<span class="code-comment"># Start developing</span>
-snow-flow swarm <span class="code-string">"create incident dashboard widget"</span></pre>
-            </div>
-
-            <h3 style="margin-top: 3rem; margin-bottom: 1.5rem; font-size: 1.5rem;">ServiceNow OAuth Setup</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-                Configure OAuth in ServiceNow before using Snow-Flow:
-            </p>
-
-            <div class="feature-card" style="max-width: 800px; margin: 0 auto;">
-                <ol style="color: var(--text-secondary); line-height: 2; padding-left: 1.5rem;">
-                    <li>Navigate to: System OAuth → Application Registry</li>
-                    <li>Click: New → "Create an OAuth API endpoint for external clients"</li>
-                    <li>Set <strong>Redirect URL</strong>: <code style="background: #0d0d0d; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">http://localhost:3005/callback</code></li>
-                    <li>Set <strong>Refresh Token Lifespan</strong>: 0 (unlimited)</li>
-                    <li>Save and copy the Client ID and Client Secret</li>
-                    <li>Create <code>.env</code> file with your credentials</li>
-                    <li>Run <code>snow-flow auth login</code></li>
-                </ol>
-            </div>
-        </div>
-    </section>
-
-    <!-- Architecture -->
-    <section id="architecture" class="section" style="background: var(--bg-card);">
-        <div class="container">
-            <h2 class="section-title">Architecture</h2>
-
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3 class="feature-title">ServiceNow Unified Server</h3>
-                    <p class="feature-description">
-                        All ServiceNow operations in one server: deployment, operations, automation, platform dev, integrations, properties, update sets, security, reporting, ML, knowledge, catalog, change management, workspaces, UI Builder, CMDB, and local development.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <h3 class="feature-title">Snow-Flow Orchestration</h3>
-                    <p class="feature-description">
-                        Swarm coordination, agent spawning, task orchestration, neural training (TensorFlow.js), memory management, and performance tracking.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <h3 class="feature-title">Claude Agent SDK</h3>
-                    <p class="feature-description">
-                        Uses @anthropic-ai/claude-agent-sdk@0.1.1 for SDK-native execution with intelligent orchestration and advanced memory capabilities.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Use Cases -->
-    <section id="use-cases" class="section">
-        <div class="container">
-            <h2 class="section-title">Use Cases</h2>
-
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🎨</div>
-                    <h3 class="feature-title">Widget Development</h3>
-                    <p class="feature-description">
-                        Create Service Portal widgets with coherence validation. Pull to local files, edit with native tools, push back with validation.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🔍</div>
-                    <h3 class="feature-title">Data Analysis</h3>
-                    <p class="feature-description">
-                        Query any ServiceNow table through conversation. AI handles query syntax and data relationships.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🏗️</div>
-                    <h3 class="feature-title">UX Workspace Creation</h3>
-                    <p class="feature-description">
-                        Build complete Now Experience Framework workspaces using official ServiceNow APIs. Fully functional and production-ready.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🤖</div>
-                    <h3 class="feature-title">Automation</h3>
-                    <p class="feature-description">
-                        Execute background scripts, test REST connections, manage scheduled jobs, and automate ServiceNow operations.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3 class="feature-title">Machine Learning</h3>
-                    <p class="feature-description">
-                        Train neural networks on ServiceNow data for incident classification, change risk prediction, and anomaly detection.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🔄</div>
-                    <h3 class="feature-title">Update Set Management</h3>
-                    <p class="feature-description">
-                        Create, manage, and export update sets. Auto-sync with user's current Update Set for seamless development.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Documentation -->
-    <section id="docs" class="section" style="background: var(--bg-card);">
-        <div class="container">
-            <h2 class="section-title">Documentation</h2>
-
-            <div style="max-width: 800px; margin: 0 auto;">
-                <div class="feature-card">
-                    <h3 class="feature-title">📚 Getting Started</h3>
-                    <p class="feature-description" style="margin-bottom: 1rem;">
-                        Complete installation guide, authentication setup, and first steps with Snow-Flow.
-                    </p>
-                    <a href="https://github.com/groeimetai/snow-flow#readme" class="btn btn-secondary" style="display: inline-block;">View README</a>
-                </div>
-
-                <div class="feature-card" style="margin-top: 2rem;">
-                    <h3 class="feature-title">🛠️ Tool Reference</h3>
-                    <p class="feature-description" style="margin-bottom: 1rem;">
-                        Complete reference for all 411 ServiceNow tools across both MCP servers.
-                    </p>
-                    <a href="https://github.com/groeimetai/snow-flow" class="btn btn-secondary" style="display: inline-block;">Browse Tools</a>
-                </div>
-
-                <div class="feature-card" style="margin-top: 2rem;">
-                    <h3 class="feature-title">🔗 GitHub Repository</h3>
-                    <p class="feature-description" style="margin-bottom: 1rem;">
-                        Source code, examples, and contribution guidelines.
-                    </p>
-                    <a href="https://github.com/groeimetai/snow-flow" class="btn btn-secondary" style="display: inline-block;">View on GitHub</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Footer -->
     <footer>
         <div class="container">
-            <div class="footer-links">
-                <a href="https://github.com/groeimetai/snow-flow">GitHub</a>
-                <a href="https://www.npmjs.com/package/snow-flow">npm</a>
-                <a href="https://github.com/groeimetai/snow-flow/issues">Issues</a>
+            <div class="footer-container">
+                <div class="footer-section">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="https://github.com/groeimetai/snow-flow">Documentation</a></li>
+                        <li><a href="https://status.snow-flow.dev">Status Page</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Enterprise</h4>
+                    <ul>
+                        <li><a href="#enterprise">For Service Integrators</a></li>
+                        <li><a href="mailto:sales@snow-flow.dev">Contact Sales</a></li>
+                        <li><a href="#roi">ROI Calculator</a></li>
+                        <li><a href="https://portal.snow-flow.dev">Customer Portal</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
+                        <li><a href="https://discord.gg/snowflow">Discord Community</a></li>
+                        <li><a href="https://github.com/groeimetai/snowcode">SnowCode IDE</a></li>
+                        <li><a href="https://twitter.com/snowflow_dev">Twitter/X</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="https://github.com/groeimetai/snow-flow">About</a></li>
+                        <li><a href="https://github.com/groeimetai/snow-flow/issues">Support</a></li>
+                        <li><a href="mailto:sales@snow-flow.dev">Contact</a></li>
+                    </ul>
+                </div>
             </div>
-            <p>&copy; 2025 Snow-Flow. MIT License.</p>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 Snow-Flow. Built with ❤️ for the ServiceNow community. MIT License.</p>
+                <div class="footer-badges">
+                    <span class="badge">✅ 99.9% Uptime</span>
+                    <span class="badge">🔒 SOC 2 Ready</span>
+                    <span class="badge">🇪🇺 GDPR Compliant</span>
+                    <span class="badge">☁️ Google Cloud</span>
+                </div>
+            </div>
         </div>
     </footer>
 </body>
