@@ -15,13 +15,13 @@ import session from 'express-session';
 import MySQLStoreFactory from 'express-mysql-session';
 import cookieParser from 'cookie-parser';
 import { LicenseDatabase } from './database/schema.js';
-import { CredentialsDatabase } from './database/credentials-schema.js';
+// import { CredentialsDatabase } from './database/credentials-schema.js'; // TODO: SQLite only, need MySQL impl
 import { ValidationService } from './services/validation.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { adminRouter, initializeAdminRouter } from './routes/admin.js';
 import { createSsoRoutes } from './routes/sso.js';
-import { createCredentialsRoutes } from './routes/credentials.js';
+// import { createCredentialsRoutes } from './routes/credentials.js'; // TODO: Needs MySQL credentials DB
 import { createThemesRoutes } from './routes/themes.js';
 import { createAuthRoutes } from './routes/auth.js';
 import { TokenRefreshWorker } from './workers/token-refresh.js';
@@ -58,7 +58,7 @@ const logger = winston.createLogger({
 
 // Database instances
 let db: LicenseDatabase;
-let credsDb: CredentialsDatabase | undefined;  // Will be initialized when needed
+// let credsDb: CredentialsDatabase | undefined;  // TODO: Will be initialized when MySQL impl is ready
 let validationService: ValidationService | undefined;
 
 // Create Express app
@@ -127,7 +127,7 @@ app.get('/health', (req: Request, res: Response) => {
     service: 'snow-flow-portal',
     timestamp: new Date().toISOString(),
     database: db ? 'connected' : 'disconnected',
-    credentialsDb: credsDb ? 'connected' : 'disconnected'
+    credentialsDb: 'not_implemented' // TODO: MySQL credentials implementation
   });
 });
 
@@ -144,8 +144,11 @@ function initializeApiRoutes() {
   initializeAdminRouter(db);
   app.use('/api/admin', adminRouter);
 
-  // TODO: Credentials routes (requires credsDb initialization)
-  // app.use('/api/credentials', createCredentialsRoutes(db, credsDb!));
+  // TODO: Credentials routes (requires MySQL credentials implementation)
+  // if (credsDb) {
+  //   app.use('/api/credentials', createCredentialsRoutes(db, credsDb));
+  //   logger.info('✅ Credentials routes initialized');
+  // }
 
   // Themes routes
   app.use('/api/themes', createThemesRoutes(db));
@@ -181,9 +184,12 @@ async function startServer() {
     await db.initialize();
     logger.info('✅ License database connected');
 
-    // TODO: Initialize credentials database
-    // credsDb will be initialized when needed
-    logger.info('✅ Credentials database (deferred initialization)');
+    // TODO: Initialize credentials database (requires MySQL implementation)
+    // CredentialsDatabase is currently SQLite-only, portal uses MySQL
+    // Need to either: migrate credentials schema to MySQL OR use separate SQLite instance
+    // credsDb = new CredentialsDatabase();
+    // await credsDb.initialize();
+    logger.info('⏸️  Credentials database (TODO: MySQL implementation needed)');
 
     // Initialize validation service (if it doesn't need credsDb)
     // validationService = new ValidationService(db);
@@ -245,14 +251,14 @@ async function startServer() {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully...');
   if (db) await db.close();
-  // TODO: Close credsDb when implemented
+  // TODO: Close credsDb when MySQL implementation is ready
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully...');
   if (db) await db.close();
-  // TODO: Close credsDb when implemented
+  // TODO: Close credsDb when MySQL implementation is ready
   process.exit(0);
 });
 

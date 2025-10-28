@@ -5,12 +5,20 @@
  * Supports OAuth2 flows for Jira, Azure DevOps, Confluence, and ServiceNow.
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
 import { LicenseDatabase } from '../database/schema.js';
 import { CredentialsDatabase, OAuthCredential } from '../database/credentials-schema.js';
-import { requireSsoAuth } from '../middleware/sso-auth.js';
 import winston from 'winston';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+interface CustomerSessionPayload {
+  type: 'customer';
+  customerId: number;
+  licenseKey: string;
+}
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -61,8 +69,70 @@ const OAUTH_CONFIGS = {
 export function createCredentialsRoutes(db: LicenseDatabase, credsDb: CredentialsDatabase): Router {
   const router = Router();
 
-  // Apply SSO authentication to all routes
-  router.use(requireSsoAuth(db));
+  /**
+   * Middleware: Authenticate customer via JWT
+   */
+  async function authenticateCustomer(req: Request, res: Response, next: NextFunction) {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({
+          success: false,
+          error: 'Missing authentication token'
+        });
+      }
+
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+
+      // Verify JWT token
+      const decoded = jwt.verify(token, JWT_SECRET) as CustomerSessionPayload;
+
+      // Verify token type
+      if (decoded.type !== 'customer') {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid token type'
+        });
+      }
+
+      // Verify customer exists and is active
+      const customer = await db.getCustomerById(decoded.customerId);
+      if (!customer) {
+        return res.status(401).json({
+          success: false,
+          error: 'Customer not found'
+        });
+      }
+
+      if (customer.status !== 'active') {
+        return res.status(403).json({
+          success: false,
+          error: 'Account is not active'
+        });
+      }
+
+      // Attach customer to request
+      (req as any).customerId = decoded.customerId;
+      (req as any).customer = customer;
+      next();
+    } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid or expired token'
+        });
+      }
+      logger.error('Customer authentication error:', error);
+      res.status(401).json({
+        success: false,
+        error: 'Authentication failed'
+      });
+    }
+  }
+
+  // Apply JWT authentication to all routes
+  router.use(authenticateCustomer);
 
   /**
    * GET /api/credentials/list
@@ -524,6 +594,92 @@ export function createCredentialsRoutes(db: LicenseDatabase, credsDb: Credential
         error: error instanceof Error ? error.message : String(error)
       });
       res.status(500).json({ error: 'Failed to delete credentials' });
+    }
+  });
+
+  /**
+   * POST /api/credentials/store
+   * Store credentials with service in request body (alternative to /:service endpoint)
+   *
+   * Request body:
+   * - service: 'jira' | 'azure-devops' | 'confluence' | 'servicenow'
+   * - credentialType: 'api_token' | 'basic_auth'
+   * - username: Username (for basic auth)
+   * - password: Password (for basic auth)
+   * - apiToken: API token (for api_token type)
+   * - instanceUrl: Service instance URL
+   */
+  router.post('/store', async (req: Request, res: Response) => {
+    try {
+      const customerId = req.customer.id;
+      const { service, username, password, apiToken, instanceUrl } = req.body;
+
+      if (!service || !instanceUrl) {
+        return res.status(400).json({ error: 'service and instanceUrl are required' });
+      }
+
+      // Determine credential type based on what's provided
+      let credentialType: 'api_token' | 'basic';
+      if (apiToken) {
+        credentialType = 'api_token';
+      } else if (username && password) {
+        credentialType = 'basic';
+      } else {
+        return res.status(400).json({ error: 'Either apiToken or username+password is required' });
+      }
+
+      // Check if credential exists
+      const existing = credsDb.getOAuthCredential(customerId, service);
+
+      if (existing) {
+        // Update existing credential
+        const updates: Partial<OAuthCredential> = {
+          baseUrl: instanceUrl
+        };
+
+        if (credentialType === 'api_token') {
+          updates.apiToken = apiToken;
+        } else {
+          updates.username = username;
+          // Note: password is not stored in OAuthCredential for basic auth
+        }
+
+        credsDb.updateOAuthCredential(customerId, service, updates);
+      } else {
+        // Create new credential
+        credsDb.createOAuthCredential({
+          customerId,
+          service,
+          credentialType,
+          baseUrl: instanceUrl,
+          apiToken: credentialType === 'api_token' ? apiToken : undefined,
+          username: credentialType === 'basic' ? username : undefined,
+          enabled: true
+        });
+      }
+
+      logger.info({
+        action: 'store_credential',
+        customerId,
+        service,
+        credentialType
+      });
+
+      res.json({
+        success: true,
+        credential: {
+          service,
+          credentialType,
+          instanceUrl,
+          enabled: true
+        }
+      });
+    } catch (error) {
+      logger.error({
+        action: 'store_credential',
+        error: error instanceof Error ? error.message : String(error)
+      });
+      res.status(500).json({ error: 'Failed to store credentials' });
     }
   });
 
