@@ -114,12 +114,12 @@ npm install -g .
 ### 2.3 Verify Installation
 
 ```bash
-snowcode --version
+snow-flow --version
 ```
 
 You should see:
 ```
-SnowCode v1.0.0
+Snow-Flow v1.0.0
 ServiceNow Development Agent
 ```
 
@@ -151,7 +151,7 @@ export OPENAI_API_KEY="sk-..."
 
 ### 3.2 Configure SnowCode
 
-Create or edit `~/.snowcode/config.json`:
+Create or edit `~/.snow-flow/config.json`:
 
 ```json
 {
@@ -179,7 +179,7 @@ Create or edit `~/.snowcode/config.json`:
 ### 3.3 Test LLM Connection
 
 ```bash
-snowcode test-llm
+snow-flow test-llm
 ```
 
 You should see:
@@ -208,7 +208,7 @@ You should see:
 ### 4.2 Configure OAuth in SnowCode
 
 ```bash
-snowcode oauth setup
+snow-flow oauth setup
 ```
 
 Follow the interactive prompts:
@@ -242,7 +242,7 @@ You can now use Snow-Flow with your ServiceNow instance!
 ### 4.4 Verify OAuth Connection
 
 ```bash
-snowcode test-servicenow
+snow-flow test-servicenow
 ```
 
 You should see:
@@ -273,7 +273,7 @@ You'll receive a license key like: `SNOW-ENT-GLOB-ABC123`
 ### 5.2 Login to Enterprise Portal
 
 ```bash
-snowcode enterprise login
+snow-flow enterprise login
 ```
 
 Follow the interactive prompts:
@@ -315,20 +315,20 @@ Follow the interactive prompts:
 
 ```bash
 # Add Jira credentials
-snowcode enterprise add-credential \
+snow-flow enterprise add-credential \
   --service jira \
   --url https://company.atlassian.net \
   --email user@company.com \
   --token YOUR_JIRA_TOKEN
 
 # Add Azure DevOps credentials
-snowcode enterprise add-credential \
+snow-flow enterprise add-credential \
   --service azdo \
   --org https://dev.azure.com/org \
   --token YOUR_AZURE_PAT
 
 # Add Confluence credentials
-snowcode enterprise add-credential \
+snow-flow enterprise add-credential \
   --service confluence \
   --url https://company.atlassian.net/wiki \
   --email user@company.com \
@@ -338,7 +338,7 @@ snowcode enterprise add-credential \
 ### 5.4 Verify Enterprise Tools
 
 ```bash
-snowcode enterprise test
+snow-flow enterprise test
 ```
 
 You should see:
@@ -386,19 +386,19 @@ Test the complete setup with a simple workflow:
 ### Test ServiceNow Tools (Open Source)
 
 ```bash
-snowcode
+snow-flow
 ```
 
-In the SnowCode prompt:
+In the Snow-Flow prompt:
 
 ```
 You: "Create a test incident in ServiceNow"
 
-SnowCode: [Uses snow_create_record]
-          "Created incident INC0000123: Test incident
-           Short description: Test incident created by Snow-Flow
-           State: New
-           Priority: 3 - Moderate"
+Snow-Flow: [Uses snow_create_record]
+           "Created incident INC0000123: Test incident
+            Short description: Test incident created by Snow-Flow
+            State: New
+            Priority: 3 - Moderate"
 ```
 
 ### Test Enterprise Tools (If Activated)
@@ -406,10 +406,10 @@ SnowCode: [Uses snow_create_record]
 ```
 You: "Create a Jira ticket for this incident"
 
-SnowCode: [Uses snow_jira_create_issue]
-          "Created Jira ticket SNOW-456: Test incident
-           URL: https://company.atlassian.net/browse/SNOW-456
-           Linked to ServiceNow INC0000123"
+Snow-Flow: [Uses snow_jira_create_issue]
+           "Created Jira ticket SNOW-456: Test incident
+            URL: https://company.atlassian.net/browse/SNOW-456
+            Linked to ServiceNow INC0000123"
 ```
 
 ### Test Autonomous Agents
@@ -417,14 +417,14 @@ SnowCode: [Uses snow_jira_create_issue]
 ```
 You: "Setup an agent to sync high-priority incidents from ServiceNow to Jira"
 
-SnowCode: [Creates autonomous agent]
-          "Agent configured:
-           - Monitors ServiceNow incidents (priority 1-2)
-           - Auto-creates Jira tickets
-           - Syncs status updates bi-directionally
-           - Runs every 15 minutes
+Snow-Flow: [Creates autonomous agent]
+           "Agent configured:
+            - Monitors ServiceNow incidents (priority 1-2)
+            - Auto-creates Jira tickets
+            - Syncs status updates bi-directionally
+            - Runs every 15 minutes
 
-           Agent is now active!"
+            Agent is now active!"
 ```
 
 ---
@@ -466,9 +466,9 @@ SnowCode: [Creates autonomous agent]
 **Error:** MCP tools list doesn't include Jira/Azure/Confluence
 
 **Solutions:**
-1. Verify enterprise license is activated: `snowcode enterprise status`
+1. Verify enterprise license is activated: `snow-flow enterprise status`
 2. Check credentials are configured in portal
-3. Restart SnowCode: `snowcode restart`
+3. Restart Snow-Flow: `snow-flow restart`
 4. Check license server is accessible: `curl https://snow-flow-enterprise-*.run.app/health`
 
 ---
