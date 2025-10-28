@@ -759,32 +759,155 @@ See [MONETIZATION_STRATEGY.md](./MONETIZATION_STRATEGY.md) for complete business
 
 ---
 
-## 🌟 Enterprise Edition
+## 💰 Pricing & Plans
 
-Everything in Open Source **+** external tool integrations via license key.
+Snow-Flow offers a transparent 3-tier pricing model designed for individual developers, teams, and service integrators.
 
-**Unlocks 40+ Additional MCP Tools:**
-- 🔷 **Azure DevOps** (10 tools) - sync work items, run pipelines, monitor builds
-- 🟦 **Jira** (8 tools) - backlog management, issue tracking, JQL queries
-- 📚 **Confluence** (8 tools) - documentation sync, page management
-- 🤖 **ML & Analytics** (15+ tools) - predictive intelligence, forecasting
+### 🆓 Open Source (Free Forever)
 
-**Additional Enterprise Features:**
-- ✅ **Fully managed SaaS** - hosted on Google Cloud Platform (europe-west4)
-- ✅ **License key activation** - same open source project, extra MCP servers unlocked
-- ✅ **Agent task automation** - agents can fetch tasks from Jira/Azure/Confluence
-- ✅ **Enterprise security** - Google Cloud KMS encryption, SOC 2/ISO 27001 ready
-- ✅ **White-label portal** - branded customer experience for service integrators
-- ✅ **Zero maintenance** - automatic updates without customer reinstalls
-- ✅ **Unlimited integrations** - no service limits
-- ✅ **24/7 priority support** - dedicated support team
+**350+ ServiceNow MCP Tools** - Zero cost, full access to core framework
+
+**What's Included:**
+- ✅ All 350+ ServiceNow tools (ITSM, CMDB, Flow Designer, UI Builder, etc.)
+- ✅ Local MCP servers (self-hosted)
+- ✅ Unlimited ServiceNow instances
+- ✅ Community support (GitHub Discussions)
+- ✅ Elastic License 2.0 (free commercial use)
+
+**Perfect for:** Individual developers, students, learning, open source projects
+
+```bash
+npm install -g snow-flow
+snow-flow init
+# Start building immediately - no credit card required!
+```
+
+---
+
+### 👤 Individual Plan - $99/month
+
+**Everything in Open Source +** enterprise tools & managed SaaS infrastructure
+
+**What's Included:**
+- ✅ **40+ Enterprise MCP Tools:**
+  - 🔷 Azure DevOps (10 tools) - work items, pipelines, PRs
+  - 🟦 Jira (8 tools) - backlog sync, JQL queries, issue tracking
+  - 📚 Confluence (8 tools) - documentation sync, page management
+  - 🤖 ML & Analytics (15+ tools) - predictive intelligence, forecasting
+- ✅ **Fully Managed SaaS** - hosted on Google Cloud (europe-west4)
+- ✅ **Zero Maintenance** - automatic updates, no server management
+- ✅ **Email Support** - business hours support (24h response time)
+- ✅ **99.9% SLA** - enterprise-grade reliability
+
+**Perfect for:** Freelance consultants, solo practitioners, side projects
 
 **How it works:**
-1. Install the open source Snow-Flow (350+ ServiceNow tools)
-2. Add enterprise license key to unlock Jira/Azure/Confluence MCP servers
-3. Agents can now manage backlogs across ServiceNow + Jira/Azure/Confluence
+1. Subscribe at [portal.snow-flow.dev](https://portal.snow-flow.dev)
+2. Receive enterprise license key
+3. Add key to Snow-Flow config - enterprise MCP servers auto-activate
+4. Start using Jira/Azure/Confluence tools immediately
 
-**Pricing:** Custom enterprise pricing. Contact sales@snow-flow.dev
+---
+
+### 👥 Teams Plan - $79/user/month
+
+**Everything in Individual +** team collaboration & priority support
+
+**What's Included:**
+- ✅ All Individual plan features
+- ✅ **Team Dashboard** - centralized license management
+- ✅ **Usage Analytics** - track team tool usage and costs
+- ✅ **Priority Support** - 4-hour response time, Slack channel
+- ✅ **Team Onboarding** - setup session with solutions architect
+- ✅ **Volume Discount** - save 20% vs Individual ($79 vs $99/user)
+
+**Minimum:** 3 users
+**Perfect for:** Development teams, agencies, consulting firms
+
+---
+
+### 🏢 Enterprise (Service Integrators)
+
+**Wholesale pricing** for service integrators (Capgemini, Accenture, etc.)
+
+**What's Included:**
+- ✅ All Teams plan features
+- ✅ **White-Label Portal** - branded customer experience
+- ✅ **Wholesale Pricing** - $49/seat/month (50+ seats)
+- ✅ **Partner Margins** - resell at $69-79/seat, keep 40-75% margin
+- ✅ **24/7 Priority Support** - dedicated support team
+- ✅ **Custom Integrations** - build custom MCP tools for your organization
+- ✅ **Deployment Flexibility** - cloud or on-premise options
+- ✅ **SOC 2 / ISO 27001** - enterprise compliance ready
+
+**Minimum:** 25 seats
+**Perfect for:** Service integrators, large consulting firms, managed service providers
+
+**ROI Example:**
+- Wholesale cost: $49/seat × 50 consultants = $2,450/month
+- Resell at: $69/seat × 50 consultants = $3,450/month
+- **Your margin: $1,000/month (41%)** + faster delivery = more projects
+
+**Contact:** [sales@snow-flow.dev](mailto:sales@snow-flow.dev) for custom enterprise pricing
+
+---
+
+### 📊 Plan Comparison
+
+| Feature | Open Source | Individual | Teams | Enterprise |
+|---------|-------------|------------|-------|------------|
+| **ServiceNow Tools** | 350+ tools | 350+ tools | 350+ tools | 350+ tools |
+| **Enterprise Tools** | ❌ | 40+ tools | 40+ tools | 40+ tools |
+| **Jira/Azure/Confluence** | ❌ | ✅ | ✅ | ✅ |
+| **Managed SaaS** | ❌ Self-hosted | ✅ Cloud-hosted | ✅ Cloud-hosted | ✅ Cloud-hosted |
+| **Support** | Community | Email (24h) | Priority (4h) | 24/7 Dedicated |
+| **SLA** | None | 99.9% | 99.9% | 99.95% |
+| **White-Label** | ❌ | ❌ | ❌ | ✅ |
+| **Team Dashboard** | ❌ | ❌ | ✅ | ✅ |
+| **Custom Integrations** | ❌ | ❌ | ❌ | ✅ |
+| **Price** | **Free** | **$99/mo** | **$79/user/mo** | **$49/seat/mo** |
+
+---
+
+### 🎯 Which Plan is Right for You?
+
+**Choose Open Source if:**
+- You're learning ServiceNow development
+- You're working on personal/open source projects
+- You only need ServiceNow tools (no Jira/Azure/Confluence)
+- You can self-host MCP servers locally
+
+**Choose Individual if:**
+- You're a freelance consultant or solo practitioner
+- You need Jira/Azure/Confluence integration
+- You want zero server maintenance (managed SaaS)
+- You bill clients and can expense the subscription
+
+**Choose Teams if:**
+- You're a development team (3-25 people)
+- You need team collaboration and analytics
+- You want priority support and onboarding
+- You want to save 20% vs Individual pricing
+
+**Choose Enterprise if:**
+- You're a service integrator (Capgemini, Accenture, etc.)
+- You have 25+ consultants using ServiceNow
+- You want to resell Snow-Flow to your customers
+- You need white-label branding and custom integrations
+
+---
+
+### 💳 Payment & Billing
+
+- **Monthly billing** - cancel anytime, no annual commitment required
+- **Annual discount** - save 2 months (pay for 10, get 12)
+- **Payment methods** - credit card, wire transfer (Enterprise only)
+- **Invoicing** - automatic monthly invoices for accounting
+- **Tax** - prices exclude VAT/sales tax (added at checkout)
+
+**Start free trial:** 14-day free trial on Individual/Teams plans - no credit card required
+
+👉 **[Get Started](https://portal.snow-flow.dev/signup)** | **[Contact Sales](mailto:sales@snow-flow.dev)**
 
 ---
 
