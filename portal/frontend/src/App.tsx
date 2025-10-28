@@ -178,11 +178,36 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      {/* TODO: Add these routes when pages are created
-      <Route path="/service-integrator/customers" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorCustomers /></ProtectedRoute>} />
-      <Route path="/service-integrator/white-label" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorWhiteLabel /></ProtectedRoute>} />
-      <Route path="/service-integrator/settings" element={<ProtectedRoute requireServiceIntegrator><ServiceIntegratorSettings /></ProtectedRoute>} />
-      */}
+      <Route
+        path="/service-integrator/customers"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorCustomers />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/service-integrator/white-label"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorWhiteLabel />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/service-integrator/settings"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorSettings />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />

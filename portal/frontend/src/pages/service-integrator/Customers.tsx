@@ -42,7 +42,7 @@ export default function ServiceIntegratorCustomers() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('serviceIntegratorToken');
+      const token = localStorage.getItem('service_integrator_token');
       const url = filter === 'all'
         ? '/api/service-integrator/customers'
         : `/api/service-integrator/customers?status=${filter}`;
@@ -68,7 +68,7 @@ export default function ServiceIntegratorCustomers() {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem('serviceIntegratorToken');
+      const token = localStorage.getItem('service_integrator_token');
       const response = await fetch('/api/service-integrator/customers', {
         method: 'POST',
         headers: {
