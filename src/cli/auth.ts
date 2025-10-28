@@ -477,15 +477,21 @@ export function registerAuthCommands(program: Command) {
       }
 
       // License server URL (with sensible default)
-      const licenseServerUrl = await prompts.text({
+      let licenseServerUrl = await prompts.text({
         message: 'Enterprise license server URL',
-        placeholder: 'https://license.snow-flow.dev',
+        placeholder: 'https://license.snow-flow.dev (default)',
         defaultValue: 'https://license.snow-flow.dev',
         validate: (value) => {
-          if (!value || value.trim() === '') return 'URL is required';
+          // Allow empty - will use default
+          if (!value || value.trim() === '') return undefined;
           if (!value.startsWith('https://')) return 'Must be HTTPS URL';
         }
       }) as string;
+
+      // Apply default if empty
+      if (!licenseServerUrl || licenseServerUrl.trim() === '') {
+        licenseServerUrl = 'https://license.snow-flow.dev';
+      }
 
       if (prompts.isCancel(licenseServerUrl)) {
         prompts.log.info('Enterprise setup skipped');
@@ -621,27 +627,35 @@ export function registerAuthCommands(program: Command) {
       fs.writeFileSync(envPath, envContent);
       prompts.log.success('Enterprise credentials saved to .env');
 
-      // Configure enterprise MCP proxy
-      const spinner3 = prompts.spinner();
-      spinner3.start('Configuring enterprise MCP proxy');
+      // Configure enterprise MCP proxy (only for Service Integrators)
+      const isServiceIntegrator = licenseKey.includes('-SI-');
+      const isCustomer = !isServiceIntegrator;
 
-      try {
-        // Find the enterprise proxy path
-        const enterpriseProxyPath = path.join(
-          process.cwd(),
-          '..',
-          'snow-flow-enterprise',
-          'mcp-proxy',
-          'dist',
-          'enterprise-proxy.js'
-        );
+      if (isCustomer) {
+        // Customers use remote server only - no proxy needed
+        prompts.log.success('Enterprise configuration complete');
+        prompts.log.info('Using remote enterprise server: ' + licenseServerUrl);
+      } else {
+        // Service Integrators can use local proxy OR remote server
+        const spinner3 = prompts.spinner();
+        spinner3.start('Configuring enterprise MCP proxy');
 
-        // Check if proxy exists
-        if (!fs.existsSync(enterpriseProxyPath)) {
-          spinner3.stop('Enterprise proxy not found - will use remote server only');
-          prompts.log.warn('Enterprise proxy not built yet');
-          prompts.log.message('   Run: cd ../snow-flow-enterprise/mcp-proxy && npm run build');
-        } else {
+        try {
+          // Find the enterprise proxy path
+          const enterpriseProxyPath = path.join(
+            process.cwd(),
+            '..',
+            'snow-flow-enterprise',
+            'mcp-proxy',
+            'dist',
+            'enterprise-proxy.js'
+          );
+
+          // Check if proxy exists
+          if (!fs.existsSync(enterpriseProxyPath)) {
+            spinner3.stop('Local proxy not found - will use remote server');
+            prompts.log.message('   (Optional) To use local proxy: cd ../snow-flow-enterprise/mcp-proxy && npm run build');
+          } else {
           // Configure for SnowCode (prioritize SnowCode config)
           const snowcodeConfigPath = path.join(process.env.HOME || '', '.snowcode', 'config.json');
           const snowcodeConfigDirPath = path.join(process.env.HOME || '', '.snowcode');
@@ -706,8 +720,9 @@ export function registerAuthCommands(program: Command) {
         prompts.log.warn(`Error: ${error.message}`);
         prompts.log.message('You can configure manually later');
       }
+    } // Close Service Integrator else block
 
-      prompts.outro('🎉 Enterprise setup complete! Restart your AI coding assistant to use enterprise features.');
+    prompts.outro('🎉 Enterprise setup complete! Restart your AI coding assistant to use enterprise features.');
     });
 
   auth
