@@ -1930,71 +1930,12 @@ program
         console.log(chalk.dim('\n🔍 Verifying MCP server configuration...'));
         await verifyMCPServers(targetDir);
 
-        // Start MCP servers using the locally copied script
-        console.log(chalk.blue('\n🚀 Starting MCP servers...'));
-        try {
-          const { execSync } = require('child_process');
-          const path = require('path');
-          const fs = require('fs');
-
-          // Use the script that was copied to the project directory
-          const localScriptPath = path.join(targetDir, 'scripts', 'mcp-server-manager.sh');
-
-          // Check if the script exists locally
-          if (!fs.existsSync(localScriptPath)) {
-            throw new Error('MCP server manager script not found. Re-run snow-flow init if needed.');
-          }
-
-          // Make script executable
-          try {
-            fs.chmodSync(localScriptPath, '755');
-          } catch (chmodError) {
-            // Ignore chmod errors on Windows
-          }
-
-          // Execute and capture output
-          const output = execSync(`bash "${localScriptPath}" start`, {
-            cwd: targetDir,
-            encoding: 'utf-8'
-          });
-
-          // Check if startup was successful
-          if (output.includes('✓ MCP server started')) {
-            console.log(chalk.green('✅ MCP servers started successfully'));
-            const pidMatch = output.match(/PID: (\d+)/);
-            if (pidMatch) {
-              console.log(chalk.dim(`   Server PID: ${pidMatch[1]}`));
-            }
-            console.log(chalk.dim('   Check status: ./scripts/mcp-server-manager.sh status'));
-            console.log(chalk.dim('   View logs: ./scripts/mcp-server-manager.sh logs'));
-          } else {
-            console.log(chalk.yellow('⚠️  MCP server startup status unclear'));
-            console.log(output);
-          }
-        } catch (error) {
-          const errorMsg = (error as Error).message || String(error);
-
-          // Check if it's a credential issue
-          if (errorMsg.includes('No .env file found') ||
-              errorMsg.includes('SERVICENOW_INSTANCE') ||
-              errorMsg.includes('credentials')) {
-            console.log(chalk.yellow('⚠️  MCP servers not started - credentials not configured yet'));
-            console.log(chalk.blue('\n📋 Required next steps:'));
-            console.log(chalk.cyan('1. Configure .env with ServiceNow credentials'));
-            console.log(chalk.cyan('2. Run: snow-flow auth login'));
-            console.log(chalk.cyan('3. Then MCP servers will start automatically'));
-            console.log(chalk.dim('\n   Or start manually later: ./scripts/mcp-server-manager.sh start'));
-          } else {
-            // Other errors - show details
-            console.log(chalk.red('❌ MCP server startup failed'));
-            console.log(chalk.dim('Error: ' + errorMsg));
-            console.log(chalk.yellow('\n💡 Troubleshooting:'));
-            console.log(chalk.dim('   1. Check that npm run build completed successfully'));
-            console.log(chalk.dim('   2. Verify Node.js version >= 18'));
-            console.log(chalk.dim('   3. Try: rm -rf node_modules && npm install'));
-            console.log(chalk.dim('   4. Manual start: ./scripts/mcp-server-manager.sh start'));
-          }
-        }
+        // MCP servers auto-start via SnowCode - no manual startup needed
+        console.log(chalk.blue('\n🚀 MCP Servers:'));
+        console.log(chalk.green('✅ MCP servers will start automatically when you launch SnowCode'));
+        console.log(chalk.dim('   - Configured via .mcp.json in this project'));
+        console.log(chalk.dim('   - 18 specialized ServiceNow MCP servers with 400+ tools'));
+        console.log(chalk.dim('   - No manual startup required!'));
       }
 
       // Check and optionally install SnowCode
@@ -2136,11 +2077,11 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
 
   // ALWAYS install SnowCode locally in the project directory with platform binaries
   console.log(chalk.blue('\n📦 Installing SnowCode locally (with platform binaries)...'));
-  console.log(chalk.dim('Installing @groeimetai/snowcode@0.15.21...'));
+  console.log(chalk.dim('Installing @groeimetai/snowcode@0.15.24...'));
 
   try {
     const projectDir = process.cwd();
-    execSync('npm install @groeimetai/snowcode@0.15.21', {
+    execSync('npm install @groeimetai/snowcode@0.15.24', {
       cwd: projectDir,
       stdio: 'inherit'
     });
@@ -2149,7 +2090,7 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
     console.log(chalk.dim('   ℹ️  npm audit warnings are expected (upstream SnowCode dependencies) - safe to ignore'));
   } catch (error) {
     console.log(chalk.red('\n❌ Failed to install SnowCode locally'));
-    console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install @groeimetai/snowcode@0.15.21'));
+    console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install @groeimetai/snowcode@0.15.24'));
     console.log(chalk.dim('This is required for the compiled binaries'));
     return false;
   }
@@ -2764,7 +2705,7 @@ async function copyMCPServerScripts(targetDir: string, force: boolean = false) {
 
     // Copy specific scripts
     const scriptFiles = [
-      'mcp-server-manager.sh',
+      // 'mcp-server-manager.sh', // REMOVED: MCP servers auto-start via .mcp.json, this script is for dev only
       'start-snowcode.sh'
     ];
 
