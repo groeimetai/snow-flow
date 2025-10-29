@@ -3197,37 +3197,26 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       await fs.mkdir(snowcodeConfigDirPath, { recursive: true });
     }
 
-    // Read existing SnowCode config or create new one
+    // Read existing SnowCode config or create new MINIMAL one
     let snowcodeConfig: any = {
       "$schema": "https://opencode.ai/config.json",
-      "name": "snow-flow",
-      "description": "ServiceNow development with SnowCode and multi-LLM support",
       "mcp": {}
     };
 
-    let isOpenCodeFormat = false;
-
     try {
       const existingConfig = await fs.readFile(snowcodeConfigPath, 'utf-8');
-      snowcodeConfig = JSON.parse(existingConfig);
+      const existing = JSON.parse(existingConfig);
 
-      // Detect OpenCode/SnowCode format (uses "mcp" instead of "mcpServers")
-      if (snowcodeConfig.$schema || snowcodeConfig.mcp) {
-        isOpenCodeFormat = true;
+      // Preserve existing MCP config, we'll update/add servers
+      if (existing.mcp) {
+        snowcodeConfig.mcp = existing.mcp;
       }
     } catch {
-      // File doesn't exist or is invalid - will create new OpenCode-compatible one
-      isOpenCodeFormat = true;
+      // File doesn't exist or is invalid - will create new minimal one
     }
 
-    // SnowCode/OpenCode uses "mcp" field, NOT "mcpServers"
-    if (!snowcodeConfig.mcp) {
-      snowcodeConfig.mcp = {};
-    }
-
-    // Transform MCP servers from Claude Desktop format to OpenCode/SnowCode format
-    // Claude Desktop: { command: "node", args: ["path"], env: {} }
-    // OpenCode: { type: "local", command: ["node", "path"], environment: {} }
+    // Transform MCP servers to SnowCode format with ${VAR} syntax
+    // SnowCode expands ${VAR} from process.env automatically
     for (const [serverName, serverConfig] of Object.entries(finalConfig.mcpServers) as [string, any][]) {
       const transformedConfig: any = {};
 
@@ -3236,27 +3225,41 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
         transformedConfig.type = "local";
         transformedConfig.command = [serverConfig.command, ...serverConfig.args];
 
-        // Transform "env" to "environment"
+        // Convert environment variables to ${VAR} syntax for SnowCode
         if (serverConfig.env) {
-          transformedConfig.environment = serverConfig.env;
+          transformedConfig.environment = {};
 
-          // Check if required credentials are present (must return boolean!)
-          const hasRequiredCreds = Boolean(
-            (serverName === 'servicenow-unified' &&
-             serverConfig.env.SERVICENOW_INSTANCE_URL &&
-             serverConfig.env.SERVICENOW_CLIENT_ID &&
-             serverConfig.env.SERVICENOW_CLIENT_SECRET) ||
-            (serverName === 'snow-flow-orchestration') || // No creds required
-            (serverName !== 'servicenow-unified' && serverName !== 'snow-flow-orchestration')
-          );
-
-          transformedConfig.enabled = hasRequiredCreds;
+          // For ServiceNow Unified server - use ${VAR} syntax
+          if (serverName === 'servicenow-unified') {
+            transformedConfig.environment.SERVICENOW_INSTANCE_URL = '${SNOW_INSTANCE}';
+            transformedConfig.environment.SERVICENOW_CLIENT_ID = '${SNOW_CLIENT_ID}';
+            transformedConfig.environment.SERVICENOW_CLIENT_SECRET = '${SNOW_CLIENT_SECRET}';
+            transformedConfig.environment.SERVICENOW_USERNAME = '${SNOW_USERNAME}';
+            transformedConfig.environment.SERVICENOW_PASSWORD = '${SNOW_PASSWORD}';
+            transformedConfig.environment.SERVICENOW_REFRESH_TOKEN = '${SNOW_REFRESH_TOKEN}';
+            transformedConfig.enabled = true; // Always enabled (SnowCode handles missing vars)
+          }
+          // For other servers - use ${VAR} syntax for known variables
+          else {
+            for (const [key, value] of Object.entries(serverConfig.env)) {
+              // Map common env var patterns to ${VAR} syntax
+              if (key === 'SNOW_FLOW_ENV') {
+                transformedConfig.environment[key] = '${SNOW_FLOW_ENV}';
+              } else if (key === 'NEO4J_URI') {
+                transformedConfig.environment[key] = '${NEO4J_URI}';
+              } else if (key === 'NEO4J_USER') {
+                transformedConfig.environment[key] = '${NEO4J_USER}';
+              } else if (key === 'NEO4J_PASSWORD') {
+                transformedConfig.environment[key] = '${NEO4J_PASSWORD}';
+              } else {
+                // Keep value as-is for unknown vars
+                transformedConfig.environment[key] = value;
+              }
+            }
+            transformedConfig.enabled = true;
+          }
         } else {
-          transformedConfig.enabled = false; // No env vars = disabled
-        }
-
-        if (serverConfig.description) {
-          transformedConfig.description = serverConfig.description;
+          transformedConfig.enabled = true;
         }
       }
       // Handle remote servers (have "type": "sse" or "url")
@@ -3264,22 +3267,21 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
         transformedConfig.type = "remote";
         transformedConfig.url = serverConfig.url;
 
-        // Check if Authorization header has a token (not empty string or placeholder)
-        const hasToken = Boolean(
-          serverConfig.headers?.Authorization &&
-          !serverConfig.headers.Authorization.includes('{{') &&
-          serverConfig.headers.Authorization !== 'Bearer '
-        );
-
-        transformedConfig.enabled = hasToken;
-
+        // Convert Authorization header to ${VAR} syntax if it contains {{...}}
         if (serverConfig.headers) {
-          transformedConfig.headers = serverConfig.headers;
+          transformedConfig.headers = {};
+          for (const [key, value] of Object.entries(serverConfig.headers)) {
+            const val = value as string;
+            // Convert {{VAR}} to ${VAR} syntax
+            if (val.includes('{{') && val.includes('}}')) {
+              transformedConfig.headers[key] = val.replace(/\{\{(\w+)\}\}/g, '${$1}');
+            } else {
+              transformedConfig.headers[key] = val;
+            }
+          }
         }
 
-        if (serverConfig.description) {
-          transformedConfig.description = serverConfig.description;
-        }
+        transformedConfig.enabled = true; // Always enabled (SnowCode handles auth errors)
       }
       // Unknown format - copy as-is
       else {
@@ -3292,7 +3294,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
     // Write updated config
     await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
     console.log(`✅ Global SnowCode config updated: ${snowcodeConfigPath}`);
-    console.log(`   Format: OpenCode/SnowCode (type + command/url)`);
+    console.log(`   Format: OpenCode/SnowCode with \${VAR} expansion`);
     console.log(`   Servers: ${Object.keys(snowcodeConfig.mcp).join(', ')}`);
   } catch (error) {
     console.warn(`⚠️  Could not update global SnowCode config: ${error}`);
@@ -3666,37 +3668,26 @@ export async function setupMCPConfig(
       await fs.mkdir(snowcodeConfigDirPath, { recursive: true });
     }
 
-    // Read existing SnowCode config or create new one
+    // Read existing SnowCode config or create new MINIMAL one
     let snowcodeConfig: any = {
       "$schema": "https://opencode.ai/config.json",
-      "name": "snow-flow",
-      "description": "ServiceNow development with SnowCode and multi-LLM support",
       "mcp": {}
     };
 
-    let isOpenCodeFormat = false;
-
     try {
       const existingConfig = await fs.readFile(snowcodeConfigPath, 'utf-8');
-      snowcodeConfig = JSON.parse(existingConfig);
+      const existing = JSON.parse(existingConfig);
 
-      // Detect OpenCode/SnowCode format (uses "mcp" instead of "mcpServers")
-      if (snowcodeConfig.$schema || snowcodeConfig.mcp) {
-        isOpenCodeFormat = true;
+      // Preserve existing MCP config, we'll update/add servers
+      if (existing.mcp) {
+        snowcodeConfig.mcp = existing.mcp;
       }
     } catch {
-      // File doesn't exist or is invalid - will create new OpenCode-compatible one
-      isOpenCodeFormat = true;
+      // File doesn't exist or is invalid - will create new minimal one
     }
 
-    // SnowCode/OpenCode uses "mcp" field, NOT "mcpServers"
-    if (!snowcodeConfig.mcp) {
-      snowcodeConfig.mcp = {};
-    }
-
-    // Transform MCP servers from Claude Desktop format to OpenCode/SnowCode format
-    // Claude Desktop: { command: "node", args: ["path"], env: {} }
-    // OpenCode: { type: "local", command: ["node", "path"], environment: {} }
+    // Transform MCP servers to SnowCode format with ${VAR} syntax
+    // SnowCode expands ${VAR} from process.env automatically
     for (const [serverName, serverConfig] of Object.entries(finalConfig.mcpServers) as [string, any][]) {
       const transformedConfig: any = {};
 
@@ -3705,27 +3696,41 @@ export async function setupMCPConfig(
         transformedConfig.type = "local";
         transformedConfig.command = [serverConfig.command, ...serverConfig.args];
 
-        // Transform "env" to "environment"
+        // Convert environment variables to ${VAR} syntax for SnowCode
         if (serverConfig.env) {
-          transformedConfig.environment = serverConfig.env;
+          transformedConfig.environment = {};
 
-          // Check if required credentials are present (must return boolean!)
-          const hasRequiredCreds = Boolean(
-            (serverName === 'servicenow-unified' &&
-             serverConfig.env.SERVICENOW_INSTANCE_URL &&
-             serverConfig.env.SERVICENOW_CLIENT_ID &&
-             serverConfig.env.SERVICENOW_CLIENT_SECRET) ||
-            (serverName === 'snow-flow-orchestration') || // No creds required
-            (serverName !== 'servicenow-unified' && serverName !== 'snow-flow-orchestration')
-          );
-
-          transformedConfig.enabled = hasRequiredCreds;
+          // For ServiceNow Unified server - use ${VAR} syntax
+          if (serverName === 'servicenow-unified') {
+            transformedConfig.environment.SERVICENOW_INSTANCE_URL = '${SNOW_INSTANCE}';
+            transformedConfig.environment.SERVICENOW_CLIENT_ID = '${SNOW_CLIENT_ID}';
+            transformedConfig.environment.SERVICENOW_CLIENT_SECRET = '${SNOW_CLIENT_SECRET}';
+            transformedConfig.environment.SERVICENOW_USERNAME = '${SNOW_USERNAME}';
+            transformedConfig.environment.SERVICENOW_PASSWORD = '${SNOW_PASSWORD}';
+            transformedConfig.environment.SERVICENOW_REFRESH_TOKEN = '${SNOW_REFRESH_TOKEN}';
+            transformedConfig.enabled = true; // Always enabled (SnowCode handles missing vars)
+          }
+          // For other servers - use ${VAR} syntax for known variables
+          else {
+            for (const [key, value] of Object.entries(serverConfig.env)) {
+              // Map common env var patterns to ${VAR} syntax
+              if (key === 'SNOW_FLOW_ENV') {
+                transformedConfig.environment[key] = '${SNOW_FLOW_ENV}';
+              } else if (key === 'NEO4J_URI') {
+                transformedConfig.environment[key] = '${NEO4J_URI}';
+              } else if (key === 'NEO4J_USER') {
+                transformedConfig.environment[key] = '${NEO4J_USER}';
+              } else if (key === 'NEO4J_PASSWORD') {
+                transformedConfig.environment[key] = '${NEO4J_PASSWORD}';
+              } else {
+                // Keep value as-is for unknown vars
+                transformedConfig.environment[key] = value;
+              }
+            }
+            transformedConfig.enabled = true;
+          }
         } else {
-          transformedConfig.enabled = false; // No env vars = disabled
-        }
-
-        if (serverConfig.description) {
-          transformedConfig.description = serverConfig.description;
+          transformedConfig.enabled = true;
         }
       }
       // Handle remote servers (have "type": "sse" or "url")
@@ -3733,22 +3738,21 @@ export async function setupMCPConfig(
         transformedConfig.type = "remote";
         transformedConfig.url = serverConfig.url;
 
-        // Check if Authorization header has a token (not empty string or placeholder)
-        const hasToken = Boolean(
-          serverConfig.headers?.Authorization &&
-          !serverConfig.headers.Authorization.includes('{{') &&
-          serverConfig.headers.Authorization !== 'Bearer '
-        );
-
-        transformedConfig.enabled = hasToken;
-
+        // Convert Authorization header to ${VAR} syntax if it contains {{...}}
         if (serverConfig.headers) {
-          transformedConfig.headers = serverConfig.headers;
+          transformedConfig.headers = {};
+          for (const [key, value] of Object.entries(serverConfig.headers)) {
+            const val = value as string;
+            // Convert {{VAR}} to ${VAR} syntax
+            if (val.includes('{{') && val.includes('}}')) {
+              transformedConfig.headers[key] = val.replace(/\{\{(\w+)\}\}/g, '${$1}');
+            } else {
+              transformedConfig.headers[key] = val;
+            }
+          }
         }
 
-        if (serverConfig.description) {
-          transformedConfig.description = serverConfig.description;
-        }
+        transformedConfig.enabled = true; // Always enabled (SnowCode handles auth errors)
       }
       // Unknown format - copy as-is
       else {
@@ -3761,7 +3765,7 @@ export async function setupMCPConfig(
     // Write updated config
     await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
     console.log(`✅ Global SnowCode config updated: ${snowcodeConfigPath}`);
-    console.log(`   Format: OpenCode/SnowCode (type + command/url)`);
+    console.log(`   Format: OpenCode/SnowCode with \${VAR} expansion`);
     console.log(`   Servers: ${Object.keys(snowcodeConfig.mcp).join(', ')}`);
   } catch (error) {
     console.warn(`⚠️  Could not update global SnowCode config: ${error}`);
