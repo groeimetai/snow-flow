@@ -19,6 +19,7 @@ import { VERSION } from './version.js';
 import { snowFlowSystem } from './snow-flow-system.js';
 import { Logger } from './utils/logger.js';
 import chalk from 'chalk';
+import * as prompts from '@clack/prompts';
 // Load MCP Persistent Guard for bulletproof server protection
 import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
 // Load SnowCode output interceptor for beautiful MCP formatting
@@ -3286,7 +3287,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   try {
     templateContent = await fs.readFile(templatePath, 'utf-8');
   } catch (error) {
-    console.error('❌ Could not find .mcp.json.template file');
+    prompts.log.error('Could not find .mcp.json.template file');
     throw error;
   }
 
@@ -3319,10 +3320,10 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   try {
     await fs.access(mcpConfigPath);
     if (force) {
-      console.log('⚠️  .mcp.json already exists, overwriting with --force flag');
+      prompts.log.warn('.mcp.json already exists, overwriting with --force flag');
       await fs.writeFile(mcpConfigPath, JSON.stringify(finalConfig, null, 2));
     } else {
-      console.log('⚠️  .mcp.json already exists, skipping (use --force to overwrite)');
+      prompts.log.warn('.mcp.json already exists, skipping (use --force to overwrite)');
     }
   } catch {
     await fs.writeFile(mcpConfigPath, JSON.stringify(finalConfig, null, 2));
@@ -3697,7 +3698,7 @@ export async function setupMCPConfig(
     try {
       await fs.access(join(testPath, '.mcp.json.template'));
       snowFlowRoot = testPath;
-      console.log(`✅ Found Snow-Flow installation: ${testPath}`);
+      prompts.log.success(`Found Snow-Flow installation: ${testPath}`);
       break;
     } catch {
       // Keep trying
@@ -3789,7 +3790,7 @@ export async function setupMCPConfig(
 
     // Write updated .env
     await fs.writeFile(envPath, envContent);
-    console.log('✅ Updated .env with credentials');
+    prompts.log.success('Updated .env with credentials');
   }
 
   // Read the template file
@@ -3799,7 +3800,7 @@ export async function setupMCPConfig(
   try {
     templateContent = await fs.readFile(templatePath, 'utf-8');
   } catch (error) {
-    console.error('❌ Could not find .mcp.json.template file');
+    prompts.log.error('Could not find .mcp.json.template file');
     throw error;
   }
 
@@ -3836,10 +3837,10 @@ export async function setupMCPConfig(
   try {
     await fs.access(mcpConfigPath);
     if (force) {
-      console.log('⚠️  .mcp.json already exists, overwriting with --force flag');
+      prompts.log.warn('.mcp.json already exists, overwriting with --force flag');
       await fs.writeFile(mcpConfigPath, JSON.stringify(finalConfig, null, 2));
     } else {
-      console.log('⚠️  .mcp.json already exists, skipping (use --force to overwrite)');
+      prompts.log.warn('.mcp.json already exists, skipping (use --force to overwrite)');
     }
   } catch {
     await fs.writeFile(mcpConfigPath, JSON.stringify(finalConfig, null, 2));
@@ -3958,9 +3959,9 @@ export async function setupMCPConfig(
 
     // Write GLOBAL config
     await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
-    console.log(`✅ Global SnowCode config updated: ${snowcodeConfigPath}`);
-    console.log(`   Format: OpenCode/SnowCode with \${VAR} expansion`);
-    console.log(`   Servers: ${Object.keys(snowcodeConfig.mcp).join(', ')}`);
+    prompts.log.success(`Global SnowCode config updated: ${snowcodeConfigPath}`);
+    prompts.log.message(`   Format: OpenCode/SnowCode with \${VAR} expansion`);
+    prompts.log.message(`   Servers: ${Object.keys(snowcodeConfig.mcp).join(', ')}`);
 
     // 🔥 ALSO write LOCAL config (takes priority!)
     const localSnowcodeDir = join(targetDir, '.snowcode');
@@ -3972,16 +3973,16 @@ export async function setupMCPConfig(
 
       // Write SAME config to local directory
       await fs.writeFile(localSnowcodePath, JSON.stringify(snowcodeConfig, null, 2));
-      console.log(`✅ LOCAL SnowCode config created: ${localSnowcodePath}`);
-      console.log(`   📌 SnowCode will use THIS config (local takes priority)`);
+      prompts.log.success(`LOCAL SnowCode config created: ${localSnowcodePath}`);
+      prompts.log.message(`   SnowCode will use THIS config (local takes priority)`);
     } catch (localError) {
-      console.warn(`⚠️  Could not create local SnowCode config: ${localError}`);
-      console.warn(`   Will fall back to global config`);
+      prompts.log.warn(`Could not create local SnowCode config: ${localError}`);
+      prompts.log.message(`   Will fall back to global config`);
     }
 
   } catch (error) {
-    console.warn(`⚠️  Could not update SnowCode config: ${error}`);
-    console.warn('   SnowCode will use project-local .mcp.json instead');
+    prompts.log.warn(`Could not update SnowCode config: ${error}`);
+    prompts.log.message('   SnowCode will use project-local .mcp.json instead');
   }
 }
 
@@ -3991,43 +3992,52 @@ program
   .description('Refresh MCP server configuration to latest version')
   .option('--force', 'Force overwrite existing configuration')
   .action(async (options) => {
-    console.log(chalk.blue.bold(`\n🔄 Refreshing MCP Configuration to v${VERSION}...`));
-    console.log('='.repeat(60));
-    
+    prompts.log.step(`Refreshing MCP Configuration to v${VERSION}...`);
+
     try {
       // Check if project is initialized
       const envPath = join(process.cwd(), '.env');
       if (!existsSync(envPath)) {
-        console.error(chalk.red('\n❌ No .env file found. Please run "snow-flow init" first.'));
+        prompts.log.error('No .env file found. Please run "snow-flow init" first.');
         process.exit(1);
       }
-      
+
       // Load env vars
       dotenv.config({ path: envPath });
       const instanceUrl = process.env.SNOW_INSTANCE;
       const clientId = process.env.SNOW_CLIENT_ID;
       const clientSecret = process.env.SNOW_CLIENT_SECRET;
-      
+
       if (!instanceUrl || !clientId || !clientSecret) {
-        console.error(chalk.red('\n❌ Missing ServiceNow credentials in .env file.'));
+        prompts.log.error('Missing ServiceNow credentials in .env file.');
         process.exit(1);
       }
-      
-      console.log('\n📝 Updating MCP configuration...');
-      await setupMCPConfig(process.cwd(), instanceUrl, clientId, clientSecret, options.force || false);
-      
-      console.log(chalk.green('\n✅ MCP configuration refreshed successfully!'));
-      console.log('\n📢 IMPORTANT: Restart SnowCode (or Claude Code) to use the new configuration:');
-      console.log(chalk.cyan('   SnowCode: snowcode'));
-      console.log(chalk.cyan('   Claude Code: claude --mcp-config .mcp.json'));
-      console.log('\n💡 The Local Development server now includes:');
-      console.log('   • Universal artifact detection via sys_metadata');
-      console.log('   • Support for ANY ServiceNow table (even custom)');
-      console.log('   • Generic artifact handling for unknown types');
-      console.log('   • Automatic file structure creation');
-      
+
+      const spinner = prompts.spinner();
+      spinner.start('Updating MCP configuration');
+
+      try {
+        await setupMCPConfig(process.cwd(), instanceUrl, clientId, clientSecret, options.force || false);
+        spinner.stop('MCP configuration refreshed successfully');
+      } catch (err) {
+        spinner.stop('Failed to update MCP configuration');
+        throw err;
+      }
+
+      prompts.log.message('');
+      prompts.log.info('IMPORTANT: Restart SnowCode (or Claude Code) to use the new configuration:');
+      prompts.log.message('   SnowCode: snowcode');
+      prompts.log.message('   Claude Code: claude --mcp-config .mcp.json');
+      prompts.log.message('');
+      prompts.log.info('The Local Development server now includes:');
+      prompts.log.message('   - Universal artifact detection via sys_metadata');
+      prompts.log.message('   - Support for ANY ServiceNow table (even custom)');
+      prompts.log.message('   - Generic artifact handling for unknown types');
+      prompts.log.message('   - Automatic file structure creation');
+
     } catch (error) {
-      console.error(chalk.red('\n❌ Failed to refresh MCP configuration:'), error);
+      prompts.log.error('Failed to refresh MCP configuration:');
+      prompts.log.message(String(error));
       process.exit(1);
     }
   });
