@@ -530,7 +530,7 @@
     "typescript": "5.9.3"
   },
   "peerDependencies": {
-    "@groeimetai/snowcode": "0.15.14-snow-flow-4"
+    "@groeimetai/snowcode": ">=0.15.22"
   },
   "peerDependenciesMeta": {
     "@groeimetai/snowcode": {
