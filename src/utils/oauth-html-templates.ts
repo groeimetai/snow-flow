@@ -1,73 +1,139 @@
 /**
- * OAuth HTML Templates with Snow-Flow branding
+ * OAuth HTML Templates with Snow-Flow minimalist branding
  */
 
 const baseStyles = `
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      background: #1E2531;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0;
       padding: 20px;
+      color: #FFFFFF;
     }
+
     .container {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      padding: 40px;
-      text-align: center;
-      max-width: 500px;
+      max-width: 600px;
       width: 100%;
+      text-align: center;
     }
+
     .logo {
-      margin-bottom: 30px;
+      margin-bottom: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
     }
-    .logo-ascii {
-      font-family: 'Courier New', monospace;
-      white-space: pre;
-      line-height: 1.2;
-      color: #4A90E2;
-      font-size: 14px;
-      margin-bottom: 20px;
+
+    .logo-svg {
+      width: 48px;
+      height: 48px;
     }
+
+    .logo-text {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .snow {
+      color: #FFFFFF;
+    }
+
+    .flow {
+      color: #00D9FF;
+    }
+
+    .status-icon {
+      font-size: 4rem;
+      margin-bottom: 2rem;
+      display: block;
+    }
+
     h1 {
-      color: #2E5C8A;
-      margin-bottom: 20px;
-      font-size: 28px;
+      font-size: 3rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
     }
+
+    .success-text {
+      color: #00D9FF;
+    }
+
+    .error-text {
+      color: #f5222d;
+    }
+
     p {
-      color: #666;
+      font-size: 1.25rem;
+      color: #94A3B8;
       line-height: 1.6;
-      margin-bottom: 15px;
+      margin-bottom: 1rem;
     }
-    .success { color: #52c41a; }
-    .error { color: #f5222d; }
-    .brand {
-      color: #4A90E2;
-      font-weight: bold;
+
+    .instruction {
+      font-size: 1.125rem;
+      color: #FFFFFF;
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .snowflake {
-      display: inline-block;
-      animation: fall 3s ease-in-out infinite;
+
+    .error-details {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: rgba(245, 34, 45, 0.1);
+      border-radius: 12px;
+      border: 1px solid rgba(245, 34, 45, 0.3);
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
+      color: #f5222d;
+      word-break: break-word;
     }
-    @keyframes fall {
-      0% { transform: translateY(0) rotate(0deg); }
-      100% { transform: translateY(20px) rotate(360deg); }
+
+    .footer {
+      margin-top: 3rem;
+      font-size: 0.875rem;
+      color: #64748B;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .status-icon {
+        font-size: 3rem;
+      }
+
+      .logo-text {
+        font-size: 1.5rem;
+      }
     }
   </style>
 `;
 
-const logoASCII = `
-      /\\        <span class="snowflake">❄</span>
-     /  \\      <span class="snowflake" style="animation-delay: 0.5s">❄</span>
-    /    \\    <span class="snowflake" style="animation-delay: 1s">❄</span>
-   /      \\  <span class="snowflake" style="animation-delay: 1.5s">❄</span>
-  /________\\
-     ||||
+const logoSVG = `
+  <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 4L8 12L16 20L24 12L16 4Z" fill="#00D9FF"/>
+    <path d="M8 20L4 24H12L8 20Z" fill="#00D9FF" opacity="0.7"/>
+    <path d="M24 20L28 24H20L24 20Z" fill="#00D9FF" opacity="0.7"/>
+    <path d="M16 20L12 28H20L16 20Z" fill="#00D9FF" opacity="0.5"/>
+  </svg>
 `;
 
 export const OAuthTemplates = {
@@ -75,20 +141,36 @@ export const OAuthTemplates = {
     <html>
       <head>
         <title>Snow-Flow - Authentication Successful</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         ${baseStyles}
       </head>
       <body>
         <div class="container">
           <div class="logo">
-            <div class="logo-ascii">${logoASCII}</div>
-            <h2 class="brand">Snow-Flow</h2>
+            ${logoSVG}
+            <div class="logo-text">
+              <span class="snow">SNOW</span><span class="flow">FLOW</span>
+            </div>
           </div>
-          <h1><span class="success">✅</span> Authentication Successful!</h1>
-          <p>You are now connected to ServiceNow!</p>
-          <p>You can close this window and return to the terminal.</p>
-          <p style="margin-top: 30px; font-size: 14px; color: #999;">
-            Snow-Flow: ServiceNow Multi-Agent Development Framework
+
+          <span class="status-icon">✓</span>
+
+          <h1 class="success-text">
+            Connected!
+          </h1>
+
+          <p>
+            Your ServiceNow instance is now connected to Snow-Flow.
           </p>
+
+          <div class="instruction">
+            You can close this window and return to your terminal.
+          </div>
+
+          <div class="footer">
+            Snow-Flow: ServiceNow Multi-Agent Development Framework
+          </div>
         </div>
       </body>
     </html>
@@ -98,20 +180,40 @@ export const OAuthTemplates = {
     <html>
       <head>
         <title>Snow-Flow - Authentication Error</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         ${baseStyles}
       </head>
       <body>
         <div class="container">
           <div class="logo">
-            <div class="logo-ascii">${logoASCII}</div>
-            <h2 class="brand">Snow-Flow</h2>
+            ${logoSVG}
+            <div class="logo-text">
+              <span class="snow">SNOW</span><span class="flow">FLOW</span>
+            </div>
           </div>
-          <h1><span class="error">❌</span> OAuth Error</h1>
-          <p>Error: ${error}</p>
-          <p>Please close this window and try again.</p>
-          <p style="margin-top: 30px; font-size: 14px; color: #999;">
-            Need help? Check the Snow-Flow documentation.
+
+          <span class="status-icon error-text">✕</span>
+
+          <h1 class="error-text">
+            Authentication Failed
+          </h1>
+
+          <p>
+            We couldn't complete the authentication process.
           </p>
+
+          <div class="error-details">
+            ${error}
+          </div>
+
+          <div class="instruction">
+            Please close this window and try again.
+          </div>
+
+          <div class="footer">
+            Need help? Check the Snow-Flow documentation.
+          </div>
         </div>
       </body>
     </html>
@@ -121,20 +223,36 @@ export const OAuthTemplates = {
     <html>
       <head>
         <title>Snow-Flow - Security Error</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         ${baseStyles}
       </head>
       <body>
         <div class="container">
           <div class="logo">
-            <div class="logo-ascii">${logoASCII}</div>
-            <h2 class="brand">Snow-Flow</h2>
+            ${logoSVG}
+            <div class="logo-text">
+              <span class="snow">SNOW</span><span class="flow">FLOW</span>
+            </div>
           </div>
-          <h1><span class="error">❌</span> Security Error</h1>
-          <p>Invalid state parameter - possible CSRF attack detected.</p>
-          <p>Please close this window and start the authentication process again.</p>
-          <p style="margin-top: 30px; font-size: 14px; color: #999;">
-            Your security is our priority.
+
+          <span class="status-icon error-text">⚠</span>
+
+          <h1 class="error-text">
+            Security Error
+          </h1>
+
+          <p>
+            Invalid state parameter detected - possible CSRF attack.
           </p>
+
+          <div class="instruction">
+            Please close this window and start the authentication process again.
+          </div>
+
+          <div class="footer">
+            Your security is our priority.
+          </div>
         </div>
       </body>
     </html>
@@ -144,20 +262,36 @@ export const OAuthTemplates = {
     <html>
       <head>
         <title>Snow-Flow - Missing Authorization Code</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         ${baseStyles}
       </head>
       <body>
         <div class="container">
           <div class="logo">
-            <div class="logo-ascii">${logoASCII}</div>
-            <h2 class="brand">Snow-Flow</h2>
+            ${logoSVG}
+            <div class="logo-text">
+              <span class="snow">SNOW</span><span class="flow">FLOW</span>
+            </div>
           </div>
-          <h1><span class="error">❌</span> Missing Authorization Code</h1>
-          <p>No authorization code was received from ServiceNow.</p>
-          <p>Please close this window and try again.</p>
-          <p style="margin-top: 30px; font-size: 14px; color: #999;">
-            Make sure you approve the authorization request in ServiceNow.
+
+          <span class="status-icon error-text">✕</span>
+
+          <h1 class="error-text">
+            Missing Authorization
+          </h1>
+
+          <p>
+            No authorization code was received from ServiceNow.
           </p>
+
+          <div class="instruction">
+            Make sure you approve the authorization request in ServiceNow, then try again.
+          </div>
+
+          <div class="footer">
+            Snow-Flow: ServiceNow Multi-Agent Development Framework
+          </div>
         </div>
       </body>
     </html>
@@ -167,20 +301,40 @@ export const OAuthTemplates = {
     <html>
       <head>
         <title>Snow-Flow - Token Exchange Failed</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         ${baseStyles}
       </head>
       <body>
         <div class="container">
           <div class="logo">
-            <div class="logo-ascii">${logoASCII}</div>
-            <h2 class="brand">Snow-Flow</h2>
+            ${logoSVG}
+            <div class="logo-text">
+              <span class="snow">SNOW</span><span class="flow">FLOW</span>
+            </div>
           </div>
-          <h1><span class="error">❌</span> Token Exchange Failed</h1>
-          <p>Error: ${error}</p>
-          <p>Please close this window and check your OAuth configuration.</p>
-          <p style="margin-top: 30px; font-size: 14px; color: #999;">
-            Ensure your Client ID and Client Secret are correct.
+
+          <span class="status-icon error-text">✕</span>
+
+          <h1 class="error-text">
+            Token Exchange Failed
+          </h1>
+
+          <p>
+            Unable to exchange authorization code for access token.
           </p>
+
+          <div class="error-details">
+            ${error}
+          </div>
+
+          <div class="instruction">
+            Please verify your OAuth configuration (Client ID and Client Secret) and try again.
+          </div>
+
+          <div class="footer">
+            Snow-Flow: ServiceNow Multi-Agent Development Framework
+          </div>
         </div>
       </body>
     </html>
