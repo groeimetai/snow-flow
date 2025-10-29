@@ -1942,13 +1942,11 @@ program
       const configImported = await checkAndInstallSnowCode();
 
       console.log(chalk.blue.bold('\n🎯 Next steps:'));
-      console.log('1. Configure credentials: Edit ' + chalk.cyan('.env'));
-      console.log('   - Add your ServiceNow instance URL, username/password or OAuth credentials');
-      console.log('2. Authenticate: ' + chalk.cyan('snow-flow auth login'));
+      console.log('1. Authenticate: ' + chalk.cyan('snow-flow auth login'));
       console.log('   - Authenticates with your LLM provider (Claude/OpenAI/Google/Ollama)');
       console.log('   - Then authenticates with ServiceNow OAuth');
       console.log('   - Your provider choice is automatically saved to .env');
-      console.log('3. Start developing with SnowCode: ' + chalk.cyan('./scripts/start-snowcode.sh'));
+      console.log('2. Start developing with SnowCode: ' + chalk.cyan('./scripts/start-snowcode.sh'));
       console.log('   - Smart launcher with pre-flight checks and MCP server management');
       console.log('   - Or use swarm: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
       console.log('   - Or launch SnowCode directly: ' + chalk.cyan('snowcode'));
