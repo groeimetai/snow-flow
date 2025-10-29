@@ -3144,8 +3144,8 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       // File doesn't exist or is invalid - will create new minimal one
     }
 
-    // Transform MCP servers to SnowCode format with ${VAR} syntax
-    // SnowCode expands ${VAR} from process.env automatically
+    // Transform MCP servers to SnowCode format using REAL values (not ${VAR} placeholders)
+    // serverConfig.env already contains real values from template replacement
     for (const [serverName, serverConfig] of Object.entries(finalConfig.mcpServers) as [string, any][]) {
       const transformedConfig: any = {};
 
@@ -3154,39 +3154,15 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
         transformedConfig.type = "local";
         transformedConfig.command = [serverConfig.command, ...serverConfig.args];
 
-        // Convert environment variables to ${VAR} syntax for SnowCode
+        // Use ACTUAL values from serverConfig.env (already replaced from template)
         if (serverConfig.env) {
           transformedConfig.environment = {};
 
-          // For ServiceNow Unified server - use ${VAR} syntax
-          if (serverName === 'servicenow-unified') {
-            transformedConfig.environment.SERVICENOW_INSTANCE_URL = '${SNOW_INSTANCE}';
-            transformedConfig.environment.SERVICENOW_CLIENT_ID = '${SNOW_CLIENT_ID}';
-            transformedConfig.environment.SERVICENOW_CLIENT_SECRET = '${SNOW_CLIENT_SECRET}';
-            transformedConfig.environment.SERVICENOW_USERNAME = '${SNOW_USERNAME}';
-            transformedConfig.environment.SERVICENOW_PASSWORD = '${SNOW_PASSWORD}';
-            transformedConfig.environment.SERVICENOW_REFRESH_TOKEN = '${SNOW_REFRESH_TOKEN}';
-            transformedConfig.enabled = true; // Always enabled (SnowCode handles missing vars)
+          // Copy all environment variables as-is (they have real values)
+          for (const [key, value] of Object.entries(serverConfig.env)) {
+            transformedConfig.environment[key] = value;
           }
-          // For other servers - use ${VAR} syntax for known variables
-          else {
-            for (const [key, value] of Object.entries(serverConfig.env)) {
-              // Map common env var patterns to ${VAR} syntax
-              if (key === 'SNOW_FLOW_ENV') {
-                transformedConfig.environment[key] = '${SNOW_FLOW_ENV}';
-              } else if (key === 'NEO4J_URI') {
-                transformedConfig.environment[key] = '${NEO4J_URI}';
-              } else if (key === 'NEO4J_USER') {
-                transformedConfig.environment[key] = '${NEO4J_USER}';
-              } else if (key === 'NEO4J_PASSWORD') {
-                transformedConfig.environment[key] = '${NEO4J_PASSWORD}';
-              } else {
-                // Keep value as-is for unknown vars
-                transformedConfig.environment[key] = value;
-              }
-            }
-            transformedConfig.enabled = true;
-          }
+          transformedConfig.enabled = true;
         } else {
           transformedConfig.enabled = true;
         }
@@ -3196,25 +3172,28 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
         transformedConfig.type = "remote";
         transformedConfig.url = serverConfig.url;
 
-        // Convert Authorization header to ${VAR} syntax if it contains {{...}}
+        // Copy headers as-is (already have real values from template)
         if (serverConfig.headers) {
           transformedConfig.headers = {};
+          var hasValidAuth = false;
           for (const [key, value] of Object.entries(serverConfig.headers)) {
-            const val = value as string;
-            // Convert {{VAR}} to ${VAR} syntax
-            if (val.includes('{{') && val.includes('}}')) {
-              transformedConfig.headers[key] = val.replace(/\{\{(\w+)\}\}/g, '${$1}');
-            } else {
-              transformedConfig.headers[key] = val;
+            transformedConfig.headers[key] = value;
+            // Check if Authorization header has actual token (not empty "Bearer ")
+            var val = String(value);
+            if (key === 'Authorization' && val && val.trim() !== 'Bearer' && val.trim() !== 'Bearer ') {
+              hasValidAuth = true;
             }
           }
+          // Disable server if Authorization is empty (prevents auth errors)
+          transformedConfig.enabled = serverName !== 'snow-flow-enterprise' || hasValidAuth;
+        } else {
+          transformedConfig.enabled = true;
         }
-
-        transformedConfig.enabled = true; // Always enabled (SnowCode handles auth errors)
       }
-      // Unknown format - copy as-is
+      // Unknown format - skip to avoid schema violations
       else {
-        Object.assign(transformedConfig, serverConfig);
+        // Don't copy unknown formats - they may violate OpenCode schema
+        continue;
       }
 
       snowcodeConfig.mcp[serverName] = transformedConfig;
@@ -3223,7 +3202,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
     // Write updated config
     await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
     console.log(`✅ Global SnowCode config updated: ${snowcodeConfigPath}`);
-    console.log(`   Format: OpenCode/SnowCode with \${VAR} expansion`);
+    console.log(`   Format: OpenCode/SnowCode with real credential values`);
     console.log(`   Servers: ${Object.keys(snowcodeConfig.mcp).join(', ')}`);
   } catch (error) {
     console.warn(`⚠️  Could not update global SnowCode config: ${error}`);
@@ -3667,8 +3646,8 @@ export async function setupMCPConfig(
       // File doesn't exist or is invalid - will create new minimal one
     }
 
-    // Transform MCP servers to SnowCode format with ${VAR} syntax
-    // SnowCode expands ${VAR} from process.env automatically
+    // Transform MCP servers to SnowCode format using REAL values (not ${VAR} placeholders)
+    // serverConfig.env already contains real values from template replacement
     for (const [serverName, serverConfig] of Object.entries(finalConfig.mcpServers) as [string, any][]) {
       const transformedConfig: any = {};
 
@@ -3677,39 +3656,15 @@ export async function setupMCPConfig(
         transformedConfig.type = "local";
         transformedConfig.command = [serverConfig.command, ...serverConfig.args];
 
-        // Convert environment variables to ${VAR} syntax for SnowCode
+        // Use ACTUAL values from serverConfig.env (already replaced from template)
         if (serverConfig.env) {
           transformedConfig.environment = {};
 
-          // For ServiceNow Unified server - use ${VAR} syntax
-          if (serverName === 'servicenow-unified') {
-            transformedConfig.environment.SERVICENOW_INSTANCE_URL = '${SNOW_INSTANCE}';
-            transformedConfig.environment.SERVICENOW_CLIENT_ID = '${SNOW_CLIENT_ID}';
-            transformedConfig.environment.SERVICENOW_CLIENT_SECRET = '${SNOW_CLIENT_SECRET}';
-            transformedConfig.environment.SERVICENOW_USERNAME = '${SNOW_USERNAME}';
-            transformedConfig.environment.SERVICENOW_PASSWORD = '${SNOW_PASSWORD}';
-            transformedConfig.environment.SERVICENOW_REFRESH_TOKEN = '${SNOW_REFRESH_TOKEN}';
-            transformedConfig.enabled = true; // Always enabled (SnowCode handles missing vars)
+          // Copy all environment variables as-is (they have real values)
+          for (const [key, value] of Object.entries(serverConfig.env)) {
+            transformedConfig.environment[key] = value;
           }
-          // For other servers - use ${VAR} syntax for known variables
-          else {
-            for (const [key, value] of Object.entries(serverConfig.env)) {
-              // Map common env var patterns to ${VAR} syntax
-              if (key === 'SNOW_FLOW_ENV') {
-                transformedConfig.environment[key] = '${SNOW_FLOW_ENV}';
-              } else if (key === 'NEO4J_URI') {
-                transformedConfig.environment[key] = '${NEO4J_URI}';
-              } else if (key === 'NEO4J_USER') {
-                transformedConfig.environment[key] = '${NEO4J_USER}';
-              } else if (key === 'NEO4J_PASSWORD') {
-                transformedConfig.environment[key] = '${NEO4J_PASSWORD}';
-              } else {
-                // Keep value as-is for unknown vars
-                transformedConfig.environment[key] = value;
-              }
-            }
-            transformedConfig.enabled = true;
-          }
+          transformedConfig.enabled = true;
         } else {
           transformedConfig.enabled = true;
         }
@@ -3719,25 +3674,28 @@ export async function setupMCPConfig(
         transformedConfig.type = "remote";
         transformedConfig.url = serverConfig.url;
 
-        // Convert Authorization header to ${VAR} syntax if it contains {{...}}
+        // Copy headers as-is (already have real values from template)
         if (serverConfig.headers) {
           transformedConfig.headers = {};
+          var hasValidAuth = false;
           for (const [key, value] of Object.entries(serverConfig.headers)) {
-            const val = value as string;
-            // Convert {{VAR}} to ${VAR} syntax
-            if (val.includes('{{') && val.includes('}}')) {
-              transformedConfig.headers[key] = val.replace(/\{\{(\w+)\}\}/g, '${$1}');
-            } else {
-              transformedConfig.headers[key] = val;
+            transformedConfig.headers[key] = value;
+            // Check if Authorization header has actual token (not empty "Bearer ")
+            var val = String(value);
+            if (key === 'Authorization' && val && val.trim() !== 'Bearer' && val.trim() !== 'Bearer ') {
+              hasValidAuth = true;
             }
           }
+          // Disable server if Authorization is empty (prevents auth errors)
+          transformedConfig.enabled = serverName !== 'snow-flow-enterprise' || hasValidAuth;
+        } else {
+          transformedConfig.enabled = true;
         }
-
-        transformedConfig.enabled = true; // Always enabled (SnowCode handles auth errors)
       }
-      // Unknown format - copy as-is
+      // Unknown format - skip to avoid schema violations
       else {
-        Object.assign(transformedConfig, serverConfig);
+        // Don't copy unknown formats - they may violate OpenCode schema
+        continue;
       }
 
       snowcodeConfig.mcp[serverName] = transformedConfig;
@@ -3746,7 +3704,7 @@ export async function setupMCPConfig(
     // Write GLOBAL config
     await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
     prompts.log.success(`Global SnowCode config updated: ${snowcodeConfigPath}`);
-    prompts.log.message(`   Format: OpenCode/SnowCode with \${VAR} expansion`);
+    prompts.log.message(`   Format: OpenCode/SnowCode with real credential values`);
     prompts.log.message(`   Servers: ${Object.keys(snowcodeConfig.mcp).join(', ')}`);
 
     // 🔥 ALSO write LOCAL config (takes priority!)

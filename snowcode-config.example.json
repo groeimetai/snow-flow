@@ -8,21 +8,29 @@
       "type": "local",
       "command": ["node", "dist/mcp/servicenow-mcp-unified/index.js"],
       "environment": {
-        "SERVICENOW_INSTANCE_URL": "https://${SNOW_INSTANCE}",
-        "SERVICENOW_CLIENT_ID": "${SNOW_CLIENT_ID}",
-        "SERVICENOW_CLIENT_SECRET": "${SNOW_CLIENT_SECRET}",
-        "SERVICENOW_USERNAME": "${SNOW_USERNAME}",
-        "SERVICENOW_PASSWORD": "${SNOW_PASSWORD}"
+        "SERVICENOW_INSTANCE_URL": "https://dev12345.service-now.com",
+        "SERVICENOW_CLIENT_ID": "your-client-id-here",
+        "SERVICENOW_CLIENT_SECRET": "your-client-secret-here",
+        "SERVICENOW_USERNAME": "your-username-here",
+        "SERVICENOW_PASSWORD": "your-password-here"
       },
       "enabled": true
     },
-    "snow-flow": {
+    "snow-flow-orchestration": {
       "type": "local",
       "command": ["node", "dist/mcp/snow-flow-mcp.js"],
       "environment": {
         "SNOW_FLOW_ENV": "production"
       },
       "enabled": true
+    },
+    "snow-flow-enterprise": {
+      "type": "remote",
+      "url": "https://enterprise.snow-flow.dev/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer your-enterprise-token-here"
+      },
+      "enabled": false
     }
   }
 }
