@@ -1,15 +1,15 @@
 <svg viewBox="0 0 100 70" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <!-- Mountain gradient (white to cyan) -->
-    <linearGradient id="mountain-v" x1="50" y1="6" x2="50" y2="26" gradientUnits="userSpaceOnUse">
+    <linearGradient id="mountain-v" x1="50" y1="8" x2="50" y2="28" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF"/>
       <stop offset="100%" stop-color="#00D9FF"/>
     </linearGradient>
   </defs>
 
   <!-- Icon centered and scaled up -->
-  <g transform="translate(26, 0)">
-    <!-- Mountain peaks (geometric, clear) - scaled up -->
+  <g transform="translate(26, 2)">
+    <!-- Mountain peaks (geometric, clear) - scaled up and better centered -->
     <path d="M6 26 L15 6 L24 16 L33 6 L42 26 Z"
           fill="url(#mountain-v)"
           stroke="#00D9FF"
