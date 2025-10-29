@@ -3584,8 +3584,9 @@ export async function setupMCPConfig(
   }
 
   // Helper function to get env value with proper URL formatting
-  function getEnvValue(key: string, defaultValue: string = ''): string {
-    var value = envValues[key] || process.env[key] || defaultValue;
+  function getEnvValue(key: string, defaultValue: string = '', overrideValue?: string): string {
+    // Use override value if provided (from function parameters), otherwise fall back to env
+    var value = overrideValue || envValues[key] || process.env[key] || defaultValue;
 
     // Special handling for SNOW_INSTANCE - ensure it's a full URL
     if (key === 'SNOW_INSTANCE' && value && !value.startsWith('http')) {
@@ -3594,6 +3595,11 @@ export async function setupMCPConfig(
 
     return value;
   }
+
+  // Prepare credential values (use function params if provided, otherwise read from env)
+  const finalInstanceUrl = instanceUrl || getEnvValue('SNOW_INSTANCE');
+  const finalClientId = clientId || getEnvValue('SNOW_CLIENT_ID');
+  const finalClientSecret = clientSecret || getEnvValue('SNOW_CLIENT_SECRET');
 
   // Read the template file
   const templatePath = join(snowFlowRoot, '.mcp.json.template');
@@ -3606,13 +3612,13 @@ export async function setupMCPConfig(
     throw error;
   }
 
-  // Replace placeholders with ACTUAL values from .env (not ${...} syntax!)
+  // Replace placeholders with ACTUAL values (from function params or .env)
   // This ensures SnowCode/Claude Code can use the MCP servers immediately
   const mcpConfigContent = templateContent
     .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)
-    .replace(/{{SNOW_INSTANCE}}/g, getEnvValue('SNOW_INSTANCE'))
-    .replace(/{{SNOW_CLIENT_ID}}/g, getEnvValue('SNOW_CLIENT_ID'))
-    .replace(/{{SNOW_CLIENT_SECRET}}/g, getEnvValue('SNOW_CLIENT_SECRET'))
+    .replace(/{{SNOW_INSTANCE}}/g, finalInstanceUrl)
+    .replace(/{{SNOW_CLIENT_ID}}/g, finalClientId)
+    .replace(/{{SNOW_CLIENT_SECRET}}/g, finalClientSecret)
     .replace(/{{SNOW_DEPLOYMENT_TIMEOUT}}/g, getEnvValue('SNOW_DEPLOYMENT_TIMEOUT', '180000'))
     .replace(/{{MCP_DEPLOYMENT_TIMEOUT}}/g, getEnvValue('MCP_DEPLOYMENT_TIMEOUT', '180000'))
     .replace(/{{NEO4J_URI}}/g, getEnvValue('NEO4J_URI', ''))
