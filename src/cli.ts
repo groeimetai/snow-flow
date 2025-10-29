@@ -3002,13 +3002,30 @@ function convertToSnowCodeFormat(claudeConfig: any): any {
 
   for (const [name, server] of Object.entries(servers)) {
     const s = server as any;
-    snowcodeConfig.mcp[name] = {
-      type: "local",
-      command: s.args ? [s.command, ...s.args] : (Array.isArray(s.command) ? s.command : [s.command]),
-      environment: s.env || s.environment || {},
-      enabled: true,
-      description: s.description || ""
-    };
+
+    // Handle remote servers (SSE/HTTP - have type: "sse" or url field)
+    if (s.type === 'sse' || s.url) {
+      snowcodeConfig.mcp[name] = {
+        type: "remote",
+        url: s.url,
+        enabled: Boolean(s.headers?.Authorization && s.headers.Authorization !== 'Bearer '),
+        description: s.description || ""
+      };
+
+      if (s.headers) {
+        snowcodeConfig.mcp[name].headers = s.headers;
+      }
+    }
+    // Handle local servers (have command + args)
+    else {
+      snowcodeConfig.mcp[name] = {
+        type: "local",
+        command: s.args ? [s.command, ...s.args] : (Array.isArray(s.command) ? s.command : [s.command]),
+        environment: s.env || s.environment || {},
+        enabled: true,
+        description: s.description || ""
+      };
+    }
   }
 
   return snowcodeConfig;
