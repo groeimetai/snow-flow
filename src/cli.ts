@@ -406,37 +406,13 @@ program
       const success = await executeSnowCode(objective);
 
       if (success) {
-        if (options.verbose) {
-          cliLogger.info('✅ SnowCode launched successfully!');
-          cliLogger.info('🤖 SnowCode is now executing your objective');
-          cliLogger.info(`💾 Monitor progress with session ID: ${sessionId}`);
-
-          if (isAuthenticated && options.autoDeploy) {
-            cliLogger.info('🚀 Real artifacts will be created in ServiceNow');
-          } else {
-            cliLogger.info('📋 Planning mode - analysis and recommendations only');
-          }
-        }
-        
         // Store successful launch in memory
         memorySystem.storeLearning(`launch_${sessionId}`, {
           success: true,
           launched_at: new Date().toISOString()
         });
       } else {
-        cliLogger.warn('⚠️  SnowCode CLI not found or failed to start');
-        cliLogger.info('\n📋 Please ensure SnowCode is installed:');
-        cliLogger.info('   npm install -g @groeimetai/snowcode');
-        cliLogger.info('\n💡 Or start SnowCode manually:');
-        cliLogger.info('   1. Run: snowcode');
-        cliLogger.info(`   2. Enter objective: ${objective}`);
-
-        if (isAuthenticated && options.autoDeploy) {
-          cliLogger.info('\n🚀 Deployment Mode: Artifacts will be created in ServiceNow');
-        } else {
-          cliLogger.info('\n📋 Planning Mode: Analysis and recommendations only');
-        }
-        cliLogger.info(`\n💾 Session ID: ${sessionId}`);
+        cliLogger.error('SnowCode failed to start - check configuration');
       }
       
     } catch (error) {
@@ -451,180 +427,6 @@ program
   });
 
 
-// Helper function to retry MCP server startup with exponential backoff
-async function startMCPServersWithRetry(maxRetries: number = 3): Promise<boolean> {
-  const prompts = await import('@clack/prompts');
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    if (attempt > 1) {
-      const waitTime = Math.pow(2, attempt - 1) * 1000; // 2s, 4s, 8s
-      cliLogger.info(`⏳ Retrying MCP server startup (attempt ${attempt}/${maxRetries}) in ${waitTime/1000}s...`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-    }
-
-    const success = await startMCPServersWithLoading();
-    if (success) {
-      return true;
-    }
-
-    if (attempt < maxRetries) {
-      cliLogger.warn(`⚠️  Attempt ${attempt} failed, will retry...`);
-    }
-  }
-
-  cliLogger.error(`❌ All ${maxRetries} startup attempts failed`);
-  return false;
-}
-
-// Helper function to pre-start MCP servers with loading animation
-async function startMCPServersWithLoading(): Promise<boolean> {
-  const { spawn } = require('child_process');
-  const prompts = await import('@clack/prompts');
-
-  // Find Snow-Flow MCP server path
-  const snowFlowRoot = __dirname.includes('dist') ? resolve(__dirname, '..') : __dirname;
-  const mcpServerPath = join(snowFlowRoot, 'dist/mcp/servicenow-mcp-unified/index.js');
-
-  // Check if server exists
-  if (!existsSync(mcpServerPath)) {
-    cliLogger.error('❌ MCP server not found at: ' + mcpServerPath);
-    cliLogger.info('   Run: npm run build');
-    return false; // CRITICAL - cannot continue without MCP servers
-  }
-
-  // Check for ServiceNow credentials in .env
-  const envPath = join(process.cwd(), '.env');
-  if (!existsSync(envPath)) {
-    cliLogger.warn('⚠️  No .env file found - MCP servers need credentials to connect');
-    cliLogger.info('   Run: snow-flow init (to create .env)');
-    cliLogger.info('   Then configure: SERVICENOW_INSTANCE, SERVICENOW_USERNAME, SERVICENOW_PASSWORD');
-    return false;
-  }
-
-  const spinner = prompts.spinner();
-  spinner.start('🚀 Starting MCP servers (ServiceNow Unified)');
-
-  return new Promise((resolve) => {
-    // Start MCP server in background
-    const serverProcess = spawn('node', [mcpServerPath], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      cwd: process.cwd(),
-      env: {
-        ...process.env,
-        // Ensure .env is loaded
-        NODE_ENV: process.env.NODE_ENV || 'development'
-      },
-      detached: true // Run in background
-    });
-
-    let output = '';
-    let errorOutput = '';
-    let initComplete = false;
-    let hasError = false;
-
-    const timeout = setTimeout(() => {
-      if (!initComplete) {
-        clearTimeout(timeout);
-        spinner.stop('❌ MCP server startup timeout (30s exceeded)');
-        serverProcess.kill();
-
-        // Show captured output for debugging
-        if (errorOutput) {
-          cliLogger.error('Server errors:');
-          cliLogger.error(errorOutput.trim());
-        }
-        if (output && !output.includes('Initialization complete')) {
-          cliLogger.info('Server output:');
-          cliLogger.info(output.trim());
-        }
-
-        cliLogger.info('💡 Troubleshooting:');
-        cliLogger.info('   1. Check .env credentials are correct');
-        cliLogger.info('   2. Verify ServiceNow instance is accessible');
-        cliLogger.info('   3. Run: snow-flow auth login');
-        resolve(false); // FAIL - timeout means servers didn't start properly
-      }
-    }, 30000); // 30 second timeout
-
-    // Monitor stdout for "Initialization complete"
-    serverProcess.stdout?.on('data', (data: Buffer) => {
-      output += data.toString();
-      const lines = output.split('\n');
-
-      for (const line of lines) {
-        // Success marker
-        if (line.includes('Initialization complete') || line.includes('MCP server ready')) {
-          clearTimeout(timeout);
-          initComplete = true;
-          spinner.stop('✅ MCP servers ready (409+ tools available)');
-
-          // Keep server running in background
-          serverProcess.unref();
-
-          resolve(true);
-          return;
-        }
-
-        // Check for credential errors
-        if (line.includes('SERVICENOW_INSTANCE') ||
-            line.includes('credentials') ||
-            line.includes('authentication')) {
-          errorOutput += line + '\n';
-        }
-      }
-    });
-
-    // Monitor stderr for errors
-    serverProcess.stderr?.on('data', (data: Buffer) => {
-      const errChunk = data.toString();
-      errorOutput += errChunk;
-
-      // Check for critical errors that should fail immediately
-      if (errChunk.includes('Fatal error') ||
-          errChunk.includes('ENOENT') ||
-          errChunk.includes('Cannot find module') ||
-          errChunk.includes('ECONNREFUSED') ||
-          errChunk.includes('authentication failed') ||
-          errChunk.includes('Invalid credentials')) {
-        hasError = true;
-        clearTimeout(timeout);
-        spinner.stop('❌ MCP server startup failed');
-        cliLogger.error('Critical error detected:');
-        cliLogger.error(errChunk.trim());
-        serverProcess.kill();
-        resolve(false); // FAIL - critical error
-      }
-    });
-
-    serverProcess.on('error', (error) => {
-      clearTimeout(timeout);
-      spinner.stop('❌ Could not start MCP servers');
-      cliLogger.error('Process error: ' + error.message);
-      cliLogger.info('💡 Check that Node.js is properly installed');
-      resolve(false); // FAIL - process error
-    });
-
-    serverProcess.on('exit', (code) => {
-      if (!initComplete) {
-        clearTimeout(timeout);
-        spinner.stop('❌ MCP server exited prematurely (code: ' + code + ')');
-
-        // Show error output for debugging
-        if (errorOutput) {
-          cliLogger.error('Server stderr:');
-          cliLogger.error(errorOutput.trim());
-        }
-        if (output) {
-          cliLogger.info('Server stdout:');
-          cliLogger.info(output.trim());
-        }
-
-        resolve(false); // FAIL - early exit
-      }
-    });
-  });
-}
-
 // Helper function to execute SnowCode directly with the objective
 async function executeSnowCode(objective: string): Promise<boolean> {
   try {
@@ -633,54 +435,26 @@ async function executeSnowCode(objective: string): Promise<boolean> {
     try {
       execSync('which snowcode', { stdio: 'ignore' });
     } catch {
-      cliLogger.warn('⚠️  SnowCode CLI not found in PATH');
-      cliLogger.info('📋 Please install SnowCode: npm install -g @groeimetai/snowcode');
+      cliLogger.error('SnowCode CLI not found - install: npm install -g @groeimetai/snowcode');
       return false;
     }
 
     // Check for SnowCode config (.snowcode/snowcode.json created by init)
     const snowcodeConfigPath = join(process.cwd(), '.snowcode', 'snowcode.json');
-    const hasSnowcodeConfig = existsSync(snowcodeConfigPath);
-
-    if (!hasSnowcodeConfig) {
-      cliLogger.warn('⚠️  SnowCode configuration not found');
-      cliLogger.info('📋 Please run: snow-flow init');
-      cliLogger.info('   This will create .snowcode/snowcode.json with MCP servers configured');
+    if (!existsSync(snowcodeConfigPath)) {
+      cliLogger.error('SnowCode config not found - run: snow-flow init');
       return false;
     }
 
-    // Check for .env file with required configuration
+    // Check for .env file
     const envPath = join(process.cwd(), '.env');
-    const hasEnvFile = existsSync(envPath);
-
-    if (!hasEnvFile) {
-      cliLogger.warn('⚠️  .env file not found');
-      cliLogger.info('📋 Please create .env with your configuration:');
-      cliLogger.info('   - ServiceNow credentials (SNOW_INSTANCE, SNOW_CLIENT_ID, etc.)');
-      cliLogger.info('   - LLM provider API keys (ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.)');
-      cliLogger.info('   - Default model (DEFAULT_LLM_PROVIDER, DEFAULT_ANTHROPIC_MODEL, etc.)');
+    if (!existsSync(envPath)) {
+      cliLogger.error('.env file not found - run: snow-flow init');
       return false;
     }
 
-    // 🔥 PRE-START MCP SERVERS WITH RETRY LOGIC (exponential backoff)
-    const mcpStarted = await startMCPServersWithRetry(3); // 3 attempts: 0s, 2s, 4s
-    if (!mcpStarted) {
-      cliLogger.error('❌ Cannot start SnowCode without MCP servers');
-      cliLogger.info('💡 Fix the issues above and try again');
-      cliLogger.info('   Possible solutions:');
-      cliLogger.info('   1. Check .env configuration: nano .env');
-      cliLogger.info('   2. Verify credentials: snow-flow auth login');
-      cliLogger.info('   3. Rebuild project: npm run build');
-      cliLogger.info('   4. Reconfigure: snow-flow init');
-      return false;
-    }
-
-    // Debug output if enabled
-    if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.VERBOSE === 'true') {
-      cliLogger.info(`🔍 Working Directory: ${process.cwd()}`);
-      cliLogger.info(`🔍 SnowCode Config: ${snowcodeConfigPath}`);
-      cliLogger.info(`🔍 Environment File: ${envPath}`);
-    }
+    // SnowCode will start MCP servers automatically from .snowcode/snowcode.json
+    // No pre-start needed - cleaner and avoids process conflicts
 
     // Write objective to temp file for SnowCode to read
     const { tmpdir } = await import('os');
