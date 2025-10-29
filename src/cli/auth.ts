@@ -31,7 +31,7 @@ export function registerAuthCommands(program: Command) {
             if (model.contextWindow) {
               prompts.log.message(`     Context: ${model.contextWindow.toLocaleString()} tokens`);
             }
-            console.log();
+            prompts.log.message('');
           });
         } else {
           prompts.log.warn('  No models available for this provider');
@@ -47,7 +47,7 @@ export function registerAuthCommands(program: Command) {
             models.forEach((model, i) => {
               prompts.log.message(`  ${i + 1}. ${model.name}`);
               prompts.log.message(`     ID: ${model.value}`);
-              console.log();
+              prompts.log.message('');
             });
           } else {
             prompts.log.warn('  No models available');
@@ -68,7 +68,7 @@ export function registerAuthCommands(program: Command) {
       const path = require('path');
       const inquirer = require('inquirer');
 
-      console.log(); // Empty line for spacing
+      prompts.log.message(''); // Empty line for spacing
 
       // Step 0: Check if we need LLM authentication
       let provider = process.env.DEFAULT_LLM_PROVIDER;
@@ -311,13 +311,14 @@ export function registerAuthCommands(program: Command) {
           }
 
           // 🔧 Auto-refresh MCP configuration with new credentials
+          const spinner2 = prompts.spinner();
           try {
             const { setupMCPConfig } = await import('../cli.js');
-            const spinner2 = prompts.spinner();
             spinner2.start('Updating MCP configuration');
             await setupMCPConfig(process.cwd(), instance, clientId, clientSecret, true);
             spinner2.stop('MCP servers ready for SnowCode/Claude Code');
           } catch (error) {
+            spinner2.stop('MCP configuration update failed');
             prompts.log.warn('Could not update MCP config - run "snow-flow init" to set up');
           }
 
@@ -413,13 +414,14 @@ export function registerAuthCommands(program: Command) {
           prompts.log.success(`Logged in as: ${testResult.data.name} (${testResult.data.user_name})`);
 
           // 🔧 Auto-refresh MCP configuration with new credentials
+          const spinner2 = prompts.spinner();
           try {
             const { setupMCPConfig } = await import('../cli.js');
-            const spinner2 = prompts.spinner();
             spinner2.start('Updating MCP configuration');
             await setupMCPConfig(process.cwd(), instance, username, password, true);
             spinner2.stop('MCP servers ready for SnowCode/Claude Code');
           } catch (error) {
+            spinner2.stop('MCP configuration update failed');
             prompts.log.warn('Could not update MCP config - run "snow-flow init" to set up');
           }
 
@@ -435,7 +437,7 @@ export function registerAuthCommands(program: Command) {
       // 🚀 ENTERPRISE FEATURES SETUP (Optional)
       // ═══════════════════════════════════════════════════════════════════
 
-      console.log(); // Spacing
+      prompts.log.message(''); // Spacing
       prompts.log.step('Enterprise Features (Optional)');
 
       const hasEnterprise = await prompts.confirm({
