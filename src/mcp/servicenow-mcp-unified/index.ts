@@ -16,12 +16,32 @@
  */
 
 import { ServiceNowUnifiedServer } from './server.js';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
 /**
  * Main entry point
  */
 async function main() {
   try {
+    // Load environment variables from .env file
+    // Search in current directory and parent directories
+    const result = dotenv.config();
+
+    if (result.error) {
+      // Try loading from parent directory (common when MCP server is in subdirectory)
+      const parentEnvPath = path.resolve(process.cwd(), '..', '.env');
+      const parentResult = dotenv.config({ path: parentEnvPath });
+
+      if (parentResult.error) {
+        console.warn('[Main] No .env file found - using environment variables from MCP configuration');
+      } else {
+        console.log('[Main] Loaded environment from parent directory:', parentEnvPath);
+      }
+    } else {
+      console.log('[Main] Loaded environment from .env file');
+    }
+
     // Create server instance
     const server = new ServiceNowUnifiedServer();
 
