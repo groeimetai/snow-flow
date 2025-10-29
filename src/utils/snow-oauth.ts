@@ -226,23 +226,30 @@ export class ServiceNowOAuth {
       // Exchange code for tokens
       const spinner = prompts.spinner();
       spinner.start('Exchanging authorization code for tokens');
-      const tokenResult = await this.exchangeCodeForTokens(code);
 
-      if (tokenResult.success && tokenResult.accessToken) {
-        // Save tokens
-        await this.saveTokens({
-          accessToken: tokenResult.accessToken,
-          refreshToken: tokenResult.refreshToken || '',
-          expiresIn: tokenResult.expiresIn || 3600,
-          instance: this.credentials.instance,
-          clientId,
-          clientSecret
-        });
+      let tokenResult: ServiceNowAuthResult;
+      try {
+        tokenResult = await this.exchangeCodeForTokens(code);
 
-        spinner.stop('Authentication successful');
-        prompts.log.success('Tokens saved securely');
-      } else {
+        if (tokenResult.success && tokenResult.accessToken) {
+          // Save tokens
+          await this.saveTokens({
+            accessToken: tokenResult.accessToken,
+            refreshToken: tokenResult.refreshToken || '',
+            expiresIn: tokenResult.expiresIn || 3600,
+            instance: this.credentials.instance,
+            clientId,
+            clientSecret
+          });
+
+          spinner.stop('Authentication successful');
+          prompts.log.success('Tokens saved securely');
+        } else {
+          spinner.stop('Token exchange failed');
+        }
+      } catch (error) {
         spinner.stop('Token exchange failed');
+        throw error;
       }
 
       return tokenResult;
@@ -377,6 +384,16 @@ export class ServiceNowOAuth {
   private async startCallbackServer(redirectUri: string, port: number): Promise<ServiceNowAuthResult> {
     return new Promise(async (resolve) => {
       let resolved = false;
+      let timeoutHandle: NodeJS.Timeout | null = null;
+
+      // Helper function to cleanup and close server
+      const cleanup = () => {
+        if (timeoutHandle) {
+          clearTimeout(timeoutHandle);
+          timeoutHandle = null;
+        }
+        server.close();
+      };
 
       const server = createServer(async (req, res) => {
         if (resolved) return;
@@ -394,7 +411,7 @@ export class ServiceNowOAuth {
               res.end(OAuthTemplates.securityError);
 
               resolved = true;
-              server.close();
+              cleanup();
               resolve({
                 success: false,
                 error: 'Invalid state parameter'
@@ -407,7 +424,7 @@ export class ServiceNowOAuth {
               res.end(OAuthTemplates.error(error));
 
               resolved = true;
-              server.close();
+              cleanup();
               resolve({
                 success: false,
                 error: `OAuth error: ${error}`
@@ -420,7 +437,7 @@ export class ServiceNowOAuth {
               res.end(OAuthTemplates.missingCode);
 
               resolved = true;
-              server.close();
+              cleanup();
               resolve({
                 success: false,
                 error: 'No authorization code received'
@@ -432,20 +449,35 @@ export class ServiceNowOAuth {
             resolved = true;
             const spinner = prompts.spinner();
             spinner.start('Exchanging authorization code for tokens');
-            const tokenResult = await this.exchangeCodeForTokens(code);
 
-            if (tokenResult.success) {
-              res.writeHead(200, { 'Content-Type': 'text/html' });
-              res.end(OAuthTemplates.success);
+            let tokenResult: ServiceNowAuthResult;
+            try {
+              tokenResult = await this.exchangeCodeForTokens(code);
+              spinner.stop(tokenResult.success ? 'Token exchange successful' : 'Token exchange failed');
 
-              server.close();
-              resolve(tokenResult);
-            } else {
+              if (tokenResult.success) {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(OAuthTemplates.success);
+
+                cleanup();
+                resolve(tokenResult);
+              } else {
+                res.writeHead(500, { 'Content-Type': 'text/html' });
+                res.end(OAuthTemplates.tokenExchangeFailed(tokenResult.error || 'Unknown error'));
+
+                cleanup();
+                resolve(tokenResult);
+              }
+            } catch (error) {
+              spinner.stop('Token exchange failed');
               res.writeHead(500, { 'Content-Type': 'text/html' });
-              res.end(OAuthTemplates.tokenExchangeFailed(tokenResult.error || 'Unknown error'));
+              res.end(OAuthTemplates.tokenExchangeFailed('Unexpected error during token exchange'));
 
-              server.close();
-              resolve(tokenResult);
+              cleanup();
+              resolve({
+                success: false,
+                error: error instanceof Error ? error.message : String(error)
+              });
             }
           } else {
             res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -457,7 +489,7 @@ export class ServiceNowOAuth {
           res.end('Internal Server Error');
 
           resolved = true;
-          server.close();
+          cleanup();
           resolve({
             success: false,
             error: error instanceof Error ? error.message : String(error)
@@ -466,6 +498,9 @@ export class ServiceNowOAuth {
       });
       
       server.listen(port, () => {
+        // Prevent server from keeping process alive after authentication completes
+        server.unref();
+
         prompts.log.step(`OAuth callback server started on http://${snowFlowConfig.servicenow.oauth.redirectHost}:${port}`);
         prompts.log.warn('Please open the authorization URL in your browser');
         prompts.log.info('Waiting for OAuth callback...');
@@ -556,7 +591,7 @@ export class ServiceNowOAuth {
 
               // Validate state
               if (state !== this.stateParameter) {
-                server.close();
+                cleanup();
                 resolve({
                   success: false,
                   error: 'Invalid state parameter - security check failed'
@@ -565,7 +600,7 @@ export class ServiceNowOAuth {
               }
 
               if (error) {
-                server.close();
+                cleanup();
                 resolve({
                   success: false,
                   error: `OAuth error: ${error}`
@@ -574,7 +609,7 @@ export class ServiceNowOAuth {
               }
 
               if (!code) {
-                server.close();
+                cleanup();
                 resolve({
                   success: false,
                   error: 'No authorization code found in URL'
@@ -586,13 +621,24 @@ export class ServiceNowOAuth {
               prompts.log.success('Authorization code received from pasted URL');
               const spinner = prompts.spinner();
               spinner.start('Exchanging authorization code for tokens');
-              const tokenResult = await this.exchangeCodeForTokens(code);
-              spinner.stop(tokenResult.success ? 'Token exchange successful' : 'Token exchange failed');
 
-              server.close();
-              resolve(tokenResult);
+              let tokenResult: ServiceNowAuthResult;
+              try {
+                tokenResult = await this.exchangeCodeForTokens(code);
+                spinner.stop(tokenResult.success ? 'Token exchange successful' : 'Token exchange failed');
+
+                cleanup();
+                resolve(tokenResult);
+              } catch (error) {
+                spinner.stop('Token exchange failed');
+                cleanup();
+                resolve({
+                  success: false,
+                  error: error instanceof Error ? error.message : 'Unexpected error during token exchange'
+                });
+              }
             } catch (err) {
-              server.close();
+              cleanup();
               resolve({
                 success: false,
                 error: 'Invalid callback URL format'
@@ -607,10 +653,10 @@ export class ServiceNowOAuth {
         })();
 
         // Add 5-minute timeout for OAuth flow
-        setTimeout(() => {
+        timeoutHandle = setTimeout(() => {
           if (!resolved) {
             resolved = true;
-            server.close();
+            cleanup();
             prompts.log.error('OAuth authorization timed out after 5 minutes');
             prompts.log.info('Please try again: snow-flow auth login');
             resolve({
