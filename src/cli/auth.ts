@@ -94,49 +94,63 @@ export function registerAuthCommands(program: Command) {
         }
 
         // Check SnowCode version (we need >=0.15.24 for proper dependencies)
+        let needsUpgrade = false;
+        let detectedVersion = 'unknown';
+
         try {
           const versionOutput = execSync('snowcode --version', { encoding: 'utf-8', stdio: 'pipe' }).trim();
           const versionMatch = versionOutput.match(/(\d+\.\d+\.\d+)/);
 
           if (versionMatch) {
             const [major, minor, patch] = versionMatch[1].split('.').map(Number);
-            const currentVersion = `${major}.${minor}.${patch}`;
+            detectedVersion = `${major}.${minor}.${patch}`;
             const isOldVersion = major === 0 && minor === 15 && patch < 24;
-
-            if (isOldVersion) {
-              prompts.log.warn(`SnowCode v${currentVersion} is outdated (need >=0.15.24)`);
-              prompts.log.message(''); // Empty line
-
-              const shouldUpgrade = await prompts.confirm({
-                message: 'Upgrade SnowCode to latest version now?',
-                initialValue: true
-              });
-
-              if (prompts.isCancel(shouldUpgrade) || !shouldUpgrade) {
-                prompts.log.message(''); // Empty line
-                prompts.log.info('You can upgrade manually: npm install -g @groeimetai/snowcode@latest');
-                prompts.log.info('Or use API keys instead: Add ANTHROPIC_API_KEY to .env');
-                return;
-              }
-
-              prompts.log.message(''); // Empty line
-              const spinner = prompts.spinner();
-              spinner.start('Upgrading SnowCode...');
-
-              try {
-                execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'pipe' });
-                spinner.stop('SnowCode upgraded successfully!');
-                prompts.log.message(''); // Empty line
-              } catch (upgradeError) {
-                spinner.stop('Upgrade failed');
-                prompts.log.error('Failed to upgrade SnowCode');
-                prompts.log.info('Try manually: npm install -g @groeimetai/snowcode@latest');
-                return;
-              }
-            }
+            needsUpgrade = isOldVersion;
           }
-        } catch (versionError) {
-          // Version check failed - continue anyway, will fail later with better error
+        } catch (versionError: any) {
+          // Version check failed - check if it's the bun error (indicates old SnowCode)
+          const stderr = versionError?.stderr?.toString() || '';
+          const stdout = versionError?.stdout?.toString() || '';
+
+          if (stderr.includes('Cannot find package') || stderr.includes('bun') || stderr.includes('ERR_MODULE_NOT_FOUND')) {
+            // Bun error = definitely old SnowCode version (likely 0.15.14 or earlier)
+            needsUpgrade = true;
+            detectedVersion = '0.15.14 or earlier';
+          }
+        }
+
+        // If we detected an old version (either by version number or bun error), offer upgrade
+        if (needsUpgrade) {
+          prompts.log.message(''); // Empty line
+          prompts.log.warn(`SnowCode v${detectedVersion} is outdated (need >=0.15.24)`);
+          prompts.log.message(''); // Empty line
+
+          const shouldUpgrade = await prompts.confirm({
+            message: 'Upgrade SnowCode to latest version now?',
+            initialValue: true
+          });
+
+          if (prompts.isCancel(shouldUpgrade) || !shouldUpgrade) {
+            prompts.log.message(''); // Empty line
+            prompts.log.info('You can upgrade manually: npm install -g @groeimetai/snowcode@latest');
+            prompts.log.info('Or use API keys instead: Add ANTHROPIC_API_KEY to .env');
+            return;
+          }
+
+          prompts.log.message(''); // Empty line
+          const spinner = prompts.spinner();
+          spinner.start('Upgrading SnowCode...');
+
+          try {
+            execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'pipe' });
+            spinner.stop('SnowCode upgraded successfully!');
+            prompts.log.message(''); // Empty line
+          } catch (upgradeError) {
+            spinner.stop('Upgrade failed');
+            prompts.log.error('Failed to upgrade SnowCode');
+            prompts.log.info('Try manually: npm install -g @groeimetai/snowcode@latest');
+            return;
+          }
         }
 
         prompts.intro('Starting authentication');
