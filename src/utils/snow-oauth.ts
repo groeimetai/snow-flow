@@ -605,6 +605,20 @@ export class ServiceNowOAuth {
             }
           }
         })();
+
+        // Add 5-minute timeout for OAuth flow
+        setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            server.close();
+            prompts.log.error('OAuth authorization timed out after 5 minutes');
+            prompts.log.info('Please try again: snow-flow auth login');
+            resolve({
+              success: false,
+              error: 'OAuth authorization timed out - no callback received within 5 minutes'
+            });
+          }
+        }, 300000); // 5 minutes
       });
     });
   }
