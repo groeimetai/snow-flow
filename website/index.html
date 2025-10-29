@@ -309,9 +309,15 @@
         /* Pricing - Simple cards */
         .pricing-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 2rem;
             max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .pricing-card.enterprise {
+            grid-column: 1 / -1;
+            max-width: 400px;
             margin: 0 auto;
         }
 
@@ -532,6 +538,10 @@
             .pricing-grid {
                 grid-template-columns: 1fr;
             }
+
+            .pricing-card.enterprise {
+                max-width: none;
+            }
         }
     </style>
 </head>
@@ -687,7 +697,7 @@
                     <a href="https://portal.snow-flow.dev" class="pricing-cta">Start Trial</a>
                 </div>
 
-                <div class="pricing-card">
+                <div class="pricing-card enterprise">
                     <div class="pricing-badge">Service Integrators</div>
                     <h3>Enterprise</h3>
                     <div class="pricing-price">$49<span>/seat</span></div>
