@@ -40,6 +40,22 @@ Dit mapje bevat alle logo varianten voor Snow-Flow in SVG formaat.
   - Footer credits
   - Watermerks
 
+### 5. **linkedin-banner.svg / linkedin-banner.png**
+- Professionele LinkedIn bedrijfspagina banner
+- 1584x396px (LinkedIn standaard formaat)
+- **Bevat:**
+  - Snow-Flow logo en branding (gebruikt icon-only.svg voor consistency)
+  - Tagline: "Conversational ServiceNow Development Platform"
+  - Key stats: 411 Tools • 75+ LLM Providers • MIT + Enterprise
+  - Value proposition: "Build ServiceNow through conversation with ANY AI assistant"
+  - Supported platforms badges (Claude, GPT, Gemini, +72 more)
+  - Professional gradient background met subtiele berg graphics
+- **Gebruik voor:**
+  - LinkedIn company page header
+  - Social media covers
+  - Professional presentations
+  - Marketing materials
+
 ## Kleurenschema
 
 - **Primary Cyan**: `#00D9FF` (gebruikt voor FLOW en icoon)
