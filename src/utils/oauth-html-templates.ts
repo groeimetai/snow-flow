@@ -130,23 +130,19 @@ const baseStyles = `
 const logoSVG = `
   <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="oauth-mountain" x1="16" y1="6" x2="16" y2="26" gradientUnits="userSpaceOnUse">
+      <!-- Mountain gradient (white to cyan) -->
+      <linearGradient id="oauth-mountain" x1="16" y1="4" x2="16" y2="14" gradientUnits="userSpaceOnUse">
         <stop offset="0%" stop-color="#FFFFFF"/>
         <stop offset="100%" stop-color="#00D9FF"/>
       </linearGradient>
     </defs>
 
-    <!-- Left mountains forming "S" curve -->
-    <path d="M4 16 L6 12 L8 16" fill="url(#oauth-mountain)" stroke="#00D9FF" stroke-width="1" stroke-linejoin="round"/>
-    <path d="M7 18 L9 14 L11 18" fill="url(#oauth-mountain)" stroke="#00D9FF" stroke-width="1" stroke-linejoin="round"/>
-    <path d="M4 22 L6 18 L8 22" fill="url(#oauth-mountain)" stroke="#00D9FF" stroke-width="1" stroke-linejoin="round"/>
-
-    <!-- Right mountains forming "F" shape -->
-    <path d="M18 12 L20 8 L22 12" fill="url(#oauth-mountain)" stroke="#00D9FF" stroke-width="1" stroke-linejoin="round"/>
-    <path d="M22 12 L24 10 L26 12" fill="url(#oauth-mountain)" stroke="#00D9FF" stroke-width="1" stroke-linejoin="round"/>
-    <path d="M18 17 L20 13 L22 17" fill="url(#oauth-mountain)" stroke="#00D9FF" stroke-width="1" stroke-linejoin="round"/>
-    <path d="M22 17 L24 15 L26 17" fill="url(#oauth-mountain)" stroke="#00D9FF" stroke-width="1" stroke-linejoin="round"/>
-    <path d="M18 22 L20 18 L22 22" fill="url(#oauth-mountain)" stroke="#00D9FF" stroke-width="1" stroke-linejoin="round"/>
+    <!-- Mountain peaks (geometric, clear) -->
+    <path d="M8 14 L12 6 L16 10 L20 6 L24 14 Z"
+          fill="url(#oauth-mountain)"
+          stroke="#00D9FF"
+          stroke-width="1"
+          stroke-linejoin="round"/>
   </svg>
 `;
 
