@@ -259,27 +259,56 @@
             margin: 0 auto 4rem;
         }
 
-        /* Feature comparison - Simple side-by-side */
+        /* Feature comparison - Modern side-by-side */
         .comparison {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 3rem;
-            max-width: 900px;
+            gap: 2rem;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
         .comparison-side {
-            padding: 3rem;
+            padding: 2.5rem;
             background: var(--brand-darker);
-            border-radius: 12px;
+            border-radius: 16px;
             border: 2px solid var(--border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .comparison-side::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--brand-cyan), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .comparison-side:hover::before {
+            opacity: 1;
         }
 
         .comparison-side.bad {
-            border-color: #EF4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .comparison-side.bad::before {
+            background: linear-gradient(90deg, transparent, #EF4444, transparent);
         }
 
         .comparison-side.good {
+            border-color: rgba(0, 217, 255, 0.3);
+            background: linear-gradient(135deg, var(--brand-darker) 0%, rgba(0, 217, 255, 0.05) 100%);
+        }
+
+        .comparison-side:hover {
+            transform: translateY(-4px);
             border-color: var(--brand-cyan);
         }
 
@@ -289,6 +318,9 @@
             margin-bottom: 2rem;
             padding-bottom: 1.5rem;
             border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
         .comparison-title.bad {
@@ -301,9 +333,43 @@
 
         .comparison-item {
             padding: 1rem 0;
+            padding-left: 2rem;
             color: var(--text-gray);
             font-size: 1rem;
-            line-height: 1.6;
+            line-height: 1.7;
+            position: relative;
+            border-left: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .comparison-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--brand-cyan);
+        }
+
+        .comparison-side.bad .comparison-item::before {
+            background: #EF4444;
+        }
+
+        .comparison-item:hover {
+            padding-left: 2.5rem;
+            border-left-color: var(--brand-cyan);
+        }
+
+        .comparison-side.bad .comparison-item:hover {
+            border-left-color: #EF4444;
+        }
+
+        .comparison-item strong {
+            color: var(--text-white);
+            font-weight: 600;
         }
 
         /* Pricing - Simple cards */
@@ -477,6 +543,14 @@
             letter-spacing: -0.02em;
         }
 
+        .footer-logo-text .snow {
+            color: var(--text-white);
+        }
+
+        .footer-logo-text .flow {
+            color: var(--brand-cyan);
+        }
+
         .footer-tagline {
             color: var(--text-gray);
             font-size: 1rem;
@@ -556,10 +630,37 @@
         @media (max-width: 768px) {
             .nav-links {
                 display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--brand-dark);
+                flex-direction: column;
+                padding: 1rem 0;
+                border-top: 1px solid var(--border);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-links li {
+                width: 100%;
+                text-align: center;
+            }
+
+            .nav-links a {
+                display: block;
+                padding: 1rem;
             }
 
             .mobile-menu-btn {
                 display: block;
+            }
+
+            nav {
+                position: relative;
             }
 
             .hero {
@@ -689,20 +790,22 @@
 
             <div class="comparison">
                 <div class="comparison-side bad">
-                    <div class="comparison-title bad">❌ Traditional ServiceNow</div>
-                    <div class="comparison-item">Web-based development</div>
-                    <div class="comparison-item">Limited browser editing</div>
-                    <div class="comparison-item">Manual table queries</div>
-                    <div class="comparison-item">Context switching</div>
-                    <div class="comparison-item">Steep learning curve</div>
+                    <div class="comparison-title bad">❌ Traditional ServiceNow Development</div>
+                    <div class="comparison-item"><strong>Web-only interface</strong> - Limited to browser-based Studio</div>
+                    <div class="comparison-item"><strong>Manual scripting</strong> - Write every business rule from scratch</div>
+                    <div class="comparison-item"><strong>Context switching</strong> - Jump between documentation and code</div>
+                    <div class="comparison-item"><strong>Steep learning curve</strong> - Months to become productive</div>
+                    <div class="comparison-item"><strong>Limited tooling</strong> - Basic IDE features only</div>
+                    <div class="comparison-item"><strong>Slow iteration</strong> - Deploy, test, debug cycle takes minutes</div>
                 </div>
                 <div class="comparison-side good">
-                    <div class="comparison-title good">✅ With Snow-Flow</div>
-                    <div class="comparison-item">Natural language development</div>
-                    <div class="comparison-item">Native code editing</div>
-                    <div class="comparison-item">Conversational queries</div>
-                    <div class="comparison-item">Unified interface</div>
-                    <div class="comparison-item">AI handles complexity</div>
+                    <div class="comparison-title good">✅ With Snow-Flow AI Platform</div>
+                    <div class="comparison-item"><strong>411 ServiceNow tools</strong> - Complete automation library</div>
+                    <div class="comparison-item"><strong>Natural language</strong> - "Create incident dashboard" → Done</div>
+                    <div class="comparison-item"><strong>75+ LLM providers</strong> - Claude, GPT, Gemini, DeepSeek + more</div>
+                    <div class="comparison-item"><strong>Instant productivity</strong> - Start building from day one</div>
+                    <div class="comparison-item"><strong>Native IDE integration</strong> - VS Code, Cursor, any editor</div>
+                    <div class="comparison-item"><strong>Real-time testing</strong> - Immediate feedback and validation</div>
                 </div>
             </div>
         </div>
@@ -930,5 +1033,42 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+            const navLinks = document.querySelector('.nav-links');
+
+            if (mobileMenuBtn && navLinks) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    navLinks.classList.toggle('active');
+
+                    // Change icon based on state
+                    if (navLinks.classList.contains('active')) {
+                        mobileMenuBtn.textContent = '✕';
+                    } else {
+                        mobileMenuBtn.textContent = '☰';
+                    }
+                });
+
+                // Close menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!event.target.closest('nav')) {
+                        navLinks.classList.remove('active');
+                        mobileMenuBtn.textContent = '☰';
+                    }
+                });
+
+                // Close menu when clicking a link
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', function() {
+                        navLinks.classList.remove('active');
+                        mobileMenuBtn.textContent = '☰';
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>
