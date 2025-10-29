@@ -1,0 +1,201 @@
+<svg viewBox="0 0 1584 396" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Professional gradient background (dark to subtle cyan) -->
+    <linearGradient id="bg-gradient" x1="0" y1="0" x2="1584" y2="396" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0A1628"/>
+      <stop offset="50%" stop-color="#0D1F3C"/>
+      <stop offset="100%" stop-color="#00455A"/>
+    </linearGradient>
+
+    <!-- Mountain gradient (white to cyan) - from icon-only.svg -->
+    <linearGradient id="mountain-icon" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#00D9FF"/>
+    </linearGradient>
+
+    <!-- Subtle glow effect -->
+    <radialGradient id="glow" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#00D9FF" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#00D9FF" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Decorative mountain pattern gradient -->
+    <linearGradient id="deco-mountain" x1="0" y1="0" x2="0" y2="1" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00D9FF" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#00D9FF" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1584" height="396" fill="url(#bg-gradient)"/>
+
+  <!-- Subtle glow in top right -->
+  <ellipse cx="1400" cy="100" rx="400" ry="300" fill="url(#glow)"/>
+
+  <!-- Decorative mountain silhouettes (right side, subtle) -->
+  <path d="M1400 396 L1450 280 L1500 320 L1550 260 L1584 396 Z"
+        fill="url(#deco-mountain)" opacity="0.4"/>
+  <path d="M1300 396 L1350 300 L1400 340 L1450 290 L1500 396 Z"
+        fill="url(#deco-mountain)" opacity="0.3"/>
+
+  <!-- Large Mountain Icon (left side, EXACT from icon-only.svg) -->
+  <g transform="translate(75, 120) scale(2.5)">
+    <!-- Mountain peaks (geometric, clear) - from icon-only.svg -->
+    <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z"
+          fill="url(#mountain-icon)"
+          stroke="#00D9FF"
+          stroke-width="1.2"
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- Main Logo Text -->
+  <g transform="translate(185, 192)">
+    <text font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="56"
+          font-weight="800"
+          fill="#FFFFFF"
+          letter-spacing="-0.02em">SNOW</text>
+    <text x="185"
+          font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="56"
+          font-weight="800"
+          fill="#00D9FF"
+          letter-spacing="-0.02em">FLOW</text>
+  </g>
+
+  <!-- Tagline -->
+  <text x="185" y="235"
+        font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+        font-size="24"
+        font-weight="600"
+        fill="#FFFFFF"
+        opacity="0.9"
+        letter-spacing="-0.01em">Conversational ServiceNow Development Platform</text>
+
+  <!-- Separator line -->
+  <line x1="185" y1="262" x2="720" y2="262"
+        stroke="#00D9FF"
+        stroke-width="2"
+        opacity="0.5"/>
+
+  <!-- Key Stats (3 columns) -->
+  <g transform="translate(185, 297)">
+    <!-- Column 1: 411 Tools -->
+    <text font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="32"
+          font-weight="800"
+          fill="#00D9FF">411</text>
+    <text y="32"
+          font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="14"
+          font-weight="500"
+          fill="#FFFFFF"
+          opacity="0.7">ServiceNow Tools</text>
+  </g>
+
+  <g transform="translate(370, 297)">
+    <!-- Column 2: 75+ LLMs -->
+    <text font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="32"
+          font-weight="800"
+          fill="#00D9FF">75+</text>
+    <text y="32"
+          font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="14"
+          font-weight="500"
+          fill="#FFFFFF"
+          opacity="0.7">LLM Providers</text>
+  </g>
+
+  <g transform="translate(555, 297)">
+    <!-- Column 3: MIT + Enterprise -->
+    <text font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="32"
+          font-weight="800"
+          fill="#00D9FF">MIT</text>
+    <text y="32"
+          font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="14"
+          font-weight="500"
+          fill="#FFFFFF"
+          opacity="0.7">+ Enterprise</text>
+  </g>
+
+  <!-- Call to Action / Value Prop (right side) -->
+  <g transform="translate(900, 165)">
+    <text font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="28"
+          font-weight="700"
+          fill="#FFFFFF"
+          letter-spacing="-0.01em">Build ServiceNow through</text>
+    <text y="40"
+          font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="28"
+          font-weight="700"
+          fill="#FFFFFF"
+          letter-spacing="-0.01em">conversation with </text>
+    <text y="40"
+          x="240"
+          font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="28"
+          font-weight="700"
+          fill="#00D9FF"
+          letter-spacing="-0.01em">ANY</text>
+    <text y="40"
+          x="310"
+          font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="28"
+          font-weight="700"
+          fill="#FFFFFF"
+          letter-spacing="-0.01em"> AI assistant</text>
+  </g>
+
+  <!-- Supported platforms badges -->
+  <g transform="translate(900, 255)">
+    <text font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+          font-size="16"
+          font-weight="600"
+          fill="#FFFFFF"
+          opacity="0.6">Works with:</text>
+
+    <!-- Platform badges -->
+    <g transform="translate(0, 25)">
+      <rect width="90" height="28" rx="14" fill="#00D9FF" opacity="0.15"/>
+      <text x="12" y="19"
+            font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+            font-size="13"
+            font-weight="600"
+            fill="#00D9FF">Claude</text>
+
+      <rect x="100" width="90" height="28" rx="14" fill="#00D9FF" opacity="0.15"/>
+      <text x="112" y="19"
+            font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+            font-size="13"
+            font-weight="600"
+            fill="#00D9FF">GPT</text>
+
+      <rect x="200" width="90" height="28" rx="14" fill="#00D9FF" opacity="0.15"/>
+      <text x="212" y="19"
+            font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+            font-size="13"
+            font-weight="600"
+            fill="#00D9FF">Gemini</text>
+
+      <rect x="300" width="90" height="28" rx="14" fill="#00D9FF" opacity="0.15"/>
+      <text x="312" y="19"
+            font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+            font-size="13"
+            font-weight="600"
+            fill="#00D9FF">+72 more</text>
+    </g>
+  </g>
+
+  <!-- Website URL (bottom right) -->
+  <text x="1400" y="365"
+        font-family="system-ui, -apple-system, 'SF Pro Display', sans-serif"
+        font-size="16"
+        font-weight="500"
+        fill="#00D9FF"
+        opacity="0.8"
+        text-anchor="end">github.com/groeimetai/snow-flow</text>
+</svg>

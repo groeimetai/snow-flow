@@ -1,0 +1,129 @@
+#!/usr/bin/env node
+
+/**
+ * SnowCode Launcher with MCP Auto-Start
+ *
+ * WORKAROUND: SnowCode v0.15.14 doesn't auto-start MCP servers
+ * This script starts them manually before launching SnowCode
+ */
+
+var { spawn } = require('child_process');
+var path = require('path');
+var os = require('os');
+var fs = require('fs');
+
+console.log('🚀 SnowCode + MCP Auto-Start Launcher\n');
+
+// Load SnowCode config
+var configPath = path.join(os.homedir(), '.snowcode', 'snowcode.json');
+if (!fs.existsSync(configPath)) {
+  console.log('❌ SnowCode config not found: ' + configPath);
+  console.log('💡 Run: snow-flow auth login');
+  process.exit(1);
+}
+
+var config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+var mcpServers = config.mcp || {};
+
+// Start each enabled local MCP server
+var startedServers = [];
+var failedServers = [];
+
+console.log('📡 Starting MCP servers...\n');
+
+for (var serverName in mcpServers) {
+  var serverConfig = mcpServers[serverName];
+
+  // Skip disabled servers
+  if (serverConfig.enabled === false) {
+    console.log('⏭️  Skipping disabled server: ' + serverName);
+    continue;
+  }
+
+  // Only start local servers (remote servers connect on demand)
+  if (serverConfig.type !== 'local') {
+    console.log('⏭️  Skipping remote server: ' + serverName);
+    continue;
+  }
+
+  console.log('🔧 Starting: ' + serverName);
+
+  try {
+    // Prepare environment
+    var env = Object.assign({}, process.env, serverConfig.environment || {});
+
+    // Start server in background (detached)
+    var serverProcess = spawn(serverConfig.command[0], serverConfig.command.slice(1), {
+      env: env,
+      stdio: 'ignore', // Don't capture output (runs in background)
+      detached: true
+    });
+
+    serverProcess.unref(); // Allow parent to exit independently
+
+    startedServers.push(serverName);
+    console.log('   ✅ Started (PID: ' + serverProcess.pid + ')');
+
+  } catch (error) {
+    failedServers.push(serverName);
+    console.log('   ❌ Failed to start: ' + error.message);
+  }
+}
+
+console.log('');
+
+// Summary
+if (startedServers.length > 0) {
+  console.log('✅ Started ' + startedServers.length + ' MCP server(s):');
+  startedServers.forEach(function(name) {
+    console.log('   - ' + name);
+  });
+  console.log('');
+}
+
+if (failedServers.length > 0) {
+  console.log('⚠️  Failed to start ' + failedServers.length + ' server(s):');
+  failedServers.forEach(function(name) {
+    console.log('   - ' + name);
+  });
+  console.log('');
+}
+
+// Wait 2 seconds for servers to initialize
+console.log('⏳ Waiting for servers to initialize (2 seconds)...\n');
+setTimeout(function() {
+  console.log('🎯 Launching SnowCode...\n');
+  console.log('='.repeat(80));
+  console.log('');
+
+  // Launch SnowCode with all arguments passed through
+  var snowcodeArgs = process.argv.slice(2);
+  var snowcode = spawn('snowcode', snowcodeArgs, {
+    stdio: 'inherit' // Pass through stdin/stdout/stderr
+  });
+
+  snowcode.on('exit', function(code) {
+    console.log('');
+    console.log('='.repeat(80));
+    console.log('');
+    console.log('👋 SnowCode exited');
+
+    // Kill MCP servers when SnowCode exits
+    if (startedServers.length > 0) {
+      console.log('🛑 Stopping MCP servers...');
+
+      // Kill all node processes running MCP servers
+      var { execSync } = require('child_process');
+      try {
+        execSync('pkill -f "servicenow-mcp-unified\\|snow-flow-mcp" 2>/dev/null || true');
+        console.log('   ✅ MCP servers stopped');
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+
+    console.log('');
+    process.exit(code);
+  });
+
+}, 2000);

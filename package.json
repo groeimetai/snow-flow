@@ -1,11 +1,12 @@
 {
   "name": "snow-flow",
-  "version": "8.6.38",
+  "version": "8.6.39",
   "description": "ServiceNow development with SnowCode - 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, Groq, Ollama) • 410 Optimized Tools • 2 MCP Servers • Native Predictive Intelligence builder • Multi-agent orchestration • Use ANY AI coding assistant",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
-    "snow-flow": "bin/snow-flow"
+    "snow-flow": "bin/snow-flow",
+    "snowcode-with-mcp": "bin/snowcode-with-mcp"
   },
   "files": [
     "dist/",
@@ -21,6 +22,7 @@
     "THEMES.md",
     "SNOWCODE-SETUP.md",
     "SNOWCODE-TROUBLESHOOTING.md",
+    "SNOWCODE-MCP-FIX.md",
     "LICENSE"
   ],
   "scripts": {
