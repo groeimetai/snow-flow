@@ -141,46 +141,50 @@ export function registerAuthCommands(program: Command) {
             prompts.log.message('   Using global SnowCode installation');
           }
 
+          // Test if SnowCode can start at all (captures bun error before it crashes terminal)
+          try {
+            execSync(`${snowcodeCommand} --version`, { stdio: 'pipe', timeout: 5000 });
+          } catch (testError: any) {
+            // SnowCode can't even start - show error immediately
+            const stderr = testError?.stderr?.toString() || '';
+
+            if (stderr.includes('Cannot find package') || stderr.includes('ERR_MODULE_NOT_FOUND') || stderr.includes('bun')) {
+              prompts.log.message(''); // Empty line
+              prompts.log.error('SnowCode installation has missing dependencies');
+              prompts.log.message(''); // Empty line
+              prompts.log.warn('Detected: Missing \'bun\' package (SnowCode v0.15.14 issue)');
+              prompts.log.message(''); // Empty line
+              prompts.log.message('RECOMMENDED SOLUTIONS:');
+              prompts.log.message(''); // Empty line
+              prompts.log.message('Option A: Use API keys directly (SIMPLEST!)');
+              prompts.log.message('   1. Get an Anthropic API key from https://console.anthropic.com');
+              prompts.log.message('   2. Add to .env file: ANTHROPIC_API_KEY=your-api-key-here');
+              prompts.log.message('   3. Run: snow-flow auth login');
+              prompts.log.message(''); // Empty line
+              prompts.log.message('Option B: Fix SnowCode installation');
+              prompts.log.message('   1. Reinstall SnowCode: npm install -g @groeimetai/snowcode@latest');
+              prompts.log.message('   2. Or install bun: npm install -g bun');
+              prompts.log.message('   3. Then try: snow-flow auth login');
+              prompts.log.message(''); // Empty line
+              prompts.log.info('💡 Tip: API keys work great and skip this issue entirely!');
+              prompts.log.message(''); // Empty line
+              return;
+            }
+          }
+
+          // SnowCode can start - now try auth (use inherit for interactive prompt)
           try {
             execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
-          } catch (execError: any) {
-            // SnowCode auth failed - check the error details
+          } catch (authError: any) {
+            // Auth failed (user cancelled or other error)
             prompts.log.message(''); // Empty line
-            prompts.log.error('SnowCode authentication failed');
+            prompts.log.warn('SnowCode authentication was not completed');
             prompts.log.message(''); // Empty line
-
-            // The bun error shows up in stderr, not the error message
-            // So we need to check process exit code and give helpful advice
-            const exitCode = execError?.status || execError?.code || 0;
-
-            // Common errors:
-            // - ERR_MODULE_NOT_FOUND (bun dependency) -> exit code 1
-            // - User cancelled -> exit code varies
-
-            prompts.log.warn('SnowCode authentication is having issues');
-            prompts.log.message(''); // Empty line
-            prompts.log.message('This may be due to:');
-            prompts.log.message('   1. Missing SnowCode dependencies (e.g., bun package)');
-            prompts.log.message('   2. SnowCode version compatibility issues');
-            prompts.log.message('   3. User cancelled authentication');
-            prompts.log.message(''); // Empty line
-
-            prompts.log.message('RECOMMENDED SOLUTIONS:');
-            prompts.log.message(''); // Empty line
-            prompts.log.message('Option A: Skip SnowCode auth and use API keys directly');
+            prompts.log.message('You can continue with API keys instead:');
             prompts.log.message('   1. Get an Anthropic API key from https://console.anthropic.com');
-            prompts.log.message('   2. Add to .env file: ANTHROPIC_API_KEY=your-api-key-here');
+            prompts.log.message('   2. Add to .env: ANTHROPIC_API_KEY=your-api-key');
             prompts.log.message('   3. Run: snow-flow auth login');
             prompts.log.message(''); // Empty line
-
-            prompts.log.message('Option B: Fix SnowCode installation');
-            prompts.log.message('   1. Reinstall SnowCode: npm install -g @groeimetai/snowcode@latest');
-            prompts.log.message('   2. Try again: snow-flow auth login');
-            prompts.log.message(''); // Empty line
-
-            prompts.log.info('Note: API keys (Option A) work just as well and are simpler!');
-            prompts.log.message(''); // Empty line
-
             return;
           }
         } catch (error: any) {
