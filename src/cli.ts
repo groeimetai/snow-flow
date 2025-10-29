@@ -427,8 +427,85 @@ program
   });
 
 
+// Helper function to start MCP servers before SnowCode
+async function startMCPServers(): Promise<number[]> {
+  const pids: number[] = [];
+
+  try {
+    // Load SnowCode config
+    const snowcodeConfigPath = join(os.homedir(), '.snowcode', 'snowcode.json');
+    if (!existsSync(snowcodeConfigPath)) {
+      // Try local config
+      const localConfigPath = join(process.cwd(), '.snowcode', 'snowcode.json');
+      if (!existsSync(localConfigPath)) {
+        return pids;
+      }
+    }
+
+    const configContent = await fs.readFile(
+      existsSync(snowcodeConfigPath) ? snowcodeConfigPath : join(process.cwd(), '.snowcode', 'snowcode.json'),
+      'utf-8'
+    );
+    const config = JSON.parse(configContent);
+    const mcpServers = config.mcp || {};
+
+    // Start each enabled local MCP server
+    for (const [serverName, serverConfig] of Object.entries(mcpServers) as [string, any][]) {
+      // Skip disabled servers
+      if (serverConfig.enabled === false) {
+        continue;
+      }
+
+      // Only start local servers
+      if (serverConfig.type !== 'local') {
+        continue;
+      }
+
+      try {
+        // Prepare environment
+        const env = Object.assign({}, process.env, serverConfig.environment || {});
+
+        // Start server in background (detached)
+        const serverProcess = spawn(serverConfig.command[0], serverConfig.command.slice(1), {
+          env: env,
+          stdio: 'ignore', // Don't capture output (runs in background)
+          detached: true
+        });
+
+        serverProcess.unref(); // Allow parent to exit independently
+        pids.push(serverProcess.pid || 0);
+
+      } catch (error) {
+        cliLogger.warn(`⚠️  Failed to start ${serverName}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    // Wait 2 seconds for servers to initialize
+    if (pids.length > 0) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
+  } catch (error) {
+    cliLogger.warn('⚠️  Could not start MCP servers:', error instanceof Error ? error.message : String(error));
+  }
+
+  return pids;
+}
+
+// Helper function to stop MCP servers after SnowCode
+function stopMCPServers(): void {
+  try {
+    const { execSync } = require('child_process');
+    execSync('pkill -f "servicenow-mcp-unified\\|snow-flow-mcp" 2>/dev/null || true');
+  } catch (e) {
+    // Ignore errors
+  }
+}
+
 // Helper function to execute SnowCode directly with the objective
 async function executeSnowCode(objective: string): Promise<boolean> {
+  let mcpServerPIDs: number[] = [];
+
   try {
     // Check if SnowCode CLI is available
     const { execSync } = require('child_process');
@@ -453,8 +530,14 @@ async function executeSnowCode(objective: string): Promise<boolean> {
       return false;
     }
 
-    // SnowCode will start MCP servers automatically from .snowcode/snowcode.json
-    // No pre-start needed - cleaner and avoids process conflicts
+    // 🔥 CRITICAL: SnowCode v0.15.14 doesn't auto-start MCP servers
+    // We need to start them manually before launching SnowCode
+    mcpServerPIDs = await startMCPServers();
+    if (mcpServerPIDs.length === 0) {
+      cliLogger.warn('⚠️  No MCP servers started - tools may not be available');
+    } else {
+      cliLogger.info(`✅ Started ${mcpServerPIDs.length} MCP server(s)`);
+    }
 
     // Write objective to temp file for SnowCode to read
     const { tmpdir } = await import('os');
@@ -499,6 +582,12 @@ async function executeSnowCode(objective: string): Promise<boolean> {
           // Ignore cleanup errors
         }
 
+        // Stop MCP servers when SnowCode exits
+        if (mcpServerPIDs.length > 0) {
+          cliLogger.info('🛑 Stopping MCP servers...');
+          stopMCPServers();
+        }
+
         resolve(code === 0);
       });
 
@@ -508,6 +597,11 @@ async function executeSnowCode(objective: string): Promise<boolean> {
           unlinkSync(tmpFile);
         } catch (e) {
           // Ignore cleanup errors
+        }
+
+        // Stop MCP servers on error
+        if (mcpServerPIDs.length > 0) {
+          stopMCPServers();
         }
 
         cliLogger.error(`❌ Failed to start SnowCode: ${error.message}`);
@@ -528,12 +622,22 @@ async function executeSnowCode(objective: string): Promise<boolean> {
             // Ignore cleanup errors
           }
 
+          // Stop MCP servers on timeout
+          if (mcpServerPIDs.length > 0) {
+            stopMCPServers();
+          }
+
           resolve(false);
         }, timeoutMinutes * 60 * 1000);
       }
     });
 
   } catch (error) {
+    // Stop MCP servers on error
+    if (mcpServerPIDs.length > 0) {
+      stopMCPServers();
+    }
+
     cliLogger.error('❌ Error launching SnowCode:', error instanceof Error ? error.message : String(error));
     cliLogger.info('📋 Please start SnowCode manually: snowcode');
     return false;
