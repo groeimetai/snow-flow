@@ -1,0 +1,15 @@
+<svg viewBox="0 0 100 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon centered -->
+  <g transform="translate(34, 0)">
+    <path d="M16 4L8 12L16 20L24 12L16 4Z" fill="#00D9FF"/>
+    <path d="M8 20L4 24H12L8 20Z" fill="#00D9FF" opacity="0.7"/>
+    <path d="M24 20L28 24H20L24 20Z" fill="#00D9FF" opacity="0.7"/>
+    <path d="M16 20L12 28H20L16 20Z" fill="#00D9FF" opacity="0.5"/>
+  </g>
+
+  <!-- Text SNOW centered -->
+  <text x="50" y="50" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#FFFFFF" letter-spacing="-0.02em">SNOW</text>
+
+  <!-- Text FLOW centered -->
+  <text x="50" y="66" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#00D9FF" letter-spacing="-0.02em">FLOW</text>
+</svg>
