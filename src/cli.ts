@@ -3146,38 +3146,44 @@ async function checkNeo4jAvailability(): Promise<boolean> {
 }
 
 async function createMCPConfig(targetDir: string, force: boolean = false) {
-  // Determine the snow-flow installation directory
-  let snowFlowRoot: string;
+  // 🔥 SAME FIX: Find Snow-Flow installation dynamically (support nvm!)
+  let snowFlowRoot = '';
 
-  // Check if we're in a global npm installation
-  const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
-                         __dirname.includes('node_modules/.pnpm') ||
-                         __dirname.includes('npm/snow-flow');
+  // Get global npm root dynamically
+  let globalNpmRoot = '';
+  try {
+    const { execSync } = require('child_process');
+    globalNpmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim();
+  } catch {
+    globalNpmRoot = join(process.env.HOME || '', '.npm-global/lib/node_modules');
+  }
 
-  if (isGlobalInstall) {
-    // For global installs, find the snow-flow package root
-    const parts = __dirname.split(/node_modules[\/\\]/);
-    snowFlowRoot = parts[0] + 'node_modules/snow-flow';
-  } else {
-    // For local development or local install
-    // Find the snow-flow project root by looking for the parent directory with package.json
-    let currentDir = __dirname;
-    while (currentDir !== '/') {
-      try {
-        const packageJsonPath = join(currentDir, 'package.json');
-        const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
-        if (packageJson.name === 'snow-flow') {
-          snowFlowRoot = currentDir;
-          break;
-        }
-      } catch {
-        // Continue searching up
-      }
-      currentDir = dirname(currentDir);
+  // Try different locations (PRIORITIZE GLOBAL!)
+  const possiblePaths = [
+    join(globalNpmRoot, 'snow-flow'),  // 🔥 GLOBAL NPM INSTALL
+    join(targetDir, 'node_modules/snow-flow'),  // Local install
+    __dirname.includes('dist') ? resolve(__dirname, '..') : __dirname,  // Running from build
+    join(targetDir, '../snow-flow-dev/snow-flow'),  // Dev
+    join(process.env.HOME || '', 'Projects/snow-flow-dev/snow-flow')  // Dev alt
+  ];
+
+  for (const testPath of possiblePaths) {
+    try {
+      await fs.access(join(testPath, '.mcp.json.template'));
+      snowFlowRoot = testPath;
+      console.log(`✅ Found Snow-Flow: ${testPath}`);
+      break;
+    } catch {
+      // Keep trying
     }
-    if (!snowFlowRoot) {
-      throw new Error('Could not find snow-flow project root');
-    }
+  }
+
+  if (!snowFlowRoot) {
+    throw new Error(
+      `Could not find snow-flow installation!\n` +
+      `Searched: ${possiblePaths.join(', ')}\n` +
+      `Try: npm install -g snow-flow`
+    );
   }
 
   // 🔧 FIX: Read actual environment values from .env file
@@ -3615,21 +3621,33 @@ export async function setupMCPConfig(
   clientSecret: string,
   force: boolean = false
 ): Promise<void> {
-  // Find the Snow-Flow installation root
+  // 🔥 CRITICAL FIX: Find Snow-Flow installation (MUST check global npm first!)
   let snowFlowRoot = '';
 
-  // Try different locations to find the Snow-Flow root
+  // Get global npm root dynamically (works with nvm!)
+  let globalNpmRoot = '';
+  try {
+    const { execSync } = require('child_process');
+    globalNpmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim();
+  } catch {
+    // Fallback if npm command fails
+    globalNpmRoot = join(process.env.HOME || '', '.npm-global/lib/node_modules');
+  }
+
+  // Try different locations to find Snow-Flow root (PRIORITIZE GLOBAL INSTALL!)
   const possiblePaths = [
-    join(targetDir, 'node_modules/snow-flow'),
-    join(targetDir, '../snow-flow-dev/snow-flow'),
-    join(process.env.HOME || '', 'Projects/snow-flow-dev/snow-flow'),
-    __dirname.includes('dist') ? resolve(__dirname, '..') : __dirname
+    join(globalNpmRoot, 'snow-flow'),  // 🔥 GLOBAL NPM INSTALL (priority!)
+    join(targetDir, 'node_modules/snow-flow'),  // Local project install
+    __dirname.includes('dist') ? resolve(__dirname, '..') : __dirname,  // Running from build
+    join(targetDir, '../snow-flow-dev/snow-flow'),  // Dev environment
+    join(process.env.HOME || '', 'Projects/snow-flow-dev/snow-flow')  // Dev environment alt
   ];
 
   for (const testPath of possiblePaths) {
     try {
       await fs.access(join(testPath, '.mcp.json.template'));
       snowFlowRoot = testPath;
+      console.log(`✅ Found Snow-Flow installation: ${testPath}`);
       break;
     } catch {
       // Keep trying
@@ -3637,14 +3655,12 @@ export async function setupMCPConfig(
   }
 
   if (!snowFlowRoot) {
-    // Last resort: assume we're running from the installed package
-    snowFlowRoot = resolve(__dirname, '..');
-    // Verify we can find the template
-    try {
-      await fs.access(join(snowFlowRoot, '.mcp.json.template'));
-    } catch {
-      throw new Error('Could not find snow-flow project root');
-    }
+    throw new Error(
+      `Could not find snow-flow installation!\n` +
+      `Searched locations:\n` +
+      possiblePaths.map(p => `  - ${p}`).join('\n') +
+      `\n\nTry: npm install -g snow-flow`
+    );
   }
 
   // 🔧 CRITICAL FIX: Prioritize function parameters over .env
