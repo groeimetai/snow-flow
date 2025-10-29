@@ -145,37 +145,7 @@ export function registerAuthCommands(program: Command) {
             prompts.log.message('   Using global SnowCode installation');
           }
 
-          // Pre-flight test: check if SnowCode can start before trying auth
-          try {
-            execSync(`${snowcodeCommand} --version`, { stdio: 'pipe', timeout: 5000 });
-          } catch (testError: any) {
-            // SnowCode can't even start - show error immediately
-            const stderr = testError?.stderr?.toString() || '';
-
-            if (stderr.includes('Cannot find package') || stderr.includes('ERR_MODULE_NOT_FOUND') || stderr.includes('bun')) {
-              prompts.log.message(''); // Empty line
-              prompts.log.error('SnowCode installation has missing dependencies');
-              prompts.log.message(''); // Empty line
-              prompts.log.warn('Detected: Incompatible SnowCode version');
-              prompts.log.message(''); // Empty line
-              prompts.log.message('RECOMMENDED SOLUTIONS:');
-              prompts.log.message(''); // Empty line
-              prompts.log.message('Option A: Use API keys directly (SIMPLEST!)');
-              prompts.log.message('   1. Get an Anthropic API key from https://console.anthropic.com');
-              prompts.log.message('   2. Add to .env file: ANTHROPIC_API_KEY=your-api-key-here');
-              prompts.log.message('   3. Run: snow-flow auth login');
-              prompts.log.message(''); // Empty line
-              prompts.log.message('Option B: Run snow-flow init to install compatible SnowCode');
-              prompts.log.message('   1. Run: snow-flow init');
-              prompts.log.message('   2. This will install SnowCode v0.15.21 (stable)');
-              prompts.log.message(''); // Empty line
-              prompts.log.info('💡 Tip: API keys work great and skip this issue entirely!');
-              prompts.log.message(''); // Empty line
-              return;
-            }
-          }
-
-          // SnowCode can start - now try auth (use inherit for interactive prompt)
+          // Run SnowCode auth (use inherit for interactive prompt)
           try {
             execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
           } catch (authError: any) {
