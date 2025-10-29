@@ -2136,11 +2136,11 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
 
   // ALWAYS install SnowCode locally in the project directory with platform binaries
   console.log(chalk.blue('\n📦 Installing SnowCode locally (with platform binaries)...'));
-  console.log(chalk.dim('Installing @groeimetai/snowcode@latest...'));
+  console.log(chalk.dim('Installing @groeimetai/snowcode@0.15.21...'));
 
   try {
     const projectDir = process.cwd();
-    execSync('npm install @groeimetai/snowcode@latest', {
+    execSync('npm install @groeimetai/snowcode@0.15.21', {
       cwd: projectDir,
       stdio: 'inherit'
     });
@@ -2149,7 +2149,7 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
     console.log(chalk.dim('   ℹ️  npm audit warnings are expected (upstream SnowCode dependencies) - safe to ignore'));
   } catch (error) {
     console.log(chalk.red('\n❌ Failed to install SnowCode locally'));
-    console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install @groeimetai/snowcode@latest'));
+    console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install @groeimetai/snowcode@0.15.21'));
     console.log(chalk.dim('This is required for the compiled binaries'));
     return false;
   }
