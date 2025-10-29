@@ -39,7 +39,7 @@
         fill="url(#deco-mountain)" opacity="0.3"/>
 
   <!-- Large Mountain Icon (left side, EXACT from icon-only.svg) -->
-  <g transform="translate(75, 120) scale(2.5)">
+  <g transform="translate(66, 134) scale(2.5)">
     <!-- Mountain peaks (geometric, clear) - from icon-only.svg -->
     <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z"
           fill="url(#mountain-icon)"
