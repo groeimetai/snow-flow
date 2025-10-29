@@ -141,28 +141,52 @@ export function registerAuthCommands(program: Command) {
             prompts.log.message('   Using global SnowCode installation');
           }
 
-          execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
-        } catch (error: any) {
-          prompts.log.error('Authentication failed');
+          try {
+            execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
+          } catch (execError: any) {
+            // SnowCode auth failed - check the error details
+            prompts.log.message(''); // Empty line
+            prompts.log.error('SnowCode authentication failed');
+            prompts.log.message(''); // Empty line
 
-          // Check if it's the bun dependency error
-          const errorMsg = error?.message || error?.toString() || '';
-          if (errorMsg.includes('Cannot find package \'bun\'') || errorMsg.includes('ERR_MODULE_NOT_FOUND')) {
-            prompts.log.warn('SnowCode dependency issue detected');
-            prompts.log.message('   This is a known issue with SnowCode versions 0.15.18 and earlier');
-            prompts.log.message('   Please update SnowCode to the latest version:');
-            prompts.log.message('   npm update -g @groeimetai/snowcode');
-            prompts.log.message('   Alternatively, use an API key instead:');
-            prompts.log.message('   1. Add to .env: ANTHROPIC_API_KEY=your-api-key');
-            prompts.log.message('   2. Then run: snow-flow auth login');
-          } else if (errorMsg.includes('agents') && errorMsg.includes('agent')) {
-            prompts.log.warn('SnowCode directory issue detected');
-            prompts.log.message('   Run this fix: mv ~/.snowcode/agents ~/.snowcode/agent');
-            prompts.log.message('   Then try: snow-flow auth login');
-          } else {
-            prompts.log.warn('You can try again later or use an API key instead');
-            prompts.log.message('   Add to .env: ANTHROPIC_API_KEY=your-api-key');
+            // The bun error shows up in stderr, not the error message
+            // So we need to check process exit code and give helpful advice
+            const exitCode = execError?.status || execError?.code || 0;
+
+            // Common errors:
+            // - ERR_MODULE_NOT_FOUND (bun dependency) -> exit code 1
+            // - User cancelled -> exit code varies
+
+            prompts.log.warn('SnowCode authentication is having issues');
+            prompts.log.message(''); // Empty line
+            prompts.log.message('This may be due to:');
+            prompts.log.message('   1. Missing SnowCode dependencies (e.g., bun package)');
+            prompts.log.message('   2. SnowCode version compatibility issues');
+            prompts.log.message('   3. User cancelled authentication');
+            prompts.log.message(''); // Empty line
+
+            prompts.log.message('RECOMMENDED SOLUTIONS:');
+            prompts.log.message(''); // Empty line
+            prompts.log.message('Option A: Skip SnowCode auth and use API keys directly');
+            prompts.log.message('   1. Get an Anthropic API key from https://console.anthropic.com');
+            prompts.log.message('   2. Add to .env file: ANTHROPIC_API_KEY=your-api-key-here');
+            prompts.log.message('   3. Run: snow-flow auth login');
+            prompts.log.message(''); // Empty line
+
+            prompts.log.message('Option B: Fix SnowCode installation');
+            prompts.log.message('   1. Reinstall SnowCode: npm install -g @groeimetai/snowcode@latest');
+            prompts.log.message('   2. Try again: snow-flow auth login');
+            prompts.log.message(''); // Empty line
+
+            prompts.log.info('Note: API keys (Option A) work just as well and are simpler!');
+            prompts.log.message(''); // Empty line
+
+            return;
           }
+        } catch (error: any) {
+          // Unexpected error (not from execSync)
+          prompts.log.error('Unexpected error during authentication');
+          prompts.log.message(error?.message || String(error));
           return;
         }
       }
