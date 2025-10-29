@@ -131,17 +131,17 @@ const logoSVG = `
   <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <!-- Mountain gradient (white to cyan) -->
-      <linearGradient id="oauth-mountain" x1="16" y1="4" x2="16" y2="14" gradientUnits="userSpaceOnUse">
+      <linearGradient id="oauth-mountain" x1="16" y1="6" x2="16" y2="20" gradientUnits="userSpaceOnUse">
         <stop offset="0%" stop-color="#FFFFFF"/>
         <stop offset="100%" stop-color="#00D9FF"/>
       </linearGradient>
     </defs>
 
-    <!-- Mountain peaks (geometric, clear) -->
-    <path d="M8 14 L12 6 L16 10 L20 6 L24 14 Z"
+    <!-- Mountain peaks (geometric, clear) - scaled up and centered -->
+    <path d="M4 20 L10 6 L16 12 L22 6 L28 20 Z"
           fill="url(#oauth-mountain)"
           stroke="#00D9FF"
-          stroke-width="1"
+          stroke-width="1.2"
           stroke-linejoin="round"/>
   </svg>
 `;
