@@ -48,7 +48,7 @@ Dit mapje bevat alle logo varianten voor Snow-Flow in SVG formaat.
   - Tagline: "Conversational ServiceNow Development Platform"
   - Key stats: 411 Tools • 75+ LLM Providers • MIT + Enterprise
   - Value proposition: "Build ServiceNow through conversation with ANY AI assistant"
-  - Supported platforms badges (Claude, GPT, Gemini, +72 more)
+  - Supported platforms badges (Claude, GPT, Open Source, +72 more)
   - Professional gradient background met subtiele berg graphics
 - **Gebruik voor:**
   - LinkedIn company page header
