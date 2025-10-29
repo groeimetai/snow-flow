@@ -3647,25 +3647,24 @@ export async function setupMCPConfig(
     }
   }
 
-  // 🔧 FIX: Read actual environment values from .env file
-  // This solves the issue where SnowCode/Claude Code doesn't expand ${...} variables
+  // 🔧 CRITICAL FIX: Prioritize function parameters over .env
+  // When auth login calls this function, it passes real credentials - USE THOSE!
   const envPath = join(targetDir, '.env');
   const envValues: Record<string, string> = {};
 
+  // Read existing .env (if exists)
   try {
     const envContent = await fs.readFile(envPath, 'utf-8');
-    // Parse .env file (simple parser - handles KEY=VALUE lines)
     const lines = envContent.split('\n');
     for (var line of lines) {
       line = line.trim();
-      // Skip comments and empty lines
       if (!line || line.startsWith('#')) continue;
 
       var equalIndex = line.indexOf('=');
       if (equalIndex > 0) {
         var key = line.substring(0, equalIndex).trim();
         var value = line.substring(equalIndex + 1).trim();
-        // Remove quotes if present
+        // Remove quotes
         if ((value.startsWith('"') && value.endsWith('"')) ||
             (value.startsWith("'") && value.endsWith("'"))) {
           value = value.substring(1, value.length - 1);
@@ -3674,26 +3673,58 @@ export async function setupMCPConfig(
       }
     }
   } catch (error) {
-    // .env file doesn't exist yet - that's okay
+    // .env doesn't exist yet - OK
   }
 
-  // Helper function to get env value with proper URL formatting
-  function getEnvValue(key: string, defaultValue: string = '', overrideValue?: string): string {
-    // Use override value if provided (from function parameters), otherwise fall back to env
-    var value = overrideValue || envValues[key] || process.env[key] || defaultValue;
+  // 🔥 PRIORITY: Use function parameters FIRST (from auth login), then .env, then process.env
+  // This ensures fresh credentials from auth login are ALWAYS used
+  var finalInstanceUrl = instanceUrl || envValues['SNOW_INSTANCE'] || process.env.SNOW_INSTANCE || '';
+  var finalClientId = clientId || envValues['SNOW_CLIENT_ID'] || process.env.SNOW_CLIENT_ID || '';
+  var finalClientSecret = clientSecret || envValues['SNOW_CLIENT_SECRET'] || process.env.SNOW_CLIENT_SECRET || '';
 
-    // Special handling for SNOW_INSTANCE - ensure it's a full URL
-    if (key === 'SNOW_INSTANCE' && value && !value.startsWith('http')) {
-      value = 'https://' + value.replace(/^https?:\/\//, '');
+  // Format instance URL properly
+  if (finalInstanceUrl && !finalInstanceUrl.startsWith('http')) {
+    finalInstanceUrl = 'https://' + finalInstanceUrl.replace(/^https?:\/\//, '');
+  }
+
+  // 🔥 UPDATE .env WITH REAL CREDENTIALS (if provided as parameters)
+  // This ensures .env has real values, not placeholders
+  if (instanceUrl || clientId || clientSecret) {
+    var envContent = '';
+    try {
+      envContent = await fs.readFile(envPath, 'utf-8');
+    } catch {
+      // .env doesn't exist - create from template
+      try {
+        envContent = await fs.readFile(join(targetDir, '.env.example'), 'utf-8');
+      } catch {
+        envContent = '# Snow-Flow Environment Configuration\n';
+      }
     }
 
-    return value;
-  }
+    // Update credentials in .env (replace existing or append)
+    const updates = [
+      { key: 'SNOW_INSTANCE', value: finalInstanceUrl },
+      { key: 'SNOW_CLIENT_ID', value: finalClientId },
+      { key: 'SNOW_CLIENT_SECRET', value: finalClientSecret }
+    ];
 
-  // Prepare credential values (use function params if provided, otherwise read from env)
-  const finalInstanceUrl = instanceUrl || getEnvValue('SNOW_INSTANCE');
-  const finalClientId = clientId || getEnvValue('SNOW_CLIENT_ID');
-  const finalClientSecret = clientSecret || getEnvValue('SNOW_CLIENT_SECRET');
+    for (const { key, value } of updates) {
+      if (value) { // Only update if we have a value
+        if (envContent.includes(`${key}=`)) {
+          // Replace existing line
+          envContent = envContent.replace(new RegExp(`${key}=.*`, 'g'), `${key}=${value}`);
+        } else {
+          // Append new line
+          envContent += `\n${key}=${value}\n`;
+        }
+      }
+    }
+
+    // Write updated .env
+    await fs.writeFile(envPath, envContent);
+    console.log('✅ Updated .env with credentials');
+  }
 
   // Read the template file
   const templatePath = join(snowFlowRoot, '.mcp.json.template');
@@ -3705,6 +3736,11 @@ export async function setupMCPConfig(
     console.error('❌ Could not find .mcp.json.template file');
     throw error;
   }
+
+  // Helper to get env values with fallback
+  const getEnvValue = (key: string, defaultValue: string = ''): string => {
+    return envValues[key] || process.env[key] || defaultValue;
+  };
 
   // Replace placeholders with ACTUAL values (from function params or .env)
   // This ensures SnowCode/Claude Code can use the MCP servers immediately
@@ -3854,13 +3890,31 @@ export async function setupMCPConfig(
       snowcodeConfig.mcp[serverName] = transformedConfig;
     }
 
-    // Write updated config
+    // Write GLOBAL config
     await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
     console.log(`✅ Global SnowCode config updated: ${snowcodeConfigPath}`);
     console.log(`   Format: OpenCode/SnowCode with \${VAR} expansion`);
     console.log(`   Servers: ${Object.keys(snowcodeConfig.mcp).join(', ')}`);
+
+    // 🔥 ALSO write LOCAL config (takes priority!)
+    const localSnowcodeDir = join(targetDir, '.snowcode');
+    const localSnowcodePath = join(localSnowcodeDir, 'snowcode.json');
+
+    try {
+      // Ensure local .snowcode directory exists
+      await fs.mkdir(localSnowcodeDir, { recursive: true });
+
+      // Write SAME config to local directory
+      await fs.writeFile(localSnowcodePath, JSON.stringify(snowcodeConfig, null, 2));
+      console.log(`✅ LOCAL SnowCode config created: ${localSnowcodePath}`);
+      console.log(`   📌 SnowCode will use THIS config (local takes priority)`);
+    } catch (localError) {
+      console.warn(`⚠️  Could not create local SnowCode config: ${localError}`);
+      console.warn(`   Will fall back to global config`);
+    }
+
   } catch (error) {
-    console.warn(`⚠️  Could not update global SnowCode config: ${error}`);
+    console.warn(`⚠️  Could not update SnowCode config: ${error}`);
     console.warn('   SnowCode will use project-local .mcp.json instead');
   }
 }
