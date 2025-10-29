@@ -450,6 +450,95 @@ program
   });
 
 
+// Helper function to pre-start MCP servers with loading animation
+async function startMCPServersWithLoading(): Promise<boolean> {
+  const { spawn } = require('child_process');
+  const prompts = await import('@clack/prompts');
+
+  // Find Snow-Flow MCP server path
+  const snowFlowRoot = __dirname.includes('dist') ? resolve(__dirname, '..') : __dirname;
+  const mcpServerPath = join(snowFlowRoot, 'dist/mcp/servicenow-mcp-unified/index.js');
+
+  // Check if server exists
+  if (!existsSync(mcpServerPath)) {
+    cliLogger.warn('⚠️  MCP server not found - will start on first use');
+    return true; // Not critical, continue anyway
+  }
+
+  const spinner = prompts.spinner();
+  spinner.start('🚀 Starting MCP servers (ServiceNow Unified)');
+
+  return new Promise((resolve) => {
+    // Start MCP server in background
+    const serverProcess = spawn('node', [mcpServerPath], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        // Ensure .env is loaded
+        NODE_ENV: process.env.NODE_ENV || 'development'
+      },
+      detached: true // Run in background
+    });
+
+    let output = '';
+    let initComplete = false;
+    const timeout = setTimeout(() => {
+      if (!initComplete) {
+        spinner.stop('⚠️  MCP server timeout - will retry on first use');
+        serverProcess.kill();
+        resolve(true); // Continue anyway
+      }
+    }, 30000); // 30 second timeout
+
+    // Monitor stdout for "Initialization complete"
+    serverProcess.stdout?.on('data', (data: Buffer) => {
+      output += data.toString();
+      const lines = output.split('\n');
+
+      for (const line of lines) {
+        if (line.includes('Initialization complete')) {
+          clearTimeout(timeout);
+          initComplete = true;
+          spinner.stop('✅ MCP servers ready (235+ tools discovered)');
+
+          // Keep server running in background
+          serverProcess.unref();
+
+          resolve(true);
+          return;
+        }
+      }
+    });
+
+    // Monitor stderr for errors
+    serverProcess.stderr?.on('data', (data: Buffer) => {
+      const errorOutput = data.toString();
+      // Only log critical errors, ignore warnings
+      if (errorOutput.includes('Fatal error') || errorOutput.includes('ENOENT')) {
+        clearTimeout(timeout);
+        spinner.stop('⚠️  MCP server error - will retry on first use');
+        serverProcess.kill();
+        resolve(true); // Continue anyway, not critical
+      }
+    });
+
+    serverProcess.on('error', (error) => {
+      clearTimeout(timeout);
+      spinner.stop('⚠️  Could not start MCP servers - will retry on first use');
+      resolve(true); // Continue anyway
+    });
+
+    serverProcess.on('exit', (code) => {
+      if (!initComplete) {
+        clearTimeout(timeout);
+        spinner.stop('⚠️  MCP server exited early - will retry on first use');
+        resolve(true); // Continue anyway
+      }
+    });
+  });
+}
+
 // Helper function to execute SnowCode directly with the objective
 async function executeSnowCode(objective: string): Promise<boolean> {
   try {
@@ -486,6 +575,9 @@ async function executeSnowCode(objective: string): Promise<boolean> {
       cliLogger.info('   - Default model (DEFAULT_LLM_PROVIDER, DEFAULT_ANTHROPIC_MODEL, etc.)');
       return false;
     }
+
+    // 🔥 PRE-START MCP SERVERS WITH LOADING ANIMATION
+    await startMCPServersWithLoading();
 
     // Debug output if enabled
     if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.VERBOSE === 'true') {
