@@ -450,6 +450,31 @@ program
   });
 
 
+// Helper function to retry MCP server startup with exponential backoff
+async function startMCPServersWithRetry(maxRetries: number = 3): Promise<boolean> {
+  const prompts = await import('@clack/prompts');
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    if (attempt > 1) {
+      const waitTime = Math.pow(2, attempt - 1) * 1000; // 2s, 4s, 8s
+      cliLogger.info(`⏳ Retrying MCP server startup (attempt ${attempt}/${maxRetries}) in ${waitTime/1000}s...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+
+    const success = await startMCPServersWithLoading();
+    if (success) {
+      return true;
+    }
+
+    if (attempt < maxRetries) {
+      cliLogger.warn(`⚠️  Attempt ${attempt} failed, will retry...`);
+    }
+  }
+
+  cliLogger.error(`❌ All ${maxRetries} startup attempts failed`);
+  return false;
+}
+
 // Helper function to pre-start MCP servers with loading animation
 async function startMCPServersWithLoading(): Promise<boolean> {
   const { spawn } = require('child_process');
@@ -461,8 +486,18 @@ async function startMCPServersWithLoading(): Promise<boolean> {
 
   // Check if server exists
   if (!existsSync(mcpServerPath)) {
-    cliLogger.warn('⚠️  MCP server not found - will start on first use');
-    return true; // Not critical, continue anyway
+    cliLogger.error('❌ MCP server not found at: ' + mcpServerPath);
+    cliLogger.info('   Run: npm run build');
+    return false; // CRITICAL - cannot continue without MCP servers
+  }
+
+  // Check for ServiceNow credentials in .env
+  const envPath = join(process.cwd(), '.env');
+  if (!existsSync(envPath)) {
+    cliLogger.warn('⚠️  No .env file found - MCP servers need credentials to connect');
+    cliLogger.info('   Run: snow-flow init (to create .env)');
+    cliLogger.info('   Then configure: SERVICENOW_INSTANCE, SERVICENOW_USERNAME, SERVICENOW_PASSWORD');
+    return false;
   }
 
   const spinner = prompts.spinner();
@@ -482,12 +517,31 @@ async function startMCPServersWithLoading(): Promise<boolean> {
     });
 
     let output = '';
+    let errorOutput = '';
     let initComplete = false;
+    let hasError = false;
+
     const timeout = setTimeout(() => {
       if (!initComplete) {
-        spinner.stop('⚠️  MCP server timeout - will retry on first use');
+        clearTimeout(timeout);
+        spinner.stop('❌ MCP server startup timeout (30s exceeded)');
         serverProcess.kill();
-        resolve(true); // Continue anyway
+
+        // Show captured output for debugging
+        if (errorOutput) {
+          cliLogger.error('Server errors:');
+          cliLogger.error(errorOutput.trim());
+        }
+        if (output && !output.includes('Initialization complete')) {
+          cliLogger.info('Server output:');
+          cliLogger.info(output.trim());
+        }
+
+        cliLogger.info('💡 Troubleshooting:');
+        cliLogger.info('   1. Check .env credentials are correct');
+        cliLogger.info('   2. Verify ServiceNow instance is accessible');
+        cliLogger.info('   3. Run: snow-flow auth login');
+        resolve(false); // FAIL - timeout means servers didn't start properly
       }
     }, 30000); // 30 second timeout
 
@@ -497,10 +551,11 @@ async function startMCPServersWithLoading(): Promise<boolean> {
       const lines = output.split('\n');
 
       for (const line of lines) {
-        if (line.includes('Initialization complete')) {
+        // Success marker
+        if (line.includes('Initialization complete') || line.includes('MCP server ready')) {
           clearTimeout(timeout);
           initComplete = true;
-          spinner.stop('✅ MCP servers ready (235+ tools discovered)');
+          spinner.stop('✅ MCP servers ready (409+ tools available)');
 
           // Keep server running in background
           serverProcess.unref();
@@ -508,32 +563,62 @@ async function startMCPServersWithLoading(): Promise<boolean> {
           resolve(true);
           return;
         }
+
+        // Check for credential errors
+        if (line.includes('SERVICENOW_INSTANCE') ||
+            line.includes('credentials') ||
+            line.includes('authentication')) {
+          errorOutput += line + '\n';
+        }
       }
     });
 
     // Monitor stderr for errors
     serverProcess.stderr?.on('data', (data: Buffer) => {
-      const errorOutput = data.toString();
-      // Only log critical errors, ignore warnings
-      if (errorOutput.includes('Fatal error') || errorOutput.includes('ENOENT')) {
+      const errChunk = data.toString();
+      errorOutput += errChunk;
+
+      // Check for critical errors that should fail immediately
+      if (errChunk.includes('Fatal error') ||
+          errChunk.includes('ENOENT') ||
+          errChunk.includes('Cannot find module') ||
+          errChunk.includes('ECONNREFUSED') ||
+          errChunk.includes('authentication failed') ||
+          errChunk.includes('Invalid credentials')) {
+        hasError = true;
         clearTimeout(timeout);
-        spinner.stop('⚠️  MCP server error - will retry on first use');
+        spinner.stop('❌ MCP server startup failed');
+        cliLogger.error('Critical error detected:');
+        cliLogger.error(errChunk.trim());
         serverProcess.kill();
-        resolve(true); // Continue anyway, not critical
+        resolve(false); // FAIL - critical error
       }
     });
 
     serverProcess.on('error', (error) => {
       clearTimeout(timeout);
-      spinner.stop('⚠️  Could not start MCP servers - will retry on first use');
-      resolve(true); // Continue anyway
+      spinner.stop('❌ Could not start MCP servers');
+      cliLogger.error('Process error: ' + error.message);
+      cliLogger.info('💡 Check that Node.js is properly installed');
+      resolve(false); // FAIL - process error
     });
 
     serverProcess.on('exit', (code) => {
       if (!initComplete) {
         clearTimeout(timeout);
-        spinner.stop('⚠️  MCP server exited early - will retry on first use');
-        resolve(true); // Continue anyway
+        spinner.stop('❌ MCP server exited prematurely (code: ' + code + ')');
+
+        // Show error output for debugging
+        if (errorOutput) {
+          cliLogger.error('Server stderr:');
+          cliLogger.error(errorOutput.trim());
+        }
+        if (output) {
+          cliLogger.info('Server stdout:');
+          cliLogger.info(output.trim());
+        }
+
+        resolve(false); // FAIL - early exit
       }
     });
   });
@@ -576,8 +661,18 @@ async function executeSnowCode(objective: string): Promise<boolean> {
       return false;
     }
 
-    // 🔥 PRE-START MCP SERVERS WITH LOADING ANIMATION
-    await startMCPServersWithLoading();
+    // 🔥 PRE-START MCP SERVERS WITH RETRY LOGIC (exponential backoff)
+    const mcpStarted = await startMCPServersWithRetry(3); // 3 attempts: 0s, 2s, 4s
+    if (!mcpStarted) {
+      cliLogger.error('❌ Cannot start SnowCode without MCP servers');
+      cliLogger.info('💡 Fix the issues above and try again');
+      cliLogger.info('   Possible solutions:');
+      cliLogger.info('   1. Check .env configuration: nano .env');
+      cliLogger.info('   2. Verify credentials: snow-flow auth login');
+      cliLogger.info('   3. Rebuild project: npm run build');
+      cliLogger.info('   4. Reconfigure: snow-flow init');
+      return false;
+    }
 
     // Debug output if enabled
     if (process.env.SNOW_FLOW_DEBUG === 'true' || process.env.VERBOSE === 'true') {
@@ -1877,10 +1972,27 @@ program
             console.log(output);
           }
         } catch (error) {
-          console.log(chalk.yellow('⚠️  MCP servers will start automatically when you launch SnowCode'));
-          console.log(chalk.dim('   Or start manually: ./scripts/mcp-server-manager.sh start'));
-          if ((error as Error).message.includes('No .env file found')) {
-            console.log(chalk.dim('   💡 Tip: Configure .env first, then run: ./scripts/mcp-server-manager.sh start'));
+          const errorMsg = (error as Error).message || String(error);
+
+          // Check if it's a credential issue
+          if (errorMsg.includes('No .env file found') ||
+              errorMsg.includes('SERVICENOW_INSTANCE') ||
+              errorMsg.includes('credentials')) {
+            console.log(chalk.yellow('⚠️  MCP servers not started - credentials not configured yet'));
+            console.log(chalk.blue('\n📋 Required next steps:'));
+            console.log(chalk.cyan('1. Configure .env with ServiceNow credentials'));
+            console.log(chalk.cyan('2. Run: snow-flow auth login'));
+            console.log(chalk.cyan('3. Then MCP servers will start automatically'));
+            console.log(chalk.dim('\n   Or start manually later: ./scripts/mcp-server-manager.sh start'));
+          } else {
+            // Other errors - show details
+            console.log(chalk.red('❌ MCP server startup failed'));
+            console.log(chalk.dim('Error: ' + errorMsg));
+            console.log(chalk.yellow('\n💡 Troubleshooting:'));
+            console.log(chalk.dim('   1. Check that npm run build completed successfully'));
+            console.log(chalk.dim('   2. Verify Node.js version >= 18'));
+            console.log(chalk.dim('   3. Try: rm -rf node_modules && npm install'));
+            console.log(chalk.dim('   4. Manual start: ./scripts/mcp-server-manager.sh start'));
           }
         }
       }
