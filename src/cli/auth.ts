@@ -94,11 +94,19 @@ export function registerAuthCommands(program: Command) {
         }
 
         // Check SnowCode version (we need >=0.15.24 for proper dependencies)
+        // Use same logic as auth flow: prefer local, fallback to global
+        const localSnowCode = path.join(process.cwd(), 'node_modules', '@groeimetai', 'snowcode', 'bin', 'snowcode');
+        let snowcodeCommand = 'snowcode'; // fallback to global
+
+        if (fs.existsSync(localSnowCode)) {
+          snowcodeCommand = `"${localSnowCode}"`;
+        }
+
         let needsUpgrade = false;
         let detectedVersion = 'unknown';
 
         try {
-          const versionOutput = execSync('snowcode --version', { encoding: 'utf-8', stdio: 'pipe' }).trim();
+          const versionOutput = execSync(`${snowcodeCommand} --version`, { encoding: 'utf-8', stdio: 'pipe' }).trim();
           const versionMatch = versionOutput.match(/(\d+\.\d+\.\d+)/);
 
           if (versionMatch) {
@@ -132,7 +140,12 @@ export function registerAuthCommands(program: Command) {
 
           if (prompts.isCancel(shouldUpgrade) || !shouldUpgrade) {
             prompts.log.message(''); // Empty line
-            prompts.log.info('You can upgrade manually: npm install -g @groeimetai/snowcode@latest');
+            prompts.log.info('You can upgrade manually:');
+            if (fs.existsSync(localSnowCode)) {
+              prompts.log.info('  npm install @groeimetai/snowcode@latest --save-dev');
+            } else {
+              prompts.log.info('  npm install -g @groeimetai/snowcode@latest');
+            }
             prompts.log.info('Or use API keys instead: Add ANTHROPIC_API_KEY to .env');
             return;
           }
@@ -142,13 +155,20 @@ export function registerAuthCommands(program: Command) {
           spinner.start('Upgrading SnowCode...');
 
           try {
-            execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'pipe' });
-            spinner.stop('SnowCode upgraded successfully!');
+            // Upgrade local installation if it exists, otherwise global
+            if (fs.existsSync(localSnowCode)) {
+              execSync('npm install @groeimetai/snowcode@latest --save-dev', { stdio: 'pipe' });
+              spinner.stop('SnowCode upgraded successfully (local installation)!');
+            } else {
+              execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'pipe' });
+              spinner.stop('SnowCode upgraded successfully (global installation)!');
+            }
             prompts.log.message(''); // Empty line
           } catch (upgradeError) {
             spinner.stop('Upgrade failed');
             prompts.log.error('Failed to upgrade SnowCode');
-            prompts.log.info('Try manually: npm install -g @groeimetai/snowcode@latest');
+            prompts.log.info('Try manually (local): npm install @groeimetai/snowcode@latest --save-dev');
+            prompts.log.info('Or manually (global): npm install -g @groeimetai/snowcode@latest');
             return;
           }
         }
@@ -190,45 +210,47 @@ export function registerAuthCommands(program: Command) {
         }
 
         try {
-          // Run SnowCode auth login - prefer local installation (has platform binaries)
-          const localSnowCode = path.join(process.cwd(), 'node_modules', '@groeimetai', 'snowcode', 'bin', 'snowcode');
-          let snowcodeCommand = 'snowcode'; // fallback to global
-
+          // Run SnowCode auth login - reuse snowcodeCommand from version check
           if (fs.existsSync(localSnowCode)) {
             prompts.log.message('   Using local SnowCode installation (with platform binaries)');
-            snowcodeCommand = `"${localSnowCode}"`;
           } else {
             prompts.log.message('   Using global SnowCode installation');
           }
 
-          // Test if SnowCode can start at all (captures bun error before it crashes terminal)
-          try {
-            execSync(`${snowcodeCommand} --version`, { stdio: 'pipe', timeout: 5000 });
-          } catch (testError: any) {
-            // SnowCode can't even start - show error immediately
-            const stderr = testError?.stderr?.toString() || '';
+          // Pre-flight test only needed if version check didn't already catch issues
+          // (if needsUpgrade was true, we already showed upgrade prompt or user declined)
+          if (!needsUpgrade) {
+            try {
+              execSync(`${snowcodeCommand} --version`, { stdio: 'pipe', timeout: 5000 });
+            } catch (testError: any) {
+              // SnowCode can't even start - show error immediately
+              const stderr = testError?.stderr?.toString() || '';
 
-            if (stderr.includes('Cannot find package') || stderr.includes('ERR_MODULE_NOT_FOUND') || stderr.includes('bun')) {
-              prompts.log.message(''); // Empty line
-              prompts.log.error('SnowCode installation has missing dependencies');
-              prompts.log.message(''); // Empty line
-              prompts.log.warn('Detected: Missing \'bun\' package (SnowCode v0.15.14 issue)');
-              prompts.log.message(''); // Empty line
-              prompts.log.message('RECOMMENDED SOLUTIONS:');
-              prompts.log.message(''); // Empty line
-              prompts.log.message('Option A: Use API keys directly (SIMPLEST!)');
-              prompts.log.message('   1. Get an Anthropic API key from https://console.anthropic.com');
-              prompts.log.message('   2. Add to .env file: ANTHROPIC_API_KEY=your-api-key-here');
-              prompts.log.message('   3. Run: snow-flow auth login');
-              prompts.log.message(''); // Empty line
-              prompts.log.message('Option B: Fix SnowCode installation');
-              prompts.log.message('   1. Reinstall SnowCode: npm install -g @groeimetai/snowcode@latest');
-              prompts.log.message('   2. Or install bun: npm install -g bun');
-              prompts.log.message('   3. Then try: snow-flow auth login');
-              prompts.log.message(''); // Empty line
-              prompts.log.info('💡 Tip: API keys work great and skip this issue entirely!');
-              prompts.log.message(''); // Empty line
-              return;
+              if (stderr.includes('Cannot find package') || stderr.includes('ERR_MODULE_NOT_FOUND') || stderr.includes('bun')) {
+                prompts.log.message(''); // Empty line
+                prompts.log.error('SnowCode installation has missing dependencies');
+                prompts.log.message(''); // Empty line
+                prompts.log.warn('Detected: Missing \'bun\' package (SnowCode v0.15.14 issue)');
+                prompts.log.message(''); // Empty line
+                prompts.log.message('RECOMMENDED SOLUTIONS:');
+                prompts.log.message(''); // Empty line
+                prompts.log.message('Option A: Use API keys directly (SIMPLEST!)');
+                prompts.log.message('   1. Get an Anthropic API key from https://console.anthropic.com');
+                prompts.log.message('   2. Add to .env file: ANTHROPIC_API_KEY=your-api-key-here');
+                prompts.log.message('   3. Run: snow-flow auth login');
+                prompts.log.message(''); // Empty line
+                prompts.log.message('Option B: Fix SnowCode installation');
+                if (fs.existsSync(localSnowCode)) {
+                  prompts.log.message('   1. Reinstall SnowCode: npm install @groeimetai/snowcode@latest --save-dev');
+                } else {
+                  prompts.log.message('   1. Reinstall SnowCode: npm install -g @groeimetai/snowcode@latest');
+                }
+                prompts.log.message('   2. Then try: snow-flow auth login');
+                prompts.log.message(''); // Empty line
+                prompts.log.info('💡 Tip: API keys work great and skip this issue entirely!');
+                prompts.log.message(''); // Empty line
+                return;
+              }
             }
           }
 
