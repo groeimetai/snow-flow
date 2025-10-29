@@ -3349,6 +3349,9 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
     // Read existing SnowCode config or create new MINIMAL one
     let snowcodeConfig: any = {
       "$schema": "https://opencode.ai/config.json",
+      "tui": {
+        "scroll_speed": 5
+      },
       "mcp": {}
     };
 
@@ -3356,7 +3359,10 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       const existingConfig = await fs.readFile(snowcodeConfigPath, 'utf-8');
       const existing = JSON.parse(existingConfig);
 
-      // Preserve existing MCP config, we'll update/add servers
+      // Preserve existing TUI and MCP config
+      if (existing.tui) {
+        snowcodeConfig.tui = existing.tui;
+      }
       if (existing.mcp) {
         snowcodeConfig.mcp = existing.mcp;
       }
@@ -3866,6 +3872,9 @@ export async function setupMCPConfig(
     // Read existing SnowCode config or create new MINIMAL one
     let snowcodeConfig: any = {
       "$schema": "https://opencode.ai/config.json",
+      "tui": {
+        "scroll_speed": 5
+      },
       "mcp": {}
     };
 
@@ -3873,7 +3882,10 @@ export async function setupMCPConfig(
       const existingConfig = await fs.readFile(snowcodeConfigPath, 'utf-8');
       const existing = JSON.parse(existingConfig);
 
-      // Preserve existing MCP config, we'll update/add servers
+      // Preserve existing TUI and MCP config
+      if (existing.tui) {
+        snowcodeConfig.tui = existing.tui;
+      }
       if (existing.mcp) {
         snowcodeConfig.mcp = existing.mcp;
       }
