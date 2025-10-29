@@ -93,6 +93,52 @@ export function registerAuthCommands(program: Command) {
           return;
         }
 
+        // Check SnowCode version (we need >=0.15.24 for proper dependencies)
+        try {
+          const versionOutput = execSync('snowcode --version', { encoding: 'utf-8', stdio: 'pipe' }).trim();
+          const versionMatch = versionOutput.match(/(\d+\.\d+\.\d+)/);
+
+          if (versionMatch) {
+            const [major, minor, patch] = versionMatch[1].split('.').map(Number);
+            const currentVersion = `${major}.${minor}.${patch}`;
+            const isOldVersion = major === 0 && minor === 15 && patch < 24;
+
+            if (isOldVersion) {
+              prompts.log.warn(`SnowCode v${currentVersion} is outdated (need >=0.15.24)`);
+              prompts.log.message(''); // Empty line
+
+              const shouldUpgrade = await prompts.confirm({
+                message: 'Upgrade SnowCode to latest version now?',
+                initialValue: true
+              });
+
+              if (prompts.isCancel(shouldUpgrade) || !shouldUpgrade) {
+                prompts.log.message(''); // Empty line
+                prompts.log.info('You can upgrade manually: npm install -g @groeimetai/snowcode@latest');
+                prompts.log.info('Or use API keys instead: Add ANTHROPIC_API_KEY to .env');
+                return;
+              }
+
+              prompts.log.message(''); // Empty line
+              const spinner = prompts.spinner();
+              spinner.start('Upgrading SnowCode...');
+
+              try {
+                execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'pipe' });
+                spinner.stop('SnowCode upgraded successfully!');
+                prompts.log.message(''); // Empty line
+              } catch (upgradeError) {
+                spinner.stop('Upgrade failed');
+                prompts.log.error('Failed to upgrade SnowCode');
+                prompts.log.info('Try manually: npm install -g @groeimetai/snowcode@latest');
+                return;
+              }
+            }
+          }
+        } catch (versionError) {
+          // Version check failed - continue anyway, will fail later with better error
+        }
+
         prompts.intro('Starting authentication');
 
         // Fix common SnowCode directory issue (agents vs agent) in ALL possible directories
