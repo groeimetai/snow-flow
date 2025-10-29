@@ -64,20 +64,24 @@ export class ServiceNowUnifiedServer {
     const username = process.env.SERVICENOW_USERNAME;
     const password = process.env.SERVICENOW_PASSWORD;
 
-    // Allow server to start without credentials (tools will fail gracefully)
-    if (!instanceUrl || !clientId || !clientSecret) {
-      console.error('[Auth] Warning: Missing ServiceNow credentials (SERVICENOW_INSTANCE_URL, SERVICENOW_CLIENT_ID, SERVICENOW_CLIENT_SECRET)');
+    // Check for placeholder values
+    const isPlaceholder = (val?: string) => !val || val.includes('your-') || val.includes('placeholder');
+
+    // Allow server to start without credentials OR with placeholder values (tools will fail gracefully)
+    if (!instanceUrl || !clientId || !clientSecret ||
+        isPlaceholder(instanceUrl) || isPlaceholder(clientId) || isPlaceholder(clientSecret)) {
+      console.error('[Auth] Warning: ServiceNow credentials not configured or contain placeholder values');
       console.error('[Auth] Server starting in UNAUTHENTICATED mode - tools will return authentication errors');
-      console.error('[Auth] Configure credentials in .env to enable ServiceNow integration');
+      console.error('[Auth] To configure credentials, run: snow-flow auth login');
 
       // Return empty context - tools will fail with clear auth errors
       return {
-        instanceUrl: instanceUrl || '',
-        clientId: clientId || '',
-        clientSecret: clientSecret || '',
-        refreshToken,
-        username,
-        password
+        instanceUrl: '',
+        clientId: '',
+        clientSecret: '',
+        refreshToken: undefined,
+        username: undefined,
+        password: undefined
       };
     }
 

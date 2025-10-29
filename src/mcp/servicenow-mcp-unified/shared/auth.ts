@@ -213,6 +213,14 @@ export class ServiceNowAuthManager {
     const cacheKey = this.getCacheKey(context.instanceUrl);
     console.log('[Auth] Refreshing access token for:', context.instanceUrl);
 
+    // Check if credentials are placeholders or empty
+    if (!context.instanceUrl || !context.clientId || !context.clientSecret ||
+        context.instanceUrl.includes('your-instance') ||
+        context.clientId.includes('your-') ||
+        context.instanceUrl === '' || context.clientId === '' || context.clientSecret === '') {
+      throw new Error('ServiceNow credentials not configured. Please run: snow-flow auth login');
+    }
+
     // Try OAuth first if refresh token available
     let refreshToken = context.refreshToken;
     const cached = this.tokenCache.get(cacheKey);
