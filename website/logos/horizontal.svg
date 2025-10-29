@@ -1,9 +1,40 @@
 <svg viewBox="0 0 200 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Icon -->
-  <path d="M16 4L8 12L16 20L24 12L16 4Z" fill="#00D9FF"/>
-  <path d="M8 20L4 24H12L8 20Z" fill="#00D9FF" opacity="0.7"/>
-  <path d="M24 20L28 24H20L24 20Z" fill="#00D9FF" opacity="0.7"/>
-  <path d="M16 20L12 28H20L16 20Z" fill="#00D9FF" opacity="0.5"/>
+  <!-- Modern gradient definitions -->
+  <defs>
+    <linearGradient id="primary-h" x1="16" y1="4" x2="16" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00E5FF"/>
+      <stop offset="100%" stop-color="#00B8D4"/>
+    </linearGradient>
+    <linearGradient id="secondary-h" x1="16" y1="12" x2="16" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00D9FF" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0097A7" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Modern rounded mountain peak -->
+  <path d="M16 5 C14.5 5 13 6.5 10 10 C7 13.5 7 15 8 16 L16 20 L24 16 C25 15 25 13.5 22 10 C19 6.5 17.5 5 16 5 Z"
+        fill="url(#primary-h)"
+        stroke="#00D9FF"
+        stroke-width="0.5"
+        stroke-linejoin="round"/>
+
+  <!-- Left snow drift -->
+  <path d="M8 20 C7 20 5 21 4.5 22.5 C4 24 4 24.5 5 24.5 L11 24.5 C11.5 24.5 12 24 11.5 22.5 C11 21 9 20 8 20 Z"
+        fill="url(#secondary-h)"
+        opacity="0.8"/>
+
+  <!-- Right snow drift -->
+  <path d="M24 20 C25 20 27 21 27.5 22.5 C28 24 28 24.5 27 24.5 L21 24.5 C20.5 24.5 20 24 20.5 22.5 C21 21 23 20 24 20 Z"
+        fill="url(#secondary-h)"
+        opacity="0.8"/>
+
+  <!-- Center snow trail -->
+  <path d="M16 20 C15 21 13.5 24 13 26.5 C12.5 28 12.5 28.5 14 28.5 L18 28.5 C19.5 28.5 19.5 28 19 26.5 C18.5 24 17 21 16 20 Z"
+        fill="url(#secondary-h)"
+        opacity="0.6"/>
+
+  <!-- Subtle highlight -->
+  <ellipse cx="16" cy="12" rx="4" ry="2" fill="#FFFFFF" opacity="0.15"/>
 
   <!-- Text SNOW -->
   <text x="42" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" letter-spacing="-0.02em">SNOW</text>
