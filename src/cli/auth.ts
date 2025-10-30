@@ -147,13 +147,12 @@ export function registerAuthCommands(program: Command) {
 
           // Run SnowCode auth (use inherit for interactive prompt)
           try {
-            console.log('\n[DEBUG] Starting SnowCode auth...');
             execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
-            console.log('[DEBUG] SnowCode auth completed, continuing...');
 
             // Success - now continue to ServiceNow setup
-            prompts.log.message(''); // Empty line
-            prompts.log.step('Continuing to ServiceNow authentication...');
+            // Add immediate clarification after SnowCode's "Done" message
+            console.log('\n✓ LLM provider setup complete! Now configuring ServiceNow...\n');
+            prompts.log.step('ServiceNow Authentication');
             prompts.log.message(''); // Empty line
           } catch (authError: any) {
             // Auth failed (user cancelled or other error)
@@ -175,8 +174,7 @@ export function registerAuthCommands(program: Command) {
         }
       }
 
-      // ServiceNow setup - continue the flow (maintain @clack/prompts styling)
-      prompts.intro('ServiceNow Authentication');
+      // ServiceNow setup - continue the flow (intro already shown above after SnowCode auth)
 
       // Read credentials from .env file
       let instance = process.env.SNOW_INSTANCE;
