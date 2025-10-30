@@ -23,14 +23,6 @@
         "SNOW_FLOW_ENV": "production"
       },
       "enabled": true
-    },
-    "snow-flow-enterprise": {
-      "type": "remote",
-      "url": "https://enterprise.snow-flow.dev/mcp/sse",
-      "headers": {
-        "Authorization": "Bearer your-enterprise-token-here"
-      },
-      "enabled": false
     }
   }
 }
