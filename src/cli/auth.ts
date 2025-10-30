@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import * as prompts from '@clack/prompts';
+import chalk from 'chalk';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
 import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { Logger } from '../utils/logger.js';
@@ -154,7 +155,20 @@ export function registerAuthCommands(program: Command) {
             console.log('\n✓ LLM provider setup complete! Now configuring ServiceNow...\n');
             prompts.log.step('ServiceNow Authentication');
           } catch (authError: any) {
-            // Auth failed (user cancelled or other error)
+            // User cancelled (Ctrl+C) or auth failed
+            if (authError.signal === 'SIGINT' || authError.status === 130) {
+              // User pressed Ctrl+C - they might have completed SnowCode auth already
+              prompts.log.message(''); // Empty line
+              prompts.log.info('Authentication interrupted');
+              prompts.log.message(''); // Empty line
+              prompts.log.message('If you completed the LLM provider setup:');
+              prompts.log.message('   → Just run ' + chalk.cyan('snow-flow auth login') + ' again');
+              prompts.log.message('   → It will skip provider setup and go directly to ServiceNow');
+              prompts.log.message(''); // Empty line
+              return;
+            }
+
+            // Other auth error
             prompts.log.message(''); // Empty line
             prompts.log.warn('SnowCode authentication was not completed');
             prompts.log.message(''); // Empty line
