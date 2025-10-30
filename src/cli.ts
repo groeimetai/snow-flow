@@ -516,9 +516,10 @@ async function executeSnowCode(objective: string): Promise<boolean> {
       return false;
     }
 
-    // Check for SnowCode config (.snowcode/snowcode.json created by init)
+    // Check for SnowCode config (.snowcode/snowcode.json or .snowcode/opencode.json)
     const snowcodeConfigPath = join(process.cwd(), '.snowcode', 'snowcode.json');
-    if (!existsSync(snowcodeConfigPath)) {
+    const opencodeConfigPath = join(process.cwd(), '.snowcode', 'opencode.json');
+    if (!existsSync(snowcodeConfigPath) && !existsSync(opencodeConfigPath)) {
       cliLogger.error('SnowCode config not found - run: snow-flow init');
       return false;
     }
