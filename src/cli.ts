@@ -3291,13 +3291,19 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
           var hasValidAuth = false;
           for (const [key, value] of Object.entries(serverConfig.headers)) {
             transformedConfig.headers[key] = value;
-            // Check if Authorization header has actual token (not empty "Bearer ")
+            // Check if Authorization header has actual token (not empty "Bearer " or placeholder)
             var val = String(value);
-            if (key === 'Authorization' && val && val.trim() !== 'Bearer' && val.trim() !== 'Bearer ') {
+            if (key === 'Authorization' && val &&
+                val.trim() !== 'Bearer' &&
+                val.trim() !== 'Bearer ' &&
+                !val.includes('your-enterprise-token-here') &&
+                !val.includes('your-token-here') &&
+                !val.includes('YOUR_') &&
+                !val.includes('your_')) {
               hasValidAuth = true;
             }
           }
-          // Disable server if Authorization is empty (prevents auth errors)
+          // Disable server if Authorization is empty or placeholder (prevents auth errors)
           transformedConfig.enabled = serverName !== 'snow-flow-enterprise' || hasValidAuth;
         } else {
           transformedConfig.enabled = true;
@@ -3793,13 +3799,19 @@ export async function setupMCPConfig(
           var hasValidAuth = false;
           for (const [key, value] of Object.entries(serverConfig.headers)) {
             transformedConfig.headers[key] = value;
-            // Check if Authorization header has actual token (not empty "Bearer ")
+            // Check if Authorization header has actual token (not empty "Bearer " or placeholder)
             var val = String(value);
-            if (key === 'Authorization' && val && val.trim() !== 'Bearer' && val.trim() !== 'Bearer ') {
+            if (key === 'Authorization' && val &&
+                val.trim() !== 'Bearer' &&
+                val.trim() !== 'Bearer ' &&
+                !val.includes('your-enterprise-token-here') &&
+                !val.includes('your-token-here') &&
+                !val.includes('YOUR_') &&
+                !val.includes('your_')) {
               hasValidAuth = true;
             }
           }
-          // Disable server if Authorization is empty (prevents auth errors)
+          // Disable server if Authorization is empty or placeholder (prevents auth errors)
           transformedConfig.enabled = serverName !== 'snow-flow-enterprise' || hasValidAuth;
         } else {
           transformedConfig.enabled = true;
