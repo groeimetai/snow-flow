@@ -2375,9 +2375,17 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
   const fs = require('fs').promises;
 
   try {
-    // Read SnowCode configuration
-    const configPath = path.join(targetDir, '.snowcode', 'snowcode.json');
-    const configContent = await fs.readFile(configPath, 'utf-8');
+    // Read SnowCode configuration - try opencode.json first (primary), then config.json (fallback)
+    const opencodeJsonPath = path.join(targetDir, '.snowcode', 'opencode.json');
+    const configJsonPath = path.join(targetDir, '.snowcode', 'config.json');
+
+    let configContent: string;
+    try {
+      configContent = await fs.readFile(opencodeJsonPath, 'utf-8');
+    } catch {
+      // Fallback to config.json if opencode.json doesn't exist
+      configContent = await fs.readFile(configJsonPath, 'utf-8');
+    }
     const config = JSON.parse(configContent);
 
     if (!config.mcp) {
