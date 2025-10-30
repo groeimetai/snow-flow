@@ -3006,8 +3006,6 @@ async function appendToEnvFile(targetDir: string, content: string) {
 function convertToSnowCodeFormat(claudeConfig: any): any {
   const snowcodeConfig: any = {
     "$schema": "https://opencode.ai/config.json",
-    "name": "snow-flow",
-    "description": "ServiceNow development with SnowCode and multi-LLM support",
     "mcp": {},
     "tools": {
       "enabled": true,
@@ -3031,8 +3029,7 @@ function convertToSnowCodeFormat(claudeConfig: any): any {
       snowcodeConfig.mcp[name] = {
         type: "remote",
         url: s.url,
-        enabled: Boolean(s.headers?.Authorization && s.headers.Authorization !== 'Bearer '),
-        description: s.description || ""
+        enabled: Boolean(s.headers?.Authorization && s.headers.Authorization !== 'Bearer ')
       };
 
       if (s.headers) {
@@ -3045,8 +3042,7 @@ function convertToSnowCodeFormat(claudeConfig: any): any {
         type: "local",
         command: s.args ? [s.command, ...s.args] : (Array.isArray(s.command) ? s.command : [s.command]),
         environment: s.env || s.environment || {},
-        enabled: true,
-        description: s.description || ""
+        enabled: true
       };
     }
   }
