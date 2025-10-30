@@ -2,109 +2,9 @@ import { Command } from 'commander';
 import * as prompts from '@clack/prompts';
 import { execSync } from 'child_process';
 import path from 'path';
-import fs from 'fs';
-import os from 'os';
 import { Logger } from '../utils/logger.js';
 
 const authLogger = new Logger('auth');
-
-/**
- * Configure Snow-Flow Enterprise MCP server after authentication
- * Only adds enterprise server if user provides valid credentials
- */
-async function configureEnterpriseIfNeeded(): Promise<void> {
-  const snowcodeConfigPath = path.join(os.homedir(), '.snowcode', 'snowcode.json');
-
-  if (!fs.existsSync(snowcodeConfigPath)) {
-    authLogger.debug('No snowcode config found, skipping enterprise setup');
-    return;
-  }
-
-  prompts.log.message('');
-  prompts.log.step('🔧 Configuring Snow-Flow MCP servers...');
-
-  try {
-    const config = JSON.parse(fs.readFileSync(snowcodeConfigPath, 'utf8'));
-
-    // Ensure MCP section exists
-    if (!config.mcp) {
-      config.mcp = {};
-    }
-
-    // Remove enterprise server if it exists (we'll re-add only if user has credentials)
-    if (config.mcp['snow-flow-enterprise']) {
-      delete config.mcp['snow-flow-enterprise'];
-      authLogger.debug('Removed default enterprise server placeholder');
-    }
-
-    // Ask user about enterprise credentials
-    const hasEnterprise = await prompts.confirm({
-      message: 'Do you have Snow-Flow Enterprise credentials?',
-      initialValue: false
-    });
-
-    if (prompts.isCancel(hasEnterprise)) {
-      authLogger.debug('User cancelled enterprise setup');
-      // Save config without enterprise
-      fs.writeFileSync(snowcodeConfigPath, JSON.stringify(config, null, 2));
-      return;
-    }
-
-    if (hasEnterprise) {
-      // User has enterprise - ask for JWT token
-      const jwtToken = await prompts.text({
-        message: 'Enter your Snow-Flow Enterprise JWT token:',
-        placeholder: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        validate: (value) => {
-          if (!value || value.trim().length === 0) {
-            return 'JWT token is required';
-          }
-          if (!value.startsWith('eyJ')) {
-            return 'Invalid JWT token format (should start with "eyJ")';
-          }
-          return;
-        }
-      });
-
-      if (prompts.isCancel(jwtToken)) {
-        authLogger.debug('User cancelled JWT token entry');
-        fs.writeFileSync(snowcodeConfigPath, JSON.stringify(config, null, 2));
-        return;
-      }
-
-      // Add enterprise server with real credentials
-      config.mcp['snow-flow-enterprise'] = {
-        type: 'remote',
-        url: 'https://enterprise.snow-flow.dev/mcp/sse',
-        headers: {
-          Authorization: `Bearer ${jwtToken}`
-        },
-        enabled: true
-      };
-
-      authLogger.info('Enterprise server configured with provided credentials');
-      prompts.log.success('✅ Snow-Flow Enterprise enabled!');
-      prompts.log.info('   You now have access to 26+ integration tools (Jira, Azure DevOps, Confluence)');
-    } else {
-      // User doesn't have enterprise - ensure it's not in config
-      authLogger.debug('User does not have enterprise credentials, keeping config clean');
-      prompts.log.info('📦 Configured 2 MCP servers:');
-      prompts.log.message('   • servicenow-unified (235+ ServiceNow tools)');
-      prompts.log.message('   • snow-flow-orchestration (Swarm coordination)');
-      prompts.log.message('');
-      prompts.log.info('💡 Want enterprise features? Visit: https://snow-flow.dev/pricing');
-    }
-
-    // Save updated config
-    fs.writeFileSync(snowcodeConfigPath, JSON.stringify(config, null, 2));
-    authLogger.debug('SnowCode config updated successfully');
-
-  } catch (error: any) {
-    authLogger.error('Failed to configure enterprise:', error.message);
-    prompts.log.warn('⚠️  Could not configure enterprise server. You can add it manually later.');
-    prompts.log.info('   See: ENTERPRISE-SETUP.md for instructions');
-  }
-}
 
 export function registerAuthCommands(program: Command) {
   const auth = program.command('auth').description('Authentication management (powered by SnowCode)');
@@ -194,14 +94,11 @@ export function registerAuthCommands(program: Command) {
         prompts.log.message('');
 
         // Call SnowCode auth login - it handles everything now!
+        // SnowCode will handle enterprise setup during its auth flow
         execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
 
         prompts.log.message('');
         prompts.log.success('✅ Authentication complete!');
-
-        // Post-auth: Configure Snow-Flow Enterprise (optional)
-        await configureEnterpriseIfNeeded();
-
         prompts.log.message('');
         prompts.log.info('Next steps:');
         prompts.log.message('  • Run: snow-flow swarm "<objective>" to start developing');
