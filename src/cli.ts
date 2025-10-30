@@ -550,17 +550,17 @@ async function executeSnowCode(objective: string): Promise<boolean> {
     const defaultProvider = process.env.DEFAULT_LLM_PROVIDER;
 
     // Start SnowCode with the objective and default model
-    // SnowCode will be started interactively with stdin redirect
-    let snowcodeCommand = `snowcode < "${tmpFile}"`;
+    // Use 'snowcode run' command (not TUI mode) with stdin redirect
+    let snowcodeCommand = `snowcode run < "${tmpFile}"`;
 
     // If we have a default model, pass it to SnowCode
     if (defaultModel) {
-      snowcodeCommand = `snowcode --model "${defaultModel}" < "${tmpFile}"`;
+      snowcodeCommand = `snowcode run --model "${defaultModel}" < "${tmpFile}"`;
     }
 
-    // Spawn SnowCode process - let it run fully interactively
-    // SnowCode is a TUI (Terminal User Interface) application that needs full terminal control
-    // We pass the objective via stdin redirect (shell: snowcode < tmpfile)
+    // Spawn SnowCode process in run mode - let it run fully interactively
+    // Use 'snowcode run' command (non-TUI mode) with full terminal control
+    // We pass the objective via stdin redirect (shell: snowcode run < tmpfile)
     const snowcodeProcess = spawn('sh', ['-c', snowcodeCommand], {
       stdio: 'inherit', // All stdio inherited - SnowCode can use TTY
       cwd: process.cwd(),
