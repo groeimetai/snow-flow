@@ -1838,63 +1838,15 @@ program
       console.log('1. Authenticate: ' + chalk.cyan('snow-flow auth login'));
       console.log('   - Authenticates with your LLM provider (Claude/OpenAI/Google/Ollama)');
       console.log('   - Then authenticates with ServiceNow OAuth');
-      console.log('   - Your provider choice is automatically saved to .env');
-      console.log('2. Start developing with SnowCode: ' + chalk.cyan('snowcode-with-mcp'));
-      console.log('   - Smart launcher with auto MCP server startup');
-      console.log('   - Or use swarm: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
+      console.log('   - Configures Snow-Flow MCP servers (including enterprise if applicable)');
+      console.log('2. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
+      console.log('   - Automatically launches SnowCode with MCP servers');
+      console.log('   - Starts multi-agent orchestration for your objective');
       console.log('\n📚 Documentation: ' + chalk.blue('https://github.com/groeimetai/snow-flow'));
       console.log('💡 370+ ServiceNow tools • 2 MCP servers • Multi-LLM support');
 
-      // Ask if user wants to start SnowCode now
-      const inquirer = (await import('inquirer')).default;
-      const { startNow } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'startNow',
-          message: 'Would you like to start SnowCode now?',
-          default: true
-        }
-      ]);
-
-      if (startNow) {
-        console.log(chalk.blue.bold('\n🚀 Launching SnowCode with MCP servers...\n'));
-
-        try {
-          const { execSync } = await import('child_process');
-
-          // Check if authenticated first
-          const fs = (await import('fs')).default;
-          const os = (await import('os')).default;
-          const snowcodeConfigPath = (await import('path')).default.join(os.homedir(), '.snowcode', 'snowcode.json');
-
-          if (!fs.existsSync(snowcodeConfigPath)) {
-            console.log(chalk.yellow('⚠️  No SnowCode configuration found.'));
-            console.log(chalk.blue('📝 Please run: ' + chalk.cyan('snow-flow auth login') + ' first'));
-            process.exit(0);
-          }
-
-          // Check if snowcode-with-mcp exists
-          try {
-            execSync('which snowcode-with-mcp', { stdio: 'ignore' });
-          } catch {
-            console.log(chalk.yellow('⚠️  snowcode-with-mcp launcher not found.'));
-            console.log(chalk.blue('📝 Using regular snowcode command instead...'));
-            execSync('snowcode', { stdio: 'inherit' });
-            process.exit(0);
-          }
-
-          // Launch snowcode-with-mcp
-          execSync('snowcode-with-mcp', { stdio: 'inherit' });
-          process.exit(0);
-        } catch (error: any) {
-          console.error(chalk.red('\n❌ Failed to launch SnowCode:'), error.message);
-          console.log(chalk.blue('💡 You can start it manually with: ' + chalk.cyan('snowcode-with-mcp')));
-          process.exit(1);
-        }
-      } else {
-        console.log(chalk.blue('\n💡 You can start SnowCode later with: ' + chalk.cyan('snowcode-with-mcp')));
-        process.exit(0);
-      }
+      // Force exit to prevent hanging
+      process.exit(0);
       
     } catch (error) {
       console.error(chalk.red('\n❌ Initialization failed:'), error);
