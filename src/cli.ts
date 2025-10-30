@@ -2839,15 +2839,33 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       // Convert Claude Desktop format to SnowCode format
       const snowcodeConfig = convertToSnowCodeFormat(claudeConfig);
 
-      // Write both snowcode.json AND config.json (Claude uses config.json)
-      const snowcodeConfigPath = join(snowcodeDir, 'snowcode.json');
+      // Write opencode.json (SnowCode searches for this name!)
+      const opencodeJsonPath = join(snowcodeDir, 'opencode.json');
       const configJsonPath = join(snowcodeDir, 'config.json');
 
-      await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
+      await fs.writeFile(opencodeJsonPath, JSON.stringify(snowcodeConfig, null, 2));
       await fs.writeFile(configJsonPath, JSON.stringify(snowcodeConfig, null, 2));
 
-      console.log('✅ Created .snowcode/snowcode.json (converted from .mcp.json.template → SnowCode format)');
-      console.log('✅ Created .snowcode/config.json (SnowCode format, Claude compatibility)');
+      console.log('✅ Created .snowcode/opencode.json (SnowCode format)');
+      console.log('✅ Created .snowcode/config.json (fallback compatibility)');
+
+      // CRITICAL: Also write to global SnowCode config directory!
+      // This ensures MCP tools are available even outside projects
+      const globalSnowCodeDir = join(process.env.HOME || '', '.config', 'snowcode');
+      try {
+        await fs.mkdir(globalSnowCodeDir, { recursive: true });
+
+        const globalOpencodeJsonPath = join(globalSnowCodeDir, 'opencode.json');
+        const globalConfigJsonPath = join(globalSnowCodeDir, 'config.json');
+
+        await fs.writeFile(globalOpencodeJsonPath, JSON.stringify(snowcodeConfig, null, 2));
+        await fs.writeFile(globalConfigJsonPath, JSON.stringify(snowcodeConfig, null, 2));
+
+        console.log('✅ Created ~/.config/snowcode/opencode.json (global SnowCode config)');
+        console.log('✅ Created ~/.config/snowcode/config.json (global fallback)');
+      } catch (error) {
+        console.log('⚠️  Could not write global SnowCode config:', error instanceof Error ? error.message : String(error));
+      }
 
       // Also create AGENTS.md in .snowcode/
       const snowcodeAgentsMdPath = join(snowcodeDir, 'AGENTS.md');
