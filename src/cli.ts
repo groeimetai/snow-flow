@@ -539,29 +539,25 @@ async function executeSnowCode(objective: string): Promise<boolean> {
       cliLogger.info(`✅ Started ${mcpServerPIDs.length} MCP server(s)`);
     }
 
-    // Write objective to temp file for SnowCode to read
-    const { tmpdir } = await import('os');
-    const { writeFileSync, unlinkSync } = await import('fs');
-    const tmpFile = join(tmpdir(), `snow-flow-objective-${Date.now()}.txt`);
-    writeFileSync(tmpFile, objective, 'utf8');
-
     // Get default model from .env if available
     const defaultModel = process.env.DEFAULT_MODEL;
     const defaultProvider = process.env.DEFAULT_LLM_PROVIDER;
 
-    // Start SnowCode with the objective and default model
-    // Use 'snowcode run' command (not TUI mode) with stdin redirect
-    let snowcodeCommand = `snowcode run < "${tmpFile}"`;
+    // Build SnowCode command with objective as argument
+    // Use 'snowcode run' command (non-TUI mode) with objective as positional argument
+    const snowcodeArgs = ['run'];
 
-    // If we have a default model, pass it to SnowCode
+    // Add model option if available
     if (defaultModel) {
-      snowcodeCommand = `snowcode run --model "${defaultModel}" < "${tmpFile}"`;
+      snowcodeArgs.push('--model', defaultModel);
     }
 
+    // Add objective as positional argument
+    snowcodeArgs.push(objective);
+
     // Spawn SnowCode process in run mode - let it run fully interactively
-    // Use 'snowcode run' command (non-TUI mode) with full terminal control
-    // We pass the objective via stdin redirect (shell: snowcode run < tmpfile)
-    const snowcodeProcess = spawn('sh', ['-c', snowcodeCommand], {
+    // Use 'snowcode run <objective>' with full terminal control
+    const snowcodeProcess = spawn('snowcode', snowcodeArgs, {
       stdio: 'inherit', // All stdio inherited - SnowCode can use TTY
       cwd: process.cwd(),
       env: {
@@ -575,13 +571,6 @@ async function executeSnowCode(objective: string): Promise<boolean> {
     // Set up process monitoring
     return new Promise((resolve) => {
       snowcodeProcess.on('close', async (code) => {
-        // Clean up temp file
-        try {
-          unlinkSync(tmpFile);
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-
         // Stop MCP servers when SnowCode exits
         if (mcpServerPIDs.length > 0) {
           cliLogger.info('🛑 Stopping MCP servers...');
@@ -592,13 +581,6 @@ async function executeSnowCode(objective: string): Promise<boolean> {
       });
 
       snowcodeProcess.on('error', (error) => {
-        // Clean up temp file
-        try {
-          unlinkSync(tmpFile);
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-
         // Stop MCP servers on error
         if (mcpServerPIDs.length > 0) {
           stopMCPServers();
@@ -614,13 +596,6 @@ async function executeSnowCode(objective: string): Promise<boolean> {
         setTimeout(() => {
           cliLogger.warn(`⏱️  SnowCode session timeout (${timeoutMinutes} minutes), terminating...`);
           snowcodeProcess.kill('SIGTERM');
-
-          // Clean up temp file
-          try {
-            unlinkSync(tmpFile);
-          } catch (e) {
-            // Ignore cleanup errors
-          }
 
           // Stop MCP servers on timeout
           if (mcpServerPIDs.length > 0) {
