@@ -2608,42 +2608,6 @@ async function copyMCPServerScripts(targetDir: string, force: boolean = false) {
       console.log(`✅ Scripts are executable and ready to use`);
     }
 
-    // Also copy SNOWCODE-TROUBLESHOOTING.md to project root
-    const troubleshootingSourcePaths = [
-      join(snowFlowRoot, 'SNOWCODE-TROUBLESHOOTING.md'),
-      join(__dirname, '..', 'SNOWCODE-TROUBLESHOOTING.md'),
-      join(__dirname, 'SNOWCODE-TROUBLESHOOTING.md')
-    ];
-
-    let troubleshootingSourcePath: string | null = null;
-    for (const sourcePath of troubleshootingSourcePaths) {
-      try {
-        await fs.access(sourcePath);
-        troubleshootingSourcePath = sourcePath;
-        break;
-      } catch {
-        // Continue to next path
-      }
-    }
-
-    if (troubleshootingSourcePath) {
-      const targetPath = join(targetDir, 'SNOWCODE-TROUBLESHOOTING.md');
-      try {
-        await fs.access(targetPath);
-        if (!force) {
-          console.log(`✅ SNOWCODE-TROUBLESHOOTING.md already exists`);
-        } else {
-          const content = await fs.readFile(troubleshootingSourcePath, 'utf8');
-          await fs.writeFile(targetPath, content);
-          console.log(`✅ Created SNOWCODE-TROUBLESHOOTING.md`);
-        }
-      } catch {
-        const content = await fs.readFile(troubleshootingSourcePath, 'utf8');
-        await fs.writeFile(targetPath, content);
-        console.log(`✅ Created SNOWCODE-TROUBLESHOOTING.md`);
-      }
-    }
-
   } catch (error) {
     console.error('❌ Error copying MCP server scripts:', error);
   }

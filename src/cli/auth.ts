@@ -153,7 +153,6 @@ export function registerAuthCommands(program: Command) {
             // Add immediate clarification after SnowCode's "Done" message
             console.log('\n✓ LLM provider setup complete! Now configuring ServiceNow...\n');
             prompts.log.step('ServiceNow Authentication');
-            prompts.log.message(''); // Empty line
           } catch (authError: any) {
             // Auth failed (user cancelled or other error)
             prompts.log.message(''); // Empty line
