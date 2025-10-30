@@ -1727,7 +1727,45 @@ program
         console.log('\n🔄 Detected .snow-flow directory, migrating to .snow-flow...');
         await migrationUtil.migrate();
       }
-      
+
+      // Install/Update SnowCode to latest version
+      console.log('\n📦 Checking SnowCode installation...');
+      try {
+        const { execSync } = await import('child_process');
+
+        // Check if SnowCode is installed globally
+        let installedVersion = null;
+        try {
+          const versionOutput = execSync('npm list -g @groeimetai/snowcode --depth=0', { encoding: 'utf8' });
+          const match = versionOutput.match(/@groeimetai\/snowcode@(\d+\.\d+\.\d+)/);
+          installedVersion = match ? match[1] : null;
+        } catch (err) {
+          // Not installed yet
+        }
+
+        if (installedVersion) {
+          console.log(`   Current version: ${installedVersion}`);
+
+          // Check latest version available
+          const latestOutput = execSync('npm view @groeimetai/snowcode version', { encoding: 'utf8' }).trim();
+          console.log(`   Latest version: ${latestOutput}`);
+
+          if (installedVersion !== latestOutput) {
+            console.log('   ⬆️  Updating to latest version...');
+            execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'inherit' });
+            console.log(chalk.green('   ✅ SnowCode updated successfully!'));
+          } else {
+            console.log(chalk.green('   ✅ Already on latest version'));
+          }
+        } else {
+          console.log('   📥 Installing SnowCode...');
+          execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'inherit' });
+          console.log(chalk.green('   ✅ SnowCode installed successfully!'));
+        }
+      } catch (err) {
+        console.log(chalk.yellow('   ⚠️  Could not auto-update SnowCode. Run: npm install -g @groeimetai/snowcode@latest'));
+      }
+
       // Create directory structure
       console.log('\n📁 Creating project structure...');
       await createDirectoryStructure(targetDir, options.force);
