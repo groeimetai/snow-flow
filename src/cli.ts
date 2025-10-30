@@ -1912,33 +1912,42 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
       return false;
     }
 
-    // Install SnowCode
+    // Install SnowCode globally with latest version
     console.log(chalk.blue('\n📦 Installing SnowCode globally...'));
-    console.log(chalk.dim('This may take a minute...'));
+    console.log(chalk.dim('Installing @groeimetai/snowcode@latest (forcing latest version)...'));
 
     try {
-      execSync('npm install -g @groeimetai/snowcode', { stdio: 'inherit' });
+      // Use @latest and --force to bypass npm cache and get absolute latest version
+      execSync('npm install -g @groeimetai/snowcode@latest --force', { stdio: 'inherit' });
       console.log(chalk.green('\n✅ SnowCode installed successfully!'));
+
+      // Verify version
+      try {
+        const installedVersion = execSync('snowcode --version 2>&1', { encoding: 'utf-8' }).trim();
+        console.log(chalk.dim(`   Installed version: ${installedVersion}`));
+      } catch {}
+
       snowcodeInstalled = true;
     } catch (error) {
       console.log(chalk.red('\n❌ Failed to install SnowCode'));
-      console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install -g @groeimetai/snowcode'));
+      console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install -g @groeimetai/snowcode@latest'));
       return false;
     }
   }
 
   // ALWAYS install SnowCode locally in the project directory with platform binaries
   console.log(chalk.blue('\n📦 Installing SnowCode locally (with platform binaries)...'));
-  console.log(chalk.dim('Installing @groeimetai/snowcode@latest...'));
+  console.log(chalk.dim('Installing @groeimetai/snowcode@latest (forcing latest version)...'));
 
   try {
     const projectDir = process.cwd();
-    execSync('npm install @groeimetai/snowcode@latest --no-audit --no-fund', {
+    // Use --force to bypass npm cache and get absolute latest version
+    execSync('npm install @groeimetai/snowcode@latest --no-audit --no-fund --force', {
       cwd: projectDir,
       stdio: 'inherit'
     });
     console.log(chalk.green('✅ SnowCode installed locally with platform binaries!'));
-    console.log(chalk.dim(`   Platform binary: opencode-${process.platform}-${process.arch}`));
+    console.log(chalk.dim(`   Platform binary: @groeimetai/snowcode-${process.platform}-${process.arch}`));
   } catch (error) {
     console.log(chalk.red('\n❌ Failed to install SnowCode locally'));
     console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install @groeimetai/snowcode@latest --no-audit --no-fund'));
