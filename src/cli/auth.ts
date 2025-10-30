@@ -148,6 +148,26 @@ export function registerAuthCommands(program: Command) {
           // Run SnowCode auth (use inherit for interactive prompt)
           try {
             execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
+
+            // Success - reload environment variables from .env if it exists
+            const envPath = path.join(process.cwd(), '.env');
+            if (fs.existsSync(envPath)) {
+              const envContent = fs.readFileSync(envPath, 'utf-8');
+              envContent.split('\n').forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed && !trimmed.startsWith('#')) {
+                  const [key, ...valueParts] = trimmed.split('=');
+                  if (key && valueParts.length > 0) {
+                    process.env[key.trim()] = valueParts.join('=').trim();
+                  }
+                }
+              });
+            }
+
+            // Success - now continue to ServiceNow setup
+            prompts.log.message(''); // Empty line
+            prompts.log.step('Continuing to ServiceNow authentication...');
+            prompts.log.message(''); // Empty line
           } catch (authError: any) {
             // Auth failed (user cancelled or other error)
             prompts.log.message(''); // Empty line
@@ -169,6 +189,7 @@ export function registerAuthCommands(program: Command) {
       }
 
       // ServiceNow setup - continue the flow (maintain @clack/prompts styling)
+      prompts.intro('ServiceNow Authentication');
 
       // Read credentials from .env file
       let instance = process.env.SNOW_INSTANCE;
