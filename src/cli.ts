@@ -543,20 +543,20 @@ async function executeSnowCode(objective: string): Promise<boolean> {
     const defaultModel = process.env.DEFAULT_MODEL;
     const defaultProvider = process.env.DEFAULT_LLM_PROVIDER;
 
-    // Build SnowCode command with objective as argument
-    // Use 'snowcode run' command (non-TUI mode) with objective as positional argument
-    const snowcodeArgs = ['run'];
+    // Build SnowCode command for TUI mode
+    // Use default TUI mode with --prompt to start with objective
+    const snowcodeArgs = [];
 
     // Add model option if available
     if (defaultModel) {
       snowcodeArgs.push('--model', defaultModel);
     }
 
-    // Add objective as positional argument
-    snowcodeArgs.push(objective);
+    // Add prompt option with objective
+    snowcodeArgs.push('--prompt', objective);
 
-    // Spawn SnowCode process in run mode - let it run fully interactively
-    // Use 'snowcode run <objective>' with full terminal control
+    // Spawn SnowCode process in TUI mode - full interactive interface
+    // Use 'snowcode --prompt <objective>' to start TUI with initial prompt
     const snowcodeProcess = spawn('snowcode', snowcodeArgs, {
       stdio: 'inherit', // All stdio inherited - SnowCode can use TTY
       cwd: process.cwd(),
