@@ -90,12 +90,7 @@ export function registerAuthCommands(program: Command) {
         }
 
         prompts.log.message('');
-        prompts.log.step('🚀 Starting unified authentication flow (powered by SnowCode)');
-        prompts.log.message('');
-        prompts.log.info('SnowCode will guide you through:');
-        prompts.log.message('  1️⃣  LLM Provider authentication (Anthropic, OpenAI, Google, etc.)');
-        prompts.log.message('  2️⃣  ServiceNow OAuth setup (optional)');
-        prompts.log.message('  3️⃣  Snow-Flow Enterprise setup (optional)');
+        prompts.log.step('🚀 Starting authentication flow (powered by SnowCode)');
         prompts.log.message('');
 
         // Call SnowCode auth login - it handles everything now!
