@@ -607,6 +607,30 @@ async function autoUpdateSnowCode(): Promise<void> {
             cwd: projectRoot
           });
 
+          // Restore executable permissions for platform binaries
+          try {
+            const packages = readdirSync(groeimetaiPath);
+            for (const pkg of packages) {
+              if (pkg.startsWith('snowcode-')) {
+                const binPath = join(groeimetaiPath, pkg, 'bin');
+                if (existsSync(binPath)) {
+                  const binaries = readdirSync(binPath);
+                  for (const binary of binaries) {
+                    const binaryPath = join(binPath, binary);
+                    try {
+                      execSync(`chmod +x "${binaryPath}"`, { stdio: 'ignore' });
+                      cliLogger.debug(`Set executable: ${pkg}/bin/${binary}`);
+                    } catch (err) {
+                      cliLogger.debug(`Chmod error for ${binary}: ${err}`);
+                    }
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            cliLogger.debug(`Error setting permissions: ${err}`);
+          }
+
           cliLogger.info(`✅ Updated SnowCode in ${projectRoot}`);
         }
       }
