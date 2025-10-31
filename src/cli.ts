@@ -1838,10 +1838,9 @@ program
       console.log('1. Authenticate: ' + chalk.cyan('snow-flow auth login'));
       console.log('   - Authenticates with your LLM provider (Claude/OpenAI/Google/Ollama)');
       console.log('   - Then authenticates with ServiceNow OAuth');
-      console.log('   - Configures Snow-Flow MCP servers (including enterprise if applicable)');
+      console.log('   - Your provider choice is automatically saved to .env');
       console.log('2. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
-      console.log('   - Automatically launches SnowCode with MCP servers');
-      console.log('   - Starts multi-agent orchestration for your objective');
+      console.log('   - Multi-agent orchestration for ServiceNow development');
       console.log('\n📚 Documentation: ' + chalk.blue('https://github.com/groeimetai/snow-flow'));
       console.log('💡 370+ ServiceNow tools • 2 MCP servers • Multi-LLM support');
 
@@ -3965,9 +3964,9 @@ async function handleMCPStart(manager: any, options: any): Promise<void> {
     console.log(`\n✅ Started ${running}/${total} MCP servers`);
 
     if (running === total) {
-      console.log('🎉 All MCP servers are now running and available in SnowCode!');
+      console.log('🎉 All MCP servers are now running!');
       console.log('\n📋 Next steps:');
-      console.log('   1. Open SnowCode (or Claude Code)');
+      console.log('   1. Use: ' + chalk.cyan('snow-flow swarm "<your objective>"'));
       console.log('   2. MCP tools will be automatically available');
       console.log('   3. Use snow_deploy_widget, snow_deploy_flow, etc.');
     } else {
