@@ -506,8 +506,8 @@ function stopMCPServers(): void {
 async function autoUpdateSnowCode(): Promise<void> {
   try {
     const { execSync } = require('child_process');
-    const { existsSync } = require('fs');
-    const { join } = require('path');
+    const { existsSync, readdirSync, rmSync } = require('fs');
+    const { join, dirname } = require('path');
 
     // Get current version
     const currentVersion = execSync('snowcode --version', { encoding: 'utf8' }).trim();
@@ -515,34 +515,91 @@ async function autoUpdateSnowCode(): Promise<void> {
     // Get latest version from npm
     const latestVersion = execSync('npm view @groeimetai/snowcode version', { encoding: 'utf8' }).trim();
 
+    // Helper to find node_modules in current and parent directories
+    const findNodeModules = (startPath: string): string[] => {
+      const found: string[] = [];
+      let currentPath = startPath;
+
+      // Check up to 3 levels up
+      for (let i = 0; i < 3; i++) {
+        const nodeModulesPath = join(currentPath, 'node_modules', '@groeimetai');
+        if (existsSync(nodeModulesPath)) {
+          found.push(currentPath);
+        }
+        const parent = dirname(currentPath);
+        if (parent === currentPath) break; // Reached root
+        currentPath = parent;
+      }
+
+      return found;
+    };
+
+    // Helper to update local node_modules
+    const updateLocalNodeModules = (projectRoot: string) => {
+      const groeimetaiPath = join(projectRoot, 'node_modules', '@groeimetai');
+
+      if (existsSync(groeimetaiPath)) {
+        // Check main package version
+        const snowcodePackage = join(groeimetaiPath, 'snowcode', 'package.json');
+        let needsUpdate = false;
+
+        if (existsSync(snowcodePackage)) {
+          const pkg = JSON.parse(require('fs').readFileSync(snowcodePackage, 'utf8'));
+          if (pkg.version !== latestVersion) {
+            needsUpdate = true;
+          }
+        } else {
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          cliLogger.info(`📦 Updating SnowCode in ${projectRoot}...`);
+
+          // Remove old platform binaries to force reinstall
+          try {
+            const packages = readdirSync(groeimetaiPath);
+            for (const pkg of packages) {
+              if (pkg.startsWith('snowcode-') || pkg === 'snowcode') {
+                const pkgPath = join(groeimetaiPath, pkg);
+                cliLogger.debug(`Removing old package: ${pkg}`);
+                rmSync(pkgPath, { recursive: true, force: true });
+              }
+            }
+          } catch (err) {
+            cliLogger.debug(`Cleanup error: ${err}`);
+          }
+
+          // Install fresh version
+          execSync('npm install @groeimetai/snowcode@latest', {
+            stdio: 'inherit',
+            cwd: projectRoot
+          });
+
+          cliLogger.info(`✅ Updated SnowCode in ${projectRoot}`);
+        }
+      }
+    };
+
     if (currentVersion !== latestVersion) {
       cliLogger.info(`📦 Updating SnowCode: ${currentVersion} → ${latestVersion}`);
 
       // Update global version
       execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'inherit' });
 
-      // Check for local node_modules and update if present
-      const localNodeModules = join(process.cwd(), 'node_modules', '@groeimetai', 'snowcode');
-      if (existsSync(localNodeModules)) {
-        cliLogger.info(`📦 Updating local SnowCode in node_modules...`);
-        execSync('npm install @groeimetai/snowcode@latest', { stdio: 'inherit', cwd: process.cwd() });
+      // Update all local node_modules
+      const projectRoots = findNodeModules(process.cwd());
+      for (const root of projectRoots) {
+        updateLocalNodeModules(root);
       }
 
       cliLogger.info(`✅ SnowCode updated to ${latestVersion}`);
     } else {
       cliLogger.debug(`✅ SnowCode is up-to-date (${currentVersion})`);
 
-      // Even if global is up-to-date, check if local node_modules needs update
-      const localNodeModules = join(process.cwd(), 'node_modules', '@groeimetai', 'snowcode');
-      if (existsSync(localNodeModules)) {
-        const localPackageJson = join(localNodeModules, 'package.json');
-        if (existsSync(localPackageJson)) {
-          const localPkg = JSON.parse(require('fs').readFileSync(localPackageJson, 'utf8'));
-          if (localPkg.version !== latestVersion) {
-            cliLogger.info(`📦 Updating local SnowCode: ${localPkg.version} → ${latestVersion}`);
-            execSync('npm install @groeimetai/snowcode@latest', { stdio: 'inherit', cwd: process.cwd() });
-          }
-        }
+      // Even if global is up-to-date, check local node_modules
+      const projectRoots = findNodeModules(process.cwd());
+      for (const root of projectRoots) {
+        updateLocalNodeModules(root);
       }
     }
   } catch (error) {
