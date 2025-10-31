@@ -506,6 +506,8 @@ function stopMCPServers(): void {
 async function autoUpdateSnowCode(): Promise<void> {
   try {
     const { execSync } = require('child_process');
+    const { existsSync } = require('fs');
+    const { join } = require('path');
 
     // Get current version
     const currentVersion = execSync('snowcode --version', { encoding: 'utf8' }).trim();
@@ -515,10 +517,33 @@ async function autoUpdateSnowCode(): Promise<void> {
 
     if (currentVersion !== latestVersion) {
       cliLogger.info(`📦 Updating SnowCode: ${currentVersion} → ${latestVersion}`);
+
+      // Update global version
       execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'inherit' });
+
+      // Check for local node_modules and update if present
+      const localNodeModules = join(process.cwd(), 'node_modules', '@groeimetai', 'snowcode');
+      if (existsSync(localNodeModules)) {
+        cliLogger.info(`📦 Updating local SnowCode in node_modules...`);
+        execSync('npm install @groeimetai/snowcode@latest', { stdio: 'inherit', cwd: process.cwd() });
+      }
+
       cliLogger.info(`✅ SnowCode updated to ${latestVersion}`);
     } else {
       cliLogger.debug(`✅ SnowCode is up-to-date (${currentVersion})`);
+
+      // Even if global is up-to-date, check if local node_modules needs update
+      const localNodeModules = join(process.cwd(), 'node_modules', '@groeimetai', 'snowcode');
+      if (existsSync(localNodeModules)) {
+        const localPackageJson = join(localNodeModules, 'package.json');
+        if (existsSync(localPackageJson)) {
+          const localPkg = JSON.parse(require('fs').readFileSync(localPackageJson, 'utf8'));
+          if (localPkg.version !== latestVersion) {
+            cliLogger.info(`📦 Updating local SnowCode: ${localPkg.version} → ${latestVersion}`);
+            execSync('npm install @groeimetai/snowcode@latest', { stdio: 'inherit', cwd: process.cwd() });
+          }
+        }
+      }
     }
   } catch (error) {
     // Silently ignore errors - don't block execution if update fails
