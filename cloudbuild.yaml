@@ -1,0 +1,196 @@
+# Snow-Flow Monorepo - Root Cloud Build Configuration
+# This file automatically detects which service to build based on changed files
+# Triggered by Cloud Build on push to main branch
+
+steps:
+  # Determine which services changed
+  - name: 'gcr.io/cloud-builders/git'
+    id: 'detect-changes'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Detecting changed files..."
+        git fetch origin main || true
+        git diff --name-only origin/main HEAD > /workspace/changed-files.txt || echo "All files changed (new repo)" > /workspace/changed-files.txt
+        cat /workspace/changed-files.txt
+
+        # Check which directories changed
+        if grep -q "^status-page/" /workspace/changed-files.txt || ! git rev-parse origin/main > /dev/null 2>&1; then
+          echo "true" > /workspace/build-status-page.txt
+          echo "Status page changed - will build"
+        else
+          echo "false" > /workspace/build-status-page.txt
+          echo "Status page unchanged - skip build"
+        fi
+
+        if grep -q "^website/" /workspace/changed-files.txt || ! git rev-parse origin/main > /dev/null 2>&1; then
+          echo "true" > /workspace/build-website.txt
+          echo "Website changed - will build"
+        else
+          echo "false" > /workspace/build-website.txt
+          echo "Website unchanged - skip build"
+        fi
+
+  # Build Status Page (if changed)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-status-page'
+    waitFor: ['detect-changes']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "$(cat /workspace/build-status-page.txt)" = "true" ]; then
+          echo "Building status page..."
+          docker build \
+            -t europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:$COMMIT_SHA \
+            -t europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest \
+            --cache-from europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest \
+            -f status-page/Dockerfile \
+            status-page/
+        else
+          echo "Skipping status page build - no changes detected"
+        fi
+
+  # Push Status Page (if built)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-status-page-sha'
+    waitFor: ['build-status-page']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "$(cat /workspace/build-status-page.txt)" = "true" ]; then
+          docker push europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:$COMMIT_SHA
+        else
+          echo "Skipping status page push"
+        fi
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-status-page-latest'
+    waitFor: ['build-status-page']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "$(cat /workspace/build-status-page.txt)" = "true" ]; then
+          docker push europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest
+        else
+          echo "Skipping status page push"
+        fi
+
+  # Deploy Status Page to Cloud Run (if built)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-status-page'
+    waitFor: ['push-status-page-sha', 'push-status-page-latest']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "$(cat /workspace/build-status-page.txt)" = "true" ]; then
+          gcloud run deploy snow-flow-status-page \
+            --image europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:$COMMIT_SHA \
+            --region europe-west4 \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8080 \
+            --memory 512Mi \
+            --cpu 1 \
+            --min-instances 1 \
+            --max-instances 5 \
+            --timeout 60
+        else
+          echo "Skipping status page deployment"
+        fi
+
+  # Build Website (if changed)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-website'
+    waitFor: ['detect-changes']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "$(cat /workspace/build-website.txt)" = "true" ]; then
+          echo "Building website..."
+          docker build \
+            -t gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA \
+            -t gcr.io/$PROJECT_ID/snow-flow-website:latest \
+            --cache-from gcr.io/$PROJECT_ID/snow-flow-website:latest \
+            -f website/Dockerfile \
+            website/
+        else
+          echo "Skipping website build - no changes detected"
+        fi
+
+  # Push Website (if built)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-website-sha'
+    waitFor: ['build-website']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "$(cat /workspace/build-website.txt)" = "true" ]; then
+          docker push gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA
+        else
+          echo "Skipping website push"
+        fi
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-website-latest'
+    waitFor: ['build-website']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "$(cat /workspace/build-website.txt)" = "true" ]; then
+          docker push gcr.io/$PROJECT_ID/snow-flow-website:latest
+        else
+          echo "Skipping website push"
+        fi
+
+  # Deploy Website to Cloud Run (if built)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-website'
+    waitFor: ['push-website-sha', 'push-website-latest']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "$(cat /workspace/build-website.txt)" = "true" ]; then
+          gcloud run deploy snow-flow-website \
+            --image gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA \
+            --region europe-west1 \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 80 \
+            --memory 512Mi \
+            --cpu 1 \
+            --concurrency 80 \
+            --max-instances 10 \
+            --min-instances 1 \
+            --set-env-vars NODE_ENV=production \
+            --timeout 300
+        else
+          echo "Skipping website deployment"
+        fi
+
+# Images to push (conditional based on what changed)
+images:
+  - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:$COMMIT_SHA'
+  - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest'
+  - 'gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/snow-flow-website:latest'
+
+# Build options
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+  diskSizeGb: 100
+
+# Build timeout (20 minutes for both services)
+timeout: '1200s'
+
+# Tags for organization
+tags: ['snow-flow', 'monorepo', 'production']
