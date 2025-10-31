@@ -1,5 +1,5 @@
 steps:
-  # Build the Docker image with nginx
+  # Build the Docker image with nginx (FIXED PATH - runs from root)
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -7,8 +7,11 @@ steps:
       - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:$COMMIT_SHA'
       - '-t'
       - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest'
-      - '.'
-    dir: 'status-page'
+      - '--cache-from'
+      - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest'
+      - '-f'
+      - 'status-page/Dockerfile'
+      - 'status-page/'
 
   # Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
@@ -52,6 +55,19 @@ images:
   - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:$COMMIT_SHA'
   - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest'
 
+# Build options
 options:
   machineType: 'E2_HIGHCPU_8'
   logging: CLOUD_LOGGING_ONLY
+  diskSizeGb: 100
+
+# Substitutions for environment-specific values
+substitutions:
+  _REGION: 'europe-west4'
+  _SERVICE_NAME: 'snow-flow-status-page'
+
+# Build timeout
+timeout: '1200s'
+
+# Tags for organization
+tags: ['snow-flow', 'status-page', 'production']
