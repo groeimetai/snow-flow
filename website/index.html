@@ -44,18 +44,17 @@
         body::before {
             content: '';
             position: fixed;
-            top: -30%;
-            left: -10%;
-            width: 80%;
-            height: 100%;
+            top: -50%;
+            left: -20%;
+            width: 140%;
+            height: 200%;
             background: radial-gradient(
                 ellipse at center,
-                rgba(0, 217, 255, 0.15) 0%,
-                rgba(59, 130, 246, 0.12) 20%,
-                rgba(0, 217, 255, 0.08) 40%,
-                transparent 70%
+                rgba(0, 217, 255, 0.08) 0%,
+                rgba(59, 130, 246, 0.05) 25%,
+                transparent 60%
             );
-            animation: pageWave1 18s ease-in-out infinite;
+            animation: pageWave 20s ease-in-out infinite;
             pointer-events: none;
             z-index: 0;
         }
@@ -63,50 +62,38 @@
         body::after {
             content: '';
             position: fixed;
-            top: -20%;
-            right: -10%;
-            width: 70%;
-            height: 90%;
+            top: -30%;
+            right: -20%;
+            width: 120%;
+            height: 180%;
             background: radial-gradient(
                 ellipse at center,
-                rgba(59, 130, 246, 0.18) 0%,
-                rgba(0, 217, 255, 0.12) 25%,
-                rgba(59, 130, 246, 0.08) 45%,
-                transparent 70%
+                rgba(59, 130, 246, 0.06) 0%,
+                rgba(0, 217, 255, 0.04) 30%,
+                transparent 55%
             );
-            animation: pageWave2 22s ease-in-out infinite;
-            animation-delay: -11s;
+            animation: pageWave 15s ease-in-out infinite;
+            animation-delay: -7.5s;
             pointer-events: none;
             z-index: 0;
         }
 
-        @keyframes pageWave1 {
+        @keyframes pageWave {
             0%, 100% {
-                transform: translate(0, 0) scale(1) rotate(0deg);
+                transform: translate(0, 0) scale(1);
                 opacity: 1;
             }
-            33% {
-                transform: translate(-8%, 12%) scale(1.15) rotate(5deg);
-                opacity: 0.85;
-            }
-            66% {
-                transform: translate(12%, -8%) scale(1.08) rotate(-3deg);
-                opacity: 0.92;
-            }
-        }
-
-        @keyframes pageWave2 {
-            0%, 100% {
-                transform: translate(0, 0) scale(1) rotate(0deg);
-                opacity: 1;
-            }
-            33% {
-                transform: translate(10%, -10%) scale(1.12) rotate(-4deg);
-                opacity: 0.88;
-            }
-            66% {
-                transform: translate(-7%, 15%) scale(1.18) rotate(6deg);
+            25% {
+                transform: translate(10%, 5%) scale(1.1);
                 opacity: 0.8;
+            }
+            50% {
+                transform: translate(-5%, 10%) scale(1.05);
+                opacity: 0.9;
+            }
+            75% {
+                transform: translate(5%, -5%) scale(1.08);
+                opacity: 0.85;
             }
         }
 
@@ -213,47 +200,6 @@
             text-align: center;
             position: relative;
             z-index: 1;
-        }
-
-        /* Hero-specific animated background blob */
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 120%;
-            height: 150%;
-            background: radial-gradient(
-                ellipse at center,
-                rgba(0, 217, 255, 0.2) 0%,
-                rgba(59, 130, 246, 0.15) 15%,
-                rgba(0, 217, 255, 0.1) 30%,
-                rgba(59, 130, 246, 0.08) 45%,
-                transparent 65%
-            );
-            animation: heroWave 16s ease-in-out infinite;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        @keyframes heroWave {
-            0%, 100% {
-                transform: translate(-50%, -50%) scale(1) rotate(0deg);
-                opacity: 1;
-            }
-            25% {
-                transform: translate(-48%, -52%) scale(1.1) rotate(2deg);
-                opacity: 0.9;
-            }
-            50% {
-                transform: translate(-52%, -48%) scale(1.15) rotate(-2deg);
-                opacity: 0.95;
-            }
-            75% {
-                transform: translate(-50%, -51%) scale(1.08) rotate(1deg);
-                opacity: 0.88;
-            }
         }
 
         .hero-label {
