@@ -207,7 +207,7 @@ export class ServiceNowAuthManager {
   }
 
   /**
-   * Refresh access token using refresh token OR username/password
+   * Refresh access token using refresh token, OAuth client credentials, OR username/password
    */
   private async refreshAccessToken(context: ServiceNowContext): Promise<string> {
     const cacheKey = this.getCacheKey(context.instanceUrl);
@@ -221,7 +221,7 @@ export class ServiceNowAuthManager {
       throw new Error('ServiceNow credentials not configured. Please run: snow-flow auth login');
     }
 
-    // Try OAuth first if refresh token available
+    // STEP 1: Try OAuth Refresh Token flow if refresh token is available
     let refreshToken = context.refreshToken;
     const cached = this.tokenCache.get(cacheKey);
     if (!refreshToken && cached) {
@@ -230,6 +230,7 @@ export class ServiceNowAuthManager {
 
     if (refreshToken) {
       try {
+        console.log('[Auth] Attempting OAuth refresh token flow...');
         // OAuth token refresh request
         const tokenUrl = `${context.instanceUrl}/oauth_token.do`;
         const response = await axios.post<OAuthTokenResponse>(
@@ -254,7 +255,7 @@ export class ServiceNowAuthManager {
         const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000; // 1 min buffer
         this.tokenCache.set(cacheKey, {
           accessToken: tokenData.access_token,
-          refreshToken: tokenData.refresh_token,
+          refreshToken: tokenData.refresh_token || refreshToken, // Keep old refresh token if new one not provided
           expiresAt,
           instanceUrl: context.instanceUrl
         });
@@ -262,15 +263,57 @@ export class ServiceNowAuthManager {
         // Persist to disk
         await this.saveTokenCache();
 
-        console.log('[Auth] Access token refreshed successfully (OAuth)');
+        console.log('[Auth] Access token refreshed successfully (OAuth Refresh Token)');
         return tokenData.access_token;
 
       } catch (error: any) {
-        console.warn('[Auth] OAuth refresh failed, trying username/password...', error.message);
+        console.warn('[Auth] OAuth refresh token flow failed:', error.message);
+        console.log('[Auth] Will try OAuth client credentials flow...');
       }
     }
 
-    // Fallback to username/password authentication
+    // STEP 2: Try OAuth Client Credentials Grant (initial token acquisition)
+    try {
+      console.log('[Auth] Attempting OAuth client credentials flow...');
+      const tokenUrl = `${context.instanceUrl}/oauth_token.do`;
+      const response = await axios.post<OAuthTokenResponse>(
+        tokenUrl,
+        new URLSearchParams({
+          grant_type: 'client_credentials',
+          client_id: context.clientId,
+          client_secret: context.clientSecret
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          timeout: 10000
+        }
+      );
+
+      const tokenData = response.data;
+
+      // Cache tokens
+      const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000; // 1 min buffer
+      this.tokenCache.set(cacheKey, {
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token || '', // Store refresh token if provided
+        expiresAt,
+        instanceUrl: context.instanceUrl
+      });
+
+      // Persist to disk
+      await this.saveTokenCache();
+
+      console.log('[Auth] Access token acquired successfully (OAuth Client Credentials)');
+      return tokenData.access_token;
+
+    } catch (error: any) {
+      console.warn('[Auth] OAuth client credentials flow failed:', error.message);
+      console.log('[Auth] Will try username/password fallback...');
+    }
+
+    // STEP 3: Fallback to username/password authentication
     return await this.authenticateWithPassword(context);
   }
 
