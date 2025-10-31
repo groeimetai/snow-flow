@@ -96,14 +96,6 @@ export function registerAuthCommands(program: Command) {
         // Call SnowCode auth login - it handles everything now!
         // SnowCode will handle enterprise setup during its auth flow
         execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
-
-        prompts.log.message('');
-        prompts.log.success('✅ Authentication complete!');
-        prompts.log.message('');
-        prompts.log.info('Next steps:');
-        prompts.log.message('  • Run: snow-flow swarm "<objective>" to start developing');
-        prompts.log.message('  • Run: snow-flow auth list to see configured credentials');
-        prompts.log.message('');
       } catch (error: any) {
         if (error.code !== 'ENOENT') {
           prompts.log.error(`Authentication failed: ${error.message}`);
