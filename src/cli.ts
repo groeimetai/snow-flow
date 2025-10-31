@@ -541,7 +541,7 @@ async function autoUpdateSnowCode(): Promise<void> {
       const groeimetaiPath = join(projectRoot, 'node_modules', '@groeimetai');
 
       if (existsSync(groeimetaiPath)) {
-        // Check main package version
+        // Check main package version AND platform binaries
         const snowcodePackage = join(groeimetaiPath, 'snowcode', 'package.json');
         let needsUpdate = false;
 
@@ -549,9 +549,32 @@ async function autoUpdateSnowCode(): Promise<void> {
           const pkg = JSON.parse(require('fs').readFileSync(snowcodePackage, 'utf8'));
           if (pkg.version !== latestVersion) {
             needsUpdate = true;
+            cliLogger.info(`Main package outdated: ${pkg.version} → ${latestVersion}`);
           }
         } else {
           needsUpdate = true;
+        }
+
+        // Also check platform binaries (snowcode-darwin-arm64, etc.)
+        if (!needsUpdate) {
+          try {
+            const packages = readdirSync(groeimetaiPath);
+            for (const pkg of packages) {
+              if (pkg.startsWith('snowcode-')) {
+                const pkgJsonPath = join(groeimetaiPath, pkg, 'package.json');
+                if (existsSync(pkgJsonPath)) {
+                  const pkgJson = JSON.parse(require('fs').readFileSync(pkgJsonPath, 'utf8'));
+                  if (pkgJson.version !== latestVersion) {
+                    needsUpdate = true;
+                    cliLogger.info(`Platform binary outdated: ${pkg}@${pkgJson.version} → ${latestVersion}`);
+                    break;
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            cliLogger.debug(`Error checking platform binaries: ${err}`);
+          }
         }
 
         if (needsUpdate) {
