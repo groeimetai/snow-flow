@@ -509,6 +509,8 @@ async function autoUpdateSnowCode(): Promise<void> {
     const { existsSync, readdirSync, rmSync } = require('fs');
     const { join, dirname } = require('path');
 
+    cliLogger.info('🔄 Checking for SnowCode updates...');
+
     // Get current version
     const currentVersion = execSync('snowcode --version', { encoding: 'utf8' }).trim();
 
@@ -588,23 +590,26 @@ async function autoUpdateSnowCode(): Promise<void> {
 
       // Update all local node_modules
       const projectRoots = findNodeModules(process.cwd());
+      cliLogger.info(`Found ${projectRoots.length} project(s) with node_modules`);
       for (const root of projectRoots) {
         updateLocalNodeModules(root);
       }
 
       cliLogger.info(`✅ SnowCode updated to ${latestVersion}`);
     } else {
-      cliLogger.debug(`✅ SnowCode is up-to-date (${currentVersion})`);
+      cliLogger.info(`✅ SnowCode is up-to-date (${currentVersion})`);
 
       // Even if global is up-to-date, check local node_modules
       const projectRoots = findNodeModules(process.cwd());
+      cliLogger.debug(`Checking ${projectRoots.length} project(s) for local updates`);
       for (const root of projectRoots) {
         updateLocalNodeModules(root);
       }
     }
   } catch (error) {
-    // Silently ignore errors - don't block execution if update fails
-    cliLogger.debug(`Auto-update check failed: ${error}`);
+    // Log error but don't block execution
+    cliLogger.warn(`⚠️  Auto-update check failed: ${error instanceof Error ? error.message : String(error)}`);
+    cliLogger.debug(`Full error: ${error}`);
   }
 }
 
