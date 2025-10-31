@@ -21,7 +21,7 @@ import {
 
 import { toolRegistry } from './shared/tool-registry.js';
 import { authManager } from './shared/auth.js';
-import { executeWithErrorHandling, SnowFlowError } from './shared/error-handler.js';
+import { executeWithErrorHandling, SnowFlowError, classifyError } from './shared/error-handler.js';
 import { ServiceNowContext } from './shared/types.js';
 
 /**
@@ -156,17 +156,15 @@ export class ServiceNowUnifiedServer {
       } catch (error: any) {
         console.error(`[Server] Tool execution failed: ${name}`, error.message);
 
-        if (error instanceof SnowFlowError) {
-          throw new McpError(
-            ErrorCode.InternalError,
-            error.message,
-            error.toToolResult()
-          );
-        }
+        // Ensure error is properly classified as SnowFlowError before calling toToolResult()
+        const snowFlowError = error instanceof SnowFlowError
+          ? error
+          : classifyError(error);
 
         throw new McpError(
           ErrorCode.InternalError,
-          error.message || 'Unknown error'
+          snowFlowError.message,
+          snowFlowError.toToolResult()
         );
       }
     });
