@@ -2,9 +2,63 @@ import { Command } from 'commander';
 import * as prompts from '@clack/prompts';
 import { execSync } from 'child_process';
 import path from 'path';
+import fs from 'fs/promises';
+import os from 'os';
 import { Logger } from '../utils/logger.js';
 
 const authLogger = new Logger('auth');
+
+/**
+ * Update MCP server config with ServiceNow credentials from auth.json
+ */
+async function updateMCPServerConfig() {
+  try {
+    // Read SnowCode auth.json
+    const authPath = path.join(os.homedir(), '.local', 'share', 'snowcode', 'auth.json');
+    const authJson = JSON.parse(await fs.readFile(authPath, 'utf-8'));
+
+    // Check if ServiceNow credentials exist
+    const servicenowCreds = authJson['servicenow'];
+    if (!servicenowCreds || servicenowCreds.type !== 'servicenow-oauth') {
+      authLogger.debug('No ServiceNow OAuth credentials found in auth.json');
+      return;
+    }
+
+    // Read SnowCode config.json
+    const configPath = path.join(os.homedir(), '.config', 'snowcode', 'config.json');
+    let config: any = {};
+    try {
+      config = JSON.parse(await fs.readFile(configPath, 'utf-8'));
+    } catch (err) {
+      authLogger.debug('No existing config.json found, will create new one');
+    }
+
+    // Ensure mcp section exists
+    if (!config.mcp) config.mcp = {};
+
+    // Update servicenow-unified MCP server environment variables
+    if (config.mcp['servicenow-unified']) {
+      if (!config.mcp['servicenow-unified'].environment) {
+        config.mcp['servicenow-unified'].environment = {};
+      }
+
+      config.mcp['servicenow-unified'].environment['SERVICENOW_INSTANCE_URL'] = servicenowCreds.instance;
+      config.mcp['servicenow-unified'].environment['SERVICENOW_CLIENT_ID'] = servicenowCreds.clientId;
+      config.mcp['servicenow-unified'].environment['SERVICENOW_CLIENT_SECRET'] = servicenowCreds.clientSecret;
+
+      // Write updated config
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
+
+      prompts.log.success('✅ Updated MCP server config with ServiceNow credentials');
+      authLogger.info('MCP server config updated successfully');
+    } else {
+      authLogger.debug('No servicenow-unified MCP server found in config');
+    }
+  } catch (error: any) {
+    authLogger.warn(`Failed to update MCP server config: ${error.message}`);
+    // Don't throw - this is not critical
+  }
+}
 
 export function registerAuthCommands(program: Command) {
   const auth = program.command('auth').description('Authentication management (powered by SnowCode)');
@@ -96,6 +150,9 @@ export function registerAuthCommands(program: Command) {
         // Call SnowCode auth login - it handles everything now!
         // SnowCode will handle enterprise setup during its auth flow
         execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
+
+        // After successful auth, update MCP server config with ServiceNow credentials
+        await updateMCPServerConfig();
       } catch (error: any) {
         if (error.code !== 'ENOENT') {
           prompts.log.error(`Authentication failed: ${error.message}`);
