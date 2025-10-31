@@ -594,6 +594,13 @@ async function autoUpdateSnowCode(): Promise<void> {
             cliLogger.debug(`Cleanup error: ${err}`);
           }
 
+          // Remove package-lock.json to ensure fresh install (avoid stale lockfile cache)
+          const lockfilePath = join(projectRoot, 'package-lock.json');
+          if (existsSync(lockfilePath)) {
+            cliLogger.debug('Removing stale package-lock.json');
+            rmSync(lockfilePath, { force: true });
+          }
+
           // Install fresh version
           execSync('npm install @groeimetai/snowcode@latest', {
             stdio: 'inherit',
