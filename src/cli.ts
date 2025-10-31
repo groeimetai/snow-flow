@@ -502,11 +502,38 @@ function stopMCPServers(): void {
   }
 }
 
+// Helper function to auto-update SnowCode to latest version
+async function autoUpdateSnowCode(): Promise<void> {
+  try {
+    const { execSync } = require('child_process');
+
+    // Get current version
+    const currentVersion = execSync('snowcode --version', { encoding: 'utf8' }).trim();
+
+    // Get latest version from npm
+    const latestVersion = execSync('npm view @groeimetai/snowcode version', { encoding: 'utf8' }).trim();
+
+    if (currentVersion !== latestVersion) {
+      cliLogger.info(`📦 Updating SnowCode: ${currentVersion} → ${latestVersion}`);
+      execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'inherit' });
+      cliLogger.info(`✅ SnowCode updated to ${latestVersion}`);
+    } else {
+      cliLogger.debug(`✅ SnowCode is up-to-date (${currentVersion})`);
+    }
+  } catch (error) {
+    // Silently ignore errors - don't block execution if update fails
+    cliLogger.debug(`Auto-update check failed: ${error}`);
+  }
+}
+
 // Helper function to execute SnowCode directly with the objective
 async function executeSnowCode(objective: string): Promise<boolean> {
   let mcpServerPIDs: number[] = [];
 
   try {
+    // Auto-update SnowCode to latest version
+    await autoUpdateSnowCode();
+
     // Check if SnowCode CLI is available
     const { execSync } = require('child_process');
     try {
