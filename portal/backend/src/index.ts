@@ -28,6 +28,7 @@ import { createAuthRoutes } from './routes/auth.js';
 import { createServiceIntegratorRoutes } from './routes/service-integrator.js';
 import { createSIThemesRoutes } from './routes/si-themes.js';
 import { createCustomerRoutes } from './routes/customer.js';
+import { createUserRoutes } from './routes/users.js';
 import { validateInput, errorHandler } from './middleware/security.js';
 import { apiLogger } from './middleware/api-logger.js';
 import { MigrationRunner } from './migrations/runner.js';
@@ -256,6 +257,10 @@ function initializeApiRoutes() {
 
   // Customer routes (usage stats, profile)
   app.use('/api/customer', createCustomerRoutes(db));
+
+  // User management routes (v2.0.0 - enterprise license user tracking)
+  app.use('/api/users', createUserRoutes(db));
+  logger.info('✅ User management routes initialized');
 
   // TODO: Monitoring routes (requires credsDb initialization)
   // app.use('/api/monitoring', createMonitoringRoutes(db, credsDb!));

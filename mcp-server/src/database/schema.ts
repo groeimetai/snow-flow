@@ -77,6 +77,47 @@ export interface ConnectionEvent {
   activeCount?: number; // Active connections at time of event
 }
 
+/**
+ * User (v2.0.0)
+ * User credentials and management for enterprise licenses
+ * Links users to customers or service integrators for portal access
+ */
+export interface User {
+  id: number;
+  customerId?: number; // NULL for SI admin users
+  serviceIntegratorId?: number; // NULL for customer users
+  userId: string; // Hashed machine ID (SHA-256) from MCP authentication
+  machineIdRaw?: string; // Optional: Unhashed machine ID for display
+  username?: string; // Optional display name
+  email?: string; // Optional email address
+  role: 'developer' | 'stakeholder' | 'admin';
+  passwordHash?: string; // Optional: For future password authentication
+  status: 'active' | 'inactive' | 'suspended';
+  isActive: boolean; // Quick active check (TRUE = active, FALSE = inactive/suspended)
+  createdAt: number; // Unix timestamp (ms)
+  updatedAt: number; // Unix timestamp (ms)
+  lastLoginAt?: number; // Unix timestamp (ms) of last authentication
+  lastSeenIp?: string; // Last IP address
+  lastSeenUserAgent?: string; // Last user agent string
+}
+
+/**
+ * User Activity Log (v2.0.0)
+ * Audit trail for user activity and changes
+ */
+export interface UserActivityLog {
+  id: number;
+  userId: number; // References users.id
+  activityType: 'login' | 'logout' | 'status_change' | 'role_change' | 'created' | 'updated';
+  activityTimestamp: number; // Unix timestamp (ms)
+  ipAddress?: string;
+  userAgent?: string;
+  oldValue?: string; // Previous value for changes
+  newValue?: string; // New value for changes
+  performedBy?: string; // Who performed the action (admin, system, self)
+  notes?: string; // Additional context
+}
+
 export interface License {
   id: number;
   key: string;
@@ -1559,5 +1600,376 @@ export class LicenseDatabase {
       rejectionRate,
       byRole
     };
+  }
+
+  // =====================================================================
+  // User Management (v2.0.0)
+  // =====================================================================
+
+  /**
+   * Create or update user record (upsert)
+   * Called during MCP authentication to track users
+   *
+   * @param user User data
+   * @returns Created or updated user
+   */
+  async createOrUpdateUser(user: {
+    customerId?: number;
+    serviceIntegratorId?: number;
+    userId: string;
+    machineIdRaw?: string;
+    username?: string;
+    email?: string;
+    role: 'developer' | 'stakeholder' | 'admin';
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<User> {
+    const now = Date.now();
+
+    await this.pool.execute(
+      `INSERT INTO users (
+        customer_id, service_integrator_id, user_id, machine_id_raw,
+        username, email, role, status, is_active,
+        created_at, updated_at, last_login_at, last_seen_ip, last_seen_user_agent
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'active', TRUE, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        username = COALESCE(VALUES(username), username),
+        email = COALESCE(VALUES(email), email),
+        updated_at = VALUES(updated_at),
+        last_login_at = VALUES(last_login_at),
+        last_seen_ip = VALUES(last_seen_ip),
+        last_seen_user_agent = VALUES(last_seen_user_agent)`,
+      [
+        user.customerId || null,
+        user.serviceIntegratorId || null,
+        user.userId,
+        user.machineIdRaw || null,
+        user.username || null,
+        user.email || null,
+        user.role,
+        now,
+        now,
+        now,
+        user.ipAddress || null,
+        user.userAgent || null
+      ]
+    );
+
+    // Fetch the created/updated user
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM users WHERE user_id = ? AND (customer_id = ? OR service_integrator_id = ?)`,
+      [user.userId, user.customerId || null, user.serviceIntegratorId || null]
+    );
+
+    const userData = (rows as any[])[0];
+    return convertBooleans(toCamelCase(userData), ['isActive']) as User;
+  }
+
+  /**
+   * Get user by internal ID
+   *
+   * @param id User ID
+   * @returns User or null
+   */
+  async getUserById(id: number): Promise<User | null> {
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM users WHERE id = ?`,
+      [id]
+    );
+
+    const userData = (rows as any[])[0];
+    if (!userData) return null;
+
+    return convertBooleans(toCamelCase(userData), ['isActive']) as User;
+  }
+
+  /**
+   * Get user by userId (hashed machine ID) and customer/SI
+   *
+   * @param userId Hashed machine ID
+   * @param customerId Optional customer ID
+   * @param serviceIntegratorId Optional SI ID
+   * @returns User or null
+   */
+  async getUserByUserId(
+    userId: string,
+    customerId?: number,
+    serviceIntegratorId?: number
+  ): Promise<User | null> {
+    var sql = 'SELECT * FROM users WHERE user_id = ?';
+    var params: any[] = [userId];
+
+    if (customerId) {
+      sql += ' AND customer_id = ?';
+      params.push(customerId);
+    } else if (serviceIntegratorId) {
+      sql += ' AND service_integrator_id = ?';
+      params.push(serviceIntegratorId);
+    }
+
+    const [rows] = await this.pool.execute(sql, params);
+
+    const userData = (rows as any[])[0];
+    if (!userData) return null;
+
+    return convertBooleans(toCamelCase(userData), ['isActive']) as User;
+  }
+
+  /**
+   * List users for a customer or service integrator
+   *
+   * @param options Query options
+   * @returns Array of users
+   */
+  async listUsers(options: {
+    customerId?: number;
+    serviceIntegratorId?: number;
+    status?: 'active' | 'inactive' | 'suspended';
+    role?: 'developer' | 'stakeholder' | 'admin';
+    limit?: number;
+    offset?: number;
+  }): Promise<User[]> {
+    var sql = 'SELECT * FROM users WHERE 1=1';
+    var params: any[] = [];
+
+    if (options.customerId) {
+      sql += ' AND customer_id = ?';
+      params.push(options.customerId);
+    }
+
+    if (options.serviceIntegratorId) {
+      sql += ' AND service_integrator_id = ?';
+      params.push(options.serviceIntegratorId);
+    }
+
+    if (options.status) {
+      sql += ' AND status = ?';
+      params.push(options.status);
+    }
+
+    if (options.role) {
+      sql += ' AND role = ?';
+      params.push(options.role);
+    }
+
+    sql += ' ORDER BY last_login_at DESC';
+
+    if (options.limit) {
+      sql += ' LIMIT ?';
+      params.push(options.limit);
+
+      if (options.offset) {
+        sql += ' OFFSET ?';
+        params.push(options.offset);
+      }
+    }
+
+    const [rows] = await this.pool.execute(sql, params);
+
+    return (rows as any[]).map(row =>
+      convertBooleans(toCamelCase(row), ['isActive']) as User
+    );
+  }
+
+  /**
+   * Update user details
+   *
+   * @param id User ID
+   * @param updates Fields to update
+   * @returns Updated user
+   */
+  async updateUser(
+    id: number,
+    updates: {
+      username?: string;
+      email?: string;
+      role?: 'developer' | 'stakeholder' | 'admin';
+      machineIdRaw?: string;
+    }
+  ): Promise<User | null> {
+    var setClauses: string[] = [];
+    var params: any[] = [];
+
+    if (updates.username !== undefined) {
+      setClauses.push('username = ?');
+      params.push(updates.username);
+    }
+
+    if (updates.email !== undefined) {
+      setClauses.push('email = ?');
+      params.push(updates.email);
+    }
+
+    if (updates.role !== undefined) {
+      setClauses.push('role = ?');
+      params.push(updates.role);
+    }
+
+    if (updates.machineIdRaw !== undefined) {
+      setClauses.push('machine_id_raw = ?');
+      params.push(updates.machineIdRaw);
+    }
+
+    if (setClauses.length === 0) {
+      return this.getUserById(id);
+    }
+
+    setClauses.push('updated_at = ?');
+    params.push(Date.now());
+
+    params.push(id);
+
+    await this.pool.execute(
+      'UPDATE users SET ' + setClauses.join(', ') + ' WHERE id = ?',
+      params
+    );
+
+    return this.getUserById(id);
+  }
+
+  /**
+   * Set user status (activate/deactivate/suspend)
+   *
+   * @param id User ID
+   * @param status New status
+   * @param performedBy Who performed the action
+   * @param notes Optional notes
+   * @returns Updated user
+   */
+  async setUserStatus(
+    id: number,
+    status: 'active' | 'inactive' | 'suspended',
+    performedBy?: string,
+    notes?: string
+  ): Promise<User | null> {
+    var isActive = status === 'active';
+
+    var oldUser = await this.getUserById(id);
+    if (!oldUser) return null;
+
+    await this.pool.execute(
+      `UPDATE users SET status = ?, is_active = ?, updated_at = ? WHERE id = ?`,
+      [status, isActive, Date.now(), id]
+    );
+
+    // Log activity
+    await this.logUserActivity({
+      userId: id,
+      activityType: 'status_change',
+      oldValue: oldUser.status,
+      newValue: status,
+      performedBy: performedBy || 'system',
+      notes: notes
+    });
+
+    return this.getUserById(id);
+  }
+
+  /**
+   * Delete user
+   *
+   * @param id User ID
+   */
+  async deleteUser(id: number): Promise<void> {
+    await this.pool.execute(`DELETE FROM users WHERE id = ?`, [id]);
+  }
+
+  /**
+   * Log user activity
+   *
+   * @param activity Activity data
+   */
+  async logUserActivity(activity: {
+    userId: number;
+    activityType: 'login' | 'logout' | 'status_change' | 'role_change' | 'created' | 'updated';
+    ipAddress?: string;
+    userAgent?: string;
+    oldValue?: string;
+    newValue?: string;
+    performedBy?: string;
+    notes?: string;
+  }): Promise<void> {
+    await this.pool.execute(
+      `INSERT INTO user_activity_log (
+        user_id, activity_type, activity_timestamp,
+        ip_address, user_agent, old_value, new_value, performed_by, notes
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        activity.userId,
+        activity.activityType,
+        Date.now(),
+        activity.ipAddress || null,
+        activity.userAgent || null,
+        activity.oldValue || null,
+        activity.newValue || null,
+        activity.performedBy || null,
+        activity.notes || null
+      ]
+    );
+  }
+
+  /**
+   * Get user activity log
+   *
+   * @param userId User ID
+   * @param limit Maximum number of entries
+   * @param activityType Optional filter by type
+   * @returns Array of activity log entries
+   */
+  async getUserActivity(
+    userId: number,
+    limit: number = 100,
+    activityType?: 'login' | 'logout' | 'status_change' | 'role_change' | 'created' | 'updated'
+  ): Promise<UserActivityLog[]> {
+    var sql = activityType
+      ? `SELECT * FROM user_activity_log
+         WHERE user_id = ? AND activity_type = ?
+         ORDER BY activity_timestamp DESC LIMIT ?`
+      : `SELECT * FROM user_activity_log
+         WHERE user_id = ?
+         ORDER BY activity_timestamp DESC LIMIT ?`;
+
+    var params = activityType ? [userId, activityType, limit] : [userId, limit];
+    const [rows] = await this.pool.execute(sql, params);
+
+    return (rows as any[]).map(row => toCamelCase(row) as UserActivityLog);
+  }
+
+  /**
+   * Get users with connection details (enriched view)
+   * Joins users with their current active connections
+   *
+   * @param customerId Customer ID
+   * @returns Array of users with connection info
+   */
+  async getUsersWithConnections(customerId: number): Promise<Array<User & {
+    isConnected: boolean;
+    connectionId?: string;
+    connectedAt?: number;
+    lastSeen?: number;
+  }>> {
+    const [rows] = await this.pool.execute(
+      `SELECT
+        u.*,
+        ac.connection_id,
+        ac.connected_at,
+        ac.last_seen
+      FROM users u
+      LEFT JOIN active_connections ac
+        ON u.customer_id = ac.customer_id
+        AND u.user_id = ac.user_id
+        AND u.role = ac.role
+      WHERE u.customer_id = ?
+      ORDER BY u.last_login_at DESC`,
+      [customerId]
+    );
+
+    return (rows as any[]).map(row => {
+      var user = convertBooleans(toCamelCase(row), ['isActive']) as any;
+      user.isConnected = Boolean(row.connection_id);
+      return user;
+    });
   }
 }

@@ -282,6 +282,23 @@ export function createAuthRoutes(db: LicenseDatabase): Router {
         expiresIn: JWT_EXPIRES_IN,
       });
 
+      // Create or update user record for tracking
+      try {
+        await db.createOrUpdateUser({
+          customerId: customer.id,
+          userId: hashedMachineId,
+          machineIdRaw: machineId, // Store unhashed for display (optional)
+          role: role as 'developer' | 'stakeholder' | 'admin',
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent']
+        });
+
+        console.log(`[Auth] User record created/updated: customer=${customer.id}, role=${role}, machineId=${hashedMachineId.substring(0, 8)}...`);
+      } catch (userError) {
+        console.error('[Auth] Failed to create/update user record:', userError);
+        // Don't fail the login if user creation fails - log and continue
+      }
+
       res.json({
         success: true,
         token,
