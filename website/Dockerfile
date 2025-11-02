@@ -1,8 +1,8 @@
 # Snow-Flow Website - Production Docker Image
 FROM nginx:alpine
 
-# Install security updates
-RUN apk update && apk upgrade
+# Install security updates and curl for healthcheck
+RUN apk update && apk upgrade && apk add --no-cache curl
 
 # Remove default nginx website
 RUN rm -rf /usr/share/nginx/html/*
@@ -29,9 +29,9 @@ EXPOSE 80
 
 # Add metadata
 LABEL maintainer="Snow-Flow Team" \
-      description="Snow-Flow Enterprise Website v4.2.0" \
-      version="4.2.0" \
-      features="23 MCP Servers, 355+ Tools, ITAM, SecOps, Notifications"
+      description="Snow-Flow Enterprise Website v4.3.0" \
+      version="4.3.0" \
+      features="18 MCP Servers, 410+ Tools, Seat-Based Licensing, User Management, Enterprise Analytics"
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

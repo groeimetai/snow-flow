@@ -176,12 +176,8 @@ steps:
           echo "Skipping website deployment"
         fi
 
-# Images to push (conditional based on what changed)
-images:
-  - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:$COMMIT_SHA'
-  - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest'
-  - 'gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA'
-  - 'gcr.io/$PROJECT_ID/snow-flow-website:latest'
+# Note: Images are pushed conditionally in the steps above
+# The 'images:' field is not used because we handle pushes conditionally
 
 # Build options
 options:
