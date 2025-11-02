@@ -22,6 +22,13 @@ interface AuthData {
     name: string;
     tier: string;
     features: string[];
+    // Seat information (v8.5.0+)
+    developerSeats?: number;      // Number of developer seats (undefined = unlimited/legacy)
+    stakeholderSeats?: number;    // Number of stakeholder seats (undefined = unlimited/legacy)
+    activeDeveloperSeats?: number;    // Current active developer connections
+    activeStakeholderSeats?: number;  // Current active stakeholder sessions
+    // User role (for multi-role accounts)
+    role?: 'developer' | 'stakeholder' | 'admin';
     theme?: string;
     customTheme?: {
       themeName: string;
@@ -122,6 +129,24 @@ async function loginCommand(licenseKey: string): Promise<void> {
     console.log(chalk.bold('License Tier:'), chalk.cyan(authData.customer.tier.toUpperCase()));
     console.log(chalk.bold('Features:'), authData.customer.features.join(', '));
 
+    // Show seat information if available (v8.5.0+)
+    if (authData.customer.developerSeats !== undefined || authData.customer.stakeholderSeats !== undefined) {
+      console.log('');
+      console.log(chalk.bold('License Seats:'));
+
+      if (authData.customer.developerSeats !== undefined) {
+        const devSeats = authData.customer.developerSeats === -1 ? 'Unlimited' : authData.customer.developerSeats;
+        const activeDevSeats = authData.customer.activeDeveloperSeats || 0;
+        console.log(chalk.gray('  Developer Seats:'), chalk.cyan(`${activeDevSeats}/${devSeats}`), chalk.gray('(active/total)'));
+      }
+
+      if (authData.customer.stakeholderSeats !== undefined) {
+        const stakeholderSeats = authData.customer.stakeholderSeats === -1 ? 'Unlimited' : authData.customer.stakeholderSeats;
+        const activeStakeholderSeats = authData.customer.activeStakeholderSeats || 0;
+        console.log(chalk.gray('  Stakeholder Seats:'), chalk.cyan(`${activeStakeholderSeats}/${stakeholderSeats}`), chalk.gray('(active/total)'));
+      }
+    }
+
     // Show theme information if available
     if (authData.customer.customTheme) {
       console.log(chalk.bold('Custom Theme:'), chalk.magenta(authData.customer.customTheme.displayName));
@@ -171,6 +196,48 @@ export async function showEnterpriseStatus(): Promise<void> {
   auth.customer.features.forEach(feature => {
     console.log(chalk.gray('      •'), feature);
   });
+
+  // Show seat information if available (v8.5.0+)
+  if (auth.customer.developerSeats !== undefined || auth.customer.stakeholderSeats !== undefined) {
+    console.log('');
+    console.log(chalk.bold('   License Seats:'));
+
+    if (auth.customer.developerSeats !== undefined) {
+      const devSeats = auth.customer.developerSeats === -1 ? 'Unlimited' : auth.customer.developerSeats;
+      const activeDevSeats = auth.customer.activeDeveloperSeats || 0;
+      const devUsagePercent = auth.customer.developerSeats > 0
+        ? Math.round((activeDevSeats / auth.customer.developerSeats) * 100)
+        : 0;
+
+      let devColor = chalk.green;
+      if (devUsagePercent >= 90) devColor = chalk.red;
+      else if (devUsagePercent >= 75) devColor = chalk.yellow;
+
+      console.log(
+        chalk.gray('      Developer:'),
+        devColor(`${activeDevSeats}/${devSeats}`),
+        chalk.gray('(active/total)')
+      );
+    }
+
+    if (auth.customer.stakeholderSeats !== undefined) {
+      const stakeholderSeats = auth.customer.stakeholderSeats === -1 ? 'Unlimited' : auth.customer.stakeholderSeats;
+      const activeStakeholderSeats = auth.customer.activeStakeholderSeats || 0;
+      const stakeholderUsagePercent = auth.customer.stakeholderSeats > 0
+        ? Math.round((activeStakeholderSeats / auth.customer.stakeholderSeats) * 100)
+        : 0;
+
+      let stakeholderColor = chalk.green;
+      if (stakeholderUsagePercent >= 90) stakeholderColor = chalk.red;
+      else if (stakeholderUsagePercent >= 75) stakeholderColor = chalk.yellow;
+
+      console.log(
+        chalk.gray('      Stakeholder:'),
+        stakeholderColor(`${activeStakeholderSeats}/${stakeholderSeats}`),
+        chalk.gray('(active/total)')
+      );
+    }
+  }
 
   // Show theme information if available
   if (auth.customer.customTheme) {

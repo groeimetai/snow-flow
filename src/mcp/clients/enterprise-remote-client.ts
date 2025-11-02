@@ -5,6 +5,8 @@
 
 import { EventSource } from 'eventsource';
 import { getEnterpriseToken, ENTERPRISE_MCP_SERVER_URL } from '../../cli/enterprise.js';
+import { createHash } from 'crypto';
+import { networkInterfaces, hostname } from 'os';
 
 interface MCPTool {
   name: string;
@@ -18,6 +20,43 @@ interface MCPToolCallResult {
 }
 
 /**
+ * Generate a unique machine identifier for seat tracking
+ * Based on hostname and MAC addresses
+ */
+function generateMachineId(): string {
+  try {
+    const interfaces = networkInterfaces();
+    const macAddresses: string[] = [];
+
+    // Collect MAC addresses from all network interfaces
+    for (const name of Object.keys(interfaces)) {
+      const iface = interfaces[name];
+      if (iface) {
+        for (const config of iface) {
+          if (config.mac && config.mac !== '00:00:00:00:00:00') {
+            macAddresses.push(config.mac);
+          }
+        }
+      }
+    }
+
+    // Sort for consistency
+    macAddresses.sort();
+
+    // Combine hostname and MAC addresses
+    const identifier = `${hostname()}-${macAddresses.join('-')}`;
+
+    // Create hash for privacy (don't send actual MAC addresses)
+    const hash = createHash('sha256').update(identifier).digest('hex');
+
+    return hash.substring(0, 32);
+  } catch (err) {
+    // Fallback to random ID if machine ID generation fails
+    return createHash('sha256').update(`${Date.now()}-${Math.random()}`).digest('hex').substring(0, 32);
+  }
+}
+
+/**
  * Enterprise MCP Client
  * Connects to remote enterprise MCP server for advanced features
  */
@@ -27,9 +66,13 @@ export class EnterpriseRemoteClient {
   private tools: MCPTool[] = [];
   private connected: boolean = false;
   private messageHandlers: Map<string, (data: any) => void> = new Map();
+  private machineId: string;
+  private role: 'developer' | 'stakeholder' | 'admin';
 
-  constructor() {
+  constructor(role: 'developer' | 'stakeholder' | 'admin' = 'developer') {
     this.sseUrl = `${ENTERPRISE_MCP_SERVER_URL}/mcp/sse`;
+    this.machineId = generateMachineId();
+    this.role = role; // MCP proxy users are always developers by default
   }
 
   /**
@@ -48,7 +91,9 @@ export class EnterpriseRemoteClient {
         // Cast to any to bypass TypeScript's browser EventSourceInit type
         this.eventSource = new EventSource(this.sseUrl, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'X-Snow-Flow-Role': this.role,
+            'X-Snow-Flow-User-Id': this.machineId
           }
         } as any);
 
@@ -127,20 +172,25 @@ export class EnterpriseRemoteClient {
       });
 
       // Send request via POST endpoint
-      fetch(`${ENTERPRISE_MCP_SERVER_URL}/mcp/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: messageId,
-          method,
-          params
-        })
-      }).catch((err) => {
-        this.messageHandlers.delete(messageId);
-        reject(err);
+      getEnterpriseToken().then(token => {
+        fetch(`${ENTERPRISE_MCP_SERVER_URL}/mcp/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'X-Snow-Flow-Role': this.role,
+            'X-Snow-Flow-User-Id': this.machineId
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: messageId,
+            method,
+            params
+          })
+        }).catch((err) => {
+          this.messageHandlers.delete(messageId);
+          reject(err);
+        });
       });
 
       // Timeout after 30 seconds

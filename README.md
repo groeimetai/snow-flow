@@ -704,17 +704,25 @@ Premium integrations for enterprise ServiceNow teams:
 
 ### Pricing (Coming Q2 2025)
 
-Enterprise features will be available via commercial license:
+Enterprise features will be available via seat-based commercial license:
 
-- **Professional:** €499/month (5 developers)
-- **Team:** €999/month (20 developers)
-- **Enterprise:** €1,999/month (unlimited developers)
+**License Format:** `SNOW-[TIER]-[ORG]-[DEV_SEATS]/[STAKEHOLDER_SEATS]-[EXPIRY]-[CHECKSUM]`
+
+**Seat Types:**
+- **Developer Seats:** For technical users using Claude Code + MCP tools
+- **Stakeholder Seats:** For non-technical users (POs, PMs, BAs) using web portal only
+
+**Pricing Tiers:**
+- **Professional:** €499/month (5 developer seats + 2 stakeholder seats)
+- **Team:** €999/month (20 developer seats + 10 stakeholder seats)
+- **Enterprise:** €1,999/month (unlimited seats)
 
 All tiers include:
 - All open source features
 - Enterprise integrations (Jira/Azure DevOps/Confluence)
 - Enterprise SSO/SAML
 - Audit logging
+- Seat tracking and management
 - Email support (SLA varies by tier)
 
 **Early Access:** Contact [sales@snow-flow.dev](mailto:sales@snow-flow.dev) for beta access and pilot programs.
