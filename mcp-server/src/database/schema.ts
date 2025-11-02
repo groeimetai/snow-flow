@@ -28,13 +28,53 @@ export interface Customer {
   name: string;
   contactEmail: string;
   company?: string;
-  licenseKey: string; // SNOW-ENT-CUST-XXXX
+  licenseKey: string; // SNOW-ENT-CUST-XXXX or new format: SNOW-ENT-ORG-5/1-EXPIRY-CHECKSUM
   theme?: string; // Theme name (e.g., 'capgemini', 'ey', 'servicenow')
+  // NEW (v2.0.0): Seat tracking for seat-based licensing
+  developerSeats: number; // Total developer seats (-1 = unlimited, for legacy licenses)
+  stakeholderSeats: number; // Total stakeholder seats (-1 = unlimited)
+  activeDeveloperSeats: number; // Currently active developer connections
+  activeStakeholderSeats: number; // Currently active stakeholder connections
+  seatLimitsEnforced: boolean; // Feature flag: enable/disable seat enforcement per customer
   createdAt: number;
   updatedAt: number;
   status: 'active' | 'suspended' | 'churned';
   totalApiCalls: number;
   lastApiCall?: number;
+}
+
+/**
+ * Active MCP connection (v2.0.0)
+ * Tracks real-time SSE connections for seat management
+ */
+export interface ActiveConnection {
+  id: number;
+  customerId: number;
+  userId: string; // Hashed machine ID (SHA-256)
+  role: 'developer' | 'stakeholder' | 'admin';
+  connectionId: string; // Unique SSE connection ID (UUID)
+  ipAddress?: string;
+  userAgent?: string;
+  connectedAt: number; // Timestamp in ms
+  lastSeen: number; // Timestamp in ms (updated by heartbeat)
+  jwtTokenHash?: string; // SHA-256 hash of JWT for correlation
+}
+
+/**
+ * Connection lifecycle event (v2.0.0)
+ * Audit trail for seat management and troubleshooting
+ */
+export interface ConnectionEvent {
+  id: number;
+  customerId: number;
+  userId: string;
+  role: 'developer' | 'stakeholder' | 'admin';
+  eventType: 'connect' | 'disconnect' | 'heartbeat' | 'timeout' | 'rejected';
+  timestamp: number; // Timestamp in ms
+  ipAddress?: string;
+  errorMessage?: string; // For rejected connections
+  seatLimit?: number; // Seat limit at time of event
+  activeCount?: number; // Active connections at time of event
 }
 
 export interface License {
@@ -182,7 +222,7 @@ function convertBooleans(row: any, boolFields: string[]): any {
 }
 
 export class LicenseDatabase {
-  private pool!: mysql.Pool;
+  public pool!: mysql.Pool; // Public for migration runner and cleanup worker access
   private connector?: Connector;
   private isInitialized = false;
 
@@ -1274,6 +1314,250 @@ export class LicenseDatabase {
       totalLogins: result.total_logins || 0,
       activeUsers: result.active_users || 0,
       avgSessionDuration: result.avg_session_duration || 0
+    };
+  }
+
+  // ============================================================================
+  // CONNECTION TRACKING METHODS (v2.0.0 - Seat Management)
+  // ============================================================================
+
+  /**
+   * Track new active connection or update existing one
+   * Uses ON DUPLICATE KEY UPDATE for atomic upsert (race-condition safe)
+   */
+  async trackConnection(
+    customerId: number,
+    userId: string,
+    role: 'developer' | 'stakeholder' | 'admin',
+    connectionId: string,
+    ipAddress?: string,
+    userAgent?: string,
+    jwtTokenHash?: string
+  ): Promise<ActiveConnection> {
+    const now = Date.now();
+
+    await this.pool.execute(
+      `INSERT INTO active_connections (
+        customer_id, user_id, role, connection_id, ip_address, user_agent,
+        connected_at, last_seen, jwt_token_hash
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        connection_id = VALUES(connection_id),
+        ip_address = VALUES(ip_address),
+        user_agent = VALUES(user_agent),
+        last_seen = VALUES(last_seen),
+        jwt_token_hash = VALUES(jwt_token_hash)`,
+      [customerId, userId, role, connectionId, ipAddress || null, userAgent || null, now, now, jwtTokenHash || null]
+    );
+
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM active_connections WHERE customer_id = ? AND user_id = ? AND role = ?`,
+      [customerId, userId, role]
+    );
+
+    return toCamelCase((rows as any[])[0]) as ActiveConnection;
+  }
+
+  /**
+   * Update connection heartbeat (last_seen timestamp)
+   */
+  async updateConnectionHeartbeat(
+    customerId: number,
+    userId: string,
+    role: 'developer' | 'stakeholder' | 'admin'
+  ): Promise<boolean> {
+    const now = Date.now();
+    const [result] = await this.pool.execute(
+      `UPDATE active_connections SET last_seen = ? WHERE customer_id = ? AND user_id = ? AND role = ?`,
+      [now, customerId, userId, role]
+    );
+    return (result as any).affectedRows > 0;
+  }
+
+  /**
+   * Remove active connection (graceful disconnect)
+   */
+  async removeConnection(
+    customerId: number,
+    userId: string,
+    role: 'developer' | 'stakeholder' | 'admin'
+  ): Promise<void> {
+    await this.pool.execute(
+      `DELETE FROM active_connections WHERE customer_id = ? AND user_id = ? AND role = ?`,
+      [customerId, userId, role]
+    );
+  }
+
+  /**
+   * Get active connection count for a customer by role
+   */
+  async getActiveConnectionCount(
+    customerId: number,
+    role: 'developer' | 'stakeholder' | 'admin'
+  ): Promise<number> {
+    const [rows] = await this.pool.execute(
+      `SELECT COUNT(*) as count FROM active_connections WHERE customer_id = ? AND role = ?`,
+      [customerId, role]
+    );
+    return ((rows as any[])[0]).count;
+  }
+
+  /**
+   * Check for recent connection from same user (grace period logic)
+   */
+  async getRecentConnection(
+    customerId: number,
+    userId: string,
+    gracePeriodMs: number = 5 * 60 * 1000
+  ): Promise<ActiveConnection | null> {
+    const cutoff = Date.now() - gracePeriodMs;
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM active_connections WHERE customer_id = ? AND user_id = ? AND last_seen > ? ORDER BY last_seen DESC LIMIT 1`,
+      [customerId, userId, cutoff]
+    );
+
+    const rowsArray = rows as any[];
+    if (rowsArray.length === 0) return null;
+    return toCamelCase(rowsArray[0]) as ActiveConnection;
+  }
+
+  /**
+   * Cleanup stale connections (no heartbeat for timeoutMs)
+   */
+  async cleanupStaleConnections(timeoutMs: number = 2 * 60 * 1000): Promise<number> {
+    const cutoff = Date.now() - timeoutMs;
+    const [result] = await this.pool.execute(
+      `DELETE FROM active_connections WHERE last_seen < ?`,
+      [cutoff]
+    );
+    return (result as any).affectedRows;
+  }
+
+  /**
+   * Update active seat counts in customers table
+   */
+  async updateActiveSeats(
+    customerId: number,
+    activeDeveloperSeats: number,
+    activeStakeholderSeats: number
+  ): Promise<void> {
+    await this.pool.execute(
+      `UPDATE customers SET active_developer_seats = ?, active_stakeholder_seats = ?, updated_at = ? WHERE id = ?`,
+      [activeDeveloperSeats, activeStakeholderSeats, Date.now(), customerId]
+    );
+  }
+
+  /**
+   * Recalculate active seat counts from active_connections table
+   */
+  async recalculateActiveSeats(customerId: number): Promise<void> {
+    const [rows] = await this.pool.execute(
+      `SELECT
+         SUM(CASE WHEN role = 'developer' THEN 1 ELSE 0 END) as dev_count,
+         SUM(CASE WHEN role = 'stakeholder' THEN 1 ELSE 0 END) as stakeholder_count
+       FROM active_connections
+       WHERE customer_id = ?`,
+      [customerId]
+    );
+
+    const result = (rows as any[])[0];
+    const devCount = result.dev_count || 0;
+    const stakeholderCount = result.stakeholder_count || 0;
+
+    await this.updateActiveSeats(customerId, devCount, stakeholderCount);
+  }
+
+  /**
+   * Log connection lifecycle event for audit trail
+   */
+  async logConnectionEvent(
+    customerId: number,
+    userId: string,
+    role: 'developer' | 'stakeholder' | 'admin',
+    eventType: 'connect' | 'disconnect' | 'heartbeat' | 'timeout' | 'rejected',
+    ipAddress?: string,
+    errorMessage?: string,
+    seatLimit?: number,
+    activeCount?: number
+  ): Promise<void> {
+    await this.pool.execute(
+      `INSERT INTO connection_events (
+        customer_id, user_id, role, event_type, timestamp,
+        ip_address, error_message, seat_limit, active_count
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [customerId, userId, role, eventType, Date.now(), ipAddress || null, errorMessage || null, seatLimit || null, activeCount || null]
+    );
+  }
+
+  /**
+   * Get connection events for customer (audit trail)
+   */
+  async getConnectionEvents(
+    customerId: number,
+    limit: number = 100,
+    eventType?: 'connect' | 'disconnect' | 'heartbeat' | 'timeout' | 'rejected'
+  ): Promise<ConnectionEvent[]> {
+    const sql = eventType
+      ? `SELECT * FROM connection_events WHERE customer_id = ? AND event_type = ? ORDER BY timestamp DESC LIMIT ?`
+      : `SELECT * FROM connection_events WHERE customer_id = ? ORDER BY timestamp DESC LIMIT ?`;
+
+    const params = eventType ? [customerId, eventType, limit] : [customerId, limit];
+    const [rows] = await this.pool.execute(sql, params);
+
+    return (rows as any[]).map(row => toCamelCase(row) as ConnectionEvent);
+  }
+
+  /**
+   * Get connection statistics for customer
+   */
+  async getConnectionStats(customerId: number, days: number = 30): Promise<{
+    totalConnections: number;
+    totalDisconnects: number;
+    totalRejections: number;
+    avgConnectionsPerDay: number;
+    rejectionRate: number;
+    byRole: Record<string, number>;
+  }> {
+    const since = Date.now() - days * 24 * 60 * 60 * 1000;
+
+    const [overallRows] = await this.pool.execute(
+      `SELECT
+        SUM(CASE WHEN event_type = 'connect' THEN 1 ELSE 0 END) as total_connections,
+        SUM(CASE WHEN event_type = 'disconnect' THEN 1 ELSE 0 END) as total_disconnects,
+        SUM(CASE WHEN event_type = 'rejected' THEN 1 ELSE 0 END) as total_rejections
+      FROM connection_events
+      WHERE customer_id = ? AND timestamp > ?`,
+      [customerId, since]
+    );
+
+    const overall = (overallRows as any[])[0];
+
+    const [roleRows] = await this.pool.execute(
+      `SELECT role, COUNT(*) as count
+      FROM connection_events
+      WHERE customer_id = ? AND timestamp > ? AND event_type = 'connect'
+      GROUP BY role`,
+      [customerId, since]
+    );
+
+    const byRole: Record<string, number> = {};
+    (roleRows as any[]).forEach(r => {
+      byRole[r.role] = r.count;
+    });
+
+    const totalConnections = overall.total_connections || 0;
+    const totalRejections = overall.total_rejections || 0;
+    const rejectionRate = totalConnections > 0 ? totalRejections / (totalConnections + totalRejections) : 0;
+
+    return {
+      totalConnections,
+      totalDisconnects: overall.total_disconnects || 0,
+      totalRejections,
+      avgConnectionsPerDay: totalConnections / days,
+      rejectionRate,
+      byRole
     };
   }
 }

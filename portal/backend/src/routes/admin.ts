@@ -422,7 +422,13 @@ router.post('/customers', async (req: Request, res: Response) => {
       company,
       theme,
       licenseKey,
-      status: 'active'
+      status: 'active',
+      // Default seat configuration (unlimited for legacy compatibility)
+      developerSeats: -1,
+      stakeholderSeats: -1,
+      activeDeveloperSeats: 0,
+      activeStakeholderSeats: 0,
+      seatLimitsEnforced: true
     });
 
     res.json({

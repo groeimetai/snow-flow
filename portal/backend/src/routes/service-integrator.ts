@@ -203,7 +203,13 @@ export function createServiceIntegratorRoutes(db: LicenseDatabase): Router {
         company: company || name,
         licenseKey,
         theme: theme || null,
-        status: 'active'
+        status: 'active',
+        // Default seat configuration (unlimited for legacy compatibility)
+        developerSeats: -1,
+        stakeholderSeats: -1,
+        activeDeveloperSeats: 0,
+        activeStakeholderSeats: 0,
+        seatLimitsEnforced: true
       });
 
       res.json({
