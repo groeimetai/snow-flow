@@ -69,26 +69,20 @@
         }
 
         .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
             color: var(--text-white);
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            letter-spacing: -0.02em;
+            transition: transform 0.3s ease;
         }
 
-        .logo-icon {
-            font-size: 1.8rem;
+        .logo:hover {
+            transform: translateY(-2px);
         }
 
-        .logo .snow {
-            color: var(--text-white);
-        }
-
-        .logo .flow {
-            color: var(--brand-cyan);
+        .logo-horizontal {
+            height: 32px;
+            width: auto;
         }
 
         .nav-links {
@@ -459,6 +453,10 @@
                 padding: 0 1rem;
             }
 
+            .logo-horizontal {
+                height: 28px;
+            }
+
             header h1 {
                 font-size: 2rem;
             }
@@ -481,6 +479,12 @@
                 display: none;
             }
         }
+
+        @media (max-width: 480px) {
+            .logo-horizontal {
+                height: 26px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -488,8 +492,7 @@
     <nav>
         <div class="nav-content">
             <a href="https://snow-flow.dev" class="logo">
-                <span class="logo-icon">🏔️</span>
-                <span class="snow">Snow</span><span class="flow">Flow</span>
+                <img src="../website/logos/horizontal.svg" alt="Snow-Flow" class="logo-horizontal" />
             </a>
             <ul class="nav-links">
                 <li><a href="https://snow-flow.dev">Home</a></li>

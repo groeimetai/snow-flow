@@ -52,6 +52,10 @@ steps:
       - '60'
       - '--set-env-vars'
       - 'NODE_ENV=production'
+      - '--command'
+      - 'node'
+      - '--args'
+      - 'dist/api/simple-health-api.js'
 
 images:
   - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-health-api:$COMMIT_SHA'
