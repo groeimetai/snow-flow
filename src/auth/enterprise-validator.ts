@@ -68,7 +68,8 @@ const COMPANY_CONFIGS: Record<string, CompanyConfig> = {
 const TIER_CODES: Record<string, EnterpriseTier> = {
   'PRO': 'professional',
   'TEAM': 'team',
-  'ENT': 'enterprise'
+  'ENT': 'enterprise',
+  'SI': 'enterprise'  // Service Integrator - enterprise tier
 };
 
 /**
