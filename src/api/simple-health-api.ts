@@ -15,7 +15,8 @@ app.use(cors({
   origin: [
     'http://localhost:8080',
     'https://status.snow-flow.dev',
-    'https://snow-flow.dev'
+    'https://snow-flow.dev',
+    'https://snow-flow-status-page-761141808583.europe-west4.run.app'
   ],
   credentials: true
 }));
