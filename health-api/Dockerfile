@@ -42,4 +42,4 @@ USER node
 EXPOSE 3000
 
 # Start the API
-CMD ["node", "dist/api/health-api.js"]
+CMD ["node", "dist/api/simple-health-api.js"]

@@ -6,7 +6,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { SystemHealth } from '../health/system-health';
-import { MemorySystem } from '../memory/memory-system';
+import { MemorySystem, BasicMemorySystem } from '../memory/memory-system';
 import { Logger } from '../utils/logger';
 
 const logger = new Logger('HealthAPI');
@@ -32,14 +32,7 @@ async function initializeHealthMonitoring() {
   logger.info('Initializing health monitoring API...');
 
   // Initialize memory system
-  memorySystem = new MemorySystem({
-    type: 'sqlite',
-    path: process.env.HEALTH_DB_PATH || './data/health-monitoring.db',
-    options: {
-      enableWAL: true,
-      cacheSize: 10000
-    }
-  });
+  memorySystem = new BasicMemorySystem();
 
   await memorySystem.initialize();
 
