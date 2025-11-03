@@ -34,6 +34,10 @@ interface HealthRecord {
 const healthHistory: HealthRecord[] = [];
 const MAX_HISTORY = 4320; // 90 days at 30min intervals
 
+// Response time tracking for average latency calculation
+const responseTimesMs: number[] = [];
+const MAX_RESPONSE_TIMES = 100; // Keep last 100 response times
+
 // Incident management
 interface Incident {
   id: string;
@@ -158,6 +162,8 @@ function determineStatus(cpuUsage: number, memoryUsagePercent: number, diskUsage
  * Get current system status (for status page)
  */
 app.get('/api/v1/status', async (req: Request, res: Response) => {
+  const requestStartTime = Date.now(); // Track request processing time
+
   try {
     // Get system metrics
     const cpuUsage = getCPUUsage();
@@ -194,9 +200,15 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
       ? (operationalRecords.length / recentRecords.length) * 100
       : 99.95;
 
-    // Calculate average latency from health check response times
-    // Currently not tracked - will be added with Cloud SQL integration
-    const avgLatency = null;
+    // Calculate average response time from last 100 requests
+    var avgLatency = null;
+    if (responseTimesMs.length > 0) {
+      var sum = 0;
+      for (var i = 0; i < responseTimesMs.length; i++) {
+        sum += responseTimesMs[i];
+      }
+      avgLatency = Math.round(sum / responseTimesMs.length);
+    }
 
     // Check for active incidents and override status if needed
     const hasActiveIncidents = activeIncidents.length > 0;
@@ -264,6 +276,15 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
       },
       timestamp: new Date().toISOString()
     };
+
+    // Track response time for avg latency calculation
+    var responseTime = Date.now() - requestStartTime;
+    responseTimesMs.push(responseTime);
+
+    // Keep only last MAX_RESPONSE_TIMES
+    if (responseTimesMs.length > MAX_RESPONSE_TIMES) {
+      responseTimesMs.shift();
+    }
 
     res.json(response);
   } catch (error) {
