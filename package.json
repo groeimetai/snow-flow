@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "8.29.0",
+  "version": "8.30.0",
   "description": "ServiceNow development with SnowCode - 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, Groq, Ollama) • 410 Optimized Tools • 2 MCP Servers • Native Predictive Intelligence builder • Multi-agent orchestration • Use ANY AI coding assistant",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -514,7 +514,11 @@
     "zod": "4.1.12"
   },
   "optionalDependencies": {
-    "opencode-darwin-arm64": "^0.15.14"
+    "@groeimetai/snow-code-darwin-arm64": "*",
+    "@groeimetai/snow-code-darwin-x64": "*",
+    "@groeimetai/snow-code-linux-arm64": "*",
+    "@groeimetai/snow-code-linux-x64": "*",
+    "@groeimetai/snow-code-windows-x64": "*"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
@@ -533,10 +537,10 @@
     "typescript": "5.9.3"
   },
   "peerDependencies": {
-    "@groeimetai/snowcode": ">=0.16.19"
+    "@groeimetai/snow-code": ">=0.18.5"
   },
   "peerDependenciesMeta": {
-    "@groeimetai/snowcode": {
+    "@groeimetai/snow-code": {
       "optional": false
     }
   },
