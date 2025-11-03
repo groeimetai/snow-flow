@@ -1,15 +1,34 @@
-# Simple Cloud Build configuration for Health API
-# GitHub → Cloud Build → Cloud Run (direct deployment)
+# Cloud Build configuration for Health API
+# GitHub → Cloud Build → Cloud Run
 
 steps:
-  # Single step: Build from Dockerfile and deploy to Cloud Run
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west4-docker.pkg.dev/snow-flow-ai/cloud-run-source-deploy/snow-flow-health-api:$COMMIT_SHA'
+      - '-t'
+      - 'europe-west4-docker.pkg.dev/snow-flow-ai/cloud-run-source-deploy/snow-flow-health-api:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+
+  # Step 2: Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'europe-west4-docker.pkg.dev/snow-flow-ai/cloud-run-source-deploy/snow-flow-health-api'
+
+  # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     entrypoint: gcloud
     args:
       - 'run'
       - 'deploy'
       - 'snow-flow-health-api'
-      - '--source=.'
+      - '--image=europe-west4-docker.pkg.dev/snow-flow-ai/cloud-run-source-deploy/snow-flow-health-api:$COMMIT_SHA'
       - '--region=europe-west4'
       - '--platform=managed'
       - '--allow-unauthenticated'
@@ -20,6 +39,11 @@ steps:
       - '--max-instances=3'
       - '--timeout=60'
       - '--set-env-vars=NODE_ENV=production'
+
+# Specify the images to be pushed to the registry
+images:
+  - 'europe-west4-docker.pkg.dev/snow-flow-ai/cloud-run-source-deploy/snow-flow-health-api:$COMMIT_SHA'
+  - 'europe-west4-docker.pkg.dev/snow-flow-ai/cloud-run-source-deploy/snow-flow-health-api:latest'
 
 options:
   machineType: 'E2_HIGHCPU_8'
