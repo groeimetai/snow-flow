@@ -29,6 +29,7 @@ export default function ServiceIntegratorCustomers() {
   const [themes, setThemes] = useState<CustomTheme[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showAssignThemeModal, setShowAssignThemeModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'suspended' | 'churned'>('all');
@@ -40,6 +41,15 @@ export default function ServiceIntegratorCustomers() {
     contactEmail: '',
     company: '',
     theme: ''
+  });
+
+  // Edit form state
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    contactEmail: '',
+    company: '',
+    theme: '',
+    status: 'active' as 'active' | 'suspended' | 'churned'
   });
 
   // Theme assignment state
@@ -107,6 +117,49 @@ export default function ServiceIntegratorCustomers() {
     setSelectedCustomer(customer);
     setSelectedThemeId(null);
     setShowAssignThemeModal(true);
+  };
+
+  const openEditModal = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setEditFormData({
+      name: customer.name,
+      contactEmail: customer.contactEmail,
+      company: customer.company,
+      theme: customer.theme || '',
+      status: customer.status
+    });
+    setShowEditModal(true);
+    setError('');
+  };
+
+  const handleEditCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCustomer) return;
+
+    try {
+      setError('');
+      const token = localStorage.getItem('service_integrator_token');
+      const response = await fetch(`/api/service-integrator/customers/${selectedCustomer.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editFormData)
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setShowEditModal(false);
+        setSelectedCustomer(null);
+        fetchCustomers();
+      } else {
+        setError(data.error || 'Failed to update customer');
+      }
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      setError('Failed to update customer');
+    }
   };
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
@@ -261,7 +314,10 @@ export default function ServiceIntegratorCustomers() {
                   >
                     Assign Theme
                   </button>
-                  <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <button
+                    onClick={() => openEditModal(customer)}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
                     Edit
                   </button>
                   <button className="text-sm text-red-600 hover:text-red-700 font-medium">
@@ -315,6 +371,75 @@ export default function ServiceIntegratorCustomers() {
               Cancel
             </Button>
             <Button type="submit">Create Customer</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Customer Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedCustomer(null);
+          setError('');
+        }}
+        title="Edit Customer"
+      >
+        <form onSubmit={handleEditCustomer} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          <Input
+            label="Customer Name"
+            value={editFormData.name}
+            onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+            required
+          />
+          <Input
+            label="Contact Email"
+            type="email"
+            value={editFormData.contactEmail}
+            onChange={(e) => setEditFormData({ ...editFormData, contactEmail: e.target.value })}
+            required
+          />
+          <Input
+            label="Company Name"
+            value={editFormData.company}
+            onChange={(e) => setEditFormData({ ...editFormData, company: e.target.value })}
+            required
+          />
+          <Input
+            label="Theme (optional)"
+            value={editFormData.theme}
+            onChange={(e) => setEditFormData({ ...editFormData, theme: e.target.value })}
+            placeholder="e.g., capgemini, ey"
+          />
+          <Select
+            label="Status"
+            value={editFormData.status}
+            onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as any })}
+            options={[
+              { value: 'active', label: 'Active' },
+              { value: 'suspended', label: 'Suspended' },
+              { value: 'churned', label: 'Churned' }
+            ]}
+          />
+          <div className="flex justify-end space-x-3 mt-6">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setShowEditModal(false);
+                setSelectedCustomer(null);
+                setError('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">Save Changes</Button>
           </div>
         </form>
       </Modal>
