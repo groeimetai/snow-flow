@@ -169,11 +169,11 @@ export default function CustomerProfile() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Developer Seats</p>
-              <p className="text-sm text-gray-900">{customer.developerSeats} seats</p>
+              <p className="text-sm text-gray-900">{customer.developerSeats || 0} seats</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Stakeholder Seats</p>
-              <p className="text-sm text-gray-900">{customer.stakeholderSeats} seats</p>
+              <p className="text-sm text-gray-900">{customer.stakeholderSeats || 0} seats</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Theme</p>
@@ -316,7 +316,7 @@ export default function CustomerProfile() {
             <div>
               <p className="text-sm font-medium text-gray-500">Active Connections</p>
               <p className="text-2xl font-bold text-gray-900">
-                {customer.activeConnections || '0'}
+                {customer.activeConnections ?? 0}
               </p>
             </div>
             <div>

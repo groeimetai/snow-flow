@@ -25,11 +25,16 @@ export interface Customer {
   company?: string;
   licenseKey: string;
   theme?: string;
+  tier?: string;
+  developerSeats?: number;
+  stakeholderSeats?: number;
   createdAt: number;
   updatedAt: number;
   status: 'active' | 'suspended' | 'churned';
   totalApiCalls: number;
   lastApiCall?: number;
+  activeConnections?: number;
+  lastActivityAt?: number;
 }
 
 export interface CreateCustomerDto {
