@@ -14,7 +14,7 @@ const authLogger = new Logger('auth');
 async function updateMCPServerConfig() {
   try {
     // Read SnowCode auth.json
-    const authPath = path.join(os.homedir(), '.local', 'share', 'snowcode', 'auth.json');
+    const authPath = path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json');
     const authJson = JSON.parse(await fs.readFile(authPath, 'utf-8'));
 
     // Check if ServiceNow credentials exist
@@ -121,17 +121,17 @@ export function registerAuthCommands(program: Command) {
       try {
         // Check if snowcode is installed
         try {
-          execSync('which snowcode', { stdio: 'ignore' });
+          execSync('which snow-code', { stdio: 'ignore' });
         } catch {
           prompts.log.error('SnowCode is not installed');
           prompts.log.warn('Please run: npm install -g snow-flow');
-          prompts.log.info('This will install both snow-flow and snowcode');
+          prompts.log.info('This will install both snow-flow and snow-code');
           return;
         }
 
         // Determine which SnowCode to use: prefer local, fallback to global
-        const localSnowCode = path.join(process.cwd(), 'node_modules', '@groeimetai', 'snowcode', 'bin', 'snowcode');
-        let snowcodeCommand = 'snowcode'; // fallback to global
+        const localSnowCode = path.join(process.cwd(), 'node_modules', '@groeimetai', 'snow-code', 'bin', 'snow-code');
+        let snowcodeCommand = 'snow-code'; // fallback to global
 
         try {
           const fs = require('fs');
@@ -167,7 +167,7 @@ export function registerAuthCommands(program: Command) {
     .description('List configured credentials (via SnowCode)')
     .action(async () => {
       try {
-        execSync('snowcode auth list', { stdio: 'inherit' });
+        execSync('snow-code auth list', { stdio: 'inherit' });
       } catch (error: any) {
         prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
       }
@@ -179,7 +179,7 @@ export function registerAuthCommands(program: Command) {
     .description('Log out from a configured provider (via SnowCode)')
     .action(async () => {
       try {
-        execSync('snowcode auth logout', { stdio: 'inherit' });
+        execSync('snow-code auth logout', { stdio: 'inherit' });
       } catch (error: any) {
         prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
       }
