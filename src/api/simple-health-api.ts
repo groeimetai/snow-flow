@@ -34,6 +34,29 @@ interface HealthRecord {
 const healthHistory: HealthRecord[] = [];
 const MAX_HISTORY = 4320; // 90 days at 30min intervals
 
+// Incident management
+interface Incident {
+  id: string;
+  title: string;
+  description: string;
+  severity: 'critical' | 'major' | 'minor';
+  affectedServices: string[];
+  status: 'investigating' | 'identified' | 'monitoring' | 'resolved';
+  startedAt: Date;
+  resolvedAt?: Date;
+  updates: IncidentUpdate[];
+}
+
+interface IncidentUpdate {
+  timestamp: Date;
+  status: string;
+  message: string;
+}
+
+const activeIncidents: Incident[] = [];
+const incidentHistory: Incident[] = [];
+const MAX_INCIDENT_HISTORY = 100;
+
 /**
  * GET /health
  * Basic health check endpoint
@@ -174,11 +197,26 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
     // Mock latency (TODO: Add real latency monitoring)
     const avgLatency = Math.floor(Math.random() * 100) + 150;
 
+    // Check for active incidents and override status if needed
+    const hasActiveIncidents = activeIncidents.length > 0;
+    let finalStatus = overallStatus;
+
+    if (hasActiveIncidents) {
+      const criticalIncidents = activeIncidents.filter(i => i.severity === 'critical');
+      const majorIncidents = activeIncidents.filter(i => i.severity === 'major');
+
+      if (criticalIncidents.length > 0) {
+        finalStatus = 'outage';
+      } else if (majorIncidents.length > 0) {
+        finalStatus = 'degraded';
+      }
+    }
+
     const response = {
-      overall_status: overallStatus,
+      overall_status: finalStatus,
       uptime_30d: Math.round(uptime30d * 100) / 100,
       avg_latency: avgLatency,
-      active_incidents: overallStatus === 'outage' ? 1 : 0,
+      active_incidents: activeIncidents.length,
       services: {
         mcp_server: {
           status: memoryUsagePercent < 80 ? 'operational' : 'degraded',
@@ -298,6 +336,131 @@ app.get('/api/v1/metrics', async (req: Request, res: Response) => {
       message: (error as Error).message
     });
   }
+});
+
+/**
+ * POST /api/v1/incidents
+ * Create a new incident (for testing/simulation)
+ */
+app.post('/api/v1/incidents', async (req: Request, res: Response) => {
+  const { title, description, severity, affectedServices } = req.body;
+
+  if (!title || !severity) {
+    return res.status(400).json({ error: 'Title and severity are required' });
+  }
+
+  const incident: Incident = {
+    id: `INC-${Date.now()}`,
+    title,
+    description: description || '',
+    severity: severity as 'critical' | 'major' | 'minor',
+    affectedServices: affectedServices || ['website'],
+    status: 'investigating',
+    startedAt: new Date(),
+    updates: [{
+      timestamp: new Date(),
+      status: 'investigating',
+      message: `Incident created: ${title}`
+    }]
+  };
+
+  activeIncidents.push(incident);
+
+  console.log(`🚨 Incident created: ${incident.id} - ${title} (${severity})`);
+
+  res.json({
+    success: true,
+    incident
+  });
+});
+
+/**
+ * POST /api/v1/incidents/:id/update
+ * Add an update to an incident
+ */
+app.post('/api/v1/incidents/:id/update', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status, message } = req.body;
+
+  const incident = activeIncidents.find(i => i.id === id);
+
+  if (!incident) {
+    return res.status(404).json({ error: 'Incident not found' });
+  }
+
+  incident.status = status || incident.status;
+  incident.updates.push({
+    timestamp: new Date(),
+    status: status || incident.status,
+    message: message || `Status updated to ${status}`
+  });
+
+  console.log(`📝 Incident updated: ${id} - ${message}`);
+
+  res.json({
+    success: true,
+    incident
+  });
+});
+
+/**
+ * POST /api/v1/incidents/:id/resolve
+ * Resolve an incident
+ */
+app.post('/api/v1/incidents/:id/resolve', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { message } = req.body;
+
+  const incidentIndex = activeIncidents.findIndex(i => i.id === id);
+
+  if (incidentIndex === -1) {
+    return res.status(404).json({ error: 'Incident not found' });
+  }
+
+  const incident = activeIncidents[incidentIndex];
+  incident.status = 'resolved';
+  incident.resolvedAt = new Date();
+  incident.updates.push({
+    timestamp: new Date(),
+    status: 'resolved',
+    message: message || 'Incident has been resolved'
+  });
+
+  // Move to history
+  incidentHistory.push(incident);
+  activeIncidents.splice(incidentIndex, 1);
+
+  // Keep only last MAX_INCIDENT_HISTORY
+  if (incidentHistory.length > MAX_INCIDENT_HISTORY) {
+    incidentHistory.shift();
+  }
+
+  const duration = Math.round((incident.resolvedAt.getTime() - incident.startedAt.getTime()) / 1000 / 60);
+
+  console.log(`✅ Incident resolved: ${id} - Duration: ${duration} minutes`);
+
+  res.json({
+    success: true,
+    incident,
+    duration_minutes: duration
+  });
+});
+
+/**
+ * GET /api/v1/incidents
+ * Get all incidents (active + recent history)
+ */
+app.get('/api/v1/incidents', async (req: Request, res: Response) => {
+  const limit = parseInt(req.query.limit as string) || 50;
+
+  const recentHistory = incidentHistory.slice(-limit);
+
+  res.json({
+    active: activeIncidents,
+    recent: recentHistory,
+    total_active: activeIncidents.length,
+    total_history: incidentHistory.length
+  });
 });
 
 // Error handling middleware
