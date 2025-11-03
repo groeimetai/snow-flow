@@ -194,8 +194,9 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
       ? (operationalRecords.length / recentRecords.length) * 100
       : 99.95;
 
-    // Mock latency (TODO: Add real latency monitoring)
-    const avgLatency = Math.floor(Math.random() * 100) + 150;
+    // Calculate average latency from health check response times
+    // Currently not tracked - will be added with Cloud SQL integration
+    const avgLatency = null;
 
     // Check for active incidents and override status if needed
     const hasActiveIncidents = activeIncidents.length > 0;
@@ -212,6 +213,30 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
       }
     }
 
+    // Build affected services map from active incidents
+    var affectedServicesMap = {};
+    for (var i = 0; i < activeIncidents.length; i++) {
+      var incident = activeIncidents[i];
+      for (var j = 0; j < incident.affectedServices.length; j++) {
+        var service = incident.affectedServices[j];
+        // Track highest severity affecting each service
+        if (!affectedServicesMap[service] || incident.severity === 'critical') {
+          affectedServicesMap[service] = incident.severity;
+        }
+      }
+    }
+
+    // Helper function to determine service status
+    function getServiceStatus(serviceName, baseStatus) {
+      if (affectedServicesMap[serviceName]) {
+        var severity = affectedServicesMap[serviceName];
+        if (severity === 'critical') return 'outage';
+        if (severity === 'major') return 'degraded';
+        // Minor incidents don't change service status
+      }
+      return baseStatus;
+    }
+
     const response = {
       overall_status: finalStatus,
       uptime_30d: Math.round(uptime30d * 100) / 100,
@@ -219,20 +244,16 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
       active_incidents: activeIncidents.length,
       services: {
         mcp_server: {
-          status: memoryUsagePercent < 80 ? 'operational' : 'degraded',
-          latency: Math.floor(Math.random() * 50) + 150
+          status: getServiceStatus('mcp_server', memoryUsagePercent < 80 ? 'operational' : 'degraded')
         },
         portal: {
-          status: 'operational',
-          latency: Math.floor(Math.random() * 50) + 200
+          status: getServiceStatus('portal', 'operational')
         },
         website: {
-          status: 'operational',
-          latency: Math.floor(Math.random() * 30) + 100
+          status: getServiceStatus('website', 'operational')
         },
         database: {
-          status: memoryUsagePercent < 90 ? 'operational' : 'degraded',
-          connections: Math.floor(Math.random() * 10) + 5
+          status: getServiceStatus('database', memoryUsagePercent < 90 ? 'operational' : 'degraded')
         }
       },
       system_resources: {
