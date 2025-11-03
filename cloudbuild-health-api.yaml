@@ -10,7 +10,6 @@ steps:
       - 'deploy'
       - 'snow-flow-health-api'
       - '--source=.'
-      - '--dockerfile=Dockerfile.health-api'
       - '--region=europe-west4'
       - '--platform=managed'
       - '--allow-unauthenticated'
