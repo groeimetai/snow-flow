@@ -18,6 +18,7 @@ import CustomerLogin from './pages/customer/Login';
 import CustomerDashboard from './pages/customer/Dashboard';
 import CustomerCredentials from './pages/customer/Credentials';
 import CustomerUsage from './pages/customer/Usage';
+import CustomerUsers from './pages/customer/Users';
 // import CustomerProfile from './pages/customer/Profile'; // TODO
 
 // Service Integrator pages (created)
@@ -27,6 +28,7 @@ import ServiceIntegratorCustomers from './pages/service-integrator/Customers';
 import ServiceIntegratorWhiteLabel from './pages/service-integrator/WhiteLabel';
 import ServiceIntegratorSettings from './pages/service-integrator/Settings';
 import ServiceIntegratorThemes from './pages/service-integrator/Themes';
+import ServiceIntegratorUsers from './pages/service-integrator/Users';
 
 // Layouts
 import ServiceIntegratorLayout from './components/layout/ServiceIntegratorLayout';
@@ -160,6 +162,14 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/portal/users"
+        element={
+          <ProtectedRoute>
+            <CustomerUsers />
+          </ProtectedRoute>
+        }
+      />
       {/* TODO: Add these routes when pages are created
       <Route path="/portal/profile" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
       */}
@@ -222,6 +232,16 @@ export default function App() {
           <ProtectedRoute requireServiceIntegrator>
             <ServiceIntegratorLayout>
               <ServiceIntegratorThemes />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/service-integrator/users"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorUsers />
             </ServiceIntegratorLayout>
           </ProtectedRoute>
         }

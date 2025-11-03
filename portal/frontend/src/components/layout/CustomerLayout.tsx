@@ -16,6 +16,7 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
     { name: 'Dashboard', path: '/portal/dashboard', icon: '🏠' },
     { name: 'Credentials', path: '/portal/credentials', icon: '🔑' },
     { name: 'Usage', path: '/portal/usage', icon: '📊' },
+    { name: 'Users', path: '/portal/users', icon: '👥' },
     { name: 'Profile', path: '/portal/profile', icon: '⚙️' },
   ];
 
