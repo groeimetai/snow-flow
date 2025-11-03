@@ -109,12 +109,21 @@ function getDiskUsage(): { usage: number; total: number } {
 /**
  * Determine overall system status
  */
-function determineStatus(cpuUsage: number, memoryUsagePercent: number, diskUsage: number): 'operational' | 'degraded' | 'outage' {
-  if (cpuUsage > 90 || memoryUsagePercent > 90 || diskUsage > 90) {
+function determineStatus(cpuUsage: number, memoryUsagePercent: number, diskUsage: number, uptime: number): 'operational' | 'degraded' | 'outage' {
+  // Warmup period: First 5 minutes after container start, always return operational
+  // This prevents false outages during container initialization
+  const WARMUP_PERIOD = 5 * 60; // 5 minutes in seconds
+  if (uptime < WARMUP_PERIOD) {
+    return 'operational';
+  }
+
+  // Critical thresholds - only trigger outage for severe issues
+  if (memoryUsagePercent > 95 || diskUsage > 95) {
     return 'outage';
   }
 
-  if (cpuUsage > 75 || memoryUsagePercent > 80 || diskUsage > 80) {
+  // Warning thresholds - degraded service
+  if (memoryUsagePercent > 85 || diskUsage > 85) {
     return 'degraded';
   }
 
@@ -137,7 +146,7 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
     const uptime = os.uptime();
 
     // Determine status
-    const overallStatus = determineStatus(cpuUsage, memoryUsagePercent, diskInfo.usage);
+    const overallStatus = determineStatus(cpuUsage, memoryUsagePercent, diskInfo.usage, uptime);
 
     // Store in history
     const healthRecord: HealthRecord = {
@@ -172,7 +181,7 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
       active_incidents: overallStatus === 'outage' ? 1 : 0,
       services: {
         mcp_server: {
-          status: cpuUsage < 80 ? 'operational' : 'degraded',
+          status: memoryUsagePercent < 80 ? 'operational' : 'degraded',
           latency: Math.floor(Math.random() * 50) + 150
         },
         portal: {
@@ -184,7 +193,7 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
           latency: Math.floor(Math.random() * 30) + 100
         },
         database: {
-          status: memoryUsagePercent < 85 ? 'operational' : 'degraded',
+          status: memoryUsagePercent < 90 ? 'operational' : 'degraded',
           connections: Math.floor(Math.random() * 10) + 5
         }
       },
