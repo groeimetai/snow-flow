@@ -19,7 +19,7 @@ import CustomerDashboard from './pages/customer/Dashboard';
 import CustomerCredentials from './pages/customer/Credentials';
 import CustomerUsage from './pages/customer/Usage';
 import CustomerUsers from './pages/customer/Users';
-// import CustomerProfile from './pages/customer/Profile'; // TODO
+import CustomerProfile from './pages/customer/Profile';
 
 // Service Integrator pages (created)
 import ServiceIntegratorLogin from './pages/service-integrator/Login';
@@ -170,9 +170,14 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      {/* TODO: Add these routes when pages are created
-      <Route path="/portal/profile" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
-      */}
+      <Route
+        path="/portal/profile"
+        element={
+          <ProtectedRoute>
+            <CustomerProfile />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Service Integrator Portal Routes */}
       <Route path="/service-integrator/login" element={<ServiceIntegratorLogin />} />

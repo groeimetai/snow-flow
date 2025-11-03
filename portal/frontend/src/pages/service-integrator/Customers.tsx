@@ -120,6 +120,7 @@ export default function ServiceIntegratorCustomers() {
   };
 
   const openEditModal = (customer: Customer) => {
+    console.log('openEditModal called with customer:', customer);
     setSelectedCustomer(customer);
     setEditFormData({
       name: customer.name,
@@ -128,8 +129,10 @@ export default function ServiceIntegratorCustomers() {
       theme: customer.theme || '',
       status: customer.status
     });
+    console.log('Setting showEditModal to true');
     setShowEditModal(true);
     setError('');
+    console.log('openEditModal completed');
   };
 
   const handleEditCustomer = async (e: React.FormEvent) => {
@@ -315,7 +318,10 @@ export default function ServiceIntegratorCustomers() {
                     Assign Theme
                   </button>
                   <button
-                    onClick={() => openEditModal(customer)}
+                    onClick={() => {
+                      console.log('Edit button clicked for customer:', customer.id, customer.name);
+                      openEditModal(customer);
+                    }}
                     className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                   >
                     Edit
