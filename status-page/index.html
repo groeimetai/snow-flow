@@ -10,143 +10,235 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏔️%3C/text%3E%3C/svg%3E">
 
     <style>
-        :root {
-            --bg-dark: #0a0a0a;
-            --bg-card: #151515;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0a0;
-            --accent-blue: #3b82f6;
-            --accent-green: #10b981;
-            --accent-yellow: #f59e0b;
-            --accent-red: #ef4444;
-            --border: #2a2a2a;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        :root {
+            /* Snow-Flow brand colors - matching main website */
+            --brand-dark: #1E2531;
+            --brand-darker: #151A23;
+            --brand-cyan: #00D9FF;
+            --brand-blue: #3B82F6;
+            --text-white: #FFFFFF;
+            --text-gray: #94A3B8;
+            --border: #2D3748;
+
+            /* Status colors */
+            --status-green: #10b981;
+            --status-yellow: #f59e0b;
+            --status-red: #ef4444;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: var(--brand-dark);
+            color: var(--text-white);
             line-height: 1.6;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
+        }
+
+        /* Navigation */
+        nav {
+            position: sticky;
+            top: 0;
+            background: rgba(30, 37, 49, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 1.25rem 0;
+            z-index: 1000;
+            margin-bottom: 3rem;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-white);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-icon {
+            font-size: 1.8rem;
+        }
+
+        .logo .snow {
+            color: var(--text-white);
+        }
+
+        .logo .flow {
+            color: var(--brand-cyan);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-gray);
+            text-decoration: none;
+            transition: color 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover {
+            color: var(--brand-cyan);
         }
 
         /* Header */
         header {
             text-align: center;
-            padding: 3rem 0;
-            border-bottom: 1px solid var(--border);
+            padding: 2rem 0 3rem;
         }
 
         header h1 {
             font-size: 2.5rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
         }
 
         header p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
+            color: var(--text-gray);
+            font-size: 1.15rem;
+        }
+
+        .demo-badge {
+            display: inline-block;
+            background: var(--brand-blue);
+            color: white;
+            padding: 0.375rem 0.875rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 1rem;
         }
 
         /* Status Banner */
         .status-banner {
             margin: 2rem 0;
-            padding: 2rem;
-            background: var(--bg-card);
-            border: 2px solid var(--accent-green);
-            border-radius: 12px;
+            padding: 2.5rem;
+            background: var(--brand-darker);
+            border: 2px solid var(--status-green);
+            border-radius: 16px;
             text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
         .status-banner.degraded {
-            border-color: var(--accent-yellow);
+            border-color: var(--status-yellow);
         }
 
         .status-banner.down {
-            border-color: var(--accent-red);
+            border-color: var(--status-red);
         }
 
         .status-icon {
-            font-size: 3rem;
+            font-size: 3.5rem;
             margin-bottom: 1rem;
         }
 
         .status-text {
-            font-size: 1.5rem;
-            font-weight: 600;
+            font-size: 1.75rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
         }
 
         .status-detail {
-            color: var(--text-secondary);
+            color: var(--text-gray);
+            font-size: 1.05rem;
         }
 
         /* Uptime Stats */
         .uptime-stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 1.5rem;
-            margin: 2rem 0;
+            margin: 3rem 0;
         }
 
         .stat-card {
-            background: var(--bg-card);
+            background: var(--brand-darker);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.5rem;
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
             text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--brand-cyan);
         }
 
         .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--accent-green);
+            font-size: 2.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--brand-cyan), var(--brand-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 0.5rem;
         }
 
         .stat-label {
-            color: var(--text-secondary);
+            color: var(--text-gray);
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         /* Services */
         .services-section {
-            margin: 3rem 0;
+            margin: 4rem 0;
         }
 
         .section-title {
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border);
         }
 
         .service-card {
-            background: var(--bg-card);
+            background: var(--brand-darker);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.5rem;
+            border-radius: 12px;
+            padding: 1.75rem;
             margin-bottom: 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: transform 0.2s, border-color 0.2s;
+            transition: all 0.3s;
         }
 
         .service-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--accent-blue);
+            transform: translateX(8px);
+            border-color: var(--brand-cyan);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.1);
         }
 
         .service-info {
@@ -154,130 +246,150 @@
         }
 
         .service-name {
-            font-size: 1.2rem;
-            font-weight: 600;
+            font-size: 1.25rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
         }
 
         .service-description {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
+            color: var(--text-gray);
+            font-size: 0.95rem;
         }
 
         .service-status {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
         }
 
         .status-indicator {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background: var(--accent-green);
+            background: var(--status-green);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
         }
 
         .status-indicator.degraded {
-            background: var(--accent-yellow);
+            background: var(--status-yellow);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
         }
 
         .status-indicator.down {
-            background: var(--accent-red);
+            background: var(--status-red);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
         }
 
         .status-label {
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 1.05rem;
         }
 
         .status-label.operational {
-            color: var(--accent-green);
+            color: var(--status-green);
         }
 
         .status-label.degraded {
-            color: var(--accent-yellow);
+            color: var(--status-yellow);
         }
 
         .status-label.down {
-            color: var(--accent-red);
+            color: var(--status-red);
         }
 
         /* Uptime History */
         .uptime-history {
-            margin: 3rem 0;
+            margin: 4rem 0;
         }
 
         .uptime-days {
             display: grid;
             grid-template-columns: repeat(90, 1fr);
-            gap: 3px;
-            margin: 1.5rem 0;
+            gap: 4px;
+            margin: 2rem 0;
         }
 
         .uptime-day {
-            height: 40px;
-            background: var(--accent-green);
-            border-radius: 2px;
+            height: 45px;
+            background: var(--status-green);
+            border-radius: 4px;
             position: relative;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s;
         }
 
         .uptime-day:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
         }
 
         .uptime-day.degraded {
-            background: var(--accent-yellow);
+            background: var(--status-yellow);
+        }
+
+        .uptime-day.degraded:hover {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
         }
 
         .uptime-day.down {
-            background: var(--accent-red);
+            background: var(--status-red);
         }
 
-        .uptime-day.loading {
-            background: var(--border);
+        .uptime-day.down:hover {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
         }
 
         .uptime-legend {
             display: flex;
-            gap: 2rem;
+            gap: 2.5rem;
             justify-content: center;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            color: var(--text-gray);
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.625rem;
         }
 
         .legend-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
         }
 
         /* Incidents */
         .incidents-section {
-            margin: 3rem 0;
+            margin: 4rem 0;
         }
 
         .incident-card {
-            background: var(--bg-card);
-            border-left: 4px solid var(--accent-yellow);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
+            background: var(--brand-darker);
+            border-left: 4px solid var(--status-yellow);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
 
         .incident-card.resolved {
-            border-left-color: var(--accent-green);
+            border-left-color: var(--status-green);
         }
 
         .incident-card.critical {
-            border-left-color: var(--accent-red);
+            border-left-color: var(--status-red);
         }
 
         .incident-header {
@@ -288,83 +400,63 @@
         }
 
         .incident-title {
-            font-weight: 600;
-            font-size: 1.1rem;
+            font-weight: 700;
+            font-size: 1.2rem;
         }
 
         .incident-status-badge {
-            background: var(--accent-yellow);
-            color: var(--bg-dark);
-            padding: 0.25rem 0.75rem;
-            border-radius: 4px;
+            background: var(--status-yellow);
+            color: var(--brand-dark);
+            padding: 0.375rem 0.875rem;
+            border-radius: 6px;
             font-size: 0.85rem;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .incident-status-badge.resolved {
-            background: var(--accent-green);
+            background: var(--status-green);
         }
 
         .incident-status-badge.critical {
-            background: var(--accent-red);
+            background: var(--status-red);
             color: white;
         }
 
         .incident-time {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
+            color: var(--text-gray);
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
         }
 
         .incident-description {
-            color: var(--text-secondary);
-            line-height: 1.6;
+            color: var(--text-gray);
+            line-height: 1.7;
         }
 
         /* Footer */
         footer {
-            border-top: 1px solid var(--border);
-            padding: 2rem 0;
+            border-top: 2px solid var(--border);
+            padding: 3rem 0;
             text-align: center;
-            color: var(--text-secondary);
-            margin-top: 4rem;
+            color: var(--text-gray);
+            margin-top: 5rem;
         }
 
         footer a {
-            color: var(--accent-blue);
+            color: var(--brand-cyan);
             text-decoration: none;
+            transition: color 0.2s;
         }
 
         footer a:hover {
+            color: var(--brand-blue);
             text-decoration: underline;
-        }
-
-        /* Loading State */
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-secondary);
-        }
-
-        .spinner {
-            border: 3px solid var(--border);
-            border-top: 3px solid var(--accent-blue);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
+            .container, .nav-content {
+                padding: 0 1rem;
             }
 
             header h1 {
@@ -382,16 +474,37 @@
             .service-card {
                 flex-direction: column;
                 align-items: start;
-                gap: 1rem;
+                gap: 1.25rem;
+            }
+
+            .nav-links {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-content">
+            <a href="https://snow-flow.dev" class="logo">
+                <span class="logo-icon">🏔️</span>
+                <span class="snow">Snow</span><span class="flow">Flow</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="https://snow-flow.dev">Home</a></li>
+                <li><a href="https://snow-flow.dev#features">Features</a></li>
+                <li><a href="https://snow-flow.dev#pricing">Pricing</a></li>
+                <li><a href="mailto:sales@snow-flow.dev">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="container">
         <header>
-            <h1>🏔️ Snow-Flow Status</h1>
-            <p>Real-time status and uptime monitoring</p>
+            <h1>System Status</h1>
+            <p>Real-time status and uptime monitoring for Snow-Flow Enterprise</p>
+            <div class="demo-badge">⚠️ Demo Data - Real monitoring coming soon</div>
         </header>
 
         <!-- Status Banner -->
@@ -416,7 +529,7 @@
                 <div class="stat-label">Active Incidents</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="slastat">99.9%</div>
+                <div class="stat-value">99.9%</div>
                 <div class="stat-label">SLA Target</div>
             </div>
         </div>
@@ -478,15 +591,15 @@
             </div>
             <div class="uptime-legend">
                 <div class="legend-item">
-                    <div class="legend-dot" style="background: var(--accent-green)"></div>
+                    <div class="legend-dot" style="background: var(--status-green)"></div>
                     <span>Operational</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-dot" style="background: var(--accent-yellow)"></div>
+                    <div class="legend-dot" style="background: var(--status-yellow)"></div>
                     <span>Degraded</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-dot" style="background: var(--accent-red)"></div>
+                    <div class="legend-dot" style="background: var(--status-red)"></div>
                     <span>Down</span>
                 </div>
             </div>
@@ -496,7 +609,6 @@
         <section class="incidents-section">
             <h2 class="section-title">Past Incidents</h2>
             <div id="incidentsList">
-                <!-- Generated by JavaScript -->
                 <div class="incident-card resolved">
                     <div class="incident-header">
                         <div class="incident-title">No recent incidents</div>
@@ -512,18 +624,24 @@
 
         <footer>
             <p>
+                <strong>Snow-Flow Enterprise Status Page</strong><br>
                 Monitored by <a href="https://cloud.google.com/monitoring">Google Cloud Monitoring</a><br>
-                Health checks every 5 minutes | Data retention: 90 days<br>
-                <a href="https://snow-flow.dev">Back to Snow-Flow</a> | <a href="mailto:support@snow-flow.dev">Report an Issue</a>
+                Health checks every 5 minutes | Data retention: 90 days<br><br>
+                <a href="https://snow-flow.dev">Back to Snow-Flow</a> |
+                <a href="mailto:support@snow-flow.dev">Report an Issue</a> |
+                <a href="https://github.com/groeimetai/snow-flow">GitHub</a>
             </p>
         </footer>
     </div>
 
     <script>
+        // ⚠️ NOTE: This is currently using simulated data for demonstration
+        // Real Google Cloud Monitoring integration will be added in future updates
+
         // API endpoint (will be replaced with actual API)
         const API_BASE = '/api/status';
 
-        // Generate 90-day uptime history
+        // Generate 90-day uptime history with simulated data
         function generateUptimeHistory() {
             const container = document.getElementById('uptimeDays');
             const days = 90;
@@ -532,7 +650,7 @@
                 const day = document.createElement('div');
                 day.className = 'uptime-day';
 
-                // Simulate uptime data (replace with real data from API)
+                // ⚠️ SIMULATED DATA - will be replaced with real Cloud Monitoring data
                 const uptime = Math.random();
                 if (uptime < 0.001) { // 0.1% chance of downtime
                     day.classList.add('down');
@@ -555,11 +673,11 @@
         // Fetch real-time status from API
         async function fetchStatus() {
             try {
-                // In production, this would call the actual API
+                // ⚠️ TODO: Replace with actual Google Cloud Monitoring API call
                 // const response = await fetch(`${API_BASE}/current`);
                 // const data = await response.json();
 
-                // Simulated data for now
+                // ⚠️ SIMULATED DATA for demonstration purposes
                 const data = {
                     overall_status: 'operational', // operational, degraded, down
                     uptime_30d: 99.97,
