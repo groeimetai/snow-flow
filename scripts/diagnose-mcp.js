@@ -21,7 +21,7 @@ console.log('\n1️⃣  Checking SnowCode installation...');
 try {
   var snowcodeVersion = execSync('snowcode --version 2>&1', { encoding: 'utf-8' }).trim();
   if (snowcodeVersion.includes('command not found')) {
-    issues.push('SnowCode CLI not found - install with: npm install -g @groeimetai/snowcode');
+    issues.push('SnowCode CLI not found - install with: npm install -g @groeimetai/snow-code');
   } else {
     successes.push('SnowCode installed: ' + snowcodeVersion);
     console.log('   ✅ ' + snowcodeVersion);
@@ -249,7 +249,7 @@ console.log('💡 RECOMMENDATIONS:\n');
 if (issues.length > 0) {
   console.log('1. Fix the issues above first:');
   if (issues.some(function(i) { return i.includes('SnowCode not installed'); })) {
-    console.log('   → Install SnowCode: npm install -g @groeimetai/snowcode');
+    console.log('   → Install SnowCode: npm install -g @groeimetai/snow-code');
   }
   if (issues.some(function(i) { return i.includes('config not found'); })) {
     console.log('   → Configure Snow-Flow: snow-flow auth login');

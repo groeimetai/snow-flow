@@ -2,6 +2,8 @@
  * OAuth HTML Templates with Snow-Flow minimalist branding
  */
 
+const faviconLink = `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='mountain' x1='16' y1='9' x2='16' y2='23' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23FFFFFF'/%3E%3Cstop offset='100%25' stop-color='%2300D9FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M4 23 L10 9 L16 15 L22 9 L28 23 Z' fill='url(%23mountain)' stroke='%2300D9FF' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E">`;
+
 const baseStyles = `
   <style>
     * {
@@ -153,6 +155,7 @@ export const OAuthTemplates = {
         <title>Snow-Flow - Authentication Successful</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        ${faviconLink}
         ${baseStyles}
       </head>
       <body>
@@ -192,6 +195,7 @@ export const OAuthTemplates = {
         <title>Snow-Flow - Authentication Error</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        ${faviconLink}
         ${baseStyles}
       </head>
       <body>
@@ -235,6 +239,7 @@ export const OAuthTemplates = {
         <title>Snow-Flow - Security Error</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        ${faviconLink}
         ${baseStyles}
       </head>
       <body>
@@ -274,6 +279,7 @@ export const OAuthTemplates = {
         <title>Snow-Flow - Missing Authorization Code</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        ${faviconLink}
         ${baseStyles}
       </head>
       <body>
@@ -313,6 +319,7 @@ export const OAuthTemplates = {
         <title>Snow-Flow - Token Exchange Failed</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        ${faviconLink}
         ${baseStyles}
       </head>
       <body>

@@ -515,7 +515,7 @@ async function autoUpdateSnowCode(): Promise<void> {
     const currentVersion = execSync('snowcode --version', { encoding: 'utf8' }).trim();
 
     // Get latest version from npm
-    const latestVersion = execSync('npm view @groeimetai/snowcode version', { encoding: 'utf8' }).trim();
+    const latestVersion = execSync('npm view @groeimetai/snow-code version', { encoding: 'utf8' }).trim();
 
     // Helper to find node_modules in current and parent directories
     const findNodeModules = (startPath: string): string[] => {
@@ -602,7 +602,7 @@ async function autoUpdateSnowCode(): Promise<void> {
           }
 
           // Install fresh version
-          execSync('npm install @groeimetai/snowcode@latest', {
+          execSync('npm install @groeimetai/snow-code@latest', {
             stdio: 'inherit',
             cwd: projectRoot
           });
@@ -640,7 +640,7 @@ async function autoUpdateSnowCode(): Promise<void> {
       cliLogger.info(`📦 Updating SnowCode: ${currentVersion} → ${latestVersion}`);
 
       // Update global version
-      execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'inherit' });
+      execSync('npm install -g @groeimetai/snow-code@latest', { stdio: 'inherit' });
 
       // Update all local node_modules
       const projectRoots = findNodeModules(process.cwd());
@@ -680,7 +680,7 @@ async function executeSnowCode(objective: string): Promise<boolean> {
     try {
       execSync('which snowcode', { stdio: 'ignore' });
     } catch {
-      cliLogger.error('SnowCode CLI not found - install: npm install -g @groeimetai/snowcode');
+      cliLogger.error('SnowCode CLI not found - install: npm install -g @groeimetai/snow-code');
       return false;
     }
 
@@ -1905,7 +1905,7 @@ program
         // Check if SnowCode is installed globally
         let installedVersion = null;
         try {
-          const versionOutput = execSync('npm list -g @groeimetai/snowcode --depth=0', { encoding: 'utf8' });
+          const versionOutput = execSync('npm list -g @groeimetai/snow-code --depth=0', { encoding: 'utf8' });
           const match = versionOutput.match(/@groeimetai\/snowcode@(\d+\.\d+\.\d+)/);
           installedVersion = match ? match[1] : null;
         } catch (err) {
@@ -1916,23 +1916,23 @@ program
           console.log(`   Current version: ${installedVersion}`);
 
           // Check latest version available
-          const latestOutput = execSync('npm view @groeimetai/snowcode version', { encoding: 'utf8' }).trim();
+          const latestOutput = execSync('npm view @groeimetai/snow-code version', { encoding: 'utf8' }).trim();
           console.log(`   Latest version: ${latestOutput}`);
 
           if (installedVersion !== latestOutput) {
             console.log('   ⬆️  Updating to latest version...');
-            execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'inherit' });
+            execSync('npm install -g @groeimetai/snow-code@latest', { stdio: 'inherit' });
             console.log(chalk.green('   ✅ SnowCode updated successfully!'));
           } else {
             console.log(chalk.green('   ✅ Already on latest version'));
           }
         } else {
           console.log('   📥 Installing SnowCode...');
-          execSync('npm install -g @groeimetai/snowcode@latest', { stdio: 'inherit' });
+          execSync('npm install -g @groeimetai/snow-code@latest', { stdio: 'inherit' });
           console.log(chalk.green('   ✅ SnowCode installed successfully!'));
         }
       } catch (err) {
-        console.log(chalk.yellow('   ⚠️  Could not auto-update SnowCode. Run: npm install -g @groeimetai/snowcode@latest'));
+        console.log(chalk.yellow('   ⚠️  Could not auto-update SnowCode. Run: npm install -g @groeimetai/snow-code@latest'));
       }
 
       // Create directory structure
@@ -2106,24 +2106,24 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
       {
         type: 'confirm',
         name: 'shouldInstall',
-        message: 'Would you like to install SnowCode now? (npm install -g @groeimetai/snowcode)',
+        message: 'Would you like to install SnowCode now? (npm install -g @groeimetai/snow-code)',
         default: true
       }
     ]);
 
     if (!shouldInstall) {
       console.log(chalk.yellow('\n⏭️  Skipping SnowCode installation'));
-      console.log(chalk.blue('You can install it later with: ') + chalk.cyan('npm install -g @groeimetai/snowcode'));
+      console.log(chalk.blue('You can install it later with: ') + chalk.cyan('npm install -g @groeimetai/snow-code'));
       return false;
     }
 
     // Install SnowCode globally with latest version
     console.log(chalk.blue('\n📦 Installing SnowCode globally...'));
-    console.log(chalk.dim('Installing @groeimetai/snowcode@latest (forcing latest version)...'));
+    console.log(chalk.dim('Installing @groeimetai/snow-code@latest (forcing latest version)...'));
 
     try {
       // Use @latest and --force to bypass npm cache and get absolute latest version
-      execSync('npm install -g @groeimetai/snowcode@latest --force', { stdio: 'inherit' });
+      execSync('npm install -g @groeimetai/snow-code@latest --force', { stdio: 'inherit' });
       console.log(chalk.green('\n✅ SnowCode installed successfully!'));
 
       // Verify version
@@ -2135,27 +2135,27 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
       snowcodeInstalled = true;
     } catch (error) {
       console.log(chalk.red('\n❌ Failed to install SnowCode'));
-      console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install -g @groeimetai/snowcode@latest'));
+      console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install -g @groeimetai/snow-code@latest'));
       return false;
     }
   }
 
   // ALWAYS install SnowCode locally in the project directory with platform binaries
   console.log(chalk.blue('\n📦 Installing SnowCode locally (with platform binaries)...'));
-  console.log(chalk.dim('Installing @groeimetai/snowcode@latest (forcing latest version)...'));
+  console.log(chalk.dim('Installing @groeimetai/snow-code@latest (forcing latest version)...'));
 
   try {
     const projectDir = process.cwd();
     // Use --force to bypass npm cache and get absolute latest version
-    execSync('npm install @groeimetai/snowcode@latest --no-audit --no-fund --force', {
+    execSync('npm install @groeimetai/snow-code@latest --no-audit --no-fund --force', {
       cwd: projectDir,
       stdio: 'inherit'
     });
     console.log(chalk.green('✅ SnowCode installed locally with platform binaries!'));
-    console.log(chalk.dim(`   Platform binary: @groeimetai/snowcode-${process.platform}-${process.arch}`));
+    console.log(chalk.dim(`   Platform binary: @groeimetai/snow-code-${process.platform}-${process.arch}`));
   } catch (error) {
     console.log(chalk.red('\n❌ Failed to install SnowCode locally'));
-    console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install @groeimetai/snowcode@latest --no-audit --no-fund'));
+    console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install @groeimetai/snow-code@latest --no-audit --no-fund'));
     console.log(chalk.dim('This is required for the compiled binaries'));
     return false;
   }
@@ -2564,7 +2564,7 @@ async function copySnowCodePackageJson(targetDir: string, force: boolean = false
     }
 
     await fs.copyFile(templatePath, targetPath);
-    console.log('✅ Created .snowcode/package.json with @groeimetai/snowcode-plugin');
+    console.log('✅ Created .snowcode/package.json with @groeimetai/snow-code-plugin');
 
   } catch (error) {
     console.error('❌ Error copying SnowCode package.json:', error);
@@ -4347,7 +4347,7 @@ async function handleMCPDebug(options: any): Promise<void> {
     console.log('   ✅ SnowCode CLI found');
   } catch {
     console.log('   ❌ SnowCode CLI not found in PATH');
-    console.log('   💡 Install with: npm install -g @groeimetai/snowcode');
+    console.log('   💡 Install with: npm install -g @groeimetai/snow-code');
   }
 
   console.log('\n💡 Tips:');
