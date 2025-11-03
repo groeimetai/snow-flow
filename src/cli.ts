@@ -1906,7 +1906,7 @@ program
         let installedVersion = null;
         try {
           const versionOutput = execSync('npm list -g @groeimetai/snow-code --depth=0', { encoding: 'utf8' });
-          const match = versionOutput.match(/@groeimetai\/snowcode@(\d+\.\d+\.\d+)/);
+          const match = versionOutput.match(/@groeimetai\/snow-code@(\d+\.\d+\.\d+)/);
           installedVersion = match ? match[1] : null;
         } catch (err) {
           // Not installed yet
@@ -2090,8 +2090,8 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
   let snowcodeInstalled = false;
 
   try {
-    // Check if snowcode is already installed
-    execSync('which snowcode', { stdio: 'ignore' });
+    // Check if snow-code is already installed globally via npm
+    execSync('npm list -g @groeimetai/snow-code --depth=0', { stdio: 'ignore' });
     console.log(chalk.green('\n✅ SnowCode is already installed!'));
     snowcodeInstalled = true;
   } catch {
