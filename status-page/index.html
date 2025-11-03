@@ -7,7 +7,7 @@
     <meta name="description" content="Real-time status and uptime monitoring for Snow-Flow Enterprise services. 99.9% SLA guaranteed.">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏔️%3C/text%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='mountain' x1='16' y1='9' x2='16' y2='23' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23FFFFFF'/%3E%3Cstop offset='100%25' stop-color='%2300D9FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M4 23 L10 9 L16 15 L22 9 L28 23 Z' fill='url(%23mountain)' stroke='%2300D9FF' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E">
 
     <style>
         * {
@@ -69,10 +69,13 @@
         }
 
         .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
             color: var(--text-white);
             text-decoration: none;
             display: flex;
             align-items: center;
+            gap: 0.625rem;
             transition: transform 0.3s ease;
         }
 
@@ -80,9 +83,22 @@
             transform: translateY(-2px);
         }
 
-        .logo-horizontal {
+        .logo-svg {
+            width: 32px;
             height: 32px;
-            width: auto;
+        }
+
+        .logo-text {
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-text .snow {
+            color: var(--text-white);
+        }
+
+        .logo-text .flow {
+            color: var(--brand-cyan);
         }
 
         .nav-links {
@@ -453,7 +469,12 @@
                 padding: 0 1rem;
             }
 
-            .logo-horizontal {
+            .logo {
+                font-size: 1.25rem;
+            }
+
+            .logo-svg {
+                width: 28px;
                 height: 28px;
             }
 
@@ -481,7 +502,12 @@
         }
 
         @media (max-width: 480px) {
-            .logo-horizontal {
+            .logo {
+                font-size: 1.125rem;
+            }
+
+            .logo-svg {
+                width: 26px;
                 height: 26px;
             }
         }
@@ -492,7 +518,22 @@
     <nav>
         <div class="nav-content">
             <a href="https://snow-flow.dev" class="logo">
-                <img src="../website/logos/horizontal.svg" alt="Snow-Flow" class="logo-horizontal" />
+                <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logo-mountain" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#FFFFFF"/>
+                            <stop offset="100%" stop-color="#00D9FF"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z"
+                          fill="url(#logo-mountain)"
+                          stroke="#00D9FF"
+                          stroke-width="1.2"
+                          stroke-linejoin="round"/>
+                </svg>
+                <span class="logo-text">
+                    <span class="snow">SNOW</span><span class="flow">FLOW</span>
+                </span>
             </a>
             <ul class="nav-links">
                 <li><a href="https://snow-flow.dev">Home</a></li>
@@ -708,12 +749,14 @@
                 const data = await response.json();
                 updateStatus(data);
 
-                // Update last check time
-                const now = new Date();
-                document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+                // Update last check time (if element exists)
+                const lastUpdateEl = document.getElementById('lastUpdate');
+                if (lastUpdateEl) {
+                    lastUpdateEl.textContent = new Date().toLocaleTimeString();
+                }
 
             } catch (error) {
-                console.error('Failed to fetch status:', error);
+                console.warn('Status API unavailable, showing demo data');
 
                 // Show fallback state - API temporarily unavailable
                 const data = {
