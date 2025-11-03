@@ -69,6 +69,11 @@
             display: flex;
             align-items: center;
             gap: 0.625rem;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: translateY(-2px);
         }
 
         .logo-svg {
@@ -975,6 +980,57 @@
 
             .pricing-grid {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        /* Small mobile devices */
+        @media (max-width: 480px) {
+            nav {
+                padding: 1rem 0;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+
+            .logo-svg {
+                width: 28px;
+                height: 28px;
+            }
+
+            .footer-logo-svg {
+                width: 40px;
+                height: 40px;
+            }
+
+            .footer-logo-text {
+                font-size: 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.125rem;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .nav-links {
+                padding: 4rem 1.5rem 2rem;
+            }
+
+            .nav-links a {
+                padding: 1.25rem 1.5rem;
+                font-size: 1rem;
+            }
+
+            .nav-cta {
+                font-size: 1rem !important;
             }
         }
     </style>

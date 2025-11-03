@@ -299,8 +299,8 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
   });
 });
 
-// Start server
-const PORT = parseInt(process.env.PORT || '3000');
+// Start server - Cloud Run provides PORT environment variable
+const PORT = parseInt(process.env.PORT || '8080');
 const HOST = process.env.HOST || '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
@@ -309,6 +309,7 @@ app.listen(PORT, HOST, () => {
   console.log(`🔍 Status API: http://${HOST}:${PORT}/api/v1/status`);
   console.log(`📈 Metrics API: http://${HOST}:${PORT}/api/v1/metrics`);
   console.log(`📅 History API: http://${HOST}:${PORT}/api/v1/uptime-history`);
+  console.log(`🚀 Running in ${process.env.NODE_ENV || 'development'} mode`);
 });
 
 // Graceful shutdown

@@ -39,7 +39,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--port'
-      - '3000'
+      - '8080'
       - '--memory'
       - '512Mi'
       - '--cpu'
@@ -51,7 +51,7 @@ steps:
       - '--timeout'
       - '60'
       - '--set-env-vars'
-      - 'NODE_ENV=production,PORT=3000'
+      - 'NODE_ENV=production'
 
 images:
   - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-health-api:$COMMIT_SHA'

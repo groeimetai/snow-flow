@@ -31,15 +31,15 @@ COPY --from=builder /app/dist ./dist
 # Create data directory for SQLite
 RUN mkdir -p /app/data && chmod 777 /app/data
 
-# Health check
+# Health check - Cloud Run uses PORT environment variable (default 8080)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || '8080') + '/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"
 
 # Run as non-root user
 USER node
 
-# Expose port
-EXPOSE 3000
+# Expose port (Cloud Run will override with PORT env var)
+EXPOSE 8080
 
 # Start the API
 CMD ["node", "dist/api/simple-health-api.js"]
