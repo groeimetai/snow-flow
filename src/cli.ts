@@ -192,9 +192,12 @@ program
         cliLogger.info('🔍 VERBOSE MODE: Enabled');
       }
     }
-    
-    // Only show header in verbose mode
-    if (options.verbose) {
+
+    // Show clean intro for non-verbose mode
+    if (!options.verbose) {
+      prompts.intro(chalk.blue.bold(`🚀 Snow-Flow v${VERSION}`));
+      prompts.log.message(chalk.dim(objective));
+    } else {
       cliLogger.info(`\n🚀 Snow-Flow v${VERSION}`);
       console.log(chalk.blue(`📋 ${objective}`));
     }
@@ -1916,21 +1919,23 @@ program
   .option('--skip-mcp', 'Skip MCP server activation prompt')
   .option('--force', 'Overwrite existing files without prompting')
   .action(async (options) => {
-    console.log(chalk.blue.bold(`\n🏔️ Snow-Flow v${VERSION} - Conversational ServiceNow Development`));
-    console.log('='.repeat(60));
-    
+    prompts.intro(chalk.blue.bold(`🏔️ Snow-Flow v${VERSION}`));
+
     const targetDir = process.cwd();
-    
+
     try {
       // Check for .snow-flow migration
       const { migrationUtil } = await import('./utils/migrate-snow-flow.js');
       if (await migrationUtil.checkMigrationNeeded()) {
-        console.log('\n🔄 Detected .snow-flow directory, migrating to .snow-flow...');
+        const s = prompts.spinner();
+        s.start('Migrating project structure');
         await migrationUtil.migrate();
+        s.stop('Migration complete');
       }
 
       // Install/Update SnowCode to latest version
-      console.log('\n📦 Checking SnowCode installation...');
+      const snowcodeSpinner = prompts.spinner();
+      snowcodeSpinner.start('Checking SnowCode installation');
       try {
         const { execSync } = await import('child_process');
 
@@ -1945,110 +1950,71 @@ program
         }
 
         if (installedVersion) {
-          console.log(`   Current version: ${installedVersion}`);
-
-          // Check latest version available
           const latestOutput = execSync('npm view @groeimetai/snow-code version', { encoding: 'utf8' }).trim();
-          console.log(`   Latest version: ${latestOutput}`);
 
           if (installedVersion !== latestOutput) {
-            console.log('   ⬆️  Updating to latest version...');
-            execSync('npm install -g @groeimetai/snow-code@latest', { stdio: 'inherit' });
-            console.log(chalk.green('   ✅ SnowCode updated successfully!'));
+            snowcodeSpinner.message('Updating SnowCode');
+            execSync('npm install -g @groeimetai/snow-code@latest', { stdio: 'ignore' });
+            snowcodeSpinner.stop('SnowCode updated');
           } else {
-            console.log(chalk.green('   ✅ Already on latest version'));
+            snowcodeSpinner.stop('SnowCode up to date');
           }
         } else {
-          console.log('   📥 Installing SnowCode...');
-          execSync('npm install -g @groeimetai/snow-code@latest', { stdio: 'inherit' });
-          console.log(chalk.green('   ✅ SnowCode installed successfully!'));
+          snowcodeSpinner.message('Installing SnowCode');
+          execSync('npm install -g @groeimetai/snow-code@latest', { stdio: 'ignore' });
+          snowcodeSpinner.stop('SnowCode installed');
         }
       } catch (err) {
-        console.log(chalk.yellow('   ⚠️  Could not auto-update SnowCode. Run: npm install -g @groeimetai/snow-code@latest'));
+        snowcodeSpinner.stop('Could not update SnowCode');
+        prompts.log.warn('Run: npm install -g @groeimetai/snow-code@latest');
       }
 
-      // Create directory structure
-      console.log('\n📁 Creating project structure...');
+      // Create project structure
+      const setupSpinner = prompts.spinner();
+      setupSpinner.start('Setting up project');
+
       await createDirectoryStructure(targetDir, options.force);
-      
-      // Create .env file
-      console.log('🔐 Creating environment configuration...');
       await createEnvFile(targetDir, options.force);
-      
-      // Create MCP configuration - always included now (SPARC is default)
-      console.log('🔧 Setting up MCP servers for SnowCode (also works with Claude Code)...');
       await createMCPConfig(targetDir, options.force);
 
-      // Copy CLAUDE.md file
-      console.log('📚 Creating documentation files...');
       await copyCLAUDEmd(targetDir, options.force);
-
-      // Create README files
       await createReadmeFiles(targetDir, options.force);
-
-      // Copy snowcode-config.example.json
       await copySnowCodeConfig(targetDir, options.force);
-
-      // Copy SnowCode themes
       await copySnowCodeThemes(targetDir, options.force);
-
-      // Copy SnowCode package.json with snowcode-plugin
-      console.log('📦 Configuring SnowCode plugin (snowcode fork)...');
       await copySnowCodePackageJson(targetDir, options.force);
-
-      // Copy MCP server management scripts
-      console.log('🔧 Setting up MCP server management scripts...');
       await copyMCPServerScripts(targetDir, options.force);
 
-      console.log(chalk.green.bold('\n✅ Snow-Flow project initialized successfully!'));
-      console.log('\n📋 Created Snow-Flow configuration:');
-      console.log('   ✓ .snowcode/ - SnowCode configuration with both MCP servers');
-      console.log('   ✓ .snowcode/themes/ - ServiceNow custom theme for SnowCode');
-      console.log('   ✓ .claude/ - Claude Code MCP configuration (backward compatibility)');
-      console.log('   ✓ .mcp.json - 2 unified MCP servers (370 tools total)');
-      console.log('   ✓ scripts/ - MCP server management and SnowCode launcher');
-      console.log('   ✓ AGENTS.md - SnowCode primary instructions');
-      console.log('   ✓ CLAUDE.md - Claude Code compatibility');
-      console.log('   ✓ README.md - Complete capabilities documentation');
-      console.log('   ✓ SNOWCODE-TROUBLESHOOTING.md - Troubleshooting guide');
-      console.log('   ✓ .snow-flow/ - Project workspace and memory');
+      setupSpinner.stop('Project configured');
 
+      // Verify MCP servers
       if (!options.skipMcp) {
-        // NOTE: MCP servers work with SnowCode's native Task() system
-        console.log(chalk.blue('\nℹ️  MCP servers configured for SnowCode (also compatible with Claude Code)'));
-        console.log(chalk.green('✅ 411 ServiceNow tools automatically available via 2 unified servers'));
-        console.log(chalk.blue('📋 SDK handles MCP server lifecycle automatically'));
-
-        // Verify MCP servers can actually start
-        console.log(chalk.dim('\n🔍 Verifying MCP server configuration...'));
+        const mcpSpinner = prompts.spinner();
+        mcpSpinner.start('Verifying MCP servers');
         await verifyMCPServers(targetDir);
-
-        // MCP servers auto-start via SnowCode - no manual startup needed
-        console.log(chalk.blue('\n🚀 MCP Servers:'));
-        console.log(chalk.green('✅ MCP servers will start automatically when you launch SnowCode'));
-        console.log(chalk.dim('   - Configured via .mcp.json in this project'));
-        console.log(chalk.dim('   - 18 specialized ServiceNow MCP servers with 400+ tools'));
-        console.log(chalk.dim('   - No manual startup required!'));
+        mcpSpinner.stop('MCP servers verified');
       }
 
-      // Check and optionally install SnowCode
-      const configImported = await checkAndInstallSnowCode();
+      // Check and optionally install SnowCode locally
+      await checkAndInstallSnowCode();
 
-      console.log(chalk.blue.bold('\n🎯 Next steps:'));
-      console.log('1. Authenticate: ' + chalk.cyan('snow-flow auth login'));
-      console.log('   - Authenticates with your LLM provider (Claude/OpenAI/Google/Ollama)');
-      console.log('   - Then authenticates with ServiceNow OAuth');
-      console.log('   - Your provider choice is automatically saved to .env');
-      console.log('2. Start developing: ' + chalk.cyan('snow-flow swarm "create incident dashboard"'));
-      console.log('   - Multi-agent orchestration for ServiceNow development');
-      console.log('\n📚 Documentation: ' + chalk.blue('https://github.com/groeimetai/snow-flow'));
-      console.log('💡 370+ ServiceNow tools • 2 MCP servers • Multi-LLM support');
+      prompts.outro(chalk.green('✅ Snow-Flow initialized successfully!'));
+
+      prompts.log.message('');
+      prompts.log.step('Next steps:');
+      prompts.log.message('');
+      prompts.log.message('  1. Authenticate with providers:');
+      prompts.log.info('     snow-flow auth login');
+      prompts.log.message('');
+      prompts.log.message('  2. Start developing:');
+      prompts.log.info('     snow-flow swarm "create incident dashboard"');
+      prompts.log.message('');
 
       // Force exit to prevent hanging
       process.exit(0);
-      
+
     } catch (error) {
-      console.error(chalk.red('\n❌ Initialization failed:'), error);
+      prompts.log.error('Initialization failed');
+      cliLogger.error('Init error:', error);
       process.exit(1);
     }
   });
