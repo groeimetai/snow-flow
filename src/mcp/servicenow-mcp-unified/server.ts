@@ -103,7 +103,7 @@ export class ServiceNowUnifiedServer {
     // List available tools (filtered by user role)
     this.server.setRequestHandler(ListToolsRequestSchema, async (request) => {
       // 🆕 Phase 2: Role-based tool filtering
-      const jwtPayload = extractJWTPayload(request.headers);
+      const jwtPayload = extractJWTPayload((request as any).headers);
       const userRole = jwtPayload?.role || 'developer';
 
       const allTools = toolRegistry.getToolDefinitions();
@@ -138,7 +138,7 @@ export class ServiceNowUnifiedServer {
         }
 
         // 🆕 Phase 2: Permission validation before execution
-        const jwtPayload = extractJWTPayload(request.headers);
+        const jwtPayload = extractJWTPayload((request as any).headers);
         validateJWTExpiry(jwtPayload);
         validatePermission(tool.definition, jwtPayload);
 
