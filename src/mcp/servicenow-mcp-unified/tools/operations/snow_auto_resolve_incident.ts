@@ -18,6 +18,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['incidents', 'automation'],
   complexity: 'advanced',
   frequency: 'medium',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Resolution function - closes incidents automatically
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

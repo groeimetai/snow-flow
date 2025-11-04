@@ -18,6 +18,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['update-sets', 'activation', 'change-tracking'],
   complexity: 'intermediate',
   frequency: 'high',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Update set function - creates or switches active update set
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

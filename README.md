@@ -678,10 +678,10 @@ Premium integrations for enterprise ServiceNow teams:
   - Technical specs → Implementation guides
   - Architecture diagrams → Attachment sync
 
-- 🔒 **Enterprise SSO/SAML** - Single sign-on integration
+- 🔒 **Enterprise SSO/SAML** - Single sign-on integration 🚧 *Coming Q1 2025*
   - SAML 2.0, OAuth 2.0, OIDC
   - Active Directory/LDAP integration
-  - Role-based access control (RBAC)
+  - Role-based access control (RBAC) - *Partial: Role tracking implemented, enforcement in progress*
 
 - 🔒 **Advanced Audit Logging** - Comprehensive activity tracking
   - Every AI action logged with audit trail
@@ -709,8 +709,8 @@ Enterprise features will be available via seat-based commercial license:
 **License Format:** `SNOW-[TIER]-[ORG]-[DEV_SEATS]/[STAKEHOLDER_SEATS]-[EXPIRY]-[CHECKSUM]`
 
 **Seat Types:**
-- **Developer Seats:** For technical users using Claude Code + MCP tools
-- **Stakeholder Seats:** For non-technical users (POs, PMs, BAs) using web portal only
+- **Developer Seats:** Full read/write access to all 410+ MCP tools via CLI/TUI
+- **Stakeholder Seats:** 🚧 *Coming Q1 2025* - Read-only CLI/TUI access for queries and analytics (no write operations)
 
 **Pricing Tiers:**
 - **Professional:** €499/month (5 developer seats + 2 stakeholder seats)
@@ -720,10 +720,26 @@ Enterprise features will be available via seat-based commercial license:
 All tiers include:
 - All open source features
 - Enterprise integrations (Jira/Azure DevOps/Confluence)
-- Enterprise SSO/SAML
+- Enterprise SSO/SAML 🚧 *Q1 2025*
 - Audit logging
 - Seat tracking and management
 - Email support (SLA varies by tier)
+
+**⚠️ Current Implementation Status (As of 2025-11-04):**
+
+✅ **Available Now:**
+- License parsing (developer/stakeholder seat counts)
+- Role assignment and tracking
+- Seat usage display in CLI
+- User management in enterprise portal
+
+🚧 **In Development (Q1 2025):**
+- Stakeholder read-only enforcement (stakeholders currently have full tool access)
+- Seat limit enforcement at connection time
+- Active session tracking and monitoring
+- Role-based permission validation
+
+For detailed implementation status, see: `/Users/nielsvanderwerf/snow-flow-enterprise/STAKEHOLDER-SEATS-TECHNICAL-SPEC.md`
 
 **Early Access:** Contact [sales@snow-flow.dev](mailto:sales@snow-flow.dev) for beta access and pilot programs.
 
@@ -739,11 +755,18 @@ All tiers include:
 
 ### Roadmap
 
-**Q1 2025** (Current Release - Open Source)
+**Q1 2025 - Current** (Open Source Features)
 - ✅ Native ServiceNow Predictive Intelligence tools
 - ✅ UI Builder complete integration
 - ✅ 75+ LLM provider support
 - ✅ Local development bridge
+- 🚧 Seat-based licensing infrastructure (37.5% complete - see STAKEHOLDER-SEATS-TECHNICAL-SPEC.md)
+
+**Q1 2025** (Stakeholder Seats & RBAC)
+- 🚧 Stakeholder read-only enforcement (tool permission system)
+- 🚧 Seat limit enforcement (active session tracking)
+- 🚧 Role-based access control (RBAC) implementation
+- 🚧 Session management API endpoints
 
 **Q2 2025** (Enterprise Launch)
 - 🔒 Jira Integration (beta)

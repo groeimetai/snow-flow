@@ -15,6 +15,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['attachments', 'deletion', 'file-management'],
   complexity: 'beginner',
   frequency: 'medium',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Delete operation - modifies data
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

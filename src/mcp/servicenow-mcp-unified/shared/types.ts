@@ -39,6 +39,16 @@ export interface ServiceNowContext {
 }
 
 /**
+ * User role for permission validation
+ */
+export type UserRole = 'developer' | 'stakeholder' | 'admin';
+
+/**
+ * Tool permission level
+ */
+export type ToolPermission = 'read' | 'write';
+
+/**
  * MCP Tool Definition (compliant with Model Context Protocol)
  */
 export interface MCPToolDefinition {
@@ -50,6 +60,12 @@ export interface MCPToolDefinition {
   use_cases?: string[];
   complexity?: 'beginner' | 'intermediate' | 'advanced';
   frequency?: 'low' | 'medium' | 'high';
+
+  // 🆕 Permission enforcement (Phase 1 - Q1 2025)
+  // Optional for backward compatibility during migration
+  permission?: ToolPermission; // 'read' or 'write' - defaults to 'write' (most restrictive)
+  allowedRoles?: UserRole[]; // Roles permitted to execute this tool - defaults to ['developer', 'admin']
+
   inputSchema: {
     type: 'object';
     properties: Record<string, any>;
@@ -127,6 +143,22 @@ export interface OAuthTokenResponse {
   token_type: 'Bearer';
   expires_in: number;
   scope: string;
+}
+
+/**
+ * JWT Payload (for enterprise MCP authentication)
+ */
+export interface JWTPayload {
+  customerId: number;
+  company?: string;
+  tier: EnterpriseTier;
+  features: string[];
+  role: UserRole; // 'developer', 'stakeholder', or 'admin'
+  userId?: number; // NULL for MCP proxy connections
+  sessionId: string; // Unique session identifier
+  instanceId?: string; // Machine fingerprint
+  iat: number; // Issued at
+  exp: number; // Expires at
 }
 
 /**

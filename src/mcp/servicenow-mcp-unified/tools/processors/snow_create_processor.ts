@@ -15,6 +15,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['processors', 'scripted-rest', 'api'],
   complexity: 'advanced',
   frequency: 'medium',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Create operation - modifies data
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

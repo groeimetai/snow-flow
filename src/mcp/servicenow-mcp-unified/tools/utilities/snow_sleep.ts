@@ -14,6 +14,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['delay', 'timing', 'utilities'],
   complexity: 'beginner',
   frequency: 'low',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: READ - Utility function - delays execution but no data modification
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

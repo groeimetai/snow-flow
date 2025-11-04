@@ -15,6 +15,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['optimization', 'cost-reduction', 'sam'],
   complexity: 'advanced',
   frequency: 'medium',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Optimization function - modifies license allocations
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

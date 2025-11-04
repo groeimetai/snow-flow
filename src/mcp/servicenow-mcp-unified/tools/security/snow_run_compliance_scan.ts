@@ -17,6 +17,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['security', 'compliance', 'audit'],
   complexity: 'advanced',
   frequency: 'medium',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: READ - Scan function - scans compliance without modifying
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

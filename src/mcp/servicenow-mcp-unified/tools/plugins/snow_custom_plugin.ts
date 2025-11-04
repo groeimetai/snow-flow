@@ -14,6 +14,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['plugin-customization', 'extensions', 'custom-logic'],
   complexity: 'advanced',
   frequency: 'low',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Plugin function - executes custom plugin which can modify data
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

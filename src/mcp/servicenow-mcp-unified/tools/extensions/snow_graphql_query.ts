@@ -15,6 +15,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['graphql', 'query', 'data-retrieval'],
   complexity: 'intermediate',
   frequency: 'low',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: READ - Query operation - only reads data
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

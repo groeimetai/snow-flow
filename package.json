@@ -537,7 +537,7 @@
     "typescript": "5.9.3"
   },
   "peerDependencies": {
-    "@groeimetai/snow-code": ">=0.18.5"
+    "@groeimetai/snow-code": "^0.18.10"
   },
   "peerDependenciesMeta": {
     "@groeimetai/snow-code": {

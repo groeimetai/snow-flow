@@ -15,6 +15,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['autocomplete', 'search', 'ux'],
   complexity: 'beginner',
   frequency: 'high',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: READ - Autocomplete function - suggests completions without modifying
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

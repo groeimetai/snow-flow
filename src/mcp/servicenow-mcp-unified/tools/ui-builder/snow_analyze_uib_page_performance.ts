@@ -18,6 +18,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['ui-builder', 'performance', 'optimization'],
   complexity: 'advanced',
   frequency: 'low',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: READ - Analysis operation - reads data
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

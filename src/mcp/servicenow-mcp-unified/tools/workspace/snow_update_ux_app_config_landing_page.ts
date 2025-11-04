@@ -18,6 +18,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['workspace', 'configuration', 'landing-page'],
   complexity: 'beginner',
   frequency: 'low',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Update operation - modifies data
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

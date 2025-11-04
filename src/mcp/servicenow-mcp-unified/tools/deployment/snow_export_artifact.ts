@@ -17,6 +17,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['deployment', 'export', 'backup'],
   complexity: 'intermediate',
   frequency: 'medium',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: READ - Export operation - reads data
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

@@ -14,6 +14,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['timestamps', 'time', 'utilities'],
   complexity: 'beginner',
   frequency: 'high',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: READ - Utility function - generates timestamp locally
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

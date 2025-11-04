@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snow-Flow | Enterprise ServiceNow Development Platform</title>
-    <meta name="description" content="AI-powered ServiceNow development with 410+ tools, seat-based licensing for developers & stakeholders, managed SaaS infrastructure, and 99.9% SLA. Built for service integrators.">
+    <meta name="description" content="AI-powered ServiceNow development with 410+ tools, seat-based licensing with developer & stakeholder roles, managed SaaS infrastructure, and 99.9% SLA. Built for enterprise teams.">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
@@ -489,6 +489,27 @@
             font-size: 0.8rem;
             font-weight: 700;
             margin-bottom: 1.5rem;
+        }
+
+        /* Coming Soon Badge */
+        .coming-soon {
+            display: inline-block;
+            background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
+            color: white;
+            padding: 0.25rem 0.625rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         .pricing-card h3 {
@@ -1099,7 +1120,7 @@
                 DEVELOPMENT PLATFORM
             </h1>
             <p class="hero-subtitle">
-                410+ AI tools, seat-based licensing, user management, and managed SaaS infrastructure. Built for developers and stakeholders in enterprise teams.
+                410+ AI tools, seat-based licensing with role management, and managed SaaS infrastructure. Built for enterprise teams with developers and stakeholders.
             </p>
             <div>
                 <a href="https://github.com/groeimetai/snow-flow" class="hero-cta">START FREE</a>
@@ -1180,11 +1201,11 @@
                 </div>
                 <div class="comparison-side good">
                     <div class="comparison-title good">📊 For Stakeholders</div>
-                    <div class="comparison-item"><strong>Portal-Only Access</strong> - View analytics without dev tools access</div>
+                    <div class="comparison-item"><strong>Seat-Based Licensing</strong> - Track developer vs stakeholder seat usage</div>
                     <div class="comparison-item"><strong>User Management</strong> - Control who has access and what role</div>
                     <div class="comparison-item"><strong>Usage Analytics</strong> - Track seat utilization and costs</div>
-                    <div class="comparison-item"><strong>Real-Time Monitoring</strong> - See who's online and active</div>
-                    <div class="comparison-item"><strong>Audit Trails</strong> - Complete activity logs for compliance</div>
+                    <div class="comparison-item"><strong>License Monitoring</strong> - See active sessions and seat limits</div>
+                    <div class="comparison-item"><strong>Read-Only CLI Access</strong> <span class="coming-soon">Coming Soon</span> - Query data without write permissions</div>
                     <div class="comparison-item"><strong>Cost Optimization</strong> - Pay only for seats you use</div>
                 </div>
             </div>
@@ -1211,7 +1232,7 @@
             <div class="section-label">Pricing</div>
             <h2 class="section-title">Seat-based licensing for teams</h2>
             <p class="section-subtitle">
-                Choose the plan that fits your needs. Developer seats for full MCP tool access, Stakeholder seats for portal-only access. All plans include 410+ ServiceNow tools.
+                Choose the plan that fits your needs. Developer seats for full MCP tool access and write permissions. Stakeholder seats for license management and analytics. All plans include 410+ ServiceNow tools.
             </p>
 
             <div class="pricing-grid">
@@ -1346,6 +1367,69 @@
                     <h3 class="feature-title">White-Label Portal</h3>
                     <p class="feature-text">
                         Service integrators can rebrand the portal with their own logo, colors, and custom domain. 40%+ partner margins.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Transparency & Roadmap -->
+    <section class="section" style="background: rgba(0, 217, 255, 0.03); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container" style="max-width: 900px;">
+            <div class="section-label">Transparency</div>
+            <h2 class="section-title">Current Capabilities & Roadmap</h2>
+            <p class="section-subtitle">
+                We believe in transparency. Here's what's available now and what's coming soon.
+            </p>
+
+            <div style="margin-top: 3rem;">
+                <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--brand-cyan);">
+                    ✅ Available Now
+                </h3>
+                <div style="background: var(--brand-darker); border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem;">
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="color: var(--text-gray); line-height: 1.8;">
+                            <strong style="color: var(--text-white);">✓ Seat-based licensing:</strong> License keys track developer and stakeholder seat counts
+                        </div>
+                        <div style="color: var(--text-gray); line-height: 1.8;">
+                            <strong style="color: var(--text-white);">✓ Role assignment:</strong> Users can be designated as developers or stakeholders
+                        </div>
+                        <div style="color: var(--text-gray); line-height: 1.8;">
+                            <strong style="color: var(--text-white);">✓ Seat usage display:</strong> View active seat utilization in CLI and portal
+                        </div>
+                        <div style="color: var(--text-gray); line-height: 1.8;">
+                            <strong style="color: var(--text-white);">✓ User management portal:</strong> Admins can create, edit, and manage users
+                        </div>
+                        <div style="color: var(--text-gray); line-height: 1.8;">
+                            <strong style="color: var(--text-white);">✓ 410+ MCP tools:</strong> Complete ServiceNow automation library for developers
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; color: #F59E0B;">
+                    🚧 Coming Soon (Q1 2025)
+                </h3>
+                <div style="background: var(--brand-darker); border-radius: 12px; padding: 2rem;">
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="color: var(--text-gray); line-height: 1.8;">
+                            <strong style="color: var(--text-white);">⏳ Stakeholder read-only enforcement:</strong> Block stakeholders from write operations (create, update, delete, deploy)
+                        </div>
+                        <div style="color: var(--text-gray); line-height: 1.8;">
+                            <strong style="color: var(--text-white);">⏳ Seat limit enforcement:</strong> Prevent connections when seat limits are reached
+                        </div>
+                        <div style="color: var(--text-gray); line-height: 1.8;">
+                            <strong style="color: var(--text-white);">⏳ Active session tracking:</strong> Real-time monitoring of who's using which seats
+                        </div>
+                        <div style="color: var(--text-gray); line-height: 1.8;">
+                            <strong style="color: var(--text-white);">⏳ Tool permission system:</strong> Classify all 410+ tools as read or write operations
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2.5rem; padding: 1.5rem; background: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--brand-blue); border-radius: 8px;">
+                    <p style="color: var(--text-gray); line-height: 1.8; margin: 0;">
+                        <strong style="color: var(--text-white);">Current limitation:</strong> Stakeholders currently have the same tool access as developers. Role-based permission enforcement is actively in development.
+                        <a href="https://github.com/groeimetai/snow-flow/issues" style="color: var(--brand-cyan); text-decoration: underline;">Track progress on GitHub</a>
                     </p>
                 </div>
             </div>

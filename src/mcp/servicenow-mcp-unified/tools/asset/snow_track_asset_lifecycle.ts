@@ -15,6 +15,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['lifecycle', 'tracking', 'audit-trail'],
   complexity: 'intermediate',
   frequency: 'high',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Tracking function - updates asset lifecycle state
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

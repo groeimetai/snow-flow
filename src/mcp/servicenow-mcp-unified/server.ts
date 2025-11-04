@@ -22,7 +22,8 @@ import {
 import { toolRegistry } from './shared/tool-registry.js';
 import { authManager } from './shared/auth.js';
 import { executeWithErrorHandling, SnowFlowError, classifyError } from './shared/error-handler.js';
-import { ServiceNowContext } from './shared/types.js';
+import { ServiceNowContext, JWTPayload } from './shared/types.js';
+import { extractJWTPayload, validatePermission, validateJWTExpiry, filterToolsByRole } from './shared/permission-validator.js';
 
 /**
  * ServiceNow Unified MCP Server
@@ -99,13 +100,21 @@ export class ServiceNowUnifiedServer {
    * Setup MCP request handlers
    */
   private setupHandlers(): void {
-    // List available tools
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      const tools = toolRegistry.getToolDefinitions();
-      console.log(`[Server] Listing ${tools.length} tools`);
+    // List available tools (filtered by user role)
+    this.server.setRequestHandler(ListToolsRequestSchema, async (request) => {
+      // 🆕 Phase 2: Role-based tool filtering
+      const jwtPayload = extractJWTPayload(request.headers);
+      const userRole = jwtPayload?.role || 'developer';
+
+      const allTools = toolRegistry.getToolDefinitions();
+      const filteredTools = filterToolsByRole(allTools, jwtPayload);
+
+      console.log(
+        `[Server] Listing ${filteredTools.length}/${allTools.length} tools for role: ${userRole}`
+      );
 
       return {
-        tools: tools.map(tool => ({
+        tools: filteredTools.map(tool => ({
           name: tool.name,
           description: tool.description,
           inputSchema: tool.inputSchema
@@ -128,7 +137,12 @@ export class ServiceNowUnifiedServer {
           );
         }
 
-        // Execute tool with error handling
+        // 🆕 Phase 2: Permission validation before execution
+        const jwtPayload = extractJWTPayload(request.headers);
+        validateJWTExpiry(jwtPayload);
+        validatePermission(tool.definition, jwtPayload);
+
+        // Execute tool with error handling (permission check passed!)
         const result = await executeWithErrorHandling(
           name,
           async () => {

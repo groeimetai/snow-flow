@@ -19,6 +19,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['properties', 'discovery', 'search'],
   complexity: 'beginner',
   frequency: 'medium',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: READ - Query operation - only reads data
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

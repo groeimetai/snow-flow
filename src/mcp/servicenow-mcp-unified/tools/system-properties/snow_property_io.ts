@@ -19,6 +19,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['properties', 'backup', 'migration', 'audit'],
   complexity: 'intermediate',
   frequency: 'low',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Property I/O - imports properties which modifies ServiceNow
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

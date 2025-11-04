@@ -20,6 +20,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['ui-builder', 'discovery', 'components', 'pages'],
   complexity: 'beginner',
   frequency: 'high',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: READ - Discovery function - reads UI Builder configuration
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

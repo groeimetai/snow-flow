@@ -21,6 +21,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['automation', 'scripts', 'output-capture'],
   complexity: 'advanced',
   frequency: 'high',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Execution operation - can have side effects
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

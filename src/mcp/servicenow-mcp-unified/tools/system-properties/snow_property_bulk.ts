@@ -19,6 +19,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['properties', 'bulk-operations', 'batch'],
   complexity: 'intermediate',
   frequency: 'low',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Bulk operation - modifies multiple properties
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

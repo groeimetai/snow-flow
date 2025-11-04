@@ -21,6 +21,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['training', 'native-ml', 'model-building'],
   complexity: 'intermediate',
   frequency: 'high',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Training function - trains predictive intelligence model
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

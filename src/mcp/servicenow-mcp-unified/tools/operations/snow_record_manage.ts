@@ -20,6 +20,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['create', 'update', 'delete', 'records'],
   complexity: 'intermediate',
   frequency: 'high',
+
+  // 🆕 Permission enforcement (Q1 2025)
+  // Classification: WRITE - Management function - creates/updates/deletes records based on action
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

@@ -154,9 +154,29 @@ export function registerAuthCommands(program: Command) {
         // After successful auth, update MCP server config with ServiceNow credentials
         await updateMCPServerConfig();
       } catch (error: any) {
-        if (error.code !== 'ENOENT') {
-          prompts.log.error(`Authentication failed: ${error.message}`);
+        // Error details are already shown via stdio: 'inherit'
+        // Only provide helpful context here
+        prompts.log.message('');
+
+        if (error.code === 'ENOENT') {
+          prompts.log.error('SnowCode command not found');
+          prompts.log.info('Please ensure snow-code is properly installed');
+        } else {
+          prompts.log.error('Authentication process was interrupted or failed');
+
+          if (error.status) {
+            prompts.log.info(`Exit code: ${error.status}`);
+          }
+
+          prompts.log.message('');
+          prompts.log.info('💡 Troubleshooting tips:');
+          prompts.log.message('  • Check your license key format (SNOW-ENT-* or SNOW-SI-*)');
+          prompts.log.message('  • Verify enterprise server is accessible');
+          prompts.log.message('  • Try running: snow-code auth login (for detailed errors)');
+          prompts.log.message('  • Check logs in ~/.local/share/snow-code/');
         }
+
+        prompts.log.message('');
       }
     });
 
