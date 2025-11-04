@@ -15,7 +15,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'beginner',
   frequency: 'high',
 
-  // 🆕 Permission enforcement (Q1 2025)
+  // ✅ Permission enforcement (v2.0.0)
   // Classification: READ - Utility function - generates timestamp locally
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],

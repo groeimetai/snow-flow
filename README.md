@@ -657,7 +657,7 @@ The current Snow-Flow release includes:
 
 **Use for:** Solo developers, small teams, learning, proof-of-concepts, community projects
 
-### Enterprise Features (Commercial License) 🔒 - Coming Soon
+### Enterprise Features (Commercial License) 🔒
 
 Premium integrations for enterprise ServiceNow teams:
 
@@ -681,7 +681,7 @@ Premium integrations for enterprise ServiceNow teams:
 - 🔒 **Enterprise SSO/SAML** - Single sign-on integration 🚧 *Coming Q1 2025*
   - SAML 2.0, OAuth 2.0, OIDC
   - Active Directory/LDAP integration
-  - Role-based access control (RBAC) - *Partial: Role tracking implemented, enforcement in progress*
+  - Role-based access control (RBAC) - ✅ *Complete (v2.0.0): Full read-only enforcement for stakeholders*
 
 - 🔒 **Advanced Audit Logging** - Comprehensive activity tracking
   - Every AI action logged with audit trail
@@ -710,7 +710,7 @@ Enterprise features will be available via seat-based commercial license:
 
 **Seat Types:**
 - **Developer Seats:** Full read/write access to all 410+ MCP tools via CLI/TUI
-- **Stakeholder Seats:** 🚧 *Coming Q1 2025* - Read-only CLI/TUI access for queries and analytics (no write operations)
+- **Stakeholder Seats:** ✅ *Available Now (v2.0.0)* - Read-only CLI/TUI access for queries and analytics (no write operations)
 
 **Pricing Tiers:**
 - **Professional:** €499/month (5 developer seats + 2 stakeholder seats)
@@ -733,8 +733,8 @@ All tiers include:
 - Seat usage display in CLI
 - User management in enterprise portal
 
-🚧 **In Development (Q1 2025):**
-- Stakeholder read-only enforcement (stakeholders currently have full tool access)
+✅ **Available Now (v2.0.0):**
+- Stakeholder read-only enforcement (290/380 tools classified for permission control)
 - Seat limit enforcement at connection time
 - Active session tracking and monitoring
 - Role-based permission validation
@@ -760,13 +760,13 @@ For detailed implementation status, see: `/Users/nielsvanderwerf/snow-flow-enter
 - ✅ UI Builder complete integration
 - ✅ 75+ LLM provider support
 - ✅ Local development bridge
-- 🚧 Seat-based licensing infrastructure (37.5% complete - see STAKEHOLDER-SEATS-TECHNICAL-SPEC.md)
+- ✅ Seat-based licensing infrastructure (Complete v2.0.0)
 
-**Q1 2025** (Stakeholder Seats & RBAC)
-- 🚧 Stakeholder read-only enforcement (tool permission system)
-- 🚧 Seat limit enforcement (active session tracking)
-- 🚧 Role-based access control (RBAC) implementation
-- 🚧 Session management API endpoints
+**Q1 2025 - Completed ✅** (Stakeholder Seats & RBAC)
+- ✅ Stakeholder read-only enforcement (tool permission system - 290/380 tools classified)
+- ✅ Seat limit enforcement (active session tracking)
+- ✅ Role-based access control (RBAC) implementation
+- ✅ Session management API endpoints
 
 **Q2 2025** (Enterprise Launch)
 - 🔒 Jira Integration (beta)

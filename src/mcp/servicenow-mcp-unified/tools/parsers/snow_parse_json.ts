@@ -15,7 +15,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'beginner',
   frequency: 'medium',
 
-  // 🆕 Permission enforcement (Q1 2025)
+  // ✅ Permission enforcement (v2.0.0)
   // Classification: READ - Utility function - parses JSON locally
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],

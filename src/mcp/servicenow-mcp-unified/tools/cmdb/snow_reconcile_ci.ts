@@ -16,7 +16,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'advanced',
   frequency: 'low',
 
-  // 🆕 Permission enforcement (Q1 2025)
+  // ✅ Permission enforcement (v2.0.0)
   // Classification: WRITE - Reconciliation function - updates CI records
   permission: 'write',
   allowedRoles: ['developer', 'admin'],

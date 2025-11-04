@@ -16,7 +16,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'intermediate',
   frequency: 'medium',
 
-  // 🆕 Permission enforcement (Q1 2025)
+  // ✅ Permission enforcement (v2.0.0)
   // Classification: WRITE - Batch function - can execute multiple operations including writes
   permission: 'write',
   allowedRoles: ['developer', 'admin'],

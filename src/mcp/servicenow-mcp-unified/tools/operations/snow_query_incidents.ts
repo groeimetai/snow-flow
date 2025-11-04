@@ -19,7 +19,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'intermediate',
   frequency: 'high',
 
-  // 🆕 Permission enforcement (Q1 2025)
+  // ✅ Permission enforcement (v2.0.0)
   // Classification: READ - only queries incident data, no modifications
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],

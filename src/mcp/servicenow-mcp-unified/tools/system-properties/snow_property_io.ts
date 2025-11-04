@@ -20,7 +20,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'intermediate',
   frequency: 'low',
 
-  // 🆕 Permission enforcement (Q1 2025)
+  // ✅ Permission enforcement (v2.0.0)
   // Classification: WRITE - Property I/O - imports properties which modifies ServiceNow
   permission: 'write',
   allowedRoles: ['developer', 'admin'],

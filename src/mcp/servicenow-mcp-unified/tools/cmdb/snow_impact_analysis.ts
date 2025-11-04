@@ -16,7 +16,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'advanced',
   frequency: 'high',
 
-  // 🆕 Permission enforcement (Q1 2025)
+  // ✅ Permission enforcement (v2.0.0)
   // Classification: READ - Read-only operation based on name pattern
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],

@@ -16,7 +16,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'beginner',
   frequency: 'medium',
 
-  // 🆕 Permission enforcement (Q1 2025)
+  // ✅ Permission enforcement (v2.0.0)
   // Classification: READ - Health check - validates CI health without modifying
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],

@@ -22,7 +22,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'intermediate',
   frequency: 'high',
 
-  // 🆕 Permission enforcement (Q1 2025)
+  // ✅ Permission enforcement (v2.0.0)
   // Classification: WRITE - Training function - trains predictive intelligence model
   permission: 'write',
   allowedRoles: ['developer', 'admin'],

@@ -15,7 +15,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'advanced',
   frequency: 'medium',
 
-  // 🆕 Permission enforcement (Q1 2025)
+  // ✅ Permission enforcement (v2.0.0)
   // Classification: READ - Prediction function - generates predictions without modifying data
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],
