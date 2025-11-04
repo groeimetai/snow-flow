@@ -11,7 +11,8 @@ import AdminCustomers from './pages/admin/Customers';
 import AdminServiceIntegrators from './pages/admin/ServiceIntegrators';
 import AdminMonitoring from './pages/admin/Monitoring';
 import AdminThemes from './pages/admin/Themes';
-// import AdminCustomerDetail from './pages/admin/CustomerDetail'; // TODO
+import AdminCustomerDetail from './pages/admin/CustomerDetail';
+import AdminServiceIntegratorDetail from './pages/admin/ServiceIntegratorDetail';
 
 // Customer pages (created)
 import CustomerLogin from './pages/customer/Login';
@@ -25,6 +26,7 @@ import CustomerProfile from './pages/customer/Profile';
 import ServiceIntegratorLogin from './pages/service-integrator/Login';
 import ServiceIntegratorDashboard from './pages/service-integrator/Dashboard';
 import ServiceIntegratorCustomers from './pages/service-integrator/Customers';
+import ServiceIntegratorCustomerDetail from './pages/service-integrator/CustomerDetail';
 import ServiceIntegratorWhiteLabel from './pages/service-integrator/WhiteLabel';
 import ServiceIntegratorSettings from './pages/service-integrator/Settings';
 import ServiceIntegratorThemes from './pages/service-integrator/Themes';
@@ -124,9 +126,22 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      {/* TODO: Add these routes when pages are created
-      <Route path="/admin/customers/:id" element={<ProtectedRoute requireAdmin><AdminCustomerDetail /></ProtectedRoute>} />
-      */}
+      <Route
+        path="/admin/customers/:id"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminCustomerDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/service-integrators/:id"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminServiceIntegratorDetail />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Customer Portal Routes */}
       <Route path="/portal/login" element={<CustomerLogin />} />
@@ -207,6 +222,16 @@ export default function App() {
           <ProtectedRoute requireServiceIntegrator>
             <ServiceIntegratorLayout>
               <ServiceIntegratorCustomers />
+            </ServiceIntegratorLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/service-integrator/customers/:id"
+        element={
+          <ProtectedRoute requireServiceIntegrator>
+            <ServiceIntegratorLayout>
+              <ServiceIntegratorCustomerDetail />
             </ServiceIntegratorLayout>
           </ProtectedRoute>
         }

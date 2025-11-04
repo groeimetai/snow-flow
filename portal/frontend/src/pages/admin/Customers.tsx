@@ -25,6 +25,9 @@ export default function AdminCustomers() {
     company: '',
     serviceIntegratorId: '',
     theme: '',
+    developerSeats: 10,
+    stakeholderSeats: 5,
+    seatLimitsEnforced: true,
   });
 
   // Fetch customers
@@ -57,11 +60,23 @@ export default function AdminCustomers() {
         company: formData.company || undefined,
         serviceIntegratorId: parseInt(formData.serviceIntegratorId),
         theme: formData.theme || undefined,
+        developerSeats: formData.developerSeats,
+        stakeholderSeats: formData.stakeholderSeats,
+        seatLimitsEnforced: formData.seatLimitsEnforced,
       });
 
-      toast.success('Customer created successfully!');
+      toast.success('Customer created successfully! License key generated automatically.');
       setIsCreateModalOpen(false);
-      setFormData({ name: '', contactEmail: '', company: '', serviceIntegratorId: '', theme: '' });
+      setFormData({
+        name: '',
+        contactEmail: '',
+        company: '',
+        serviceIntegratorId: '',
+        theme: '',
+        developerSeats: 10,
+        stakeholderSeats: 5,
+        seatLimitsEnforced: true,
+      });
       refetch();
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to create customer');
@@ -106,9 +121,40 @@ export default function AdminCustomers() {
       render: (customer: Customer) => getStatusBadge(customer.status),
     },
     {
-      key: 'theme',
-      header: 'Theme',
-      render: (customer: Customer) => customer.theme || '-',
+      key: 'developerSeats',
+      header: 'Dev Seats',
+      render: (customer: Customer) => {
+        const total = customer.developerSeats;
+        const active = customer.activeDeveloperSeats || 0;
+        const isUnlimited = total === -1;
+        const usage = isUnlimited ? 0 : Math.round((active / total) * 100);
+        const variant = usage >= 90 ? 'danger' : usage >= 70 ? 'warning' : 'success';
+
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-sm">{isUnlimited ? 'Unlimited' : `${active}/${total}`}</span>
+            {!isUnlimited && <Badge variant={variant} size="sm">{usage}%</Badge>}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'stakeholderSeats',
+      header: 'Stakeholder Seats',
+      render: (customer: Customer) => {
+        const total = customer.stakeholderSeats;
+        const active = customer.activeStakeholderSeats || 0;
+        const isUnlimited = total === -1;
+        const usage = isUnlimited ? 0 : Math.round((active / total) * 100);
+        const variant = usage >= 90 ? 'danger' : usage >= 70 ? 'warning' : 'success';
+
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-sm">{isUnlimited ? 'Unlimited' : `${active}/${total}`}</span>
+            {!isUnlimited && <Badge variant={variant} size="sm">{usage}%</Badge>}
+          </div>
+        );
+      },
     },
     {
       key: 'totalApiCalls',
@@ -203,6 +249,30 @@ export default function AdminCustomers() {
               ]}
             />
 
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>License Key:</strong> Will be auto-generated based on organization name and seat allocation
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Developer Seats (-1 = Unlimited)"
+                type="number"
+                required
+                value={formData.developerSeats.toString()}
+                onChange={(e) => setFormData({ ...formData, developerSeats: parseInt(e.target.value) || 0 })}
+              />
+
+              <Input
+                label="Stakeholder Seats (-1 = Unlimited)"
+                type="number"
+                required
+                value={formData.stakeholderSeats.toString()}
+                onChange={(e) => setFormData({ ...formData, stakeholderSeats: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+
             <Select
               label="Theme (Optional)"
               value={formData.theme}
@@ -214,6 +284,19 @@ export default function AdminCustomers() {
                 { value: 'servicenow', label: 'ServiceNow' },
               ]}
             />
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="seatLimitsEnforced"
+                checked={formData.seatLimitsEnforced}
+                onChange={(e) => setFormData({ ...formData, seatLimitsEnforced: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor="seatLimitsEnforced" className="text-sm text-gray-700">
+                Enforce seat limits
+              </label>
+            </div>
 
             <div className="flex items-center justify-end space-x-3 pt-4">
               <Button

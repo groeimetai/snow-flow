@@ -202,6 +202,8 @@ export function createAuthRoutes(db: LicenseDatabase): Router {
    * POST /api/auth/mcp/login
    * MCP client login with license key, machine ID, and role
    * Used by Claude Code clients for seat-based connection tracking
+   *
+   * Supports both customer licenses (SNOW-ENT-*) and service integrator licenses (SNOW-SI-*)
    */
   router.post('/mcp/login', async (req: Request, res: Response): Promise<void> => {
     try {
@@ -229,7 +231,67 @@ export function createAuthRoutes(db: LicenseDatabase): Router {
         .update(machineId)
         .digest('hex');
 
-      // Find customer by license key
+      // Check if this is a Service Integrator key (SNOW-SI-*)
+      if (licenseKey.startsWith('SNOW-SI-')) {
+        console.log('[Auth] Service Integrator key detected for MCP login');
+
+        // Find service integrator by master license key
+        const serviceIntegrator = await db.getServiceIntegrator(licenseKey);
+        if (!serviceIntegrator) {
+          res.status(401).json({ error: 'Invalid license key' });
+          return;
+        }
+
+        // Check status
+        if (serviceIntegrator.status === 'suspended' || serviceIntegrator.status === 'churned') {
+          res.status(403).json({ error: `Account ${serviceIntegrator.status}` });
+          return;
+        }
+
+        // For Service Integrators, we allow direct MCP access with unlimited seats
+        // They essentially act as enterprise customers with full access
+        const tokenPayload: CustomerSessionPayload = {
+          type: 'customer',
+          customerId: -serviceIntegrator.id, // Negative ID to distinguish from regular customers
+          licenseKey: serviceIntegrator.masterLicenseKey,
+          machineId: hashedMachineId,
+          role: role as 'developer' | 'stakeholder' | 'admin',
+          // Unlimited seats for Service Integrators
+          developerSeats: -1,
+          stakeholderSeats: -1,
+          activeDeveloperSeats: 0,
+          activeStakeholderSeats: 0,
+          seatLimitsEnforced: false,
+        };
+
+        const token = jwt.sign(tokenPayload, JWT_SECRET, {
+          expiresIn: JWT_EXPIRES_IN,
+        });
+
+        console.log(`[Auth] Service Integrator MCP login successful: ${serviceIntegrator.companyName}`);
+
+        res.json({
+          success: true,
+          token,
+          customer: {
+            id: -serviceIntegrator.id,
+            name: serviceIntegrator.companyName,
+            company: serviceIntegrator.companyName,
+            role: role,
+            // Unlimited seats
+            developerSeats: -1,
+            stakeholderSeats: -1,
+            activeDeveloperSeats: 0,
+            activeStakeholderSeats: 0,
+            seatLimitsEnforced: false,
+            availableDeveloperSeats: -1,
+            availableStakeholderSeats: -1,
+          },
+        });
+        return;
+      }
+
+      // Standard customer license flow (SNOW-ENT-*)
       const customer = await db.getCustomer(licenseKey);
       if (!customer) {
         res.status(401).json({ error: 'Invalid license key' });

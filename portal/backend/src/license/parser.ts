@@ -12,6 +12,8 @@
  *    - Unlimited seats (backward compatibility)
  */
 
+import { createHash } from 'crypto';
+
 export interface ParsedLicense {
   tier: string;                    // ENT, TEAM, PROFESSIONAL
   organization: string;            // Customer organization name
@@ -122,6 +124,11 @@ function parseNewFormat(
   // Parse expiry date (YYYYMMDD)
   const expiresAt = parseExpiryDate(expiryStr);
 
+  // Validate checksum
+  if (!validateChecksum(originalKey, checksum)) {
+    throw new LicenseParseError('Invalid checksum: license key may be tampered with');
+  }
+
   return {
     tier,
     organization,
@@ -155,6 +162,11 @@ function parseLegacyFormat(
 
   // Parse expiry date (YYYYMMDD)
   const expiresAt = parseExpiryDate(expiryStr);
+
+  // Validate checksum
+  if (!validateChecksum(originalKey, checksum)) {
+    throw new LicenseParseError('Invalid checksum: license key may be tampered with');
+  }
 
   // Legacy licenses have unlimited seats (represented as -1)
   return {
@@ -286,14 +298,30 @@ export function getSeatAvailability(total: number, active: number): {
 }
 
 /**
- * Validate checksum (placeholder - implement actual validation if needed)
+ * Validate checksum against license key
  *
- * @param licenseKey Original license key
- * @param checksum Checksum from license
- * @returns True if valid (currently always returns true - implement actual validation)
+ * @param licenseKey Full license key including checksum
+ * @param providedChecksum Checksum from license
+ * @returns True if checksum is valid
  */
-export function validateChecksum(licenseKey: string, checksum: string): boolean {
-  // TODO: Implement actual checksum validation algorithm
-  // For now, just check that checksum exists and has reasonable length
-  return Boolean(checksum && checksum.length >= 6);
+export function validateChecksum(licenseKey: string, providedChecksum: string): boolean {
+  if (!providedChecksum || providedChecksum.length !== 8) {
+    return false;
+  }
+
+  // Extract base key (everything before the last dash)
+  const lastDashIndex = licenseKey.lastIndexOf('-');
+  if (lastDashIndex === -1) {
+    return false;
+  }
+
+  const baseKey = licenseKey.substring(0, lastDashIndex);
+
+  // Calculate expected checksum
+  const hash = createHash('sha256');
+  hash.update(baseKey);
+  hash.update(process.env.LICENSE_SECRET || 'snow-flow-enterprise-2025');
+  const expectedChecksum = hash.digest('hex').substring(0, 8).toUpperCase();
+
+  return providedChecksum.toUpperCase() === expectedChecksum;
 }

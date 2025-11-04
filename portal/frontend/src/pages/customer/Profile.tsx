@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import CustomerLayout from '../../components/layout/CustomerLayout';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
@@ -118,16 +119,19 @@ export default function CustomerProfile() {
 
   if (!customerSession) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
+      <CustomerLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </CustomerLayout>
     );
   }
 
   const { customer } = customerSession;
 
   return (
-    <div className="space-y-6">
+    <CustomerLayout>
+      <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
@@ -346,6 +350,7 @@ export default function CustomerProfile() {
           </div>
         </div>
       </Card>
-    </div>
+      </div>
+    </CustomerLayout>
   );
 }

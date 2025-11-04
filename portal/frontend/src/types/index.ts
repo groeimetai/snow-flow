@@ -26,8 +26,11 @@ export interface Customer {
   licenseKey: string;
   theme?: string;
   tier?: string;
-  developerSeats?: number;
-  stakeholderSeats?: number;
+  developerSeats: number;
+  stakeholderSeats: number;
+  activeDeveloperSeats: number;
+  activeStakeholderSeats: number;
+  seatLimitsEnforced: boolean;
   createdAt: number;
   updatedAt: number;
   status: 'active' | 'suspended' | 'churned';
@@ -43,6 +46,10 @@ export interface CreateCustomerDto {
   contactEmail: string;
   company?: string;
   theme?: string;
+  licenseKey?: string; // Optional - auto-generated if not provided
+  developerSeats: number;
+  stakeholderSeats: number;
+  seatLimitsEnforced: boolean;
 }
 
 export interface UpdateCustomerDto {
@@ -51,6 +58,9 @@ export interface UpdateCustomerDto {
   company?: string;
   theme?: string;
   status?: 'active' | 'suspended' | 'churned';
+  developerSeats?: number;
+  stakeholderSeats?: number;
+  seatLimitsEnforced?: boolean;
 }
 
 // ===== SERVICE INTEGRATOR =====

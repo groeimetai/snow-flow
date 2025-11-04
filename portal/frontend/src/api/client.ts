@@ -197,6 +197,10 @@ class ApiClient {
     return data.customer;
   }
 
+  async getCustomerById(id: number): Promise<Customer> {
+    return this.getCustomer(id);
+  }
+
   async createCustomer(customerData: CreateCustomerDto): Promise<Customer> {
     const { data } = await this.client.post<{ customer: Customer }>(
       '/api/admin/customers',
@@ -246,6 +250,10 @@ class ApiClient {
       `/api/admin/service-integrators/${id}`
     );
     return data.service_integrator;
+  }
+
+  async getServiceIntegratorById(id: number): Promise<ServiceIntegrator> {
+    return this.getServiceIntegrator(id);
   }
 
   async createServiceIntegrator(

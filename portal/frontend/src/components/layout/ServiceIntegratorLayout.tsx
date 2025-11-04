@@ -32,8 +32,26 @@ export default function ServiceIntegratorLayout({ children }: ServiceIntegratorL
       <nav className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">Service Integrator Portal</h1>
+            <div className="flex items-center space-x-3">
+              {/* Snow-Flow Logo */}
+              <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="nav-mountain" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#6366F1"/>
+                    <stop offset="100%" stopColor="#8B5CF6"/>
+                  </linearGradient>
+                </defs>
+                <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z"
+                      fill="url(#nav-mountain)"
+                      stroke="#8B5CF6"
+                      strokeWidth="1.2"
+                      strokeLinejoin="round"/>
+              </svg>
+              <h1 className="text-xl font-bold text-gray-900">
+                <span className="text-gray-900">SNOW</span>
+                <span className="text-purple-600">FLOW</span>
+                <span className="ml-2 text-sm font-normal text-gray-500">Service Integrator</span>
+              </h1>
               {serviceIntegratorSession?.serviceIntegrator.whiteLabelEnabled && (
                 <span className="ml-4 px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded">
                   White-Label Enabled

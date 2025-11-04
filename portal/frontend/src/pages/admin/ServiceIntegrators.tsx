@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '../../components/layout/AdminLayout';
 import Table from '../../components/common/Table';
@@ -11,6 +12,7 @@ import { ServiceIntegrator } from '../../types';
 import toast from 'react-hot-toast';
 
 export default function AdminServiceIntegrators() {
+  const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -105,6 +107,7 @@ export default function AdminServiceIntegrators() {
           data={serviceIntegrators}
           columns={columns}
           keyExtractor={(si: ServiceIntegrator) => si.id}
+          onRowClick={(si: ServiceIntegrator) => navigate(`/admin/service-integrators/${si.id}`)}
           isLoading={isLoadingData}
           emptyMessage="No service integrators found"
         />

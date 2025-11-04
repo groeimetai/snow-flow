@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiClient } from '../../api/client';
 import Card from '../../components/common/Card';
@@ -19,11 +20,17 @@ interface Customer {
   customThemeId?: number;
   status: 'active' | 'suspended' | 'churned';
   totalApiCalls: number;
+  developerSeats?: number;
+  stakeholderSeats?: number;
+  activeDeveloperSeats?: number;
+  activeStakeholderSeats?: number;
+  seatLimitsEnforced?: boolean;
   createdAt: number;
   updatedAt: number;
 }
 
 export default function ServiceIntegratorCustomers() {
+  const navigate = useNavigate();
   const { serviceIntegratorSession } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [themes, setThemes] = useState<CustomTheme[]>([]);
@@ -271,68 +278,109 @@ export default function ServiceIntegratorCustomers() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {customers.map((customer) => (
-            <Card key={customer.id}>
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {customer.name}
-                    </h3>
-                    {getStatusBadge(customer.status)}
+          {customers.map((customer) => {
+            const devSeatsUsage = customer.developerSeats && customer.developerSeats !== -1
+              ? Math.round(((customer.activeDeveloperSeats || 0) / customer.developerSeats) * 100)
+              : 0;
+            const stakeholderSeatsUsage = customer.stakeholderSeats && customer.stakeholderSeats !== -1
+              ? Math.round(((customer.activeStakeholderSeats || 0) / customer.stakeholderSeats) * 100)
+              : 0;
+
+            return (
+              <div
+                key={customer.id}
+                className="cursor-pointer"
+                onClick={() => navigate(`/service-integrator/customers/${customer.id}`)}
+              >
+                <Card className="hover:shadow-lg transition-shadow">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {customer.name}
+                      </h3>
+                      {getStatusBadge(customer.status)}
+                    </div>
+                    <div className="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Company</p>
+                        <p className="text-sm text-gray-900">{customer.company}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Contact Email</p>
+                        <p className="text-sm text-gray-900">{customer.contactEmail}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">License Key</p>
+                        <p className="text-sm text-gray-900 font-mono">{customer.licenseKey}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">API Calls</p>
+                        <p className="text-sm text-gray-900">{customer.totalApiCalls.toLocaleString()}</p>
+                      </div>
+                      {customer.developerSeats !== undefined && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Dev Seats</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">
+                              {customer.developerSeats === -1 ? 'Unlimited' : `${customer.activeDeveloperSeats || 0}/${customer.developerSeats}`}
+                            </span>
+                            {customer.developerSeats !== -1 && (
+                              <Badge
+                                variant={devSeatsUsage >= 90 ? 'danger' : devSeatsUsage >= 70 ? 'warning' : 'success'}
+                                size="sm"
+                              >
+                                {devSeatsUsage}%
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {customer.stakeholderSeats !== undefined && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Stakeholder Seats</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">
+                              {customer.stakeholderSeats === -1 ? 'Unlimited' : `${customer.activeStakeholderSeats || 0}/${customer.stakeholderSeats}`}
+                            </span>
+                            {customer.stakeholderSeats !== -1 && (
+                              <Badge
+                                variant={stakeholderSeatsUsage >= 90 ? 'danger' : stakeholderSeatsUsage >= 70 ? 'warning' : 'success'}
+                                size="sm"
+                              >
+                                {stakeholderSeatsUsage}%
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Company</p>
-                      <p className="text-sm text-gray-900">{customer.company}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Contact Email</p>
-                      <p className="text-sm text-gray-900">{customer.contactEmail}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">License Key</p>
-                      <p className="text-sm text-gray-900 font-mono">{customer.licenseKey}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">API Calls</p>
-                      <p className="text-sm text-gray-900">{customer.totalApiCalls.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Theme</p>
-                      <p className="text-sm text-gray-900">{customer.theme || 'Default'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Created</p>
-                      <p className="text-sm text-gray-900">
-                        {new Date(customer.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
+                  <div className="ml-4 flex flex-col space-y-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openAssignThemeModal(customer);
+                      }}
+                      className="text-sm text-purple-600 hover:text-purple-700 font-medium whitespace-nowrap"
+                    >
+                      Assign Theme
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditModal(customer);
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Edit
+                    </button>
                   </div>
                 </div>
-                <div className="ml-4 flex flex-col space-y-2">
-                  <button
-                    onClick={() => openAssignThemeModal(customer)}
-                    className="text-sm text-purple-600 hover:text-purple-700 font-medium whitespace-nowrap"
-                  >
-                    Assign Theme
-                  </button>
-                  <button
-                    onClick={() => {
-                      console.log('Edit button clicked for customer:', customer.id, customer.name);
-                      openEditModal(customer);
-                    }}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Edit
-                  </button>
-                  <button className="text-sm text-red-600 hover:text-red-700 font-medium">
-                    Suspend
-                  </button>
-                </div>
+                </Card>
               </div>
-            </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

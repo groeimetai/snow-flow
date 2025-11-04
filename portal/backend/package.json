@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
+    "db:migrate": "tsx src/scripts/run-migrations.ts",
     "db:init": "node dist/scripts/init-db.js",
     "db:seed": "node dist/scripts/seed-licenses.js"
   },

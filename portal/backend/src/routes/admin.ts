@@ -378,7 +378,17 @@ router.delete('/service-integrators/:id', async (req: Request, res: Response) =>
  */
 router.post('/customers', async (req: Request, res: Response) => {
   try {
-    const { serviceIntegratorId, name, contactEmail, company, theme } = req.body;
+    const {
+      serviceIntegratorId,
+      name,
+      contactEmail,
+      company,
+      theme,
+      licenseKey: providedLicenseKey,
+      developerSeats,
+      stakeholderSeats,
+      seatLimitsEnforced
+    } = req.body;
 
     if (!serviceIntegratorId || !name || !contactEmail) {
       return res.status(400).json({
@@ -410,10 +420,39 @@ router.post('/customers', async (req: Request, res: Response) => {
       }
     }
 
-    // Generate license key: SNOW-ENT-CUSTNAME-XXXXX
-    const custPrefix = name.substring(0, 4).toUpperCase().replace(/[^A-Z]/g, '');
-    const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const licenseKey = `SNOW-ENT-${custPrefix}-${randomPart}`;
+    // Parse seat values or use defaults
+    const finalDeveloperSeats = typeof developerSeats === 'number' ? developerSeats : -1;
+    const finalStakeholderSeats = typeof stakeholderSeats === 'number' ? stakeholderSeats : -1;
+    const finalSeatLimitsEnforced = typeof seatLimitsEnforced === 'boolean' ? seatLimitsEnforced : true;
+
+    // Generate or use provided license key
+    let licenseKey: string;
+    if (providedLicenseKey && typeof providedLicenseKey === 'string' && providedLicenseKey.trim()) {
+      // Use provided license key (manual override)
+      licenseKey = providedLicenseKey.trim();
+
+      // Validate the provided license key format
+      const { parseLicenseKey } = require('../license/parser.js');
+      try {
+        parseLicenseKey(licenseKey);
+      } catch (parseError: any) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid license key format: ${parseError.message}`
+        });
+      }
+    } else {
+      // Auto-generate license key
+      const { generateLicenseKey, createExpiryDateFromNow } = require('../license/generator.js');
+
+      licenseKey = generateLicenseKey({
+        tier: 'ENT',
+        organization: name,
+        developerSeats: finalDeveloperSeats,
+        stakeholderSeats: finalStakeholderSeats,
+        expiresAt: createExpiryDateFromNow(1) // Default: 1 year expiry
+      });
+    }
 
     const customer = await db.createCustomer({
       serviceIntegratorId,
@@ -423,12 +462,11 @@ router.post('/customers', async (req: Request, res: Response) => {
       theme,
       licenseKey,
       status: 'active',
-      // Default seat configuration (unlimited for legacy compatibility)
-      developerSeats: -1,
-      stakeholderSeats: -1,
+      developerSeats: finalDeveloperSeats,
+      stakeholderSeats: finalStakeholderSeats,
       activeDeveloperSeats: 0,
       activeStakeholderSeats: 0,
-      seatLimitsEnforced: true
+      seatLimitsEnforced: finalSeatLimitsEnforced
     });
 
     res.json({
