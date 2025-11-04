@@ -18,7 +18,7 @@ export interface ParsedLicense {
  *
  * Formats supported:
  * - New: SNOW-[TIER]-[ORG]-[DEV_SEATS]/[STAKEHOLDER_SEATS]-[EXPIRY]-[CHECKSUM]
- *   Example: SNOW-ENT-ACME-10/5-20261231-A3F2E9C1
+ *   Example: SNOW-ENT-COMPANY-10/5-20261231-ABC123DEF
  *
  * - Legacy: SNOW-[TIER]-[ORG]-[EXPIRY]-[CHECKSUM]
  *   Example: SNOW-ENT-ACME-20261231-ABC123

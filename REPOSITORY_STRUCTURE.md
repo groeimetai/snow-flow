@@ -327,8 +327,8 @@ export class JiraSyncEngine {
       "command": "node",
       "args": ["./node_modules/@snow-flow/enterprise/dist/mcp/enterprise-server.js"],
       "env": {
-        "SNOW_FLOW_LICENSE_KEY": "SNOW-ENT-CAPGEMINI-20261231-A3F2E9C1",
-        "JIRA_URL": "https://capgemini.atlassian.net",
+        "SNOW_FLOW_LICENSE_KEY": "SNOW-ENT-ACME-20261231-ABC123DEF",
+        "JIRA_URL": "https://your-company.atlassian.net",
         "JIRA_API_TOKEN": "...",
         "AZURE_DEVOPS_ORG": "...",
         "AZURE_DEVOPS_PAT": "..."
@@ -452,7 +452,7 @@ npm install -g @snow-flow/core @snow-flow/enterprise
 snow-flow init --enterprise
 
 # Provide license key
-export SNOW_FLOW_LICENSE_KEY="SNOW-ENT-CAPGEMINI-20261231-A3F2E9C1"
+export SNOW_FLOW_LICENSE_KEY="SNOW-ENT-ACME-20261231-ABC123DEF"
 
 # Configure integrations (interactive prompts)
 snow-flow enterprise configure
@@ -726,7 +726,7 @@ npm install -g @capgemini/snow-flow
 **Option B: License Key Distribution**
 ```bash
 # Capgemini provides license keys to consultants
-export SNOW_FLOW_LICENSE_KEY="SNOW-ENT-CAPGEMINI-20261231-A3F2E9C1"
+export SNOW_FLOW_LICENSE_KEY="SNOW-ENT-ACME-20261231-ABC123DEF"
 npm install -g @snow-flow/enterprise
 ```
 
