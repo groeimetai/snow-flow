@@ -52,7 +52,7 @@
     "test:unified": "node dist/mcp/servicenow-mcp-unified/scripts/validate-tools.js",
     "test:integration": "npm run build && node dist/tests/integration-test.js",
     "postbuild-disabled": "npm run setup-mcp",
-    "postinstall": "node scripts/postinstall.js || true",
+    "postinstall": "patch-package && node scripts/postinstall.js || true",
     "version": "node scripts/update-version.js && npm run build && git add src/version.ts",
     "postversion": "git push && git push --tags"
   },
@@ -531,18 +531,22 @@
     "eslint": "9.38.0",
     "jest": "30.2.0",
     "lint-staged": "16.2.5",
+    "patch-package": "^8.0.1",
     "prettier": "^3.6.2",
     "semantic-release": "25.0.1",
     "ts-jest": "29.4.5",
     "typescript": "5.9.3"
   },
   "peerDependencies": {
-    "@groeimetai/snow-code": "^0.18.10"
+    "@groeimetai/snow-code": "^0.18.13"
   },
   "peerDependenciesMeta": {
     "@groeimetai/snow-code": {
       "optional": false
     }
+  },
+  "overrides": {
+    "zod": "4.1.12"
   },
   "lint-staged": {
     "*.ts": [
