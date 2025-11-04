@@ -51,6 +51,7 @@
     "mcp:unified": "node dist/mcp/servicenow-mcp-unified/index.js",
     "test:unified": "node dist/mcp/servicenow-mcp-unified/scripts/validate-tools.js",
     "test:integration": "npm run build && node dist/tests/integration-test.js",
+    "update-deps": "node scripts/update-dependencies.js",
     "postbuild-disabled": "npm run setup-mcp",
     "postinstall": "patch-package && node scripts/postinstall.js || true",
     "version": "node scripts/update-version.js && npm run build && git add src/version.ts",
