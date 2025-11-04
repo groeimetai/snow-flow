@@ -2090,12 +2090,9 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
   try {
     // Check if snow-code is already installed globally via npm
     execSync('npm list -g @groeimetai/snow-code --depth=0', { stdio: 'ignore' });
-    console.log(chalk.green('\n✅ SnowCode is already installed!'));
     snowcodeInstalled = true;
   } catch {
     // SnowCode not installed
-    console.log(chalk.yellow('\n⚠️  SnowCode is not installed'));
-    console.log(chalk.blue('SnowCode is required to use Snow-Flow with any LLM provider'));
 
     // Import inquirer dynamically
     const inquirer = (await import('inquirer')).default;
@@ -2110,38 +2107,21 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
     ]);
 
     if (!shouldInstall) {
-      console.log(chalk.yellow('\n⏭️  Skipping SnowCode installation'));
-      console.log(chalk.blue('You can install it later with: ') + chalk.cyan('npm install -g @groeimetai/snow-code'));
       return false;
     }
 
     // Install SnowCode globally with latest version
-    console.log(chalk.blue('\n📦 Installing SnowCode globally...'));
-    console.log(chalk.dim('Installing @groeimetai/snow-code@latest (forcing latest version)...'));
-
     try {
       // Use @latest and --force to bypass npm cache and get absolute latest version
       execSync('npm install -g @groeimetai/snow-code@latest --force', { stdio: 'inherit' });
-      console.log(chalk.green('\n✅ SnowCode installed successfully!'));
-
-      // Verify version
-      try {
-        const installedVersion = execSync('snowcode --version 2>&1', { encoding: 'utf-8' }).trim();
-        console.log(chalk.dim(`   Installed version: ${installedVersion}`));
-      } catch {}
 
       snowcodeInstalled = true;
     } catch (error) {
-      console.log(chalk.red('\n❌ Failed to install SnowCode'));
-      console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install -g @groeimetai/snow-code@latest'));
       return false;
     }
   }
 
   // ALWAYS install SnowCode locally in the project directory with platform binaries
-  console.log(chalk.blue('\n📦 Installing SnowCode locally (with platform binaries)...'));
-  console.log(chalk.dim('Installing @groeimetai/snow-code@latest (forcing latest version)...'));
-
   try {
     const projectDir = process.cwd();
     // Use --force to bypass npm cache and get absolute latest version
@@ -2149,12 +2129,7 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
       cwd: projectDir,
       stdio: 'inherit'
     });
-    console.log(chalk.green('✅ SnowCode installed locally with platform binaries!'));
-    console.log(chalk.dim(`   Platform binary: @groeimetai/snow-code-${process.platform}-${process.arch}`));
   } catch (error) {
-    console.log(chalk.red('\n❌ Failed to install SnowCode locally'));
-    console.log(chalk.yellow('Please install it manually: ') + chalk.cyan('npm install @groeimetai/snow-code@latest --no-audit --no-fund'));
-    console.log(chalk.dim('This is required for the compiled binaries'));
     return false;
   }
 
@@ -2168,8 +2143,6 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
     try {
       await fs.access(exampleConfigPath);
 
-      console.log(chalk.blue('\n🔧 Setting up SnowCode configuration...'));
-
       try {
         // Copy example config to .snowcode/config.json for automatic detection
         let configContent = await fs.readFile(exampleConfigPath, 'utf-8');
@@ -2177,7 +2150,6 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
         // Ensure the config content has the correct cwd (in case it still has a placeholder)
         // This is a safety check - the placeholder should already be replaced by copySnowCodeConfig
         if (configContent.includes('"/path/to/your/snow-flow/installation"')) {
-          console.log(chalk.yellow('⚠️  Config still contains placeholder, attempting to fix...'));
 
           // Determine the snow-flow installation directory
           let snowFlowRoot: string;
@@ -2214,17 +2186,11 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
         }
 
         await fs.writeFile(snowcodeConfigPath, configContent);
-        console.log(chalk.green('✅ SnowCode configuration created at .snowcode/config.json'));
-        console.log(chalk.blue('💡 SnowCode will automatically detect this configuration'));
         return true; // Successfully configured
       } catch (error) {
-        console.log(chalk.yellow('\n⚠️  Could not create SnowCode config'));
-        console.log(chalk.blue('You can copy it manually: ') + chalk.cyan(`cp snowcode-config.example.json .snowcode/config.json`));
         return false;
       }
     } catch {
-      console.log(chalk.yellow('\n⚠️  snowcode-config.example.json not found'));
-      console.log(chalk.blue('Config will be available after init completes'));
       return false;
     }
   }
@@ -2348,7 +2314,6 @@ async function copySnowCodeConfig(targetDir: string, force: boolean = false) {
       try {
         configContent = await fs.readFile(sourcePath, 'utf8');
         foundSource = true;
-        console.log(`✅ Found snowcode-config.example.json at: ${sourcePath}`);
         break;
       } catch {
         // Continue to next path
@@ -2356,7 +2321,6 @@ async function copySnowCodeConfig(targetDir: string, force: boolean = false) {
     }
 
     if (!foundSource) {
-      console.log('⚠️  Could not find snowcode-config.example.json source file');
       return;
     }
 
@@ -2370,10 +2334,7 @@ async function copySnowCodeConfig(targetDir: string, force: boolean = false) {
 
     try {
       await fs.access(targetPath);
-      if (force) {
-        console.log('⚠️  snowcode-config.example.json already exists, overwriting with --force flag');
-      } else {
-        console.log('✅ snowcode-config.example.json already exists');
+      if (!force) {
         return;
       }
     } catch {
@@ -2381,10 +2342,9 @@ async function copySnowCodeConfig(targetDir: string, force: boolean = false) {
     }
 
     await fs.writeFile(targetPath, configContent);
-    console.log('✅ Created snowcode-config.example.json with correct snow-flow path');
 
   } catch (error) {
-    console.error('❌ Error copying snowcode-config.example.json:', error);
+    // Silent error handling
   }
 }
 
@@ -2433,7 +2393,6 @@ async function copySnowCodeThemes(targetDir: string, force: boolean = false) {
       try {
         await fs.access(sourcePath);
         themesSourceDir = sourcePath;
-        console.log(`✅ Found themes directory at: ${sourcePath}`);
         break;
       } catch {
         // Continue to next path
@@ -2441,7 +2400,6 @@ async function copySnowCodeThemes(targetDir: string, force: boolean = false) {
     }
 
     if (!themesSourceDir) {
-      console.log('✅ Themes skipped (optional - custom ServiceNow themes for SnowCode UI)');
       return;
     }
 
@@ -2464,7 +2422,6 @@ async function copySnowCodeThemes(targetDir: string, force: boolean = false) {
           try {
             await fs.access(targetPath);
             if (!force) {
-              console.log(`✅ Theme ${themeFile} already exists`);
               continue;
             }
           } catch {
@@ -2476,16 +2433,12 @@ async function copySnowCodeThemes(targetDir: string, force: boolean = false) {
           copiedCount++;
         }
       } catch (error) {
-        console.log(`⚠️  Could not copy theme ${themeFile}:`, error);
+        // Silent error handling
       }
     }
 
-    if (copiedCount > 0) {
-      console.log(`✅ Copied ${copiedCount} SnowCode theme file(s) to .snowcode/themes/`);
-    }
-
   } catch (error) {
-    console.error('❌ Error copying SnowCode themes:', error);
+    // Silent error handling
   }
 }
 
@@ -2539,7 +2492,6 @@ async function copySnowCodePackageJson(targetDir: string, force: boolean = false
     }
 
     if (!templatePath) {
-      console.log('⚠️  SnowCode package.json template not found, SnowCode will use default plugin');
       return;
     }
 
@@ -2554,7 +2506,6 @@ async function copySnowCodePackageJson(targetDir: string, force: boolean = false
     try {
       await fs.access(targetPath);
       if (!force) {
-        console.log('✅ .snowcode/package.json already exists (snowcode-plugin configured)');
         return;
       }
     } catch {
@@ -2562,10 +2513,9 @@ async function copySnowCodePackageJson(targetDir: string, force: boolean = false
     }
 
     await fs.copyFile(templatePath, targetPath);
-    console.log('✅ Created .snowcode/package.json with @groeimetai/snow-code-plugin');
 
   } catch (error) {
-    console.error('❌ Error copying SnowCode package.json:', error);
+    // Silent error handling
   }
 }
 
@@ -2592,7 +2542,6 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
     const config = JSON.parse(configContent);
 
     if (!config.mcp) {
-      console.log(chalk.yellow('   ⚠️  No MCP servers configured'));
       return;
     }
 
@@ -2604,16 +2553,12 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
       const serverConfig = config.mcp[serverName];
 
       if (!serverConfig.enabled) {
-        console.log(chalk.dim(`   ⊘ ${serverName} (disabled)`));
         continue;
       }
-
-      process.stdout.write(chalk.dim(`   Testing ${serverName}... `));
 
       try {
         // Skip remote servers (SSE/HTTP) - they can't be tested with spawn
         if (serverConfig.type === 'remote' || serverConfig.url) {
-          console.log(chalk.yellow('⚠ (remote server, skipping local test)'));
           successCount++;
           continue;
         }
@@ -2626,7 +2571,6 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
 
         // Skip if no command (shouldn't happen but safety check)
         if (!cmd) {
-          console.log(chalk.yellow('⚠ (no command configured)'));
           continue;
         }
 
@@ -2665,12 +2609,8 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
         });
 
         if (responded) {
-          console.log(chalk.green('✓'));
           successCount++;
         } else if (error.includes('Cannot find module') || error.includes('ENOENT')) {
-          console.log(chalk.red('✗ (server file not found)'));
-          const serverPath = Array.isArray(serverConfig.command) ? serverConfig.command[1] : serverConfig.args?.[0];
-          console.log(chalk.yellow(`      Check: ${serverPath}`));
           failCount++;
         } else if (error) {
           // Check if stderr contains success messages (some servers log to stderr)
@@ -2680,38 +2620,22 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
                                    error.includes('Snow-Flow MCP');
 
           if (isSuccessMessage) {
-            console.log(chalk.green('✓'));
             successCount++;
           } else {
-            console.log(chalk.red('✗'));
-            console.log(chalk.dim(`      ${error.split('\n')[0].substring(0, 60)}...`));
             failCount++;
           }
         } else {
-          console.log(chalk.yellow('⚠ (no response, may need credentials)'));
           // This is actually OK - server started but needs auth
           successCount++;
         }
 
       } catch (err: any) {
-        console.log(chalk.red('✗'));
-        console.log(chalk.dim(`      ${err.message}`));
         failCount++;
       }
     }
 
-    // Summary
-    console.log();
-    if (failCount === 0) {
-      console.log(chalk.green(`   ✅ All ${successCount} MCP server(s) verified successfully`));
-    } else {
-      console.log(chalk.yellow(`   ⚠️  ${successCount} verified, ${failCount} failed`));
-      console.log(chalk.dim('   Run with credentials configured to fully test servers'));
-    }
-
   } catch (error: any) {
-    console.log(chalk.yellow(`   ⚠️  Could not verify MCP servers: ${error.message}`));
-    console.log(chalk.dim('   Servers will be tested when SnowCode starts'));
+    // Silent error handling
   }
 }
 
@@ -2758,7 +2682,6 @@ async function copyMCPServerScripts(targetDir: string, force: boolean = false) {
       try {
         await fs.access(sourcePath);
         scriptsSourceDir = sourcePath;
-        console.log(`✅ Found scripts directory at: ${sourcePath}`);
         break;
       } catch {
         // Continue to next path
@@ -2766,7 +2689,6 @@ async function copyMCPServerScripts(targetDir: string, force: boolean = false) {
     }
 
     if (!scriptsSourceDir) {
-      console.log('⚠️  Could not find scripts directory, skipping script installation');
       return;
     }
 
@@ -2791,7 +2713,6 @@ async function copyMCPServerScripts(targetDir: string, force: boolean = false) {
         try {
           await fs.access(targetPath);
           if (!force) {
-            console.log(`✅ Script ${scriptFile} already exists`);
             continue;
           }
         } catch {
@@ -2802,17 +2723,12 @@ async function copyMCPServerScripts(targetDir: string, force: boolean = false) {
         await fs.writeFile(targetPath, content, { mode: 0o755 }); // Make executable
         copiedCount++;
       } catch (error) {
-        console.log(`⚠️  Could not copy script ${scriptFile}:`, error);
+        // Silent error handling
       }
     }
 
-    if (copiedCount > 0) {
-      console.log(`✅ Copied ${copiedCount} MCP server management script(s) to scripts/`);
-      console.log(`✅ Scripts are executable and ready to use`);
-    }
-
   } catch (error) {
-    console.error('❌ Error copying MCP server scripts:', error);
+    // Silent error handling
   }
 }
 
@@ -2870,7 +2786,6 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       try {
         claudeMdContent = await fs.readFile(sourcePath, 'utf8');
         foundSource = true;
-        console.log(`✅ Found CLAUDE.md source at: ${sourcePath}`);
         break;
       } catch {
         // Continue to next path
@@ -2881,7 +2796,6 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       // Import the template from the dedicated file
       const { CLAUDE_MD_TEMPLATE } = await import('./templates/claude-md-template.js');
       claudeMdContent = CLAUDE_MD_TEMPLATE;
-      console.log('✅ Using built-in CLAUDE.md template');
     }
 
     // Use same content for AGENTS.md as CLAUDE.md (they should be identical)
@@ -2892,14 +2806,10 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
     try {
       await fs.access(claudeMdPath);
       if (force) {
-        console.log('⚠️  CLAUDE.md already exists, overwriting with --force flag');
         await fs.writeFile(claudeMdPath, claudeMdContent);
-      } else {
-        console.log('⚠️  CLAUDE.md already exists, skipping (use --force to overwrite)');
       }
     } catch {
       await fs.writeFile(claudeMdPath, claudeMdContent);
-      console.log('✅ Created CLAUDE.md (Primary instructions)');
     }
 
     // Create AGENTS.md (identical copy for SnowCode compatibility)
@@ -2907,14 +2817,10 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
     try {
       await fs.access(agentsMdPath);
       if (force) {
-        console.log('⚠️  AGENTS.md already exists, overwriting with --force flag');
         await fs.writeFile(agentsMdPath, agentsMdContent);
-      } else {
-        console.log('⚠️  AGENTS.md already exists, skipping (use --force to overwrite)');
       }
     } catch {
       await fs.writeFile(agentsMdPath, agentsMdContent);
-      console.log('✅ Created AGENTS.md (Identical copy for SnowCode compatibility)');
     }
 
     // Create .snowcode/ directory structure
@@ -2926,7 +2832,6 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       await fs.mkdir(snowcodeDir, { recursive: true });
       await fs.mkdir(agentsDir, { recursive: true });
       await fs.mkdir(modesDir, { recursive: true });
-      console.log('✅ Created .snowcode/ directory structure');
 
       // Copy agent files from .claude/ to .snowcode/agent/ (if they exist)
       const sourceAgentsDir = join(__dirname, '..', '.claude', 'agents');
@@ -2940,7 +2845,6 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
             await fs.writeFile(targetFile, content);
           }
         }
-        console.log('✅ Copied agent configurations to .snowcode/agent/');
       } catch (err) {
         // Silently continue - agent configs are in snowcode.json, not separate files
       }
@@ -2975,7 +2879,7 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
           }
         }
       } catch (error) {
-        console.log('⚠️  No .env file found - SnowCode config will use placeholder values');
+        // Silent error handling
       }
 
       // Helper function to get env value with proper URL formatting
@@ -2997,7 +2901,6 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       try {
         mcpTemplateContent = await fs.readFile(mcpTemplatePath, 'utf-8');
       } catch (error) {
-        console.log('⚠️  Could not find .mcp.json.template');
         throw error;
       }
 
@@ -3021,9 +2924,6 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       await fs.writeFile(opencodeJsonPath, JSON.stringify(snowcodeConfig, null, 2));
       await fs.writeFile(configJsonPath, JSON.stringify(snowcodeConfig, null, 2));
 
-      console.log('✅ Created .snowcode/opencode.json (SnowCode format)');
-      console.log('✅ Created .snowcode/config.json (fallback compatibility)');
-
       // CRITICAL: Also write to global SnowCode config directory!
       // This ensures MCP tools are available even outside projects
       const globalSnowCodeDir = join(process.env.HOME || '', '.config', 'snowcode');
@@ -3035,24 +2935,20 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
 
         await fs.writeFile(globalOpencodeJsonPath, JSON.stringify(snowcodeConfig, null, 2));
         await fs.writeFile(globalConfigJsonPath, JSON.stringify(snowcodeConfig, null, 2));
-
-        console.log('✅ Created ~/.config/snowcode/opencode.json (global SnowCode config)');
-        console.log('✅ Created ~/.config/snowcode/config.json (global fallback)');
       } catch (error) {
-        console.log('⚠️  Could not write global SnowCode config:', error instanceof Error ? error.message : String(error));
+        // Silent error handling
       }
 
       // Also create AGENTS.md in .snowcode/
       const snowcodeAgentsMdPath = join(snowcodeDir, 'AGENTS.md');
       await fs.writeFile(snowcodeAgentsMdPath, agentsMdContent);
-      console.log('✅ Created .snowcode/AGENTS.md');
 
     } catch (error) {
-      console.log('⚠️  Error creating .snowcode/ directory:', error instanceof Error ? error.message : String(error));
+      // Silent error handling
     }
 
   } catch (error) {
-    console.log('⚠️  Error copying CLAUDE.md, creating Snow-Flow specific version');
+    // Silent error handling
     // Import the template as fallback
     const { CLAUDE_MD_TEMPLATE } = await import('./templates/claude-md-template.js');
     const claudeMdPath = join(targetDir, 'CLAUDE.md');
@@ -3075,15 +2971,12 @@ async function createEnvFile(targetDir: string, force: boolean = false) {
     // Try to read from the project's .env.example file (npm package location)
     const templatePath = join(__dirname, '..', '.env.example');
     envContent = await fs.readFile(templatePath, 'utf-8');
-    console.log('📋 Using .env.example for configuration');
   } catch (error) {
     // If template not found, try alternative locations
     try {
       const alternativePath = join(process.cwd(), '.env.example');
       envContent = await fs.readFile(alternativePath, 'utf-8');
-      console.log('📋 Using .env.example from current directory');
     } catch (fallbackError) {
-      console.warn('⚠️  Could not find .env.example file, using embedded minimal version');
       // Last resort: use embedded minimal version with v3.0.1 timeout config
       envContent = `# ServiceNow Configuration
 # ===========================================
@@ -3147,25 +3040,18 @@ API_TIMEOUT_MS=1800000
   }
 
   const envFilePath = join(targetDir, '.env');
-  
+
   // Check if .env already exists
   try {
     await fs.access(envFilePath);
     if (force) {
-      console.log('⚠️  .env file already exists, overwriting with --force flag');
       await fs.writeFile(envFilePath, envContent);
-      console.log('✅ .env file overwritten successfully');
     } else {
-      console.log('⚠️  .env file already exists, creating .env.example template instead');
-      console.log('📝 To overwrite: use --force flag or delete existing .env file');
       await fs.writeFile(join(targetDir, '.env.example'), envContent);
-      console.log('✅ .env.example template created');
     }
   } catch {
     // .env doesn't exist, create it
-    console.log('📄 Creating new .env file...');
     await fs.writeFile(envFilePath, envContent);
-    console.log('✅ .env file created successfully');
   }
 }
 
@@ -3273,7 +3159,6 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
     try {
       await fs.access(join(testPath, '.mcp.json.template'));
       snowFlowRoot = testPath;
-      console.log(`✅ Found Snow-Flow: ${testPath}`);
       break;
     } catch {
       // Keep trying
@@ -3315,8 +3200,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
       }
     }
   } catch (error) {
-    console.log('⚠️  No .env file found - MCP config will use placeholder values');
-    console.log('   Run "snow-flow auth login" after init to configure credentials');
+    // Silent error handling
   }
 
   // Helper function to get env value with proper URL formatting
@@ -3484,12 +3368,8 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
 
     // Write updated config
     await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
-    console.log(`✅ Global SnowCode config updated: ${snowcodeConfigPath}`);
-    console.log(`   Format: OpenCode/SnowCode with real credential values`);
-    console.log(`   Servers: ${Object.keys(snowcodeConfig.mcp).join(', ')}`);
   } catch (error) {
-    console.warn(`⚠️  Could not update global SnowCode config: ${error}`);
-    console.warn('   SnowCode will use project-local .mcp.json instead');
+    // Silent error handling
   }
 
   // Create comprehensive Claude Code settings file
