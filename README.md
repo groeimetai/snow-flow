@@ -678,10 +678,10 @@ Premium integrations for enterprise ServiceNow teams:
   - Technical specs → Implementation guides
   - Architecture diagrams → Attachment sync
 
-- 🔒 **Enterprise SSO/SAML** - Single sign-on integration 🚧 *Coming Q1 2025*
+- 🔒 **Enterprise SSO/SAML** - Single sign-on integration (in development)
   - SAML 2.0, OAuth 2.0, OIDC
   - Active Directory/LDAP integration
-  - Role-based access control (RBAC) - ✅ *Complete (v2.0.0): Full read-only enforcement for stakeholders*
+  - Role-based access control (RBAC) with read-only enforcement for stakeholders
 
 - 🔒 **Advanced Audit Logging** - Comprehensive activity tracking
   - Every AI action logged with audit trail
@@ -710,7 +710,7 @@ Enterprise features will be available via seat-based commercial license:
 
 **Seat Types:**
 - **Developer Seats:** Full read/write access to all 410+ MCP tools via CLI/TUI
-- **Stakeholder Seats:** ✅ *Available Now (v2.0.0)* - Read-only CLI/TUI access for queries and analytics (no write operations)
+- **Stakeholder Seats:** Read-only CLI/TUI access for queries and analytics (no write operations)
 
 **Pricing Tiers:**
 - **Professional:** €499/month (5 developer seats + 2 stakeholder seats)
@@ -720,28 +720,24 @@ Enterprise features will be available via seat-based commercial license:
 All tiers include:
 - All open source features
 - Enterprise integrations (Jira/Azure DevOps/Confluence)
-- Enterprise SSO/SAML 🚧 *Q1 2025*
+- Enterprise SSO/SAML (in development)
 - Audit logging
 - Seat tracking and management
 - Email support (SLA varies by tier)
 
-**⚠️ Current Implementation Status (As of 2025-11-04):**
-
-✅ **Available Now:**
+**License Management:**
 - License parsing (developer/stakeholder seat counts)
 - Role assignment and tracking
 - Seat usage display in CLI
 - User management in enterprise portal
 
-✅ **Available Now (v2.0.0):**
+**Role-Based Access Control:**
 - Stakeholder read-only enforcement (290/380 tools classified for permission control)
 - Seat limit enforcement at connection time
 - Active session tracking and monitoring
 - Role-based permission validation
 
-For detailed implementation status, see: `/Users/nielsvanderwerf/snow-flow-enterprise/STAKEHOLDER-SEATS-TECHNICAL-SPEC.md`
-
-**Early Access:** Contact [sales@snow-flow.dev](mailto:sales@snow-flow.dev) for beta access and pilot programs.
+Contact [sales@snow-flow.dev](mailto:sales@snow-flow.dev) for enterprise license.
 
 **Strategic Partners:** Consulting firms and ISVs - contact us for partnership opportunities.
 
@@ -753,36 +749,27 @@ For detailed implementation status, see: `/Users/nielsvanderwerf/snow-flow-enter
 4. **Sustainable Development** - Enterprise revenue funds ongoing development
 5. **Enterprise Confidence** - Commercial license provides support and guarantees
 
-### Roadmap
+### Features
 
-**Q1 2025 - Current** (Open Source Features)
-- ✅ Native ServiceNow Predictive Intelligence tools
-- ✅ UI Builder complete integration
-- ✅ 75+ LLM provider support
-- ✅ Local development bridge
-- ✅ Seat-based licensing infrastructure (Complete v2.0.0)
+**Open Source**
+- Native ServiceNow Predictive Intelligence tools
+- UI Builder complete integration
+- 75+ LLM provider support
+- Local development bridge
+- Seat-based licensing infrastructure
 
-**Q1 2025 - Completed ✅** (Stakeholder Seats & RBAC)
-- ✅ Stakeholder read-only enforcement (tool permission system - 290/380 tools classified)
-- ✅ Seat limit enforcement (active session tracking)
-- ✅ Role-based access control (RBAC) implementation
-- ✅ Session management API endpoints
+**Stakeholder Seats & RBAC**
+- Stakeholder read-only enforcement (290/380 tools classified as read/write)
+- Seat limit enforcement with active session tracking
+- Role-based access control (developer/stakeholder/admin)
+- Session management API endpoints
 
-**Q2 2025** (Enterprise Launch)
-- 🔒 Jira Integration (beta)
-- 🔒 Azure DevOps Integration (beta)
-- 🔒 Enterprise SSO/SAML
-- 🔒 Audit logging
-
-**Q3-Q4 2025** (Enterprise Expansion)
-- 🔒 Confluence Integration
-- 🔒 Advanced ML features
-- 🔒 Multi-tenant architecture
-- 🔒 White-label options
-
-**2026+**
-- More enterprise integrations (GitHub, GitLab, Linear, Asana)
-- Advanced compliance features
+**Enterprise (Commercial License)**
+- Jira, Azure DevOps, Confluence integrations (in development)
+- Enterprise SSO/SAML (in development)
+- Advanced audit logging
+- Multi-tenant architecture
+- White-label options
 - AI-powered code review
 - Automated testing frameworks
 

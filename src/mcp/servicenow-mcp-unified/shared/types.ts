@@ -61,7 +61,7 @@ export interface MCPToolDefinition {
   complexity?: 'beginner' | 'intermediate' | 'advanced';
   frequency?: 'low' | 'medium' | 'high';
 
-  // 🆕 Permission enforcement (v2.0.0)
+  // 🆕 Permission enforcement
   // Optional for backward compatibility during migration
   permission?: ToolPermission; // 'read' or 'write' - defaults to 'write' (most restrictive)
   allowedRoles?: UserRole[]; // Roles permitted to execute this tool - defaults to ['developer', 'admin']

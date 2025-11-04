@@ -19,7 +19,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'advanced',
   frequency: 'medium',
 
-  // ✅ Permission enforcement (v2.0.0)
+  // Permission enforcement
   // Classification: WRITE - Resolution function - closes incidents automatically
   permission: 'write',
   allowedRoles: ['developer', 'admin'],

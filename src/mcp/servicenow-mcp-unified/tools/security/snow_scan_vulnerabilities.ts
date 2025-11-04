@@ -16,7 +16,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'intermediate',
   frequency: 'high',
 
-  // ✅ Permission enforcement (v2.0.0)
+  // Permission enforcement
   // Classification: READ - Scan function - scans for vulnerabilities without modifying
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],

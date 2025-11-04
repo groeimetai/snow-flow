@@ -20,7 +20,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'intermediate',
   frequency: 'low',
 
-  // ✅ Permission enforcement (v2.0.0)
+  // Permission enforcement
   // Classification: WRITE - Bulk operation - modifies multiple properties
   permission: 'write',
   allowedRoles: ['developer', 'admin'],

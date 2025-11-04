@@ -15,7 +15,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'advanced',
   frequency: 'low',
 
-  // ✅ Permission enforcement (v2.0.0)
+  // Permission enforcement
   // Classification: READ - Recommendation function - generates recommendations without modifying
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],

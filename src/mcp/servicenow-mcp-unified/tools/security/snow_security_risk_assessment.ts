@@ -18,7 +18,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'advanced',
   frequency: 'medium',
 
-  // ✅ Permission enforcement (v2.0.0)
+  // Permission enforcement
   // Classification: READ - Assessment function - analyzes security risks without modifying
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],

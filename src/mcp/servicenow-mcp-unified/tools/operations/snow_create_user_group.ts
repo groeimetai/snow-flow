@@ -18,7 +18,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'beginner',
   frequency: 'medium',
 
-  // ✅ Permission enforcement (v2.0.0)
+  // Permission enforcement
   // Classification: WRITE - Create operation - modifies data
   permission: 'write',
   allowedRoles: ['developer', 'admin'],

@@ -16,7 +16,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'intermediate',
   frequency: 'medium',
 
-  // ✅ Permission enforcement (v2.0.0)
+  // Permission enforcement
   // Classification: WRITE - Definition function - creates KPI definition in ServiceNow
   permission: 'write',
   allowedRoles: ['developer', 'admin'],

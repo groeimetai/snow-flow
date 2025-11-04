@@ -2,7 +2,7 @@
  * Permission Validation for Stakeholder Read-Only Enforcement
  *
  * Validates that users have permission to execute tools based on their role.
- * Phase 2: Permission Enforcement (v2.0.0)
+ * Permission enforcement
  */
 
 import { MCPToolDefinition, JWTPayload, UserRole } from './types.js';

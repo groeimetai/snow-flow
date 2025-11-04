@@ -16,7 +16,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'beginner',
   frequency: 'high',
 
-  // ✅ Permission enforcement (v2.0.0)
+  // Permission enforcement
   // Classification: READ - Autocomplete function - suggests completions without modifying
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],

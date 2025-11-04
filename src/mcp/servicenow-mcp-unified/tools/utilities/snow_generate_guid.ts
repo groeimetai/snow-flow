@@ -16,7 +16,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'beginner',
   frequency: 'medium',
 
-  // ✅ Permission enforcement (v2.0.0)
+  // Permission enforcement
   // Classification: READ - Utility function - generates GUID locally
   permission: 'read',
   allowedRoles: ['developer', 'stakeholder', 'admin'],

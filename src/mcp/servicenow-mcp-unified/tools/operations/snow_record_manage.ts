@@ -21,7 +21,7 @@ export const toolDefinition: MCPToolDefinition = {
   complexity: 'intermediate',
   frequency: 'high',
 
-  // ✅ Permission enforcement (v2.0.0)
+  // Permission enforcement
   // Classification: WRITE - Management function - creates/updates/deletes records based on action
   permission: 'write',
   allowedRoles: ['developer', 'admin'],
