@@ -403,7 +403,7 @@ program
       }
 
       // Try to execute SnowCode directly with the objective
-      const success = await executeSnowCode(objective);
+      const success = await executeSnowCode(objective, options);
 
       if (success) {
         // Store successful launch in memory
@@ -411,8 +411,17 @@ program
           success: true,
           launched_at: new Date().toISOString()
         });
+
+        if (!options.verbose) {
+          prompts.outro(chalk.green('✨ Session completed'));
+        }
       } else {
-        cliLogger.error('SnowCode failed to start - check configuration');
+        if (options.verbose) {
+          cliLogger.error('SnowCode failed to start - check configuration');
+        } else {
+          prompts.log.error('SnowCode failed to start');
+          prompts.log.info('Run: snow-flow init');
+        }
       }
       
     } catch (error) {
@@ -503,13 +512,15 @@ function stopMCPServers(): void {
 }
 
 // Helper function to auto-update SnowCode to latest version
-async function autoUpdateSnowCode(): Promise<void> {
+async function autoUpdateSnowCode(verbose: boolean = false): Promise<void> {
   try {
     const { execSync } = require('child_process');
     const { existsSync, readdirSync, rmSync } = require('fs');
     const { join, dirname } = require('path');
 
-    cliLogger.info('🔄 Checking for SnowCode updates...');
+    if (verbose) {
+      cliLogger.info('🔄 Checking for SnowCode updates...');
+    }
 
     // Get current version
     const currentVersion = execSync('snowcode --version', { encoding: 'utf8' }).trim();
@@ -549,7 +560,9 @@ async function autoUpdateSnowCode(): Promise<void> {
           const pkg = JSON.parse(require('fs').readFileSync(snowcodePackage, 'utf8'));
           if (pkg.version !== latestVersion) {
             needsUpdate = true;
-            cliLogger.info(`Main package outdated: ${pkg.version} → ${latestVersion}`);
+            if (verbose) {
+              cliLogger.info(`Main package outdated: ${pkg.version} → ${latestVersion}`);
+            }
           }
         } else {
           needsUpdate = true;
@@ -566,19 +579,25 @@ async function autoUpdateSnowCode(): Promise<void> {
                   const pkgJson = JSON.parse(require('fs').readFileSync(pkgJsonPath, 'utf8'));
                   if (pkgJson.version !== latestVersion) {
                     needsUpdate = true;
-                    cliLogger.info(`Platform binary outdated: ${pkg}@${pkgJson.version} → ${latestVersion}`);
+                    if (verbose) {
+                      cliLogger.info(`Platform binary outdated: ${pkg}@${pkgJson.version} → ${latestVersion}`);
+                    }
                     break;
                   }
                 }
               }
             }
           } catch (err) {
-            cliLogger.debug(`Error checking platform binaries: ${err}`);
+            if (verbose) {
+              cliLogger.debug(`Error checking platform binaries: ${err}`);
+            }
           }
         }
 
         if (needsUpdate) {
-          cliLogger.info(`📦 Updating SnowCode in ${projectRoot}...`);
+          if (verbose) {
+            cliLogger.info(`📦 Updating SnowCode in ${projectRoot}...`);
+          }
 
           // Remove old platform binaries to force reinstall
           try {
@@ -668,12 +687,12 @@ async function autoUpdateSnowCode(): Promise<void> {
 }
 
 // Helper function to execute SnowCode directly with the objective
-async function executeSnowCode(objective: string): Promise<boolean> {
+async function executeSnowCode(objective: string, options: any): Promise<boolean> {
   let mcpServerPIDs: number[] = [];
 
   try {
     // Auto-update SnowCode to latest version
-    await autoUpdateSnowCode();
+    await autoUpdateSnowCode(options.verbose);
 
     // Check if SnowCode CLI is available
     const { execSync } = require('child_process');
@@ -699,13 +718,26 @@ async function executeSnowCode(objective: string): Promise<boolean> {
       return false;
     }
 
+    // Show startup spinner in non-verbose mode
+    let startupSpinner;
+    if (!options.verbose) {
+      startupSpinner = prompts.spinner();
+      startupSpinner.start('Starting SnowCode');
+    }
+
     // 🔥 CRITICAL: SnowCode v0.15.14 doesn't auto-start MCP servers
     // We need to start them manually before launching SnowCode
     mcpServerPIDs = await startMCPServers();
     if (mcpServerPIDs.length === 0) {
-      cliLogger.warn('⚠️  No MCP servers started - tools may not be available');
+      if (options.verbose) {
+        cliLogger.warn('⚠️  No MCP servers started - tools may not be available');
+      }
     } else {
-      cliLogger.info(`✅ Started ${mcpServerPIDs.length} MCP server(s)`);
+      if (options.verbose) {
+        cliLogger.info(`✅ Started ${mcpServerPIDs.length} MCP server(s)`);
+      } else if (startupSpinner) {
+        startupSpinner.stop('SnowCode ready');
+      }
     }
 
     // Get default model from .env if available
