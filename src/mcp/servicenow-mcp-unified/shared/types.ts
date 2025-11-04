@@ -14,8 +14,8 @@ export type EnterpriseTier = 'community' | 'professional' | 'team' | 'enterprise
  */
 export interface EnterpriseLicense {
   tier: EnterpriseTier;
-  company?: string; // Company identifier (e.g., 'capgemini', 'ey')
-  companyName?: string; // Display name (e.g., 'Capgemini', 'EY')
+  company?: string; // Company identifier (e.g., 'acme', 'example')
+  companyName?: string; // Display name (e.g., 'ACME Corp', 'Example Inc')
   licenseKey?: string; // Format: SNOW-[TIER]-[ORG-ID]-[EXPIRY]-[CHECKSUM]
   expiresAt?: Date;
   features: string[]; // Enabled enterprise features

@@ -700,7 +700,7 @@ Premium integrations for enterprise ServiceNow teams:
   - Multi-model ensembles
   - Custom feature engineering
 
-**Use for:** Enterprise teams (20+ developers), consulting firms (Capgemini/Accenture/Deloitte), ISVs, production deployments
+**Use for:** Enterprise teams (20+ developers), consulting firms, ISVs, production deployments
 
 ### Pricing (Coming Q2 2025)
 
@@ -846,7 +846,7 @@ snow-flow init
 
 ### 🏢 Enterprise (Service Integrators)
 
-**Wholesale pricing** for service integrators (Capgemini, Accenture, etc.)
+**Wholesale pricing** for service integrators and consulting firms
 
 **What's Included:**
 - ✅ All Teams plan features
@@ -908,7 +908,7 @@ snow-flow init
 - You want to save 20% vs Individual pricing
 
 **Choose Enterprise if:**
-- You're a service integrator (Capgemini, Accenture, etc.)
+- You're a service integrator or consulting firm
 - You have 25+ consultants using ServiceNow
 - You want to resell Snow-Flow to your customers
 - You need white-label branding and custom integrations

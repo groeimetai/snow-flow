@@ -103,7 +103,7 @@ Transform the Snow-Flow website to reflect:
   - ✅ SOC 2 / ISO 27001 compliance ready
   - ✅ Multi-tenant architecture
   - ✅ Client-specific branding
-- **Use Cases**: Service integrators (Capgemini, Accenture, Deloitte, etc.)
+- **Use Cases**: Service integrators (consulting firms, system integrators, etc.)
 
 ### Service Integrator ROI
 

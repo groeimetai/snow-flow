@@ -714,26 +714,26 @@ snow-flow init --enterprise
 
 ## 12. Partner/Reseller Distribution
 
-### Capgemini Partnership Model
+### Enterprise Partnership Model
 
 **Option A: Bundled Distribution**
 ```bash
-# Capgemini provides internal npm registry
-npm install -g @capgemini/snow-flow
-# Includes: Core + Enterprise + Capgemini-specific customizations
+# Enterprise partner provides internal npm registry
+npm install -g @partner-company/snow-flow
+# Includes: Core + Enterprise + Partner-specific customizations
 ```
 
 **Option B: License Key Distribution**
 ```bash
-# Capgemini provides license keys to consultants
+# Enterprise partner provides license keys to consultants
 export SNOW_FLOW_LICENSE_KEY="SNOW-ENT-ACME-20261231-ABC123DEF"
 npm install -g @snow-flow/enterprise
 ```
 
 **Option C: White-Label**
 ```bash
-# Capgemini fully white-labeled version
-npm install -g @capgemini/servicenow-accelerator
+# Partner fully white-labeled version
+npm install -g @partner-company/servicenow-accelerator
 # Powered by Snow-Flow (attribution required per license)
 ```
 
