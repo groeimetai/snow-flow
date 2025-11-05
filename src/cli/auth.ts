@@ -5,8 +5,44 @@ import path from 'path';
 import fs from 'fs/promises';
 import os from 'os';
 import { Logger } from '../utils/logger.js';
+import { existsSync, chmodSync } from 'fs';
 
 const authLogger = new Logger('auth');
+
+// Helper function to fix binary permissions (critical for containers/codespaces)
+function fixSnowCodeBinaryPermissions(): void {
+  try {
+    const platforms = [
+      'snow-code-darwin-arm64',
+      'snow-code-darwin-x64',
+      'snow-code-linux-arm64',
+      'snow-code-linux-x64',
+      'snow-code-windows-x64'
+    ];
+
+    platforms.forEach(platform => {
+      // Try both global and local node_modules
+      const paths = [
+        path.join(process.cwd(), 'node_modules', '@groeimetai', platform, 'bin', 'snow-code'),
+        path.join(os.homedir(), '.npm', '_npx', 'node_modules', '@groeimetai', platform, 'bin', 'snow-code'),
+        path.join(__dirname, '..', '..', 'node_modules', '@groeimetai', platform, 'bin', 'snow-code')
+      ];
+
+      paths.forEach(binaryPath => {
+        if (existsSync(binaryPath)) {
+          try {
+            chmodSync(binaryPath, 0o755);
+            authLogger.debug(`Fixed permissions for ${platform}`);
+          } catch (err) {
+            // Silently continue if chmod fails
+          }
+        }
+      });
+    });
+  } catch (error) {
+    // Silently continue if permission fixing fails
+  }
+}
 
 /**
  * Update MCP server config with ServiceNow credentials from auth.json
@@ -147,6 +183,9 @@ export function registerAuthCommands(program: Command) {
         prompts.log.step('🚀 Starting authentication flow (powered by SnowCode)');
         prompts.log.message('');
 
+        // Fix binary permissions before calling snow-code (critical for containers/codespaces)
+        fixSnowCodeBinaryPermissions();
+
         // Call SnowCode auth login - it handles everything now!
         // SnowCode will handle enterprise setup during its auth flow
         execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
@@ -187,6 +226,7 @@ export function registerAuthCommands(program: Command) {
     .description('List configured credentials (via SnowCode)')
     .action(async () => {
       try {
+        fixSnowCodeBinaryPermissions();
         execSync('snow-code auth list', { stdio: 'inherit' });
       } catch (error: any) {
         prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
@@ -199,6 +239,7 @@ export function registerAuthCommands(program: Command) {
     .description('Log out from a configured provider (via SnowCode)')
     .action(async () => {
       try {
+        fixSnowCodeBinaryPermissions();
         execSync('snow-code auth logout', { stdio: 'inherit' });
       } catch (error: any) {
         prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');

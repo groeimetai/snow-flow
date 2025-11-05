@@ -9,6 +9,32 @@ try {
 
   console.log('🚀 Setting up Snow-Flow...');
 
+  // Fix binary permissions (critical for containers/codespaces)
+  try {
+    const nodeModulesPath = path.join(__dirname, '..');
+    const platforms = [
+      'snow-code-darwin-arm64',
+      'snow-code-darwin-x64',
+      'snow-code-linux-arm64',
+      'snow-code-linux-x64',
+      'snow-code-windows-x64'
+    ];
+
+    platforms.forEach(platform => {
+      const binaryPath = path.join(nodeModulesPath, `@groeimetai/${platform}/bin/snow-code`);
+      if (fs.existsSync(binaryPath)) {
+        try {
+          fs.chmodSync(binaryPath, 0o755);
+          console.log(`✅ Fixed permissions for ${platform}`);
+        } catch (err) {
+          // Silently continue if chmod fails
+        }
+      }
+    });
+  } catch (error) {
+    // Continue silently if permission fixing fails
+  }
+
   // Check if we're in a global install
   const isGlobalInstall = process.env.npm_config_global === 'true' ||
                           process.env.npm_config_global === true;

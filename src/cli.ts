@@ -46,6 +46,42 @@ dotenv.config();
 // Create CLI logger instance
 const cliLogger = new Logger('cli');
 
+// Helper function to fix binary permissions (critical for containers/codespaces)
+function fixSnowCodeBinaryPermissions(): void {
+  try {
+    const { chmodSync } = require('fs');
+    const platforms = [
+      'snow-code-darwin-arm64',
+      'snow-code-darwin-x64',
+      'snow-code-linux-arm64',
+      'snow-code-linux-x64',
+      'snow-code-windows-x64'
+    ];
+
+    platforms.forEach(platform => {
+      // Try both global and local node_modules
+      const paths = [
+        join(process.cwd(), 'node_modules', '@groeimetai', platform, 'bin', 'snow-code'),
+        join(os.homedir(), '.npm', '_npx', '*', 'node_modules', '@groeimetai', platform, 'bin', 'snow-code'),
+        join(__dirname, '..', 'node_modules', '@groeimetai', platform, 'bin', 'snow-code')
+      ];
+
+      paths.forEach(binaryPath => {
+        if (existsSync(binaryPath)) {
+          try {
+            chmodSync(binaryPath, 0o755);
+            cliLogger.debug(`Fixed permissions for ${platform}`);
+          } catch (err) {
+            // Silently continue if chmod fails
+          }
+        }
+      });
+    });
+  } catch (error) {
+    // Silently continue if permission fixing fails
+  }
+}
+
 const program = new Command();
 
 program
@@ -2134,6 +2170,9 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
       // Use @latest and --force to bypass npm cache and get absolute latest version
       execSync('npm install -g @groeimetai/snow-code@latest --force', { stdio: 'inherit' });
 
+      // Fix binary permissions immediately after install
+      fixSnowCodeBinaryPermissions();
+
       snowcodeInstalled = true;
     } catch (error) {
       return false;
@@ -2148,6 +2187,9 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
       cwd: projectDir,
       stdio: 'inherit'
     });
+
+    // Fix binary permissions immediately after install
+    fixSnowCodeBinaryPermissions();
   } catch (error) {
     return false;
   }
