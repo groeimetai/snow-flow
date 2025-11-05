@@ -101,6 +101,10 @@ PHASE2-COMPLETION-SUMMARY.md
 PHASE3-COMPLETION-SUMMARY.md
 THEMES.md
 
+# Partner program documentation (private - enterprise repo only)
+docs/PARTNER-BENEFITS-COMPARISON.md
+docs/PARTNER-PROGRAM.md
+
 # OpenCode personal configuration (confidential)
 .opencode/
 themes/
