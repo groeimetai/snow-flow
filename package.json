@@ -55,7 +55,7 @@
     "postbuild-disabled": "npm run setup-mcp",
     "postinstall": "patch-package && node scripts/postinstall.js || true",
     "version": "node scripts/update-version.js && npm run build && git add src/version.ts",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push temp main && git push temp --tags"
   },
   "keywords": [
     "servicenow",
