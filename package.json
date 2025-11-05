@@ -28,7 +28,7 @@
   ],
   "scripts": {
     "build": "tsc --noEmitOnError false || true",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "node scripts/sync-snow-code-version.js && npm run build",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "jest",
