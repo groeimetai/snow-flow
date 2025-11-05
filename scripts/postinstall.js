@@ -39,27 +39,27 @@ try {
   const isGlobalInstall = process.env.npm_config_global === 'true' ||
                           process.env.npm_config_global === true;
 
-  // Check and update @groeimetai/snow-code peer dependency
-  if (!isGlobalInstall) {
-    try {
-      const { updateSnowCode } = require('./update-snow-code.js');
+  // Check and update @groeimetai/snow-code peer dependency (always, even for global)
+  try {
+    const { updateSnowCode } = require('./update-snow-code.js');
 
-      // Run the update check (async but we don't await in postinstall)
-      updateSnowCode(true).then(result => {
-        if (result.updated) {
-          console.log(`✅ @groeimetai/snow-code ${result.message} (v${result.version})`);
-        } else if (result.version) {
-          console.log(`✅ @groeimetai/snow-code v${result.version} is up to date`);
-        } else {
-          console.log('⚠️  Could not update @groeimetai/snow-code');
-          console.log('   Run: npm run update-deps');
-        }
-      }).catch(err => {
-        // Silent fail - don't block installation
-      });
-    } catch (error) {
-      // Continue silently if version check fails
-    }
+    // Run the update check (async but we don't await in postinstall)
+    updateSnowCode(true).then(result => {
+      if (result.updated) {
+        console.log(`✅ @groeimetai/snow-code ${result.message} (v${result.version})`);
+      } else if (result.version) {
+        console.log(`✅ @groeimetai/snow-code v${result.version} is up to date`);
+      } else {
+        console.log('⚠️  Could not update @groeimetai/snow-code');
+        console.log('   Run: npm install -g @groeimetai/snow-code@latest');
+      }
+    }).catch(err => {
+      // Silent fail - don't block installation
+      console.log('⚠️  Could not auto-update @groeimetai/snow-code');
+      console.log('   Run: npm install -g @groeimetai/snow-code@latest');
+    });
+  } catch (error) {
+    // Continue silently if version check fails
   }
 
   if (isGlobalInstall) {

@@ -39,6 +39,7 @@ if (currentCommand && commandsNeedingMCP.includes(currentCommand) && !commandsNo
 import { registerAuthCommands } from './cli/auth.js';
 import { registerSessionCommands } from './cli/session.js';
 import { registerEnterpriseCommands } from './cli/enterprise.js';
+import { registerPartnerCommands } from './cli/partners.js';
 
 // Load environment variables
 dotenv.config();
@@ -95,6 +96,8 @@ registerAuthCommands(program);
 registerSessionCommands(program);
 // Register enterprise commands (login, status, portal, logout)
 registerEnterpriseCommands(program);
+// Register partner commands (partner login, status, logout)
+registerPartnerCommands(program);
 
 // Flow deprecation handler - check for flow-related commands
 function checkFlowDeprecation(command: string, objective?: string) {
@@ -2090,6 +2093,7 @@ program
   monitor               Real-time monitoring dashboard
   memory <action>       Memory operations
   auth <action>         Authentication management
+  partner <action>      Partner Program commands (login, status, logout)
   mcp <action>          Manage ServiceNow MCP servers
   help                  Show this help
 
@@ -2097,6 +2101,8 @@ program
   snow-flow init                           # Initialize project (auto-configures SnowCode)
   snow-flow auth login                     # Authenticate (handles LLM + ServiceNow)
   snow-flow auth status                    # Check authentication status
+  snow-flow partner login                  # Authenticate as Snow-Flow Partner
+  snow-flow partner status                 # Check partner license status
   snow-flow swarm "create a widget for incident management"
   snow-flow swarm "create business rule for auto-assignment"
   snow-flow swarm "generate 5000 incidents" --auto-confirm  # 📝 Auto-confirm background scripts
