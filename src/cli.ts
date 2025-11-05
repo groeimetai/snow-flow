@@ -1978,20 +1978,16 @@ program
       try {
         const { execSync } = await import('child_process');
 
-        // Update local peer dependency first using npm directly
+        // Update local peer dependency - ALWAYS use @latest to avoid cached old versions
         snowcodeSpinner.message('Updating local @groeimetai/snow-code');
         try {
-          // Read package.json to get required version
-          const packageJson = JSON.parse(await fs.readFile(join(targetDir, 'node_modules', 'snow-flow', 'package.json'), 'utf-8'));
-          const requiredVersion = packageJson.peerDependencies?.['@groeimetai/snow-code'];
-
-          if (requiredVersion) {
-            execSync(`npm install @groeimetai/snow-code@${requiredVersion}`, {
-              stdio: 'ignore',
-              cwd: targetDir
-            });
-            snowcodeSpinner.message('Local SnowCode updated');
-          }
+          // ALWAYS install @latest instead of peerDependency version
+          // This ensures users get the newest features/fixes, not a cached older version
+          execSync('npm install @groeimetai/snow-code@latest', {
+            stdio: 'ignore',
+            cwd: targetDir
+          });
+          snowcodeSpinner.message('Local SnowCode updated to latest');
         } catch (localErr) {
           // Continue even if local update fails
         }

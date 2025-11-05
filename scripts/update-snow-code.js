@@ -10,24 +10,13 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Update @groeimetai/snow-code to match peer dependency requirements
+ * Update @groeimetai/snow-code to LATEST version
+ * Always installs @latest to avoid npm cache issues with semver ranges
  * @param {boolean} verbose - Show detailed progress messages
  * @returns {Promise<{ updated: boolean, version: string, message: string }>}
  */
 async function updateSnowCode(verbose = true) {
   try {
-    const packageJsonPath = path.join(__dirname, '..', 'package.json');
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-    const requiredSnowCodeVersion = packageJson.peerDependencies['@groeimetai/snow-code'];
-
-    if (!requiredSnowCodeVersion) {
-      return {
-        updated: false,
-        version: null,
-        message: 'No peer dependency found for @groeimetai/snow-code'
-      };
-    }
-
     // Check installed version
     let installedVersion = null;
     try {
@@ -37,18 +26,23 @@ async function updateSnowCode(verbose = true) {
       // snow-code not installed yet
     }
 
+    // Get latest version from npm
+    const latestVersion = execSync('npm view @groeimetai/snow-code version', {
+      encoding: 'utf8'
+    }).trim();
+
     if (!installedVersion) {
-      if (verbose) console.log('📦 Installing @groeimetai/snow-code...');
+      if (verbose) console.log('📦 Installing @groeimetai/snow-code@latest...');
 
       try {
-        execSync(`npm install @groeimetai/snow-code@${requiredSnowCodeVersion}`, {
+        execSync('npm install @groeimetai/snow-code@latest', {
           stdio: verbose ? 'inherit' : 'ignore',
           cwd: path.join(__dirname, '..')
         });
 
         return {
           updated: true,
-          version: requiredSnowCodeVersion.replace('^', ''),
+          version: latestVersion,
           message: 'Installed successfully'
         };
       } catch (err) {
@@ -61,25 +55,18 @@ async function updateSnowCode(verbose = true) {
     }
 
     // Check if update is needed
-    const semver = installedVersion.split('.').map(Number);
-    const requiredSemver = requiredSnowCodeVersion.replace('^', '').split('.').map(Number);
-
-    const needsUpdate = semver[0] < requiredSemver[0] ||
-                       (semver[0] === requiredSemver[0] && semver[1] < requiredSemver[1]) ||
-                       (semver[0] === requiredSemver[0] && semver[1] === requiredSemver[1] && semver[2] < requiredSemver[2]);
-
-    if (needsUpdate) {
-      if (verbose) console.log(`📦 Updating @groeimetai/snow-code from v${installedVersion} to ${requiredSnowCodeVersion}...`);
+    if (installedVersion !== latestVersion) {
+      if (verbose) console.log(`📦 Updating @groeimetai/snow-code from v${installedVersion} to v${latestVersion}...`);
 
       try {
-        execSync(`npm install @groeimetai/snow-code@${requiredSnowCodeVersion}`, {
+        execSync('npm install @groeimetai/snow-code@latest', {
           stdio: verbose ? 'inherit' : 'ignore',
           cwd: path.join(__dirname, '..')
         });
 
         return {
           updated: true,
-          version: requiredSnowCodeVersion.replace('^', ''),
+          version: latestVersion,
           message: 'Updated successfully'
         };
       } catch (err) {
