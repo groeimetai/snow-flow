@@ -50,6 +50,76 @@ export class ServiceNowAuthManager {
 
     // Load enterprise license on initialization
     this.loadEnterpriseLicense();
+
+    // Load and validate partner license on initialization
+    this.loadPartnerLicense();
+  }
+
+  /**
+   * Load and validate partner license (from environment or file)
+   */
+  private loadPartnerLicense(): void {
+    try {
+      let licenseKey: string | undefined;
+
+      // Check environment variable first
+      licenseKey = process.env.PARTNER_LICENSE_KEY;
+
+      // If not in env, try to read from partner-auth.json
+      if (!licenseKey) {
+        try {
+          const os = require('os');
+          const fs = require('fs');
+          const path = require('path');
+          const partnerAuthFile = path.join(os.homedir(), '.snow-flow', 'partner-auth.json');
+          if (fs.existsSync(partnerAuthFile)) {
+            const partnerAuth = JSON.parse(fs.readFileSync(partnerAuthFile, 'utf-8'));
+            licenseKey = partnerAuth.licenseKey;
+          }
+        } catch (err) {
+          // No partner auth file - that's fine
+        }
+      }
+
+      if (!licenseKey) {
+        console.log('[Auth] No partner license configured (running as standard user)');
+        (this as any)._partnerLicense = null;
+        return;
+      }
+
+      // Validate partner license
+      try {
+        const { parsePartnerLicenseKey, validatePartnerLicense } = require('../../../partners/license-parser.js');
+
+        const parsedLicense = parsePartnerLicenseKey(licenseKey);
+        const validation = validatePartnerLicense(parsedLicense);
+
+        if (!validation.isValid) {
+          console.warn('[Auth] Invalid partner license:', validation.errors.join(', '));
+          (this as any)._partnerLicense = null;
+          return;
+        }
+
+        // Store validated license
+        (this as any)._partnerLicense = parsedLicense;
+
+        console.log('[Auth] Partner License:', {
+          organization: parsedLicense.organization,
+          type: parsedLicense.partnerType.toUpperCase(),
+          seats: parsedLicense.purchasedSeats || 'N/A',
+          referralCode: parsedLicense.referralCode || 'N/A',
+          expiresAt: parsedLicense.expiresAt.toISOString()
+        });
+
+      } catch (error: any) {
+        console.warn('[Auth] Failed to validate partner license:', error.message);
+        (this as any)._partnerLicense = null;
+      }
+
+    } catch (error: any) {
+      console.warn('[Auth] Failed to load partner license:', error.message);
+      (this as any)._partnerLicense = null;
+    }
   }
 
   /**
@@ -107,6 +177,11 @@ export class ServiceNowAuthManager {
     // Enrich context with enterprise license if not already present
     if (!context.enterprise && (this as any)._enterpriseLicense) {
       context.enterprise = (this as any)._enterpriseLicense;
+    }
+
+    // Enrich context with partner license if not already present
+    if (!(context as any).partner && (this as any)._partnerLicense) {
+      (context as any).partner = (this as any)._partnerLicense;
     }
 
     const cacheKey = this.getCacheKey(context.instanceUrl);

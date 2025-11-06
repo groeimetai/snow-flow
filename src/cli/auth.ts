@@ -45,6 +45,111 @@ function fixSnowCodeBinaryPermissions(): void {
 }
 
 /**
+ * Prompt for optional partner license key
+ */
+async function promptPartnerLicense(): Promise<string | null> {
+  try {
+    prompts.log.message('');
+    prompts.log.step('🤝 Partner License (Optional)');
+    prompts.log.info('If you have a Snow-Flow Partner license, enter it here.');
+    prompts.log.info('Partner types: RESELLER (wholesale) or SOLUTION (commission-based)');
+    prompts.log.message('');
+
+    const hasPartnerLicense = await prompts.confirm({
+      message: 'Do you have a partner license key?',
+      initialValue: false
+    });
+
+    if (prompts.isCancel(hasPartnerLicense) || !hasPartnerLicense) {
+      return null;
+    }
+
+    const licenseKey = await prompts.text({
+      message: 'Enter your partner license key',
+      placeholder: 'SNOW-RESELLER-ACME-100-20261231-ABC123 or SNOW-SOLUTION-ACME-20261231-ABC123',
+      validate: (value) => {
+        if (!value || value.length === 0) {
+          return 'License key is required';
+        }
+        if (!value.startsWith('SNOW-RESELLER-') && !value.startsWith('SNOW-SOLUTION-')) {
+          return 'Invalid partner license key format (must start with SNOW-RESELLER- or SNOW-SOLUTION-)';
+        }
+        return undefined;
+      }
+    });
+
+    if (prompts.isCancel(licenseKey)) {
+      return null;
+    }
+
+    return licenseKey as string;
+  } catch (error) {
+    authLogger.warn('Failed to prompt for partner license:', error);
+    return null;
+  }
+}
+
+/**
+ * Validate and store partner license key
+ */
+async function validateAndStorePartnerLicense(licenseKey: string): Promise<boolean> {
+  try {
+    // Dynamic import to avoid circular dependencies
+    const { parsePartnerLicenseKey, validatePartnerLicense } = await import('../partners/license-parser.js');
+
+    // Parse license
+    const parsedLicense = parsePartnerLicenseKey(licenseKey);
+
+    // Validate license
+    const validation = validatePartnerLicense(parsedLicense);
+    if (!validation.isValid) {
+      prompts.log.error('❌ Invalid partner license:');
+      validation.errors.forEach(err => prompts.log.error(`  - ${err}`));
+      return false;
+    }
+
+    // Display license info
+    prompts.log.success('✅ Partner license validated successfully!');
+    prompts.log.info(`  Organization: ${parsedLicense.organization}`);
+    prompts.log.info(`  Type: ${parsedLicense.partnerType.toUpperCase()}`);
+
+    if (parsedLicense.partnerType === 'reseller') {
+      prompts.log.info(`  Purchased seats: ${parsedLicense.purchasedSeats}`);
+    } else if (parsedLicense.partnerType === 'solution') {
+      prompts.log.info(`  Referral code: ${parsedLicense.referralCode}`);
+    }
+
+    const daysUntilExpiry = Math.floor(
+      (parsedLicense.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    );
+    prompts.log.info(`  Expires: ${parsedLicense.expiresAt.toLocaleDateString()} (${daysUntilExpiry} days)`);
+
+    // Store in Snow-Flow partner auth
+    const partnerAuthDir = path.join(os.homedir(), '.snow-flow');
+    try {
+      await fs.mkdir(partnerAuthDir, { recursive: true });
+    } catch (err) {
+      // Directory might already exist
+    }
+
+    const partnerAuthFile = path.join(partnerAuthDir, 'partner-auth.json');
+    await fs.writeFile(partnerAuthFile, JSON.stringify({
+      licenseKey,
+      parsedLicense: {
+        ...parsedLicense,
+        expiresAt: parsedLicense.expiresAt.toISOString()
+      },
+      authenticatedAt: new Date().toISOString()
+    }, null, 2));
+
+    return true;
+  } catch (error: any) {
+    prompts.log.error(`❌ Failed to validate partner license: ${error.message}`);
+    return false;
+  }
+}
+
+/**
  * Update MCP server config with ServiceNow credentials from auth.json
  */
 async function updateMCPServerConfig() {
@@ -81,6 +186,18 @@ async function updateMCPServerConfig() {
       config.mcp['servicenow-unified'].environment['SERVICENOW_INSTANCE_URL'] = servicenowCreds.instance;
       config.mcp['servicenow-unified'].environment['SERVICENOW_CLIENT_ID'] = servicenowCreds.clientId;
       config.mcp['servicenow-unified'].environment['SERVICENOW_CLIENT_SECRET'] = servicenowCreds.clientSecret;
+
+      // Check if partner license exists and add to env
+      try {
+        const partnerAuthFile = path.join(os.homedir(), '.snow-flow', 'partner-auth.json');
+        const partnerAuth = JSON.parse(await fs.readFile(partnerAuthFile, 'utf-8'));
+        if (partnerAuth.licenseKey) {
+          config.mcp['servicenow-unified'].environment['PARTNER_LICENSE_KEY'] = partnerAuth.licenseKey;
+          authLogger.info('Added partner license to MCP server config');
+        }
+      } catch (err) {
+        // No partner license - that's fine
+      }
 
       // Write updated config
       await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
@@ -189,6 +306,15 @@ export function registerAuthCommands(program: Command) {
         // Call SnowCode auth login - it handles everything now!
         // SnowCode will handle enterprise setup during its auth flow
         execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
+
+        // After successful auth, prompt for optional partner license
+        const partnerLicenseKey = await promptPartnerLicense();
+        if (partnerLicenseKey) {
+          const validated = await validateAndStorePartnerLicense(partnerLicenseKey);
+          if (validated) {
+            prompts.log.success('🤝 Partner license configured successfully!');
+          }
+        }
 
         // After successful auth, update MCP server config with ServiceNow credentials
         await updateMCPServerConfig();
