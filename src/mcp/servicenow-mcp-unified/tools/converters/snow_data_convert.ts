@@ -18,6 +18,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['conversion', 'data-transformation', 'csv', 'xml', 'json'],
   complexity: 'intermediate',
   frequency: 'low',
+
+  // Permission enforcement
+  // Classification: READ - Query/analysis operation
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

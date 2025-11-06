@@ -15,6 +15,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['test-data', 'data-generation', 'testing'],
   complexity: 'intermediate',
   frequency: 'low',
+
+  // Permission enforcement
+  // Classification: READ - Query/analysis operation
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

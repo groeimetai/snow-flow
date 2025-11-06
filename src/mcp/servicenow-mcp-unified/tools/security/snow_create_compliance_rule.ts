@@ -1,14 +1,24 @@
 /**
  * ServiceNow Security Tool: Create Compliance Rule
- * Creates compliance rules for regulatory frameworks (SOX, GDPR, HIPAA)
- * Source: servicenow-security-compliance-mcp.ts
+ * Creates compliance rules for regulatory frameworks (SOX, GDPR, HIPAA). Defines validation, remediation, and severity levels.
  */
 
-import { SnowToolConfig } from '../types';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
 
-export const snow_create_compliance_rule: SnowToolConfig = {
+export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_compliance_rule',
   description: 'Creates compliance rules for regulatory frameworks (SOX, GDPR, HIPAA). Defines validation, remediation, and severity levels.',
+  category: 'security',
+  subcategory: 'compliance',
+  use_cases: ['rules', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: WRITE - Creation/configuration operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
+
   inputSchema: {
     type: 'object',
     properties: {
@@ -21,9 +31,12 @@ export const snow_create_compliance_rule: SnowToolConfig = {
       active: { type: 'boolean', description: 'Rule active status' }
     },
     required: ['name', 'framework', 'requirement', 'validation']
-  },
-  handler: async (args, client, logger) => {
-    logger.info('Creating Compliance Rule...');
+  }
+};
+
+export async function execute(args: any, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  logger.info('Creating Compliance Rule...');
 
     // Get available compliance frameworks
     const frameworks = await getComplianceFrameworks(client, logger);
@@ -82,18 +95,4 @@ export const snow_create_compliance_rule: SnowToolConfig = {
         text: `✅ Compliance Rule created successfully!\n\n📋 **${args.name}**\n🆔 sys_id: ${response.data.sys_id}\n🏢 Framework: ${args.framework}\n📜 Requirement: ${args.requirement}\n🔍 Validation: ${args.validation}\n🚨 Severity: ${args.severity || 'medium'}\n🔄 Active: ${args.active !== false ? 'Yes' : 'No'}\n\n${args.remediation ? `🔧 Remediation: ${args.remediation}\n` : ''}\n✨ Created with dynamic compliance framework discovery!`
       }]
     };
-  }
-};
-
-// Helper functions
-async function getComplianceFrameworks(client: any, logger: any): Promise<string[]> {
-  try {
-    const frameworks = await client.searchRecords('sys_compliance_framework', '', 20);
-    if (frameworks.success) {
-      return frameworks.data.result.map((fw: any) => fw.name);
-    }
-  } catch (error) {
-    logger.warn('Could not discover compliance frameworks, using defaults');
-  }
-  return ['SOX', 'GDPR', 'HIPAA', 'ISO27001', 'PCI-DSS'];
 }

@@ -21,6 +21,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['performance-analytics', 'kpi', 'dashboards', 'reporting'],
   complexity: 'intermediate',
   frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: WRITE - Create/update/delete operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

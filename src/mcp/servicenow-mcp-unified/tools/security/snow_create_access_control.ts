@@ -1,6 +1,64 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import type { ServiceNowClient } from '../../utils/servicenow-client.js';
 import type { MCPLogger } from '../../shared/mcp-logger.js';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+
+
+export const toolDefinition: MCPToolDefinition = {
+  name: 'snow_create_access_control',
+  description: 'Createaccesscontrol',
+  category: 'security',
+  subcategory: 'access-control',
+  use_cases: ['configuration', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: WRITE - Creation/configuration operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
+
+  inputSchema: {
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "table": {
+      "type": "string"
+    },
+    "operation": {
+      "type": "string"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "condition": {
+      "type": "string"
+    },
+    "advanced": {
+      "type": "boolean"
+    },
+    "active": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "name",
+    "table",
+    "operation"
+  ]
+}
+};
+
+export async function execute(args: CreateAccessControlArgs, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  return await createAccessControl(args, client, logger);
+}
+
 
 export interface CreateAccessControlArgs {
   name: string;

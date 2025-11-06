@@ -1,6 +1,67 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import type { ServiceNowClient } from '../../utils/servicenow-client.js';
 import type { MCPLogger } from '../../shared/mcp-logger.js';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+
+
+export const toolDefinition: MCPToolDefinition = {
+  name: 'snow_create_audit_rule',
+  description: 'Createauditrule',
+  category: 'security',
+  subcategory: 'audit-rules',
+  use_cases: ['configuration', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: WRITE - Creation/configuration operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
+
+  inputSchema: {
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "table": {
+      "type": "string"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "retention": {
+      "type": "number"
+    },
+    "filter": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "name",
+    "table",
+    "events"
+  ]
+}
+};
+
+export async function execute(args: CreateAuditRuleArgs, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  return await createAuditRule(args, client, logger);
+}
+
 
 export interface CreateAuditRuleArgs {
   name: string;

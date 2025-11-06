@@ -17,6 +17,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['edit', 'modify', 'natural-language'],
   complexity: 'intermediate',
   frequency: 'high',
+
+  // Permission enforcement
+  // Classification: WRITE - Create/update/delete operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

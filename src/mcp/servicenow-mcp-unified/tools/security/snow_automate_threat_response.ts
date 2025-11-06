@@ -1,6 +1,60 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import type { ServiceNowClient } from '../../utils/servicenow-client.js';
 import type { MCPLogger } from '../../shared/mcp-logger.js';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+
+
+export const toolDefinition: MCPToolDefinition = {
+  name: 'snow_automate_threat_response',
+  description: 'Automatethreatresponse',
+  category: 'security',
+  subcategory: 'threat-response',
+  use_cases: ['automation', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: WRITE - Automation/execution operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
+
+  inputSchema: {
+  "type": "object",
+  "properties": {
+    "threat_id": {
+      "type": "string"
+    },
+    "response_level": {
+      "type": "string",
+      "enum": [
+        "contain",
+        "isolate",
+        "eradicate",
+        "recover"
+      ]
+    },
+    "automated_actions": {
+      "type": "boolean"
+    },
+    "notification_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "threat_id",
+    "response_level"
+  ]
+}
+};
+
+export async function execute(args: AutomateThreatResponseArgs, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  return await automateThreatResponse(args, client, logger);
+}
+
 
 export interface AutomateThreatResponseArgs {
   threat_id: string;

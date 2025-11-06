@@ -1,6 +1,55 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import type { ServiceNowClient } from '../../utils/servicenow-client.js';
 import type { MCPLogger } from '../../shared/mcp-logger.js';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+
+
+export const toolDefinition: MCPToolDefinition = {
+  name: 'snow_audit_trail_analysis',
+  description: 'Audittrailanalysis',
+  category: 'security',
+  subcategory: 'audit-trail',
+  use_cases: ['analysis', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: READ - Analysis/audit operation
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
+
+  inputSchema: {
+  "type": "object",
+  "properties": {
+    "timeframe": {
+      "type": "string"
+    },
+    "user": {
+      "type": "string"
+    },
+    "table": {
+      "type": "string"
+    },
+    "anomalies": {
+      "type": "boolean"
+    },
+    "exportFormat": {
+      "type": "string",
+      "enum": [
+        "json",
+        "csv",
+        "pdf"
+      ]
+    }
+  }
+}
+};
+
+export async function execute(args: AuditTrailAnalysisArgs, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  return await auditTrailAnalysis(args, client, logger);
+}
+
 
 export interface AuditTrailAnalysisArgs {
   timeframe?: string;

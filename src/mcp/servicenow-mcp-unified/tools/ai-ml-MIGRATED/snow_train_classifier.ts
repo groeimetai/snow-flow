@@ -1,5 +1,5 @@
 /**
- * snow_file_download
+ * snow_train_classifier - Train ML classifier
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
@@ -7,14 +7,14 @@ import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_file_download',
-  description: 'Download file from ServiceNow',
+  name: 'snow_train_classifier',
+  description: 'Train machine learning classifier',
   // Metadata for tool discovery (not sent to LLM)
-  category: 'core-operations',
-  subcategory: 'attachments',
-  use_cases: ['files', 'download', 'attachments'],
-  complexity: 'beginner',
-  frequency: 'medium',
+  category: 'advanced',
+  subcategory: 'machine-learning',
+  use_cases: ['ml-training', 'classifier', 'ai'],
+  complexity: 'advanced',
+  frequency: 'low',
 
   // Permission enforcement
   // Classification: READ - Query/analysis operation
@@ -23,32 +23,24 @@ export const toolDefinition: MCPToolDefinition = {
   inputSchema: {
     type: 'object',
     properties: {
-      attachment_sys_id: { type: 'string', description: 'Attachment sys_id' }
+      model_name: { type: 'string' },
+      training_data: { type: 'string' },
+      algorithm: { type: 'string' }
     },
-    required: ['attachment_sys_id']
+    required: ['model_name', 'training_data']
   }
 };
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { attachment_sys_id } = args;
+  const { model_name, training_data, algorithm = 'decision_tree' } = args;
   try {
     const client = await getAuthenticatedClient(context);
-    const response = await client.get(`/api/now/attachment/${attachment_sys_id}/file`, {
-      responseType: 'arraybuffer'
-    });
-
-    const base64Data = Buffer.from(response.data).toString('base64');
-
-    return createSuccessResult({
-      downloaded: true,
-      attachment_sys_id,
-      file_data: base64Data,
-      content_type: response.headers['content-type']
-    });
+    const mlData = { name: model_name, training_data, algorithm };
+    const response = await client.post('/api/now/v1/ml/train', mlData);
+    return createSuccessResult({ training_started: true, model: response.data.result });
   } catch (error: any) {
     return createErrorResult(error.message);
   }
 }
 
 export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';

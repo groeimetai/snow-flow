@@ -1,6 +1,69 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import type { ServiceNowClient } from '../../utils/servicenow-client.js';
 import type { MCPLogger } from '../../shared/mcp-logger.js';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+
+
+export const toolDefinition: MCPToolDefinition = {
+  name: 'snow_analyze_threat_intelligence',
+  description: 'Analyzethreatintelligence',
+  category: 'security',
+  subcategory: 'threat-intelligence',
+  use_cases: ['analysis', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: READ - Analysis/assessment operation
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
+
+  inputSchema: {
+  "type": "object",
+  "properties": {
+    "ioc_value": {
+      "type": "string"
+    },
+    "ioc_type": {
+      "type": "string",
+      "enum": [
+        "ip",
+        "domain",
+        "hash_md5",
+        "hash_sha1",
+        "hash_sha256",
+        "url",
+        "email"
+      ]
+    },
+    "threat_feed_sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "correlation_timeframe": {
+      "type": "string",
+      "enum": [
+        "1_hour",
+        "24_hours",
+        "7_days",
+        "30_days"
+      ]
+    }
+  },
+  "required": [
+    "ioc_value",
+    "ioc_type"
+  ]
+}
+};
+
+export async function execute(args: AnalyzeThreatIntelligenceArgs, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  return await analyzeThreatIntelligence(args, client, logger);
+}
+
 
 export interface AnalyzeThreatIntelligenceArgs {
   ioc_value: string;

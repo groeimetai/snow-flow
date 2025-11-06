@@ -1,14 +1,24 @@
 /**
  * ServiceNow Security Tool: Create Security Policy
- * Creates security policies for access control and data protection
- * Source: servicenow-security-compliance-mcp.ts
+ * Creates security policies for access control and data protection. Configures enforcement levels, scope, and rule sets.
  */
 
-import { SnowToolConfig } from '../types';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
 
-export const snow_create_security_policy: SnowToolConfig = {
+export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_security_policy',
   description: 'Creates security policies for access control and data protection. Configures enforcement levels, scope, and rule sets.',
+  category: 'security',
+  subcategory: 'policies',
+  use_cases: ['configuration', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: WRITE - Creation/configuration operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
+
   inputSchema: {
     type: 'object',
     properties: {
@@ -21,9 +31,12 @@ export const snow_create_security_policy: SnowToolConfig = {
       active: { type: 'boolean', description: 'Policy active status' }
     },
     required: ['name', 'type', 'rules']
-  },
-  handler: async (args, client, logger) => {
-    logger.info('Creating Security Policy...');
+  }
+};
+
+export async function execute(args: any, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  logger.info('Creating Security Policy...');
 
     // Get available policy types and enforcement levels
     const policyTypes = await getSecurityPolicyTypes(client, logger);
@@ -74,30 +87,4 @@ export const snow_create_security_policy: SnowToolConfig = {
         text: `✅ Security Policy created successfully!\n\n🔒 **${args.name}**\n🆔 sys_id: ${response.data.sys_id}\n🛡️ Type: ${args.type}\n⚖️ Enforcement: ${args.enforcement || 'moderate'}\n🎯 Scope: ${args.scope || 'global'}\n📋 Rules: ${args.rules?.length || 0} rules defined\n🔄 Active: ${args.active !== false ? 'Yes' : 'No'}\n\n📝 Description: ${args.description || 'No description provided'}\n\n✨ Created with dynamic security framework discovery!`
       }]
     };
-  }
-};
-
-// Helper functions
-async function getSecurityPolicyTypes(client: any, logger: any): Promise<string[]> {
-  try {
-    const policyTypes = await client.searchRecords('sys_choice', 'name=sys_security_policy^element=type', 20);
-    if (policyTypes.success) {
-      return policyTypes.data.result.map((choice: any) => choice.value);
-    }
-  } catch (error) {
-    logger.warn('Could not discover policy types, using defaults');
-  }
-  return ['access', 'data', 'network', 'audit', 'compliance'];
-}
-
-async function getEnforcementLevels(client: any, logger: any): Promise<string[]> {
-  try {
-    const levels = await client.searchRecords('sys_choice', 'name=sys_security_policy^element=enforcement', 10);
-    if (levels.success) {
-      return levels.data.result.map((choice: any) => choice.value);
-    }
-  } catch (error) {
-    logger.warn('Could not discover enforcement levels, using defaults');
-  }
-  return ['strict', 'moderate', 'advisory'];
 }

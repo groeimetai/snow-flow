@@ -14,6 +14,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['field-mapping', 'schema-transformation', 'integration'],
   complexity: 'beginner',
   frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: READ - Query/analysis operation
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

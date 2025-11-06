@@ -1,7 +1,7 @@
 {
   "name": "snow-flow",
   "version": "8.30.20",
-  "description": "ServiceNow development with SnowCode - 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, Groq, Ollama) • 410 Optimized Tools • 2 MCP Servers • Native Predictive Intelligence builder • Multi-agent orchestration • Use ANY AI coding assistant",
+  "description": "ServiceNow development with SnowCode - 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, Groq, Ollama) • 393 Optimized Tools • 2 MCP Servers • Multi-agent orchestration • Use ANY AI coding assistant (ML tools moved to Enterprise)",
   "main": "dist/index.js",
   "type": "commonjs",
   "bin": {
@@ -524,7 +524,8 @@
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "12.0.0",
+    "@semantic-release/github": "^11.0.6",
+    "@semantic-release/npm": "^12.0.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "24.9.1",
     "@typescript-eslint/eslint-plugin": "8.46.2",
@@ -534,7 +535,7 @@
     "lint-staged": "16.2.5",
     "patch-package": "^8.0.1",
     "prettier": "^3.6.2",
-    "semantic-release": "25.0.1",
+    "semantic-release": "^24.2.9",
     "ts-jest": "29.4.5",
     "typescript": "5.9.3"
   },

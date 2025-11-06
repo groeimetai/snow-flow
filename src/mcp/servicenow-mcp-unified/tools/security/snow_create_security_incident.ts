@@ -1,14 +1,24 @@
 /**
- * ServiceNow SecOps Tool: Create Security Incident
- * Creates security incidents with automated threat correlation
- * Source: servicenow-secops-mcp.ts
+ * ServiceNow Security Tool: Create Security Incident
+ * Create security incident with automated threat correlation and priority assignment
  */
 
-import { SnowToolConfig } from '../types';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
 
-export const snow_create_security_incident: SnowToolConfig = {
+export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_security_incident',
   description: 'Create security incident with automated threat correlation and priority assignment',
+  category: 'security',
+  subcategory: 'incidents',
+  use_cases: ['logging', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: WRITE - Creation/logging operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
+
   inputSchema: {
     type: 'object',
     properties: {
@@ -21,9 +31,12 @@ export const snow_create_security_incident: SnowToolConfig = {
       source: { type: 'string', description: 'Incident source (SIEM, manual, automated)' }
     },
     required: ['title', 'description', 'threat_type']
-  },
-  handler: async (args, client, logger) => {
-    const { title, description, priority = 'medium', threat_type, affected_systems = [], iocs = [], source = 'manual' } = args;
+  }
+};
+
+export async function execute(args: any, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  const { title, description, priority = 'medium', threat_type, affected_systems = [], iocs = [], source = 'manual' } = args;
 
     // Create security incident
     const incidentData = {
@@ -91,38 +104,4 @@ export const snow_create_security_incident: SnowToolConfig = {
     } else {
       throw new Error(`Failed to create security incident: ${response.error}`);
     }
-  }
-};
-
-// Helper functions
-function mapPriorityToNumber(priority: string): number {
-  const priorityMap = { critical: 1, high: 2, medium: 3, low: 4 };
-  return priorityMap[priority as keyof typeof priorityMap] || 3;
-}
-
-function calculateImpact(affectedSystems: string[], threatType: string): number {
-  const baseImpact = affectedSystems.length;
-  const threatMultiplier = {
-    'data_breach': 3,
-    'malware': 2,
-    'unauthorized_access': 2,
-    'ddos': 1,
-    'phishing': 1,
-    'insider_threat': 3
-  };
-
-  const multiplier = threatMultiplier[threatType as keyof typeof threatMultiplier] || 1;
-  const impact = Math.min(baseImpact * multiplier, 3); // Max impact of 3
-
-  return impact || 1;
-}
-
-function detectIOCType(ioc: string): string {
-  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ioc)) return 'ip';
-  if (/^[a-f0-9]{32}$/i.test(ioc)) return 'hash_md5';
-  if (/^[a-f0-9]{40}$/i.test(ioc)) return 'hash_sha1';
-  if (/^[a-f0-9]{64}$/i.test(ioc)) return 'hash_sha256';
-  if (/^https?:\/\//.test(ioc)) return 'url';
-  if (/@/.test(ioc)) return 'email';
-  return 'domain';
 }

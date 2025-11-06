@@ -1,14 +1,24 @@
 /**
  * ServiceNow Security Tool: Escalate Permissions
- * Escalate user permissions with approval workflow
- * Implementation based on ServiceNow best practices
+ * Escalate user permissions with approval workflow and time-based access controls
  */
 
-import { SnowToolConfig } from '../types';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
 
-export const snow_escalate_permissions: SnowToolConfig = {
+export const toolDefinition: MCPToolDefinition = {
   name: 'snow_escalate_permissions',
   description: 'Escalate user permissions with approval workflow and time-based access controls',
+  category: 'security',
+  subcategory: 'permissions',
+  use_cases: ['escalation', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: WRITE - Modification/escalation operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
+
   inputSchema: {
     type: 'object',
     properties: {
@@ -20,9 +30,12 @@ export const snow_escalate_permissions: SnowToolConfig = {
       require_approval: { type: 'boolean', description: 'Require approval before granting' }
     },
     required: ['user_id', 'role', 'justification']
-  },
-  handler: async (args, client, logger) => {
-    logger.info(`Escalating permissions for user ${args.user_id}...`);
+  }
+};
+
+export async function execute(args: any, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  logger.info(`Escalating permissions for user ${args.user_id}...`);
 
     const { user_id, role, duration = 24, justification, approver, require_approval = true } = args;
 
@@ -116,5 +129,4 @@ ${require_approval ?
 - All actions will be logged for audit purposes`}`
       }]
     };
-  }
-};
+}

@@ -1,14 +1,24 @@
 /**
- * ServiceNow SecOps Tool: Security Dashboard
- * Generate real-time security operations dashboards
- * Source: servicenow-secops-mcp.ts
+ * ServiceNow Security Tool: Security Dashboard
+ * Generate real-time security operations dashboard with key metrics
  */
 
-import { SnowToolConfig } from '../types';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
 
-export const snow_security_dashboard: SnowToolConfig = {
+export const toolDefinition: MCPToolDefinition = {
   name: 'snow_security_dashboard',
   description: 'Generate real-time security operations dashboard with key metrics',
+  category: 'security',
+  subcategory: 'dashboard',
+  use_cases: ['monitoring', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: READ - Dashboard/reporting operation
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
+
   inputSchema: {
     type: 'object',
     properties: {
@@ -18,9 +28,12 @@ export const snow_security_dashboard: SnowToolConfig = {
       export_format: { type: 'string', description: 'Export format', enum: ['json', 'pdf', 'csv'] }
     },
     required: ['dashboard_type']
-  },
-  handler: async (args, client, logger) => {
-    const { dashboard_type, time_range = '24_hours', include_trends = false, export_format = 'json' } = args;
+  }
+};
+
+export async function execute(args: any, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  const { dashboard_type, time_range = '24_hours', include_trends = false, export_format = 'json' } = args;
 
     // Generate dashboard metrics based on type
     const baseMetrics = {
@@ -127,5 +140,4 @@ export const snow_security_dashboard: SnowToolConfig = {
 ${include_trends ? '📈 **Trend Analysis**: Security metrics improving 15% month-over-month' : ''}`
       }]
     };
-  }
-};
+}

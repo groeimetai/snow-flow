@@ -18,6 +18,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['deployment', 'validation', 'artifacts'],
   complexity: 'intermediate',
   frequency: 'high',
+
+  // Permission enforcement
+  // Classification: WRITE - Create/update/delete operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

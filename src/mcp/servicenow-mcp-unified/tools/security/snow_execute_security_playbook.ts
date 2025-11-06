@@ -1,14 +1,24 @@
 /**
- * ServiceNow SecOps Tool: Execute Security Playbook
- * Execute automated security response playbooks
- * Source: servicenow-secops-mcp.ts
+ * ServiceNow Security Tool: Execute Security Playbook
+ * Execute automated security response playbook with orchestrated actions
  */
 
-import { SnowToolConfig } from '../types';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
 
-export const snow_execute_security_playbook: SnowToolConfig = {
+export const toolDefinition: MCPToolDefinition = {
   name: 'snow_execute_security_playbook',
   description: 'Execute automated security response playbook with orchestrated actions',
+  category: 'security',
+  subcategory: 'playbooks',
+  use_cases: ['execution', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: WRITE - Execution/automation operation
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
+
   inputSchema: {
     type: 'object',
     properties: {
@@ -18,9 +28,12 @@ export const snow_execute_security_playbook: SnowToolConfig = {
       parameters: { type: 'object', description: 'Playbook execution parameters' }
     },
     required: ['playbook_id', 'incident_id']
-  },
-  handler: async (args, client, logger) => {
-    const { playbook_id, incident_id, execution_mode = 'semi_automatic', parameters = {} } = args;
+  }
+};
+
+export async function execute(args: any, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  const { playbook_id, incident_id, execution_mode = 'semi_automatic', parameters = {} } = args;
 
     // Get playbook details
     const playbook = await client.getRecord('sn_si_playbook', playbook_id);
@@ -77,5 +90,4 @@ ${execution_mode === 'automatic' ?
 - Update playbook based on lessons learned`
       }]
     };
-  }
-};
+}

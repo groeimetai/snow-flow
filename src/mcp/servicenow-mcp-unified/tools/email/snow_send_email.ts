@@ -15,6 +15,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['email', 'notifications', 'communication'],
   complexity: 'beginner',
   frequency: 'high',
+
+  // Permission enforcement
+  // Classification: READ - Query/analysis operation
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

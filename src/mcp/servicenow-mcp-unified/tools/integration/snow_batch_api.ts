@@ -18,6 +18,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['integration', 'api', 'batch'],
   complexity: 'advanced',
   frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: READ - Query/analysis operation
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {

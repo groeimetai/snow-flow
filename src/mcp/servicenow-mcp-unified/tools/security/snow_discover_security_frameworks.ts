@@ -1,22 +1,35 @@
 /**
  * ServiceNow Security Tool: Discover Security Frameworks
- * Discovers available security and compliance frameworks
- * Source: servicenow-security-compliance-mcp.ts
+ * Discovers security and compliance frameworks available in the instance for policy creation and auditing.
  */
 
-import { SnowToolConfig } from '../types';
+import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
 
-export const snow_discover_security_frameworks: SnowToolConfig = {
+export const toolDefinition: MCPToolDefinition = {
   name: 'snow_discover_security_frameworks',
   description: 'Discovers security and compliance frameworks available in the instance for policy creation and auditing.',
+  category: 'security',
+  subcategory: 'frameworks',
+  use_cases: ['discovery', 'security', 'compliance'],
+  complexity: 'intermediate',
+  frequency: 'medium',
+
+  // Permission enforcement
+  // Classification: READ - Discovery/analysis operation
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
+
   inputSchema: {
     type: 'object',
     properties: {
       type: { type: 'string', description: 'Framework type (security, compliance, audit)' }
     }
-  },
-  handler: async (args, client, logger) => {
-    logger.info('Discovering security frameworks...');
+  }
+};
+
+export async function execute(args: any, context: ToolContext): Promise<ToolResult> {
+  const { client, logger } = context;
+  logger.info('Discovering security frameworks...');
 
     const type = args?.type || 'all';
     const frameworks: Array<{category: string, items: any[]}> = [];
@@ -65,5 +78,4 @@ export const snow_discover_security_frameworks: SnowToolConfig = {
         ).join('\n\n')}\n\n✨ Total frameworks: ${frameworks.reduce((sum, cat) => sum + cat.items.length, 0)}\n🔍 All frameworks discovered dynamically!`
       }]
     };
-  }
-};
+}

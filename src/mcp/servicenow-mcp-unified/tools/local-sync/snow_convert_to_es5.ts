@@ -17,6 +17,11 @@ export const toolDefinition: MCPToolDefinition = {
   use_cases: ['es5-conversion', 'validation', 'development'],
   complexity: 'intermediate',
   frequency: 'high',
+
+  // Permission enforcement
+  // Classification: READ - Query/analysis operation
+  permission: 'read',
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {
