@@ -52,8 +52,10 @@
     "test:unified": "node dist/mcp/servicenow-mcp-unified/scripts/validate-tools.js",
     "test:integration": "npm run build && node dist/tests/integration-test.js",
     "update-deps": "node scripts/update-dependencies.js",
+    "check-binaries": "node scripts/check-binary-updates.js",
+    "update-binaries": "node scripts/check-binary-updates.js --auto-update",
     "postbuild-disabled": "npm run setup-mcp",
-    "postinstall": "patch-package && node scripts/postinstall.js || true",
+    "postinstall": "patch-package && node scripts/postinstall.js && node scripts/check-binary-updates.js --silent || true",
     "version": "node scripts/update-version.js && npm run build && git add src/version.ts",
     "postversion": "git push temp main && git push temp --tags"
   },
