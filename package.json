@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "8.30.20",
+  "version": "8.30.21",
   "description": "ServiceNow development with SnowCode - 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, Groq, Ollama) • 393 Optimized Tools • 2 MCP Servers • Multi-agent orchestration • Use ANY AI coding assistant (ML tools moved to Enterprise)",
   "main": "dist/index.js",
   "type": "commonjs",
