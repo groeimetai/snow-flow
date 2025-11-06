@@ -51,6 +51,15 @@ async function updateMCPServerConfig() {
   try {
     // Read SnowCode auth.json
     const authPath = path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json');
+
+    // Check if auth.json exists
+    try {
+      await fs.access(authPath);
+    } catch {
+      authLogger.debug('auth.json does not exist yet, skipping MCP config update');
+      return;
+    }
+
     const authJson = JSON.parse(await fs.readFile(authPath, 'utf-8'));
 
     // Check if ServiceNow credentials exist
