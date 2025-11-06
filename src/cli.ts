@@ -39,7 +39,6 @@ if (currentCommand && commandsNeedingMCP.includes(currentCommand) && !commandsNo
 import { registerAuthCommands } from './cli/auth.js';
 import { registerSessionCommands } from './cli/session.js';
 import { registerEnterpriseCommands } from './cli/enterprise.js';
-import { registerPartnerCommands } from './cli/partners.js';
 
 // Load environment variables
 dotenv.config();
@@ -96,8 +95,6 @@ registerAuthCommands(program);
 registerSessionCommands(program);
 // Register enterprise commands (login, status, portal, logout)
 registerEnterpriseCommands(program);
-// Register partner commands (partner login, status, logout)
-registerPartnerCommands(program);
 
 // Flow deprecation handler - check for flow-related commands
 function checkFlowDeprecation(command: string, objective?: string) {
