@@ -310,11 +310,22 @@ export class ServiceNowAuthManager {
 
     } catch (error: any) {
       console.warn('[Auth] OAuth client credentials flow failed:', error.message);
-      console.log('[Auth] Will try username/password fallback...');
+
+      // Only try username/password if explicitly provided
+      const hasBasicAuth = context.username && context.password &&
+                          context.username.trim() !== '' && context.password.trim() !== '';
+
+      if (hasBasicAuth) {
+        console.log('[Auth] Will try username/password fallback...');
+        return await this.authenticateWithPassword(context);
+      } else {
+        console.error('[Auth] No username/password credentials available for fallback');
+        throw new Error(`OAuth authentication failed: ${error.message}. Please verify ServiceNow OAuth configuration.`);
+      }
     }
 
-    // STEP 3: Fallback to username/password authentication
-    return await this.authenticateWithPassword(context);
+    // This code should never be reached, but TypeScript needs it
+    throw new Error('Authentication failed: All methods exhausted');
   }
 
   /**
