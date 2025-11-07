@@ -45,7 +45,10 @@ function fixSnowCodeBinaryPermissions(): void {
 }
 
 /**
- * Update MCP server config with ServiceNow credentials from auth.json
+ * Update PROJECT-LEVEL MCP server config with ServiceNow credentials from auth.json
+ *
+ * IMPORTANT: This function ONLY updates project-level .mcp.json, NOT global config!
+ * Each snow-flow project maintains its own isolated MCP configuration.
  */
 async function updateMCPServerConfig() {
   try {
@@ -69,63 +72,40 @@ async function updateMCPServerConfig() {
       return;
     }
 
-    // Read SnowCode config.json
-    const configPath = path.join(os.homedir(), '.config', 'snowcode', 'config.json');
-    let config: any = {};
-    try {
-      config = JSON.parse(await fs.readFile(configPath, 'utf-8'));
-    } catch (err) {
-      authLogger.debug('No existing config.json found, will create new one');
-    }
-
-    // Ensure mcp section exists
-    if (!config.mcp) config.mcp = {};
-
-    // Update servicenow-unified MCP server environment variables in GLOBAL config
-    if (config.mcp['servicenow-unified']) {
-      if (!config.mcp['servicenow-unified'].environment) {
-        config.mcp['servicenow-unified'].environment = {};
-      }
-
-      config.mcp['servicenow-unified'].environment['SERVICENOW_INSTANCE_URL'] = servicenowCreds.instance;
-      config.mcp['servicenow-unified'].environment['SERVICENOW_CLIENT_ID'] = servicenowCreds.clientId;
-      config.mcp['servicenow-unified'].environment['SERVICENOW_CLIENT_SECRET'] = servicenowCreds.clientSecret;
-
-      // Write updated config
-      await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
-
-      prompts.log.success('✅ Updated global MCP server config');
-      authLogger.info('Global MCP server config updated successfully');
-    } else {
-      authLogger.debug('No servicenow-unified MCP server found in global config');
-    }
-
-    // ALSO update PROJECT-LEVEL .mcp.json if it exists
+    // Update PROJECT-LEVEL .mcp.json ONLY (no global config!)
     const projectMcpPath = path.join(process.cwd(), '.mcp.json');
     try {
       await fs.access(projectMcpPath);
 
       const projectMcp = JSON.parse(await fs.readFile(projectMcpPath, 'utf-8'));
 
-      if (projectMcp.mcpServers && projectMcp.mcpServers['servicenow-unified']) {
-        if (!projectMcp.mcpServers['servicenow-unified'].env) {
-          projectMcp.mcpServers['servicenow-unified'].env = {};
+      // Support both .mcpServers and .servers key formats
+      const serversKey = projectMcp.mcpServers ? 'mcpServers' : 'servers';
+
+      if (projectMcp[serversKey] && projectMcp[serversKey]['servicenow-unified']) {
+        if (!projectMcp[serversKey]['servicenow-unified'].env) {
+          projectMcp[serversKey]['servicenow-unified'].env = {};
         }
 
-        projectMcp.mcpServers['servicenow-unified'].env['SERVICENOW_INSTANCE_URL'] = servicenowCreds.instance;
-        projectMcp.mcpServers['servicenow-unified'].env['SERVICENOW_CLIENT_ID'] = servicenowCreds.clientId;
-        projectMcp.mcpServers['servicenow-unified'].env['SERVICENOW_CLIENT_SECRET'] = servicenowCreds.clientSecret;
+        projectMcp[serversKey]['servicenow-unified'].env['SERVICENOW_INSTANCE_URL'] = servicenowCreds.instance;
+        projectMcp[serversKey]['servicenow-unified'].env['SERVICENOW_CLIENT_ID'] = servicenowCreds.clientId;
+        projectMcp[serversKey]['servicenow-unified'].env['SERVICENOW_CLIENT_SECRET'] = servicenowCreds.clientSecret;
 
         await fs.writeFile(projectMcpPath, JSON.stringify(projectMcp, null, 2), 'utf-8');
 
         prompts.log.success('✅ Updated project .mcp.json with ServiceNow credentials');
         authLogger.info('Project .mcp.json updated successfully');
+      } else {
+        authLogger.debug('No servicenow-unified MCP server found in project .mcp.json');
       }
     } catch (err: any) {
-      if (err.code !== 'ENOENT') {
+      if (err.code === 'ENOENT') {
+        authLogger.warn('Project .mcp.json not found. Run "snow-flow init" to create one.');
+        prompts.log.warn('⚠️  No .mcp.json found in current directory');
+        prompts.log.info('💡 Run: snow-flow init');
+      } else {
         authLogger.debug(`Could not update project .mcp.json: ${err.message}`);
       }
-      // File doesn't exist or couldn't be updated - not critical
     }
   } catch (error: any) {
     authLogger.warn(`Failed to update MCP server config: ${error.message}`);

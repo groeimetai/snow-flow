@@ -2978,26 +2978,17 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       const snowcodeConfig = convertToSnowCodeFormat(claudeConfig);
 
       // Write opencode.json (SnowCode searches for this name!)
+      // ✅ PROJECT-SCOPED: Only write to project .snowcode/ directory
       const opencodeJsonPath = join(snowcodeDir, 'opencode.json');
       const configJsonPath = join(snowcodeDir, 'config.json');
 
       await fs.writeFile(opencodeJsonPath, JSON.stringify(snowcodeConfig, null, 2));
       await fs.writeFile(configJsonPath, JSON.stringify(snowcodeConfig, null, 2));
 
-      // CRITICAL: Also write to global SnowCode config directory!
-      // This ensures MCP tools are available even outside projects
-      const globalSnowCodeDir = join(process.env.HOME || '', '.config', 'snowcode');
-      try {
-        await fs.mkdir(globalSnowCodeDir, { recursive: true });
-
-        const globalOpencodeJsonPath = join(globalSnowCodeDir, 'opencode.json');
-        const globalConfigJsonPath = join(globalSnowCodeDir, 'config.json');
-
-        await fs.writeFile(globalOpencodeJsonPath, JSON.stringify(snowcodeConfig, null, 2));
-        await fs.writeFile(globalConfigJsonPath, JSON.stringify(snowcodeConfig, null, 2));
-      } catch (error) {
-        // Silent error handling
-      }
+      // ❌ REMOVED: Global config write
+      // We do NOT write to ~/.config/snowcode/ anymore
+      // Each snow-flow project maintains its own isolated SnowCode configuration
+      // SnowCode will automatically discover and use the project-level .snowcode/ config
 
       // Also create AGENTS.md in .snowcode/
       const snowcodeAgentsMdPath = join(snowcodeDir, 'AGENTS.md');
@@ -3328,109 +3319,10 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   const legacyConfigPath = join(targetDir, '.claude/mcp-config.json');
   await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
 
-  // 🔧 CRITICAL FIX: Also update global SnowCode configuration
-  // SnowCode/OpenCode reads from ~/.snowcode/snowcode.json
-  const snowcodeConfigPath = join(process.env.HOME || '', '.snowcode', 'snowcode.json');
-  const snowcodeConfigDirPath = join(process.env.HOME || '', '.snowcode');
-
-  try {
-    // Ensure directory exists
-    try {
-      await fs.access(snowcodeConfigDirPath);
-    } catch {
-      await fs.mkdir(snowcodeConfigDirPath, { recursive: true });
-    }
-
-    // Read existing SnowCode config or create new MINIMAL one
-    let snowcodeConfig: any = {
-      "$schema": "https://opencode.ai/config.json",
-      "tui": {
-        "scroll_speed": 5
-      },
-      "mcp": {}
-    };
-
-    try {
-      const existingConfig = await fs.readFile(snowcodeConfigPath, 'utf-8');
-      const existing = JSON.parse(existingConfig);
-
-      // Preserve existing TUI and MCP config
-      if (existing.tui) {
-        snowcodeConfig.tui = existing.tui;
-      }
-      if (existing.mcp) {
-        snowcodeConfig.mcp = existing.mcp;
-      }
-    } catch {
-      // File doesn't exist or is invalid - will create new minimal one
-    }
-
-    // Transform MCP servers to SnowCode format using REAL values (not ${VAR} placeholders)
-    // serverConfig.env already contains real values from template replacement
-    for (const [serverName, serverConfig] of Object.entries(finalConfig.mcpServers) as [string, any][]) {
-      const transformedConfig: any = {};
-
-      // Handle local servers (have "command" + "args")
-      if (serverConfig.command && serverConfig.args) {
-        transformedConfig.type = "local";
-        transformedConfig.command = [serverConfig.command, ...serverConfig.args];
-
-        // Use ACTUAL values from serverConfig.env (already replaced from template)
-        if (serverConfig.env) {
-          transformedConfig.environment = {};
-
-          // Copy all environment variables as-is (they have real values)
-          for (const [key, value] of Object.entries(serverConfig.env)) {
-            transformedConfig.environment[key] = value;
-          }
-          transformedConfig.enabled = true;
-        } else {
-          transformedConfig.enabled = true;
-        }
-      }
-      // Handle remote servers (have "type": "sse" or "url")
-      else if (serverConfig.type === 'sse' || serverConfig.url) {
-        transformedConfig.type = "remote";
-        transformedConfig.url = serverConfig.url;
-
-        // Copy headers as-is (already have real values from template)
-        if (serverConfig.headers) {
-          transformedConfig.headers = {};
-          var hasValidAuth = false;
-          for (const [key, value] of Object.entries(serverConfig.headers)) {
-            transformedConfig.headers[key] = value;
-            // Check if Authorization header has actual token (not empty "Bearer " or placeholder)
-            var val = String(value);
-            if (key === 'Authorization' && val &&
-                val.trim() !== 'Bearer' &&
-                val.trim() !== 'Bearer ' &&
-                !val.includes('your-enterprise-token-here') &&
-                !val.includes('your-token-here') &&
-                !val.includes('YOUR_') &&
-                !val.includes('your_')) {
-              hasValidAuth = true;
-            }
-          }
-          // Disable server if Authorization is empty or placeholder (prevents auth errors)
-          transformedConfig.enabled = serverName !== 'snow-flow-enterprise' || hasValidAuth;
-        } else {
-          transformedConfig.enabled = true;
-        }
-      }
-      // Unknown format - skip to avoid schema violations
-      else {
-        // Don't copy unknown formats - they may violate OpenCode schema
-        continue;
-      }
-
-      snowcodeConfig.mcp[serverName] = transformedConfig;
-    }
-
-    // Write updated config
-    await fs.writeFile(snowcodeConfigPath, JSON.stringify(snowcodeConfig, null, 2));
-  } catch (error) {
-    // Silent error handling
-  }
+  // ✅ PROJECT-SCOPED MCP CONFIG ONLY
+  // We do NOT modify global SnowCode config (~/.snowcode/snowcode.json)
+  // Each project maintains its own isolated MCP configuration in .mcp.json
+  // SnowCode/Claude Code will automatically discover and use the project-level .mcp.json
 
   // Create comprehensive Claude Code settings file
   // NOTE: Only include properties that Claude Code actually accepts
