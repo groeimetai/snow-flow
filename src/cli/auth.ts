@@ -81,7 +81,7 @@ async function updateMCPServerConfig() {
     // Ensure mcp section exists
     if (!config.mcp) config.mcp = {};
 
-    // Update servicenow-unified MCP server environment variables
+    // Update servicenow-unified MCP server environment variables in GLOBAL config
     if (config.mcp['servicenow-unified']) {
       if (!config.mcp['servicenow-unified'].environment) {
         config.mcp['servicenow-unified'].environment = {};
@@ -94,10 +94,38 @@ async function updateMCPServerConfig() {
       // Write updated config
       await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
 
-      prompts.log.success('✅ Updated MCP server config with ServiceNow credentials');
-      authLogger.info('MCP server config updated successfully');
+      prompts.log.success('✅ Updated global MCP server config');
+      authLogger.info('Global MCP server config updated successfully');
     } else {
-      authLogger.debug('No servicenow-unified MCP server found in config');
+      authLogger.debug('No servicenow-unified MCP server found in global config');
+    }
+
+    // ALSO update PROJECT-LEVEL .mcp.json if it exists
+    const projectMcpPath = path.join(process.cwd(), '.mcp.json');
+    try {
+      await fs.access(projectMcpPath);
+
+      const projectMcp = JSON.parse(await fs.readFile(projectMcpPath, 'utf-8'));
+
+      if (projectMcp.mcpServers && projectMcp.mcpServers['servicenow-unified']) {
+        if (!projectMcp.mcpServers['servicenow-unified'].env) {
+          projectMcp.mcpServers['servicenow-unified'].env = {};
+        }
+
+        projectMcp.mcpServers['servicenow-unified'].env['SERVICENOW_INSTANCE_URL'] = servicenowCreds.instance;
+        projectMcp.mcpServers['servicenow-unified'].env['SERVICENOW_CLIENT_ID'] = servicenowCreds.clientId;
+        projectMcp.mcpServers['servicenow-unified'].env['SERVICENOW_CLIENT_SECRET'] = servicenowCreds.clientSecret;
+
+        await fs.writeFile(projectMcpPath, JSON.stringify(projectMcp, null, 2), 'utf-8');
+
+        prompts.log.success('✅ Updated project .mcp.json with ServiceNow credentials');
+        authLogger.info('Project .mcp.json updated successfully');
+      }
+    } catch (err: any) {
+      if (err.code !== 'ENOENT') {
+        authLogger.debug(`Could not update project .mcp.json: ${err.message}`);
+      }
+      // File doesn't exist or couldn't be updated - not critical
     }
   } catch (error: any) {
     authLogger.warn(`Failed to update MCP server config: ${error.message}`);
