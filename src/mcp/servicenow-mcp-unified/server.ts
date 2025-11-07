@@ -65,6 +65,9 @@ export class ServiceNowUnifiedServer {
     const username = process.env.SERVICENOW_USERNAME;
     const password = process.env.SERVICENOW_PASSWORD;
 
+    // Helper: Convert empty strings to undefined (treat empty as missing)
+    const normalizeCredential = (val?: string) => val && val.trim() !== '' ? val : undefined;
+
     // Check for placeholder values
     const isPlaceholder = (val?: string) => !val || val.includes('your-') || val.includes('placeholder');
 
@@ -90,9 +93,9 @@ export class ServiceNowUnifiedServer {
       instanceUrl,
       clientId,
       clientSecret,
-      refreshToken,
-      username,
-      password
+      refreshToken: normalizeCredential(refreshToken),
+      username: normalizeCredential(username),  // Empty strings become undefined
+      password: normalizeCredential(password)   // Empty strings become undefined
     };
   }
 

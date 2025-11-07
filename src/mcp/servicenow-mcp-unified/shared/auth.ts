@@ -328,7 +328,8 @@ export class ServiceNowAuthManager {
       const username = process.env.SERVICENOW_USERNAME;
       const password = process.env.SERVICENOW_PASSWORD;
 
-      if (!username || !password) {
+      // Check for missing OR empty strings (reject empty credentials)
+      if (!username || !password || username.trim() === '' || password.trim() === '') {
         throw new Error('No username/password available for basic authentication');
       }
 
