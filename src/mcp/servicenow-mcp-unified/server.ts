@@ -56,14 +56,18 @@ export class ServiceNowUnifiedServer {
   /**
    * Load ServiceNow context from environment variables
    * Note: Server will start even without credentials (unauthenticated mode)
+   *
+   * Supports both SNOW_* and SERVICENOW_* prefixes for backward compatibility
    */
   private loadContext(): ServiceNowContext {
-    const instanceUrl = process.env.SERVICENOW_INSTANCE_URL;
-    const clientId = process.env.SERVICENOW_CLIENT_ID;
-    const clientSecret = process.env.SERVICENOW_CLIENT_SECRET;
-    const refreshToken = process.env.SERVICENOW_REFRESH_TOKEN;
-    const username = process.env.SERVICENOW_USERNAME;
-    const password = process.env.SERVICENOW_PASSWORD;
+    // Support both SERVICENOW_* and SNOW_* prefixes (SNOW_* preferred for consistency)
+    const instanceUrl = process.env.SERVICENOW_INSTANCE_URL ||
+                       (process.env.SNOW_INSTANCE ? `https://${process.env.SNOW_INSTANCE}` : undefined);
+    const clientId = process.env.SERVICENOW_CLIENT_ID || process.env.SNOW_CLIENT_ID;
+    const clientSecret = process.env.SERVICENOW_CLIENT_SECRET || process.env.SNOW_CLIENT_SECRET;
+    const refreshToken = process.env.SERVICENOW_REFRESH_TOKEN || process.env.SNOW_REFRESH_TOKEN;
+    const username = process.env.SERVICENOW_USERNAME || process.env.SNOW_USERNAME;
+    const password = process.env.SERVICENOW_PASSWORD || process.env.SNOW_PASSWORD;
 
     // Helper: Convert empty strings to undefined (treat empty as missing)
     const normalizeCredential = (val?: string) => val && val.trim() !== '' ? val : undefined;
