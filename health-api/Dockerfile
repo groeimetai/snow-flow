@@ -3,14 +3,15 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files from root (build context is repo root)
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install dependencies
-RUN npm ci --production=false
+# Install dependencies (use npm install for dynamic version resolution)
+# This will install the latest @groeimetai/snow-code version specified in package.json
+RUN npm install --production=false
 
-# Copy source
+# Copy source files
 COPY src/ ./src/
 
 # Build TypeScript
@@ -21,9 +22,9 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Install production dependencies only
+# Install production dependencies only (use npm install for dynamic version resolution)
 COPY package*.json ./
-RUN npm ci --production && npm cache clean --force
+RUN npm install --production && npm cache clean --force
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
