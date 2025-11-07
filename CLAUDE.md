@@ -556,35 +556,66 @@ Examples:
 
 ## 🚫 CRITICAL ANTI-PATTERNS (Never Do These!)
 
-### Anti-Pattern 1: Bash/Node/NPM for MCP Tools
+### Anti-Pattern 1: Trying to Use MCP Tools via Bash/Node/require()
 
-**MCP tools are JavaScript functions loaded via MCP protocol** - they are NOT npm packages or CLI commands!
+**🚨 CRITICAL: MCP tools are loaded via the MCP protocol, NOT npm packages!**
+
+You have **direct access** to MCP tools in your environment. They are **already available** as JavaScript functions.
+
+**❌ NEVER DO THIS - THESE ALWAYS FAIL:**
 
 ```bash
-# ❌ FORBIDDEN - These WILL ALWAYS FAIL:
+# ❌ WRONG: Trying to require() MCP tools
+node -e "const { snow_create_ui_page } = require('@snow-flow/mcp-client');"
+# ERROR: Module '@snow-flow/mcp-client' not found - this package DOES NOT EXIST!
 
-node -e "const { snow_create_ui_page } = require('./node_modules/@snow-flow/...');"
-# ERROR: Module not found - @snow-flow packages don't exist in node_modules!
+node -e "const { snow_update_set_manage } = require('snow-flow');"
+# ERROR: MCP tools are NOT exported from the npm package!
 
-cd /path/to/project && node -e "const { snow_query_table } = require(...);"
-# ERROR: Module not found - MCP tools can't be required()!
+node -e "const { snow_query_table } = require('./node_modules/snow-flow/dist/mcp/...');"
+# ERROR: MCP tools cannot be required() - they work via MCP protocol only!
 
+# ❌ WRONG: Trying to use bash commands
 npx snow-flow-mcp-client servicenow-unified snow_create_ui_page {...}
-# ERROR: 404 Not Found - this package doesn't exist!
+# ERROR: Package 'snow-flow-mcp-client' DOES NOT EXIST!
 
 snow-flow mcp execute --tool snow_create_ui_page
-# ERROR: No such command - MCP tools aren't CLI commands!
+# ERROR: No such CLI command - 'snow-flow mcp' does not exist!
+
+# ❌ WRONG: Any form of node -e with MCP tools
+echo "..." && node -e "const { ... } = require(...);"
+# ERROR: Parser3.init error - complex JavaScript in bash breaks SnowCode parser!
 ```
 
-**✅ CORRECT: Just call the function directly!**
+**✅ CORRECT: Just call the MCP tool directly!**
+
+MCP tools are **already available** in your environment. Just use them:
+
 ```javascript
+// ✅ CORRECT: Direct MCP tool invocation
 await snow_create_ui_page({
   name: "incident_dashboard",
   html: "...",
   processing_script: "..."
 });
-// That's it! No bash, no require, no npm!
+
+// ✅ CORRECT: Another example
+await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: Dashboard",
+  description: "Create incident dashboard",
+  application: "global"
+});
+
+// That's it! No bash, no require(), no npm, no node -e!
+// MCP tools work like built-in functions - just call them.
 ```
+
+**Why This Error Happens:**
+- MCP tools communicate via **Model Context Protocol** (server ↔ client)
+- They are **NOT** npm packages you can `require()`
+- They are **NOT** CLI commands you can run in bash
+- Attempting bash + node -e causes **Parser3.init errors** in SnowCode
 
 ### Anti-Pattern 2: Using Background Scripts for Development
 

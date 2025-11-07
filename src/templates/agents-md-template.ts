@@ -195,16 +195,36 @@ for (var i = 0; i < items.length; i++) { }  // NOT for...of
 - Widget not working? → \`snow_pull_artifact\`
 - Need to edit widget? → \`snow_pull_artifact\`
 
-### 3. MCP Tools Are Functions
-**MCP tools are JavaScript functions** - call them directly!
-\`\`\`javascript
-// ✅ CORRECT
-await snow_create_ui_page({ name: "dashboard", html: "..." });
+### 3. MCP Tools Are Functions (NOT npm packages!)
+**🚨 CRITICAL:** MCP tools work via **Model Context Protocol** - they are **already available** as JavaScript functions!
 
-// ❌ WRONG - DO NOT USE BASH!
-// node dist/index.js mcp execute ...  // DOES NOT EXIST!
-// npx snow-flow-mcp-client ...        // DOES NOT EXIST!
+**✅ CORRECT: Just call them directly**
+\`\`\`javascript
+await snow_create_ui_page({ name: "dashboard", html: "..." });
+await snow_update_set_manage({ action: 'create', name: "Feature X" });
+// That's it! No bash, no require(), no npm!
 \`\`\`
+
+**❌ FORBIDDEN: These ALWAYS fail!**
+\`\`\`bash
+# ❌ NEVER DO THIS:
+node -e "const { snow_update_set_manage } = require('@snow-flow/mcp-client');"
+# ERROR: Module '@snow-flow/mcp-client' DOES NOT EXIST!
+
+node -e "const { snow_query_table } = require('snow-flow');"
+# ERROR: MCP tools are NOT exported from npm package!
+
+node dist/index.js mcp execute snow_create_ui_page {...}
+# ERROR: This command DOES NOT EXIST!
+
+npx snow-flow-mcp-client servicenow-unified snow_create_ui_page {...}
+# ERROR: This package DOES NOT EXIST!
+
+echo "..." && node -e "const { ... } = require(...);"
+# ERROR: Parser3.init error - breaks SnowCode parser!
+\`\`\`
+
+**Why?** MCP tools use the MCP protocol (server ↔ client communication), NOT npm packages or bash commands!
 
 ### 4. No Mock Data
 - **FORBIDDEN:** Placeholders, TODOs, "this would normally...", test values
