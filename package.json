@@ -1,6 +1,6 @@
 {
   "name": "snow-flow",
-  "version": "8.30.25",
+  "version": "8.30.26",
   "description": "ServiceNow development with SnowCode - 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, Groq, Ollama) • 393 Optimized Tools • 2 MCP Servers • Multi-agent orchestration • Use ANY AI coding assistant (ML tools moved to Enterprise)",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -39,6 +39,7 @@
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit",
     "setup-mcp": "node scripts/setup-mcp.js",
+    "update-mcp": "node scripts/update-mcp-config.js",
     "reset-mcp": "node scripts/reset-mcp-servers.js",
     "reset-mcp:restart": "node scripts/reset-mcp-servers.js --restart",
     "cleanup-mcp": "node scripts/cleanup-mcp-servers.js",
@@ -55,7 +56,7 @@
     "check-binaries": "node scripts/check-binary-updates.js",
     "update-binaries": "node scripts/check-binary-updates.js --auto-update",
     "postbuild-disabled": "npm run setup-mcp",
-    "postinstall": "patch-package && node scripts/postinstall.js && node scripts/check-binary-updates.js --silent || true",
+    "postinstall": "patch-package && node scripts/postinstall.js && node scripts/check-binary-updates.js --silent && node scripts/update-mcp-config.js || true",
     "version": "node scripts/update-version.js && npm run build && git add src/version.ts",
     "postversion": "git push temp main && git push temp --tags"
   },
