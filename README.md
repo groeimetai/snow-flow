@@ -452,6 +452,42 @@ snow-flow swarm "create PI solution to predict best assignment group for new inc
 
 ---
 
+## 🆚 Snow-Flow vs ServiceNow Build Agent
+
+See how Snow-Flow's open, flexible approach compares to ServiceNow's proprietary AI solution:
+
+| Feature | Snow-Flow / SnowCode | ServiceNow Build Agent |
+|---------|---------------------|------------------------|
+| **Pricing Model** | Open source + paid enterprise tiers | Proprietary, part of ServiceNow Pro Plus |
+| **Base Cost** | €0 (open source) or €99/dev/month (enterprise) | €100-200/user/month + implementation fees (€150k-€4.5M) |
+| **LLM Choice** | **Any LLM** (Claude, GPT-4, Gemini, Llama, Mistral, DeepSeek, local models) | NowLLM + optional Azure OpenAI |
+| **Development Environment** | **Local + native IDEs** (VS Code, Cursor, Windsurf, terminal) | ServiceNow Studio only (browser-based) |
+| **MCP Tools** | **437 tools** (393 open source + 44 enterprise) | N/A (proprietary API, no MCP) |
+| **Target Users** | Professional developers + technical users | Citizen developers + process owners |
+| **Enterprise Integrations** | **Jira, Azure DevOps, Confluence**, Process Mining, ML tools | ServiceNow ecosystem only |
+| **ML Capabilities** | **TensorFlow.js neural networks** (local training) + Predictive Intelligence integration | RAG-based AI only |
+| **Update Set Management** | **Automated tracking** with intelligent change detection | Manual/limited automated tracking |
+| **ES5 Validation** | **Real-time Rhino checks** (prevents ES6+ syntax errors) | No specific ES5 support |
+| **Open Source** | **Yes** (Elastic-2.0 license) | No (proprietary) |
+| **White-label** | **Yes** (Enterprise tier) | No |
+| **Multi-agent Orchestration** | **Yes** (Queen Agent + 6 specialized agents) | Limited agentic capabilities |
+| **Seat-based Licensing** | **Developer + Stakeholder** roles with granular permissions | Per-user licensing only |
+| **Deployment Options** | **Self-hosted** (local) or **Managed SaaS** (Cloud Run) | ServiceNow Cloud only |
+| **Local Development** | **Yes** (pull artifacts to local files, edit with native tools) | No (browser-only) |
+| **API Integration** | **REST, MCP, stdio** - works with any AI assistant | Proprietary ServiceNow APIs |
+| **Process Mining** | **Included** (enterprise tier) - $100k+/year value | Separate expensive add-on |
+| **Stakeholder Access** | **Free with developer seats** - read-only analytics & dashboards | Full developer license required for all users |
+
+### Why Choose Snow-Flow?
+
+- **Vendor Independence**: Not locked into ServiceNow's AI ecosystem - use any LLM provider
+- **Cost Efficiency**: Free open-source option + affordable enterprise pricing (10-20x cheaper than ServiceNow)
+- **Developer Experience**: Work in your preferred IDE with local development workflows
+- **Enterprise Grade**: 437 tools, seat management, integrations, 99.9% SLA on managed infrastructure
+- **Future-Proof**: Open standards (MCP), portable integrations, no vendor lock-in
+
+---
+
 ## 📋 Examples
 
 ### Widget Development
