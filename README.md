@@ -970,11 +970,18 @@ snow-flow init
 **Core Framework:** Elastic License 2.0 - see [LICENSE](LICENSE) file for details.
 
 **What this means:**
-- ✅ Free to use, modify, and redistribute
-- ✅ Can be used commercially
-- ✅ Full source code access
-- ⚠️ Cannot provide Snow-Flow as a managed service to third parties
-- ⚠️ Cannot remove or obscure licensing/copyright notices
+- ✅ **Free to use internally**: Companies can use Snow-Flow for their own ServiceNow development
+- ✅ **Commercial use allowed**: Use for commercial projects, consulting, client work
+- ✅ **Modify and redistribute**: Fork, modify, and share the source code
+- ✅ **Full source code access**: Complete transparency, no hidden code
+- ⚠️ **Cannot resell as SaaS**: You cannot offer "Snow-Flow-as-a-Service" to compete with our managed platform
+- ⚠️ **Keep attribution**: Cannot remove licensing/copyright notices
+
+**Examples:**
+- ✅ **OK**: Accenture uses Snow-Flow internally for ServiceNow projects
+- ✅ **OK**: Consultant shares Snow-Flow with client who self-hosts it
+- ✅ **OK**: Fork Snow-Flow and create custom version for your organization
+- ❌ **NOT OK**: Launch "MyCompany Snow-Flow Hosting" as a paid SaaS product
 
 **Trademark:** "Snow-Flow" name and logo are protected trademarks - see [TRADEMARK.md](./TRADEMARK.md).
 
