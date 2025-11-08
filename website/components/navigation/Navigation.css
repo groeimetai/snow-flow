@@ -1,4 +1,4 @@
-/* Navigation Component - Black/White Minimalist Design */
+/* Navigation Component - Dark Tech Design matching website */
 
 .sf-nav {
   position: fixed;
@@ -6,16 +6,16 @@
   left: 0;
   right: 0;
   z-index: 9999;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(30, 37, 49, 0.98);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid #2D3748;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sf-nav--scrolled {
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: rgba(30, 37, 49, 0.98);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .sf-nav__container {
@@ -40,28 +40,26 @@
 
 .sf-nav__logo {
   font-size: 1.75rem;
-  background: linear-gradient(135deg, #000000 0%, #333333 50%, #000000 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #00D9FF 100%);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: sf-gradient-shift 3s ease-in-out infinite;
   transition: transform 0.3s ease;
+  filter: drop-shadow(0 2px 8px rgba(0, 217, 255, 0.3));
 }
 
 .sf-nav__brand:hover .sf-nav__logo {
   transform: scale(1.1);
+  filter: drop-shadow(0 4px 12px rgba(0, 217, 255, 0.5));
 }
 
 .sf-nav__brand-name {
   font-size: 1.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #000000 0%, #666666 50%, #000000 100%);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: sf-gradient-shift 3s ease-in-out infinite reverse;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
 }
 
 @keyframes sf-gradient-shift {
@@ -90,7 +88,7 @@
 .sf-nav__link {
   position: relative;
   text-decoration: none;
-  color: #333333;
+  color: #94A3B8;
   font-weight: 500;
   font-size: 0.95rem;
   padding: 0.75rem 0;
@@ -106,12 +104,12 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #000000, #666666);
+  background: linear-gradient(90deg, #00D9FF, #3B82F6);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sf-nav__link:hover {
-  color: #000000;
+  color: #FFFFFF;
 }
 
 .sf-nav__link:hover::before,
@@ -120,7 +118,7 @@
 }
 
 .sf-nav__link--active {
-  color: #000000;
+  color: #FFFFFF;
   font-weight: 600;
 }
 
@@ -131,7 +129,7 @@
   transform: translateY(-50%) scale(0);
   width: 4px;
   height: 4px;
-  background: #000000;
+  background: #00D9FF;
   border-radius: 50%;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -142,13 +140,13 @@
 
 /* CTA Button */
 .sf-nav__cta {
-  background: linear-gradient(135deg, #000000 0%, #333333 100%);
-  color: white;
+  background: #00D9FF;
+  color: #151A23;
   padding: 0.75rem 1.5rem;
-  border-radius: 50px;
+  border-radius: 8px;
   text-decoration: none;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -161,13 +159,13 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
   transition: left 0.5s ease;
 }
 
 .sf-nav__cta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 25px rgba(0, 217, 255, 0.4);
 }
 
 .sf-nav__cta:hover::before {
@@ -194,7 +192,7 @@
 .sf-nav__hamburger span {
   width: 100%;
   height: 2px;
-  background: #333333;
+  background: #FFFFFF;
   border-radius: 2px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
@@ -237,12 +235,12 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 217, 255, 0.1);
 }
 
 .sf-nav__progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #000000, #666666, #000000);
+  background: linear-gradient(90deg, #00D9FF, #3B82F6, #00D9FF);
   background-size: 200% 100%;
   animation: sf-progress-flow 2s linear infinite;
   transition: width 0.1s ease-out;
@@ -285,11 +283,11 @@
     gap: 0;
 
     /* Styling */
-    background: rgba(255, 255, 255, 0.98);
+    background: rgba(21, 26, 35, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid #2D3748;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 
     /* Hidden by default */
     transform: translateX(100%);
@@ -382,21 +380,21 @@
 /* High Contrast Mode */
 @media (prefers-contrast: high) {
   .sf-nav {
-    background: white;
-    border-bottom: 2px solid black;
+    background: #151A23;
+    border-bottom: 2px solid #00D9FF;
   }
-  
+
   .sf-nav__logo,
   .sf-nav__brand-name {
-    -webkit-text-fill-color: black;
+    -webkit-text-fill-color: #FFFFFF;
   }
-  
+
   .sf-nav__link {
-    color: black;
+    color: #FFFFFF;
   }
-  
+
   .sf-nav__cta {
-    background: black;
-    color: white;
+    background: #00D9FF;
+    color: #151A23;
   }
 }
