@@ -79,17 +79,23 @@ async function updateMCPServerConfig() {
 
       const projectMcp = JSON.parse(await fs.readFile(projectMcpPath, 'utf-8'));
 
-      // Support both .mcpServers and .servers key formats
+      // Support both .mcpServers and .servers key formats (OpenCode vs Claude Desktop)
       const serversKey = projectMcp.mcpServers ? 'mcpServers' : 'servers';
 
       if (projectMcp[serversKey] && projectMcp[serversKey]['servicenow-unified']) {
-        if (!projectMcp[serversKey]['servicenow-unified'].env) {
-          projectMcp[serversKey]['servicenow-unified'].env = {};
+        const server = projectMcp[serversKey]['servicenow-unified'];
+
+        // Support both "environment" (OpenCode) and "env" (Claude Desktop) keys
+        const envKey = server.environment !== undefined ? 'environment' : 'env';
+
+        if (!server[envKey]) {
+          server[envKey] = {};
         }
 
-        projectMcp[serversKey]['servicenow-unified'].env['SERVICENOW_INSTANCE_URL'] = servicenowCreds.instance;
-        projectMcp[serversKey]['servicenow-unified'].env['SERVICENOW_CLIENT_ID'] = servicenowCreds.clientId;
-        projectMcp[serversKey]['servicenow-unified'].env['SERVICENOW_CLIENT_SECRET'] = servicenowCreds.clientSecret;
+        // Update credentials in the environment object
+        server[envKey]['SERVICENOW_INSTANCE_URL'] = servicenowCreds.instance;
+        server[envKey]['SERVICENOW_CLIENT_ID'] = servicenowCreds.clientId;
+        server[envKey]['SERVICENOW_CLIENT_SECRET'] = servicenowCreds.clientSecret;
 
         await fs.writeFile(projectMcpPath, JSON.stringify(projectMcp, null, 2), 'utf-8');
 

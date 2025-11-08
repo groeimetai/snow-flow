@@ -1,22 +1,25 @@
 {
-  "servers": {
+  "$schema": "https://opencode.ai/mcp.json",
+  "mcpServers": {
     "servicenow-unified": {
-      "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/servicenow-mcp-unified/index.js"],
+      "type": "local",
+      "command": ["node", "{{PROJECT_ROOT}}/dist/mcp/servicenow-mcp-unified/index.js"],
       "description": "Unified ServiceNow MCP Server - ALL 235+ ServiceNow tools in ONE server including: deployment, operations, automation, platform dev, integrations, properties, update sets, dev assistant, security, reporting, ML, knowledge, catalog, change management, virtual agent, PA, flows, workspaces, mobile, UI Builder, CMDB, events, HR, CSM, DevOps, advanced features, and local development",
-      "env": {
+      "environment": {
         "SERVICENOW_INSTANCE_URL": "{{SNOW_INSTANCE}}",
         "SERVICENOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
         "SERVICENOW_CLIENT_SECRET": "{{SNOW_CLIENT_SECRET}}"
-      }
+      },
+      "enabled": true
     },
     "snow-flow-orchestration": {
-      "command": "node",
-      "args": ["{{PROJECT_ROOT}}/dist/mcp/snow-flow-mcp.js"],
+      "type": "local",
+      "command": ["node", "{{PROJECT_ROOT}}/dist/mcp/snow-flow-mcp.js"],
       "description": "Snow-Flow orchestration - swarm coordination, agent spawning, task orchestration, neural training (TensorFlow.js), memory management, performance tracking",
-      "env": {
+      "environment": {
         "SNOW_FLOW_ENV": "{{SNOW_FLOW_ENV}}"
-      }
+      },
+      "enabled": true
     }
   }
 }

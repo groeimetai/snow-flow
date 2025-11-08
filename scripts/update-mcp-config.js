@@ -60,23 +60,27 @@ try {
 if (config.mcpServers && config.mcpServers['servicenow-unified']) {
   const server = config.mcpServers['servicenow-unified'];
 
-  if (!server.env) {
-    server.env = {};
+  // Support both "environment" (OpenCode) and "env" (Claude Desktop) keys
+  const envKey = server.environment !== undefined ? 'environment' : 'env';
+
+  if (!server[envKey]) {
+    server[envKey] = {};
   }
 
   // Check if values are placeholders
+  const envVars = server[envKey];
   const hasPlaceholders =
-    !server.env.SERVICENOW_INSTANCE_URL ||
-    server.env.SERVICENOW_INSTANCE_URL.includes('your-instance') ||
-    server.env.SERVICENOW_CLIENT_ID === 'your-client-id' ||
-    server.env.SERVICENOW_CLIENT_SECRET === 'your-client-secret';
+    !envVars.SERVICENOW_INSTANCE_URL ||
+    envVars.SERVICENOW_INSTANCE_URL.includes('your-instance') ||
+    envVars.SERVICENOW_CLIENT_ID === 'your-client-id' ||
+    envVars.SERVICENOW_CLIENT_SECRET === 'your-client-secret';
 
   if (hasPlaceholders) {
     console.log('🔧 Updating .mcp.json with credentials from environment...');
 
-    server.env.SERVICENOW_INSTANCE_URL = instanceUrl;
-    server.env.SERVICENOW_CLIENT_ID = clientId;
-    server.env.SERVICENOW_CLIENT_SECRET = clientSecret;
+    envVars.SERVICENOW_INSTANCE_URL = instanceUrl;
+    envVars.SERVICENOW_CLIENT_ID = clientId;
+    envVars.SERVICENOW_CLIENT_SECRET = clientSecret;
 
     // Write updated config
     fs.writeFileSync(mcpJsonPath, JSON.stringify(config, null, 2), 'utf-8');

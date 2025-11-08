@@ -3297,9 +3297,8 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   const mcpConfig = JSON.parse(mcpConfigContent);
   
   // Keep the standard MCP structure that Claude Code expects
-  const finalConfig = {
-    "mcpServers": mcpConfig.servers
-  };
+  // Use the OpenCode MCP structure directly from template (mcpServers key)
+  const finalConfig = mcpConfig;
   
   // Create .mcp.json in project root for Claude Code discovery
   const mcpConfigPath = join(targetDir, '.mcp.json');
@@ -3702,9 +3701,8 @@ export async function setupMCPConfig(
   const mcpConfig = JSON.parse(mcpConfigContent);
   
   // Keep the standard MCP structure that Claude Code expects
-  const finalConfig = {
-    "mcpServers": mcpConfig.servers
-  };
+  // Use the OpenCode MCP structure directly from template (mcpServers key)
+  const finalConfig = mcpConfig;
   
   // Create .mcp.json in project root for Claude Code discovery
   const mcpConfigPath = join(targetDir, '.mcp.json');
