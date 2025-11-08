@@ -157,6 +157,16 @@ html, body {
     -webkit-overflow-scrolling: touch;
     font-size: 0.85rem !important;
     margin: 2rem 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  /* Ensure table container doesn't overflow */
+  .comparison-table-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .comparison-table thead {
