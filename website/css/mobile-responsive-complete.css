@@ -1,0 +1,566 @@
+/* =========================================
+   COMPLETE MOBILE RESPONSIVE DESIGN
+   Snow-Flow Website - Mobile First Optimization
+   ========================================= */
+
+/* Prevent horizontal overflow globally */
+* {
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* =========================================
+   TABLET OPTIMIZATIONS (768px - 1024px)
+   ========================================= */
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 1.5rem;
+    max-width: 100%;
+  }
+
+  .section {
+    padding: 4rem 0;
+  }
+
+  .section-title {
+    font-size: 2.5rem;
+  }
+}
+
+/* =========================================
+   MOBILE OPTIMIZATIONS (max-width: 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  /* Global container fixes */
+  .container {
+    max-width: 100%;
+    padding: 0 1rem !important;
+    margin: 0 auto;
+  }
+
+  /* Section spacing - much tighter on mobile */
+  .section {
+    padding: 3rem 0 !important;
+  }
+
+  /* Section titles - better mobile sizing */
+  .section-label {
+    font-size: 0.75rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .section-title {
+    font-size: 1.75rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 1rem !important;
+    padding: 0 0.5rem;
+  }
+
+  .section-subtitle {
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+    margin-bottom: 2rem !important;
+    padding: 0 0.5rem;
+    max-width: 95%;
+  }
+
+  /* Hero adjustments */
+  .hero {
+    padding: 5rem 0 3rem !important;
+    min-height: auto !important;
+  }
+
+  .hero h1 {
+    font-size: 2.5rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem !important;
+    margin-bottom: 2rem !important;
+    padding: 0 1rem;
+  }
+
+  .hero-label {
+    font-size: 0.75rem !important;
+    padding: 0.4rem 0.8rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  /* Navigation - ensure it doesn't overflow */
+  nav {
+    padding: 1rem 0 !important;
+  }
+
+  .nav-content {
+    padding: 0 1rem;
+  }
+
+  .logo {
+    font-size: 1.25rem !important;
+  }
+
+  .logo-svg {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  /* Stats grid - 2 columns on mobile */
+  .stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+    margin: 3rem 0 0 !important;
+    padding: 2rem 1rem !important;
+  }
+
+  .stat-number {
+    font-size: 2rem !important;
+  }
+
+  .stat-label {
+    font-size: 0.85rem !important;
+  }
+
+  /* Comparison section - stack on mobile */
+  .comparison {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+    padding: 0 0.5rem;
+  }
+
+  .comparison-side {
+    padding: 1.5rem !important;
+  }
+
+  .comparison-title {
+    font-size: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .comparison-item {
+    font-size: 0.9rem !important;
+    padding: 0.75rem 0 !important;
+    padding-left: 1.5rem !important;
+  }
+
+  /* Comparison table - responsive */
+  .comparison-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 0.85rem !important;
+    margin: 2rem 0;
+  }
+
+  .comparison-table thead {
+    display: none; /* Hide headers on mobile, show in rows */
+  }
+
+  .comparison-table tbody tr {
+    display: block;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  .comparison-table td {
+    display: block;
+    padding: 0.75rem 0 !important;
+    border: none !important;
+    text-align: left !important;
+  }
+
+  .comparison-table td:first-child {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--brand-cyan);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  .comparison-table td:nth-child(2)::before {
+    content: "Snow-Flow: ";
+    font-weight: 600;
+    color: var(--text-gray);
+  }
+
+  .comparison-table td:nth-child(3)::before {
+    content: "ServiceNow: ";
+    font-weight: 600;
+    color: var(--text-gray);
+  }
+
+  /* Pricing grid - single column on mobile */
+  .pricing-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+    padding: 0 0.5rem;
+  }
+
+  .pricing-card {
+    padding: 1.5rem !important;
+  }
+
+  .pricing-card h3 {
+    font-size: 1.5rem !important;
+  }
+
+  .pricing-price {
+    font-size: 2.5rem !important;
+    margin: 1rem 0 !important;
+  }
+
+  .pricing-features li {
+    padding: 0.75rem 0 !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Features grid - single column on mobile */
+  .features-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+    padding: 0 0.5rem;
+  }
+
+  .feature-card {
+    padding: 1.5rem !important;
+  }
+
+  .feature-icon {
+    font-size: 2rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .feature-title {
+    font-size: 1.25rem !important;
+  }
+
+  .feature-text {
+    font-size: 0.95rem !important;
+  }
+
+  /* Footer optimizations */
+  footer {
+    padding: 3rem 0 1.5rem !important;
+    margin-top: 4rem !important;
+  }
+
+  .footer-brand {
+    margin-bottom: 3rem !important;
+    gap: 1rem !important;
+  }
+
+  .footer-logo-svg {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .footer-logo-text {
+    font-size: 1.5rem !important;
+  }
+
+  .footer-tagline {
+    font-size: 0.95rem !important;
+    padding: 0 1rem;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 2rem !important;
+    margin-bottom: 3rem !important;
+  }
+
+  .footer-section h4 {
+    font-size: 0.85rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .footer-section a {
+    font-size: 0.85rem !important;
+  }
+
+  .footer-bottom {
+    padding-top: 2rem !important;
+    gap: 1rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .footer-social a {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 1rem !important;
+  }
+
+  /* Buttons - mobile friendly */
+  .hero-cta {
+    padding: 1rem 2rem !important;
+    font-size: 1rem !important;
+  }
+
+  .hero-secondary {
+    font-size: 0.95rem !important;
+    margin-left: 0 !important;
+    margin-top: 1rem !important;
+    display: block !important;
+    text-align: center !important;
+  }
+
+  .pricing-cta {
+    padding: 0.875rem !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* Transparency section cards */
+  .section > .container > div[style*="grid"] {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+}
+
+/* =========================================
+   SMALL MOBILE (max-width: 480px)
+   ========================================= */
+@media (max-width: 480px) {
+  /* Even tighter spacing for small phones */
+  .container {
+    padding: 0 0.75rem !important;
+  }
+
+  .section {
+    padding: 2rem 0 !important;
+  }
+
+  .section-title {
+    font-size: 1.5rem !important;
+    padding: 0 0.25rem;
+  }
+
+  .section-subtitle {
+    font-size: 0.9rem !important;
+    padding: 0 0.25rem;
+  }
+
+  /* Hero for very small screens */
+  .hero {
+    padding: 4rem 0 2rem !important;
+  }
+
+  .hero h1 {
+    font-size: 2rem !important;
+  }
+
+  .hero-subtitle {
+    font-size: 0.9rem !important;
+  }
+
+  .hero-cta {
+    padding: 0.875rem 1.5rem !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* Stats - stack vertically on very small screens */
+  .stats {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+    padding: 1.5rem 0.75rem !important;
+  }
+
+  .stat-number {
+    font-size: 1.75rem !important;
+  }
+
+  .stat-label {
+    font-size: 0.8rem !important;
+  }
+
+  /* Comparison items */
+  .comparison-side {
+    padding: 1.25rem !important;
+  }
+
+  .comparison-title {
+    font-size: 1.1rem !important;
+  }
+
+  .comparison-item {
+    font-size: 0.85rem !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Pricing cards */
+  .pricing-card {
+    padding: 1.25rem !important;
+  }
+
+  .pricing-price {
+    font-size: 2.25rem !important;
+  }
+
+  .pricing-price span {
+    font-size: 1rem !important;
+  }
+
+  /* Feature cards */
+  .feature-card {
+    padding: 1.25rem !important;
+  }
+
+  .feature-title {
+    font-size: 1.15rem !important;
+  }
+
+  /* Footer */
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  .footer-tagline {
+    font-size: 0.9rem !important;
+  }
+
+  /* Mobile menu adjustments */
+  .nav-links {
+    padding: 5rem 1rem 2rem !important;
+  }
+
+  .nav-links a {
+    font-size: 1rem !important;
+    padding: 1rem !important;
+  }
+}
+
+/* =========================================
+   VERY SMALL SCREENS (max-width: 360px)
+   ========================================= */
+@media (max-width: 360px) {
+  .container {
+    padding: 0 0.5rem !important;
+  }
+
+  .section-title {
+    font-size: 1.35rem !important;
+  }
+
+  .hero h1 {
+    font-size: 1.75rem !important;
+  }
+
+  .hero-subtitle {
+    font-size: 0.85rem !important;
+  }
+
+  .comparison-item,
+  .feature-text,
+  .pricing-features li {
+    font-size: 0.8rem !important;
+  }
+}
+
+/* =========================================
+   LANDSCAPE MOBILE OPTIMIZATION
+   ========================================= */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero {
+    min-height: auto !important;
+    padding: 2rem 0 1rem !important;
+  }
+
+  .stats {
+    margin: 2rem 0 0 !important;
+    padding: 1.5rem 1rem !important;
+  }
+
+  .section {
+    padding: 2rem 0 !important;
+  }
+}
+
+/* =========================================
+   FIX SPECIFIC OVERFLOW ISSUES
+   ========================================= */
+
+/* Prevent code blocks from overflowing */
+.code-block,
+pre,
+code {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure images don't overflow */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Fix table overflow */
+table {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Ensure flex items don't overflow */
+.flex,
+.inline-flex {
+  flex-wrap: wrap;
+}
+
+/* Fix long words in cards */
+.card-title,
+.card-description,
+.feature-text {
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* =========================================
+   TOUCH IMPROVEMENTS
+   ========================================= */
+
+/* Larger tap targets for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .nav-links a,
+  .btn,
+  .pricing-cta,
+  .footer-section a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Remove hover effects on touch devices */
+  .card:hover {
+    transform: none;
+  }
+
+  .btn:hover {
+    transform: none;
+  }
+}
+
+/* =========================================
+   SAFE AREA SUPPORT (iOS notch)
+   ========================================= */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+
+  nav {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
