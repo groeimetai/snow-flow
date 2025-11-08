@@ -872,20 +872,31 @@
                 justify-content: flex-start;
                 align-items: stretch;
                 padding: 5rem 2rem 2rem;
-                gap: 0.75rem;
+                gap: 1rem;
 
-                /* Styling */
-                background: var(--brand-darker);
+                /* Professional glassmorphism styling matching website theme */
+                background: rgba(21, 26, 35, 0.95);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-left: 1px solid rgba(0, 217, 255, 0.1);
+                box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
 
                 /* Hidden by default - slide from right */
                 transform: translateX(100%);
                 visibility: hidden;
                 opacity: 0;
-                transition: transform 0.3s ease, visibility 0s 0.3s, opacity 0.3s ease;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                            visibility 0s 0.3s,
+                            opacity 0.3s ease;
 
                 /* Enable scrolling */
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
+
+                /* Gradient overlay for depth */
+                background-image: linear-gradient(135deg,
+                    rgba(0, 217, 255, 0.03) 0%,
+                    rgba(59, 130, 246, 0.03) 100%);
             }
 
             /* Show menu when active */
@@ -893,10 +904,12 @@
                 transform: translateX(0);
                 visibility: visible;
                 opacity: 1;
-                transition: transform 0.3s ease, visibility 0s 0s, opacity 0.3s ease;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                            visibility 0s 0s,
+                            opacity 0.3s ease;
             }
 
-            /* Menu items styling */
+            /* Menu items styling - professional card-like appearance */
             .nav-links li {
                 width: 100%;
                 margin: 0;
@@ -904,23 +917,71 @@
 
             .nav-links a {
                 display: block;
-                padding: 1rem 1.5rem;
-                font-size: 1.125rem;
-                font-weight: 600;
-                text-align: center;
-                border-radius: 8px;
-                background: rgba(255, 255, 255, 0.05);
+                padding: 1.125rem 1.5rem;
+                font-size: 1.0625rem;
+                font-weight: 500;
+                text-align: left;
+                border-radius: 12px;
+                color: var(--text-gray);
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+                /* Glassmorphism card effect */
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+
+            /* Gradient highlight on hover/active */
+            .nav-links a::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, var(--brand-cyan), transparent);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .nav-links a:hover,
+            .nav-links a:active {
+                background: rgba(0, 217, 255, 0.08);
+                border-color: rgba(0, 217, 255, 0.2);
                 color: var(--text-white);
+                transform: translateX(4px);
+                box-shadow: 0 4px 12px rgba(0, 217, 255, 0.15);
             }
 
-            .nav-links a:not(.nav-cta):active {
-                background: rgba(0, 217, 255, 0.15);
+            .nav-links a:hover::before,
+            .nav-links a:active::before {
+                opacity: 1;
             }
 
+            /* CTA button special styling */
             .nav-cta {
                 margin-top: 1rem;
-                padding: 1rem 2rem !important;
-                font-size: 1.125rem !important;
+                padding: 1.125rem 2rem !important;
+                font-size: 1.0625rem !important;
+                background: var(--brand-cyan) !important;
+                color: var(--brand-darker) !important;
+                border: 1px solid var(--brand-cyan) !important;
+                font-weight: 600 !important;
+                box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3) !important;
+            }
+
+            .nav-cta:hover,
+            .nav-cta:active {
+                transform: translateX(0) translateY(-2px) !important;
+                box-shadow: 0 8px 20px rgba(0, 217, 255, 0.4) !important;
+                background: var(--brand-cyan) !important;
+            }
+
+            .nav-cta::before {
+                display: none;
             }
 
             /* Other mobile adjustments */
@@ -1021,12 +1082,22 @@
         /* Comparison Table Styles */
         .comparison-table {
             width: 100%;
+            max-width: 100%;
             margin: 3rem auto;
             border-collapse: separate;
             border-spacing: 0;
             overflow: hidden;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Prevent table from causing horizontal scroll */
+        .comparison-table-container {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 auto;
         }
 
         .comparison-table thead {
@@ -1281,7 +1352,8 @@
                 See how Snow-Flow's open, flexible approach compares to ServiceNow's proprietary AI solution.
             </p>
 
-            <table class="comparison-table">
+            <div class="comparison-table-container">
+                <table class="comparison-table">
                 <thead>
                     <tr>
                         <th>Feature</th>
@@ -1387,6 +1459,7 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
 
             <div style="margin-top: 3rem; padding: 2rem; background: rgba(0, 217, 255, 0.1); border-left: 4px solid var(--brand-cyan); border-radius: 8px;">
                 <h3 style="color: var(--brand-cyan); margin-bottom: 1rem; font-size: 1.25rem;">Strategic Advantages</h3>
