@@ -167,8 +167,9 @@ html, body {
     display: block;
     margin-bottom: 1.5rem;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 1rem;
+    background: var(--brand-darker);
   }
 
   .comparison-table td {
@@ -180,23 +181,51 @@ html, body {
 
   .comparison-table td:first-child {
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 1.05rem;
     color: var(--brand-cyan);
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border) !important;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border) !important;
+    text-align: center;
+  }
+
+  /* Snow-Flow column - distinctive cyan styling */
+  .comparison-table td:nth-child(2) {
+    background: rgba(0, 217, 255, 0.08);
+    border-left: 3px solid var(--brand-cyan);
+    padding: 1rem !important;
+    margin-bottom: 0.75rem;
+    border-radius: 6px;
   }
 
   .comparison-table td:nth-child(2)::before {
-    content: "Snow-Flow: ";
-    font-weight: 600;
-    color: var(--text-gray);
+    content: "✅ Snow-Flow";
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--brand-cyan);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ServiceNow column - neutral gray styling */
+  .comparison-table td:nth-child(3) {
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 3px solid var(--gray-600);
+    padding: 1rem !important;
+    border-radius: 6px;
   }
 
   .comparison-table td:nth-child(3)::before {
-    content: "ServiceNow: ";
-    font-weight: 600;
-    color: var(--text-gray);
+    content: "⚪ ServiceNow";
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--gray-400);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   /* Pricing grid - single column on mobile */
