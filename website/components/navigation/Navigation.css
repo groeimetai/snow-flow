@@ -270,33 +270,48 @@
   }
 
   .sf-nav__menu {
+    /* Positioning */
     position: fixed;
     top: 60px;
     left: 0;
     right: 0;
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    bottom: 0;
+    z-index: 9998;
+
+    /* Layout */
+    display: flex;
     flex-direction: column;
     padding: 2rem 0;
     gap: 0;
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Styling */
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    z-index: 999;
+
+    /* Hidden by default */
+    transform: translateX(100%);
+    visibility: hidden;
+
+    /* Smooth transition */
+    transition: transform 0.3s ease-in-out, visibility 0s 0.3s;
+
+    /* Scrolling */
+    overflow-y: auto;
   }
 
   .sf-nav__menu--open {
-    max-height: 100vh;
-    opacity: 1;
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.3s ease-in-out, visibility 0s 0s;
   }
 
   .sf-nav__item {
     width: 100%;
     text-align: center;
+    opacity: 1;
   }
 
   .sf-nav__link {
