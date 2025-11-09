@@ -1001,4 +1001,89 @@ De server doet:
 **Security:** 🔒 Grade A (9/10)
 **Alles geïmplementeerd:** ✅ JA
 
+---
+
+## 🛠️ SnowCode Platform Integration
+
+Snow-Flow is gebouwd op **SnowCode** - een fork van OpenCode CLI specifiek voor ServiceNow development.
+
+### **Rebranding: OpenCode → Snow-Code**
+
+**Package Details:**
+- **NPM Package:** `@groeimetai/snow-code` (was: `@opencode-ai/opencode`)
+- **Binaries:** `snow-code`, `snowcode`
+- **Platform Packages:** `@groeimetai/snow-code-{platform}-{arch}`
+  - darwin-arm64, darwin-x64
+  - linux-arm64, linux-x64
+  - windows-x64
+
+**Environment Variables:**
+```bash
+# Primary (nieuwe naming):
+SNOWCODE_AUTO_SHARE
+SNOWCODE_CONFIG
+SNOWCODE_CONFIG_DIR
+SNOWCODE_DISABLE_AUTOUPDATE
+SNOWCODE_PERMISSION
+SNOWCODE_EXPERIMENTAL_WATCHER
+
+# Backwards compatibility (fallback):
+OPENCODE_* # Alle oude variables blijven werken!
+```
+
+**VS Code Extension:**
+- **Publisher:** `groeimetai`
+- **Extension ID:** `groeimetai.snow-code-vscode`
+- **Commands:**
+  - `snowcode.openTerminal` - Open Snow-Code terminal
+  - `snowcode.openNewTerminal` - New Snow-Code session
+  - `snowcode.addFilepathToTerminal` - Add file to terminal
+
+**Binary Compatibility:**
+- `snow-code` - Main binary
+- `snowcode` - Symlink (convenience)
+- `snow-code.exe` - Windows binary
+- `snowcode.cmd` - Windows wrapper
+
+**Configuration:**
+```json
+// .snowcode/config.json (primary)
+// .opencode/config.json (fallback for backwards compatibility)
+{
+  "mcpServers": {
+    "servicenow-unified": {
+      "command": "node",
+      "args": ["dist/mcp/servicenow-mcp-unified/index.js"]
+    }
+  }
+}
+```
+
+**Integration Points:**
+1. **MCP Server Communication:**
+   - SnowCode provides stdio-based MCP communication
+   - Snow-Flow MCP servers run as child processes
+   - Protocol: Model Context Protocol (MCP)
+
+2. **Environment Detection:**
+   - `SNOWCODE_CALLER=vscode` - Launched from VS Code extension
+   - `_EXTENSION_SNOWCODE_PORT` - VS Code extension port
+
+3. **Build System:**
+   - Built with Bun (compile to binary)
+   - Global constants: `SNOWCODE_VERSION`, `SNOWCODE_TUI_PATH`
+   - Platform-specific packaging
+
+**Repository:**
+- **GitHub:** `https://github.com/groeimetai/snow-code`
+- **Upstream:** `https://github.com/sst/opencode` (maintained compatibility)
+
+**Important Notes:**
+- ✅ Complete backwards compatibility with OPENCODE_* environment variables
+- ✅ Config directory migration (.opencode/ → .snowcode/)
+- ✅ Binary name migration (opencode → snow-code)
+- ✅ Package scope migration (@opencode-ai → @groeimetai)
+
+---
+
 Je hebt nu een complete, production-ready enterprise platform!
