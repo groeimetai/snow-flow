@@ -227,10 +227,10 @@
         .mobile-menu-backdrop {
             display: none;
             position: fixed;
-            top: 0;
+            top: 70px;
             left: 0;
             width: 100%;
-            height: 100vh;
+            height: calc(100vh - 70px);
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(8px) saturate(80%);
             -webkit-backdrop-filter: blur(8px) saturate(80%);
@@ -879,18 +879,18 @@
             /* Hide desktop menu, show as overlay when active */
             .nav-links {
                 position: fixed;
-                top: 0;
+                top: 70px;
                 right: 0;
                 width: 340px;
                 max-width: 85vw;
-                height: 100vh;
+                height: calc(100vh - 70px);
                 z-index: 10000;
 
                 /* Layout */
                 flex-direction: column;
                 justify-content: flex-start;
                 align-items: stretch;
-                padding: 6rem 2rem 2rem;
+                padding: 2rem 2rem 2rem;
                 gap: 0.25rem;
 
                 /* Enterprise-grade glassmorphism */
