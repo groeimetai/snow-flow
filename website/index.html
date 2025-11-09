@@ -889,62 +889,79 @@
             /* Hide desktop menu, show as overlay when active */
             .nav-links {
                 position: fixed;
-                top: 70px;
+                top: 0;
                 right: 0;
-                width: 360px;
+                width: 380px;
                 max-width: 90vw;
-                height: calc(100vh - 70px);
-                z-index: 10000;
+                height: 100vh;
+                z-index: 9999;
 
-                /* Layout */
+                /* Layout - add padding for navbar */
                 flex-direction: column;
                 justify-content: flex-start;
                 align-items: stretch;
-                padding: 2.5rem 1.75rem 2rem;
-                gap: 0.5rem;
+                padding: calc(70px + 2rem) 2rem 2rem;
+                gap: 0;
 
-                /* Premium glassmorphism with cyan accent */
-                background: linear-gradient(165deg,
-                    rgba(15, 23, 35, 0.98) 0%,
-                    rgba(25, 35, 50, 0.97) 50%,
-                    rgba(20, 30, 45, 0.98) 100%);
-                backdrop-filter: saturate(200%) blur(32px);
-                -webkit-backdrop-filter: saturate(200%) blur(32px);
+                /* Modern glassmorphism with deep depth */
+                background:
+                    linear-gradient(160deg,
+                        rgba(10, 15, 25, 0.97) 0%,
+                        rgba(15, 22, 35, 0.96) 30%,
+                        rgba(20, 28, 42, 0.97) 70%,
+                        rgba(12, 18, 30, 0.98) 100%);
+                backdrop-filter: blur(40px) saturate(180%);
+                -webkit-backdrop-filter: blur(40px) saturate(180%);
 
-                /* Sophisticated border with gradient */
-                border-left: 1px solid;
-                border-image: linear-gradient(180deg,
-                    rgba(0, 217, 255, 0.2) 0%,
-                    rgba(59, 130, 246, 0.15) 50%,
-                    transparent 100%) 1;
-                box-shadow: -12px 0 48px rgba(0, 0, 0, 0.7),
-                            -4px 0 24px rgba(0, 217, 255, 0.08),
-                            inset 1px 0 0 rgba(0, 217, 255, 0.1),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.02);
+                /* Futuristic border with animated gradient */
+                border-left: 1px solid rgba(0, 217, 255, 0.3);
+                box-shadow:
+                    -20px 0 60px rgba(0, 0, 0, 0.8),
+                    -8px 0 32px rgba(0, 217, 255, 0.12),
+                    -2px 0 12px rgba(59, 130, 246, 0.15),
+                    inset 1px 0 1px rgba(0, 217, 255, 0.15),
+                    inset -1px 0 20px rgba(0, 217, 255, 0.03);
 
-                /* Hidden by default - elegant slide */
+                /* Hidden by default - smooth slide */
                 transform: translateX(100%);
                 visibility: hidden;
                 opacity: 0;
-                transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-                            visibility 0s 0.45s,
-                            opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+                transition:
+                    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                    visibility 0s 0.5s,
+                    opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 
                 /* Enable scrolling */
                 overflow-y: auto;
                 overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
 
-                /* Premium gradient overlay with noise */
+                /* Futuristic overlay effects */
                 background-image:
-                    linear-gradient(165deg,
-                        rgba(0, 217, 255, 0.04) 0%,
-                        rgba(59, 130, 246, 0.025) 40%,
+                    /* Animated scan line effect */
+                    linear-gradient(180deg,
+                        transparent 0%,
+                        rgba(0, 217, 255, 0.02) 50%,
                         transparent 100%),
-                    radial-gradient(circle at top right,
-                        rgba(0, 217, 255, 0.06) 0%,
-                        transparent 50%),
-                    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
+                    /* Radial glow from top */
+                    radial-gradient(ellipse 100% 40% at 50% -20%,
+                        rgba(0, 217, 255, 0.08) 0%,
+                        transparent 60%),
+                    /* Radial glow from button area */
+                    radial-gradient(circle at 90% 8%,
+                        rgba(0, 217, 255, 0.12) 0%,
+                        transparent 25%),
+                    /* Subtle grid pattern */
+                    repeating-linear-gradient(90deg,
+                        transparent,
+                        transparent 39px,
+                        rgba(0, 217, 255, 0.01) 39px,
+                        rgba(0, 217, 255, 0.01) 40px),
+                    repeating-linear-gradient(0deg,
+                        transparent,
+                        transparent 39px,
+                        rgba(0, 217, 255, 0.01) 39px,
+                        rgba(0, 217, 255, 0.01) 40px);
             }
 
             /* Show menu when active */
@@ -980,40 +997,57 @@
                 }
             }
 
-            /* Menu items styling - premium enterprise design */
+            /* Menu items styling - futuristic design */
             .nav-links li {
                 width: 100%;
-                margin: 0;
+                margin: 0.5rem 0;
                 position: relative;
             }
 
-            /* Elegant divider between items */
+            /* Futuristic divider between items */
             .nav-links li:not(:last-child)::after {
                 content: '';
                 position: absolute;
-                bottom: 0;
-                left: 0.75rem;
-                right: 0.75rem;
+                bottom: -0.25rem;
+                left: 0;
+                right: 0;
                 height: 1px;
-                background: linear-gradient(90deg,
-                    transparent,
-                    rgba(0, 217, 255, 0.08) 20%,
-                    rgba(59, 130, 246, 0.06) 50%,
-                    rgba(0, 217, 255, 0.08) 80%,
-                    transparent);
+                background:
+                    radial-gradient(circle at center,
+                        rgba(0, 217, 255, 0.15) 0%,
+                        rgba(59, 130, 246, 0.08) 50%,
+                        transparent 100%);
+                box-shadow: 0 0 8px rgba(0, 217, 255, 0.1);
             }
 
             .nav-links a {
                 display: block;
-                padding: 1.125rem 1.25rem;
+                padding: 1rem 1.5rem;
                 font-size: 0.9375rem;
                 font-weight: 500;
-                letter-spacing: -0.01em;
+                letter-spacing: 0.01em;
                 text-align: left;
-                color: rgba(255, 255, 255, 0.75);
+                color: rgba(255, 255, 255, 0.8);
                 position: relative;
-                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-                border-radius: 10px;
+                transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+                border-radius: 12px;
+                overflow: hidden;
+            }
+
+            /* Animated background glow on hover */
+            .nav-links a::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg,
+                    transparent,
+                    rgba(0, 217, 255, 0.08) 50%,
+                    transparent);
+                transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+                z-index: -1;
             }
 
             /* Sophisticated left accent with glow */
@@ -1027,30 +1061,38 @@
                 height: 0;
                 background: linear-gradient(180deg,
                     transparent,
-                    var(--brand-cyan) 30%,
-                    var(--brand-cyan) 70%,
+                    var(--brand-cyan) 20%,
+                    var(--brand-cyan) 80%,
                     transparent);
-                border-radius: 0 2px 2px 0;
+                border-radius: 0 3px 3px 0;
                 opacity: 0;
-                box-shadow: 0 0 12px rgba(0, 217, 255, 0.6);
-                transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-                            opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                box-shadow: 0 0 16px rgba(0, 217, 255, 0.8),
+                            0 0 8px rgba(0, 217, 255, 0.4);
+                transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                            opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
             }
 
-            /* Premium hover state with glow */
+            /* Futuristic hover state */
             .nav-links a:hover,
             .nav-links a:active {
                 color: #ffffff;
                 background: linear-gradient(90deg,
-                    rgba(0, 217, 255, 0.08) 0%,
-                    rgba(0, 217, 255, 0.04) 100%);
-                padding-left: 1.5rem;
-                box-shadow: inset 0 0 0 1px rgba(0, 217, 255, 0.1);
+                    rgba(0, 217, 255, 0.12) 0%,
+                    rgba(0, 217, 255, 0.06) 50%,
+                    rgba(0, 217, 255, 0.02) 100%);
+                transform: translateX(4px);
+                box-shadow:
+                    inset 0 0 0 1px rgba(0, 217, 255, 0.2),
+                    0 0 20px rgba(0, 217, 255, 0.1);
+            }
+
+            .nav-links a:hover::after {
+                left: 100%;
             }
 
             .nav-links a:hover::before,
             .nav-links a:active::before {
-                height: 70%;
+                height: 80%;
                 opacity: 1;
             }
 
