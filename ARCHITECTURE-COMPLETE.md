@@ -1,8 +1,8 @@
 # Snow-Flow Complete Architecture - Open Source + Enterprise
 
-**Versie:** 8.2.0
-**Datum:** 2025-10-22
-**Status:** ✅ PRODUCTION READY
+**Versie:** 8.30.31
+**Datum:** 2025-11-09
+**Status:** ✅ PRODUCTION READY - Enterprise MCP Proxy Implemented
 
 ---
 
@@ -53,9 +53,11 @@
    - Multi-agent swarms
    - Neural networks (TensorFlow.js)
 
-4. **Enterprise MCP Proxy** (`enterprise/mcp-proxy/`)
-   - Verbindt lokale CLI met enterprise server
-   - Translates: stdio (local) → HTTPS (remote)
+4. **Enterprise MCP Proxy** (`src/mcp/enterprise-proxy/`)
+   - Verbindt SnowCode CLI met enterprise server
+   - Protocol translator: stdio MCP ↔ HTTPS REST
+   - Automatic activation via `snow-flow auth login`
+   - Credential management (local + server-side modes)
 
 **License:** Elastic License v2 (Open Source)
 
@@ -126,53 +128,93 @@
 
 ```
 ┌────────────┐
-│   Claude   │  "Create Jira ticket"
+│  SnowCode  │  "Create Jira ticket"
+│    CLI     │
 └─────┬──────┘
       │ MCP Protocol (stdio)
       ▼
 ┌─────────────────────────────────────────────┐
 │  Enterprise MCP Proxy (LOKAAL)              │  ← Open Source
-│  enterprise/mcp-proxy/enterprise-proxy.ts   │
-│  • Reads license key from .env             │
-│  • Reads credentials from .env             │
-│  • Forwards to enterprise server           │
+│  src/mcp/enterprise-proxy/index.ts          │  ← Runs as MCP server
+│                                             │
+│  Configuration (auto-added during auth):    │
+│  ~/.snowcode/config.json:                   │
+│  {                                          │
+│    "mcpServers": {                          │
+│      "snow-flow-enterprise": {              │
+│        "command": "node",                   │
+│        "args": ["dist/mcp/enterprise-      │
+│                  proxy/index.js"],          │
+│        "env": {                             │
+│          "SNOW_LICENSE_KEY": "...",         │
+│          "JIRA_HOST": "...",                │
+│          "JIRA_EMAIL": "...",               │
+│          "JIRA_API_TOKEN": "..."            │
+│        }                                    │
+│      }                                      │
+│    }                                        │
+│  }                                          │
+│                                             │
+│  • Implements stdio MCP server              │
+│  • Reads license key from env              │
+│  • Reads credentials from env (optional)   │
+│  • Translates MCP → HTTPS REST             │
+│  • Machine fingerprinting (seat tracking)  │
 └─────┬───────────────────────────────────────┘
       │ HTTPS + License Key Auth
       │ POST /mcp/tools/call
       │ Authorization: Bearer SNOW-ENT-CUST-ABC123
-      │ Body: { tool: "jira_create_issue", arguments: {...}, credentials: {...} }
+      │ X-Instance-ID: machine-fingerprint-abc123
+      │ X-Snow-Flow-Version: 8.30.31
+      │ Body: {
+      │   tool: "snow_jira_create_issue",
+      │   arguments: {...},
+      │   credentials: {...}  // Optional (local mode)
+      │ }
       ▼
 ┌─────────────────────────────────────────────┐
 │  Enterprise License Server (CLOUD - GCP)    │  ← Proprietary
 │  • Validates license key                   │
-│  • Checks customer status                  │
+│  • Checks customer status & seat limit    │
 │  • Rate limiting (100 req/15min)          │
 │  • Logs usage to database                 │
-│  • Executes MCP tool                      │
+│  • Uses credentials (request OR database) │
+│  • Executes enterprise tool                │
 └─────┬───────────────────────────────────────┘
       │ HTTPS + API Token/OAuth2
       ▼
 ┌─────────────────────────────────────────────┐
 │  Jira/Azure/Confluence API                  │  ← External Service
-│  • Creates ticket                          │
+│  • Creates ticket/work item/page          │
 │  • Updates issue                           │
 │  • Returns result                          │
 └─────┬───────────────────────────────────────┘
       │ Response
       ▼
 ┌─────────────────────────────────────────────┐
+│  Enterprise License Server                  │
+│  • Logs success/failure                    │
+│  • Updates usage metrics                   │
+│  • Returns formatted response              │
+└─────┬───────────────────────────────────────┘
+      │ HTTPS Response
+      ▼
+┌─────────────────────────────────────────────┐
 │  Enterprise MCP Proxy (LOKAAL)              │
-│  • Receives response via HTTPS             │
-│  • Forwards to Claude via stdio            │
+│  • Receives HTTPS response                 │
+│  • Converts to MCP protocol format         │
+│  • Forwards to SnowCode via stdio          │
 └─────┬───────────────────────────────────────┘
       │ MCP Protocol (stdio)
       ▼
 ┌────────────┐
-│   Claude   │  Shows result: "Created JIRA-123"
+│  SnowCode  │  Shows result: "Created JIRA-123"
+│    CLI     │  URL: https://company.atlassian.net/browse/JIRA-123
 └────────────┘
 
-🔑 Auth: License Key + Credentials (in request of server-side stored)
-✅ Voordeel: Centralized credentials, automatic refresh, usage tracking
+🔑 Auth: License Key + Credentials (local env OR server-side encrypted)
+✅ Voordeel: Automatic setup, credential management, usage tracking, seat licensing
+🆕 Setup: Fully automated via `snow-flow auth login` command
 ```
 
 ---
@@ -228,31 +270,83 @@
 - ✅ **Open Source**: MCP Proxy stuurt license key mee
 - ✅ **Enterprise**: Valideert license key
 
-**Flow:**
+**🆕 AUTOMATISCHE SETUP VIA `snow-flow auth login`:**
+
 ```bash
 # Stap 1: Service Integrator koopt enterprise licentie
 # → Krijgt license key: SNOW-ENT-CUST-ABC123
 
-# Stap 2: Customer configureert MCP proxy
-# enterprise/mcp-proxy/.env:
-SNOW_ENTERPRISE_URL=https://license-server.run.app
-SNOW_LICENSE_KEY=SNOW-ENT-CUST-ABC123
+# Stap 2: Run snow-flow auth login (VOLLEDIG AUTOMATISCH!)
+$ snow-flow auth login
 
-# Stap 3: MCP Proxy stuurt bij elke call:
+# 2a. SnowCode auth flow (LLM providers + ServiceNow)
+# ... existing SnowCode auth process ...
+
+# 2b. Enterprise License Flow (NIEUW!)
+? Do you have a Snow-Flow Enterprise license? Yes
+? Enterprise License Key: SNOW-ENT-CUST-ABC123
+
+✓ Validating enterprise license...
+✓ License validated successfully
+  Available enterprise features: jira, azure-devops, confluence
+
+# 2c. Credential Mode Selection
+? How would you like to provide enterprise credentials?
+  > Server-side (credentials stored encrypted on enterprise server)
+    Local (credentials from environment variables)
+    Skip for now (configure later)
+
+# Als "Local" gekozen:
+? Configure Jira integration? Yes
+? Jira Host: https://company.atlassian.net
+? Jira Email: user@company.com
+? Jira API Token: ****
+
+✓ Enterprise MCP server configured
+  Enterprise tools are now available in SnowCode CLI
+
+# Stap 3: Configuration auto-written to ~/.snowcode/config.json
+# {
+#   "mcpServers": {
+#     "snow-flow-enterprise": {
+#       "command": "node",
+#       "args": ["node_modules/snow-flow/dist/mcp/enterprise-proxy/index.js"],
+#       "env": {
+#         "SNOW_LICENSE_KEY": "SNOW-ENT-CUST-ABC123",
+#         "SNOW_ENTERPRISE_URL": "https://license-server.run.app",
+#         "JIRA_HOST": "https://company.atlassian.net",
+#         "JIRA_EMAIL": "user@company.com",
+#         "JIRA_API_TOKEN": "ATATT3xFfGF..."
+#       }
+#     }
+#   }
+# }
+
+# Stap 4: MCP Proxy draait automatisch bij elke SnowCode sessie
+# → stuurt bij elke enterprise tool call:
 POST /mcp/tools/call
 Authorization: Bearer SNOW-ENT-CUST-ABC123
-Body: { tool: "jira_create_issue", arguments: {...}, credentials: {...} }
+X-Instance-ID: machine-fingerprint-abc123
+X-Snow-Flow-Version: 8.30.31
+Body: { tool: "snow_jira_create_issue", arguments: {...}, credentials: {...} }
 
-# Stap 4: Enterprise server valideert:
+# Stap 5: Enterprise server valideert:
 # ✅ License key format correct?
 # ✅ Customer exists in database?
 # ✅ Customer status = active?
 # ✅ License not expired?
 # ✅ Rate limit not exceeded?
+# ✅ Seat limit not exceeded? (via X-Instance-ID)
 # ✅ Tool allowed for this customer?
 
 # Als alles OK: execute tool en return result
 ```
+
+**Implementatie Details:**
+- **Auth Integration:** `src/cli/auth.ts` → `enterpriseLicenseFlow()`
+- **Config Management:** `src/config/snowcode-config.ts` → `addEnterpriseMcpServer()`
+- **License Validation:** `src/mcp/enterprise-proxy/proxy.ts` → `validateLicenseKey()`
+- **Credential Gathering:** `src/mcp/enterprise-proxy/credentials.ts` → `gatherCredentials()`
 
 ---
 
@@ -407,24 +501,30 @@ const credentials = credsDb.getOAuthCredential(customer.id, 'jira');
 snow-flow/                           ← ROOT (Open Source)
 │
 ├── src/                             ← Open Source Code
-│   ├── cli.ts                       ← CLI entry point
+│   ├── cli/
+│   │   └── auth.ts                  ← CLI auth with enterprise flow
+│   │
+│   ├── config/
+│   │   └── snowcode-config.ts       ← ~/.snowcode/config.json management
+│   │
 │   ├── mcp/
-│   │   └── servicenow-mcp-unified/  ← ServiceNow MCP (400+ tools)
-│   │       ├── tools/               ← All ServiceNow tools
-│   │       ├── shared/              ← Auth, API client
-│   │       └── server.ts            ← MCP server (stdio)
+│   │   ├── servicenow-mcp-unified/  ← ServiceNow MCP (400+ tools)
+│   │   │   ├── tools/               ← All ServiceNow tools
+│   │   │   ├── shared/              ← Auth, API client
+│   │   │   └── server.ts            ← MCP server (stdio)
+│   │   │
+│   │   └── enterprise-proxy/        ← Enterprise MCP Proxy (Open Source)
+│   │       ├── index.ts             ← MCP server entry point (stdio)
+│   │       ├── proxy.ts             ← HTTPS client for enterprise server
+│   │       ├── credentials.ts       ← Environment credential gathering
+│   │       ├── types.ts             ← TypeScript type definitions
+│   │       └── README.md            ← Setup & usage guide
 │   │
 │   └── agents/                      ← AI Agents & Orchestration
 │       ├── sparc/                   ← SPARC modes
 │       └── swarm/                   ← Multi-agent swarms
 │
-├── enterprise/                      ← ENTERPRISE CODE
-│   │
-│   ├── mcp-proxy/                   ← Open Source (Elastic v2)
-│   │   ├── enterprise-proxy.ts      ← stdio → HTTPS proxy
-│   │   ├── package.json
-│   │   ├── .env.example             ← Config example
-│   │   └── README.md                ← Setup guide
+├── enterprise/                      ← ENTERPRISE CODE (Not in this repo)
 │   │
 │   └── license-server/              ← Proprietary (Closed Source)
 │       ├── src/
@@ -1000,6 +1100,90 @@ De server doet:
 **Status:** ✅ PRODUCTION READY
 **Security:** 🔒 Grade A (9/10)
 **Alles geïmplementeerd:** ✅ JA
+
+---
+
+## 🎉 Recent Implementation: Enterprise MCP Proxy (v8.30.31)
+
+### **What's New:**
+
+**✅ Fully Automated Setup Flow**
+- Enterprise license configuration integrated into `snow-flow auth login`
+- Automatic `~/.snowcode/config.json` management
+- Interactive credential gathering (Jira, Azure DevOps, Confluence)
+- No manual configuration files needed!
+
+**✅ Complete MCP Proxy Implementation**
+```
+src/mcp/enterprise-proxy/
+├── index.ts          # MCP Server (stdio transport)
+├── proxy.ts          # HTTPS client for enterprise server
+├── credentials.ts    # Smart credential gathering
+├── types.ts          # TypeScript definitions
+└── README.md         # Complete documentation
+```
+
+**✅ Intelligent Credential Management**
+- **Local Mode:** Credentials from environment variables (simple setup)
+- **Server-side Mode:** Credentials encrypted in enterprise database (most secure)
+- **Auto-detection:** Missing credentials trigger warnings but don't fail
+- **Graceful fallback:** If local credentials missing, tries server-side
+
+**✅ Production-Ready Features**
+- License key validation with enterprise server
+- Machine fingerprinting for seat licensing (via `node-machine-id`)
+- Rate limiting support (100 req/15min tracking)
+- Version tracking (X-Snow-Flow-Version header)
+- Comprehensive error handling
+- Graceful degradation (empty tools list if server unreachable)
+
+**✅ Security Implementation**
+- License key format validation (SNOW-ENT-*, SNOW-SI-*)
+- Bearer token authentication
+- HTTPS-only communication
+- No credentials in logs (redacted)
+- Secure credential storage in config
+
+**🔧 Technical Details:**
+- **Protocol Translation:** stdio MCP ↔ HTTPS REST
+- **Transport:** Model Context Protocol via @modelcontextprotocol/sdk
+- **HTTP Client:** Axios with 2-minute timeout
+- **Dependencies:** axios, node-machine-id, @clack/prompts
+- **Build Status:** ✅ All TypeScript compiled successfully
+- **Integration:** Seamless with existing SnowCode auth flow
+
+**📋 Implementation Files Updated:**
+1. `src/mcp/enterprise-proxy/` - Complete proxy implementation
+2. `src/config/snowcode-config.ts` - Config management utilities
+3. `src/cli/auth.ts` - Enhanced with `enterpriseLicenseFlow()`
+4. `package.json` - Added `node-machine-id` dependency
+5. `ARCHITECTURE-COMPLETE.md` - Updated architecture documentation
+
+**🚀 User Experience:**
+```bash
+$ snow-flow auth login
+# ... SnowCode auth (LLM + ServiceNow) ...
+
+? Do you have a Snow-Flow Enterprise license? Yes
+? Enterprise License Key: SNOW-ENT-CUST-ABC123
+✓ License validated successfully
+
+? How would you like to provide enterprise credentials?
+  > Server-side (recommended)
+    Local (simple setup)
+
+✓ Enterprise MCP server configured
+  Enterprise tools are now available!
+```
+
+**📊 What This Enables:**
+- 🎫 Jira integration (8 tools) - Create issues, update status, search
+- 📋 Azure DevOps (10 tools) - Work items, repositories, pipelines
+- 📝 Confluence (8 tools) - Pages, spaces, content management
+- 📈 Usage tracking & analytics
+- 🔐 Centralized credential management
+- 💺 Seat-based licensing
+- ⚡ Automatic token refresh (server-side mode)
 
 ---
 

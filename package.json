@@ -512,6 +512,7 @@
     "gradient-string": "^3.0.0",
     "inquirer": "^8.2.7",
     "neo4j-driver": "6.0.0",
+    "node-machine-id": "^1.1.12",
     "ora": "^5.4.1",
     "uuid": "13.0.0",
     "winston": "3.18.3",
