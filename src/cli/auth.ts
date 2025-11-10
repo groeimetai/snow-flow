@@ -6,12 +6,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import { Logger } from '../utils/logger.js';
 import { existsSync, chmodSync } from 'fs';
-import {
-  addEnterpriseMcpServer,
-  isEnterpriseMcpConfigured,
-  type EnterpriseMcpConfig,
-} from '../config/snowcode-config.js';
-import { validateLicenseKey } from '../mcp/enterprise-proxy/proxy.js';
+// Enterprise auth now handled by SnowCode - no imports needed
 
 const authLogger = new Logger('auth');
 
@@ -50,263 +45,7 @@ function fixSnowCodeBinaryPermissions(): void {
   }
 }
 
-/**
- * Enterprise License Flow
- * Prompts user for enterprise license and configures enterprise MCP server
- */
-async function enterpriseLicenseFlow(): Promise<void> {
-  try {
-    // Check if already configured
-    const alreadyConfigured = await isEnterpriseMcpConfigured();
-
-    if (alreadyConfigured) {
-      const reconfigure = await prompts.confirm({
-        message: 'Enterprise MCP server is already configured. Reconfigure?',
-        initialValue: false,
-      });
-
-      if (prompts.isCancel(reconfigure) || !reconfigure) {
-        authLogger.debug('Skipping enterprise configuration (already configured)');
-        return;
-      }
-    }
-
-    // Ask if user has enterprise license
-    const hasEnterprise = await prompts.confirm({
-      message: 'Do you have a Snow-Flow Enterprise license?',
-      initialValue: false,
-    });
-
-    if (prompts.isCancel(hasEnterprise) || !hasEnterprise) {
-      authLogger.debug('Skipping enterprise configuration (user does not have license)');
-      return;
-    }
-
-    // Prompt for license key
-    const licenseKey = await prompts.text({
-      message: 'Enter your Enterprise License Key:',
-      placeholder: 'SNOW-SI-COMPANY-1/5-20261231-ABC12345',
-      validate: (value) => {
-        if (!value || value.trim().length === 0) {
-          return 'License key is required';
-        }
-        if (!value.startsWith('SNOW-ENT-') && !value.startsWith('SNOW-SI-')) {
-          return 'License key must start with SNOW-ENT- or SNOW-SI-';
-        }
-        return undefined;
-      },
-    });
-
-    if (prompts.isCancel(licenseKey)) {
-      authLogger.debug('Enterprise configuration cancelled by user');
-      return;
-    }
-
-    // Validate license key with enterprise server
-    prompts.log.step('Validating enterprise license...');
-
-    // Set license key temporarily for validation
-    const originalLicenseKey = process.env.SNOW_LICENSE_KEY;
-    process.env.SNOW_LICENSE_KEY = licenseKey;
-
-    let validation: { valid: boolean; error?: string; features?: string[]; serverUrl?: string };
-
-    try {
-      validation = await validateLicenseKey(licenseKey);
-
-      if (!validation.valid) {
-        prompts.log.error(`License validation failed: ${validation.error || 'Unknown error'}`);
-        authLogger.error(`License validation failed: ${validation.error}`);
-
-        // Restore original license key
-        if (originalLicenseKey) {
-          process.env.SNOW_LICENSE_KEY = originalLicenseKey;
-        } else {
-          delete process.env.SNOW_LICENSE_KEY;
-        }
-
-        return;
-      }
-
-      prompts.log.success('✅ License validated successfully');
-      authLogger.info('Enterprise license validated successfully');
-
-      // Show available features
-      if (validation.features && validation.features.length > 0) {
-        prompts.log.info(`Available enterprise features: ${validation.features.join(', ')}`);
-      }
-    } catch (error: any) {
-      prompts.log.error(`Failed to validate license: ${error.message}`);
-      authLogger.error(`License validation error: ${error.message}`);
-
-      // Restore original license key
-      if (originalLicenseKey) {
-        process.env.SNOW_LICENSE_KEY = originalLicenseKey;
-      } else {
-        delete process.env.SNOW_LICENSE_KEY;
-      }
-
-      return;
-    }
-
-    // Ask about credential mode
-    const credentialMode = await prompts.select({
-      message: 'How would you like to provide enterprise credentials?',
-      options: [
-        {
-          value: 'server',
-          label: 'Server-side (credentials stored encrypted on enterprise server)',
-          hint: 'Most secure, requires SSO configuration',
-        },
-        {
-          value: 'local',
-          label: 'Local (credentials from environment variables)',
-          hint: 'Simple setup, credentials stored locally',
-        },
-        {
-          value: 'skip',
-          label: 'Skip for now (configure later)',
-        },
-      ],
-      initialValue: 'server',
-    });
-
-    if (prompts.isCancel(credentialMode)) {
-      authLogger.debug('Enterprise configuration cancelled by user');
-
-      // Restore original license key
-      if (originalLicenseKey) {
-        process.env.SNOW_LICENSE_KEY = originalLicenseKey;
-      } else {
-        delete process.env.SNOW_LICENSE_KEY;
-      }
-
-      return;
-    }
-
-    const enterpriseConfig: EnterpriseMcpConfig = {
-      licenseKey,
-      serverUrl: validation.serverUrl,
-    };
-
-    // If local mode, prompt for credentials
-    if (credentialMode === 'local') {
-      prompts.log.step('Configuring local credentials...');
-
-      // Jira credentials
-      const configureJira = await prompts.confirm({
-        message: 'Configure Jira integration?',
-        initialValue: false,
-      });
-
-      if (!prompts.isCancel(configureJira) && configureJira) {
-        const jiraHost = await prompts.text({
-          message: 'Jira Host:',
-          placeholder: 'https://company.atlassian.net',
-          validate: (value) => (value.startsWith('https://') ? undefined : 'Must start with https://'),
-        });
-
-        const jiraEmail = await prompts.text({
-          message: 'Jira Email:',
-          placeholder: 'user@company.com',
-        });
-
-        const jiraApiToken = await prompts.password({
-          message: 'Jira API Token:',
-        });
-
-        if (!prompts.isCancel(jiraHost) && !prompts.isCancel(jiraEmail) && !prompts.isCancel(jiraApiToken)) {
-          enterpriseConfig.credentials = {
-            ...enterpriseConfig.credentials,
-            jira: {
-              host: jiraHost,
-              email: jiraEmail,
-              apiToken: jiraApiToken,
-            },
-          };
-        }
-      }
-
-      // Azure DevOps credentials
-      const configureAzure = await prompts.confirm({
-        message: 'Configure Azure DevOps integration?',
-        initialValue: false,
-      });
-
-      if (!prompts.isCancel(configureAzure) && configureAzure) {
-        const azureOrg = await prompts.text({
-          message: 'Azure DevOps Organization:',
-          placeholder: 'mycompany',
-        });
-
-        const azurePat = await prompts.password({
-          message: 'Azure DevOps PAT:',
-        });
-
-        if (!prompts.isCancel(azureOrg) && !prompts.isCancel(azurePat)) {
-          enterpriseConfig.credentials = {
-            ...enterpriseConfig.credentials,
-            azure: {
-              organization: azureOrg,
-              pat: azurePat,
-            },
-          };
-        }
-      }
-
-      // Confluence credentials
-      const configureConfluence = await prompts.confirm({
-        message: 'Configure Confluence integration?',
-        initialValue: false,
-      });
-
-      if (!prompts.isCancel(configureConfluence) && configureConfluence) {
-        const confluenceHost = await prompts.text({
-          message: 'Confluence Host:',
-          placeholder: 'https://company.atlassian.net',
-          validate: (value) => (value.startsWith('https://') ? undefined : 'Must start with https://'),
-        });
-
-        const confluenceEmail = await prompts.text({
-          message: 'Confluence Email:',
-          placeholder: 'user@company.com',
-        });
-
-        const confluenceApiToken = await prompts.password({
-          message: 'Confluence API Token:',
-        });
-
-        if (
-          !prompts.isCancel(confluenceHost) &&
-          !prompts.isCancel(confluenceEmail) &&
-          !prompts.isCancel(confluenceApiToken)
-        ) {
-          enterpriseConfig.credentials = {
-            ...enterpriseConfig.credentials,
-            confluence: {
-              host: confluenceHost,
-              email: confluenceEmail,
-              apiToken: confluenceApiToken,
-            },
-          };
-        }
-      }
-    }
-
-    // Add enterprise MCP server to SnowCode config
-    prompts.log.step('Configuring enterprise MCP server...');
-
-    await addEnterpriseMcpServer(enterpriseConfig);
-
-    prompts.log.success('✅ Enterprise MCP server configured');
-    prompts.log.info('Enterprise tools are now available in SnowCode CLI');
-
-    authLogger.info('Enterprise MCP server configuration completed');
-  } catch (error: any) {
-    prompts.log.error(`Enterprise configuration failed: ${error.message}`);
-    authLogger.error(`Enterprise configuration error: ${error.message}`);
-  }
-}
+// Enterprise auth flow moved to SnowCode - see snow-code auth enterprise
 
 /**
  * Update PROJECT-LEVEL MCP server config with ServiceNow credentials from auth.json
@@ -508,22 +247,10 @@ export function registerAuthCommands(program: Command) {
   // Enterprise setup - Enterprise license only
   auth
     .command('enterprise')
-    .description('Configure Snow-Flow Enterprise license (Jira, Azure DevOps, Confluence)')
+    .description('Configure Snow-Flow Enterprise (user account + integrations) - powered by SnowCode')
     .action(async () => {
-      try {
-        prompts.log.message('');
-        prompts.log.step('🏢 Configuring Snow-Flow Enterprise');
-        prompts.log.message('');
-
-        // Run enterprise license flow
-        await enterpriseLicenseFlow();
-
-        prompts.log.message('');
-        prompts.log.success('✅ Enterprise configured');
-      } catch (error: any) {
-        prompts.log.message('');
-        prompts.log.error(`Enterprise configuration failed: ${error.message}`);
-      }
+      fixSnowCodeBinaryPermissions();
+      execSync('snow-code auth enterprise', { stdio: 'inherit' });
     });
 
   // Login - complete flow (all three steps)
@@ -568,11 +295,8 @@ export function registerAuthCommands(program: Command) {
         // Fix binary permissions before calling snow-code (critical for containers/codespaces)
         fixSnowCodeBinaryPermissions();
 
-        // Step 1 & 2: Call SnowCode auth login for LLM providers and ServiceNow OAuth
+        // Call SnowCode auth login for all three steps (Provider + ServiceNow + Enterprise)
         execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
-
-        // Step 3: After successful auth, prompt for enterprise license if applicable
-        await enterpriseLicenseFlow();
 
         // Update MCP server config with ServiceNow credentials
         await updateMCPServerConfig();

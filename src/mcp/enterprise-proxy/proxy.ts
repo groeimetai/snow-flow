@@ -1,6 +1,10 @@
 /**
  * Enterprise MCP Proxy
  * Handles HTTPS communication with enterprise license server
+ *
+ * ⚠️ DEPRECATED: This file is legacy code for the old enterprise MCP proxy system.
+ * Primary enterprise auth is now handled by SnowCode (see snow-code auth enterprise).
+ * This remains for backwards compatibility only.
  */
 
 import axios, { AxiosError } from 'axios';

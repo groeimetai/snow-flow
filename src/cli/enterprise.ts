@@ -1,6 +1,9 @@
 /**
  * Enterprise authentication commands for Snow-Flow
- * Handles license key authentication with portal.snow-flow.dev
+ *
+ * NOTE: This file contains LEGACY portal authentication code.
+ * Primary enterprise auth is now handled by SnowCode (see snow-code auth enterprise).
+ * These functions remain for backwards compatibility but should be migrated.
  */
 
 import { Command } from 'commander';
@@ -41,16 +44,7 @@ interface AuthData {
   };
 }
 
-/**
- * Ensure .snow-flow directory exists
- */
-async function ensureSnowFlowDir(): Promise<void> {
-  try {
-    await fs.mkdir(SNOW_FLOW_DIR, { recursive: true });
-  } catch (err) {
-    // Directory already exists, ignore
-  }
-}
+// ensureSnowFlowDir removed - no longer used (enterprise auth in SnowCode)
 
 /**
  * Load stored authentication data
@@ -73,101 +67,7 @@ async function loadAuth(): Promise<AuthData | null> {
   }
 }
 
-/**
- * Save authentication data
- */
-async function saveAuth(auth: AuthData): Promise<void> {
-  await ensureSnowFlowDir();
-  await fs.writeFile(AUTH_FILE, JSON.stringify(auth, null, 2), 'utf-8');
-}
-
-/**
- * Delete authentication data
- */
-async function deleteAuth(): Promise<void> {
-  try {
-    await fs.unlink(AUTH_FILE);
-  } catch (err) {
-    // File doesn't exist, ignore
-  }
-}
-
-/**
- * Login with license key
- */
-async function loginCommand(licenseKey: string): Promise<void> {
-  console.log(chalk.blue('🔑 Authenticating with Snow-Flow Enterprise...'));
-
-  try {
-    const response = await fetch(`${PORTAL_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ licenseKey })
-    });
-
-    if (!response.ok) {
-      const error = await response.json() as { message?: string };
-      console.error(chalk.red(`❌ Authentication failed: ${error.message || 'Invalid license key'}`));
-      process.exit(1);
-    }
-
-    const data = await response.json() as { token: string; expiresAt?: string; customer: AuthData['customer'] };
-
-    const authData: AuthData = {
-      jwt: data.token,
-      expiresAt: data.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-      customer: data.customer
-    };
-
-    await saveAuth(authData);
-
-    console.log(chalk.green('✅ Successfully authenticated!'));
-    console.log('');
-    console.log(chalk.bold('Customer:'), authData.customer.name);
-    console.log(chalk.bold('License Tier:'), chalk.cyan(authData.customer.tier.toUpperCase()));
-    console.log(chalk.bold('Features:'), authData.customer.features.join(', '));
-
-    // Show seat information if available (v8.5.0+)
-    if (authData.customer.developerSeats !== undefined || authData.customer.stakeholderSeats !== undefined) {
-      console.log('');
-      console.log(chalk.bold('License Seats:'));
-
-      if (authData.customer.developerSeats !== undefined) {
-        const devSeats = authData.customer.developerSeats === -1 ? 'Unlimited' : authData.customer.developerSeats;
-        const activeDevSeats = authData.customer.activeDeveloperSeats || 0;
-        console.log(chalk.gray('  Developer Seats:'), chalk.cyan(`${activeDevSeats}/${devSeats}`), chalk.gray('(active/total)'));
-      }
-
-      if (authData.customer.stakeholderSeats !== undefined) {
-        const stakeholderSeats = authData.customer.stakeholderSeats === -1 ? 'Unlimited' : authData.customer.stakeholderSeats;
-        const activeStakeholderSeats = authData.customer.activeStakeholderSeats || 0;
-        console.log(chalk.gray('  Stakeholder Seats:'), chalk.cyan(`${activeStakeholderSeats}/${stakeholderSeats}`), chalk.gray('(active/total)'));
-      }
-    }
-
-    // Show theme information if available
-    if (authData.customer.customTheme) {
-      console.log(chalk.bold('Custom Theme:'), chalk.magenta(authData.customer.customTheme.displayName));
-      console.log(chalk.gray('  Theme has been synced for your SnowCode CLI'));
-    } else if (authData.customer.theme) {
-      console.log(chalk.bold('Theme:'), chalk.magenta(authData.customer.theme));
-    }
-
-    console.log('');
-    console.log(chalk.gray('Your credentials have been saved to:'), chalk.gray(AUTH_FILE));
-    console.log('');
-    console.log(chalk.blue('💡 Enterprise tools are now available!'));
-    console.log(chalk.gray('   Run'), chalk.cyan('snow-flow swarm "<task>"'), chalk.gray('to use them.'));
-    console.log(chalk.gray('   Run'), chalk.cyan('snow-flow portal'), chalk.gray('to configure integrations.'));
-    console.log(chalk.gray('   Run'), chalk.cyan('snow-flow status'), chalk.gray('to view your account details.'));
-  } catch (err: any) {
-    console.error(chalk.red('❌ Network error:'), err.message);
-    console.error(chalk.gray('Please check your internet connection and try again.'));
-    process.exit(1);
-  }
-}
+// Legacy saveAuth, deleteAuth, loginCommand removed - use snow-code auth enterprise instead
 
 /**
  * Show authentication status
@@ -280,24 +180,7 @@ async function portalCommand(): Promise<void> {
   }
 }
 
-/**
- * Logout and remove credentials
- */
-async function logoutCommand(): Promise<void> {
-  const auth = await loadAuth();
-
-  if (!auth) {
-    console.log(chalk.yellow('⚠️  You are not logged in.'));
-    return;
-  }
-
-  await deleteAuth();
-
-  console.log(chalk.green('✅ Successfully logged out'));
-  console.log('');
-  console.log(chalk.gray('Your authentication credentials have been removed.'));
-  console.log(chalk.gray('Enterprise tools will no longer be available until you login again.'));
-}
+// Legacy logoutCommand removed - use snow-code auth logout instead
 
 /**
  * Get JWT token for MCP server authentication
