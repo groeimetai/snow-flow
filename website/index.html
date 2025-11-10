@@ -1356,18 +1356,86 @@
         }
 
         @media (max-width: 768px) {
-            .comparison-table {
-                font-size: 0.9rem;
+            /* Mobile: Transform table into card layout */
+            .comparison-table-container {
+                overflow-x: visible;
             }
 
-            .comparison-table th,
+            .comparison-table,
+            .comparison-table tbody {
+                display: block;
+                width: 100%;
+            }
+
+            .comparison-table thead {
+                display: none; /* Hide header on mobile */
+            }
+
+            .comparison-table tbody tr {
+                display: block;
+                margin-bottom: 1.5rem;
+                background: rgba(10, 15, 25, 0.6);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 1.25rem;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            }
+
+            .comparison-table tbody tr:hover {
+                background: rgba(0, 217, 255, 0.08);
+                border-color: var(--brand-cyan);
+                transform: translateY(-2px);
+            }
+
             .comparison-table td {
-                padding: 1rem;
+                display: block;
+                padding: 0.75rem 0;
+                border: none;
+                text-align: left;
             }
 
-            .comparison-table th:first-child,
+            /* Feature name as card title */
             .comparison-table td:first-child {
-                width: 40%;
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: var(--brand-cyan);
+                padding-bottom: 1rem;
+                margin-bottom: 0.75rem;
+                border-bottom: 1px solid var(--border);
+            }
+
+            /* Add labels before Snow-Flow and ServiceNow data */
+            .comparison-table td:nth-child(2)::before {
+                content: 'Snow-Flow: ';
+                font-weight: 600;
+                color: var(--text-white);
+                display: block;
+                margin-bottom: 0.25rem;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .comparison-table td:nth-child(3)::before {
+                content: 'ServiceNow: ';
+                font-weight: 600;
+                color: var(--text-gray);
+                display: block;
+                margin-bottom: 0.25rem;
+                margin-top: 0.5rem;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .comparison-table td:nth-child(2),
+            .comparison-table td:nth-child(3) {
+                padding-left: 1rem;
+                border-left: 2px solid var(--border);
+            }
+
+            .comparison-table td:nth-child(2) {
+                border-left-color: var(--brand-cyan);
             }
         }
     </style>
