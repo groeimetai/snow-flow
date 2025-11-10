@@ -203,8 +203,8 @@ export function registerAuthCommands(program: Command) {
         prompts.log.message('');
         prompts.log.success('✅ Provider configured');
       } catch (error: any) {
-        prompts.log.message('');
-        prompts.log.error('Provider configuration failed');
+        // Snow-code already displayed the error message
+        process.exit(1);
       }
     });
 
@@ -239,8 +239,8 @@ export function registerAuthCommands(program: Command) {
 
         prompts.log.success('✅ ServiceNow configured');
       } catch (error: any) {
-        prompts.log.message('');
-        prompts.log.error('ServiceNow configuration failed');
+        // Snow-code already displayed the error message
+        process.exit(1);
       }
     });
 
@@ -249,8 +249,14 @@ export function registerAuthCommands(program: Command) {
     .command('enterprise')
     .description('Configure Snow-Flow Enterprise (user account + integrations) - powered by SnowCode')
     .action(async () => {
-      fixSnowCodeBinaryPermissions();
-      execSync('snow-code auth enterprise', { stdio: 'inherit' });
+      try {
+        fixSnowCodeBinaryPermissions();
+        execSync('snow-code auth enterprise', { stdio: 'inherit' });
+      } catch (error: any) {
+        // Snow-code already displayed the error message
+        // Exit gracefully without showing Node.js error stack
+        process.exit(1);
+      }
     });
 
   // Login - complete flow (all three steps)
@@ -345,7 +351,8 @@ export function registerAuthCommands(program: Command) {
         fixSnowCodeBinaryPermissions();
         execSync('snow-code auth list', { stdio: 'inherit' });
       } catch (error: any) {
-        prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
+        // Snow-code already displayed the error message
+        process.exit(1);
       }
     });
 
@@ -358,7 +365,8 @@ export function registerAuthCommands(program: Command) {
         fixSnowCodeBinaryPermissions();
         execSync('snow-code auth logout', { stdio: 'inherit' });
       } catch (error: any) {
-        prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
+        // Snow-code already displayed the error message
+        process.exit(1);
       }
     });
 }
