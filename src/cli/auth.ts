@@ -436,10 +436,100 @@ export function registerAuthCommands(program: Command) {
       prompts.log.message('Example: snow-flow auth models --provider anthropic');
     });
 
-  // Login - delegate to SnowCode
+  // Provider setup - LLM provider authentication only
+  auth
+    .command('provider')
+    .description('Configure LLM provider (Claude, GPT, Gemini, etc.)')
+    .action(async () => {
+      try {
+        // Check if snowcode is installed
+        try {
+          execSync('which snow-code', { stdio: 'ignore' });
+        } catch {
+          prompts.log.error('SnowCode is not installed');
+          prompts.log.warn('Please run: npm install -g snow-flow');
+          prompts.log.info('This will install both snow-flow and snow-code');
+          return;
+        }
+
+        fixSnowCodeBinaryPermissions();
+
+        prompts.log.message('');
+        prompts.log.step('🤖 Configuring LLM Provider');
+        prompts.log.message('');
+
+        // Call SnowCode auth provider
+        execSync('snow-code auth provider', { stdio: 'inherit' });
+
+        prompts.log.message('');
+        prompts.log.success('✅ Provider configured');
+      } catch (error: any) {
+        prompts.log.message('');
+        prompts.log.error('Provider configuration failed');
+      }
+    });
+
+  // ServiceNow setup - ServiceNow OAuth configuration only
+  auth
+    .command('servicenow')
+    .description('Configure ServiceNow instance OAuth credentials')
+    .action(async () => {
+      try {
+        // Check if snowcode is installed
+        try {
+          execSync('which snow-code', { stdio: 'ignore' });
+        } catch {
+          prompts.log.error('SnowCode is not installed');
+          prompts.log.warn('Please run: npm install -g snow-flow');
+          return;
+        }
+
+        fixSnowCodeBinaryPermissions();
+
+        prompts.log.message('');
+        prompts.log.step('🔐 Configuring ServiceNow OAuth');
+        prompts.log.message('');
+
+        // Call SnowCode auth servicenow
+        execSync('snow-code auth servicenow', { stdio: 'inherit' });
+
+        prompts.log.message('');
+
+        // Update MCP server config with ServiceNow credentials
+        await updateMCPServerConfig();
+
+        prompts.log.success('✅ ServiceNow configured');
+      } catch (error: any) {
+        prompts.log.message('');
+        prompts.log.error('ServiceNow configuration failed');
+      }
+    });
+
+  // Enterprise setup - Enterprise license only
+  auth
+    .command('enterprise')
+    .description('Configure Snow-Flow Enterprise license (Jira, Azure DevOps, Confluence)')
+    .action(async () => {
+      try {
+        prompts.log.message('');
+        prompts.log.step('🏢 Configuring Snow-Flow Enterprise');
+        prompts.log.message('');
+
+        // Run enterprise license flow
+        await enterpriseLicenseFlow();
+
+        prompts.log.message('');
+        prompts.log.success('✅ Enterprise configured');
+      } catch (error: any) {
+        prompts.log.message('');
+        prompts.log.error(`Enterprise configuration failed: ${error.message}`);
+      }
+    });
+
+  // Login - complete flow (all three steps)
   auth
     .command('login')
-    .description('Authenticate with LLM providers, ServiceNow, and Enterprise (via SnowCode)')
+    .description('Complete authentication: Provider + ServiceNow + Enterprise')
     .action(async () => {
       try {
         // Check if snowcode is installed
@@ -467,20 +557,33 @@ export function registerAuthCommands(program: Command) {
         }
 
         prompts.log.message('');
-        prompts.log.step('🚀 Starting authentication flow (powered by SnowCode)');
+        prompts.log.step('🚀 Starting complete authentication flow');
+        prompts.log.message('');
+        prompts.log.info('This will configure:');
+        prompts.log.message('  1️⃣  LLM Provider (Claude, GPT, Gemini, etc.)');
+        prompts.log.message('  2️⃣  ServiceNow Instance OAuth');
+        prompts.log.message('  3️⃣  Snow-Flow Enterprise (optional)');
         prompts.log.message('');
 
         // Fix binary permissions before calling snow-code (critical for containers/codespaces)
         fixSnowCodeBinaryPermissions();
 
-        // Call SnowCode auth login for LLM providers and ServiceNow OAuth
+        // Step 1 & 2: Call SnowCode auth login for LLM providers and ServiceNow OAuth
         execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
 
-        // After successful auth, prompt for enterprise license if applicable
+        // Step 3: After successful auth, prompt for enterprise license if applicable
         await enterpriseLicenseFlow();
 
         // Update MCP server config with ServiceNow credentials
         await updateMCPServerConfig();
+
+        prompts.log.message('');
+        prompts.log.success('✅ Complete authentication flow finished');
+        prompts.log.message('');
+        prompts.log.info('💡 You can now use:');
+        prompts.log.message('   • snow-flow swarm "<task>" - Start working with AI');
+        prompts.log.message('   • snow-flow status - View configuration status');
+        prompts.log.message('');
       } catch (error: any) {
         // Error details are already shown via stdio: 'inherit'
         // Only provide helpful context here
@@ -498,9 +601,9 @@ export function registerAuthCommands(program: Command) {
 
           prompts.log.message('');
           prompts.log.info('💡 Troubleshooting tips:');
+          prompts.log.message('  • Try individual steps: snow-flow auth provider | servicenow | enterprise');
           prompts.log.message('  • Check your license key format (SNOW-ENT-* or SNOW-SI-*)');
           prompts.log.message('  • Verify enterprise server is accessible');
-          prompts.log.message('  • Try running: snow-code auth login (for detailed errors)');
           prompts.log.message('  • Check logs in ~/.local/share/snow-code/');
         }
 

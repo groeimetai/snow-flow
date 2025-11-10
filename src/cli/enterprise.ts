@@ -327,32 +327,15 @@ export async function getEnterpriseInfo(): Promise<AuthData['customer'] | null> 
 
 /**
  * Register enterprise commands with Commander
+ * Note: login/logout commands moved to auth subcommands (snow-flow auth enterprise)
  */
 export function registerEnterpriseCommands(program: Command): void {
-  // Login command
-  program
-    .command('login <license-key>')
-    .description('Authenticate with Snow-Flow Enterprise using your license key')
-    .action(async (licenseKey: string) => {
-      await loginCommand(licenseKey);
-    });
-
-  // Status command removed - enterprise status is now shown via getEnterpriseInfo() in main status command
-
-  // Portal command
+  // Portal command - open Snow-Flow Enterprise portal in browser
   program
     .command('portal')
-    .description('Open Snow-Flow Enterprise Portal in browser')
+    .description('Open Snow-Flow Enterprise Portal (portal.snow-flow.dev)')
     .action(async () => {
       await portalCommand();
-    });
-
-  // Logout command
-  program
-    .command('logout')
-    .description('Logout from Snow-Flow Enterprise and remove credentials')
-    .action(async () => {
-      await logoutCommand();
     });
 }
 
