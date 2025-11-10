@@ -437,8 +437,8 @@ program
         }
       }
 
-      // Try to execute SnowCode directly with the objective
-      const success = await executeSnowCode(objective, options);
+      // Try to execute SnowCode with the full orchestration prompt
+      const success = await executeSnowCode(orchestrationPrompt, options);
 
       if (success) {
         // Store successful launch in memory
@@ -721,8 +721,9 @@ async function autoUpdateSnowCode(verbose: boolean = false): Promise<void> {
   }
 }
 
-// Helper function to execute SnowCode directly with the objective
-async function executeSnowCode(objective: string, options: any): Promise<boolean> {
+// Helper function to execute SnowCode with the full orchestration prompt
+// The prompt includes ServiceNow-specific context (auth, update sets, workflows, etc.)
+async function executeSnowCode(prompt: string, options: any): Promise<boolean> {
   let mcpServerPIDs: number[] = [];
 
   try {
@@ -780,7 +781,7 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
     const defaultProvider = process.env.DEFAULT_LLM_PROVIDER;
 
     // Build SnowCode command for TUI mode
-    // Use default TUI mode with --prompt to start with objective
+    // Pass the full ServiceNow orchestration prompt (includes auth, update set, workflows, etc.)
     const snowcodeArgs = [];
 
     // Add model option if available
@@ -788,11 +789,16 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
       snowcodeArgs.push('--model', defaultModel);
     }
 
-    // Add prompt option with objective
-    snowcodeArgs.push('--prompt', objective);
+    // Add the full orchestration prompt (NOT just the objective!)
+    // This prompt includes ServiceNow-specific instructions:
+    // - Auth & Update Set setup
+    // - UX Workspace creation workflows
+    // - Table discovery intelligence
+    // - Data generation strategies
+    // - Memory coordination patterns
+    snowcodeArgs.push('--prompt', prompt);
 
     // Spawn SnowCode process in TUI mode - full interactive interface
-    // Use 'snowcode --prompt <objective>' to start TUI with initial prompt
     const snowcodeProcess = spawn('snowcode', snowcodeArgs, {
       stdio: 'inherit', // All stdio inherited - SnowCode can use TTY
       cwd: process.cwd(),
@@ -896,796 +902,171 @@ function startMonitoringDashboard(snowcodeProcess: ChildProcess): NodeJS.Timeout
 // Helper function to build Queen Agent orchestration prompt
 // Helper function to build Queen Agent orchestration prompt - CLEANED UP VERSION
 function buildQueenAgentPrompt(objective: string, taskAnalysis: TaskAnalysis, options: any, isAuthenticated: boolean = false, sessionId: string): string {
-  // Check if intelligent features are enabled
-  const hasIntelligentFeatures = options.autoPermissions || options.smartDiscovery || 
-    options.liveTesting || options.autoDeploy || options.autoRollback || 
-    options.sharedMemory || options.progressMonitoring;
-
-  const prompt = `# 👑 Snow-Flow Queen Agent Orchestration
-
-## 🤖 Claude Agent SDK Integration
-**Snow-Flow v5.0+ is powered by @anthropic-ai/claude-agent-sdk@0.1.1**
-
-This session uses the official Anthropic Claude Agent SDK for:
-- **MCP Server Management**: 2 unified servers with 411 tools automatically managed
-- **Agent Lifecycle**: SDK handles agent spawning, coordination, and resource optimization
-- **Intelligent Routing**: Task-aware tool routing and context management
-- **Performance Optimization**: Automatic batching and parallel execution support
-
-**Available Tools:**
-- **ServiceNow Unified Server** (235+ tools): All ServiceNow operations
-- **Snow-Flow Orchestration Server** (176+ tools): Swarm coordination, neural networks, memory
-
-## 🚨 CRITICAL: PREVENT INFINITE LOOPS - READ FIRST!
-
-**NEVER SPAWN DUPLICATE AGENTS!** This causes infinite loops that spam MCP servers and crash Codespaces!
-
-**❌ INFINITE LOOP PATTERN (PROHIBITED):**
-\`\`\`
-Task(\"UI Builder Tools Tester\", \"Test UI Builder tools\");
-Task(\"UI Builder Tools Tester\", \"Test UI Builder tools\");  // ← DUPLICATE AGENT TYPE!
-Task(\"Workspace Tools Tester\", \"Test workspace tools\");
-Task(\"Workspace Tools Tester\", \"Test workspace tools\");  // ← INFINITE LOOP!
-\`\`\`
-
-**✅ CORRECT PATTERN (REQUIRED):**
-\`\`\`
-Task(\"workspace-architect\", \"Create ONE UX workspace using snow_create_complete_workspace\");
-Task(\"ui-designer\", \"Design UI components AFTER workspace is created\");
-Task(\"validator\", \"Test AFTER both previous agents complete\");
-\`\`\`
-
-**GOLDEN RULES:**
-1. **ONE agent per task type maximum**
-2. **UNIQUE agent names** (not generic \"Tester\")
-3. **SEQUENTIAL spawning** - wait for completion
-4. **CHECK Memory** for existing agents first
-
-## 🎯 Mission Brief
-You are the Queen Agent, master coordinator of the Snow-Flow hive-mind. Your mission is to orchestrate a swarm of specialized agents to complete the following ServiceNow development objective:
+  const prompt = `# 🎯 ServiceNow Development Task
 
 **Objective**: ${objective}
 **Session ID**: ${sessionId}
 
-## 🧠 Task Analysis Summary
+## 📊 Task Analysis
 - **Task Type**: ${taskAnalysis.taskType}
 - **Complexity**: ${taskAnalysis.complexity}
-- **Primary Agent Required**: ${taskAnalysis.primaryAgent}
-- **Supporting Agents**: ${taskAnalysis.supportingAgents.join(', ')}
-- **Estimated Total Agents**: ${taskAnalysis.estimatedAgentCount}
 - **ServiceNow Artifacts**: ${taskAnalysis.serviceNowArtifacts.join(', ')}
 
-## ⚡ CRITICAL: Task Intent Analysis
-**BEFORE PROCEEDING**, analyze the user's ACTUAL intent:
+## 🚨 MANDATORY: ServiceNow Setup (Required First!)
 
-1. **Data Generation Request?** (e.g., "create 5000 incidents", "generate test data")
-   → Focus on CREATING DATA, not building systems
-   → Use simple scripts or bulk operations to generate the data
-   → Skip complex architectures unless explicitly asked
-
-2. **System Building Request?** (e.g., "build a widget", "create an ML system")
-   → Follow full development workflow
-   → Build proper architecture and components
-
-3. **Simple Operation Request?** (e.g., "update field X", "delete records")
-   → Execute the operation directly
-   → Skip unnecessary complexity
-
-**For this objective**: Analyze if the user wants data generation, system building, or a simple operation.
-
-## 📊 Table Discovery Intelligence
-
-The Queen Agent will automatically discover and validate table schemas based on the objective. This ensures agents use correct field names and table structures.
-
-**Table Detection Examples:**
-- "create widget for incident records" → Discovers: incident, sys_user, sys_user_group
-- "build catalog item for equipment requests" → Discovers: sc_cat_item, sc_category, u_equipment_request
-- "create UX workspace for IT support" → Discovers: sys_ux_experience, sys_ux_app_config, sys_ux_macroponent, sys_ux_page_registry, sys_ux_app_route
-- "portal showing catalog items" → Discovers: sc_cat_item, sc_category, sc_request
-- "dashboard with CMDB assets" → Discovers: cmdb_ci, cmdb_rel_ci, sys_user
-- "report on problem tickets" → Discovers: problem, incident, sys_user
-
-**Discovery Process:**
-1. Extracts table names from objective (standard tables, u_ custom tables, explicit mentions)
-2. Discovers actual table schemas with field names, types, and relationships
-3. Stores schemas in memory for all agents to use
-4. Agents MUST use exact field names from schemas (e.g., 'short_description' not 'desc')
-
-## 👑 Your Queen Agent Responsibilities
-
-## 🏗️ UX Workspace Creation Specific Instructions
-If the task involves UX WORKSPACE CREATION (e.g., "create workspace for IT support", "build agent workspace"):
-
-1. **ALWAYS** use \`snow_create_complete_workspace\` for full 6-step workflow
-2. **INDIVIDUAL STEPS** available if fine control needed:
-   - Step 1: \`snow_create_ux_experience\` (sys_ux_experience)
-   - Step 2: \`snow_create_ux_app_config\` (sys_ux_app_config) 
-   - Step 3: \`snow_create_ux_page_macroponent\` (sys_ux_macroponent)
-   - Step 4: \`snow_create_ux_page_registry\` (sys_ux_page_registry)
-   - Step 5: \`snow_create_ux_app_route\` (sys_ux_app_route)
-   - Step 6: \`snow_update_ux_app_config_landing_page\` (landing page route)
-3. **VERIFY ORDER**: Must follow exact sequence for functional workspaces
-4. **STORE SYS_IDS**: Store all sys_ids in Memory for agents coordination
-5. **TEST ACCESS**: Provide workspace URL: \`/now/experience/workspace/{route_name}\`
-
-## 📊 Data Generation Specific Instructions
-If the task is identified as DATA GENERATION (e.g., "create 5000 incidents"):
-
-1. **DO NOT** build complex export/import systems
-2. **DO NOT** create APIs, UI Actions, or workflows
-3. **DO** focus on:
-   - Creating a simple script to generate the data
-   - Using ServiceNow's REST API or direct table operations
-   - Ensuring realistic data distribution for ML training
-   - Adding variety in categories, priorities, descriptions, etc.
-
-**Example approach for "create 5000 incidents":**
+### 1. Test Authentication
 \`\`\`javascript
-// Simple batch creation script
-for (let i = 0; i < 5000; i += 100) {
-  // Create 100 incidents at a time to avoid timeouts
-  const batch = generateRealisticIncidentBatch(100);
-  await createIncidentsBatch(batch);
-}
-\`\`\`
-
-### 1. Initialize Memory & Session (Required First Step)
-**THIS MUST BE YOUR VERY FIRST ACTION:**
-\`\`\`javascript
-// Initialize swarm memory session
-Memory.store("swarm_session_${sessionId}", JSON.stringify({
-  objective: "${objective}",
-  status: "initializing",
-  started_at: new Date().toISOString(),
-  task_analysis: ${JSON.stringify(taskAnalysis, null, 2)},
-  configuration: {
-    strategy: "${options.strategy}",
-    mode: "${options.mode}",
-    max_agents: ${parseInt(options.maxAgents)},
-    authenticated: ${isAuthenticated}
-  }
-}));
-\`\`\`
-
-### 2. 🚨 MANDATORY: ServiceNow Auth & Update Set Setup
-**CRITICAL: These steps are REQUIRED for ALL development work:**
-
-\`\`\`javascript
-// Step 2.1: MANDATORY - Test ServiceNow authentication
 const authCheck = await snow_auth_diagnostics();
 if (!authCheck.success) {
-  throw new Error("❌ CRITICAL: Authentication failed! Run: snow-flow auth login");
+  throw new Error("❌ Authentication failed! Run: snow-flow auth login");
 }
+\`\`\`
 
-// Step 2.2: MANDATORY - Create Update Set for tracking ALL changes
-const updateSetName = "Snow-Flow: ${objective.substring(0, 50)}... - ${new Date().toISOString().split('T')[0]}";
+### 2. Create Update Set (CRITICAL!)
+All ServiceNow changes MUST be tracked in an Update Set:
+
+\`\`\`javascript
+const updateSetName = "Snow-Flow: ${objective.substring(0, 50)}...";
 const updateSet = await snow_update_set_create({
   name: updateSetName,
-  description: "Automated Snow-Flow development for: ${objective}\\n\\nSession: ${sessionId}\\nAll changes tracked automatically",
-  auto_switch: true  // 🚨 CRITICAL: Sets as current update set!
+  description: "Automated Snow-Flow development for: ${objective}\\n\\nSession: ${sessionId}",
+  auto_switch: true
 });
 
-// Store Update Set info in memory for all agents
+// Store for other agents
 Memory.store("update_set_${sessionId}", JSON.stringify(updateSet));
 Memory.store("current_update_set", updateSet.sys_id);
 \`\`\`
 
-**WHY THIS IS CRITICAL:**
-- ✅ All ServiceNow changes are automatically tracked
-- ✅ Enables deployment to other instances later  
-- ✅ Provides rollback capabilities
-- ✅ Follows ServiceNow development best practices
-- ❌ **WITHOUT UPDATE SET: Changes are untracked and risky!**
+**Why Update Sets are Critical:**
+- ✅ Tracks ALL ServiceNow changes automatically
+- ✅ Enables deployment to other instances (Dev → Test → Prod)
+- ✅ Provides rollback capabilities if needed
+- ❌ WITHOUT UPDATE SET: Changes are untracked and cannot be deployed!
 
-### 3. Create Master Task List
-After completing setup steps, create task breakdown:
-\`\`\`javascript
-TodoWrite([
-  {
-    id: "setup_complete",
-    content: "✅ Setup: Auth, Update Set, Memory initialized",
-    status: "completed",
-    priority: "high"
-  },
-  {
-    id: "analyze_requirements",
-    content: "Analyze user requirements: ${objective}",
-    status: "in_progress",
-    priority: "high"
-  },
-  {
-    id: "spawn_agents",
-    content: "Spawn ${taskAnalysis.estimatedAgentCount} specialized agents",
-    status: "pending",
-    priority: "high"
-  },
-  {
-    id: "coordinate_development",
-    content: "Coordinate agent activities for ${taskAnalysis.taskType}",
-    status: "pending",
-    priority: "high"
-  },
-  {
-    id: "validate_solution",
-    content: "Validate and test the complete solution",
-    status: "pending",
-    priority: "medium"
-  }
-]);
-\`\`\`
+## 📊 Table Discovery Intelligence
 
-### 4. Agent Spawning Strategy - 🚨 ANTI-LOOP PROTECTION 🚨
+ServiceNow has hundreds of tables. Discover exact schemas before using:
 
-**CRITICAL: NO DUPLICATE AGENTS! ONLY SPAWN EACH AGENT TYPE ONCE!**
+**Discovery Process:**
+1. Extract table names from objective (e.g., "incident", "sc_cat_item", "u_custom_table")
+2. Discover actual schemas with field names, types, and relationships
+3. Store schemas in memory for all agents
+4. Use EXACT field names from schemas (e.g., 'short_description' not 'desc')
 
-**✅ CORRECT (Single Agents Only):**
-1. **Initialize Swarm ONCE**: \`swarm_init({ topology: 'hierarchical', maxAgents: ${parseInt(options.maxAgents)} })\`
-2. **Spawn ${taskAnalysis.estimatedAgentCount} DIFFERENT agents**: 
-Spawn ONE agent of each required type based on the objective:
+**Examples:**
+- "incident widget" → Discovers: incident, sys_user, sys_user_group
+- "catalog item" → Discovers: sc_cat_item, sc_category, sc_request
+- "UX workspace for IT" → Discovers: sys_ux_experience, sys_ux_app_config, sys_ux_page_registry
+- "CMDB dashboard" → Discovers: cmdb_ci, cmdb_rel_ci, sys_user
 
-**${taskAnalysis.taskType} requires these UNIQUE agents:**
-- **ONE researcher**: \`Task(\"researcher\", \"Research ServiceNow requirements for: ${objective}\")\`
-- **ONE ${taskAnalysis.primaryAgent}**: \`Task(\"${taskAnalysis.primaryAgent}\", \"Implement main solution for: ${objective}\")\`
-- **ONE tester**: \`Task(\"tester\", \"Test and validate solution for: ${objective}\")\`
+## 🏗️ UX Workspace Creation Workflow
 
-**🚨 CRITICAL ANTI-LOOP RULES:**
-- **NEVER spawn multiple agents of the same type**
-- **NEVER spawn \"UI Builder Tools Tester\" multiple times**
-- **NEVER spawn \"Workspace Tools Tester\" multiple times**
-- **WAIT for agent completion** before spawning related agents
-- **CHECK Memory** for existing agents before spawning new ones
+For UX Workspace tasks (e.g., "create workspace for IT support"):
 
-**❌ PROHIBITED PATTERNS:**
-\`\`\`
-// DON'T DO THIS - CAUSES INFINITE LOOPS:
-Task(\"UI Builder Tools Tester\", \"Test UI Builder tools\");
-Task(\"UI Builder Tools Tester\", \"Test UI Builder tools\");  // ← DUPLICATE!
-Task(\"UI Builder Tools Tester\", \"Test UI Builder tools\");  // ← INFINITE LOOP!
-\`\`\`
-
-**✅ CORRECT PATTERNS:**
-\`\`\`
-// DO THIS - SINGLE AGENTS WITH SPECIFIC TASKS:
-Task(\"ui-builder-specialist\", \"Create specific UI Builder page for incident management\");
-Task(\"workspace-architect\", \"Design UX workspace structure for IT support team\");
-Task(\"testing-specialist\", \"Validate workspace functionality and report results\");
-\`\`\`
-
-### 5. Memory Coordination Pattern with Loop Detection
-All agents MUST use this memory coordination WITH loop prevention:
+### Option 1: Complete Workflow (Recommended)
+Use \`snow_create_complete_workspace\` for full 6-step automated creation:
 
 \`\`\`javascript
-// STEP 1: Check if agent type already exists (PREVENT LOOPS!)
-const existingAgents = Memory.get('active_agents') || [];
-const agentType = 'ui-builder-specialist';
+const workspace = await snow_create_complete_workspace({
+  workspace_name: "IT Support Workspace",
+  description: "Agent workspace for IT support team",
+  tables: ["incident", "task", "problem"],
+  route_name: "it_support_workspace"
+});
+\`\`\`
 
-if (existingAgents.includes(agentType)) {
-  console.log('Agent type already active - SKIPPING to prevent infinite loop');
-  return; // DON'T spawn duplicate agents!
+### Option 2: Individual Steps (Advanced Control)
+If fine control needed, follow exact sequence:
+
+1. \`snow_create_ux_experience\` → Creates sys_ux_experience record
+2. \`snow_create_ux_app_config\` → Creates sys_ux_app_config record
+3. \`snow_create_ux_page_macroponent\` → Creates sys_ux_macroponent
+4. \`snow_create_ux_page_registry\` → Creates sys_ux_page_registry
+5. \`snow_create_ux_app_route\` → Creates sys_ux_app_route
+6. \`snow_update_ux_app_config_landing_page\` → Sets landing page route
+
+**CRITICAL:** Must follow exact sequence for functional workspaces!
+
+**Access URL:** \`/now/experience/workspace/{route_name}\`
+
+## 📊 Data Generation Strategy
+
+For data generation tasks (e.g., "create 5000 incidents for ML training"):
+
+**Focus on:**
+- Creating realistic data distributions
+- Using batch operations (100-500 records per batch)
+- Adding variety in categories, priorities, statuses
+- Ensuring data quality for ML training
+
+**Avoid:**
+- Building complex export/import systems
+- Creating APIs or workflows (unless explicitly requested)
+- Over-engineering simple data creation
+
+**Example Approach:**
+\`\`\`javascript
+// Batch creation to avoid timeouts
+for (let batch = 0; batch < 50; batch++) {
+  const incidents = generateRealisticIncidentBatch(100);
+  await snow_bulk_create_records({
+    table: 'incident',
+    records: incidents
+  });
+  console.log(\`Created batch \${batch + 1}/50\`);
 }
+\`\`\`
 
-// STEP 2: Register agent as active
-const agentId = \`agent_\${agentType}_\${sessionId}\`;
-existingAgents.push(agentType);
-Memory.store('active_agents', JSON.stringify(existingAgents));
+## 🧠 Memory Coordination Pattern
 
-// STEP 3: Agent stores progress
-Memory.store(\`\${agentId}_progress\`, JSON.stringify({
-  agent_type: agentType,
+For swarm sessions with multiple agents:
+
+\`\`\`javascript
+// Initialize session memory
+Memory.store("swarm_session_${sessionId}", JSON.stringify({
+  objective: "${objective}",
+  status: "in_progress",
+  started_at: new Date().toISOString(),
+  update_set_id: updateSet.sys_id
+}));
+
+// Store agent progress
+Memory.store("agent_<name>_progress", JSON.stringify({
   status: "working",
-  current_task: "description of current work",
+  current_task: "description",
   completion_percentage: 45,
-  spawned_at: new Date().toISOString(),
   last_update: new Date().toISOString()
 }));
 
-// Agent reads other agent's work when needed
-const primaryWork = Memory.get("agent_\${taskAnalysis.primaryAgent}_output");
+// Read other agent's work
+const otherAgentWork = Memory.get("agent_<other>_output");
 
-// Agent signals completion
-Memory.store(\`\${agentId}_complete\`, JSON.stringify({
+// Signal completion
+Memory.store("agent_<name>_complete", JSON.stringify({
   completed_at: new Date().toISOString(),
-  outputs: { /* agent deliverables */ },
-  artifacts_created: [ /* list of created artifacts */ ]
+  outputs: { /* deliverables */ },
+  artifacts_created: [ /* sys_ids */ ]
 }));
 \`\`\`
 
-## 🧠 Intelligent Features Configuration
-${hasIntelligentFeatures ? `✅ **INTELLIGENT MODE ACTIVE** - The following features are enabled:
+## 🎯 ServiceNow Development Best Practices
 
-- **🔐 Auto Permissions**: ${options.autoPermissions ? '✅ Will escalate permissions automatically' : '❌ Manual permission handling'}
-- **🔍 Smart Discovery**: ${options.smartDiscovery ? '✅ Will discover and reuse existing artifacts' : '❌ Create all new artifacts'}
-- **🧪 Live Testing**: ${options.liveTesting ? '✅ Will test in real ServiceNow instance' : '❌ Local testing only'}
-- **🚀 Auto Deploy**: ${options.autoDeploy ? '⚠️ WILL DEPLOY TO SERVICENOW AUTOMATICALLY' : '✅ Planning mode - no deployment'}
-- **🔄 Auto Rollback**: ${options.autoRollback ? '✅ Will rollback on any failures' : '❌ No automatic rollback'}
-- **💾 Shared Memory**: ${options.sharedMemory ? '✅ Agents share context via Memory' : '❌ Isolated agent execution'}
-- **📊 Progress Monitoring**: ${options.progressMonitoring ? '✅ Real-time progress tracking' : '❌ No progress monitoring'}
-- **📝 Script Execution**: ${options.autoConfirm ? '⚠️ AUTO-CONFIRM - Background scripts execute without user confirmation' : options.autoConfirm === false ? '🔒 FORCE CONFIRM - Always ask for script confirmation' : '🤚 DEFAULT - Ask for confirmation on risky scripts'}` : '❌ **STANDARD MODE** - Use manual coordination patterns'}
+1. **Always use Update Sets** - Required for all development work
+2. **Discover table schemas** - Use exact field names from discovery
+3. **Test authentication** - Verify connection before starting work
+4. **Use batch operations** - For creating multiple records (avoid timeouts)
+5. **Store sys_ids in memory** - For agent coordination and artifact tracking
+6. **Follow ServiceNow workflows** - UX Workspaces, widgets, flows have specific creation patterns
 
-## 🎯 ServiceNow Execution Strategy
+## Available MCP Tools
 
-### 🚀 MANDATORY: Live ServiceNow Development First!
+- **ServiceNow Unified Server** (235+ tools): All ServiceNow CRUD, queries, deployments
+- **Snow-Flow Orchestration Server** (176+ tools): Swarm coordination, memory, neural networks
 
-**CRITICAL RULE**: All agents MUST attempt to use ServiceNow MCP tools first, regardless of authentication status.
-
-### 🚨 MANDATORY: ES5 JavaScript Only for ALL ServiceNow Scripts
-**⚠️ SERVICENOW RHINO ENGINE = ES5 ONLY - NO MODERN SYNTAX!**
-
-**CRITICAL ES5 RULES:**
-- NO const/let (use var)
-- NO arrow functions (use function())
-- NO template literals (use string concatenation) 
-- NO destructuring (use explicit property access)
-- NO for...of loops (use traditional for loops)
-- NO default parameters (use typeof checks)
-
-**🔥 If you use ES6+ syntax, the script WILL FAIL with SyntaxError!**
-**See CLAUDE.md for complete ES5 examples and common mistake fixes.**
-
-### 📝 Background Script Execution Settings
-${options.autoConfirm ? '⚠️ **AUTO-CONFIRM MODE ENABLED**: When calling snow_execute_background_script, ALWAYS add autoConfirm: true parameter to skip user confirmation.\n```javascript\nsnow_execute_background_script({\n  script: "your ES5 script here",\n  description: "Clear description",\n  autoConfirm: true  // ⚠️ User enabled auto-confirm mode\n})\n```' : options.autoConfirm === false ? '🔒 **FORCE CONFIRM MODE**: All background scripts will require user confirmation, even simple ones.' : '🤚 **DEFAULT MODE**: Background scripts will ask for user confirmation based on risk level.'}
-
-#### Current MCP Tools Available (Snow-Flow v3.3.4)
-${isAuthenticated ? '✅ Authentication detected - full deployment capabilities' : '⚠️ No authentication detected - MCP tools will provide specific instructions if auth needed'}
-
-Your agents MUST use these MCP tools IN THIS ORDER:
-
-🚨 **MANDATORY PRE-FLIGHT CHECKS** (ALWAYS do first!):
-1. \`snow_auth_diagnostics\` - Test authentication and permissions
-2. \`snow_update_set_create\` - Create and activate update set for tracking
-3. If auth fails, STOP and provide instructions to run 'snow-flow auth login'
-4. If update set fails, STOP - development work is not safe without tracking
-
-🎯 **Core Development Tools**:
-1. **Universal Query Tool**: \`snow_query_table\` - Works with ALL ServiceNow tables
-   - Count-only: \`{table: "incident", query: "state!=7"}\` → Memory efficient
-   - Specific fields: \`{table: "sc_request", fields: ["number", "state"]}\` → Only needed data
-   - Full content: \`{table: "change_request", include_content: true}\` → When all data needed
-
-2. **Deployment Tools**: 
-   - \`snow_deploy\` - Universal deployment for NEW artifacts (16+ types supported!)
-   - \`snow_update\` - Update EXISTING artifacts by name or sys_id
-
-3. **Discovery Tools**:
-   - \`snow_discover_table_fields\` - Get exact field names and types
-   - \`snow_table_schema_discovery\` - Complete table structure
-
-4. **Update Set Management**:
-   - \`snow_update_set_create\` - Create new update sets
-   - \`snow_update_set_add_comment\` - Track progress
-   - \`snow_update_set_retrieve\` - Get update set XML
-
-## 🔧 NEW: Expanded Artifact Support (v3.3.4)
-
-Snow-Flow now supports **16+ different ServiceNow artifact types**:
-
-| Type | Table | Deploy | Update | Natural Language |
-|------|-------|--------|---------|------------------|
-| widget | sp_widget | ✅ | ✅ | ✅ |
-| business_rule | sys_script | ✅ | ✅ | ✅ |
-| script_include | sys_script_include | ✅ | ✅ | ✅ |
-| ui_page | sys_ui_page | ✅ | ✅ | ✅ |
-| client_script | sys_script_client | ✅ | ✅ | ✅ |
-| ui_action | sys_ui_action | ✅ | ✅ | ✅ |
-| ui_policy | sys_ui_policy | ✅ | ✅ | ✅ |
-| acl | sys_security_acl | ✅ | ✅ | ✅ |
-| table | sys_db_object | ✅ | ✅ | ✅ |
-| field | sys_dictionary | ✅ | ✅ | ✅ |
-| workflow | wf_workflow | ✅ | ✅ | ✅ |
-| flow | sys_hub_flow | ✅ | ✅ | ✅ |
-| notification | sysevent_email_action | ✅ | ✅ | ✅ |
-| scheduled_job | sysauto_script | ✅ | ✅ | ✅ |
-
-**Usage Examples:**
-\`\`\`javascript
-// Deploy NEW artifacts
-await snow_deploy({
-  type: 'business_rule',
-  name: 'Auto Assignment Rule',
-  table: 'incident',
-  when: 'before',
-  script: 'if (current.priority == "1") current.assigned_to = "admin";'
-});
-
-// Update EXISTING artifacts (natural language supported!)
-await snow_update({
-  type: 'ui_action',
-  identifier: 'close_incident',
-  instruction: 'Change label to "Close with Resolution" and add validation'
-});
-\`\`\`
-
-${options.autoDeploy ? `
-#### ⚠️ AUTO-DEPLOYMENT ACTIVE ⚠️
-- Real artifacts will be created in ServiceNow
-- All changes tracked in Update Sets
-- Rollback available if needed
-` : `
-#### 📋 Planning Mode Active
-- No real artifacts will be created
-- Analysis and recommendations only
-- Use --auto-deploy to enable deployment
-`}
-
-${!isAuthenticated ? `### ❌ ServiceNow Integration Disabled
-
-#### Planning Mode (Auth Required)
-When authentication is not available, agents will:
-1. Document the COMPLETE solution architecture
-2. Create detailed implementation guides
-3. Store all plans in Memory for future deployment
-4. Provide SPECIFIC instructions: "Run snow-flow auth login"
-
-⚠️ IMPORTANT: This is a FALLBACK mode only!
-Agents must ALWAYS try MCP tools first!` : ''}
-
-## 👑 Queen Agent Coordination Instructions
-
-### 6. Agent Coordination & Handoffs
-Ensure smooth transitions between agents:
-
-\`\`\`javascript
-// Primary agent signals readiness for support
-Memory.store("agent_${taskAnalysis.primaryAgent}_ready_for_support", JSON.stringify({
-  base_structure_complete: true,
-  ready_for: [${taskAnalysis.supportingAgents.map(a => `"${a}"`).join(', ')}],
-  timestamp: new Date().toISOString()
-}));
-
-// Supporting agents check readiness
-const canProceed = JSON.parse(Memory.get("agent_${taskAnalysis.primaryAgent}_ready_for_support") || "{}");
-if (canProceed?.base_structure_complete) {
-  // Begin supporting work
-}
-\`\`\`
-
-### 7. Final Validation and Completion
-Once all agents complete their work:
-
-\`\`\`javascript
-// Collect all agent outputs
-const agentOutputs = {};
-[${[taskAnalysis.primaryAgent, ...taskAnalysis.supportingAgents].map(a => `"${a}"`).join(', ')}].forEach(agent => {
-  const output = Memory.get(\`agent_\${agent}_complete\`);
-  if (output) {
-    agentOutputs[agent] = JSON.parse(output);
-  }
-});
-
-// Store final swarm results
-Memory.store("swarm_session_${sessionId}_results", JSON.stringify({
-  objective: "${objective}",
-  completed_at: new Date().toISOString(),
-  agent_outputs: agentOutputs,
-  artifacts_created: Object.values(agentOutputs)
-    .flatMap(output => output.artifacts_created || []),
-  success: true
-}));
-
-// Update final TodoWrite status
-TodoWrite([
-  {
-    id: "swarm_completion",
-    content: "Swarm successfully completed: ${objective}",
-    status: "completed",
-    priority: "high"
-  }
-]);
-\`\`\`
-
-## 🎯 Success Criteria
-
-Your Queen Agent orchestration is successful when:
-1. ✅ All agents have been spawned and initialized
-2. ✅ Swarm session is tracked in Memory
-3. ✅ Agents are coordinating through shared Memory
-4. ✅ TodoWrite is being used for task tracking
-5. ✅ ${taskAnalysis.taskType} requirements are met
-6. ✅ All artifacts are created/deployed successfully
-
-## 💡 Queen Agent Best Practices
-
-### **Workflow Orchestration:**
-1. **NEVER parallel foundation work** - research, planning, architecture must be sequential
-2. **Foundation → Development → Validation** - strict phase progression  
-3. **Parallel development only** after foundation complete
-4. **Use Memory to share foundation outputs** to development agents
-5. **Coordinate parallel agents** through shared Memory state
-
-### **Agent Coordination:**
-1. **Sequential Agents**: researcher → planner → architect (must wait for each other)
-2. **Parallel Agents**: widget-developer + script-writer + ui-builder (can work simultaneously)
-3. **Foundation Dependencies**: All development agents depend on architecture completion
-4. **Shared Memory**: Store research findings, plans, architecture for all agents to access
-
-### **Task Management:**
-1. **Update TodoWrite** with phase progression
-2. **Mark foundation complete** before starting development  
-3. **Monitor parallel agent progress** and coordinate conflicts
-4. **Validate outputs** before marking complete
-5. **Store all decisions** in Memory for audit trail
-
-### **Example Workflow:**
-**Phase 1 (Sequential):** researcher → architect → planner
-**Phase 2 (Parallel):** widget-dev + script-writer + ui-builder (use foundation outputs)  
-**Phase 3 (Parallel):** tester + reviewer + documenter (validate development outputs)
-
-## 🚀 Begin Orchestration
-
-Now execute this Queen Agent orchestration plan:
-1. Initialize the swarm session in Memory
-2. Create the master task list with TodoWrite
-3. Spawn all required agents using Task
-4. Monitor progress and coordinate
-5. Validate and complete the objective
-
-Remember: You are the Queen Agent - the master coordinator. Your role is to ensure all agents work harmoniously to achieve the objective: "${objective}"
-
-## 📊 Session Information
-- **Session ID**: ${sessionId}
-- **Snow-Flow Version**: v${VERSION}
-- **Authentication**: ${isAuthenticated ? 'Active' : 'Required'}
-- **Deployment Mode**: ${options.autoDeploy ? 'Live deployment enabled' : 'Planning mode'}
-- **Estimated Agents**: ${taskAnalysis.estimatedAgentCount}
-- **Primary Agent**: ${taskAnalysis.primaryAgent}
-
-🎯 **Ready to begin orchestration!**
-`;
+Now begin working on the objective: ${objective}`;
 
   return prompt;
-}
-function getTeamRecommendation(taskType: string): string {
-  switch (taskType) {
-    case 'widget_development':
-      return 'Widget Development Team (Frontend + Backend + UI/UX + Platform + QA)';
-    case 'flow_development':
-      return 'Flow Development Team (Process + Trigger + Data + Integration + Security)';
-    case 'application_development':
-      return 'Application Development Team (Database + Business Logic + Interface + Security + Performance)';
-    case 'integration':
-      return 'Individual Integration Specialist or Adaptive Team';
-    case 'security_review':
-      return 'Individual Security Specialist';
-    case 'performance_optimization':
-      return 'Individual Backend Specialist or Adaptive Team';
-    default:
-      return 'Adaptive Team (dynamically assembled based on requirements)';
-  }
-}
-
-function getServiceNowInstructions(taskType: string): string {
-  const taskTitle = taskType.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
-  
-  return `**${taskTitle} Process:**
-The team-based SPARC architecture will handle the complete development process.
-Refer to CLAUDE.md for detailed instructions and best practices specific to ${taskType}.`;
-}
-
-function getExpectedDeliverables(taskType: string, isAuthenticated: boolean = false): string {
-  const taskTitle = taskType.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
-  
-  if (isAuthenticated) {
-    return `The team will deliver a complete ${taskTitle.toLowerCase()} solution directly to ServiceNow.
-All artifacts will be created in your ServiceNow instance with proper Update Set tracking.
-Refer to CLAUDE.md for specific deliverables based on your task type.`;
-  } else {
-    return `The team will create ${taskTitle.toLowerCase()} artifacts as local files.
-Files will be organized in the servicenow/ directory for easy import.
-Refer to CLAUDE.md for specific deliverables based on your task type.`;
-  }
-}
-
-// Helper function to analyze objectives using intelligent agent detection
-function analyzeObjective(objective: string, userMaxAgents?: number): TaskAnalysis {
-  return AgentDetector.analyzeTask(objective, userMaxAgents);
-}
-
-function extractName(objective: string, type: string): string {
-  const words = objective.split(' ');
-  const typeIndex = words.findIndex(w => w.toLowerCase().includes(type));
-  if (typeIndex >= 0 && typeIndex < words.length - 1) {
-    return words.slice(typeIndex + 1).join(' ').replace(/['"]/g, '');
-  }
-  return `Generated ${type}`;
-}
-
-/**
- * Generate intelligent agent spawning strategy based on task dependencies
- * Creates execution batches for sequential and parallel execution
- */
-function getAgentSpawnStrategy(taskAnalysis: any): string {
-  const { primaryAgent, supportingAgents, taskType, serviceNowArtifacts } = taskAnalysis;
-  
-  // Define agent dependencies - which agents must run before others
-  const agentDependencies: { [key: string]: string[] } = {
-    // Architecture/Design agents must run first
-    'architect': [],
-    'app-architect': [],
-    
-    // Script/Code agents depend on architecture
-    'script-writer': ['architect', 'app-architect'],
-    'coder': ['architect', 'app-architect'],
-    
-    // UI agents can run after architecture, parallel with backend
-    'widget-creator': ['architect', 'app-architect'],
-    'css-specialist': ['widget-creator'],
-    'frontend-specialist': ['widget-creator'],
-    'backend-specialist': ['architect', 'app-architect'],
-
-    // Integration agents can run in parallel with others
-    'integration-specialist': ['architect'],
-    'api-specialist': ['architect'],
-
-    // Testing/Security agents run last
-    'tester': ['script-writer', 'widget-creator', 'frontend-specialist', 'backend-specialist'],
-    'security-specialist': ['script-writer', 'api-specialist'],
-    'performance-specialist': ['frontend-specialist', 'backend-specialist'],
-
-    // Error handling depends on main implementation
-    'error-handler': ['script-writer'],
-    
-    // Documentation can run in parallel
-    'documentation-specialist': [],
-    
-    // Specialized agents
-    'ml-developer': ['architect', 'script-writer'],
-    'database-expert': ['architect'],
-    'analyst': ['architect']
-  };
-  
-  // Create dependency graph
-  const allAgents = [primaryAgent, ...supportingAgents];
-  const agentBatches: string[][] = [];
-  const processedAgents = new Set<string>();
-  
-  // Helper to check if all dependencies are met
-  const canExecute = (agent: string): boolean => {
-    const deps = agentDependencies[agent] || [];
-    return deps.every(dep => processedAgents.has(dep));
-  };
-  
-  // Create batches based on dependencies
-  while (processedAgents.size < allAgents.length) {
-    const currentBatch: string[] = [];
-    
-    for (const agent of allAgents) {
-      if (!processedAgents.has(agent) && canExecute(agent)) {
-        currentBatch.push(agent);
-      }
-    }
-    
-    if (currentBatch.length === 0) {
-      // Circular dependency or missing dependency - add remaining agents
-      for (const agent of allAgents) {
-        if (!processedAgents.has(agent)) {
-          currentBatch.push(agent);
-        }
-      }
-    }
-    
-    if (currentBatch.length > 0) {
-      agentBatches.push(currentBatch);
-      currentBatch.forEach(agent => processedAgents.add(agent));
-    }
-  }
-  
-  // Generate the strategy prompt
-  let strategy = `
-**🧠 Intelligent Dependency-Based Agent Execution Plan:**
-
-`;
-  
-  // Show execution batches
-  agentBatches.forEach((batch, index) => {
-    const isParallel = batch.length > 1;
-    const executionType = isParallel ? '⚡ PARALLEL EXECUTION' : '📦 SEQUENTIAL STEP';
-    
-    strategy += `**Batch ${index + 1} - ${executionType}:**\n`;
-    
-    if (isParallel) {
-      strategy += `\`\`\`javascript
-// 🚀 Execute these ${batch.length} agents IN PARALLEL (single message, multiple Tasks)
-`;
-      batch.forEach(agent => {
-        const agentPrompt = getAgentPromptForBatch(agent, taskType);
-        strategy += `Task("${agent}", \`${agentPrompt}\`);
-`;
-      });
-      strategy += `\`\`\`\n\n`;
-    } else {
-      strategy += `\`\`\`javascript
-// 📦 Execute this agent FIRST before proceeding
-`;
-      const agent = batch[0];
-      const agentPrompt = getAgentPromptForBatch(agent, taskType);
-      strategy += `Task("${agent}", \`${agentPrompt}\`);
-`;
-      strategy += `\`\`\`\n\n`;
-    }
-    
-    // Add wait/coordination note if not the last batch
-    if (index < agentBatches.length - 1) {
-      strategy += `**⏸️ WAIT for Batch ${index + 1} completion before proceeding to Batch ${index + 2}**\n\n`;
-    }
-  });
-  
-  // Add execution summary
-  const totalBatches = agentBatches.length;
-  const parallelBatches = agentBatches.filter(b => b.length > 1).length;
-  const maxParallelAgents = Math.max(...agentBatches.map(b => b.length));
-  
-  strategy += `
-**📊 Execution Summary:**
-- Total Execution Batches: ${totalBatches}
-- Parallel Batches: ${parallelBatches}
-- Sequential Steps: ${totalBatches - parallelBatches}
-- Max Parallel Agents: ${maxParallelAgents}
-- Estimated Time Reduction: ${Math.round((1 - (totalBatches / allAgents.length)) * 100)}%
-
-**🔄 Dependency Flow:**
-`;
-  
-  // Show visual dependency flow
-  agentBatches.forEach((batch, index) => {
-    if (index === 0) {
-      strategy += `START → `;
-    }
-    
-    if (batch.length === 1) {
-      strategy += `[${batch[0]}]`;
-    } else {
-      strategy += `[${batch.join(' | ')}]`;
-    }
-    
-    if (index < agentBatches.length - 1) {
-      strategy += ` → `;
-    } else {
-      strategy += ` → COMPLETE`;
-    }
-  });
-  
-  strategy += `\n`;
-  
-  return strategy;
-}
-
-/**
- * Generate agent-specific prompts for batch execution
- */
-function getAgentPromptForBatch(agentType: string, taskType: string): string {
-  const basePrompts: { [key: string]: string } = {
-    'architect': 'You are the architect agent. Design the system architecture and data models. Store your design in Memory for other agents.',
-    'app-architect': 'You are the application architect. Design the overall application structure and component interfaces.',
-    'script-writer': 'You are the script writer. Implement business logic and scripts based on the architecture. Check Memory for design specs.',
-    'widget-creator': 'You are the widget creator. Build the HTML structure for Service Portal widgets. Store widget specs in Memory.',
-    'css-specialist': 'You are the CSS specialist. Create responsive styles for the widgets. Read widget structure from Memory.',
-    'frontend-specialist': 'You are the frontend specialist. Implement client-side JavaScript. Coordinate with backend via Memory.',
-    'backend-specialist': 'You are the backend specialist. Implement server-side logic. Coordinate with frontend via Memory.',
-    'integration-specialist': 'You are the integration specialist. Handle external system integrations and APIs.',
-    'api-specialist': 'You are the API specialist. Design and implement REST/SOAP endpoints.',
-    'tester': 'You are the tester. Test all components created by other agents. Read their outputs from Memory.',
-    'security-specialist': 'You are the security specialist. Implement security best practices and access controls.',
-    'performance-specialist': 'You are the performance specialist. Optimize code and queries for performance.',
-    'error-handler': 'You are the error handler. Implement comprehensive error handling and logging.',
-    'documentation-specialist': 'You are the documentation specialist. Create comprehensive documentation.',
-    'ml-developer': 'You are the ML developer. Implement machine learning features using ServiceNow ML tools.',
-    'database-expert': 'You are the database expert. Design and optimize database schemas and queries.',
-    'analyst': 'You are the analyst. Analyze requirements and provide insights for implementation.'
-  };
-  
-  const prompt = basePrompts[agentType] || `You are the ${agentType} agent. Perform your specialized tasks.`;
-  
-  return `${prompt}
-MANDATORY: 
-1. Run npx snow-flow hooks pre-task --description "${taskType} - ${agentType}"
-2. Store ALL decisions in Memory with key "agent_${agentType}_decisions"
-3. Check Memory for work from agents you depend on
-4. After EVERY file operation, run npx snow-flow hooks post-edit
-5. When complete, run npx snow-flow hooks post-task --task-id "${agentType}"`;
 }
 
 // Swarm status command - monitor running swarms
