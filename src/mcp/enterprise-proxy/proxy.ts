@@ -14,9 +14,9 @@ import {
 } from './types.js';
 
 // Configuration from environment variables
-const ENTERPRISE_URL = process.env.SNOW_ENTERPRISE_URL || 'https://license-server.run.app';
+const ENTERPRISE_URL = process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev';
 const LICENSE_KEY = process.env.SNOW_LICENSE_KEY;
-const VERSION = process.env.SNOW_FLOW_VERSION || '8.30.31';
+const VERSION = process.env.SNOW_FLOW_VERSION || '8.30.34';
 
 // Generate unique machine ID for tracking
 let INSTANCE_ID: string;

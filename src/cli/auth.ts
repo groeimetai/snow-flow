@@ -85,7 +85,7 @@ async function enterpriseLicenseFlow(): Promise<void> {
     // Prompt for license key
     const licenseKey = await prompts.text({
       message: 'Enter your Enterprise License Key:',
-      placeholder: 'SNOW-ENT-CUST-ABC123',
+      placeholder: 'SNOW-SI-COMPANY-1/5-20261231-ABC12345',
       validate: (value) => {
         if (!value || value.trim().length === 0) {
           return 'License key is required';
