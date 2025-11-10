@@ -1356,71 +1356,83 @@
         }
 
         @media (max-width: 768px) {
+            /* Stack table rows as cards */
             .comparison-table-container {
                 overflow: visible;
-                padding: 0;
             }
 
-            .comparison-table {
-                font-size: 0.8rem;
+            .comparison-table,
+            .comparison-table tbody {
+                display: block;
             }
 
-            /* Hide ServiceNow column on mobile */
-            .comparison-table th:nth-child(3),
-            .comparison-table td:nth-child(3) {
+            .comparison-table thead {
                 display: none;
             }
 
-            .comparison-table th {
-                padding: 0.75rem 0.5rem;
-                font-size: 0.85rem;
-            }
-
-            .comparison-table td {
-                padding: 0.65rem 0.5rem;
-                line-height: 1.4;
+            .comparison-table tbody tr {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                background: rgba(10, 15, 25, 0.4);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 0.75rem;
             }
 
             .comparison-table td:first-child {
-                width: 40%;
-                font-size: 0.8rem;
+                grid-column: 1 / -1;
+                font-size: 0.85rem;
+                font-weight: 700;
+                color: var(--brand-cyan);
+                padding: 0 0 0.5rem 0;
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 0.25rem;
+            }
+
+            .comparison-table td:nth-child(2),
+            .comparison-table td:nth-child(3) {
+                padding: 0.5rem;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 6px;
+                font-size: 0.7rem;
+                line-height: 1.4;
             }
 
             .comparison-table td:nth-child(2) {
-                width: 60%;
-                font-size: 0.75rem;
+                border-left: 2px solid var(--brand-cyan);
+            }
+
+            .comparison-table td:nth-child(3) {
+                border-left: 2px solid rgba(239, 68, 68, 0.3);
+            }
+
+            .comparison-table td:nth-child(2)::before {
+                content: '✓ Snow-Flow';
+                display: block;
+                font-weight: 700;
+                font-size: 0.65rem;
+                color: var(--brand-cyan);
+                margin-bottom: 0.35rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .comparison-table td:nth-child(3)::before {
+                content: 'ServiceNow';
+                display: block;
+                font-weight: 700;
+                font-size: 0.65rem;
+                color: var(--text-gray);
+                margin-bottom: 0.35rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
             }
 
             .comparison-highlight {
-                padding: 0.2rem 0.5rem;
-                font-size: 0.75rem;
-            }
-
-            /* Shorten long text content on mobile */
-            .comparison-table tbody tr:nth-child(2) td:nth-child(2) {
-                font-size: 0.7rem; /* Smaller for long price text */
-            }
-
-            .comparison-table tbody tr:nth-child(3) td:nth-child(2),
-            .comparison-table tbody tr:nth-child(5) td:nth-child(2),
-            .comparison-table tbody tr:nth-child(7) td:nth-child(2),
-            .comparison-table tbody tr:nth-child(8) td:nth-child(2),
-            .comparison-table tbody tr:nth-child(9) td:nth-child(2) {
-                font-size: 0.7rem; /* Smaller for complex rows */
-            }
-
-            /* Add note that we're showing Snow-Flow only */
-            .comparison-table-container::before {
-                content: 'Snow-Flow Features (Desktop for full comparison)';
-                display: block;
-                text-align: center;
-                padding: 0.5rem;
-                background: rgba(0, 217, 255, 0.1);
-                border-radius: 8px 8px 0 0;
-                font-size: 0.7rem;
-                color: var(--brand-cyan);
-                font-weight: 600;
-                margin-bottom: -8px;
+                padding: 0.15rem 0.4rem;
+                font-size: 0.68rem;
             }
         }
     </style>
