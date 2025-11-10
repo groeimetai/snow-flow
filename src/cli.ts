@@ -345,19 +345,7 @@ program
       }
     }
 
-    // Check Enterprise features
-    const { hasEnterpriseFeatures, getEnterpriseInfo } = await import('./cli/enterprise.js');
-    const enterpriseEnabled = await hasEnterpriseFeatures();
-    const enterpriseInfo = enterpriseEnabled ? await getEnterpriseInfo() : null;
-
-    if (options.verbose && enterpriseEnabled && enterpriseInfo) {
-      cliLogger.info(`\n🌟 Snow-Flow Enterprise: ✅ Active (${enterpriseInfo.tier.toUpperCase()})`);
-      cliLogger.info(`   Organization: ${enterpriseInfo.name}`);
-      cliLogger.info(`   Features: ${enterpriseInfo.features.join(', ')}`);
-    } else if (options.verbose) {
-      cliLogger.info('\n🌟 Snow-Flow Enterprise: ❌ Not active');
-      cliLogger.info('💡 Run "snow-flow login <license-key>" to enable enterprise features');
-    }
+    // Enterprise auth now managed by SnowCode - check via snow-code auth status if needed
     
     // Initialize Queen Agent memory system
     if (options.verbose) {
