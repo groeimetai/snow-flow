@@ -1356,86 +1356,71 @@
         }
 
         @media (max-width: 768px) {
-            /* Mobile: Transform table into card layout */
             .comparison-table-container {
-                overflow-x: visible;
+                overflow: visible;
+                padding: 0;
             }
 
-            .comparison-table,
-            .comparison-table tbody {
-                display: block;
-                width: 100%;
+            .comparison-table {
+                font-size: 0.8rem;
             }
 
-            .comparison-table thead {
-                display: none; /* Hide header on mobile */
+            /* Hide ServiceNow column on mobile */
+            .comparison-table th:nth-child(3),
+            .comparison-table td:nth-child(3) {
+                display: none;
             }
 
-            .comparison-table tbody tr {
-                display: block;
-                margin-bottom: 1.5rem;
-                background: rgba(10, 15, 25, 0.6);
-                border: 1px solid var(--border);
-                border-radius: 12px;
-                padding: 1.25rem;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            }
-
-            .comparison-table tbody tr:hover {
-                background: rgba(0, 217, 255, 0.08);
-                border-color: var(--brand-cyan);
-                transform: translateY(-2px);
+            .comparison-table th {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.85rem;
             }
 
             .comparison-table td {
-                display: block;
-                padding: 0.75rem 0;
-                border: none;
-                text-align: left;
+                padding: 0.65rem 0.5rem;
+                line-height: 1.4;
             }
 
-            /* Feature name as card title */
             .comparison-table td:first-child {
-                font-size: 1.1rem;
-                font-weight: 700;
-                color: var(--brand-cyan);
-                padding-bottom: 1rem;
-                margin-bottom: 0.75rem;
-                border-bottom: 1px solid var(--border);
-            }
-
-            /* Add labels before Snow-Flow and ServiceNow data */
-            .comparison-table td:nth-child(2)::before {
-                content: 'Snow-Flow: ';
-                font-weight: 600;
-                color: var(--text-white);
-                display: block;
-                margin-bottom: 0.25rem;
-                font-size: 0.85rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-            }
-
-            .comparison-table td:nth-child(3)::before {
-                content: 'ServiceNow: ';
-                font-weight: 600;
-                color: var(--text-gray);
-                display: block;
-                margin-bottom: 0.25rem;
-                margin-top: 0.5rem;
-                font-size: 0.85rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-            }
-
-            .comparison-table td:nth-child(2),
-            .comparison-table td:nth-child(3) {
-                padding-left: 1rem;
-                border-left: 2px solid var(--border);
+                width: 40%;
+                font-size: 0.8rem;
             }
 
             .comparison-table td:nth-child(2) {
-                border-left-color: var(--brand-cyan);
+                width: 60%;
+                font-size: 0.75rem;
+            }
+
+            .comparison-highlight {
+                padding: 0.2rem 0.5rem;
+                font-size: 0.75rem;
+            }
+
+            /* Shorten long text content on mobile */
+            .comparison-table tbody tr:nth-child(2) td:nth-child(2) {
+                font-size: 0.7rem; /* Smaller for long price text */
+            }
+
+            .comparison-table tbody tr:nth-child(3) td:nth-child(2),
+            .comparison-table tbody tr:nth-child(5) td:nth-child(2),
+            .comparison-table tbody tr:nth-child(7) td:nth-child(2),
+            .comparison-table tbody tr:nth-child(8) td:nth-child(2),
+            .comparison-table tbody tr:nth-child(9) td:nth-child(2) {
+                font-size: 0.7rem; /* Smaller for complex rows */
+            }
+
+            /* Add note that we're showing Snow-Flow only */
+            .comparison-table-container::before {
+                content: 'Snow-Flow Features (Desktop for full comparison)';
+                display: block;
+                text-align: center;
+                padding: 0.5rem;
+                background: rgba(0, 217, 255, 0.1);
+                border-radius: 8px 8px 0 0;
+                font-size: 0.7rem;
+                color: var(--brand-cyan);
+                font-weight: 600;
+                margin-bottom: -8px;
             }
         }
     </style>
