@@ -295,7 +295,7 @@ program
     // Snow-Flow uses Claude Code directly - no provider-agnostic layer needed
 
     // Analyze the objective using intelligent agent detection
-    const taskAnalysis = analyzeObjective(objective, parseInt(options.maxAgents));
+    const taskAnalysis = AgentDetector.analyzeTask(objective, parseInt(options.maxAgents));
     
     // Debug logging to understand task type detection
     if (process.env.DEBUG || options.verbose) {
