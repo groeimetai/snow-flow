@@ -2076,59 +2076,30 @@ program
   .description('Show detailed help information')
   .action(() => {
     console.log(`
-🚀 Snow-Flow v${VERSION} - ServiceNow Multi-Agent Development Framework
+🚀 Snow-Flow v${VERSION} - ServiceNow AI Development Platform
 
-📋 Available Commands:
-  swarm <objective>     Execute multi-agent orchestration
-  spawn <type>          Spawn specific agent types
-  export                Export MCP configuration to Claude Desktop
-  status                Show system status
-  monitor               Real-time monitoring dashboard
-  memory <action>       Memory operations
-  auth <action>         Authentication management
-  partner <action>      Partner Program commands (login, status, logout)
-  mcp <action>          Manage ServiceNow MCP servers
-  help                  Show this help
+📋 Essential Commands:
+  snow-flow init              Initialize project with MCP servers
+  snow-flow auth login        Complete authentication setup
+  snow-flow swarm "task"      Execute AI-powered ServiceNow development
 
-🎯 Example Usage:
-  snow-flow init                           # Initialize project (auto-configures SnowCode)
-  snow-flow auth login                     # Authenticate (handles LLM + ServiceNow)
-  snow-flow auth status                    # Check authentication status
-  snow-flow partner login                  # Authenticate as Snow-Flow Partner
-  snow-flow partner status                 # Check partner license status
-  snow-flow swarm "create a widget for incident management"
-  snow-flow swarm "create business rule for auto-assignment"
-  snow-flow swarm "generate 5000 incidents" --auto-confirm  # 📝 Auto-confirm background scripts
-  snow-flow spawn widget-builder --name "IncidentWidget"
-  snow-flow monitor --duration 120
-  snow-flow memory store "project" "incident_system"
-  snow-flow status
+🎯 Quick Start:
+  1. snow-flow init                           # Set up your project
+  2. snow-flow auth login                     # Authenticate (LLM + ServiceNow + Enterprise)
+  3. snow-flow swarm "your task"              # Let AI build your solution
 
-🤖 Agent Types:
-  widget-builder       Create Service Portal widgets
-  script-generator     Generate scripts and business rules
-  security-specialist  ACL and compliance validation
-  ui-builder          Create UI components
-  app-creator         Build complete applications
+💡 Example Tasks:
+  snow-flow swarm "create incident dashboard widget"
+  snow-flow swarm "build auto-assignment business rule"
+  snow-flow swarm "generate 5000 test incidents with realistic data"
+  snow-flow swarm "refactor legacy client scripts to modern patterns"
 
-⚙️  OAuth Configuration:
-  Set environment variables or use command line options:
-  - SNOW_INSTANCE: Your ServiceNow instance (e.g., dev12345.service-now.com)
-  - SNOW_CLIENT_ID: OAuth Client ID from ServiceNow
-  - SNOW_CLIENT_SECRET: OAuth Client Secret from ServiceNow
-  
-🔧 MCP Server Management:
-  - start        Start all or specific MCP servers
-  - stop         Stop all or specific MCP servers  
-  - restart      Restart all or specific MCP servers
-  - status       Show status of all MCP servers
-  - logs         View MCP server logs
-  - list         List all configured MCP servers
-
-  🔗 Live ServiceNow Integration:
-  - Create widgets directly in ServiceNow
-  - Execute business rules and scripts
-  - Test changes immediately in your instance
+🔗 What You Get:
+  • 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, etc.)
+  • 393 optimized ServiceNow tools via MCP protocol
+  • Multi-agent AI orchestration for complex tasks
+  • Automatic Update Set management
+  • Direct ServiceNow instance integration
 
 🌐 More Info: https://github.com/groeimetai/snow-flow
     `);
