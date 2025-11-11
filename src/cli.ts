@@ -1198,35 +1198,30 @@ program
   .description('Show detailed help information')
   .action(() => {
     console.log(`
-🚀 Snow-Flow v${VERSION} - ServiceNow Multi-Agent Development Framework
+🚀 Snow-Flow v${VERSION} - ServiceNow AI Development Platform
 
-📋 Available Commands:
-  init                  Initialize Snow-Flow project
-  auth <action>         Authentication management
-    ├─ login            Complete authentication (Provider + ServiceNow + Enterprise)
-    ├─ provider         Configure LLM provider (Claude, GPT, Gemini, etc.)
-    ├─ servicenow       Configure ServiceNow instance credentials
-    └─ enterprise       Configure Snow-Flow Enterprise license
-  swarm <objective>     Execute multi-agent ServiceNow development
-  portal                Open Snow-Flow Enterprise Portal
-  help                  Show this help
+📋 Essential Commands:
+  snow-flow init              Initialize project with MCP servers
+  snow-flow auth login        Complete authentication setup
+  snow-flow swarm "task"      Execute AI-powered ServiceNow development
 
-🎯 Example Usage:
-  snow-flow init                                    # Initialize project
-  snow-flow auth login                              # Complete authentication setup
-  snow-flow auth provider                           # Configure LLM provider only
-  snow-flow auth servicenow                         # Configure ServiceNow only
+🎯 Quick Start:
+  1. snow-flow init                           # Set up your project
+  2. snow-flow auth login                     # Authenticate (LLM + ServiceNow + Enterprise)
+  3. snow-flow swarm "your task"              # Let AI build your solution
+
+💡 Example Tasks:
   snow-flow swarm "create incident dashboard widget"
-  snow-flow swarm "create business rule for auto-assignment"
-  snow-flow swarm "generate 5000 test incidents"
-  snow-flow portal                                  # Open Enterprise Portal
+  snow-flow swarm "build auto-assignment business rule"
+  snow-flow swarm "generate 5000 test incidents with realistic data"
+  snow-flow swarm "refactor legacy client scripts to modern patterns"
 
-🔗 Live ServiceNow Integration:
-  - Multi-agent orchestration for complex ServiceNow development
-  - Direct integration with ServiceNow instances via OAuth
-  - Automatic Update Set management
-  - Widget, business rule, and script generation
-  - Real-time testing and deployment
+🔗 What You Get:
+  • 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, etc.)
+  • 393 optimized ServiceNow tools via MCP protocol
+  • Multi-agent AI orchestration for complex tasks
+  • Automatic Update Set management
+  • Direct ServiceNow instance integration
 
 🌐 More Info: https://github.com/groeimetai/snow-flow
     `);
