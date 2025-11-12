@@ -367,7 +367,7 @@ program
     if (options.verbose) {
       cliLogger.info('\n💾 Initializing swarm memory system...');
     }
-    const { SessionMemorySystem } = await import('./memory/session-memory');
+    const { SessionMemorySystem } = await import('./memory/session-memory.js');
     const memorySystem = new SessionMemorySystem();
     
     // Generate swarm session ID
@@ -1700,9 +1700,9 @@ program
   .option('--interval <seconds>', 'Watch interval in seconds', '5')
   .action(async (sessionId: string | undefined, options) => {
     cliLogger.info('\n🔍 Checking swarm status...\n');
-    
+
     try {
-      const { SessionMemorySystem } = await import('./memory/session-memory');
+      const { SessionMemorySystem } = await import('./memory/session-memory.js');
       const memorySystem = new SessionMemorySystem();
       
       if (!sessionId) {
