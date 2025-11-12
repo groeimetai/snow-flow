@@ -9,8 +9,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      id-token: write  # Required for provenance
+      contents: write  # Required for creating GitHub releases
+      id-token: write  # Required for npm provenance
 
     steps:
       - name: Checkout code
