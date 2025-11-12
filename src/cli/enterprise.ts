@@ -174,31 +174,47 @@ async function loginCommand(licenseKey: string): Promise<void> {
  * Exported for use in main status command
  */
 export async function showEnterpriseStatus(): Promise<void> {
+  // Check for enterprise MCP configuration (new flow)
+  const { isEnterpriseMcpConfigured } = await import('../config/snowcode-config.js');
+  const mcpConfigured = await isEnterpriseMcpConfigured();
+
+  // Check for portal auth (legacy flow)
   const auth = await loadAuth();
 
-  if (!auth) {
+  if (!mcpConfigured && !auth) {
     console.log(chalk.blue('🔐 Snow-Flow Enterprise'));
-    console.log(chalk.yellow('   Status: Not logged in'));
+    console.log(chalk.yellow('   Status: Not configured'));
     console.log('');
-    console.log(chalk.gray('   To login: snow-flow login <license-key>'));
-    console.log(chalk.gray('   Get key from:'), chalk.blue(PORTAL_URL));
+    console.log(chalk.gray('   Setup: snow-flow auth login  (or)  snow-flow enterprise setup'));
+    console.log(chalk.gray('   Get license key from:'), chalk.blue(PORTAL_URL));
     return;
   }
 
   console.log(chalk.blue('🔐 Snow-Flow Enterprise'));
-  console.log(chalk.green('   Status: ✅ Authenticated'));
+  console.log(chalk.green('   Status: ✅ Configured'));
   console.log('');
-  console.log(chalk.bold('   Customer:'), auth.customer.name);
-  console.log(chalk.bold('   Customer ID:'), auth.customer.id);
-  console.log(chalk.bold('   License Tier:'), chalk.cyan(auth.customer.tier.toUpperCase()));
-  console.log('');
-  console.log(chalk.bold('   Features:'));
-  auth.customer.features.forEach(feature => {
-    console.log(chalk.gray('      •'), feature);
-  });
 
-  // Show seat information if available (v8.5.0+)
-  if (auth.customer.developerSeats !== undefined || auth.customer.stakeholderSeats !== undefined) {
+  // Show MCP server info if configured
+  if (mcpConfigured) {
+    console.log(chalk.bold('   Type:'), 'Enterprise MCP Server (Jira, Azure DevOps, Confluence)');
+    console.log(chalk.gray('   Config:'), '~/.snowcode/config.json');
+    console.log(chalk.gray('   Reconfigure:'), 'snow-flow enterprise setup');
+  }
+
+  // Show portal auth info if available
+  if (auth && auth.customer) {
+    console.log('');
+    console.log(chalk.bold('   Customer:'), auth.customer.name);
+    console.log(chalk.bold('   Customer ID:'), auth.customer.id);
+    console.log(chalk.bold('   License Tier:'), chalk.cyan(auth.customer.tier.toUpperCase()));
+    console.log('');
+    console.log(chalk.bold('   Features:'));
+    auth.customer.features.forEach(feature => {
+      console.log(chalk.gray('      •'), feature);
+    });
+
+    // Show seat information if available (v8.5.0+)
+    if (auth.customer.developerSeats !== undefined || auth.customer.stakeholderSeats !== undefined) {
     console.log('');
     console.log(chalk.bold('   License Seats:'));
 
@@ -237,10 +253,10 @@ export async function showEnterpriseStatus(): Promise<void> {
         chalk.gray('(active/total)')
       );
     }
-  }
+    }
 
-  // Show theme information if available
-  if (auth.customer.customTheme) {
+    // Show theme information if available
+    if (auth.customer.customTheme) {
     console.log('');
     console.log(chalk.bold('   Custom Theme:'), chalk.magenta(auth.customer.customTheme.displayName));
     console.log(chalk.gray('      Theme ID:'), auth.customer.customTheme.themeName);
@@ -251,13 +267,14 @@ export async function showEnterpriseStatus(): Promise<void> {
     if (auth.customer.customTheme.accentColor) {
       console.log(chalk.gray('      Accent:'), auth.customer.customTheme.accentColor);
     }
-  } else if (auth.customer.theme) {
-    console.log('');
-    console.log(chalk.bold('   Theme:'), chalk.magenta(auth.customer.theme));
-  }
+    } else if (auth.customer.theme) {
+      console.log('');
+      console.log(chalk.bold('   Theme:'), chalk.magenta(auth.customer.theme));
+    }
 
-  console.log('');
-  console.log(chalk.bold('   Token Expires:'), new Date(auth.expiresAt).toLocaleString());
+    console.log('');
+    console.log(chalk.bold('   Token Expires:'), new Date(auth.expiresAt).toLocaleString());
+  }
 }
 
 /**
