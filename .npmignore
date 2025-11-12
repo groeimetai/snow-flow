@@ -113,7 +113,8 @@ Thumbs.db
 # Build artifacts
 *.tsbuildinfo
 dist/**/*.map
-!dist/memory/
+# CRITICAL: Ensure dist/memory/ is included for session tracking
+!dist/memory/**
 
 # Scripts (only exclude non-essential scripts)
 scripts/*

@@ -363,28 +363,43 @@ program
       cliLogger.info('💡 Run "snow-flow login <license-key>" to enable enterprise features');
     }
     
-    // Initialize Queen Agent memory system
-    if (options.verbose) {
-      cliLogger.info('\n💾 Initializing swarm memory system...');
+    // Initialize Queen Agent memory system (with graceful fallback)
+    let memorySystem: any = null;
+    let sessionId = `swarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    try {
+      if (options.verbose) {
+        cliLogger.info('\n💾 Initializing swarm memory system...');
+      }
+      const { SessionMemorySystem } = await import('./memory/session-memory');
+      memorySystem = new SessionMemorySystem();
+
+      // Session ID only in verbose mode
+      if (options.verbose) {
+        cliLogger.info(`🔖 Session: ${sessionId}`);
+      }
+
+      // Store swarm session in memory
+      await memorySystem.storeLearning(`session_${sessionId}`, {
+        objective,
+        taskAnalysis,
+        options,
+        started_at: new Date().toISOString(),
+        is_authenticated: isAuthenticated
+      });
+    } catch (error) {
+      // Memory system is optional - swarm works without it
+      if (options.verbose) {
+        cliLogger.warn('⚠️  Memory tracking unavailable (will continue without session tracking)');
+      }
+      // Create mock memory system for compatibility
+      memorySystem = {
+        storeLearning: async () => {},
+        getLearning: async () => null,
+        retrieveLearning: async () => null,
+        updateLearning: async () => {}
+      };
     }
-    const { SessionMemorySystem } = await import('./memory/session-memory');
-    const memorySystem = new SessionMemorySystem();
-    
-    // Generate swarm session ID
-    const sessionId = `swarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    // Session ID only in verbose mode
-    if (options.verbose) {
-      cliLogger.info(`🔖 Session: ${sessionId}`);
-    }
-    
-    // Store swarm session in memory
-    memorySystem.storeLearning(`session_${sessionId}`, {
-      objective,
-      taskAnalysis,
-      options,
-      started_at: new Date().toISOString(),
-      is_authenticated: isAuthenticated
-    });
 
     // Start SnowCode multi-agent orchestration
     try {
@@ -857,44 +872,6 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
     cliLogger.info('📋 Please start SnowCode manually: snowcode');
     return false;
   }
-}
-
-// Real-time monitoring dashboard for SnowCode process
-function startMonitoringDashboard(snowcodeProcess: ChildProcess): NodeJS.Timeout {
-  let iterations = 0;
-  const startTime = Date.now();
-
-  // Show initial dashboard only once
-  cliLogger.info(`┌─────────────────────────────────────────────────────────────┐`);
-  cliLogger.info(`│               🚀 Snow-Flow Dashboard v${VERSION}            │`);
-  cliLogger.info(`├─────────────────────────────────────────────────────────────┤`);
-  cliLogger.info(`│ 🤖 SnowCode Status:     ✅ Starting                          │`);
-  cliLogger.info(`│ 📊 Process ID:          ${snowcodeProcess.pid || 'N/A'}        │`);
-  cliLogger.info(`│ ⏱️  Session Time:        00:00                               │`);
-  cliLogger.info(`│ 🔄 Monitoring Cycles:    0                                   │`);
-  cliLogger.info('└─────────────────────────────────────────────────────────────┘');
-
-  // Silent monitoring - only log to file or memory, don't interfere with SnowCode UI
-  const monitoringInterval = setInterval(() => {
-    iterations++;
-    const uptime = Math.floor((Date.now() - startTime) / 1000);
-
-    // Silent monitoring - check files but don't output to console
-    try {
-      const serviceNowDir = join(process.cwd(), 'servicenow');
-      fs.readdir(serviceNowDir).then(files => {
-        // Files are being generated - could log to file if needed
-        // console.log(`\n📁 Generated Files: ${files.length} artifacts in servicenow/`);
-      }).catch(() => {
-        // Directory doesn't exist yet, that's normal
-      });
-    } catch (error) {
-      // Ignore errors
-    }
-
-  }, 5000); // Check every 5 seconds silently
-
-  return monitoringInterval;
 }
 
 // Helper function to build Queen Agent orchestration prompt
@@ -1438,50 +1415,6 @@ Remember: You are the Queen Agent - the master coordinator. Your role is to ensu
 
   return prompt;
 }
-function getTeamRecommendation(taskType: string): string {
-  switch (taskType) {
-    case 'widget_development':
-      return 'Widget Development Team (Frontend + Backend + UI/UX + Platform + QA)';
-    case 'flow_development':
-      return 'Flow Development Team (Process + Trigger + Data + Integration + Security)';
-    case 'application_development':
-      return 'Application Development Team (Database + Business Logic + Interface + Security + Performance)';
-    case 'integration':
-      return 'Individual Integration Specialist or Adaptive Team';
-    case 'security_review':
-      return 'Individual Security Specialist';
-    case 'performance_optimization':
-      return 'Individual Backend Specialist or Adaptive Team';
-    default:
-      return 'Adaptive Team (dynamically assembled based on requirements)';
-  }
-}
-
-function getServiceNowInstructions(taskType: string): string {
-  const taskTitle = taskType.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
-  
-  return `**${taskTitle} Process:**
-The team-based SPARC architecture will handle the complete development process.
-Refer to CLAUDE.md for detailed instructions and best practices specific to ${taskType}.`;
-}
-
-function getExpectedDeliverables(taskType: string, isAuthenticated: boolean = false): string {
-  const taskTitle = taskType.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
-  
-  if (isAuthenticated) {
-    return `The team will deliver a complete ${taskTitle.toLowerCase()} solution directly to ServiceNow.
-All artifacts will be created in your ServiceNow instance with proper Update Set tracking.
-Refer to CLAUDE.md for specific deliverables based on your task type.`;
-  } else {
-    return `The team will create ${taskTitle.toLowerCase()} artifacts as local files.
-Files will be organized in the servicenow/ directory for easy import.
-Refer to CLAUDE.md for specific deliverables based on your task type.`;
-  }
-}
 
 // Helper function to analyze objectives using intelligent agent detection
 function analyzeObjective(objective: string, userMaxAgents?: number): TaskAnalysis {
@@ -1497,201 +1430,6 @@ function extractName(objective: string, type: string): string {
   return `Generated ${type}`;
 }
 
-/**
- * Generate intelligent agent spawning strategy based on task dependencies
- * Creates execution batches for sequential and parallel execution
- */
-function getAgentSpawnStrategy(taskAnalysis: any): string {
-  const { primaryAgent, supportingAgents, taskType, serviceNowArtifacts } = taskAnalysis;
-  
-  // Define agent dependencies - which agents must run before others
-  const agentDependencies: { [key: string]: string[] } = {
-    // Architecture/Design agents must run first
-    'architect': [],
-    'app-architect': [],
-    
-    // Script/Code agents depend on architecture
-    'script-writer': ['architect', 'app-architect'],
-    'coder': ['architect', 'app-architect'],
-    
-    // UI agents can run after architecture, parallel with backend
-    'widget-creator': ['architect', 'app-architect'],
-    'css-specialist': ['widget-creator'],
-    'frontend-specialist': ['widget-creator'],
-    'backend-specialist': ['architect', 'app-architect'],
-
-    // Integration agents can run in parallel with others
-    'integration-specialist': ['architect'],
-    'api-specialist': ['architect'],
-
-    // Testing/Security agents run last
-    'tester': ['script-writer', 'widget-creator', 'frontend-specialist', 'backend-specialist'],
-    'security-specialist': ['script-writer', 'api-specialist'],
-    'performance-specialist': ['frontend-specialist', 'backend-specialist'],
-
-    // Error handling depends on main implementation
-    'error-handler': ['script-writer'],
-    
-    // Documentation can run in parallel
-    'documentation-specialist': [],
-    
-    // Specialized agents
-    'ml-developer': ['architect', 'script-writer'],
-    'database-expert': ['architect'],
-    'analyst': ['architect']
-  };
-  
-  // Create dependency graph
-  const allAgents = [primaryAgent, ...supportingAgents];
-  const agentBatches: string[][] = [];
-  const processedAgents = new Set<string>();
-  
-  // Helper to check if all dependencies are met
-  const canExecute = (agent: string): boolean => {
-    const deps = agentDependencies[agent] || [];
-    return deps.every(dep => processedAgents.has(dep));
-  };
-  
-  // Create batches based on dependencies
-  while (processedAgents.size < allAgents.length) {
-    const currentBatch: string[] = [];
-    
-    for (const agent of allAgents) {
-      if (!processedAgents.has(agent) && canExecute(agent)) {
-        currentBatch.push(agent);
-      }
-    }
-    
-    if (currentBatch.length === 0) {
-      // Circular dependency or missing dependency - add remaining agents
-      for (const agent of allAgents) {
-        if (!processedAgents.has(agent)) {
-          currentBatch.push(agent);
-        }
-      }
-    }
-    
-    if (currentBatch.length > 0) {
-      agentBatches.push(currentBatch);
-      currentBatch.forEach(agent => processedAgents.add(agent));
-    }
-  }
-  
-  // Generate the strategy prompt
-  let strategy = `
-**🧠 Intelligent Dependency-Based Agent Execution Plan:**
-
-`;
-  
-  // Show execution batches
-  agentBatches.forEach((batch, index) => {
-    const isParallel = batch.length > 1;
-    const executionType = isParallel ? '⚡ PARALLEL EXECUTION' : '📦 SEQUENTIAL STEP';
-    
-    strategy += `**Batch ${index + 1} - ${executionType}:**\n`;
-    
-    if (isParallel) {
-      strategy += `\`\`\`javascript
-// 🚀 Execute these ${batch.length} agents IN PARALLEL (single message, multiple Tasks)
-`;
-      batch.forEach(agent => {
-        const agentPrompt = getAgentPromptForBatch(agent, taskType);
-        strategy += `Task("${agent}", \`${agentPrompt}\`);
-`;
-      });
-      strategy += `\`\`\`\n\n`;
-    } else {
-      strategy += `\`\`\`javascript
-// 📦 Execute this agent FIRST before proceeding
-`;
-      const agent = batch[0];
-      const agentPrompt = getAgentPromptForBatch(agent, taskType);
-      strategy += `Task("${agent}", \`${agentPrompt}\`);
-`;
-      strategy += `\`\`\`\n\n`;
-    }
-    
-    // Add wait/coordination note if not the last batch
-    if (index < agentBatches.length - 1) {
-      strategy += `**⏸️ WAIT for Batch ${index + 1} completion before proceeding to Batch ${index + 2}**\n\n`;
-    }
-  });
-  
-  // Add execution summary
-  const totalBatches = agentBatches.length;
-  const parallelBatches = agentBatches.filter(b => b.length > 1).length;
-  const maxParallelAgents = Math.max(...agentBatches.map(b => b.length));
-  
-  strategy += `
-**📊 Execution Summary:**
-- Total Execution Batches: ${totalBatches}
-- Parallel Batches: ${parallelBatches}
-- Sequential Steps: ${totalBatches - parallelBatches}
-- Max Parallel Agents: ${maxParallelAgents}
-- Estimated Time Reduction: ${Math.round((1 - (totalBatches / allAgents.length)) * 100)}%
-
-**🔄 Dependency Flow:**
-`;
-  
-  // Show visual dependency flow
-  agentBatches.forEach((batch, index) => {
-    if (index === 0) {
-      strategy += `START → `;
-    }
-    
-    if (batch.length === 1) {
-      strategy += `[${batch[0]}]`;
-    } else {
-      strategy += `[${batch.join(' | ')}]`;
-    }
-    
-    if (index < agentBatches.length - 1) {
-      strategy += ` → `;
-    } else {
-      strategy += ` → COMPLETE`;
-    }
-  });
-  
-  strategy += `\n`;
-  
-  return strategy;
-}
-
-/**
- * Generate agent-specific prompts for batch execution
- */
-function getAgentPromptForBatch(agentType: string, taskType: string): string {
-  const basePrompts: { [key: string]: string } = {
-    'architect': 'You are the architect agent. Design the system architecture and data models. Store your design in Memory for other agents.',
-    'app-architect': 'You are the application architect. Design the overall application structure and component interfaces.',
-    'script-writer': 'You are the script writer. Implement business logic and scripts based on the architecture. Check Memory for design specs.',
-    'widget-creator': 'You are the widget creator. Build the HTML structure for Service Portal widgets. Store widget specs in Memory.',
-    'css-specialist': 'You are the CSS specialist. Create responsive styles for the widgets. Read widget structure from Memory.',
-    'frontend-specialist': 'You are the frontend specialist. Implement client-side JavaScript. Coordinate with backend via Memory.',
-    'backend-specialist': 'You are the backend specialist. Implement server-side logic. Coordinate with frontend via Memory.',
-    'integration-specialist': 'You are the integration specialist. Handle external system integrations and APIs.',
-    'api-specialist': 'You are the API specialist. Design and implement REST/SOAP endpoints.',
-    'tester': 'You are the tester. Test all components created by other agents. Read their outputs from Memory.',
-    'security-specialist': 'You are the security specialist. Implement security best practices and access controls.',
-    'performance-specialist': 'You are the performance specialist. Optimize code and queries for performance.',
-    'error-handler': 'You are the error handler. Implement comprehensive error handling and logging.',
-    'documentation-specialist': 'You are the documentation specialist. Create comprehensive documentation.',
-    'ml-developer': 'You are the ML developer. Implement machine learning features using ServiceNow ML tools.',
-    'database-expert': 'You are the database expert. Design and optimize database schemas and queries.',
-    'analyst': 'You are the analyst. Analyze requirements and provide insights for implementation.'
-  };
-  
-  const prompt = basePrompts[agentType] || `You are the ${agentType} agent. Perform your specialized tasks.`;
-  
-  return `${prompt}
-MANDATORY: 
-1. Run npx snow-flow hooks pre-task --description "${taskType} - ${agentType}"
-2. Store ALL decisions in Memory with key "agent_${agentType}_decisions"
-3. Check Memory for work from agents you depend on
-4. After EVERY file operation, run npx snow-flow hooks post-edit
-5. When complete, run npx snow-flow hooks post-task --task-id "${agentType}"`;
-}
-
 // Swarm status command - monitor running swarms
 program
   .command('swarm-status [sessionId]')
@@ -1702,14 +1440,23 @@ program
     cliLogger.info('\n🔍 Checking swarm status...\n');
 
     try {
-      const { SessionMemorySystem } = await import('./memory/session-memory');
-      const memorySystem = new SessionMemorySystem();
-      
+      // Try to load memory system
+      let memorySystem: any;
+      try {
+        const { SessionMemorySystem } = await import('./memory/session-memory');
+        memorySystem = new SessionMemorySystem();
+      } catch (error) {
+        cliLogger.error('❌ Memory system unavailable - session tracking not available in this version');
+        cliLogger.info('💡 Please upgrade snow-flow to enable session tracking');
+        cliLogger.info('   Run: npm install -g snow-flow@latest');
+        return;
+      }
+
       if (!sessionId) {
         // List all recent swarm sessions
         cliLogger.info('📋 Recent swarm sessions:');
         cliLogger.info('(Provide a session ID to see detailed status)\n');
-        
+
         // Get all session keys from learnings
         const sessionKeys: string[] = [];
         // Note: This is a simplified approach - in production, you'd query the memory files directly
@@ -1717,7 +1464,7 @@ program
         cliLogger.info('💡 Session IDs are displayed when you start a swarm\n');
         return;
       }
-      
+
       // Get specific session data
       const sessionData = await memorySystem.getLearning(`session_${sessionId}`);
       const launchData = await memorySystem.getLearning(`launch_${sessionId}`);
@@ -3121,28 +2868,6 @@ function convertToSnowCodeFormat(claudeConfig: any): any {
   return snowcodeConfig;
 }
 
-async function checkNeo4jAvailability(): Promise<boolean> {
-  const { execSync } = require('child_process');
-  
-  try {
-    // Check if Neo4j is installed
-    execSync('which neo4j', { stdio: 'pipe' });
-    
-    // Check if Neo4j is running
-    try {
-      execSync('neo4j status', { stdio: 'pipe' });
-      return true;
-    } catch {
-      // Neo4j is installed but not running
-      console.log('ℹ️  Neo4j is installed but not running. Start with: neo4j start');
-      return false;
-    }
-  } catch {
-    // Neo4j is not installed
-    return false;
-  }
-}
-
 async function createMCPConfig(targetDir: string, force: boolean = false) {
   // 🔥 SAME FIX: Find Snow-Flow installation dynamically (support nvm!)
   let snowFlowRoot = '';
@@ -3894,255 +3619,6 @@ program
     console.log(chalk.blue('\n💡 Simply run your swarm commands - SnowCode handles the rest!'));
     return;
   });
-
-// MCP action handlers
-async function handleMCPStart(manager: any, options: any): Promise<void> {
-  console.log('🚀 Starting ServiceNow MCP Servers...');
-  
-  if (options.server) {
-    console.log(`📡 Starting server: ${options.server}`);
-    const success = await manager.startServer(options.server);
-    if (success) {
-      console.log(`✅ Server '${options.server}' started successfully`);
-    } else {
-      console.log(`❌ Failed to start server '${options.server}'`);
-      process.exit(1);
-    }
-  } else {
-    console.log('📡 Starting all configured MCP servers...');
-    await manager.startAllServers();
-    
-    const status = manager.getServerList();
-    const running = status.filter((s: any) => s.status === 'running').length;
-    const total = status.length;
-    
-    console.log(`\n✅ Started ${running}/${total} MCP servers`);
-
-    if (running === total) {
-      console.log('🎉 All MCP servers are now running!');
-      console.log('\n📋 Next steps:');
-      console.log('   1. Use: ' + chalk.cyan('snow-flow swarm "<your objective>"'));
-      console.log('   2. MCP tools will be automatically available');
-      console.log('   3. Use snow_deploy_widget, snow_deploy_flow, etc.');
-    } else {
-      console.log('⚠️  Some servers failed to start. Check logs with: snow-flow mcp logs');
-    }
-  }
-}
-
-async function handleMCPStop(manager: any, options: any): Promise<void> {
-  if (options.server) {
-    console.log(`🛑 Stopping server: ${options.server}`);
-    const success = await manager.stopServer(options.server);
-    if (success) {
-      console.log(`✅ Server '${options.server}' stopped successfully`);
-    } else {
-      console.log(`❌ Failed to stop server '${options.server}'`);
-      process.exit(1);
-    }
-  } else {
-    console.log('🛑 Stopping all MCP servers...');
-    await manager.stopAllServers();
-    console.log('✅ All MCP servers stopped');
-  }
-}
-
-async function handleMCPRestart(manager: any, options: any): Promise<void> {
-  if (options.server) {
-    console.log(`🔄 Restarting server: ${options.server}`);
-    await manager.stopServer(options.server);
-    const success = await manager.startServer(options.server);
-    if (success) {
-      console.log(`✅ Server '${options.server}' restarted successfully`);
-    } else {
-      console.log(`❌ Failed to restart server '${options.server}'`);
-      process.exit(1);
-    }
-  } else {
-    console.log('🔄 Restarting all MCP servers...');
-    await manager.stopAllServers();
-    await manager.startAllServers();
-    
-    const running = manager.getRunningServersCount();
-    const total = manager.getServerList().length;
-    console.log(`✅ Restarted ${running}/${total} MCP servers`);
-  }
-}
-
-async function handleMCPStatus(manager: any, options: any): Promise<void> {
-  const servers = manager.getServerList();
-  
-  console.log('\n📊 MCP Server Status');
-  console.log('═'.repeat(80));
-  
-  if (servers.length === 0) {
-    console.log('No MCP servers configured');
-    return;
-  }
-  
-  servers.forEach((server: any) => {
-    const statusIcon = server.status === 'running' ? '✅' : 
-                      server.status === 'starting' ? '🔄' : 
-                      server.status === 'error' ? '❌' : '⭕';
-    
-    console.log(`${statusIcon} ${server.name}`);
-    console.log(`   Status: ${server.status}`);
-    console.log(`   Script: ${server.script}`);
-    
-    if (server.pid) {
-      console.log(`   PID: ${server.pid}`);
-    }
-    
-    if (server.startedAt) {
-      console.log(`   Started: ${server.startedAt.toLocaleString()}`);
-    }
-    
-    if (server.lastError) {
-      console.log(`   Last Error: ${server.lastError}`);
-    }
-    
-    console.log('');
-  });
-  
-  const running = servers.filter((s: any) => s.status === 'running').length;
-  const total = servers.length;
-  
-  console.log(`📈 Summary: ${running}/${total} servers running`);
-
-  if (running === total) {
-    console.log('🎉 All MCP servers are operational and available in SnowCode (or Claude Code)!');
-  } else if (running > 0) {
-    console.log('⚠️  Some servers are not running. Use "snow-flow mcp start" to start them.');
-  } else {
-    console.log('💡 No servers running. Use "snow-flow mcp start" to start all servers.');
-  }
-}
-
-async function handleMCPLogs(manager: any, options: any): Promise<void> {
-  const { join } = require('path');
-  const { promises: fs } = require('fs');
-  
-  const logDir = join(process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow'), 'logs');
-  
-  try {
-    const logFiles = await fs.readdir(logDir);
-    
-    if (options.server) {
-      const serverLogFile = `${options.server.replace(/\\s+/g, '_').toLowerCase()}.log`;
-      if (logFiles.includes(serverLogFile)) {
-        console.log(`📄 Logs for ${options.server}:`);
-        console.log('═'.repeat(80));
-        const logContent = await fs.readFile(join(logDir, serverLogFile), 'utf-8');
-        console.log(logContent);
-      } else {
-        console.log(`❌ No logs found for server '${options.server}'`);
-      }
-    } else {
-      console.log('📄 Available log files:');
-      logFiles.forEach((file: string) => {
-        console.log(`   - ${file}`);
-      });
-      console.log('\\n💡 Use --server <name> to view specific server logs');
-    }
-  } catch (error) {
-    console.log('📄 No log files found');
-  }
-}
-
-async function handleMCPList(manager: any, options: any): Promise<void> {
-  const servers = manager.getServerList();
-  
-  console.log('\n📋 Configured MCP Servers');
-  console.log('═'.repeat(80));
-  
-  if (servers.length === 0) {
-    console.log('No MCP servers configured');
-    console.log('💡 Run "snow-flow init" to configure default MCP servers');
-    return;
-  }
-  
-  servers.forEach((server: any, index: number) => {
-    console.log(`${index + 1}. ${server.name}`);
-    console.log(`   Script: ${server.script}`);
-    console.log(`   Status: ${server.status}`);
-    console.log('');
-  });
-}
-
-async function handleMCPDebug(options: any): Promise<void> {
-  console.log('🔍 MCP Debug Information');
-  console.log('========================\n');
-  
-  const { existsSync, readFileSync } = require('fs');
-  const { join, resolve } = require('path');
-  
-  // Check .mcp.json
-  const mcpJsonPath = join(process.cwd(), '.mcp.json');
-  console.log('📄 .mcp.json:');
-  if (existsSync(mcpJsonPath)) {
-    console.log(`   ✅ Found at: ${mcpJsonPath}`);
-    try {
-      const mcpConfig = JSON.parse(readFileSync(mcpJsonPath, 'utf8'));
-      console.log(`   📊 Servers configured: ${Object.keys(mcpConfig.servers || {}).length}`);
-      
-      // Check if paths exist
-      for (const [name, config] of Object.entries(mcpConfig.servers || {})) {
-        const serverConfig = config as any;
-        if (serverConfig.args && serverConfig.args[0]) {
-          const scriptPath = serverConfig.args[0];
-          const exists = existsSync(scriptPath);
-          console.log(`   ${exists ? '✅' : '❌'} ${name}: ${scriptPath}`);
-        }
-      }
-    } catch (error) {
-      console.log(`   ❌ Error reading: ${error}`);
-    }
-  } else {
-    console.log(`   ❌ Not found at: ${mcpJsonPath}`);
-  }
-  
-  // Check .claude/settings.json
-  console.log('\n📄 .claude/settings.json:');
-  const claudeSettingsPath = join(process.cwd(), '.claude/settings.json');
-  if (existsSync(claudeSettingsPath)) {
-    console.log(`   ✅ Found at: ${claudeSettingsPath}`);
-    try {
-      const settings = JSON.parse(readFileSync(claudeSettingsPath, 'utf8'));
-      const enabledServers = settings.enabledMcpjsonServers || [];
-      console.log(`   📊 Enabled servers: ${enabledServers.length}`);
-      enabledServers.forEach((server: string) => {
-        console.log(`      - ${server}`);
-      });
-    } catch (error) {
-      console.log(`   ❌ Error reading: ${error}`);
-    }
-  } else {
-    console.log(`   ❌ Not found at: ${claudeSettingsPath}`);
-  }
-  
-  // Check environment
-  console.log('\n🔐 Environment:');
-  console.log(`   SNOW_INSTANCE: ${process.env.SNOW_INSTANCE ? '✅ Set' : '❌ Not set'}`);
-  console.log(`   SNOW_CLIENT_ID: ${process.env.SNOW_CLIENT_ID ? '✅ Set' : '❌ Not set'}`);
-  console.log(`   SNOW_CLIENT_SECRET: ${process.env.SNOW_CLIENT_SECRET ? '✅ Set' : '❌ Not set'}`);
-  
-  // Check SnowCode
-  console.log('\n🤖 SnowCode:');
-  const { execSync } = require('child_process');
-  try {
-    execSync('which snowcode', { stdio: 'ignore' });
-    console.log('   ✅ SnowCode CLI found');
-  } catch {
-    console.log('   ❌ SnowCode CLI not found in PATH');
-    console.log('   💡 Install with: npm install -g @groeimetai/snow-code');
-  }
-
-  console.log('\n💡 Tips:');
-  console.log('   1. Ensure SnowCode is configured: snowcode config import snowcode-config.example.json');
-  console.log('   2. Check .env file has valid ServiceNow credentials and LLM API keys');
-  console.log('   3. Start developing: snow-flow swarm "your objective"');
-  console.log('   4. SnowCode will automatically connect to Snow-Flow\'s MCP servers');
-}
 
 
 // SPARC Detailed Help Command - DISABLED (sparc-help.js file missing)
