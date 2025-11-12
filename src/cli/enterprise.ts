@@ -337,6 +337,16 @@ export function registerEnterpriseCommands(program: Command): void {
       await loginCommand(licenseKey);
     });
 
+  // Setup command - Configure enterprise MCP server
+  program
+    .command('setup')
+    .description('Setup Enterprise MCP server with Jira, Azure DevOps, and Confluence integrations')
+    .action(async () => {
+      // Dynamic import to avoid circular dependencies
+      const { setupEnterpriseFlow } = await import('./auth.js');
+      await setupEnterpriseFlow();
+    });
+
   // Status command removed - enterprise status is now shown via getEnterpriseInfo() in main status command
 
   // Portal command

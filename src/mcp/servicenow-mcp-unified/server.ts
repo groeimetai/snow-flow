@@ -18,6 +18,9 @@ import {
   ErrorCode,
   McpError
 } from '@modelcontextprotocol/sdk/types.js';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 import { toolRegistry } from './shared/tool-registry.js';
 import { authManager } from './shared/auth.js';
@@ -54,13 +57,61 @@ export class ServiceNowUnifiedServer {
   }
 
   /**
-   * Load ServiceNow context from environment variables
+   * Load ServiceNow credentials from snow-code auth.json
+   * Returns undefined if auth.json doesn't exist or credentials are invalid
+   */
+  private loadFromAuthJson(): ServiceNowContext | undefined {
+    try {
+      const authPath = path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json');
+
+      if (!fs.existsSync(authPath)) {
+        return undefined;
+      }
+
+      const authData = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
+      const servicenowCreds = authData['servicenow'];
+
+      if (!servicenowCreds || servicenowCreds.type !== 'servicenow-oauth') {
+        return undefined;
+      }
+
+      // Validate credentials are not placeholders
+      const isPlaceholder = (val?: string) => !val || val.includes('your-') || val.includes('placeholder');
+
+      if (isPlaceholder(servicenowCreds.instance) ||
+          isPlaceholder(servicenowCreds.clientId) ||
+          isPlaceholder(servicenowCreds.clientSecret)) {
+        return undefined;
+      }
+
+      console.log('[Auth] Loaded credentials from snow-code auth.json');
+      return {
+        instanceUrl: servicenowCreds.instance.startsWith('http')
+          ? servicenowCreds.instance
+          : `https://${servicenowCreds.instance}`,
+        clientId: servicenowCreds.clientId,
+        clientSecret: servicenowCreds.clientSecret,
+        refreshToken: servicenowCreds.refreshToken,
+        username: undefined,
+        password: undefined
+      };
+    } catch (error: any) {
+      console.warn('[Auth] Failed to load from auth.json:', error.message);
+      return undefined;
+    }
+  }
+
+  /**
+   * Load ServiceNow context from environment variables OR auth.json fallback
    * Note: Server will start even without credentials (unauthenticated mode)
    *
-   * Supports both SNOW_* and SERVICENOW_* prefixes for backward compatibility
+   * Priority:
+   * 1. Environment variables (SERVICENOW_* or SNOW_*)
+   * 2. snow-code auth.json (~/.local/share/snow-code/auth.json)
+   * 3. Unauthenticated mode (empty credentials)
    */
   private loadContext(): ServiceNowContext {
-    // Support both SERVICENOW_* and SNOW_* prefixes (SNOW_* preferred for consistency)
+    // STEP 1: Try environment variables first
     const instanceUrl = process.env.SERVICENOW_INSTANCE_URL ||
                        (process.env.SNOW_INSTANCE ? `https://${process.env.SNOW_INSTANCE}` : undefined);
     const clientId = process.env.SERVICENOW_CLIENT_ID || process.env.SNOW_CLIENT_ID;
@@ -75,31 +126,46 @@ export class ServiceNowUnifiedServer {
     // Check for placeholder values
     const isPlaceholder = (val?: string) => !val || val.includes('your-') || val.includes('placeholder');
 
-    // Allow server to start without credentials OR with placeholder values (tools will fail gracefully)
-    if (!instanceUrl || !clientId || !clientSecret ||
-        isPlaceholder(instanceUrl) || isPlaceholder(clientId) || isPlaceholder(clientSecret)) {
-      console.error('[Auth] Warning: ServiceNow credentials not configured or contain placeholder values');
-      console.error('[Auth] Server starting in UNAUTHENTICATED mode - tools will return authentication errors');
-      console.error('[Auth] To configure credentials, run: snow-flow auth login');
+    // Check if env vars are valid
+    const hasValidEnvVars = instanceUrl && clientId && clientSecret &&
+                           !isPlaceholder(instanceUrl) &&
+                           !isPlaceholder(clientId) &&
+                           !isPlaceholder(clientSecret);
 
-      // Return empty context - tools will fail with clear auth errors
+    if (hasValidEnvVars) {
+      console.log('[Auth] Using credentials from environment variables');
       return {
-        instanceUrl: '',
-        clientId: '',
-        clientSecret: '',
-        refreshToken: undefined,
-        username: undefined,
-        password: undefined
+        instanceUrl: instanceUrl!,
+        clientId: clientId!,
+        clientSecret: clientSecret!,
+        refreshToken: normalizeCredential(refreshToken),
+        username: normalizeCredential(username),
+        password: normalizeCredential(password)
       };
     }
 
+    // STEP 2: Try snow-code auth.json fallback
+    const authJsonContext = this.loadFromAuthJson();
+    if (authJsonContext) {
+      return authJsonContext;
+    }
+
+    // STEP 3: No valid credentials found - start in unauthenticated mode
+    console.error('[Auth] Warning: No ServiceNow credentials found');
+    console.error('[Auth] Checked:');
+    console.error('[Auth]   1. Environment variables (SERVICENOW_* or SNOW_*)');
+    console.error('[Auth]   2. snow-code auth.json (~/.local/share/snow-code/auth.json)');
+    console.error('[Auth] Server starting in UNAUTHENTICATED mode - tools will return authentication errors');
+    console.error('[Auth] To configure credentials, run: snow-flow auth login');
+
+    // Return empty context - tools will fail with clear auth errors
     return {
-      instanceUrl,
-      clientId,
-      clientSecret,
-      refreshToken: normalizeCredential(refreshToken),
-      username: normalizeCredential(username),  // Empty strings become undefined
-      password: normalizeCredential(password)   // Empty strings become undefined
+      instanceUrl: '',
+      clientId: '',
+      clientSecret: '',
+      refreshToken: undefined,
+      username: undefined,
+      password: undefined
     };
   }
 
