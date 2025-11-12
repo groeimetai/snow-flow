@@ -44,8 +44,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Get change request data
     let changeData: any;
     if (change_number) {
-      const response = await client.query({
-        table: 'change_request',
+      const response = await client.query('change_request', {
         query: `number=${change_number}`,
         limit: 1,
         fields: ['short_description', 'risk', 'category', 'type', 'test_plan', 'backout_plan', 'implementation_plan', 'approval']

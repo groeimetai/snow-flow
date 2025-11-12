@@ -93,8 +93,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
     const query = `sys_created_on>=${startDate.toISOString()}^sys_created_on<=${endDate.toISOString()}`;
 
-    const records = await client.query({
-      table: tableName,
+    const records = await client.query(tableName, {
       query: query,
       limit: 100000,
       fields: [metricField, 'sys_created_on']
@@ -188,7 +187,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     errors.dispose();
 
     // Final metrics
-    const finalLoss = history.history.loss[history.history.loss.length - 1];
+    const finalLossValue = history.history.loss[history.history.loss.length - 1];
+    const finalLoss = typeof finalLossValue === 'number' ? finalLossValue : Array.isArray(finalLossValue) ? finalLossValue[0] : 0;
 
     return createSuccessResult({
       status: 'success',

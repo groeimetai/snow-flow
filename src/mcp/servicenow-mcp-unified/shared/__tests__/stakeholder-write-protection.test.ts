@@ -155,9 +155,12 @@ describe('Stakeholder Write Protection - End-to-End', () => {
 
     test('should throw McpError with correct error code for WRITE tools', () => {
       for (var i = 0; i < writeTools.length; i++) {
+        expect(() => {
+          validatePermission(writeTools[i], stakeholderJWT);
+        }).toThrow(McpError);
+
         try {
           validatePermission(writeTools[i], stakeholderJWT);
-          fail('Expected McpError to be thrown');
         } catch (error: any) {
           expect(error).toBeInstanceOf(McpError);
           expect(error.code).toBe(ErrorCode.InvalidRequest);

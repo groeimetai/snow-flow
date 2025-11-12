@@ -53,8 +53,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Get incident data if number provided
     let incidentData: any;
     if (incident_number) {
-      const response = await client.query({
-        table: 'incident',
+      const response = await client.query('incident', {
         query: `number=${incident_number}`,
         limit: 1,
         fields: ['short_description', 'description', 'category', 'priority']

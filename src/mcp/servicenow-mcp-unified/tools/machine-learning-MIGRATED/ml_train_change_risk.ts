@@ -77,8 +77,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       'state!=cancelled' :
       'state=closed^close_code=successful';
 
-    const changes = await client.query({
-      table: 'change_request',
+    const changes = await client.query('change_request', {
       query: query,
       limit: sample_size,
       fields: ['short_description', 'risk', 'category', 'type', 'assignment_group', 'approval', 'test_plan', 'backout_plan', 'close_code', 'implementation_plan']
@@ -138,8 +137,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     labels.dispose();
 
     // Calculate final metrics
-    const finalAccuracy = history.history.acc[history.history.acc.length - 1];
-    const finalLoss = history.history.loss[history.history.loss.length - 1];
+    const finalAccuracyValue = history.history.acc[history.history.acc.length - 1];
+    const finalAccuracy = typeof finalAccuracyValue === 'number' ? finalAccuracyValue : Array.isArray(finalAccuracyValue) ? finalAccuracyValue[0] : 0;
+    const finalLossValue = history.history.loss[history.history.loss.length - 1];
+    const finalLoss = typeof finalLossValue === 'number' ? finalLossValue : Array.isArray(finalLossValue) ? finalLossValue[0] : 0;
 
     return createSuccessResult({
       status: 'success',

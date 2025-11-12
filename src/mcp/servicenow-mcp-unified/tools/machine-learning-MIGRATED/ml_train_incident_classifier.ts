@@ -120,8 +120,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
       try {
         // Try to count available incidents
-        const response = await client.query({
-          table: 'incident',
+        const response = await client.query('incident', {
           query: countQuery,
           limit: 1,
           count: true
@@ -162,8 +161,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       'categoryISNOTEMPTY^descriptionISNOTEMPTY^sys_created_onONLast 6 months' :
       'categoryISNOTEMPTY');
 
-    const incidents = await client.query({
-      table: 'incident',
+    const incidents = await client.query('incident', {
       query: finalQuery,
       limit: actualSampleSize,
       fields: ['short_description', 'description', 'category', 'priority', 'impact', 'urgency']
@@ -254,8 +252,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     labels.dispose();
 
     // Calculate final metrics
-    const finalAccuracy = history.history.acc[history.history.acc.length - 1];
-    const finalLoss = history.history.loss[history.history.loss.length - 1];
+    const finalAccuracyValue = history.history.acc[history.history.acc.length - 1];
+    const finalAccuracy = typeof finalAccuracyValue === 'number' ? finalAccuracyValue : Array.isArray(finalAccuracyValue) ? finalAccuracyValue[0] : 0;
+    const finalLossValue = history.history.loss[history.history.loss.length - 1];
+    const finalLoss = typeof finalLossValue === 'number' ? finalLossValue : Array.isArray(finalLossValue) ? finalLossValue[0] : 0;
 
     return createSuccessResult({
       status: 'success',

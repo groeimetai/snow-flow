@@ -65,8 +65,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       query += `^category=${category}`;
     }
 
-    const incidents = await client.query({
-      table: 'incident',
+    const incidents = await client.query('incident', {
       query: query,
       limit: 100000,
       fields: ['sys_created_on', 'category']
@@ -89,7 +88,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Calculate statistics
     const historicalAvg = dailyCounts.reduce((a, b) => a + b, 0) / dailyCounts.length;
     const forecastAvg = forecast.reduce((a, b) => a + b, 0) / forecast.length;
-    const trend = ((forecastAvg - historicalAvg) / historicalAvg * 100).toFixed(1);
+    const trendValue = (forecastAvg - historicalAvg) / historicalAvg * 100;
+    const trend = trendValue.toFixed(1);
 
     // Generate recommendations
     const recommendations = generateForecastRecommendations(forecast, historicalAvg);
@@ -116,7 +116,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       statistics: {
         historical_average: Math.round(historicalAvg),
         forecast_average: Math.round(forecastAvg),
-        trend: `${trend > 0 ? '+' : ''}${trend}%`
+        trend: `${trendValue > 0 ? '+' : ''}${trend}%`
       },
       recommendations
     });

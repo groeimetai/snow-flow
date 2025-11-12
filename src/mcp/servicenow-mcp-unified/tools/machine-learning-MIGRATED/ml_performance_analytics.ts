@@ -54,8 +54,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const client = await getAuthenticatedClient(context);
 
     // Check if PA is available
-    const paCheck = await client.query({
-      table: 'sys_plugins',
+    const paCheck = await client.query('sys_plugins', {
       query: `id=com.snc.pa`,
       limit: 1,
       fields: ['active']
@@ -69,8 +68,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     }
 
     // Fetch indicator data
-    const indicator = await client.query({
-      table: 'pa_indicators',
+    const indicator = await client.query('pa_indicators', {
       query: `name=${indicator_name}`,
       limit: 1,
       fields: ['sys_id', 'name', 'description', 'frequency', 'collection_method']
@@ -83,8 +81,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const indicatorData = indicator[0];
 
     // Get historical scores
-    const scores = await client.query({
-      table: 'pa_scores',
+    const scores = await client.query('pa_scores', {
       query: `indicator=${indicatorData.sys_id}^ORDERBYDESCperiod_start`,
       limit: 100,
       fields: ['value', 'period_start', 'period_end']

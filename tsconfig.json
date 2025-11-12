@@ -44,7 +44,7 @@
     "src/mcp/servicenow-mcp-unified/tools/ui-actions/index.ts",
     "src/mcp/servicenow-mcp-unified/tools/ui-policies/index.ts",
     "src/mcp/servicenow-mcp-unified/tools/system-properties/index.ts",
-    "src/mcp/servicenow-mcp-unified/tools/machine-learning/**/*",
+    "src/mcp/servicenow-mcp-unified/tools/machine-learning/*.ts",
     "src/queen/queen-memory-system.ts",
     "src/queen/agent-factory.ts",
     "src/queen/neural-learning.ts",

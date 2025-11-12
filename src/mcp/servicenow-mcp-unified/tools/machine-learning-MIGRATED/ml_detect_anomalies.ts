@@ -77,8 +77,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         break;
     }
 
-    const records = await client.query({
-      table: tableName,
+    const records = await client.query(tableName, {
       query: query,
       limit: 10000,
       fields: [analysisField, 'sys_created_on']
