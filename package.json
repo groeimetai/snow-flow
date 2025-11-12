@@ -13,6 +13,7 @@
     "bin/",
     "scripts/",
     "templates/",
+    "patches/",
     ".env.example",
     ".mcp.json.template",
     "snowcode-config.example.json",
@@ -28,6 +29,7 @@
   ],
   "scripts": {
     "build": "tsc --noEmitOnError false || true",
+    "postinstall": "patch-package",
     "prepublishOnly": "node scripts/sync-snow-code-version.js && npm run build",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
