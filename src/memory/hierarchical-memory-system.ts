@@ -3,7 +3,7 @@
  * Extended memory system with hierarchical organization
  */
 
-import { MemorySystem } from './memory-system.js';
+import { MemorySystem } from './memory-system';
 
 export interface HierarchicalMemorySystem extends MemorySystem {
   dbPath?: string;

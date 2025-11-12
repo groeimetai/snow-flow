@@ -5,7 +5,7 @@
 
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { Logger } from '../utils/logger.js';
+import { Logger } from '../utils/logger';
 
 export interface ServiceNowArtifact {
   sys_id: string;
