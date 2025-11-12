@@ -1,8 +1,48 @@
 diff --git a/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts b/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
-index ae91a87..832eab0 100644
+index ce6bfbd..3d09618 100644
 --- a/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
 +++ b/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
-@@ -1992,6 +1992,39 @@ export const AuthLoginCommand = cmd({
+@@ -1074,6 +1074,39 @@ export const AuthLoginCommand = cmd({
+             // Silently skip enterprise MCP configuration errors
+           }
+ 
++          // 🔐 SYNC CREDENTIALS TO PORTAL (if provided)
++          if (authData && authData.token && jiraBaseUrl && jiraEmail && jiraApiToken) {
++            try {
++              prompts.log.message("")
++              prompts.log.step("Syncing credentials to portal...")
++
++              const syncResponse = await fetch(`${enterpriseUrl}/api/credentials/store`, {
++                method: "POST",
++                headers: {
++                  "Content-Type": "application/json",
++                  "Authorization": `Bearer ${authData.token}`
++                },
++                body: JSON.stringify({
++                  service: "jira",
++                  username: jiraEmail,
++                  apiToken: jiraApiToken,
++                  instanceUrl: jiraBaseUrl
++                })
++              })
++
++              const syncResult = await syncResponse.json()
++
++              if (syncResponse.ok && syncResult.success) {
++                prompts.log.success("✓ Jira credentials synced to portal")
++              } else {
++                prompts.log.warn("⚠ Credentials saved locally but sync to portal failed")
++              }
++            } catch (syncError: any) {
++              // Silently continue - credentials are still saved locally
++              prompts.log.warn("⚠ Credentials saved locally (portal sync unavailable)")
++            }
++          }
++
+           prompts.log.message("")
+           prompts.log.success("Enterprise configuration saved")
+           prompts.log.info("Credentials saved to .env file")
+@@ -2067,6 +2100,39 @@ export const AuthLoginCommand = cmd({
                // Silently skip enterprise MCP configuration errors
              }
  
@@ -42,7 +82,7 @@ index ae91a87..832eab0 100644
              prompts.log.message("")
              prompts.log.success("Enterprise configuration saved")
              prompts.log.info("Credentials saved to .env file")
-@@ -2404,41 +2437,104 @@ export const AuthLoginCommand = cmd({
+@@ -2479,41 +2545,104 @@ export const AuthLoginCommand = cmd({
                // Silently skip enterprise MCP configuration errors
              }
  
