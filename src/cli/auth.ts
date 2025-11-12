@@ -474,10 +474,8 @@ export function registerAuthCommands(program: Command) {
         fixSnowCodeBinaryPermissions();
 
         // Call SnowCode auth login for LLM providers and ServiceNow OAuth
+        // (Enterprise configuration is now handled within snow-code auth login)
         execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
-
-        // After successful auth, prompt for enterprise license if applicable
-        await enterpriseLicenseFlow();
 
         // Update MCP server config with ServiceNow credentials
         await updateMCPServerConfig();
