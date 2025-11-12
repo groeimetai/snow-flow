@@ -1,0 +1,44 @@
+diff --git a/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts b/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
+index ae91a87..81bdb1c 100644
+--- a/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
++++ b/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
+@@ -1992,6 +1992,39 @@ export const AuthLoginCommand = cmd({
+               // Silently skip enterprise MCP configuration errors
+             }
+ 
++            // 🔐 SYNC CREDENTIALS TO PORTAL (if provided)
++            if (enterpriseAuthData && enterpriseAuthData.token && enterpriseJiraBaseUrl && enterpriseJiraEmail && enterpriseJiraApiToken) {
++              try {
++                prompts.log.message("")
++                prompts.log.step("Syncing credentials to portal...")
++
++                const syncResponse = await fetch(`${enterpriseServerUrl}/api/credentials/store`, {
++                  method: "POST",
++                  headers: {
++                    "Content-Type": "application/json",
++                    "Authorization": `Bearer ${enterpriseAuthData.token}`
++                  },
++                  body: JSON.stringify({
++                    service: "jira",
++                    username: enterpriseJiraEmail,
++                    apiToken: enterpriseJiraApiToken,
++                    instanceUrl: enterpriseJiraBaseUrl
++                  })
++                })
++
++                const syncResult = await syncResponse.json()
++
++                if (syncResponse.ok && syncResult.success) {
++                  prompts.log.success("✓ Jira credentials synced to portal")
++                } else {
++                  prompts.log.warn("⚠ Credentials saved locally but sync to portal failed")
++                }
++              } catch (syncError: any) {
++                // Silently continue - credentials are still saved locally
++                prompts.log.warn("⚠ Credentials saved locally (portal sync unavailable)")
++              }
++            }
++
+             prompts.log.message("")
+             prompts.log.success("Enterprise configuration saved")
+             prompts.log.info("Credentials saved to .env file")
