@@ -1013,19 +1013,23 @@ for (let i = 0; i < 5000; i += 100) {
 ### 1. Initialize Memory & Session (Required First Step)
 **THIS MUST BE YOUR VERY FIRST ACTION:**
 \`\`\`javascript
-// Initialize swarm memory session
-Memory.store("swarm_session_${sessionId}", JSON.stringify({
-  objective: "${objective}",
-  status: "initializing",
-  started_at: new Date().toISOString(),
-  task_analysis: ${JSON.stringify(taskAnalysis, null, 2)},
-  configuration: {
-    strategy: "${options.strategy}",
-    mode: "${options.mode}",
-    max_agents: ${parseInt(options.maxAgents)},
-    authenticated: ${isAuthenticated}
-  }
-}));
+// Initialize swarm memory session using memory_usage MCP tool
+await memory_usage({
+  action: 'store',
+  key: "swarm_session_${sessionId}",
+  value: JSON.stringify({
+    objective: "${objective}",
+    status: "initializing",
+    started_at: new Date().toISOString(),
+    task_analysis: ${JSON.stringify(taskAnalysis, null, 2)},
+    configuration: {
+      strategy: "${options.strategy}",
+      mode: "${options.mode}",
+      max_agents: ${parseInt(options.maxAgents)},
+      authenticated: ${isAuthenticated}
+    }
+  })
+});
 \`\`\`
 
 ### 2. 🚨 MANDATORY: ServiceNow Auth & Update Set Setup
@@ -1046,9 +1050,17 @@ const updateSet = await snow_update_set_create({
   auto_switch: true  // 🚨 CRITICAL: Sets as current update set!
 });
 
-// Store Update Set info in memory for all agents
-Memory.store("update_set_${sessionId}", JSON.stringify(updateSet));
-Memory.store("current_update_set", updateSet.sys_id);
+// Store Update Set info in memory for all agents using memory_usage MCP tool
+await memory_usage({
+  action: 'store',
+  key: "update_set_${sessionId}",
+  value: JSON.stringify(updateSet)
+});
+await memory_usage({
+  action: 'store',
+  key: "current_update_set",
+  value: updateSet.sys_id
+});
 \`\`\`
 
 **WHY THIS IS CRITICAL:**
@@ -1137,7 +1149,11 @@ All agents MUST use this memory coordination WITH loop prevention:
 
 \`\`\`javascript
 // STEP 1: Check if agent type already exists (PREVENT LOOPS!)
-const existingAgents = Memory.get('active_agents') || [];
+const existingAgentsResult = await memory_usage({
+  action: 'retrieve',
+  key: 'active_agents'
+});
+const existingAgents = existingAgentsResult?.value ? JSON.parse(existingAgentsResult.value) : [];
 const agentType = 'ui-builder-specialist';
 
 if (existingAgents.includes(agentType)) {
@@ -1148,27 +1164,43 @@ if (existingAgents.includes(agentType)) {
 // STEP 2: Register agent as active
 const agentId = \`agent_\${agentType}_\${sessionId}\`;
 existingAgents.push(agentType);
-Memory.store('active_agents', JSON.stringify(existingAgents));
+await memory_usage({
+  action: 'store',
+  key: 'active_agents',
+  value: JSON.stringify(existingAgents)
+});
 
 // STEP 3: Agent stores progress
-Memory.store(\`\${agentId}_progress\`, JSON.stringify({
-  agent_type: agentType,
-  status: "working",
-  current_task: "description of current work",
-  completion_percentage: 45,
-  spawned_at: new Date().toISOString(),
-  last_update: new Date().toISOString()
-}));
+await memory_usage({
+  action: 'store',
+  key: \`\${agentId}_progress\`,
+  value: JSON.stringify({
+    agent_type: agentType,
+    status: "working",
+    current_task: "description of current work",
+    completion_percentage: 45,
+    spawned_at: new Date().toISOString(),
+    last_update: new Date().toISOString()
+  })
+});
 
 // Agent reads other agent's work when needed
-const primaryWork = Memory.get("agent_\${taskAnalysis.primaryAgent}_output");
+const primaryWorkResult = await memory_usage({
+  action: 'retrieve',
+  key: "agent_\${taskAnalysis.primaryAgent}_output"
+});
+const primaryWork = primaryWorkResult?.value ? JSON.parse(primaryWorkResult.value) : null;
 
 // Agent signals completion
-Memory.store(\`\${agentId}_complete\`, JSON.stringify({
-  completed_at: new Date().toISOString(),
-  outputs: { /* agent deliverables */ },
-  artifacts_created: [ /* list of created artifacts */ ]
-}));
+await memory_usage({
+  action: 'store',
+  key: \`\${agentId}_complete\`,
+  value: JSON.stringify({
+    completed_at: new Date().toISOString(),
+    outputs: { /* agent deliverables */ },
+    artifacts_created: [ /* list of created artifacts */ ]
+  })
+});
 \`\`\`
 
 ## 🧠 Intelligent Features Configuration
@@ -1307,14 +1339,22 @@ Ensure smooth transitions between agents:
 
 \`\`\`javascript
 // Primary agent signals readiness for support
-Memory.store("agent_${taskAnalysis.primaryAgent}_ready_for_support", JSON.stringify({
-  base_structure_complete: true,
-  ready_for: [${taskAnalysis.supportingAgents.map(a => `"${a}"`).join(', ')}],
-  timestamp: new Date().toISOString()
-}));
+await memory_usage({
+  action: 'store',
+  key: "agent_${taskAnalysis.primaryAgent}_ready_for_support",
+  value: JSON.stringify({
+    base_structure_complete: true,
+    ready_for: [${taskAnalysis.supportingAgents.map(a => `"${a}"`).join(', ')}],
+    timestamp: new Date().toISOString()
+  })
+});
 
 // Supporting agents check readiness
-const canProceed = JSON.parse(Memory.get("agent_${taskAnalysis.primaryAgent}_ready_for_support") || "{}");
+const readinessResult = await memory_usage({
+  action: 'retrieve',
+  key: "agent_${taskAnalysis.primaryAgent}_ready_for_support"
+});
+const canProceed = readinessResult?.value ? JSON.parse(readinessResult.value) : {};
 if (canProceed?.base_structure_complete) {
   // Begin supporting work
 }
@@ -1326,22 +1366,31 @@ Once all agents complete their work:
 \`\`\`javascript
 // Collect all agent outputs
 const agentOutputs = {};
-[${[taskAnalysis.primaryAgent, ...taskAnalysis.supportingAgents].map(a => `"${a}"`).join(', ')}].forEach(agent => {
-  const output = Memory.get(\`agent_\${agent}_complete\`);
-  if (output) {
-    agentOutputs[agent] = JSON.parse(output);
+const agents = [${[taskAnalysis.primaryAgent, ...taskAnalysis.supportingAgents].map(a => `"${a}"`).join(', ')}];
+
+for (const agent of agents) {
+  const outputResult = await memory_usage({
+    action: 'retrieve',
+    key: \`agent_\${agent}_complete\`
+  });
+  if (outputResult?.value) {
+    agentOutputs[agent] = JSON.parse(outputResult.value);
   }
-});
+}
 
 // Store final swarm results
-Memory.store("swarm_session_${sessionId}_results", JSON.stringify({
-  objective: "${objective}",
-  completed_at: new Date().toISOString(),
-  agent_outputs: agentOutputs,
-  artifacts_created: Object.values(agentOutputs)
-    .flatMap(output => output.artifacts_created || []),
-  success: true
-}));
+await memory_usage({
+  action: 'store',
+  key: "swarm_session_${sessionId}_results",
+  value: JSON.stringify({
+    objective: "${objective}",
+    completed_at: new Date().toISOString(),
+    agent_outputs: agentOutputs,
+    artifacts_created: Object.values(agentOutputs)
+      .flatMap(output => output.artifacts_created || []),
+    success: true
+  })
+});
 
 // Update final TodoWrite status
 TodoWrite([
