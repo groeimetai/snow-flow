@@ -1,8 +1,72 @@
 diff --git a/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts b/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
-index ce6bfbd..3d09618 100644
+index ce6bfbd..f8c3e36 100644
 --- a/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
 +++ b/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
-@@ -1074,6 +1074,39 @@ export const AuthLoginCommand = cmd({
+@@ -711,6 +711,63 @@ export const AuthLoginCommand = cmd({
+               if (prompts.isCancel(roleChoice)) throw new UI.CancelledError()
+               role = roleChoice as "developer" | "stakeholder" | "admin"
+ 
++              // Check seat availability for selected role
++              if (role === "developer" || role === "stakeholder") {
++                const seatCheckSpinner = prompts.spinner()
++                seatCheckSpinner.start(`Checking ${role} seat availability...`)
++
++                try {
++                  const seatCheckResponse = await fetch(
++                    `${enterpriseUrl}/api/user-auth/check-seat-availability?licenseKey=${encodeURIComponent(
++                      licenseKey,
++                    )}&role=${role}`,
++                  )
++                  const seatCheckData = await seatCheckResponse.json()
++
++                  if (!seatCheckResponse.ok) {
++                    seatCheckSpinner.stop("Seat check failed", 1)
++                    prompts.log.error(seatCheckData.error || "Failed to check seat availability")
++                    throw new Error("Seat availability check failed")
++                  }
++
++                  seatCheckSpinner.stop("Seat availability checked")
++
++                  if (!seatCheckData.available) {
++                    prompts.log.error(`\n${seatCheckData.message}`)
++                    prompts.log.message("")
++                    prompts.log.message(`No ${role} seats are available for this license key.`)
++
++                    if (seatCheckData.allocatedSeats !== "unlimited") {
++                      prompts.log.message(
++                        `Allocated: ${seatCheckData.allocatedSeats}, Registered: ${seatCheckData.registeredUsers}`,
++                      )
++                    }
++
++                    prompts.log.message("")
++                    prompts.log.message("Please contact your administrator to:")
++                    prompts.log.message("  • Increase seat allocation for your organization")
++                    prompts.log.message(`  • Free up ${role} seats by removing inactive users`)
++                    prompts.log.message("")
++
++                    throw new Error(`No ${role} seats available`)
++                  }
++
++                  // Show available seats info
++                  if (!seatCheckData.unlimited) {
++                    prompts.log.success(
++                      `${seatCheckData.availableSeats} ${role} seat(s) available (${seatCheckData.registeredUsers}/${seatCheckData.allocatedSeats} registered)`,
++                    )
++                  } else {
++                    prompts.log.success(`${role} seats: unlimited`)
++                  }
++                } catch (error: any) {
++                  if (error.message === `No ${role} seats available`) {
++                    throw error
++                  }
++                  prompts.log.warn("Could not verify seat availability - proceeding with registration")
++                }
++              }
++
+               prompts.log.info(`Machine ID: ${machineId.substring(0, 16)}...`)
+ 
+               // Register with enterprise backend
+@@ -1074,6 +1131,39 @@ export const AuthLoginCommand = cmd({
              // Silently skip enterprise MCP configuration errors
            }
  
@@ -42,7 +106,7 @@ index ce6bfbd..3d09618 100644
            prompts.log.message("")
            prompts.log.success("Enterprise configuration saved")
            prompts.log.info("Credentials saved to .env file")
-@@ -2067,6 +2100,39 @@ export const AuthLoginCommand = cmd({
+@@ -2067,6 +2157,39 @@ export const AuthLoginCommand = cmd({
                // Silently skip enterprise MCP configuration errors
              }
  
@@ -82,7 +146,7 @@ index ce6bfbd..3d09618 100644
              prompts.log.message("")
              prompts.log.success("Enterprise configuration saved")
              prompts.log.info("Credentials saved to .env file")
-@@ -2479,41 +2545,104 @@ export const AuthLoginCommand = cmd({
+@@ -2479,41 +2602,104 @@ export const AuthLoginCommand = cmd({
                // Silently skip enterprise MCP configuration errors
              }
  
