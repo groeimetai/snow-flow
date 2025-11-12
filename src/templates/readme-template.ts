@@ -51,7 +51,7 @@ This will:
 snow-flow swarm "create an incident dashboard widget"
 
 # Or use SnowCode/Claude Code directly (MCP servers auto-configured)
-snowcode  # All 22 MCP servers available automatically
+snow-code  # All 22 MCP servers available automatically
 \`\`\`
 
 ## 🎯 Key Features
@@ -191,7 +191,7 @@ snow-flow swarm "<task>"  # Multi-agent orchestration for complex tasks
 
 ### Direct AI Usage
 \`\`\`bash
-snowcode               # Start SnowCode with all 22 MCP servers
+snow-code              # Start SnowCode with all 22 MCP servers
 claude                 # Start Claude Code with MCP servers (if installed)
 \`\`\`
 
@@ -276,7 +276,7 @@ your-project/
 ### "SnowCode is not installed"
 
 \`\`\`bash
-npm install -g snowcode-ai
+npm install -g @groeimetai/snow-code
 \`\`\`
 
 ### "ServiceNow authentication failed"

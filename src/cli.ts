@@ -577,7 +577,7 @@ async function autoUpdateSnowCode(verbose: boolean = false): Promise<void> {
     }
 
     // Get current version
-    const currentVersion = execSync('snowcode --version', { encoding: 'utf8' }).trim();
+    const currentVersion = execSync('snow-code --version', { encoding: 'utf8' }).trim();
 
     // Get latest version from npm
     const latestVersion = execSync('npm view @groeimetai/snow-code version', { encoding: 'utf8' }).trim();
@@ -751,7 +751,7 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
     // Check if SnowCode CLI is available
     const { execSync } = require('child_process');
     try {
-      execSync('which snowcode', { stdio: 'ignore' });
+      execSync('which snow-code', { stdio: 'ignore' });
     } catch {
       cliLogger.error('SnowCode CLI not found - install: npm install -g @groeimetai/snow-code');
       return false;
@@ -811,8 +811,8 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
     snowcodeArgs.push('--prompt', objective);
 
     // Spawn SnowCode process in TUI mode - full interactive interface
-    // Use 'snowcode --prompt <objective>' to start TUI with initial prompt
-    const snowcodeProcess = spawn('snowcode', snowcodeArgs, {
+    // Use 'snow-code --prompt <objective>' to start TUI with initial prompt
+    const snowcodeProcess = spawn('snow-code', snowcodeArgs, {
       stdio: 'inherit', // All stdio inherited - SnowCode can use TTY
       cwd: process.cwd(),
       env: {
