@@ -354,10 +354,10 @@ export function registerEnterpriseCommands(program: Command): void {
       await loginCommand(licenseKey);
     });
 
-  // Setup command - Configure enterprise MCP server
+  // Setup command - Redirect to snow-code auth
   program
     .command('setup')
-    .description('Setup Enterprise MCP server with Jira, Azure DevOps, and Confluence integrations')
+    .description('[DEPRECATED] Enterprise setup has moved to snow-code auth login')
     .action(async () => {
       // Dynamic import to avoid circular dependencies
       const { setupEnterpriseFlow } = await import('./auth.js');
