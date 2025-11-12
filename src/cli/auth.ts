@@ -532,4 +532,151 @@ export function registerAuthCommands(program: Command) {
         prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
       }
     });
+
+  // Sync credentials to portal
+  auth
+    .command('sync')
+    .description('Sync local credentials to Enterprise Portal')
+    .action(async () => {
+      prompts.intro('Credential Sync');
+
+      try {
+        // Read .env file from current directory
+        const envPath = path.join(process.cwd(), '.env');
+        const envContent = await fs.readFile(envPath, 'utf-8');
+
+        // Parse environment variables
+        const envVars: Record<string, string> = {};
+        envContent.split('\n').forEach(line => {
+          const match = line.match(/^([^=]+)=(.*)$/);
+          if (match) {
+            envVars[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, '');
+          }
+        });
+
+        const licenseKey = envVars.SNOW_ENTERPRISE_LICENSE_KEY;
+        const enterpriseUrl = envVars.SNOW_ENTERPRISE_URL || 'https://portal.snow-flow.dev';
+
+        if (!licenseKey) {
+          prompts.log.error('No enterprise license key found in .env');
+          prompts.outro('Sync failed');
+          return;
+        }
+
+        // Login first to get customer token
+        prompts.log.step('Authenticating with enterprise portal...');
+
+        const username = envVars.SNOW_ENTERPRISE_USERNAME;
+        const password = envVars.SNOW_ENTERPRISE_PASSWORD;
+
+        if (!username || !password) {
+          prompts.log.error('Username or password not found in .env');
+          prompts.log.info('Add SNOW_ENTERPRISE_USERNAME and SNOW_ENTERPRISE_PASSWORD to .env');
+          prompts.outro('Sync failed');
+          return;
+        }
+
+        const loginResponse = await fetch(`${enterpriseUrl}/api/user-auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ licenseKey, username, password })
+        });
+
+        const loginData: any = await loginResponse.json();
+
+        if (!loginResponse.ok || !loginData.success) {
+          prompts.log.error('Authentication failed: ' + (loginData.error || 'Invalid credentials'));
+          prompts.outro('Sync failed');
+          return;
+        }
+
+        const token: string = loginData.token;
+        const credentialsToSync: Array<{ service: string; data: any }> = [];
+
+        // Check Jira credentials
+        if (envVars.SNOW_JIRA_BASE_URL && envVars.SNOW_JIRA_EMAIL && envVars.SNOW_JIRA_API_TOKEN) {
+          credentialsToSync.push({
+            service: 'jira',
+            data: {
+              service: 'jira',
+              username: envVars.SNOW_JIRA_EMAIL,
+              apiToken: envVars.SNOW_JIRA_API_TOKEN,
+              instanceUrl: envVars.SNOW_JIRA_BASE_URL
+            }
+          });
+        }
+
+        // Check Azure DevOps credentials
+        if (envVars.SNOW_AZURE_ORG && envVars.SNOW_AZURE_PAT) {
+          credentialsToSync.push({
+            service: 'azdo',
+            data: {
+              service: 'azdo',
+              username: envVars.SNOW_AZURE_ORG,
+              apiToken: envVars.SNOW_AZURE_PAT,
+              instanceUrl: `https://dev.azure.com/${envVars.SNOW_AZURE_ORG}`
+            }
+          });
+        }
+
+        // Check Confluence credentials
+        if (envVars.SNOW_CONFLUENCE_BASE_URL && envVars.SNOW_CONFLUENCE_EMAIL && envVars.SNOW_CONFLUENCE_API_TOKEN) {
+          credentialsToSync.push({
+            service: 'confluence',
+            data: {
+              service: 'confluence',
+              username: envVars.SNOW_CONFLUENCE_EMAIL,
+              apiToken: envVars.SNOW_CONFLUENCE_API_TOKEN,
+              instanceUrl: envVars.SNOW_CONFLUENCE_BASE_URL
+            }
+          });
+        }
+
+        if (credentialsToSync.length === 0) {
+          prompts.log.warn('No credentials found in .env to sync');
+          prompts.outro('Nothing to sync');
+          return;
+        }
+
+        prompts.log.step(`Syncing ${credentialsToSync.length} credential(s)...`);
+
+        // Sync each credential
+        for (const cred of credentialsToSync) {
+          try {
+            const response = await fetch(`${enterpriseUrl}/api/credentials/store`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(cred.data)
+            });
+
+            const result: any = await response.json();
+
+            if (response.ok && result.success) {
+              prompts.log.success(`✓ ${cred.service} credentials synced`);
+            } else {
+              prompts.log.error(`✗ ${cred.service} failed: ${result.error || 'Unknown error'}`);
+            }
+          } catch (error: any) {
+            prompts.log.error(`✗ ${cred.service} failed: ${error.message}`);
+          }
+        }
+
+        prompts.log.message('');
+        prompts.log.success('Credential sync complete!');
+        prompts.log.info('View your credentials at: ' + enterpriseUrl + '/portal/credentials');
+        prompts.outro('Done');
+
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          prompts.log.error('No .env file found in current directory');
+          prompts.log.info('Run: snow-flow auth login first');
+        } else {
+          prompts.log.error('Sync failed: ' + error.message);
+        }
+        prompts.outro('Sync failed');
+      }
+    });
 }
