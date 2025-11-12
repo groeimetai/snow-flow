@@ -1975,6 +1975,17 @@ program
       try {
         const { execSync } = await import('child_process');
 
+        // Update GLOBAL snow-code first (used by snow-flow auth login)
+        snowcodeSpinner.message('Updating global @groeimetai/snow-code');
+        try {
+          execSync('npm install -g @groeimetai/snow-code@latest', {
+            stdio: 'ignore'
+          });
+          snowcodeSpinner.message('Global SnowCode updated to latest');
+        } catch (globalErr) {
+          // Continue even if global update fails
+        }
+
         // Update local peer dependency - ALWAYS use @latest to avoid cached old versions
         snowcodeSpinner.message('Updating local @groeimetai/snow-code');
         try {
@@ -1989,31 +2000,8 @@ program
           // Continue even if local update fails
         }
 
-        // Check global installation
-        let installedVersion = null;
-        try {
-          const versionOutput = execSync('npm list -g @groeimetai/snow-code --depth=0', { encoding: 'utf8' });
-          const match = versionOutput.match(/@groeimetai\/snow-code@(\d+\.\d+\.\d+)/);
-          installedVersion = match ? match[1] : null;
-        } catch (err) {
-          // Not installed yet
-        }
-
-        if (installedVersion) {
-          const latestOutput = execSync('npm view @groeimetai/snow-code version', { encoding: 'utf8' }).trim();
-
-          if (installedVersion !== latestOutput) {
-            snowcodeSpinner.message('Updating global SnowCode');
-            execSync('npm install -g @groeimetai/snow-code@latest', { stdio: 'ignore' });
-            snowcodeSpinner.stop('SnowCode updated (global + local)');
-          } else {
-            snowcodeSpinner.stop('SnowCode up to date');
-          }
-        } else {
-          snowcodeSpinner.message('Installing global SnowCode');
-          execSync('npm install -g @groeimetai/snow-code@latest', { stdio: 'ignore' });
-          snowcodeSpinner.stop('SnowCode installed globally');
-        }
+        // Verify installation
+        snowcodeSpinner.stop('SnowCode updated (global + local)');
       } catch (err) {
         snowcodeSpinner.stop('Could not update SnowCode');
         prompts.log.warn('Run: npm install -g @groeimetai/snow-code@latest');
