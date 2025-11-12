@@ -1,5 +1,5 @@
 diff --git a/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts b/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
-index ae91a87..81bdb1c 100644
+index ae91a87..832eab0 100644
 --- a/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
 +++ b/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
 @@ -1992,6 +1992,39 @@ export const AuthLoginCommand = cmd({
@@ -42,3 +42,143 @@ index ae91a87..81bdb1c 100644
              prompts.log.message("")
              prompts.log.success("Enterprise configuration saved")
              prompts.log.info("Credentials saved to .env file")
+@@ -2404,41 +2437,104 @@ export const AuthLoginCommand = cmd({
+               // Silently skip enterprise MCP configuration errors
+             }
+ 
+-            // Sync integration settings to enterprise backend
+-            try {
+-              const enterpriseApiUrl = enterpriseUrl || "https://portal.snow-flow.dev"
+-              await fetch(`${enterpriseApiUrl}/api/integrations`, {
+-                method: "POST",
+-                headers: {
+-                  "Content-Type": "application/json",
+-                  Authorization: `Bearer ${licenseKey}`,
+-                },
+-                body: JSON.stringify({
+-                  jira: jiraBaseUrl
+-                    ? {
+-                        baseUrl: jiraBaseUrl,
+-                        email: jiraEmail,
+-                        // API token is NOT sent - kept local for security
+-                      }
+-                    : undefined,
+-                  azure: azureOrg
+-                    ? {
+-                        organization: azureOrg,
+-                        project: azureProject,
+-                        // PAT is NOT sent - kept local for security
+-                      }
+-                    : undefined,
+-                  confluence: confluenceUrl
+-                    ? {
+-                        baseUrl: confluenceUrl,
+-                        email: confluenceEmail,
+-                        // API token is NOT sent - kept local for security
+-                      }
+-                    : undefined,
+-                }),
+-              })
+-            } catch (error) {
+-              // Silently fail - integrations are still saved locally
++            // 🔐 SYNC CREDENTIALS TO PORTAL (secure encrypted storage)
++            // Note: Credentials are encrypted with AES-256-GCM in the portal database
++            if (authData && authData.token) {
++              try {
++                const enterpriseApiUrl = enterpriseUrl || "https://portal.snow-flow.dev"
++                prompts.log.message("")
++                prompts.log.step("Syncing credentials to portal...")
++
++                let syncCount = 0
++
++                // Sync Jira credentials
++                if (jiraBaseUrl && jiraEmail && jiraApiToken) {
++                  try {
++                    const jiraResponse = await fetch(`${enterpriseApiUrl}/api/credentials/store`, {
++                      method: "POST",
++                      headers: {
++                        "Content-Type": "application/json",
++                        "Authorization": `Bearer ${authData.token}`
++                      },
++                      body: JSON.stringify({
++                        service: "jira",
++                        username: jiraEmail,
++                        apiToken: jiraApiToken,
++                        instanceUrl: jiraBaseUrl
++                      })
++                    })
++
++                    const jiraResult = await jiraResponse.json()
++                    if (jiraResponse.ok && jiraResult.success) {
++                      prompts.log.success("✓ Jira credentials synced to portal")
++                      syncCount++
++                    }
++                  } catch (e) {
++                    // Continue with other services
++                  }
++                }
++
++                // Sync Azure DevOps credentials
++                if (azureOrg && azurePat) {
++                  try {
++                    const azureResponse = await fetch(`${enterpriseApiUrl}/api/credentials/store`, {
++                      method: "POST",
++                      headers: {
++                        "Content-Type": "application/json",
++                        "Authorization": `Bearer ${authData.token}`
++                      },
++                      body: JSON.stringify({
++                        service: "azdo",
++                        username: azureOrg,
++                        apiToken: azurePat,
++                        instanceUrl: `https://dev.azure.com/${azureOrg}`
++                      })
++                    })
++
++                    const azureResult = await azureResponse.json()
++                    if (azureResponse.ok && azureResult.success) {
++                      prompts.log.success("✓ Azure DevOps credentials synced to portal")
++                      syncCount++
++                    }
++                  } catch (e) {
++                    // Continue with other services
++                  }
++                }
++
++                // Sync Confluence credentials
++                if (confluenceUrl && confluenceEmail && confluenceApiToken) {
++                  try {
++                    const confluenceResponse = await fetch(`${enterpriseApiUrl}/api/credentials/store`, {
++                      method: "POST",
++                      headers: {
++                        "Content-Type": "application/json",
++                        "Authorization": `Bearer ${authData.token}`
++                      },
++                      body: JSON.stringify({
++                        service: "confluence",
++                        username: confluenceEmail,
++                        apiToken: confluenceApiToken,
++                        instanceUrl: confluenceUrl
++                      })
++                    })
++
++                    const confluenceResult = await confluenceResponse.json()
++                    if (confluenceResponse.ok && confluenceResult.success) {
++                      prompts.log.success("✓ Confluence credentials synced to portal")
++                      syncCount++
++                    }
++                  } catch (e) {
++                    // Continue
++                  }
++                }
++
++                if (syncCount === 0) {
++                  prompts.log.warn("⚠ Credentials saved locally (portal sync unavailable)")
++                }
++              } catch (error) {
++                // Silently fail - integrations are still saved locally
++                prompts.log.warn("⚠ Credentials saved locally (portal sync unavailable)")
++              }
+             }
+ 
+             prompts.log.success("Enterprise configuration saved")
