@@ -1,5 +1,5 @@
 diff --git a/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts b/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
-index ce6bfbd..f8c3e36 100644
+index ce6bfbd..1133af8 100644
 --- a/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
 +++ b/node_modules/@groeimetai/snow-code/src/cli/cmd/auth.ts
 @@ -711,6 +711,63 @@ export const AuthLoginCommand = cmd({
@@ -84,7 +84,7 @@ index ce6bfbd..f8c3e36 100644
 +                },
 +                body: JSON.stringify({
 +                  service: "jira",
-+                  username: jiraEmail,
++                  email: jiraEmail,
 +                  apiToken: jiraApiToken,
 +                  instanceUrl: jiraBaseUrl
 +                })
@@ -124,7 +124,7 @@ index ce6bfbd..f8c3e36 100644
 +                  },
 +                  body: JSON.stringify({
 +                    service: "jira",
-+                    username: enterpriseJiraEmail,
++                    email: enterpriseJiraEmail,
 +                    apiToken: enterpriseJiraApiToken,
 +                    instanceUrl: enterpriseJiraBaseUrl
 +                  })
@@ -163,28 +163,6 @@ index ce6bfbd..f8c3e36 100644
 -                  jira: jiraBaseUrl
 -                    ? {
 -                        baseUrl: jiraBaseUrl,
--                        email: jiraEmail,
--                        // API token is NOT sent - kept local for security
--                      }
--                    : undefined,
--                  azure: azureOrg
--                    ? {
--                        organization: azureOrg,
--                        project: azureProject,
--                        // PAT is NOT sent - kept local for security
--                      }
--                    : undefined,
--                  confluence: confluenceUrl
--                    ? {
--                        baseUrl: confluenceUrl,
--                        email: confluenceEmail,
--                        // API token is NOT sent - kept local for security
--                      }
--                    : undefined,
--                }),
--              })
--            } catch (error) {
--              // Silently fail - integrations are still saved locally
 +            // 🔐 SYNC CREDENTIALS TO PORTAL (secure encrypted storage)
 +            // Note: Credentials are encrypted with AES-256-GCM in the portal database
 +            if (authData && authData.token) {
@@ -206,7 +184,20 @@ index ce6bfbd..f8c3e36 100644
 +                      },
 +                      body: JSON.stringify({
 +                        service: "jira",
-+                        username: jiraEmail,
+                         email: jiraEmail,
+-                        // API token is NOT sent - kept local for security
+-                      }
+-                    : undefined,
+-                  azure: azureOrg
+-                    ? {
+-                        organization: azureOrg,
+-                        project: azureProject,
+-                        // PAT is NOT sent - kept local for security
+-                      }
+-                    : undefined,
+-                  confluence: confluenceUrl
+-                    ? {
+-                        baseUrl: confluenceUrl,
 +                        apiToken: jiraApiToken,
 +                        instanceUrl: jiraBaseUrl
 +                      })
@@ -260,7 +251,14 @@ index ce6bfbd..f8c3e36 100644
 +                      },
 +                      body: JSON.stringify({
 +                        service: "confluence",
-+                        username: confluenceEmail,
+                         email: confluenceEmail,
+-                        // API token is NOT sent - kept local for security
+-                      }
+-                    : undefined,
+-                }),
+-              })
+-            } catch (error) {
+-              // Silently fail - integrations are still saved locally
 +                        apiToken: confluenceApiToken,
 +                        instanceUrl: confluenceUrl
 +                      })

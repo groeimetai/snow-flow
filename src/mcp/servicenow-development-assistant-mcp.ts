@@ -19,11 +19,11 @@ import { MCPLogger } from './shared/mcp-logger.js';
 import { widgetTemplateGenerator } from '../utils/widget-template-generator.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { SelfDocumentingSystem } from '../documentation/self-documenting-system.js';
-import { CostOptimizationEngine } from '../optimization/cost-optimization-engine.js';
-import { AdvancedComplianceSystem } from '../compliance/advanced-compliance-system.js';
-import { SelfHealingSystem } from '../healing/self-healing-system.js';
-import { QueenMemorySystem } from '../memory/session-memory.js';
+import { SelfDocumentingSystem } from '../documentation/self-documenting-system';
+import { CostOptimizationEngine } from '../optimization/cost-optimization-engine';
+import { AdvancedComplianceSystem } from '../compliance/advanced-compliance-system';
+import { SelfHealingSystem } from '../healing/self-healing-system';
+import { QueenMemorySystem } from '../memory/session-memory';
 
 interface ParsedIntent {
   action: 'find' | 'edit' | 'create' | 'clone';
