@@ -493,31 +493,8 @@ export function registerAuthCommands(program: Command) {
         // Update MCP server config with ServiceNow credentials
         await updateMCPServerConfig();
 
-        // After successful auth, prompt for enterprise license (if not already configured)
-        const enterpriseConfigured = await isEnterpriseMcpConfigured();
-
-        if (!enterpriseConfigured) {
-          prompts.log.message('');
-          prompts.log.step('🔐 Enterprise License Setup (Optional)');
-          prompts.log.message('');
-          prompts.log.info('Snow-Flow Enterprise adds 50+ tools for Jira, Azure DevOps, and Confluence');
-          prompts.log.message('');
-
-          const shouldConfigureEnterprise = await prompts.confirm({
-            message: 'Do you have a Snow-Flow Enterprise license key?',
-            initialValue: false
-          });
-
-          if (prompts.isCancel(shouldConfigureEnterprise)) {
-            prompts.log.info('Skipping enterprise setup');
-          } else if (shouldConfigureEnterprise) {
-            // Run enterprise setup flow
-            await setupEnterpriseFlow();
-          }
-        } else {
-          prompts.log.message('');
-          prompts.log.success('✓ Enterprise MCP server already configured');
-        }
+        // Note: Enterprise setup is now handled by snow-code auth login
+        // No need to prompt again here - snow-code already asks about enterprise configuration
       } catch (error: any) {
         // Error details are already shown via stdio: 'inherit'
         // Only provide helpful context here
