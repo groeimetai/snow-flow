@@ -102,7 +102,7 @@ async function main() {
     console.error('[Enterprise Proxy] Snow-Flow Enterprise MCP Proxy started');
     console.error(`[Enterprise Proxy] Version: ${VERSION}`);
     console.error(
-      `[Enterprise Proxy] Enterprise URL: ${process.env.SNOW_ENTERPRISE_URL || 'https://portal.snow-flow.dev'}`
+      `[Enterprise Proxy] Enterprise URL: ${process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev'}`
     );
     console.error(
       `[Enterprise Proxy] License Key: ${process.env.SNOW_LICENSE_KEY ? '✓ Configured' : '✗ Not configured'}`
