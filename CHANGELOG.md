@@ -5,6 +5,21 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.31.41] - 2025-11-13
+
+### Fixed
+- **🔧 Snow-Code Binary Auth Path**: Updated to `@groeimetai/snow-code@0.18.49` which fixes auth.json directory creation
+  - snow-code binary now correctly uses `snow-code` directory (with dash) instead of `snowcode` (without dash)
+  - Fixes root cause of authentication path issues at the source
+  - Ensures auth.json is created at correct location (`~/.local/share/snow-code/auth.json`) from the start
+  - Combined with v8.31.40's auto-fix, provides double protection against auth path issues
+  - This is the **FINAL FIX** - auth.json will now ALWAYS be created and found at the correct location
+
+### Changed
+- **Dependency Update**: Upgraded `@groeimetai/snow-code` from v0.18.48 to v0.18.49
+  - Contains critical fix for XDG directory naming (app name must be "snow-code" with dash)
+  - Published to npm: https://www.npmjs.com/package/@groeimetai/snow-code
+
 ## [8.31.40] - 2025-11-13
 
 ### Added
