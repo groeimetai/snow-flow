@@ -151,9 +151,21 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
 
   // Auto-switch if requested
   if (auto_switch) {
-    await client.put(`/api/now/table/sys_update_set/${updateSet.sys_id}`, {
-      is_current: true
-    });
+    // Use server-side script to switch update set (is_current cannot be set via REST API)
+    const switchScript = `
+var gus = new GlideUpdateSet2();
+gus.setCurrent('${updateSet.sys_id}');
+gs.info('Switched to update set: ${updateSet.sys_id}');
+`;
+
+    try {
+      await client.post('/api/now/v1/script/execute', {
+        script: switchScript
+      });
+    } catch (switchError: any) {
+      // Log error but don't fail the creation
+      console.warn('Failed to auto-switch update set:', switchError.message);
+    }
   }
 
   return createSuccessResult({
@@ -191,9 +203,15 @@ async function executeSwitch(args: any, context: ServiceNowContext): Promise<Too
 
   const updateSet = checkResponse.data.result;
 
-  // Switch to this Update Set
-  await client.put(`/api/now/table/sys_update_set/${update_set_id}`, {
-    is_current: true
+  // Switch to this Update Set using server-side script
+  const switchScript = `
+var gus = new GlideUpdateSet2();
+gus.setCurrent('${update_set_id}');
+gs.info('Switched to update set: ${update_set_id}');
+`;
+
+  await client.post('/api/now/v1/script/execute', {
+    script: switchScript
   });
 
   return createSuccessResult({
