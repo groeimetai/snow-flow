@@ -735,8 +735,12 @@ async function autoUpdateSnowCode(verbose: boolean = false): Promise<void> {
     }
   } catch (error) {
     // Log error but don't block execution
-    cliLogger.warn(`⚠️  Auto-update check failed: ${error instanceof Error ? error.message : String(error)}`);
-    cliLogger.debug(`Full error: ${error}`);
+    // Silently catch update errors - user can manually update with: npm install -g @groeimetai/snow-code@latest
+    if (verbose) {
+      cliLogger.warn(`⚠️  Auto-update check failed: ${error instanceof Error ? error.message : String(error)}`);
+      cliLogger.debug(`Full error: ${error}`);
+      cliLogger.info('💡 To manually update SnowCode: npm install -g @groeimetai/snow-code@latest');
+    }
   }
 }
 
@@ -868,7 +872,7 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
     }
 
     cliLogger.error('❌ Error launching SnowCode:', error instanceof Error ? error.message : String(error));
-    cliLogger.info('📋 Please start SnowCode manually: snowcode');
+    cliLogger.info('📋 Please start SnowCode manually: snow-code');
     return false;
   }
 }

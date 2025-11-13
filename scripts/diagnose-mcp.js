@@ -19,7 +19,7 @@ var successes = [];
 // 1. Check SnowCode installation
 console.log('\n1️⃣  Checking SnowCode installation...');
 try {
-  var snowcodeVersion = execSync('snowcode --version 2>&1', { encoding: 'utf-8' }).trim();
+  var snowcodeVersion = execSync('snow-code --version 2>&1', { encoding: 'utf-8' }).trim();
   if (snowcodeVersion.includes('command not found')) {
     issues.push('SnowCode CLI not found - install with: npm install -g @groeimetai/snow-code');
   } else {
@@ -284,7 +284,7 @@ if (issues.length === 0 && warnings.length === 0) {
   console.log('');
   console.log('If MCP tools are still not available in SnowCode:');
   console.log('1. Completely quit SnowCode (not just close window)');
-  console.log('2. Restart SnowCode: snowcode');
+  console.log('2. Restart SnowCode: snow-code');
   console.log('3. Tools should be available immediately');
   console.log('');
   console.log('Test MCP tools with:');
