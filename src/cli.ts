@@ -2291,11 +2291,11 @@ async function copySnowCodePackageJson(targetDir: string, force: boolean = false
       }
     }
 
-    // Find snowcode package.json template
+    // Find snow-code package.json template
     const templateSourcePaths = [
-      join(snowFlowRoot, 'templates', 'snowcode-package.json'),
-      join(__dirname, '..', 'templates', 'snowcode-package.json'),
-      join(__dirname, 'templates', 'snowcode-package.json')
+      join(snowFlowRoot, 'templates', 'snow-code-package.json'),
+      join(__dirname, '..', 'templates', 'snow-code-package.json'),
+      join(__dirname, 'templates', 'snow-code-package.json')
     ];
 
     let templatePath: string | null = null;
