@@ -41,7 +41,7 @@ intelligent-mcp.db*
 .snow-flow/
 .swarm/
 .hive-mind/
-memory/
+/memory/
 coordination/
 servicenow/
 reports/
@@ -122,3 +122,5 @@ enterprise/**/*
 .enterprise/
 ../snow-flow-enterprise/
 ../snow-flow-enterprise/**/*
+
+CLAUDE.md
