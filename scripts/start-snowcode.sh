@@ -80,28 +80,28 @@ else
     exit 1
 fi
 
-# Check if snowcode-config.json exists
-if [ ! -f "$PROJECT_ROOT/snowcode-config.json" ]; then
-    echo -e "${YELLOW}Creating snowcode-config.json...${NC}"
+# Check if snow-code-config.json exists
+if [ ! -f "$PROJECT_ROOT/snow-code-config.json" ]; then
+    echo -e "${YELLOW}Creating snow-code-config.json...${NC}"
 
-    if [ -f "$PROJECT_ROOT/snowcode-config.example.json" ]; then
-        cp "$PROJECT_ROOT/snowcode-config.example.json" "$PROJECT_ROOT/snowcode-config.json"
+    if [ -f "$PROJECT_ROOT/snow-code-config.example.json" ]; then
+        cp "$PROJECT_ROOT/snow-code-config.example.json" "$PROJECT_ROOT/snow-code-config.json"
 
         # Replace variables in config
         source "$PROJECT_ROOT/.env"
 
-        sed -i.bak "s|\${SNOW_INSTANCE}|${SNOW_INSTANCE}|g" "$PROJECT_ROOT/snowcode-config.json"
-        sed -i.bak "s|\${SNOW_CLIENT_ID}|${SNOW_CLIENT_ID}|g" "$PROJECT_ROOT/snowcode-config.json"
-        sed -i.bak "s|\${SNOW_CLIENT_SECRET}|${SNOW_CLIENT_SECRET}|g" "$PROJECT_ROOT/snowcode-config.json"
-        sed -i.bak "s|\${SNOW_USERNAME}|${SNOW_USERNAME}|g" "$PROJECT_ROOT/snowcode-config.json"
-        sed -i.bak "s|\${SNOW_PASSWORD}|${SNOW_PASSWORD}|g" "$PROJECT_ROOT/snowcode-config.json"
-        sed -i.bak "s|/path/to/your/snow-flow/installation|${PROJECT_ROOT}|g" "$PROJECT_ROOT/snowcode-config.json"
+        sed -i.bak "s|\${SNOW_INSTANCE}|${SNOW_INSTANCE}|g" "$PROJECT_ROOT/snow-code-config.json"
+        sed -i.bak "s|\${SNOW_CLIENT_ID}|${SNOW_CLIENT_ID}|g" "$PROJECT_ROOT/snow-code-config.json"
+        sed -i.bak "s|\${SNOW_CLIENT_SECRET}|${SNOW_CLIENT_SECRET}|g" "$PROJECT_ROOT/snow-code-config.json"
+        sed -i.bak "s|\${SNOW_USERNAME}|${SNOW_USERNAME}|g" "$PROJECT_ROOT/snow-code-config.json"
+        sed -i.bak "s|\${SNOW_PASSWORD}|${SNOW_PASSWORD}|g" "$PROJECT_ROOT/snow-code-config.json"
+        sed -i.bak "s|/path/to/your/snow-flow/installation|${PROJECT_ROOT}|g" "$PROJECT_ROOT/snow-code-config.json"
 
-        rm -f "$PROJECT_ROOT/snowcode-config.json.bak"
+        rm -f "$PROJECT_ROOT/snow-code-config.json.bak"
 
-        echo -e "${GREEN}✓ snowcode-config.json created${NC}"
+        echo -e "${GREEN}✓ snow-code-config.json created${NC}"
     else
-        echo -e "${RED}✗ snowcode-config.example.json not found${NC}"
+        echo -e "${RED}✗ snow-code-config.example.json not found${NC}"
         exit 1
     fi
 fi

@@ -16,7 +16,7 @@
     "patches/",
     ".env.example",
     ".mcp.json.template",
-    "snowcode-config.example.json",
+    "snow-code-config.example.json",
     "themes/",
     "README.md",
     "CLAUDE.md",

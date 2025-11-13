@@ -496,17 +496,17 @@ async function startMCPServers(): Promise<number[]> {
 
   try {
     // Load SnowCode config
-    const snowcodeConfigPath = join(os.homedir(), '.snowcode', 'snowcode.json');
+    const snowcodeConfigPath = join(os.homedir(), '.snow-code', 'snow-code.json');
     if (!existsSync(snowcodeConfigPath)) {
       // Try local config
-      const localConfigPath = join(process.cwd(), '.snowcode', 'snowcode.json');
+      const localConfigPath = join(process.cwd(), '.snow-code', 'snow-code.json');
       if (!existsSync(localConfigPath)) {
         return pids;
       }
     }
 
     const configContent = await fs.readFile(
-      existsSync(snowcodeConfigPath) ? snowcodeConfigPath : join(process.cwd(), '.snowcode', 'snowcode.json'),
+      existsSync(snowcodeConfigPath) ? snowcodeConfigPath : join(process.cwd(), '.snow-code', 'snow-code.json'),
       'utf-8'
     );
     const config = JSON.parse(configContent);
@@ -607,7 +607,7 @@ async function autoUpdateSnowCode(verbose: boolean = false): Promise<void> {
 
       if (existsSync(groeimetaiPath)) {
         // Check main package version AND platform binaries
-        const snowcodePackage = join(groeimetaiPath, 'snowcode', 'package.json');
+        const snowcodePackage = join(groeimetaiPath, 'snow-code', 'package.json');
         let needsUpdate = false;
 
         if (existsSync(snowcodePackage)) {
@@ -622,12 +622,12 @@ async function autoUpdateSnowCode(verbose: boolean = false): Promise<void> {
           needsUpdate = true;
         }
 
-        // Also check platform binaries (snowcode-darwin-arm64, etc.)
+        // Also check platform binaries (snow-code-darwin-arm64, etc.)
         if (!needsUpdate) {
           try {
             const packages = readdirSync(groeimetaiPath);
             for (const pkg of packages) {
-              if (pkg.startsWith('snowcode-')) {
+              if (pkg.startsWith('snow-code-')) {
                 const pkgJsonPath = join(groeimetaiPath, pkg, 'package.json');
                 if (existsSync(pkgJsonPath)) {
                   const pkgJson = JSON.parse(require('fs').readFileSync(pkgJsonPath, 'utf8'));
@@ -657,7 +657,7 @@ async function autoUpdateSnowCode(verbose: boolean = false): Promise<void> {
           try {
             const packages = readdirSync(groeimetaiPath);
             for (const pkg of packages) {
-              if (pkg.startsWith('snowcode-') || pkg === 'snowcode') {
+              if (pkg.startsWith('snow-code-') || pkg === 'snow-code') {
                 const pkgPath = join(groeimetaiPath, pkg);
                 cliLogger.debug(`Removing old package: ${pkg}`);
                 rmSync(pkgPath, { recursive: true, force: true });
@@ -684,7 +684,7 @@ async function autoUpdateSnowCode(verbose: boolean = false): Promise<void> {
           try {
             const packages = readdirSync(groeimetaiPath);
             for (const pkg of packages) {
-              if (pkg.startsWith('snowcode-')) {
+              if (pkg.startsWith('snow-code-')) {
                 const binPath = join(groeimetaiPath, pkg, 'bin');
                 if (existsSync(binPath)) {
                   const binaries = readdirSync(binPath);
@@ -757,10 +757,9 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
       return false;
     }
 
-    // Check for SnowCode config (.snowcode/snowcode.json or .snowcode/opencode.json)
-    const snowcodeConfigPath = join(process.cwd(), '.snowcode', 'snowcode.json');
-    const opencodeConfigPath = join(process.cwd(), '.snowcode', 'opencode.json');
-    if (!existsSync(snowcodeConfigPath) && !existsSync(opencodeConfigPath)) {
+    // Check for SnowCode config (.snow-code/snow-code.json)
+    const snowcodeConfigPath = join(process.cwd(), '.snow-code', 'snow-code.json');
+    if (!existsSync(snowcodeConfigPath)) {
       cliLogger.error('SnowCode config not found - run: snow-flow init');
       return false;
     }
@@ -1948,18 +1947,18 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
     return false;
   }
 
-  // If SnowCode is installed, copy config to .snowcode/ directory
-  // SnowCode automatically detects config files in project root and .snowcode/ directory
+  // If SnowCode is installed, copy config to .snow-code/ directory
+  // SnowCode automatically detects config files in project root and .snow-code/ directory
   if (snowcodeInstalled) {
-    const exampleConfigPath = join(process.cwd(), 'snowcode-config.example.json');
-    const snowcodeConfigPath = join(process.cwd(), '.snowcode', 'config.json');
+    const exampleConfigPath = join(process.cwd(), 'snow-code-config.example.json');
+    const snowcodeConfigPath = join(process.cwd(), '.snow-code', 'config.json');
 
     // Check if example config file exists
     try {
       await fs.access(exampleConfigPath);
 
       try {
-        // Copy example config to .snowcode/config.json for automatic detection
+        // Copy example config to .snow-code/config.json for automatic detection
         let configContent = await fs.readFile(exampleConfigPath, 'utf-8');
 
         // Ensure the config content has the correct cwd (in case it still has a placeholder)
@@ -2112,14 +2111,14 @@ async function copySnowCodeConfig(targetDir: string, force: boolean = false) {
       }
     }
 
-    // Try to find the snowcode-config.example.json
+    // Try to find the snow-code-config.example.json
     const sourceFiles = [
-      join(snowFlowRoot, 'snowcode-config.example.json'),
-      join(__dirname, '..', 'snowcode-config.example.json'),
-      join(__dirname, 'snowcode-config.example.json'),
-      join(__dirname, '..', '..', '..', 'snowcode-config.example.json'),
-      join(__dirname, '..', '..', '..', '..', 'snowcode-config.example.json'),
-      join(process.cwd(), 'snowcode-config.example.json')
+      join(snowFlowRoot, 'snow-code-config.example.json'),
+      join(__dirname, '..', 'snow-code-config.example.json'),
+      join(__dirname, 'snow-code-config.example.json'),
+      join(__dirname, '..', '..', '..', 'snow-code-config.example.json'),
+      join(__dirname, '..', '..', '..', '..', 'snow-code-config.example.json'),
+      join(process.cwd(), 'snow-code-config.example.json')
     ];
 
     let foundSource = false;
@@ -2145,7 +2144,7 @@ async function copySnowCodeConfig(targetDir: string, force: boolean = false) {
       `"${snowFlowRoot.replace(/\\/g, '/')}"`
     );
 
-    const targetPath = join(targetDir, 'snowcode-config.example.json');
+    const targetPath = join(targetDir, 'snow-code-config.example.json');
 
     try {
       await fs.access(targetPath);
@@ -2199,8 +2198,8 @@ async function copySnowCodeThemes(targetDir: string, force: boolean = false) {
       join(snowFlowRoot, 'themes'),
       join(__dirname, '..', 'themes'),
       join(__dirname, 'themes'),
-      join(snowFlowRoot, '.snowcode', 'themes'),
-      join(__dirname, '..', '.snowcode', 'themes')
+      join(snowFlowRoot, '.snow-code', 'themes'),
+      join(__dirname, '..', '.snow-code', 'themes')
     ];
 
     let themesSourceDir: string | null = null;
@@ -2218,8 +2217,8 @@ async function copySnowCodeThemes(targetDir: string, force: boolean = false) {
       return;
     }
 
-    // Create target .snowcode/themes directory
-    const themesTargetDir = join(targetDir, '.snowcode', 'themes');
+    // Create target .snow-code/themes directory
+    const themesTargetDir = join(targetDir, '.snow-code', 'themes');
     await fs.mkdir(themesTargetDir, { recursive: true });
 
     // Copy all theme files
@@ -2310,8 +2309,8 @@ async function copySnowCodePackageJson(targetDir: string, force: boolean = false
       return;
     }
 
-    // Create .snowcode directory
-    const snowcodeDir = join(targetDir, '.snowcode');
+    // Create .snow-code directory
+    const snowcodeDir = join(targetDir, '.snow-code');
     await fs.mkdir(snowcodeDir, { recursive: true });
 
     // Copy package.json template
@@ -2343,15 +2342,15 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
   const fs = require('fs').promises;
 
   try {
-    // Read SnowCode configuration - try opencode.json first (primary), then config.json (fallback)
-    const opencodeJsonPath = path.join(targetDir, '.snowcode', 'opencode.json');
-    const configJsonPath = path.join(targetDir, '.snowcode', 'config.json');
+    // Read SnowCode configuration - try snow-code.json first (primary), then config.json (fallback)
+    const snowCodeJsonPath = path.join(targetDir, '.snow-code', 'snow-code.json');
+    const configJsonPath = path.join(targetDir, '.snow-code', 'config.json');
 
     let configContent: string;
     try {
-      configContent = await fs.readFile(opencodeJsonPath, 'utf-8');
+      configContent = await fs.readFile(snowCodeJsonPath, 'utf-8');
     } catch {
-      // Fallback to config.json if opencode.json doesn't exist
+      // Fallback to config.json if snow-code.json doesn't exist
       configContent = await fs.readFile(configJsonPath, 'utf-8');
     }
     const config = JSON.parse(configContent);
@@ -2638,8 +2637,8 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       await fs.writeFile(agentsMdPath, agentsMdContent);
     }
 
-    // Create .snowcode/ directory structure
-    const snowcodeDir = join(targetDir, '.snowcode');
+    // Create .snow-code/ directory structure
+    const snowcodeDir = join(targetDir, '.snow-code');
     const agentsDir = join(snowcodeDir, 'agent');  // Singular 'agent' as required by SnowCode
     const modesDir = join(snowcodeDir, 'modes');
 
@@ -2648,7 +2647,7 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       await fs.mkdir(agentsDir, { recursive: true });
       await fs.mkdir(modesDir, { recursive: true });
 
-      // Copy agent files from .claude/ to .snowcode/agent/ (if they exist)
+      // Copy agent files from .claude/ to .snow-code/agent/ (if they exist)
       const sourceAgentsDir = join(__dirname, '..', '.claude', 'agents');
       try {
         const agentFiles = await fs.readdir(sourceAgentsDir);
@@ -2661,10 +2660,10 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
           }
         }
       } catch (err) {
-        // Silently continue - agent configs are in snowcode.json, not separate files
+        // Silently continue - agent configs are in snow-code.json, not separate files
       }
 
-      // Create .snowcode/snowcode.json by converting from .mcp.json.template
+      // Create .snow-code/snow-code.json by converting from .mcp.json.template
       // SINGLE SOURCE OF TRUTH: .mcp.json.template → both Claude and SnowCode formats
       // CRITICAL: SnowCode/OpenCode does NOT auto-expand ${...} variables
 
@@ -2732,20 +2731,20 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       // Convert Claude Desktop format to SnowCode format
       const snowcodeConfig = convertToSnowCodeFormat(claudeConfig);
 
-      // Write opencode.json (SnowCode searches for this name!)
-      // ✅ PROJECT-SCOPED: Only write to project .snowcode/ directory
-      const opencodeJsonPath = join(snowcodeDir, 'opencode.json');
+      // Write snow-code.json (SnowCode searches for this name!)
+      // ✅ PROJECT-SCOPED: Only write to project .snow-code/ directory
+      const snowCodeJsonPath = join(snowcodeDir, 'snow-code.json');
       const configJsonPath = join(snowcodeDir, 'config.json');
 
-      await fs.writeFile(opencodeJsonPath, JSON.stringify(snowcodeConfig, null, 2));
+      await fs.writeFile(snowCodeJsonPath, JSON.stringify(snowcodeConfig, null, 2));
       await fs.writeFile(configJsonPath, JSON.stringify(snowcodeConfig, null, 2));
 
       // ❌ REMOVED: Global config write
-      // We do NOT write to ~/.config/snowcode/ anymore
+      // We do NOT write to ~/.config/snow-code/ anymore
       // Each snow-flow project maintains its own isolated SnowCode configuration
-      // SnowCode will automatically discover and use the project-level .snowcode/ config
+      // SnowCode will automatically discover and use the project-level .snow-code/ config
 
-      // Also create AGENTS.md in .snowcode/
+      // Also create AGENTS.md in .snow-code/
       const snowcodeAgentsMdPath = join(snowcodeDir, 'AGENTS.md');
       await fs.writeFile(snowcodeAgentsMdPath, agentsMdContent);
 
@@ -2868,7 +2867,7 @@ async function appendToEnvFile(targetDir: string, content: string) {
 
 /**
  * Converts Claude Desktop MCP config format to SnowCode/OpenCode format
- * Single source of truth: .mcp.json.template → both .mcp.json and .snowcode/snowcode.json
+ * Single source of truth: .mcp.json.template → both .mcp.json and .snow-code/snow-code.json
  */
 function convertToSnowCodeFormat(claudeConfig: any): any {
   const snowcodeConfig: any = {
@@ -3457,8 +3456,8 @@ export async function setupMCPConfig(
 
   // 🔧 CRITICAL FIX: Also update global SnowCode configuration
   // SnowCode/OpenCode reads from ~/.snowcode/snowcode.json
-  const snowcodeConfigPath = join(process.env.HOME || '', '.snowcode', 'snowcode.json');
-  const snowcodeConfigDirPath = join(process.env.HOME || '', '.snowcode');
+  const snowcodeConfigPath = join(process.env.HOME || '', '.snow-code', 'snow-code.json');
+  const snowcodeConfigDirPath = join(process.env.HOME || '', '.snow-code');
 
   try {
     // Ensure directory exists
@@ -3560,11 +3559,11 @@ export async function setupMCPConfig(
     prompts.log.message(`   Servers: ${Object.keys(snowcodeConfig.mcp).join(', ')}`);
 
     // 🔥 ALSO write LOCAL config (takes priority!)
-    const localSnowcodeDir = join(targetDir, '.snowcode');
-    const localSnowcodePath = join(localSnowcodeDir, 'snowcode.json');
+    const localSnowcodeDir = join(targetDir, '.snow-code');
+    const localSnowcodePath = join(localSnowcodeDir, 'snow-code.json');
 
     try {
-      // Ensure local .snowcode directory exists
+      // Ensure local .snow-code directory exists
       await fs.mkdir(localSnowcodeDir, { recursive: true });
 
       // Write SAME config to local directory

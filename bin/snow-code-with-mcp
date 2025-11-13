@@ -15,7 +15,7 @@ var fs = require('fs');
 console.log('🚀 SnowCode + MCP Auto-Start Launcher\n');
 
 // Load SnowCode config
-var configPath = path.join(os.homedir(), '.snowcode', 'snowcode.json');
+var configPath = path.join(os.homedir(), '.snow-code', 'snow-code.json');
 if (!fs.existsSync(configPath)) {
   console.log('❌ SnowCode config not found: ' + configPath);
   console.log('💡 Run: snow-flow auth login');
@@ -98,7 +98,7 @@ setTimeout(function() {
 
   // Launch SnowCode with all arguments passed through
   var snowcodeArgs = process.argv.slice(2);
-  var snowcode = spawn('snowcode', snowcodeArgs, {
+  var snowcode = spawn('snow-code', snowcodeArgs, {
     stdio: 'inherit' // Pass through stdin/stdout/stderr
   });
 

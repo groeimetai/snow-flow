@@ -790,7 +790,7 @@ Your process:
 **Context Management:**
 - MCP servers add to your context window
 - Some servers (e.g., GitHub MCP) are token-heavy
-- You can't control which servers are enabled (user's .snowcode/config.json)
+- You can't control which servers are enabled (user's .snow-code/config.json)
 - Adapt to available tools - if a tool doesn't exist, suggest alternatives
 
 **Tool Reference Pattern:**

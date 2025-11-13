@@ -39,7 +39,7 @@ CONFLUENCE_API_TOKEN=ATATT3xFfGF...
 
 ### SnowCode Configuration
 
-Automatically added to `~/.snowcode/config.json`:
+Automatically added to `~/.snow-code/config.json`:
 
 ```json
 {
@@ -78,7 +78,7 @@ $ snow-flow auth login
 ? Enterprise License Key: SNOW-ENT-CUST-ABC123
 
 ✓ Enterprise MCP Proxy configured
-✓ .snowcode/config.json updated
+✓ .snow-code/config.json updated
 ```
 
 ### Manual Testing

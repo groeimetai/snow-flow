@@ -49,7 +49,7 @@ snow-flow init
 
 Snow-Flow will automatically:
 - ✅ Detect and install SnowCode (recommended AI coding platform)
-- ✅ Generate configuration files (`.env`, `.snowcode/config.json`)
+- ✅ Generate configuration files (`.env`, `.snow-code/config.json`)
 - ✅ Set up 2 MCP servers with 411 ServiceNow tools
 - ✅ Create documentation (`AGENTS.md`, `README.md`)
 
@@ -102,7 +102,7 @@ For detailed SnowCode configuration (MCP servers, environment variables, trouble
 📖 **[SNOWCODE-SETUP.md](SNOWCODE-SETUP.md)** - Complete SnowCode configuration guide
 
 **Quick checklist:**
-- ✅ Use `"environment"` (not `"env"`) in `snowcode-config.json`
+- ✅ Use `"environment"` (not `"env"`) in `snow-code-config.json`
 - ✅ Run `npm run build` to create `dist/` directory
 - ✅ Verify MCP servers load when SnowCode starts
 - ✅ Test tools actually execute (not just show code snippets)
@@ -553,11 +553,11 @@ Snow-Flow works with **any MCP-compatible AI coding assistant**:
 
 | AI Assistant | How to Connect |
 |-------------|----------------|
-| **Cursor** | Copy `.snowcode/config.json` → `.cursor/mcp.json` |
-| **Windsurf** | Copy `.snowcode/config.json` → `mcp_config.json` |
-| **Continue.dev** | Copy `.snowcode/config.json` → `.continue/mcpServers/snow-flow.json` |
-| **Cline** | Copy `.snowcode/config.json` → `.vscode/mcp.json` |
-| **GitHub Copilot** | Copy `.snowcode/config.json` → `.vscode/mcp.json` |
+| **Cursor** | Copy `.snow-code/config.json` → `.cursor/mcp.json` |
+| **Windsurf** | Copy `.snow-code/config.json` → `mcp_config.json` |
+| **Continue.dev** | Copy `.snow-code/config.json` → `.continue/mcpServers/snow-flow.json` |
+| **Cline** | Copy `.snow-code/config.json` → `.vscode/mcp.json` |
+| **GitHub Copilot** | Copy `.snow-code/config.json` → `.vscode/mcp.json` |
 
 **Quick setup:**
 ```bash
@@ -565,10 +565,10 @@ Snow-Flow works with **any MCP-compatible AI coding assistant**:
 snow-flow init
 
 # For Cursor
-cp .snowcode/config.json .cursor/mcp.json
+cp .snow-code/config.json .cursor/mcp.json
 
 # For Windsurf
-cp .snowcode/config.json mcp_config.json
+cp .snow-code/config.json mcp_config.json
 
 # Restart your AI assistant → 411 Snow-Flow tools available!
 ```

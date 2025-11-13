@@ -175,7 +175,7 @@ async function loginCommand(licenseKey: string): Promise<void> {
  */
 export async function showEnterpriseStatus(): Promise<void> {
   // Check for enterprise MCP configuration (new flow)
-  const { isEnterpriseMcpConfigured } = await import('../config/snowcode-config.js');
+  const { isEnterpriseMcpConfigured } = await import('../config/snow-code-config.js');
   const mcpConfigured = await isEnterpriseMcpConfigured();
 
   // Check for portal auth (legacy flow)
@@ -197,7 +197,7 @@ export async function showEnterpriseStatus(): Promise<void> {
   // Show MCP server info if configured
   if (mcpConfigured) {
     console.log(chalk.bold('   Type:'), 'Enterprise MCP Server (Jira, Azure DevOps, Confluence)');
-    console.log(chalk.gray('   Config:'), '~/.snowcode/config.json');
+    console.log(chalk.gray('   Config:'), '~/.snow-code/config.json');
     console.log(chalk.gray('   Reconfigure:'), 'snow-flow enterprise setup');
   }
 

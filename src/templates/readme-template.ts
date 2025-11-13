@@ -237,7 +237,7 @@ your-project/
 ├── .env.example            # Example environment template
 ├── CLAUDE.md               # AI instructions (primary)
 ├── AGENTS.md               # AI instructions (SnowCode copy)
-├── .snowcode/              # SnowCode configuration
+├── .snow-code/             # SnowCode configuration
 │   └── config.json         # MCP servers for SnowCode
 ├── .claude/                # Claude Code configuration
 │   └── config.json         # MCP servers for Claude Code
@@ -289,7 +289,7 @@ npm install -g @groeimetai/snow-code
 ### "MCP servers not loading"
 
 1. Make sure you ran \`snow-flow init\` in your project directory
-2. Check that .snowcode/config.json exists
+2. Check that .snow-code/config.json exists
 3. Restart SnowCode/Claude Code after running init
 
 ### "Widget coherence validation failed"

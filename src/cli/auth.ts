@@ -10,7 +10,7 @@ import {
   addEnterpriseMcpServer,
   isEnterpriseMcpConfigured,
   type EnterpriseMcpConfig,
-} from '../config/snowcode-config.js';
+} from '../config/snow-code-config.js';
 import { validateLicenseKey } from '../mcp/enterprise-proxy/proxy.js';
 
 const authLogger = new Logger('auth');

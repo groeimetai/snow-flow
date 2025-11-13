@@ -101,8 +101,8 @@ PHASE2-COMPLETION-SUMMARY.md
 PHASE3-COMPLETION-SUMMARY.md
 THEMES.md
 
-# OpenCode personal configuration (confidential)
-.opencode/
+# Snow-Code personal configuration (confidential)
+.snow-code/
 themes/
 
 # Optimization internals (not needed by users)

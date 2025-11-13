@@ -1,6 +1,6 @@
 /**
  * SnowCode Configuration Management
- * Manages ~/.snowcode/config.json for MCP server configuration
+ * Manages ~/.snow-code/config.json for MCP server configuration
  */
 
 import path from 'path';
@@ -55,7 +55,7 @@ export interface EnterpriseMcpConfig {
  * Get the SnowCode config file path
  */
 export function getSnowCodeConfigPath(): string {
-  return path.join(os.homedir(), '.snowcode', 'config.json');
+  return path.join(os.homedir(), '.snow-code', 'config.json');
 }
 
 /**
@@ -98,10 +98,10 @@ export async function writeSnowCodeConfig(config: SnowCodeConfig): Promise<void>
   const configDir = path.dirname(configPath);
 
   try {
-    // Ensure .snowcode directory exists
+    // Ensure .snow-code directory exists
     if (!existsSync(configDir)) {
       await fs.mkdir(configDir, { recursive: true });
-      logger.debug('Created .snowcode directory');
+      logger.debug('Created .snow-code directory');
     }
 
     // Write configuration file
