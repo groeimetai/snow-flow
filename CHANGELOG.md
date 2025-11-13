@@ -5,6 +5,13 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.31.42] - 2025-11-13
+
+### Fixed
+- **Package Lock Sync**: Updated package-lock.json to match package.json dependencies
+  - Ensures `npm ci` works correctly in CI/CD pipelines
+  - Resolves version mismatch for @groeimetai/snow-code@0.18.49
+
 ## [8.31.41] - 2025-11-13
 
 ### Fixed
