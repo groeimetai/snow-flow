@@ -13,7 +13,7 @@ console.log('\n🧪 Manual MCP Server Test\n');
 console.log('='.repeat(80));
 
 // Load config
-var configPath = path.join(os.homedir(), '.snowcode', 'snowcode.json');
+var configPath = path.join(os.homedir(), '.snow-code', 'snowcode.json');
 var config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
 var serverConfig = config.mcp['servicenow-unified'];
@@ -75,7 +75,7 @@ serverProcess.stdout.on('data', function(data) {
       console.log('');
       console.log('💡 SOLUTION NEEDED:');
       console.log('   1. Check if SnowCode (OpenCode v0.15.14) supports MCP auto-start');
-      console.log('   2. Verify SnowCode is reading ~/.snowcode/snowcode.json on startup');
+      console.log('   2. Verify SnowCode is reading ~/.snow-code/snowcode.json on startup');
       console.log('   3. Check SnowCode logs for MCP startup errors');
       console.log('   4. Possible SnowCode bug - MCP servers may need manual start');
       console.log('');

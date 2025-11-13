@@ -3055,7 +3055,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
 
   // ✅ PROJECT-SCOPED MCP CONFIG ONLY
-  // We do NOT modify global SnowCode config (~/.snowcode/snowcode.json)
+  // We do NOT modify global SnowCode config (~/.snow-code/snowcode.json)
   // Each project maintains its own isolated MCP configuration in .mcp.json
   // SnowCode/Claude Code will automatically discover and use the project-level .mcp.json
 
@@ -3459,7 +3459,7 @@ export async function setupMCPConfig(
   await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
 
   // 🔧 CRITICAL FIX: Also update global SnowCode configuration
-  // SnowCode/OpenCode reads from ~/.snowcode/snowcode.json
+  // SnowCode/OpenCode reads from ~/.snow-code/snowcode.json
   const snowcodeConfigPath = join(process.env.HOME || '', '.snow-code', 'snow-code.json');
   const snowcodeConfigDirPath = join(process.env.HOME || '', '.snow-code');
 

@@ -33,7 +33,7 @@ try {
 
 // 2. Check global snowcode.json
 console.log('\n2️⃣  Checking global SnowCode configuration...');
-var globalConfigPath = path.join(os.homedir(), '.snowcode', 'snowcode.json');
+var globalConfigPath = path.join(os.homedir(), '.snow-code', 'snowcode.json');
 if (fs.existsSync(globalConfigPath)) {
   try {
     var globalConfig = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
@@ -120,7 +120,7 @@ if (fs.existsSync(globalConfigPath)) {
 
 // 3. Check local project config
 console.log('\n3️⃣  Checking local project configuration...');
-var localConfigPath = path.join(process.cwd(), '.snowcode', 'snowcode.json');
+var localConfigPath = path.join(process.cwd(), '.snow-code', 'snowcode.json');
 if (fs.existsSync(localConfigPath)) {
   console.log('   ✅ Local config exists: ' + localConfigPath);
   console.log('   💡 Local config takes priority over global config');
@@ -294,6 +294,6 @@ if (issues.length === 0 && warnings.length === 0) {
 
 console.log('📝 Next steps if issues persist:');
 console.log('   1. Check SnowCode logs for MCP startup errors');
-console.log('   2. Verify SnowCode is reading ~/.snowcode/snowcode.json');
+console.log('   2. Verify SnowCode is reading ~/.snow-code/snowcode.json');
 console.log('   3. Try manual MCP server test: node ' + (globalConfig && globalConfig.mcp && globalConfig.mcp['servicenow-unified'] ? globalConfig.mcp['servicenow-unified'].command[1] : '[path-to-mcp-server]'));
 console.log('');
