@@ -5,6 +5,14 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.31.44] - 2025-11-13
+
+### Changed
+- **📦 Release Process**: Delegated npm publishing to GitHub Actions exclusively
+  - Prevents duplicate publish attempts
+  - Ensures consistent CI/CD workflow
+  - All releases now go through automated GitHub Actions pipeline
+
 ## [8.31.43] - 2025-11-13
 
 ### Fixed
