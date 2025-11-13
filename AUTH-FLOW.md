@@ -29,7 +29,7 @@ The MCP server loads ServiceNow credentials in the following order:
 
 ### Option 1: Using snow-flow auth login (Recommended)
 
-This is the easiest method and works automatically:
+This is the easiest method and works **fully automatically**:
 
 ```bash
 # Run the authentication flow
@@ -39,10 +39,21 @@ snow-flow auth login
 # 1. Authenticate with your LLM provider (Claude, GPT, etc.)
 # 2. Authenticate with ServiceNow OAuth
 # 3. Store credentials in ~/.local/share/snow-code/auth.json
-# 4. MCP server automatically reads from auth.json
+# 4. 🆕 AUTO-FIX: Automatically move auth.json to correct location if needed
+# 5. 🆕 AUTO-FIX: Create symlink for backwards compatibility
+# 6. Update project .mcp.json with credentials
+# 7. MCP server automatically reads from auth.json
 ```
 
-After running `snow-flow auth login`, the MCP tools will automatically use the stored credentials without any additional configuration.
+**🆕 NEW: Automatic Location Fix (v8.31.40+)**
+
+If `snow-code` creates auth.json at the wrong location (`~/.local/share/snowcode/` without dash), `snow-flow auth login` will **automatically**:
+- ✅ Detect the incorrect location
+- ✅ Move auth.json to correct location (`~/.local/share/snow-code/` with dash)
+- ✅ Create a symlink at the old location for backwards compatibility
+- ✅ Show confirmation: "✅ Auth credentials stored at correct location"
+
+**No manual intervention needed!** After running `snow-flow auth login`, the MCP tools will automatically use the stored credentials without any additional configuration.
 
 ### Option 2: Using Environment Variables
 

@@ -323,6 +323,68 @@ export async function setupEnterpriseFlow(): Promise<void> {
 }
 
 /**
+ * Ensure auth.json is in the correct location (snow-code with dash, not snowcode without)
+ *
+ * Snow-code binary may create auth.json at ~/.local/share/snowcode/ (without dash)
+ * but the correct location is ~/.local/share/snow-code/ (with dash).
+ * This function moves it if needed and creates a symlink for compatibility.
+ */
+async function ensureCorrectAuthLocation(): Promise<void> {
+  try {
+    const correctPath = path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json');
+    const incorrectPath = path.join(os.homedir(), '.local', 'share', 'snowcode', 'auth.json');
+
+    // Check if file exists at incorrect location
+    try {
+      await fs.access(incorrectPath);
+
+      // File exists at wrong location - move it
+      authLogger.info('Found auth.json at incorrect location (snowcode/ without dash)');
+      authLogger.info('Moving to correct location (snow-code/ with dash)...');
+
+      // Ensure correct directory exists
+      const correctDir = path.dirname(correctPath);
+      await fs.mkdir(correctDir, { recursive: true });
+
+      // Copy file to correct location
+      await fs.copyFile(incorrectPath, correctPath);
+      authLogger.info(`✅ Moved auth.json to: ${correctPath}`);
+
+      // Create symlink at old location for backwards compatibility
+      try {
+        const incorrectDir = path.dirname(incorrectPath);
+        await fs.mkdir(incorrectDir, { recursive: true });
+
+        // Remove old file after successful copy
+        await fs.unlink(incorrectPath);
+
+        // Create symlink
+        await fs.symlink(correctPath, incorrectPath);
+        authLogger.debug('Created symlink for backwards compatibility');
+      } catch (symlinkError: any) {
+        // Symlink creation failed, but that's OK - just log it
+        authLogger.debug(`Could not create symlink: ${symlinkError.message}`);
+      }
+
+      prompts.log.success('✅ Auth credentials stored at correct location');
+    } catch (err: any) {
+      if (err.code === 'ENOENT') {
+        // File doesn't exist at incorrect location - check if it's already at correct location
+        try {
+          await fs.access(correctPath);
+          authLogger.debug('Auth.json already at correct location');
+        } catch {
+          authLogger.debug('Auth.json not found at either location (will be created on next auth)');
+        }
+      }
+    }
+  } catch (error: any) {
+    authLogger.warn(`Failed to ensure correct auth location: ${error.message}`);
+    // Don't throw - this is not critical enough to fail the auth process
+  }
+}
+
+/**
  * Update PROJECT-LEVEL MCP server config with ServiceNow credentials from auth.json
  *
  * IMPORTANT: This function ONLY updates project-level .mcp.json, NOT global config!
@@ -489,6 +551,9 @@ export function registerAuthCommands(program: Command) {
 
         // Call SnowCode auth login for LLM providers and ServiceNow OAuth
         execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
+
+        // Post-processing: Ensure auth.json is in correct location
+        await ensureCorrectAuthLocation();
 
         // Update MCP server config with ServiceNow credentials
         await updateMCPServerConfig();

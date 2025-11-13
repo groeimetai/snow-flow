@@ -5,6 +5,28 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.31.40] - 2025-11-13
+
+### Added
+- **🆕 Automatic Auth Location Fix**: `snow-flow auth login` now automatically corrects auth.json location
+  - Detects if snow-code binary creates auth.json at wrong location (`snowcode/` without dash)
+  - Automatically moves it to correct location (`snow-code/` with dash)
+  - Creates symlink at old location for backwards compatibility
+  - Shows clear confirmation message when fix is applied
+  - Zero manual intervention required - fully automatic!
+
+### Fixed
+- **Auth Path Post-Processing**: Ensures auth.json is always at correct location after snow-code auth login
+  - Fixes issue where snow-code binary may create auth.json without dash
+  - Prevents "Authentication failed: No username/password available" errors
+  - Makes authentication fully automatic and foolproof
+
+### Changed
+- **Enhanced Auth Flow**: `snow-flow auth login` now includes 3-step post-processing:
+  1. Run snow-code auth login (OAuth flow)
+  2. 🆕 Auto-correct auth.json location if needed
+  3. Update project .mcp.json with credentials
+
 ## [8.31.39] - 2025-11-13
 
 ### Fixed
