@@ -1355,86 +1355,8 @@
             margin-left: 0.75rem;
         }
 
-        @media (max-width: 768px) {
-            /* Stack table rows as cards */
-            .comparison-table-container {
-                overflow: visible;
-            }
-
-            .comparison-table,
-            .comparison-table tbody {
-                display: block;
-            }
-
-            .comparison-table thead {
-                display: none;
-            }
-
-            .comparison-table tbody tr {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 0.5rem;
-                margin-bottom: 1rem;
-                background: rgba(10, 15, 25, 0.4);
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                padding: 0.75rem;
-            }
-
-            .comparison-table td:first-child {
-                grid-column: 1 / -1;
-                font-size: 0.85rem;
-                font-weight: 700;
-                color: var(--brand-cyan);
-                padding: 0 0 0.5rem 0;
-                border-bottom: 1px solid var(--border);
-                margin-bottom: 0.25rem;
-            }
-
-            .comparison-table td:nth-child(2),
-            .comparison-table td:nth-child(3) {
-                padding: 0.5rem;
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 6px;
-                font-size: 0.7rem;
-                line-height: 1.4;
-            }
-
-            .comparison-table td:nth-child(2) {
-                border-left: 2px solid var(--brand-cyan);
-            }
-
-            .comparison-table td:nth-child(3) {
-                border-left: 2px solid rgba(239, 68, 68, 0.3);
-            }
-
-            .comparison-table td:nth-child(2)::before {
-                content: '✓ Snow-Flow';
-                display: block;
-                font-weight: 700;
-                font-size: 0.65rem;
-                color: var(--brand-cyan);
-                margin-bottom: 0.35rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-            }
-
-            .comparison-table td:nth-child(3)::before {
-                content: 'ServiceNow';
-                display: block;
-                font-weight: 700;
-                font-size: 0.65rem;
-                color: var(--text-gray);
-                margin-bottom: 0.35rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-            }
-
-            .comparison-highlight {
-                padding: 0.15rem 0.4rem;
-                font-size: 0.68rem;
-            }
-        }
+        /* Mobile responsive styling moved to css/mobile-responsive-complete.css */
+        /* This improves maintainability and prevents style conflicts */
     </style>
 </head>
 <body>
