@@ -57,48 +57,78 @@ export class ServiceNowUnifiedServer {
   }
 
   /**
-   * Load ServiceNow credentials from snow-code auth.json
-   * Returns undefined if auth.json doesn't exist or credentials are invalid
+   * Load ServiceNow credentials from auth.json files
+   * Checks multiple possible locations in priority order
+   * Returns undefined if no valid credentials found
    */
   private loadFromAuthJson(): ServiceNowContext | undefined {
-    try {
-      const authPath = path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json');
+    // Possible auth.json locations in priority order
+    const authPaths = [
+      // 1. Snow-Code (with dash) - OFFICIAL location (must always be with dash!)
+      path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json'),
+      // 2. Snow-Flow specific auth
+      path.join(os.homedir(), '.snow-flow', 'auth.json'),
+      // 3. OpenCode (fallback for compatibility)
+      path.join(os.homedir(), '.local', 'share', 'opencode', 'auth.json'),
+    ];
 
-      if (!fs.existsSync(authPath)) {
-        return undefined;
+    for (const authPath of authPaths) {
+      try {
+        if (!fs.existsSync(authPath)) {
+          continue;
+        }
+
+        const authData = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
+
+        // Check for servicenow credentials in auth.json structure
+        let servicenowCreds = authData['servicenow'];
+
+        // If not found, check if the root IS the servicenow config (for ~/.snow-flow/auth.json)
+        if (!servicenowCreds && authData.instance && authData.clientId) {
+          servicenowCreds = authData;
+        }
+
+        if (!servicenowCreds) {
+          continue;
+        }
+
+        // Validate credentials are not placeholders
+        const isPlaceholder = (val?: string) => !val || val.includes('your-') || val.includes('placeholder');
+
+        const instance = servicenowCreds.instance;
+        const clientId = servicenowCreds.clientId;
+        const clientSecret = servicenowCreds.clientSecret;
+
+        if (isPlaceholder(instance) || isPlaceholder(clientId) || isPlaceholder(clientSecret)) {
+          continue;
+        }
+
+        console.log('[Auth] ✅ Loaded credentials from:', authPath);
+        console.log('[Auth]    Instance:', instance);
+        console.log('[Auth]    Client ID:', clientId ? '***' + clientId.slice(-4) : 'MISSING');
+        console.log('[Auth]    Has Refresh Token:', !!servicenowCreds.refreshToken);
+
+        return {
+          instanceUrl: instance.startsWith('http')
+            ? instance
+            : `https://${instance}`,
+          clientId: clientId,
+          clientSecret: clientSecret,
+          refreshToken: servicenowCreds.refreshToken || servicenowCreds.refresh_token,
+          username: undefined,
+          password: undefined
+        };
+      } catch (error: any) {
+        console.warn('[Auth] Failed to load from', authPath, ':', error.message);
+        continue;
       }
-
-      const authData = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
-      const servicenowCreds = authData['servicenow'];
-
-      if (!servicenowCreds || servicenowCreds.type !== 'servicenow-oauth') {
-        return undefined;
-      }
-
-      // Validate credentials are not placeholders
-      const isPlaceholder = (val?: string) => !val || val.includes('your-') || val.includes('placeholder');
-
-      if (isPlaceholder(servicenowCreds.instance) ||
-          isPlaceholder(servicenowCreds.clientId) ||
-          isPlaceholder(servicenowCreds.clientSecret)) {
-        return undefined;
-      }
-
-      console.log('[Auth] Loaded credentials from snow-code auth.json');
-      return {
-        instanceUrl: servicenowCreds.instance.startsWith('http')
-          ? servicenowCreds.instance
-          : `https://${servicenowCreds.instance}`,
-        clientId: servicenowCreds.clientId,
-        clientSecret: servicenowCreds.clientSecret,
-        refreshToken: servicenowCreds.refreshToken,
-        username: undefined,
-        password: undefined
-      };
-    } catch (error: any) {
-      console.warn('[Auth] Failed to load from auth.json:', error.message);
-      return undefined;
     }
+
+    // No valid auth.json found
+    console.warn('[Auth] No valid auth.json found in any location');
+    console.warn('[Auth] Checked paths:');
+    authPaths.forEach(p => console.warn('[Auth]   -', p));
+    return undefined;
   }
 
   /**
