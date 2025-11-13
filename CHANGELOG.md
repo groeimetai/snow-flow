@@ -5,6 +5,22 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [8.31.39] - 2025-11-13
+
+### Fixed
+- **Auth Path Resolution**: Fixed MCP server to correctly find auth.json at `~/.local/share/snow-code/auth.json` (with dash, not snowcode without dash)
+  - Now checks multiple locations in priority order for maximum compatibility
+  - Enforces correct `snow-code` directory naming (must always be with dash)
+  - Added detailed logging of which auth.json location was loaded
+  - Moved misplaced auth.json from `snowcode/` to `snow-code/` directory
+  - Fixed authentication errors where MCP tools returned "Authentication failed: No username/password available"
+
+### Changed
+- **Auth Location Priority**:
+  1. `~/.local/share/snow-code/auth.json` (OFFICIAL - with dash, must always be used)
+  2. `~/.snow-flow/auth.json` (snow-flow specific fallback)
+  3. `~/.local/share/opencode/auth.json` (compatibility fallback)
+
 ## [8.31.38] - 2025-11-13
 
 ### Fixed
