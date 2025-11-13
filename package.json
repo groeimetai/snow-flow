@@ -6,7 +6,7 @@
   "type": "commonjs",
   "bin": {
     "snow-flow": "bin/snow-flow",
-    "snowcode-with-mcp": "bin/snowcode-with-mcp"
+    "snow-code-with-mcp": "bin/snow-code-with-mcp"
   },
   "files": [
     "dist/",
