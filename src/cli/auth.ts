@@ -566,8 +566,9 @@ export function registerAuthCommands(program: Command) {
         // Update MCP server config with ServiceNow credentials
         await updateMCPServerConfig();
 
-        // Note: Enterprise setup is now handled by snow-code auth login
-        // No need to prompt again here - snow-code already asks about enterprise configuration
+        // Prompt for enterprise license configuration
+        // This adds the enterprise-proxy MCP server for Jira/Azure DevOps/Confluence integrations
+        await enterpriseLicenseFlow();
       } catch (error: any) {
         // Error details are already shown via stdio: 'inherit'
         // Only provide helpful context here

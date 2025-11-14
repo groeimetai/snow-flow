@@ -20,6 +20,17 @@
         "SNOW_FLOW_ENV": "{{SNOW_FLOW_ENV}}"
       },
       "enabled": true
+    },
+    "snow-flow-enterprise": {
+      "type": "local",
+      "command": ["node", "{{PROJECT_ROOT}}/dist/mcp/enterprise-proxy/index.js"],
+      "description": "Enterprise integrations - Jira, Azure DevOps, Confluence (requires Snow-Flow Enterprise license). Configure via: snow-flow auth login",
+      "environment": {
+        "SNOW_LICENSE_KEY": "",
+        "SNOW_ENTERPRISE_URL": "https://enterprise.snow-flow.dev"
+      },
+      "enabled": false,
+      "_comment": "This server is disabled by default. Run 'snow-flow auth login' and select 'Yes' when asked about Enterprise license to configure and enable this server."
     }
   }
 }
