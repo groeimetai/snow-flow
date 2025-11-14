@@ -82,6 +82,115 @@ await snow_update_set_manage({
 
 ---
 
+## 🔗 PROACTIVE BEHAVIOR RULES
+
+### CRITICAL: Always Fetch Instance URL - NEVER Use Placeholders!
+
+**The #1 mistake:** Providing placeholder URLs like `https://[your-instance].service-now.com`
+
+**CORRECT behavior:**
+1. **AUTOMATICALLY** call `snow_get_instance_info` FIRST (don't ask!)
+2. **THEN** construct full URLs with the actual instance
+3. **NEVER** use placeholders or incomplete URLs
+
+```javascript
+// ✅ CORRECT - Do this EVERY time you provide a URL:
+const info = await snow_get_instance_info()
+const fullUrl = `${info.data.instance_url}/sys_update_set.do?sys_id=abc123`
+// Result: https://dev123456.service-now.com/sys_update_set.do?sys_id=abc123
+
+// ❌ WRONG - NEVER do this:
+"Go to https://[your-instance].service-now.com/sys_update_set.do?sys_id=abc123"
+```
+
+**This applies to ALL URLs:**
+- Update Set links
+- Widget preview links
+- Record links
+- Table links
+- ANY ServiceNow UI link
+
+### Be Proactive - Don't Ask, Just Do
+
+**Users want ACTION, not questions!**
+
+#### Instance Information
+- Need a URL? → **Automatically** fetch instance info
+- Need config? → **Automatically** check instance settings
+- Troubleshooting? → **Automatically** check logs
+
+#### Update Set Operations
+- User mentions "update set"? → **Automatically** check which is active
+- Starting development? → **Automatically** create one if none exists
+- Created artifact? → **Automatically** provide full URL
+
+#### Error Recovery
+- Tool fails? → **Automatically** check logs with `snow_get_logs`
+- Connection issue? → **Automatically** verify instance with `snow_get_instance_info`
+- Script error? → **Automatically** get execution details
+
+### Remember Context - Don't Repeat Questions
+
+**Use information from previous tool calls!**
+
+```javascript
+// ✅ CORRECT - Remember what you just did:
+// Step 1: You created an update set
+const updateSet = await snow_update_set_manage({...});
+// Step 2: User says "open it"
+// You KNOW which update set - use the sys_id from step 1!
+const url = `${instanceUrl}/sys_update_set.do?sys_id=${updateSet.sys_id}`
+
+// ❌ WRONG - Asking for info you already have:
+// "Which update set would you like to open?"
+// (You JUST created one 30 seconds ago!)
+```
+
+**What to remember:**
+- Update sets you created (sys_id, name)
+- Records you queried (sys_id, fields)
+- Instance URL (from first fetch)
+- Widgets you deployed (name, sys_id)
+
+### Communication Style
+
+#### Action-Oriented (Not Question-Oriented)
+- ✅ "Let me fetch the instance URL and create that..."
+- ❌ "Would you like me to create an update set?"
+
+#### Show Results (Don't Describe)
+- ✅ [Calls tool] "Created widget - preview: https://dev123.service-now.com/sp?id=..."
+- ❌ "You can create widgets using snow_create_widget..."
+
+#### Complete Information (Not Partial)
+- ✅ "Here's the URL: https://dev123456.service-now.com/sys_update_set.do?sys_id=abc"
+- ❌ "Here's the URL: /sys_update_set.do?sys_id=abc"
+
+#### Smart Follow-Ups
+After completing tasks, suggest next steps:
+- Created widget? → "Want to preview it?"
+- Queried data? → "Want me to export this?"
+- Found errors? → "Shall I fix these?"
+- Deployed? → "Want me to verify deployment?"
+
+### Common Mistakes to AVOID
+
+**❌ DON'T:**
+1. Ask "What's your instance?" → Just fetch it!
+2. Say "Go to /sys_update_set.do" → Provide FULL URL!
+3. Ask "Which update set?" → You just created one!
+4. Say "Something failed" → Check logs and be specific!
+5. Wait for permission → Take initiative!
+
+**✅ DO:**
+1. Automatically fetch instance info
+2. Provide complete, clickable URLs
+3. Remember previous context
+4. Provide specific error details
+5. Be proactive and helpful
+
+---
+
 ## Core MCP Tools (v8.2.0)
 
 ### Update Set Management (MANDATORY!)

@@ -24,6 +24,8 @@ import * as prompts from '@clack/prompts';
 import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
 // Load SnowCode output interceptor for beautiful MCP formatting
 import { interceptSnowCodeOutput } from './utils/snowcode-output-interceptor.js';
+// Automatic snow-code update utility
+import { autoUpdateSnowCode } from './utils/auto-update-snow-code.js';
 
 // Activate MCP guard ONLY for commands that actually use MCP servers
 // Explicitly exclude: init, version, help, auth, export, config commands
@@ -236,6 +238,23 @@ program
     } else {
       cliLogger.info(`\n🚀 Snow-Flow v${VERSION}`);
       console.log(chalk.blue(`📋 ${objective}`));
+    }
+
+    // Ensure snow-code is up-to-date before starting swarm execution
+    try {
+      if (options.verbose) {
+        cliLogger.info('🔄 Checking for snow-code updates...');
+      }
+      const updateResult = await autoUpdateSnowCode(process.cwd(), options.verbose);
+
+      if (updateResult.success && options.verbose) {
+        cliLogger.info(`✓ Snow-code v${updateResult.mainPackageVersion || 'latest'} ready`);
+      }
+      // Silently continue if update fails - don't block swarm execution
+    } catch (updateErr) {
+      if (options.verbose) {
+        cliLogger.debug('Snow-code update check failed (non-critical):', updateErr);
+      }
     }
 
     // Only show detailed config in verbose mode
@@ -565,192 +584,13 @@ function stopMCPServers(): void {
   }
 }
 
-// Helper function to auto-update SnowCode to latest version
-async function autoUpdateSnowCode(verbose: boolean = false): Promise<void> {
-  try {
-    const { execSync } = require('child_process');
-    const { existsSync, readdirSync, rmSync } = require('fs');
-    const { join, dirname } = require('path');
-
-    if (verbose) {
-      cliLogger.info('🔄 Checking for SnowCode updates...');
-    }
-
-    // Get current version
-    const currentVersion = execSync('snow-code --version', { encoding: 'utf8' }).trim();
-
-    // Get latest version from npm
-    const latestVersion = execSync('npm view @groeimetai/snow-code version', { encoding: 'utf8' }).trim();
-
-    // Helper to find node_modules in current and parent directories
-    const findNodeModules = (startPath: string): string[] => {
-      const found: string[] = [];
-      let currentPath = startPath;
-
-      // Check up to 3 levels up
-      for (let i = 0; i < 3; i++) {
-        const nodeModulesPath = join(currentPath, 'node_modules', '@groeimetai');
-        if (existsSync(nodeModulesPath)) {
-          found.push(currentPath);
-        }
-        const parent = dirname(currentPath);
-        if (parent === currentPath) break; // Reached root
-        currentPath = parent;
-      }
-
-      return found;
-    };
-
-    // Helper to update local node_modules
-    const updateLocalNodeModules = (projectRoot: string) => {
-      const groeimetaiPath = join(projectRoot, 'node_modules', '@groeimetai');
-
-      if (existsSync(groeimetaiPath)) {
-        // Check main package version AND platform binaries
-        const snowcodePackage = join(groeimetaiPath, 'snow-code', 'package.json');
-        let needsUpdate = false;
-
-        if (existsSync(snowcodePackage)) {
-          const pkg = JSON.parse(require('fs').readFileSync(snowcodePackage, 'utf8'));
-          if (pkg.version !== latestVersion) {
-            needsUpdate = true;
-            if (verbose) {
-              cliLogger.info(`Main package outdated: ${pkg.version} → ${latestVersion}`);
-            }
-          }
-        } else {
-          needsUpdate = true;
-        }
-
-        // Also check platform binaries (snow-code-darwin-arm64, etc.)
-        if (!needsUpdate) {
-          try {
-            const packages = readdirSync(groeimetaiPath);
-            for (const pkg of packages) {
-              if (pkg.startsWith('snow-code-')) {
-                const pkgJsonPath = join(groeimetaiPath, pkg, 'package.json');
-                if (existsSync(pkgJsonPath)) {
-                  const pkgJson = JSON.parse(require('fs').readFileSync(pkgJsonPath, 'utf8'));
-                  if (pkgJson.version !== latestVersion) {
-                    needsUpdate = true;
-                    if (verbose) {
-                      cliLogger.info(`Platform binary outdated: ${pkg}@${pkgJson.version} → ${latestVersion}`);
-                    }
-                    break;
-                  }
-                }
-              }
-            }
-          } catch (err) {
-            if (verbose) {
-              cliLogger.debug(`Error checking platform binaries: ${err}`);
-            }
-          }
-        }
-
-        if (needsUpdate) {
-          if (verbose) {
-            cliLogger.info(`📦 Updating SnowCode in ${projectRoot}...`);
-          }
-
-          // Remove old platform binaries to force reinstall
-          try {
-            const packages = readdirSync(groeimetaiPath);
-            for (const pkg of packages) {
-              if (pkg.startsWith('snow-code-') || pkg === 'snow-code') {
-                const pkgPath = join(groeimetaiPath, pkg);
-                cliLogger.debug(`Removing old package: ${pkg}`);
-                rmSync(pkgPath, { recursive: true, force: true });
-              }
-            }
-          } catch (err) {
-            cliLogger.debug(`Cleanup error: ${err}`);
-          }
-
-          // Remove package-lock.json to ensure fresh install (avoid stale lockfile cache)
-          const lockfilePath = join(projectRoot, 'package-lock.json');
-          if (existsSync(lockfilePath)) {
-            cliLogger.debug('Removing stale package-lock.json');
-            rmSync(lockfilePath, { force: true });
-          }
-
-          // Install fresh version
-          execSync('npm install @groeimetai/snow-code@latest', {
-            stdio: 'inherit',
-            cwd: projectRoot
-          });
-
-          // Restore executable permissions for platform binaries
-          try {
-            const packages = readdirSync(groeimetaiPath);
-            for (const pkg of packages) {
-              if (pkg.startsWith('snow-code-')) {
-                const binPath = join(groeimetaiPath, pkg, 'bin');
-                if (existsSync(binPath)) {
-                  const binaries = readdirSync(binPath);
-                  for (const binary of binaries) {
-                    const binaryPath = join(binPath, binary);
-                    try {
-                      execSync(`chmod +x "${binaryPath}"`, { stdio: 'ignore' });
-                      cliLogger.debug(`Set executable: ${pkg}/bin/${binary}`);
-                    } catch (err) {
-                      cliLogger.debug(`Chmod error for ${binary}: ${err}`);
-                    }
-                  }
-                }
-              }
-            }
-          } catch (err) {
-            cliLogger.debug(`Error setting permissions: ${err}`);
-          }
-
-          cliLogger.info(`✅ Updated SnowCode in ${projectRoot}`);
-        }
-      }
-    };
-
-    if (currentVersion !== latestVersion) {
-      cliLogger.info(`📦 Updating SnowCode: ${currentVersion} → ${latestVersion}`);
-
-      // Update global version
-      execSync('npm install -g @groeimetai/snow-code@latest', { stdio: 'inherit' });
-
-      // Update all local node_modules
-      const projectRoots = findNodeModules(process.cwd());
-      cliLogger.info(`Found ${projectRoots.length} project(s) with node_modules`);
-      for (const root of projectRoots) {
-        updateLocalNodeModules(root);
-      }
-
-      cliLogger.info(`✅ SnowCode updated to ${latestVersion}`);
-    } else {
-      cliLogger.info(`✅ SnowCode is up-to-date (${currentVersion})`);
-
-      // Even if global is up-to-date, check local node_modules
-      const projectRoots = findNodeModules(process.cwd());
-      cliLogger.debug(`Checking ${projectRoots.length} project(s) for local updates`);
-      for (const root of projectRoots) {
-        updateLocalNodeModules(root);
-      }
-    }
-  } catch (error) {
-    // Log error but don't block execution
-    // Silently catch update errors - user can manually update with: npm install -g @groeimetai/snow-code@latest
-    if (verbose) {
-      cliLogger.warn(`⚠️  Auto-update check failed: ${error instanceof Error ? error.message : String(error)}`);
-      cliLogger.debug(`Full error: ${error}`);
-      cliLogger.info('💡 To manually update SnowCode: npm install -g @groeimetai/snow-code@latest');
-    }
-  }
-}
-
 // Helper function to execute SnowCode directly with the objective
 async function executeSnowCode(objective: string, options: any): Promise<boolean> {
   let mcpServerPIDs: number[] = [];
 
   try {
     // Auto-update SnowCode to latest version
-    await autoUpdateSnowCode(options.verbose);
+    await autoUpdateSnowCode(process.cwd(), options.verbose);
 
     // Check if SnowCode CLI is available
     const { execSync } = require('child_process');
@@ -1768,41 +1608,27 @@ program
         s.stop('Migration complete');
       }
 
-      // Install/Update SnowCode (both global and local peer dependency)
+      // Install/Update SnowCode with comprehensive auto-update utility
       const snowcodeSpinner = prompts.spinner();
-      snowcodeSpinner.start('Checking SnowCode installation');
+      snowcodeSpinner.start('Updating snow-code to latest version');
       try {
-        const { execSync } = await import('child_process');
+        const updateResult = await autoUpdateSnowCode(targetDir, false);
 
-        // Update GLOBAL snow-code first (used by snow-flow auth login)
-        snowcodeSpinner.message('Updating global @groeimetai/snow-code');
-        try {
-          execSync('npm install -g @groeimetai/snow-code@latest', {
-            stdio: 'ignore'
-          });
-          snowcodeSpinner.message('Global SnowCode updated to latest');
-        } catch (globalErr) {
-          // Continue even if global update fails
+        if (updateResult.success) {
+          snowcodeSpinner.stop(`✓ Snow-code updated to v${updateResult.mainPackageVersion || 'latest'}`);
+          if (updateResult.binaryPackagesUpdated > 0) {
+            prompts.log.info(`  Updated ${updateResult.binaryPackagesUpdated} platform-specific binaries`);
+          }
+        } else {
+          snowcodeSpinner.stop('⚠️  Snow-code update completed with warnings');
+          if (updateResult.errors.length > 0) {
+            prompts.log.warn('Some updates failed - run manually if needed:');
+            prompts.log.warn('  npm install -g @groeimetai/snow-code@latest');
+            prompts.log.warn('  npm run update-deps');
+          }
         }
-
-        // Update local peer dependency - ALWAYS use @latest to avoid cached old versions
-        snowcodeSpinner.message('Updating local @groeimetai/snow-code');
-        try {
-          // ALWAYS install @latest instead of peerDependency version
-          // This ensures users get the newest features/fixes, not a cached older version
-          execSync('npm install @groeimetai/snow-code@latest', {
-            stdio: 'ignore',
-            cwd: targetDir
-          });
-          snowcodeSpinner.message('Local SnowCode updated to latest');
-        } catch (localErr) {
-          // Continue even if local update fails
-        }
-
-        // Verify installation
-        snowcodeSpinner.stop('SnowCode updated (global + local)');
       } catch (err) {
-        snowcodeSpinner.stop('Could not update SnowCode');
+        snowcodeSpinner.stop('Could not update snow-code');
         prompts.log.warn('Run: npm install -g @groeimetai/snow-code@latest');
         prompts.log.warn('And: npm run update-deps');
       }
