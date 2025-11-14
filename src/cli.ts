@@ -1661,8 +1661,7 @@ program
       // Check and optionally install SnowCode locally
       await checkAndInstallSnowCode();
 
-      prompts.outro(chalk.green('✅ Snow-Flow initialized successfully!'));
-
+      // Show next steps BEFORE the success outro
       prompts.log.message('');
       prompts.log.step('Next steps:');
       prompts.log.message('');
@@ -1672,6 +1671,8 @@ program
       prompts.log.message('  2. Start developing:');
       prompts.log.info('     snow-flow swarm "create incident dashboard"');
       prompts.log.message('');
+
+      prompts.outro(chalk.green('✅ Snow-Flow initialized successfully!'));
 
       // Force exit to prevent hanging
       process.exit(0);
@@ -1766,14 +1767,16 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
   try {
     const projectDir = process.cwd();
     // Use --force to bypass npm cache and get absolute latest version
+    // Suppress output to avoid cluttering the init process
     execSync('npm install @groeimetai/snow-code@latest --no-audit --no-fund --force', {
       cwd: projectDir,
-      stdio: 'inherit'
+      stdio: 'ignore'
     });
 
     // Fix binary permissions immediately after install
     fixSnowCodeBinaryPermissions();
   } catch (error) {
+    // Silently continue - snow-code installation is optional
     return false;
   }
 
@@ -2117,11 +2120,11 @@ async function copySnowCodePackageJson(targetDir: string, force: boolean = false
       }
     }
 
-    // Find snowcode package.json template
+    // Find snow-code package.json template
     const templateSourcePaths = [
-      join(snowFlowRoot, 'templates', 'snowcode-package.json'),
-      join(__dirname, '..', 'templates', 'snowcode-package.json'),
-      join(__dirname, 'templates', 'snowcode-package.json')
+      join(snowFlowRoot, 'templates', 'snow-code-package.json'),
+      join(__dirname, '..', 'templates', 'snow-code-package.json'),
+      join(__dirname, 'templates', 'snow-code-package.json')
     ];
 
     let templatePath: string | null = null;
