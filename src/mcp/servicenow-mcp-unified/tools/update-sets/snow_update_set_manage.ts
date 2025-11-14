@@ -150,21 +150,42 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
   const updateSet = response.data.result;
 
   // Auto-switch if requested
+  let actuallyAutoSwitched = false;
   if (auto_switch) {
     // Use server-side script to switch update set (is_current cannot be set via REST API)
+    // IMPORTANT: Use GlideUpdateSet and set() method (not setCurrent())
     const switchScript = `
-var gus = new GlideUpdateSet2();
-gus.setCurrent('${updateSet.sys_id}');
-gs.info('Switched to update set: ${updateSet.sys_id}');
+var gus = new GlideUpdateSet();
+gus.set('${updateSet.sys_id}');
+gs.print('UPDATE_SET_SWITCHED');
 `;
 
     try {
-      await client.post('/api/now/v1/script/execute', {
-        script: switchScript
+      // Execute script via sys_script_execution endpoint
+      await client.post('/api/now/table/sys_script_execution', {
+        script: switchScript,
+        scope: 'global'
       });
+
+      // Verify the switch was successful by checking the current update set
+      const verifyResponse = await client.get('/api/now/table/sys_update_set', {
+        params: {
+          sysparm_query: 'is_current=true',
+          sysparm_fields: 'sys_id,name',
+          sysparm_limit: 1
+        }
+      });
+
+      const currentUpdateSet = verifyResponse.data.result?.[0];
+      if (currentUpdateSet && currentUpdateSet.sys_id === updateSet.sys_id) {
+        actuallyAutoSwitched = true;
+      } else {
+        console.warn('Update Set created but auto-switch verification failed. Current update set:', currentUpdateSet?.name);
+      }
     } catch (switchError: any) {
-      // Log error but don't fail the creation
-      console.warn('Failed to auto-switch update set:', switchError.message);
+      console.error('Failed to auto-switch update set:', switchError.message);
+      console.error('Error details:', switchError.response?.data);
+      // Don't fail the creation, but user should know it didn't switch
     }
   }
 
@@ -173,10 +194,14 @@ gs.info('Switched to update set: ${updateSet.sys_id}');
     name: updateSet.name,
     description: updateSet.description,
     state: 'in progress',
-    auto_switched: auto_switch,
+    auto_switched: actuallyAutoSwitched,
+    auto_switch_requested: auto_switch,
     created_at: updateSet.sys_created_on,
     created_by: updateSet.sys_created_by,
-    user_story
+    user_story,
+    ...(auto_switch && !actuallyAutoSwitched && {
+      warning: 'Update Set created successfully but auto-switch failed. Please manually switch to this update set or use snow_update_set_manage with action=switch'
+    })
   });
 }
 
@@ -204,24 +229,48 @@ async function executeSwitch(args: any, context: ServiceNowContext): Promise<Too
   const updateSet = checkResponse.data.result;
 
   // Switch to this Update Set using server-side script
+  // IMPORTANT: Use GlideUpdateSet (not GlideUpdateSet2) and set() method (not setCurrent())
   const switchScript = `
-var gus = new GlideUpdateSet2();
-gus.setCurrent('${update_set_id}');
-gs.info('Switched to update set: ${update_set_id}');
+var gus = new GlideUpdateSet();
+gus.set('${update_set_id}');
+gs.print('UPDATE_SET_SWITCHED');
 `;
 
-  await client.post('/api/now/v1/script/execute', {
-    script: switchScript
-  });
+  try {
+    // Execute script via sys_script_execution endpoint
+    await client.post('/api/now/table/sys_script_execution', {
+      script: switchScript,
+      scope: 'global'
+    });
 
-  return createSuccessResult({
-    sys_id: updateSet.sys_id,
-    name: updateSet.name,
-    description: updateSet.description,
-    state: updateSet.state,
-    switched: true,
-    created_at: updateSet.sys_created_on
-  });
+    // Verify the switch was successful
+    const verifyResponse = await client.get('/api/now/table/sys_update_set', {
+      params: {
+        sysparm_query: 'is_current=true',
+        sysparm_fields: 'sys_id,name',
+        sysparm_limit: 1
+      }
+    });
+
+    const currentUpdateSet = verifyResponse.data.result?.[0];
+    if (!currentUpdateSet || currentUpdateSet.sys_id !== update_set_id) {
+      return createErrorResult(
+        `Failed to switch to update set. Current update set is: ${currentUpdateSet?.name || 'unknown'}`
+      );
+    }
+
+    return createSuccessResult({
+      sys_id: updateSet.sys_id,
+      name: updateSet.name,
+      description: updateSet.description,
+      state: updateSet.state,
+      switched: true,
+      verified: true,
+      created_at: updateSet.sys_created_on
+    });
+  } catch (switchError: any) {
+    return createErrorResult(`Failed to switch update set: ${switchError.message}. Error details: ${JSON.stringify(switchError.response?.data)}`);
+  }
 }
 
 // ==================== COMPLETE ====================
