@@ -336,9 +336,18 @@ async function ensureCorrectAuthLocation(): Promise<void> {
 
     // Check if file exists at incorrect location
     try {
-      await fs.access(incorrectPath);
+      const stats = await fs.lstat(incorrectPath);
 
-      // File exists at wrong location - move it
+      // If it's already a symlink pointing to the correct location, we're done
+      if (stats.isSymbolicLink()) {
+        const linkTarget = await fs.readlink(incorrectPath);
+        if (linkTarget === correctPath || path.resolve(path.dirname(incorrectPath), linkTarget) === correctPath) {
+          authLogger.debug('Symlink already exists at correct location');
+          return;
+        }
+      }
+
+      // File exists at wrong location and is NOT a symlink - move it
       authLogger.info('Found auth.json at incorrect location (snowcode/ without dash)');
       authLogger.info('Moving to correct location (snow-code/ with dash)...');
 
@@ -440,7 +449,6 @@ async function updateMCPServerConfig() {
         await fs.writeFile(projectMcpPath, JSON.stringify(projectMcp, null, 2), 'utf-8');
 
         prompts.log.success('✅ Updated project .mcp.json with ServiceNow credentials');
-        authLogger.info('Project .mcp.json updated successfully');
       } else {
         authLogger.debug('No servicenow-unified MCP server found in project .mcp.json');
       }
