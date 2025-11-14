@@ -66,6 +66,68 @@ Automatically added to `~/.snow-code/config.json`:
 - **credentials.ts** - Environment variable credential gathering
 - **types.ts** - TypeScript type definitions
 
+## Available Enterprise Tools
+
+### 🎯 Jira Agent Intelligence (22 Tools)
+
+The enterprise proxy includes comprehensive Jira integration with AI-powered workflow intelligence.
+
+#### Phase 1: Foundation Tools (4)
+1. **jira_get_active_sprint** - Get current sprint context and progress
+2. **jira_get_epic_hierarchy** - View complete epic breakdown and story structure
+3. **jira_get_board** - Board workflow, columns, and WIP limits
+4. **jira_get_issue_comments** - Team discussions and collaboration context
+
+#### Phase 2: Intelligence Tools (4)
+5. **jira_create_user_story** - AI-generated user stories with acceptance criteria
+6. **jira_analyze_issue_dependencies** - Automatic blocker and dependency detection
+7. **jira_estimate_story_points** - AI-powered story point estimation
+8. **jira_decompose_epic** - Automated epic breakdown into user stories
+
+#### Phase 3: Optimization Tools (6)
+9. **jira_suggest_next_task** - Smart task suggestions based on context
+10. **jira_get_sprint_velocity** - Team velocity tracking and forecasting
+11. **jira_find_similar_issues** - Duplicate detection and historical insights
+12. **jira_bulk_update_issues** - Efficient bulk operations
+13. **jira_get_team_capacity** - Team capacity analysis and planning
+14. **jira_create_sprint_report** - Comprehensive sprint reporting
+
+#### Original Jira Tools (8)
+15. **jira_create_issue** - Create Jira issues
+16. **jira_update_issue** - Update existing issues
+17. **jira_get_issue** - Get issue details
+18. **jira_search_issues** - JQL search
+19. **jira_add_comment** - Add comments to issues
+20. **jira_assign_issue** - Assign issues to users
+21. **jira_transition_issue** - Workflow transitions
+22. **jira_get_transitions** - Get available transitions
+
+**Example Usage:**
+```javascript
+// AI suggests next task based on sprint, dependencies, and your skills
+await jira_suggest_next_task({
+  board_id: 123,
+  user_id: "john.doe"
+});
+// Returns: "PROJ-102 (OAuth integration) - Blocks 3 stories, matches your skills"
+
+// AI decomposes epic into stories
+await jira_decompose_epic({
+  epic_key: "PROJ-50"
+});
+// Creates 4 user stories with acceptance criteria and estimates
+```
+
+### Azure DevOps Integration (Coming Soon)
+- Work item management
+- Pipeline automation
+- Repository operations
+
+### Confluence Integration (Coming Soon)
+- Page creation and updates
+- Space management
+- Content search
+
 ## Usage
 
 ### Automatic (Recommended)
