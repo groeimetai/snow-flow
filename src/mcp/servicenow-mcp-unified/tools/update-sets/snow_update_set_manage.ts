@@ -15,7 +15,14 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_update_set_manage',
-  description: 'Unified tool for Update Set management (create, switch, complete, export, preview, add_artifact)',
+  description: `Unified tool for Update Set management (create, switch, complete, export, preview, add_artifact)
+
+⚠️ IMPORTANT: OAuth Context
+- snow-flow uses OAuth service account authentication
+- Update Sets are created and tracked by the service account
+- Setting an Update Set as "current" applies to the SERVICE ACCOUNT, not your UI user
+- Changes are automatically captured in the Update Set regardless of UI state
+- To see it as current in your ServiceNow UI, provide your ServiceNow username`,
   // Metadata for tool discovery (not sent to LLM)
   category: 'development',
   subcategory: 'update-sets',
@@ -57,10 +64,14 @@ export const toolDefinition: MCPToolDefinition = {
         type: 'string',
         description: '[create] Target release date'
       },
+      servicenow_username: {
+        type: 'string',
+        description: '[create/switch] Optional: ServiceNow username to set Update Set as current for (e.g., "john.doe"). If not provided, Update Set is set as current for the OAuth service account only.'
+      },
       auto_switch: {
         type: 'boolean',
-        description: '[create] Automatically switch to created Update Set',
-        default: true
+        description: '[create] Automatically switch to created Update Set for the service account (default: false). Set to true only if you want the service account to track changes.',
+        default: false
       },
       // COMPLETE parameters
       notes: {
@@ -129,7 +140,8 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
     description,
     user_story,
     release_date,
-    auto_switch = true
+    auto_switch = false,
+    servicenow_username
   } = args;
 
   if (!name || !description) {
@@ -149,56 +161,40 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
 
   const updateSet = response.data.result;
 
-  // Auto-switch if requested
-  let actuallyAutoSwitched = false;
-  if (auto_switch) {
-    // Use sys_user_preference table to set the current update set
-    // This is the same method used by the working ServiceNowClient implementation
-    try {
-      // First, check if a preference already exists
-      const existingPref = await client.get('/api/now/table/sys_user_preference', {
-        params: {
-          sysparm_query: 'name=sys_update_set^user=javascript:gs.getUserID()',
-          sysparm_limit: 1
-        }
-      });
+  // Switching logic
+  let switchResult = {
+    switched: false,
+    switched_for_user: null as string | null,
+    switched_for_service_account: false,
+    message: 'Update Set created but NOT set as current (auto_switch=false)'
+  };
 
-      if (existingPref.data.result && existingPref.data.result.length > 0) {
-        // Update existing preference
-        await client.patch(
-          `/api/now/table/sys_user_preference/${existingPref.data.result[0].sys_id}`,
-          {
-            value: updateSet.sys_id
-          }
-        );
-      } else {
-        // Create new preference
-        await client.post('/api/now/table/sys_user_preference', {
-          name: 'sys_update_set',
-          value: updateSet.sys_id,
-          user: 'javascript:gs.getUserID()'
-        });
+  // Only attempt switching if auto_switch OR servicenow_username provided
+  if (auto_switch || servicenow_username) {
+    try {
+      // If specific username provided, switch for that user
+      if (servicenow_username) {
+        await setUpdateSetForUser(client, updateSet.sys_id, servicenow_username);
+        switchResult.switched = true;
+        switchResult.switched_for_user = servicenow_username;
+        switchResult.message = `Update Set set as current for ServiceNow user: ${servicenow_username}`;
       }
 
-      // Verify the switch was successful
-      const verifyResponse = await client.get('/api/now/table/sys_update_set', {
-        params: {
-          sysparm_query: 'is_current=true',
-          sysparm_fields: 'sys_id,name',
-          sysparm_limit: 1
-        }
-      });
+      // If auto_switch enabled, also switch for service account
+      if (auto_switch) {
+        await setUpdateSetForServiceAccount(client, updateSet.sys_id);
+        switchResult.switched = true;
+        switchResult.switched_for_service_account = true;
 
-      const currentUpdateSet = verifyResponse.data.result?.[0];
-      if (currentUpdateSet && currentUpdateSet.sys_id === updateSet.sys_id) {
-        actuallyAutoSwitched = true;
-      } else {
-        console.warn('Update Set created but auto-switch verification failed. Current update set:', currentUpdateSet?.name);
+        if (servicenow_username) {
+          switchResult.message = `Update Set set as current for BOTH service account AND user: ${servicenow_username}`;
+        } else {
+          switchResult.message = 'Update Set set as current for OAuth service account only (not visible in your UI)';
+        }
       }
     } catch (switchError: any) {
-      console.error('Failed to auto-switch update set:', switchError.message);
-      console.error('Error details:', switchError.response?.data);
-      // Don't fail the creation, but user should know it didn't switch
+      console.error('Failed to switch update set:', switchError.message);
+      switchResult.message = `Update Set created but switching failed: ${switchError.message}`;
     }
   }
 
@@ -207,20 +203,87 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
     name: updateSet.name,
     description: updateSet.description,
     state: 'in progress',
-    auto_switched: actuallyAutoSwitched,
-    auto_switch_requested: auto_switch,
     created_at: updateSet.sys_created_on,
     created_by: updateSet.sys_created_by,
     user_story,
-    ...(auto_switch && !actuallyAutoSwitched && {
-      warning: 'Update Set created successfully but auto-switch failed. Please manually switch to this update set or use snow_update_set_manage with action=switch'
-    })
+    switching: switchResult,
+    oauth_context_info: {
+      message: '⚠️ snow-flow uses OAuth service account - Update Sets apply to service account context',
+      note: 'To see Update Set as current in your ServiceNow UI, provide your ServiceNow username in servicenow_username parameter'
+    }
   });
+}
+
+// Helper: Set update set as current for service account (OAuth user)
+async function setUpdateSetForServiceAccount(client: any, updateSetId: string): Promise<void> {
+  // Check if preference exists for service account
+  const existingPref = await client.get('/api/now/table/sys_user_preference', {
+    params: {
+      sysparm_query: 'name=sys_update_set^user=javascript:gs.getUserID()',
+      sysparm_limit: 1
+    }
+  });
+
+  if (existingPref.data.result && existingPref.data.result.length > 0) {
+    // Update existing preference
+    await client.patch(
+      `/api/now/table/sys_user_preference/${existingPref.data.result[0].sys_id}`,
+      { value: updateSetId }
+    );
+  } else {
+    // Create new preference
+    await client.post('/api/now/table/sys_user_preference', {
+      name: 'sys_update_set',
+      value: updateSetId,
+      user: 'javascript:gs.getUserID()'
+    });
+  }
+}
+
+// Helper: Set update set as current for specific ServiceNow user
+async function setUpdateSetForUser(client: any, updateSetId: string, username: string): Promise<void> {
+  // First, get the user's sys_id from username
+  const userResponse = await client.get('/api/now/table/sys_user', {
+    params: {
+      sysparm_query: `user_name=${username}`,
+      sysparm_fields: 'sys_id,user_name,name',
+      sysparm_limit: 1
+    }
+  });
+
+  if (!userResponse.data.result || userResponse.data.result.length === 0) {
+    throw new Error(`ServiceNow user not found: ${username}`);
+  }
+
+  const userSysId = userResponse.data.result[0].sys_id;
+
+  // Check if preference exists for this user
+  const existingPref = await client.get('/api/now/table/sys_user_preference', {
+    params: {
+      sysparm_query: `name=sys_update_set^user=${userSysId}`,
+      sysparm_limit: 1
+    }
+  });
+
+  if (existingPref.data.result && existingPref.data.result.length > 0) {
+    // Update existing preference
+    await client.patch(
+      `/api/now/table/sys_user_preference/${existingPref.data.result[0].sys_id}`,
+      { value: updateSetId }
+    );
+  } else {
+    // Create new preference
+    await client.post('/api/now/table/sys_user_preference', {
+      name: 'sys_update_set',
+      value: updateSetId,
+      user: userSysId
+    });
+  }
 }
 
 // ==================== SWITCH ====================
 async function executeSwitch(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { update_set_id } = args;
+  const { update_set_id, servicenow_username } = args;
 
   if (!update_set_id) {
     return createErrorResult('update_set_id is required for switch action');
@@ -241,48 +304,27 @@ async function executeSwitch(args: any, context: ServiceNowContext): Promise<Too
 
   const updateSet = checkResponse.data.result;
 
-  // Switch to this Update Set using sys_user_preference table
-  // This is the same method used by the working ServiceNowClient implementation
+  // Switch logic
+  let switchResult = {
+    switched: false,
+    switched_for_user: null as string | null,
+    switched_for_service_account: false,
+    message: ''
+  };
+
   try {
-    // First, check if a preference already exists
-    const existingPref = await client.get('/api/now/table/sys_user_preference', {
-      params: {
-        sysparm_query: 'name=sys_update_set^user=javascript:gs.getUserID()',
-        sysparm_limit: 1
-      }
-    });
-
-    if (existingPref.data.result && existingPref.data.result.length > 0) {
-      // Update existing preference
-      await client.patch(
-        `/api/now/table/sys_user_preference/${existingPref.data.result[0].sys_id}`,
-        {
-          value: update_set_id
-        }
-      );
+    // If specific username provided, switch for that user
+    if (servicenow_username) {
+      await setUpdateSetForUser(client, update_set_id, servicenow_username);
+      switchResult.switched = true;
+      switchResult.switched_for_user = servicenow_username;
+      switchResult.message = `Update Set switched for ServiceNow user: ${servicenow_username}`;
     } else {
-      // Create new preference
-      await client.post('/api/now/table/sys_user_preference', {
-        name: 'sys_update_set',
-        value: update_set_id,
-        user: 'javascript:gs.getUserID()'
-      });
-    }
-
-    // Verify the switch was successful
-    const verifyResponse = await client.get('/api/now/table/sys_update_set', {
-      params: {
-        sysparm_query: 'is_current=true',
-        sysparm_fields: 'sys_id,name',
-        sysparm_limit: 1
-      }
-    });
-
-    const currentUpdateSet = verifyResponse.data.result?.[0];
-    if (!currentUpdateSet || currentUpdateSet.sys_id !== update_set_id) {
-      return createErrorResult(
-        `Failed to switch to update set. Current update set is: ${currentUpdateSet?.name || 'unknown'}`
-      );
+      // Default: switch for service account only
+      await setUpdateSetForServiceAccount(client, update_set_id);
+      switchResult.switched = true;
+      switchResult.switched_for_service_account = true;
+      switchResult.message = 'Update Set switched for OAuth service account only (not visible in your UI)';
     }
 
     return createSuccessResult({
@@ -290,12 +332,15 @@ async function executeSwitch(args: any, context: ServiceNowContext): Promise<Too
       name: updateSet.name,
       description: updateSet.description,
       state: updateSet.state,
-      switched: true,
-      verified: true,
-      created_at: updateSet.sys_created_on
+      created_at: updateSet.sys_created_on,
+      switching: switchResult,
+      oauth_context_info: {
+        message: '⚠️ snow-flow uses OAuth service account - Update Sets apply to service account context',
+        note: 'To see Update Set as current in your ServiceNow UI, provide your ServiceNow username in servicenow_username parameter'
+      }
     });
   } catch (switchError: any) {
-    return createErrorResult(`Failed to switch update set: ${switchError.message}. Error details: ${JSON.stringify(switchError.response?.data)}`);
+    return createErrorResult(`Failed to switch update set: ${switchError.message}`);
   }
 }
 
