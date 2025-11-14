@@ -13,8 +13,8 @@ import { EnterpriseCredentials } from './types.js';
 export function gatherCredentials(toolName: string): Partial<EnterpriseCredentials> {
   const credentials: Partial<EnterpriseCredentials> = {};
 
-  // Jira tools (snow_jira_*)
-  if (toolName.startsWith('snow_jira_')) {
+  // Jira tools (jira_* or snow_jira_*)
+  if (toolName.startsWith('jira_') || toolName.startsWith('snow_jira_')) {
     if (process.env.JIRA_HOST && process.env.JIRA_EMAIL && process.env.JIRA_API_TOKEN) {
       credentials.jira = {
         host: process.env.JIRA_HOST,
@@ -24,8 +24,8 @@ export function gatherCredentials(toolName: string): Partial<EnterpriseCredentia
     }
   }
 
-  // Azure DevOps tools (snow_azure_*)
-  if (toolName.startsWith('snow_azure_')) {
+  // Azure DevOps tools (azure_* or snow_azure_*)
+  if (toolName.startsWith('azure_') || toolName.startsWith('snow_azure_')) {
     if (process.env.AZURE_DEVOPS_ORG && process.env.AZURE_DEVOPS_PAT) {
       credentials.azure = {
         organization: process.env.AZURE_DEVOPS_ORG,
@@ -34,8 +34,8 @@ export function gatherCredentials(toolName: string): Partial<EnterpriseCredentia
     }
   }
 
-  // Confluence tools (snow_confluence_*)
-  if (toolName.startsWith('snow_confluence_')) {
+  // Confluence tools (confluence_* or snow_confluence_*)
+  if (toolName.startsWith('confluence_') || toolName.startsWith('snow_confluence_')) {
     if (process.env.CONFLUENCE_HOST && process.env.CONFLUENCE_EMAIL && process.env.CONFLUENCE_API_TOKEN) {
       credentials.confluence = {
         host: process.env.CONFLUENCE_HOST,
@@ -56,15 +56,15 @@ export function gatherCredentials(toolName: string): Partial<EnterpriseCredentia
 export function hasRequiredCredentials(toolName: string): boolean {
   const credentials = gatherCredentials(toolName);
 
-  if (toolName.startsWith('snow_jira_')) {
+  if (toolName.startsWith('jira_') || toolName.startsWith('snow_jira_')) {
     return !!credentials.jira;
   }
 
-  if (toolName.startsWith('snow_azure_')) {
+  if (toolName.startsWith('azure_') || toolName.startsWith('snow_azure_')) {
     return !!credentials.azure;
   }
 
-  if (toolName.startsWith('snow_confluence_')) {
+  if (toolName.startsWith('confluence_') || toolName.startsWith('snow_confluence_')) {
     return !!credentials.confluence;
   }
 
@@ -79,18 +79,18 @@ export function hasRequiredCredentials(toolName: string): boolean {
 export function getMissingCredentials(toolName: string): string[] {
   const missing: string[] = [];
 
-  if (toolName.startsWith('snow_jira_')) {
+  if (toolName.startsWith('jira_') || toolName.startsWith('snow_jira_')) {
     if (!process.env.JIRA_HOST) missing.push('JIRA_HOST');
     if (!process.env.JIRA_EMAIL) missing.push('JIRA_EMAIL');
     if (!process.env.JIRA_API_TOKEN) missing.push('JIRA_API_TOKEN');
   }
 
-  if (toolName.startsWith('snow_azure_')) {
+  if (toolName.startsWith('azure_') || toolName.startsWith('snow_azure_')) {
     if (!process.env.AZURE_DEVOPS_ORG) missing.push('AZURE_DEVOPS_ORG');
     if (!process.env.AZURE_DEVOPS_PAT) missing.push('AZURE_DEVOPS_PAT');
   }
 
-  if (toolName.startsWith('snow_confluence_')) {
+  if (toolName.startsWith('confluence_') || toolName.startsWith('snow_confluence_')) {
     if (!process.env.CONFLUENCE_HOST) missing.push('CONFLUENCE_HOST');
     if (!process.env.CONFLUENCE_EMAIL) missing.push('CONFLUENCE_EMAIL');
     if (!process.env.CONFLUENCE_API_TOKEN) missing.push('CONFLUENCE_API_TOKEN');
