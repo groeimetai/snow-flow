@@ -82,23 +82,31 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Build batch request payload
     const batchPayload = {
       batch_request_id: `batch_${Date.now()}`,
-      rest_requests: requests.map((req: any) => ({
-        id: req.id,
-        method: req.method,
-        url: req.url,
-        headers: {
-          ...req.headers,
-          'Content-Type': 'application/json'
-        },
-        body: req.body ? JSON.stringify(req.body) : undefined,
-        exclude_reference_link: exclude_reference_link.toString()
-      }))
+      rest_requests: requests.map((req: any) => {
+        const batchRequest: any = {
+          id: req.id,
+          method: req.method,
+          url: req.url,
+          headers: {
+            'Content-Type': 'application/json',
+            ...req.headers
+          }
+        };
+
+        // Only add body for methods that support it
+        if (req.body && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
+          batchRequest.body = req.body;
+        }
+
+        return batchRequest;
+      })
     };
 
     // Execute batch request
-    const response = await client.post('/api/now/v1/batch', batchPayload, {
+    const response = await client.post('/api/now/batch', batchPayload, {
       params: {
-        execution_order: batch_execution_order
+        execution_order: batch_execution_order,
+        exclude_reference_link: exclude_reference_link
       }
     });
 

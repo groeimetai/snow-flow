@@ -51,7 +51,7 @@ RECOMMENDED USAGE:
       action: {
         type: 'string',
         description: 'Management action to perform',
-        enum: ['create', 'switch', 'complete', 'export', 'preview', 'add_artifact']
+        enum: ['create', 'switch', 'complete', 'export', 'preview', 'add_artifact', 'current']
       },
       // Common parameters
       update_set_id: {
@@ -136,6 +136,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return await executePreview(args, context);
       case 'add_artifact':
         return await executeAddArtifact(args, context);
+      case 'current':
+        return await executeCurrent(args, context);
       default:
         return createErrorResult(`Unknown action: ${action}`);
     }
@@ -648,6 +650,72 @@ async function executeAddArtifact(args: any, context: ServiceNowContext): Promis
       tracking_record: trackingRecord.sys_id
     },
     message: `Artifact '${artifact_name}' (${artifact_type}) added to Update Set`
+  });
+}
+
+// ==================== CURRENT ====================
+async function executeCurrent(args: any, context: ServiceNowContext): Promise<ToolResult> {
+  const client = await getAuthenticatedClient(context);
+
+  // Get current update set preference for the OAuth service account
+  const prefResponse = await client.get('/api/now/table/sys_user_preference', {
+    params: {
+      sysparm_query: 'name=sys_update_set^user=javascript:gs.getUserID()',
+      sysparm_fields: 'value',
+      sysparm_limit: 1
+    }
+  });
+
+  if (!prefResponse.data.result || prefResponse.data.result.length === 0) {
+    return createErrorResult('No current update set found for the OAuth service account. Create or switch to an update set first.');
+  }
+
+  const currentUpdateSetId = prefResponse.data.result[0].value;
+
+  // Get the update set details
+  const updateSetResponse = await client.get(`/api/now/table/sys_update_set/${currentUpdateSetId}`, {
+    params: {
+      sysparm_fields: 'sys_id,name,description,state,sys_created_on,sys_created_by,sys_updated_on'
+    }
+  });
+
+  if (!updateSetResponse.data.result) {
+    return createErrorResult(`Current update set reference found but update set not found: ${currentUpdateSetId}`);
+  }
+
+  const updateSet = updateSetResponse.data.result;
+
+  // Get artifact count
+  const artifactsResponse = await client.get('/api/now/table/sys_update_xml', {
+    params: {
+      sysparm_query: `update_set=${currentUpdateSetId}`,
+      sysparm_fields: 'sys_id,type',
+      sysparm_limit: 1000
+    }
+  });
+
+  const artifacts = artifactsResponse.data.result || [];
+  const artifactsByType: Record<string, number> = {};
+  artifacts.forEach((artifact: any) => {
+    const type = artifact.type || 'Unknown';
+    artifactsByType[type] = (artifactsByType[type] || 0) + 1;
+  });
+
+  return createSuccessResult({
+    sys_id: updateSet.sys_id,
+    name: updateSet.name,
+    description: updateSet.description,
+    state: updateSet.state,
+    created_at: updateSet.sys_created_on,
+    created_by: updateSet.sys_created_by,
+    updated_at: updateSet.sys_updated_on,
+    artifact_count: artifacts.length,
+    artifacts_by_type: artifactsByType,
+    is_current: true,
+    oauth_context_info: {
+      message: '⚠️ This is the current update set for the OAuth service account',
+      note: 'All changes made via snow-flow are automatically tracked in this update set'
+    }
   });
 }
 
