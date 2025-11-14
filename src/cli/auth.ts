@@ -749,10 +749,6 @@ export function registerAuthCommands(program: Command) {
 
         // Update MCP server config with ServiceNow credentials
         await updateMCPServerConfig();
-
-        // Prompt for enterprise license configuration
-        // This adds the enterprise-proxy MCP server for Jira/Azure DevOps/Confluence integrations
-        await enterpriseLicenseFlow();
       } catch (error: any) {
         // Error details are already shown via stdio: 'inherit'
         // Only provide helpful context here
