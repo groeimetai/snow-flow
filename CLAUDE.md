@@ -76,7 +76,7 @@ const updateSet = await snow_update_set_manage({
   action: 'create',
   name: "Feature: Incident Auto-Assignment",
   description: "Implements automatic incident assignment based on category and location",
-  application: "global"
+  servicenow_username: 'your.username'  // Optional: to see it in your UI
 });
 console.log(`✅ Created Update Set: ${updateSet.name} (sys_id: ${updateSet.sys_id})`);
 ```
@@ -207,6 +207,48 @@ function test(p) {
 - Automatically captures ALL artifact changes when active
 - Required for moving changes between instances (Dev → Test → Prod)
 
+**⚠️ CRITICAL: OAuth Context & Update Set Visibility**
+
+**snow-flow uses OAuth service account authentication:**
+- All API calls run as an OAuth **service account**, not your UI user
+- Update Sets are created and tracked by this service account
+- Setting an Update Set as "current" affects the **SERVICE ACCOUNT context**
+- Changes are **automatically captured** regardless of what's "current" in your UI
+
+**Understanding the Two Contexts:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ YOUR UI SESSION (when you log in to ServiceNow UI)         │
+│ User: john.doe                                              │
+│ Current Update Set: [Whatever you selected in UI]          │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ SNOW-FLOW OAUTH SESSION (API calls)                        │
+│ User: oauth.service.account                                 │
+│ Current Update Set: [Set via snow_update_set_manage]       │
+│ ← All snow-flow changes are tracked here                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Points:**
+- ✅ **Update Sets ARE created** - they exist in ServiceNow
+- ✅ **Changes ARE tracked** - all snow-flow artifacts go into the Update Set
+- ❌ **NOT visible in YOUR UI** - unless you explicitly set it for your username
+- ✅ **Deployment still works** - Update Set can be exported/imported normally
+
+**To see Update Set as "current" in YOUR ServiceNow UI:**
+
+```javascript
+await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: My Feature",
+  description: "Development work",
+  servicenow_username: 'john.doe'  // ← YOUR ServiceNow username
+});
+```
+
 **The Golden Rule: UPDATE SET FIRST, ALWAYS**
 
 Every development task MUST follow this workflow:
@@ -217,12 +259,12 @@ const updateSet = await snow_update_set_manage({
   action: 'create',
   name: "Feature: [Descriptive Name]",
   description: "Complete description of what and why",
-  application: "global"  // or specific app scope
+  // OPTIONAL: Add your username to see it as current in UI
+  servicenow_username: 'your.username'  // ← Only needed if you want UI visibility
 });
 
-// STEP 2: VERIFY IT'S ACTIVE
-const current = await snow_update_set_query({ action: 'current' });
-console.log(`Active Update Set: ${current.name}`);
+// STEP 2: VERIFY IT'S CREATED (it exists even if not visible in your UI)
+// Changes will be tracked automatically by the service account
 
 // STEP 3: NOW DEVELOP (all changes auto-tracked in Update Set)
 await snow_deploy({
@@ -248,12 +290,14 @@ await snow_update_set_manage({
 - Without an active Update Set, changes are NOT tracked
 - Untracked changes = Cannot deploy to other instances
 - Users will lose work if you skip this step
+- OAuth context means changes may not be visible in your UI without servicenow_username
 
 **Update Set Best Practices:**
 - **ONE feature = ONE Update Set** (clear boundaries)
 - **Descriptive names**: "Feature: Incident Auto-Assignment" NOT "Changes" or "Updates"
 - **Complete descriptions**: What, why, which components affected
 - **Complete when done**: Mark as 'complete' when feature is finished
+- **Use servicenow_username** if user wants to see Update Set as current in their UI
 
 **3. Widget Coherence (HTML ↔ Client ↔ Server)**
 
