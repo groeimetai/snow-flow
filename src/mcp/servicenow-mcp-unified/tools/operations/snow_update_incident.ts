@@ -128,29 +128,50 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Validate state transition
     if (state && validate_state_transition) {
       const currentState = parseInt(incident.state);
-      const validTransitions: Record<number, number[]> = {
-        1: [2, 6, 7],           // New → In Progress, Resolved, Closed
-        2: [3, 6, 7],           // In Progress → On Hold, Resolved, Closed
-        3: [2, 6, 7],           // On Hold → In Progress, Resolved, Closed
-        6: [2, 7],              // Resolved → In Progress, Closed
-        7: [2]                  // Closed → In Progress (reopen)
-      };
 
-      if (!validTransitions[currentState]?.includes(state)) {
-        throw new SnowFlowError(
-          ErrorType.VALIDATION_ERROR,
-          `Invalid state transition from ${currentState} to ${state}`,
-          {
-            details: {
-              current_state: currentState,
-              requested_state: state,
-              valid_transitions: validTransitions[currentState]
+      // If already in requested state, this is a no-op (idempotent operation)
+      if (currentState === state) {
+        // Don't set state in updateData - no change needed
+        // Continue with other updates (assigned_to, work_notes, etc.)
+      } else {
+        const validTransitions: Record<number, number[]> = {
+          1: [2, 6, 7],           // New → In Progress, Resolved, Closed
+          2: [3, 6, 7],           // In Progress → On Hold, Resolved, Closed
+          3: [2, 6, 7],           // On Hold → In Progress, Resolved, Closed
+          6: [2, 7],              // Resolved → In Progress, Closed
+          7: [2]                  // Closed → In Progress (reopen)
+        };
+
+        if (!validTransitions[currentState]?.includes(state)) {
+          const stateNames: Record<number, string> = {
+            1: 'New',
+            2: 'In Progress',
+            3: 'On Hold',
+            6: 'Resolved',
+            7: 'Closed'
+          };
+
+          throw new SnowFlowError(
+            ErrorType.VALIDATION_ERROR,
+            `Invalid state transition: Cannot change from ${stateNames[currentState] || currentState} to ${stateNames[state] || state}`,
+            {
+              details: {
+                current_state: currentState,
+                current_state_name: stateNames[currentState],
+                requested_state: state,
+                requested_state_name: stateNames[state],
+                valid_transitions: validTransitions[currentState]?.map((s: number) => ({
+                  value: s,
+                  name: stateNames[s]
+                })),
+                suggestion: 'Use validate_state_transition: false to skip validation, or transition through valid intermediate states'
+              }
             }
-          }
-        );
-      }
+          );
+        }
 
-      updateData.state = state;
+        updateData.state = state;
+      }
 
       // Validate resolution requirements
       if (state === 6) { // Resolved
