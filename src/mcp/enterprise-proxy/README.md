@@ -4,6 +4,23 @@
 
 The Enterprise MCP Proxy bridges **SnowCode CLI** (stdio MCP protocol) with the **Snow-Flow Enterprise License Server** (HTTPS REST API), enabling enterprise features like Jira, Azure DevOps, and Confluence integrations.
 
+### 🚀 Enterprise Tool Ecosystem
+
+**Total: 56+ Enterprise Tools**
+- 🎯 **Jira**: 22 tools (AI-powered workflow intelligence)
+- ⚡ **Azure DevOps**: 26 tools (CI/CD + work item intelligence)
+- 📚 **Confluence**: 8 tools (Documentation management)
+
+**Key Capabilities:**
+- ✅ AI-powered story generation and estimation
+- ✅ Automated epic/feature decomposition
+- ✅ Smart task suggestions based on context
+- ✅ Dependency and blocker detection
+- ✅ CI/CD pipeline failure analysis
+- ✅ Team velocity tracking and forecasting
+- ✅ Duplicate detection and similar issue search
+- ✅ Bulk operations and automation
+
 ## Architecture
 
 ```
@@ -20,22 +37,40 @@ The proxy is automatically configured when running `snow-flow auth login` with a
 ### Environment Variables
 
 ```bash
-# Required
+# ============================================
+# Required - Enterprise License
+# ============================================
 SNOW_LICENSE_KEY=SNOW-ENT-CUST-ABC123
 SNOW_ENTERPRISE_URL=https://license-server.run.app
 
-# Optional: Local credentials (otherwise server-side)
+# ============================================
+# Optional: Local Credentials
+# (Otherwise uses server-side encrypted credentials)
+# ============================================
+
+# Jira Integration (22 tools)
 JIRA_HOST=https://company.atlassian.net
 JIRA_EMAIL=user@company.com
-JIRA_API_TOKEN=ATATT3xFfGF...
+JIRA_API_TOKEN=ATATT3xFfGF0...
+# Get token: https://id.atlassian.com/manage-profile/security/api-tokens
 
+# Azure DevOps Integration (26 tools)
 AZURE_DEVOPS_ORG=mycompany
-AZURE_DEVOPS_PAT=xxxxxxxxxxxxxxxx
+AZURE_DEVOPS_PAT=xxxxxxxxxxxxxxxxxxxxx
+# Get PAT: https://dev.azure.com/{org}/_usersSettings/tokens
+# Required scopes: Work Items (Read, Write), Build (Read, Execute), Code (Read, Write)
 
+# Confluence Integration (8 tools)
 CONFLUENCE_HOST=https://company.atlassian.net
 CONFLUENCE_EMAIL=user@company.com
-CONFLUENCE_API_TOKEN=ATATT3xFfGF...
+CONFLUENCE_API_TOKEN=ATATT3xFfGF0...
+# Same token as Jira (Atlassian Cloud uses same API tokens)
 ```
+
+**Credential Priority:**
+1. **Local environment variables** (shown above) - Sent encrypted to server
+2. **Server-side encrypted storage** - Managed by enterprise admin
+3. **Error** - If neither available, tool will fail with clear message
 
 ### SnowCode Configuration
 
@@ -118,15 +153,76 @@ await jira_decompose_epic({
 // Creates 4 user stories with acceptance criteria and estimates
 ```
 
-### Azure DevOps Integration (Coming Soon)
-- Work item management
-- Pipeline automation
-- Repository operations
+### ⚡ Azure DevOps Agent Intelligence (26 Tools)
 
-### Confluence Integration (Coming Soon)
+Comprehensive Azure DevOps integration with AI-powered workflow intelligence and CI/CD analysis.
+
+#### Phase 1: Foundation Tools (6)
+1. **azure_get_active_iteration** - Get current iteration context and progress
+2. **azure_get_work_item_hierarchy** - Epic → Feature → Story → Task breakdown
+3. **azure_get_board** - Board workflow, columns, and WIP limits
+4. **azure_get_work_item_comments** - Team discussions and collaboration context
+5. **azure_analyze_work_item_dependencies** - Dependency and blocker detection
+6. **azure_analyze_pipeline_failures** - CI/CD failure analysis with recommendations
+
+#### Phase 2: Intelligence Tools (6)
+7. **azure_create_user_story** - AI-generated user stories with acceptance criteria
+8. **azure_estimate_work_item** - AI-powered story points/hours estimation
+9. **azure_decompose_feature** - Automated feature breakdown into stories
+10. **azure_suggest_next_work_item** - Smart work item suggestions
+11. **azure_get_iteration_velocity** - Team velocity tracking and forecasting
+12. **azure_find_similar_work_items** - Duplicate detection and historical insights
+
+#### Phase 3: Optimization Tools (4)
+13. **azure_bulk_update_work_items** - Efficient bulk operations
+14. **azure_get_team_capacity** - Team capacity analysis and planning
+15. **azure_create_iteration_report** - Comprehensive iteration reporting
+16. **azure_pr_readiness_check** - PR quality gates and recommendations
+
+#### Original Azure DevOps Tools (10)
+17. **azure_create_work_item** - Create work items
+18. **azure_update_work_item** - Update existing work items
+19. **azure_get_work_item** - Get work item details
+20. **azure_query_work_items** - WIQL queries
+21. **azure_add_work_item_comment** - Add comments
+22. **azure_link_work_items** - Link work items (parent/child, related, etc.)
+23. **azure_get_pipeline_runs** - Get pipeline execution history
+24. **azure_trigger_pipeline** - Trigger pipeline runs
+25. **azure_get_pull_requests** - Get PR list and status
+26. **azure_create_pull_request** - Create PRs
+
+**Example Usage:**
+```javascript
+// AI suggests next work item based on iteration, dependencies, and capacity
+await azure_suggest_next_work_item({
+  team: "Platform Team",
+  project: "MyProject"
+});
+// Returns: "Work Item 102 (OAuth login) - High priority, blocks 2 items, ~13 pts"
+
+// AI analyzes pipeline failures and suggests fixes
+await azure_analyze_pipeline_failures({
+  project: "MyProject",
+  pipeline_id: 42
+});
+// Returns: "3/10 runs failed. Recommendations: 1) Review failed builds 2) Check agent config"
+
+// AI decomposes feature into stories
+await azure_decompose_feature({
+  work_item_id: 150
+});
+// Creates 3 user stories with estimates and acceptance criteria
+```
+
+### 📚 Confluence Integration (8 Tools)
 - Page creation and updates
 - Space management
 - Content search
+- Template management
+- Attachment handling
+- Version history
+- User mentions
+- Page analytics
 
 ## Usage
 
