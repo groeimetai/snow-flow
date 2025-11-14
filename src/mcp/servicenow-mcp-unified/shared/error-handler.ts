@@ -478,6 +478,22 @@ export async function executeWithErrorHandling<T>(
       result = await operation();
     }
 
+    // Check if result is already a ToolResult (has success/error field)
+    // If so, just add metadata and return it (avoid double wrapping)
+    if (result && typeof result === 'object' && ('success' in result || 'error' in result)) {
+      const toolResult = result as any;
+      // Add tool metadata if not already present
+      return {
+        ...toolResult,
+        metadata: {
+          tool: toolName,
+          timestamp: new Date().toISOString(),
+          ...(toolResult.metadata || {})
+        }
+      };
+    }
+
+    // Otherwise, wrap the result
     return createSuccessResult(result, {
       tool: toolName,
       timestamp: new Date().toISOString()

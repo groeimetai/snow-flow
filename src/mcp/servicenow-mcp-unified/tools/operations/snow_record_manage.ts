@@ -153,15 +153,43 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
 
       if (data[fieldName]) {
         // Validate reference exists
-        const refCheck = await client.get(`/api/now/table/${referenceTable}/${data[fieldName]}`, {
-          params: { sysparm_fields: 'sys_id' }
-        });
+        try {
+          const refCheck = await client.get(`/api/now/table/${referenceTable}/${data[fieldName]}`, {
+            params: { sysparm_fields: 'sys_id' }
+          });
 
-        if (!refCheck.data.result) {
+          if (!refCheck.data.result) {
+            throw new SnowFlowError(
+              ErrorType.VALIDATION_ERROR,
+              `Reference validation failed: Field '${fieldName}' points to non-existent record in '${referenceTable}'`,
+              {
+                details: {
+                  field: fieldName,
+                  value: data[fieldName],
+                  reference_table: referenceTable,
+                  message: `The record with sys_id '${data[fieldName]}' does not exist in table '${referenceTable}'`,
+                  suggestion: 'Verify the sys_id exists or set validate_references=false to skip validation'
+                }
+              }
+            );
+          }
+        } catch (refError: any) {
+          if (refError instanceof SnowFlowError) {
+            throw refError;
+          }
+          // Reference table or record doesn't exist
           throw new SnowFlowError(
             ErrorType.VALIDATION_ERROR,
-            `Reference '${fieldName}' points to non-existent record in '${referenceTable}'`,
-            { details: { field: fieldName, value: data[fieldName], table: referenceTable } }
+            `Reference validation error for field '${fieldName}': ${refError.message}`,
+            {
+              details: {
+                field: fieldName,
+                value: data[fieldName],
+                reference_table: referenceTable,
+                error: refError.response?.data || refError.message,
+                suggestion: 'Check if reference table exists and record sys_id is correct'
+              }
+            }
           );
         }
       }
@@ -169,23 +197,44 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
   }
 
   // Create record
-  const response = await client.post(`/api/now/table/${table}`, data, {
-    params: {
-      sysparm_display_value: display_value ? 'all' : 'false',
-      sysparm_exclude_reference_link: 'true'
-    }
-  });
+  try {
+    const response = await client.post(`/api/now/table/${table}`, data, {
+      params: {
+        sysparm_display_value: display_value ? 'all' : 'false',
+        sysparm_exclude_reference_link: 'true'
+      }
+    });
 
-  const record = response.data.result;
+    const record = response.data.result;
 
-  return createSuccessResult({
-    action: 'create',
-    created: true,
-    sys_id: record.sys_id,
-    table,
-    record,
-    display_values: display_value
-  });
+    return createSuccessResult({
+      action: 'create',
+      created: true,
+      sys_id: record.sys_id,
+      table,
+      record,
+      display_values: display_value
+    });
+  } catch (createError: any) {
+    // Extract ServiceNow-specific error details
+    const snowError = createError.response?.data?.error || {};
+    const errorMessage = snowError.message || createError.message;
+    const errorDetail = snowError.detail || '';
+
+    throw new SnowFlowError(
+      ErrorType.VALIDATION_ERROR,
+      `Failed to create record in table '${table}': ${errorMessage}`,
+      {
+        details: {
+          table,
+          data: data,
+          snow_error: snowError,
+          error_detail: errorDetail,
+          status_code: createError.response?.status
+        }
+      }
+    );
+  }
 }
 
 // ==================== UPDATE ====================
