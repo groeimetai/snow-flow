@@ -4,7 +4,6 @@
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
-import crypto from 'crypto';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_random_string',

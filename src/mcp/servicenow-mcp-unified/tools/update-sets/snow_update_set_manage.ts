@@ -152,22 +152,35 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
   // Auto-switch if requested
   let actuallyAutoSwitched = false;
   if (auto_switch) {
-    // Use server-side script to switch update set (is_current cannot be set via REST API)
-    // IMPORTANT: Use GlideUpdateSet and set() method (not setCurrent())
-    const switchScript = `
-var gus = new GlideUpdateSet();
-gus.set('${updateSet.sys_id}');
-gs.print('UPDATE_SET_SWITCHED');
-`;
-
+    // Use sys_user_preference table to set the current update set
+    // This is the same method used by the working ServiceNowClient implementation
     try {
-      // Execute script via sys_script_execution endpoint
-      await client.post('/api/now/table/sys_script_execution', {
-        script: switchScript,
-        scope: 'global'
+      // First, check if a preference already exists
+      const existingPref = await client.get('/api/now/table/sys_user_preference', {
+        params: {
+          sysparm_query: 'name=sys_update_set^user=javascript:gs.getUserID()',
+          sysparm_limit: 1
+        }
       });
 
-      // Verify the switch was successful by checking the current update set
+      if (existingPref.data.result && existingPref.data.result.length > 0) {
+        // Update existing preference
+        await client.patch(
+          `/api/now/table/sys_user_preference/${existingPref.data.result[0].sys_id}`,
+          {
+            value: updateSet.sys_id
+          }
+        );
+      } else {
+        // Create new preference
+        await client.post('/api/now/table/sys_user_preference', {
+          name: 'sys_update_set',
+          value: updateSet.sys_id,
+          user: 'javascript:gs.getUserID()'
+        });
+      }
+
+      // Verify the switch was successful
       const verifyResponse = await client.get('/api/now/table/sys_update_set', {
         params: {
           sysparm_query: 'is_current=true',
@@ -228,20 +241,33 @@ async function executeSwitch(args: any, context: ServiceNowContext): Promise<Too
 
   const updateSet = checkResponse.data.result;
 
-  // Switch to this Update Set using server-side script
-  // IMPORTANT: Use GlideUpdateSet (not GlideUpdateSet2) and set() method (not setCurrent())
-  const switchScript = `
-var gus = new GlideUpdateSet();
-gus.set('${update_set_id}');
-gs.print('UPDATE_SET_SWITCHED');
-`;
-
+  // Switch to this Update Set using sys_user_preference table
+  // This is the same method used by the working ServiceNowClient implementation
   try {
-    // Execute script via sys_script_execution endpoint
-    await client.post('/api/now/table/sys_script_execution', {
-      script: switchScript,
-      scope: 'global'
+    // First, check if a preference already exists
+    const existingPref = await client.get('/api/now/table/sys_user_preference', {
+      params: {
+        sysparm_query: 'name=sys_update_set^user=javascript:gs.getUserID()',
+        sysparm_limit: 1
+      }
     });
+
+    if (existingPref.data.result && existingPref.data.result.length > 0) {
+      // Update existing preference
+      await client.patch(
+        `/api/now/table/sys_user_preference/${existingPref.data.result[0].sys_id}`,
+        {
+          value: update_set_id
+        }
+      );
+    } else {
+      // Create new preference
+      await client.post('/api/now/table/sys_user_preference', {
+        name: 'sys_update_set',
+        value: update_set_id,
+        user: 'javascript:gs.getUserID()'
+      });
+    }
 
     // Verify the switch was successful
     const verifyResponse = await client.get('/api/now/table/sys_update_set', {
