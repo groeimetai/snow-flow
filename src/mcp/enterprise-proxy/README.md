@@ -6,10 +6,11 @@ The Enterprise MCP Proxy bridges **SnowCode CLI** (stdio MCP protocol) with the 
 
 ### 🚀 Enterprise Tool Ecosystem
 
-**Total: 56+ Enterprise Tools**
+**Total: 76+ Enterprise Tools**
 - 🎯 **Jira**: 22 tools (AI-powered workflow intelligence)
 - ⚡ **Azure DevOps**: 26 tools (CI/CD + work item intelligence)
-- 📚 **Confluence**: 8 tools (Documentation management)
+- 📚 **Confluence**: 24 tools (AI-powered documentation intelligence)
+- 🔄 **Process Mining**: 4 tools (Process optimization)
 
 **Key Capabilities:**
 - ✅ AI-powered story generation and estimation
@@ -20,6 +21,10 @@ The Enterprise MCP Proxy bridges **SnowCode CLI** (stdio MCP protocol) with the 
 - ✅ Team velocity tracking and forecasting
 - ✅ Duplicate detection and similar issue search
 - ✅ Bulk operations and automation
+- ✅ AI-powered documentation generation and improvement
+- ✅ Documentation gap analysis and suggestions
+- ✅ Automated content summarization and formatting
+- ✅ Space health reports and analytics
 
 ## Architecture
 
@@ -60,7 +65,7 @@ AZURE_DEVOPS_PAT=xxxxxxxxxxxxxxxxxxxxx
 # Get PAT: https://dev.azure.com/{org}/_usersSettings/tokens
 # Required scopes: Work Items (Read, Write), Build (Read, Execute), Code (Read, Write)
 
-# Confluence Integration (8 tools)
+# Confluence Integration (24 tools)
 CONFLUENCE_HOST=https://company.atlassian.net
 CONFLUENCE_EMAIL=user@company.com
 CONFLUENCE_API_TOKEN=ATATT3xFfGF0...
@@ -214,15 +219,67 @@ await azure_decompose_feature({
 // Creates 3 user stories with estimates and acceptance criteria
 ```
 
-### 📚 Confluence Integration (8 Tools)
-- Page creation and updates
-- Space management
-- Content search
-- Template management
-- Attachment handling
-- Version history
-- User mentions
-- Page analytics
+### 📚 Confluence Agent Intelligence (24 Tools)
+
+The enterprise proxy includes comprehensive Confluence integration with AI-powered documentation intelligence.
+
+#### Phase 1: Foundation Tools (6)
+1. **confluence_get_space_overview** - Complete space overview with page tree structure
+2. **confluence_get_page_hierarchy** - Page hierarchy for navigation context
+3. **confluence_get_page_comments** - All comments and team discussions
+4. **confluence_get_recent_updates** - Recent content updates across spaces
+5. **confluence_analyze_page_links** - Page link analysis (incoming/outgoing relationships)
+6. **confluence_get_page_metrics** - Engagement metrics (views, likes, shares)
+
+#### Phase 2: Intelligence Tools (6)
+7. **confluence_create_documentation** - AI-powered documentation generation with best practices
+8. **confluence_improve_content** - AI content analysis and improvement suggestions
+9. **confluence_generate_page_summary** - Automatic page summarization
+10. **confluence_suggest_related_pages** - Find related content for better navigation
+11. **confluence_analyze_documentation_gaps** - Identify missing documentation
+12. **confluence_standardize_formatting** - Automated formatting standardization
+
+#### Phase 3: Optimization Tools (4)
+13. **confluence_bulk_update_pages** - Bulk operations on multiple pages
+14. **confluence_create_space_report** - Comprehensive space analytics and health reports
+15. **confluence_find_duplicate_content** - Detect duplicate or similar pages
+16. **confluence_archive_old_content** - Archive outdated content automatically
+
+#### Original Confluence Tools (8)
+17. **confluence_create_page** - Create new pages
+18. **confluence_update_page** - Update existing pages
+19. **confluence_get_page** - Get page details
+20. **confluence_search_content** - Search across spaces
+21. **confluence_add_comment** - Add comments to pages
+22. **confluence_get_space** - Get space information
+23. **confluence_create_space** - Create new spaces
+24. **confluence_manage_attachments** - Handle page attachments
+
+**Example Usage:**
+```javascript
+// AI identifies documentation gaps in your space
+await confluence_analyze_documentation_gaps({
+  space_key: "DEV",
+  check_areas: ["API", "Architecture", "Deployment"]
+});
+// Returns: "Missing: API authentication guide, Database schema docs"
+
+// AI generates comprehensive documentation
+await confluence_create_documentation({
+  space_key: "DEV",
+  title: "REST API Authentication Guide",
+  topic: "OAuth 2.0 implementation for our REST API",
+  include_code_examples: true
+});
+// Creates complete page with structure, examples, and best practices
+
+// AI improves existing content
+await confluence_improve_content({
+  page_id: "12345",
+  aspects: ["clarity", "structure", "completeness"]
+});
+// Returns suggestions: "Add table of contents, clarify step 3, add troubleshooting section"
+```
 
 ## Usage
 
