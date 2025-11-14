@@ -17,12 +17,23 @@ export const toolDefinition: MCPToolDefinition = {
   name: 'snow_update_set_manage',
   description: `Unified tool for Update Set management (create, switch, complete, export, preview, add_artifact)
 
-⚠️ IMPORTANT: OAuth Context
-- snow-flow uses OAuth service account authentication
-- Update Sets are created and tracked by the service account
-- Setting an Update Set as "current" applies to the SERVICE ACCOUNT, not your UI user
-- Changes are automatically captured in the Update Set regardless of UI state
-- To see it as current in your ServiceNow UI, provide your ServiceNow username`,
+⚠️ CRITICAL: Update Set Tracking & OAuth Context
+
+HOW TRACKING WORKS:
+- Update Sets MUST be "current" for the user making changes (via API = OAuth service account)
+- snow-flow uses OAuth service account → Update Set must be current for SERVICE ACCOUNT
+- auto_switch=true (DEFAULT) → Changes ARE tracked automatically ✅
+- auto_switch=false → Changes are NOT tracked ❌
+
+UI VISIBILITY:
+- Update Set current for service account ≠ visible in YOUR UI
+- To see it as current in YOUR ServiceNow UI, provide servicenow_username parameter
+- This is OPTIONAL and only affects UI visibility, NOT tracking
+
+RECOMMENDED USAGE:
+- Always use auto_switch=true (default) for development work
+- Add servicenow_username if you want to see it in your UI
+- Only use auto_switch=false for non-development operations`,
   // Metadata for tool discovery (not sent to LLM)
   category: 'development',
   subcategory: 'update-sets',
@@ -66,12 +77,12 @@ export const toolDefinition: MCPToolDefinition = {
       },
       servicenow_username: {
         type: 'string',
-        description: '[create/switch] Optional: ServiceNow username to set Update Set as current for (e.g., "john.doe"). If not provided, Update Set is set as current for the OAuth service account only.'
+        description: '[create/switch] Optional: ServiceNow username to ALSO set Update Set as current for (e.g., "john.doe"). This makes the Update Set visible as current in YOUR ServiceNow UI. The Update Set is ALWAYS set as current for the OAuth service account to enable change tracking.'
       },
       auto_switch: {
         type: 'boolean',
-        description: '[create] Automatically switch to created Update Set for the service account (default: false). Set to true only if you want the service account to track changes.',
-        default: false
+        description: '[create] Automatically switch to created Update Set for the service account (default: true). MUST be true for automatic change tracking. Only set to false if you are NOT making development changes.',
+        default: true
       },
       // COMPLETE parameters
       notes: {
@@ -140,7 +151,7 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
     description,
     user_story,
     release_date,
-    auto_switch = false,
+    auto_switch = true,  // Default TRUE for automatic change tracking!
     servicenow_username
   } = args;
 
@@ -166,35 +177,29 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
     switched: false,
     switched_for_user: null as string | null,
     switched_for_service_account: false,
-    message: 'Update Set created but NOT set as current (auto_switch=false)'
+    message: 'Update Set created but NOT set as current (auto_switch=false) - changes will NOT be tracked!'
   };
 
-  // Only attempt switching if auto_switch OR servicenow_username provided
-  if (auto_switch || servicenow_username) {
+  // Auto-switch for service account (REQUIRED for change tracking!)
+  if (auto_switch) {
     try {
-      // If specific username provided, switch for that user
+      // ALWAYS switch for service account first (enables change tracking)
+      await setUpdateSetForServiceAccount(client, updateSet.sys_id);
+      switchResult.switched = true;
+      switchResult.switched_for_service_account = true;
+      switchResult.message = 'Update Set set as current for OAuth service account (changes will be tracked)';
+
+      // If specific username provided, ALSO switch for that user (UI visibility)
       if (servicenow_username) {
         await setUpdateSetForUser(client, updateSet.sys_id, servicenow_username);
-        switchResult.switched = true;
         switchResult.switched_for_user = servicenow_username;
-        switchResult.message = `Update Set set as current for ServiceNow user: ${servicenow_username}`;
-      }
-
-      // If auto_switch enabled, also switch for service account
-      if (auto_switch) {
-        await setUpdateSetForServiceAccount(client, updateSet.sys_id);
-        switchResult.switched = true;
-        switchResult.switched_for_service_account = true;
-
-        if (servicenow_username) {
-          switchResult.message = `Update Set set as current for BOTH service account AND user: ${servicenow_username}`;
-        } else {
-          switchResult.message = 'Update Set set as current for OAuth service account only (not visible in your UI)';
-        }
+        switchResult.message = `Update Set set as current for BOTH service account (tracking) AND user: ${servicenow_username} (UI visibility)`;
+      } else {
+        switchResult.message += ' (not visible in your UI - provide servicenow_username to see it)';
       }
     } catch (switchError: any) {
       console.error('Failed to switch update set:', switchError.message);
-      switchResult.message = `Update Set created but switching failed: ${switchError.message}`;
+      switchResult.message = `⚠️ Update Set created but switching failed: ${switchError.message}. Changes may NOT be tracked!`;
     }
   }
 

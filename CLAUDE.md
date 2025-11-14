@@ -207,13 +207,16 @@ function test(p) {
 - Automatically captures ALL artifact changes when active
 - Required for moving changes between instances (Dev → Test → Prod)
 
-**⚠️ CRITICAL: OAuth Context & Update Set Visibility**
+**⚠️ CRITICAL: OAuth Context & Update Set Tracking**
 
 **snow-flow uses OAuth service account authentication:**
 - All API calls run as an OAuth **service account**, not your UI user
-- Update Sets are created and tracked by this service account
-- Setting an Update Set as "current" affects the **SERVICE ACCOUNT context**
-- Changes are **automatically captured** regardless of what's "current" in your UI
+- Update Sets MUST be "current" for the user making changes
+- For API changes: Update Set must be current for the **SERVICE ACCOUNT**
+- **auto_switch=true (DEFAULT)** → Update Set is set as current for service account
+- **This enables automatic change tracking** ✅
+
+**IMPORTANT:** If auto_switch=false, changes will NOT be tracked!
 
 **Understanding the Two Contexts:**
 
@@ -234,18 +237,30 @@ function test(p) {
 
 **Key Points:**
 - ✅ **Update Sets ARE created** - they exist in ServiceNow
-- ✅ **Changes ARE tracked** - all snow-flow artifacts go into the Update Set
-- ❌ **NOT visible in YOUR UI** - unless you explicitly set it for your username
+- ✅ **auto_switch=true (DEFAULT)** - Update Set is set as current for service account
+- ✅ **Changes ARE tracked** - all snow-flow artifacts go into the Update Set automatically
+- ❌ **NOT visible in YOUR UI** - unless you provide servicenow_username parameter
 - ✅ **Deployment still works** - Update Set can be exported/imported normally
+- ⚠️ **auto_switch=false** - Changes will NOT be tracked (use only for non-development tasks)
 
-**To see Update Set as "current" in YOUR ServiceNow UI:**
+**To see Update Set as "current" in YOUR ServiceNow UI (optional):**
 
 ```javascript
+// Standard usage - changes ARE tracked, but NOT visible in your UI
+await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: My Feature",
+  description: "Development work"
+  // auto_switch defaults to true → tracking enabled ✅
+});
+
+// To ALSO see it in your UI - add servicenow_username
 await snow_update_set_manage({
   action: 'create',
   name: "Feature: My Feature",
   description: "Development work",
-  servicenow_username: 'john.doe'  // ← YOUR ServiceNow username
+  servicenow_username: 'john.doe'  // ← Makes it visible in YOUR UI too
+  // auto_switch still true → tracking enabled ✅
 });
 ```
 
@@ -258,13 +273,14 @@ Every development task MUST follow this workflow:
 const updateSet = await snow_update_set_manage({
   action: 'create',
   name: "Feature: [Descriptive Name]",
-  description: "Complete description of what and why",
-  // OPTIONAL: Add your username to see it as current in UI
-  servicenow_username: 'your.username'  // ← Only needed if you want UI visibility
+  description: "Complete description of what and why"
+  // auto_switch defaults to true → changes will be tracked ✅
+  // OPTIONAL: Add servicenow_username to see it in your UI
+  // servicenow_username: 'your.username'
 });
 
-// STEP 2: VERIFY IT'S CREATED (it exists even if not visible in your UI)
-// Changes will be tracked automatically by the service account
+// STEP 2: UPDATE SET IS NOW ACTIVE FOR SERVICE ACCOUNT
+// Changes will be automatically tracked in this Update Set
 
 // STEP 3: NOW DEVELOP (all changes auto-tracked in Update Set)
 await snow_deploy({
@@ -287,17 +303,20 @@ await snow_update_set_manage({
 ```
 
 **Why This Matters:**
-- Without an active Update Set, changes are NOT tracked
+- Without an active Update Set (auto_switch=true), changes are NOT tracked
 - Untracked changes = Cannot deploy to other instances
-- Users will lose work if you skip this step
-- OAuth context means changes may not be visible in your UI without servicenow_username
+- Users will lose work if you skip this step or use auto_switch=false
+- auto_switch=true (DEFAULT) ensures automatic tracking for service account
+- servicenow_username is OPTIONAL and only affects UI visibility, NOT tracking
 
 **Update Set Best Practices:**
 - **ONE feature = ONE Update Set** (clear boundaries)
 - **Descriptive names**: "Feature: Incident Auto-Assignment" NOT "Changes" or "Updates"
 - **Complete descriptions**: What, why, which components affected
 - **Complete when done**: Mark as 'complete' when feature is finished
-- **Use servicenow_username** if user wants to see Update Set as current in their UI
+- **Keep auto_switch=true** (default) for development - REQUIRED for tracking
+- **Use servicenow_username** (optional) if user wants to see Update Set in their UI
+- **Only use auto_switch=false** for queries/analysis - NOT for development
 
 **3. Widget Coherence (HTML ↔ Client ↔ Server)**
 
