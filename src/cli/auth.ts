@@ -302,9 +302,193 @@ async function enterpriseLicenseFlow(): Promise<void> {
     prompts.log.info('Enterprise tools are now available in SnowCode CLI');
 
     authLogger.info('Enterprise MCP server configuration completed');
+
+    // Update documentation with enterprise features
+    await updateDocumentationWithEnterprise();
   } catch (error: any) {
     prompts.log.error(`Enterprise configuration failed: ${error.message}`);
     authLogger.error(`Enterprise configuration error: ${error.message}`);
+  }
+}
+
+/**
+ * Update project documentation (CLAUDE.md and AGENTS.md) with enterprise server information
+ * Only adds the enterprise section if it doesn't already exist
+ */
+async function updateDocumentationWithEnterprise(): Promise<void> {
+  try {
+    const projectRoot = process.cwd();
+    const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
+    const agentsMdPath = path.join(projectRoot, 'AGENTS.md');
+
+    const enterpriseDocSection = `
+## 🚀 Enterprise Features (Snow-Flow Enterprise License)
+
+### Enterprise MCP Server
+
+The \`snow-flow-enterprise\` MCP server provides integrations with external enterprise tools:
+
+**Available Integrations:**
+- **Jira**: Search issues, create/update issues, link to ServiceNow incidents, manage workflows
+- **Azure DevOps**: Work items, repositories, pipeline integration, build management
+- **Confluence**: Search pages, create/update documentation, manage spaces
+
+**Configuration:**
+The enterprise server is automatically configured when you complete \`snow-flow auth login\` with a valid enterprise license.
+
+**Enterprise Tools:**
+
+#### Jira Integration
+\`\`\`javascript
+// Search Jira issues
+const issues = await jira_search_issues({
+  jql: "project = PROJ AND status = 'In Progress'",
+  maxResults: 50
+});
+
+// Create Jira issue
+const newIssue = await jira_create_issue({
+  project: "PROJ",
+  summary: "Integration with ServiceNow incident INC001234",
+  description: "Auto-created from ServiceNow",
+  issueType: "Task"
+});
+
+// Link to ServiceNow incident
+await jira_link_servicenow({
+  jiraKey: "PROJ-123",
+  incidentNumber: "INC001234",
+  linkType: "relates to"
+});
+\`\`\`
+
+#### Azure DevOps Integration
+\`\`\`javascript
+// Search work items
+const workItems = await azure_search_work_items({
+  project: "MyProject",
+  wiql: "SELECT [System.Id] FROM WorkItems WHERE [System.State] = 'Active'"
+});
+
+// Create work item
+const newWorkItem = await azure_create_work_item({
+  project: "MyProject",
+  type: "Bug",
+  title: "Issue from ServiceNow INC001234",
+  description: "Auto-created from ServiceNow incident"
+});
+
+// Trigger pipeline
+await azure_trigger_pipeline({
+  project: "MyProject",
+  pipelineId: 123,
+  branch: "main"
+});
+\`\`\`
+
+#### Confluence Integration
+\`\`\`javascript
+// Search Confluence pages
+const pages = await confluence_search({
+  cql: "space = DOCS AND type = page AND title ~ 'ServiceNow'",
+  limit: 20
+});
+
+// Create documentation page
+const newPage = await confluence_create_page({
+  space: "DOCS",
+  title: "ServiceNow Integration Guide",
+  content: "<h1>Integration Documentation</h1><p>...</p>",
+  parentId: "123456"
+});
+
+// Update existing page
+await confluence_update_page({
+  pageId: "789012",
+  title: "Updated Integration Guide",
+  content: "<h1>Updated Content</h1>",
+  version: 2
+});
+\`\`\`
+
+**Usage Pattern:**
+1. Complete \`snow-flow auth login\` with enterprise license
+2. Configure Jira/Azure DevOps/Confluence credentials (local or server-side)
+3. Enterprise tools are automatically available in your AI agent
+4. Use tools directly - no additional setup required
+
+**Benefits:**
+- ✅ Seamless integration between ServiceNow and enterprise tools
+- ✅ Automatic bi-directional sync (incidents ↔ Jira issues, changes ↔ Azure work items)
+- ✅ Documentation auto-generation (ServiceNow → Confluence)
+- ✅ Single source of truth across all enterprise systems
+`;
+
+    // Update CLAUDE.md if it exists and doesn't already have enterprise section
+    try {
+      await fs.access(claudeMdPath);
+      const claudeContent = await fs.readFile(claudeMdPath, 'utf-8');
+
+      if (!claudeContent.includes('## 🚀 Enterprise Features')) {
+        // Find the best insertion point (before "## Conclusion" or at the end)
+        let insertionPoint = claudeContent.lastIndexOf('## Conclusion');
+        if (insertionPoint === -1) {
+          insertionPoint = claudeContent.length;
+        }
+
+        const updatedContent =
+          claudeContent.slice(0, insertionPoint) +
+          enterpriseDocSection +
+          '\n\n' +
+          claudeContent.slice(insertionPoint);
+
+        await fs.writeFile(claudeMdPath, updatedContent, 'utf-8');
+        authLogger.info('✅ Updated CLAUDE.md with enterprise features documentation');
+      } else {
+        authLogger.debug('CLAUDE.md already contains enterprise features section');
+      }
+    } catch (err: any) {
+      if (err.code !== 'ENOENT') {
+        authLogger.debug(`Could not update CLAUDE.md: ${err.message}`);
+      }
+    }
+
+    // Update AGENTS.md if it exists and doesn't already have enterprise section
+    try {
+      await fs.access(agentsMdPath);
+      const agentsContent = await fs.readFile(agentsMdPath, 'utf-8');
+
+      if (!agentsContent.includes('## 🚀 Enterprise Features')) {
+        // Find the best insertion point (before "## Conclusion" or at the end)
+        let insertionPoint = agentsContent.lastIndexOf('## Conclusion');
+        if (insertionPoint === -1) {
+          insertionPoint = agentsContent.lastIndexOf('---');
+          if (insertionPoint === -1) {
+            insertionPoint = agentsContent.length;
+          }
+        }
+
+        const updatedContent =
+          agentsContent.slice(0, insertionPoint) +
+          enterpriseDocSection +
+          '\n\n' +
+          agentsContent.slice(insertionPoint);
+
+        await fs.writeFile(agentsMdPath, updatedContent, 'utf-8');
+        authLogger.info('✅ Updated AGENTS.md with enterprise features documentation');
+      } else {
+        authLogger.debug('AGENTS.md already contains enterprise features section');
+      }
+    } catch (err: any) {
+      if (err.code !== 'ENOENT') {
+        authLogger.debug(`Could not update AGENTS.md: ${err.message}`);
+      }
+    }
+
+    prompts.log.success('✅ Documentation updated with enterprise features');
+  } catch (error: any) {
+    authLogger.warn(`Failed to update documentation: ${error.message}`);
+    // Don't throw - this is not critical
   }
 }
 
