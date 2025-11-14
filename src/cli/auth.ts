@@ -734,9 +734,7 @@ export function registerAuthCommands(program: Command) {
           authLogger.debug('Using global SnowCode installation');
         }
 
-        prompts.log.message('');
-        prompts.log.step('🚀 Starting authentication flow (powered by SnowCode)');
-        prompts.log.message('');
+        prompts.intro('🚀 Starting authentication flow (powered by SnowCode)');
 
         // Fix binary permissions before calling snow-code (critical for containers/codespaces)
         fixSnowCodeBinaryPermissions();
