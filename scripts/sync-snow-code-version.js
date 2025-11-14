@@ -24,6 +24,11 @@ async function syncSnowCodeVersion() {
     const packageJsonPath = path.join(__dirname, '..', 'package.json');
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 
+    // Ensure peerDependencies exists
+    if (!packageJson.peerDependencies) {
+      packageJson.peerDependencies = {};
+    }
+
     // Get current peer dependency version
     const currentVersion = packageJson.peerDependencies['@groeimetai/snow-code'];
 
