@@ -559,6 +559,6 @@
     ]
   },
   "peerDependencies": {
-    "@groeimetai/snow-code": "^1.0.48"
+    "@groeimetai/snow-code": "*"
   }
 }
