@@ -11,14 +11,7 @@ const path = require('path');
 
 async function syncSnowCodeVersion() {
   try {
-    console.log('🔍 Fetching latest @groeimetai/snow-code version from npm...');
-
-    // Fetch latest version from npm registry
-    const latestVersion = execSync('npm view @groeimetai/snow-code version', {
-      encoding: 'utf8'
-    }).trim();
-
-    console.log(`✅ Latest version: ${latestVersion}`);
+    console.log('🔍 Syncing @groeimetai/snow-code peerDependency to wildcard...');
 
     // Read current package.json
     const packageJsonPath = path.join(__dirname, '..', 'package.json');
@@ -32,13 +25,13 @@ async function syncSnowCodeVersion() {
     // Get current peer dependency version
     const currentVersion = packageJson.peerDependencies['@groeimetai/snow-code'];
 
-    if (currentVersion === `^${latestVersion}`) {
-      console.log(`✓ Already up to date: ^${latestVersion}`);
-      return { updated: false, version: latestVersion };
+    if (currentVersion === '*') {
+      console.log(`✓ Already up to date: *`);
+      return { updated: false };
     }
 
-    // Update peerDependency to latest
-    packageJson.peerDependencies['@groeimetai/snow-code'] = `^${latestVersion}`;
+    // Update peerDependency to wildcard (matches dependencies field)
+    packageJson.peerDependencies['@groeimetai/snow-code'] = '*';
 
     // Write back to package.json
     fs.writeFileSync(
@@ -47,7 +40,7 @@ async function syncSnowCodeVersion() {
       'utf-8'
     );
 
-    console.log(`✅ Updated peerDependency: ${currentVersion} → ^${latestVersion}`);
+    console.log(`✅ Updated peerDependency: ${currentVersion} → *`);
 
     // Stage the change for git
     try {
@@ -57,10 +50,10 @@ async function syncSnowCodeVersion() {
       // Git add might fail if not in a git repo, that's ok
     }
 
-    return { updated: true, version: latestVersion };
+    return { updated: true };
 
   } catch (error) {
-    console.error('❌ Failed to sync @groeimetai/snow-code version:', error.message);
+    console.error('❌ Failed to sync @groeimetai/snow-code peerDependency:', error.message);
     console.error('   Continuing with current version...');
     return { updated: false, error: error.message };
   }
@@ -70,7 +63,7 @@ async function syncSnowCodeVersion() {
 if (require.main === module) {
   syncSnowCodeVersion().then(result => {
     if (result.updated) {
-      console.log('\n🎉 Ready to publish with latest @groeimetai/snow-code dependency!');
+      console.log('\n🎉 Ready to publish with wildcard @groeimetai/snow-code dependency!');
     } else if (result.error) {
       console.log('\n⚠️  Could not auto-sync, but continuing...');
     }
