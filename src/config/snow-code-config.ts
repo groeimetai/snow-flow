@@ -122,14 +122,23 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     // Write to .mcp.json in current working directory (where snow-code is run)
     const mcpConfigPath = path.join(process.cwd(), '.mcp.json');
 
-    // Read existing .mcp.json or create new one
-    let mcpConfig: any = { mcpServers: {} };
-    if (existsSync(mcpConfigPath)) {
-      const content = await fs.readFile(mcpConfigPath, 'utf-8');
-      mcpConfig = JSON.parse(content);
-      if (!mcpConfig.mcpServers) {
-        mcpConfig.mcpServers = {};
-      }
+    // 🔥 FIX: Check if .mcp.json exists - if not, user must run `snow-flow init` first!
+    if (!existsSync(mcpConfigPath)) {
+      logger.warn('.mcp.json not found in current directory');
+      logger.warn('Please run: snow-flow init');
+      logger.warn('Then run: snow-flow auth login again');
+      throw new Error(
+        '.mcp.json not found!\n' +
+        'Run "snow-flow init" first to initialize the project.\n' +
+        'Then run "snow-flow auth login" again to configure enterprise features.'
+      );
+    }
+
+    // Read existing .mcp.json
+    const content = await fs.readFile(mcpConfigPath, 'utf-8');
+    const mcpConfig = JSON.parse(content);
+    if (!mcpConfig.mcpServers) {
+      mcpConfig.mcpServers = {};
     }
 
     // Get the path to the enterprise proxy entry point

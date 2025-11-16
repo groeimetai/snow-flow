@@ -306,7 +306,16 @@ async function enterpriseLicenseFlow(): Promise<void> {
     // Update documentation with enterprise features
     await updateDocumentationWithEnterprise();
   } catch (error: any) {
-    prompts.log.error(`Enterprise configuration failed: ${error.message}`);
+    if (error.message.includes('.mcp.json not found')) {
+      prompts.log.error('⚠️  Project not initialized');
+      prompts.log.message('');
+      prompts.log.info('💡 Next steps:');
+      prompts.log.message('  1. Run: snow-flow init');
+      prompts.log.message('  2. Then run: snow-flow auth login (to configure enterprise)');
+      prompts.log.message('');
+    } else {
+      prompts.log.error(`Enterprise configuration failed: ${error.message}`);
+    }
     authLogger.error(`Enterprise configuration error: ${error.message}`);
   }
 }
