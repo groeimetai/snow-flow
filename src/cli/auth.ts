@@ -690,6 +690,55 @@ export function registerAuthCommands(program: Command) {
 
         // Update MCP server config with ServiceNow credentials
         await updateMCPServerConfig();
+
+        // 🔥 FIX: After snow-code auth login, check if enterprise was configured
+        // If so, we need to convert LOCAL config to REMOTE config with JWT
+        const authPath = path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json');
+        try {
+          const authJson = JSON.parse(await fs.readFile(authPath, 'utf-8'));
+          const enterpriseCreds = authJson['enterprise'];
+
+          if (enterpriseCreds && enterpriseCreds.type === 'enterprise') {
+            prompts.log.message('');
+            prompts.log.step('Converting enterprise configuration to JWT-based authentication...');
+
+            // Ask for role (if not already set)
+            const role = await prompts.select({
+              message: 'Select your role',
+              options: [
+                {
+                  value: 'developer',
+                  label: 'Developer (Full access)',
+                  hint: 'Full read/write access to all enterprise tools',
+                },
+                {
+                  value: 'stakeholder',
+                  label: 'Stakeholder (Read-only)',
+                  hint: 'Read-only access for managers and stakeholders',
+                },
+                {
+                  value: 'admin',
+                  label: 'Admin (Management)',
+                  hint: 'Administrative access for team leads',
+                },
+              ],
+              initialValue: 'developer',
+            }) as 'developer' | 'stakeholder' | 'admin';
+
+            // Convert to JWT-based config
+            await addEnterpriseMcpServer({
+              licenseKey: enterpriseCreds.licenseKey,
+              role: role,
+              serverUrl: enterpriseCreds.serverUrl || 'https://enterprise.snow-flow.dev',
+            });
+
+            prompts.log.success('✅ Enterprise configuration converted to JWT-based authentication');
+            prompts.log.info('Enterprise MCP tools are now available via remote SSE connection');
+          }
+        } catch (err: any) {
+          // Silently continue if auth.json doesn't exist or enterprise not configured
+          authLogger.debug(`Enterprise conversion check: ${err.message}`);
+        }
       } catch (error: any) {
         // Error details are already shown via stdio: 'inherit'
         // Only provide helpful context here
