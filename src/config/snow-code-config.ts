@@ -141,45 +141,19 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
       mcpConfig.mcpServers = {};
     }
 
-    // Get the path to the enterprise proxy entry point
-    const enterpriseProxyPath = getEnterpriseProxyPath();
+    // 🔥 FIX: Use REMOTE SSE connection instead of LOCAL proxy
+    // Local proxy with environment variables doesn't work reliably in MCP clients
+    // Remote SSE connection to enterprise server works correctly
+    const serverUrl = config.serverUrl || 'https://enterprise.snow-flow.dev';
 
-    // Build environment variables
-    const environment: Record<string, string> = {
-      SNOW_LICENSE_KEY: config.licenseKey,
-    };
-
-    // Add server URL if provided
-    if (config.serverUrl) {
-      environment.SNOW_ENTERPRISE_URL = config.serverUrl;
-    }
-
-    // Add credentials if provided (local mode)
-    if (config.credentials) {
-      if (config.credentials.jira) {
-        environment.JIRA_HOST = config.credentials.jira.host;
-        environment.JIRA_EMAIL = config.credentials.jira.email;
-        environment.JIRA_API_TOKEN = config.credentials.jira.apiToken;
-      }
-
-      if (config.credentials.azure) {
-        environment.AZURE_DEVOPS_ORG = config.credentials.azure.organization;
-        environment.AZURE_DEVOPS_PAT = config.credentials.azure.pat;
-      }
-
-      if (config.credentials.confluence) {
-        environment.CONFLUENCE_HOST = config.credentials.confluence.host;
-        environment.CONFLUENCE_EMAIL = config.credentials.confluence.email;
-        environment.CONFLUENCE_API_TOKEN = config.credentials.confluence.apiToken;
-      }
-    }
-
-    // Add or update enterprise MCP server in SnowCode format
+    // Add or update enterprise MCP server as REMOTE server (not local!)
     mcpConfig.mcpServers['snow-flow-enterprise'] = {
-      type: 'local',
-      command: ['node', enterpriseProxyPath],
-      description: 'Snow-Flow Enterprise - Jira (22 tools), Azure DevOps (26 tools), Confluence (24 tools) - AI-powered integrations',
-      environment,
+      type: 'remote',
+      url: `${serverUrl}/mcp/sse`,
+      description: 'Snow-Flow Enterprise - Jira (22 tools), Azure DevOps (26 tools), Confluence (24 tools) via remote SSE',
+      headers: {
+        Authorization: `Bearer ${config.licenseKey}`,
+      },
       enabled: true,
     };
 
