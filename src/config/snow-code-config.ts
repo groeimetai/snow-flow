@@ -127,9 +127,13 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
       mcpConfig.mcpServers = {};
     }
 
-    const serverUrl = config.serverUrl || 'https://enterprise.snow-flow.dev';
+    // 🔥 IMPORTANT: Auth and MCP servers are SEPARATE!
+    // - Auth/Portal: portal.snow-flow.dev (handles user auth, license validation, JWT generation)
+    // - MCP Server: enterprise.snow-flow.dev (handles MCP SSE connections with JWT)
+    const portalUrl = config.serverUrl || 'https://portal.snow-flow.dev';
+    const mcpServerUrl = 'https://enterprise.snow-flow.dev';
 
-    // 🔥 NEW: Generate JWT token via enterprise server
+    // 🔥 NEW: Generate JWT token via portal server
     logger.info('Generating enterprise JWT token...');
 
     // Generate machine ID (sha256 of hostname for seat tracking)
@@ -138,8 +142,8 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
       .update(os.hostname())
       .digest('hex');
 
-    // Call enterprise server to get JWT
-    const authResponse = await fetch(`${serverUrl}/api/auth/mcp/login`, {
+    // Call portal server to get JWT (NOT the MCP server!)
+    const authResponse = await fetch(`${portalUrl}/api/auth/mcp/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -175,9 +179,10 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     logger.info(`   Stakeholder seats: ${authData.customer?.stakeholderSeats || 'N/A'}`);
 
     // Add or update enterprise MCP server with JWT token
+    // MCP SSE connection goes to enterprise.snow-flow.dev (NOT portal!)
     mcpConfig.mcpServers['snow-flow-enterprise'] = {
       type: 'remote',
-      url: `${serverUrl}/mcp/sse`,
+      url: `${mcpServerUrl}/mcp/sse`,  // ← MCP server, not portal!
       description: `Snow-Flow Enterprise (${config.role}) - Jira (22), Azure DevOps (26), Confluence (24 tools)`,
       headers: {
         Authorization: `Bearer ${jwtToken}`,

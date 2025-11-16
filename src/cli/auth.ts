@@ -707,11 +707,11 @@ export function registerAuthCommands(program: Command) {
             authLogger.info(`Using role from snow-code auth: ${role}`);
 
             // Convert to JWT-based MCP config
-            // IMPORTANT: Use enterprise.snow-flow.dev (MCP server), NOT portal.snow-flow.dev (web portal)
+            // IMPORTANT: portal.snow-flow.dev handles BOTH portal AND MCP auth
             await addEnterpriseMcpServer({
               licenseKey: enterpriseCreds.licenseKey,
               role: role as 'developer' | 'stakeholder' | 'admin',
-              serverUrl: 'https://enterprise.snow-flow.dev',  // ← Always use MCP server URL, not portal URL
+              serverUrl: 'https://portal.snow-flow.dev',  // ← Portal server handles MCP auth
             });
 
             prompts.log.success('✅ Enterprise MCP server configured with JWT authentication');
