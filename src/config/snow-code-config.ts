@@ -119,60 +119,64 @@ export async function writeSnowCodeConfig(config: SnowCodeConfig): Promise<void>
  */
 export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promise<void> {
   try {
-    const snowCodeConfig = await readSnowCodeConfig();
+    // Write to .mcp.json in current working directory (where snow-code is run)
+    const mcpConfigPath = path.join(process.cwd(), '.mcp.json');
 
-    // Determine which key to use (mcpServers is preferred, fallback to servers)
-    const serversKey = snowCodeConfig.mcpServers !== undefined ? 'mcpServers' : 'servers';
-
-    if (!snowCodeConfig[serversKey]) {
-      snowCodeConfig[serversKey] = {};
+    // Read existing .mcp.json or create new one
+    let mcpConfig: any = { mcpServers: {} };
+    if (existsSync(mcpConfigPath)) {
+      const content = await fs.readFile(mcpConfigPath, 'utf-8');
+      mcpConfig = JSON.parse(content);
+      if (!mcpConfig.mcpServers) {
+        mcpConfig.mcpServers = {};
+      }
     }
 
     // Get the path to the enterprise proxy entry point
-    // This needs to be the compiled dist file
     const enterpriseProxyPath = getEnterpriseProxyPath();
 
     // Build environment variables
-    const env: Record<string, string> = {
+    const environment: Record<string, string> = {
       SNOW_LICENSE_KEY: config.licenseKey,
     };
 
     // Add server URL if provided
     if (config.serverUrl) {
-      env.SNOW_ENTERPRISE_URL = config.serverUrl;
+      environment.SNOW_ENTERPRISE_URL = config.serverUrl;
     }
 
     // Add credentials if provided (local mode)
     if (config.credentials) {
       if (config.credentials.jira) {
-        env.JIRA_HOST = config.credentials.jira.host;
-        env.JIRA_EMAIL = config.credentials.jira.email;
-        env.JIRA_API_TOKEN = config.credentials.jira.apiToken;
+        environment.JIRA_HOST = config.credentials.jira.host;
+        environment.JIRA_EMAIL = config.credentials.jira.email;
+        environment.JIRA_API_TOKEN = config.credentials.jira.apiToken;
       }
 
       if (config.credentials.azure) {
-        env.AZURE_DEVOPS_ORG = config.credentials.azure.organization;
-        env.AZURE_DEVOPS_PAT = config.credentials.azure.pat;
+        environment.AZURE_DEVOPS_ORG = config.credentials.azure.organization;
+        environment.AZURE_DEVOPS_PAT = config.credentials.azure.pat;
       }
 
       if (config.credentials.confluence) {
-        env.CONFLUENCE_HOST = config.credentials.confluence.host;
-        env.CONFLUENCE_EMAIL = config.credentials.confluence.email;
-        env.CONFLUENCE_API_TOKEN = config.credentials.confluence.apiToken;
+        environment.CONFLUENCE_HOST = config.credentials.confluence.host;
+        environment.CONFLUENCE_EMAIL = config.credentials.confluence.email;
+        environment.CONFLUENCE_API_TOKEN = config.credentials.confluence.apiToken;
       }
     }
 
-    // Add or update enterprise MCP server
-    snowCodeConfig[serversKey]!['snow-flow-enterprise'] = {
-      command: 'node',
-      args: [enterpriseProxyPath],
-      env,
+    // Add or update enterprise MCP server in SnowCode format
+    mcpConfig.mcpServers['snow-flow-enterprise'] = {
+      type: 'local',
+      command: ['node', enterpriseProxyPath],
+      description: 'Snow-Flow Enterprise - Jira (22 tools), Azure DevOps (26 tools), Confluence (24 tools) - AI-powered integrations',
+      environment,
+      enabled: true,
     };
 
-    // Write updated configuration
-    await writeSnowCodeConfig(snowCodeConfig);
-
-    logger.info('Successfully added enterprise MCP server to SnowCode config');
+    // Write updated .mcp.json
+    await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), 'utf-8');
+    logger.info(`Successfully added enterprise MCP server to ${mcpConfigPath}`);
   } catch (error: any) {
     logger.error(`Failed to add enterprise MCP server: ${error.message}`);
     throw error;
@@ -184,26 +188,22 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
  */
 export async function removeEnterpriseMcpServer(): Promise<void> {
   try {
-    const snowCodeConfig = await readSnowCodeConfig();
+    const mcpConfigPath = path.join(process.cwd(), '.mcp.json');
 
-    // Check both possible keys
-    let removed = false;
-
-    if (snowCodeConfig.mcpServers?.['snow-flow-enterprise']) {
-      delete snowCodeConfig.mcpServers['snow-flow-enterprise'];
-      removed = true;
+    if (!existsSync(mcpConfigPath)) {
+      logger.debug('No .mcp.json file found');
+      return;
     }
 
-    if (snowCodeConfig.servers?.['snow-flow-enterprise']) {
-      delete snowCodeConfig.servers['snow-flow-enterprise'];
-      removed = true;
-    }
+    const content = await fs.readFile(mcpConfigPath, 'utf-8');
+    const mcpConfig = JSON.parse(content);
 
-    if (removed) {
-      await writeSnowCodeConfig(snowCodeConfig);
-      logger.info('Successfully removed enterprise MCP server from SnowCode config');
+    if (mcpConfig.mcpServers?.['snow-flow-enterprise']) {
+      delete mcpConfig.mcpServers['snow-flow-enterprise'];
+      await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), 'utf-8');
+      logger.info('Successfully removed enterprise MCP server from .mcp.json');
     } else {
-      logger.debug('Enterprise MCP server not found in config');
+      logger.debug('Enterprise MCP server not found in .mcp.json');
     }
   } catch (error: any) {
     logger.error(`Failed to remove enterprise MCP server: ${error.message}`);
@@ -216,12 +216,16 @@ export async function removeEnterpriseMcpServer(): Promise<void> {
  */
 export async function isEnterpriseMcpConfigured(): Promise<boolean> {
   try {
-    const snowCodeConfig = await readSnowCodeConfig();
+    const mcpConfigPath = path.join(process.cwd(), '.mcp.json');
 
-    return !!(
-      snowCodeConfig.mcpServers?.['snow-flow-enterprise'] ||
-      snowCodeConfig.servers?.['snow-flow-enterprise']
-    );
+    if (!existsSync(mcpConfigPath)) {
+      return false;
+    }
+
+    const content = await fs.readFile(mcpConfigPath, 'utf-8');
+    const mcpConfig = JSON.parse(content);
+
+    return !!mcpConfig.mcpServers?.['snow-flow-enterprise'];
   } catch (error) {
     return false;
   }
@@ -229,11 +233,26 @@ export async function isEnterpriseMcpConfigured(): Promise<boolean> {
 
 /**
  * Get the path to the enterprise proxy entry point
- * Tries to find the compiled dist file, falls back to source if in development
+ * Returns absolute path to the installed snow-flow package
  */
 function getEnterpriseProxyPath(): string {
-  // First try to find in node_modules (installed package)
-  const nodeModulesPath = path.join(
+  const { execSync } = require('child_process');
+
+  try {
+    // Try to find the installed snow-flow package using npm
+    const npmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim();
+    const globalPath = path.join(npmRoot, 'snow-flow', 'dist', 'mcp', 'enterprise-proxy', 'index.js');
+
+    if (existsSync(globalPath)) {
+      logger.debug(`Using enterprise proxy from global npm: ${globalPath}`);
+      return globalPath;
+    }
+  } catch (error) {
+    // Global npm root failed, continue to other options
+  }
+
+  // Try local node_modules (project directory)
+  const localPath = path.join(
     process.cwd(),
     'node_modules',
     'snow-flow',
@@ -243,30 +262,12 @@ function getEnterpriseProxyPath(): string {
     'index.js'
   );
 
-  if (existsSync(nodeModulesPath)) {
-    logger.debug('Using enterprise proxy from node_modules');
-    return nodeModulesPath;
+  if (existsSync(localPath)) {
+    logger.debug(`Using enterprise proxy from local node_modules: ${localPath}`);
+    return localPath;
   }
 
-  // Try global installation
-  const globalNodeModulesPath = path.join(
-    os.homedir(),
-    '.npm',
-    'lib',
-    'node_modules',
-    'snow-flow',
-    'dist',
-    'mcp',
-    'enterprise-proxy',
-    'index.js'
-  );
-
-  if (existsSync(globalNodeModulesPath)) {
-    logger.debug('Using enterprise proxy from global installation');
-    return globalNodeModulesPath;
-  }
-
-  // Fallback to development path (when running from source)
+  // Try development path (when running from source)
   const devPath = path.join(
     __dirname,
     '..',
@@ -278,31 +279,46 @@ function getEnterpriseProxyPath(): string {
   );
 
   if (existsSync(devPath)) {
-    logger.debug('Using enterprise proxy from development build');
-    return devPath;
+    const absoluteDevPath = path.resolve(devPath);
+    logger.debug(`Using enterprise proxy from development: ${absoluteDevPath}`);
+    return absoluteDevPath;
   }
 
-  // Last resort - relative to current file location
-  logger.warn('Enterprise proxy not found in standard locations, using relative path');
-  return path.join(__dirname, '..', '..', 'dist', 'mcp', 'enterprise-proxy', 'index.js');
+  // Last resort - try to use require.resolve
+  try {
+    const resolvedPath = require.resolve('snow-flow/dist/mcp/enterprise-proxy/index.js');
+    logger.debug(`Using enterprise proxy from require.resolve: ${resolvedPath}`);
+    return resolvedPath;
+  } catch (error) {
+    // Could not resolve
+  }
+
+  // Fallback - return relative path and hope it works
+  logger.warn('Enterprise proxy not found in standard locations, using fallback path');
+  return path.resolve(__dirname, '..', '..', 'dist', 'mcp', 'enterprise-proxy', 'index.js');
 }
 
 /**
- * Get enterprise MCP server configuration from SnowCode config
+ * Get enterprise MCP server configuration from .mcp.json
  */
-export async function getEnterpriseMcpConfig(): Promise<SnowCodeMcpServer | null> {
+export async function getEnterpriseMcpConfig(): Promise<any | null> {
   try {
-    const snowCodeConfig = await readSnowCodeConfig();
+    const mcpConfigPath = path.join(process.cwd(), '.mcp.json');
 
-    const server =
-      snowCodeConfig.mcpServers?.['snow-flow-enterprise'] ||
-      snowCodeConfig.servers?.['snow-flow-enterprise'] ||
-      null;
+    if (!existsSync(mcpConfigPath)) {
+      logger.debug('No .mcp.json file found');
+      return null;
+    }
+
+    const content = await fs.readFile(mcpConfigPath, 'utf-8');
+    const mcpConfig = JSON.parse(content);
+
+    const server = mcpConfig.mcpServers?.['snow-flow-enterprise'] || null;
 
     if (server) {
-      logger.debug('Found enterprise MCP server configuration');
+      logger.debug('Found enterprise MCP server configuration in .mcp.json');
     } else {
-      logger.debug('Enterprise MCP server not configured');
+      logger.debug('Enterprise MCP server not configured in .mcp.json');
     }
 
     return server;
