@@ -700,40 +700,22 @@ export function registerAuthCommands(program: Command) {
 
           if (enterpriseCreds && enterpriseCreds.type === 'enterprise') {
             prompts.log.message('');
-            prompts.log.step('Converting enterprise configuration to JWT-based authentication...');
+            prompts.log.step('Converting enterprise configuration to MCP-compatible format...');
 
-            // Ask for role (if not already set)
-            const role = await prompts.select({
-              message: 'Select your role',
-              options: [
-                {
-                  value: 'developer',
-                  label: 'Developer (Full access)',
-                  hint: 'Full read/write access to all enterprise tools',
-                },
-                {
-                  value: 'stakeholder',
-                  label: 'Stakeholder (Read-only)',
-                  hint: 'Read-only access for managers and stakeholders',
-                },
-                {
-                  value: 'admin',
-                  label: 'Admin (Management)',
-                  hint: 'Administrative access for team leads',
-                },
-              ],
-              initialValue: 'developer',
-            }) as 'developer' | 'stakeholder' | 'admin';
+            // Use role from auth.json (already asked by snow-code)
+            const role = enterpriseCreds.role || 'developer';
+            authLogger.info(`Using role from snow-code auth: ${role}`);
 
-            // Convert to JWT-based config
+            // Convert to JWT-based MCP config
+            // IMPORTANT: Use enterprise.snow-flow.dev (MCP server), NOT portal.snow-flow.dev (web portal)
             await addEnterpriseMcpServer({
               licenseKey: enterpriseCreds.licenseKey,
-              role: role,
-              serverUrl: enterpriseCreds.serverUrl || 'https://enterprise.snow-flow.dev',
+              role: role as 'developer' | 'stakeholder' | 'admin',
+              serverUrl: 'https://enterprise.snow-flow.dev',  // ← Always use MCP server URL, not portal URL
             });
 
-            prompts.log.success('✅ Enterprise configuration converted to JWT-based authentication');
-            prompts.log.info('Enterprise MCP tools are now available via remote SSE connection');
+            prompts.log.success('✅ Enterprise MCP server configured with JWT authentication');
+            prompts.log.info('   Enterprise tools are now available via remote SSE connection');
           }
         } catch (err: any) {
           // Silently continue if auth.json doesn't exist or enterprise not configured
