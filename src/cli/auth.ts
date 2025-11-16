@@ -149,6 +149,42 @@ async function enterpriseLicenseFlow(): Promise<void> {
       return;
     }
 
+    // Ask for user role (required for seat management and JWT generation)
+    const role = await prompts.select({
+      message: 'Select your role',
+      options: [
+        {
+          value: 'developer',
+          label: 'Developer (Full access)',
+          hint: 'Full read/write access to all enterprise tools',
+        },
+        {
+          value: 'stakeholder',
+          label: 'Stakeholder (Read-only)',
+          hint: 'Read-only access for managers and stakeholders',
+        },
+        {
+          value: 'admin',
+          label: 'Admin (Management)',
+          hint: 'Administrative access for team leads',
+        },
+      ],
+      initialValue: 'developer',
+    });
+
+    if (prompts.isCancel(role)) {
+      authLogger.debug('Enterprise configuration cancelled by user');
+
+      // Restore original license key
+      if (originalLicenseKey) {
+        process.env.SNOW_LICENSE_KEY = originalLicenseKey;
+      } else {
+        delete process.env.SNOW_LICENSE_KEY;
+      }
+
+      return;
+    }
+
     // Ask about credential mode
     const credentialMode = await prompts.select({
       message: 'How would you like to provide enterprise credentials?',
@@ -156,16 +192,11 @@ async function enterpriseLicenseFlow(): Promise<void> {
         {
           value: 'server',
           label: 'Server-side (credentials stored encrypted on enterprise server)',
-          hint: 'Most secure, requires SSO configuration',
-        },
-        {
-          value: 'local',
-          label: 'Local (credentials from environment variables)',
-          hint: 'Simple setup, credentials stored locally',
+          hint: 'Recommended - most secure, requires portal configuration',
         },
         {
           value: 'skip',
-          label: 'Skip for now (configure later)',
+          label: 'Skip for now (configure credentials later in portal)',
         },
       ],
       initialValue: 'server',
@@ -186,115 +217,18 @@ async function enterpriseLicenseFlow(): Promise<void> {
 
     const enterpriseConfig: EnterpriseMcpConfig = {
       licenseKey,
+      role: role as 'developer' | 'stakeholder' | 'admin',
       serverUrl: validation.serverUrl,
     };
 
-    // If local mode, prompt for credentials
-    if (credentialMode === 'local') {
-      prompts.log.step('Configuring local credentials...');
-
-      // Jira credentials
-      const configureJira = await prompts.confirm({
-        message: 'Configure Jira integration?',
-        initialValue: false,
-      });
-
-      if (!prompts.isCancel(configureJira) && configureJira) {
-        const jiraHost = await prompts.text({
-          message: 'Jira Host:',
-          placeholder: 'https://company.atlassian.net',
-          validate: (value) => (value.startsWith('https://') ? undefined : 'Must start with https://'),
-        });
-
-        const jiraEmail = await prompts.text({
-          message: 'Jira Email:',
-          placeholder: 'user@company.com',
-        });
-
-        const jiraApiToken = await prompts.password({
-          message: 'Jira API Token:',
-        });
-
-        if (!prompts.isCancel(jiraHost) && !prompts.isCancel(jiraEmail) && !prompts.isCancel(jiraApiToken)) {
-          enterpriseConfig.credentials = {
-            ...enterpriseConfig.credentials,
-            jira: {
-              host: jiraHost,
-              email: jiraEmail,
-              apiToken: jiraApiToken,
-            },
-          };
-        }
-      }
-
-      // Azure DevOps credentials
-      const configureAzure = await prompts.confirm({
-        message: 'Configure Azure DevOps integration?',
-        initialValue: false,
-      });
-
-      if (!prompts.isCancel(configureAzure) && configureAzure) {
-        const azureOrg = await prompts.text({
-          message: 'Azure DevOps Organization:',
-          placeholder: 'mycompany',
-        });
-
-        const azurePat = await prompts.password({
-          message: 'Azure DevOps PAT:',
-        });
-
-        if (!prompts.isCancel(azureOrg) && !prompts.isCancel(azurePat)) {
-          enterpriseConfig.credentials = {
-            ...enterpriseConfig.credentials,
-            azure: {
-              organization: azureOrg,
-              pat: azurePat,
-            },
-          };
-        }
-      }
-
-      // Confluence credentials
-      const configureConfluence = await prompts.confirm({
-        message: 'Configure Confluence integration?',
-        initialValue: false,
-      });
-
-      if (!prompts.isCancel(configureConfluence) && configureConfluence) {
-        const confluenceHost = await prompts.text({
-          message: 'Confluence Host:',
-          placeholder: 'https://company.atlassian.net',
-          validate: (value) => (value.startsWith('https://') ? undefined : 'Must start with https://'),
-        });
-
-        const confluenceEmail = await prompts.text({
-          message: 'Confluence Email:',
-          placeholder: 'user@company.com',
-        });
-
-        const confluenceApiToken = await prompts.password({
-          message: 'Confluence API Token:',
-        });
-
-        if (
-          !prompts.isCancel(confluenceHost) &&
-          !prompts.isCancel(confluenceEmail) &&
-          !prompts.isCancel(confluenceApiToken)
-        ) {
-          enterpriseConfig.credentials = {
-            ...enterpriseConfig.credentials,
-            confluence: {
-              host: confluenceHost,
-              email: confluenceEmail,
-              apiToken: confluenceApiToken,
-            },
-          };
-        }
-      }
+    // Inform user about server-side credentials
+    if (credentialMode === 'server') {
+      prompts.log.info('💡 Credentials for Jira/Azure/Confluence are configured in the enterprise portal');
+      prompts.log.info('   Visit: https://enterprise.snow-flow.dev to configure integrations');
     }
 
-    // Add enterprise MCP server to SnowCode config
-    prompts.log.step('Configuring enterprise MCP server...');
+    // Add enterprise MCP server to SnowCode config (generates JWT)
+    prompts.log.step('Generating enterprise JWT token...');
 
     await addEnterpriseMcpServer(enterpriseConfig);
 

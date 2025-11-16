@@ -32,23 +32,9 @@ export interface SnowCodeConfig {
  */
 export interface EnterpriseMcpConfig {
   licenseKey: string;
+  role: 'developer' | 'stakeholder' | 'admin';
   serverUrl?: string;
-  credentials?: {
-    jira?: {
-      host: string;
-      email: string;
-      apiToken: string;
-    };
-    azure?: {
-      organization: string;
-      pat: string;
-    };
-    confluence?: {
-      host: string;
-      email: string;
-      apiToken: string;
-    };
-  };
+  // Credentials are now stored server-side only (not in local config)
 }
 
 /**
@@ -141,25 +127,67 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
       mcpConfig.mcpServers = {};
     }
 
-    // 🔥 FIX: Use REMOTE SSE connection instead of LOCAL proxy
-    // Local proxy with environment variables doesn't work reliably in MCP clients
-    // Remote SSE connection to enterprise server works correctly
     const serverUrl = config.serverUrl || 'https://enterprise.snow-flow.dev';
 
-    // Add or update enterprise MCP server as REMOTE server (not local!)
+    // 🔥 NEW: Generate JWT token via enterprise server
+    logger.info('Generating enterprise JWT token...');
+
+    // Generate machine ID (sha256 of hostname for seat tracking)
+    const machineId = require('crypto')
+      .createHash('sha256')
+      .update(os.hostname())
+      .digest('hex');
+
+    // Call enterprise server to get JWT
+    const authResponse = await fetch(`${serverUrl}/api/auth/mcp/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        licenseKey: config.licenseKey,
+        machineId: machineId,
+        role: config.role,
+      }),
+    });
+
+    if (!authResponse.ok) {
+      const errorData: any = await authResponse.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(
+        `Enterprise authentication failed: ${errorData.error || authResponse.statusText}\n` +
+        `Status: ${authResponse.status}`
+      );
+    }
+
+    const authData: any = await authResponse.json();
+
+    if (!authData.success || !authData.token) {
+      throw new Error(
+        `Enterprise authentication failed: ${authData.error || 'No token received'}`
+      );
+    }
+
+    const jwtToken = authData.token;
+
+    logger.info('✅ JWT token generated successfully');
+    logger.info(`   Role: ${config.role}`);
+    logger.info(`   Developer seats: ${authData.customer?.developerSeats || 'N/A'}`);
+    logger.info(`   Stakeholder seats: ${authData.customer?.stakeholderSeats || 'N/A'}`);
+
+    // Add or update enterprise MCP server with JWT token
     mcpConfig.mcpServers['snow-flow-enterprise'] = {
       type: 'remote',
       url: `${serverUrl}/mcp/sse`,
-      description: 'Snow-Flow Enterprise - Jira (22 tools), Azure DevOps (26 tools), Confluence (24 tools) via remote SSE',
+      description: `Snow-Flow Enterprise (${config.role}) - Jira (22), Azure DevOps (26), Confluence (24 tools)`,
       headers: {
-        Authorization: `Bearer ${config.licenseKey}`,
+        Authorization: `Bearer ${jwtToken}`,
       },
       enabled: true,
     };
 
     // Write updated .mcp.json
     await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), 'utf-8');
-    logger.info(`Successfully added enterprise MCP server to ${mcpConfigPath}`);
+    logger.info(`Successfully configured enterprise MCP server in ${mcpConfigPath}`);
   } catch (error: any) {
     logger.error(`Failed to add enterprise MCP server: ${error.message}`);
     throw error;
