@@ -193,6 +193,63 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     // Write updated .mcp.json
     await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), 'utf-8');
     logger.info(`Successfully configured enterprise MCP server in ${mcpConfigPath}`);
+
+    // 🔥 ALSO update .snow-code/config.json for snow-code CLI compatibility
+    const snowCodeConfigPath = path.join(process.cwd(), '.snow-code', 'config.json');
+    if (existsSync(snowCodeConfigPath)) {
+      try {
+        const snowCodeContent = await fs.readFile(snowCodeConfigPath, 'utf-8');
+        const snowCodeConfig = JSON.parse(snowCodeContent);
+
+        if (!snowCodeConfig.mcp) {
+          snowCodeConfig.mcp = {};
+        }
+
+        // Update enterprise server with REMOTE SSE config (not LOCAL proxy!)
+        snowCodeConfig.mcp['snow-flow-enterprise'] = {
+          type: 'remote',
+          url: `${mcpServerUrl}/mcp/sse`,
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+          enabled: true,
+        };
+
+        await fs.writeFile(snowCodeConfigPath, JSON.stringify(snowCodeConfig, null, 2), 'utf-8');
+        logger.info(`Successfully configured enterprise MCP server in ${snowCodeConfigPath}`);
+      } catch (err: any) {
+        logger.warn(`Could not update .snow-code/config.json: ${err.message}`);
+      }
+    }
+
+    // 🔥 ALSO update .claude/mcp-config.json for Claude Code compatibility
+    const claudeMcpConfigPath = path.join(process.cwd(), '.claude', 'mcp-config.json');
+    if (existsSync(claudeMcpConfigPath)) {
+      try {
+        const claudeContent = await fs.readFile(claudeMcpConfigPath, 'utf-8');
+        const claudeMcpConfig = JSON.parse(claudeContent);
+
+        if (!claudeMcpConfig.mcpServers) {
+          claudeMcpConfig.mcpServers = {};
+        }
+
+        // Update enterprise server with same config
+        claudeMcpConfig.mcpServers['snow-flow-enterprise'] = {
+          type: 'remote',
+          url: `${mcpServerUrl}/mcp/sse`,
+          description: `Snow-Flow Enterprise (${config.role}) - Jira (22), Azure DevOps (26), Confluence (24 tools)`,
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+          enabled: true,
+        };
+
+        await fs.writeFile(claudeMcpConfigPath, JSON.stringify(claudeMcpConfig, null, 2), 'utf-8');
+        logger.info(`Successfully configured enterprise MCP server in ${claudeMcpConfigPath}`);
+      } catch (err: any) {
+        logger.warn(`Could not update .claude/mcp-config.json: ${err.message}`);
+      }
+    }
   } catch (error: any) {
     logger.error(`Failed to add enterprise MCP server: ${error.message}`);
     throw error;
