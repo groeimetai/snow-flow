@@ -718,8 +718,22 @@ export function registerAuthCommands(program: Command) {
             prompts.log.info('   Enterprise tools are now available via LOCAL proxy connection');
           }
         } catch (err: any) {
-          // Silently continue if auth.json doesn't exist or enterprise not configured
-          authLogger.debug(`Enterprise conversion check: ${err.message}`);
+          // Show warning if enterprise configuration failed
+          if (err.message && err.message.includes('.mcp.json not found')) {
+            prompts.log.message('');
+            prompts.log.warn('⚠️  Enterprise MCP configuration skipped');
+            prompts.log.info('   Run "snow-flow init" first to create .mcp.json');
+            prompts.log.info('   Then run "snow-flow auth login" again to enable enterprise tools');
+          } else if (err.message && !err.message.includes('ENOENT')) {
+            // Only show error if it's not just "file doesn't exist"
+            prompts.log.message('');
+            prompts.log.warn('⚠️  Enterprise MCP configuration failed');
+            prompts.log.info(`   ${err.message}`);
+            authLogger.error(`Enterprise MCP configuration error: ${err.stack || err.message}`);
+          } else {
+            // Silently continue for expected cases (no auth.json, no enterprise creds)
+            authLogger.debug(`Enterprise conversion check: ${err.message}`);
+          }
         }
       } catch (error: any) {
         // Error details are already shown via stdio: 'inherit'
