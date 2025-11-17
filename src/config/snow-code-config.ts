@@ -178,14 +178,26 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     logger.info(`   Developer seats: ${authData.customer?.developerSeats || 'N/A'}`);
     logger.info(`   Stakeholder seats: ${authData.customer?.stakeholderSeats || 'N/A'}`);
 
-    // Add or update enterprise MCP server with JWT token
-    // MCP SSE connection goes to enterprise.snow-flow.dev (NOT portal!)
+    // 🔥 FIX: Use LOCAL proxy instead of REMOTE SSE
+    // The proxy runs locally via stdio and connects to enterprise.snow-flow.dev via HTTPS
+    // This keeps proprietary enterprise code private while enabling enterprise tools
+    const enterpriseProxyPath = path.join(
+      process.cwd(),
+      '..',
+      'snow-flow-enterprise',
+      'mcp-proxy',
+      'dist',
+      'enterprise-proxy.js'
+    );
+
+    // Add or update enterprise MCP server with LOCAL proxy configuration
     mcpConfig.mcpServers['snow-flow-enterprise'] = {
-      type: 'remote',
-      url: `${mcpServerUrl}/mcp/sse`,  // ← MCP server, not portal!
+      type: 'local',
+      command: ['node', enterpriseProxyPath],
       description: `Snow-Flow Enterprise (${config.role}) - Jira (22), Azure DevOps (26), Confluence (24 tools)`,
-      headers: {
-        Authorization: `Bearer ${jwtToken}`,
+      environment: {
+        SNOW_ENTERPRISE_URL: mcpServerUrl,
+        SNOW_LICENSE_KEY: jwtToken,
       },
       enabled: true,
     };
@@ -205,12 +217,13 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
           snowCodeConfig.mcp = {};
         }
 
-        // Update enterprise server with REMOTE SSE config (not LOCAL proxy!)
+        // Update enterprise server with LOCAL proxy config (same as .mcp.json)
         snowCodeConfig.mcp['snow-flow-enterprise'] = {
-          type: 'remote',
-          url: `${mcpServerUrl}/mcp/sse`,
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
+          type: 'local',
+          command: ['node', enterpriseProxyPath],
+          environment: {
+            SNOW_ENTERPRISE_URL: mcpServerUrl,
+            SNOW_LICENSE_KEY: jwtToken,
           },
           enabled: true,
         };
@@ -233,13 +246,14 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
           claudeMcpConfig.mcpServers = {};
         }
 
-        // Update enterprise server with same config
+        // Update enterprise server with LOCAL proxy config (same as .mcp.json)
         claudeMcpConfig.mcpServers['snow-flow-enterprise'] = {
-          type: 'remote',
-          url: `${mcpServerUrl}/mcp/sse`,
+          type: 'local',
+          command: ['node', enterpriseProxyPath],
           description: `Snow-Flow Enterprise (${config.role}) - Jira (22), Azure DevOps (26), Confluence (24 tools)`,
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
+          environment: {
+            SNOW_ENTERPRISE_URL: mcpServerUrl,
+            SNOW_LICENSE_KEY: jwtToken,
           },
           enabled: true,
         };

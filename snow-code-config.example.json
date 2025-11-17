@@ -23,6 +23,17 @@
         "SNOW_FLOW_ENV": "production"
       },
       "enabled": true
+    },
+    "snow-flow-enterprise": {
+      "type": "local",
+      "command": ["node", "../snow-flow-enterprise/mcp-proxy/dist/enterprise-proxy.js"],
+      "description": "Enterprise integrations - Jira, Azure DevOps, Confluence (local proxy to remote server)",
+      "environment": {
+        "SNOW_ENTERPRISE_URL": "https://enterprise.snow-flow.dev",
+        "SNOW_LICENSE_KEY": ""
+      },
+      "enabled": false,
+      "_comment": "Run 'snow-flow auth login' to configure and enable this server"
     }
   }
 }

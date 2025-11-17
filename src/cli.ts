@@ -2845,8 +2845,13 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   // Replace placeholders with ACTUAL values from .env (not ${...} syntax!)
   // This ensures SnowCode/Claude Code can use the MCP servers immediately
   const distPath = join(snowFlowRoot, 'dist');
+
+  // Determine enterprise proxy path (snow-flow-enterprise/mcp-proxy)
+  const enterpriseProxyPath = join(dirname(snowFlowRoot), 'snow-flow-enterprise', 'mcp-proxy');
+
   const mcpConfigContent = templateContent
     .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)
+    .replace(/{{ENTERPRISE_PROXY_PATH}}/g, enterpriseProxyPath)
     .replace(/{{SNOW_INSTANCE}}/g, getEnvValue('SNOW_INSTANCE'))
     .replace(/{{SNOW_CLIENT_ID}}/g, getEnvValue('SNOW_CLIENT_ID'))
     .replace(/{{SNOW_CLIENT_SECRET}}/g, getEnvValue('SNOW_CLIENT_SECRET'))
