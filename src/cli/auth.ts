@@ -715,7 +715,7 @@ export function registerAuthCommands(program: Command) {
             });
 
             prompts.log.success('✅ Enterprise MCP server configured with JWT authentication');
-            prompts.log.info('   Enterprise tools are now available via remote SSE connection');
+            prompts.log.info('   Enterprise tools are now available via LOCAL proxy connection');
           }
         } catch (err: any) {
           // Silently continue if auth.json doesn't exist or enterprise not configured
