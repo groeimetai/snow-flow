@@ -26,6 +26,10 @@ import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
 import { interceptSnowCodeOutput } from './utils/snowcode-output-interceptor.js';
 // Automatic snow-code update utility
 import { autoUpdateSnowCode } from './utils/auto-update-snow-code.js';
+// MCP configuration sync utility
+import { syncMcpConfigs } from './utils/sync-mcp-configs.js';
+// Enterprise proxy path resolution utility
+import { getEnterpriseProxyDirectory, isEnterpriseProxyAvailable } from './utils/find-enterprise-proxy.js';
 
 // Activate MCP guard ONLY for commands that actually use MCP servers
 // Explicitly exclude: init, version, help, auth, export, config commands
@@ -1658,6 +1662,17 @@ program
         mcpSpinner.stop('MCP servers verified');
       }
 
+      // 🔥 CRITICAL: Sync .mcp.json to .claude/mcp-config.json
+      // This ensures Claude Code can discover all MCP servers
+      try {
+        const syncSpinner = prompts.spinner();
+        syncSpinner.start('Syncing MCP configurations');
+        await syncMcpConfigs(targetDir);
+        syncSpinner.stop('MCP configurations synced');
+      } catch (syncErr: any) {
+        cliLogger.warn(`MCP config sync warning: ${syncErr.message}`);
+      }
+
       // Check and optionally install SnowCode locally
       await checkAndInstallSnowCode();
 
@@ -2846,8 +2861,14 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   // This ensures SnowCode/Claude Code can use the MCP servers immediately
   const distPath = join(snowFlowRoot, 'dist');
 
-  // Determine enterprise proxy path (snow-flow-enterprise/mcp-proxy)
-  const enterpriseProxyPath = join(dirname(snowFlowRoot), 'snow-flow-enterprise', 'mcp-proxy');
+  // 🔥 FIX: Determine enterprise proxy path DYNAMICALLY (not hardcoded!)
+  // This works for global install, development, and custom setups
+  const enterpriseProxyPath = getEnterpriseProxyDirectory();
+  const enterpriseAvailable = isEnterpriseProxyAvailable();
+
+  if (!enterpriseAvailable) {
+    cliLogger.debug('Enterprise proxy not found during init - will be configured on auth login');
+  }
 
   const mcpConfigContent = templateContent
     .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)

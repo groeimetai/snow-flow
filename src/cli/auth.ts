@@ -12,6 +12,7 @@ import {
   type EnterpriseMcpConfig,
 } from '../config/snow-code-config.js';
 import { validateLicenseKey } from '../mcp/enterprise-proxy/proxy.js';
+import { syncMcpConfigs } from '../utils/sync-mcp-configs.js';
 
 const authLogger = new Logger('auth');
 
@@ -716,6 +717,17 @@ export function registerAuthCommands(program: Command) {
 
             prompts.log.success('✅ Enterprise MCP server configured with JWT authentication');
             prompts.log.info('   Enterprise tools are now available via LOCAL proxy connection');
+
+            // 🔥 CRITICAL FIX: Sync .mcp.json to .claude/mcp-config.json
+            // This ensures Claude Code sees the enterprise server when running swarm commands
+            try {
+              prompts.log.step('Syncing MCP configurations for Claude Code...');
+              await syncMcpConfigs(process.cwd());
+              prompts.log.success('✅ MCP configurations synced - enterprise tools ready for swarm command');
+            } catch (syncErr: any) {
+              prompts.log.warn(`⚠️  MCP config sync warning: ${syncErr.message}`);
+              authLogger.warn(`MCP sync error: ${syncErr.message}`);
+            }
           }
         } catch (err: any) {
           // Show warning if enterprise configuration failed
@@ -734,6 +746,16 @@ export function registerAuthCommands(program: Command) {
             // Silently continue for expected cases (no auth.json, no enterprise creds)
             authLogger.debug(`Enterprise conversion check: ${err.message}`);
           }
+        }
+
+        // 🔥 ALWAYS sync MCP configs after auth login completes
+        // This ensures .claude/mcp-config.json is up-to-date even if enterprise wasn't configured
+        try {
+          authLogger.debug('Final MCP config sync after auth completion');
+          await syncMcpConfigs(process.cwd());
+        } catch (syncErr: any) {
+          // Silent - already logged above if enterprise was configured
+          authLogger.debug(`Final sync: ${syncErr.message}`);
         }
       } catch (error: any) {
         // Error details are already shown via stdio: 'inherit'

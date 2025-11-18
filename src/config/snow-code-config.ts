@@ -8,6 +8,7 @@ import os from 'os';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { Logger } from '../utils/logger.js';
+import { findEnterpriseProxyPath, getEnterpriseProxyNotFoundMessage } from '../utils/find-enterprise-proxy.js';
 
 const logger = new Logger('snowcode-config');
 
@@ -182,33 +183,15 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     // The proxy runs locally via stdio and connects to enterprise.snow-flow.dev via HTTPS
     // This keeps proprietary enterprise code private while enabling enterprise tools
 
-    // Try to find enterprise proxy in multiple locations
-    let enterpriseProxyPath = '';
-    const possiblePaths = [
-      // Development setup (snow-flow-enterprise next to current dir)
-      path.join(process.cwd(), '..', 'snow-flow-enterprise', 'mcp-proxy', 'dist', 'enterprise-proxy.js'),
-      // Global installation (same parent as snow-flow)
-      path.join(os.homedir(), 'Snow-Flow-dir', 'snow-flow-enterprise', 'mcp-proxy', 'dist', 'enterprise-proxy.js'),
-      // Check environment variable
-      process.env.SNOW_ENTERPRISE_PROXY_PATH,
-    ].filter(Boolean) as string[];
-
-    for (const testPath of possiblePaths) {
-      if (existsSync(testPath)) {
-        enterpriseProxyPath = testPath;
-        logger.info(`Found enterprise proxy at: ${enterpriseProxyPath}`);
-        break;
-      }
-    }
+    // 🚀 DYNAMIC PATH RESOLUTION - Works for ANY user setup!
+    const enterpriseProxyPath = findEnterpriseProxyPath();
 
     if (!enterpriseProxyPath) {
-      throw new Error(
-        'Enterprise proxy not found!\n' +
-        'Tried locations:\n' +
-        possiblePaths.map(p => `  - ${p}`).join('\n') + '\n\n' +
-        'Please set SNOW_ENTERPRISE_PROXY_PATH environment variable or ensure snow-flow-enterprise is installed.'
-      );
+      logger.warn('Enterprise proxy not found');
+      throw new Error(getEnterpriseProxyNotFoundMessage());
     }
+
+    logger.info(`✅ Found enterprise proxy at: ${enterpriseProxyPath}`);
 
     // Add or update enterprise MCP server with LOCAL proxy configuration
     mcpConfig.mcpServers['snow-flow-enterprise'] = {
