@@ -23,7 +23,7 @@
     },
     "snow-flow-enterprise": {
       "type": "local",
-      "command": ["node", "{{ENTERPRISE_PROXY_PATH}}/dist/enterprise-proxy.js"],
+      "command": ["node", "{{PROJECT_ROOT}}/dist/mcp/enterprise-proxy/server.js"],
       "description": "Enterprise integrations - Jira (22 tools), Azure DevOps (26 tools), Confluence (24 tools) - Local proxy to remote enterprise server",
       "environment": {
         "SNOW_ENTERPRISE_URL": "https://enterprise.snow-flow.dev",

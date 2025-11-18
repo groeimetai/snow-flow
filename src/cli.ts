@@ -28,8 +28,6 @@ import { interceptSnowCodeOutput } from './utils/snowcode-output-interceptor.js'
 import { autoUpdateSnowCode } from './utils/auto-update-snow-code.js';
 // MCP configuration sync utility
 import { syncMcpConfigs } from './utils/sync-mcp-configs.js';
-// Enterprise proxy path resolution utility
-import { getEnterpriseProxyDirectory, isEnterpriseProxyAvailable } from './utils/find-enterprise-proxy.js';
 
 // Activate MCP guard ONLY for commands that actually use MCP servers
 // Explicitly exclude: init, version, help, auth, export, config commands
@@ -2861,18 +2859,8 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   // This ensures SnowCode/Claude Code can use the MCP servers immediately
   const distPath = join(snowFlowRoot, 'dist');
 
-  // 🔥 FIX: Determine enterprise proxy path DYNAMICALLY (not hardcoded!)
-  // This works for global install, development, and custom setups
-  const enterpriseProxyPath = getEnterpriseProxyDirectory();
-  const enterpriseAvailable = isEnterpriseProxyAvailable();
-
-  if (!enterpriseAvailable) {
-    cliLogger.debug('Enterprise proxy not found during init - will be configured on auth login');
-  }
-
   const mcpConfigContent = templateContent
     .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)
-    .replace(/{{ENTERPRISE_PROXY_PATH}}/g, enterpriseProxyPath)
     .replace(/{{SNOW_INSTANCE}}/g, getEnvValue('SNOW_INSTANCE'))
     .replace(/{{SNOW_CLIENT_ID}}/g, getEnvValue('SNOW_CLIENT_ID'))
     .replace(/{{SNOW_CLIENT_SECRET}}/g, getEnvValue('SNOW_CLIENT_SECRET'))

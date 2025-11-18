@@ -8,7 +8,7 @@ import os from 'os';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { Logger } from '../utils/logger.js';
-import { findEnterpriseProxyPath, getEnterpriseProxyNotFoundMessage } from '../utils/find-enterprise-proxy.js';
+import { execSync } from 'child_process';
 
 const logger = new Logger('snowcode-config');
 
@@ -184,13 +184,7 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     // This keeps proprietary enterprise code private while enabling enterprise tools
 
     // 🚀 DYNAMIC PATH RESOLUTION - Works for ANY user setup!
-    const enterpriseProxyPath = findEnterpriseProxyPath();
-
-    if (!enterpriseProxyPath) {
-      logger.warn('Enterprise proxy not found');
-      throw new Error(getEnterpriseProxyNotFoundMessage());
-    }
-
+    const enterpriseProxyPath = getEnterpriseProxyPath();
     logger.info(`✅ Found enterprise proxy at: ${enterpriseProxyPath}`);
 
     // Add or update enterprise MCP server with LOCAL proxy configuration
@@ -323,69 +317,54 @@ export async function isEnterpriseMcpConfigured(): Promise<boolean> {
 
 /**
  * Get the path to the enterprise proxy entry point
- * Returns absolute path to the installed snow-flow package
+ * Returns absolute path using the same pattern as other MCP servers
  */
 function getEnterpriseProxyPath(): string {
-  const { execSync } = require('child_process');
+  // Get snow-flow root path (where the package is installed)
+  let snowFlowRoot: string;
 
   try {
-    // Try to find the installed snow-flow package using npm
+    // Try global npm installation first
     const npmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim();
-    const globalPath = path.join(npmRoot, 'snow-flow', 'dist', 'mcp', 'enterprise-proxy', 'index.js');
-
+    const globalPath = path.join(npmRoot, 'snow-flow');
     if (existsSync(globalPath)) {
-      logger.debug(`Using enterprise proxy from global npm: ${globalPath}`);
-      return globalPath;
+      snowFlowRoot = globalPath;
+      logger.debug(`Using snow-flow from global npm: ${snowFlowRoot}`);
     }
   } catch (error) {
-    // Global npm root failed, continue to other options
+    // Global npm failed, try other options
   }
 
-  // Try local node_modules (project directory)
-  const localPath = path.join(
-    process.cwd(),
-    'node_modules',
-    'snow-flow',
-    'dist',
-    'mcp',
-    'enterprise-proxy',
-    'index.js'
-  );
-
-  if (existsSync(localPath)) {
-    logger.debug(`Using enterprise proxy from local node_modules: ${localPath}`);
-    return localPath;
+  // If not found globally, try local node_modules
+  if (!snowFlowRoot) {
+    const localPath = path.join(process.cwd(), 'node_modules', 'snow-flow');
+    if (existsSync(localPath)) {
+      snowFlowRoot = localPath;
+      logger.debug(`Using snow-flow from local node_modules: ${snowFlowRoot}`);
+    }
   }
 
-  // Try development path (when running from source)
-  const devPath = path.join(
-    __dirname,
-    '..',
-    '..',
-    'dist',
-    'mcp',
-    'enterprise-proxy',
-    'index.js'
-  );
-
-  if (existsSync(devPath)) {
-    const absoluteDevPath = path.resolve(devPath);
-    logger.debug(`Using enterprise proxy from development: ${absoluteDevPath}`);
-    return absoluteDevPath;
+  // If not found, try development path
+  if (!snowFlowRoot) {
+    const devPath = path.join(__dirname, '..', '..');
+    if (existsSync(devPath)) {
+      snowFlowRoot = path.resolve(devPath);
+      logger.debug(`Using snow-flow from development: ${snowFlowRoot}`);
+    }
   }
 
-  // Last resort - try to use require.resolve
-  try {
-    const resolvedPath = require.resolve('snow-flow/dist/mcp/enterprise-proxy/index.js');
-    logger.debug(`Using enterprise proxy from require.resolve: ${resolvedPath}`);
-    return resolvedPath;
-  } catch (error) {
-    // Could not resolve
+  // Construct enterprise proxy path using consistent pattern
+  const enterpriseProxyPath = path.join(snowFlowRoot, 'dist', 'mcp', 'enterprise-proxy', 'server.js');
+
+  if (!existsSync(enterpriseProxyPath)) {
+    throw new Error(
+      'Enterprise proxy not found!\\n' +
+      `Expected location: ${enterpriseProxyPath}\\n` +
+      'Please ensure snow-flow is properly installed.'
+    );
   }
 
-  // Fallback - return relative path and hope it works
-  logger.warn('Enterprise proxy not found in standard locations, using fallback path');
-  return path.resolve(__dirname, '..', '..', 'dist', 'mcp', 'enterprise-proxy', 'index.js');
+  return enterpriseProxyPath;
 }
 
 /**
