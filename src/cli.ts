@@ -1610,29 +1610,11 @@ program
         s.stop('Migration complete');
       }
 
-      // Install/Update SnowCode with comprehensive auto-update utility
-      const snowcodeSpinner = prompts.spinner();
-      snowcodeSpinner.start('Updating snow-code to latest version');
-      try {
-        const updateResult = await autoUpdateSnowCode(targetDir, false);
-
-        if (updateResult.success) {
-          snowcodeSpinner.stop(`✓ Snow-code updated to v${updateResult.mainPackageVersion || 'latest'}`);
-          if (updateResult.binaryPackagesUpdated > 0) {
-            prompts.log.info(`  Updated ${updateResult.binaryPackagesUpdated} platform-specific binaries`);
-          }
-        } else {
-          snowcodeSpinner.stop('⚠️  Snow-code update completed with warnings');
-          if (updateResult.errors.length > 0) {
-            prompts.log.warn('Some updates failed - run manually if needed:');
-            prompts.log.warn('  npm install -g @groeimetai/snow-code@latest');
-            prompts.log.warn('  npm run update-deps');
-          }
-        }
-      } catch (err) {
-        snowcodeSpinner.stop('Could not update snow-code');
-        prompts.log.warn('Run: npm install -g @groeimetai/snow-code@latest');
-        prompts.log.warn('And: npm run update-deps');
+      // Skip snow-code auto-update during init (users can update manually)
+      // Auto-update may fail in new projects without package.json and requires global permissions
+      // Users will get the bundled version from snow-flow, which is sufficient for init
+      if (options.verbose) {
+        cliLogger.debug('Skipping snow-code auto-update during init (not required for project setup)');
       }
 
       // Create project structure
