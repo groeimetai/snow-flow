@@ -12,6 +12,7 @@ import {
   EnterpriseToolListResponse,
   EnterpriseTool,
 } from './types.js';
+import { proxyLogger } from './logger.js';
 
 // Configuration from environment variables
 const ENTERPRISE_URL = process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev';
@@ -33,17 +34,30 @@ try {
  */
 export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
   if (!LICENSE_KEY) {
+    proxyLogger.log('error', 'SNOW_LICENSE_KEY not configured');
     throw new Error(
       'SNOW_LICENSE_KEY not configured. Run: snow-flow auth login'
     );
   }
 
-  // Debug: Log JWT token info
-  console.error(`[Proxy Debug] JWT length: ${LICENSE_KEY.length}`);
-  console.error(`[Proxy Debug] JWT preview: ${LICENSE_KEY.substring(0, 50)}...`);
-  console.error(`[Proxy Debug] JWT ends with: ${JSON.stringify(LICENSE_KEY.slice(-10))}`);
+  // Log JWT token info for debugging
+  proxyLogger.log('debug', 'Fetching enterprise tools', {
+    jwtLength: LICENSE_KEY.length,
+    jwtPreview: LICENSE_KEY.substring(0, 50) + '...',
+    jwtEnding: LICENSE_KEY.slice(-10),
+    hasNewline: LICENSE_KEY.includes('\n'),
+    hasCarriageReturn: LICENSE_KEY.includes('\r'),
+    enterpriseUrl: ENTERPRISE_URL,
+    instanceId: INSTANCE_ID.substring(0, 16) + '...',
+    version: VERSION
+  });
 
   try {
+    proxyLogger.log('info', 'Sending request to enterprise server', {
+      url: `${ENTERPRISE_URL}/mcp/tools/list`,
+      authHeaderLength: `Bearer ${LICENSE_KEY}`.length
+    });
+
     const response = await axios.get<EnterpriseToolListResponse>(
       `${ENTERPRISE_URL}/mcp/tools/list`,
       {
@@ -56,14 +70,28 @@ export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
       }
     );
 
+    proxyLogger.log('info', `Successfully fetched ${response.data.tools?.length || 0} enterprise tools`);
     return response.data.tools || [];
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
+
+      // Log detailed error info
+      proxyLogger.log('error', 'Enterprise tools list request failed', {
+        status: axiosError.response?.status,
+        statusText: axiosError.response?.statusText,
+        responseData: axiosError.response?.data,
+        code: axiosError.code,
+        message: axiosError.message
+      });
+
       if (axiosError.response?.status === 401) {
         // Check if the error is due to JWT malformation (common after KMS secret updates)
         const responseData = axiosError.response?.data as any;
         if (responseData?.error && responseData.error.toLowerCase().includes('jwt')) {
+          proxyLogger.log('error', 'JWT token rejected by server - likely KMS secret mismatch', {
+            serverError: responseData.error
+          });
           throw new Error(
             'JWT token is invalid or expired.\n\n' +
             '🔧 This usually happens after server configuration updates (e.g., KMS secrets).\n\n' +
@@ -86,6 +114,11 @@ export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
         );
       }
     }
+
+    proxyLogger.log('error', 'Unexpected error listing tools', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+
     throw new Error(
       `Failed to list enterprise tools: ${error instanceof Error ? error.message : String(error)}`
     );
