@@ -38,6 +38,11 @@ export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
     );
   }
 
+  // Debug: Log JWT token info
+  console.error(`[Proxy Debug] JWT length: ${LICENSE_KEY.length}`);
+  console.error(`[Proxy Debug] JWT preview: ${LICENSE_KEY.substring(0, 50)}...`);
+  console.error(`[Proxy Debug] JWT ends with: ${JSON.stringify(LICENSE_KEY.slice(-10))}`);
+
   try {
     const response = await axios.get<EnterpriseToolListResponse>(
       `${ENTERPRISE_URL}/mcp/tools/list`,
