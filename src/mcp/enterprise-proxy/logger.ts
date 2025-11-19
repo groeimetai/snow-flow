@@ -12,6 +12,28 @@ class ProxyLogger {
 
   constructor() {
     this.initializeLogFile();
+
+    // Log ALL environment variables related to Snow-Flow at startup
+    this.logEnvironmentVariables();
+  }
+
+  private logEnvironmentVariables(): void {
+    const relevantVars = Object.keys(process.env)
+      .filter(key => key.includes('SNOW') || key.includes('LICENSE'))
+      .reduce((obj: any, key) => {
+        // Mask secrets but show first/last few chars for debugging
+        const value = process.env[key] || '';
+        if (key.includes('KEY') || key.includes('SECRET') || key.includes('TOKEN')) {
+          obj[key] = value.length > 20
+            ? `${value.substring(0, 10)}...${value.slice(-10)} (${value.length} chars)`
+            : `${value.substring(0, 5)}...${value.slice(-3)} (${value.length} chars)`;
+        } else {
+          obj[key] = value;
+        }
+        return obj;
+      }, {});
+
+    this.log('debug', 'Environment variables at startup', relevantVars);
   }
 
   private initializeLogFile(): void {
