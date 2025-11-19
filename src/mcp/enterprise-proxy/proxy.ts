@@ -56,6 +56,18 @@ export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
       if (axiosError.response?.status === 401) {
+        // Check if the error is due to JWT malformation (common after KMS secret updates)
+        const responseData = axiosError.response?.data as any;
+        if (responseData?.error && responseData.error.toLowerCase().includes('jwt')) {
+          throw new Error(
+            'JWT token is invalid or expired.\n\n' +
+            '🔧 This usually happens after server configuration updates (e.g., KMS secrets).\n\n' +
+            'Fix this by running ONE of these commands:\n' +
+            '  • snow-flow enterprise refresh-jwt    (quick JWT refresh only)\n' +
+            '  • snow-flow auth login                (full authentication refresh)\n\n' +
+            'The JWT will be regenerated with the latest server configuration.'
+          );
+        }
         throw new Error(
           'License key invalid or expired. Run: snow-flow auth login'
         );

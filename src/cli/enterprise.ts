@@ -364,6 +364,16 @@ export function registerEnterpriseCommands(program: Command): void {
       await setupEnterpriseFlow();
     });
 
+  // JWT Refresh command - Regenerate JWT with latest server configuration
+  program
+    .command('refresh-jwt')
+    .description('Refresh enterprise JWT token with latest server configuration (e.g., after updating KMS secrets)')
+    .action(async () => {
+      // Dynamic import to avoid circular dependencies
+      const { refreshEnterpriseJWT } = await import('./enterprise-refresh.js');
+      await refreshEnterpriseJWT();
+    });
+
   // Status command removed - enterprise status is now shown via getEnterpriseInfo() in main status command
 
   // Portal command
