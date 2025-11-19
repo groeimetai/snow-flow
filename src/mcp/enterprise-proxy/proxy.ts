@@ -15,7 +15,7 @@ import {
 
 // Configuration from environment variables
 const ENTERPRISE_URL = process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev';
-const LICENSE_KEY = process.env.SNOW_LICENSE_KEY;
+const LICENSE_KEY = process.env.SNOW_LICENSE_KEY ? process.env.SNOW_LICENSE_KEY.trim() : undefined; // Remove newlines/whitespace
 const VERSION = process.env.SNOW_FLOW_VERSION || '8.30.31';
 
 // Generate unique machine ID for tracking

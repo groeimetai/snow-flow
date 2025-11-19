@@ -38,7 +38,7 @@ import axios, { AxiosInstance } from 'axios';
 
 // Configuration from environment variables
 const LICENSE_SERVER_URL = process.env.SNOW_ENTERPRISE_URL || '';
-const LICENSE_KEY = process.env.SNOW_LICENSE_KEY || '';
+const LICENSE_KEY = (process.env.SNOW_LICENSE_KEY || '').trim(); // Remove newlines/whitespace
 
 // ServiceNow credentials
 const SNOW_INSTANCE_URL = process.env.SNOW_INSTANCE_URL || '';
