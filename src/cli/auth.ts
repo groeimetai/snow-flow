@@ -273,16 +273,50 @@ async function updateDocumentationWithEnterprise(): Promise<void> {
 The \`snow-flow-enterprise\` MCP server provides integrations with external enterprise tools:
 
 **Available Integrations:**
-- **Jira**: Search issues, create/update issues, link to ServiceNow incidents, manage workflows
-- **Azure DevOps**: Work items, repositories, pipeline integration, build management
-- **Confluence**: Search pages, create/update documentation, manage spaces
+- **Jira**: 26 tools (22 operational + 4 discovery) - Search issues, create/update issues, link to ServiceNow, AI-powered features, autonomous configuration
+- **Azure DevOps**: 26 tools - Work items, repositories, pipeline integration, build management, AI-powered estimation
+- **Confluence**: 24 tools - Search pages, create/update documentation, manage spaces, AI content generation
 
 **Configuration:**
 The enterprise server is automatically configured when you complete \`snow-flow auth login\` with a valid enterprise license.
 
 **Enterprise Tools:**
 
-#### Jira Integration
+#### Jira Integration (26 Tools)
+
+**🚀 Autonomous Discovery (NEW!)**
+
+Before using Jira tools, agents can autonomously discover and configure Jira:
+
+\`\`\`javascript
+// Master discovery tool - discovers EVERYTHING at once
+const discovery = await jira_discover_configuration({});
+
+// Returns:
+// {
+//   projects: [{key: 'PROJ1', name: 'Project 1', id: '10001'}, ...],
+//   boards: [{id: 1, name: 'Scrum Board', type: 'scrum'}, ...],
+//   recentIssues: [{key: 'PROJ1-123', summary: '...', project: 'PROJ1'}, ...],
+//   suggestedDefaults: {
+//     projectKey: 'PROJ1',      // First accessible project
+//     boardId: 1,               // First accessible board
+//     sampleIssueKey: 'PROJ1-123'  // First recent issue
+//   }
+// }
+
+// Agent can now store these in .env for future use:
+// SNOW_JIRA_PROJECT_KEY=PROJ1
+// SNOW_JIRA_BOARD_ID=1
+// SNOW_JIRA_SAMPLE_ISSUE_KEY=PROJ1-123
+\`\`\`
+
+**Individual Discovery Tools:**
+- \`jira_list_projects\` - List all accessible projects
+- \`jira_list_boards\` - List all accessible boards (Scrum/Kanban)
+- \`jira_get_recent_issues\` - Get recent issues for sample keys
+- \`jira_discover_configuration\` - Master tool that discovers everything
+
+**Core Jira Tools:**
 \`\`\`javascript
 // Search Jira issues
 const issues = await jira_search_issues({
@@ -292,34 +326,61 @@ const issues = await jira_search_issues({
 
 // Create Jira issue
 const newIssue = await jira_create_issue({
-  project: "PROJ",
+  projectKey: "PROJ",
   summary: "Integration with ServiceNow incident INC001234",
   description: "Auto-created from ServiceNow",
-  issueType: "Task"
+  issueType: "Story"
 });
 
-// Link to ServiceNow incident
-await jira_link_servicenow({
-  jiraKey: "PROJ-123",
-  incidentNumber: "INC001234",
-  linkType: "relates to"
+// Get active sprint with AI insights
+const sprint = await jira_get_active_sprint({
+  boardId: 1
+});
+
+// AI-powered story decomposition
+const stories = await jira_decompose_epic({
+  epicSummary: "User authentication system",
+  epicDescription: "Complete auth system with SSO",
+  projectKey: "PROJ"
+});
+
+// AI story point estimation
+const estimate = await jira_estimate_story_points({
+  summary: "Add OAuth login",
+  description: "Implement OAuth 2.0 authentication",
+  projectKey: "PROJ"
 });
 \`\`\`
 
-#### Azure DevOps Integration
+**AI-Powered Features:**
+- Epic decomposition into user stories
+- Automated story point estimation
+- Duplicate issue detection
+- Sprint velocity tracking
+- Team capacity planning
+- Smart task suggestions
+
+#### Azure DevOps Integration (26 Tools)
 \`\`\`javascript
-// Search work items
-const workItems = await azure_search_work_items({
+// Get active iteration
+const iteration = await azure_get_active_iteration({
   project: "MyProject",
-  wiql: "SELECT [System.Id] FROM WorkItems WHERE [System.State] = 'Active'"
+  team: "DevTeam"
 });
 
-// Create work item
-const newWorkItem = await azure_create_work_item({
+// AI-powered feature decomposition
+const stories = await azure_decompose_feature({
+  featureTitle: "Payment Gateway",
+  featureDescription: "Stripe integration",
+  project: "MyProject"
+});
+
+// Create user story with AI acceptance criteria
+const story = await azure_create_user_story({
   project: "MyProject",
-  type: "Bug",
-  title: "Issue from ServiceNow INC001234",
-  description: "Auto-created from ServiceNow incident"
+  title: "OAuth login",
+  description: "User can login with Google",
+  acceptanceCriteria: "auto-generate"
 });
 
 // Trigger pipeline
@@ -330,42 +391,78 @@ await azure_trigger_pipeline({
 });
 \`\`\`
 
-#### Confluence Integration
+**AI-Powered Features:**
+- Feature decomposition
+- Work item estimation
+- PR readiness checks
+- Pipeline failure analysis
+- Team velocity tracking
+
+#### Confluence Integration (24 Tools)
 \`\`\`javascript
 // Search Confluence pages
-const pages = await confluence_search({
+const pages = await confluence_search_content({
   cql: "space = DOCS AND type = page AND title ~ 'ServiceNow'",
   limit: 20
 });
 
-// Create documentation page
-const newPage = await confluence_create_page({
+// AI-generated documentation
+const newPage = await confluence_create_documentation({
   space: "DOCS",
   title: "ServiceNow Integration Guide",
-  content: "<h1>Integration Documentation</h1><p>...</p>",
-  parentId: "123456"
+  topic: "How to integrate ServiceNow with Jira",
+  audience: "developers"
 });
 
-// Update existing page
-await confluence_update_page({
+// AI content improvement
+const improved = await confluence_improve_content({
+  pageId: "123456",
+  improvementType: "clarity"
+});
+
+// Generate page summary
+const summary = await confluence_generate_page_summary({
   pageId: "789012",
-  title: "Updated Integration Guide",
-  content: "<h1>Updated Content</h1>",
-  version: 2
+  length: "short"
 });
 \`\`\`
 
+**AI-Powered Features:**
+- Automated documentation generation
+- Content quality improvement
+- Page summarization
+- Related page suggestions
+
 **Usage Pattern:**
-1. Complete \`snow-flow auth login\` with enterprise license
-2. Configure Jira/Azure DevOps/Confluence credentials (local or server-side)
-3. Enterprise tools are automatically available in your AI agent
-4. Use tools directly - no additional setup required
+
+1. **Complete \`snow-flow auth login\` with enterprise license**
+2. **Configure Jira/Azure DevOps/Confluence credentials** (stored in project .env)
+3. **Let AI discover configuration autonomously:**
+   \`\`\`javascript
+   const config = await jira_discover_configuration({});
+   // AI stores suggested defaults in .env automatically
+   \`\`\`
+4. **Enterprise tools are now ready** - AI can use all 76 tools autonomously!
+
+**Best Practices for AI Agents:**
+
+✅ **DO:**
+- Call \`jira_discover_configuration\` when encountering Jira for the first time
+- Store discovered defaults in project .env for future sessions
+- Use AI-powered tools (decompose, estimate, suggest) for intelligent automation
+- Let discovery tools run autonomously without asking user for project IDs
+
+❌ **DON'T:**
+- Assume projectKey or boardId values without discovery
+- Ask users for configuration that can be auto-discovered
+- Skip discovery tools - they enable full autonomy
 
 **Benefits:**
-- ✅ Seamless integration between ServiceNow and enterprise tools
-- ✅ Automatic bi-directional sync (incidents ↔ Jira issues, changes ↔ Azure work items)
-- ✅ Documentation auto-generation (ServiceNow → Confluence)
-- ✅ Single source of truth across all enterprise systems
+- ✅ **76 enterprise tools** (26 Jira + 26 Azure + 24 Confluence)
+- ✅ **Autonomous configuration** - AI discovers and configures itself
+- ✅ **AI-powered intelligence** - Epic decomposition, estimation, duplicate detection
+- ✅ **Seamless integration** - ServiceNow ↔ Jira ↔ Azure ↔ Confluence
+- ✅ **Single source of truth** across all enterprise systems
 `;
 
     // Update CLAUDE.md if it exists and doesn't already have enterprise section
