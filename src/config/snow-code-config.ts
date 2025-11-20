@@ -187,6 +187,39 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     const enterpriseProxyPath = getEnterpriseProxyPath();
     logger.info(`✅ Found enterprise proxy at: ${enterpriseProxyPath}`);
 
+    // 🔥 FIX: Read credentials from project .env and pass to proxy via environment
+    // This allows the proxy to access Jira/Azure/Confluence credentials
+    const projectEnvPath = path.join(process.cwd(), '.env');
+    let enterpriseCredentials: Record<string, string> = {};
+
+    if (existsSync(projectEnvPath)) {
+      try {
+        const envContent = await fs.readFile(projectEnvPath, 'utf-8');
+        const envLines = envContent.split('\n');
+
+        for (const line of envLines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+
+          const match = trimmed.match(/^([A-Z_]+)=(.*)$/);
+          if (match) {
+            const key = match[1];
+            const value = match[2];
+
+            // Pass enterprise credentials to proxy
+            if (key.startsWith('SNOW_JIRA_') || key.startsWith('SNOW_AZURE_') ||
+                key.startsWith('SNOW_CONFLUENCE_') || key === 'SNOW_ENTERPRISE_LICENSE_KEY') {
+              enterpriseCredentials[key] = value;
+            }
+          }
+        }
+
+        logger.info(`✅ Loaded ${Object.keys(enterpriseCredentials).length} enterprise credential(s) from .env`);
+      } catch (err: any) {
+        logger.warn(`Could not load .env credentials: ${err.message}`);
+      }
+    }
+
     // Add or update enterprise MCP server with LOCAL proxy configuration
     mcpConfig.mcpServers['snow-flow-enterprise'] = {
       type: 'local',
@@ -195,6 +228,8 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
       environment: {
         SNOW_ENTERPRISE_URL: mcpServerUrl,
         SNOW_LICENSE_KEY: jwtToken,
+        // Pass all enterprise credentials from .env to proxy
+        ...enterpriseCredentials,
       },
       enabled: true,
     };
@@ -221,6 +256,8 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
           environment: {
             SNOW_ENTERPRISE_URL: mcpServerUrl,
             SNOW_LICENSE_KEY: jwtToken,
+            // Pass all enterprise credentials from .env to proxy
+            ...enterpriseCredentials,
           },
           enabled: true,
         };
@@ -251,6 +288,8 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
           environment: {
             SNOW_ENTERPRISE_URL: mcpServerUrl,
             SNOW_LICENSE_KEY: jwtToken,
+            // Pass all enterprise credentials from .env to proxy
+            ...enterpriseCredentials,
           },
           enabled: true,
         };
