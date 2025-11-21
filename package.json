@@ -557,8 +557,5 @@
       "prettier --write",
       "git add"
     ]
-  },
-  "peerDependencies": {
-    "@groeimetai/snow-code": "*"
   }
 }
