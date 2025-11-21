@@ -137,14 +137,52 @@ gs.info('SNOW_FLOW_OUTPUT:' + JSON.stringify(__output));
 
     // Create scheduled script job that runs once immediately
     const now = new Date();
-    const jobResponse = await client.post('/api/now/table/sysauto_script', {
-      name: scriptName,
-      script: executableScript,
-      active: true,
-      run_type: 'once',  // Run once at specified time
-      run_start: now.toISOString(),
-      run_dayofweek: '1,2,3,4,5,6,7'  // All days (for compatibility)
-    });
+
+    let jobResponse;
+    try {
+      jobResponse = await client.post('/api/now/table/sysauto_script', {
+        name: scriptName,
+        script: executableScript,
+        active: true,
+        run_type: 'once',  // Run once at specified time
+        run_start: now.toISOString(),
+        run_dayofweek: '1,2,3,4,5,6,7'  // All days (for compatibility)
+      });
+    } catch (apiError: any) {
+      // Enhanced error handling for ServiceNow API errors
+      const status = apiError.response?.status;
+      const errorData = apiError.response?.data;
+
+      if (status === 400) {
+        let errorMessage = 'Script execution failed with ServiceNow 400 error';
+        let errorDetails: any = {
+          script_length: script.length,
+          script_preview: script.substring(0, 200) + (script.length > 200 ? '...' : '')
+        };
+
+        // Try to extract specific error from ServiceNow response
+        if (errorData?.error) {
+          errorMessage = `ServiceNow rejected script: ${errorData.error.message || errorData.error.detail || 'Unknown error'}`;
+          errorDetails.servicenow_error = errorData.error;
+        }
+
+        // Add helpful hints
+        if (script.length > 1000) {
+          errorDetails.hint = 'Script is very large (>1000 chars). Consider breaking into smaller operations or using snow_create_business_rule for complex logic.';
+        }
+
+        throw new SnowFlowError(
+          ErrorType.VALIDATION_ERROR,
+          errorMessage,
+          {
+            retryable: false,
+            details: errorDetails
+          }
+        );
+      }
+
+      throw apiError; // Re-throw other errors
+    }
 
     const jobId = jobResponse.data.result.sys_id;
 
