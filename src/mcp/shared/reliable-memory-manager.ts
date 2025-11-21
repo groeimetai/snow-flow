@@ -230,14 +230,30 @@ export class ReliableMemoryManager {
       if (!fs.existsSync(this.PERSIST_FILE)) {
         return;
       }
-      
-      const data = JSON.parse(fs.readFileSync(this.PERSIST_FILE, 'utf-8'));
-      
+
+      // Read file content
+      const fileContent = fs.readFileSync(this.PERSIST_FILE, 'utf-8');
+
+      // Handle empty or whitespace-only file
+      if (!fileContent || fileContent.trim().length === 0) {
+        this.logger.debug('Memory persist file is empty, starting with fresh memory');
+        return;
+      }
+
+      // Parse JSON
+      const data = JSON.parse(fileContent);
+
       if (data.version !== '1.0') {
         this.logger.warn('Incompatible memory snapshot version, skipping load');
         return;
       }
-      
+
+      // Validate data structure
+      if (!data.entries || !Array.isArray(data.entries)) {
+        this.logger.warn('Invalid memory snapshot structure, skipping load');
+        return;
+      }
+
       for (const entry of data.entries) {
         this.memory.set(entry.key, {
           key: entry.key,
@@ -247,12 +263,13 @@ export class ReliableMemoryManager {
           sizeBytes: entry.sizeBytes
         });
       }
-      
+
       this.cleanupExpired();
       this.logger.info(`Loaded ${this.memory.size} entries from disk`);
-      
+
     } catch (error: any) {
       this.logger.error('Failed to load memory from disk:', error);
+      // Don't throw - allow system to start with fresh memory
     }
   }
 
