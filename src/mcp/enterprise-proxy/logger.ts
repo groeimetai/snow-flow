@@ -70,15 +70,17 @@ class ProxyLogger {
     const timestamp = new Date().toISOString();
     const logEntry = `[${timestamp}] [${level.toUpperCase()}] ${message}${data ? '\n' + JSON.stringify(data, null, 2) : ''}\n`;
 
-    // Write to file
+    // Write to file only (no console output for clean UX)
     if (this.writeStream) {
       this.writeStream.write(logEntry);
     }
 
-    // Also write to stderr for immediate feedback
-    console.error(`[Proxy ${level.toUpperCase()}] ${message}`);
-    if (data) {
-      console.error(JSON.stringify(data, null, 2));
+    // Only write to stderr for actual errors (not info/debug)
+    if (level === 'error') {
+      console.error(`[Proxy ${level.toUpperCase()}] ${message}`);
+      if (data) {
+        console.error(JSON.stringify(data, null, 2));
+      }
     }
   }
 
