@@ -58,7 +58,7 @@
     "check-binaries": "node scripts/check-binary-updates.js",
     "update-binaries": "node scripts/check-binary-updates.js --auto-update",
     "postbuild-disabled": "npm run setup-mcp",
-    "version": "node scripts/update-version.js && npm run build && git add src/version.ts",
+    "version": "npm run build",
     "postversion": "git push origin main && git push origin --tags"
   },
   "keywords": [
