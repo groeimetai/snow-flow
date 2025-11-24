@@ -2,13 +2,15 @@
  * Deployment Tools - Export all deployment tool modules
  *
  * NOTE: snow_deploy has been removed (deprecated).
- * Use snow_pull_artifact and snow_push_artifact for widget development instead.
+ * Use snow_create_artifact for creating new artifacts.
+ * Use snow_pull_artifact and snow_push_artifact for widget development.
  */
 
 export { toolDefinition as snow_auth_diagnostics_def, execute as snow_auth_diagnostics_exec } from './snow_auth_diagnostics.js';
 export { toolDefinition as snow_clone_instance_artifact_def, execute as snow_clone_instance_artifact_exec } from './snow_clone_instance_artifact.js';
+export { toolDefinition as snow_create_artifact_def, execute as snow_create_artifact_exec } from './snow_create_artifact.js';
 export { toolDefinition as snow_create_solution_package_def, execute as snow_create_solution_package_exec } from './snow_create_solution_package.js';
-// snow_deploy removed - deprecated, use snow_pull_artifact/snow_push_artifact instead
+// snow_deploy removed - deprecated, use snow_create_artifact instead
 export { toolDefinition as snow_deployment_debug_def, execute as snow_deployment_debug_exec } from './snow_deployment_debug.js';
 export { toolDefinition as snow_deployment_status_def, execute as snow_deployment_status_exec } from './snow_deployment_status.js';
 export { toolDefinition as snow_export_artifact_def, execute as snow_export_artifact_exec } from './snow_export_artifact.js';

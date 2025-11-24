@@ -225,9 +225,13 @@ const current = await snow_update_set_query({ action: 'current' });
 console.log(\`Active Update Set: \${current.name}\`);
 
 // STEP 3: NOW DEVELOP (all changes auto-tracked in Update Set)
-await snow_deploy({
-  type: 'widget',
-  config: { name: 'incident_dashboard', ... }
+await snow_create_artifact({
+  type: 'sp_widget',  // Service Portal widget
+  name: 'incident_dashboard',
+  title: 'Incident Dashboard',
+  template: '<div>{{data.message}}</div>',
+  server_script: 'data.message = "Hello World";',  // ES5 only!
+  client_script: 'function($scope) { var c = this; }'
 });
 
 await snow_create_business_rule({
@@ -392,16 +396,15 @@ Is this a development task? (Creating/modifying ServiceNow artifacts)
 // 1. UPDATE SET FIRST
 await snow_update_set_manage({ action: 'create', name: "Feature: X" });
 
-// 2. DEPLOY WIDGET
-await snow_deploy({
-  type: 'widget',
-  config: {
-    name: 'incident_dashboard',
-    title: 'Incident Dashboard',
-    template: '<div>{{data.message}}</div>',
-    server_script: 'data.message = "Hello World";',
-    client_script: 'function($scope) { var c = this; }'
-  }
+// 2. CREATE WIDGET (Service Portal)
+await snow_create_artifact({
+  type: 'sp_widget',  // Service Portal widget
+  name: 'incident_dashboard',
+  title: 'Incident Dashboard',
+  template: '<div>{{data.message}}</div>',
+  server_script: 'data.message = "Hello World";',  // ES5 only!
+  client_script: 'function($scope) { var c = this; }',
+  css: '.my-widget { color: blue; }'
 });
 
 // 3. VERIFY
@@ -732,8 +735,8 @@ await snow_update_set_manage({ action: 'complete', update_set_id: us.sys_id });
 | User Want | MCP Tool | Notes |
 |-----------|----------|-------|
 | Create workspace | \`snow_create_complete_workspace\` | One call, handles all steps |
-| Create widget | \`snow_deploy({ type: 'widget' })\` | After Update Set |
-| Fix widget | \`snow_pull_artifact\` | Local sync, NOT query! |
+| Create widget | \`snow_create_artifact({ type: 'sp_widget' })\` | Service Portal widget |
+| Fix widget | \`snow_pull_artifact\` + \`snow_push_artifact\` | Local sync workflow |
 | Create business rule | \`snow_create_business_rule\` | ES5 only! |
 | Query incidents | \`snow_query_incidents\` | Specialized tool |
 | Create UI Builder page | \`snow_create_uib_page\` | Modern UI framework |

@@ -61,9 +61,13 @@ const current = await snow_update_set_query({ action: 'current' });
 console.log('Active Update Set:', current.name);
 
 // 3. NOW DEVELOP (all changes auto-tracked)
-await snow_deploy({
-  type: 'widget',
-  config: { name: 'my_widget', ... }
+await snow_create_artifact({
+  type: 'sp_widget',
+  name: 'my_widget',
+  title: 'My Widget',
+  template: '<div>{{data.message}}</div>',
+  server_script: 'data.message = "Hello";',  // ES5 only!
+  client_script: 'function($scope) { var c = this; }'
 });
 
 // 4. COMPLETE UPDATE SET when done
@@ -106,8 +110,8 @@ snow_get_by_sysid({ table, sys_id })                    // Get specific record
 
 ### Development & Deployment
 \`\`\`javascript
-snow_deploy({ type, config })                           // Deploy widgets, pages, etc.
-snow_create_business_rule({ name, table, script })      // Business rules
+snow_create_artifact({ type, name, ... })               // Universal artifact creation (widgets, pages, etc.)
+snow_create_business_rule({ name, table, script })      // Business rules (ES5 only!)
 snow_create_script_include({ name, script })            // Script includes
 snow_create_client_script({ name, table, script })      // Client scripts
 snow_create_ui_policy({ name, table, conditions })      // UI policies
@@ -246,10 +250,10 @@ echo "..." && node -e "const { ... } = require(...);"
    - \`snow_update_set_query({ action: 'current' })\` to verify
 
 2. **🔍 USE RIGHT TOOL**
-   - Creating? → \`snow_create_*\` or \`snow_deploy\`
+   - Creating? → \`snow_create_artifact\` or specific \`snow_create_*\` tool
    - Updating? → \`snow_record_manage({ action: 'update' })\`
    - Querying? → \`snow_query_table\` or specific query tool
-   - Widget? → \`snow_pull_artifact\` (local sync!)
+   - Widget development? → \`snow_pull_artifact\` + \`snow_push_artifact\` (local sync!)
 
 3. **✅ VERIFY**
    - \`snow_execute_script_with_output\` for testing
@@ -266,8 +270,8 @@ echo "..." && node -e "const { ... } = require(...);"
 | Task | Tool | Notes |
 |------|------|-------|
 | Create update set | \`snow_update_set_manage({ action: 'create' })\` | **DO THIS FIRST!** |
-| Create widget | \`snow_deploy({ type: 'widget' })\` | After update set |
-| Fix widget | \`snow_pull_artifact({ sys_id })\` | Local sync |
+| Create widget | \`snow_create_artifact({ type: 'sp_widget' })\` | Service Portal widget |
+| Fix widget | \`snow_pull_artifact\` + \`snow_push_artifact\` | Local sync workflow |
 | Create business rule | \`snow_create_business_rule()\` | ES5 only! |
 | Query incidents | \`snow_query_incidents()\` | Specialized tool |
 | Get property | \`snow_property_manage({ action: 'get' })\` | System properties |

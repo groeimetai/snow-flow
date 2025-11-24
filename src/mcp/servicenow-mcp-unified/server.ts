@@ -228,7 +228,13 @@ export class ServiceNowUnifiedServer {
     // Execute tool
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
+
+      // Enhanced logging: show tool name AND key parameters
+      const logArgs = this.formatArgsForLogging(args);
       console.log(`[Server] Executing tool: ${name}`);
+      if (logArgs) {
+        console.log(`[Server]   Parameters: ${logArgs}`);
+      }
 
       try {
         // Get tool from registry
@@ -290,6 +296,71 @@ export class ServiceNowUnifiedServer {
     this.server.onerror = (error) => {
       console.error('[Server] MCP Error:', error);
     };
+  }
+
+  /**
+   * Format arguments for logging (show key parameters without overwhelming output)
+   */
+  private formatArgsForLogging(args: any): string {
+    if (!args || typeof args !== 'object') {
+      return '';
+    }
+
+    const parts: string[] = [];
+    const maxValueLength = 100; // Truncate long values
+
+    // Helper: truncate long strings
+    const truncate = (value: any): string => {
+      const str = String(value);
+      if (str.length > maxValueLength) {
+        return str.substring(0, maxValueLength) + '...';
+      }
+      return str;
+    };
+
+    // Helper: format value for display
+    const formatValue = (value: any): string => {
+      if (value === null || value === undefined) {
+        return 'null';
+      }
+      if (typeof value === 'object') {
+        // For objects/arrays, show just the type
+        if (Array.isArray(value)) {
+          return `Array(${value.length})`;
+        }
+        return `{${Object.keys(value).length} keys}`;
+      }
+      return truncate(value);
+    };
+
+    // Show key parameters (up to 5 most relevant ones)
+    const keyParams = ['table', 'query', 'action', 'sys_id', 'name', 'type', 'identifier'];
+    const shownParams = new Set<string>();
+
+    // First, show key parameters if they exist
+    for (const key of keyParams) {
+      if (key in args && shownParams.size < 5) {
+        parts.push(`${key}=${formatValue(args[key])}`);
+        shownParams.add(key);
+      }
+    }
+
+    // Then, show remaining parameters (up to 5 total)
+    for (const [key, value] of Object.entries(args)) {
+      if (shownParams.size >= 5) break;
+      if (!shownParams.has(key) && !['script', 'template', 'client_script', 'server_script', 'css'].includes(key)) {
+        parts.push(`${key}=${formatValue(value)}`);
+        shownParams.add(key);
+      }
+    }
+
+    // Show count of additional parameters if any
+    const totalParams = Object.keys(args).length;
+    if (totalParams > shownParams.size) {
+      parts.push(`...+${totalParams - shownParams.size} more`);
+    }
+
+    return parts.join(', ');
   }
 
   /**
