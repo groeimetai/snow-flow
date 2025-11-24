@@ -1,7 +1,7 @@
 /**
  * ServiceNow MCP Unified - Tool Exports
  *
- * Auto-generated exports for all 245+ tools across 75+ domains.
+ * Auto-generated exports for all 247+ tools across 75+ domains.
  * This file is used by the Tool Registry for auto-discovery.
  */
 
@@ -50,7 +50,7 @@ export * from './email/index.js';
 // Forms (3 tools)
 export * from './forms/index.js';
 
-// Lists (3 tools)
+// Lists (4 tools)
 export * from './lists/index.js';
 
 // Business Rules (2 tools)
@@ -137,7 +137,7 @@ export * from './adapters/index.js';
 // Handlers (4 tools)
 export * from './handlers/index.js';
 
-// Filters (3 tools)
+// Filters (4 tools)
 export * from './filters/index.js';
 
 // Parsers (3 tools)

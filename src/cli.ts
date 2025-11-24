@@ -3525,7 +3525,7 @@ program
   .option('--dry-run', 'Preview the export without writing files')
   .action(async (options) => {
     console.log(`\n📤 Snow-Flow Claude Desktop Export v${VERSION}`);
-    console.log('🎯 Exporting all 22 MCP servers with 245+ tools to Claude Desktop...\n');
+    console.log('🎯 Exporting all 22 MCP servers with 247+ tools to Claude Desktop...\n');
     
     try {
       const { exportToClaudeDesktop } = await import('./utils/claude-desktop-exporter.js');
@@ -3560,7 +3560,7 @@ program
         console.log('1. Restart Claude Desktop to load the new MCP servers');
         console.log('2. Open Claude Desktop chat');
         console.log('3. Try: "Create UX workspace for IT support using snow_create_complete_workspace"');
-        console.log('\n💡 All 245+ Snow-Flow tools are now available in Claude Desktop!');
+        console.log('\n💡 All 247+ Snow-Flow tools are now available in Claude Desktop!');
       } else {
         console.error('\n❌ Export failed:', result.error);
         
