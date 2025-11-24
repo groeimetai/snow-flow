@@ -50,6 +50,11 @@ export const toolDefinition: MCPToolDefinition = {
         description: 'Validate widget coherence (HTML/Client/Server communication)',
         default: true
       },
+      skip_coherence_check: {
+        type: 'boolean',
+        description: 'Skip coherence validation entirely (use when validator reports false positives)',
+        default: false
+      },
       validate_es5: {
         type: 'boolean',
         description: 'Validate ES5 syntax in server scripts',
@@ -70,7 +75,7 @@ export const toolDefinition: MCPToolDefinition = {
 };
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { type, config, validate_coherence = true, validate_es5 = true, create_update_set = false, update_set_name } = args;
+  const { type, config, validate_coherence = true, skip_coherence_check = false, validate_es5 = true, create_update_set = false, update_set_name } = args;
 
   try {
     const client = await getAuthenticatedClient(context);
@@ -100,20 +105,21 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       }
 
       // Widget coherence validation
-      if (validate_coherence) {
+      if (validate_coherence && !skip_coherence_check) {
         const coherenceResult = validateWidgetCoherence(config);
         if (!coherenceResult.coherent) {
           const criticalIssues = coherenceResult.issues.filter(i => i.severity === 'critical');
           if (criticalIssues.length > 0) {
             throw new SnowFlowError(
               ErrorType.WIDGET_COHERENCE_ERROR,
-              'Widget coherence validation failed',
+              'Widget coherence validation failed. Use skip_coherence_check: true to bypass this validation.',
               {
                 retryable: false,
                 details: {
                   critical: criticalIssues,
                   warnings: coherenceResult.issues.filter(i => i.severity === 'warning'),
-                  analysis: coherenceResult.analysis
+                  analysis: coherenceResult.analysis,
+                  suggestion: 'If these properties are initialized conditionally (e.g., inside if blocks), use skip_coherence_check: true'
                 }
               }
             );
@@ -311,6 +317,7 @@ function validateWidgetCoherence(config: any): any {
   const issues: any[] = [];
   const analysis = {
     serverInitializedData: [] as string[],
+    conditionalData: [] as string[],
     clientMethods: [] as string[],
     htmlReferences: [] as string[],
     inputActions: [] as string[]
@@ -318,10 +325,50 @@ function validateWidgetCoherence(config: any): any {
 
   // Extract data properties from server script
   if (config.script) {
+    // Find all data assignments (both conditional and unconditional)
     const dataPattern = /data\.(\w+)\s*=/g;
     let match;
-    while ((match = dataPattern.exec(config.script)) !== null) {
-      analysis.serverInitializedData.push(match[1]);
+    const script = config.script;
+
+    while ((match = dataPattern.exec(script)) !== null) {
+      const propertyName = match[1];
+      const assignmentIndex = match.index;
+
+      // Check if this assignment is inside a conditional block
+      // Look backwards from the assignment to find if/else/switch statements
+      const beforeAssignment = script.substring(0, assignmentIndex);
+      const linesBeforeAssignment = beforeAssignment.split('\n');
+
+      // Simple heuristic: check if within an if/else/switch block
+      // Count opening and closing braces to determine depth
+      let braceDepth = 0;
+      let inConditional = false;
+
+      for (let i = linesBeforeAssignment.length - 1; i >= 0; i--) {
+        const line = linesBeforeAssignment[i];
+
+        // Count braces
+        const openBraces = (line.match(/\{/g) || []).length;
+        const closeBraces = (line.match(/\}/g) || []).length;
+        braceDepth += closeBraces - openBraces;
+
+        // Check for conditional keywords
+        if (/\b(if|else|switch|case)\b/.test(line) && braceDepth > 0) {
+          inConditional = true;
+          break;
+        }
+
+        // If we've reached the top level, stop looking
+        if (braceDepth <= 0) {
+          break;
+        }
+      }
+
+      if (inConditional) {
+        analysis.conditionalData.push(propertyName);
+      } else {
+        analysis.serverInitializedData.push(propertyName);
+      }
     }
 
     // Extract input.action handlers
@@ -341,13 +388,26 @@ function validateWidgetCoherence(config: any): any {
 
     // Check if HTML references exist in server data
     analysis.htmlReferences.forEach(ref => {
-      if (!analysis.serverInitializedData.includes(ref)) {
+      const isUnconditional = analysis.serverInitializedData.includes(ref);
+      const isConditional = analysis.conditionalData.includes(ref);
+
+      if (!isUnconditional && !isConditional) {
+        // Not found at all - critical error
         issues.push({
           type: 'missing_data',
           severity: 'critical',
           description: `HTML references data.${ref} but server doesn't initialize it`,
           location: 'template',
           fix: `Add 'data.${ref} = ...;' to server script`
+        });
+      } else if (!isUnconditional && isConditional) {
+        // Found but only conditionally - warning
+        issues.push({
+          type: 'conditional_data',
+          severity: 'warning',
+          description: `HTML references data.${ref} which is only initialized conditionally (e.g., inside if blocks)`,
+          location: 'template',
+          fix: `Consider initializing data.${ref} unconditionally or using ng-if in template to handle undefined state`
         });
       }
     });

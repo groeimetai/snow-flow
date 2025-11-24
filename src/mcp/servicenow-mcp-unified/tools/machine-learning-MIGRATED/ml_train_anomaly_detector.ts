@@ -99,8 +99,31 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       fields: [metricField, 'sys_created_on']
     });
 
+    // Check data availability
+    const requiredRecords = 50; // Minimum records for meaningful anomaly detection
+    const availableRecords = records.length;
+    const canTrain = availableRecords >= requiredRecords;
+
     if (!records || records.length === 0) {
-      return createErrorResult('No data found for training');
+      return createErrorResult('No data found for training', {
+        data_availability: {
+          required_records: requiredRecords,
+          available_records: 0,
+          can_train: false,
+          recommendation: `No ${metric_type} data available for the specified time period. Ensure your instance has historical data.`
+        }
+      });
+    }
+
+    if (!canTrain) {
+      return createErrorResult(`Insufficient training data: found ${availableRecords} records, need at least ${requiredRecords}`, {
+        data_availability: {
+          required_records: requiredRecords,
+          available_records: availableRecords,
+          can_train: false,
+          recommendation: `Need at least ${requiredRecords} records for reliable anomaly detection. Currently have ${availableRecords}. Consider increasing lookback_days or waiting for more data.`
+        }
+      });
     }
 
     // Prepare time series data
@@ -201,6 +224,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         encoding_dimension: encodingDim,
         anomaly_threshold: threshold.toFixed(4),
         final_loss: finalLoss.toFixed(4)
+      },
+      data_availability: {
+        required_records: requiredRecords,
+        available_records: availableRecords,
+        can_train: true,
+        recommendation: `Successfully trained on ${availableRecords} records across ${lookback_days} days. Model is ready for anomaly detection.`
       }
     });
 

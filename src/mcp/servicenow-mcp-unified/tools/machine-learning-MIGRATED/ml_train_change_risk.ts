@@ -83,8 +83,31 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       fields: ['short_description', 'risk', 'category', 'type', 'assignment_group', 'approval', 'test_plan', 'backout_plan', 'close_code', 'implementation_plan']
     });
 
+    // Check data availability
+    const requiredRecords = 100;
+    const availableRecords = changes.length;
+    const canTrain = availableRecords >= requiredRecords;
+
     if (!changes || changes.length === 0) {
-      return createErrorResult('No change requests found for training');
+      return createErrorResult('No change requests found for training', {
+        data_availability: {
+          required_records: requiredRecords,
+          available_records: 0,
+          can_train: false,
+          recommendation: 'No change request data available. Ensure your instance has change request records.'
+        }
+      });
+    }
+
+    if (!canTrain) {
+      return createErrorResult(`Insufficient training data: found ${availableRecords} records, need at least ${requiredRecords}`, {
+        data_availability: {
+          required_records: requiredRecords,
+          available_records: availableRecords,
+          can_train: false,
+          recommendation: `Need at least ${requiredRecords} change records for reliable training. Currently have ${availableRecords}. Consider adjusting your query or waiting for more data.`
+        }
+      });
     }
 
     // Prepare training data
@@ -151,6 +174,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         risk_levels: riskLevels,
         final_accuracy: (finalAccuracy * 100).toFixed(2) + '%',
         final_loss: finalLoss.toFixed(4)
+      },
+      data_availability: {
+        required_records: requiredRecords,
+        available_records: availableRecords,
+        can_train: true,
+        recommendation: `Successfully trained on ${availableRecords} records. Model is ready for risk predictions.`
       }
     });
 
