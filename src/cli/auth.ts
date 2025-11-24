@@ -716,6 +716,147 @@ export function registerAuthCommands(program: Command) {
       }
     });
 
+  // Provider - configure LLM provider only
+  auth
+    .command('provider')
+    .description('Configure LLM provider and model only (via SnowCode)')
+    .action(async () => {
+      try {
+        fixSnowCodeBinaryPermissions();
+        prompts.intro('🤖 Configure LLM Provider (powered by SnowCode)');
+        execSync('snow-code auth provider', { stdio: 'inherit' });
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
+        } else {
+          prompts.log.error('Provider configuration was interrupted or failed');
+        }
+      }
+    });
+
+  // ServiceNow - configure ServiceNow connection only
+  auth
+    .command('servicenow')
+    .description('Configure ServiceNow connection only (via SnowCode)')
+    .action(async () => {
+      try {
+        fixSnowCodeBinaryPermissions();
+        prompts.intro('❄️ Configure ServiceNow (powered by SnowCode)');
+        execSync('snow-code auth servicenow', { stdio: 'inherit' });
+
+        // Post-processing: Ensure auth.json is in correct location
+        await ensureCorrectAuthLocation();
+
+        // Update MCP server config with ServiceNow credentials
+        await updateMCPServerConfig();
+
+        // Sync MCP configs for Claude Code
+        try {
+          await syncMcpConfigs(process.cwd());
+        } catch (syncErr: any) {
+          authLogger.debug(`MCP sync: ${syncErr.message}`);
+        }
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
+        } else {
+          prompts.log.error('ServiceNow configuration was interrupted or failed');
+        }
+      }
+    });
+
+  // Integrations - configure third-party tools only
+  auth
+    .command('integrations')
+    .description('Configure third-party integrations (Jira, Azure DevOps, Confluence) via SnowCode')
+    .action(async () => {
+      try {
+        fixSnowCodeBinaryPermissions();
+        prompts.intro('🔗 Configure Third-Party Integrations (powered by SnowCode)');
+        execSync('snow-code auth integrations', { stdio: 'inherit' });
+
+        // Post-processing: Check if enterprise was configured and sync MCP
+        const authPath = path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json');
+        try {
+          const authJson = JSON.parse(await fs.readFile(authPath, 'utf-8'));
+          const enterpriseCreds = authJson['enterprise'];
+
+          if (enterpriseCreds && enterpriseCreds.type === 'enterprise' && enterpriseCreds.licenseKey) {
+            // Re-configure enterprise MCP server with updated credentials
+            await addEnterpriseMcpServer({
+              licenseKey: enterpriseCreds.licenseKey,
+              role: (enterpriseCreds.role || 'developer') as 'developer' | 'stakeholder' | 'admin',
+              serverUrl: enterpriseCreds.enterpriseUrl || 'https://portal.snow-flow.dev',
+            });
+
+            // Sync MCP configs
+            await syncMcpConfigs(process.cwd());
+            prompts.log.success('✅ MCP configurations synced with new integrations');
+          }
+        } catch (err: any) {
+          authLogger.debug(`Integration sync: ${err.message}`);
+        }
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
+        } else {
+          prompts.log.error('Integration configuration was interrupted or failed');
+        }
+      }
+    });
+
+  // Enterprise Login - device authorization flow
+  auth
+    .command('enterprise-login')
+    .description('Authenticate with Snow-Flow Enterprise using browser (via SnowCode)')
+    .action(async () => {
+      try {
+        fixSnowCodeBinaryPermissions();
+        prompts.intro('🏢 Snow-Flow Enterprise Login (powered by SnowCode)');
+        execSync('snow-code auth enterprise-login', { stdio: 'inherit' });
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
+        } else {
+          prompts.log.error('Enterprise login was interrupted or failed');
+        }
+      }
+    });
+
+  // Enterprise Sync - re-sync credentials from portal
+  auth
+    .command('enterprise-sync')
+    .description('Re-sync enterprise credentials from portal (via SnowCode)')
+    .action(async () => {
+      try {
+        fixSnowCodeBinaryPermissions();
+        execSync('snow-code auth enterprise-sync', { stdio: 'inherit' });
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
+        } else {
+          prompts.log.error('Enterprise sync was interrupted or failed');
+        }
+      }
+    });
+
+  // Enterprise Status - show current enterprise status
+  auth
+    .command('enterprise-status')
+    .description('Show enterprise authentication status (via SnowCode)')
+    .action(async () => {
+      try {
+        fixSnowCodeBinaryPermissions();
+        execSync('snow-code auth enterprise-status', { stdio: 'inherit' });
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          prompts.log.error('SnowCode is not installed. Run: npm install -g snow-flow');
+        } else {
+          prompts.log.error('Enterprise status check failed');
+        }
+      }
+    });
+
   // Sync credentials to portal
   auth
     .command('sync')
