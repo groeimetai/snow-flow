@@ -259,13 +259,14 @@ async function enterpriseLicenseFlow(): Promise<void> {
  * Update project documentation (CLAUDE.md and AGENTS.md) with enterprise server information
  * Only adds the enterprise section if it doesn't already exist
  */
-async function updateDocumentationWithEnterprise(): Promise<void> {
+async function updateDocumentationWithEnterprise(enabledServices?: string[]): Promise<void> {
   try {
     const projectRoot = process.cwd();
     const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
     const agentsMdPath = path.join(projectRoot, 'AGENTS.md');
 
-    const enterpriseDocSection = `
+    // Build enterprise doc section
+    let enterpriseDocSection = `
 ## 🚀 Enterprise Features (Snow-Flow Enterprise License)
 
 ### Enterprise MCP Server
@@ -464,6 +465,12 @@ const summary = await confluence_generate_page_summary({
 - ✅ **Seamless integration** - ServiceNow ↔ Jira ↔ Azure ↔ Confluence
 - ✅ **Single source of truth** across all enterprise systems
 `;
+
+    // Add autonomous workflow instructions if services are enabled
+    if (enabledServices && enabledServices.length > 0) {
+      const { generateEnterpriseInstructions } = await import('./enterprise-docs-generator.js');
+      enterpriseDocSection += generateEnterpriseInstructions(enabledServices);
+    }
 
     // Update CLAUDE.md if it exists and doesn't already have enterprise section
     try {
@@ -1045,40 +1052,28 @@ export function registerAuthCommands(program: Command) {
 
         // Update AGENTS.md and CLAUDE.md with enterprise workflow instructions
         prompts.log.message('');
-        prompts.log.step('Updating project documentation with enterprise workflow...');
+        prompts.log.step('Updating project documentation with autonomous workflow...');
 
-        const { updateAgentsMd, updateClaudeMd } = await import('./enterprise-docs-generator.js');
         const enabledServices = credentialsToSync.map(c => c.service);
+        await updateDocumentationWithEnterprise(enabledServices);
 
-        const agentsUpdated = await updateAgentsMd(enabledServices);
-        const claudeUpdated = await updateClaudeMd(enabledServices);
-
-        if (agentsUpdated) {
-          prompts.log.success('✓ AGENTS.md updated with autonomous workflow instructions');
+        prompts.log.message('');
+        prompts.log.info('📚 AI agents now have full autonomy over:');
+        if (enabledServices.includes('jira')) {
+          prompts.log.info('   • Jira: Story selection, updates, completion, commenting');
         }
-        if (claudeUpdated) {
-          prompts.log.success('✓ CLAUDE.md updated with autonomous workflow instructions');
+        if (enabledServices.includes('azdo')) {
+          prompts.log.info('   • Azure DevOps: Work item management, status updates');
         }
-
-        if (agentsUpdated || claudeUpdated) {
-          prompts.log.message('');
-          prompts.log.info('📚 AI agents now have full autonomy over:');
-          if (enabledServices.includes('jira')) {
-            prompts.log.info('   • Jira: Story selection, updates, completion, commenting');
-          }
-          if (enabledServices.includes('azdo')) {
-            prompts.log.info('   • Azure DevOps: Work item management, status updates');
-          }
-          if (enabledServices.includes('confluence')) {
-            prompts.log.info('   • Confluence: Create & maintain documentation');
-          }
-          prompts.log.message('');
-          prompts.log.info('Agents will automatically:');
-          prompts.log.info('   1. Update stories in real-time during development');
-          prompts.log.info('   2. Link Update Sets to stories');
-          prompts.log.info('   3. Create comprehensive Confluence documentation');
-          prompts.log.info('   4. Move stories to Done with full traceability');
+        if (enabledServices.includes('confluence')) {
+          prompts.log.info('   • Confluence: Create & maintain documentation');
         }
+        prompts.log.message('');
+        prompts.log.info('Agents will automatically:');
+        prompts.log.info('   1. Update stories in real-time during development');
+        prompts.log.info('   2. Link Update Sets to stories');
+        prompts.log.info('   3. Create comprehensive Confluence documentation');
+        prompts.log.info('   4. Move stories to Done with full traceability');
 
         prompts.outro('Done');
 

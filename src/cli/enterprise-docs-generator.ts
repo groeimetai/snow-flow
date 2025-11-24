@@ -1,16 +1,15 @@
 /**
  * Enterprise Documentation Generator
  *
- * Automatically updates AGENTS.md and CLAUDE.md with comprehensive
- * enterprise integration instructions when user authenticates with
- * Snow-Flow Enterprise (Jira, Azure DevOps, Confluence).
+ * Generates comprehensive enterprise workflow instructions for AGENTS.md and CLAUDE.md
+ * when user authenticates with Snow-Flow Enterprise (Jira, Azure DevOps, Confluence).
+ *
+ * Used by auth.ts updateDocumentationWithEnterprise() function.
  */
-
-import fs from 'fs';
-import path from 'path';
 
 /**
  * Generate comprehensive enterprise workflow instructions
+ * This function is called by updateDocumentationWithEnterprise() in auth.ts
  */
 export function generateEnterpriseInstructions(enabledServices: string[]): string {
   const hasJira = enabledServices.includes('jira');
@@ -705,86 +704,4 @@ await jira_transition_issue({ issueKey: "PROJ-123", transitionIdOrName: "Done" }
 `;
 
   return workflow;
-}
-
-/**
- * Update AGENTS.md with enterprise instructions
- */
-export async function updateAgentsMd(enabledServices: string[]): Promise<boolean> {
-  try {
-    const agentsMdPath = path.join(process.cwd(), 'AGENTS.md');
-
-    // Check if AGENTS.md exists
-    if (!fs.existsSync(agentsMdPath)) {
-      // Create new AGENTS.md with enterprise instructions
-      const content = `# Snow-Flow AI Agent Instructions\n\n` +
-                     `This file provides instructions for AI agents working with Snow-Flow.\n` +
-                     generateEnterpriseInstructions(enabledServices);
-      fs.writeFileSync(agentsMdPath, content, 'utf-8');
-      return true;
-    }
-
-    // Read existing AGENTS.md
-    let content = fs.readFileSync(agentsMdPath, 'utf-8');
-
-    // Remove old enterprise section if exists
-    const enterpriseMarker = '# 🚀 ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW';
-    const startIndex = content.indexOf(enterpriseMarker);
-    if (startIndex !== -1) {
-      // Find the next main heading or end of file
-      const nextHeadingIndex = content.indexOf('\n# ', startIndex + 1);
-      if (nextHeadingIndex !== -1) {
-        content = content.substring(0, startIndex) + content.substring(nextHeadingIndex);
-      } else {
-        content = content.substring(0, startIndex);
-      }
-    }
-
-    // Add new enterprise instructions
-    content += generateEnterpriseInstructions(enabledServices);
-
-    fs.writeFileSync(agentsMdPath, content, 'utf-8');
-    return true;
-  } catch (error) {
-    console.error('Failed to update AGENTS.md:', error);
-    return false;
-  }
-}
-
-/**
- * Update CLAUDE.md with enterprise instructions
- */
-export async function updateClaudeMd(enabledServices: string[]): Promise<boolean> {
-  try {
-    const claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
-
-    // Check if CLAUDE.md exists
-    if (!fs.existsSync(claudeMdPath)) {
-      return false; // Don't create CLAUDE.md if it doesn't exist
-    }
-
-    // Read existing CLAUDE.md
-    let content = fs.readFileSync(claudeMdPath, 'utf-8');
-
-    // Remove old enterprise section if exists
-    const enterpriseMarker = '# 🚀 ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW';
-    const startIndex = content.indexOf(enterpriseMarker);
-    if (startIndex !== -1) {
-      const nextHeadingIndex = content.indexOf('\n# ', startIndex + 1);
-      if (nextHeadingIndex !== -1) {
-        content = content.substring(0, startIndex) + content.substring(nextHeadingIndex);
-      } else {
-        content = content.substring(0, startIndex);
-      }
-    }
-
-    // Add new enterprise instructions
-    content += generateEnterpriseInstructions(enabledServices);
-
-    fs.writeFileSync(claudeMdPath, content, 'utf-8');
-    return true;
-  } catch (error) {
-    console.error('Failed to update CLAUDE.md:', error);
-    return false;
-  }
 }
