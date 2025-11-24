@@ -283,9 +283,13 @@ const updateSet = await snow_update_set_manage({
 // Changes will be automatically tracked in this Update Set
 
 // STEP 3: NOW DEVELOP (all changes auto-tracked in Update Set)
-await snow_deploy({
-  type: 'widget',
-  config: { name: 'incident_dashboard', ... }
+await snow_create_artifact({
+  type: 'sp_widget',
+  name: 'incident_dashboard',
+  title: 'Incident Dashboard',
+  template: '<div>{{data.message}}</div>',
+  server_script: 'data.message = "Hello World";',  // ES5 only!
+  client_script: 'function($scope) { var c = this; }'
 });
 
 await snow_create_business_rule({
@@ -455,16 +459,14 @@ Is this a development task? (Creating/modifying ServiceNow artifacts)
 // 1. UPDATE SET FIRST
 await snow_update_set_manage({ action: 'create', name: "Feature: X" });
 
-// 2. DEPLOY WIDGET
-await snow_deploy({
-  type: 'widget',
-  config: {
-    name: 'incident_dashboard',
-    title: 'Incident Dashboard',
-    template: '<div>{{data.message}}</div>',
-    server_script: 'data.message = "Hello World";',
-    client_script: 'function($scope) { var c = this; }'
-  }
+// 2. CREATE WIDGET
+await snow_create_artifact({
+  type: 'sp_widget',
+  name: 'incident_dashboard',
+  title: 'Incident Dashboard',
+  template: '<div>{{data.message}}</div>',
+  server_script: 'data.message = "Hello World";',  // ES5 only!
+  client_script: 'function($scope) { var c = this; }'
 });
 
 // 3. VERIFY
@@ -795,7 +797,7 @@ await snow_update_set_manage({ action: 'complete', update_set_id: us.sys_id });
 | User Want | MCP Tool | Notes |
 |-----------|----------|-------|
 | Create workspace | `snow_create_complete_workspace` | One call, handles all steps |
-| Create widget | `snow_deploy({ type: 'widget' })` | After Update Set |
+| Create widget | `snow_create_artifact({ type: 'sp_widget' })` | After Update Set |
 | Fix widget | `snow_pull_artifact` | Local sync, NOT query! |
 | Create business rule | `snow_create_business_rule` | ES5 only! |
 | Query incidents | `snow_query_incidents` | Specialized tool |
