@@ -1042,6 +1042,44 @@ export function registerAuthCommands(program: Command) {
         prompts.log.message('');
         prompts.log.success('Credential sync complete!');
         prompts.log.info('View your credentials at: ' + enterpriseUrl + '/portal/credentials');
+
+        // Update AGENTS.md and CLAUDE.md with enterprise workflow instructions
+        prompts.log.message('');
+        prompts.log.step('Updating project documentation with enterprise workflow...');
+
+        const { updateAgentsMd, updateClaudeMd } = await import('./enterprise-docs-generator.js');
+        const enabledServices = credentialsToSync.map(c => c.service);
+
+        const agentsUpdated = await updateAgentsMd(enabledServices);
+        const claudeUpdated = await updateClaudeMd(enabledServices);
+
+        if (agentsUpdated) {
+          prompts.log.success('✓ AGENTS.md updated with autonomous workflow instructions');
+        }
+        if (claudeUpdated) {
+          prompts.log.success('✓ CLAUDE.md updated with autonomous workflow instructions');
+        }
+
+        if (agentsUpdated || claudeUpdated) {
+          prompts.log.message('');
+          prompts.log.info('📚 AI agents now have full autonomy over:');
+          if (enabledServices.includes('jira')) {
+            prompts.log.info('   • Jira: Story selection, updates, completion, commenting');
+          }
+          if (enabledServices.includes('azdo')) {
+            prompts.log.info('   • Azure DevOps: Work item management, status updates');
+          }
+          if (enabledServices.includes('confluence')) {
+            prompts.log.info('   • Confluence: Create & maintain documentation');
+          }
+          prompts.log.message('');
+          prompts.log.info('Agents will automatically:');
+          prompts.log.info('   1. Update stories in real-time during development');
+          prompts.log.info('   2. Link Update Sets to stories');
+          prompts.log.info('   3. Create comprehensive Confluence documentation');
+          prompts.log.info('   4. Move stories to Done with full traceability');
+        }
+
         prompts.outro('Done');
 
       } catch (error: any) {
