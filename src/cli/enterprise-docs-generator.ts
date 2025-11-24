@@ -130,12 +130,15 @@ if (!canStart) {
 
 **1.3 Claim the Story**
 \`\`\`javascript
+// Get current user's accountId
+const currentUser = await jira_get_current_user();
+
 // Assign + transition + comment in ONE call
 await jira_transition_issue({
   issueKey: "PROJ-123",
   transitionIdOrName: "In Progress",
   fields: {
-    assignee: { name: "currentUser" },
+    assignee: { accountId: currentUser.accountId },
     comment: \`🚀 Starting development
 
 Pre-flight: ✅ Passed
@@ -317,11 +320,14 @@ await jira_add_comment({
 
 **3.2 Transition to In Review**
 \`\`\`javascript
+// Optionally assign to tech lead/reviewer (get their accountId first if needed)
+// const reviewer = await jira_search_users({ query: "tech.lead@company.com" });
+
 await jira_transition_issue({
   issueKey: "PROJ-123",
   transitionIdOrName: "In Review",
   fields: {
-    assignee: { name: "techlead" },
+    // assignee: { accountId: reviewer[0].accountId },  // Optional: assign to specific reviewer
     comment: \`🔍 Ready for Code Review\\n\\n**Status:**\\n✅ Development complete\\n✅ All tests passing\\n✅ Documentation complete\\n\\n**Update Set:** [Link](\${updateSet.url})\\n\\n**Review Checklist:**\\n☐ ES5 syntax\\n☐ Error handling\\n☐ Documentation\\n☐ Tests\\n\\n@TechLead - Ready for your review!\`
   }
 });
@@ -386,8 +392,10 @@ await jira_add_comment({
 - Performance: 150ms avg (target: <200ms) ✅
 
 ## 📚 Documentation
-- Confluence: [Architecture & API Docs](link)
+- Confluence: [Architecture & API Docs](\${confluenceUrl})
 - Story description: Updated with technical details
+
+**Note:** Use confluence_create_page response: \`https://your-domain.atlassian.net/wiki\${doc._links.webui}\`
 
 ## 🚀 Deployment
 ✅ Update Set locked and ready
@@ -460,7 +468,9 @@ await jira_add_comment({
 const isUrgent = bug.fields.priority.name === "Highest";
 
 if (isUrgent) {
-  await jira_update_issue({ issueKey: bug.key, assignee: "currentUser" });
+  // Assign to current user
+  const currentUser = await jira_get_current_user();
+  await jira_update_issue({ issueKey: bug.key, fields: { assignee: { accountId: currentUser.accountId } } });
   await jira_transition_issue({ issueKey: bug.key, transitionIdOrName: "In Progress" });
 
   const hotfix = await snow_update_set_manage({
@@ -527,8 +537,10 @@ await jira_add_comment({
 |------|---------|----------------|
 | **jira_search_issues** | Find stories with JQL | jql, maxResults, expand |
 | **jira_get_issue** | Get story details | issueKey, expand |
+| **jira_get_current_user** | Get current user's accountId | - |
+| **jira_search_users** | Find users by email/name | query |
 | **jira_create_issue** | Create stories/bugs/subtasks | project, summary, issueType |
-| **jira_update_issue** | Update fields | issueKey, assignee, customFields, labels |
+| **jira_update_issue** | Update fields | issueKey, fields (assignee, etc) |
 | **jira_transition_issue** | Move through workflow | issueKey, transitionIdOrName, fields |
 | **jira_add_comment** | Add development updates | issueKey, comment |
 | **jira_add_worklog** | Log time spent | issueKey, timeSpent, comment |
@@ -666,6 +678,25 @@ function generateConfluenceInstructions(): string {
 
 You **CREATE AND MAINTAIN** living documentation for every feature you build.
 
+### ⚠️ IMPORTANT: Confluence URL Construction
+
+Confluence API returns **relative URLs** in \`_links.webui\`. You MUST construct the full URL:
+
+\`\`\`javascript
+const page = await confluence_create_page({ ... });
+
+// ✅ CORRECT: Construct full URL
+const confluenceUrl = \`https://your-domain.atlassian.net/wiki\${page._links.webui}\`;
+
+// ❌ WRONG: Using _links.webui directly will give 404
+const brokenUrl = page._links.webui;  // This is just "/spaces/DEV/pages/123"
+\`\`\`
+
+**URL Format Examples:**
+- Correct: \`https://snow-flow.atlassian.net/wiki/spaces/SE/pages/7471106\`
+- Wrong: \`https:snow-flow.atlassian.net/spaces/SE/pages/7471106\` (missing //)
+- Wrong: \`/spaces/SE/pages/7471106\` (missing base URL)
+
 ### CREATE DOCUMENTATION AFTER DEVELOPMENT
 
 \`\`\`javascript
@@ -707,10 +738,13 @@ engine.process(current);
   parentPageId: "123456"
 });
 
-// Link back to Jira/Azure DevOps
+// Construct full Confluence URL for sharing
+const confluenceUrl = \`https://your-domain.atlassian.net/wiki\${page._links.webui}\`;
+
+// Link back to Jira/Azure DevOps with full URL
 await jira_add_comment({
   issueKey: "PROJ-123",
-  comment: \`📚 Documentation: \${page.url}\\n\\nIncludes: Architecture, Components, Testing, Deployment\`
+  comment: \`📚 Documentation: \${confluenceUrl}\\n\\nIncludes: Architecture, Components, Testing, Deployment\`
 });
 \`\`\`
 
@@ -809,8 +843,11 @@ const updateSet = await snow_update_set_manage({ action: "create", name: "Featur
 // Document
 const doc = await confluence_create_page({ spaceKey: "DEV", title: story.fields.summary, content: "..." });
 
+// Construct full Confluence URL (format: https://your-domain.atlassian.net/wiki + _links.webui)
+const confluenceUrl = \`https://your-domain.atlassian.net/wiki\${doc._links.webui}\`;
+
 // Complete
-await jira_add_comment({ issueKey: "PROJ-123", comment: \`✅ Complete\\nUpdate Set: \${updateSet.url}\\nDocs: \${doc.url}\` });
+await jira_add_comment({ issueKey: "PROJ-123", comment: \`✅ Complete\\nUpdate Set: \${updateSet.url}\\nDocs: \${confluenceUrl}\` });
 await jira_transition_issue({ issueKey: "PROJ-123", transitionIdOrName: "Done" });
 \`\`\`
 
