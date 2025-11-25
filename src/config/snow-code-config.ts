@@ -124,8 +124,22 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     // Read existing .mcp.json
     const content = await fs.readFile(mcpConfigPath, 'utf-8');
     const mcpConfig = JSON.parse(content);
-    if (!mcpConfig.mcpServers) {
-      mcpConfig.mcpServers = {};
+
+    // 🔥 FIX: Use 'mcp' key (matching .mcp.json template), NOT 'mcpServers'
+    if (!mcpConfig.mcp) {
+      mcpConfig.mcp = {};
+    }
+
+    // 🔥 CLEANUP: Remove stale 'mcpServers' entries from previous buggy versions
+    if (mcpConfig.mcpServers) {
+      if (mcpConfig.mcpServers['snow-flow-enterprise']) {
+        delete mcpConfig.mcpServers['snow-flow-enterprise'];
+      }
+      // Remove mcpServers entirely if empty
+      if (Object.keys(mcpConfig.mcpServers).length === 0) {
+        delete mcpConfig.mcpServers;
+      }
+      logger.info('Cleaned up legacy mcpServers entries');
     }
 
     // 🔥 IMPORTANT: Auth and MCP servers are SEPARATE!
@@ -221,7 +235,8 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     }
 
     // Add or update enterprise MCP server with LOCAL proxy configuration
-    mcpConfig.mcpServers['snow-flow-enterprise'] = {
+    // 🔥 FIX: Write to 'mcp' key (matching template), NOT 'mcpServers'
+    mcpConfig.mcp['snow-flow-enterprise'] = {
       type: 'local',
       command: ['node', enterpriseProxyPath],
       description: `Snow-Flow Enterprise (${config.role}) - Jira (22), Azure DevOps (26), Confluence (24 tools)`,
@@ -321,8 +336,24 @@ export async function removeEnterpriseMcpServer(): Promise<void> {
     const content = await fs.readFile(mcpConfigPath, 'utf-8');
     const mcpConfig = JSON.parse(content);
 
+    let removed = false;
+
+    // Remove from 'mcp' key (correct location)
+    if (mcpConfig.mcp?.['snow-flow-enterprise']) {
+      delete mcpConfig.mcp['snow-flow-enterprise'];
+      removed = true;
+    }
+
+    // Also cleanup legacy 'mcpServers' if present
     if (mcpConfig.mcpServers?.['snow-flow-enterprise']) {
       delete mcpConfig.mcpServers['snow-flow-enterprise'];
+      if (Object.keys(mcpConfig.mcpServers).length === 0) {
+        delete mcpConfig.mcpServers;
+      }
+      removed = true;
+    }
+
+    if (removed) {
       await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), 'utf-8');
       logger.info('Successfully removed enterprise MCP server from .mcp.json');
     } else {
@@ -348,7 +379,8 @@ export async function isEnterpriseMcpConfigured(): Promise<boolean> {
     const content = await fs.readFile(mcpConfigPath, 'utf-8');
     const mcpConfig = JSON.parse(content);
 
-    return !!mcpConfig.mcpServers?.['snow-flow-enterprise'];
+    // Check 'mcp' key (correct) and legacy 'mcpServers' for compatibility
+    return !!(mcpConfig.mcp?.['snow-flow-enterprise'] || mcpConfig.mcpServers?.['snow-flow-enterprise']);
   } catch (error) {
     return false;
   }
@@ -421,7 +453,10 @@ export async function getEnterpriseMcpConfig(): Promise<any | null> {
     const content = await fs.readFile(mcpConfigPath, 'utf-8');
     const mcpConfig = JSON.parse(content);
 
-    const server = mcpConfig.mcpServers?.['snow-flow-enterprise'] || null;
+    // Check 'mcp' key first (correct), then legacy 'mcpServers'
+    const server = mcpConfig.mcp?.['snow-flow-enterprise'] ||
+                   mcpConfig.mcpServers?.['snow-flow-enterprise'] ||
+                   null;
 
     if (server) {
       logger.debug('Found enterprise MCP server configuration in .mcp.json');

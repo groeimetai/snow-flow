@@ -268,12 +268,18 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
     const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
     const agentsMdPath = path.join(projectRoot, 'AGENTS.md');
 
+    authLogger.info(`Updating documentation in: ${projectRoot}`);
+    authLogger.debug(`CLAUDE.md path: ${claudeMdPath}`);
+    authLogger.debug(`AGENTS.md path: ${agentsMdPath}`);
+
     // Use the comprehensive enterprise instructions from enterprise-docs-generator.ts
     let enterpriseDocSection = '';
 
     if (enabledServices && enabledServices.length > 0) {
+      authLogger.info(`Generating enterprise docs for services: ${enabledServices.join(', ')}`);
       const { generateEnterpriseInstructions } = await import('./enterprise-docs-generator.js');
       enterpriseDocSection = generateEnterpriseInstructions(enabledServices);
+      authLogger.info(`Generated ${enterpriseDocSection.length} characters of enterprise documentation`);
     } else {
       authLogger.warn('No enterprise services specified, skipping documentation update');
       return;
@@ -313,6 +319,7 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
     };
 
     // Update CLAUDE.md
+    let claudeUpdated = false;
     try {
       await fs.access(claudeMdPath);
       let claudeContent = await fs.readFile(claudeMdPath, 'utf-8');
@@ -337,13 +344,17 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
 
       await fs.writeFile(claudeMdPath, updatedContent, 'utf-8');
       authLogger.info('✅ Updated CLAUDE.md with enterprise features documentation');
+      claudeUpdated = true;
     } catch (err: any) {
-      if (err.code !== 'ENOENT') {
-        authLogger.debug(`Could not update CLAUDE.md: ${err.message}`);
+      if (err.code === 'ENOENT') {
+        authLogger.info(`CLAUDE.md not found at ${claudeMdPath} - skipping`);
+      } else {
+        authLogger.warn(`Could not update CLAUDE.md: ${err.message}`);
       }
     }
 
     // Update AGENTS.md
+    let agentsUpdated = false;
     try {
       await fs.access(agentsMdPath);
       let agentsContent = await fs.readFile(agentsMdPath, 'utf-8');
@@ -368,15 +379,27 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
 
       await fs.writeFile(agentsMdPath, updatedContent, 'utf-8');
       authLogger.info('✅ Updated AGENTS.md with enterprise features documentation');
+      agentsUpdated = true;
     } catch (err: any) {
-      if (err.code !== 'ENOENT') {
-        authLogger.debug(`Could not update AGENTS.md: ${err.message}`);
+      if (err.code === 'ENOENT') {
+        authLogger.info(`AGENTS.md not found at ${agentsMdPath} - skipping`);
+      } else {
+        authLogger.warn(`Could not update AGENTS.md: ${err.message}`);
       }
     }
 
-    prompts.log.success('✅ Documentation updated with comprehensive enterprise workflow instructions');
+    // Report what was updated
+    if (claudeUpdated || agentsUpdated) {
+      prompts.log.success('✅ Documentation updated with comprehensive enterprise workflow instructions');
+      if (claudeUpdated) authLogger.info('  - CLAUDE.md updated');
+      if (agentsUpdated) authLogger.info('  - AGENTS.md updated');
+    } else {
+      prompts.log.warn('⚠️  No documentation files found to update (CLAUDE.md/AGENTS.md)');
+      prompts.log.info('   Run from a project directory with CLAUDE.md and/or AGENTS.md');
+    }
   } catch (error: any) {
     authLogger.warn(`Failed to update documentation: ${error.message}`);
+    authLogger.debug(`Stack: ${error.stack}`);
     // Don't throw - this is not critical
   }
 }
@@ -678,6 +701,20 @@ export function registerAuthCommands(program: Command) {
             } catch (syncErr: any) {
               prompts.log.warn(`⚠️  MCP config sync warning: ${syncErr.message}`);
               authLogger.warn(`MCP sync error: ${syncErr.message}`);
+            }
+
+            // 🔥 CRITICAL: Generate comprehensive enterprise documentation for AI agents
+            // This updates CLAUDE.md and AGENTS.md with full Jira/Azure DevOps/Confluence workflows
+            try {
+              prompts.log.step('Generating enterprise workflow documentation for AI agents...');
+              const defaultEnterpriseServices = ['jira', 'azdo', 'confluence'];
+              await updateDocumentationWithEnterprise(defaultEnterpriseServices);
+              prompts.log.success('✅ AI agent documentation updated with enterprise workflows');
+              prompts.log.info('   Agents now have full autonomy over Jira, Azure DevOps, and Confluence');
+            } catch (docErr: any) {
+              prompts.log.warn(`⚠️  Documentation update warning: ${docErr.message}`);
+              authLogger.warn(`Enterprise docs generation error: ${docErr.message}`);
+              authLogger.debug(`Stack trace: ${docErr.stack}`);
             }
           }
         } catch (err: any) {
