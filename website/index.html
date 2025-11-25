@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Snow-Flow | Enterprise ServiceNow Development Platform</title>
-    <meta name="description" content="AI-powered ServiceNow development with 410+ tools, seat-based licensing with developer & stakeholder roles, managed SaaS infrastructure, and 99.9% SLA. Built for enterprise teams.">
+    <meta name="description" content="AI-powered ServiceNow development with 347+ tools across 2 unified MCP servers, 75+ LLM providers, seat-based licensing with developer & stakeholder roles, and 99.9% SLA. Built for enterprise teams.">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="Snow-Flow | Enterprise ServiceNow Development Platform">
-    <meta property="og:description" content="AI-powered ServiceNow development with 410+ tools, user management, and 99.9% SLA">
+    <meta property="og:description" content="AI-powered ServiceNow development with 347+ tools across 2 unified MCP servers, 75+ LLM providers, and 99.9% SLA">
     <meta property="og:image" content="https://snow-flow.dev/logos/linkedin-banner.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="627">
@@ -29,22 +29,75 @@
         }
 
         :root {
-            /* AgentDB-inspired minimalist palette */
-            --brand-dark: #1E2531;
-            --brand-darker: #151A23;
+            /* Modern refined palette */
+            --brand-dark: #0F1419;
+            --brand-darker: #080B0E;
             --brand-cyan: #00D9FF;
+            --brand-cyan-soft: #00B8D9;
             --brand-blue: #3B82F6;
-            --text-white: #FFFFFF;
+            --brand-purple: #8B5CF6;
+            --text-white: #F8FAFC;
             --text-gray: #94A3B8;
-            --border: #2D3748;
+            --text-muted: #64748B;
+            --border: rgba(148, 163, 184, 0.1);
+            --border-subtle: rgba(0, 217, 255, 0.08);
+
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #00D9FF 0%, #3B82F6 50%, #8B5CF6 100%);
+            --gradient-glow: radial-gradient(ellipse at center, rgba(0, 217, 255, 0.15) 0%, transparent 70%);
+            --gradient-card: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+
+            /* Shadows */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 60px rgba(0, 217, 255, 0.15);
+            --shadow-glow-strong: 0 0 80px rgba(0, 217, 255, 0.25);
+
+            /* Timing */
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             background: var(--brand-dark);
             color: var(--text-white);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            overflow-x: hidden;
+        }
+
+        /* Subtle animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 217, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 90% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 30% at 10% 60%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Noise texture overlay for depth */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.015;
+            pointer-events: none;
+            z-index: -1;
         }
 
         .container {
@@ -61,12 +114,13 @@
         nav {
             position: sticky;
             top: 0;
-            background: rgba(30, 37, 49, 0.98);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
+            background: rgba(15, 20, 25, 0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             padding: 1rem 0;
             z-index: 9999;
+            transition: all 0.3s var(--ease-out-expo);
         }
 
         .nav-content {
@@ -134,26 +188,49 @@
             text-decoration: none;
             font-weight: 500;
             font-size: 0.95rem;
-            transition: color 0.2s;
+            transition: all 0.3s var(--ease-out-expo);
             white-space: nowrap;
+            position: relative;
+            padding: 0.5rem 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--brand-cyan), var(--brand-blue));
+            transition: width 0.3s var(--ease-out-expo);
+            border-radius: 1px;
         }
 
         .nav-links a:hover {
             color: var(--text-white);
         }
 
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
         .nav-cta {
-            background: var(--brand-cyan);
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-blue) 100%);
             color: var(--brand-darker) !important;
             padding: 0.625rem 1.25rem;
-            border-radius: 6px;
+            border-radius: 8px;
             font-weight: 600;
-            transition: all 0.2s;
+            transition: all 0.3s var(--ease-out-expo);
+            box-shadow: 0 4px 12px rgba(0, 217, 255, 0.25);
+        }
+
+        .nav-cta::after {
+            display: none;
         }
 
         .nav-cta:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 217, 255, 0.4);
+            box-shadow: 0 8px 24px rgba(0, 217, 255, 0.4);
         }
 
         /* Mobile Menu Button */
@@ -257,150 +334,364 @@
             pointer-events: auto;
         }
 
-        /* Hero - Massive and Bold */
+        /* Hero - Refined and Impressive */
         .hero {
-            padding: 10rem 0 8rem;
+            padding: 8rem 0 6rem;
             text-align: center;
+            position: relative;
+        }
+
+        /* Hero glow effect */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            background: radial-gradient(ellipse at center, rgba(0, 217, 255, 0.12) 0%, transparent 60%);
+            pointer-events: none;
+            filter: blur(60px);
         }
 
         .hero-label {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            background: rgba(0, 217, 255, 0.1);
-            border: 1px solid var(--brand-cyan);
-            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.25rem;
+            background: rgba(0, 217, 255, 0.06);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 100px;
             color: var(--brand-cyan);
-            font-size: 0.875rem;
-            font-weight: 600;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
             margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            animation: fadeInUp 0.8s var(--ease-out-expo) both;
+        }
+
+        .hero-label::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--brand-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--brand-cyan);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.8); }
         }
 
         .hero h1 {
-            font-size: 5rem;
+            font-size: clamp(2.75rem, 8vw, 5rem);
             font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 2rem;
-            letter-spacing: -0.02em;
+            line-height: 1.05;
+            margin-bottom: 1.75rem;
+            letter-spacing: -0.03em;
+            animation: fadeInUp 0.8s var(--ease-out-expo) 0.1s both;
         }
 
         .hero h1 .highlight {
-            color: var(--brand-cyan);
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
         }
 
         .hero-subtitle {
-            font-size: 1.5rem;
+            font-size: clamp(1.125rem, 2.5vw, 1.375rem);
             color: var(--text-gray);
-            max-width: 700px;
-            margin: 0 auto 3rem;
-            line-height: 1.5;
+            max-width: 680px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.6;
+            font-weight: 400;
+            animation: fadeInUp 0.8s var(--ease-out-expo) 0.2s both;
+        }
+
+        .hero-buttons {
+            animation: fadeInUp 0.8s var(--ease-out-expo) 0.3s both;
         }
 
         .hero-cta {
-            display: inline-block;
-            background: var(--brand-cyan);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-blue) 100%);
             color: var(--brand-darker);
-            padding: 1.25rem 3rem;
-            border-radius: 8px;
+            padding: 1rem 2rem;
+            border-radius: 12px;
             text-decoration: none;
             font-weight: 700;
-            font-size: 1.125rem;
-            transition: transform 0.2s, box-shadow 0.3s;
+            font-size: 1rem;
+            letter-spacing: 0.01em;
+            transition: all 0.3s var(--ease-out-expo);
+            box-shadow:
+                0 4px 20px rgba(0, 217, 255, 0.3),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
         }
 
         .hero-cta:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0, 217, 255, 0.5);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow:
+                0 12px 40px rgba(0, 217, 255, 0.4),
+                0 0 80px rgba(0, 217, 255, 0.15),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .hero-cta:hover::before {
+            left: 100%;
         }
 
         .hero-secondary {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
             color: var(--text-gray);
             text-decoration: none;
-            margin-left: 2rem;
-            font-weight: 600;
-            transition: color 0.2s;
+            margin-left: 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s var(--ease-out-expo);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid transparent;
         }
 
         .hero-secondary:hover {
             color: var(--text-white);
+            gap: 0.625rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
-        /* Stats bar */
+        /* Stats bar - Modern glass cards */
         .stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 3rem;
-            margin: 6rem 0 0;
-            padding: 3rem 0;
-            border-top: 1px solid var(--border);
+            gap: 1.5rem;
+            margin: 5rem 0 0;
+            padding: 2.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            animation: fadeInUp 0.8s var(--ease-out-expo) 0.4s both;
         }
 
         .stat {
             text-align: center;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .stat:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 40px;
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, rgba(0, 217, 255, 0.2), transparent);
         }
 
         .stat-number {
-            font-size: 3rem;
+            font-size: clamp(2rem, 5vw, 2.75rem);
             font-weight: 800;
-            color: var(--brand-cyan);
-            margin-bottom: 0.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.375rem;
             line-height: 1;
         }
 
         .stat-label {
-            color: var(--text-gray);
-            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: 0.01em;
         }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Scroll-triggered animations */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
+        }
+
+        .animate-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .animate-on-scroll.scale {
+            transform: scale(0.95);
+        }
+
+        .animate-on-scroll.scale.is-visible {
+            transform: scale(1);
+        }
+
+        .animate-on-scroll.from-left {
+            transform: translateX(-30px);
+        }
+
+        .animate-on-scroll.from-left.is-visible {
+            transform: translateX(0);
+        }
+
+        .animate-on-scroll.from-right {
+            transform: translateX(30px);
+        }
+
+        .animate-on-scroll.from-right.is-visible {
+            transform: translateX(0);
+        }
+
+        /* Staggered animation delays for children */
+        .stagger-children > *:nth-child(1) { transition-delay: 0s; }
+        .stagger-children > *:nth-child(2) { transition-delay: 0.1s; }
+        .stagger-children > *:nth-child(3) { transition-delay: 0.2s; }
+        .stagger-children > *:nth-child(4) { transition-delay: 0.3s; }
+        .stagger-children > *:nth-child(5) { transition-delay: 0.4s; }
+        .stagger-children > *:nth-child(6) { transition-delay: 0.5s; }
 
         /* Section */
         .section {
-            padding: 8rem 0;
+            padding: 7rem 0;
+            position: relative;
         }
 
         .section-label {
             text-align: center;
             color: var(--brand-cyan);
-            font-size: 0.875rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
             text-transform: uppercase;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .section-label::before,
+        .section-label::after {
+            content: '';
+            width: 24px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--brand-cyan));
+        }
+
+        .section-label::after {
+            background: linear-gradient(90deg, var(--brand-cyan), transparent);
         }
 
         .section-title {
-            font-size: 3.5rem;
+            font-size: clamp(2.25rem, 5vw, 3.25rem);
             font-weight: 800;
             text-align: center;
-            margin-bottom: 2rem;
-            line-height: 1.2;
-            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+            line-height: 1.15;
+            letter-spacing: -0.025em;
         }
 
         .section-subtitle {
             text-align: center;
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             color: var(--text-gray);
-            max-width: 700px;
-            margin: 0 auto 4rem;
+            max-width: 640px;
+            margin: 0 auto 3.5rem;
+            line-height: 1.7;
         }
 
-        /* Feature comparison - Modern side-by-side */
+        /* Feature comparison - Modern glass cards */
         .comparison {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
             max-width: 1100px;
             margin: 0 auto;
         }
 
         .comparison-side {
-            padding: 2.5rem;
-            background: var(--brand-darker);
-            border-radius: 16px;
-            border: 2px solid var(--border);
-            transition: all 0.3s ease;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.4s var(--ease-out-expo);
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .comparison-side::before {
@@ -409,10 +700,10 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
+            height: 1px;
             background: linear-gradient(90deg, transparent, var(--brand-cyan), transparent);
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.4s var(--ease-out-expo);
         }
 
         .comparison-side:hover::before {
@@ -420,76 +711,80 @@
         }
 
         .comparison-side.bad {
-            border-color: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.15);
         }
 
         .comparison-side.bad::before {
-            background: linear-gradient(90deg, transparent, #EF4444, transparent);
+            background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.5), transparent);
         }
 
         .comparison-side.good {
-            border-color: rgba(0, 217, 255, 0.3);
-            background: linear-gradient(135deg, var(--brand-darker) 0%, rgba(0, 217, 255, 0.05) 100%);
+            border-color: rgba(0, 217, 255, 0.15);
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.03) 0%, rgba(59, 130, 246, 0.02) 100%);
         }
 
         .comparison-side:hover {
             transform: translateY(-4px);
-            border-color: var(--brand-cyan);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .comparison-side.good:hover {
+            border-color: rgba(0, 217, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 60px rgba(0, 217, 255, 0.08);
         }
 
         .comparison-title {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 700;
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.625rem;
         }
 
         .comparison-title.bad {
-            color: #EF4444;
+            color: #F87171;
         }
 
         .comparison-title.good {
-            color: var(--brand-cyan);
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .comparison-item {
-            padding: 1rem 0;
-            padding-left: 2rem;
+            padding: 0.75rem 0;
+            padding-left: 1.5rem;
             color: var(--text-gray);
-            font-size: 1rem;
-            line-height: 1.7;
+            font-size: 0.9375rem;
+            line-height: 1.6;
             position: relative;
-            border-left: 2px solid transparent;
-            transition: all 0.2s ease;
+            transition: all 0.25s var(--ease-out-expo);
         }
 
         .comparison-item::before {
             content: '';
             position: absolute;
             left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 8px;
-            height: 8px;
+            top: 1.1rem;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background: var(--brand-cyan);
+            box-shadow: 0 0 8px rgba(0, 217, 255, 0.4);
         }
 
         .comparison-side.bad .comparison-item::before {
-            background: #EF4444;
+            background: #F87171;
+            box-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
         }
 
         .comparison-item:hover {
-            padding-left: 2.5rem;
-            border-left-color: var(--brand-cyan);
-        }
-
-        .comparison-side.bad .comparison-item:hover {
-            border-left-color: #EF4444;
+            padding-left: 2rem;
+            color: var(--text-white);
         }
 
         .comparison-item strong {
@@ -497,11 +792,11 @@
             font-weight: 600;
         }
 
-        /* Pricing - Simple cards */
+        /* Pricing - Modern glass cards */
         .pricing-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
+            gap: 1.5rem;
             max-width: 1100px;
             margin: 0 auto;
         }
@@ -511,69 +806,109 @@
         }
 
         .pricing-card {
-            background: var(--brand-darker);
-            border: 2px solid var(--border);
-            border-radius: 16px;
-            padding: 2.5rem;
-            transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            padding: 2rem;
+            transition: all 0.4s var(--ease-out-expo);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .pricing-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent, rgba(0,217,255,0.1));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s var(--ease-out-expo);
+        }
+
+        .pricing-card:hover::before {
+            opacity: 1;
         }
 
         .pricing-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--brand-cyan);
-            box-shadow: 0 20px 50px rgba(0, 217, 255, 0.2);
+            transform: translateY(-6px);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
         }
 
         .pricing-card.featured {
-            border-color: var(--brand-cyan);
-            box-shadow: 0 20px 50px rgba(0, 217, 255, 0.3);
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border-color: rgba(0, 217, 255, 0.2);
+        }
+
+        .pricing-card.featured::before {
+            opacity: 1;
+            background: linear-gradient(135deg, rgba(0,217,255,0.3), transparent, rgba(59,130,246,0.2));
+        }
+
+        .pricing-card.featured:hover {
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 80px rgba(0, 217, 255, 0.15);
         }
 
         .pricing-badge {
-            display: inline-block;
-            background: var(--brand-cyan);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-blue) 100%);
             color: var(--brand-darker);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            padding: 0.375rem 0.875rem;
+            border-radius: 100px;
+            font-size: 0.6875rem;
             font-weight: 700;
-            margin-bottom: 1.5rem;
-        }
-
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.25rem;
         }
 
         .pricing-card h3 {
-            font-size: 1.75rem;
-            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.01em;
         }
 
         .pricing-price {
-            font-size: 3.5rem;
+            font-size: clamp(2.5rem, 4vw, 3rem);
             font-weight: 800;
-            color: var(--brand-cyan);
-            margin: 1.5rem 0;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 1rem 0;
             line-height: 1;
         }
 
         .pricing-price span {
-            font-size: 1.25rem;
-            color: var(--text-gray);
-            font-weight: 600;
+            font-size: 1rem;
+            background: none;
+            -webkit-text-fill-color: var(--text-muted);
+            font-weight: 500;
         }
 
         .pricing-features {
             list-style: none;
-            margin: 2rem 0;
+            margin: 1.5rem 0;
         }
 
         .pricing-features li {
-            padding: 0.875rem 0;
+            padding: 0.625rem 0;
             color: var(--text-gray);
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.9375rem;
+        }
+
+        .pricing-features li:last-child {
+            border-bottom: none;
         }
 
         .pricing-cta {
@@ -581,63 +916,106 @@
             text-align: center;
             background: var(--brand-cyan);
             color: var(--brand-darker);
-            padding: 1rem;
-            border-radius: 8px;
+            padding: 0.875rem 1.5rem;
+            border-radius: 12px;
             text-decoration: none;
-            font-weight: 700;
-            margin-top: 2rem;
-            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            margin-top: 1.5rem;
+            transition: all 0.3s var(--ease-out-expo);
+            box-shadow: 0 4px 16px rgba(0, 217, 255, 0.25);
         }
 
         .pricing-cta:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.4);
+            box-shadow: 0 8px 24px rgba(0, 217, 255, 0.35);
         }
 
         .pricing-cta.secondary {
-            background: transparent;
-            border: 2px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-white);
-        }
-
-        .pricing-cta.secondary:hover {
-            border-color: var(--brand-cyan);
             box-shadow: none;
         }
 
-        /* Feature grid - Minimal */
+        .pricing-cta.secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 217, 255, 0.3);
+        }
+
+        /* Feature grid - Modern Glass */
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
         }
 
         .feature-card {
             padding: 2.5rem;
-            background: var(--brand-darker);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            transition: border-color 0.3s;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.03) 0%,
+                rgba(255, 255, 255, 0.01) 100%
+            );
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.4s var(--ease-out-expo);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(0, 217, 255, 0.3),
+                transparent
+            );
+            opacity: 0;
+            transition: opacity 0.4s ease;
         }
 
         .feature-card:hover {
-            border-color: var(--brand-cyan);
+            border-color: rgba(0, 217, 255, 0.2);
+            transform: translateY(-4px);
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                0 0 30px rgba(0, 217, 255, 0.05);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
         }
 
         .feature-icon {
             font-size: 2.5rem;
             margin-bottom: 1.5rem;
+            display: inline-block;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
         }
 
         .feature-title {
             font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--text-white) 0%, var(--text-gray) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .feature-text {
             color: var(--text-gray);
-            line-height: 1.7;
+            line-height: 1.8;
+            font-size: 0.95rem;
         }
 
         /* Footer - Professional with Animated Background */
@@ -1270,7 +1648,7 @@
             }
         }
 
-        /* Comparison Table Styles */
+        /* Comparison Table Styles - Modern Glass */
         .comparison-table {
             width: 100%;
             max-width: 100%;
@@ -1278,8 +1656,14 @@
             border-collapse: separate;
             border-spacing: 0;
             overflow: hidden;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            box-shadow:
+                0 4px 24px rgba(0, 0, 0, 0.4),
+                0 0 40px rgba(0, 217, 255, 0.05);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         /* Prevent table from causing horizontal scroll */
@@ -1292,29 +1676,31 @@
         }
 
         .comparison-table thead {
-            background: linear-gradient(135deg, rgba(0, 217, 255, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(59, 130, 246, 0.08) 100%);
         }
 
         .comparison-table th {
             padding: 1.5rem 1.5rem;
             text-align: left;
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--text-white);
-            border-bottom: 2px solid var(--brand-cyan);
+            border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+            letter-spacing: 0.01em;
         }
 
         .comparison-table th:first-child {
             width: 30%;
+            background: linear-gradient(90deg, rgba(0, 217, 255, 0.08) 0%, transparent 100%);
         }
 
         .comparison-table tbody tr {
-            border-bottom: 1px solid var(--border);
-            transition: background-color 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            transition: all 0.3s var(--ease-out-expo);
         }
 
         .comparison-table tbody tr:hover {
-            background: rgba(0, 217, 255, 0.05);
+            background: linear-gradient(90deg, rgba(0, 217, 255, 0.06) 0%, rgba(59, 130, 246, 0.04) 50%, transparent 100%);
         }
 
         .comparison-table tbody tr:last-child {
@@ -1324,35 +1710,48 @@
         .comparison-table td {
             padding: 1.25rem 1.5rem;
             vertical-align: top;
-            line-height: 1.6;
+            line-height: 1.7;
+            color: var(--text-gray);
+            font-size: 0.9375rem;
         }
 
         .comparison-table td:first-child {
             font-weight: 600;
-            color: var(--brand-cyan);
+            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .comparison-highlight {
             display: inline-block;
             padding: 0.25rem 0.75rem;
-            background: linear-gradient(135deg, rgba(0, 217, 255, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
-            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 8px;
             font-weight: 600;
             color: var(--brand-cyan);
             margin-right: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .comparison-table tbody tr:hover .comparison-highlight {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+            border-color: rgba(0, 217, 255, 0.3);
         }
 
         .comparison-badge {
             display: inline-block;
             padding: 0.375rem 0.875rem;
             background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-blue) 100%);
-            color: white;
-            font-size: 0.75rem;
+            color: var(--brand-darker);
+            font-size: 0.6875rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            border-radius: 20px;
+            border-radius: 100px;
             margin-left: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 217, 255, 0.3);
         }
 
         /* Mobile responsive styling moved to css/mobile-responsive-complete.css */
@@ -1415,7 +1814,7 @@
                 DEVELOPMENT PLATFORM
             </h1>
             <p class="hero-subtitle">
-                410+ AI tools, seat-based licensing with role management, and managed SaaS infrastructure. Built for enterprise teams with developers and stakeholders.
+                347+ ServiceNow tools across 2 unified MCP servers, seat-based licensing with role management, and managed SaaS infrastructure. Built for enterprise teams with developers and stakeholders.
             </p>
             <div>
                 <a href="https://github.com/groeimetai/snow-flow" class="hero-cta">START FREE</a>
@@ -1424,20 +1823,20 @@
 
             <div class="stats">
                 <div class="stat">
-                    <div class="stat-number">410+</div>
+                    <div class="stat-number">347+</div>
                     <div class="stat-label">ServiceNow Tools</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Unified MCP Servers</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">75+</div>
+                    <div class="stat-label">LLM Providers</div>
                 </div>
                 <div class="stat">
                     <div class="stat-number">99.9%</div>
                     <div class="stat-label">Uptime SLA</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">2 Roles</div>
-                    <div class="stat-label">Developer & Stakeholder</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">50%</div>
-                    <div class="stat-label">Faster Development</div>
                 </div>
             </div>
         </div>
@@ -1464,11 +1863,11 @@
                 </div>
                 <div class="comparison-side good">
                     <div class="comparison-title good">✅ With Snow-Flow AI Platform</div>
-                    <div class="comparison-item"><strong>410+ ServiceNow tools</strong> - Complete automation library</div>
+                    <div class="comparison-item"><strong>347+ ServiceNow tools</strong> - Complete automation library in 2 unified MCP servers</div>
                     <div class="comparison-item"><strong>Natural language</strong> - "Create incident dashboard" → Done</div>
-                    <div class="comparison-item"><strong>75+ LLM providers</strong> - Claude, GPT, Gemini, DeepSeek + more</div>
+                    <div class="comparison-item"><strong>75+ LLM providers</strong> - Claude, GPT, Gemini, DeepSeek, Ollama + more</div>
                     <div class="comparison-item"><strong>Role-based access</strong> - Developer & Stakeholder seats with user management</div>
-                    <div class="comparison-item"><strong>Native IDE integration</strong> - VS Code, Cursor, any editor</div>
+                    <div class="comparison-item"><strong>Native IDE integration</strong> - VS Code, Cursor, any MCP-compatible editor</div>
                     <div class="comparison-item"><strong>Real-time testing</strong> - Immediate feedback and validation</div>
                 </div>
             </div>
@@ -1487,12 +1886,12 @@
             <div class="comparison" style="margin-top: 4rem;">
                 <div class="comparison-side good">
                     <div class="comparison-title good">👨‍💻 For Developers</div>
-                    <div class="comparison-item"><strong>410+ MCP Tools</strong> - Complete ServiceNow automation library</div>
+                    <div class="comparison-item"><strong>347+ MCP Tools</strong> - Complete ServiceNow automation in 2 unified servers</div>
                     <div class="comparison-item"><strong>AI-Powered Development</strong> - Natural language to working code</div>
-                    <div class="comparison-item"><strong>75+ LLM Providers</strong> - Choose your preferred AI assistant</div>
-                    <div class="comparison-item"><strong>Native IDE Integration</strong> - Works in VS Code, Cursor, any editor</div>
+                    <div class="comparison-item"><strong>75+ LLM Providers</strong> - Claude, GPT, Gemini, DeepSeek, Ollama + more</div>
+                    <div class="comparison-item"><strong>Native IDE Integration</strong> - Works in VS Code, Cursor, any MCP-compatible editor</div>
                     <div class="comparison-item"><strong>Real-Time Testing</strong> - Immediate feedback loop</div>
-                    <div class="comparison-item"><strong>Enterprise Integrations</strong> - Jira, Azure DevOps, Confluence</div>
+                    <div class="comparison-item"><strong>Enterprise Integrations</strong> - Jira, Azure DevOps, Confluence (Enterprise only)</div>
                 </div>
                 <div class="comparison-side good">
                     <div class="comparison-title good">📊 For Stakeholders</div>
@@ -1562,7 +1961,7 @@
                     </tr>
                     <tr>
                         <td>MCP Toolset</td>
-                        <td><span class="comparison-highlight">437 specialized tools</span> (393 OSS + 44 enterprise)</td>
+                        <td><span class="comparison-highlight">347+ specialized tools</span> in 2 unified MCP servers (+ enterprise integrations)</td>
                         <td>Proprietary API (non-MCP protocol)</td>
                     </tr>
                     <tr>
@@ -1578,9 +1977,9 @@
                 <h3 style="color: var(--brand-cyan); margin-bottom: 1rem; font-size: 1.25rem;">Why Snow-Flow?</h3>
                 <ul style="color: var(--text-gray); line-height: 2; list-style-position: inside;">
                     <li><strong>90% Cost Reduction:</strong> Open-source foundation vs €150K-€4.5M ServiceNow implementation</li>
-                    <li><strong>No Vendor Lock-in:</strong> Choose from 75+ AI providers (Claude, GPT, local models) vs NowLLM only</li>
+                    <li><strong>No Vendor Lock-in:</strong> Choose from 75+ AI providers (Claude, GPT, Gemini, Ollama, local models) vs NowLLM only</li>
                     <li><strong>Developer Freedom:</strong> Use your preferred IDE (VSCode, Cursor, JetBrains) vs browser-only Studio</li>
-                    <li><strong>Comprehensive Tooling:</strong> 437 specialized MCP tools vs proprietary closed API</li>
+                    <li><strong>Comprehensive Tooling:</strong> 347+ specialized MCP tools across 2 unified servers vs proprietary closed API</li>
                 </ul>
             </div>
         </div>
@@ -1592,7 +1991,7 @@
             <div class="section-label">Pricing</div>
             <h2 class="section-title">Seat-based licensing for teams</h2>
             <p class="section-subtitle">
-                Choose the plan that fits your needs. Developer seats for full MCP tool access and write permissions. Stakeholder seats for license management and analytics. All plans include 410+ ServiceNow tools.
+                Choose the plan that fits your needs. Developer seats for full MCP tool access and write permissions. Stakeholder seats for license management and analytics. All plans include 347+ ServiceNow tools.
             </p>
 
             <div class="pricing-grid">
@@ -1601,9 +2000,9 @@
                     <h3>Free</h3>
                     <div class="pricing-price">$0<span>/mo</span></div>
                     <ul class="pricing-features">
-                        <li>✅ 410+ ServiceNow tools</li>
+                        <li>✅ 347+ ServiceNow tools</li>
+                        <li>✅ 2 unified MCP servers</li>
                         <li>✅ Self-hosted (local)</li>
-                        <li>✅ Unlimited instances</li>
                         <li>✅ Community support</li>
                         <li>❌ Seat management</li>
                         <li>❌ Enterprise integrations</li>
@@ -1616,11 +2015,11 @@
                     <h3>Individual</h3>
                     <div class="pricing-price">$99<span>/mo</span></div>
                     <ul class="pricing-features">
-                        <li>✅ 410+ tools + Enterprise</li>
+                        <li>✅ 347+ tools + Enterprise extras</li>
                         <li>✅ 1 Developer Seat</li>
                         <li>✅ Fully Managed SaaS</li>
-                        <li>✅ Jira, Azure, Confluence</li>
-                        <li>✅ ML & Analytics</li>
+                        <li>✅ Jira, Azure DevOps, Confluence</li>
+                        <li>✅ ML & Process Mining</li>
                         <li>✅ 99.9% SLA + 24h support</li>
                     </ul>
                     <a href="https://portal.snow-flow.dev" class="pricing-cta">Start Trial</a>
@@ -1676,9 +2075,9 @@
 
                 <div class="feature-card">
                     <div class="feature-icon">🏗️</div>
-                    <h3 class="feature-title">410+ ServiceNow Tools</h3>
+                    <h3 class="feature-title">347+ ServiceNow Tools</h3>
                     <p class="feature-text">
-                        Comprehensive tools for deployment, operations, automation, UI Builder, workspaces, and more. Full MCP protocol integration.
+                        Comprehensive tools for deployment, operations, automation, UI Builder, workspaces, and more across 2 unified MCP servers.
                     </p>
                 </div>
 
@@ -1758,7 +2157,7 @@
                         <ul style="list-style: none; display: grid; gap: 0.75rem;">
                             <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
                                 <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>410+ MCP tools production ready</span>
+                                <span>347+ MCP tools in 2 unified servers</span>
                             </li>
                             <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
                                 <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
@@ -1855,10 +2254,10 @@
                             <div style="position: absolute; left: -3rem; top: 0; width: 1rem; height: 1rem; background: var(--brand-cyan); border-radius: 50%; box-shadow: 0 0 0 4px rgba(0, 217, 255, 0.2);"></div>
                             <div style="background: rgba(0, 217, 255, 0.05); border: 1px solid rgba(0, 217, 255, 0.2); border-radius: 12px; padding: 1.5rem;">
                                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                                    <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--brand-cyan);">v8.30.6</h4>
-                                    <span style="font-size: 0.875rem; color: var(--text-gray);">Nov 4, 2025</span>
+                                    <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--brand-cyan);">v8.37.4</h4>
+                                    <span style="font-size: 0.875rem; color: var(--text-gray);">Nov 2025</span>
                                 </div>
-                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">Zod v4 compatibility fix - Resolved schema validation issues for improved MCP tool stability</p>
+                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">Current stable release - 347+ tools in 2 unified MCP servers, 75+ LLM providers, improved performance</p>
                             </div>
                         </div>
 
@@ -1866,21 +2265,10 @@
                             <div style="position: absolute; left: -3rem; top: 0; width: 1rem; height: 1rem; background: var(--brand-cyan); border-radius: 50%; box-shadow: 0 0 0 4px rgba(0, 217, 255, 0.2);"></div>
                             <div style="background: rgba(0, 217, 255, 0.05); border: 1px solid rgba(0, 217, 255, 0.2); border-radius: 12px; padding: 1.5rem;">
                                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                                    <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--brand-cyan);">v8.30.5</h4>
-                                    <span style="font-size: 0.875rem; color: var(--text-gray);">Oct 30, 2025</span>
+                                    <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--brand-cyan);">v8.30.x</h4>
+                                    <span style="font-size: 0.875rem; color: var(--text-gray);">Oct-Nov 2025</span>
                                 </div>
-                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">Stakeholder role support - Added permission validation and tool classification for read-only access</p>
-                            </div>
-                        </div>
-
-                        <div style="position: relative;">
-                            <div style="position: absolute; left: -3rem; top: 0; width: 1rem; height: 1rem; background: var(--text-gray); border-radius: 50%;"></div>
-                            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                                    <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--text-white);">v8.30.0</h4>
-                                    <span style="font-size: 0.875rem; color: var(--text-gray);">Oct 15, 2025</span>
-                                </div>
-                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">User management portal - Added complete admin interface for seat and user management</p>
+                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">Unified MCP architecture - Consolidated 34+ servers into 2 unified servers (93% memory reduction, 97.8% faster startup)</p>
                             </div>
                         </div>
 
@@ -1891,7 +2279,18 @@
                                     <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--text-white);">v8.0.0</h4>
                                     <span style="font-size: 0.875rem; color: var(--text-gray);">Sep 2025</span>
                                 </div>
-                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">Seat-based licensing launch - Developer and stakeholder roles with usage tracking</p>
+                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">Seat-based licensing launch - Developer and stakeholder roles with user management portal</p>
+                            </div>
+                        </div>
+
+                        <div style="position: relative;">
+                            <div style="position: absolute; left: -3rem; top: 0; width: 1rem; height: 1rem; background: var(--text-gray); border-radius: 50%;"></div>
+                            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                    <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--text-white);">v7.x</h4>
+                                    <span style="font-size: 0.875rem; color: var(--text-gray);">2025</span>
+                                </div>
+                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">Multi-LLM support - Added 75+ LLM provider support (Claude, GPT, Gemini, DeepSeek, Ollama, local models)</p>
                             </div>
                         </div>
                     </div>
@@ -2103,6 +2502,91 @@
                         }
                     }
                 });
+            });
+        });
+
+        // ========================================
+        // SCROLL-TRIGGERED ANIMATIONS
+        // ========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add animation classes to elements
+            const sections = document.querySelectorAll('.section');
+            const cards = document.querySelectorAll('.feature-card, .pricing-card, .comparison-side');
+            const sectionTitles = document.querySelectorAll('.section-title, .section-label');
+
+            // Add animate-on-scroll class to elements
+            sections.forEach(function(section) {
+                const label = section.querySelector('.section-label');
+                const title = section.querySelector('.section-title');
+                const subtitle = section.querySelector('.section-subtitle');
+
+                if (label) label.classList.add('animate-on-scroll');
+                if (title) title.classList.add('animate-on-scroll');
+                if (subtitle) subtitle.classList.add('animate-on-scroll');
+            });
+
+            cards.forEach(function(card, index) {
+                card.classList.add('animate-on-scroll');
+                card.style.transitionDelay = (index % 3) * 0.1 + 's';
+            });
+
+            // Intersection Observer for scroll animations
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px 0px -50px 0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all animated elements
+            document.querySelectorAll('.animate-on-scroll').forEach(function(el) {
+                observer.observe(el);
+            });
+
+            // Parallax effect for hero glow (subtle)
+            let ticking = false;
+            window.addEventListener('scroll', function() {
+                if (!ticking) {
+                    window.requestAnimationFrame(function() {
+                        const scrolled = window.pageYOffset;
+                        const hero = document.querySelector('.hero::before');
+                        if (scrolled < 800) {
+                            document.documentElement.style.setProperty('--hero-parallax', scrolled * 0.3 + 'px');
+                        }
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            });
+        });
+
+        // ========================================
+        // NAVBAR SCROLL EFFECT
+        // ========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const nav = document.querySelector('nav');
+            let lastScroll = 0;
+
+            window.addEventListener('scroll', function() {
+                const currentScroll = window.pageYOffset;
+
+                // Add shadow when scrolled
+                if (currentScroll > 20) {
+                    nav.style.boxShadow = '0 4px 30px rgba(0, 0, 0, 0.3)';
+                    nav.style.borderBottomColor = 'rgba(0, 217, 255, 0.1)';
+                } else {
+                    nav.style.boxShadow = 'none';
+                    nav.style.borderBottomColor = 'var(--border)';
+                }
+
+                lastScroll = currentScroll;
             });
         });
     </script>
