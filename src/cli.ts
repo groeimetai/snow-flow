@@ -1722,6 +1722,17 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
       await fs.writeFile(agentsMdPath, claudeMdContent);
     }
 
+    // Create CLAUDE.md as copy of AGENTS.md (for Claude Code compatibility)
+    const claudeMdPath = join(targetDir, 'CLAUDE.md');
+    try {
+      await fs.access(claudeMdPath);
+      if (force) {
+        await fs.writeFile(claudeMdPath, claudeMdContent);
+      }
+    } catch {
+      await fs.writeFile(claudeMdPath, claudeMdContent);
+    }
+
     // Setup .snow-code/ directory (directories already created by createDirectoryStructure)
     const snowcodeDir = join(targetDir, '.snow-code');
     // Agent files no longer copied - snow-code has its own built-in agent system
