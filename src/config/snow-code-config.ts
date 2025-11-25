@@ -124,8 +124,8 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     // Read existing .mcp.json
     const content = await fs.readFile(mcpConfigPath, 'utf-8');
     const mcpConfig = JSON.parse(content);
-    if (!mcpConfig.mcpServers) {
-      mcpConfig.mcpServers = {};
+    if (!mcpConfig.mcp) {
+      mcpConfig.mcp = {};
     }
 
     // 🔥 IMPORTANT: Auth and MCP servers are SEPARATE!
@@ -221,10 +221,9 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     }
 
     // Add or update enterprise MCP server with LOCAL proxy configuration
-    mcpConfig.mcpServers['snow-flow-enterprise'] = {
+    mcpConfig.mcp['snow-flow-enterprise'] = {
       type: 'local',
       command: ['node', enterpriseProxyPath],
-      description: `Snow-Flow Enterprise (${config.role}) - Jira (22), Azure DevOps (26), Confluence (24 tools)`,
       environment: {
         SNOW_ENTERPRISE_URL: mcpServerUrl,
         SNOW_LICENSE_KEY: jwtToken,
@@ -284,7 +283,6 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
         claudeMcpConfig.mcpServers['snow-flow-enterprise'] = {
           type: 'local',
           command: ['node', enterpriseProxyPath],
-          description: `Snow-Flow Enterprise (${config.role}) - Jira (22), Azure DevOps (26), Confluence (24 tools)`,
           environment: {
             SNOW_ENTERPRISE_URL: mcpServerUrl,
             SNOW_LICENSE_KEY: jwtToken,
@@ -321,8 +319,8 @@ export async function removeEnterpriseMcpServer(): Promise<void> {
     const content = await fs.readFile(mcpConfigPath, 'utf-8');
     const mcpConfig = JSON.parse(content);
 
-    if (mcpConfig.mcpServers?.['snow-flow-enterprise']) {
-      delete mcpConfig.mcpServers['snow-flow-enterprise'];
+    if (mcpConfig.mcp?.['snow-flow-enterprise']) {
+      delete mcpConfig.mcp['snow-flow-enterprise'];
       await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), 'utf-8');
       logger.info('Successfully removed enterprise MCP server from .mcp.json');
     } else {
@@ -348,7 +346,7 @@ export async function isEnterpriseMcpConfigured(): Promise<boolean> {
     const content = await fs.readFile(mcpConfigPath, 'utf-8');
     const mcpConfig = JSON.parse(content);
 
-    return !!mcpConfig.mcpServers?.['snow-flow-enterprise'];
+    return !!mcpConfig.mcp?.['snow-flow-enterprise'];
   } catch (error) {
     return false;
   }
@@ -421,7 +419,7 @@ export async function getEnterpriseMcpConfig(): Promise<any | null> {
     const content = await fs.readFile(mcpConfigPath, 'utf-8');
     const mcpConfig = JSON.parse(content);
 
-    const server = mcpConfig.mcpServers?.['snow-flow-enterprise'] || null;
+    const server = mcpConfig.mcp?.['snow-flow-enterprise'] || null;
 
     if (server) {
       logger.debug('Found enterprise MCP server configuration in .mcp.json');

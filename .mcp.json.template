@@ -1,10 +1,9 @@
 {
   "$schema": "https://opencode.ai/mcp.json",
-  "mcpServers": {
+  "mcp": {
     "servicenow-unified": {
       "type": "local",
       "command": ["node", "{{PROJECT_ROOT}}/dist/mcp/servicenow-mcp-unified/index.js"],
-      "description": "Unified ServiceNow MCP Server - ALL 235+ ServiceNow tools in ONE server including: deployment, operations, automation, platform dev, integrations, properties, update sets, dev assistant, security, reporting, ML, knowledge, catalog, change management, virtual agent, PA, flows, workspaces, mobile, UI Builder, CMDB, events, HR, CSM, DevOps, advanced features, and local development",
       "environment": {
         "SERVICENOW_INSTANCE_URL": "{{SNOW_INSTANCE}}",
         "SERVICENOW_CLIENT_ID": "{{SNOW_CLIENT_ID}}",
@@ -15,7 +14,6 @@
     "snow-flow-orchestration": {
       "type": "local",
       "command": ["node", "{{PROJECT_ROOT}}/dist/mcp/snow-flow-mcp.js"],
-      "description": "Snow-Flow orchestration - swarm coordination, agent spawning, task orchestration, neural training (TensorFlow.js), memory management, performance tracking",
       "environment": {
         "SNOW_FLOW_ENV": "{{SNOW_FLOW_ENV}}"
       },
@@ -24,13 +22,11 @@
     "snow-flow-enterprise": {
       "type": "local",
       "command": ["node", "{{PROJECT_ROOT}}/dist/mcp/enterprise-proxy/server.js"],
-      "description": "Enterprise integrations - Jira (22 tools), Azure DevOps (26 tools), Confluence (24 tools) - Local proxy to remote enterprise server",
       "environment": {
         "SNOW_ENTERPRISE_URL": "https://enterprise.snow-flow.dev",
         "SNOW_LICENSE_KEY": "{{ENTERPRISE_JWT_TOKEN}}"
       },
-      "enabled": false,
-      "_comment": "This server is disabled by default. Run 'snow-flow auth login' and select 'Yes' when asked about Enterprise license to configure and enable this server."
+      "enabled": false
     }
   }
 }

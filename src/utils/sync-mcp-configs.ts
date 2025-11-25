@@ -46,17 +46,18 @@ export async function syncMcpConfigs(projectRoot: string = process.cwd()): Promi
     }
 
     // Convert .mcp.json format to .claude/mcp-config.json format
-    // .mcp.json uses { mcpServers: { ... } }
-    // .claude/mcp-config.json also uses { mcpServers: { ... } }
-    // But we need to ensure the format matches what Claude Code expects
+    // .mcp.json uses { mcp: { ... } } (snow-code format)
+    // .claude/mcp-config.json uses { mcpServers: { ... } } (Claude Code format)
 
     const claudeConfig: any = {
       mcpServers: {}
     };
 
     // Copy all servers from .mcp.json to claude config
-    if (mcpConfig.mcpServers) {
-      for (const [serverName, serverConfig] of Object.entries(mcpConfig.mcpServers)) {
+    // Support both old (mcpServers) and new (mcp) format for backwards compatibility
+    const servers = mcpConfig.mcp || mcpConfig.mcpServers || {};
+    if (servers) {
+      for (const [serverName, serverConfig] of Object.entries(servers)) {
         const config: any = serverConfig;
 
         // Convert to Claude Code format
@@ -70,7 +71,6 @@ export async function syncMcpConfigs(projectRoot: string = process.cwd()): Promi
           claudeConfig.mcpServers[serverName] = {
             command: command[0], // "node"
             args: command.slice(1), // ["/path/to/server.js"]
-            description: config.description,
             env: config.environment || config.env || {},
             ...(config.enabled !== undefined && { enabled: config.enabled })
           };
@@ -78,14 +78,15 @@ export async function syncMcpConfigs(projectRoot: string = process.cwd()): Promi
           // Remote servers (SSE)
           claudeConfig.mcpServers[serverName] = {
             url: config.url,
-            description: config.description,
             env: config.environment || config.env || {},
             ...(config.enabled !== undefined && { enabled: config.enabled })
           };
         } else {
           // Fallback - copy as-is but ensure env key exists
+          // Remove description and _comment fields
+          const { description, _comment, ...cleanConfig } = config;
           claudeConfig.mcpServers[serverName] = {
-            ...config,
+            ...cleanConfig,
             env: config.environment || config.env || {}
           };
         }

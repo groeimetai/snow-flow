@@ -2857,8 +2857,8 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   // Parse to ensure it's valid JSON
   const mcpConfig = JSON.parse(mcpConfigContent);
   
-  // Keep the standard MCP structure that Claude Code expects
-  // Use the OpenCode MCP structure directly from template (mcpServers key)
+  // Keep the standard MCP structure that snow-code expects
+  // Use the snow-code MCP structure directly from template (mcp key)
   const finalConfig = mcpConfig;
   
   // Create .mcp.json in project root for Claude Code discovery
@@ -3261,8 +3261,8 @@ export async function setupMCPConfig(
   // Parse to ensure it's valid JSON
   const mcpConfig = JSON.parse(mcpConfigContent);
   
-  // Keep the standard MCP structure that Claude Code expects
-  // Use the OpenCode MCP structure directly from template (mcpServers key)
+  // Keep the standard MCP structure that snow-code expects
+  // Use the snow-code MCP structure directly from template (mcp key)
   const finalConfig = mcpConfig;
   
   // Create .mcp.json in project root for Claude Code discovery
@@ -3322,7 +3322,9 @@ export async function setupMCPConfig(
 
     // Transform MCP servers to SnowCode format using REAL values (not ${VAR} placeholders)
     // serverConfig.env already contains real values from template replacement
-    for (const [serverName, serverConfig] of Object.entries(finalConfig.mcpServers) as [string, any][]) {
+    // Support both new (mcp) and old (mcpServers) format for backwards compatibility
+    const mcpServers = finalConfig.mcp || finalConfig.mcpServers || {};
+    for (const [serverName, serverConfig] of Object.entries(mcpServers) as [string, any][]) {
       const transformedConfig: any = {};
 
       // Handle local servers (have "command" + "args")
