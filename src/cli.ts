@@ -598,9 +598,10 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
       return false;
     }
 
-    // Check for SnowCode config (.snow-code/snow-code.json)
-    const snowcodeConfigPath = join(process.cwd(), '.snow-code', 'snow-code.json');
-    if (!existsSync(snowcodeConfigPath)) {
+    // Check for SnowCode config (.snow-code/config.json OR .snow-code/snow-code.json)
+    const snowcodeConfigPath = join(process.cwd(), '.snow-code', 'config.json');
+    const snowcodeConfigPathAlt = join(process.cwd(), '.snow-code', 'snow-code.json');
+    if (!existsSync(snowcodeConfigPath) && !existsSync(snowcodeConfigPathAlt)) {
       cliLogger.error('SnowCode config not found - run: snow-flow init');
       return false;
     }
@@ -2134,16 +2135,16 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
   const fs = require('fs').promises;
 
   try {
-    // Read SnowCode configuration - try snow-code.json first (primary), then config.json (fallback)
-    const snowCodeJsonPath = path.join(targetDir, '.snow-code', 'snow-code.json');
+    // Read SnowCode configuration - try config.json first (primary), then snow-code.json (fallback for legacy)
     const configJsonPath = path.join(targetDir, '.snow-code', 'config.json');
+    const snowCodeJsonPath = path.join(targetDir, '.snow-code', 'snow-code.json');
 
     let configContent: string;
     try {
-      configContent = await fs.readFile(snowCodeJsonPath, 'utf-8');
-    } catch {
-      // Fallback to config.json if snow-code.json doesn't exist
       configContent = await fs.readFile(configJsonPath, 'utf-8');
+    } catch {
+      // Fallback to snow-code.json for legacy projects
+      configContent = await fs.readFile(snowCodeJsonPath, 'utf-8');
     }
     const config = JSON.parse(configContent);
 
@@ -2512,7 +2513,7 @@ async function appendToEnvFile(targetDir: string, content: string) {
 
 /**
  * Converts Claude Desktop MCP config format to SnowCode/OpenCode format
- * Single source of truth: .mcp.json.template → both .mcp.json and .snow-code/snow-code.json
+ * Single source of truth: .mcp.json.template → both .mcp.json and .snow-code/config.json
  */
 function convertToSnowCodeFormat(claudeConfig: any): any {
   const snowcodeConfig: any = {
@@ -3202,7 +3203,7 @@ export async function setupMCPConfig(
 
     // 🔥 ALSO write LOCAL config (takes priority!)
     const localSnowcodeDir = join(targetDir, '.snow-code');
-    const localSnowcodePath = join(localSnowcodeDir, 'snow-code.json');
+    const localSnowcodePath = join(localSnowcodeDir, 'config.json');
 
     try {
       // Ensure local .snow-code directory exists

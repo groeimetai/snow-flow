@@ -93,16 +93,16 @@ export function loadJsonConfig<T>(filePath: string): T | null {
  * Pre-defined config paths for snow-flow/snow-code
  */
 export const CONFIG_PATHS = {
-  // Global snow-code config
-  globalSnowCodeConfig: join(os.homedir(), '.snow-code', 'snow-code.json'),
-  globalSnowCodeConfigAlt: join(os.homedir(), '.snow-code', 'config.json'),
+  // Global snow-code config (config.json is primary, snow-code.json is legacy fallback)
+  globalSnowCodeConfig: join(os.homedir(), '.snow-code', 'config.json'),
+  globalSnowCodeConfigAlt: join(os.homedir(), '.snow-code', 'snow-code.json'),
 
   // Global snow-flow config
   globalSnowFlowConfig: join(os.homedir(), '.config', 'snow-code', 'config.json'),
 
-  // Local configs (relative to cwd)
-  localSnowCodeConfig: (cwd: string = process.cwd()) => join(cwd, '.snow-code', 'snow-code.json'),
-  localSnowCodeConfigAlt: (cwd: string = process.cwd()) => join(cwd, '.snow-code', 'config.json'),
+  // Local configs (relative to cwd) - config.json is primary, snow-code.json is legacy fallback
+  localSnowCodeConfig: (cwd: string = process.cwd()) => join(cwd, '.snow-code', 'config.json'),
+  localSnowCodeConfigAlt: (cwd: string = process.cwd()) => join(cwd, '.snow-code', 'snow-code.json'),
   localMcpConfig: (cwd: string = process.cwd()) => join(cwd, '.mcp.json'),
 
   // Enterprise config
