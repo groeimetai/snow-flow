@@ -239,7 +239,9 @@ async function enterpriseLicenseFlow(): Promise<void> {
     authLogger.info('Enterprise MCP server configuration completed');
 
     // Update documentation with enterprise features
-    await updateDocumentationWithEnterprise();
+    // Enterprise license includes all integrations by default
+    const defaultEnterpriseServices = ['jira', 'azdo', 'confluence'];
+    await updateDocumentationWithEnterprise(defaultEnterpriseServices);
   } catch (error: any) {
     if (error.message.includes('.mcp.json not found')) {
       prompts.log.error('⚠️  Project not initialized');
@@ -257,7 +259,7 @@ async function enterpriseLicenseFlow(): Promise<void> {
 
 /**
  * Update project documentation (CLAUDE.md and AGENTS.md) with enterprise server information
- * Only adds the enterprise section if it doesn't already exist
+ * Replaces any existing enterprise section with the new comprehensive instructions
  */
 async function updateDocumentationWithEnterprise(enabledServices?: string[]): Promise<void> {
   try {
@@ -271,70 +273,107 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
     if (enabledServices && enabledServices.length > 0) {
       const { generateEnterpriseInstructions } = await import('./enterprise-docs-generator.js');
       enterpriseDocSection = generateEnterpriseInstructions(enabledServices);
+    } else {
+      authLogger.warn('No enterprise services specified, skipping documentation update');
+      return;
     }
 
-    // Update CLAUDE.md if it exists and doesn't already have enterprise section
+    // Helper function to remove existing enterprise sections
+    const removeExistingEnterpriseSections = (content: string): string => {
+      // Remove old comprehensive enterprise section (from enterprise-docs-generator)
+      const comprehensiveStart = content.indexOf('# 🚀 ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW');
+      if (comprehensiveStart !== -1) {
+        // Find the end - it ends before the next major section or at EOF
+        const afterStart = content.slice(comprehensiveStart);
+        const nextMajorSection = afterStart.search(/\n# [^🚀]/); // Next # that's not the enterprise header
+        if (nextMajorSection !== -1) {
+          content = content.slice(0, comprehensiveStart) + content.slice(comprehensiveStart + nextMajorSection);
+        } else {
+          content = content.slice(0, comprehensiveStart);
+        }
+      }
+
+      // Remove old simple enterprise section (## 🚀 Enterprise Features)
+      const simpleStart = content.indexOf('## 🚀 Enterprise Features');
+      if (simpleStart !== -1) {
+        const afterSimple = content.slice(simpleStart);
+        const nextSection = afterSimple.search(/\n## [^🚀]/);
+        if (nextSection !== -1) {
+          content = content.slice(0, simpleStart) + content.slice(simpleStart + nextSection);
+        } else {
+          content = content.slice(0, simpleStart);
+        }
+      }
+
+      // Clean up multiple consecutive newlines
+      content = content.replace(/\n{4,}/g, '\n\n\n');
+
+      return content.trim();
+    };
+
+    // Update CLAUDE.md
     try {
       await fs.access(claudeMdPath);
-      const claudeContent = await fs.readFile(claudeMdPath, 'utf-8');
+      let claudeContent = await fs.readFile(claudeMdPath, 'utf-8');
 
-      if (!claudeContent.includes('ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW')) {
-        // Find the best insertion point (before "## Conclusion" or at the end)
-        let insertionPoint = claudeContent.lastIndexOf('## Conclusion');
+      // Remove existing enterprise sections
+      claudeContent = removeExistingEnterpriseSections(claudeContent);
+
+      // Find the best insertion point (before "## 🎓 FINAL MANDATE" or at the end)
+      let insertionPoint = claudeContent.indexOf('## 🎓 FINAL MANDATE');
+      if (insertionPoint === -1) {
+        insertionPoint = claudeContent.lastIndexOf('---');
         if (insertionPoint === -1) {
           insertionPoint = claudeContent.length;
         }
-
-        const updatedContent =
-          claudeContent.slice(0, insertionPoint) +
-          enterpriseDocSection +
-          '\n\n' +
-          claudeContent.slice(insertionPoint);
-
-        await fs.writeFile(claudeMdPath, updatedContent, 'utf-8');
-        authLogger.info('✅ Updated CLAUDE.md with enterprise features documentation');
-      } else {
-        authLogger.debug('CLAUDE.md already contains enterprise features section');
       }
+
+      const updatedContent =
+        claudeContent.slice(0, insertionPoint) +
+        enterpriseDocSection +
+        '\n\n' +
+        claudeContent.slice(insertionPoint);
+
+      await fs.writeFile(claudeMdPath, updatedContent, 'utf-8');
+      authLogger.info('✅ Updated CLAUDE.md with enterprise features documentation');
     } catch (err: any) {
       if (err.code !== 'ENOENT') {
         authLogger.debug(`Could not update CLAUDE.md: ${err.message}`);
       }
     }
 
-    // Update AGENTS.md if it exists and doesn't already have enterprise section
+    // Update AGENTS.md
     try {
       await fs.access(agentsMdPath);
-      const agentsContent = await fs.readFile(agentsMdPath, 'utf-8');
+      let agentsContent = await fs.readFile(agentsMdPath, 'utf-8');
 
-      if (!agentsContent.includes('ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW')) {
-        // Find the best insertion point (before "## Conclusion" or at the end)
-        let insertionPoint = agentsContent.lastIndexOf('## Conclusion');
+      // Remove existing enterprise sections
+      agentsContent = removeExistingEnterpriseSections(agentsContent);
+
+      // Find the best insertion point (before "## 🎓 FINAL MANDATE" or at the end)
+      let insertionPoint = agentsContent.indexOf('## 🎓 FINAL MANDATE');
+      if (insertionPoint === -1) {
+        insertionPoint = agentsContent.lastIndexOf('---');
         if (insertionPoint === -1) {
-          insertionPoint = agentsContent.lastIndexOf('---');
-          if (insertionPoint === -1) {
-            insertionPoint = agentsContent.length;
-          }
+          insertionPoint = agentsContent.length;
         }
-
-        const updatedContent =
-          agentsContent.slice(0, insertionPoint) +
-          enterpriseDocSection +
-          '\n\n' +
-          agentsContent.slice(insertionPoint);
-
-        await fs.writeFile(agentsMdPath, updatedContent, 'utf-8');
-        authLogger.info('✅ Updated AGENTS.md with enterprise features documentation');
-      } else {
-        authLogger.debug('AGENTS.md already contains enterprise features section');
       }
+
+      const updatedContent =
+        agentsContent.slice(0, insertionPoint) +
+        enterpriseDocSection +
+        '\n\n' +
+        agentsContent.slice(insertionPoint);
+
+      await fs.writeFile(agentsMdPath, updatedContent, 'utf-8');
+      authLogger.info('✅ Updated AGENTS.md with enterprise features documentation');
     } catch (err: any) {
       if (err.code !== 'ENOENT') {
         authLogger.debug(`Could not update AGENTS.md: ${err.message}`);
       }
     }
 
-    prompts.log.success('✅ Documentation updated with enterprise features');
+    prompts.log.success('✅ Documentation updated with comprehensive enterprise workflow instructions');
   } catch (error: any) {
     authLogger.warn(`Failed to update documentation: ${error.message}`);
     // Don't throw - this is not critical
