@@ -239,7 +239,8 @@ async function enterpriseLicenseFlow(): Promise<void> {
     authLogger.info('Enterprise MCP server configuration completed');
 
     // Update documentation with enterprise features
-    await updateDocumentationWithEnterprise();
+    // Pass the available features from license validation (e.g., 'jira', 'azdo', 'confluence')
+    await updateDocumentationWithEnterprise(validation.features);
   } catch (error: any) {
     if (error.message.includes('.mcp.json not found')) {
       prompts.log.error('⚠️  Project not initialized');
