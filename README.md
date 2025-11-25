@@ -1,3 +1,19 @@
+<p align="center">
+  <picture>
+    <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="SnowCode logo" width="300">
+  </picture>
+</p>
+
+<h1 align="center">SnowCode</h1>
+<h3 align="center">AI-Powered ServiceNow Development IDE</h3>
+<p align="center"><strong>Part of the Snow-Flow Enterprise Suite</strong></p>
+
+<p align="center">
+  <a href="https://github.com/groeimetai/snow-flow"><img alt="GitHub" src="https://img.shields.io/github/stars/groeimetai/snow-flow?style=flat-square" /></a>
+  <a href="https://github.com/groeimetai/snow-flow"><img alt="Snow-Flow" src="https://img.shields.io/badge/snow--flow-350%2B%20tools-blue?style=flat-square" /></a>
+  <a href="#enterprise-edition"><img alt="Enterprise" src="https://img.shields.io/badge/enterprise-available-green?style=flat-square" /></a>
+</p>
+
 # Snow-Flow
 
 **The Free ServiceNow Build Agent Alternative**

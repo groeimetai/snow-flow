@@ -1625,7 +1625,7 @@ program
       await copySnowCodeConfig(targetDir, options.force);
       await copySnowCodeThemes(targetDir, options.force);
       await copySnowCodePackageJson(targetDir, options.force);
-      await copyMCPServerScripts(targetDir, options.force);
+      // copyMCPServerScripts removed - scripts/ directory no longer needed for snow-code
 
       setupSpinner.stop('Project configured');
 
@@ -1637,8 +1637,8 @@ program
         mcpSpinner.stop('MCP servers verified');
       }
 
-      // 🔥 CRITICAL: Sync .mcp.json to .claude/mcp-config.json
-      // This ensures Claude Code can discover all MCP servers
+      // Sync .mcp.json to .snow-code/config.json
+      // This ensures snow-code discovers all MCP servers
       try {
         const syncSpinner = prompts.spinner();
         syncSpinner.start('Syncing MCP configurations');
@@ -1835,50 +1835,22 @@ async function checkAndInstallSnowCode(): Promise<boolean> {
 }
 
 async function createDirectoryStructure(targetDir: string, force: boolean = false) {
+  // Minimal directory structure for snow-code
+  // Legacy directories (.claude, .swarm, .snow-flow, memory, coordination, servicenow, templates, scripts) removed
   const directories = [
-    '.claude', '.claude/commands', '.claude/commands/sparc', '.claude/configs',
-    '.swarm', '.swarm/sessions', '.swarm/agents',
-    '.snow-flow', '.snow-flow/queen', '.snow-flow/memory', '.snow-flow/data', '.snow-flow/queen-test', '.snow-flow/queen-advanced',
-    'memory', 'memory/agents', 'memory/sessions',
-    'coordination', 'coordination/memory_bank', 'coordination/subtasks',
-    'servicenow', 'servicenow/widgets', 'servicenow/workflows', 'servicenow/scripts',
-    'templates', 'templates/widgets', 'templates/workflows',
-    'scripts'
+    '.snow-code',
+    '.snow-code/agent',
+    '.snow-code/command',
+    '.snow-code/plugin'
   ];
-  
+
   for (const dir of directories) {
     const dirPath = join(targetDir, dir);
     await fs.mkdir(dirPath, { recursive: true });
   }
 }
 
-async function createBasicConfig(targetDir: string) {
-  const claudeConfig = {
-    version: VERSION,
-    name: 'snow-flow',
-    description: 'ServiceNow Multi-Agent Development Framework',
-    created: new Date().toISOString(),
-    features: {
-      swarmCoordination: true,
-      persistentMemory: true, // Queen uses JSON files, MCP tools use in-memory
-      serviceNowIntegration: true,
-      sparcModes: true
-    }
-  };
-  
-  const swarmConfig = {
-    version: VERSION,
-    topology: 'hierarchical',
-    maxAgents: 8,
-    memory: {
-      path: '.swarm/memory',
-      namespace: 'snow-flow'
-    }
-  };
-  
-  await fs.writeFile(join(targetDir, '.claude/config.json'), JSON.stringify(claudeConfig, null, 2));
-  await fs.writeFile(join(targetDir, '.swarm/config.json'), JSON.stringify(swarmConfig, null, 2));
-}
+// createBasicConfig removed - legacy .claude and .swarm configs no longer needed
 
 async function createReadmeFiles(targetDir: string, force: boolean = false) {
   // Only create README.md if it doesn't exist already
@@ -1889,10 +1861,7 @@ async function createReadmeFiles(targetDir: string, force: boolean = false) {
 
     await fs.writeFile(readmePath, README_TEMPLATE);
   }
-  
-  // Create sub-directory READMEs
-  await fs.writeFile(join(targetDir, 'memory/agents/README.md'), '# Agent Memory\n\nThis directory contains persistent memory for ServiceNow agents.');
-  await fs.writeFile(join(targetDir, 'servicenow/README.md'), '# ServiceNow Artifacts\n\nThis directory contains generated ServiceNow development artifacts.');
+  // Legacy sub-directory READMEs removed (memory/, servicenow/ directories no longer created)
 }
 
 
@@ -2276,102 +2245,11 @@ async function verifyMCPServers(targetDir: string): Promise<void> {
   }
 }
 
-async function copyMCPServerScripts(targetDir: string, force: boolean = false) {
-  try {
-    // Determine the snow-flow installation directory (same logic as other copy functions)
-    let snowFlowRoot: string;
-    const isGlobalInstall = __dirname.includes('node_modules/snow-flow') ||
-                           __dirname.includes('node_modules/.pnpm') ||
-                           __dirname.includes('npm/snow-flow');
-
-    if (isGlobalInstall) {
-      const parts = __dirname.split(/node_modules[\/\\]/);
-      snowFlowRoot = parts[0] + 'node_modules/snow-flow';
-    } else {
-      let currentDir = __dirname;
-      while (currentDir !== '/') {
-        try {
-          const packageJsonPath = join(currentDir, 'package.json');
-          const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
-          if (packageJson.name === 'snow-flow') {
-            snowFlowRoot = currentDir;
-            break;
-          }
-        } catch {
-          // Continue searching up
-        }
-        currentDir = dirname(currentDir);
-      }
-      if (!snowFlowRoot) {
-        throw new Error('Could not find snow-flow project root');
-      }
-    }
-
-    // Find scripts directory
-    const scriptsSourcePaths = [
-      join(snowFlowRoot, 'scripts'),
-      join(__dirname, '..', 'scripts'),
-      join(__dirname, 'scripts')
-    ];
-
-    let scriptsSourceDir: string | null = null;
-    for (const sourcePath of scriptsSourcePaths) {
-      try {
-        await fs.access(sourcePath);
-        scriptsSourceDir = sourcePath;
-        break;
-      } catch {
-        // Continue to next path
-      }
-    }
-
-    if (!scriptsSourceDir) {
-      return;
-    }
-
-    // Create target scripts directory
-    const scriptsTargetDir = join(targetDir, 'scripts');
-    await fs.mkdir(scriptsTargetDir, { recursive: true });
-
-    // Copy specific scripts
-    const scriptFiles = [
-      // 'mcp-server-manager.sh', // REMOVED: MCP servers auto-start via .mcp.json, this script is for dev only
-      'start-snowcode.sh'
-    ];
-
-    let copiedCount = 0;
-
-    for (const scriptFile of scriptFiles) {
-      const sourcePath = join(scriptsSourceDir, scriptFile);
-      const targetPath = join(scriptsTargetDir, scriptFile);
-
-      try {
-        // Check if file already exists
-        try {
-          await fs.access(targetPath);
-          if (!force) {
-            continue;
-          }
-        } catch {
-          // File doesn't exist, continue with copy
-        }
-
-        const content = await fs.readFile(sourcePath, 'utf8');
-        await fs.writeFile(targetPath, content, { mode: 0o755 }); // Make executable
-        copiedCount++;
-      } catch (error) {
-        // Silent error handling
-      }
-    }
-
-  } catch (error) {
-    // Silent error handling
-  }
-}
+// copyMCPServerScripts removed - scripts/ directory no longer needed for snow-code
+// snow-code auto-manages MCP servers via .mcp.json and .snow-code/config.json
 
 async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
   let claudeMdContent = '';
-  let agentsMdContent = '';
 
   // Determine the snow-flow installation directory for absolute MCP paths
   let snowFlowRoot: string;
@@ -2406,14 +2284,10 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
   try {
     // First try to find the CLAUDE.md in the source directory (for global installs)
     const sourceClaudeFiles = [
-      // Try the project root (when running from dist/)
       join(__dirname, '..', 'CLAUDE.md'),
-      // Try when running directly from src/
       join(__dirname, 'CLAUDE.md'),
-      // Try npm global installation paths
       join(__dirname, '..', '..', '..', 'CLAUDE.md'),
       join(__dirname, '..', '..', '..', '..', 'CLAUDE.md'),
-      // Try current working directory as fallback
       join(process.cwd(), 'CLAUDE.md')
     ];
 
@@ -2430,161 +2304,109 @@ async function copyCLAUDEmd(targetDir: string, force: boolean = false) {
     }
 
     if (!foundSource) {
-      // Import the template from the dedicated file
       const { CLAUDE_MD_TEMPLATE } = await import('./templates/claude-md-template.js');
       claudeMdContent = CLAUDE_MD_TEMPLATE;
     }
 
-    // Use same content for AGENTS.md as CLAUDE.md (they should be identical)
-    agentsMdContent = claudeMdContent;
-
-    // Create CLAUDE.md (primary instructions for Claude Code)
-    const claudeMdPath = join(targetDir, 'CLAUDE.md');
-    try {
-      await fs.access(claudeMdPath);
-      if (force) {
-        await fs.writeFile(claudeMdPath, claudeMdContent);
-      }
-    } catch {
-      await fs.writeFile(claudeMdPath, claudeMdContent);
-    }
-
-    // Create AGENTS.md (identical copy for SnowCode compatibility)
+    // Create AGENTS.md in root (snow-code searches for AGENTS.md or CLAUDE.md)
     const agentsMdPath = join(targetDir, 'AGENTS.md');
     try {
       await fs.access(agentsMdPath);
       if (force) {
-        await fs.writeFile(agentsMdPath, agentsMdContent);
+        await fs.writeFile(agentsMdPath, claudeMdContent);
       }
     } catch {
-      await fs.writeFile(agentsMdPath, agentsMdContent);
+      await fs.writeFile(agentsMdPath, claudeMdContent);
     }
 
-    // Create .snow-code/ directory structure
+    // Setup .snow-code/ directory (directories already created by createDirectoryStructure)
     const snowcodeDir = join(targetDir, '.snow-code');
-    const agentsDir = join(snowcodeDir, 'agent');  // Singular 'agent' as required by SnowCode
-    const modesDir = join(snowcodeDir, 'modes');
+    const agentsDir = join(snowcodeDir, 'agent');
 
+    // Copy agent files from .snow-code/agent/ in snow-flow package
+    const sourceAgentsDir = join(snowFlowRoot, '.snow-code', 'agent');
     try {
-      await fs.mkdir(snowcodeDir, { recursive: true });
-      await fs.mkdir(agentsDir, { recursive: true });
-      await fs.mkdir(modesDir, { recursive: true });
-
-      // Copy agent files from .claude/ to .snow-code/agent/ (if they exist)
-      const sourceAgentsDir = join(__dirname, '..', '.claude', 'agents');
-      try {
-        const agentFiles = await fs.readdir(sourceAgentsDir);
-        for (const file of agentFiles) {
-          if (file.endsWith('.md')) {
-            const sourceFile = join(sourceAgentsDir, file);
-            const targetFile = join(agentsDir, file);
+      const agentFiles = await fs.readdir(sourceAgentsDir);
+      for (const file of agentFiles) {
+        if (file.endsWith('.md')) {
+          const sourceFile = join(sourceAgentsDir, file);
+          const targetFile = join(agentsDir, file);
+          try {
+            await fs.access(targetFile);
+            if (force) {
+              const content = await fs.readFile(sourceFile, 'utf-8');
+              await fs.writeFile(targetFile, content);
+            }
+          } catch {
             const content = await fs.readFile(sourceFile, 'utf-8');
             await fs.writeFile(targetFile, content);
           }
         }
-      } catch (err) {
-        // Silently continue - agent configs are in snow-code.json, not separate files
       }
+    } catch (err) {
+      // Silently continue - agent files are optional
+    }
 
-      // Create .snow-code/snow-code.json by converting from .mcp.json.template
-      // SINGLE SOURCE OF TRUTH: .mcp.json.template → both Claude and SnowCode formats
-      // CRITICAL: SnowCode/OpenCode does NOT auto-expand ${...} variables
+    // Create .snow-code/config.json from .mcp.json.template
+    const envPath = join(targetDir, '.env');
+    const envValues: Record<string, string> = {};
 
-      // 🔧 Read actual environment values from .env file
-      const envPath = join(targetDir, '.env');
-      const envValues: Record<string, string> = {};
-
-      try {
-        const envContent = await fs.readFile(envPath, 'utf-8');
-        // Parse .env file (simple parser - handles KEY=VALUE lines)
-        const lines = envContent.split('\n');
-        for (var line of lines) {
-          line = line.trim();
-          // Skip comments and empty lines
-          if (!line || line.startsWith('#')) continue;
-
-          var equalIndex = line.indexOf('=');
-          if (equalIndex > 0) {
-            var key = line.substring(0, equalIndex).trim();
-            var value = line.substring(equalIndex + 1).trim();
-            // Remove quotes if present
-            if ((value.startsWith('"') && value.endsWith('"')) ||
-                (value.startsWith("'") && value.endsWith("'"))) {
-              value = value.substring(1, value.length - 1);
-            }
-            envValues[key] = value;
+    try {
+      const envContent = await fs.readFile(envPath, 'utf-8');
+      const lines = envContent.split('\n');
+      for (var line of lines) {
+        line = line.trim();
+        if (!line || line.startsWith('#')) continue;
+        var equalIndex = line.indexOf('=');
+        if (equalIndex > 0) {
+          var key = line.substring(0, equalIndex).trim();
+          var value = line.substring(equalIndex + 1).trim();
+          if ((value.startsWith('"') && value.endsWith('"')) ||
+              (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.substring(1, value.length - 1);
           }
+          envValues[key] = value;
         }
-      } catch (error) {
-        // Silent error handling
       }
-
-      // Helper function to get env value with proper URL formatting
-      function getEnvValue(key: string, defaultValue: string = ''): string {
-        var value = envValues[key] || process.env[key] || defaultValue;
-
-        // Special handling for SNOW_INSTANCE - ensure it's a full URL
-        if (key === 'SNOW_INSTANCE' && value && !value.startsWith('http')) {
-          value = 'https://' + value.replace(/^https?:\/\//, '');
-        }
-
-        return value;
-      }
-
-      // Read .mcp.json.template (single source of truth for MCP servers)
-      const mcpTemplatePath = join(snowFlowRoot, '.mcp.json.template');
-      let mcpTemplateContent: string;
-
-      try {
-        mcpTemplateContent = await fs.readFile(mcpTemplatePath, 'utf-8');
-      } catch (error) {
-        throw error;
-      }
-
-      // Replace placeholders with ACTUAL values from .env (not ${...} syntax!)
-      const mcpConfigContent = mcpTemplateContent
-        .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)
-        .replace(/{{SNOW_INSTANCE}}/g, getEnvValue('SNOW_INSTANCE'))
-        .replace(/{{SNOW_CLIENT_ID}}/g, getEnvValue('SNOW_CLIENT_ID'))
-        .replace(/{{SNOW_CLIENT_SECRET}}/g, getEnvValue('SNOW_CLIENT_SECRET'))
-        .replace(/{{SNOW_FLOW_ENV}}/g, getEnvValue('SNOW_FLOW_ENV', 'development'));
-
-      const claudeConfig = JSON.parse(mcpConfigContent);
-
-      // Convert Claude Desktop format to SnowCode format
-      const snowcodeConfig = convertToSnowCodeFormat(claudeConfig);
-
-      // Write snow-code.json (SnowCode searches for this name!)
-      // ✅ PROJECT-SCOPED: Only write to project .snow-code/ directory
-      const snowCodeJsonPath = join(snowcodeDir, 'snow-code.json');
-      const configJsonPath = join(snowcodeDir, 'config.json');
-
-      await fs.writeFile(snowCodeJsonPath, JSON.stringify(snowcodeConfig, null, 2));
-      await fs.writeFile(configJsonPath, JSON.stringify(snowcodeConfig, null, 2));
-
-      // ❌ REMOVED: Global config write
-      // We do NOT write to ~/.config/snow-code/ anymore
-      // Each snow-flow project maintains its own isolated SnowCode configuration
-      // SnowCode will automatically discover and use the project-level .snow-code/ config
-
-      // Also create AGENTS.md in .snow-code/
-      const snowcodeAgentsMdPath = join(snowcodeDir, 'AGENTS.md');
-      await fs.writeFile(snowcodeAgentsMdPath, agentsMdContent);
-
     } catch (error) {
       // Silent error handling
     }
 
-  } catch (error) {
-    // Silent error handling
-    // Import the template as fallback
-    const { CLAUDE_MD_TEMPLATE } = await import('./templates/claude-md-template.js');
-    const claudeMdPath = join(targetDir, 'CLAUDE.md');
-    const agentsMdPath = join(targetDir, 'AGENTS.md');
-    if (force || !existsSync(claudeMdPath)) {
-      await fs.writeFile(claudeMdPath, CLAUDE_MD_TEMPLATE);
+    function getEnvValue(key: string, defaultValue: string = ''): string {
+      var value = envValues[key] || process.env[key] || defaultValue;
+      if (key === 'SNOW_INSTANCE' && value && !value.startsWith('http')) {
+        value = 'https://' + value.replace(/^https?:\/\//, '');
+      }
+      return value;
     }
-    // Use same content for AGENTS.md (they should be identical)
+
+    const mcpTemplatePath = join(snowFlowRoot, '.mcp.json.template');
+    let mcpTemplateContent: string;
+
+    try {
+      mcpTemplateContent = await fs.readFile(mcpTemplatePath, 'utf-8');
+    } catch (error) {
+      throw error;
+    }
+
+    const mcpConfigContent = mcpTemplateContent
+      .replace(/{{PROJECT_ROOT}}/g, snowFlowRoot)
+      .replace(/{{SNOW_INSTANCE}}/g, getEnvValue('SNOW_INSTANCE'))
+      .replace(/{{SNOW_CLIENT_ID}}/g, getEnvValue('SNOW_CLIENT_ID'))
+      .replace(/{{SNOW_CLIENT_SECRET}}/g, getEnvValue('SNOW_CLIENT_SECRET'))
+      .replace(/{{SNOW_FLOW_ENV}}/g, getEnvValue('SNOW_FLOW_ENV', 'development'));
+
+    const mcpConfig = JSON.parse(mcpConfigContent);
+    const snowcodeConfig = convertToSnowCodeFormat(mcpConfig);
+
+    // Write only config.json (snow-code reads this)
+    const configJsonPath = join(snowcodeDir, 'config.json');
+    await fs.writeFile(configJsonPath, JSON.stringify(snowcodeConfig, null, 2));
+
+  } catch (error) {
+    // Fallback: create minimal AGENTS.md
+    const { CLAUDE_MD_TEMPLATE } = await import('./templates/claude-md-template.js');
+    const agentsMdPath = join(targetDir, 'AGENTS.md');
     if (force || !existsSync(agentsMdPath)) {
       await fs.writeFile(agentsMdPath, CLAUDE_MD_TEMPLATE);
     }
@@ -2855,8 +2677,8 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   // Keep the standard MCP structure that snow-code expects
   // Use the snow-code MCP structure directly from template (mcp key)
   const finalConfig = mcpConfig;
-  
-  // Create .mcp.json in project root for Claude Code discovery
+
+  // Create .mcp.json in project root (snow-code reads this directly)
   const mcpConfigPath = join(targetDir, '.mcp.json');
   try {
     await fs.access(mcpConfigPath);
@@ -2869,15 +2691,11 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   } catch {
     await fs.writeFile(mcpConfigPath, JSON.stringify(finalConfig, null, 2));
   }
-  
-  // Also create legacy config in .claude for backward compatibility
-  const legacyConfigPath = join(targetDir, '.claude/mcp-config.json');
-  await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
+  // .claude/mcp-config.json removed - snow-code is the only supported client
 
   // ✅ PROJECT-SCOPED MCP CONFIG ONLY
-  // We do NOT modify global Snow-Code config (~/.snow-code/snow-code.json)
   // Each project maintains its own isolated MCP configuration in .mcp.json
-  // SnowCode/Claude Code will automatically discover and use the project-level .mcp.json
+  // snow-code automatically discovers and uses the project-level .mcp.json
 
   // Create comprehensive Claude Code settings file
   // NOTE: Only include properties that Claude Code actually accepts
@@ -3088,9 +2906,11 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
     // Snow-Flow v3.5.13+ optimized settings with servicenow-local-development
     // Comprehensive permissions for Snow-Flow development workflow
   };
-  
-  const claudeSettingsPath = join(targetDir, '.claude/settings.json');
-  await fs.writeFile(claudeSettingsPath, JSON.stringify(claudeSettings, null, 2));
+
+  // .claude/settings.json removed - snow-code doesn't use this format
+  // snow-code uses .snow-code/config.json for all configuration
+  // Keeping claudeSettings object for potential future snow-code config migration
+  void claudeSettings; // Suppress unused variable warning
 }
 
 // Setup MCP configuration function
@@ -3273,15 +3093,11 @@ export async function setupMCPConfig(
   } catch {
     await fs.writeFile(mcpConfigPath, JSON.stringify(finalConfig, null, 2));
   }
-  
-  // Also create legacy config in .claude for backward compatibility
-  const legacyConfigPath = join(targetDir, '.claude/mcp-config.json');
-  await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
+  // .claude/mcp-config.json removed - snow-code is the only supported client
 
-  // 🔧 CRITICAL FIX: Also update global SnowCode configuration
-  // SnowCode/OpenCode reads from ~/.snowcode/snowcode.json
-  const snowcodeConfigPath = join(process.env.HOME || '', '.snow-code', 'snow-code.json');
-  const snowcodeConfigDirPath = join(process.env.HOME || '', '.snow-code');
+  // Update project-level .snow-code/config.json
+  const snowcodeConfigPath = join(targetDir, '.snow-code', 'config.json');
+  const snowcodeConfigDirPath = join(targetDir, '.snow-code');
 
   try {
     // Ensure directory exists
