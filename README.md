@@ -1,37 +1,57 @@
 # 🏔️ Snow-Flow
 
-**Multi-LLM ServiceNow Development Platform**
+**The Open ServiceNow Development Platform - Use YOUR Preferred AI**
 
+[![npm version](https://img.shields.io/npm/v/snow-flow.svg?style=for-the-badge&color=00D9FF)](https://www.npmjs.com/package/snow-flow)
 [![License: Elastic-2.0](https://img.shields.io/badge/License-Elastic--2.0-blue.svg?style=for-the-badge)](https://www.elastic.co/licensing/elastic-license)
 [![Node.js](https://img.shields.io/node/v/snow-flow.svg?style=for-the-badge&logo=node.js&color=339933)](https://nodejs.org)
 
-**Develop ServiceNow through conversation • 413 Tools • 2 MCP Servers • 75+ LLM Providers • Works with ANY AI coding assistant**
+**347+ Tools • 2 MCP Servers • 75+ LLM Providers • Autonomous Story Completion • No Vendor Lock-in**
 
 ---
 
-## What is Snow-Flow?
+## Why Snow-Flow?
 
-Snow-Flow transforms ServiceNow development into a **conversational experience**. Instead of clicking through ServiceNow's web interface, you develop through natural conversation with your AI coding assistant using **any LLM provider** you prefer.
+### 🔓 Use Your Organization's Approved AI
 
-### The Problem
+Many organizations have **specific AI governance requirements**. You might be required to use:
+- A self-hosted LLM for data privacy
+- A specific cloud provider (Azure, AWS, GCP)
+- An enterprise-approved model (not the vendor's default)
+- Local models for offline/air-gapped environments
 
-Traditional ServiceNow development means:
-- ❌ Manual navigation through complex web UIs
-- ❌ Context switching between modules
+**Snow-Flow gives you that freedom.** Use ANY of 75+ LLM providers - from Claude Opus 4.5 to local Ollama models - while maintaining full ServiceNow integration.
+
+### 🤖 Fully Autonomous Development
+
+Snow-Flow doesn't just assist - it **autonomously completes entire development stories**:
+
+- **Jira Integration**: Pick up stories, implement them, update status, add documentation
+- **Azure DevOps Integration**: Complete work items end-to-end with PR creation
+- **Confluence Documentation**: Auto-generate technical docs and runbooks
+- **ServiceNow Knowledge Base**: Create and maintain KB articles automatically
+
+```bash
+# Autonomous story completion - AI picks up story, implements, documents, closes
+snow-flow swarm "complete JIRA-1234: implement incident auto-assignment based on category"
+```
+
+### 💡 The Problem with Traditional ServiceNow Development
+
+- ❌ Browser-based development only (ServiceNow Studio)
+- ❌ Limited to vendor-provided AI capabilities
+- ❌ No choice in AI models or providers
+- ❌ Manual context switching between tools
 - ❌ Repetitive clicking and form filling
-- ❌ Limited to browser-based development
-- ❌ Locked into specific AI providers
 
-### The Solution
+### ✅ The Snow-Flow Solution
 
-Snow-Flow provides:
-- ✅ **Conversational Development**: Build through natural language
-- ✅ **413 ServiceNow Tools**: Complete API coverage via 2 unified MCP servers
-- ✅ **75+ LLM Providers**: Claude, GPT-4o, Gemini, Llama, Mistral, DeepSeek, Groq, or ANY provider via SnowCode
-- ✅ **100% Free Option**: Ollama, LM Studio, Jan - run models locally offline
-- ✅ **Local Development**: Pull artifacts to local files, edit with native tools
-- ✅ **Local ML Training**: TensorFlow.js neural networks (runs locally, trains on ServiceNow data)
-- ✅ **Universal Compatibility**: Works with SnowCode, Claude Code, Cursor, Windsurf, Continue.dev, Cline
+- ✅ **Your AI, Your Rules**: 75+ LLM providers including local/private options
+- ✅ **347+ ServiceNow Tools**: Complete API coverage via 2 unified MCP servers
+- ✅ **Autonomous Workflows**: Complete stories from Jira/Azure DevOps automatically
+- ✅ **Native IDE Integration**: VS Code, Cursor, Windsurf, Claude Code, any MCP-compatible editor
+- ✅ **Local Development**: Pull artifacts locally, use your favorite tools
+- ✅ **Enterprise Integrations**: Jira, Azure DevOps, Confluence (Enterprise tier)
 
 ---
 
@@ -50,7 +70,7 @@ snow-flow init
 Snow-Flow will automatically:
 - ✅ Detect and install SnowCode (recommended AI coding platform)
 - ✅ Generate configuration files (`.env`, `.snow-code/config.json`)
-- ✅ Set up 2 MCP servers with 413 ServiceNow tools
+- ✅ Set up 2 MCP servers with 347+ ServiceNow tools
 - ✅ Create documentation (`AGENTS.md`, `README.md`)
 
 ### Configuration
@@ -121,33 +141,55 @@ snowcode
 
 ## 💡 LLM Provider Options
 
-Snow-Flow works with **75+ LLM providers** through SnowCode and Models.dev. Choose ANY model that fits your needs!
+Snow-Flow works with **75+ LLM providers**. Choose ANY model that fits your organization's requirements!
 
-### 🌟 Popular Providers
+### ⭐ Recommended: Claude Opus 4.5
+
+For production ServiceNow development, we recommend **Claude Opus 4.5** (`claude-opus-4-5-20251101`):
+- Best-in-class reasoning for complex ServiceNow logic
+- Superior understanding of ServiceNow APIs and patterns
+- Excellent at autonomous multi-step workflows
+- Handles ES5 JavaScript requirements (Rhino engine) correctly
+
+### 🌟 Provider Categories
 
 | Category | Providers | Cost | Best For |
 |----------|-----------|------|----------|
-| **🚀 Premium Cloud** | Claude (Anthropic), GPT-4o (OpenAI), Gemini (Google) | $10-100/mo | Best quality, production use |
+| **⭐ Recommended** | Claude Opus 4.5, Claude Sonnet 4.5 | $15-75/mo | Production development, complex logic |
 | **💰 Cost-Effective** | Claude Haiku, GPT-4o-mini, Gemini Flash | $1-20/mo | High volume, simple tasks |
-| **🆓 100% Free Local** | Ollama, LM Studio, Jan, LocalAI | $0 | Offline, privacy, unlimited use |
-| **⚡ Specialized** | DeepSeek (coding), Perplexity (research), Groq (speed) | $5-50/mo | Specific use cases |
-| **🏢 Enterprise** | Azure OpenAI, AWS Bedrock, GCP Vertex AI | Custom | Enterprise compliance |
+| **🆓 100% Free Local** | Ollama, LM Studio, Jan, LocalAI | $0 | Offline, privacy, air-gapped |
+| **🏢 Enterprise Cloud** | Azure OpenAI, AWS Bedrock, GCP Vertex AI | Custom | Corporate compliance |
+| **⚡ Specialized** | DeepSeek (coding), Groq (speed) | $5-50/mo | Specific use cases |
 
 ### 🔓 Full Provider List (75+)
 
-**Via SnowCode + Models.dev:**
-- **Anthropic**: Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1
-- **OpenAI**: GPT-5, GPT-4o, GPT-4o-mini
-- **Google**: Gemini 2.0 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash
-- **Meta**: Llama 3.3 (8B, 70B), Llama 3.2, Llama 3.1 (405B)
-- **Mistral AI**: Mistral Large, Mistral Medium, Mistral Small, Codestral
-- **Cohere**: Command R, Command R+
-- **DeepSeek**: DeepSeek Coder, DeepSeek Chat
-- **Groq**: Ultra-fast inference for Llama, Mixtral, Gemma
-- **Perplexity**: Web search-enabled models
+**Anthropic (Recommended):**
+- **Claude Opus 4.5** ⭐ - Best for complex ServiceNow development
+- **Claude Sonnet 4.5** - Great balance of speed and quality
+- **Claude Haiku** - Fast and cost-effective for simple tasks
+
+**OpenAI:**
+- GPT-4o, GPT-4o-mini, GPT-4 Turbo
+
+**Google:**
+- Gemini 2.0 Flash, Gemini 2.5 Pro (2M context), Gemini 2.5 Flash
+
+**Open Source / Local:**
+- **Ollama**: Llama 3.3, Mistral, CodeLlama, Qwen - 100% free, runs locally
+- **LM Studio**: Any GGUF model with nice UI
+- **Jan**: Privacy-focused local AI
+- **vLLM**: High-performance serving
+
+**Enterprise Cloud:**
+- **Azure OpenAI**: Corporate Azure integration
+- **AWS Bedrock**: Claude, Llama, Titan in AWS
+- **GCP Vertex AI**: Gemini in Google Cloud
+
+**Specialized:**
+- **DeepSeek**: Excellent for code generation
+- **Groq**: Ultra-fast inference (800+ tokens/sec)
+- **Mistral**: Codestral for coding tasks
 - **OpenRouter**: 200+ models aggregator
-- **Local Models**: Ollama, LM Studio, Jan, LocalAI, vLLM
-- **Enterprise**: Azure OpenAI, AWS Bedrock, GCP Vertex AI
 - **+ 60 more providers!** See [Models.dev](https://models.dev) for complete list
 
 ### 💡 Quick Setup Examples
@@ -190,16 +232,16 @@ OPENAI_API_KEY=your-key
 
 ### 🎯 Recommendations by Use Case
 
-| Use Case | Recommended Provider | Why |
-|----------|---------------------|-----|
-| **Production ServiceNow Development** | Claude Sonnet 4.5 | Best reasoning, ServiceNow knowledge |
-| **Cost-Optimized Development** | GPT-4o-mini or Claude Haiku 4.5 | 10x cheaper, good quality |
-| **Offline/Private Development** | Ollama (Llama 3.3) | 100% free, runs locally |
-| **Code Generation Focus** | DeepSeek Coder | Specialized for coding |
-| **Large Context (200K+ tokens)** | Gemini 2.5 Pro | 2M token context |
-| **Ultra-Fast Prototyping** | Groq (Llama 3.3/Mixtral) | 800+ tokens/sec |
+| Use Case | Recommended Model | Why |
+|----------|-------------------|-----|
+| **Production Development** | Claude Opus 4.5 ⭐ | Best reasoning, handles complex multi-step workflows |
+| **Daily Development** | Claude Sonnet 4.5 | Great balance of speed and quality |
+| **High Volume / Simple Tasks** | Claude Haiku, GPT-4o-mini | 10x cheaper, good for simple changes |
+| **Corporate Compliance** | Azure OpenAI, AWS Bedrock | Uses your organization's cloud |
+| **Air-Gapped / Offline** | Ollama (Llama 3.3) | 100% local, no internet required |
+| **Large Codebase Analysis** | Gemini 2.5 Pro | 2M token context window |
 
-**💡 Pro Tip:** Mix providers! Use cheap models for testing, expensive models for complex widgets.
+**💡 Pro Tip:** Use Opus 4.5 for complex autonomous workflows, Haiku for quick iterations.
 
 ---
 
@@ -303,7 +345,7 @@ snow-flow swarm "create business rule to auto-assign incidents based on category
 snow-flow swarm "train incident classifier on last 6 months of data"
 ```
 
-### 413 ServiceNow Tools (2 MCP Servers)
+### 347+ ServiceNow Tools (2 MCP Servers)
 
 **ServiceNow Unified Server (237+ tools):**
 - Complete CRUD operations on any table
@@ -462,7 +504,7 @@ See how Snow-Flow's open, flexible approach compares to ServiceNow's proprietary
 | **Base Cost** | €0 (open source) or €99/dev/month (enterprise) | €100-200/user/month + implementation fees (€150k-€4.5M) |
 | **LLM Choice** | **Any LLM** (Claude, GPT-4, Gemini, Llama, Mistral, DeepSeek, local models) | NowLLM + optional Azure OpenAI |
 | **Development Environment** | **Local + native IDEs** (VS Code, Cursor, Windsurf, terminal) | ServiceNow Studio only (browser-based) |
-| **MCP Tools** | **439 tools** (395 open source + 44 enterprise) | N/A (proprietary API, no MCP) |
+| **MCP Tools** | **347+ tools** in 2 unified MCP servers | N/A (proprietary API, no MCP) |
 | **Target Users** | Professional developers + technical users | Citizen developers + process owners |
 | **Enterprise Integrations** | **Jira, Azure DevOps, Confluence**, Process Mining, ML tools | ServiceNow ecosystem only |
 | **ML Capabilities** | **TensorFlow.js neural networks** (local training) + Predictive Intelligence integration | RAG-based AI only |
@@ -480,11 +522,30 @@ See how Snow-Flow's open, flexible approach compares to ServiceNow's proprietary
 
 ### Why Choose Snow-Flow?
 
-- **Vendor Independence**: Not locked into ServiceNow's AI ecosystem - use any LLM provider
-- **Cost Efficiency**: Free open-source option + affordable enterprise pricing (10-20x cheaper than ServiceNow)
-- **Developer Experience**: Work in your preferred IDE with local development workflows
-- **Enterprise Grade**: 439 tools, seat management, integrations, 99.9% SLA on managed infrastructure
-- **Future-Proof**: Open standards (MCP), portable integrations, no vendor lock-in
+**🔓 Freedom of Choice**
+- Use your organization's **approved AI provider** - not locked into any vendor's AI
+- Choose from **75+ LLM providers** including local/private options
+- Switch providers anytime without changing your workflows
+
+**🤖 Autonomous Development**
+- **Complete Jira stories automatically**: Pick up → Implement → Test → Document → Close
+- **Azure DevOps integration**: Work items to PRs with full traceability
+- **Auto-documentation**: Generate Confluence pages and ServiceNow KB articles
+
+**💰 Cost Efficiency**
+- Free open-source core with 347+ tools
+- Enterprise tier 10-20x cheaper than proprietary alternatives
+- Use cheap models for testing, powerful models for production
+
+**🛠️ Developer Experience**
+- Work in **your preferred IDE** (VS Code, Cursor, Windsurf, Claude Code)
+- Local development with `snow_pull_artifact` / `snow_push_artifact`
+- Native Git integration and version control
+
+**🏢 Enterprise Ready**
+- 347+ tools across 2 unified MCP servers
+- Seat-based licensing with Developer + Stakeholder roles
+- 99.9% SLA on managed infrastructure
 
 ---
 
@@ -570,7 +631,7 @@ cp .snow-code/config.json .cursor/mcp.json
 # For Windsurf
 cp .snow-code/config.json mcp_config.json
 
-# Restart your AI assistant → 413 Snow-Flow tools available!
+# Restart your AI assistant → 347+ Snow-Flow tools available!
 ```
 
 ---
@@ -678,7 +739,7 @@ Snow-Flow follows an **Open Core** business model. The core framework is 100% op
 
 The current Snow-Flow release includes:
 
-- ✅ **413 ServiceNow Tools** - Complete API coverage via 2 MCP servers
+- ✅ **347+ ServiceNow Tools** - Complete API coverage via 2 MCP servers
 - ✅ **75+ LLM Providers** - Claude, GPT-4o, Gemini, Llama, Ollama, Groq, Mistral, DeepSeek, etc.
 - ✅ **Conversational Development** - Build widgets, flows, workspaces through natural language
 - ✅ **Local Development Bridge** - Pull/push artifacts, edit with native tools
@@ -745,7 +806,7 @@ Enterprise features will be available via seat-based commercial license:
 **License Format:** `SNOW-[TIER]-[ORG]-[DEV_SEATS]/[STAKEHOLDER_SEATS]-[EXPIRY]-[CHECKSUM]`
 
 **Seat Types:**
-- **Developer Seats:** Full read/write access to all 413 MCP tools via CLI/TUI
+- **Developer Seats:** Full read/write access to all 347+ MCP tools via CLI/TUI
 - **Stakeholder Seats:** Read-only CLI/TUI access for queries and analytics (no write operations)
 
 **Pricing Tiers:**
@@ -990,7 +1051,7 @@ snow-flow init
 ---
 
 **Snow-Flow: Conversational ServiceNow Development**
-• 413 Tools • 2 MCP Servers • 75+ LLM Providers • Universal Compatibility
+• 347+ Tools • 2 MCP Servers • 75+ LLM Providers • Autonomous Development • No Vendor Lock-in
 
 **Get started in 3 minutes:**
 ```bash
