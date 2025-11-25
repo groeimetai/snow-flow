@@ -46,18 +46,27 @@ const SNOW_USERNAME = process.env.SNOW_USERNAME || '';
 const SNOW_PASSWORD = process.env.SNOW_PASSWORD || '';
 
 // Jira credentials (optional)
-const JIRA_BASE_URL = process.env.JIRA_BASE_URL || '';
-const JIRA_EMAIL = process.env.JIRA_EMAIL || '';
-const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN || '';
+// Support both naming conventions:
+// - JIRA_* (manual config / .env.example)
+// - ATLASSIAN_* + JIRA_HOST (snow-code auth login)
+const JIRA_BASE_URL = process.env.JIRA_BASE_URL || process.env.JIRA_HOST || '';
+const JIRA_EMAIL = process.env.JIRA_EMAIL || process.env.ATLASSIAN_EMAIL || '';
+const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN || process.env.ATLASSIAN_API_TOKEN || '';
 
 // Azure DevOps credentials (optional)
-const AZDO_ORG_URL = process.env.AZDO_ORG_URL || '';
-const AZDO_PAT = process.env.AZDO_PAT || '';
+// Support both naming conventions:
+// - AZDO_* (manual config / .env.example)
+// - AZURE_* (snow-code auth login)
+const AZDO_ORG_URL = process.env.AZDO_ORG_URL || process.env.AZURE_ORG || '';
+const AZDO_PAT = process.env.AZDO_PAT || process.env.AZURE_PAT || '';
 
 // Confluence credentials (optional)
-const CONFLUENCE_BASE_URL = process.env.CONFLUENCE_BASE_URL || '';
-const CONFLUENCE_EMAIL = process.env.CONFLUENCE_EMAIL || '';
-const CONFLUENCE_API_TOKEN = process.env.CONFLUENCE_API_TOKEN || '';
+// Support both naming conventions:
+// - CONFLUENCE_* (manual config / .env.example)
+// - ATLASSIAN_* + CONFLUENCE_HOST (snow-code auth login)
+const CONFLUENCE_BASE_URL = process.env.CONFLUENCE_BASE_URL || process.env.CONFLUENCE_HOST || '';
+const CONFLUENCE_EMAIL = process.env.CONFLUENCE_EMAIL || process.env.ATLASSIAN_EMAIL || '';
+const CONFLUENCE_API_TOKEN = process.env.CONFLUENCE_API_TOKEN || process.env.ATLASSIAN_API_TOKEN || '';
 
 class EnterpriseProxyServer {
   private server: Server;
