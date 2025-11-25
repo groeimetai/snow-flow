@@ -13,6 +13,7 @@ import {
 } from '../config/snow-code-config.js';
 import { validateLicenseKey } from '../mcp/enterprise-proxy/proxy.js';
 import { syncMcpConfigs } from '../utils/sync-mcp-configs.js';
+import { ensureLatestSnowCode } from '../utils/auto-update-snow-code.js';
 
 const authLogger = new Logger('auth');
 
@@ -598,6 +599,12 @@ export function registerAuthCommands(program: Command) {
     .description('Authenticate with LLM providers, ServiceNow, and Enterprise (via SnowCode)')
     .action(async () => {
       try {
+        // Auto-update snow-code to latest version BEFORE running auth
+        const updateResult = ensureLatestSnowCode(false);
+        if (updateResult.updated) {
+          prompts.log.success(`snow-code updated to v${updateResult.latestVersion}`);
+        }
+
         // Check if snowcode is installed
         try {
           execSync('which snow-code', { stdio: 'ignore' });
