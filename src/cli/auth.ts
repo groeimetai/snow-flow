@@ -258,88 +258,17 @@ async function enterpriseLicenseFlow(): Promise<void> {
 
 /**
  * Update project documentation (CLAUDE.md and AGENTS.md) with enterprise server information
- * Only adds the enterprise section if it doesn't already exist
+ *
+ * NOTE: Documentation generation has been moved to snow-code auth.ts
+ * This function is now a no-op as snow-code handles the comprehensive documentation
+ * generation when users run `snow-code auth login`.
+ *
+ * @deprecated Use snow-code auth login instead for enterprise documentation
  */
-async function updateDocumentationWithEnterprise(enabledServices?: string[]): Promise<void> {
-  try {
-    const projectRoot = process.cwd();
-    const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
-    const agentsMdPath = path.join(projectRoot, 'AGENTS.md');
-
-    // Use the comprehensive enterprise instructions from enterprise-docs-generator.ts
-    let enterpriseDocSection = '';
-
-    if (enabledServices && enabledServices.length > 0) {
-      const { generateEnterpriseInstructions } = await import('./enterprise-docs-generator.js');
-      enterpriseDocSection = generateEnterpriseInstructions(enabledServices);
-    }
-
-    // Update CLAUDE.md if it exists and doesn't already have enterprise section
-    try {
-      await fs.access(claudeMdPath);
-      const claudeContent = await fs.readFile(claudeMdPath, 'utf-8');
-
-      if (!claudeContent.includes('ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW')) {
-        // Find the best insertion point (before "## Conclusion" or at the end)
-        let insertionPoint = claudeContent.lastIndexOf('## Conclusion');
-        if (insertionPoint === -1) {
-          insertionPoint = claudeContent.length;
-        }
-
-        const updatedContent =
-          claudeContent.slice(0, insertionPoint) +
-          enterpriseDocSection +
-          '\n\n' +
-          claudeContent.slice(insertionPoint);
-
-        await fs.writeFile(claudeMdPath, updatedContent, 'utf-8');
-        authLogger.info('✅ Updated CLAUDE.md with enterprise features documentation');
-      } else {
-        authLogger.debug('CLAUDE.md already contains enterprise features section');
-      }
-    } catch (err: any) {
-      if (err.code !== 'ENOENT') {
-        authLogger.debug(`Could not update CLAUDE.md: ${err.message}`);
-      }
-    }
-
-    // Update AGENTS.md if it exists and doesn't already have enterprise section
-    try {
-      await fs.access(agentsMdPath);
-      const agentsContent = await fs.readFile(agentsMdPath, 'utf-8');
-
-      if (!agentsContent.includes('ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW')) {
-        // Find the best insertion point (before "## Conclusion" or at the end)
-        let insertionPoint = agentsContent.lastIndexOf('## Conclusion');
-        if (insertionPoint === -1) {
-          insertionPoint = agentsContent.lastIndexOf('---');
-          if (insertionPoint === -1) {
-            insertionPoint = agentsContent.length;
-          }
-        }
-
-        const updatedContent =
-          agentsContent.slice(0, insertionPoint) +
-          enterpriseDocSection +
-          '\n\n' +
-          agentsContent.slice(insertionPoint);
-
-        await fs.writeFile(agentsMdPath, updatedContent, 'utf-8');
-        authLogger.info('✅ Updated AGENTS.md with enterprise features documentation');
-      } else {
-        authLogger.debug('AGENTS.md already contains enterprise features section');
-      }
-    } catch (err: any) {
-      if (err.code !== 'ENOENT') {
-        authLogger.debug(`Could not update AGENTS.md: ${err.message}`);
-      }
-    }
-
-    prompts.log.success('✅ Documentation updated with enterprise features');
-  } catch (error: any) {
-    authLogger.warn(`Failed to update documentation: ${error.message}`);
-    // Don't throw - this is not critical
-  }
+async function updateDocumentationWithEnterprise(_enabledServices?: string[]): Promise<void> {
+  // Documentation generation is now handled by snow-code auth login
+  // This prevents duplicate/conflicting documentation being written
+  authLogger.debug('Documentation generation delegated to snow-code auth login');
 }
 
 /**

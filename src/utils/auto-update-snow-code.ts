@@ -1,15 +1,26 @@
 /**
  * Automatic Snow-Code Update Utility
  * Ensures users always have the LATEST version of @groeimetai/snow-code and platform binaries
- * Used by init and swarm commands to keep dependencies up-to-date
+ *
+ * OPTIMIZED FOR FAST STARTUP:
+ * - Caches version checks (1 hour TTL)
+ * - Fully async operations (no blocking)
+ * - Skips checks if recently verified
+ * - Background updates don't block swarm startup
  */
 
-import { execSync } from 'child_process';
-import { existsSync } from 'fs';
+import { spawn } from 'child_process';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import os from 'os';
 import { Logger } from './logger.js';
 
 const logger = new Logger('auto-update');
+
+// Cache settings
+const CACHE_DIR = join(os.homedir(), '.snow-flow', 'cache');
+const VERSION_CACHE_FILE = join(CACHE_DIR, 'version-cache.json');
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 export interface UpdateResult {
   success: boolean;
@@ -17,6 +28,15 @@ export interface UpdateResult {
   mainPackageVersion: string | null;
   binaryPackagesUpdated: number;
   errors: string[];
+  skipped?: boolean;
+  fromCache?: boolean;
+}
+
+interface VersionCache {
+  lastCheck: number;
+  latestVersion: string | null;
+  installedVersion: string | null;
+  updateAvailable: boolean;
 }
 
 /**
@@ -31,23 +51,88 @@ const BINARY_PACKAGES = [
 ];
 
 /**
- * Get the latest version of a package from npm registry
+ * Ensure cache directory exists
  */
-async function getLatestVersion(packageName: string): Promise<string | null> {
-  try {
-    const version = execSync(`npm view ${packageName} version 2>/dev/null`, {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'ignore']
-    }).trim();
-    return version || null;
-  } catch (error) {
-    logger.debug(`Could not fetch latest version for ${packageName}`);
-    return null;
+function ensureCacheDir(): void {
+  if (!existsSync(CACHE_DIR)) {
+    mkdirSync(CACHE_DIR, { recursive: true });
   }
 }
 
 /**
- * Get currently installed version of a package
+ * Read version cache from disk
+ */
+function readVersionCache(): VersionCache | null {
+  try {
+    if (existsSync(VERSION_CACHE_FILE)) {
+      const data = readFileSync(VERSION_CACHE_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    logger.debug('Could not read version cache:', error);
+  }
+  return null;
+}
+
+/**
+ * Write version cache to disk
+ */
+function writeVersionCache(cache: VersionCache): void {
+  try {
+    ensureCacheDir();
+    writeFileSync(VERSION_CACHE_FILE, JSON.stringify(cache, null, 2));
+  } catch (error) {
+    logger.debug('Could not write version cache:', error);
+  }
+}
+
+/**
+ * Check if cache is still valid (within TTL)
+ */
+function isCacheValid(cache: VersionCache | null): boolean {
+  if (!cache) return false;
+  const age = Date.now() - cache.lastCheck;
+  return age < CACHE_TTL_MS;
+}
+
+/**
+ * Get the latest version of a package from npm registry (ASYNC - non-blocking)
+ */
+async function getLatestVersionAsync(packageName: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const npmProcess = spawn('npm', ['view', packageName, 'version'], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+      shell: true
+    });
+
+    let version = '';
+
+    npmProcess.stdout?.on('data', (data) => {
+      version += data.toString();
+    });
+
+    npmProcess.on('close', (code) => {
+      if (code === 0 && version.trim()) {
+        resolve(version.trim());
+      } else {
+        resolve(null);
+      }
+    });
+
+    npmProcess.on('error', () => {
+      resolve(null);
+    });
+
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      npmProcess.kill();
+      resolve(null);
+    }, 5000);
+  });
+}
+
+/**
+ * Get currently installed version of a package (sync but fast - just reads local file)
  */
 function getInstalledVersion(packageName: string, targetDir?: string): string | null {
   try {
@@ -58,7 +143,7 @@ function getInstalledVersion(packageName: string, targetDir?: string): string | 
       return null;
     }
 
-    const packageJson = require(packageJsonPath);
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
     return packageJson.version;
   } catch (error) {
     return null;
@@ -66,227 +151,179 @@ function getInstalledVersion(packageName: string, targetDir?: string): string | 
 }
 
 /**
- * Update main @groeimetai/snow-code package to latest version
- * Installs both globally (for CLI usage) and locally (as dependency)
+ * Run npm install in background (ASYNC - non-blocking)
  */
-async function updateMainPackage(
-  targetDir?: string,
-  verbose = false
-): Promise<{ success: boolean; version: string | null; globalUpdated: boolean; localUpdated: boolean }> {
+function runNpmInstallAsync(
+  packageName: string,
+  global: boolean,
+  targetDir?: string
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const args = global
+      ? ['install', '-g', `${packageName}@latest`, '--silent', '--no-audit', '--no-fund']
+      : ['install', `${packageName}@latest`, '--silent', '--no-audit', '--no-fund'];
+
+    const npmProcess = spawn('npm', args, {
+      stdio: 'ignore',
+      shell: true,
+      cwd: global ? undefined : (targetDir || process.cwd()),
+      detached: true // Run independently of parent
+    });
+
+    // Don't wait for completion - let it run in background
+    npmProcess.unref();
+
+    // Resolve immediately - update happens in background
+    resolve(true);
+  });
+}
+
+/**
+ * Quick check if update is needed using cache
+ * Returns immediately if cache is valid
+ */
+export async function checkForUpdatesWithCache(): Promise<{
+  updateAvailable: boolean;
+  currentVersion: string | null;
+  latestVersion: string | null;
+  fromCache: boolean;
+}> {
   const packageName = '@groeimetai/snow-code';
-  const result = {
-    success: false,
-    version: null as string | null,
-    globalUpdated: false,
-    localUpdated: false
-  };
 
-  try {
-    // Get latest version
-    if (verbose) logger.info('Checking for latest snow-code version...');
-    const latestVersion = await getLatestVersion(packageName);
-
-    if (!latestVersion) {
-      logger.warn('Could not determine latest version from npm');
-      return result;
-    }
-
-    result.version = latestVersion;
-
-    // Update GLOBAL installation (used by snow-flow CLI commands)
-    if (verbose) logger.info(`Updating global ${packageName} to v${latestVersion}...`);
-    try {
-      execSync(`npm install -g ${packageName}@latest`, {
-        stdio: verbose ? 'inherit' : 'ignore',
-        encoding: 'utf8'
-      });
-      result.globalUpdated = true;
-      if (verbose) logger.info('✓ Global installation updated');
-    } catch (globalErr) {
-      logger.debug('Global update failed (non-critical):', globalErr);
-      // Continue even if global update fails
-    }
-
-    // Update LOCAL installation (as project dependency)
-    if (verbose) logger.info(`Updating local ${packageName} to v${latestVersion}...`);
-    try {
-      const cwd = targetDir || process.cwd();
-      execSync(`npm install ${packageName}@latest`, {
-        stdio: verbose ? 'inherit' : 'ignore',
-        cwd,
-        encoding: 'utf8'
-      });
-      result.localUpdated = true;
-      if (verbose) logger.info('✓ Local installation updated');
-    } catch (localErr) {
-      logger.debug('Local update failed (non-critical):', localErr);
-      // Continue even if local update fails
-    }
-
-    result.success = result.globalUpdated || result.localUpdated;
-    return result;
-
-  } catch (error) {
-    logger.error('Failed to update main package:', error);
-    return result;
+  // Check cache first
+  const cache = readVersionCache();
+  if (isCacheValid(cache)) {
+    logger.debug('Using cached version info (age: ' + Math.round((Date.now() - cache!.lastCheck) / 1000) + 's)');
+    return {
+      updateAvailable: cache!.updateAvailable,
+      currentVersion: cache!.installedVersion,
+      latestVersion: cache!.latestVersion,
+      fromCache: true
+    };
   }
+
+  // Cache miss or expired - check npm (async)
+  const currentVersion = getInstalledVersion(packageName);
+  const latestVersion = await getLatestVersionAsync(packageName);
+
+  const updateAvailable = currentVersion !== null &&
+    latestVersion !== null &&
+    currentVersion !== latestVersion;
+
+  // Update cache
+  writeVersionCache({
+    lastCheck: Date.now(),
+    latestVersion,
+    installedVersion: currentVersion,
+    updateAvailable
+  });
+
+  return {
+    updateAvailable,
+    currentVersion,
+    latestVersion,
+    fromCache: false
+  };
 }
 
 /**
- * Update platform-specific binary packages to latest versions
- * Uses platform detection to prioritize the current platform's binary
- */
-async function updateBinaryPackages(
-  targetDir?: string,
-  verbose = false
-): Promise<{ updated: number; errors: string[] }> {
-  const result = {
-    updated: 0,
-    errors: [] as string[]
-  };
-
-  if (verbose) logger.info('Updating platform-specific binaries...');
-
-  // Detect current platform to prioritize it
-  const platform = process.platform;
-  const arch = process.arch;
-  const currentPlatformPackage = `@groeimetai/snow-code-${platform}-${arch}`;
-
-  // Prioritize current platform, then update others
-  const packagesToUpdate = [
-    currentPlatformPackage,
-    ...BINARY_PACKAGES.filter(pkg => pkg !== currentPlatformPackage)
-  ];
-
-  for (const packageName of packagesToUpdate) {
-    try {
-      const latestVersion = await getLatestVersion(packageName);
-
-      if (!latestVersion) {
-        if (verbose) logger.debug(`Skipping ${packageName} (not available)`);
-        continue;
-      }
-
-      const installedVersion = getInstalledVersion(packageName, targetDir);
-
-      // Only update if not installed or version differs
-      if (!installedVersion || installedVersion !== latestVersion) {
-        if (verbose) {
-          logger.info(`Updating ${packageName} to v${latestVersion}...`);
-        }
-
-        const cwd = targetDir || process.cwd();
-        execSync(`npm install --no-save --prefer-offline ${packageName}@${latestVersion}`, {
-          stdio: verbose ? 'inherit' : 'ignore',
-          cwd,
-          encoding: 'utf8'
-        });
-
-        result.updated++;
-        if (verbose) logger.info(`✓ ${packageName} updated`);
-      } else {
-        if (verbose) logger.debug(`✓ ${packageName} already up-to-date (v${installedVersion})`);
-      }
-    } catch (error) {
-      const errorMsg = `Failed to update ${packageName}: ${error instanceof Error ? error.message : 'unknown error'}`;
-      result.errors.push(errorMsg);
-      logger.debug(errorMsg);
-    }
-  }
-
-  return result;
-}
-
-/**
- * Comprehensive snow-code update function
- * Updates both main package and platform binaries to latest versions
- *
- * @param targetDir - Target directory for local installations (defaults to cwd)
- * @param verbose - Show detailed progress messages
- * @returns UpdateResult with detailed status
+ * FAST auto-update function optimized for swarm startup
+ * - Returns immediately if cache is valid and no update needed
+ * - Triggers background update if needed (non-blocking)
+ * - Never blocks the main thread
  */
 export async function autoUpdateSnowCode(
   targetDir?: string,
   verbose = false
 ): Promise<UpdateResult> {
-  const startTime = Date.now();
-
-  if (verbose) {
-    logger.info('🔄 Checking for snow-code updates...');
-  }
-
   const result: UpdateResult = {
-    success: false,
+    success: true,
     mainPackageUpdated: false,
     mainPackageVersion: null,
     binaryPackagesUpdated: 0,
-    errors: []
+    errors: [],
+    skipped: false,
+    fromCache: false
   };
 
   try {
-    // Update main package (global + local)
-    const mainUpdate = await updateMainPackage(targetDir, verbose);
-    result.mainPackageUpdated = mainUpdate.success;
-    result.mainPackageVersion = mainUpdate.version;
+    // Quick cache check
+    const versionInfo = await checkForUpdatesWithCache();
+    result.mainPackageVersion = versionInfo.latestVersion;
+    result.fromCache = versionInfo.fromCache;
 
-    if (!mainUpdate.success) {
-      result.errors.push('Failed to update main snow-code package');
+    if (!versionInfo.updateAvailable) {
+      // No update needed - return immediately
+      if (verbose) {
+        logger.debug(`✓ snow-code is up-to-date (v${versionInfo.currentVersion})${versionInfo.fromCache ? ' [cached]' : ''}`);
+      }
+      result.skipped = true;
+      return result;
     }
 
-    // Update binary packages
-    const binaryUpdate = await updateBinaryPackages(targetDir, verbose);
-    result.binaryPackagesUpdated = binaryUpdate.updated;
-    result.errors.push(...binaryUpdate.errors);
+    // Update available - trigger background install (non-blocking)
+    if (verbose) {
+      logger.info(`🔄 Updating snow-code v${versionInfo.currentVersion} → v${versionInfo.latestVersion} (background)...`);
+    }
 
-    // Overall success if at least main package updated
-    result.success = mainUpdate.success;
+    // Fire and forget - these run in background
+    runNpmInstallAsync('@groeimetai/snow-code', true, targetDir);
+    runNpmInstallAsync('@groeimetai/snow-code', false, targetDir);
 
-    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    // Update current platform binary only (not all platforms)
+    const platform = process.platform;
+    const arch = process.arch;
+    const currentPlatformPackage = `@groeimetai/snow-code-${platform}-${arch}`;
+
+    if (BINARY_PACKAGES.includes(currentPlatformPackage)) {
+      runNpmInstallAsync(currentPlatformPackage, false, targetDir);
+      result.binaryPackagesUpdated = 1;
+    }
+
+    result.mainPackageUpdated = true;
 
     if (verbose) {
-      if (result.success) {
-        logger.info(`✅ Snow-code updated successfully in ${duration}s`);
-        if (result.mainPackageVersion) {
-          logger.info(`   Main package: v${result.mainPackageVersion}`);
-        }
-        if (result.binaryPackagesUpdated > 0) {
-          logger.info(`   Binary packages: ${result.binaryPackagesUpdated} updated`);
-        }
-      } else {
-        logger.warn(`⚠️  Snow-code update completed with errors (${duration}s)`);
-      }
-
-      if (result.errors.length > 0) {
-        logger.debug('Update errors:', result.errors);
-      }
+      logger.info('✓ Update started in background (non-blocking)');
     }
 
     return result;
 
   } catch (error) {
-    const errorMsg = `Unexpected error during update: ${error instanceof Error ? error.message : 'unknown error'}`;
+    const errorMsg = `Update check failed: ${error instanceof Error ? error.message : 'unknown error'}`;
     result.errors.push(errorMsg);
-    logger.error(errorMsg);
+    logger.debug(errorMsg);
     return result;
   }
 }
 
 /**
- * Quick check if snow-code update is available (without installing)
- * Useful for showing update notifications
+ * Force clear the version cache (useful for debugging or manual refresh)
+ */
+export function clearVersionCache(): void {
+  try {
+    if (existsSync(VERSION_CACHE_FILE)) {
+      const { unlinkSync } = require('fs');
+      unlinkSync(VERSION_CACHE_FILE);
+      logger.debug('Version cache cleared');
+    }
+  } catch (error) {
+    logger.debug('Could not clear version cache:', error);
+  }
+}
+
+/**
+ * Legacy function for backwards compatibility
+ * @deprecated Use checkForUpdatesWithCache() instead
  */
 export async function checkForUpdates(): Promise<{
   updateAvailable: boolean;
   currentVersion: string | null;
   latestVersion: string | null;
 }> {
-  const packageName = '@groeimetai/snow-code';
-  const currentVersion = getInstalledVersion(packageName);
-  const latestVersion = await getLatestVersion(packageName);
-
+  const result = await checkForUpdatesWithCache();
   return {
-    updateAvailable: currentVersion !== null && latestVersion !== null && currentVersion !== latestVersion,
-    currentVersion,
-    latestVersion
+    updateAvailable: result.updateAvailable,
+    currentVersion: result.currentVersion,
+    latestVersion: result.latestVersion
   };
 }

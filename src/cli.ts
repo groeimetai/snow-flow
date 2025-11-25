@@ -24,10 +24,12 @@ import * as prompts from '@clack/prompts';
 import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
 // Load SnowCode output interceptor for beautiful MCP formatting
 import { interceptSnowCodeOutput } from './utils/snowcode-output-interceptor.js';
-// Automatic snow-code update utility
+// Automatic snow-code update utility (optimized with caching)
 import { autoUpdateSnowCode } from './utils/auto-update-snow-code.js';
 // MCP configuration sync utility
 import { syncMcpConfigs } from './utils/sync-mcp-configs.js';
+// Config cache for faster startup
+import { loadSnowCodeConfig, loadJsonConfig } from './utils/config-cache.js';
 
 // Activate MCP guard ONLY for commands that actually use MCP servers
 // Explicitly exclude: init, version, help, auth, export, config commands
@@ -516,21 +518,12 @@ async function startMCPServers(): Promise<number[]> {
   const pids: number[] = [];
 
   try {
-    // Load SnowCode config
-    const snowcodeConfigPath = join(os.homedir(), '.snow-code', 'snow-code.json');
-    if (!existsSync(snowcodeConfigPath)) {
-      // Try local config
-      const localConfigPath = join(process.cwd(), '.snow-code', 'snow-code.json');
-      if (!existsSync(localConfigPath)) {
-        return pids;
-      }
+    // Load SnowCode config using cache (much faster on repeated calls)
+    const config = loadSnowCodeConfig(process.cwd());
+    if (!config) {
+      return pids;
     }
 
-    const configContent = await fs.readFile(
-      existsSync(snowcodeConfigPath) ? snowcodeConfigPath : join(process.cwd(), '.snow-code', 'snow-code.json'),
-      'utf-8'
-    );
-    const config = JSON.parse(configContent);
     const mcpServers = config.mcp || {};
 
     // Start each enabled local MCP server
