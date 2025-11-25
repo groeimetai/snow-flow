@@ -242,22 +242,22 @@ program
       console.log(chalk.blue(`📋 ${objective}`));
     }
 
-    // Ensure snow-code is up-to-date before starting swarm execution
-    try {
-      if (options.verbose) {
-        cliLogger.info('🔄 Checking for snow-code updates...');
-      }
-      const updateResult = await autoUpdateSnowCode(process.cwd(), options.verbose);
-
-      if (updateResult.success && options.verbose) {
-        cliLogger.info(`✓ Snow-code v${updateResult.mainPackageVersion || 'latest'} ready`);
-      }
-      // Silently continue if update fails - don't block swarm execution
-    } catch (updateErr) {
-      if (options.verbose) {
-        cliLogger.debug('Snow-code update check failed (non-critical):', updateErr);
-      }
+    // Run snow-code update check in background (non-blocking)
+    // Don't await - let swarm start immediately while update runs async
+    if (options.verbose) {
+      cliLogger.info('🔄 Checking for snow-code updates (background)...');
     }
+    autoUpdateSnowCode(process.cwd(), options.verbose)
+      .then((updateResult) => {
+        if (updateResult.success && options.verbose) {
+          cliLogger.debug(`✓ Snow-code v${updateResult.mainPackageVersion || 'latest'} updated in background`);
+        }
+      })
+      .catch((updateErr) => {
+        if (options.verbose) {
+          cliLogger.debug('Snow-code background update failed (non-critical):', updateErr);
+        }
+      });
 
     // Only show detailed config in verbose mode
     if (options.verbose) {
@@ -591,8 +591,10 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
   let mcpServerPIDs: number[] = [];
 
   try {
-    // Auto-update SnowCode to latest version
-    await autoUpdateSnowCode(process.cwd(), options.verbose);
+    // Auto-update SnowCode in background (non-blocking)
+    autoUpdateSnowCode(process.cwd(), options.verbose).catch(() => {
+      // Silently ignore update errors - not critical
+    });
 
     // Check if SnowCode CLI is available
     const { execSync } = require('child_process');
@@ -2880,7 +2882,7 @@ async function createMCPConfig(targetDir: string, force: boolean = false) {
   await fs.writeFile(legacyConfigPath, JSON.stringify(finalConfig, null, 2));
 
   // ✅ PROJECT-SCOPED MCP CONFIG ONLY
-  // We do NOT modify global SnowCode config (~/.snowcode/snowcode.json)
+  // We do NOT modify global Snow-Code config (~/.snow-code/snow-code.json)
   // Each project maintains its own isolated MCP configuration in .mcp.json
   // SnowCode/Claude Code will automatically discover and use the project-level .mcp.json
 
