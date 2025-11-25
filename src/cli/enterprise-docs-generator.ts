@@ -18,6 +18,18 @@ export function generateEnterpriseInstructions(enabledServices: string[]): strin
 
   let instructions = `\n\n---\n\n# 🚀 ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW\n\n`;
   instructions += `**YOU HAVE ACCESS TO ENTERPRISE TOOLS:** ${enabledServices.map(s => s.toUpperCase()).join(', ')}\n\n`;
+  instructions += `## 🤖 YOU ARE A FULLY AUTONOMOUS SERVICENOW DEVELOPER\n\n`;
+  instructions += `You are not just an assistant - you are a **complete autonomous development agent** capable of:\n\n`;
+  instructions += `1. **Picking up stories** from Jira or Azure DevOps autonomously\n`;
+  instructions += `2. **Creating Update Sets** in ServiceNow before any development\n`;
+  instructions += `3. **Implementing features** using ServiceNow best practices (ES5, widgets, business rules)\n`;
+  instructions += `4. **Updating story status** in real-time as you work\n`;
+  instructions += `5. **Writing documentation** in Confluence when complete\n`;
+  instructions += `6. **Connecting via OAuth** securely to all platforms\n\n`;
+  instructions += `**Your workflow should be:**\n`;
+  instructions += `\`\`\`\n`;
+  instructions += `Story Selection → Update Set Creation → Development → Testing → Documentation → Story Completion\n`;
+  instructions += `\`\`\`\n\n`;
   instructions += `This is not just about fetching data - you have **FULL AUTONOMY** to manage the entire development lifecycle across platforms.\n\n`;
 
   // Add Jira instructions
@@ -154,19 +166,36 @@ const rawAC = story.fields.customfield_10500 || story.fields.description;
 
 // Parse Given-When-Then, Checklist, or Scenario format
 function parseAcceptanceCriteria(text) {
+  if (!text) return [];
   const criteria = [];
 
-  // Given-When-Then
-  const gwtRegex = /Given (.+?)\\nWhen (.+?)\\nThen (.+?)(?=\\n\\n|$)/gs;
+  // Given-When-Then (multi-line, flexible whitespace)
+  // Matches: Given X When Y Then Z (with newlines or whitespace between)
+  const gwtRegex = /Given\\s+([\\s\\S]+?)\\s*When\\s+([\\s\\S]+?)\\s*Then\\s+([\\s\\S]+?)(?=Given\\s|$)/gi;
   let match;
   while ((match = gwtRegex.exec(text)) !== null) {
-    criteria.push({ type: 'gwt', given: match[1], when: match[2], then: match[3] });
+    criteria.push({
+      type: 'gwt',
+      given: match[1].trim().replace(/\\n/g, ' '),
+      when: match[2].trim().replace(/\\n/g, ' '),
+      then: match[3].trim().replace(/\\n/g, ' ')
+    });
   }
 
-  // Checklist (lines starting with - or •)
-  const checklistRegex = /^[\-\•]\s*(.+)$/gm;
+  // Scenario format: "Scenario: X"
+  const scenarioRegex = /Scenario:\\s*(.+?)(?=Scenario:|Given\\s|$)/gi;
+  while ((match = scenarioRegex.exec(text)) !== null) {
+    criteria.push({ type: 'scenario', requirement: match[1].trim() });
+  }
+
+  // Checklist (lines starting with -, •, *, [ ], [x], or numbered)
+  const checklistRegex = /^(?:[\\-\\•\\*]|\\[[ x]\\]|\\d+\\.)\\s*(.+)$/gm;
   while ((match = checklistRegex.exec(text)) !== null) {
-    criteria.push({ type: 'checklist', requirement: match[1].trim() });
+    const req = match[1].trim();
+    // Avoid duplicating GWT items already captured
+    if (req && !req.toLowerCase().startsWith('given') && !req.toLowerCase().startsWith('when')) {
+      criteria.push({ type: 'checklist', requirement: req });
+    }
   }
 
   return criteria;
