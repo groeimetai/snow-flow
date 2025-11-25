@@ -1,6 +1,5 @@
 {
-  "$schema": "https://opencode.ai/mcp.json",
-  "servers": {
+  "mcpServers": {
     "servicenow-unified": {
       "type": "local",
       "command": ["node", "{{PROJECT_ROOT}}/dist/mcp/servicenow-mcp-unified/index.js"],
