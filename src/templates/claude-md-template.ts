@@ -254,11 +254,12 @@ await snow_update_set_manage({
 - Users will lose work if you skip this step
 
 **Update Set Best Practices:**
-- **ONE Jira story/feature = ONE Update Set** (critical for hygiene and traceability)
-- **Descriptive names**: "Feature: Incident Auto-Assignment" or "PROJ-123: Auto-Assignment" NOT "Changes" or "Updates"
-- **Complete descriptions**: What, why, which components affected, and reference the Jira/Azure DevOps ticket
+- **ONE story/task/request = ONE Update Set** (critical for hygiene and traceability)
+- **Descriptive names**: "Feature: Incident Auto-Assignment", "Fix: SLA Calculation Bug", or "PROJ-123: Description" NOT "Changes" or "Updates"
+- **Complete descriptions**: What, why, which components affected (reference ticket if applicable)
 - **Complete when done**: Mark as 'complete' when feature is finished and tested
 - **Never mix unrelated changes**: Each Update Set should be deployable independently
+- **User requests**: Even ad-hoc user requests should get their own Update Set for clean rollback capability
 
 **ServiceNow Best Practices (ALWAYS FOLLOW!):**
 - **Scoped Applications**: Use scoped apps for custom development when possible

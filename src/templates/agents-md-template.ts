@@ -78,12 +78,13 @@ await snow_update_set_manage({
 \`\`\`
 
 ### Update Set Rules:
-- ✅ **ONE Jira story/feature = ONE update set** (critical for hygiene and traceability)
+- ✅ **ONE story/task/request = ONE update set** (critical for hygiene and traceability)
 - ✅ **Create BEFORE any development** (not after!)
-- ✅ **Descriptive names:** "Feature: X", "Fix: Y", or "PROJ-123: Description" - reference tickets!
+- ✅ **Descriptive names:** "Feature: X", "Fix: Y", or "PROJ-123: Description"
 - ✅ **Verify it's active** before making changes
 - ✅ **All changes tracked** automatically in active update set
 - ✅ **Never mix unrelated changes** - each update set should be deployable independently
+- ✅ **Ad-hoc requests too** - even user requests without tickets get their own update set
 
 ### ServiceNow Best Practices (ALWAYS FOLLOW!):
 - ✅ **Scoped Applications**: Use scoped apps for custom development when possible
