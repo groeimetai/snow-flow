@@ -90,7 +90,7 @@ const program = new Command();
 
 program
   .name('snow-flow')
-  .description('ServiceNow Multi-Agent Development Framework')
+  .description('AI-Powered ServiceNow Development Platform - 410+ MCP tools, multi-agent orchestration')
   .version(VERSION);
 
 // Register auth commands (API key management)
@@ -1714,32 +1714,68 @@ program
   .description('Show detailed help information')
   .action(() => {
     console.log(`
-🚀 Snow-Flow v${VERSION} - ServiceNow AI Development Platform
+🚀 Snow-Flow v${VERSION} - AI-Powered ServiceNow Development Platform
 
-📋 Essential Commands:
-  snow-flow init              Initialize project with MCP servers
-  snow-flow auth login        Complete authentication setup
-  snow-flow swarm "task"      Execute AI-powered ServiceNow development
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 ESSENTIAL COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🎯 Quick Start:
-  1. snow-flow init                           # Set up your project
-  2. snow-flow auth login                     # Authenticate (LLM + ServiceNow + Enterprise)
-  3. snow-flow swarm "your task"              # Let AI build your solution
+  snow-flow init                Initialize project with MCP servers & configs
+  snow-flow auth login          Complete authentication (LLM + ServiceNow + Enterprise)
+  snow-flow swarm "task"        Execute AI-powered ServiceNow development
 
-💡 Example Tasks:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔐 AUTHENTICATION COMMANDS (snow-flow auth)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  snow-flow auth login          Full auth flow: LLM + ServiceNow + Enterprise
+  snow-flow auth logout         Log out from configured providers
+  snow-flow auth list           Show configured credentials
+  snow-flow auth models         List available models per provider
+
+  Specific Auth:
+  snow-flow auth provider       Configure LLM provider only (Claude, GPT, etc.)
+  snow-flow auth servicenow     Configure ServiceNow OAuth only
+  snow-flow auth integrations   Configure Jira, Azure DevOps, Confluence
+  snow-flow auth enterprise-login   Browser-based Enterprise login
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 QUICK START
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. snow-flow init                    Set up your project
+  2. snow-flow auth login              Authenticate everything
+  3. snow-flow swarm "your task"       Let AI build your solution
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 EXAMPLE TASKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   snow-flow swarm "create incident dashboard widget"
   snow-flow swarm "build auto-assignment business rule"
   snow-flow swarm "generate 5000 test incidents with realistic data"
   snow-flow swarm "refactor legacy client scripts to modern patterns"
 
-🔗 What You Get:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔗 WHAT YOU GET
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   • 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, etc.)
-  • 393 optimized ServiceNow tools via MCP protocol
+  • 410+ optimized ServiceNow MCP tools
   • Multi-agent AI orchestration for complex tasks
   • Automatic Update Set management
-  • Direct ServiceNow instance integration
+  • Enterprise integrations: Jira, Azure DevOps, Confluence
 
-🌐 More Info: https://github.com/groeimetai/snow-flow
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 MORE COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  snow-flow status              Show system status
+  snow-flow monitor             Real-time monitoring dashboard
+  snow-flow session list        List development sessions
+  snow-flow refresh-mcp         Update MCP server configs
+
+🌐 Documentation: https://github.com/groeimetai/snow-flow
     `);
   });
 
