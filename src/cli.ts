@@ -24,8 +24,8 @@ import * as prompts from '@clack/prompts';
 import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
 // Load SnowCode output interceptor for beautiful MCP formatting
 import { interceptSnowCodeOutput } from './utils/snowcode-output-interceptor.js';
-// Automatic snow-code update utility
-import { autoUpdateSnowCodeBackground } from './utils/auto-update-snow-code.js';
+// Automatic snow-code update utility - ensures latest version is always used
+import { ensureLatestSnowCode } from './utils/auto-update-snow-code.js';
 // MCP configuration sync utility
 import { syncMcpConfigs } from './utils/sync-mcp-configs.js';
 
@@ -242,9 +242,16 @@ program
       console.log(chalk.blue(`📋 ${objective}`));
     }
 
-    // Run update check in background (non-blocking) with 1-hour cache
-    // This doesn't block swarm execution - updates happen asynchronously
-    autoUpdateSnowCodeBackground(process.cwd(), options.verbose);
+    // SYNC CHECK: Ensure latest snow-code version BEFORE starting
+    // This blocks until snow-code is up-to-date (or offline/error)
+    const updateResult = ensureLatestSnowCode(options.verbose);
+    if (updateResult.updated) {
+      if (!options.verbose) {
+        prompts.log.success(`snow-code updated to v${updateResult.latestVersion}`);
+      }
+    } else if (updateResult.error && options.verbose) {
+      cliLogger.warn(`snow-code update check: ${updateResult.error}`);
+    }
 
     // Only show detailed config in verbose mode
     if (options.verbose) {
@@ -610,8 +617,11 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
   let mcpServerPIDs: number[] = [];
 
   try {
-    // Auto-update SnowCode in background (non-blocking)
-    autoUpdateSnowCodeBackground(process.cwd(), options.verbose);
+    // SYNC CHECK: Ensure latest snow-code version BEFORE starting
+    const updateResult = ensureLatestSnowCode(options.verbose);
+    if (updateResult.updated && options.verbose) {
+      cliLogger.info(`✅ snow-code updated to v${updateResult.latestVersion}`);
+    }
 
     // Check if SnowCode CLI is available
     const { execSync } = require('child_process');

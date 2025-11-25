@@ -2,10 +2,13 @@
  * Automatic Snow-Code Update Utility
  * Ensures users always have the LATEST version of @groeimetai/snow-code and platform binaries
  * Used by init and swarm commands to keep dependencies up-to-date
+ *
+ * v2.0: Now includes synchronous version checking that runs BEFORE snow-code starts
+ *       to ensure the latest version is always used
  */
 
 import { execSync } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync, mkdirSync, writeFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { Logger } from './logger.js';
 
@@ -47,6 +50,22 @@ async function getLatestVersion(packageName: string): Promise<string | null> {
 }
 
 /**
+ * Get the latest version synchronously (for blocking checks)
+ */
+function getLatestVersionSync(packageName: string): string | null {
+  try {
+    const version = execSync(`npm view ${packageName} version 2>/dev/null`, {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore']
+    }).trim();
+    return version || null;
+  } catch (error) {
+    logger.debug(`Could not fetch latest version for ${packageName}`);
+    return null;
+  }
+}
+
+/**
  * Get currently installed version of a package
  */
 function getInstalledVersion(packageName: string, targetDir?: string): string | null {
@@ -61,6 +80,25 @@ function getInstalledVersion(packageName: string, targetDir?: string): string | 
     const packageJson = require(packageJsonPath);
     return packageJson.version;
   } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Get the ACTUAL installed version from the snow-code CLI binary
+ * This is more reliable than checking package.json because the binary
+ * contains the compiled version number
+ */
+function getInstalledBinaryVersion(): string | null {
+  try {
+    const version = execSync('snow-code --version 2>/dev/null', {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore'],
+      timeout: 5000
+    }).trim();
+    return version || null;
+  } catch (error) {
+    logger.debug('Could not get installed binary version');
     return null;
   }
 }
@@ -377,4 +415,159 @@ export function autoUpdateSnowCodeBackground(
         }
       });
   });
+}
+
+export interface EnsureLatestResult {
+  updated: boolean;
+  currentVersion: string | null;
+  latestVersion: string | null;
+  error: string | null;
+}
+
+/**
+ * Force reinstall of snow-code by removing old installation first
+ * Handles npm cache issues like ENOTEMPTY errors
+ */
+function forceReinstallSnowCode(verbose = false): boolean {
+  const packageName = '@groeimetai/snow-code';
+
+  try {
+    // Find global node_modules path
+    const globalPath = execSync('npm root -g', {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore']
+    }).trim();
+
+    const packagePath = join(globalPath, '@groeimetai', 'snow-code');
+
+    // Remove old installation if it exists
+    if (existsSync(packagePath)) {
+      if (verbose) logger.info('Removing old snow-code installation...');
+      try {
+        rmSync(packagePath, { recursive: true, force: true });
+      } catch (rmErr) {
+        logger.debug('Could not remove old installation, trying npm uninstall');
+        execSync(`npm uninstall -g ${packageName}`, {
+          stdio: 'ignore',
+          timeout: 30000
+        });
+      }
+    }
+
+    // Fresh install
+    if (verbose) logger.info('Installing latest snow-code...');
+    execSync(`npm install -g ${packageName}@latest`, {
+      stdio: verbose ? 'inherit' : 'ignore',
+      timeout: 120000
+    });
+
+    return true;
+  } catch (error) {
+    logger.debug('Force reinstall failed:', error);
+    return false;
+  }
+}
+
+/**
+ * SYNCHRONOUS version check and update - runs BEFORE snow-code starts
+ * This ensures the latest version is always used, blocking execution until updated
+ *
+ * @param verbose - Show detailed progress messages
+ * @returns Result with current/latest versions and update status
+ */
+export function ensureLatestSnowCode(verbose = false): EnsureLatestResult {
+  const packageName = '@groeimetai/snow-code';
+  const result: EnsureLatestResult = {
+    updated: false,
+    currentVersion: null,
+    latestVersion: null,
+    error: null
+  };
+
+  try {
+    // Get currently installed binary version (the actual running version)
+    result.currentVersion = getInstalledBinaryVersion();
+
+    // Get latest version from npm
+    result.latestVersion = getLatestVersionSync(packageName);
+
+    if (!result.latestVersion) {
+      // Can't check npm - might be offline, continue with current version
+      if (verbose) logger.debug('Could not fetch latest version (offline?)');
+      return result;
+    }
+
+    // Compare versions
+    if (result.currentVersion === result.latestVersion) {
+      // Already up to date
+      if (verbose) logger.debug(`snow-code is up to date (v${result.currentVersion})`);
+      return result;
+    }
+
+    // Version mismatch - need to update
+    if (verbose) {
+      logger.info(`🔄 Updating snow-code: v${result.currentVersion || 'not installed'} → v${result.latestVersion}`);
+    }
+
+    // Try normal update first
+    try {
+      execSync(`npm install -g ${packageName}@latest`, {
+        stdio: verbose ? 'inherit' : 'ignore',
+        timeout: 120000
+      });
+      result.updated = true;
+    } catch (installErr: any) {
+      // Check for ENOTEMPTY or similar cache errors
+      if (installErr.message?.includes('ENOTEMPTY') ||
+          installErr.message?.includes('EEXIST') ||
+          installErr.status === 190) {
+        if (verbose) logger.info('npm cache issue detected, forcing reinstall...');
+        result.updated = forceReinstallSnowCode(verbose);
+      } else {
+        throw installErr;
+      }
+    }
+
+    // Verify the update worked by checking binary version again
+    if (result.updated) {
+      const newVersion = getInstalledBinaryVersion();
+      if (newVersion === result.latestVersion) {
+        if (verbose) logger.info(`✅ snow-code updated to v${result.latestVersion}`);
+        result.currentVersion = newVersion;
+      } else {
+        // Update didn't fully apply (binary might still be old)
+        result.updated = false;
+        result.error = `Update applied but binary version mismatch: got ${newVersion}, expected ${result.latestVersion}`;
+        if (verbose) logger.warn(result.error);
+      }
+    }
+
+    // Update cache
+    writeUpdateCache({
+      lastCheck: Date.now(),
+      version: result.latestVersion
+    });
+
+    return result;
+
+  } catch (error) {
+    result.error = error instanceof Error ? error.message : 'Unknown error';
+    if (verbose) logger.error('Failed to ensure latest snow-code:', result.error);
+    return result;
+  }
+}
+
+/**
+ * Quick check if an update is needed (without installing)
+ * Returns true if installed version differs from latest
+ */
+export function needsUpdate(): boolean {
+  const currentVersion = getInstalledBinaryVersion();
+  const latestVersion = getLatestVersionSync('@groeimetai/snow-code');
+
+  if (!currentVersion || !latestVersion) {
+    return false; // Can't determine, assume no update needed
+  }
+
+  return currentVersion !== latestVersion;
 }
