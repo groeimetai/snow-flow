@@ -679,6 +679,19 @@ export function registerAuthCommands(program: Command) {
               prompts.log.warn(`⚠️  MCP config sync warning: ${syncErr.message}`);
               authLogger.warn(`MCP sync error: ${syncErr.message}`);
             }
+
+            // 🔥 CRITICAL FIX: Generate comprehensive enterprise documentation for AI agents
+            // This updates CLAUDE.md and AGENTS.md with full Jira/Azure DevOps/Confluence workflows
+            try {
+              prompts.log.step('Generating enterprise workflow documentation for AI agents...');
+              const defaultEnterpriseServices = ['jira', 'azdo', 'confluence'];
+              await updateDocumentationWithEnterprise(defaultEnterpriseServices);
+              prompts.log.success('✅ AI agent documentation updated with enterprise workflows');
+              prompts.log.info('   Agents now have full autonomy over Jira, Azure DevOps, and Confluence');
+            } catch (docErr: any) {
+              prompts.log.warn(`⚠️  Documentation update warning: ${docErr.message}`);
+              authLogger.warn(`Enterprise docs generation error: ${docErr.message}`);
+            }
           }
         } catch (err: any) {
           // Show warning if enterprise configuration failed
