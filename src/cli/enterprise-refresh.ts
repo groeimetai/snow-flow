@@ -35,8 +35,8 @@ export async function refreshEnterpriseJWT(): Promise<void> {
     const mcpContent = await fs.readFile(mcpConfigPath, 'utf-8');
     const mcpConfig = JSON.parse(mcpContent);
 
-    // Check if enterprise server is configured
-    const enterpriseServer = mcpConfig.mcpServers?.['snow-flow-enterprise'];
+    // Check if enterprise server is configured (support both 'mcp' and 'mcpServers' keys)
+    const enterpriseServer = mcpConfig.mcp?.['snow-flow-enterprise'] || mcpConfig.mcpServers?.['snow-flow-enterprise'];
     if (!enterpriseServer) {
       prompts.log.error('⚠️  Enterprise MCP server not configured');
       prompts.log.info('💡 Run: snow-flow auth login');

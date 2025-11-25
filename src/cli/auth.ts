@@ -462,8 +462,8 @@ async function updateMCPServerConfig() {
 
       const projectMcp = JSON.parse(await fs.readFile(projectMcpPath, 'utf-8'));
 
-      // Support both .mcpServers and .servers key formats (OpenCode vs Claude Desktop)
-      const serversKey = projectMcp.mcpServers ? 'mcpServers' : 'servers';
+      // Support .mcp (snow-code 1.0.69), .mcpServers and .servers key formats
+      const serversKey = projectMcp.mcp ? 'mcp' : (projectMcp.mcpServers ? 'mcpServers' : 'servers');
 
       if (projectMcp[serversKey] && projectMcp[serversKey]['servicenow-unified']) {
         const server = projectMcp[serversKey]['servicenow-unified'];
