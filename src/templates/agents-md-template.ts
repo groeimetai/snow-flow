@@ -78,11 +78,21 @@ await snow_update_set_manage({
 \`\`\`
 
 ### Update Set Rules:
-- ✅ **ONE feature = ONE update set** (clear scope)
+- ✅ **ONE Jira story/feature = ONE update set** (critical for hygiene and traceability)
 - ✅ **Create BEFORE any development** (not after!)
-- ✅ **Descriptive names:** "Feature: X" or "Fix: Y", NOT "Changes"
+- ✅ **Descriptive names:** "Feature: X", "Fix: Y", or "PROJ-123: Description" - reference tickets!
 - ✅ **Verify it's active** before making changes
 - ✅ **All changes tracked** automatically in active update set
+- ✅ **Never mix unrelated changes** - each update set should be deployable independently
+
+### ServiceNow Best Practices (ALWAYS FOLLOW!):
+- ✅ **Scoped Applications**: Use scoped apps for custom development when possible
+- ✅ **No hardcoded sys_ids**: Use GlideRecord queries or system properties instead
+- ✅ **Proper error handling**: Wrap GlideRecord operations in try/catch
+- ✅ **Logging**: Use gs.info/gs.warn/gs.error (remove debug logs before production)
+- ✅ **Performance**: Limit GlideRecord queries, avoid nested loops with queries
+- ✅ **Security**: Never store credentials in scripts, use system properties
+- ✅ **Testing**: Test in sub-production before deploying to production
 
 ---
 

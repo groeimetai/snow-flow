@@ -254,10 +254,21 @@ await snow_update_set_manage({
 - Users will lose work if you skip this step
 
 **Update Set Best Practices:**
-- **ONE feature = ONE Update Set** (clear boundaries)
-- **Descriptive names**: "Feature: Incident Auto-Assignment" NOT "Changes" or "Updates"
-- **Complete descriptions**: What, why, which components affected
-- **Complete when done**: Mark as 'complete' when feature is finished
+- **ONE Jira story/feature = ONE Update Set** (critical for hygiene and traceability)
+- **Descriptive names**: "Feature: Incident Auto-Assignment" or "PROJ-123: Auto-Assignment" NOT "Changes" or "Updates"
+- **Complete descriptions**: What, why, which components affected, and reference the Jira/Azure DevOps ticket
+- **Complete when done**: Mark as 'complete' when feature is finished and tested
+- **Never mix unrelated changes**: Each Update Set should be deployable independently
+
+**ServiceNow Best Practices (ALWAYS FOLLOW!):**
+- **Scoped Applications**: Use scoped apps for custom development when possible
+- **No hardcoded sys_ids**: Use GlideRecord queries or system properties instead
+- **Proper error handling**: Always wrap GlideRecord operations in try/catch
+- **Logging**: Use gs.info/gs.warn/gs.error for debugging (remove debug logs before production)
+- **Performance**: Limit GlideRecord queries, use addQuery() instead of addEncodedQuery() when possible
+- **Security**: Never store credentials in scripts, use system properties or credentials tables
+- **Testing**: Test in sub-production before deploying to production
+- **Documentation**: Document complex business logic in script comments
 
 **3. Widget Coherence (HTML ↔ Client ↔ Server)**
 
