@@ -46,17 +46,19 @@ export async function syncMcpConfigs(projectRoot: string = process.cwd()): Promi
     }
 
     // Convert .mcp.json format to .claude/mcp-config.json format
-    // .mcp.json uses { mcpServers: { ... } }
-    // .claude/mcp-config.json also uses { mcpServers: { ... } }
-    // But we need to ensure the format matches what Claude Code expects
+    // .mcp.json uses { servers: { ... } } (OpenCode/SnowCode format)
+    // .claude/mcp-config.json uses { mcpServers: { ... } } (Claude Code format)
+    // We need to convert between these formats
 
     const claudeConfig: any = {
       mcpServers: {}
     };
 
     // Copy all servers from .mcp.json to claude config
-    if (mcpConfig.mcpServers) {
-      for (const [serverName, serverConfig] of Object.entries(mcpConfig.mcpServers)) {
+    // Support both "servers" (new format) and "mcpServers" (legacy) keys
+    const sourceServers = mcpConfig.servers || mcpConfig.mcpServers || {};
+    if (Object.keys(sourceServers).length > 0) {
+      for (const [serverName, serverConfig] of Object.entries(sourceServers)) {
         const config: any = serverConfig;
 
         // Convert to Claude Code format
