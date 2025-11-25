@@ -343,6 +343,20 @@ export async function getEnterpriseInfo(): Promise<AuthData['customer'] | null> 
 }
 
 /**
+ * Combined function to check enterprise status and get info in a single call
+ * Avoids redundant file I/O by loading auth data once
+ */
+export async function getEnterpriseStatus(): Promise<{
+  hasFeatures: boolean;
+  info: AuthData['customer'] | null;
+}> {
+  const auth = await loadAuth();
+  const hasFeatures = auth !== null && auth.customer !== undefined && auth.customer.features.length > 0;
+  const info = (auth && auth.customer) ? auth.customer : null;
+  return { hasFeatures, info };
+}
+
+/**
  * Register enterprise commands with Commander
  */
 export function registerEnterpriseCommands(program: Command): void {

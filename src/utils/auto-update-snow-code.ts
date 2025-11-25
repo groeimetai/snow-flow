@@ -290,3 +290,91 @@ export async function checkForUpdates(): Promise<{
     latestVersion
   };
 }
+
+/**
+ * Cache file path for tracking last update check time
+ */
+const UPDATE_CACHE_FILE = join(process.env.HOME || '', '.snow-flow', '.update-cache.json');
+
+interface UpdateCache {
+  lastCheck: number;
+  version: string | null;
+}
+
+/**
+ * Read update cache from disk
+ */
+function readUpdateCache(): UpdateCache | null {
+  try {
+    if (existsSync(UPDATE_CACHE_FILE)) {
+      const content = require('fs').readFileSync(UPDATE_CACHE_FILE, 'utf8');
+      return JSON.parse(content);
+    }
+  } catch {
+    // Ignore cache read errors
+  }
+  return null;
+}
+
+/**
+ * Write update cache to disk
+ */
+function writeUpdateCache(cache: UpdateCache): void {
+  try {
+    const dir = join(process.env.HOME || '', '.snow-flow');
+    if (!existsSync(dir)) {
+      require('fs').mkdirSync(dir, { recursive: true });
+    }
+    require('fs').writeFileSync(UPDATE_CACHE_FILE, JSON.stringify(cache));
+  } catch {
+    // Ignore cache write errors
+  }
+}
+
+/**
+ * Run update check in background (non-blocking)
+ * Returns immediately, update happens asynchronously
+ * Uses caching to avoid checking more than once per hour
+ *
+ * @param targetDir - Target directory for local installations
+ * @param verbose - Show detailed progress messages
+ * @param cacheTimeMs - Minimum time between checks (default: 1 hour)
+ */
+export function autoUpdateSnowCodeBackground(
+  targetDir?: string,
+  verbose = false,
+  cacheTimeMs: number = 3600000 // 1 hour default
+): void {
+  // Check cache first
+  const cache = readUpdateCache();
+  const now = Date.now();
+
+  if (cache && (now - cache.lastCheck) < cacheTimeMs) {
+    // Recent check exists, skip update
+    if (verbose) {
+      logger.debug(`Skipping update check (last check ${Math.round((now - cache.lastCheck) / 60000)}min ago)`);
+    }
+    return;
+  }
+
+  // Run update in background without blocking
+  setImmediate(() => {
+    autoUpdateSnowCode(targetDir, verbose)
+      .then((result) => {
+        // Update cache with current time
+        writeUpdateCache({
+          lastCheck: Date.now(),
+          version: result.mainPackageVersion
+        });
+
+        if (verbose && result.mainPackageUpdated) {
+          logger.info(`Background update completed: v${result.mainPackageVersion}`);
+        }
+      })
+      .catch((err) => {
+        if (verbose) {
+          logger.debug('Background update failed:', err);
+        }
+      });
+  });
+}

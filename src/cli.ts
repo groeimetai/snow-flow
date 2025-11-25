@@ -25,7 +25,7 @@ import { MCPPersistentGuard } from './utils/mcp-persistent-guard.js';
 // Load SnowCode output interceptor for beautiful MCP formatting
 import { interceptSnowCodeOutput } from './utils/snowcode-output-interceptor.js';
 // Automatic snow-code update utility
-import { autoUpdateSnowCode } from './utils/auto-update-snow-code.js';
+import { autoUpdateSnowCodeBackground } from './utils/auto-update-snow-code.js';
 // MCP configuration sync utility
 import { syncMcpConfigs } from './utils/sync-mcp-configs.js';
 
@@ -242,22 +242,9 @@ program
       console.log(chalk.blue(`📋 ${objective}`));
     }
 
-    // Ensure snow-code is up-to-date before starting swarm execution
-    try {
-      if (options.verbose) {
-        cliLogger.info('🔄 Checking for snow-code updates...');
-      }
-      const updateResult = await autoUpdateSnowCode(process.cwd(), options.verbose);
-
-      if (updateResult.success && options.verbose) {
-        cliLogger.info(`✓ Snow-code v${updateResult.mainPackageVersion || 'latest'} ready`);
-      }
-      // Silently continue if update fails - don't block swarm execution
-    } catch (updateErr) {
-      if (options.verbose) {
-        cliLogger.debug('Snow-code update check failed (non-critical):', updateErr);
-      }
-    }
+    // Run update check in background (non-blocking) with 1-hour cache
+    // This doesn't block swarm execution - updates happen asynchronously
+    autoUpdateSnowCodeBackground(process.cwd(), options.verbose);
 
     // Only show detailed config in verbose mode
     if (options.verbose) {
@@ -370,10 +357,9 @@ program
       }
     }
 
-    // Check Enterprise features
-    const { hasEnterpriseFeatures, getEnterpriseInfo } = await import('./cli/enterprise.js');
-    const enterpriseEnabled = await hasEnterpriseFeatures();
-    const enterpriseInfo = enterpriseEnabled ? await getEnterpriseInfo() : null;
+    // Check Enterprise features (single file read instead of two)
+    const { getEnterpriseStatus } = await import('./cli/enterprise.js');
+    const { hasFeatures: enterpriseEnabled, info: enterpriseInfo } = await getEnterpriseStatus();
 
     if (options.verbose && enterpriseEnabled && enterpriseInfo) {
       cliLogger.info(`\n🌟 Snow-Flow Enterprise: ✅ Active (${enterpriseInfo.tier.toUpperCase()})`);
@@ -511,6 +497,41 @@ program
   });
 
 
+// Helper function to check if a process is running
+function isProcessRunning(pid: number): boolean {
+  try {
+    process.kill(pid, 0); // Signal 0 just checks if process exists
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Helper function to wait for MCP servers to be ready with intelligent polling
+async function waitForMCPServersReady(pids: number[], maxWaitMs: number = 5000): Promise<void> {
+  if (pids.length === 0) return;
+
+  const startTime = Date.now();
+  const pollIntervalMs = 100; // Check every 100ms
+  const minWaitMs = 300; // Minimum wait to allow process startup
+
+  // Wait minimum time first
+  await new Promise(resolve => setTimeout(resolve, minWaitMs));
+
+  // Poll until all processes are running or timeout
+  while (Date.now() - startTime < maxWaitMs) {
+    const allRunning = pids.every(pid => pid > 0 && isProcessRunning(pid));
+    if (allRunning) {
+      // All servers are running, give them a tiny bit more time to initialize
+      await new Promise(resolve => setTimeout(resolve, 200));
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+  }
+
+  // Timeout reached, but continue anyway (servers might still work)
+}
+
 // Helper function to start MCP servers before SnowCode
 async function startMCPServers(): Promise<number[]> {
   const pids: number[] = [];
@@ -564,10 +585,8 @@ async function startMCPServers(): Promise<number[]> {
       }
     }
 
-    // Wait 2 seconds for servers to initialize
-    if (pids.length > 0) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
+    // Use intelligent polling instead of fixed 2-second delay
+    await waitForMCPServersReady(pids);
 
   } catch (error) {
     cliLogger.warn('⚠️  Could not start MCP servers:', error instanceof Error ? error.message : String(error));
@@ -591,8 +610,8 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
   let mcpServerPIDs: number[] = [];
 
   try {
-    // Auto-update SnowCode to latest version
-    await autoUpdateSnowCode(process.cwd(), options.verbose);
+    // Auto-update SnowCode in background (non-blocking)
+    autoUpdateSnowCodeBackground(process.cwd(), options.verbose);
 
     // Check if SnowCode CLI is available
     const { execSync } = require('child_process');
