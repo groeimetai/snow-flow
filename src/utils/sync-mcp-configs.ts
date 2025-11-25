@@ -97,6 +97,37 @@ export async function syncMcpConfigs(projectRoot: string = process.cwd()): Promi
     await fs.writeFile(claudeMcpConfigPath, JSON.stringify(claudeConfig, null, 2), 'utf-8');
 
     logger.info(`✅ Synced .mcp.json → .claude/mcp-config.json`);
+
+    // 🔥 ALSO sync to .snow-code/config.json and .snow-code/snow-code.json
+    // These are used by snow-code CLI for MCP server discovery
+    const snowCodeDir = path.join(projectRoot, '.snow-code');
+    const snowCodeConfigPath = path.join(snowCodeDir, 'config.json');
+    const snowCodeJsonPath = path.join(snowCodeDir, 'snow-code.json');
+
+    // Ensure .snow-code directory exists
+    if (!existsSync(snowCodeDir)) {
+      await fs.mkdir(snowCodeDir, { recursive: true });
+      logger.info(`Created .snow-code directory: ${snowCodeDir}`);
+    }
+
+    // Create snow-code format config (uses 'mcp' key, not 'mcpServers')
+    const snowCodeConfig: any = {
+      "$schema": "https://opencode.ai/config.json",
+      mcp: {}
+    };
+
+    // Copy servers in snow-code format
+    for (const [serverName, serverConfig] of Object.entries(servers)) {
+      snowCodeConfig.mcp[serverName] = serverConfig;
+    }
+
+    // Write to both .snow-code/config.json and .snow-code/snow-code.json
+    await fs.writeFile(snowCodeConfigPath, JSON.stringify(snowCodeConfig, null, 2), 'utf-8');
+    await fs.writeFile(snowCodeJsonPath, JSON.stringify(snowCodeConfig, null, 2), 'utf-8');
+
+    logger.info(`✅ Synced .mcp.json → .snow-code/config.json`);
+    logger.info(`✅ Synced .mcp.json → .snow-code/snow-code.json`);
+
     logger.debug(`Synced ${Object.keys(claudeConfig.mcpServers).length} MCP servers`);
 
     // Log which servers are enabled
