@@ -7,6 +7,7 @@ import { spawn, ChildProcess } from 'child_process';
 import { Logger } from './logger.js';
 import { MCPProcessManager } from './mcp-process-manager.js';
 import { unifiedAuthStore } from './unified-auth-store.js';
+import { timerRegistry } from './timer-registry.js';
 import path from 'path';
 import fs from 'fs';
 
@@ -193,17 +194,25 @@ export class MCPOnDemandManager {
    */
   async stopServer(serverName: string): Promise<void> {
     const server = this.servers.get(serverName);
-    
+
     if (!server || !server.process) {
       return;
     }
-    
+
     server.status = 'stopping';
     logger.info(`🛑 Stopping ${serverName} (was used ${server.useCount} times)`);
-    
+
     try {
+      // MEMORY FIX: Remove all event listeners to prevent memory leak
+      if (server.process) {
+        server.process.removeAllListeners('error');
+        server.process.removeAllListeners('exit');
+        server.process.stdout?.removeAllListeners('data');
+        server.process.stderr?.removeAllListeners('data');
+      }
+
       server.process.kill('SIGTERM');
-      
+
       // Wait for graceful shutdown
       await new Promise((resolve) => {
         const timeout = setTimeout(() => {
@@ -212,20 +221,25 @@ export class MCPOnDemandManager {
           }
           resolve(undefined);
         }, 5000);
-        
+
         server.process?.once('exit', () => {
           clearTimeout(timeout);
           resolve(undefined);
         });
       });
-      
+
     } catch (error) {
       logger.error(`Error stopping ${serverName}:`, error);
     }
-    
+
     server.status = 'stopped';
     server.process = undefined;
     server.startTime = undefined;
+
+    // MEMORY FIX: Remove stopped server from registry immediately
+    // Server will be re-added to registry when started again via getServer()
+    this.servers.delete(serverName);
+    logger.debug(`Removed stopped server ${serverName} from registry`);
   }
   
   /**
@@ -267,21 +281,25 @@ export class MCPOnDemandManager {
    * Start monitoring for inactive servers
    */
   private startInactivityMonitor(): void {
-    // Check every minute
-    this.cleanupInterval = setInterval(() => {
-      this.stopInactiveServers().catch(error => {
-        logger.error('Error during inactivity cleanup:', error);
-      });
-    }, 60000);
-    
-    // Don't block process exit
-    this.cleanupInterval.unref();
+    // Use timerRegistry for proper cleanup
+    timerRegistry.registerInterval(
+      'mcp-on-demand-inactivity',
+      () => {
+        this.stopInactiveServers().catch(error => {
+          logger.error('Error during inactivity cleanup:', error);
+        });
+      },
+      60000,
+      true // unref - don't block process exit
+    );
   }
-  
+
   /**
    * Stop the inactivity monitor
    */
   stopInactivityMonitor(): void {
+    timerRegistry.clearInterval('mcp-on-demand-inactivity');
+    // Keep backward compatibility
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = undefined;

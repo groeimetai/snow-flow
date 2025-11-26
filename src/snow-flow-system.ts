@@ -4,13 +4,14 @@
  */
 
 import { EventEmitter } from 'events';
-import { SnowFlowConfig, ISnowFlowConfig } from './config/snow-flow-config';
+import { SnowFlowConfig, ISnowFlowConfig } from './config/snow-flow-config.js';
 // import { QueenOrchestrator } from './sdk/queen-orchestrator.js'; // REMOVED - Queen architecture deprecated
-import { MemorySystem, BasicMemorySystem } from './memory/memory-system';
-import { PerformanceTracker } from './monitoring/performance-tracker';
-import { SystemHealth } from './health/system-health';
-import { ErrorRecovery } from './utils/error-recovery';
-import { Logger } from './utils/logger';
+import { MemorySystem, BasicMemorySystem } from './memory/memory-system.js';
+import { PerformanceTracker } from './monitoring/performance-tracker.js';
+import { SystemHealth } from './health/system-health.js';
+import { ErrorRecovery } from './utils/error-recovery.js';
+import { Logger } from './utils/logger.js';
+import { timerRegistry } from './utils/timer-registry.js';
 import Database from 'better-sqlite3';
 import path from 'path';
 import os from 'os';
@@ -47,6 +48,12 @@ export class SnowFlowSystem extends EventEmitter {
   private sessions: Map<string, SwarmSession> = new Map();
   private initialized = false;
 
+  // MEMORY FIX: Session cleanup configuration (configurable via env vars)
+  // These are VERY conservative defaults - sessions are only cleaned up after they're
+  // completed/failed AND older than TTL. Active sessions are NEVER touched.
+  private readonly SESSION_TTL = parseInt(process.env.SNOW_SESSION_TTL || String(24 * 60 * 60 * 1000)); // 24 hours default
+  private readonly SESSION_CLEANUP_INTERVAL = parseInt(process.env.SNOW_SESSION_CLEANUP_INTERVAL || String(60 * 60 * 1000)); // 1 hour default
+
   constructor(config?: Partial<ISnowFlowConfig>) {
     super();
     this.config = new SnowFlowConfig(config);
@@ -77,7 +84,10 @@ export class SnowFlowSystem extends EventEmitter {
 
       // 4. Initialize System Health Monitoring
       await this.initializeHealthMonitoring();
-      
+
+      // 5. MEMORY FIX: Start session cleanup
+      this.startSessionCleanup();
+
       this.initialized = true;
       this.emit('system:initialized');
       this.logger.info('Snow-Flow System initialized successfully');
@@ -337,11 +347,51 @@ export class SnowFlowSystem extends EventEmitter {
   }
 
   /**
+   * MEMORY FIX: Start periodic session cleanup
+   */
+  private startSessionCleanup(): void {
+    timerRegistry.registerInterval(
+      'snow-flow-session-cleanup',
+      () => this.cleanupOldSessions(),
+      this.SESSION_CLEANUP_INTERVAL,
+      true // unref - don't block process exit
+    );
+    this.logger.debug('Session cleanup started');
+  }
+
+  /**
+   * MEMORY FIX: Clean up old completed/failed sessions
+   */
+  private cleanupOldSessions(): void {
+    const now = Date.now();
+    const sessionsToRemove: string[] = [];
+
+    for (const [id, session] of this.sessions) {
+      // Remove completed/failed sessions older than TTL
+      if (['completed', 'failed'].includes(session.status)) {
+        const age = now - session.startedAt.getTime();
+        if (age > this.SESSION_TTL) {
+          sessionsToRemove.push(id);
+        }
+      }
+    }
+
+    for (const id of sessionsToRemove) {
+      this.sessions.delete(id);
+      this.logger.debug(`Cleaned up old session: ${id}`);
+    }
+
+    if (sessionsToRemove.length > 0) {
+      this.logger.info(`Cleaned up ${sessionsToRemove.length} old sessions`);
+    }
+  }
+
+  /**
    * Shutdown the system gracefully
    */
   async shutdown(): Promise<void> {
     this.logger.info('Shutting down Snow-Flow System...');
-    
+
     try {
       // Complete active sessions
       for (const session of this.sessions.values()) {
@@ -349,17 +399,23 @@ export class SnowFlowSystem extends EventEmitter {
           await this.gracefullyCompleteSession(session.id);
         }
       }
-      
+
+      // MEMORY FIX: Stop session cleanup interval
+      timerRegistry.clearInterval('snow-flow-session-cleanup');
+
       // Shutdown components in reverse order
       await this.systemHealth?.stopMonitoring();
       await this.performanceTracker?.shutdown();
       // await this.queen?.shutdown(); // SDK-based shutdown - DISABLED (Queen architecture deprecated)
       await this.memory?.close();
-      
+
+      // MEMORY FIX: Clear sessions map
+      this.sessions.clear();
+
       this.initialized = false;
       this.emit('system:shutdown');
       this.logger.info('Snow-Flow System shutdown complete');
-      
+
     } catch (error) {
       this.logger.error('Error during shutdown:', error);
       throw error;

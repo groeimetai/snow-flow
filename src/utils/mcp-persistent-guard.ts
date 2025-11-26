@@ -4,8 +4,9 @@
  * Overrides all possible shutdown mechanisms
  */
 
-import { Logger } from './logger';
+import { Logger } from './logger.js';
 import { execSync } from 'child_process';
+import { timerRegistry } from './timer-registry.js';
 
 export class MCPPersistentGuard {
     private static instance: MCPPersistentGuard;
@@ -33,7 +34,35 @@ export class MCPPersistentGuard {
 
             // Monitor for shutdown attempts (silent activation)
             this.startShutdownMonitoring();
+
+            // MEMORY FIX: Register cleanup handler with timerRegistry
+            timerRegistry.registerShutdownHandler(async () => {
+                this.cleanup();
+            });
         }
+    }
+
+    /**
+     * MEMORY FIX: Cleanup method to restore original functions and clear state
+     */
+    cleanup(): void {
+        // Restore original process.kill if it was overridden
+        if (this.originalProcessKill) {
+            process.kill = this.originalProcessKill;
+            this.logger.debug('Restored original process.kill');
+        }
+
+        // Restore original process.exit if it was overridden
+        if (this.originalProcessExit) {
+            process.exit = this.originalProcessExit;
+            this.logger.debug('Restored original process.exit');
+        }
+
+        // Clear protected processes set
+        this.protectedProcesses.clear();
+
+        this.isActive = false;
+        this.logger.info('MCPPersistentGuard cleanup complete');
     }
     
     static getInstance(): MCPPersistentGuard {

@@ -7,6 +7,7 @@
 import { execSync, exec } from 'child_process';
 import { Logger } from './logger.js';
 import { getMCPSingletonLock } from './mcp-singleton-lock.js';
+import { timerRegistry } from './timer-registry.js';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
@@ -30,6 +31,11 @@ export class MCPProcessManager {
     // Never start cleanup - servers should be persistent
     logger.info('✅ MCP cleanup is PERMANENTLY DISABLED - servers will run forever');
     logger.info('🔄 MCP servers are now persistent and will not auto-shutdown');
+
+    // MEMORY FIX: Register shutdown handler to cleanup timer if it exists
+    timerRegistry.registerShutdownHandler(async () => {
+      this.stopPeriodicCleanup();
+    });
   }
   
   static getInstance(): MCPProcessManager {

@@ -22,6 +22,8 @@ import { ServiceNowClient } from '../utils/servicenow-client.js';
 import { ServiceNowOAuth } from '../utils/snow-oauth.js';
 import { Logger } from '../utils/logger.js';
 import { ResponseLimiter } from './shared/response-limiter.js';
+import { timerRegistry } from '../utils/timer-registry.js';
+import { BoundedMap } from '../utils/memory-safe-collections.js';
 
 export interface MCPServerConfig {
   name: string;
@@ -68,8 +70,10 @@ export abstract class BaseMCPServer {
   private sessionExpiry?: Date;
   private authCheckInterval?: NodeJS.Timeout;
   
-  // Performance tracking
-  private toolMetrics: Map<string, { calls: number; totalTime: number; errors: number }> = new Map();
+  // MEMORY FIX: Use BoundedMap to prevent unbounded growth
+  // Default: 500 tools - very conservative, snow-flow has ~400 tools total
+  private toolMetrics: BoundedMap<string, { calls: number; totalTime: number; errors: number }> =
+    new BoundedMap(parseInt(process.env.SNOW_TOOL_METRICS_LIMIT || '500'));
 
   constructor(config: MCPServerConfig) {
     // Store the config
@@ -186,15 +190,20 @@ export abstract class BaseMCPServer {
     if (this.config.requiresAuth === false) {
       return;
     }
-    
-    // Check auth every 5 minutes
-    this.authCheckInterval = setInterval(async () => {
-      try {
-        await this.validateAuth();
-      } catch (error) {
-        this.logger.error('Background auth check failed:', error);
-      }
-    }, 5 * 60 * 1000);
+
+    // MEMORY FIX: Use timerRegistry for proper cleanup
+    timerRegistry.registerInterval(
+      `${this.config.name}-auth-check`,
+      async () => {
+        try {
+          await this.validateAuth();
+        } catch (error) {
+          this.logger.error('Background auth check failed:', error);
+        }
+      },
+      5 * 60 * 1000, // 5 minutes
+      true // unref
+    );
   }
 
   /**
@@ -343,7 +352,10 @@ export abstract class BaseMCPServer {
   }
 
   // 🔴 SNOW-003 FIX: Circuit breaker implementation
-  private circuitBreakers: Map<string, { failures: number; lastFailure: number; isOpen: boolean }> = new Map();
+  // MEMORY FIX: Use BoundedMap to prevent unbounded growth
+  // Default: 500 - matches tool count, as each tool can have a circuit breaker
+  private circuitBreakers: BoundedMap<string, { failures: number; lastFailure: number; isOpen: boolean }> =
+    new BoundedMap(parseInt(process.env.SNOW_CIRCUIT_BREAKER_LIMIT || '500'));
   
   private updateCircuitBreaker(toolName: string, error: any): void {
     const breaker = this.circuitBreakers.get(toolName) || { failures: 0, lastFailure: 0, isOpen: false };
@@ -507,42 +519,53 @@ export abstract class BaseMCPServer {
     return false;
   }
 
+  // MEMORY FIX: Named handlers for proper cleanup
+  private uncaughtExceptionHandler = (error: Error) => {
+    this.logger.error('Uncaught exception:', error);
+    this.gracefulShutdown();
+  };
+
+  private unhandledRejectionHandler = (reason: any, promise: Promise<any>) => {
+    this.logger.error('Unhandled rejection:', { promise, reason });
+  };
+
+  private sigintHandler = () => {
+    this.logger.info('Received SIGINT, shutting down gracefully...');
+    this.gracefulShutdown();
+  };
+
   /**
    * Setup global error handling
    */
   private setupErrorHandling(): void {
-    process.on('uncaughtException', (error) => {
-      this.logger.error('Uncaught exception:', error);
-      this.gracefulShutdown();
-    });
-
-    process.on('unhandledRejection', (reason, promise) => {
-      this.logger.error('Unhandled rejection:', { promise, reason });
-    });
-
-    process.on('SIGINT', () => {
-      this.logger.info('Received SIGINT, shutting down gracefully...');
-      this.gracefulShutdown();
-    });
+    // MEMORY FIX: Use named handlers so they can be removed later
+    process.on('uncaughtException', this.uncaughtExceptionHandler);
+    process.on('unhandledRejection', this.unhandledRejectionHandler);
+    process.on('SIGINT', this.sigintHandler);
   }
 
   /**
    * Setup metrics collection
    */
   private setupMetrics(): void {
-    // Log metrics every minute
-    setInterval(() => {
-      const metrics = Array.from(this.toolMetrics.entries()).map(([tool, data]) => ({
-        tool,
-        calls: data.calls,
-        avgTime: data.calls > 0 ? Math.round(data.totalTime / data.calls) : 0,
-        errorRate: data.calls > 0 ? (data.errors / data.calls * 100).toFixed(2) : '0',
-      }));
+    // MEMORY FIX: Use timerRegistry for proper cleanup
+    timerRegistry.registerInterval(
+      `${this.config.name}-metrics`,
+      () => {
+        const metrics = Array.from(this.toolMetrics.entries()).map(([tool, data]) => ({
+          tool,
+          calls: data.calls,
+          avgTime: data.calls > 0 ? Math.round(data.totalTime / data.calls) : 0,
+          errorRate: data.calls > 0 ? (data.errors / data.calls * 100).toFixed(2) : '0',
+        }));
 
-      if (metrics.length > 0) {
-        this.logger.info('Tool metrics:', metrics);
-      }
-    }, 60000);
+        if (metrics.length > 0) {
+          this.logger.info('Tool metrics:', metrics);
+        }
+      },
+      60000, // Every minute
+      true // unref
+    );
   }
 
   /**
@@ -614,8 +637,17 @@ export abstract class BaseMCPServer {
    */
   private async gracefulShutdown(): Promise<void> {
     this.logger.info('Starting graceful shutdown...');
-    
-    // Clear intervals
+
+    // MEMORY FIX: Remove event listeners to prevent accumulation
+    process.removeListener('uncaughtException', this.uncaughtExceptionHandler);
+    process.removeListener('unhandledRejection', this.unhandledRejectionHandler);
+    process.removeListener('SIGINT', this.sigintHandler);
+
+    // MEMORY FIX: Clear intervals via timerRegistry
+    timerRegistry.clearInterval(`${this.config.name}-auth-check`);
+    timerRegistry.clearInterval(`${this.config.name}-metrics`);
+
+    // Also clear legacy interval if it exists
     if (this.authCheckInterval) {
       clearInterval(this.authCheckInterval);
     }
@@ -626,6 +658,12 @@ export abstract class BaseMCPServer {
       this.logger.info('Final metrics:', metrics);
     }
 
+    // MEMORY FIX: Clear collections
+    this.toolMetrics.clear();
+    this.circuitBreakers.clear();
+    this.tools.clear();
+    this.toolHandlers.clear();
+
     // Close connections
     try {
       await this.oauth.logout();
@@ -633,6 +671,7 @@ export abstract class BaseMCPServer {
       this.logger.error('Error during logout:', error);
     }
 
+    this.logger.info('Graceful shutdown complete');
     process.exit(0);
   }
 

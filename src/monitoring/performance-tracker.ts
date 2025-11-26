@@ -4,8 +4,9 @@
  */
 
 import { EventEmitter } from 'events';
-import { MemorySystem } from '../memory/memory-system';
-import { Logger } from '../utils/logger';
+import { MemorySystem } from '../memory/memory-system.js';
+import { Logger } from '../utils/logger.js';
+import { timerRegistry } from '../utils/timer-registry.js';
 
 export interface PerformanceMetric {
   id: string;
@@ -151,14 +152,30 @@ export class PerformanceTracker extends EventEmitter {
     };
     
     this.activeOperations.set(id, metric);
-    
+
+    // MEMORY FIX: Set cleanup timeout for orphaned operations
+    // This only cleans up operations that were NEVER completed (crash/timeout scenarios).
+    // Normal operations complete via endOperation() which clears this timeout.
+    // Default: 30 minutes - very conservative to allow for long-running operations
+    const orphanTimeout = parseInt(process.env.SNOW_OPERATION_TIMEOUT || String(30 * 60 * 1000)); // 30 minutes default
+    timerRegistry.registerTimeout(
+      `perf-operation-cleanup-${id}`,
+      () => {
+        if (this.activeOperations.has(id)) {
+          this.logger.warn(`Cleaning up orphaned operation: ${id} (${operation}) - exceeded ${orphanTimeout}ms`);
+          this.activeOperations.delete(id);
+        }
+      },
+      orphanTimeout
+    );
+
     // Emit start event
     this.emit('operation:start', {
       id,
       operation,
       metadata
     });
-    
+
     return id;
   }
 
@@ -168,6 +185,9 @@ export class PerformanceTracker extends EventEmitter {
   async endOperation(operationId: string, result: { success: boolean; error?: string; metadata?: any }): Promise<void> {
     const metric = this.activeOperations.get(operationId);
     if (!metric || operationId === 'not_sampled') return;
+
+    // MEMORY FIX: Clear the orphan cleanup timeout since we're ending properly
+    timerRegistry.clearTimeout(`perf-operation-cleanup-${operationId}`);
     
     metric.endTime = Date.now();
     metric.duration = metric.endTime - metric.startTime;
@@ -184,11 +204,24 @@ export class PerformanceTracker extends EventEmitter {
     
     // Remove from active and add to buffer
     this.activeOperations.delete(operationId);
+
+    // MEMORY FIX: Hard limit on buffer - drop oldest if exceeds limit
+    // Default: 2000 entries - very conservative, allows for lots of operations
+    // Only drops the oldest 20% when limit is hit
+    const maxBufferSize = parseInt(process.env.SNOW_METRICS_BUFFER_SIZE || '2000');
+    if (this.metricsBuffer.length >= maxBufferSize) {
+      const keepCount = Math.floor(maxBufferSize * 0.8); // Keep 80%
+      this.metricsBuffer = this.metricsBuffer.slice(-keepCount);
+      this.logger.warn(`Metrics buffer exceeded ${maxBufferSize}, keeping newest ${keepCount} entries`);
+    }
+
     this.metricsBuffer.push(metric);
-    
+
     // Store immediately if buffer is large
     if (this.metricsBuffer.length >= 100) {
-      await this.flushMetrics();
+      await this.flushMetrics().catch(err => {
+        this.logger.error('Failed to flush metrics:', err);
+      });
     }
     
     // Emit end event
@@ -451,16 +484,24 @@ export class PerformanceTracker extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     this.logger.info('Shutting down Performance Tracker...');
-    
-    // Stop timers
+
+    // MEMORY FIX: Clear intervals via timerRegistry
+    timerRegistry.clearInterval('performance-tracker-aggregation');
+    timerRegistry.clearInterval('performance-tracker-resource-monitor');
+
+    // Also clear legacy timer if it exists
     if (this.aggregationTimer) {
       clearInterval(this.aggregationTimer);
     }
-    
+
     // Flush remaining metrics
     await this.flushMetrics();
-    
+
+    // MEMORY FIX: Clear active operations map
+    this.activeOperations.clear();
+
     this.initialized = false;
+    this.logger.info('Performance Tracker shutdown complete');
   }
 
   /**
@@ -499,34 +540,45 @@ export class PerformanceTracker extends EventEmitter {
   }
 
   private startAggregation(): void {
-    this.aggregationTimer = setInterval(async () => {
-      await this.flushMetrics();
-      await this.aggregateMetrics();
-    }, this.config.aggregationInterval);
+    // MEMORY FIX: Use timerRegistry for proper cleanup
+    timerRegistry.registerInterval(
+      'performance-tracker-aggregation',
+      async () => {
+        await this.flushMetrics();
+        await this.aggregateMetrics();
+      },
+      this.config.aggregationInterval,
+      true // unref
+    );
   }
 
   private startResourceMonitoring(): void {
-    // Monitor Node.js process resources
-    setInterval(() => {
-      const usage = this.captureResourceUsage();
-      
-      // Check thresholds
-      if (usage.memoryUsage > 0.8) {
-        this.emit('resource:warning', {
-          type: 'memory',
-          usage: usage.memoryUsage,
-          threshold: 0.8
-        });
-      }
-      
-      if (usage.cpuUsage > 0.8) {
-        this.emit('resource:warning', {
-          type: 'cpu',
-          usage: usage.cpuUsage,
-          threshold: 0.8
-        });
-      }
-    }, 10000); // Every 10 seconds
+    // MEMORY FIX: Use timerRegistry for proper cleanup
+    timerRegistry.registerInterval(
+      'performance-tracker-resource-monitor',
+      () => {
+        const usage = this.captureResourceUsage();
+
+        // Check thresholds
+        if (usage.memoryUsage > 0.8) {
+          this.emit('resource:warning', {
+            type: 'memory',
+            usage: usage.memoryUsage,
+            threshold: 0.8
+          });
+        }
+
+        if (usage.cpuUsage > 0.8) {
+          this.emit('resource:warning', {
+            type: 'cpu',
+            usage: usage.cpuUsage,
+            threshold: 0.8
+          });
+        }
+      },
+      10000, // Every 10 seconds
+      true // unref
+    );
   }
 
   private captureResourceUsage(): ResourceUsage {
