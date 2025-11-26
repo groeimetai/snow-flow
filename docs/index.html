@@ -1154,17 +1154,17 @@ snow-flow agent <span class="string">"Build a complete workspace for IT support"
                 <h2>MCP Tools Overview</h2>
 
                 <p>
-                    Snow-Flow provides <strong>410+ MCP tools</strong> across 23 specialized servers,
-                    all accessible through natural language commands.
+                    Snow-Flow provides <strong>385+ MCP tools</strong> across <strong>80 functional domains</strong>,
+                    all accessible through natural language commands via the unified MCP architecture.
                 </p>
 
                 <div class="card-grid">
                     <div class="card">
-                        <div class="card-title">Unified Architecture</div>
-                        <div class="card-desc">All tools consolidated into a single, efficient MCP server with auto-discovery.</div>
+                        <div class="card-title">385+ Tools</div>
+                        <div class="card-desc">Comprehensive coverage of all ServiceNow capabilities in one unified server.</div>
                     </div>
                     <div class="card">
-                        <div class="card-title">87 Tool Categories</div>
+                        <div class="card-title">80 Domains</div>
                         <div class="card-desc">From incident management to UI Builder, CMDB to ML analytics.</div>
                     </div>
                     <div class="card">
@@ -1172,45 +1172,567 @@ snow-flow agent <span class="string">"Build a complete workspace for IT support"
                         <div class="card-desc">One authentication flow for all tools, no duplication.</div>
                     </div>
                     <div class="card">
-                        <div class="card-title">ES5 Validation</div>
-                        <div class="card-desc">All scripts automatically validated for ServiceNow compatibility.</div>
+                        <div class="card-title">Auto-Discovery</div>
+                        <div class="card-desc">Tools automatically discovered and loaded on-demand.</div>
                     </div>
                 </div>
             </section>
 
             <!-- MCP Tools -->
             <section id="mcp-tools">
-                <h3>Tool Categories</h3>
+                <h3>Complete Tool Reference</h3>
 
-                <h4>Deployment & Development</h4>
-                <ul>
-                    <li><code>snow_create_artifact</code> - Create widgets, pages, scripts</li>
-                    <li><code>snow_validate_deployment</code> - Pre-deployment validation</li>
-                    <li><code>snow_pull_artifact</code> - Pull to local files for editing</li>
-                    <li><code>snow_push_artifact</code> - Push local changes back</li>
-                </ul>
+                <p>All tools follow the <code>snow_*</code> naming convention. Below is the complete list organized by domain.</p>
 
-                <h4>Operations</h4>
-                <ul>
-                    <li><code>snow_query_table</code> - Universal table querying</li>
-                    <li><code>snow_create_incident</code> - Create/manage incidents</li>
-                    <li><code>snow_update_record</code> - Update any table</li>
-                    <li><code>snow_discover_table_fields</code> - Schema discovery</li>
-                </ul>
+                <!-- Operations Domain -->
+                <h4>Operations (24 tools)</h4>
+                <p>Core CRUD operations and data management.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_query_table</code></td><td>Universal table querying with filters and pagination</td></tr>
+                            <tr><td><code>snow_create_incident</code></td><td>Create new incidents</td></tr>
+                            <tr><td><code>snow_query_incidents</code></td><td>Query incidents with advanced filters</td></tr>
+                            <tr><td><code>snow_update_incident</code></td><td>Update existing incidents</td></tr>
+                            <tr><td><code>snow_query_problems</code></td><td>Query problem records</td></tr>
+                            <tr><td><code>snow_query_requests</code></td><td>Query service requests</td></tr>
+                            <tr><td><code>snow_user_lookup</code></td><td>Find users by various criteria</td></tr>
+                            <tr><td><code>snow_create_user_group</code></td><td>Create user groups</td></tr>
+                            <tr><td><code>snow_manage_group_membership</code></td><td>Add/remove users from groups</td></tr>
+                            <tr><td><code>snow_record_manage</code></td><td>Generic record CRUD operations</td></tr>
+                            <tr><td><code>snow_discover_table_fields</code></td><td>Discover table schema and fields</td></tr>
+                            <tr><td><code>snow_cmdb_search</code></td><td>Search CMDB configuration items</td></tr>
+                            <tr><td><code>snow_comprehensive_search</code></td><td>Search across multiple tables</td></tr>
+                            <tr><td><code>snow_cleanup_test_artifacts</code></td><td>Remove test data from instance</td></tr>
+                            <tr><td><code>snow_attach_file</code></td><td>Attach files to records</td></tr>
+                            <tr><td><code>snow_assign_task</code></td><td>Assign tasks to users/groups</td></tr>
+                            <tr><td><code>snow_analyze_incident</code></td><td>AI-powered incident analysis</td></tr>
+                            <tr><td><code>snow_auto_resolve_incident</code></td><td>Auto-resolve with known solutions</td></tr>
+                            <tr><td><code>snow_operational_metrics</code></td><td>Get operational KPIs</td></tr>
+                            <tr><td><code>snow_pattern_analysis</code></td><td>Analyze patterns in data</td></tr>
+                            <tr><td><code>snow_predictive_analysis</code></td><td>Predictive analytics on records</td></tr>
+                            <tr><td><code>snow_catalog_item_search</code></td><td>Search service catalog items</td></tr>
+                            <tr><td><code>snow_catalog_item_manager</code></td><td>Manage catalog items</td></tr>
+                            <tr><td><code>snow_get_by_sysid</code></td><td>Get any record by sys_id</td></tr>
+                        </tbody>
+                    </table>
+                </div>
 
-                <h4>Automation</h4>
-                <ul>
-                    <li><code>snow_execute_script_with_output</code> - Run scripts (ES5 only!)</li>
-                    <li><code>snow_schedule_job</code> - Create scheduled jobs</li>
-                    <li><code>snow_create_business_rule</code> - Business rule creation</li>
-                    <li><code>snow_get_logs</code> - Access system logs</li>
-                </ul>
+                <!-- Security Domain -->
+                <h4>Security & Compliance (18 tools)</h4>
+                <p>Security policies, vulnerability scanning, and compliance management.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_security_policy</code></td><td>Create security policies</td></tr>
+                            <tr><td><code>snow_create_compliance_rule</code></td><td>Define compliance rules</td></tr>
+                            <tr><td><code>snow_create_audit_rule</code></td><td>Create audit rules</td></tr>
+                            <tr><td><code>snow_create_access_control</code></td><td>Create ACL rules</td></tr>
+                            <tr><td><code>snow_scan_vulnerabilities</code></td><td>Run vulnerability scans</td></tr>
+                            <tr><td><code>snow_run_compliance_scan</code></td><td>Execute compliance scans</td></tr>
+                            <tr><td><code>snow_create_vulnerability_scan</code></td><td>Configure vulnerability scans</td></tr>
+                            <tr><td><code>snow_audit_trail_analysis</code></td><td>Analyze audit trails</td></tr>
+                            <tr><td><code>snow_analyze_threat_intelligence</code></td><td>Threat intelligence analysis</td></tr>
+                            <tr><td><code>snow_automate_threat_response</code></td><td>Automated threat response</td></tr>
+                            <tr><td><code>snow_execute_security_playbook</code></td><td>Run security playbooks</td></tr>
+                            <tr><td><code>snow_escalate_permissions</code></td><td>Escalate user permissions</td></tr>
+                            <tr><td><code>snow_discover_security_policies</code></td><td>Discover existing policies</td></tr>
+                            <tr><td><code>snow_discover_security_frameworks</code></td><td>List security frameworks</td></tr>
+                            <tr><td><code>snow_create_security_incident</code></td><td>Create security incidents</td></tr>
+                            <tr><td><code>snow_security_risk_assessment</code></td><td>Assess security risks</td></tr>
+                            <tr><td><code>snow_vulnerability_risk_assessment</code></td><td>Assess vulnerability risks</td></tr>
+                            <tr><td><code>snow_security_dashboard</code></td><td>Security dashboard data</td></tr>
+                        </tbody>
+                    </table>
+                </div>
 
-                <h4>Update Sets</h4>
-                <ul>
-                    <li><code>snow_update_set_manage</code> - Create, complete, switch update sets</li>
-                    <li><code>snow_update_set_query</code> - Query update set status</li>
-                </ul>
+                <!-- Automation Domain -->
+                <h4>Automation (18 tools)</h4>
+                <p>Script execution, scheduling, and workflow automation.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_execute_script_with_output</code></td><td>Execute scripts with full output capture</td></tr>
+                            <tr><td><code>snow_execute_background_script</code></td><td>Run background scripts (with confirmation)</td></tr>
+                            <tr><td><code>snow_execute_script_sync</code></td><td>Synchronous script execution</td></tr>
+                            <tr><td><code>snow_trace_execution</code></td><td>Trace script execution for debugging</td></tr>
+                            <tr><td><code>snow_get_logs</code></td><td>Retrieve system logs</td></tr>
+                            <tr><td><code>snow_get_script_output</code></td><td>Get previous script output</td></tr>
+                            <tr><td><code>snow_confirm_script_execution</code></td><td>Confirm pending script execution</td></tr>
+                            <tr><td><code>snow_schedule_job</code></td><td>Create scheduled jobs</td></tr>
+                            <tr><td><code>snow_test_scheduled_job</code></td><td>Test scheduled job configuration</td></tr>
+                            <tr><td><code>snow_discover_schedules</code></td><td>List existing schedules</td></tr>
+                            <tr><td><code>snow_test_rest_connection</code></td><td>Test REST endpoint connectivity</td></tr>
+                            <tr><td><code>snow_rest_message_test_suite</code></td><td>Run REST message test suites</td></tr>
+                            <tr><td><code>snow_create_event_rule</code></td><td>Create event rules</td></tr>
+                            <tr><td><code>snow_discover_events</code></td><td>Discover system events</td></tr>
+                            <tr><td><code>snow_create_escalation_rule</code></td><td>Create escalation rules</td></tr>
+                            <tr><td><code>snow_create_sla_definition</code></td><td>Define SLA configurations</td></tr>
+                            <tr><td><code>snow_create_workflow_activity</code></td><td>Create workflow activities</td></tr>
+                            <tr><td><code>snow_property_manager</code></td><td>Manage system properties</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Integration Domain -->
+                <h4>Integration (14 tools)</h4>
+                <p>REST/SOAP integrations, data mapping, and external connections.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_rest_message</code></td><td>Create REST message definitions</td></tr>
+                            <tr><td><code>snow_test_integration</code></td><td>Test integration endpoints</td></tr>
+                            <tr><td><code>snow_batch_api</code></td><td>Batch API operations</td></tr>
+                            <tr><td><code>snow_create_web_service</code></td><td>Create web service endpoints</td></tr>
+                            <tr><td><code>snow_create_field_map</code></td><td>Create field mappings</td></tr>
+                            <tr><td><code>snow_create_email_config</code></td><td>Configure email settings</td></tr>
+                            <tr><td><code>snow_detect_code_patterns</code></td><td>Detect patterns in code</td></tr>
+                            <tr><td><code>snow_discover_integration_endpoints</code></td><td>Discover existing integrations</td></tr>
+                            <tr><td><code>snow_discover_data_sources</code></td><td>List data sources</td></tr>
+                            <tr><td><code>snow_analyze_query</code></td><td>Analyze query performance</td></tr>
+                            <tr><td><code>snow_generate_docs</code></td><td>Generate API documentation</td></tr>
+                            <tr><td><code>snow_workflow_analyze</code></td><td>Analyze workflow performance</td></tr>
+                            <tr><td><code>snow_create_transform_map</code></td><td>Create data transform maps</td></tr>
+                            <tr><td><code>snow_create_import_set</code></td><td>Create import set tables</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- CMDB Domain -->
+                <h4>CMDB (13 tools)</h4>
+                <p>Configuration Management Database operations.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_ci</code></td><td>Create configuration items</td></tr>
+                            <tr><td><code>snow_update_ci</code></td><td>Update configuration items</td></tr>
+                            <tr><td><code>snow_get_ci_details</code></td><td>Get CI details</td></tr>
+                            <tr><td><code>snow_get_ci_relationships</code></td><td>Get CI relationships</td></tr>
+                            <tr><td><code>snow_get_ci_history</code></td><td>Get CI change history</td></tr>
+                            <tr><td><code>snow_get_ci_impact</code></td><td>Analyze CI impact</td></tr>
+                            <tr><td><code>snow_create_ci_relationship</code></td><td>Create CI relationships</td></tr>
+                            <tr><td><code>snow_search_cmdb</code></td><td>Search CMDB</td></tr>
+                            <tr><td><code>snow_run_discovery</code></td><td>Run discovery jobs</td></tr>
+                            <tr><td><code>snow_reconcile_ci</code></td><td>Reconcile CI data</td></tr>
+                            <tr><td><code>snow_ci_health_check</code></td><td>CI health assessment</td></tr>
+                            <tr><td><code>snow_impact_analysis</code></td><td>Run impact analysis</td></tr>
+                            <tr><td><code>snow_get_event_correlation</code></td><td>Get correlated events</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- UI Builder Domain -->
+                <h4>UI Builder (12 tools)</h4>
+                <p>Next Experience UI Builder pages and components.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_uib_page</code></td><td>Create UI Builder pages</td></tr>
+                            <tr><td><code>snow_uib_page_manage</code></td><td>Manage UIB pages</td></tr>
+                            <tr><td><code>snow_create_uib_component</code></td><td>Create UIB components</td></tr>
+                            <tr><td><code>snow_uib_component_manage</code></td><td>Manage UIB components</td></tr>
+                            <tr><td><code>snow_create_uib_data_broker</code></td><td>Create data brokers</td></tr>
+                            <tr><td><code>snow_configure_uib_data_broker</code></td><td>Configure data brokers</td></tr>
+                            <tr><td><code>snow_create_uib_event</code></td><td>Create UIB events</td></tr>
+                            <tr><td><code>snow_create_uib_page_registry</code></td><td>Register UIB pages</td></tr>
+                            <tr><td><code>snow_create_uib_client_script</code></td><td>Create UIB client scripts</td></tr>
+                            <tr><td><code>snow_create_uib_client_state</code></td><td>Manage client state</td></tr>
+                            <tr><td><code>snow_uib_discover</code></td><td>Discover UIB artifacts</td></tr>
+                            <tr><td><code>snow_analyze_uib_page_performance</code></td><td>Analyze page performance</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Deployment Domain -->
+                <h4>Deployment (11 tools)</h4>
+                <p>Artifact deployment and management.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_artifact</code></td><td>Create widgets, pages, scripts</td></tr>
+                            <tr><td><code>snow_validate_deployment</code></td><td>Pre-deployment validation</td></tr>
+                            <tr><td><code>snow_rollback_deployment</code></td><td>Rollback failed deployments</td></tr>
+                            <tr><td><code>snow_export_artifact</code></td><td>Export artifacts to XML</td></tr>
+                            <tr><td><code>snow_import_artifact</code></td><td>Import artifacts from XML</td></tr>
+                            <tr><td><code>snow_deployment_status</code></td><td>Check deployment status</td></tr>
+                            <tr><td><code>snow_deployment_debug</code></td><td>Debug deployment issues</td></tr>
+                            <tr><td><code>snow_clone_instance_artifact</code></td><td>Clone artifacts between instances</td></tr>
+                            <tr><td><code>snow_create_solution_package</code></td><td>Create solution packages</td></tr>
+                            <tr><td><code>snow_update</code></td><td>Update existing artifacts</td></tr>
+                            <tr><td><code>snow_auth_diagnostics</code></td><td>Diagnose authentication issues</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Workspace Domain -->
+                <h4>Workspace (10 tools)</h4>
+                <p>Agent Workspace and UX configuration.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_complete_workspace</code></td><td>Create complete agent workspace</td></tr>
+                            <tr><td><code>snow_create_configurable_agent_workspace</code></td><td>Create configurable workspace</td></tr>
+                            <tr><td><code>snow_create_ux_app_config</code></td><td>Create UX app configuration</td></tr>
+                            <tr><td><code>snow_create_ux_app_route</code></td><td>Create UX routes</td></tr>
+                            <tr><td><code>snow_create_ux_experience</code></td><td>Create UX experiences</td></tr>
+                            <tr><td><code>snow_create_ux_page_macroponent</code></td><td>Create macroponents</td></tr>
+                            <tr><td><code>snow_create_ux_page_registry</code></td><td>Register UX pages</td></tr>
+                            <tr><td><code>snow_discover_all_workspaces</code></td><td>List all workspaces</td></tr>
+                            <tr><td><code>snow_update_ux_app_config_landing_page</code></td><td>Update landing pages</td></tr>
+                            <tr><td><code>snow_validate_workspace_configuration</code></td><td>Validate workspace config</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Development Domain -->
+                <h4>Development Assistant (10 tools)</h4>
+                <p>Intelligent development helpers.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_find_artifact</code></td><td>Find artifacts by name/type</td></tr>
+                            <tr><td><code>snow_edit_artifact</code></td><td>Edit existing artifacts</td></tr>
+                            <tr><td><code>snow_analyze_artifact</code></td><td>Analyze artifact structure</td></tr>
+                            <tr><td><code>snow_analyze_requirements</code></td><td>Analyze development requirements</td></tr>
+                            <tr><td><code>snow_edit_by_sysid</code></td><td>Edit records by sys_id</td></tr>
+                            <tr><td><code>snow_memory_search</code></td><td>Search in-memory data</td></tr>
+                            <tr><td><code>snow_orchestrate_development</code></td><td>Orchestrate dev tasks</td></tr>
+                            <tr><td><code>snow_sync_data_consistency</code></td><td>Sync data consistency</td></tr>
+                            <tr><td><code>snow_validate_live_connection</code></td><td>Validate instance connection</td></tr>
+                            <tr><td><code>snow_get_instance_info</code></td><td>Get instance information</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Platform Domain -->
+                <h4>Platform Development (12 tools)</h4>
+                <p>Business rules, client scripts, UI policies.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_business_rule</code></td><td>Create business rules</td></tr>
+                            <tr><td><code>snow_create_client_script</code></td><td>Create client scripts</td></tr>
+                            <tr><td><code>snow_create_script_include</code></td><td>Create script includes</td></tr>
+                            <tr><td><code>snow_create_ui_action</code></td><td>Create UI actions</td></tr>
+                            <tr><td><code>snow_create_ui_page</code></td><td>Create UI pages</td></tr>
+                            <tr><td><code>snow_create_ui_policy</code></td><td>Create UI policies</td></tr>
+                            <tr><td><code>snow_create_ui_macro</code></td><td>Create UI macros</td></tr>
+                            <tr><td><code>snow_create_ui_script</code></td><td>Create UI scripts</td></tr>
+                            <tr><td><code>snow_discover_platform_tables</code></td><td>Discover platform tables</td></tr>
+                            <tr><td><code>snow_table_schema_discovery</code></td><td>Discover table schemas</td></tr>
+                            <tr><td><code>snow_create_acl</code></td><td>Create access control lists</td></tr>
+                            <tr><td><code>snow_create_notification</code></td><td>Create notifications</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Update Sets Domain -->
+                <h4>Update Sets (8 tools)</h4>
+                <p>Change management and deployment.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_update_set_manage</code></td><td>Create, complete, switch update sets</td></tr>
+                            <tr><td><code>snow_update_set_query</code></td><td>Query update set status</td></tr>
+                            <tr><td><code>snow_update_set_current</code></td><td>Get current update set</td></tr>
+                            <tr><td><code>snow_update_set_export</code></td><td>Export update set to XML</td></tr>
+                            <tr><td><code>snow_update_set_import</code></td><td>Import update set from XML</td></tr>
+                            <tr><td><code>snow_update_set_preview</code></td><td>Preview update set changes</td></tr>
+                            <tr><td><code>snow_update_set_commit</code></td><td>Commit update set</td></tr>
+                            <tr><td><code>snow_ensure_active_update_set</code></td><td>Ensure update set is active</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Service Portal Domain -->
+                <h4>Service Portal (10 tools)</h4>
+                <p>Widgets, pages, and portal configuration.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_widget</code></td><td>Create Service Portal widgets</td></tr>
+                            <tr><td><code>snow_update_widget</code></td><td>Update existing widgets</td></tr>
+                            <tr><td><code>snow_create_portal_page</code></td><td>Create portal pages</td></tr>
+                            <tr><td><code>snow_create_portal_theme</code></td><td>Create portal themes</td></tr>
+                            <tr><td><code>snow_check_widget_coherence</code></td><td>Validate widget coherence</td></tr>
+                            <tr><td><code>snow_preview_widget</code></td><td>Preview widget rendering</td></tr>
+                            <tr><td><code>snow_widget_test</code></td><td>Test widget functionality</td></tr>
+                            <tr><td><code>snow_pull_artifact</code></td><td>Pull widget to local files</td></tr>
+                            <tr><td><code>snow_push_artifact</code></td><td>Push local changes back</td></tr>
+                            <tr><td><code>snow_discover_widgets</code></td><td>Discover existing widgets</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Virtual Agent Domain -->
+                <h4>Virtual Agent (7 tools)</h4>
+                <p>Virtual Agent NLU and conversations.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_va_topic</code></td><td>Create VA topics</td></tr>
+                            <tr><td><code>snow_create_va_topic_block</code></td><td>Create topic blocks</td></tr>
+                            <tr><td><code>snow_discover_va_topics</code></td><td>Discover VA topics</td></tr>
+                            <tr><td><code>snow_get_va_conversation</code></td><td>Get VA conversation history</td></tr>
+                            <tr><td><code>snow_send_va_message</code></td><td>Send VA messages</td></tr>
+                            <tr><td><code>snow_handoff_to_agent</code></td><td>Handoff to live agent</td></tr>
+                            <tr><td><code>snow_train_va_nlu</code></td><td>Train VA NLU model</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Domain -->
+                <h4>Mobile (7 tools)</h4>
+                <p>Mobile app configuration.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_configure_mobile_app</code></td><td>Configure mobile applications</td></tr>
+                            <tr><td><code>snow_configure_offline_sync</code></td><td>Configure offline sync</td></tr>
+                            <tr><td><code>snow_create_mobile_action</code></td><td>Create mobile actions</td></tr>
+                            <tr><td><code>snow_create_mobile_layout</code></td><td>Create mobile layouts</td></tr>
+                            <tr><td><code>snow_discover_mobile_configs</code></td><td>Discover mobile configs</td></tr>
+                            <tr><td><code>snow_get_mobile_analytics</code></td><td>Get mobile analytics</td></tr>
+                            <tr><td><code>snow_send_push_notification</code></td><td>Send push notifications</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- AI/ML Domain -->
+                <h4>AI & Machine Learning (8 tools)</h4>
+                <p>Predictive intelligence and ML features.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_ai_classify</code></td><td>AI-powered classification</td></tr>
+                            <tr><td><code>snow_ml_predict</code></td><td>ML predictions</td></tr>
+                            <tr><td><code>snow_anomaly_detection</code></td><td>Detect anomalies in data</td></tr>
+                            <tr><td><code>snow_duplicate_detection</code></td><td>Find duplicate records</td></tr>
+                            <tr><td><code>snow_fuzzy_search</code></td><td>Fuzzy text search</td></tr>
+                            <tr><td><code>snow_autocomplete</code></td><td>AI autocomplete suggestions</td></tr>
+                            <tr><td><code>snow_sentiment_analysis</code></td><td>Analyze text sentiment</td></tr>
+                            <tr><td><code>snow_recommendation_engine</code></td><td>Get AI recommendations</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Asset Management Domain -->
+                <h4>Asset Management (8 tools)</h4>
+                <p>Asset lifecycle and license management.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_asset</code></td><td>Create assets</td></tr>
+                            <tr><td><code>snow_manage_software_license</code></td><td>Manage software licenses</td></tr>
+                            <tr><td><code>snow_optimize_licenses</code></td><td>Optimize license usage</td></tr>
+                            <tr><td><code>snow_retire_asset</code></td><td>Retire assets</td></tr>
+                            <tr><td><code>snow_transfer_asset</code></td><td>Transfer asset ownership</td></tr>
+                            <tr><td><code>snow_track_asset_lifecycle</code></td><td>Track asset lifecycle</td></tr>
+                            <tr><td><code>snow_asset_discovery</code></td><td>Discover assets</td></tr>
+                            <tr><td><code>snow_asset_compliance_report</code></td><td>Generate compliance reports</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Change Management Domain -->
+                <h4>Change Management (8 tools)</h4>
+                <p>Change requests and CAB management.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_change_request</code></td><td>Create change requests</td></tr>
+                            <tr><td><code>snow_update_change_request</code></td><td>Update change requests</td></tr>
+                            <tr><td><code>snow_query_changes</code></td><td>Query change records</td></tr>
+                            <tr><td><code>snow_change_risk_assessment</code></td><td>Assess change risk</td></tr>
+                            <tr><td><code>snow_change_collision_detection</code></td><td>Detect change collisions</td></tr>
+                            <tr><td><code>snow_change_calendar</code></td><td>View change calendar</td></tr>
+                            <tr><td><code>snow_cab_workbench</code></td><td>CAB workbench operations</td></tr>
+                            <tr><td><code>snow_change_manage</code></td><td>Comprehensive change management</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Knowledge Domain -->
+                <h4>Knowledge Management (7 tools)</h4>
+                <p>Knowledge base articles and management.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_knowledge_article</code></td><td>Create KB articles</td></tr>
+                            <tr><td><code>snow_update_knowledge_article</code></td><td>Update KB articles</td></tr>
+                            <tr><td><code>snow_search_knowledge</code></td><td>Search knowledge base</td></tr>
+                            <tr><td><code>snow_publish_knowledge_article</code></td><td>Publish articles</td></tr>
+                            <tr><td><code>snow_retire_knowledge_article</code></td><td>Retire articles</td></tr>
+                            <tr><td><code>snow_knowledge_feedback</code></td><td>Manage article feedback</td></tr>
+                            <tr><td><code>snow_knowledge_analytics</code></td><td>KB analytics</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Flow Designer Domain -->
+                <h4>Flow Designer (8 tools)</h4>
+                <p>Flow Designer automation.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_flow</code></td><td>Create Flow Designer flows</td></tr>
+                            <tr><td><code>snow_create_subflow</code></td><td>Create subflows</td></tr>
+                            <tr><td><code>snow_create_action</code></td><td>Create flow actions</td></tr>
+                            <tr><td><code>snow_test_flow</code></td><td>Test flow execution</td></tr>
+                            <tr><td><code>snow_activate_flow</code></td><td>Activate flows</td></tr>
+                            <tr><td><code>snow_discover_flows</code></td><td>Discover existing flows</td></tr>
+                            <tr><td><code>snow_flow_execution_history</code></td><td>View execution history</td></tr>
+                            <tr><td><code>snow_flow_debug</code></td><td>Debug flow issues</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Reporting Domain -->
+                <h4>Reporting & Analytics (8 tools)</h4>
+                <p>Reports, dashboards, and analytics.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_report</code></td><td>Create reports</td></tr>
+                            <tr><td><code>snow_create_dashboard</code></td><td>Create dashboards</td></tr>
+                            <tr><td><code>snow_create_widget_indicator</code></td><td>Create dashboard indicators</td></tr>
+                            <tr><td><code>snow_define_kpi</code></td><td>Define KPIs</td></tr>
+                            <tr><td><code>snow_schedule_report</code></td><td>Schedule report delivery</td></tr>
+                            <tr><td><code>snow_export_report</code></td><td>Export reports</td></tr>
+                            <tr><td><code>snow_analyze_data_quality</code></td><td>Analyze data quality</td></tr>
+                            <tr><td><code>snow_performance_analytics</code></td><td>Performance Analytics</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ATF Domain -->
+                <h4>Automated Test Framework (6 tools)</h4>
+                <p>Test automation and validation.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_create_atf_test</code></td><td>Create ATF tests</td></tr>
+                            <tr><td><code>snow_create_atf_suite</code></td><td>Create test suites</td></tr>
+                            <tr><td><code>snow_run_atf_test</code></td><td>Run ATF tests</td></tr>
+                            <tr><td><code>snow_run_atf_suite</code></td><td>Run test suites</td></tr>
+                            <tr><td><code>snow_get_atf_results</code></td><td>Get test results</td></tr>
+                            <tr><td><code>snow_discover_atf_tests</code></td><td>Discover existing tests</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Notifications Domain -->
+                <h4>Notifications (7 tools)</h4>
+                <p>Notification management and delivery.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>snow_send_notification</code></td><td>Send notifications</td></tr>
+                            <tr><td><code>snow_create_notification_template</code></td><td>Create notification templates</td></tr>
+                            <tr><td><code>snow_send_push</code></td><td>Send push notifications</td></tr>
+                            <tr><td><code>snow_schedule_notification</code></td><td>Schedule notifications</td></tr>
+                            <tr><td><code>snow_emergency_broadcast</code></td><td>Send emergency broadcasts</td></tr>
+                            <tr><td><code>snow_notification_preferences</code></td><td>Manage preferences</td></tr>
+                            <tr><td><code>snow_notification_analytics</code></td><td>Notification analytics</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Agent Orchestration Domain -->
+                <h4>Agent Orchestration (12 tools)</h4>
+                <p>Multi-agent coordination via snow-flow-mcp.</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>agent_init</code></td><td>Initialize agent orchestration</td></tr>
+                            <tr><td><code>agent_spawn</code></td><td>Create specialized agents</td></tr>
+                            <tr><td><code>agent_status</code></td><td>Monitor agent health</td></tr>
+                            <tr><td><code>agent_discover</code></td><td>Discover agent types</td></tr>
+                            <tr><td><code>neural_train</code></td><td>Train TensorFlow.js neural networks</td></tr>
+                            <tr><td><code>neural_status</code></td><td>Check training progress</td></tr>
+                            <tr><td><code>neural_patterns</code></td><td>Analyze patterns with ML</td></tr>
+                            <tr><td><code>memory_search</code></td><td>Search in-memory data</td></tr>
+                            <tr><td><code>memory_usage</code></td><td>Manage memory storage</td></tr>
+                            <tr><td><code>task_categorize</code></td><td>Categorize tasks for agents</td></tr>
+                            <tr><td><code>performance_report</code></td><td>Generate performance reports</td></tr>
+                            <tr><td><code>token_usage</code></td><td>Analyze token consumption</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="callout info">
+                    <div class="callout-title">Additional Domains</div>
+                    <p>Plus 50+ more domains including: HR Service Delivery, CSM, DevOps, GRC, Project Portfolio, Service Level Management, Event Management, Discovery, Cost Management, and many more. All tools follow the same <code>snow_*</code> naming pattern.</p>
+                </div>
             </section>
 
             <!-- MCP Config -->
