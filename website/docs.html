@@ -1124,6 +1124,7 @@
                     <li><a href="#mcp-overview">Overview</a></li>
                     <li><a href="#mcp-tools">Tool Categories</a></li>
                     <li><a href="#mcp-config">Configuration</a></li>
+                    <li><a href="#ide-integrations">IDE Integrations</a></li>
                 </ul>
             </div>
 
@@ -2119,6 +2120,181 @@ snow-flow agent <span class="string">"Build a complete workspace for IT support"
     }
   }
 }</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- IDE Integrations -->
+            <section id="ide-integrations">
+                <h3>Use With Any AI IDE</h3>
+
+                <p>Snow-Flow works with any MCP-compatible AI tool. After running <code>snow-flow init</code>, the configuration is generated at <code>.mcp.json</code> and synced to <code>.snow-code/config.json</code>.</p>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>AI Tool</th>
+                                <th>Config Location</th>
+                                <th>Setup</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>snow-code</strong> <span class="badge badge-new">Recommended</span></td>
+                                <td>Built-in</td>
+                                <td>Just run <code>snow-flow agent</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Claude Desktop</strong></td>
+                                <td><code>claude_desktop_config.json</code></td>
+                                <td>Copy config with <code>mcpServers</code> key</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cursor</strong></td>
+                                <td><code>.cursor/mcp.json</code></td>
+                                <td>Copy <code>.mcp.json</code> to project</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Windsurf</strong></td>
+                                <td><code>mcp_config.json</code></td>
+                                <td>Copy <code>.mcp.json</code> to project</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Continue.dev</strong></td>
+                                <td><code>.continue/config.json</code></td>
+                                <td>Add to <code>mcpServers</code> array</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Setup for Claude Desktop</h4>
+                <p>Claude Desktop uses a different key (<code>mcpServers</code>) than other tools:</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># macOS config location</span>
+~/Library/Application Support/Claude/claude_desktop_config.json
+
+<span class="comment"># Windows config location</span>
+%APPDATA%\Claude\claude_desktop_config.json</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">json</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  <span class="string">"mcpServers"</span>: {
+    <span class="string">"servicenow-unified"</span>: {
+      <span class="string">"command"</span>: <span class="string">"node"</span>,
+      <span class="string">"args"</span>: [<span class="string">"/path/to/snow-flow/dist/mcp/servicenow-mcp-unified/index.js"</span>],
+      <span class="string">"env"</span>: {
+        <span class="string">"SERVICENOW_INSTANCE_URL"</span>: <span class="string">"https://your-instance.service-now.com"</span>,
+        <span class="string">"SERVICENOW_CLIENT_ID"</span>: <span class="string">"your-client-id"</span>,
+        <span class="string">"SERVICENOW_CLIENT_SECRET"</span>: <span class="string">"your-client-secret"</span>
+      }
+    }
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="callout warning">
+                    <div class="callout-title">Important: Config Key Differences</div>
+                    <p><strong>Claude Desktop</strong> uses <code>mcpServers</code> with <code>command</code> + <code>args</code> format.<br>
+                    <strong>Other tools</strong> (Cursor, Windsurf, Continue.dev) use <code>mcp</code> with <code>command</code> array format.</p>
+                </div>
+
+                <h4>Setup for Cursor</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># After snow-flow init, copy config to Cursor</span>
+cp .mcp.json .cursor/mcp.json
+
+<span class="comment"># Or create .cursor directory first</span>
+mkdir -p .cursor && cp .mcp.json .cursor/mcp.json</pre>
+                    </div>
+                </div>
+
+                <h4>Setup for Windsurf</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># After snow-flow init, copy config to Windsurf</span>
+cp .mcp.json mcp_config.json</pre>
+                    </div>
+                </div>
+
+                <h4>Setup for Continue.dev</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Continue.dev config location</span>
+~/.continue/config.json</pre>
+                    </div>
+                </div>
+
+                <p>Add the MCP servers to your Continue.dev config:</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">json</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  <span class="string">"experimental"</span>: {
+    <span class="string">"modelContextProtocolServers"</span>: [
+      {
+        <span class="string">"transport"</span>: {
+          <span class="string">"type"</span>: <span class="string">"stdio"</span>,
+          <span class="string">"command"</span>: <span class="string">"node"</span>,
+          <span class="string">"args"</span>: [<span class="string">"/path/to/snow-flow/dist/mcp/servicenow-mcp-unified/index.js"</span>]
+        }
+      }
+    ]
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="callout info">
+                    <div class="callout-title">Finding Your Snow-Flow Path</div>
+                    <p>To find the path to your snow-flow installation:</p>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Global npm installation</span>
+npm root -g
+<span class="comment"># Output: /usr/local/lib/node_modules</span>
+<span class="comment"># Full path: /usr/local/lib/node_modules/snow-flow/dist/mcp/...</span>
+
+<span class="comment"># Or use which to find the binary</span>
+which snow-flow</pre>
                     </div>
                 </div>
             </section>
