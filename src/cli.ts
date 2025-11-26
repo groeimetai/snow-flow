@@ -388,13 +388,13 @@ program
       cliLogger.info('💡 Run "snow-flow login <license-key>" to enable enterprise features');
     }
     
-    // Initialize Queen Agent memory system (with graceful fallback)
+    // Initialize Agent memory system (with graceful fallback)
     let memorySystem: any = null;
-    let sessionId = `swarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    let sessionId = `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     try {
       if (options.verbose) {
-        cliLogger.info('\n💾 Initializing swarm memory system...');
+        cliLogger.info('\n💾 Initializing agent memory system...');
       }
       const { SessionMemorySystem } = await import('./memory/session-memory');
       memorySystem = new SessionMemorySystem();
@@ -404,7 +404,7 @@ program
         cliLogger.info(`🔖 Session: ${sessionId}`);
       }
 
-      // Store swarm session in memory
+      // Store agent session in memory
       await memorySystem.storeLearning(`session_${sessionId}`, {
         objective,
         taskAnalysis,
@@ -413,7 +413,7 @@ program
         is_authenticated: isAuthenticated
       });
     } catch (error) {
-      // Memory system is optional - swarm works without it
+      // Memory system is optional - agent works without it
       if (options.verbose) {
         cliLogger.warn('⚠️  Memory tracking unavailable (will continue without session tracking)');
       }
@@ -724,14 +724,16 @@ function extractName(objective: string, type: string): string {
   return `Generated ${type}`;
 }
 
-// Swarm status command - monitor running swarms
+// Agent status command - monitor running agent sessions
+// Note: 'swarm-status' is kept as an alias for backward compatibility
 program
-  .command('swarm-status [sessionId]')
-  .description('Check the status of a running swarm session')
-  .option('--watch', 'Continuously monitor the swarm progress')
+  .command('agent-status [sessionId]')
+  .alias('swarm-status')
+  .description('Check the status of a running agent session')
+  .option('--watch', 'Continuously monitor the agent progress')
   .option('--interval <seconds>', 'Watch interval in seconds', '5')
   .action(async (sessionId: string | undefined, options) => {
-    cliLogger.info('\n🔍 Checking swarm status...\n');
+    cliLogger.info('\n🔍 Checking agent status...\n');
 
     try {
       // Try to load memory system
@@ -747,15 +749,15 @@ program
       }
 
       if (!sessionId) {
-        // List all recent swarm sessions
-        cliLogger.info('📋 Recent swarm sessions:');
+        // List all recent agent sessions
+        cliLogger.info('📋 Recent agent sessions:');
         cliLogger.info('(Provide a session ID to see detailed status)\n');
 
         // Get all session keys from learnings
         const sessionKeys: string[] = [];
         // Note: This is a simplified approach - in production, you'd query the memory files directly
-        cliLogger.info('💡 Use: snow-flow swarm-status <sessionId> to see details');
-        cliLogger.info('💡 Session IDs are displayed when you start a swarm\n');
+        cliLogger.info('💡 Use: snow-flow agent-status <sessionId> to see details');
+        cliLogger.info('💡 Session IDs are displayed when you start an agent session\n');
         return;
       }
 
@@ -763,14 +765,14 @@ program
       const sessionData = await memorySystem.getLearning(`session_${sessionId}`);
       const launchData = await memorySystem.getLearning(`launch_${sessionId}`);
       const errorData = await memorySystem.getLearning(`error_${sessionId}`);
-      
+
       if (!sessionData) {
-        console.error(`❌ No swarm session found with ID: ${sessionId}`);
-        cliLogger.info('💡 Make sure to use the exact session ID displayed when starting the swarm');
+        console.error(`❌ No agent session found with ID: ${sessionId}`);
+        cliLogger.info('💡 Make sure to use the exact session ID displayed when starting the agent');
         return;
       }
-      
-      cliLogger.info(`👑 Swarm Session: ${sessionId}`);
+
+      cliLogger.info(`👑 Agent Session: ${sessionId}`);
       cliLogger.info(`📋 Objective: ${sessionData.objective}`);
       cliLogger.info(`🕐 Started: ${sessionData.started_at}`);
       cliLogger.info(`📊 Task Type: ${sessionData.taskAnalysis.taskType}`);
@@ -791,7 +793,7 @@ program
 
       cliLogger.info('\n💡 Tips:');
       cliLogger.info('   - Check SnowCode for real-time agent progress');
-      cliLogger.info('   - Use Memory.get("swarm_session_' + sessionId + '") in SnowCode');
+      cliLogger.info('   - Use Memory.get("agent_session_' + sessionId + '") in SnowCode');
       cliLogger.info('   - Monitor TodoRead for task completion status');
       
       if (options.watch) {
@@ -812,13 +814,13 @@ program
         // Handle graceful shutdown
         process.on('SIGINT', () => {
           clearInterval(watchInterval);
-          cliLogger.info('\n\n✋ Stopped watching swarm status');
+          cliLogger.info('\n\n✋ Stopped watching agent status');
           process.exit(0);
         });
       }
       
     } catch (error) {
-      console.error('❌ Failed to check swarm status:', error instanceof Error ? error.message : String(error));
+      console.error('❌ Failed to check agent status:', error instanceof Error ? error.message : String(error));
     }
   });
 
@@ -1064,7 +1066,7 @@ program
       prompts.log.info('     snow-flow auth login');
       prompts.log.message('');
       prompts.log.message('  2. Start developing:');
-      prompts.log.info('     snow-flow swarm "create incident dashboard"');
+      prompts.log.info('     snow-flow agent "create incident dashboard"');
       prompts.log.message('');
 
       prompts.outro(chalk.green('✅ Snow-Flow initialized successfully!'));
@@ -1090,18 +1092,18 @@ program
 📋 Essential Commands:
   snow-flow init              Initialize project with MCP servers
   snow-flow auth login        Complete authentication setup
-  snow-flow swarm "task"      Execute AI-powered ServiceNow development
+  snow-flow agent "task"      Execute AI-powered ServiceNow development
 
 🎯 Quick Start:
   1. snow-flow init                           # Set up your project
   2. snow-flow auth login                     # Authenticate (LLM + ServiceNow + Enterprise)
-  3. snow-flow swarm "your task"              # Let AI build your solution
+  3. snow-flow agent "your task"              # Let AI build your solution
 
 💡 Example Tasks:
-  snow-flow swarm "create incident dashboard widget"
-  snow-flow swarm "build auto-assignment business rule"
-  snow-flow swarm "generate 5000 test incidents with realistic data"
-  snow-flow swarm "refactor legacy client scripts to modern patterns"
+  snow-flow agent "create incident dashboard widget"
+  snow-flow agent "build auto-assignment business rule"
+  snow-flow agent "generate 5000 test incidents with realistic data"
+  snow-flow agent "refactor legacy client scripts to modern patterns"
 
 🔗 What You Get:
   • 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, etc.)
@@ -2680,7 +2682,7 @@ program
       // Use generic artifact deployment instead
       console.log('🎯 Creating widget using template system...');
       console.log('✨ Use: snow-flow deploy-artifact -t widget -c <config-file>');
-      console.log('📝 Or use: snow-flow swarm "create a widget for incident management"');
+      console.log('📝 Or use: snow-flow agent "create a widget for incident management"');
     } catch (error) {
       console.error('❌ Error creating widget:', error);
     }
@@ -2698,7 +2700,7 @@ program
     console.log(chalk.blue('ℹ️  MCP servers configured for SnowCode (also compatible with Claude Code)'));
     console.log(chalk.yellow('⚠️  Manual MCP commands are no longer needed'));
     console.log(chalk.green('✅ SnowCode automatically handles all MCP server lifecycle'));
-    console.log(chalk.blue('\n💡 Simply run your swarm commands - SnowCode handles the rest!'));
+    console.log(chalk.blue('\n💡 Simply run your agent commands - SnowCode handles the rest!'));
     return;
   });
 
@@ -2791,9 +2793,9 @@ program
 // ===================================================
 
 /**
- * Enhance existing swarm command with optional Queen intelligence
- * 
- * Note: Users can use: snow-flow swarm "objective" --queen
+ * Enhance existing agent command with optional Queen intelligence
+ *
+ * Note: Users can use: snow-flow agent "objective" --queen
  * This will be implemented in a future version once the Queen system is stable.
  */
 
@@ -2809,7 +2811,7 @@ program
 // - Configuration management
 // - Performance analytics
 // Comment out the line below to disable the integrated commands
-// CLI integration removed - swarm command is implemented directly above
+// CLI integration removed - agent command is implemented directly above
 
 program.parse(process.argv);
 

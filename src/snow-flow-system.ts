@@ -200,7 +200,8 @@ export class SnowFlowSystem extends EventEmitter {
   }
 
   /**
-   * Execute a swarm objective
+   * Execute an agent objective
+   * Note: Method name kept as executeSwarm for backward compatibility
    */
   async executeSwarm(objective: string, options: SwarmOptions = {}): Promise<SwarmResult> {
     if (!this.initialized) {
@@ -223,8 +224,8 @@ export class SnowFlowSystem extends EventEmitter {
     this.sessions.set(sessionId, session);
     
     try {
-      // Track swarm execution
-      await this.performanceTracker?.startOperation('swarm_execution', {
+      // Track agent execution
+      await this.performanceTracker?.startOperation('agent_execution', {
         sessionId,
         objective
       });
@@ -238,7 +239,7 @@ export class SnowFlowSystem extends EventEmitter {
       //   priority: 'high'
       // });
 
-      // TEMPORARY: Return mock result until swarm orchestration is properly integrated
+      // TEMPORARY: Return mock result until agent orchestration is properly integrated
       const queenResult = {
         success: false,
         objective: objective,
@@ -249,7 +250,7 @@ export class SnowFlowSystem extends EventEmitter {
         artifactsCreated: 0,
         todos: [],
         duration: 0,
-        error: new Error('Queen orchestration is deprecated. Use swarm command instead.')
+        error: new Error('Queen orchestration is deprecated. Use agent command instead.')
       };
 
       session.queenAgentId = sessionId;
@@ -257,7 +258,7 @@ export class SnowFlowSystem extends EventEmitter {
       session.status = 'active';
       session.completedTasks = queenResult.todos.filter(t => t.status === 'completed').length;
 
-      this.emit('swarm:progress', {
+      this.emit('agent:progress', {
         sessionId,
         progress: {
           completed: session.completedTasks,
@@ -269,7 +270,7 @@ export class SnowFlowSystem extends EventEmitter {
       });
 
       session.status = 'completed';
-      await this.performanceTracker?.endOperation('swarm_execution', {
+      await this.performanceTracker?.endOperation('agent_execution', {
         success: queenResult.success
       });
 
@@ -285,7 +286,7 @@ export class SnowFlowSystem extends EventEmitter {
       session.status = 'failed';
       session.errors.push(error as Error);
       
-      await this.performanceTracker?.endOperation('swarm_execution', {
+      await this.performanceTracker?.endOperation('agent_execution', {
         success: false,
         error: (error as Error).message
       });
@@ -403,7 +404,7 @@ export class SnowFlowSystem extends EventEmitter {
    * Private helper methods
    */
   private generateSessionId(): string {
-    return `swarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   private updateAgentInfo(session: SwarmSession, update: any): void {
@@ -462,7 +463,7 @@ export class SnowFlowSystem extends EventEmitter {
   }
 
   private async calculateAverageExecutionTime(): Promise<number> {
-    const metrics = await this.performanceTracker?.getAggregateMetrics('swarm_execution');
+    const metrics = await this.performanceTracker?.getAggregateMetrics('agent_execution');
     return metrics?.averageDuration || 0;
   }
 }

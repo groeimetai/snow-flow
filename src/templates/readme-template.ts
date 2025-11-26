@@ -47,8 +47,8 @@ This will:
 ### 4. Start Building!
 
 \`\`\`bash
-# Use the swarm command to build anything in ServiceNow
-snow-flow swarm "create an incident dashboard widget"
+# Use the agent command to build anything in ServiceNow
+snow-flow agent "create an incident dashboard widget"
 
 # Or use SnowCode/Claude Code directly (MCP servers auto-configured)
 snow-code  # All 22 MCP servers available automatically
@@ -85,11 +85,11 @@ Snow-Flow includes the most comprehensive ServiceNow MCP server collection:
 
 ### 🔄 Multi-Agent Orchestration
 
-The \`swarm\` command coordinates multiple specialized agents to handle complex tasks:
+The \`agent\` command coordinates multiple specialized agents to handle complex tasks:
 
 \`\`\`bash
 # Single command handles everything: planning, execution, testing, deployment
-snow-flow swarm "build a complete incident management workspace with dashboards"
+snow-flow agent "build a complete incident management workspace with dashboards"
 \`\`\`
 
 ### 🎨 SnowCode + Claude Code Support
@@ -130,43 +130,43 @@ snow_push_artifact({ sys_id: 'widget_sys_id' })
 ### Create a Service Portal Widget
 
 \`\`\`bash
-snow-flow swarm "create a widget showing top 10 open incidents with priority indicators"
+snow-flow agent "create a widget showing top 10 open incidents with priority indicators"
 \`\`\`
 
 ### Build an Agent Workspace
 
 \`\`\`bash
-snow-flow swarm "create an agent workspace for ITIL fulfillment with task lists and approvals"
+snow-flow agent "create an agent workspace for ITIL fulfillment with task lists and approvals"
 \`\`\`
 
 ### Design a Flow Designer Flow
 
 \`\`\`bash
-snow-flow swarm "create an approval flow for purchase requests over $5000"
+snow-flow agent "create an approval flow for purchase requests over $5000"
 \`\`\`
 
 ### Train a Machine Learning Model
 
 \`\`\`bash
-snow-flow swarm "create a Predictive Intelligence solution to predict incident categories"
+snow-flow agent "create a Predictive Intelligence solution to predict incident categories"
 \`\`\`
 
 ### Build a UI Builder Page
 
 \`\`\`bash
-snow-flow swarm "create a UI Builder page with a list of incidents and a detail panel"
+snow-flow agent "create a UI Builder page with a list of incidents and a detail panel"
 \`\`\`
 
 ### Update CMDB Configuration Items
 
 \`\`\`bash
-snow-flow swarm "find all Linux servers in Boston datacenter and update their support group"
+snow-flow agent "find all Linux servers in Boston datacenter and update their support group"
 \`\`\`
 
 ### Generate Reports and Dashboards
 
 \`\`\`bash
-snow-flow swarm "create a dashboard showing SLA compliance trends for the last 30 days"
+snow-flow agent "create a dashboard showing SLA compliance trends for the last 30 days"
 \`\`\`
 
 ## 🔧 Commands Reference
@@ -186,7 +186,7 @@ snow-flow version      # Show Snow-Flow version
 
 ### Development
 \`\`\`bash
-snow-flow swarm "<task>"  # Multi-agent orchestration for complex tasks
+snow-flow agent "<task>"  # Multi-agent orchestration for complex tasks
 \`\`\`
 
 ### Direct AI Usage
@@ -336,7 +336,7 @@ Built with ❤️ using:
 npm install -g snow-flow
 snow-flow init
 snow-flow auth login
-snow-flow swarm "create an awesome ServiceNow widget"
+snow-flow agent "create an awesome ServiceNow widget"
 \`\`\`
 
 🚀 **Happy building!**

@@ -115,7 +115,8 @@ export interface OrchestratorEvents {
   'task:assigned': (taskId: string, agentId: string) => void;
   'task:completed': (taskId: string, result: any) => void;
   'task:failed': (taskId: string, error: Error) => void;
-  'swarm:initialized': (config: SwarmConfig) => void;
+  'agent:initialized': (config: SwarmConfig) => void;
+  'swarm:initialized': (config: SwarmConfig) => void; // Backward compatibility alias
   'error': (error: Error) => void;
 }
 

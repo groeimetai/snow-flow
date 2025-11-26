@@ -5402,7 +5402,7 @@ Use \`snow_widget_test\` to run automated tests with different scenarios.`,
 **Possible Solutions:**
 1. **Verify the sys_id:**
    - Check that the sys_id is correct
-   - Use: \`snow-flow swarm "Find widgets by name"\` to search
+   - Use: \`snow-flow agent "Find widgets by name"\` to search
 
 2. **Check widget exists:**
    - Navigate to Service Portal > Widgets in ServiceNow

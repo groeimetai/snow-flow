@@ -766,8 +766,8 @@ const snowFlowTools = {
     badge: "8 Tools",
     tools: [
       {
-        name: "swarm_init",
-        description: "Initialize multi-agent swarms for complex tasks."
+        name: "agent_init",
+        description: "Initialize multi-agent orchestration for complex tasks."
       },
       {
         name: "agent_spawn",

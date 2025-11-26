@@ -159,7 +159,7 @@ async function loginCommand(licenseKey: string): Promise<void> {
     console.log(chalk.gray('Your credentials have been saved to:'), chalk.gray(AUTH_FILE));
     console.log('');
     console.log(chalk.blue('💡 Enterprise tools are now available!'));
-    console.log(chalk.gray('   Run'), chalk.cyan('snow-flow swarm "<task>"'), chalk.gray('to use them.'));
+    console.log(chalk.gray('   Run'), chalk.cyan('snow-flow agent "<task>"'), chalk.gray('to use them.'));
     console.log(chalk.gray('   Run'), chalk.cyan('snow-flow portal'), chalk.gray('to configure integrations.'));
     console.log(chalk.gray('   Run'), chalk.cyan('snow-flow status'), chalk.gray('to view your account details.'));
   } catch (err: any) {

@@ -74,10 +74,10 @@ class SnowFlowMCPServer {
     // List tools handler
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       const tools: Tool[] = [
-        // Swarm Management
+        // Agent Management (formerly 'swarm')
         {
-          name: 'swarm_init',
-          description: 'Initializes AI swarm with specified topology, strategy, and agent limits for coordinated task execution.',
+          name: 'agent_init',
+          description: 'Initializes AI agent orchestration with specified topology, strategy, and agent limits for coordinated task execution.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -125,21 +125,23 @@ class SnowFlowMCPServer {
               capabilities: {
                 type: 'array',
               },
-              swarmId: {
+              agentId: {
                 type: 'string',
+                description: 'Agent session ID to add this agent to (formerly swarmId)',
               },
             },
             required: ['type'],
           },
         },
         {
-          name: 'swarm_status',
-          description: 'Monitors swarm health metrics, agent status, and performance indicators in real-time.',
+          name: 'agent_status',
+          description: 'Monitors agent health metrics, status, and performance indicators in real-time.',
           inputSchema: {
             type: 'object',
             properties: {
-              swarmId: {
+              agentId: {
                 type: 'string',
+                description: 'Agent session ID to check (formerly swarmId)',
               },
             },
           },
@@ -365,11 +367,13 @@ class SnowFlowMCPServer {
 
       try {
         switch (name) {
-          case 'swarm_init':
+          case 'agent_init':
+          case 'swarm_init': // Backward compatibility alias
             return await this.handleSwarmInit(args);
           case 'agent_spawn':
             return await this.handleAgentSpawn(args);
-          case 'swarm_status':
+          case 'agent_status':
+          case 'swarm_status': // Backward compatibility alias
             return await this.handleSwarmStatus(args);
           case 'memory_usage':
             return await this.handleMemoryUsage(args);
@@ -419,9 +423,10 @@ class SnowFlowMCPServer {
   }
 
   private async handleSwarmInit(args: any) {
-    const swarmId = `swarm_${Date.now()}`;
+    // Internal implementation uses 'agent_' prefix now
+    const agentSessionId = `agent_${Date.now()}`;
     const swarm: Swarm = {
-      id: swarmId,
+      id: agentSessionId,
       topology: args.topology,
       maxAgents: args.maxAgents || 8,
       strategy: args.strategy || 'auto',
@@ -430,13 +435,13 @@ class SnowFlowMCPServer {
       createdAt: new Date(),
     };
 
-    this.swarms.set(swarmId, swarm);
+    this.swarms.set(agentSessionId, swarm);
 
     // Initialize coordinator agent automatically
     const coordinator: Agent = {
       id: `agent_${Date.now()}_coordinator`,
       type: 'coordinator',
-      name: 'Swarm Coordinator',
+      name: 'Agent Coordinator',
       status: 'idle',
       capabilities: ['coordination', 'task_distribution', 'monitoring'],
       createdAt: new Date(),
@@ -451,13 +456,14 @@ class SnowFlowMCPServer {
         {
           type: 'text',
           text: JSON.stringify({
-            swarmId,
+            agentId: agentSessionId,
+            swarmId: agentSessionId, // Backward compatibility
             topology: swarm.topology,
             maxAgents: swarm.maxAgents,
             strategy: swarm.strategy,
             coordinator: coordinator.id,
             status: 'active',
-            message: `Swarm initialized with ${swarm.topology} topology`,
+            message: `Agent orchestration initialized with ${swarm.topology} topology`,
           }),
         },
       ],
@@ -477,9 +483,10 @@ class SnowFlowMCPServer {
 
     this.agents.set(agentId, agent);
 
-    // Add to swarm if specified
-    if (args.swarmId && this.swarms.has(args.swarmId)) {
-      const swarm = this.swarms.get(args.swarmId)!;
+    // Add to agent session if specified (supports both agentId and swarmId for backward compatibility)
+    const sessionId = args.agentId || args.swarmId;
+    if (sessionId && this.swarms.has(sessionId)) {
+      const swarm = this.swarms.get(sessionId)!;
       swarm.agents.push(agent);
     }
 
@@ -502,12 +509,15 @@ class SnowFlowMCPServer {
 
 
   private async handleSwarmStatus(args: any) {
-    const swarmId = args.swarmId;
+    // Support both agentId and swarmId for backward compatibility
+    const sessionId = args.agentId || args.swarmId;
 
-    if (!swarmId) {
-      // Return all swarms status
-      const allSwarms = Array.from(this.swarms.entries()).map(([id, swarm]) => ({
+    if (!sessionId) {
+      // Return all agent sessions status
+      const allSessions = Array.from(this.swarms.entries()).map(([id, swarm]) => ({
         id,
+        agentId: id, // New naming
+        swarmId: id, // Backward compatibility
         topology: swarm.topology,
         agents: swarm.agents.length,
         maxAgents: swarm.maxAgents,
@@ -519,18 +529,21 @@ class SnowFlowMCPServer {
           {
             type: 'text',
             text: JSON.stringify({
-              swarms: allSwarms,
-              totalSwarms: allSwarms.length,
-              activeSwarms: allSwarms.filter((s) => s.status === 'active').length,
+              sessions: allSessions,
+              swarms: allSessions, // Backward compatibility
+              totalSessions: allSessions.length,
+              totalSwarms: allSessions.length, // Backward compatibility
+              activeSessions: allSessions.filter((s) => s.status === 'active').length,
+              activeSwarms: allSessions.filter((s) => s.status === 'active').length, // Backward compatibility
             }),
           },
         ],
       };
     }
 
-    const swarm = this.swarms.get(swarmId);
+    const swarm = this.swarms.get(sessionId);
     if (!swarm) {
-      throw new Error(`Swarm ${swarmId} not found`);
+      throw new Error(`Agent session ${sessionId} not found`);
     }
 
     return {
@@ -538,7 +551,8 @@ class SnowFlowMCPServer {
         {
           type: 'text',
           text: JSON.stringify({
-            swarmId,
+            agentId: sessionId,
+            swarmId: sessionId, // Backward compatibility
             topology: swarm.topology,
             agents: swarm.agents.map((a) => ({
               id: a.id,
@@ -954,7 +968,8 @@ class SnowFlowMCPServer {
           .length,
         activeAgents: Array.from(this.agents.values()).filter((a) => a.status === 'busy').length,
         totalAgents: this.agents.size,
-        activeSwarms: Array.from(this.swarms.values()).filter((s) => s.status === 'active').length,
+        activeSessions: Array.from(this.swarms.values()).filter((s) => s.status === 'active').length,
+        activeSwarms: Array.from(this.swarms.values()).filter((s) => s.status === 'active').length, // Backward compatibility
         averageTaskTime: '2.3 minutes',
         successRate: '94.2%',
       },
@@ -1035,7 +1050,8 @@ class SnowFlowMCPServer {
       operation: operation || 'all',
       totalTokens: 0, // Would need OpenAI integration to track real tokens
       breakdown: {
-        swarm_operations: this.tasks.size * 100, // Estimate based on operations
+        agent_operations: this.tasks.size * 100, // Estimate based on operations
+        swarm_operations: this.tasks.size * 100, // Backward compatibility
         neural_training: Object.keys(this.neuralModels).length * 5000,
         memory_operations: memoryStats.entries * 50,
         task_orchestration: this.tasks.size * 200,
@@ -1709,7 +1725,8 @@ class SnowFlowMCPServer {
       totalTasks: tasks.length,
       pendingTasks: tasks.filter(t => t.status === 'pending').length,
       completedTasks: tasks.filter(t => t.status === 'completed').length,
-      activeSwarms: swarms.filter(s => s.status === 'active').length,
+      activeSessions: swarms.filter(s => s.status === 'active').length,
+      activeSwarms: swarms.filter(s => s.status === 'active').length, // Backward compatibility
       memoryUsageKB: (JSON.stringify(this.memory).length / 1024).toFixed(2),
       patternsLearned: this.patterns.length
     };

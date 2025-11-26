@@ -39,7 +39,7 @@ snow-flow init
 snow-flow auth login
 
 # Start building
-snow-flow swarm "create an incident dashboard widget"
+snow-flow agent "create an incident dashboard widget"
 ```
 
 That's it. You're now developing ServiceNow through conversation.
@@ -82,16 +82,16 @@ All through natural conversation.
 
 ```bash
 # Create widgets
-snow-flow swarm "create incident dashboard with priority charts and SLA timers"
+snow-flow agent "create incident dashboard with priority charts and SLA timers"
 
 # Build automation
-snow-flow swarm "create business rule to auto-assign incidents by category"
+snow-flow agent "create business rule to auto-assign incidents by category"
 
 # Query data
-snow-flow swarm "show me all P1 incidents from last week"
+snow-flow agent "show me all P1 incidents from last week"
 
 # Complex workflows
-snow-flow swarm "analyze incident patterns and create a knowledge article with recommendations"
+snow-flow agent "analyze incident patterns and create a knowledge article with recommendations"
 ```
 
 ---
@@ -177,7 +177,7 @@ Snow-Flow works with any MCP-compatible tool:
 
 | Tool | Setup |
 |------|-------|
-| **snow-code** (recommended) | Built-in, just run `snow-flow swarm` |
+| **snow-code** (recommended) | Built-in, just run `snow-flow agent` |
 | **Claude Desktop** | Copy config to `claude_desktop_config.json` |
 | **Cursor** | Copy config to `.cursor/mcp.json` |
 | **Windsurf** | Copy config to `mcp_config.json` |
@@ -199,7 +199,7 @@ cat .snow-code/config.json
 snow-flow init          # Initialize project
 snow-flow auth login    # Authenticate (ServiceNow + enterprise)
 snow-flow auth status   # Check authentication status
-snow-flow swarm "task"  # Execute any ServiceNow task
+snow-flow agent "task"  # Execute any ServiceNow task
 
 # Direct commands
 snow-flow deploy        # Deploy artifacts
@@ -234,5 +234,5 @@ Elastic License 2.0 - Free for commercial use, cannot resell as competing SaaS.
 **Snow-Flow** - The free, open-source ServiceNow Build Agent alternative. Built by developers, for developers.
 
 ```bash
-npm install -g snow-flow && snow-flow init && snow-flow auth login && snow-flow swarm "hello servicenow"
+npm install -g snow-flow && snow-flow init && snow-flow auth login && snow-flow agent "hello servicenow"
 ```

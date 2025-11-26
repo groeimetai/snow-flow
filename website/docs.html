@@ -761,7 +761,7 @@
                 <ul class="sidebar-links">
                     <li><a href="#cli-commands">Commands</a></li>
                     <li><a href="#cli-auth">Auth Commands</a></li>
-                    <li><a href="#cli-swarm">Swarm Mode</a></li>
+                    <li><a href="#cli-agent">Agent Mode</a></li>
                 </ul>
             </div>
 
@@ -883,13 +883,13 @@ snow-flow auth status</pre>
                     </div>
                     <div class="code-content">
 <pre><span class="comment"># Run an autonomous task</span>
-snow-flow swarm <span class="string">"Create a widget showing high-priority incidents"</span>
+snow-flow agent <span class="string">"Create a widget showing high-priority incidents"</span>
 
 <span class="comment"># Query data</span>
-snow-flow swarm <span class="string">"Show me all incidents from last week"</span>
+snow-flow agent <span class="string">"Show me all incidents from last week"</span>
 
 <span class="comment"># Create automation</span>
-snow-flow swarm <span class="string">"Create a business rule for auto-assignment"</span></pre>
+snow-flow agent <span class="string">"Create a business rule for auto-assignment"</span></pre>
                     </div>
                 </div>
             </section>
@@ -1074,7 +1074,7 @@ ollama pull llama3.3
                                 <td>Check authentication status</td>
                             </tr>
                             <tr>
-                                <td><code>snow-flow swarm "task"</code></td>
+                                <td><code>snow-flow agent "task"</code></td>
                                 <td>Execute any ServiceNow task autonomously</td>
                             </tr>
                             <tr>
@@ -1115,11 +1115,11 @@ snow-flow auth refresh</pre>
                 </div>
             </section>
 
-            <!-- CLI Swarm -->
-            <section id="cli-swarm">
-                <h3>Swarm Mode</h3>
+            <!-- CLI Agent -->
+            <section id="cli-agent">
+                <h3>Agent Mode</h3>
 
-                <p>Swarm mode enables autonomous, multi-agent task execution:</p>
+                <p>Agent mode enables autonomous, multi-agent task execution:</p>
 
                 <div class="code-block">
                     <div class="code-header">
@@ -1128,22 +1128,22 @@ snow-flow auth refresh</pre>
                     </div>
                     <div class="code-content">
 <pre><span class="comment"># Create a widget</span>
-snow-flow swarm <span class="string">"Create a dashboard widget for incident metrics"</span>
+snow-flow agent <span class="string">"Create a dashboard widget for incident metrics"</span>
 
 <span class="comment"># Automate a process</span>
-snow-flow swarm <span class="string">"Create business rule to auto-assign incidents by category"</span>
+snow-flow agent <span class="string">"Create business rule to auto-assign incidents by category"</span>
 
 <span class="comment"># Query and analyze</span>
-snow-flow swarm <span class="string">"Analyze incident trends from the past month"</span>
+snow-flow agent <span class="string">"Analyze incident trends from the past month"</span>
 
 <span class="comment"># Complex task with multiple agents</span>
-snow-flow swarm <span class="string">"Build a complete workspace for IT support"</span></pre>
+snow-flow agent <span class="string">"Build a complete workspace for IT support"</span></pre>
                     </div>
                 </div>
 
                 <div class="callout success">
                     <div class="callout-title">Automatic Update Sets</div>
-                    <p>Swarm mode automatically creates isolated update sets for each task, ensuring clean deployments and easy rollbacks.</p>
+                    <p>Agent mode automatically creates isolated update sets for each task, ensuring clean deployments and easy rollbacks.</p>
                 </div>
             </section>
 
@@ -1422,7 +1422,7 @@ snow-flow auth login
 <span class="comment"># (Follow prompts to authorize)</span>
 
 <span class="comment"># Complete a Jira story autonomously</span>
-snow-flow swarm <span class="string">"Complete JIRA-1234"</span></pre>
+snow-flow agent <span class="string">"Complete JIRA-1234"</span></pre>
                     </div>
                 </div>
 
