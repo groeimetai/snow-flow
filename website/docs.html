@@ -2306,36 +2306,47 @@ which snow-flow</pre>
                 <h2>ES5 JavaScript Requirement</h2>
 
                 <div class="callout danger">
-                    <div class="callout-title">Critical: ServiceNow Only Supports ES5</div>
-                    <p>ServiceNow runs on Mozilla Rhino (2009), which <strong>ONLY supports ES5 JavaScript</strong>. Any ES6+ syntax will cause runtime errors.</p>
+                    <div class="callout-title">Recommended: Use ES5 JavaScript for Maximum Compatibility</div>
+                    <p>Many ServiceNow instances run on Mozilla Rhino, which <strong>only supports ES5 JavaScript</strong>. While newer ServiceNow releases may support some ES6+ features (like GraalVM in server-side scripts on newer versions), <strong>ES5 remains the safest approach</strong> to ensure your code works across all instances and versions.</p>
                 </div>
 
-                <h3>ES6+ Features That WILL CRASH</h3>
+                <div class="callout info">
+                    <div class="callout-title">Why ES5 is the Safe Default</div>
+                    <p>ServiceNow environments vary significantly: different versions, different JavaScript engines (Rhino vs GraalVM), and different configurations. Writing ES5 code guarantees compatibility across:</p>
+                    <ul style="margin: 1rem 0; padding-left: 1.5rem; color: var(--text-secondary);">
+                        <li>Older ServiceNow instances still on Rhino</li>
+                        <li>Background scripts and scheduled jobs</li>
+                        <li>Business rules and script includes</li>
+                        <li>Cross-instance deployments via Update Sets</li>
+                    </ul>
+                </div>
+
+                <h3>ES6+ Features That May Not Work</h3>
                 <div class="code-block">
                     <div class="code-header">
                         <span class="code-lang">javascript</span>
                     </div>
                     <div class="code-content">
-<pre><span class="comment">// ALL OF THESE BREAK SERVICENOW:</span>
-<span class="keyword">const</span> x = 5;                    <span class="comment">// SyntaxError</span>
-<span class="keyword">let</span> items = [];                 <span class="comment">// SyntaxError</span>
-<span class="keyword">const</span> fn = () => {};            <span class="comment">// SyntaxError</span>
-<span class="keyword">var</span> msg = <span class="string">`Hello ${name}`</span>;      <span class="comment">// SyntaxError</span>
-<span class="keyword">for</span> (<span class="keyword">let</span> item <span class="keyword">of</span> items) {}    <span class="comment">// SyntaxError</span>
-<span class="keyword">var</span> {name, id} = user;          <span class="comment">// SyntaxError</span>
-array.map(x => x.id);           <span class="comment">// SyntaxError</span>
-<span class="keyword">class</span> MyClass {}                <span class="comment">// SyntaxError</span></pre>
+<pre><span class="comment">// AVOID THESE FOR MAXIMUM COMPATIBILITY:</span>
+<span class="keyword">const</span> x = 5;                    <span class="comment">// May fail on Rhino</span>
+<span class="keyword">let</span> items = [];                 <span class="comment">// May fail on Rhino</span>
+<span class="keyword">const</span> fn = () => {};            <span class="comment">// May fail on Rhino</span>
+<span class="keyword">var</span> msg = <span class="string">`Hello ${name}`</span>;      <span class="comment">// May fail on Rhino</span>
+<span class="keyword">for</span> (<span class="keyword">let</span> item <span class="keyword">of</span> items) {}    <span class="comment">// May fail on Rhino</span>
+<span class="keyword">var</span> {name, id} = user;          <span class="comment">// May fail on Rhino</span>
+array.map(x => x.id);           <span class="comment">// Arrow functions may fail</span>
+<span class="keyword">class</span> MyClass {}                <span class="comment">// May fail on Rhino</span></pre>
                     </div>
                 </div>
 
-                <h3>Correct ES5 Syntax</h3>
+                <h3>Safe ES5 Syntax (Recommended)</h3>
                 <div class="code-block">
                     <div class="code-header">
                         <span class="code-lang">javascript</span>
                         <button class="code-copy" onclick="copyCode(this)">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment">// THESE WORK IN SERVICENOW:</span>
+<pre><span class="comment">// WORKS ON ALL SERVICENOW INSTANCES:</span>
 <span class="keyword">var</span> x = 5;
 <span class="keyword">var</span> items = [];
 <span class="keyword">function</span> <span class="function">fn</span>() { <span class="keyword">return</span> <span class="string">'result'</span>; }
@@ -2350,7 +2361,18 @@ array.map(x => x.id);           <span class="comment">// SyntaxError</span>
 
                 <div class="callout info">
                     <div class="callout-title">Automatic Validation</div>
-                    <p>Snow-Flow automatically validates all scripts for ES5 compliance before deployment.</p>
+                    <p>Snow-Flow automatically validates all scripts for ES5 compliance before deployment. This helps ensure your code will work regardless of which ServiceNow version or JavaScript engine your target instance uses.</p>
+                </div>
+
+                <div class="callout warning">
+                    <div class="callout-title">When ES6+ Might Work</div>
+                    <p>Some newer ServiceNow releases (particularly those using GraalVM) do support certain ES6+ features in specific contexts. However, Snow-Flow defaults to ES5 because:</p>
+                    <ul style="margin: 1rem 0; padding-left: 1.5rem; color: var(--text-secondary);">
+                        <li>Update Sets may be deployed to different instance versions</li>
+                        <li>Background scripts often run on different engines than UI scripts</li>
+                        <li>ES5 code is universally compatible across all ServiceNow environments</li>
+                    </ul>
+                    <p style="margin-top: 0.75rem;">If you know your specific target instance supports ES6+, you can disable ES5 validation in Snow-Flow settings.</p>
                 </div>
             </section>
 
