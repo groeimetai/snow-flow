@@ -690,6 +690,304 @@
                 display: none;
             }
         }
+
+        /* =====================================================
+           MOBILE NAVIGATION MENU
+           ===================================================== */
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            max-width: 320px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-subtle);
+            z-index: 1001;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            padding: 5rem 1.5rem 2rem;
+            overflow-y: auto;
+        }
+
+        .mobile-menu.active {
+            transform: translateX(0);
+        }
+
+        .mobile-menu-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mobile-menu-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .mobile-menu-links a {
+            display: block;
+            padding: 1rem 1.25rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .mobile-menu-links a:hover,
+        .mobile-menu-links a.active {
+            color: var(--text-primary);
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        .mobile-menu-links .nav-cta {
+            background: var(--accent-cyan);
+            color: var(--bg-primary) !important;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .mobile-menu-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .mobile-menu,
+            .mobile-menu-backdrop {
+                display: none !important;
+            }
+        }
+
+        /* =====================================================
+           MOBILE RESPONSIVE FIXES
+           ===================================================== */
+
+        /* Extra small devices (phones, < 480px) */
+        @media (max-width: 480px) {
+            .navbar-content {
+                padding: 0 1rem;
+            }
+
+            .logo-text {
+                font-size: 1.1rem;
+            }
+
+            .docs-content {
+                padding: 1.5rem 1rem;
+            }
+
+            .docs-content h1 {
+                font-size: 1.75rem;
+                line-height: 1.2;
+            }
+
+            .docs-content h2 {
+                font-size: 1.35rem;
+                margin: 2rem 0 1rem;
+            }
+
+            .docs-content h3 {
+                font-size: 1.1rem;
+            }
+
+            .docs-content h4 {
+                font-size: 0.95rem;
+            }
+
+            .docs-intro p {
+                font-size: 1rem;
+            }
+
+            .version-badge {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.8rem;
+            }
+
+            /* Code blocks mobile */
+            .code-block {
+                margin: 1rem -1rem;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+
+            .code-content {
+                padding: 0.875rem 1rem;
+            }
+
+            .code-content pre {
+                font-size: 0.8rem;
+            }
+
+            /* Tables mobile */
+            .table-wrapper {
+                margin: 1rem -1rem;
+            }
+
+            table {
+                font-size: 0.8rem;
+                min-width: 500px;
+            }
+
+            th, td {
+                padding: 0.625rem 0.75rem;
+            }
+
+            td code {
+                font-size: 0.7rem;
+            }
+
+            /* Cards mobile */
+            .card {
+                padding: 1.25rem;
+            }
+
+            .card-grid {
+                gap: 0.75rem;
+            }
+
+            /* Callouts mobile */
+            .callout {
+                padding: 1rem 1.25rem;
+                margin: 1rem 0;
+            }
+
+            /* Sidebar mobile */
+            .sidebar {
+                width: 85%;
+                max-width: 300px;
+            }
+
+            /* Buttons positioning */
+            .sidebar-toggle {
+                bottom: 1.5rem;
+                left: 0.75rem;
+                width: 44px;
+                height: 44px;
+            }
+
+            .scroll-top {
+                bottom: 1.5rem;
+                right: 0.75rem;
+                width: 44px;
+                height: 44px;
+            }
+
+            /* Section divider */
+            .section-divider {
+                margin: 2.5rem 0;
+            }
+
+            /* Lists */
+            .docs-content ul, .docs-content ol {
+                margin-left: 1.25rem;
+            }
+        }
+
+        /* Small devices (large phones, 481px - 767px) */
+        @media (min-width: 481px) and (max-width: 767px) {
+            .docs-content {
+                padding: 2rem 1.5rem;
+            }
+
+            .docs-content h1 {
+                font-size: 2rem;
+            }
+
+            .docs-content h2 {
+                font-size: 1.5rem;
+            }
+
+            .code-content pre {
+                font-size: 0.825rem;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Tablets (768px - 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .docs-content {
+                padding: 2.5rem 2rem;
+            }
+
+            .docs-content h1 {
+                font-size: 2.25rem;
+            }
+        }
+
+        /* Prevent horizontal scroll */
+        html, body {
+            overflow-x: hidden;
+        }
+
+        /* Better touch targets */
+        @media (hover: none) and (pointer: coarse) {
+            .sidebar-links a {
+                padding: 0.75rem;
+                min-height: 44px;
+            }
+
+            .code-copy {
+                padding: 0.5rem 1rem;
+                min-height: 44px;
+            }
+
+            .nav-cta {
+                padding: 0.625rem 1.25rem;
+            }
+        }
+
+        /* Safe area insets for notched devices */
+        @supports (padding: max(0px)) {
+            .navbar {
+                padding-left: max(1rem, env(safe-area-inset-left));
+                padding-right: max(1rem, env(safe-area-inset-right));
+            }
+
+            .docs-content {
+                padding-left: max(1rem, env(safe-area-inset-left));
+                padding-right: max(1rem, env(safe-area-inset-right));
+            }
+
+            .sidebar-toggle {
+                left: max(0.75rem, env(safe-area-inset-left));
+                bottom: max(1.5rem, env(safe-area-inset-bottom));
+            }
+
+            .scroll-top {
+                right: max(0.75rem, env(safe-area-inset-right));
+                bottom: max(1.5rem, env(safe-area-inset-bottom));
+            }
+        }
     </style>
 </head>
 <body>
@@ -729,6 +1027,19 @@
             </button>
         </div>
     </nav>
+
+    <!-- Mobile Navigation Menu -->
+    <div class="mobile-menu-backdrop" id="mobileMenuBackdrop"></div>
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">&times;</button>
+        <ul class="mobile-menu-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="docs.html" class="active">Documentation</a></li>
+            <li><a href="index.html#pricing">Pricing</a></li>
+            <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
+            <li><a href="https://portal.snow-flow.dev" class="nav-cta">Portal</a></li>
+        </ul>
+    </div>
 
     <!-- Sidebar Backdrop -->
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
@@ -1988,6 +2299,35 @@ snow-flow agent <span class="string">"Complete JIRA-1234"</span></pre>
     </button>
 
     <script>
+        // Mobile Menu Toggle
+        var mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        var mobileMenu = document.getElementById('mobileMenu');
+        var mobileMenuBackdrop = document.getElementById('mobileMenuBackdrop');
+        var mobileMenuClose = document.getElementById('mobileMenuClose');
+
+        function toggleMobileMenu() {
+            mobileMenuBtn.classList.toggle('active');
+            mobileMenu.classList.toggle('active');
+            mobileMenuBackdrop.classList.toggle('active');
+            document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
+        }
+
+        function closeMobileMenu() {
+            mobileMenuBtn.classList.remove('active');
+            mobileMenu.classList.remove('active');
+            mobileMenuBackdrop.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+        mobileMenuBackdrop.addEventListener('click', closeMobileMenu);
+        mobileMenuClose.addEventListener('click', closeMobileMenu);
+
+        // Close mobile menu on link click
+        document.querySelectorAll('.mobile-menu-links a').forEach(function(link) {
+            link.addEventListener('click', closeMobileMenu);
+        });
+
         // Sidebar Toggle
         var sidebar = document.getElementById('sidebar');
         var sidebarToggle = document.getElementById('sidebarToggle');
@@ -1999,8 +2339,12 @@ snow-flow agent <span class="string">"Complete JIRA-1234"</span></pre>
             document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
         }
 
-        sidebarToggle.addEventListener('click', toggleSidebar);
-        sidebarBackdrop.addEventListener('click', toggleSidebar);
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', toggleSidebar);
+        }
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', toggleSidebar);
+        }
 
         // Close sidebar on link click (mobile)
         document.querySelectorAll('.sidebar-links a').forEach(function(link) {
@@ -2009,6 +2353,18 @@ snow-flow agent <span class="string">"Complete JIRA-1234"</span></pre>
                     toggleSidebar();
                 }
             });
+        });
+
+        // Close menus on resize to desktop
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                closeMobileMenu();
+            }
+            if (window.innerWidth >= 1024 && sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+                sidebarBackdrop.classList.remove('active');
+                document.body.style.overflow = '';
+            }
         });
 
         // Active link on scroll
