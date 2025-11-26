@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Documentation | Snow-Flow</title>
+    <meta name="description" content="Complete documentation for Snow-Flow - the open-source ServiceNow development platform. Installation, authentication, CLI commands, MCP tools, and best practices.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='mountain' x1='16' y1='9' x2='16' y2='23' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23FFFFFF'/%3E%3Cstop offset='100%25' stop-color='%2300D9FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M4 23 L10 9 L16 15 L22 9 L28 23 Z' fill='url(%23mountain)' stroke='%2300D9FF' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* =====================================================
+           SNOW-FLOW DOCS - 2025 DESIGN SYSTEM
+           ===================================================== */
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #050508;
+            --bg-secondary: #0a0a0f;
+            --bg-card: #0d0d14;
+            --bg-code: #0f0f18;
+
+            --accent-cyan: #00D9FF;
+            --accent-blue: #3B82F6;
+            --accent-purple: #8B5CF6;
+            --accent-green: #10B981;
+            --accent-yellow: #F59E0B;
+            --accent-red: #EF4444;
+
+            --text-primary: #FFFFFF;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-medium: rgba(255, 255, 255, 0.1);
+
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+            --sidebar-width: 280px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 100px;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::selection {
+            background: rgba(0, 217, 255, 0.3);
+            color: white;
+        }
+
+        /* Background */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 217, 255, 0.08), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 0.875rem 0;
+            background: rgba(5, 5, 8, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .navbar-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-text .snow { color: var(--text-primary); }
+        .logo-text .flow { color: var(--accent-cyan); }
+
+        .nav-links {
+            display: none;
+            list-style: none;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        @media (min-width: 768px) {
+            .nav-links {
+                display: flex;
+            }
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-cta {
+            background: var(--accent-cyan);
+            color: var(--bg-primary) !important;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600 !important;
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        @media (min-width: 768px) {
+            .mobile-menu-btn {
+                display: none;
+            }
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 100%;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* Layout */
+        .docs-layout {
+            display: flex;
+            min-height: 100vh;
+            padding-top: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - 60px);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-subtle);
+            overflow-y: auto;
+            padding: 2rem 0;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar.active {
+            transform: translateX(0);
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar {
+                transform: translateX(0);
+            }
+        }
+
+        .sidebar-section {
+            padding: 0 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .sidebar-links {
+            list-style: none;
+        }
+
+        .sidebar-links a {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            margin: 0.125rem 0;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-links a:hover {
+            color: var(--text-primary);
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        .sidebar-links a.active {
+            color: var(--accent-cyan);
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 99;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar-backdrop {
+                display: none;
+            }
+        }
+
+        /* Main Content */
+        .docs-content {
+            flex: 1;
+            padding: 3rem 2rem;
+            max-width: 900px;
+            margin-left: 0;
+        }
+
+        @media (min-width: 1024px) {
+            .docs-content {
+                margin-left: var(--sidebar-width);
+                padding: 3rem 4rem;
+            }
+        }
+
+        /* Typography */
+        .docs-content h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .docs-content h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 3rem 0 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-content h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--accent-cyan);
+        }
+
+        .docs-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+        }
+
+        .docs-content p {
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        .docs-content a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        .docs-content a:hover {
+            text-decoration: underline;
+        }
+
+        .docs-content ul, .docs-content ol {
+            margin: 1rem 0 1.5rem 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .docs-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .docs-content strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: var(--bg-code);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .code-lang {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .code-copy {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-medium);
+            color: var(--text-secondary);
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .code-copy:hover {
+            background: rgba(0, 217, 255, 0.1);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .code-content {
+            padding: 1rem 1.25rem;
+            overflow-x: auto;
+        }
+
+        .code-content pre {
+            margin: 0;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .code-content .comment { color: var(--text-muted); }
+        .code-content .keyword { color: var(--accent-purple); }
+        .code-content .string { color: var(--accent-green); }
+        .code-content .function { color: var(--accent-cyan); }
+        .code-content .variable { color: var(--accent-yellow); }
+
+        /* Inline Code */
+        .docs-content code {
+            font-family: var(--font-mono);
+            font-size: 0.875em;
+            background: rgba(0, 217, 255, 0.1);
+            color: var(--accent-cyan);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+        }
+
+        /* Callouts */
+        .callout {
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-title {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .callout p {
+            margin-bottom: 0;
+        }
+
+        .callout.info {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--accent-blue);
+        }
+
+        .callout.info .callout-title {
+            color: var(--accent-blue);
+        }
+
+        .callout.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--accent-yellow);
+        }
+
+        .callout.warning .callout-title {
+            color: var(--accent-yellow);
+        }
+
+        .callout.danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--accent-red);
+        }
+
+        .callout.danger .callout-title {
+            color: var(--accent-red);
+        }
+
+        .callout.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--accent-green);
+        }
+
+        .callout.success .callout-title {
+            color: var(--accent-green);
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        @media (min-width: 640px) {
+            .card-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-desc {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 0.875rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        th {
+            background: var(--bg-card);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        td {
+            color: var(--text-secondary);
+        }
+
+        td code {
+            font-size: 0.8rem;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.625rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 100px;
+        }
+
+        .badge-enterprise {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: var(--bg-primary);
+        }
+
+        .badge-new {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        /* Section Divider */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-medium), transparent);
+            margin: 4rem 0;
+        }
+
+        /* Intro Section */
+        .docs-intro {
+            padding-bottom: 2rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-intro p {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+        }
+
+        /* Version Badge */
+        .version-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 100px;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .version-badge .v {
+            color: var(--text-muted);
+        }
+
+        .version-badge .num {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        /* Scroll to top */
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 48px;
+            height: 48px;
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scroll-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-top:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 217, 255, 0.3);
+        }
+
+        /* Mobile sidebar toggle */
+        .sidebar-toggle {
+            position: fixed;
+            bottom: 2rem;
+            left: 1rem;
+            width: 48px;
+            height: 48px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            color: var(--text-primary);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar-toggle {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="logo">
+                <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logo-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#FFFFFF"/>
+                            <stop offset="100%" stop-color="#00D9FF"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#logo-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
+                </svg>
+                <span class="logo-text">
+                    <span class="snow">SNOW</span><span class="flow">FLOW</span>
+                </span>
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="docs.html" style="color: var(--accent-cyan);">Docs</a></li>
+                <li><a href="index.html#pricing">Pricing</a></li>
+                <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
+                <li><a href="https://portal.snow-flow.dev" class="nav-cta">Portal</a></li>
+            </ul>
+
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar Backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Layout -->
+    <div class="docs-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Getting Started</div>
+                <ul class="sidebar-links">
+                    <li><a href="#introduction" class="active">Introduction</a></li>
+                    <li><a href="#installation">Installation</a></li>
+                    <li><a href="#quickstart">Quick Start</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Authentication</div>
+                <ul class="sidebar-links">
+                    <li><a href="#auth-overview">Overview</a></li>
+                    <li><a href="#servicenow-oauth">ServiceNow OAuth</a></li>
+                    <li><a href="#credential-storage">Credential Storage</a></li>
+                    <li><a href="#llm-providers">LLM Providers</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">CLI Reference</div>
+                <ul class="sidebar-links">
+                    <li><a href="#cli-commands">Commands</a></li>
+                    <li><a href="#cli-auth">Auth Commands</a></li>
+                    <li><a href="#cli-swarm">Swarm Mode</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">MCP Tools</div>
+                <ul class="sidebar-links">
+                    <li><a href="#mcp-overview">Overview</a></li>
+                    <li><a href="#mcp-tools">Tool Categories</a></li>
+                    <li><a href="#mcp-config">Configuration</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Best Practices</div>
+                <ul class="sidebar-links">
+                    <li><a href="#es5-javascript">ES5 JavaScript</a></li>
+                    <li><a href="#update-sets">Update Sets</a></li>
+                    <li><a href="#widget-coherence">Widget Coherence</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Enterprise</div>
+                <ul class="sidebar-links">
+                    <li><a href="#enterprise-features">Features</a></li>
+                    <li><a href="#integrations">Integrations</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="docs-content">
+            <div class="docs-intro" id="introduction">
+                <div class="version-badge">
+                    <span class="v">Version</span>
+                    <span class="num">8.38.3</span>
+                </div>
+                <h1>Snow-Flow Documentation</h1>
+                <p>
+                    Snow-Flow is an open-source, autonomous ServiceNow development platform.
+                    Use <strong>your approved AI models</strong> (Claude, GPT, DeepSeek, or local models)
+                    to build ServiceNow solutions through natural conversation in your terminal.
+                </p>
+            </div>
+
+            <!-- Installation -->
+            <section id="installation">
+                <h2>Installation</h2>
+
+                <h3>Requirements</h3>
+                <ul>
+                    <li><strong>Node.js 18+</strong> - Required runtime</li>
+                    <li><strong>npm 8.0+</strong> - Package manager</li>
+                    <li><strong>ServiceNow instance</strong> - With OAuth configured</li>
+                    <li><strong>LLM provider</strong> - API key or local Ollama</li>
+                </ul>
+
+                <h3>Install via npm</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Global installation (recommended)</span>
+npm install -g snow-flow
+
+<span class="comment"># Verify installation</span>
+snow-flow --version</pre>
+                    </div>
+                </div>
+
+                <div class="callout info">
+                    <div class="callout-title">Tip</div>
+                    <p>For the best experience, we recommend using Snow-Flow with <a href="https://github.com/groeimetai/snow-code">SnowCode</a> - our AI-powered IDE based on Claude Code.</p>
+                </div>
+            </section>
+
+            <!-- Quick Start -->
+            <section id="quickstart">
+                <h2>Quick Start</h2>
+
+                <h3>1. Initialize Project</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Initialize Snow-Flow in your project</span>
+snow-flow init
+
+<span class="comment"># This creates:</span>
+<span class="comment"># - .mcp.json (MCP server configuration)</span>
+<span class="comment"># - CLAUDE.md (AI agent instructions)</span></pre>
+                    </div>
+                </div>
+
+                <h3>2. Authenticate</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Login to ServiceNow and configure LLM provider</span>
+snow-flow auth login
+
+<span class="comment"># Check authentication status</span>
+snow-flow auth status</pre>
+                    </div>
+                </div>
+
+                <h3>3. Start Building</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Run an autonomous task</span>
+snow-flow swarm <span class="string">"Create a widget showing high-priority incidents"</span>
+
+<span class="comment"># Query data</span>
+snow-flow swarm <span class="string">"Show me all incidents from last week"</span>
+
+<span class="comment"># Create automation</span>
+snow-flow swarm <span class="string">"Create a business rule for auto-assignment"</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- Authentication Overview -->
+            <section id="auth-overview">
+                <h2>Authentication Overview</h2>
+                <p>
+                    Snow-Flow uses OAuth 2.0 for secure ServiceNow authentication.
+                    Credentials are stored securely and automatically refreshed.
+                </p>
+
+                <h3>Authentication Priority</h3>
+                <p>Snow-Flow checks credentials in this order:</p>
+                <ol>
+                    <li><strong>Environment variables</strong> - Highest priority</li>
+                    <li><strong>auth.json</strong> - Auto-loaded from snow-code</li>
+                    <li><strong>.mcp.json credentials</strong> - Project-specific</li>
+                    <li><strong>Interactive login</strong> - Prompts if none found</li>
+                </ol>
+            </section>
+
+            <!-- ServiceNow OAuth -->
+            <section id="servicenow-oauth">
+                <h3>ServiceNow OAuth Setup</h3>
+
+                <p>Create an OAuth application in your ServiceNow instance:</p>
+
+                <ol>
+                    <li>Navigate to <strong>System OAuth &rarr; Application Registry</strong></li>
+                    <li>Click <strong>New</strong> &rarr; Create an OAuth API endpoint for external clients</li>
+                    <li>Configure:
+                        <ul>
+                            <li><code>Name</code>: Snow-Flow</li>
+                            <li><code>Redirect URL</code>: <code>http://localhost:3005/callback</code></li>
+                            <li><code>Refresh Token Lifespan</code>: <code>0</code> (unlimited)</li>
+                        </ul>
+                    </li>
+                    <li>Copy the <strong>Client ID</strong> and <strong>Client Secret</strong></li>
+                </ol>
+
+                <div class="callout warning">
+                    <div class="callout-title">Security Note</div>
+                    <p>Never commit OAuth credentials to version control. Use environment variables or the secure credential storage.</p>
+                </div>
+            </section>
+
+            <!-- Credential Storage -->
+            <section id="credential-storage">
+                <h3>Credential Storage</h3>
+
+                <p>Snow-Flow stores credentials securely at:</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">path</span>
+                    </div>
+                    <div class="code-content">
+<pre>~/.local/share/snow-code/auth.json</pre>
+                    </div>
+                </div>
+
+                <p>This file is:</p>
+                <ul>
+                    <li>Created automatically by <code>snow-flow auth login</code></li>
+                    <li>Contains encrypted OAuth tokens</li>
+                    <li>Tokens are automatically refreshed</li>
+                    <li>Never synced to cloud or version control</li>
+                </ul>
+
+                <h4>Environment Variables (Alternative)</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># ServiceNow credentials</span>
+<span class="variable">SERVICENOW_INSTANCE_URL</span>=https://your-instance.service-now.com
+<span class="variable">SERVICENOW_CLIENT_ID</span>=your-client-id
+<span class="variable">SERVICENOW_CLIENT_SECRET</span>=your-client-secret
+
+<span class="comment"># Optional: Pre-configured refresh token</span>
+<span class="variable">SERVICENOW_REFRESH_TOKEN</span>=your-refresh-token</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LLM Providers -->
+            <section id="llm-providers">
+                <h3>LLM Providers</h3>
+
+                <p>Snow-Flow supports <strong>75+ AI providers</strong>. Configure via environment variables:</p>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Provider</th>
+                                <th>Environment Variable</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Claude (Anthropic)</strong></td>
+                                <td><code>ANTHROPIC_API_KEY</code></td>
+                                <td>Recommended</td>
+                            </tr>
+                            <tr>
+                                <td><strong>GPT-4 (OpenAI)</strong></td>
+                                <td><code>OPENAI_API_KEY</code></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Gemini (Google)</strong></td>
+                                <td><code>GOOGLE_API_KEY</code></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td><strong>DeepSeek</strong></td>
+                                <td><code>DEEPSEEK_API_KEY</code></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ollama (Local)</strong></td>
+                                <td><code>OLLAMA_BASE_URL</code></td>
+                                <td>100% Free, runs locally</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Using Ollama (Free, Local)</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Install Ollama</span>
+curl -fsSL https://ollama.com/install.sh | sh
+
+<span class="comment"># Pull a model</span>
+ollama pull llama3.3
+
+<span class="comment"># Configure Snow-Flow</span>
+<span class="variable">DEFAULT_LLM_PROVIDER</span>=ollama
+<span class="variable">OLLAMA_BASE_URL</span>=http://localhost:11434
+<span class="variable">DEFAULT_OLLAMA_MODEL</span>=llama3.3</pre>
+                    </div>
+                </div>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- CLI Commands -->
+            <section id="cli-commands">
+                <h2>CLI Commands</h2>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>snow-flow init</code></td>
+                                <td>Initialize project with config files</td>
+                            </tr>
+                            <tr>
+                                <td><code>snow-flow auth login</code></td>
+                                <td>Authenticate with ServiceNow & LLM provider</td>
+                            </tr>
+                            <tr>
+                                <td><code>snow-flow auth status</code></td>
+                                <td>Check authentication status</td>
+                            </tr>
+                            <tr>
+                                <td><code>snow-flow swarm "task"</code></td>
+                                <td>Execute any ServiceNow task autonomously</td>
+                            </tr>
+                            <tr>
+                                <td><code>snow-flow status</code></td>
+                                <td>Show system status</td>
+                            </tr>
+                            <tr>
+                                <td><code>snow-flow monitor</code></td>
+                                <td>Real-time monitoring dashboard</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- CLI Auth -->
+            <section id="cli-auth">
+                <h3>Auth Commands</h3>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Full interactive login</span>
+snow-flow auth login
+
+<span class="comment"># Check current authentication</span>
+snow-flow auth status
+
+<span class="comment"># Logout and clear credentials</span>
+snow-flow auth logout
+
+<span class="comment"># Refresh OAuth token manually</span>
+snow-flow auth refresh</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CLI Swarm -->
+            <section id="cli-swarm">
+                <h3>Swarm Mode</h3>
+
+                <p>Swarm mode enables autonomous, multi-agent task execution:</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Create a widget</span>
+snow-flow swarm <span class="string">"Create a dashboard widget for incident metrics"</span>
+
+<span class="comment"># Automate a process</span>
+snow-flow swarm <span class="string">"Create business rule to auto-assign incidents by category"</span>
+
+<span class="comment"># Query and analyze</span>
+snow-flow swarm <span class="string">"Analyze incident trends from the past month"</span>
+
+<span class="comment"># Complex task with multiple agents</span>
+snow-flow swarm <span class="string">"Build a complete workspace for IT support"</span></pre>
+                    </div>
+                </div>
+
+                <div class="callout success">
+                    <div class="callout-title">Automatic Update Sets</div>
+                    <p>Swarm mode automatically creates isolated update sets for each task, ensuring clean deployments and easy rollbacks.</p>
+                </div>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- MCP Overview -->
+            <section id="mcp-overview">
+                <h2>MCP Tools Overview</h2>
+
+                <p>
+                    Snow-Flow provides <strong>410+ MCP tools</strong> across 23 specialized servers,
+                    all accessible through natural language commands.
+                </p>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-title">Unified Architecture</div>
+                        <div class="card-desc">All tools consolidated into a single, efficient MCP server with auto-discovery.</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">87 Tool Categories</div>
+                        <div class="card-desc">From incident management to UI Builder, CMDB to ML analytics.</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Single OAuth</div>
+                        <div class="card-desc">One authentication flow for all tools, no duplication.</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">ES5 Validation</div>
+                        <div class="card-desc">All scripts automatically validated for ServiceNow compatibility.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MCP Tools -->
+            <section id="mcp-tools">
+                <h3>Tool Categories</h3>
+
+                <h4>Deployment & Development</h4>
+                <ul>
+                    <li><code>snow_create_artifact</code> - Create widgets, pages, scripts</li>
+                    <li><code>snow_validate_deployment</code> - Pre-deployment validation</li>
+                    <li><code>snow_pull_artifact</code> - Pull to local files for editing</li>
+                    <li><code>snow_push_artifact</code> - Push local changes back</li>
+                </ul>
+
+                <h4>Operations</h4>
+                <ul>
+                    <li><code>snow_query_table</code> - Universal table querying</li>
+                    <li><code>snow_create_incident</code> - Create/manage incidents</li>
+                    <li><code>snow_update_record</code> - Update any table</li>
+                    <li><code>snow_discover_table_fields</code> - Schema discovery</li>
+                </ul>
+
+                <h4>Automation</h4>
+                <ul>
+                    <li><code>snow_execute_script_with_output</code> - Run scripts (ES5 only!)</li>
+                    <li><code>snow_schedule_job</code> - Create scheduled jobs</li>
+                    <li><code>snow_create_business_rule</code> - Business rule creation</li>
+                    <li><code>snow_get_logs</code> - Access system logs</li>
+                </ul>
+
+                <h4>Update Sets</h4>
+                <ul>
+                    <li><code>snow_update_set_manage</code> - Create, complete, switch update sets</li>
+                    <li><code>snow_update_set_query</code> - Query update set status</li>
+                </ul>
+            </section>
+
+            <!-- MCP Config -->
+            <section id="mcp-config">
+                <h3>MCP Configuration</h3>
+
+                <p>The <code>.mcp.json</code> file configures MCP servers:</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">json</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  <span class="string">"mcp"</span>: {
+    <span class="string">"servicenow-unified"</span>: {
+      <span class="string">"type"</span>: <span class="string">"local"</span>,
+      <span class="string">"command"</span>: [<span class="string">"node"</span>, <span class="string">"dist/mcp/servicenow-mcp-unified/index.js"</span>],
+      <span class="string">"environment"</span>: {
+        <span class="string">"SERVICENOW_INSTANCE_URL"</span>: <span class="string">"{{SNOW_INSTANCE}}"</span>,
+        <span class="string">"SERVICENOW_CLIENT_ID"</span>: <span class="string">"{{SNOW_CLIENT_ID}}"</span>,
+        <span class="string">"SERVICENOW_CLIENT_SECRET"</span>: <span class="string">"{{SNOW_CLIENT_SECRET}}"</span>
+      },
+      <span class="string">"enabled"</span>: <span class="keyword">true</span>
+    }
+  }
+}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- ES5 JavaScript -->
+            <section id="es5-javascript">
+                <h2>ES5 JavaScript Requirement</h2>
+
+                <div class="callout danger">
+                    <div class="callout-title">Critical: ServiceNow Only Supports ES5</div>
+                    <p>ServiceNow runs on Mozilla Rhino (2009), which <strong>ONLY supports ES5 JavaScript</strong>. Any ES6+ syntax will cause runtime errors.</p>
+                </div>
+
+                <h3>ES6+ Features That WILL CRASH</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">javascript</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment">// ALL OF THESE BREAK SERVICENOW:</span>
+<span class="keyword">const</span> x = 5;                    <span class="comment">// SyntaxError</span>
+<span class="keyword">let</span> items = [];                 <span class="comment">// SyntaxError</span>
+<span class="keyword">const</span> fn = () => {};            <span class="comment">// SyntaxError</span>
+<span class="keyword">var</span> msg = <span class="string">`Hello ${name}`</span>;      <span class="comment">// SyntaxError</span>
+<span class="keyword">for</span> (<span class="keyword">let</span> item <span class="keyword">of</span> items) {}    <span class="comment">// SyntaxError</span>
+<span class="keyword">var</span> {name, id} = user;          <span class="comment">// SyntaxError</span>
+array.map(x => x.id);           <span class="comment">// SyntaxError</span>
+<span class="keyword">class</span> MyClass {}                <span class="comment">// SyntaxError</span></pre>
+                    </div>
+                </div>
+
+                <h3>Correct ES5 Syntax</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">javascript</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment">// THESE WORK IN SERVICENOW:</span>
+<span class="keyword">var</span> x = 5;
+<span class="keyword">var</span> items = [];
+<span class="keyword">function</span> <span class="function">fn</span>() { <span class="keyword">return</span> <span class="string">'result'</span>; }
+<span class="keyword">var</span> msg = <span class="string">'Hello '</span> + name;
+<span class="keyword">for</span> (<span class="keyword">var</span> i = 0; i < items.length; i++) {
+  <span class="keyword">var</span> item = items[i];
+}
+<span class="keyword">var</span> name = user.name;
+<span class="keyword">var</span> id = user.id;</pre>
+                    </div>
+                </div>
+
+                <div class="callout info">
+                    <div class="callout-title">Automatic Validation</div>
+                    <p>Snow-Flow automatically validates all scripts for ES5 compliance before deployment.</p>
+                </div>
+            </section>
+
+            <!-- Update Sets -->
+            <section id="update-sets">
+                <h2>Update Set Management</h2>
+
+                <p>Update Sets track ALL changes for deployment between instances. <strong>Always create an Update Set before making changes.</strong></p>
+
+                <h3>Workflow</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">javascript</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment">// 1. Create Update Set FIRST</span>
+snow_update_set_manage({
+  action: <span class="string">'create'</span>,
+  name: <span class="string">"Feature: Incident Dashboard"</span>,
+  description: <span class="string">"Widget showing incident metrics"</span>
+});
+
+<span class="comment">// 2. Develop (changes auto-tracked)</span>
+snow_create_artifact({...});
+snow_create_business_rule({...});
+
+<span class="comment">// 3. Complete Update Set</span>
+snow_update_set_manage({
+  action: <span class="string">'complete'</span>,
+  update_set_id: <span class="string">'sys_id_here'</span>
+});</pre>
+                    </div>
+                </div>
+
+                <div class="callout warning">
+                    <div class="callout-title">OAuth Context</div>
+                    <p>Snow-Flow uses a service account for API calls. Update Sets are automatically set as current for this account when <code>auto_switch=true</code> (default).</p>
+                </div>
+            </section>
+
+            <!-- Widget Coherence -->
+            <section id="widget-coherence">
+                <h2>Widget Coherence</h2>
+
+                <p>ServiceNow widgets require perfect synchronization between <strong>Server Script</strong>, <strong>Client Script</strong>, and <strong>HTML Template</strong>.</p>
+
+                <h3>The Three-Way Contract</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">javascript</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment">// SERVER SCRIPT - Initialize data</span>
+data.message = <span class="string">"Hello"</span>;
+data.items = [];
+<span class="keyword">if</span> (input.action === <span class="string">'loadItems'</span>) {
+  data.items = getItems();
+}
+
+<span class="comment">// CLIENT SCRIPT - Handle UI interactions</span>
+c.loadItems = <span class="keyword">function</span>() {
+  c.server.get({action: <span class="string">'loadItems'</span>}).then(<span class="keyword">function</span>() {
+    console.log(c.data.items);
+  });
+};
+
+<span class="comment">// HTML TEMPLATE - Display data</span>
+&lt;button ng-click=<span class="string">"loadItems()"</span>&gt;Load&lt;/button&gt;
+&lt;div ng-repeat=<span class="string">"item in data.items"</span>&gt;{{item}}&lt;/div&gt;</pre>
+                    </div>
+                </div>
+
+                <h3>Coherence Checklist</h3>
+                <ul>
+                    <li>Every <code>data.property</code> in server is used in HTML/client</li>
+                    <li>Every <code>ng-click="method()"</code> in HTML has matching <code>c.method</code> in client</li>
+                    <li>Every <code>c.server.get({action})</code> in client has matching <code>if(input.action)</code> in server</li>
+                </ul>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- Enterprise Features -->
+            <section id="enterprise-features">
+                <h2>Enterprise Features <span class="badge badge-enterprise">Enterprise</span></h2>
+
+                <p>Snow-Flow Enterprise adds powerful integrations for team workflows:</p>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-title">Jira Integration</div>
+                        <div class="card-desc">Pull stories, auto-update tickets, bidirectional sync with your sprint backlog.</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Azure DevOps</div>
+                        <div class="card-desc">Connect to Azure Boards, complete work items, integrate with pipelines.</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Confluence</div>
+                        <div class="card-desc">Auto-generate technical documentation, keep wiki in sync with code.</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Stakeholder Seats</div>
+                        <div class="card-desc">Read-only access for non-developers to query and get answers safely.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Integrations -->
+            <section id="integrations">
+                <h3>Integration Setup</h3>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Login with enterprise features</span>
+snow-flow auth login
+
+<span class="comment"># Connect Jira</span>
+<span class="comment"># (Follow prompts to authorize)</span>
+
+<span class="comment"># Complete a Jira story autonomously</span>
+snow-flow swarm <span class="string">"Complete JIRA-1234"</span></pre>
+                    </div>
+                </div>
+
+                <div class="callout info">
+                    <div class="callout-title">Enterprise Portal</div>
+                    <p>Manage licenses, users, and integrations at <a href="https://portal.snow-flow.dev">portal.snow-flow.dev</a></p>
+                </div>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- Footer -->
+            <footer style="text-align: center; padding: 3rem 0; color: var(--text-muted);">
+                <p>
+                    <strong>Snow-Flow Documentation</strong><br>
+                    <a href="https://github.com/groeimetai/snow-flow">GitHub</a> &middot;
+                    <a href="https://github.com/groeimetai/snow-flow/issues">Report Issue</a> &middot;
+                    <a href="mailto:support@snow-flow.dev">Support</a>
+                </p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Sidebar Toggle (Mobile) -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12h18M3 6h18M3 18h18"/>
+        </svg>
+    </button>
+
+    <!-- Scroll to Top -->
+    <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 15l-6-6-6 6"/>
+        </svg>
+    </button>
+
+    <script>
+        // Sidebar Toggle
+        var sidebar = document.getElementById('sidebar');
+        var sidebarToggle = document.getElementById('sidebarToggle');
+        var sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('active');
+            sidebarBackdrop.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+        }
+
+        sidebarToggle.addEventListener('click', toggleSidebar);
+        sidebarBackdrop.addEventListener('click', toggleSidebar);
+
+        // Close sidebar on link click (mobile)
+        document.querySelectorAll('.sidebar-links a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 1024 && sidebar.classList.contains('active')) {
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // Active link on scroll
+        var sections = document.querySelectorAll('section[id]');
+        var sidebarLinks = document.querySelectorAll('.sidebar-links a');
+
+        function updateActiveLink() {
+            var scrollPos = window.scrollY + 150;
+
+            sections.forEach(function(section) {
+                var top = section.offsetTop;
+                var height = section.offsetHeight;
+                var id = section.getAttribute('id');
+
+                if (scrollPos >= top && scrollPos < top + height) {
+                    sidebarLinks.forEach(function(link) {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === '#' + id) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateActiveLink);
+
+        // Scroll to top button
+        var scrollTopBtn = document.getElementById('scrollTop');
+
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 500) {
+                scrollTopBtn.classList.add('visible');
+            } else {
+                scrollTopBtn.classList.remove('visible');
+            }
+        });
+
+        scrollTopBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Copy code functionality
+        function copyCode(button) {
+            var codeBlock = button.closest('.code-block');
+            var code = codeBlock.querySelector('pre').textContent;
+
+            navigator.clipboard.writeText(code).then(function() {
+                var originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.color = 'var(--accent-green)';
+                button.style.borderColor = 'var(--accent-green)';
+
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.color = '';
+                    button.style.borderColor = '';
+                }, 2000);
+            });
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                var target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
