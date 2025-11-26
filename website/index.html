@@ -2,94 +2,177 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Snow-Flow | Enterprise ServiceNow Development Platform</title>
-    <meta name="description" content="AI-powered ServiceNow development with 410+ tools, seat-based licensing with developer & stakeholder roles, managed SaaS infrastructure, and 99.9% SLA. Built for enterprise teams.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Snow-Flow | Break Free from ServiceNow Vendor Lock-in</title>
+    <meta name="description" content="The open-source alternative to ServiceNow Build Agent. Use YOUR approved AI models. Built by developers, for developers. Autonomous story completion from Jira & Azure DevOps.">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Snow-Flow | Enterprise ServiceNow Development Platform">
-    <meta property="og:description" content="AI-powered ServiceNow development with 410+ tools, user management, and 99.9% SLA">
+    <meta property="og:title" content="Snow-Flow | Break Free from ServiceNow Vendor Lock-in">
+    <meta property="og:description" content="Open-source ServiceNow development. Use your own AI models. Autonomous story completion. Built by developers, for developers.">
     <meta property="og:image" content="https://snow-flow.dev/logos/linkedin-banner.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="627">
-    <meta property="og:image:alt" content="Snow-Flow - Enterprise ServiceNow Development Platform">
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='mountain' x1='16' y1='9' x2='16' y2='23' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23FFFFFF'/%3E%3Cstop offset='100%25' stop-color='%2300D9FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M4 23 L10 9 L16 15 L22 9 L28 23 Z' fill='url(%23mountain)' stroke='%2300D9FF' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link rel="apple-touch-icon" sizes="180x180" href="logos/icon-only-256.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="logos/icon-only-128.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="logos/icon-only-128.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <style>
-        * {
+        /* =====================================================
+           SNOW-FLOW 2025 - ULTRA MODERN DESIGN SYSTEM
+           ===================================================== */
+
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
         :root {
-            /* AgentDB-inspired minimalist palette */
-            --brand-dark: #1E2531;
-            --brand-darker: #151A23;
-            --brand-cyan: #00D9FF;
-            --brand-blue: #3B82F6;
-            --text-white: #FFFFFF;
-            --text-gray: #94A3B8;
-            --border: #2D3748;
+            /* Core Colors */
+            --bg-primary: #050508;
+            --bg-secondary: #0a0a0f;
+            --bg-tertiary: #111118;
+            --bg-card: #0d0d14;
+
+            /* Accent Colors */
+            --accent-cyan: #00D9FF;
+            --accent-blue: #3B82F6;
+            --accent-purple: #8B5CF6;
+            --accent-green: #10B981;
+            --accent-red: #EF4444;
+
+            /* Text Colors */
+            --text-primary: #FFFFFF;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+
+            /* Borders & Effects */
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-medium: rgba(255, 255, 255, 0.1);
+            --glow-cyan: 0 0 60px rgba(0, 217, 255, 0.3);
+            --glow-purple: 0 0 60px rgba(139, 92, 246, 0.2);
+
+            /* Typography */
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
-            background: var(--brand-dark);
-            color: var(--text-white);
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
         }
+
+        /* Selection */
+        ::selection {
+            background: rgba(0, 217, 255, 0.3);
+            color: white;
+        }
+
+        /* =====================================================
+           ANIMATED BACKGROUND
+           ===================================================== */
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 217, 255, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(139, 92, 246, 0.1), transparent),
+                radial-gradient(ellipse 50% 30% at 20% 80%, rgba(59, 130, 246, 0.08), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-noise {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.015;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* =====================================================
+           LAYOUT
+           ===================================================== */
 
         .container {
-            max-width: 1200px;
+            width: 100%;
+            max-width: 1280px;
             margin: 0 auto;
-            padding: 0 2rem;
+            padding: 0 1.5rem;
+            position: relative;
+            z-index: 1;
         }
 
-        /* ========================================
-           NAVIGATION - COMPLETE REBUILD
-           ======================================== */
+        @media (min-width: 768px) {
+            .container {
+                padding: 0 2rem;
+            }
+        }
 
-        /* Base Navigation */
-        nav {
-            position: sticky;
+        /* =====================================================
+           NAVIGATION
+           ===================================================== */
+
+        .navbar {
+            position: fixed;
             top: 0;
-            background: rgba(30, 37, 49, 0.98);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
+            left: 0;
+            right: 0;
+            z-index: 1000;
             padding: 1rem 0;
-            z-index: 9999;
+            background: rgba(5, 5, 8, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border-subtle);
+            transition: all 0.3s ease;
         }
 
-        .nav-content {
+        .navbar.scrolled {
+            padding: 0.75rem 0;
+            background: rgba(5, 5, 8, 0.95);
+        }
+
+        .navbar-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
         }
 
-        /* Logo */
         .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-white);
-            text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 0.625rem;
+            gap: 0.75rem;
+            text-decoration: none;
             transition: transform 0.3s ease;
-            z-index: 10001;
-            position: relative;
         }
 
         .logo:hover {
@@ -97,1306 +180,1241 @@
         }
 
         .logo-svg {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
         }
 
         .logo-text {
+            font-size: 1.375rem;
             font-weight: 800;
             letter-spacing: -0.02em;
         }
 
-        .logo-text .snow {
-            color: var(--text-white);
-        }
+        .logo-text .snow { color: var(--text-primary); }
+        .logo-text .flow { color: var(--accent-cyan); }
 
-        .logo-text .flow {
-            color: var(--brand-cyan);
-        }
-
-        /* Desktop Navigation Links */
         .nav-links {
-            display: flex;
-            gap: 2rem;
+            display: none;
             list-style: none;
+            gap: 2rem;
             align-items: center;
-            margin: 0;
-            padding: 0;
         }
 
-        .nav-links li {
-            margin: 0;
-            padding: 0;
+        @media (min-width: 1024px) {
+            .nav-links {
+                display: flex;
+            }
         }
 
         .nav-links a {
-            color: var(--text-gray);
+            color: var(--text-secondary);
             text-decoration: none;
+            font-size: 0.9375rem;
             font-weight: 500;
-            font-size: 0.95rem;
-            transition: color 0.2s;
-            white-space: nowrap;
+            transition: color 0.2s ease;
         }
 
         .nav-links a:hover {
-            color: var(--text-white);
+            color: var(--text-primary);
         }
 
         .nav-cta {
-            background: var(--brand-cyan);
-            color: var(--brand-darker) !important;
+            background: var(--accent-cyan);
+            color: var(--bg-primary) !important;
             padding: 0.625rem 1.25rem;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.2s;
+            border-radius: 8px;
+            font-weight: 600 !important;
+            transition: all 0.2s ease !important;
         }
 
         .nav-cta:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 217, 255, 0.4);
+            box-shadow: var(--glow-cyan);
         }
 
         /* Mobile Menu Button */
         .mobile-menu-btn {
-            display: none;
+            display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, rgba(0, 217, 255, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
-            border: 1px solid rgba(0, 217, 255, 0.15);
-            border-radius: 12px;
-            cursor: pointer;
+            gap: 5px;
             width: 44px;
             height: 44px;
-            padding: 0;
-            z-index: 10001;
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 2px 8px rgba(0, 217, 255, 0.1),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-medium);
+            border-radius: 10px;
+            cursor: pointer;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        @media (min-width: 1024px) {
+            .mobile-menu-btn {
+                display: none;
+            }
         }
 
         .mobile-menu-btn:hover {
-            background: linear-gradient(135deg, rgba(0, 217, 255, 0.12) 0%, rgba(59, 130, 246, 0.12) 100%);
-            border-color: rgba(0, 217, 255, 0.25);
-            box-shadow: 0 4px 16px rgba(0, 217, 255, 0.2),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-cyan);
         }
 
         .mobile-menu-btn span {
             display: block;
-            width: 20px;
-            height: 2.5px;
-            background: linear-gradient(90deg, var(--brand-cyan) 0%, rgba(255, 255, 255, 0.9) 100%);
-            border-radius: 3px;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: absolute;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        }
-
-        .mobile-menu-btn span:nth-child(1) {
-            top: 13px;
-        }
-
-        .mobile-menu-btn span:nth-child(2) {
-            top: 20.5px;
-        }
-
-        .mobile-menu-btn span:nth-child(3) {
-            top: 28px;
-        }
-
-        .mobile-menu-btn.active {
-            background: linear-gradient(135deg, rgba(0, 217, 255, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
-            border-color: rgba(0, 217, 255, 0.4);
-            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.25),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            width: 100%;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: all 0.3s ease;
         }
 
         .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(45deg);
-            top: 20.5px;
-            background: var(--brand-cyan);
-            box-shadow: 0 0 8px rgba(0, 217, 255, 0.4);
+            transform: rotate(45deg) translate(5px, 5px);
         }
 
         .mobile-menu-btn.active span:nth-child(2) {
             opacity: 0;
-            transform: scale(0);
         }
 
         .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(-45deg);
-            top: 20.5px;
-            background: var(--brand-cyan);
-            box-shadow: 0 0 8px rgba(0, 217, 255, 0.4);
+            transform: rotate(-45deg) translate(5px, -5px);
         }
 
-        /* Mobile Menu Backdrop - Premium blur effect */
-        .mobile-menu-backdrop {
-            display: none;
+        /* Mobile Menu */
+        .mobile-nav {
             position: fixed;
-            top: 70px;
-            left: 0;
+            top: 0;
+            right: 0;
             width: 100%;
-            height: calc(100vh - 70px);
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px) saturate(80%);
-            -webkit-backdrop-filter: blur(8px) saturate(80%);
-            z-index: 9998;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                        backdrop-filter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 400px;
+            height: 100vh;
+            background: rgba(10, 10, 15, 0.98);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            z-index: 999;
+            padding: 6rem 2rem 2rem;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border-left: 1px solid var(--border-medium);
+            overflow-y: auto;
         }
 
-        .mobile-menu-backdrop.active {
+        .mobile-nav.active {
+            transform: translateX(0);
+        }
+
+        .mobile-nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .mobile-nav-links a {
             display: block;
-            opacity: 1;
-            pointer-events: auto;
+            padding: 1rem 1.25rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 12px;
+            transition: all 0.2s ease;
         }
 
-        /* Hero - Massive and Bold */
-        .hero {
-            padding: 10rem 0 8rem;
+        .mobile-nav-links a:hover {
+            color: var(--text-primary);
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        .mobile-nav-links .nav-cta {
+            margin-top: 1.5rem;
             text-align: center;
+            padding: 1rem 1.5rem;
         }
 
-        .hero-label {
-            display: inline-block;
+        .mobile-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* =====================================================
+           HERO SECTION
+           ===================================================== */
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 8rem 0 6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-glow {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 600px;
+            background: radial-gradient(ellipse, rgba(0, 217, 255, 0.2) 0%, transparent 70%);
+            filter: blur(60px);
+            pointer-events: none;
+            animation: pulse-glow 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.8; transform: translateX(-50%) scale(1.1); }
+        }
+
+        .hero-content {
+            text-align: center;
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
             padding: 0.5rem 1rem;
             background: rgba(0, 217, 255, 0.1);
-            border: 1px solid var(--brand-cyan);
-            border-radius: 20px;
-            color: var(--brand-cyan);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 100px;
             font-size: 0.875rem;
             font-weight: 600;
+            color: var(--accent-cyan);
             margin-bottom: 2rem;
+            animation: fade-in 0.6s ease-out;
         }
 
-        .hero h1 {
-            font-size: 5rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 2rem;
-            letter-spacing: -0.02em;
+        .hero-badge .pulse {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
         }
 
-        .hero h1 .highlight {
-            color: var(--brand-cyan);
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            animation: fade-in-up 0.8s ease-out;
+        }
+
+        .hero-title .gradient {
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-title .small {
+            display: block;
+            font-size: 0.35em;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
         }
 
         .hero-subtitle {
-            font-size: 1.5rem;
-            color: var(--text-gray);
+            font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+            color: var(--text-secondary);
             max-width: 700px;
-            margin: 0 auto 3rem;
-            line-height: 1.5;
+            margin: 0 auto 2.5rem;
+            line-height: 1.6;
+            animation: fade-in-up 0.8s ease-out 0.2s backwards;
         }
 
-        .hero-cta {
-            display: inline-block;
-            background: var(--brand-cyan);
-            color: var(--brand-darker);
-            padding: 1.25rem 3rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 1.125rem;
-            transition: transform 0.2s, box-shadow 0.3s;
+        .hero-subtitle strong {
+            color: var(--text-primary);
         }
 
-        .hero-cta:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0, 217, 255, 0.5);
+        .hero-ctas {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 4rem;
+            animation: fade-in-up 0.8s ease-out 0.4s backwards;
         }
 
-        .hero-secondary {
-            display: inline-block;
-            color: var(--text-gray);
-            text-decoration: none;
-            margin-left: 2rem;
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            font-size: 1rem;
             font-weight: 600;
-            transition: color 0.2s;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
         }
 
-        .hero-secondary:hover {
-            color: var(--text-white);
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
+            color: var(--bg-primary);
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
         }
 
-        /* Stats bar */
-        .stats {
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 217, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border-medium);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-cyan);
+        }
+
+        /* Hero Stats */
+        .hero-stats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 3rem;
-            margin: 6rem 0 0;
-            padding: 3rem 0;
-            border-top: 1px solid var(--border);
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border-subtle);
+            animation: fade-in-up 0.8s ease-out 0.6s backwards;
+        }
+
+        @media (min-width: 768px) {
+            .hero-stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
         }
 
         .stat {
             text-align: center;
         }
 
-        .stat-number {
-            font-size: 3rem;
+        .stat-value {
+            font-size: clamp(2rem, 4vw, 2.5rem);
             font-weight: 800;
-            color: var(--brand-cyan);
-            margin-bottom: 0.5rem;
+            color: var(--accent-cyan);
             line-height: 1;
+            margin-bottom: 0.25rem;
         }
 
         .stat-label {
-            color: var(--text-gray);
-            font-size: 0.95rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
         }
 
-        /* Section */
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* =====================================================
+           SECTION STYLING
+           ===================================================== */
+
         .section {
-            padding: 8rem 0;
+            padding: 6rem 0;
+            position: relative;
+        }
+
+        @media (min-width: 768px) {
+            .section {
+                padding: 8rem 0;
+            }
         }
 
         .section-label {
-            text-align: center;
-            color: var(--brand-cyan);
-            font-size: 0.875rem;
+            display: inline-block;
+            font-size: 0.75rem;
             font-weight: 700;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.15em;
             text-transform: uppercase;
-            margin-bottom: 1.5rem;
+            color: var(--accent-cyan);
+            margin-bottom: 1rem;
         }
 
         .section-title {
-            font-size: 3.5rem;
+            font-size: clamp(2rem, 5vw, 3.5rem);
             font-weight: 800;
-            text-align: center;
-            margin-bottom: 2rem;
-            line-height: 1.2;
+            line-height: 1.1;
             letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
         }
 
         .section-subtitle {
-            text-align: center;
-            font-size: 1.25rem;
-            color: var(--text-gray);
+            font-size: 1.125rem;
+            color: var(--text-secondary);
             max-width: 700px;
-            margin: 0 auto 4rem;
+            line-height: 1.7;
         }
 
-        /* Feature comparison - Modern side-by-side */
-        .comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            max-width: 1100px;
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header .section-subtitle {
             margin: 0 auto;
         }
 
-        .comparison-side {
-            padding: 2.5rem;
-            background: var(--brand-darker);
-            border-radius: 16px;
-            border: 2px solid var(--border);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+        /* =====================================================
+           WHY SNOW-FLOW - VENDOR LOCK-IN SECTION
+           ===================================================== */
+
+        .why-section {
+            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
         }
 
-        .comparison-side::before {
+        .why-grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .why-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .why-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .why-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, transparent, var(--brand-cyan), transparent);
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
             opacity: 0;
             transition: opacity 0.3s ease;
         }
 
-        .comparison-side:hover::before {
+        .why-card:hover {
+            border-color: var(--border-medium);
+            transform: translateY(-4px);
+        }
+
+        .why-card:hover::before {
             opacity: 1;
         }
 
-        .comparison-side.bad {
-            border-color: rgba(239, 68, 68, 0.3);
+        .why-card.problem {
+            border-color: rgba(239, 68, 68, 0.2);
         }
 
-        .comparison-side.bad::before {
-            background: linear-gradient(90deg, transparent, #EF4444, transparent);
+        .why-card.problem::before {
+            background: var(--accent-red);
         }
 
-        .comparison-side.good {
-            border-color: rgba(0, 217, 255, 0.3);
-            background: linear-gradient(135deg, var(--brand-darker) 0%, rgba(0, 217, 255, 0.05) 100%);
-        }
-
-        .comparison-side:hover {
-            transform: translateY(-4px);
-            border-color: var(--brand-cyan);
-        }
-
-        .comparison-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .comparison-title.bad {
-            color: #EF4444;
-        }
-
-        .comparison-title.good {
-            color: var(--brand-cyan);
-        }
-
-        .comparison-item {
-            padding: 1rem 0;
-            padding-left: 2rem;
-            color: var(--text-gray);
-            font-size: 1rem;
-            line-height: 1.7;
-            position: relative;
-            border-left: 2px solid transparent;
-            transition: all 0.2s ease;
-        }
-
-        .comparison-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--brand-cyan);
-        }
-
-        .comparison-side.bad .comparison-item::before {
-            background: #EF4444;
-        }
-
-        .comparison-item:hover {
-            padding-left: 2.5rem;
-            border-left-color: var(--brand-cyan);
-        }
-
-        .comparison-side.bad .comparison-item:hover {
-            border-left-color: #EF4444;
-        }
-
-        .comparison-item strong {
-            color: var(--text-white);
-            font-weight: 600;
-        }
-
-        /* Pricing - Simple cards */
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .pricing-card.enterprise {
-            grid-column: 1 / -1;
-        }
-
-        .pricing-card {
-            background: var(--brand-darker);
-            border: 2px solid var(--border);
-            border-radius: 16px;
-            padding: 2.5rem;
-            transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
-        }
-
-        .pricing-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--brand-cyan);
-            box-shadow: 0 20px 50px rgba(0, 217, 255, 0.2);
-        }
-
-        .pricing-card.featured {
-            border-color: var(--brand-cyan);
-            box-shadow: 0 20px 50px rgba(0, 217, 255, 0.3);
-        }
-
-        .pricing-badge {
-            display: inline-block;
-            background: var(--brand-cyan);
-            color: var(--brand-darker);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-        }
-
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .pricing-card h3 {
-            font-size: 1.75rem;
-            margin-bottom: 1rem;
-        }
-
-        .pricing-price {
-            font-size: 3.5rem;
-            font-weight: 800;
-            color: var(--brand-cyan);
-            margin: 1.5rem 0;
-            line-height: 1;
-        }
-
-        .pricing-price span {
-            font-size: 1.25rem;
-            color: var(--text-gray);
-            font-weight: 600;
-        }
-
-        .pricing-features {
-            list-style: none;
-            margin: 2rem 0;
-        }
-
-        .pricing-features li {
-            padding: 0.875rem 0;
-            color: var(--text-gray);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .pricing-cta {
-            display: block;
-            text-align: center;
-            background: var(--brand-cyan);
-            color: var(--brand-darker);
-            padding: 1rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 700;
-            margin-top: 2rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .pricing-cta:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.4);
-        }
-
-        .pricing-cta.secondary {
-            background: transparent;
-            border: 2px solid var(--border);
-            color: var(--text-white);
-        }
-
-        .pricing-cta.secondary:hover {
-            border-color: var(--brand-cyan);
-            box-shadow: none;
-        }
-
-        /* Feature grid - Minimal */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            padding: 2.5rem;
-            background: var(--brand-darker);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            transition: border-color 0.3s;
-        }
-
-        .feature-card:hover {
-            border-color: var(--brand-cyan);
-        }
-
-        .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .feature-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .feature-text {
-            color: var(--text-gray);
-            line-height: 1.7;
-        }
-
-        /* Footer - Professional with Animated Background */
-        footer {
-            border-top: 1px solid var(--border);
-            padding: 5rem 0 2rem;
-            margin-top: 8rem;
-            background: var(--brand-darker);
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Animated gradient background blob */
-        footer::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -20%;
-            width: 140%;
-            height: 200%;
-            background: radial-gradient(
-                ellipse at center,
-                rgba(0, 217, 255, 0.08) 0%,
-                rgba(59, 130, 246, 0.05) 25%,
-                transparent 60%
-            );
-            animation: footerWave 20s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        footer::after {
-            content: '';
-            position: absolute;
-            top: -30%;
-            right: -20%;
-            width: 120%;
-            height: 180%;
-            background: radial-gradient(
-                ellipse at center,
-                rgba(59, 130, 246, 0.06) 0%,
-                rgba(0, 217, 255, 0.04) 30%,
-                transparent 55%
-            );
-            animation: footerWave 15s ease-in-out infinite;
-            animation-delay: -7.5s;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        @keyframes footerWave {
-            0%, 100% {
-                transform: translate(0, 0) scale(1);
-                opacity: 1;
-            }
-            25% {
-                transform: translate(10%, 5%) scale(1.1);
-                opacity: 0.8;
-            }
-            50% {
-                transform: translate(-5%, 10%) scale(1.05);
-                opacity: 0.9;
-            }
-            75% {
-                transform: translate(5%, -5%) scale(1.08);
-                opacity: 0.85;
-            }
-        }
-
-        .footer-brand {
-            margin-bottom: 4rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .footer-logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            text-decoration: none;
-            transition: transform 0.3s ease;
-        }
-
-        .footer-logo:hover {
-            transform: translateY(-3px);
-        }
-
-        .footer-logo-svg {
+        .why-card-icon {
             width: 48px;
             height: 48px;
-            filter: drop-shadow(0 4px 12px rgba(0, 217, 255, 0.3));
-        }
-
-        .footer-logo-text {
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }
-
-        .footer-logo-text .snow {
-            color: var(--text-white);
-        }
-
-        .footer-logo-text .flow {
-            color: var(--brand-cyan);
-            text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
-        }
-
-        .footer-tagline {
-            color: var(--text-gray);
-            font-size: 1.125rem;
-            max-width: 600px;
-            text-align: center;
-            line-height: 1.7;
-            font-weight: 400;
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 4rem;
-            margin-bottom: 5rem;
-            max-width: 1000px;
-            margin-left: auto;
-            margin-right: auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        .footer-section h4 {
-            font-weight: 700;
-            margin-bottom: 1.75rem;
-            color: var(--text-white);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            position: relative;
-            padding-bottom: 0.75rem;
-        }
-
-        .footer-section h4::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 40px;
-            height: 2px;
-            background: linear-gradient(90deg, var(--brand-cyan), transparent);
-        }
-
-        .footer-section ul {
-            list-style: none;
-        }
-
-        .footer-section li {
-            margin-bottom: 1rem;
-        }
-
-        .footer-section a {
-            color: var(--text-gray);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-            display: inline-block;
-            position: relative;
-        }
-
-        .footer-section a::before {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background: var(--brand-cyan);
-            transition: width 0.3s ease;
-        }
-
-        .footer-section a:hover {
-            color: var(--brand-cyan);
-            transform: translateX(4px);
-        }
-
-        .footer-section a:hover::before {
-            width: 100%;
-        }
-
-        .footer-bottom {
-            text-align: center;
-            padding-top: 3rem;
-            border-top: 1px solid rgba(0, 217, 255, 0.1);
-            color: var(--text-gray);
-            font-size: 0.875rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            align-items: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .footer-bottom p {
-            font-weight: 400;
-            letter-spacing: 0.02em;
-        }
-
-        .footer-social {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .footer-social a {
-            color: var(--text-gray);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-size: 1.25rem;
-            width: 44px;
-            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            background: rgba(0, 217, 255, 0.05);
-            border: 1px solid rgba(0, 217, 255, 0.1);
-        }
-
-        .footer-social a:hover {
-            color: var(--brand-cyan);
             background: rgba(0, 217, 255, 0.1);
-            border-color: var(--brand-cyan);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 217, 255, 0.2);
+            border-radius: 12px;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
-        /* ========================================
-           MOBILE RESPONSIVE - CLEAN REBUILD
-           ======================================== */
-        @media (max-width: 768px) {
-            /* Show mobile menu button */
-            .mobile-menu-btn {
-                display: flex;
+        .why-card.problem .why-card-icon {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .why-card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .why-card.problem .why-card-title {
+            color: var(--accent-red);
+        }
+
+        .why-card-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .why-card-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .why-card-list li::before {
+            content: '>';
+            color: var(--accent-cyan);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .why-card.problem .why-card-list li::before {
+            content: 'x';
+            color: var(--accent-red);
+        }
+
+        /* =====================================================
+           AUTONOMOUS STORIES SECTION
+           ===================================================== */
+
+        .autonomous-section {
+            background: var(--bg-secondary);
+            position: relative;
+        }
+
+        .autonomous-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-medium), transparent);
+        }
+
+        .autonomous-grid {
+            display: grid;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        @media (min-width: 768px) {
+            .autonomous-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
+        }
 
-            /* Hide desktop menu, show as overlay when active */
-            .nav-links {
-                position: fixed;
-                top: 0;
-                right: 0;
-                width: 380px;
-                max-width: 90vw;
-                height: 100vh;
-                z-index: 9999;
-
-                /* Layout - add padding for navbar */
-                flex-direction: column;
-                justify-content: flex-start;
-                align-items: stretch;
-                padding: calc(70px + 2rem) 2rem 2rem;
-                gap: 0;
-
-                /* Modern glassmorphism with deep depth */
-                background:
-                    linear-gradient(160deg,
-                        rgba(10, 15, 25, 0.97) 0%,
-                        rgba(15, 22, 35, 0.96) 30%,
-                        rgba(20, 28, 42, 0.97) 70%,
-                        rgba(12, 18, 30, 0.98) 100%);
-                backdrop-filter: blur(40px) saturate(180%);
-                -webkit-backdrop-filter: blur(40px) saturate(180%);
-
-                /* Futuristic border with animated gradient */
-                border-left: 1px solid rgba(0, 217, 255, 0.3);
-                box-shadow:
-                    -20px 0 60px rgba(0, 0, 0, 0.8),
-                    -8px 0 32px rgba(0, 217, 255, 0.12),
-                    -2px 0 12px rgba(59, 130, 246, 0.15),
-                    inset 1px 0 1px rgba(0, 217, 255, 0.15),
-                    inset -1px 0 20px rgba(0, 217, 255, 0.03);
-
-                /* Hidden by default - smooth slide */
-                transform: translateX(100%);
-                visibility: hidden;
-                opacity: 0;
-                transition:
-                    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                    visibility 0s 0.5s,
-                    opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-
-                /* Enable scrolling */
-                overflow-y: auto;
-                overflow-x: hidden;
-                -webkit-overflow-scrolling: touch;
-
-                /* Futuristic overlay effects */
-                background-image:
-                    /* Animated scan line effect */
-                    linear-gradient(180deg,
-                        transparent 0%,
-                        rgba(0, 217, 255, 0.02) 50%,
-                        transparent 100%),
-                    /* Radial glow from top */
-                    radial-gradient(ellipse 100% 40% at 50% -20%,
-                        rgba(0, 217, 255, 0.08) 0%,
-                        transparent 60%),
-                    /* Radial glow from button area */
-                    radial-gradient(circle at 90% 8%,
-                        rgba(0, 217, 255, 0.12) 0%,
-                        transparent 25%),
-                    /* Subtle grid pattern */
-                    repeating-linear-gradient(90deg,
-                        transparent,
-                        transparent 39px,
-                        rgba(0, 217, 255, 0.01) 39px,
-                        rgba(0, 217, 255, 0.01) 40px),
-                    repeating-linear-gradient(0deg,
-                        transparent,
-                        transparent 39px,
-                        rgba(0, 217, 255, 0.01) 39px,
-                        rgba(0, 217, 255, 0.01) 40px);
+        @media (min-width: 1024px) {
+            .autonomous-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
+        }
 
-            /* Show menu when active */
-            .nav-links.active {
-                transform: translateX(0);
-                visibility: visible;
-                opacity: 1;
-                transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                            visibility 0s 0s,
-                            opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card-icon {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(139, 92, 246, 0.1));
+            border-radius: 14px;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card-desc {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .feature-card-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--bg-primary);
+        }
+
+        /* Workflow Visualization */
+        .workflow {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 4rem;
+            padding: 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .workflow {
+                flex-direction: row;
+                align-items: center;
             }
+        }
 
-            /* Staggered animation for menu items */
-            .nav-links.active li {
-                animation: menuItemSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-            }
+        .workflow-step {
+            flex: 1;
+            text-align: center;
+            padding: 1.5rem;
+            position: relative;
+        }
 
-            .nav-links.active li:nth-child(1) { animation-delay: 0.05s; }
-            .nav-links.active li:nth-child(2) { animation-delay: 0.1s; }
-            .nav-links.active li:nth-child(3) { animation-delay: 0.15s; }
-            .nav-links.active li:nth-child(4) { animation-delay: 0.2s; }
-            .nav-links.active li:nth-child(5) { animation-delay: 0.25s; }
-            .nav-links.active li:nth-child(6) { animation-delay: 0.3s; }
+        .workflow-step::after {
+            display: none;
+        }
 
-            @keyframes menuItemSlideIn {
-                from {
-                    opacity: 0;
-                    transform: translateX(20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-            }
-
-            /* Menu items styling - futuristic design */
-            .nav-links li {
-                width: 100%;
-                margin: 0.5rem 0;
-                position: relative;
-            }
-
-            /* Futuristic divider between items */
-            .nav-links li:not(:last-child)::after {
+        @media (min-width: 768px) {
+            .workflow-step::after {
                 content: '';
-                position: absolute;
-                bottom: -0.25rem;
-                left: 0;
-                right: 0;
-                height: 1px;
-                background:
-                    radial-gradient(circle at center,
-                        rgba(0, 217, 255, 0.15) 0%,
-                        rgba(59, 130, 246, 0.08) 50%,
-                        transparent 100%);
-                box-shadow: 0 0 8px rgba(0, 217, 255, 0.1);
-            }
-
-            .nav-links a {
                 display: block;
-                padding: 1rem 1.5rem;
-                font-size: 0.9375rem;
-                font-weight: 500;
-                letter-spacing: 0.01em;
-                text-align: left;
-                color: rgba(255, 255, 255, 0.8);
-                position: relative;
-                transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-                border-radius: 12px;
-                overflow: hidden;
-            }
-
-            /* Animated background glow on hover */
-            .nav-links a::after {
-                content: '';
                 position: absolute;
-                top: 0;
-                left: -100%;
-                width: 100%;
-                height: 100%;
-                background: linear-gradient(90deg,
-                    transparent,
-                    rgba(0, 217, 255, 0.08) 50%,
-                    transparent);
-                transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-                z-index: -1;
-            }
-
-            /* Sophisticated left accent with glow */
-            .nav-links a::before {
-                content: '';
-                position: absolute;
-                left: 0;
                 top: 50%;
-                transform: translateY(-50%);
-                width: 3px;
-                height: 0;
-                background: linear-gradient(180deg,
-                    transparent,
-                    var(--brand-cyan) 20%,
-                    var(--brand-cyan) 80%,
-                    transparent);
-                border-radius: 0 3px 3px 0;
-                opacity: 0;
-                box-shadow: 0 0 16px rgba(0, 217, 255, 0.8),
-                            0 0 8px rgba(0, 217, 255, 0.4);
-                transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-                            opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+                right: -1rem;
+                width: 2rem;
+                height: 2px;
+                background: linear-gradient(90deg, var(--accent-cyan), transparent);
             }
 
-            /* Futuristic hover state */
-            .nav-links a:hover,
-            .nav-links a:active {
-                color: #ffffff;
-                background: linear-gradient(90deg,
-                    rgba(0, 217, 255, 0.12) 0%,
-                    rgba(0, 217, 255, 0.06) 50%,
-                    rgba(0, 217, 255, 0.02) 100%);
-                transform: translateX(4px);
-                box-shadow:
-                    inset 0 0 0 1px rgba(0, 217, 255, 0.2),
-                    0 0 20px rgba(0, 217, 255, 0.1);
-            }
-
-            .nav-links a:hover::after {
-                left: 100%;
-            }
-
-            .nav-links a:hover::before,
-            .nav-links a:active::before {
-                height: 80%;
-                opacity: 1;
-            }
-
-            /* Remove background/border from regular links */
-            .nav-links a:not(.nav-cta) {
-                background: transparent;
-                border: none;
-                backdrop-filter: none;
-                -webkit-backdrop-filter: none;
-            }
-
-            /* Premium CTA button styling */
-            .nav-cta {
-                margin-top: 2rem;
-                padding: 1rem 1.75rem !important;
-                font-size: 0.9375rem !important;
-                font-weight: 600 !important;
-                letter-spacing: -0.01em !important;
-                text-align: center !important;
-
-                /* Premium gradient background with animation */
-                background: linear-gradient(135deg,
-                    var(--brand-cyan) 0%,
-                    #00C4E6 50%,
-                    var(--brand-blue) 100%) !important;
-                background-size: 200% 200% !important;
-                color: #0A0A0A !important;
-                border: none !important;
-                border-radius: 12px !important;
-
-                /* Premium shadow with glow */
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2),
-                            0 8px 24px rgba(0, 217, 255, 0.25),
-                            0 0 40px rgba(0, 217, 255, 0.1),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.15),
-                            inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
-
-                /* Subtle inner glow */
-                position: relative;
-                overflow: hidden;
-                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-            }
-
-            /* Shine effect on CTA */
-            .nav-cta::after {
-                content: '';
-                position: absolute;
-                top: -50%;
-                right: -50%;
-                bottom: -50%;
-                left: -50%;
-                background: linear-gradient(to bottom,
-                    rgba(255, 255, 255, 0.13) 0%,
-                    rgba(255, 255, 255, 0.13) 77%,
-                    rgba(255, 255, 255, 0.5) 92%,
-                    rgba(0, 0, 0, 0.0) 100%);
-                transform: rotate(35deg);
-                pointer-events: none;
-            }
-
-            .nav-cta:hover,
-            .nav-cta:active {
-                transform: translateY(-2px) scale(1.02) !important;
-                background-position: 100% 50% !important;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25),
-                            0 12px 32px rgba(0, 217, 255, 0.35),
-                            0 0 60px rgba(0, 217, 255, 0.15),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                            inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
-            }
-
-            .nav-cta:active {
-                transform: translateY(-1px) scale(1.01) !important;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25),
-                            0 8px 24px rgba(0, 217, 255, 0.3),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-            }
-
-            .nav-cta::before {
+            .workflow-step:last-child::after {
                 display: none;
             }
-
-            /* Other mobile adjustments */
-            .nav-content {
-                padding: 0 1rem;
-            }
-
-            .hero {
-                padding: 6rem 0 4rem;
-            }
-
-            .hero h1 {
-                font-size: 3rem;
-            }
-
-            .hero-subtitle {
-                font-size: 1.2rem;
-            }
-
-            .hero-secondary {
-                display: block;
-                margin: 1rem 0 0;
-            }
-
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 2rem;
-            }
-
-            .section {
-                padding: 5rem 0;
-            }
-
-            .section-title {
-                font-size: 2.5rem;
-            }
-
-            .comparison {
-                grid-template-columns: 1fr;
-            }
-
-            .pricing-grid {
-                grid-template-columns: 1fr;
-            }
         }
 
-        /* Small mobile devices */
-        @media (max-width: 480px) {
-            nav {
-                padding: 1rem 0;
-            }
-
-            .logo {
-                font-size: 1.25rem;
-            }
-
-            .logo-svg {
-                width: 28px;
-                height: 28px;
-            }
-
-            .footer-logo-svg {
-                width: 40px;
-                height: 40px;
-            }
-
-            .footer-logo-text {
-                font-size: 1.5rem;
-            }
-
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            .hero-subtitle {
-                font-size: 1.125rem;
-            }
-
-            .stats {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            .nav-links {
-                padding: 4rem 1.5rem 2rem;
-            }
-
-            .nav-links a {
-                padding: 1.25rem 1.5rem;
-                font-size: 1rem;
-            }
-
-            .nav-cta {
-                font-size: 1rem !important;
-            }
+        .workflow-step-num {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            border-radius: 50%;
+            font-weight: 700;
+            color: var(--bg-primary);
+            margin: 0 auto 1rem;
         }
 
-        /* Comparison Table Styles */
-        .comparison-table {
-            width: 100%;
-            max-width: 100%;
-            margin: 3rem auto;
-            border-collapse: separate;
-            border-spacing: 0;
-            overflow: hidden;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        .workflow-step-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
         }
 
-        /* Prevent table from causing horizontal scroll */
-        .comparison-table-container {
-            width: 100%;
-            max-width: 100%;
+        .workflow-step-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* =====================================================
+           COMPARISON TABLE
+           ===================================================== */
+
+        .comparison-section {
+            background: var(--bg-primary);
+        }
+
+        .comparison-wrapper {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            margin: 0 auto;
+            margin: 0 -1.5rem;
+            padding: 0 1.5rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            min-width: 700px;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--bg-card);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
         }
 
         .comparison-table thead {
-            background: linear-gradient(135deg, rgba(0, 217, 255, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(139, 92, 246, 0.05));
         }
 
         .comparison-table th {
-            padding: 1.5rem 1.5rem;
+            padding: 1.25rem 1.5rem;
             text-align: left;
             font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--text-white);
-            border-bottom: 2px solid var(--brand-cyan);
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         .comparison-table th:first-child {
-            width: 30%;
-        }
-
-        .comparison-table tbody tr {
-            border-bottom: 1px solid var(--border);
-            transition: background-color 0.2s ease;
-        }
-
-        .comparison-table tbody tr:hover {
-            background: rgba(0, 217, 255, 0.05);
-        }
-
-        .comparison-table tbody tr:last-child {
-            border-bottom: none;
+            width: 25%;
         }
 
         .comparison-table td {
             padding: 1.25rem 1.5rem;
             vertical-align: top;
-            line-height: 1.6;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
         }
 
         .comparison-table td:first-child {
             font-weight: 600;
-            color: var(--brand-cyan);
+            color: var(--accent-cyan);
         }
 
         .comparison-highlight {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
             padding: 0.25rem 0.75rem;
-            background: linear-gradient(135deg, rgba(0, 217, 255, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+            background: rgba(0, 217, 255, 0.15);
             border-radius: 6px;
             font-weight: 600;
-            color: var(--brand-cyan);
-            margin-right: 0.5rem;
+            color: var(--accent-cyan);
         }
 
-        .comparison-badge {
+        .comparison-note {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(139, 92, 246, 0.05));
+            border-left: 4px solid var(--accent-cyan);
+            border-radius: 8px;
+        }
+
+        .comparison-note-title {
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 0.75rem;
+        }
+
+        .comparison-note-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .comparison-note-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .comparison-note-list li strong {
+            color: var(--text-primary);
+        }
+
+        /* =====================================================
+           PRICING
+           ===================================================== */
+
+        .pricing-section {
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+        }
+
+        .pricing-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .pricing-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .pricing-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .pricing-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--border-medium);
+            transform: translateY(-4px);
+        }
+
+        .pricing-card.featured {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 60px rgba(0, 217, 255, 0.15);
+        }
+
+        .pricing-badge {
             display: inline-block;
             padding: 0.375rem 0.875rem;
-            background: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-blue) 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            border-radius: 100px;
             font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            border-radius: 20px;
-            margin-left: 0.75rem;
+            color: var(--bg-primary);
+            margin-bottom: 1.25rem;
         }
 
-        /* Mobile responsive styling moved to css/mobile-responsive-complete.css */
-        /* This improves maintainability and prevents style conflicts */
+        .pricing-name {
+            font-size: 1.375rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            margin: 1rem 0;
+            line-height: 1;
+        }
+
+        .pricing-price span {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--accent-cyan);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .pricing-cta {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-medium);
+            border-radius: 10px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .pricing-cta:hover {
+            background: rgba(0, 217, 255, 0.1);
+            border-color: var(--accent-cyan);
+        }
+
+        .pricing-card.featured .pricing-cta {
+            background: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+
+        .pricing-card.featured .pricing-cta:hover {
+            box-shadow: var(--glow-cyan);
+        }
+
+        /* =====================================================
+           DEVELOPERS SECTION
+           ===================================================== */
+
+        .developers-section {
+            background: var(--bg-primary);
+            position: relative;
+        }
+
+        .developers-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-medium), transparent);
+        }
+
+        .developers-quote {
+            max-width: 800px;
+            margin: 0 auto 4rem;
+            text-align: center;
+            padding: 3rem;
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.05), rgba(139, 92, 246, 0.03));
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+        }
+
+        .developers-quote-text {
+            font-size: clamp(1.25rem, 3vw, 1.75rem);
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 1.5rem;
+        }
+
+        .developers-quote-text .highlight {
+            color: var(--accent-cyan);
+        }
+
+        .developers-quote-author {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .terminal-demo {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #0d0d14;
+            border: 1px solid var(--border-medium);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #ff5f56; }
+        .terminal-dot.yellow { background: #ffbd2e; }
+        .terminal-dot.green { background: #27c93f; }
+
+        .terminal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .terminal-body {
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.8;
+        }
+
+        .terminal-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .terminal-prompt {
+            color: var(--accent-cyan);
+        }
+
+        .terminal-command {
+            color: var(--text-primary);
+        }
+
+        .terminal-output {
+            color: var(--text-muted);
+        }
+
+        .terminal-success {
+            color: var(--accent-green);
+        }
+
+        /* =====================================================
+           FOOTER
+           ===================================================== */
+
+        footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-subtle);
+            padding: 5rem 0 2rem;
+            position: relative;
+        }
+
+        footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 300px;
+            background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0, 217, 255, 0.08), transparent);
+            pointer-events: none;
+        }
+
+        .footer-brand {
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-logo-svg {
+            width: 48px;
+            height: 48px;
+        }
+
+        .footer-logo-text {
+            font-size: 1.75rem;
+            font-weight: 800;
+        }
+
+        .footer-tagline {
+            max-width: 500px;
+            margin: 0 auto;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 800px;
+            margin: 0 auto 4rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (min-width: 768px) {
+            .footer-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .footer-column h4 {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-primary);
+            margin-bottom: 1.25rem;
+        }
+
+        .footer-column ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .footer-column a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9375rem;
+            transition: color 0.2s ease;
+        }
+
+        .footer-column a:hover {
+            color: var(--accent-cyan);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-subtle);
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-social {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-social a {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .footer-social a:hover {
+            background: rgba(0, 217, 255, 0.1);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .footer-copyright {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* =====================================================
+           UTILITIES
+           ===================================================== */
+
+        .text-center { text-align: center; }
+        .mt-4 { margin-top: 2rem; }
+        .mt-6 { margin-top: 3rem; }
+        .mb-4 { margin-bottom: 2rem; }
+
+        /* Scroll animations */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease-out;
+        }
+
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
-    <!-- Mobile menu backdrop -->
-    <div class="mobile-menu-backdrop"></div>
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+
+    <!-- Mobile Menu Backdrop -->
+    <div class="mobile-backdrop" id="mobileBackdrop"></div>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav" id="mobileNav">
+        <ul class="mobile-nav-links">
+            <li><a href="#why">Why Snow-Flow</a></li>
+            <li><a href="#autonomous">Features</a></li>
+            <li><a href="#comparison">vs Build Agent</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
+            <li><a href="https://status.snow-flow.dev">Status</a></li>
+            <li><a href="https://portal.snow-flow.dev" class="nav-cta">Start Free</a></li>
+        </ul>
+    </nav>
 
     <!-- Navigation -->
-    <nav>
+    <nav class="navbar" id="navbar">
         <div class="container">
-            <div class="nav-content">
+            <div class="navbar-content">
                 <a href="#" class="logo">
                     <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <defs>
-                            <!-- Mountain gradient (white to cyan) -->
-                            <linearGradient id="logo-mountain" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                            <linearGradient id="logo-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
                                 <stop offset="0%" stop-color="#FFFFFF"/>
                                 <stop offset="100%" stop-color="#00D9FF"/>
                             </linearGradient>
                         </defs>
-
-                        <!-- Mountain peaks (geometric, clear) - scaled up and perfectly centered -->
-                        <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z"
-                              fill="url(#logo-mountain)"
-                              stroke="#00D9FF"
-                              stroke-width="1.2"
-                              stroke-linejoin="round"/>
+                        <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#logo-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
                     </svg>
                     <span class="logo-text">
                         <span class="snow">SNOW</span><span class="flow">FLOW</span>
                     </span>
                 </a>
+
                 <ul class="nav-links">
-                    <li><a href="#comparison">Comparison</a></li>
+                    <li><a href="#why">Why Snow-Flow</a></li>
+                    <li><a href="#autonomous">Features</a></li>
+                    <li><a href="#comparison">vs Build Agent</a></li>
                     <li><a href="#pricing">Pricing</a></li>
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="https://status.snow-flow.dev">Status</a></li>
                     <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
-                    <li><a href="https://portal.snow-flow.dev" class="nav-cta">Portal</a></li>
+                    <li><a href="https://portal.snow-flow.dev" class="nav-cta">Start Free</a></li>
                 </ul>
-                <button class="mobile-menu-btn" aria-label="Toggle mobile menu">
+
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -1405,518 +1423,365 @@
         </div>
     </nav>
 
-    <!-- Hero -->
+    <!-- Hero Section -->
     <section class="hero">
+        <div class="hero-glow"></div>
         <div class="container">
-            <div class="hero-label">Enterprise ServiceNow Platform • For Developers & Stakeholders</div>
-            <h1>
-                THE AI-POWERED<br>
-                <span class="highlight">SERVICENOW</span><br>
-                DEVELOPMENT PLATFORM
-            </h1>
-            <p class="hero-subtitle">
-                410+ AI tools, seat-based licensing with role management, and managed SaaS infrastructure. Built for enterprise teams with developers and stakeholders.
-            </p>
-            <div>
-                <a href="https://github.com/groeimetai/snow-flow" class="hero-cta">START FREE</a>
-                <a href="mailto:sales@snow-flow.dev" class="hero-secondary">Enterprise Demo →</a>
-            </div>
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="pulse"></span>
+                    Open Source Alternative to Build Agent
+                </div>
 
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-number">410+</div>
-                    <div class="stat-label">ServiceNow Tools</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">99.9%</div>
-                    <div class="stat-label">Uptime SLA</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">2 Roles</div>
-                    <div class="stat-label">Developer & Stakeholder</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">50%</div>
-                    <div class="stat-label">Faster Development</div>
-                </div>
-            </div>
-        </div>
-    </section>
+                <h1 class="hero-title">
+                    <span class="small">Break Free From Vendor Lock-in</span>
+                    <span class="gradient">YOUR AI.</span><br>
+                    YOUR MODELS.<br>
+                    YOUR RULES.
+                </h1>
 
-    <!-- What is Snow-Flow -->
-    <section class="section">
-        <div class="container">
-            <div class="section-label">What is Snow-Flow?</div>
-            <h2 class="section-title">Natural language<br>ServiceNow development</h2>
-            <p class="section-subtitle">
-                Talk to your ServiceNow instance through AI. Develop solutions through conversation instead of web interfaces.
-            </p>
-
-            <div class="comparison">
-                <div class="comparison-side bad">
-                    <div class="comparison-title bad">❌ Traditional ServiceNow Development</div>
-                    <div class="comparison-item"><strong>Web-only interface</strong> - Limited to browser-based Studio</div>
-                    <div class="comparison-item"><strong>Manual scripting</strong> - Write every business rule from scratch</div>
-                    <div class="comparison-item"><strong>Context switching</strong> - Jump between documentation and code</div>
-                    <div class="comparison-item"><strong>Steep learning curve</strong> - Months to become productive</div>
-                    <div class="comparison-item"><strong>Limited tooling</strong> - Basic IDE features only</div>
-                    <div class="comparison-item"><strong>Slow iteration</strong> - Deploy, test, debug cycle takes minutes</div>
-                </div>
-                <div class="comparison-side good">
-                    <div class="comparison-title good">✅ With Snow-Flow AI Platform</div>
-                    <div class="comparison-item"><strong>410+ ServiceNow tools</strong> - Complete automation library</div>
-                    <div class="comparison-item"><strong>Natural language</strong> - "Create incident dashboard" → Done</div>
-                    <div class="comparison-item"><strong>75+ LLM providers</strong> - Claude, GPT, Gemini, DeepSeek + more</div>
-                    <div class="comparison-item"><strong>Role-based access</strong> - Developer & Stakeholder seats with user management</div>
-                    <div class="comparison-item"><strong>Native IDE integration</strong> - VS Code, Cursor, any editor</div>
-                    <div class="comparison-item"><strong>Real-time testing</strong> - Immediate feedback and validation</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Developer & Stakeholder Value -->
-    <section class="section" style="background: linear-gradient(135deg, rgba(0, 217, 255, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);">
-        <div class="container">
-            <div class="section-label">For Everyone</div>
-            <h2 class="section-title">Why teams choose Snow-Flow</h2>
-            <p class="section-subtitle">
-                The only platform that serves both developers building ServiceNow solutions and stakeholders managing enterprise licenses.
-            </p>
-
-            <div class="comparison" style="margin-top: 4rem;">
-                <div class="comparison-side good">
-                    <div class="comparison-title good">👨‍💻 For Developers</div>
-                    <div class="comparison-item"><strong>410+ MCP Tools</strong> - Complete ServiceNow automation library</div>
-                    <div class="comparison-item"><strong>AI-Powered Development</strong> - Natural language to working code</div>
-                    <div class="comparison-item"><strong>75+ LLM Providers</strong> - Choose your preferred AI assistant</div>
-                    <div class="comparison-item"><strong>Native IDE Integration</strong> - Works in VS Code, Cursor, any editor</div>
-                    <div class="comparison-item"><strong>Real-Time Testing</strong> - Immediate feedback loop</div>
-                    <div class="comparison-item"><strong>Enterprise Integrations</strong> - Jira, Azure DevOps, Confluence</div>
-                </div>
-                <div class="comparison-side good">
-                    <div class="comparison-title good">📊 For Stakeholders</div>
-                    <div class="comparison-item"><strong>Seat-Based Licensing</strong> - Track developer vs stakeholder seat usage</div>
-                    <div class="comparison-item"><strong>User Management</strong> - Control who has access and what role</div>
-                    <div class="comparison-item"><strong>Usage Analytics</strong> - Track seat utilization and costs</div>
-                    <div class="comparison-item"><strong>License Monitoring</strong> - See active sessions and seat limits</div>
-                    <div class="comparison-item"><strong>Read-Only CLI Access</strong> - Query data without write permissions</div>
-                    <div class="comparison-item"><strong>Cost Optimization</strong> - Pay only for seats you use</div>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 4rem;">
-                <h3 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--text-white);">
-                    The result? <span style="color: var(--brand-cyan);">50% faster development</span> with full stakeholder visibility
-                </h3>
-                <p style="color: var(--text-gray); font-size: 1.125rem; max-width: 800px; margin: 0 auto 2.5rem;">
-                    Developers ship features faster with AI-powered tools. Stakeholders maintain control with user management and analytics.
-                    Everyone wins with seat-based licensing that scales with your team.
+                <p class="hero-subtitle">
+                    Stop paying for locked-down AI. Snow-Flow lets you use <strong>your approved LLMs</strong> (Claude, GPT, DeepSeek, local models) to build ServiceNow solutions. <strong>Built by developers, for developers.</strong>
                 </p>
-                <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
-                    <a href="https://portal.snow-flow.dev" class="hero-cta">Try It Free</a>
-                    <a href="mailto:sales@snow-flow.dev" class="hero-secondary" style="background: rgba(255, 255, 255, 0.1); padding: 1.25rem 2rem; border-radius: 8px;">Schedule Demo →</a>
+
+                <div class="hero-ctas">
+                    <a href="https://github.com/groeimetai/snow-flow" class="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                        Star on GitHub
+                    </a>
+                    <a href="https://portal.snow-flow.dev" class="btn btn-secondary">
+                        Try Enterprise Free
+                    </a>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-value">410+</div>
+                        <div class="stat-label">MCP Tools</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">75+</div>
+                        <div class="stat-label">AI Providers</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">100%</div>
+                        <div class="stat-label">Open Source</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Vendor Lock-in</div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Comparison -->
-    <section id="comparison" class="section" style="background: linear-gradient(135deg, rgba(0, 217, 255, 0.03) 0%, rgba(59, 130, 246, 0.03) 100%);">
+    <!-- Why Snow-Flow Section -->
+    <section id="why" class="section why-section">
         <div class="container">
-            <div class="section-label">Platform Comparison</div>
-            <h2 class="section-title">Snow-Flow vs ServiceNow Build Agent</h2>
-            <p class="section-subtitle">
-                See how Snow-Flow's open, flexible approach compares to ServiceNow's proprietary AI solution.
-            </p>
-
-            <div class="comparison-table-container">
-                <table class="comparison-table">
-                <thead>
-                    <tr>
-                        <th>Feature</th>
-                        <th><span class="comparison-highlight">Snow-Flow Platform</span></th>
-                        <th>ServiceNow Build Agent</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Starting Cost</td>
-                        <td><span class="comparison-highlight">€0</span> (open-source) or €99/developer/month</td>
-                        <td>€100-200/user/month + €150K-€4.5M implementation</td>
-                    </tr>
-                    <tr>
-                        <td>Source Code</td>
-                        <td><span class="comparison-highlight">Open-source</span> (Elastic License 2.0) - inspect, audit, customize</td>
-                        <td>Proprietary closed-source</td>
-                    </tr>
-                    <tr>
-                        <td>AI/LLM Providers</td>
-                        <td><span class="comparison-highlight">75+ providers</span> (Claude, GPT, local models) - no vendor lock-in</td>
-                        <td>NowLLM only + optional Azure OpenAI integration</td>
-                    </tr>
-                    <tr>
-                        <td>Development Environment</td>
-                        <td><span class="comparison-highlight">Any IDE or terminal</span> - VSCode, Cursor, JetBrains, CLI</td>
-                        <td>Browser-based Studio environment only</td>
-                    </tr>
-                    <tr>
-                        <td>MCP Toolset</td>
-                        <td><span class="comparison-highlight">437 specialized tools</span> (393 OSS + 44 enterprise)</td>
-                        <td>Proprietary API (non-MCP protocol)</td>
-                    </tr>
-                    <tr>
-                        <td>Agent Architecture</td>
-                        <td><span class="comparison-highlight">Multi-agent orchestration</span> - specialized agents for complex tasks</td>
-                        <td>Single-agent assistant</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="section-header">
+                <span class="section-label">The Problem We Solve</span>
+                <h2 class="section-title">ServiceNow's AI comes with strings attached</h2>
+                <p class="section-subtitle">
+                    ServiceNow Build Agent locks you into their AI, their models, their pricing. Snow-Flow gives you freedom.
+                </p>
             </div>
 
-            <div style="margin-top: 3rem; padding: 2rem; background: rgba(0, 217, 255, 0.1); border-left: 4px solid var(--brand-cyan); border-radius: 8px;">
-                <h3 style="color: var(--brand-cyan); margin-bottom: 1rem; font-size: 1.25rem;">Why Snow-Flow?</h3>
-                <ul style="color: var(--text-gray); line-height: 2; list-style-position: inside;">
-                    <li><strong>90% Cost Reduction:</strong> Open-source foundation vs €150K-€4.5M ServiceNow implementation</li>
-                    <li><strong>No Vendor Lock-in:</strong> Choose from 75+ AI providers (Claude, GPT, local models) vs NowLLM only</li>
-                    <li><strong>Developer Freedom:</strong> Use your preferred IDE (VSCode, Cursor, JetBrains) vs browser-only Studio</li>
-                    <li><strong>Comprehensive Tooling:</strong> 437 specialized MCP tools vs proprietary closed API</li>
+            <div class="why-grid">
+                <div class="why-card problem">
+                    <div class="why-card-icon">X</div>
+                    <h3 class="why-card-title">ServiceNow Build Agent</h3>
+                    <ul class="why-card-list">
+                        <li>Locked to NowLLM only - no choice in AI models</li>
+                        <li>Browser-only Studio environment</li>
+                        <li>Proprietary closed-source system</li>
+                        <li>$150K-$4.5M implementation costs</li>
+                        <li>Single-agent architecture</li>
+                        <li>Can't use your company's approved AI models</li>
+                    </ul>
+                </div>
+
+                <div class="why-card">
+                    <div class="why-card-icon">S</div>
+                    <h3 class="why-card-title">Snow-Flow Platform</h3>
+                    <ul class="why-card-list">
+                        <li>75+ AI providers - Claude, GPT, DeepSeek, local models</li>
+                        <li>Any IDE - VS Code, Cursor, JetBrains, terminal</li>
+                        <li>100% open source (Elastic License 2.0)</li>
+                        <li>Free forever or $99/mo for managed cloud</li>
+                        <li>Multi-agent orchestration for complex tasks</li>
+                        <li>Use ONLY your organization's approved models</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Autonomous Stories Section -->
+    <section id="autonomous" class="section autonomous-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Autonomous Development</span>
+                <h2 class="section-title">From Jira ticket to deployed code.<br>Automatically.</h2>
+                <p class="section-subtitle">
+                    Snow-Flow agents autonomously complete stories from Jira & Azure DevOps, create isolated update sets, and write documentation to Confluence or ServiceNow.
+                </p>
+            </div>
+
+            <div class="autonomous-grid">
+                <div class="feature-card">
+                    <span class="feature-card-badge">Enterprise</span>
+                    <div class="feature-card-icon">J</div>
+                    <h3 class="feature-card-title">Jira Integration</h3>
+                    <p class="feature-card-desc">Pull stories directly from Jira. Snow-Flow reads requirements, builds solutions, and updates ticket status automatically.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-card-badge">Enterprise</span>
+                    <div class="feature-card-icon">A</div>
+                    <h3 class="feature-card-title">Azure DevOps</h3>
+                    <p class="feature-card-desc">Connect to Azure Boards. Complete work items autonomously with full traceability back to your sprint backlog.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-card-icon">U</div>
+                    <h3 class="feature-card-title">Isolated Update Sets</h3>
+                    <p class="feature-card-desc">Every story gets its own update set. Clean deployments, easy rollbacks, perfect audit trail.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-card-badge">Enterprise</span>
+                    <div class="feature-card-icon">C</div>
+                    <h3 class="feature-card-title">Confluence Docs</h3>
+                    <p class="feature-card-desc">Auto-generate technical documentation in Confluence. Keep your wiki in sync with your codebase.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-card-icon">K</div>
+                    <h3 class="feature-card-title">ServiceNow KB</h3>
+                    <p class="feature-card-desc">Write knowledge articles directly in ServiceNow. User guides, release notes, and technical specs.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-card-icon">M</div>
+                    <h3 class="feature-card-title">Multi-Agent</h3>
+                    <p class="feature-card-desc">Specialized agents for different tasks. Planning, coding, testing, and documentation work in parallel.</p>
+                </div>
+            </div>
+
+            <!-- Workflow Visualization -->
+            <div class="workflow">
+                <div class="workflow-step">
+                    <div class="workflow-step-num">1</div>
+                    <div class="workflow-step-title">Pull Story</div>
+                    <div class="workflow-step-desc">From Jira or Azure DevOps</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-step-num">2</div>
+                    <div class="workflow-step-title">Create Update Set</div>
+                    <div class="workflow-step-desc">Isolated per story</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-step-num">3</div>
+                    <div class="workflow-step-title">Build & Test</div>
+                    <div class="workflow-step-desc">Autonomous development</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-step-num">4</div>
+                    <div class="workflow-step-title">Document</div>
+                    <div class="workflow-step-desc">Confluence or ServiceNow</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table Section -->
+    <section id="comparison" class="section comparison-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">Platform Comparison</span>
+                <h2 class="section-title">Snow-Flow vs ServiceNow Build Agent</h2>
+                <p class="section-subtitle">
+                    A side-by-side comparison of Snow-Flow's open approach versus ServiceNow's proprietary AI solution.
+                </p>
+            </div>
+
+            <div class="comparison-wrapper">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Capability</th>
+                            <th><span class="comparison-highlight">Snow-Flow</span></th>
+                            <th>Build Agent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AI Models</td>
+                            <td><span class="comparison-highlight">75+ providers</span> - Use YOUR approved models (Claude, GPT, DeepSeek, local)</td>
+                            <td>NowLLM only + optional Azure OpenAI</td>
+                        </tr>
+                        <tr>
+                            <td>Source Code</td>
+                            <td><span class="comparison-highlight">Open source</span> - Elastic License 2.0, audit & customize</td>
+                            <td>Proprietary closed-source</td>
+                        </tr>
+                        <tr>
+                            <td>Development Environment</td>
+                            <td><span class="comparison-highlight">Any IDE</span> - VS Code, Cursor, JetBrains, terminal</td>
+                            <td>Browser-based Studio only</td>
+                        </tr>
+                        <tr>
+                            <td>Starting Cost</td>
+                            <td><span class="comparison-highlight">$0</span> (open source) or $99/dev/month</td>
+                            <td>$100-200/user/mo + $150K-$4.5M implementation</td>
+                        </tr>
+                        <tr>
+                            <td>MCP Tools</td>
+                            <td><span class="comparison-highlight">410+ tools</span> across 23 specialized servers</td>
+                            <td>Proprietary non-MCP API</td>
+                        </tr>
+                        <tr>
+                            <td>External Integrations</td>
+                            <td><span class="comparison-highlight">Jira, Azure DevOps, Confluence</span></td>
+                            <td>ServiceNow ecosystem only</td>
+                        </tr>
+                        <tr>
+                            <td>Update Set Management</td>
+                            <td><span class="comparison-highlight">1 story = 1 update set</span> automatically</td>
+                            <td>Manual update set management</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="comparison-note">
+                <div class="comparison-note-title">Why developers choose Snow-Flow</div>
+                <ul class="comparison-note-list">
+                    <li><strong>No vendor lock-in:</strong> Use any AI model your organization approves</li>
+                    <li><strong>90% cost reduction:</strong> Open-source foundation vs $150K+ ServiceNow implementation</li>
+                    <li><strong>Developer freedom:</strong> Code in your favorite IDE, not a browser</li>
+                    <li><strong>Full transparency:</strong> Every line of code on GitHub, audit and customize freely</li>
                 </ul>
             </div>
         </div>
     </section>
 
-    <!-- Pricing -->
-    <section id="pricing" class="section">
+    <!-- Pricing Section -->
+    <section id="pricing" class="section pricing-section">
         <div class="container">
-            <div class="section-label">Pricing</div>
-            <h2 class="section-title">Seat-based licensing for teams</h2>
-            <p class="section-subtitle">
-                Choose the plan that fits your needs. Developer seats for full MCP tool access and write permissions. Stakeholder seats for license management and analytics. All plans include 410+ ServiceNow tools.
-            </p>
+            <div class="section-header">
+                <span class="section-label">Simple Pricing</span>
+                <h2 class="section-title">From free to enterprise</h2>
+                <p class="section-subtitle">
+                    Start with open source. Scale with managed cloud. All plans include 410+ ServiceNow tools.
+                </p>
+            </div>
 
             <div class="pricing-grid">
                 <div class="pricing-card">
-                    <div class="pricing-badge">Open Source</div>
-                    <h3>Free</h3>
-                    <div class="pricing-price">$0<span>/mo</span></div>
+                    <span class="pricing-badge">Open Source</span>
+                    <h3 class="pricing-name">Free</h3>
+                    <div class="pricing-price">$0<span>/forever</span></div>
                     <ul class="pricing-features">
-                        <li>✅ 410+ ServiceNow tools</li>
-                        <li>✅ Self-hosted (local)</li>
-                        <li>✅ Unlimited instances</li>
-                        <li>✅ Community support</li>
-                        <li>❌ Seat management</li>
-                        <li>❌ Enterprise integrations</li>
+                        <li>410+ MCP tools</li>
+                        <li>75+ AI providers</li>
+                        <li>Self-hosted</li>
+                        <li>Unlimited instances</li>
+                        <li>Community support</li>
                     </ul>
-                    <a href="https://github.com/groeimetai/snow-flow" class="pricing-cta secondary">Get Started</a>
+                    <a href="https://github.com/groeimetai/snow-flow" class="pricing-cta">Get Started</a>
                 </div>
 
                 <div class="pricing-card featured">
-                    <div class="pricing-badge">Most Popular</div>
-                    <h3>Individual</h3>
+                    <span class="pricing-badge">Most Popular</span>
+                    <h3 class="pricing-name">Individual</h3>
                     <div class="pricing-price">$99<span>/mo</span></div>
                     <ul class="pricing-features">
-                        <li>✅ 410+ tools + Enterprise</li>
-                        <li>✅ 1 Developer Seat</li>
-                        <li>✅ Fully Managed SaaS</li>
-                        <li>✅ Jira, Azure, Confluence</li>
-                        <li>✅ ML & Analytics</li>
-                        <li>✅ 99.9% SLA + 24h support</li>
+                        <li>Everything in Free</li>
+                        <li>Jira, Azure DevOps, Confluence</li>
+                        <li>Managed SaaS (EU)</li>
+                        <li>99.9% SLA</li>
+                        <li>24h email support</li>
                     </ul>
                     <a href="https://portal.snow-flow.dev" class="pricing-cta">Start Trial</a>
                 </div>
 
                 <div class="pricing-card">
-                    <div class="pricing-badge">Teams</div>
-                    <h3>Teams</h3>
-                    <div class="pricing-price">$79<span>/dev seat</span></div>
+                    <span class="pricing-badge">Teams</span>
+                    <h3 class="pricing-name">Teams</h3>
+                    <div class="pricing-price">$79<span>/seat/mo</span></div>
                     <ul class="pricing-features">
-                        <li>✅ Everything in Individual</li>
-                        <li>✅ Developer + Stakeholder seats</li>
-                        <li>✅ User Management Portal</li>
-                        <li>✅ Usage Analytics Dashboard</li>
-                        <li>✅ Priority Support (4h)</li>
-                        <li>✅ Min 3 seats</li>
+                        <li>Everything in Individual</li>
+                        <li>Developer + Stakeholder seats</li>
+                        <li>User management portal</li>
+                        <li>Usage analytics</li>
+                        <li>4h priority support</li>
                     </ul>
                     <a href="https://portal.snow-flow.dev" class="pricing-cta">Start Trial</a>
                 </div>
 
-                <div class="pricing-card enterprise">
-                    <div class="pricing-badge">Large Teams</div>
-                    <h3>Enterprise</h3>
-                    <div class="pricing-price">Custom<span> pricing</span></div>
+                <div class="pricing-card">
+                    <span class="pricing-badge">Enterprise</span>
+                    <h3 class="pricing-name">Enterprise</h3>
+                    <div class="pricing-price">Custom</div>
                     <ul class="pricing-features">
-                        <li>✅ Everything in Teams</li>
-                        <li>✅ Custom seat packages (50+ seats)</li>
-                        <li>✅ Dedicated account manager</li>
-                        <li>✅ Custom SLA guarantees</li>
-                        <li>✅ 24/7 Priority Support</li>
-                        <li>✅ SOC 2 / ISO 27001</li>
+                        <li>Everything in Teams</li>
+                        <li>50+ seat packages</li>
+                        <li>Dedicated account manager</li>
+                        <li>Custom SLA</li>
+                        <li>SOC 2 / ISO 27001</li>
                     </ul>
-                    <a href="mailto:sales@snow-flow.dev" class="pricing-cta secondary">Contact Sales</a>
+                    <a href="mailto:sales@snow-flow.dev" class="pricing-cta">Contact Sales</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Features -->
-    <section id="features" class="section">
+    <!-- Built by Developers Section -->
+    <section class="section developers-section">
         <div class="container">
-            <div class="section-label">Features</div>
-            <h2 class="section-title">Built for developers<br>AND stakeholders</h2>
-
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🤖</div>
-                    <h3 class="feature-title">AI Integration</h3>
-                    <p class="feature-text">
-                        Talk to your ServiceNow instance through Claude Code and other AI assistants via MCP protocol. 75+ LLM providers supported.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🏗️</div>
-                    <h3 class="feature-title">410+ ServiceNow Tools</h3>
-                    <p class="feature-text">
-                        Comprehensive tools for deployment, operations, automation, UI Builder, workspaces, and more. Full MCP protocol integration.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">👥</div>
-                    <h3 class="feature-title">Seat-Based Licensing</h3>
-                    <p class="feature-text">
-                        Developer seats for full tool access, Stakeholder seats for portal-only. Flexible allocation, user management portal included.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🔐</div>
-                    <h3 class="feature-title">User Management</h3>
-                    <p class="feature-text">
-                        Complete user tracking, activity logs, role-based access control, activate/deactivate users, view real-time connection status.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">☁️</div>
-                    <h3 class="feature-title">Managed SaaS</h3>
-                    <p class="feature-text">
-                        Cloud-hosted on Google Cloud (EU). Zero setup, automatic updates, instant activation with license key. 99.9% SLA.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3 class="feature-title">Enterprise Analytics</h3>
-                    <p class="feature-text">
-                        Usage analytics, seat utilization, connection monitoring, audit trails. Perfect for compliance and cost optimization.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🔌</div>
-                    <h3 class="feature-title">Enterprise Integrations</h3>
-                    <p class="feature-text">
-                        40+ tools for Jira, Azure DevOps, and Confluence with bidirectional sync. ML & Analytics tools included.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🏢</div>
-                    <h3 class="feature-title">White-Label Portal</h3>
-                    <p class="feature-text">
-                        Service integrators can rebrand the portal with their own logo, colors, and custom domain. 40%+ partner margins.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Transparency & Platform Status -->
-    <section class="section" style="background: linear-gradient(135deg, rgba(0, 217, 255, 0.03) 0%, rgba(59, 130, 246, 0.02) 100%); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-        <div class="container" style="max-width: 1100px;">
-            <div class="section-label">Transparency</div>
-            <h2 class="section-title">Built on trust, shipped with clarity</h2>
-            <p class="section-subtitle">
-                Real updates. Real features. No marketing fluff. Here's exactly where we are and where we're going.
-            </p>
-
-            <!-- Platform Status Grid -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin: 4rem 0;">
-                <!-- Core Platform Status -->
-                <div style="background: var(--brand-darker); border: 2px solid var(--brand-cyan); border-radius: 16px; padding: 2rem; position: relative; overflow: hidden;">
-                    <div style="position: absolute; top: 0; right: 0; background: var(--brand-cyan); color: var(--brand-darker); padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; border-bottom-left-radius: 12px;">PRODUCTION</div>
-                    <div style="margin-top: 1rem;">
-                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-white); margin-bottom: 1rem;">Core Platform</h3>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-                            <div style="flex: 1; height: 8px; background: rgba(0, 217, 255, 0.2); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 100%; height: 100%; background: var(--brand-cyan); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 0.875rem; font-weight: 700; color: var(--brand-cyan);">100%</span>
-                        </div>
-                        <ul style="list-style: none; display: grid; gap: 0.75rem;">
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>410+ MCP tools production ready</span>
-                            </li>
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>75+ LLM providers integrated</span>
-                            </li>
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>Native IDE support (VS Code, Cursor)</span>
-                            </li>
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>Real-time ServiceNow sync</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Enterprise Features Status -->
-                <div style="background: var(--brand-darker); border: 2px solid var(--brand-cyan); border-radius: 16px; padding: 2rem; position: relative; overflow: hidden;">
-                    <div style="position: absolute; top: 0; right: 0; background: var(--brand-cyan); color: var(--brand-darker); padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; border-bottom-left-radius: 12px;">LIVE</div>
-                    <div style="margin-top: 1rem;">
-                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-white); margin-bottom: 1rem;">Enterprise Ready</h3>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-                            <div style="flex: 1; height: 8px; background: rgba(0, 217, 255, 0.2); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 100%; height: 100%; background: var(--brand-cyan); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 0.875rem; font-weight: 700; color: var(--brand-cyan);">100%</span>
-                        </div>
-                        <ul style="list-style: none; display: grid; gap: 0.75rem;">
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>Seat-based licensing system</span>
-                            </li>
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>User management portal</span>
-                            </li>
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>Role-based access control</span>
-                            </li>
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>Usage analytics dashboard</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Infrastructure Status -->
-                <div style="background: var(--brand-darker); border: 2px solid var(--brand-cyan); border-radius: 16px; padding: 2rem; position: relative; overflow: hidden;">
-                    <div style="position: absolute; top: 0; right: 0; background: var(--brand-cyan); color: var(--brand-darker); padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; border-bottom-left-radius: 12px;">HOSTED</div>
-                    <div style="margin-top: 1rem;">
-                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-white); margin-bottom: 1rem;">Cloud Infrastructure</h3>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-                            <div style="flex: 1; height: 8px; background: rgba(0, 217, 255, 0.2); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 99.9%; height: 100%; background: var(--brand-cyan); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 0.875rem; font-weight: 700; color: var(--brand-cyan);">99.9%</span>
-                        </div>
-                        <ul style="list-style: none; display: grid; gap: 0.75rem;">
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>Google Cloud Platform (EU)</span>
-                            </li>
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>99.9% uptime SLA</span>
-                            </li>
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span>Automatic scaling & updates</span>
-                            </li>
-                            <li style="color: var(--text-gray); font-size: 0.95rem; display: flex; align-items: start; gap: 0.5rem;">
-                                <span style="color: var(--brand-cyan); flex-shrink: 0;">✓</span>
-                                <span><a href="https://status.snow-flow.dev" style="color: var(--brand-cyan); text-decoration: underline;">Live status page</a></span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="section-header">
+                <span class="section-label">Philosophy</span>
+                <h2 class="section-title">Built by developers.<br>For developers.</h2>
             </div>
 
-            <!-- Version History Timeline -->
-            <div style="margin-top: 4rem;">
-                <h3 style="font-size: 1.75rem; font-weight: 700; text-align: center; margin-bottom: 3rem; color: var(--text-white);">Recent releases</h3>
-
-                <div style="max-width: 800px; margin: 0 auto; position: relative;">
-                    <!-- Timeline line -->
-                    <div style="position: absolute; left: 2rem; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, var(--brand-cyan), transparent);"></div>
-
-                    <!-- Release items -->
-                    <div style="display: grid; gap: 2rem; padding-left: 5rem; position: relative;">
-                        <div style="position: relative;">
-                            <div style="position: absolute; left: -3rem; top: 0; width: 1rem; height: 1rem; background: var(--brand-cyan); border-radius: 50%; box-shadow: 0 0 0 4px rgba(0, 217, 255, 0.2);"></div>
-                            <div style="background: rgba(0, 217, 255, 0.05); border: 1px solid rgba(0, 217, 255, 0.2); border-radius: 12px; padding: 1.5rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                                    <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--brand-cyan);">v8.30.6</h4>
-                                    <span style="font-size: 0.875rem; color: var(--text-gray);">Nov 4, 2025</span>
-                                </div>
-                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">Zod v4 compatibility fix - Resolved schema validation issues for improved MCP tool stability</p>
-                            </div>
-                        </div>
-
-                        <div style="position: relative;">
-                            <div style="position: absolute; left: -3rem; top: 0; width: 1rem; height: 1rem; background: var(--brand-cyan); border-radius: 50%; box-shadow: 0 0 0 4px rgba(0, 217, 255, 0.2);"></div>
-                            <div style="background: rgba(0, 217, 255, 0.05); border: 1px solid rgba(0, 217, 255, 0.2); border-radius: 12px; padding: 1.5rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                                    <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--brand-cyan);">v8.30.5</h4>
-                                    <span style="font-size: 0.875rem; color: var(--text-gray);">Oct 30, 2025</span>
-                                </div>
-                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">Stakeholder role support - Added permission validation and tool classification for read-only access</p>
-                            </div>
-                        </div>
-
-                        <div style="position: relative;">
-                            <div style="position: absolute; left: -3rem; top: 0; width: 1rem; height: 1rem; background: var(--text-gray); border-radius: 50%;"></div>
-                            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                                    <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--text-white);">v8.30.0</h4>
-                                    <span style="font-size: 0.875rem; color: var(--text-gray);">Oct 15, 2025</span>
-                                </div>
-                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">User management portal - Added complete admin interface for seat and user management</p>
-                            </div>
-                        </div>
-
-                        <div style="position: relative;">
-                            <div style="position: absolute; left: -3rem; top: 0; width: 1rem; height: 1rem; background: var(--text-gray); border-radius: 50%;"></div>
-                            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                                    <h4 style="font-size: 1.125rem; font-weight: 700; color: var(--text-white);">v8.0.0</h4>
-                                    <span style="font-size: 0.875rem; color: var(--text-gray);">Sep 2025</span>
-                                </div>
-                                <p style="color: var(--text-gray); font-size: 0.95rem; margin: 0;">Seat-based licensing launch - Developer and stakeholder roles with usage tracking</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Open Source Commitment -->
-            <div style="margin-top: 4rem; text-align: center; padding: 3rem; background: rgba(0, 217, 255, 0.03); border: 2px solid rgba(0, 217, 255, 0.1); border-radius: 16px;">
-                <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--text-white); margin-bottom: 1rem;">Open source, always</h3>
-                <p style="color: var(--text-gray); font-size: 1.125rem; max-width: 700px; margin: 0 auto 2rem; line-height: 1.7;">
-                    Every feature, every tool, every line of code is available on GitHub under Elastic License 2.0. No vendor lock-in. No hidden fees. Use it free forever or upgrade for managed infrastructure and enterprise features.
+            <div class="developers-quote">
+                <p class="developers-quote-text">
+                    "We got tired of being told which AI we could use. Snow-Flow is our answer: <span class="highlight">use any model, any IDE, any way you want.</span>"
                 </p>
-                <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
-                    <a href="https://github.com/groeimetai/snow-flow" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: var(--text-white); text-decoration: none; font-weight: 600; transition: all 0.3s ease;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-                        </svg>
-                        View on GitHub
-                    </a>
-                    <a href="https://status.snow-flow.dev" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; background: transparent; border: 1px solid rgba(0, 217, 255, 0.3); border-radius: 8px; color: var(--brand-cyan); text-decoration: none; font-weight: 600; transition: all 0.3s ease;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                        </svg>
-                        Status Page
-                    </a>
+                <p class="developers-quote-author">The Snow-Flow Team</p>
+            </div>
+
+            <div class="terminal-demo">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">snow-flow</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span> <span class="terminal-command">snow-flow init</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-output">Initializing Snow-Flow MCP servers...</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-success">410 tools loaded from 23 servers</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span> <span class="terminal-command">snow-flow agent "Complete JIRA-1234"</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-output">Creating update set: JIRA-1234-incident-dashboard</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-output">Building widget... Running tests... Deploying...</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-success">Story complete. Update set ready for promotion.</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1925,52 +1790,45 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <!-- Footer Brand -->
             <div class="footer-brand">
                 <a href="#" class="footer-logo">
                     <svg class="footer-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <defs>
-                            <linearGradient id="footer-mountain" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                            <linearGradient id="footer-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
                                 <stop offset="0%" stop-color="#FFFFFF"/>
                                 <stop offset="100%" stop-color="#00D9FF"/>
                             </linearGradient>
                         </defs>
-                        <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z"
-                              fill="url(#footer-mountain)"
-                              stroke="#00D9FF"
-                              stroke-width="1.2"
-                              stroke-linejoin="round"/>
+                        <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#footer-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
                     </svg>
-                    <div class="footer-logo-text">
+                    <span class="footer-logo-text">
                         <span class="snow">SNOW</span><span class="flow">FLOW</span>
-                    </div>
+                    </span>
                 </a>
                 <p class="footer-tagline">
-                    Enterprise ServiceNow development platform powered by AI. 410+ tools, seat-based licensing, user management, 99.9% uptime. Built for developers and stakeholders.
+                    The open-source ServiceNow development platform. Use your AI. Keep your freedom.
                 </p>
             </div>
 
-            <!-- Footer Links -->
             <div class="footer-grid">
-                <div class="footer-section">
+                <div class="footer-column">
                     <h4>Product</h4>
                     <ul>
                         <li><a href="#pricing">Pricing</a></li>
-                        <li><a href="#features">Features</a></li>
+                        <li><a href="#autonomous">Features</a></li>
                         <li><a href="https://github.com/groeimetai/snow-flow">Documentation</a></li>
                         <li><a href="https://status.snow-flow.dev">Status</a></li>
                     </ul>
                 </div>
-
-                <div class="footer-section">
+                <div class="footer-column">
                     <h4>Enterprise</h4>
                     <ul>
                         <li><a href="mailto:sales@snow-flow.dev">Contact Sales</a></li>
                         <li><a href="https://portal.snow-flow.dev">Portal</a></li>
+                        <li><a href="#comparison">vs Build Agent</a></li>
                     </ul>
                 </div>
-
-                <div class="footer-section">
+                <div class="footer-column">
                     <h4>Resources</h4>
                     <ul>
                         <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
@@ -1978,18 +1836,16 @@
                         <li><a href="https://github.com/groeimetai/snowcode">SnowCode</a></li>
                     </ul>
                 </div>
-
-                <div class="footer-section">
+                <div class="footer-column">
                     <h4>Company</h4>
                     <ul>
-                        <li><a href="mailto:sales@snow-flow.dev">Contact</a></li>
-                        <li><a href="https://github.com/groeimetai/snow-flow/issues">Support</a></li>
                         <li><a href="mailto:hello@snow-flow.dev">About</a></li>
+                        <li><a href="https://github.com/groeimetai/snow-flow/issues">Support</a></li>
+                        <li><a href="mailto:sales@snow-flow.dev">Contact</a></li>
                     </ul>
                 </div>
             </div>
 
-            <!-- Footer Bottom -->
             <div class="footer-bottom">
                 <div class="footer-social">
                     <a href="https://github.com/groeimetai/snow-flow" aria-label="GitHub">
@@ -1999,112 +1855,108 @@
                     </a>
                     <a href="https://discord.gg/snowflow" aria-label="Discord">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
                         </svg>
                     </a>
-                    <a href="https://twitter.com/snowflowdev" aria-label="Twitter">
+                    <a href="https://www.linkedin.com/company/snow-flow" aria-label="LinkedIn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                         </svg>
                     </a>
                 </div>
-                <p>&copy; 2025 Snow-Flow. Built for the ServiceNow community. Elastic License 2.0.</p>
+                <p class="footer-copyright">
+                    2025 Snow-Flow. Open source under Elastic License 2.0.
+                </p>
             </div>
         </div>
     </footer>
 
     <script>
-        // ========================================
-        // MOBILE MENU - CLEAN REBUILD
-        // ========================================
-        document.addEventListener('DOMContentLoaded', function() {
-            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-            const navLinks = document.querySelector('.nav-links');
-            const backdrop = document.querySelector('.mobile-menu-backdrop');
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileNav = document.getElementById('mobileNav');
+        const mobileBackdrop = document.getElementById('mobileBackdrop');
 
-            if (!mobileMenuBtn || !navLinks) {
-                console.warn('Mobile menu elements not found');
-                return;
-            }
+        function toggleMobileMenu() {
+            mobileMenuBtn.classList.toggle('active');
+            mobileNav.classList.toggle('active');
+            mobileBackdrop.classList.toggle('active');
+            document.body.style.overflow = mobileNav.classList.contains('active') ? 'hidden' : '';
+        }
 
-            // Toggle menu on button click
-            mobileMenuBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                toggleMenu();
-            });
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+        mobileBackdrop.addEventListener('click', toggleMobileMenu);
 
-            function toggleMenu() {
-                const isActive = navLinks.classList.contains('active');
-
-                if (isActive) {
-                    closeMenu();
-                } else {
-                    openMenu();
-                }
-            }
-
-            function openMenu() {
-                navLinks.classList.add('active');
-                mobileMenuBtn.classList.add('active');
-                if (backdrop) backdrop.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeMenu() {
-                navLinks.classList.remove('active');
-                mobileMenuBtn.classList.remove('active');
-                if (backdrop) backdrop.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-
-            // Close menu when clicking on backdrop (if exists)
-            if (backdrop) {
-                backdrop.addEventListener('click', closeMenu);
-            }
-
-            // Close menu when clicking any link
-            navLinks.querySelectorAll('a').forEach(function(link) {
-                link.addEventListener('click', function() {
-                    closeMenu();
-                });
-            });
-
-            // Close menu on ESC key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && navLinks.classList.contains('active')) {
-                    closeMenu();
-                }
-            });
-
-            // Close menu on window resize if bigger than mobile
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 768 && navLinks.classList.contains('active')) {
-                    closeMenu();
+        // Close mobile menu on link click
+        document.querySelectorAll('.mobile-nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (mobileNav.classList.contains('active')) {
+                    toggleMobileMenu();
                 }
             });
         });
 
-        // ========================================
-        // SMOOTH SCROLLING FOR ANCHOR LINKS
-        // ========================================
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
-                anchor.addEventListener('click', function(e) {
-                    const href = this.getAttribute('href');
-                    if (href && href !== '#') {
-                        const target = document.querySelector(href);
-                        if (target) {
-                            e.preventDefault();
-                            const offsetTop = target.offsetTop - 80;
-                            window.scrollTo({
-                                top: offsetTop,
-                                behavior: 'smooth'
-                            });
-                        }
-                    }
-                });
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        let lastScroll = 0;
+
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+
+            if (currentScroll > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+
+            // Hide/show navbar on scroll
+            if (currentScroll > lastScroll && currentScroll > 400) {
+                navbar.style.transform = 'translateY(-100%)';
+            } else {
+                navbar.style.transform = 'translateY(0)';
+            }
+
+            lastScroll = currentScroll;
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    const offset = 80;
+                    const targetPosition = target.offsetTop - offset;
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
             });
         });
+
+        // Scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Console easter egg
+        console.log('%cSnow-Flow', 'font-size: 40px; font-weight: bold; background: linear-gradient(135deg, #00D9FF 0%, #8B5CF6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;');
+        console.log('%cBreak free from vendor lock-in. Use YOUR AI.', 'font-size: 14px; color: #94A3B8;');
+        console.log('%chttps://github.com/groeimetai/snow-flow', 'font-size: 12px; color: #00D9FF;');
     </script>
 </body>
 </html>
