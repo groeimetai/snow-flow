@@ -117,25 +117,23 @@ snow-flow memory cleanup                 # Clean unused entries</code></pre>
                 <h2>JavaScript API</h2>
                 
                 <div class="api-method">
-                    <h3>snow_deploy_widget(options)</h3>
-                    <p>Deploy a Service Portal widget with automatic coherence validation.</p>
-                    <pre><code class="language-javascript">const result = await snow_deploy_widget({
-    name: "My Widget",
-    id: "my_widget",
+                    <h3>snow_create_artifact(options)</h3>
+                    <p>Create ServiceNow artifacts with automatic ES5 validation. Supports widgets, pages, scripts, and more.</p>
+                    <pre><code class="language-javascript">const result = await snow_create_artifact({
+    type: "sp_widget",
+    name: "my_widget",
+    title: "My Widget",
     template: "&lt;div&gt;HTML template&lt;/div&gt;",
     css: ".my-class { color: blue; }",
     server_script: "(function() { data.items = []; })()",
     client_script: "function($scope) { var c = this; }",
-    option_schema: [
+    option_schema: JSON.stringify([
         {
             name: "title",
             label: "Title",
             type: "string"
         }
-    ],
-    demo_data: {},
-    dependencies: [],
-    update_set: "auto" // or specific sys_id
+    ])
 });
 
 // Returns:
@@ -321,18 +319,15 @@ await snow_property_manager({
                 
                 <div class="api-method">
                     <h3>ServiceNow Deployment MCP</h3>
-                    <p>Tools for deploying artifacts to ServiceNow.</p>
+                    <p>Tools for creating and deploying artifacts to ServiceNow.</p>
                     <ul class="tool-list">
-                        <li><code>snow_deploy_widget</code> - Deploy Service Portal widgets</li>
-                        <li><code>snow_deploy_portal_page</code> - Deploy portal pages</li>
-                        <li><code>snow_deploy_flow</code> - Deploy Flow Designer flows</li>
-                        <li><code>snow_deploy_application</code> - Deploy scoped applications</li>
+                        <li><code>snow_create_artifact</code> - Create any ServiceNow artifact (widgets, pages, scripts, etc.)</li>
+                        <li><code>snow_update</code> - Update existing artifacts</li>
                         <li><code>snow_create_update_set</code> - Create update sets</li>
                         <li><code>snow_validate_deployment</code> - Validate deployments</li>
                         <li><code>snow_rollback_deployment</code> - Rollback on failure</li>
-                        <li><code>snow_deploy_ui_page</code> - Deploy UI pages</li>
-                        <li><code>snow_deploy_script_include</code> - Deploy Script Includes</li>
-                        <li><code>snow_deploy_business_rule</code> - Deploy Business Rules</li>
+                        <li><code>snow_preview_widget</code> - Preview widgets before deployment</li>
+                        <li><code>snow_widget_test</code> - Test widget functionality</li>
                     </ul>
                 </div>
 

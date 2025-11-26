@@ -104,8 +104,8 @@ describe('Stakeholder Write Protection - End-to-End', () => {
   describe('WRITE Operations - Stakeholder Denied', () => {
     var writeTools: MCPToolDefinition[] = [
       {
-        name: 'snow_deploy',
-        description: 'Deploy artifacts to ServiceNow',
+        name: 'snow_create_artifact',
+        description: 'Create ServiceNow artifacts',
         permission: 'write',
         allowedRoles: ['developer', 'admin'],
         inputSchema: { type: 'object', properties: {} }
@@ -209,8 +209,8 @@ describe('Stakeholder Write Protection - End-to-End', () => {
         inputSchema: { type: 'object', properties: {} }
       },
       {
-        name: 'snow_deploy',
-        description: 'Deploy artifacts',
+        name: 'snow_create_artifact',
+        description: 'Create artifacts',
         permission: 'write',
         allowedRoles: ['developer', 'admin'],
         inputSchema: { type: 'object', properties: {} }
@@ -248,7 +248,7 @@ describe('Stakeholder Write Protection - End-to-End', () => {
       expect(names).toContain('snow_query_table');
       expect(names).toContain('snow_cmdb_search');
       expect(names).toContain('snow_knowledge_search');
-      expect(names).not.toContain('snow_deploy');
+      expect(names).not.toContain('snow_create_artifact');
       expect(names).not.toContain('snow_create_business_rule');
     });
 
@@ -312,8 +312,8 @@ describe('Stakeholder Write Protection - End-to-End', () => {
     test('should protect all deployment tools from stakeholder', () => {
       var deploymentTools: MCPToolDefinition[] = [
         {
-          name: 'snow_deploy',
-          description: 'Deploy artifacts',
+          name: 'snow_create_artifact',
+          description: 'Create artifacts',
           permission: 'write',
           allowedRoles: ['developer', 'admin'],
           inputSchema: { type: 'object', properties: {} }
@@ -433,8 +433,8 @@ describe('Stakeholder Write Protection - End-to-End', () => {
   describe('Multi-Role Scenarios', () => {
     test('should enforce different permissions for different roles on same tool', () => {
       var tool: MCPToolDefinition = {
-        name: 'snow_deploy',
-        description: 'Deploy artifacts',
+        name: 'snow_create_artifact',
+        description: 'Create artifacts',
         permission: 'write',
         allowedRoles: ['developer', 'admin'],
         inputSchema: { type: 'object', properties: {} }
@@ -460,7 +460,7 @@ describe('Stakeholder Write Protection - End-to-End', () => {
           inputSchema: { type: 'object', properties: {} }
         },
         {
-          name: 'snow_deploy',
+          name: 'snow_create_artifact',
           permission: 'write',
           allowedRoles: ['developer', 'admin'],
           description: '',
@@ -487,7 +487,7 @@ describe('Stakeholder Write Protection - End-to-End', () => {
 
       // Stakeholder should succeed on READ, fail on WRITE
       expect(stakeholderResults[0].allowed).toBe(true);  // snow_query_table (READ)
-      expect(stakeholderResults[1].allowed).toBe(false); // snow_deploy (WRITE)
+      expect(stakeholderResults[1].allowed).toBe(false); // snow_create_artifact (WRITE)
       expect(stakeholderResults[2].allowed).toBe(true);  // snow_cmdb_search (READ)
     });
   });
@@ -554,10 +554,10 @@ describe('Stakeholder Write Protection - End-to-End', () => {
       expect(() => validatePermission(tool, stakeholderJWT)).not.toThrow();
     });
 
-    test('Scenario: Stakeholder trying to deploy widget (should fail)', () => {
+    test('Scenario: Stakeholder trying to create artifact (should fail)', () => {
       var tool: MCPToolDefinition = {
-        name: 'snow_deploy',
-        description: 'Deploy Service Portal widget',
+        name: 'snow_create_artifact',
+        description: 'Create Service Portal widget',
         permission: 'write',
         allowedRoles: ['developer', 'admin'],
         inputSchema: {

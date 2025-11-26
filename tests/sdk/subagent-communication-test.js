@@ -97,7 +97,7 @@ async function testOrchestratorDelegationPatterns() {
     },
     {
       name: 'MCP Tool Discovery',
-      pattern: /snow_comprehensive_search|snow_deploy|snow_query_table/,
+      pattern: /snow_comprehensive_search|snow_create_artifact|snow_query_table/,
       required: true
     },
     {
@@ -136,7 +136,7 @@ async function testSpecialistAgentCapabilities() {
     {
       file: 'deployment-specialist.md',
       requiredCapabilities: [
-        'snow_deploy',
+        'snow_create_artifact',
         'snow_validate_deployment',
         'snow_rollback_deployment',
         'Widget Coherence',

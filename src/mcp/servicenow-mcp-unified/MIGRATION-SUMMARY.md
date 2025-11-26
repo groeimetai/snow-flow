@@ -104,7 +104,7 @@ Successfully migrated Snow-Flow from 34 separate MCP servers to a single unified
 ### Deployment & Validation (3 tools)
 
 **Domain: deployment/**
-1. `snow_deploy` - Deploy widgets, pages, flows with validation
+1. `snow_create_artifact` - Create widgets, pages, scripts with validation
 2. `snow_rollback_deployment` - Safe rollback of failed deployments
 3. `snow_get_deployment_status` - Check deployment status
 

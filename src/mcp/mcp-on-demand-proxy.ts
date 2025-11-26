@@ -29,7 +29,7 @@ const TOOL_SERVER_MAP: Record<string, string> = {
   
   // Deployment tools
   'snow_create_widget': 'servicenow-deployment',
-  'snow_deploy_widget': 'servicenow-deployment',
+  'snow_create_artifact': 'servicenow-unified',
   'snow_create_flow': 'servicenow-deployment',
   
   // ML tools

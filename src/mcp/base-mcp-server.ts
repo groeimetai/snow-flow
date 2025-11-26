@@ -329,8 +329,7 @@ export abstract class BaseMCPServer {
     // Tool-specific timeouts based on complexity
     const timeoutMap: Record<string, number> = {
       'snow_create_flow': 90000,           // Flow creation: 90s
-      'snow_deploy': 120000,               // Deployment: 2 minutes
-      'snow_deploy_widget': 180000,        // Widget deployment: 3 minutes (complex ML widgets)
+      'snow_create_artifact': 120000,      // Artifact creation: 2 minutes
       'snow_create_widget': 120000,        // Widget creation: 2 minutes
       'ml_train_incident_classifier': 300000, // ML training: 5 minutes
       'ml_train_change_risk': 300000,      // ML training: 5 minutes

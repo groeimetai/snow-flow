@@ -33,7 +33,7 @@ servicenow-mcp-unified/
 ├── server.ts                     # Unified server implementation
 ├── tools/                        # Auto-discovered tools
 │   ├── deployment/              # Widget, app, flow deployment
-│   │   ├── snow_deploy.ts
+│   │   ├── snow_create_artifact.ts
 │   │   ├── snow_validate_deployment.ts
 │   │   ├── snow_rollback_deployment.ts
 │   │   └── index.ts             # Tool exports
@@ -77,8 +77,8 @@ servicenow-mcp-unified/
 Tools are organized by **domain** (functional area), not by original server:
 
 ### 1. Deployment Tools (deployment/)
-**Purpose:** Artifact deployment with validation
-- `snow_deploy` - Deploy widgets, pages, flows
+**Purpose:** Artifact creation and deployment with validation
+- `snow_create_artifact` - Create widgets, pages, scripts, and more
 - `snow_validate_deployment` - Pre-deployment validation
 - `snow_rollback_deployment` - Safe rollback
 - `snow_preview_widget` - Widget preview
@@ -132,17 +132,17 @@ The tool registry automatically discovers tools using:
 
 **Tool Definition Pattern:**
 ```typescript
-// tools/deployment/snow_deploy.ts
+// tools/deployment/snow_create_artifact.ts
 export const toolDefinition = {
-  name: 'snow_deploy',
-  description: 'Deploy ServiceNow artifacts with validation',
+  name: 'snow_create_artifact',
+  description: 'Create ServiceNow artifacts with ES5 validation',
   inputSchema: {
     type: 'object',
     properties: {
-      type: { type: 'string', enum: ['widget', 'page', 'flow'] },
-      config: { type: 'object' }
+      type: { type: 'string', enum: ['sp_widget', 'sp_page', 'script_include', ...] },
+      name: { type: 'string' }
     },
-    required: ['type', 'config']
+    required: ['type', 'name']
   }
 };
 
@@ -184,12 +184,12 @@ const response = await client.get('/api/now/table/incident');
 import { handleError, retryWithBackoff } from '../shared/error-handler';
 
 try {
-  await retryWithBackoff(() => deployWidget(config), {
+  await retryWithBackoff(() => createArtifact(config), {
     maxAttempts: 3,
     initialDelay: 1000
   });
 } catch (error) {
-  throw handleError(error, 'snow_deploy', { config });
+  throw handleError(error, 'snow_create_artifact', { config });
 }
 ```
 
@@ -298,10 +298,10 @@ node dist/mcp/servicenow-mcp-unified/index.js
 
 **Example:**
 ```typescript
-// tools/deployment/snow_deploy_flow.ts
+// tools/deployment/snow_create_flow.ts
 export const toolDefinition = {
-  name: 'snow_deploy_flow',
-  description: 'Deploy Flow Designer flows',
+  name: 'snow_create_flow',
+  description: 'Create Flow Designer flows',
   inputSchema: { /* ... */ }
 };
 
@@ -314,13 +314,11 @@ export async function execute(args: any, context: ServiceNowContext) {
 ### Tool Execution
 ```typescript
 // From Claude Agent SDK subagent
-const result = await snow_deploy({
-  type: 'widget',
-  config: {
-    name: 'my_widget',
-    template: '<div>Hello</div>',
-    script: 'data.message = "Hello";'
-  }
+const result = await snow_create_artifact({
+  type: 'sp_widget',
+  name: 'my_widget',
+  template: '<div>Hello</div>',
+  server_script: 'data.message = "Hello";'
 });
 ```
 

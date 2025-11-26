@@ -259,7 +259,7 @@ await mcp__claude-flow__memory_usage({
         'snow_create_uib_data_broker'
       ],
       'deployment-specialist': [
-        'snow_deploy',
+        'snow_create_artifact',
         'snow_validate_deployment',
         'snow_ensure_active_update_set'
       ],

@@ -689,7 +689,7 @@ ${errorText}
         ],
         next_steps: [
           'Contact ServiceNow admin for elevated permissions',
-          'Or use snow_deploy with fallback_strategy="manual_steps"'
+          'Or use snow_create_artifact with fallback_strategy="manual_steps"'
         ]
       }
     );
@@ -819,7 +819,7 @@ ${errorText}
           '4. Check application scope permissions'
         ],
         next_steps: [
-          'Try snow_deploy with scope_strategy="global"',
+          'Try snow_create_artifact with scope_strategy="global"',
           'Or create application scope manually first'
         ]
       }

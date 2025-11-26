@@ -43,18 +43,18 @@ export class MCPToolRegistry {
       description: 'Comprehensive table schema discovery'
     });
 
-    // Flow deployment tools
+    // Flow deployment tools - NOTE: snow_deploy removed, use snow_create_artifact
     this.registerTool({
-      canonicalName: 'deploy_flow',
+      canonicalName: 'create_artifact',
       aliases: [
-        'mcp__servicenow-deployment__snow_deploy_flow',
-        'snow_deploy_flow',
-        'deploy_flow',
-        'flow_deploy'
+        'mcp__servicenow-unified__snow_create_artifact',
+        'snow_create_artifact',
+        'create_artifact',
+        'artifact_create'
       ],
-      provider: 'servicenow-deployment',
-      actualTool: 'mcp__servicenow-deployment__snow_deploy',
-      description: 'Deploy flows to ServiceNow'
+      provider: 'servicenow-unified',
+      actualTool: 'mcp__servicenow-unified__snow_create_artifact',
+      description: 'Create ServiceNow artifacts (widgets, pages, scripts, etc.)'
     });
 
 

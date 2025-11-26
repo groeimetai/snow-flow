@@ -20,7 +20,7 @@ Specializes in creating ServiceNow Service Portal widgets.
 - Demo data generation
 
 **MCP Tools Used:**
-- `snow_deploy` - Deploy widgets to ServiceNow
+- `snow_create_artifact` - Create and deploy widgets to ServiceNow
 - `snow_preview_widget` - Preview widget rendering
 - `snow_widget_test` - Test widget functionality
 

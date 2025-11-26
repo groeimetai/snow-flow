@@ -8,9 +8,9 @@ const snowFlowTools = {
     badge: "10+ Tools",
     tools: [
       {
-        name: "snow_deploy",
-        description: "Universal deployment tool for creating NEW ServiceNow artifacts. Now supports catalog_ui_policy! Features automatic update set management, permission escalation, retry logic, and comprehensive error recovery.",
-        highlight: "NEW: catalog_ui_policy support"
+        name: "snow_create_artifact",
+        description: "Universal artifact creation tool for ServiceNow. Create widgets, pages, scripts, business rules, and more with a unified interface. Features automatic ES5 validation and update set management.",
+        highlight: "RECOMMENDED: Use for all artifact creation"
       },
       {
         name: "snow_update", 

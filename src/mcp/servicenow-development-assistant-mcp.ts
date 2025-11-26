@@ -1795,7 +1795,7 @@ export class ServiceNowDevelopmentAssistantMCP {
 
   private formatResults(results: any[]): string {
     if (!results || results.length === 0) {
-      return '❌ No artifacts found matching your search criteria.\n\n🔍 **Debugging Info:**\n- ServiceNow connection appears to be working\n- Try broader search terms\n- Check if widgets exist in your ServiceNow instance\n- Use snow_deploy_widget to create new widgets first';
+      return '❌ No artifacts found matching your search criteria.\n\n🔍 **Debugging Info:**\n- ServiceNow connection appears to be working\n- Try broader search terms\n- Check if widgets exist in your ServiceNow instance\n- Use snow_create_artifact to create new artifacts first';
     }
 
     const formattedResults = results.map((result, index) => {
@@ -3684,7 +3684,7 @@ export class ServiceNowDevelopmentAssistantMCP {
           '🚀 To deploy: Re-run with auto_deploy: true',
           'Execute specific MCP tools manually:',
           '  - snow_create_flow for flow creation',
-          '  - snow_deploy_widget for widget deployment',
+          '  - snow_create_artifact for widget/artifact deployment',
           '  - snow_resilient_deployment for batch deployment'
         ];
       }

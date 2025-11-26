@@ -257,7 +257,7 @@ class ServiceNowDeploymentMCP {
         },
         {
           name: 'snow_update',
-          description: 'Updates existing ServiceNow artifacts (widgets, applications, etc.). Finds artifact by name or sys_id and modifies it. Use snow_deploy for creating new artifacts.',
+          description: 'Updates existing ServiceNow artifacts (widgets, applications, etc.). Finds artifact by name or sys_id and modifies it. Use snow_create_artifact for creating new artifacts.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -296,54 +296,8 @@ class ServiceNowDeploymentMCP {
             required: ['type', 'identifier']
           }
         },
-        {
-          name: 'snow_deploy',
-          description: 'Universal deployment tool for creating NEW ServiceNow artifacts. For updating existing artifacts, use snow_update. Features automatic update set management, permission escalation, retry logic, and comprehensive error recovery.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              type: {
-                type: 'string',
-                enum: [
-                  'widget', 'portal_page', 'application', 'script', 'business_rule', 'table',
-                  'script_include', 'ui_page', 'client_script', 'ui_action', 'ui_policy', 
-                  'catalog_ui_policy', 'acl', 'field', 'workflow', 'flow', 'notification', 'scheduled_job'
-                ],
-                description: 'Type of artifact to deploy'
-              },
-              instruction: {
-                type: 'string',
-                description: 'Natural language instruction for what to create (for flows/widgets)'
-              },
-              config: {
-                type: 'object',
-                description: 'Artifact configuration (alternative to instruction for direct config)'
-              },
-              auto_update_set: {
-                type: 'boolean',
-                description: 'Automatically ensure active Update Set session (default: true)',
-                default: true
-              },
-              fallback_strategy: {
-                type: 'string',
-                enum: ['manual_steps', 'update_set_only', 'none'],
-                description: 'Strategy when direct deployment fails (default: manual_steps)',
-                default: 'manual_steps'
-              },
-              permission_escalation: {
-                type: 'string',
-                enum: ['auto_request', 'manual', 'none'],
-                description: 'How to handle permission errors (default: auto_request)',
-                default: 'auto_request'
-              },
-              deployment_context: {
-                type: 'string',
-                description: 'Context for Update Set naming (e.g., "incident widget", "approval flow")'
-              }
-            },
-            required: ['type']
-          }
-        },
+        // NOTE: snow_deploy has been REMOVED. Use snow_create_artifact instead.
+        // snow_create_artifact is available in the unified MCP server with improved functionality.
       ],
     }));
 
@@ -396,9 +350,7 @@ class ServiceNowDeploymentMCP {
           case 'snow_create_solution_package':
             result = await this.createSolutionPackage(args);
             break;
-          case 'snow_deploy':
-            result = await this.unifiedDeploy(args);
-            break;
+          // NOTE: 'snow_deploy' case removed - use snow_create_artifact in unified MCP server
           case 'snow_update':
             result = await this.updateArtifact(args);
             break;
@@ -601,7 +553,7 @@ class ServiceNowDeploymentMCP {
           error: 'Widget name is required',
           content: [{
             type: 'text',
-            text: `❌ Widget deployment failed: Missing required field\n\n**Error:** Widget name is required\n\n**Required fields for widget deployment:**\n• name: Internal identifier for the widget (e.g., "my_dashboard_widget")\n• title: Display title shown in Service Portal (e.g., "My Dashboard")\n• template: HTML template for the widget\n\n**Example usage:**\n\`\`\`javascript\nsnow_deploy({\n  type: "widget",\n  config: {\n    name: "my_widget",\n    title: "My Widget Title",\n    template: "<div>{{data.message}}</div>",\n    server_script: "data.message = 'Hello World';",\n    client_script: "function() { var c = this; }"\n  }\n})\n\`\`\``
+            text: `❌ Widget deployment failed: Missing required field\n\n**Error:** Widget name is required\n\n**Required fields for widget deployment:**\n• name: Internal identifier for the widget (e.g., "my_dashboard_widget")\n• title: Display title shown in Service Portal (e.g., "My Dashboard")\n• template: HTML template for the widget\n\n**Example usage:**\n\`\`\`javascript\nsnow_create_artifact({\n  type: "sp_widget",\n  name: "my_widget",\n  title: "My Widget Title",\n  template: "<div>{{data.message}}</div>",\n  server_script: "data.message = 'Hello World';",\n  client_script: "function() { var c = this; }"\n})\n\`\`\``
           }]
         };
       }
@@ -1373,7 +1325,7 @@ ${args._coherenceWarnings || ''}
 4. Try widget preview: snow_preview_widget()
 
 💡 Alternative Approaches:
-• Use snow_deploy with smaller components first
+• Use snow_create_artifact with smaller components first
 • Test with snow_widget_test() before deployment
 • Check dependencies with check_dependencies: true
 
@@ -1765,7 +1717,7 @@ ${widgetInstances.map((instance, i) =>
 4. Verify Update Set: snow_update_set_current()
 
 💡 Alternative Approaches:
-• Deploy widget first: snow_deploy({ type: 'widget', ... })
+• Deploy widget first: snow_create_artifact({ type: 'sp_widget', ... })
 • Use manual creation in Page Designer
 • Check portal configuration
 
@@ -5457,7 +5409,7 @@ Use \`snow_widget_test\` to run automated tests with different scenarios.`,
    - Search for the widget manually
 
 3. **Create the widget first:**
-   - Use: \`snow_deploy\` to create the widget
+   - Use: \`snow_create_artifact\` to create the widget
    - Then test it with this tool
 
 **Error Details:** ${error?.message || 'Widget not found'}`
@@ -5965,7 +5917,7 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
               text: `🚨 Flow Definition Error: No activities found
 
 📍 Common Causes:
-• Used snow_deploy_flow with manual JSON (often fails)
+• Used manual JSON flow definitions (often fails)
 • Incorrect flow_definition format
 • Activities not properly mapped from actions/steps
 
@@ -5983,7 +5935,7 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
 💡 Alternative Approach:
 1. Use snow_create_flow for natural language creation
 2. Use snow_test_flow_with_mock for testing
-3. Use snow_deploy_flow only for pre-validated definitions`
+3. Use snow_create_artifact for pre-validated definitions`
             }
           ]
         };
@@ -6299,7 +6251,7 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
       });
 
       // Generate wizard interface
-      const wizardText = `🧙‍♂️ **Flow Creation Wizard**\n\n📋 **Flow Details:**\n- Name: ${args.name}\n- Type: ${flowType}\n- Interactive: ${args.interactive ? '✅' : '❌'}\n- Preview Each Step: ${args.preview_each_step ? '✅' : '❌'}\n- Test As You Build: ${args.test_as_you_build ? '✅' : '❌'}\n\n📊 **Wizard Steps:**\n${steps.map(s => `${s.step}. ${s.status} ${s.name}\n   ${s.details}`).join('\n\n')}\n\n💡 **Interactive Features:**\n- ✅ Step-by-step guidance\n- ✅ Preview after each step\n- ✅ Validation at each stage\n- ✅ Test before deployment\n- ✅ Rollback capability\n\n🎯 **Next Actions:**\n1. Use snow_deploy_flow with your configuration\n2. Or continue building with individual artifact tools\n3. Test with snow_validate_flow_definition\n\n⚡ **Quick Start Example:**\n\`\`\`json\n{\n  "name": "${args.name}",\n  "flow_type": "${flowType}",\n  "trigger_type": "record_created",\n  "table": "incident",\n  "flow_definition": {\n    "activities": [\n      {\n        "name": "Check Priority",\n        "type": "condition",\n        "condition": "current.priority == 1"\n      },\n      {\n        "name": "Send Alert",\n        "type": "notification",\n        "recipients": "incident.assigned_to"\n      }\n    ]\n  }\n}\n\`\`\``;
+      const wizardText = `🧙‍♂️ **Flow Creation Wizard**\n\n📋 **Flow Details:**\n- Name: ${args.name}\n- Type: ${flowType}\n- Interactive: ${args.interactive ? '✅' : '❌'}\n- Preview Each Step: ${args.preview_each_step ? '✅' : '❌'}\n- Test As You Build: ${args.test_as_you_build ? '✅' : '❌'}\n\n📊 **Wizard Steps:**\n${steps.map(s => `${s.step}. ${s.status} ${s.name}\n   ${s.details}`).join('\n\n')}\n\n💡 **Interactive Features:**\n- ✅ Step-by-step guidance\n- ✅ Preview after each step\n- ✅ Validation at each stage\n- ✅ Test before deployment\n- ✅ Rollback capability\n\n🎯 **Next Actions:**\n1. Use snow_create_flow with your configuration\n2. Or continue building with individual artifact tools\n3. Test with snow_validate_flow_definition\n\n⚡ **Quick Start Example:**\n\`\`\`json\n{\n  "name": "${args.name}",\n  "flow_type": "${flowType}",\n  "trigger_type": "record_created",\n  "table": "incident",\n  "flow_definition": {\n    "activities": [\n      {\n        "name": "Check Priority",\n        "type": "condition",\n        "condition": "current.priority == 1"\n      },\n      {\n        "name": "Send Alert",\n        "type": "notification",\n        "recipients": "incident.assigned_to"\n      }\n    ]\n  }\n}\n\`\`\``;
 
       return {
         content: [
@@ -7052,7 +7004,7 @@ Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
 4. Contact your ServiceNow administrator for assistance
 
 💡 **Manual Alternative:**
-Use individual deployment tools like \`snow_deploy_${args.type}\` with manual configuration.`
+Use \`snow_create_artifact\` with type: '${args.type}' and manual configuration.`
         }]
       };
     }
@@ -8423,7 +8375,7 @@ Use individual deployment tools like \`snow_deploy_${args.type}\` with manual co
 **Option 2: Use Delegated Development**
 1. Create artifact in personal scope first
 2. Have admin promote to ${scope} scope
-3. Command: \`snow_deploy --scope personal\`
+3. Command: \`snow_create_artifact --scope personal\`
 
 **Option 3: Manual Import via Update Set**
 1. Export the generated Update Set XML
@@ -8875,7 +8827,7 @@ ${updateSetSession ? '- Changes are automatically tracked in your active Update 
 - Complete Update Set when ready for deployment
 
 💡 **Quick Actions:**
-- 🔧 Retry with different scope: \`snow_deploy --type ${type} --scope personal\`
+- 🔧 Retry with different scope: \`snow_create_artifact --type ${type} --scope personal\`
 - 📋 Check permissions: \`snow_auth_diagnostics\`
 - 🚀 Use wizard mode: \`snow_${type}_wizard\``
       }]
@@ -9185,7 +9137,7 @@ ${updateSetSession ? `📋 **Update Set**: ${updateSetSession.name}
       if (!existingArtifact) {
         if (create_if_not_exists) {
           this.logger.info(`${type} not found, creating new one as requested`);
-          // Delegate to snow_deploy for creation
+          // Delegate to internal creation method (use snow_create_artifact externally)
           return await this.unifiedDeploy({
             type,
             config,
@@ -9211,7 +9163,7 @@ ${updateSetSession ? `📋 **Update Set**: ${updateSetSession.name}
 
 🔧 **Alternative Commands:**
 - List existing: \`snow_query_table({ table: "${tableName}", limit: 10 })\`
-- Create new: \`snow_deploy({ type: "${type}", ... })\`
+- Create new: \`snow_create_artifact({ type: "${type}", name: "...", ... })\`
 - Find by name: \`snow_update({ type: "${type}", identifier: "exact_name" })\``
             }]
           };
@@ -9296,7 +9248,7 @@ ${updateSetSession ? `- View Update Set: /nav_to.do?uri=sys_update_set.do?sys_id
 4. Try with create_if_not_exists: true if artifact might not exist
 
 💡 **Alternative:**
-Use \`snow_deploy\` to create a new ${args.type} instead.`
+Use \`snow_create_artifact\` to create a new ${args.type} instead.`
         }]
       };
     }

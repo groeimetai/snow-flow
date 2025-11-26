@@ -57,7 +57,7 @@ const WRITE_PATTERNS = [
   /^snow_delete_/,
   /^snow_remove_/,
   /^snow_execute_/,
-  /^snow_deploy_/,
+  // Note: snow_deploy_* patterns removed - use snow_create_artifact instead
   /^snow_manage_/,
   /^snow_add_/,
   /^snow_set_/,

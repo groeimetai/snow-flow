@@ -641,9 +641,9 @@ graph TB
         authentication: 'OAuth 2.0'
       },
       {
-        endpoint: '/tools/snow_deploy',
+        endpoint: '/tools/snow_create_artifact',
         method: 'POST',
-        description: 'Deploy artifacts to ServiceNow with automatic update set management',
+        description: 'Create ServiceNow artifacts with automatic update set management',
         authentication: 'OAuth 2.0'
       },
       {

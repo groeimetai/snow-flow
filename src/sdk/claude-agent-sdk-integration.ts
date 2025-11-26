@@ -270,7 +270,7 @@ Execute your mission now. Use TodoWrite to break down tasks if needed.`;
 - Validate data access patterns`,
 
       'deployment-specialist': `Deploy and validate artifacts using:
-- snow_deploy for widget/artifact deployment
+- snow_create_artifact for widget/artifact deployment
 - snow_ensure_active_update_set for change tracking
 - snow_validate_deployment for verification
 - Handle rollback if needed`,
