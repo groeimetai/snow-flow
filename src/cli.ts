@@ -15,7 +15,7 @@ import { ServiceNowClient } from './utils/servicenow-client.js';
 import { AgentDetector, TaskAnalysis } from './utils/agent-detector.js';
 import { getNotificationTemplateSysId } from './utils/servicenow-id-generator.js';
 import { VERSION } from './version.js';
-// Snow-Flow CLI integration removed - using direct swarm command implementation
+// Snow-Flow CLI integration removed - using direct agent command implementation
 import { snowFlowSystem } from './snow-flow-system.js';
 import { Logger } from './utils/logger.js';
 import chalk from 'chalk';
@@ -33,7 +33,7 @@ import { loadSnowCodeConfig, loadJsonConfig } from './utils/config-cache.js';
 
 // Activate MCP guard ONLY for commands that actually use MCP servers
 // Explicitly exclude: init, version, help, auth, export, config commands
-const commandsNeedingMCP = ['swarm', 'status', 'monitor', 'mcp'];
+const commandsNeedingMCP = ['agent', 'swarm', 'status', 'monitor', 'mcp'];
 const commandsNotNeedingMCP = ['init', 'version', 'help', 'auth', 'export', '-v', '--version', '-h', '--help'];
 const currentCommand = process.argv[2];
 
@@ -129,9 +129,11 @@ function checkFlowDeprecation(command: string, objective?: string) {
 }
 
 
-// Swarm command - the main orchestration command with EVERYTHING
+// Agent command - the main orchestration command with EVERYTHING
+// Note: 'swarm' is kept as an alias for backward compatibility
 program
-  .command('swarm <objective>')
+  .command('agent <objective>')
+  .alias('swarm')
   .description('Execute multi-agent orchestration for a ServiceNow task - één command voor alles!')
   // New engine selector: defaults to auto (uses config-driven agent when available)
   .option('--engine <engine>', 'Execution engine (auto|agent|claude)', 'auto')
@@ -185,7 +187,7 @@ program
   .option('--debug-all', 'Enable ALL debug output (WARNING: Very verbose!)')
   .action(async (objective: string, options) => {
     // Check for flow deprecation first
-    checkFlowDeprecation('swarm', objective);
+    checkFlowDeprecation('agent', objective);
 
     // Set debug levels based on options
     if (options.debugAll) {
@@ -245,7 +247,7 @@ program
     }
 
     // Run snow-code update check in background (non-blocking)
-    // Don't await - let swarm start immediately while update runs async
+    // Don't await - let agent start immediately while update runs async
     if (options.verbose) {
       cliLogger.info('🔄 Checking for snow-code updates (background)...');
     }
