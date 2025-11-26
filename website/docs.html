@@ -797,7 +797,7 @@
             <div class="docs-intro" id="introduction">
                 <div class="version-badge">
                     <span class="v">Version</span>
-                    <span class="num">8.38.3</span>
+                    <span class="num" id="npm-version">loading...</span>
                 </div>
                 <h1>Snow-Flow Documentation</h1>
                 <p>
@@ -984,7 +984,7 @@ snow-flow agent <span class="string">"Create a business rule for auto-assignment
             <section id="llm-providers">
                 <h3>LLM Providers</h3>
 
-                <p>Snow-Flow supports <strong>75+ AI providers</strong>. Configure via environment variables:</p>
+                <p>Snow-Flow supports <strong>75+ AI providers</strong> via <a href="https://models.dev" target="_blank">Models.dev</a>. Configure via environment variables:</p>
 
                 <div class="table-wrapper">
                     <table>
@@ -1043,6 +1043,11 @@ ollama pull llama3.3
 <span class="variable">OLLAMA_BASE_URL</span>=http://localhost:11434
 <span class="variable">DEFAULT_OLLAMA_MODEL</span>=llama3.3</pre>
                     </div>
+                </div>
+
+                <div class="callout info">
+                    <div class="callout-title">All Supported Models</div>
+                    <p>For the complete list of 75+ supported AI providers and models, visit <a href="https://models.dev" target="_blank">models.dev</a>. Snow-Flow uses their unified API to support Claude, GPT, Gemini, DeepSeek, Mistral, Llama, and many more.</p>
                 </div>
             </section>
 
@@ -2075,6 +2080,27 @@ snow-flow agent <span class="string">"Complete JIRA-1234"</span></pre>
                 }
             });
         });
+
+        // Fetch npm version dynamically
+        (function() {
+            var versionEl = document.getElementById('npm-version');
+            if (versionEl) {
+                fetch('https://registry.npmjs.org/snow-flow/latest')
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (data && data.version) {
+                            versionEl.textContent = data.version;
+                        } else {
+                            versionEl.textContent = 'latest';
+                        }
+                    })
+                    .catch(function() {
+                        versionEl.textContent = 'latest';
+                    });
+            }
+        })();
     </script>
 </body>
 </html>
