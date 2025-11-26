@@ -4,7 +4,7 @@
   </picture>
 </p>
 
-<h1 align="center">SnowCode</h1>
+<h1 align="center">Snow-Flow</h1>
 <h3 align="center">AI-Powered ServiceNow Development IDE</h3>
 <p align="center"><strong>Part of the Snow-Flow Enterprise Suite</strong></p>
 
