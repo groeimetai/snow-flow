@@ -2,80 +2,159 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Snow-Flow Status - System Status & Uptime</title>
     <meta name="description" content="Real-time status and uptime monitoring for Snow-Flow Enterprise services. 99.9% SLA guaranteed.">
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='mountain' x1='16' y1='9' x2='16' y2='23' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23FFFFFF'/%3E%3Cstop offset='100%25' stop-color='%2300D9FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M4 23 L10 9 L16 15 L22 9 L28 23 Z' fill='url(%23mountain)' stroke='%2300D9FF' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E">
 
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     <style>
-        * {
+        /* =====================================================
+           SNOW-FLOW STATUS PAGE - 2025 DESIGN SYSTEM
+           Matching main website styling
+           ===================================================== */
+
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
         :root {
-            /* Snow-Flow brand colors - matching main website */
-            --brand-dark: #1E2531;
-            --brand-darker: #151A23;
-            --brand-cyan: #00D9FF;
-            --brand-blue: #3B82F6;
-            --text-white: #FFFFFF;
-            --text-gray: #94A3B8;
-            --border: #2D3748;
+            /* Core Colors - matching main website */
+            --bg-primary: #050508;
+            --bg-secondary: #0a0a0f;
+            --bg-card: #0d0d14;
+
+            /* Accent Colors */
+            --accent-cyan: #00D9FF;
+            --accent-blue: #3B82F6;
+            --accent-purple: #8B5CF6;
+
+            /* Text Colors */
+            --text-primary: #FFFFFF;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+
+            /* Borders & Effects */
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-medium: rgba(255, 255, 255, 0.1);
+            --glow-cyan: 0 0 60px rgba(0, 217, 255, 0.3);
 
             /* Status colors */
-            --status-green: #10b981;
-            --status-yellow: #f59e0b;
-            --status-red: #ef4444;
+            --status-green: #10B981;
+            --status-yellow: #F59E0B;
+            --status-red: #EF4444;
+
+            /* Typography */
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
-            background: var(--brand-dark);
-            color: var(--text-white);
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
         }
 
+        ::selection {
+            background: rgba(0, 217, 255, 0.3);
+            color: white;
+        }
+
+        /* Background Effects */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 217, 255, 0.12), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(139, 92, 246, 0.08), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-noise {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.015;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Layout */
         .container {
+            width: 100%;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 0 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                padding: 0 2rem;
+            }
         }
 
         /* Navigation */
-        nav {
-            position: sticky;
+        .navbar {
+            position: fixed;
             top: 0;
-            background: rgba(30, 37, 49, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border);
-            padding: 1.25rem 0;
+            left: 0;
+            right: 0;
             z-index: 1000;
-            margin-bottom: 3rem;
+            padding: 1rem 0;
+            background: rgba(5, 5, 8, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border-subtle);
+            transition: all 0.3s ease;
         }
 
-        .nav-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
+        .navbar.scrolled {
+            padding: 0.75rem 0;
+            background: rgba(5, 5, 8, 0.95);
+        }
+
+        .navbar-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-white);
-            text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 0.625rem;
+            gap: 0.75rem;
+            text-decoration: none;
             transition: transform 0.3s ease;
         }
 
@@ -84,75 +163,222 @@
         }
 
         .logo-svg {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
         }
 
         .logo-text {
+            font-size: 1.375rem;
             font-weight: 800;
             letter-spacing: -0.02em;
         }
 
-        .logo-text .snow {
-            color: var(--text-white);
-        }
-
-        .logo-text .flow {
-            color: var(--brand-cyan);
-        }
+        .logo-text .snow { color: var(--text-primary); }
+        .logo-text .flow { color: var(--accent-cyan); }
 
         .nav-links {
-            display: flex;
-            gap: 2rem;
+            display: none;
             list-style: none;
+            gap: 2rem;
             align-items: center;
         }
 
+        @media (min-width: 768px) {
+            .nav-links {
+                display: flex;
+            }
+        }
+
         .nav-links a {
-            color: var(--text-gray);
+            color: var(--text-secondary);
             text-decoration: none;
-            transition: color 0.2s;
-            font-size: 0.95rem;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
         }
 
         .nav-links a:hover {
-            color: var(--brand-cyan);
+            color: var(--text-primary);
+        }
+
+        .nav-cta {
+            background: var(--accent-cyan);
+            color: var(--bg-primary) !important;
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-cyan);
+        }
+
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-medium);
+            border-radius: 10px;
+            cursor: pointer;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        @media (min-width: 768px) {
+            .mobile-menu-btn {
+                display: none;
+            }
+        }
+
+        .mobile-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-cyan);
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 100%;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* Mobile Menu */
+        .mobile-nav {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            max-width: 320px;
+            height: 100vh;
+            background: rgba(10, 10, 15, 0.98);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            z-index: 999;
+            padding: 5rem 1.5rem 2rem;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border-left: 1px solid var(--border-medium);
+        }
+
+        .mobile-nav.active {
+            transform: translateX(0);
+        }
+
+        .mobile-nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .mobile-nav-links a {
+            display: block;
+            padding: 1rem 1.25rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-nav-links a:hover {
+            color: var(--text-primary);
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        .mobile-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-backdrop.active {
+            opacity: 1;
+            visibility: visible;
         }
 
         /* Header */
-        header {
+        .page-header {
             text-align: center;
-            padding: 2rem 0 3rem;
+            padding: 8rem 0 3rem;
         }
 
-        header h1 {
-            font-size: 2.5rem;
+        .page-header h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800;
             margin-bottom: 0.75rem;
-            font-weight: 700;
+            letter-spacing: -0.02em;
         }
 
-        header p {
-            color: var(--text-gray);
-            font-size: 1.15rem;
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
         }
 
         /* Status Banner */
         .status-banner {
             margin: 2rem 0;
             padding: 2.5rem;
-            background: var(--brand-darker);
+            background: var(--bg-card);
             border: 2px solid var(--status-green);
-            border-radius: 16px;
+            border-radius: 20px;
             text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--status-green);
         }
 
         .status-banner.degraded {
             border-color: var(--status-yellow);
         }
 
+        .status-banner.degraded::before {
+            background: var(--status-yellow);
+        }
+
         .status-banner.down {
             border-color: var(--status-red);
+        }
+
+        .status-banner.down::before {
+            background: var(--status-red);
         }
 
         .status-icon {
@@ -167,36 +393,42 @@
         }
 
         .status-detail {
-            color: var(--text-gray);
-            font-size: 1.05rem;
+            color: var(--text-secondary);
+            font-size: 1rem;
         }
 
         /* Uptime Stats */
         .uptime-stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
             margin: 3rem 0;
         }
 
+        @media (min-width: 768px) {
+            .uptime-stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
         .stat-card {
-            background: var(--brand-darker);
-            border: 1px solid var(--border);
-            border-radius: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
             padding: 2rem 1.5rem;
             text-align: center;
-            transition: transform 0.2s, border-color 0.2s;
+            transition: all 0.3s ease;
         }
 
         .stat-card:hover {
             transform: translateY(-4px);
-            border-color: var(--brand-cyan);
+            border-color: var(--accent-cyan);
         }
 
         .stat-value {
             font-size: 2.25rem;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--brand-cyan), var(--brand-blue));
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -204,9 +436,18 @@
         }
 
         .stat-label {
-            color: var(--text-gray);
-            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
             font-weight: 500;
+        }
+
+        /* Section Title */
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         /* Services */
@@ -214,29 +455,21 @@
             margin: 4rem 0;
         }
 
-        .section-title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid var(--border);
-        }
-
         .service-card {
-            background: var(--brand-darker);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.75rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 1.5rem;
             margin-bottom: 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
         }
 
         .service-card:hover {
             transform: translateX(8px);
-            border-color: var(--brand-cyan);
+            border-color: var(--accent-cyan);
             box-shadow: 0 4px 20px rgba(0, 217, 255, 0.1);
         }
 
@@ -245,14 +478,14 @@
         }
 
         .service-name {
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
         }
 
         .service-description {
-            color: var(--text-gray);
-            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
         }
 
         .service-status {
@@ -262,8 +495,8 @@
         }
 
         .status-indicator {
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             background: var(--status-green);
             box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
@@ -271,12 +504,8 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.7;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .status-indicator.degraded {
@@ -290,21 +519,13 @@
         }
 
         .status-label {
-            font-weight: 700;
-            font-size: 1.05rem;
+            font-weight: 600;
+            font-size: 0.9375rem;
         }
 
-        .status-label.operational {
-            color: var(--status-green);
-        }
-
-        .status-label.degraded {
-            color: var(--status-yellow);
-        }
-
-        .status-label.down {
-            color: var(--status-red);
-        }
+        .status-label.operational { color: var(--status-green); }
+        .status-label.degraded { color: var(--status-yellow); }
+        .status-label.down { color: var(--status-red); }
 
         /* Uptime History */
         .uptime-history {
@@ -313,22 +534,35 @@
 
         .uptime-days {
             display: grid;
-            grid-template-columns: repeat(90, 1fr);
-            gap: 4px;
-            margin: 2rem 0;
+            grid-template-columns: repeat(30, 1fr);
+            gap: 3px;
+            margin: 1.5rem 0;
+        }
+
+        @media (min-width: 768px) {
+            .uptime-days {
+                grid-template-columns: repeat(90, 1fr);
+            }
         }
 
         .uptime-day {
-            height: 45px;
+            height: 32px;
             background: var(--status-green);
-            border-radius: 4px;
+            border-radius: 3px;
             position: relative;
             cursor: pointer;
             transition: all 0.2s;
         }
 
+        @media (min-width: 768px) {
+            .uptime-day {
+                height: 40px;
+            }
+        }
+
         .uptime-day:hover {
-            transform: scale(1.15);
+            transform: scale(1.2);
+            z-index: 10;
             box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
         }
 
@@ -350,23 +584,24 @@
 
         .uptime-legend {
             display: flex;
-            gap: 2.5rem;
+            gap: 2rem;
             justify-content: center;
             margin-top: 1.5rem;
-            font-size: 0.95rem;
-            color: var(--text-gray);
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 0.625rem;
+            gap: 0.5rem;
         }
 
         .legend-dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
         }
 
         /* Incidents */
@@ -375,12 +610,11 @@
         }
 
         .incident-card {
-            background: var(--brand-darker);
+            background: var(--bg-card);
             border-left: 4px solid var(--status-yellow);
             border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .incident-card.resolved {
@@ -395,21 +629,25 @@
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
         }
 
         .incident-title {
             font-weight: 700;
-            font-size: 1.2rem;
+            font-size: 1.125rem;
         }
 
         .incident-status-badge {
             background: var(--status-yellow);
-            color: var(--brand-dark);
-            padding: 0.375rem 0.875rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
+            color: var(--bg-primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .incident-status-badge.resolved {
@@ -422,119 +660,115 @@
         }
 
         .incident-time {
-            color: var(--text-gray);
-            font-size: 0.95rem;
-            margin-bottom: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
         }
 
         .incident-description {
-            color: var(--text-gray);
-            line-height: 1.7;
+            color: var(--text-secondary);
+            line-height: 1.6;
         }
 
         /* Footer */
         footer {
-            border-top: 2px solid var(--border);
+            border-top: 1px solid var(--border-subtle);
             padding: 3rem 0;
             text-align: center;
-            color: var(--text-gray);
-            margin-top: 5rem;
+            color: var(--text-muted);
+            margin-top: 4rem;
         }
 
         footer a {
-            color: var(--brand-cyan);
+            color: var(--accent-cyan);
             text-decoration: none;
             transition: color 0.2s;
         }
 
         footer a:hover {
-            color: var(--brand-blue);
-            text-decoration: underline;
+            color: var(--text-primary);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .container, .nav-content {
-                padding: 0 1rem;
-            }
-
-            .logo {
-                font-size: 1.25rem;
-            }
-
-            .logo-svg {
-                width: 28px;
-                height: 28px;
-            }
-
-            header h1 {
-                font-size: 2rem;
-            }
-
-            .uptime-days {
-                grid-template-columns: repeat(30, 1fr);
+            .service-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
             }
 
             .uptime-stats {
-                grid-template-columns: 1fr;
-            }
-
-            .service-card {
-                flex-direction: column;
-                align-items: start;
-                gap: 1.25rem;
-            }
-
-            .nav-links {
-                display: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .logo {
-                font-size: 1.125rem;
-            }
-
-            .logo-svg {
-                width: 26px;
-                height: 26px;
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
 </head>
 <body>
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+
+    <!-- Mobile Menu Backdrop -->
+    <div class="mobile-backdrop" id="mobileBackdrop"></div>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav" id="mobileNav">
+        <ul class="mobile-nav-links">
+            <li><a href="https://snow-flow.dev">Home</a></li>
+            <li><a href="https://snow-flow.dev#autonomous">Features</a></li>
+            <li><a href="https://snow-flow.dev#pricing">Pricing</a></li>
+            <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
+            <li><a href="mailto:support@snow-flow.dev">Support</a></li>
+        </ul>
+    </nav>
+
     <!-- Navigation -->
-    <nav>
-        <div class="nav-content">
-            <a href="https://snow-flow.dev" class="logo">
-                <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="logo-mountain" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
-                            <stop offset="0%" stop-color="#FFFFFF"/>
-                            <stop offset="100%" stop-color="#00D9FF"/>
-                        </linearGradient>
-                    </defs>
-                    <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z"
-                          fill="url(#logo-mountain)"
-                          stroke="#00D9FF"
-                          stroke-width="1.2"
-                          stroke-linejoin="round"/>
-                </svg>
-                <span class="logo-text">
-                    <span class="snow">SNOW</span><span class="flow">FLOW</span>
-                </span>
-            </a>
-            <ul class="nav-links">
-                <li><a href="https://snow-flow.dev">Home</a></li>
-                <li><a href="https://snow-flow.dev#features">Features</a></li>
-                <li><a href="https://snow-flow.dev#pricing">Pricing</a></li>
-                <li><a href="mailto:sales@snow-flow.dev">Contact</a></li>
-            </ul>
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="https://snow-flow.dev" class="logo">
+                    <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="logo-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#FFFFFF"/>
+                                <stop offset="100%" stop-color="#00D9FF"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#logo-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="logo-text">
+                        <span class="snow">SNOW</span><span class="flow">FLOW</span>
+                    </span>
+                </a>
+
+                <ul class="nav-links">
+                    <li><a href="https://snow-flow.dev">Home</a></li>
+                    <li><a href="https://snow-flow.dev#autonomous">Features</a></li>
+                    <li><a href="https://snow-flow.dev#pricing">Pricing</a></li>
+                    <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
+                    <li><a href="https://portal.snow-flow.dev" class="nav-cta">Portal</a></li>
+                </ul>
+
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
         </div>
     </nav>
 
     <div class="container">
-        <header>
+        <header class="page-header">
             <h1>System Status</h1>
             <p>Real-time status and uptime monitoring for Snow-Flow Enterprise</p>
         </header>
@@ -656,127 +890,149 @@
 
         <footer>
             <p>
-                <strong>Snow-Flow Enterprise Status Page</strong><br>
-                Monitored by <a href="https://cloud.google.com/monitoring">Google Cloud Monitoring</a><br>
-                Health checks every 5 minutes | Data retention: 90 days<br><br>
-                <a href="https://snow-flow.dev">Back to Snow-Flow</a> |
-                <a href="mailto:support@snow-flow.dev">Report an Issue</a> |
-                <a href="https://github.com/groeimetai/snow-flow">GitHub</a>
+                <strong>Snow-Flow Enterprise Status</strong><br>
+                Health checks every 30 seconds | Data retention: 90 days
             </p>
+            <div class="footer-links">
+                <a href="https://snow-flow.dev">Back to Snow-Flow</a>
+                <a href="mailto:support@snow-flow.dev">Report an Issue</a>
+                <a href="https://github.com/groeimetai/snow-flow">GitHub</a>
+            </div>
         </footer>
     </div>
 
     <script>
-        // 🚀 REAL-TIME HEALTH MONITORING - Connected to Snow-Flow Health API
-        // Live data from system-health monitoring with 30-second refresh
+        // Mobile Menu Toggle
+        var mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        var mobileNav = document.getElementById('mobileNav');
+        var mobileBackdrop = document.getElementById('mobileBackdrop');
+
+        function toggleMobileMenu() {
+            mobileMenuBtn.classList.toggle('active');
+            mobileNav.classList.toggle('active');
+            mobileBackdrop.classList.toggle('active');
+            document.body.style.overflow = mobileNav.classList.contains('active') ? 'hidden' : '';
+        }
+
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+        mobileBackdrop.addEventListener('click', toggleMobileMenu);
+
+        document.querySelectorAll('.mobile-nav-links a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                if (mobileNav.classList.contains('active')) {
+                    toggleMobileMenu();
+                }
+            });
+        });
+
+        // Navbar scroll effect
+        var navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
 
         // API endpoint - Health Monitoring API
-        const API_BASE = window.location.hostname === 'localhost'
+        var API_BASE = window.location.hostname === 'localhost'
             ? 'http://localhost:3000/api/v1'
             : 'https://snow-flow-health-api-2e7rlcc77q-ez.a.run.app/api/v1';
 
-        // Generate 90-day uptime history from real monitoring data
-        async function generateUptimeHistory() {
-            const container = document.getElementById('uptimeDays');
-            const days = 90;
+        // Generate 90-day uptime history
+        function generateUptimeHistory() {
+            var container = document.getElementById('uptimeDays');
+            var days = 90;
 
-            // Generate placeholder first (will be replaced with real data when available)
             for (var i = days - 1; i >= 0; i--) {
-                const day = document.createElement('div');
+                var day = document.createElement('div');
                 day.className = 'uptime-day';
 
-                const date = new Date();
+                var date = new Date();
                 date.setDate(date.getDate() - i);
-                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                var dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-                // Default to operational (green) - real data will update this
-                day.title = `${dateStr}: Loading...`;
+                day.title = dateStr + ': Loading...';
                 day.dataset.index = i;
                 day.dataset.date = date.toISOString().split('T')[0];
 
                 container.appendChild(day);
             }
 
-            // Fetch real uptime history from API
-            try {
-                const response = await fetch(`${API_BASE}/uptime-history?days=${days}`);
-                if (response.ok) {
-                    const historyData = await response.json();
-
-                    // Update days with real data
+            // Fetch real uptime history
+            fetch(API_BASE + '/uptime-history?days=' + days)
+                .then(function(response) {
+                    if (response.ok) return response.json();
+                    throw new Error('API unavailable');
+                })
+                .then(function(historyData) {
                     historyData.uptime_data.forEach(function(dayData) {
-                        const dayElement = container.querySelector(`[data-date="${dayData.date}"]`);
+                        var dayElement = container.querySelector('[data-date="' + dayData.date + '"]');
                         if (dayElement) {
-                            const uptimePercent = dayData.uptime_percentage;
+                            var uptimePercent = dayData.uptime_percentage;
 
-                            // Apply status class based on uptime
                             if (uptimePercent < 95) {
                                 dayElement.classList.add('down');
                             } else if (uptimePercent < 99) {
                                 dayElement.classList.add('degraded');
                             }
 
-                            dayElement.title = `${new Date(dayData.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${uptimePercent.toFixed(2)}% uptime`;
+                            dayElement.title = new Date(dayData.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ': ' + uptimePercent.toFixed(2) + '% uptime';
                         }
                     });
-                }
-            } catch (error) {
-                console.warn('Failed to load uptime history, showing default operational state:', error);
-            }
+                })
+                .catch(function(error) {
+                    console.warn('Failed to load uptime history:', error);
+                    // Update all days with default tooltip
+                    var allDays = container.querySelectorAll('.uptime-day');
+                    allDays.forEach(function(day) {
+                        var date = new Date(day.dataset.date);
+                        day.title = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ': Operational';
+                    });
+                });
         }
 
-        // Fetch real-time status from Health API
-        async function fetchStatus() {
-            try {
-                const response = await fetch(`${API_BASE}/status`);
+        // Fetch real-time status
+        function fetchStatus() {
+            fetch(API_BASE + '/status')
+                .then(function(response) {
+                    if (!response.ok) throw new Error('Health API unavailable');
+                    return response.json();
+                })
+                .then(function(data) {
+                    updateStatus(data);
+                })
+                .catch(function(error) {
+                    console.warn('Status API unavailable, showing fallback');
+                    var data = {
+                        overall_status: 'degraded',
+                        uptime_30d: 99.95,
+                        avg_latency: 0,
+                        active_incidents: 0,
+                        services: {
+                            mcp_server: { status: 'unknown' },
+                            portal: { status: 'unknown' },
+                            website: { status: 'unknown' },
+                            database: { status: 'unknown' }
+                        }
+                    };
+                    updateStatus(data);
 
-                if (!response.ok) {
-                    throw new Error('Health API unavailable');
-                }
-
-                const data = await response.json();
-                updateStatus(data);
-
-                // Update last check time (if element exists)
-                const lastUpdateEl = document.getElementById('lastUpdate');
-                if (lastUpdateEl) {
-                    lastUpdateEl.textContent = new Date().toLocaleTimeString();
-                }
-
-            } catch (error) {
-                console.warn('Status API unavailable, showing demo data');
-
-                // Show fallback state - API temporarily unavailable
-                const data = {
-                    overall_status: 'degraded',
-                    uptime_30d: 99.95,
-                    avg_latency: 0,
-                    active_incidents: 0,
-                    services: {
-                        mcp_server: { status: 'unknown', latency: 0 },
-                        portal: { status: 'unknown', latency: 0 },
-                        website: { status: 'unknown', latency: 0 },
-                        database: { status: 'unknown', connections: 0 }
-                    }
-                };
-                updateStatus(data);
-
-                // Show connection error message
-                const banner = document.getElementById('statusBanner');
-                banner.className = 'status-banner degraded';
-                document.getElementById('statusIcon').textContent = '⚠️';
-                document.getElementById('statusText').textContent = 'Monitoring System Unavailable';
-                document.getElementById('statusDetail').textContent = 'Unable to connect to health monitoring API - Showing cached data';
-            }
+                    var banner = document.getElementById('statusBanner');
+                    banner.className = 'status-banner degraded';
+                    document.getElementById('statusIcon').textContent = '⚠️';
+                    document.getElementById('statusText').textContent = 'Monitoring System Unavailable';
+                    document.getElementById('statusDetail').textContent = 'Unable to connect to health monitoring API';
+                });
         }
 
         // Update UI with status data
         function updateStatus(data) {
-            // Update banner
-            const banner = document.getElementById('statusBanner');
-            const icon = document.getElementById('statusIcon');
-            const text = document.getElementById('statusText');
-            const detail = document.getElementById('statusDetail');
+            var banner = document.getElementById('statusBanner');
+            var icon = document.getElementById('statusIcon');
+            var text = document.getElementById('statusText');
+            var detail = document.getElementById('statusDetail');
 
             if (data.overall_status === 'operational') {
                 banner.className = 'status-banner';
@@ -795,12 +1051,10 @@
                 detail.textContent = 'Major service outage in progress';
             }
 
-            // Update stats
             document.getElementById('uptimeStat').textContent = data.uptime_30d + '%';
             document.getElementById('latencyStat').textContent = data.avg_latency + 'ms';
             document.getElementById('incidentStat').textContent = data.active_incidents;
 
-            // Update service statuses
             updateServiceStatus('mcp', data.services.mcp_server.status);
             updateServiceStatus('portal', data.services.portal.status);
             updateServiceStatus('website', data.services.website.status);
@@ -809,8 +1063,8 @@
 
         // Update individual service status
         function updateServiceStatus(service, status) {
-            const indicator = document.getElementById(service + 'Indicator');
-            const label = document.getElementById(service + 'Status');
+            var indicator = document.getElementById(service + 'Indicator');
+            var label = document.getElementById(service + 'Status');
 
             indicator.className = 'status-indicator';
             label.className = 'status-label';
@@ -826,16 +1080,14 @@
             } else {
                 indicator.classList.add('down');
                 label.classList.add('down');
-                label.textContent = 'Down';
+                label.textContent = 'Unknown';
             }
         }
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             generateUptimeHistory();
             fetchStatus();
-
-            // Refresh status every 30 seconds
             setInterval(fetchStatus, 30000);
         });
     </script>
