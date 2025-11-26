@@ -166,18 +166,21 @@
             font-weight: 600 !important;
         }
 
-        /* Mobile Menu */
+        /* Mobile Menu Button (Hamburger) */
         .mobile-menu-btn {
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            width: 40px;
-            height: 40px;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            width: 44px;
+            height: 44px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border-medium);
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            padding: 10px;
+            padding: 0;
+            position: relative;
         }
 
         @media (min-width: 768px) {
@@ -188,23 +191,25 @@
 
         .mobile-menu-btn span {
             display: block;
-            width: 100%;
+            width: 20px;
             height: 2px;
             background: var(--text-primary);
             border-radius: 2px;
             transition: all 0.3s ease;
+            transform-origin: center;
         }
 
         .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
+            transform: translateY(8px) rotate(45deg);
         }
 
         .mobile-menu-btn.active span:nth-child(2) {
             opacity: 0;
+            transform: scaleX(0);
         }
 
         .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(5px, -5px);
+            transform: translateY(-8px) rotate(-45deg);
         }
 
         /* Layout */
@@ -667,22 +672,46 @@
             box-shadow: 0 8px 20px rgba(0, 217, 255, 0.3);
         }
 
-        /* Mobile sidebar toggle */
+        /* Mobile sidebar toggle (TOC button) */
         .sidebar-toggle {
             position: fixed;
             bottom: 2rem;
             left: 1rem;
-            width: 48px;
-            height: 48px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-medium);
-            color: var(--text-primary);
-            border-radius: 12px;
+            width: 52px;
+            height: 52px;
+            background: var(--accent-cyan);
+            border: none;
+            color: var(--bg-primary);
+            border-radius: 14px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 217, 255, 0.4);
+        }
+
+        .sidebar-toggle:active {
+            transform: translateY(0);
+        }
+
+        /* TOC label */
+        .sidebar-toggle::after {
+            content: 'TOC';
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
         }
 
         @media (min-width: 1024px) {
@@ -764,17 +793,25 @@
             position: absolute;
             top: 1rem;
             right: 1rem;
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border-medium);
-            border-radius: 8px;
+            border-radius: 10px;
             color: var(--text-primary);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.75rem;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-menu-close:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--accent-red);
+            color: var(--accent-red);
         }
 
         @media (min-width: 768px) {
@@ -888,15 +925,20 @@
             .sidebar-toggle {
                 bottom: 1.5rem;
                 left: 0.75rem;
-                width: 44px;
-                height: 44px;
+                width: 48px;
+                height: 48px;
+                border-radius: 12px;
+            }
+
+            .sidebar-toggle::after {
+                display: none; /* Hide TOC label on small screens */
             }
 
             .scroll-top {
                 bottom: 1.5rem;
                 right: 0.75rem;
-                width: 44px;
-                height: 44px;
+                width: 48px;
+                height: 48px;
             }
 
             /* Section divider */
@@ -2284,10 +2326,14 @@ snow-flow agent <span class="string">"Complete JIRA-1234"</span></pre>
         </main>
     </div>
 
-    <!-- Sidebar Toggle (Mobile) -->
-    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 12h18M3 6h18M3 18h18"/>
+    <!-- Sidebar Toggle (Mobile) - Table of Contents -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle table of contents">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <line x1="8" y1="7" x2="16" y2="7"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+            <line x1="8" y1="15" x2="12" y2="15"/>
         </svg>
     </button>
 
