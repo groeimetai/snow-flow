@@ -38,7 +38,7 @@ export function extractJWTPayload(headers?: Record<string, string>): JWTPayload 
       return payload as JWTPayload;
     } catch (error) {
       console.error('[Permission] Failed to parse JWT from headers:', error);
-      return null;
+      // Fall through to default developer role
     }
   }
 
@@ -98,11 +98,12 @@ export function validatePermission(
     throw new McpError(ErrorCode.InvalidRequest, errorMessage);
   }
 
-  // Check 2: Double-check for stakeholder write protection
-  // Even if stakeholder is in allowedRoles (shouldn't happen), never allow write operations
-  if (userRole === 'stakeholder' && permission === 'write') {
+  // Check 2: Double-check for stakeholder write/admin protection
+  // Even if stakeholder is in allowedRoles (shouldn't happen), never allow write or admin operations
+  if (userRole === 'stakeholder' && (permission === 'write' || permission === 'admin')) {
+    const permissionType = permission === 'admin' ? 'admin' : 'write';
     const errorMessage =
-      `🚫 Write Access Denied: Tool '${tool.name}' requires write permissions.\n\n` +
+      `🚫 ${permissionType === 'admin' ? 'Admin' : 'Write'} Access Denied: Tool '${tool.name}' requires ${permissionType} permissions.\n\n` +
       `💡 Stakeholders have read-only access to Snow-Flow tools.\n` +
       `   You can query data, view analytics, and generate reports,\n` +
       `   but cannot create, update, or delete records.\n\n` +

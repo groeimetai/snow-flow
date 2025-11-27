@@ -191,6 +191,13 @@ describe('Permission Validator', () => {
           allowedRoles: ['developer', 'admin'],
           description: '',
           inputSchema: { type: 'object', properties: {} }
+        },
+        {
+          name: 'snow_configure_mid_server',
+          permission: 'admin',
+          allowedRoles: ['admin'],
+          description: '',
+          inputSchema: { type: 'object', properties: {} }
         }
       ];
       var jwt: JWTPayload = {
@@ -206,6 +213,90 @@ describe('Permission Validator', () => {
       tools.forEach(function(tool) {
         expect(() => validatePermission(tool, jwt)).not.toThrow();
       });
+    });
+
+    test('should DENY stakeholder from executing ADMIN tools', () => {
+      var tool: MCPToolDefinition = {
+        name: 'snow_configure_mid_server',
+        description: 'Configure MID Server',
+        permission: 'admin',
+        allowedRoles: ['admin'],
+        inputSchema: { type: 'object', properties: {} }
+      };
+      var jwt: JWTPayload = {
+        customerId: 1,
+        tier: 'enterprise',
+        features: [],
+        role: 'stakeholder',
+        sessionId: 'test',
+        iat: Date.now(),
+        exp: Date.now() + 86400000
+      };
+
+      expect(() => validatePermission(tool, jwt)).toThrow(McpError);
+      try {
+        validatePermission(tool, jwt);
+      } catch (error: any) {
+        expect(error.message).toContain('Permission Denied');
+        expect(error.code).toBe(ErrorCode.InvalidRequest);
+      }
+    });
+
+    test('should DENY developer from executing ADMIN-only tools', () => {
+      var tool: MCPToolDefinition = {
+        name: 'snow_configure_mid_server',
+        description: 'Configure MID Server',
+        permission: 'admin',
+        allowedRoles: ['admin'],
+        inputSchema: { type: 'object', properties: {} }
+      };
+      var jwt: JWTPayload = {
+        customerId: 1,
+        tier: 'enterprise',
+        features: [],
+        role: 'developer',
+        sessionId: 'test',
+        iat: Date.now(),
+        exp: Date.now() + 86400000
+      };
+
+      expect(() => validatePermission(tool, jwt)).toThrow(McpError);
+      try {
+        validatePermission(tool, jwt);
+      } catch (error: any) {
+        expect(error.message).toContain('Permission Denied');
+        expect(error.message).toContain('admin');
+        expect(error.code).toBe(ErrorCode.InvalidRequest);
+      }
+    });
+
+    test('should DENY stakeholder even if in allowedRoles for ADMIN tool (double-check)', () => {
+      // Edge case: Tool misconfigured with stakeholder in allowedRoles for admin operation
+      var tool: MCPToolDefinition = {
+        name: 'snow_install_spoke',
+        description: 'Install Spoke',
+        permission: 'admin',
+        allowedRoles: ['developer', 'stakeholder', 'admin'], // Misconfigured!
+        inputSchema: { type: 'object', properties: {} }
+      };
+      var jwt: JWTPayload = {
+        customerId: 1,
+        tier: 'enterprise',
+        features: [],
+        role: 'stakeholder',
+        sessionId: 'test',
+        iat: Date.now(),
+        exp: Date.now() + 86400000
+      };
+
+      // Should still deny because of double-check in validatePermission
+      expect(() => validatePermission(tool, jwt)).toThrow(McpError);
+      try {
+        validatePermission(tool, jwt);
+      } catch (error: any) {
+        expect(error.message).toContain('Admin Access Denied');
+        expect(error.message).toContain('read-only access');
+      }
     });
 
     test('should use default permissions for tools without permission field', () => {

@@ -22,7 +22,7 @@ export const toolDefinition: MCPToolDefinition = {
   // Permission enforcement
   // Classification: READ - Get operation - retrieves data
   permission: 'read',
-  allowedRoles: ['developer', 'admin'],
+  allowedRoles: ['developer', 'stakeholder', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {
