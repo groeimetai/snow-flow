@@ -46,7 +46,7 @@ export type UserRole = 'developer' | 'stakeholder' | 'admin';
 /**
  * Tool permission level
  */
-export type ToolPermission = 'read' | 'write';
+export type ToolPermission = 'read' | 'write' | 'admin';
 
 /**
  * MCP Tool Definition (compliant with Model Context Protocol)
@@ -63,7 +63,7 @@ export interface MCPToolDefinition {
 
   // 🆕 Permission enforcement
   // Optional for backward compatibility during migration
-  permission?: ToolPermission; // 'read' or 'write' - defaults to 'write' (most restrictive)
+  permission?: ToolPermission; // 'read', 'write', or 'admin' - defaults to 'write' (most restrictive)
   allowedRoles?: UserRole[]; // Roles permitted to execute this tool - defaults to ['developer', 'admin']
 
   inputSchema: {

@@ -5,7 +5,7 @@
  * Permission enforcement
  */
 
-import { MCPToolDefinition, JWTPayload, UserRole } from './types.js';
+import { MCPToolDefinition, JWTPayload, UserRole, ToolPermission } from './types.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 
 /**
@@ -60,7 +60,7 @@ export function extractJWTPayload(headers?: Record<string, string>): JWTPayload 
  * (Defaults to most restrictive: write-only for developers)
  */
 function getDefaultPermission(tool: MCPToolDefinition): {
-  permission: 'read' | 'write';
+  permission: ToolPermission;
   allowedRoles: UserRole[];
 } {
   // If tool doesn't have permission fields, default to WRITE (most restrictive)
