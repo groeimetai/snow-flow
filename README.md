@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="SnowCode logo" width="300">
+    <img src="assets/logo.svg" alt="Snow-Flow logo" width="300">
   </picture>
 </p>
 
