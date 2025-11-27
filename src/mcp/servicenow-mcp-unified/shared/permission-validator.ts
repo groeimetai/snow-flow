@@ -7,48 +7,106 @@
 
 import { MCPToolDefinition, JWTPayload, UserRole, ToolPermission } from './types.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+
+// Cache for auth.json role to avoid repeated file reads
+let cachedAuthRole: UserRole | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_TTL_MS = 60000; // 1 minute cache
+
+/**
+ * Load user role from auth.json enterprise section
+ */
+function loadRoleFromAuthJson(): UserRole | null {
+  // Check cache first
+  if (cachedAuthRole && (Date.now() - cacheTimestamp) < CACHE_TTL_MS) {
+    return cachedAuthRole;
+  }
+
+  const authPaths = [
+    path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json'),
+    path.join(os.homedir(), '.snow-flow', 'auth.json'),
+  ];
+
+  for (const authPath of authPaths) {
+    try {
+      if (!fs.existsSync(authPath)) continue;
+
+      const authData = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
+
+      // Check enterprise section for role
+      if (authData.enterprise?.role) {
+        const role = authData.enterprise.role;
+        if (['developer', 'stakeholder', 'admin'].includes(role)) {
+          console.log(`[Permission] 🔑 Loaded role '${role}' from ${authPath}`);
+          cachedAuthRole = role as UserRole;
+          cacheTimestamp = Date.now();
+          return cachedAuthRole;
+        }
+      }
+    } catch (error) {
+      // Ignore errors, try next path
+    }
+  }
+
+  return null;
+}
 
 /**
  * Extract JWT payload from MCP connection headers
- * (In production, this is set by the enterprise MCP proxy)
+ * Priority: 1. Env var, 2. Headers, 3. auth.json, 4. Default developer
  */
 export function extractJWTPayload(headers?: Record<string, string>): JWTPayload | null {
-  // For now, check if role is passed via environment variable (development mode)
-  // In production, this comes from JWT in X-Snow-Flow-Auth header
+  // Priority 1: Check environment variable (explicit override)
   const devRole = process.env.SNOW_FLOW_USER_ROLE as UserRole | undefined;
 
   if (devRole && ['developer', 'stakeholder', 'admin'].includes(devRole)) {
-    // Development mode: create mock JWT payload
+    console.log(`[Permission] Using role from env: ${devRole}`);
     return {
       customerId: 0,
       tier: 'community',
       features: [],
       role: devRole,
-      sessionId: 'dev-session',
+      sessionId: 'env-session',
       iat: Date.now(),
-      exp: Date.now() + 86400000, // 24 hours
+      exp: Date.now() + 86400000,
     };
   }
 
-  // Production mode: extract from headers
+  // Priority 2: Extract from headers (enterprise MCP proxy)
   if (headers && headers['x-snow-flow-auth']) {
     try {
-      // In production, the enterprise MCP proxy sets this header with JWT
       const payload = JSON.parse(Buffer.from(headers['x-snow-flow-auth'], 'base64').toString());
+      console.log(`[Permission] Using role from header: ${payload.role}`);
       return payload as JWTPayload;
     } catch (error) {
       console.error('[Permission] Failed to parse JWT from headers:', error);
-      // Fall through to default developer role
     }
   }
 
-  // No JWT found - default to developer for backward compatibility
-  // TODO: In future, require JWT for all enterprise connections
+  // Priority 3: Load from auth.json (snow-code stored role)
+  const authJsonRole = loadRoleFromAuthJson();
+  if (authJsonRole) {
+    return {
+      customerId: 0,
+      tier: 'enterprise',
+      features: [],
+      role: authJsonRole,
+      sessionId: 'auth-json-session',
+      iat: Date.now(),
+      exp: Date.now() + 86400000,
+    };
+  }
+
+  // Priority 4: Default to developer for backward compatibility
+  console.log('[Permission] No role found, defaulting to developer');
   return {
     customerId: 0,
     tier: 'community',
     features: [],
-    role: 'developer', // Default to most permissive for backward compatibility
+    role: 'developer',
     sessionId: 'anonymous',
     iat: Date.now(),
     exp: Date.now() + 86400000,
