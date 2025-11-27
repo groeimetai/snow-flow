@@ -755,6 +755,10 @@ await snow_update_set_manage({ action: 'complete', update_set_id: us.sys_id });
 | Test script | \`snow_execute_script_with_output\` | Verification only |
 | Get property | \`snow_property_manage({ action: 'get' })\` | System config |
 | Create change | \`snow_change_manage({ action: 'create' })\` | ITSM workflow |
+| View system logs | \`snow_get_logs\` | Filter by level, source |
+| View email logs | \`snow_get_email_logs\` | Sent/received emails |
+| Debug integrations | \`snow_get_outbound_http_logs\` | Outgoing REST/SOAP |
+| Monitor API traffic | \`snow_get_inbound_http_logs\` | Incoming requests |
 
 ### ES5 Quick Conversion
 
@@ -850,4 +854,4 @@ Your process:
 **Now go build amazing ServiceNow solutions! 🚀**
 `;
 
-export const CLAUDE_MD_TEMPLATE_VERSION = '9.0.0-AI-AGENT-INSTRUCTIONS';
+export const CLAUDE_MD_TEMPLATE_VERSION = '9.1.0-MONITORING-TOOLS';

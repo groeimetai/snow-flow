@@ -174,7 +174,10 @@ snow_create_workspace_tab({ workspace, tab_config })        // Add tab
 \`\`\`javascript
 snow_execute_script_with_output({ script })             // Test/verify scripts (ES5 ONLY!)
 snow_schedule_job({ name, script, interval })           // Scheduled jobs
-snow_get_logs({ filter })                               // View system logs
+snow_get_logs({ level, source, since })                 // View system logs
+snow_get_email_logs({ type, recipient, since })         // View sent/received emails
+snow_get_outbound_http_logs({ status, endpoint })       // Monitor outgoing REST/SOAP calls
+snow_get_inbound_http_logs({ status, url_path })        // Track incoming API requests
 \`\`\`
 
 ### System Properties
@@ -287,6 +290,9 @@ echo "..." && node -e "const { ... } = require(...);"
 | Query incidents | \`snow_query_incidents()\` | Specialized tool |
 | Get property | \`snow_property_manage({ action: 'get' })\` | System properties |
 | Test script | \`snow_execute_script_with_output()\` | ES5 verification |
+| View emails | \`snow_get_email_logs()\` | Sent/received emails |
+| Debug integrations | \`snow_get_outbound_http_logs()\` | Outgoing HTTP calls |
+| Monitor API usage | \`snow_get_inbound_http_logs()\` | Incoming requests |
 | Complete work | \`snow_update_set_manage({ action: 'complete' })\` | **DO THIS LAST!** |
 
 ---
@@ -294,4 +300,4 @@ echo "..." && node -e "const { ... } = require(...);"
 **Remember:** Update Set → Tool → Verify → Complete. Every. Single. Time.
 `;
 
-export const AGENTS_MD_TEMPLATE_VERSION = '8.3.0-ENTERPRISE-THEMES';
+export const AGENTS_MD_TEMPLATE_VERSION = '8.4.0-MONITORING-TOOLS';
