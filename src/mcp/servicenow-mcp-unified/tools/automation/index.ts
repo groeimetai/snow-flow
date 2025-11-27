@@ -17,6 +17,9 @@ export { toolDefinition as snow_get_logs_def, execute as snow_get_logs_exec } fr
 export { toolDefinition as snow_get_email_logs_def, execute as snow_get_email_logs_exec } from './snow_get_email_logs.js';
 export { toolDefinition as snow_get_outbound_http_logs_def, execute as snow_get_outbound_http_logs_exec } from './snow_get_outbound_http_logs.js';
 export { toolDefinition as snow_get_inbound_http_logs_def, execute as snow_get_inbound_http_logs_exec } from './snow_get_inbound_http_logs.js';
+export { toolDefinition as snow_get_flow_execution_logs_def, execute as snow_get_flow_execution_logs_exec } from './snow_get_flow_execution_logs.js';
+export { toolDefinition as snow_get_scheduled_job_logs_def, execute as snow_get_scheduled_job_logs_exec } from './snow_get_scheduled_job_logs.js';
+export { toolDefinition as snow_get_slow_queries_def, execute as snow_get_slow_queries_exec } from './snow_get_slow_queries.js';
 export { toolDefinition as snow_get_script_output_def, execute as snow_get_script_output_exec } from './snow_get_script_output.js';
 export { toolDefinition as snow_property_manager_def, execute as snow_property_manager_exec } from './snow_property_manager.js';
 export { toolDefinition as snow_rest_message_test_suite_def, execute as snow_rest_message_test_suite_exec } from './snow_rest_message_test_suite.js';

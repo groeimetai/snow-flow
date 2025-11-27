@@ -178,6 +178,9 @@ snow_get_logs({ level, source, since })                 // View system logs
 snow_get_email_logs({ type, recipient, since })         // View sent/received emails
 snow_get_outbound_http_logs({ status, endpoint })       // Monitor outgoing REST/SOAP calls
 snow_get_inbound_http_logs({ status, url_path })        // Track incoming API requests
+snow_get_flow_execution_logs({ status, flow_name })     // Flow Designer execution history
+snow_get_scheduled_job_logs({ job_name, failed_only })  // Scheduled job runs and errors
+snow_get_slow_queries({ table, min_duration })          // Database performance issues
 \`\`\`
 
 ### System Properties
@@ -293,6 +296,9 @@ echo "..." && node -e "const { ... } = require(...);"
 | View emails | \`snow_get_email_logs()\` | Sent/received emails |
 | Debug integrations | \`snow_get_outbound_http_logs()\` | Outgoing HTTP calls |
 | Monitor API usage | \`snow_get_inbound_http_logs()\` | Incoming requests |
+| Debug flows | \`snow_get_flow_execution_logs()\` | Flow Designer runs |
+| Debug scheduled jobs | \`snow_get_scheduled_job_logs()\` | Job history & errors |
+| Find slow queries | \`snow_get_slow_queries()\` | Performance issues |
 | Complete work | \`snow_update_set_manage({ action: 'complete' })\` | **DO THIS LAST!** |
 
 ---
@@ -300,4 +306,4 @@ echo "..." && node -e "const { ... } = require(...);"
 **Remember:** Update Set → Tool → Verify → Complete. Every. Single. Time.
 `;
 
-export const AGENTS_MD_TEMPLATE_VERSION = '8.4.0-MONITORING-TOOLS';
+export const AGENTS_MD_TEMPLATE_VERSION = '8.5.0-DEBUGGING-TOOLS';

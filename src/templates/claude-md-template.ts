@@ -759,6 +759,9 @@ await snow_update_set_manage({ action: 'complete', update_set_id: us.sys_id });
 | View email logs | \`snow_get_email_logs\` | Sent/received emails |
 | Debug integrations | \`snow_get_outbound_http_logs\` | Outgoing REST/SOAP |
 | Monitor API traffic | \`snow_get_inbound_http_logs\` | Incoming requests |
+| Debug flows | \`snow_get_flow_execution_logs\` | Flow Designer runs |
+| Debug scheduled jobs | \`snow_get_scheduled_job_logs\` | Job history & errors |
+| Find slow queries | \`snow_get_slow_queries\` | Performance issues |
 
 ### ES5 Quick Conversion
 
@@ -854,4 +857,4 @@ Your process:
 **Now go build amazing ServiceNow solutions! 🚀**
 `;
 
-export const CLAUDE_MD_TEMPLATE_VERSION = '9.1.0-MONITORING-TOOLS';
+export const CLAUDE_MD_TEMPLATE_VERSION = '9.2.0-DEBUGGING-TOOLS';
