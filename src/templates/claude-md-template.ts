@@ -762,6 +762,15 @@ await snow_update_set_manage({ action: 'complete', update_set_id: us.sys_id });
 | Debug flows | \`snow_get_flow_execution_logs\` | Flow Designer runs |
 | Debug scheduled jobs | \`snow_get_scheduled_job_logs\` | Job history & errors |
 | Find slow queries | \`snow_get_slow_queries\` | Performance issues |
+| Create OAuth profile | \`snow_create_oauth_profile\` | External API auth |
+| Store credentials | \`snow_create_credential_alias\` | API keys, passwords |
+| Manage OAuth tokens | \`snow_manage_oauth_tokens\` | List, refresh, test |
+| List spokes | \`snow_install_spoke\` | IntegrationHub |
+| Create flow action | \`snow_create_flow_action\` | Custom IH actions |
+| Test spoke connection | \`snow_manage_spoke_connection\` | Diagnose issues |
+| List MID Servers | \`snow_configure_mid_server\` | On-premise integration |
+| Test MID connectivity | \`snow_test_mid_connectivity\` | Network diagnostics |
+| Manage MID capabilities | \`snow_manage_mid_capabilities\` | Discovery, Orchestration |
 
 ### ES5 Quick Conversion
 
@@ -857,4 +866,4 @@ Your process:
 **Now go build amazing ServiceNow solutions! 🚀**
 `;
 
-export const CLAUDE_MD_TEMPLATE_VERSION = '9.2.0-DEBUGGING-TOOLS';
+export const CLAUDE_MD_TEMPLATE_VERSION = '9.3.0-EXTERNAL-INTEGRATION';

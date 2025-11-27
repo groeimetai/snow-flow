@@ -190,6 +190,40 @@ snow_property_manage({ action: 'set', name, value })    // Set property
 snow_property_query({ action: 'list', pattern })        // List properties
 \`\`\`
 
+### OAuth & Credentials Management
+\`\`\`javascript
+snow_create_oauth_profile({ name, client_id, token_url })  // Create OAuth 2.0 profile
+snow_create_connection_alias({ name, connection_type })    // Create connection alias for IntegrationHub
+snow_create_credential_alias({ name, type, basic_auth })   // Store API keys, passwords securely
+snow_manage_oauth_tokens({ action: 'list' })               // View OAuth token status
+snow_manage_oauth_tokens({ action: 'refresh', oauth_profile_id })  // Refresh expired tokens
+snow_manage_oauth_tokens({ action: 'test', oauth_profile_id })     // Test OAuth connectivity
+\`\`\`
+
+### IntegrationHub & Spokes
+\`\`\`javascript
+snow_install_spoke({ action: 'list' })                     // List installed spokes
+snow_install_spoke({ action: 'search', search_query })     // Search available spokes
+snow_install_spoke({ action: 'status', spoke_name })       // Check spoke status & actions
+snow_create_flow_action({ name, inputs, outputs })         // Create custom IntegrationHub action
+snow_manage_spoke_connection({ action: 'list' })           // List spoke connections
+snow_manage_spoke_connection({ action: 'test', connection_alias_id })  // Test spoke connection
+snow_manage_spoke_connection({ action: 'troubleshoot', connection_alias_id })  // Diagnose issues
+\`\`\`
+
+### MID Server Management
+\`\`\`javascript
+snow_configure_mid_server({ action: 'list' })              // List all MID Servers
+snow_configure_mid_server({ action: 'status', mid_server_name })  // Detailed MID status
+snow_configure_mid_server({ action: 'validate', mid_server_name })  // Validate MID Server
+snow_test_mid_connectivity({ action: 'test_endpoint', mid_server_name, target_url })  // Test connectivity
+snow_test_mid_connectivity({ action: 'ping', mid_server_name, target_host })  // Ping from MID
+snow_test_mid_connectivity({ action: 'full_diagnostic', mid_server_name, target_host })  // Full network diagnostic
+snow_manage_mid_capabilities({ action: 'list', mid_server_name })  // List MID capabilities
+snow_manage_mid_capabilities({ action: 'add', mid_server_name, capability_name })  // Add capability
+snow_manage_mid_capabilities({ action: 'recommend', use_case: 'discovery' })  // Get recommended capabilities
+\`\`\`
+
 ---
 
 ## Critical Rules
@@ -299,6 +333,15 @@ echo "..." && node -e "const { ... } = require(...);"
 | Debug flows | \`snow_get_flow_execution_logs()\` | Flow Designer runs |
 | Debug scheduled jobs | \`snow_get_scheduled_job_logs()\` | Job history & errors |
 | Find slow queries | \`snow_get_slow_queries()\` | Performance issues |
+| Create OAuth profile | \`snow_create_oauth_profile()\` | External API auth |
+| Store credentials | \`snow_create_credential_alias()\` | API keys, passwords |
+| Manage OAuth tokens | \`snow_manage_oauth_tokens()\` | List, refresh, test |
+| List spokes | \`snow_install_spoke({ action: 'list' })\` | IntegrationHub |
+| Create flow action | \`snow_create_flow_action()\` | Custom IH actions |
+| Test spoke connection | \`snow_manage_spoke_connection()\` | Diagnose issues |
+| List MID Servers | \`snow_configure_mid_server()\` | On-premise integration |
+| Test MID connectivity | \`snow_test_mid_connectivity()\` | Network diagnostics |
+| Manage MID capabilities | \`snow_manage_mid_capabilities()\` | Discovery, Orchestration |
 | Complete work | \`snow_update_set_manage({ action: 'complete' })\` | **DO THIS LAST!** |
 
 ---
@@ -306,4 +349,4 @@ echo "..." && node -e "const { ... } = require(...);"
 **Remember:** Update Set → Tool → Verify → Complete. Every. Single. Time.
 `;
 
-export const AGENTS_MD_TEMPLATE_VERSION = '8.5.0-DEBUGGING-TOOLS';
+export const AGENTS_MD_TEMPLATE_VERSION = '8.6.0-EXTERNAL-INTEGRATION';

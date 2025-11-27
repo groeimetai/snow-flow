@@ -16,3 +16,19 @@ export { toolDefinition as snow_create_field_map_def, execute as snow_create_fie
 export { toolDefinition as snow_create_web_service_def, execute as snow_create_web_service_exec } from './snow_create_web_service.js';
 export { toolDefinition as snow_discover_data_sources_def, execute as snow_discover_data_sources_exec } from './snow_discover_data_sources.js';
 export { toolDefinition as snow_discover_integration_endpoints_def, execute as snow_discover_integration_endpoints_exec } from './snow_discover_integration_endpoints.js';
+
+// OAuth & Credentials Management
+export { toolDefinition as snow_create_oauth_profile_def, execute as snow_create_oauth_profile_exec } from './snow_create_oauth_profile.js';
+export { toolDefinition as snow_create_connection_alias_def, execute as snow_create_connection_alias_exec } from './snow_create_connection_alias.js';
+export { toolDefinition as snow_create_credential_alias_def, execute as snow_create_credential_alias_exec } from './snow_create_credential_alias.js';
+export { toolDefinition as snow_manage_oauth_tokens_def, execute as snow_manage_oauth_tokens_exec } from './snow_manage_oauth_tokens.js';
+
+// IntegrationHub & Spokes
+export { toolDefinition as snow_install_spoke_def, execute as snow_install_spoke_exec } from './snow_install_spoke.js';
+export { toolDefinition as snow_create_flow_action_def, execute as snow_create_flow_action_exec } from './snow_create_flow_action.js';
+export { toolDefinition as snow_manage_spoke_connection_def, execute as snow_manage_spoke_connection_exec } from './snow_manage_spoke_connection.js';
+
+// MID Server Management
+export { toolDefinition as snow_configure_mid_server_def, execute as snow_configure_mid_server_exec } from './snow_configure_mid_server.js';
+export { toolDefinition as snow_test_mid_connectivity_def, execute as snow_test_mid_connectivity_exec } from './snow_test_mid_connectivity.js';
+export { toolDefinition as snow_manage_mid_capabilities_def, execute as snow_manage_mid_capabilities_exec } from './snow_manage_mid_capabilities.js';
