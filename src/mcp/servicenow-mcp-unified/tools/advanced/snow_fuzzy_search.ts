@@ -136,7 +136,7 @@ function calculateSimilarity(query: string, value: string): number {
 /**
  * Calculate overall relevance score for a record
  */
-function calculateRelevanceScore(query: string, record: any, searchFields: string[]): number {
+function calculateRelevanceScore(query: string, record: any, searchFields: string[]): { score: number; matchedField: string } {
   let maxScore = 0;
   let matchedField = '';
 
