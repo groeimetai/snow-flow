@@ -6,7 +6,9 @@
 export { toolDefinition as snow_query_table_def, execute as snow_query_table_exec } from './snow_query_table.js';
 export { toolDefinition as snow_discover_table_fields_def, execute as snow_discover_table_fields_exec } from './snow_discover_table_fields.js';
 export { toolDefinition as snow_get_by_sysid_def, execute as snow_get_by_sysid_exec } from './snow_get_by_sysid.js';
-export { toolDefinition as snow_comprehensive_search_def, execute as snow_comprehensive_search_exec } from './snow_comprehensive_search.js';
+// Note: snow_comprehensive_search renamed to snow_search_artifacts (v8.3.0)
+// Old name kept as alias for backwards compatibility
+export { toolDefinition as snow_search_artifacts_def, toolDefinitionAlias as snow_comprehensive_search_def, execute as snow_search_artifacts_exec, execute as snow_comprehensive_search_exec } from './snow_comprehensive_search.js';
 
 // Record Operations (v8.2.0 Merged: create, update, delete → manage)
 export { toolDefinition as snow_record_manage_def, execute as snow_record_manage_exec } from './snow_record_manage.js';
