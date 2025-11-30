@@ -1047,10 +1047,7 @@ program
       // Sync .mcp.json to .snow-code/config.json
       // This ensures snow-code discovers all MCP servers
       try {
-        const syncSpinner = prompts.spinner();
-        syncSpinner.start('Syncing MCP configurations');
         await syncMcpConfigs(targetDir);
-        syncSpinner.stop('MCP configurations synced');
       } catch (syncErr: any) {
         cliLogger.warn(`MCP config sync warning: ${syncErr.message}`);
       }

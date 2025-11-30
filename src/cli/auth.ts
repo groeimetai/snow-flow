@@ -410,8 +410,6 @@ async function updateMCPServerConfig() {
         server[envKey]['SERVICENOW_CLIENT_SECRET'] = servicenowCreds.clientSecret;
 
         await fs.writeFile(projectMcpPath, JSON.stringify(projectMcp, null, 2), 'utf-8');
-
-        prompts.log.success('✅ Updated project .mcp.json with ServiceNow credentials');
       } else {
         authLogger.debug('No servicenow-unified MCP server found in project .mcp.json');
       }
@@ -535,32 +533,21 @@ export function registerAuthCommands(program: Command) {
           const enterpriseCreds = authJson['enterprise'];
 
           if (enterpriseCreds && enterpriseCreds.type === 'enterprise') {
-            prompts.log.message('');
-            prompts.log.step('Converting enterprise configuration to MCP-compatible format...');
-
             // Use role from auth.json (already asked by snow-code)
             const role = enterpriseCreds.role || 'developer';
-            authLogger.info(`Using role from snow-code auth: ${role}`);
+            authLogger.debug(`Using role from snow-code auth: ${role}`);
 
             // Convert to JWT-based MCP config
-            // IMPORTANT: portal.snow-flow.dev handles BOTH portal AND MCP auth
             await addEnterpriseMcpServer({
               licenseKey: enterpriseCreds.licenseKey,
               role: role as 'developer' | 'stakeholder' | 'admin',
-              serverUrl: 'https://portal.snow-flow.dev',  // ← Portal server handles MCP auth
+              serverUrl: 'https://portal.snow-flow.dev',
             });
 
-            prompts.log.success('✅ Enterprise MCP server configured with JWT authentication');
-            prompts.log.info('   Enterprise tools are now available via LOCAL proxy connection');
-
-            // 🔥 CRITICAL FIX: Sync .mcp.json to .claude/mcp-config.json
-            // This ensures Claude Code sees the enterprise server when running swarm commands
+            // Sync MCP configurations
             try {
-              prompts.log.step('Syncing MCP configurations for Claude Code...');
               await syncMcpConfigs(process.cwd());
-              prompts.log.success('✅ MCP configurations synced - enterprise tools ready for swarm command');
             } catch (syncErr: any) {
-              prompts.log.warn(`⚠️  MCP config sync warning: ${syncErr.message}`);
               authLogger.warn(`MCP sync error: ${syncErr.message}`);
             }
           }
