@@ -212,7 +212,7 @@ snow-flow status        # System status
 
 - **Node.js** 18+
 - **ServiceNow** instance with OAuth configured
-- **LLM Provider** - Any provider supported by [models.dev](https://models.dev) (Claude, GPT-4, Gemini, Mistral, DeepSeek, Groq, and more) or Ollama for free local models
+- **LLM Provider** - Any provider supported by [models.dev](https://models.dev) (Claude, GPT-4, Gemini, Mistral, DeepSeek, Groq, local models, and more)
 
 ---
 
