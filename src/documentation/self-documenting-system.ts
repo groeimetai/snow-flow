@@ -209,6 +209,7 @@ export class SelfDocumentingSystem {
   private documentationProfiles: Map<string, DocumentationProfile> = new Map();
   private templateEngine: Map<string, string> = new Map();
   private diagramGenerator: any; // Mermaid/PlantUML generator
+  private continuousDocInterval: NodeJS.Timeout | null = null;
 
   constructor(client: ServiceNowClient, memory: MemorySystem) {
     this.logger = new Logger('SelfDocumentingSystem');
@@ -314,14 +315,19 @@ export class SelfDocumentingSystem {
 
     const interval = options.interval || 3600000; // Default: 1 hour
 
-    setInterval(async () => {
+    // Clear existing interval if any
+    if (this.continuousDocInterval) {
+      clearInterval(this.continuousDocInterval);
+    }
+
+    this.continuousDocInterval = setInterval(async () => {
       try {
         // Check for changes
         const changes = await this.detectSystemChanges();
-        
+
         if (changes.length > 0) {
           this.logger.info(`📝 Detected ${changes.length} changes, updating documentation`);
-          
+
           // Generate incremental documentation
           const result = await this.generateDocumentation({
             scope: 'incremental',
@@ -336,6 +342,28 @@ export class SelfDocumentingSystem {
         this.logger.error('Error in continuous documentation', error);
       }
     }, interval);
+
+    // Don't block process exit
+    if (this.continuousDocInterval.unref) {
+      this.continuousDocInterval.unref();
+    }
+  }
+
+  /**
+   * Stop continuous documentation and clean up resources
+   */
+  shutdown(): void {
+    this.logger.info('Shutting down self-documenting system...');
+
+    if (this.continuousDocInterval) {
+      clearInterval(this.continuousDocInterval);
+      this.continuousDocInterval = null;
+    }
+
+    this.documentationProfiles.clear();
+    this.templateEngine.clear();
+
+    this.logger.info('Self-documenting system shutdown complete');
   }
 
   /**

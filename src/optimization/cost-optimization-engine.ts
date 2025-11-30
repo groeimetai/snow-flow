@@ -218,6 +218,8 @@ export class CostOptimizationEngine {
   private activeOptimizations: Map<string, CostOptimization> = new Map();
   private costThresholds: Map<string, number> = new Map();
   private monitoringEnabled: boolean = true;
+  private autonomousOptimizationInterval: NodeJS.Timeout | null = null;
+  private continuousMonitoringInterval: NodeJS.Timeout | null = null;
 
   // Cost factors per service/operation
   private costModel = {
@@ -351,7 +353,12 @@ export class CostOptimizationEngine {
     const interval = options.checkInterval || 3600000; // Default: 1 hour
     const autoThreshold = options.autoImplementThreshold || 100; // $100 savings
 
-    setInterval(async () => {
+    // Clear existing interval if any
+    if (this.autonomousOptimizationInterval) {
+      clearInterval(this.autonomousOptimizationInterval);
+    }
+
+    this.autonomousOptimizationInterval = setInterval(async () => {
       try {
         // Analyze current costs
         const result = await this.analyzeCosts({
@@ -908,14 +915,48 @@ export class CostOptimizationEngine {
   private startContinuousMonitoring(): void {
     if (!this.monitoringEnabled) return;
 
+    // Clear existing interval if any
+    if (this.continuousMonitoringInterval) {
+      clearInterval(this.continuousMonitoringInterval);
+    }
+
     // Monitor costs every hour
-    setInterval(async () => {
+    this.continuousMonitoringInterval = setInterval(async () => {
       try {
         await this.checkCostThresholds();
       } catch (error) {
         this.logger.error('Error in cost monitoring', error);
       }
     }, 3600000);
+
+    // Don't block process exit
+    if (this.continuousMonitoringInterval.unref) {
+      this.continuousMonitoringInterval.unref();
+    }
+  }
+
+  /**
+   * Stop all monitoring and clean up resources
+   */
+  shutdown(): void {
+    this.logger.info('Shutting down cost optimization engine...');
+
+    if (this.autonomousOptimizationInterval) {
+      clearInterval(this.autonomousOptimizationInterval);
+      this.autonomousOptimizationInterval = null;
+    }
+
+    if (this.continuousMonitoringInterval) {
+      clearInterval(this.continuousMonitoringInterval);
+      this.continuousMonitoringInterval = null;
+    }
+
+    this.monitoringEnabled = false;
+    this.costProfiles.clear();
+    this.activeOptimizations.clear();
+    this.costThresholds.clear();
+
+    this.logger.info('Cost optimization engine shutdown complete');
   }
 
   private async checkCostThresholds(): Promise<void> {
