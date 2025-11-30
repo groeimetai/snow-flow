@@ -1263,6 +1263,40 @@ export class AdvancedComplianceSystem {
     // Initialize continuous compliance monitoring
     this.logger.info('🔐 Continuous compliance monitoring initialized');
   }
+
+  /**
+   * Stop a specific monitoring session
+   */
+  stopMonitoring(monitoringId: string): boolean {
+    const interval = this.activeMonitoring.get(monitoringId);
+    if (interval) {
+      clearInterval(interval);
+      this.activeMonitoring.delete(monitoringId);
+      this.logger.info(`Stopped monitoring session: ${monitoringId}`);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Shutdown compliance system and clean up all resources
+   */
+  shutdown(): void {
+    this.logger.info('Shutting down compliance system...');
+
+    // Clear all active monitoring intervals
+    for (const [monitoringId, interval] of this.activeMonitoring.entries()) {
+      clearInterval(interval);
+      this.logger.debug(`Cleared monitoring interval: ${monitoringId}`);
+    }
+    this.activeMonitoring.clear();
+
+    // Clear cached data
+    this.frameworks.clear();
+    this.auditTrail.length = 0;
+
+    this.logger.info('Compliance system shutdown complete');
+  }
 }
 
 export default AdvancedComplianceSystem;

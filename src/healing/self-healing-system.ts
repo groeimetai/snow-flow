@@ -235,6 +235,7 @@ export class SelfHealingSystem {
   private recoveryStrategies: Map<string, RecoveryStrategy> = new Map();
   private monitoringActive: boolean = true;
   private learningEngine: LearningEngine;
+  private autonomousHealingInterval: NodeJS.Timeout | null = null;
 
   constructor(client: ServiceNowClient, memory: MemorySystem) {
     this.logger = new Logger('SelfHealingSystem');
@@ -361,7 +362,12 @@ export class SelfHealingSystem {
     const interval = options.checkInterval || 300000; // Default: 5 minutes
     const threshold = options.healingThreshold || 0.8; // 80% confidence
 
-    setInterval(async () => {
+    // Clear any existing interval before starting a new one
+    if (this.autonomousHealingInterval) {
+      clearInterval(this.autonomousHealingInterval);
+    }
+
+    this.autonomousHealingInterval = setInterval(async () => {
       try {
         // Perform incremental health check
         const result = await this.performHealthCheck({
@@ -391,6 +397,31 @@ export class SelfHealingSystem {
         await this.healSelf(error);
       }
     }, interval);
+
+    // Don't block process exit
+    if (this.autonomousHealingInterval.unref) {
+      this.autonomousHealingInterval.unref();
+    }
+  }
+
+  /**
+   * Stop autonomous healing and clean up resources
+   */
+  shutdown(): void {
+    this.logger.info('Shutting down self-healing system...');
+
+    if (this.autonomousHealingInterval) {
+      clearInterval(this.autonomousHealingInterval);
+      this.autonomousHealingInterval = null;
+    }
+
+    this.monitoringActive = false;
+    this.healingProfiles.clear();
+    this.activeIncidents.clear();
+    this.errorPatterns.clear();
+    this.recoveryStrategies.clear();
+
+    this.logger.info('Self-healing system shutdown complete');
   }
 
   /**

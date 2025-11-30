@@ -115,10 +115,13 @@ export class ServiceNowMachineLearningMCP {
   private incidentVolumePredictor?: TimeSeriesModel;
   private anomalyDetector?: AnomalyDetectionModel;
   
-  // Model cache
+  // Model cache with LRU tracking
   private modelCache: Map<string, tf.LayersModel> = new Map();
   private embeddingCache: Map<string, tf.Tensor> = new Map();
-  
+  private modelAccessOrder: string[] = []; // For LRU eviction
+  private static readonly MAX_CACHED_MODELS = 5;
+  private static readonly MAX_CACHED_EMBEDDINGS = 100;
+
   // Track ML API availability
   private hasPA: boolean = false;
   private hasPI: boolean = false;
@@ -3728,6 +3731,144 @@ export class ServiceNowMachineLearningMCP {
         payback_period: '6-9 months',
         annual_savings: '$50,000-$100,000'
       }
+    };
+  }
+
+  /**
+   * Cache a model with LRU eviction
+   * Disposes oldest model when cache is full
+   */
+  private cacheModel(key: string, model: tf.LayersModel): void {
+    // If cache is full, evict oldest
+    if (this.modelCache.size >= ServiceNowMachineLearningMCP.MAX_CACHED_MODELS) {
+      const oldestKey = this.modelAccessOrder.shift();
+      if (oldestKey) {
+        const oldModel = this.modelCache.get(oldestKey);
+        if (oldModel) {
+          oldModel.dispose();
+          this.modelCache.delete(oldestKey);
+          this.logger.info(`Evicted model from cache: ${oldestKey}`);
+        }
+      }
+    }
+
+    // Add new model
+    this.modelCache.set(key, model);
+    this.modelAccessOrder.push(key);
+  }
+
+  /**
+   * Get a cached model and update LRU order
+   */
+  private getCachedModel(key: string): tf.LayersModel | undefined {
+    const model = this.modelCache.get(key);
+    if (model) {
+      // Update LRU order
+      const index = this.modelAccessOrder.indexOf(key);
+      if (index > -1) {
+        this.modelAccessOrder.splice(index, 1);
+        this.modelAccessOrder.push(key);
+      }
+    }
+    return model;
+  }
+
+  /**
+   * Cache an embedding with size limit
+   * Clears oldest embeddings when cache is full
+   */
+  private cacheEmbedding(key: string, embedding: tf.Tensor): void {
+    // If cache is full, clear oldest half
+    if (this.embeddingCache.size >= ServiceNowMachineLearningMCP.MAX_CACHED_EMBEDDINGS) {
+      const keysToRemove = Array.from(this.embeddingCache.keys()).slice(0, Math.floor(ServiceNowMachineLearningMCP.MAX_CACHED_EMBEDDINGS / 2));
+      for (const k of keysToRemove) {
+        const oldEmbedding = this.embeddingCache.get(k);
+        if (oldEmbedding) {
+          oldEmbedding.dispose();
+        }
+        this.embeddingCache.delete(k);
+      }
+      this.logger.info(`Evicted ${keysToRemove.length} embeddings from cache`);
+    }
+
+    this.embeddingCache.set(key, embedding);
+  }
+
+  /**
+   * Shutdown and clean up all TensorFlow resources
+   * CRITICAL: Call this before the process exits to prevent memory leaks
+   */
+  shutdown(): void {
+    this.logger.info('Shutting down ML MCP server and disposing TensorFlow resources...');
+
+    // Dispose all cached models
+    for (const [key, model] of this.modelCache.entries()) {
+      try {
+        model.dispose();
+        this.logger.debug(`Disposed model: ${key}`);
+      } catch (e) {
+        this.logger.warn(`Failed to dispose model ${key}:`, e);
+      }
+    }
+    this.modelCache.clear();
+    this.modelAccessOrder.length = 0;
+
+    // Dispose all cached embeddings
+    for (const [key, tensor] of this.embeddingCache.entries()) {
+      try {
+        tensor.dispose();
+      } catch (e) {
+        this.logger.warn(`Failed to dispose embedding ${key}:`, e);
+      }
+    }
+    this.embeddingCache.clear();
+
+    // Dispose individual model instances
+    if (this.incidentClassifier) {
+      try {
+        // @ts-ignore - dispose if available
+        if (this.incidentClassifier.dispose) this.incidentClassifier.dispose();
+      } catch (e) { /* ignore */ }
+    }
+    if (this.changeRiskPredictor) {
+      try {
+        // @ts-ignore
+        if (this.changeRiskPredictor.dispose) this.changeRiskPredictor.dispose();
+      } catch (e) { /* ignore */ }
+    }
+    if (this.incidentVolumePredictor) {
+      try {
+        // @ts-ignore
+        if (this.incidentVolumePredictor.dispose) this.incidentVolumePredictor.dispose();
+      } catch (e) { /* ignore */ }
+    }
+    if (this.anomalyDetector) {
+      try {
+        // @ts-ignore
+        if (this.anomalyDetector.dispose) this.anomalyDetector.dispose();
+      } catch (e) { /* ignore */ }
+    }
+
+    // Log memory stats after cleanup
+    const memInfo = tf.memory();
+    this.logger.info('TensorFlow memory after cleanup:', {
+      numTensors: memInfo.numTensors,
+      numBytes: memInfo.numBytes,
+      unreliable: memInfo.unreliable
+    });
+
+    this.logger.info('ML MCP server shutdown complete');
+  }
+
+  /**
+   * Get current TensorFlow memory usage
+   */
+  getMemoryUsage(): { numTensors: number; numBytes: number; numDataBuffers: number } {
+    const mem = tf.memory();
+    return {
+      numTensors: mem.numTensors,
+      numBytes: mem.numBytes,
+      numDataBuffers: mem.numDataBuffers || 0
     };
   }
 }
