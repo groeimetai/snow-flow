@@ -84,7 +84,10 @@ export class ReliableMemoryManager {
     };
     
     this.memory.set(key, entry);
-    this.logger.debug(`Stored key '${key}' (${(sizeBytes / 1024).toFixed(2)}KB)`);
+    // Only log large stores (>100KB) to reduce log spam
+    if (sizeBytes > 100 * 1024) {
+      this.logger.debug(`Stored key '${key}' (${(sizeBytes / 1024).toFixed(2)}KB)`);
+    }
   }
 
   /**
@@ -215,8 +218,11 @@ export class ReliableMemoryManager {
         JSON.stringify(data, null, 2),
         'utf-8'
       );
-      
-      this.logger.debug(`Persisted ${this.memory.size} entries to disk`);
+
+      // Only log if there are entries (reduce spam for empty persists)
+      if (this.memory.size > 0) {
+        this.logger.debug(`Persisted ${this.memory.size} entries to disk`);
+      }
     } catch (error: any) {
       this.logger.error('Failed to persist memory to disk:', error);
     }
@@ -277,12 +283,12 @@ export class ReliableMemoryManager {
    * Start auto-persist timer
    */
   private startAutoPersist(): void {
-    // Persist every 30 seconds
+    // Persist every 5 minutes (reduced from 30 seconds to prevent log spam)
     this.persistTimer = setInterval(() => {
       this.persistToDisk().catch(error => {
         this.logger.error('Auto-persist failed:', error);
       });
-    }, 30000);
+    }, 5 * 60 * 1000); // 5 minutes
     
     // Don't block process exit
     if (this.persistTimer.unref) {
