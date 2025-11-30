@@ -49,7 +49,6 @@ export async function syncMcpConfigs(projectRoot: string = process.cwd()): Promi
     // Ensure .snow-code directory exists
     if (!existsSync(snowCodeDir)) {
       await fs.mkdir(snowCodeDir, { recursive: true });
-      logger.info(`Created .snow-code directory: ${snowCodeDir}`);
     }
 
     // Create snow-code format config (uses 'mcp' key)
@@ -65,17 +64,6 @@ export async function syncMcpConfigs(projectRoot: string = process.cwd()): Promi
 
     // Write to .snow-code/config.json
     await fs.writeFile(snowCodeConfigPath, JSON.stringify(snowCodeConfig, null, 2), 'utf-8');
-
-    logger.info(`✅ Synced .mcp.json → .snow-code/config.json`);
-
-    // Log which servers are enabled
-    const enabledServers = Object.entries(servers)
-      .filter(([_, config]: [string, any]) => (config as any).enabled !== false)
-      .map(([name]) => name);
-
-    if (enabledServers.length > 0) {
-      logger.info(`Enabled servers: ${enabledServers.join(', ')}`);
-    }
 
   } catch (error: any) {
     logger.error(`Failed to sync MCP configs: ${error.message}`);
