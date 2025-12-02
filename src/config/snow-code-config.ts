@@ -93,7 +93,7 @@ export async function writeSnowCodeConfig(config: SnowCodeConfig): Promise<void>
 
     // Write configuration file
     await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
-    logger.info('Successfully wrote SnowCode config');
+    logger.debug('Successfully wrote SnowCode config');
   } catch (error: any) {
     logger.error(`Failed to write SnowCode config: ${error.message}`);
     throw error;
@@ -135,7 +135,7 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     const mcpServerUrl = 'https://enterprise.snow-flow.dev';
 
     // 🔥 NEW: Generate JWT token via portal server
-    logger.info('Generating enterprise JWT token...');
+    logger.debug('Generating enterprise JWT token...');
 
     // Generate machine ID (sha256 of hostname for seat tracking)
     const machineId = require('crypto')
@@ -174,10 +174,10 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
 
     const jwtToken = authData.token;
 
-    logger.info('✅ JWT token generated successfully');
-    logger.info(`   Role: ${config.role}`);
-    logger.info(`   Developer seats: ${authData.customer?.developerSeats || 'N/A'}`);
-    logger.info(`   Stakeholder seats: ${authData.customer?.stakeholderSeats || 'N/A'}`);
+    logger.debug('JWT token generated successfully');
+    logger.debug(`Role: ${config.role}`);
+    logger.debug(`Developer seats: ${authData.customer?.developerSeats || 'N/A'}`);
+    logger.debug(`Stakeholder seats: ${authData.customer?.stakeholderSeats || 'N/A'}`);
 
     // 🔥 FIX: Use LOCAL proxy instead of REMOTE SSE
     // The proxy runs locally via stdio and connects to enterprise.snow-flow.dev via HTTPS
@@ -185,7 +185,7 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
 
     // 🚀 DYNAMIC PATH RESOLUTION - Works for ANY user setup!
     const enterpriseProxyPath = getEnterpriseProxyPath();
-    logger.info(`✅ Found enterprise proxy at: ${enterpriseProxyPath}`);
+    logger.debug(`Found enterprise proxy at: ${enterpriseProxyPath}`);
 
     // 🔥 FIX: Read credentials from project .env and pass to proxy via environment
     // This allows the proxy to access Jira/Azure/Confluence credentials
@@ -214,7 +214,7 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
           }
         }
 
-        logger.info(`✅ Loaded ${Object.keys(enterpriseCredentials).length} enterprise credential(s) from .env`);
+        logger.debug(`Loaded ${Object.keys(enterpriseCredentials).length} enterprise credential(s) from .env`);
       } catch (err: any) {
         logger.warn(`Could not load .env credentials: ${err.message}`);
       }
@@ -235,7 +235,7 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
 
     // Write updated .mcp.json
     await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), 'utf-8');
-    logger.info(`Successfully configured enterprise MCP server in ${mcpConfigPath}`);
+    logger.debug(`Configured enterprise MCP server in ${mcpConfigPath}`);
 
     // 🔥 ALSO update .snow-code/config.json for snow-code CLI compatibility
     const snowCodeConfigPath = path.join(process.cwd(), '.snow-code', 'config.json');
@@ -262,7 +262,7 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
         };
 
         await fs.writeFile(snowCodeConfigPath, JSON.stringify(snowCodeConfig, null, 2), 'utf-8');
-        logger.info(`Successfully configured enterprise MCP server in ${snowCodeConfigPath}`);
+        logger.debug(`Configured enterprise MCP server in ${snowCodeConfigPath}`);
       } catch (err: any) {
         logger.warn(`Could not update .snow-code/config.json: ${err.message}`);
       }
@@ -293,7 +293,7 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
         };
 
         await fs.writeFile(claudeMcpConfigPath, JSON.stringify(claudeMcpConfig, null, 2), 'utf-8');
-        logger.info(`Successfully configured enterprise MCP server in ${claudeMcpConfigPath}`);
+        logger.debug(`Successfully configured enterprise MCP server in ${claudeMcpConfigPath}`);
       } catch (err: any) {
         logger.warn(`Could not update .claude/mcp-config.json: ${err.message}`);
       }
@@ -322,7 +322,7 @@ export async function removeEnterpriseMcpServer(): Promise<void> {
     if (mcpConfig.mcp?.['snow-flow-enterprise']) {
       delete mcpConfig.mcp['snow-flow-enterprise'];
       await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), 'utf-8');
-      logger.info('Successfully removed enterprise MCP server from .mcp.json');
+      logger.debug('Successfully removed enterprise MCP server from .mcp.json');
     } else {
       logger.debug('Enterprise MCP server not found in .mcp.json');
     }
