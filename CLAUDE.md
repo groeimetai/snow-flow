@@ -276,28 +276,69 @@ await snow_update_set_manage({
 });
 ```
 
-### OAuth Context Understanding
+### ⚠️ OAuth Context Understanding (CRITICAL)
 
-snow-flow uses OAuth service account authentication:
+**snow-flow uses OAuth service account authentication:**
 - All API calls run as an OAuth **service account**, not your UI user
-- `auto_switch=true` (DEFAULT) → Update Set is set as current for service account
-- Changes ARE tracked automatically ✅
-- Add `servicenow_username` to ALSO see it in YOUR UI (optional)
+- Update Sets MUST be "current" for the user making changes
+- For API changes: Update Set must be current for the **SERVICE ACCOUNT**
+- **auto_switch=true (DEFAULT)** → Update Set is set as current for service account
+- **This enables automatic change tracking** ✅
+
+**IMPORTANT:** If auto_switch=false, changes will NOT be tracked!
+
+**Understanding the Two Contexts:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ YOUR UI SESSION (when you log in to ServiceNow UI)         │
+│ User: john.doe                                              │
+│ Current Update Set: [Whatever you selected in UI]          │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ SNOW-FLOW OAUTH SESSION (API calls)                        │
+│ User: oauth.service.account                                 │
+│ Current Update Set: [Set via snow_update_set_manage]       │
+│ ← All snow-flow changes are tracked here                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Points:**
+- ✅ **Update Sets ARE created** - they exist in ServiceNow
+- ✅ **auto_switch=true (DEFAULT)** - Update Set is set as current for service account
+- ✅ **Changes ARE tracked** - all snow-flow artifacts go into the Update Set automatically
+- ❌ **NOT visible in YOUR UI** - unless you provide servicenow_username parameter
+- ✅ **Deployment still works** - Update Set can be exported/imported normally
+- ⚠️ **auto_switch=false** - Changes will NOT be tracked (use only for non-development tasks)
+
+**To see Update Set as "current" in YOUR ServiceNow UI (optional):**
 
 ```javascript
-// Standard - changes tracked, not visible in your UI
-await snow_update_set_manage({
-  action: 'create',
-  name: "Feature: My Feature"
-});
-
-// Optional - ALSO visible in your UI
+// Standard usage - changes ARE tracked, but NOT visible in your UI
 await snow_update_set_manage({
   action: 'create',
   name: "Feature: My Feature",
+  description: "Development work"
+  // auto_switch defaults to true → tracking enabled ✅
+});
+
+// To ALSO see it in your UI - add servicenow_username
+await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: My Feature",
+  description: "Development work",
   servicenow_username: 'john.doe'  // ← Makes it visible in YOUR UI too
+  // auto_switch still true → tracking enabled ✅
 });
 ```
+
+**Why This Matters:**
+- Without an active Update Set (auto_switch=true), changes are NOT tracked
+- Untracked changes = Cannot deploy to other instances
+- Users will lose work if you skip this step or use auto_switch=false
+- auto_switch=true (DEFAULT) ensures automatic tracking for service account
+- servicenow_username is OPTIONAL and only affects UI visibility, NOT tracking
 
 ### Update Set Best Practices
 
@@ -305,6 +346,7 @@ await snow_update_set_manage({
 - **Descriptive names**: "Feature: Incident Auto-Assignment" NOT "Changes"
 - **Complete descriptions**: What, why, which components affected
 - **Complete when done**: Mark as 'complete' when feature is finished
+- **Never open a complete update set**: Create a new one for follow-up changes
 
 ---
 
