@@ -8,23 +8,16 @@
  * Architecture:
  * Claude Code → stdio → This Proxy → HTTPS → License Server → External APIs
  *
+ * IMPORTANT: Credentials (Jira, Azure DevOps, Confluence, GitHub, GitLab) are
+ * fetched by the enterprise MCP server from the Portal API using the JWT token.
+ * No local credentials are needed - just SNOW_ENTERPRISE_URL and SNOW_LICENSE_KEY.
+ *
  * Usage:
  * node server.js
  *
  * Environment Variables:
  * - SNOW_ENTERPRISE_URL: License server URL (required)
- * - SNOW_LICENSE_KEY: Your license key (required)
- * - SNOW_INSTANCE_URL: ServiceNow instance URL
- * - SNOW_USERNAME: ServiceNow username
- * - SNOW_PASSWORD: ServiceNow password
- * - JIRA_BASE_URL: Jira Cloud base URL
- * - JIRA_EMAIL: Jira email
- * - JIRA_API_TOKEN: Jira API token
- * - AZDO_ORG_URL: Azure DevOps org URL
- * - AZDO_PAT: Azure DevOps PAT
- * - CONFLUENCE_BASE_URL: Confluence base URL
- * - CONFLUENCE_EMAIL: Confluence email
- * - CONFLUENCE_API_TOKEN: Confluence API token
+ * - SNOW_LICENSE_KEY: JWT token for authentication (required)
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -40,33 +33,9 @@ import axios, { AxiosInstance } from 'axios';
 const LICENSE_SERVER_URL = process.env.SNOW_ENTERPRISE_URL || '';
 const LICENSE_KEY = (process.env.SNOW_LICENSE_KEY || '').trim(); // Remove newlines/whitespace
 
-// ServiceNow credentials
-const SNOW_INSTANCE_URL = process.env.SNOW_INSTANCE_URL || '';
-const SNOW_USERNAME = process.env.SNOW_USERNAME || '';
-const SNOW_PASSWORD = process.env.SNOW_PASSWORD || '';
-
-// Jira credentials (optional)
-// Support both naming conventions:
-// - JIRA_* (manual config / .env.example)
-// - ATLASSIAN_* + JIRA_HOST (snow-code auth login)
-const JIRA_BASE_URL = process.env.JIRA_BASE_URL || process.env.JIRA_HOST || '';
-const JIRA_EMAIL = process.env.JIRA_EMAIL || process.env.ATLASSIAN_EMAIL || '';
-const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN || process.env.ATLASSIAN_API_TOKEN || '';
-
-// Azure DevOps credentials (optional)
-// Support both naming conventions:
-// - AZDO_* (manual config / .env.example)
-// - AZURE_* (snow-code auth login)
-const AZDO_ORG_URL = process.env.AZDO_ORG_URL || process.env.AZURE_ORG || '';
-const AZDO_PAT = process.env.AZDO_PAT || process.env.AZURE_PAT || '';
-
-// Confluence credentials (optional)
-// Support both naming conventions:
-// - CONFLUENCE_* (manual config / .env.example)
-// - ATLASSIAN_* + CONFLUENCE_HOST (snow-code auth login)
-const CONFLUENCE_BASE_URL = process.env.CONFLUENCE_BASE_URL || process.env.CONFLUENCE_HOST || '';
-const CONFLUENCE_EMAIL = process.env.CONFLUENCE_EMAIL || process.env.ATLASSIAN_EMAIL || '';
-const CONFLUENCE_API_TOKEN = process.env.CONFLUENCE_API_TOKEN || process.env.ATLASSIAN_API_TOKEN || '';
+// NOTE: Credentials (Jira, Azure DevOps, Confluence, GitHub, GitLab) are fetched
+// by the enterprise MCP server from the Portal API using the JWT token.
+// No local credential configuration is needed.
 
 class EnterpriseProxyServer {
   private server: Server;
@@ -114,56 +83,11 @@ class EnterpriseProxyServer {
     console.error('Snow-Flow Enterprise MCP Proxy');
     console.error('═══════════════════════════════════════════════════');
     console.error(`License Server: ${LICENSE_SERVER_URL}`);
-    console.error(`License Key: ${LICENSE_KEY.substring(0, 20)}...`);
+    console.error(`JWT Token: ${LICENSE_KEY.substring(0, 20)}...`);
     console.error('');
-    console.error('Configured Services:');
-    console.error(`  ServiceNow: ${SNOW_INSTANCE_URL ? '✓' : '✗'}`);
-    console.error(`  Jira: ${JIRA_BASE_URL ? '✓' : '✗'}`);
-    console.error(`  Azure DevOps: ${AZDO_ORG_URL ? '✓' : '✗'}`);
-    console.error(`  Confluence: ${CONFLUENCE_BASE_URL ? '✓' : '✗'}`);
+    console.error('Credentials are fetched from Portal API by enterprise server');
     console.error('═══════════════════════════════════════════════════');
     console.error('');
-  }
-
-  private buildCredentials() {
-    var credentials: any = {};
-
-    // ServiceNow credentials
-    if (SNOW_INSTANCE_URL && SNOW_USERNAME && SNOW_PASSWORD) {
-      credentials.servicenow = {
-        instanceUrl: SNOW_INSTANCE_URL,
-        username: SNOW_USERNAME,
-        password: SNOW_PASSWORD
-      };
-    }
-
-    // Jira credentials
-    if (JIRA_BASE_URL && JIRA_EMAIL && JIRA_API_TOKEN) {
-      credentials.jira = {
-        baseUrl: JIRA_BASE_URL,
-        email: JIRA_EMAIL,
-        apiToken: JIRA_API_TOKEN
-      };
-    }
-
-    // Azure DevOps credentials
-    if (AZDO_ORG_URL && AZDO_PAT) {
-      credentials.azdo = {
-        orgUrl: AZDO_ORG_URL,
-        pat: AZDO_PAT
-      };
-    }
-
-    // Confluence credentials
-    if (CONFLUENCE_BASE_URL && CONFLUENCE_EMAIL && CONFLUENCE_API_TOKEN) {
-      credentials.confluence = {
-        baseUrl: CONFLUENCE_BASE_URL,
-        email: CONFLUENCE_EMAIL,
-        apiToken: CONFLUENCE_API_TOKEN
-      };
-    }
-
-    return credentials;
   }
 
   private setupHandlers() {
@@ -200,15 +124,12 @@ class EnterpriseProxyServer {
       try {
         console.error(`[Proxy] Executing tool: ${toolName}`);
 
-        // Build credentials
-        var credentials = this.buildCredentials();
-
-        // Call enterprise server
+        // Call enterprise server (credentials are fetched by server from Portal API)
         var startTime = Date.now();
         var response = await this.httpClient.post('/mcp/tools/call', {
           tool: toolName,
-          arguments: toolArgs,
-          credentials: credentials
+          arguments: toolArgs
+          // NOTE: Credentials no longer passed - enterprise server fetches from Portal API
         });
         var duration = Date.now() - startTime;
 

@@ -1,6 +1,12 @@
 /**
  * Enterprise Credentials Gathering
  * Reads credentials from environment variables based on tool name
+ *
+ * @deprecated This file is no longer used. Credentials are now fetched by the
+ * enterprise MCP server from the Portal API using the JWT token. The portal
+ * handles KMS decryption, so no local credentials are needed.
+ *
+ * This file is kept for backwards compatibility but will be removed in a future version.
  */
 
 import { EnterpriseCredentials } from './types.js';

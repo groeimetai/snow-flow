@@ -1,11 +1,14 @@
 /**
  * Enterprise MCP Proxy
  * Handles HTTPS communication with enterprise license server
+ *
+ * IMPORTANT: Credentials (Jira, Azure DevOps, Confluence, GitHub, GitLab) are
+ * fetched by the enterprise MCP server from the Portal API using the JWT token.
+ * No local credentials are needed.
  */
 
 import axios, { AxiosError } from 'axios';
 import { machineIdSync } from 'node-machine-id';
-import { gatherCredentials, getMissingCredentials } from './credentials.js';
 import {
   EnterpriseToolCallRequest,
   EnterpriseToolCallResponse,
@@ -258,22 +261,11 @@ export async function proxyToolCall(
   // Get JWT token (cached or fetch new one)
   const jwtToken = await getJwtToken();
 
-  // Gather credentials from environment
-  const credentials = gatherCredentials(toolName);
-
-  // Check for missing credentials (warn but don't fail - server might have them)
-  const missing = getMissingCredentials(toolName);
-  if (missing.length > 0) {
-    console.error(
-      `Warning: Missing local credentials: ${missing.join(', ')}. Using server-side credentials if available.`
-    );
-  }
-
-  // Prepare request
+  // Prepare request (credentials are fetched by enterprise server from Portal API)
   const request: EnterpriseToolCallRequest = {
     tool: toolName,
     arguments: args,
-    credentials: Object.keys(credentials).length > 0 ? credentials : undefined,
+    // NOTE: Credentials no longer sent - enterprise server fetches from Portal API using JWT
   };
 
   try {
