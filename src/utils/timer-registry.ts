@@ -69,7 +69,6 @@ export class TimerRegistry {
       if (this.isShuttingDown) return;
       this.isShuttingDown = true;
 
-      this.logger.info(`Received ${signal}, cleaning up timers...`);
       await this.cleanup();
     };
 
@@ -234,8 +233,6 @@ export class TimerRegistry {
    * Cleanup all timers and run shutdown handlers
    */
   async cleanup(): Promise<void> {
-    this.logger.info('Starting cleanup...');
-
     // Clear all intervals
     const intervalCount = this.intervals.size;
     this.intervals.forEach((info) => {
@@ -262,8 +259,6 @@ export class TimerRegistry {
         this.logger.error('Shutdown handler error:', error);
       }
     }
-
-    this.logger.info(`Cleanup complete: ${intervalCount} intervals, ${timeoutCount} timeouts, ${handlerCount} handlers`);
   }
 
   /**

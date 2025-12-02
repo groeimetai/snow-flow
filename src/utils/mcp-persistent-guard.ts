@@ -62,7 +62,6 @@ export class MCPPersistentGuard {
         this.protectedProcesses.clear();
 
         this.isActive = false;
-        this.logger.info('MCPPersistentGuard cleanup complete');
     }
     
     static getInstance(): MCPPersistentGuard {
