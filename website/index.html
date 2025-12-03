@@ -191,7 +191,12 @@
         }
 
         .logo-text .snow { color: var(--text-primary); }
-        .logo-text .flow { color: var(--accent-cyan); }
+        .logo-text .flow {
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
         .nav-links {
             display: none;
@@ -1439,7 +1444,10 @@
         }
 
         .footer-logo-text .flow {
-            color: var(--accent-cyan);
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .footer-tagline {
