@@ -1046,12 +1046,12 @@ export class ServiceNowClient {
   }
 
   /**
-   * Execute a ServiceNow script using Fix Scripts
-   * Creates a temporary Fix Script, attempts to run it, and cleans up
+   * Execute a ServiceNow script using Scheduled Jobs with sys_trigger
+   * Creates a scheduled job, triggers it via sys_trigger, and cleans up
    */
   async executeScript(script: string): Promise<ServiceNowAPIResponse<any>> {
     try {
-      this.logger.info('⚡ Executing ServiceNow script via Fix Script...');
+      this.logger.info('⚡ Executing ServiceNow script via Scheduled Job + sys_trigger...');
 
       const executionId = `exec_${Date.now()}_${Math.random().toString(36).substring(7)}`;
       const outputMarker = `SNOW_FLOW_EXEC_${executionId}`;
@@ -1089,30 +1089,45 @@ gs.setProperty('${outputMarker}', JSON.stringify({
 }));
 `;
 
-      // Create Fix Script
+      // Create Scheduled Script Job
+      const jobName = `Snow-Flow Exec - ${executionId}`;
       const createResponse = await this.client.post(
-        `${this.getBaseUrl()}/api/now/table/sys_script_fix`,
+        `${this.getBaseUrl()}/api/now/table/sysauto_script`,
         {
-          name: `Snow-Flow Exec - ${executionId}`,
+          name: jobName,
           script: wrappedScript,
-          description: `Temporary script execution. ID: ${executionId}`,
-          active: true
+          active: true,
+          run_type: 'on_demand',
+          conditional: false
         }
       );
 
-      const fixScriptSysId = createResponse.data?.result?.sys_id;
-      if (!fixScriptSysId) {
-        throw new Error('Failed to create Fix Script record');
+      const jobSysId = createResponse.data?.result?.sys_id;
+      if (!jobSysId) {
+        throw new Error('Failed to create scheduled script job');
       }
 
-      // Attempt to trigger execution
+      // Create sys_trigger to execute immediately
+      const now = new Date();
+      const triggerTime = new Date(now.getTime() + 2000); // 2 seconds from now
+      const triggerTimeStr = triggerTime.toISOString().replace('T', ' ').substring(0, 19);
+
       try {
-        await this.client.patch(
-          `${this.getBaseUrl()}/api/now/table/sys_script_fix/${fixScriptSysId}`,
-          { sys_run_script: 'true' }
+        await this.client.post(
+          `${this.getBaseUrl()}/api/now/table/sys_trigger`,
+          {
+            name: jobName,
+            next_action: triggerTimeStr,
+            trigger_type: 0,  // Run Once
+            state: 0,         // Ready
+            document: 'sysauto_script',
+            document_key: jobSysId,
+            claimed_by: '',
+            system_id: 'snow-flow'
+          }
         );
-      } catch (runErr) {
-        // Script created but may need manual execution
+      } catch (triggerErr) {
+        // Trigger creation may fail due to permissions
       }
 
       // Poll for result (max 30 seconds)
@@ -1140,9 +1155,9 @@ gs.setProperty('${outputMarker}', JSON.stringify({
         }
       }
 
-      // Cleanup Fix Script
+      // Cleanup scheduled job
       try {
-        await this.client.delete(`${this.getBaseUrl()}/api/now/table/sys_script_fix/${fixScriptSysId}`);
+        await this.client.delete(`${this.getBaseUrl()}/api/now/table/sysauto_script/${jobSysId}`);
       } catch (cleanupErr) {
         // Ignore
       }
@@ -1158,8 +1173,8 @@ gs.setProperty('${outputMarker}', JSON.stringify({
         return {
           success: true,
           data: {
-            message: 'Script saved as Fix Script but execution not confirmed',
-            fix_script_sys_id: fixScriptSysId
+            message: 'Scheduled job created but execution not confirmed. The sys_trigger may not have been created (permissions) or the scheduler has not yet picked it up.',
+            scheduled_job_sys_id: jobSysId
           }
         };
       }
