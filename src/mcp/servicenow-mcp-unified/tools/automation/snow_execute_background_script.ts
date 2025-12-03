@@ -150,41 +150,45 @@ gs.setProperty('${outputMarker}', JSON.stringify(__bgResultObj));
 gs.info('${outputMarker}:COMPLETE');
 `;
 
-      // Create Fix Script
-      const fixScriptName = `Snow-Flow BG Script - ${executionId}`;
+      // Create Scheduled Script Job
+      const jobName = `Snow-Flow BG Script - ${executionId}`;
 
-      const createResponse = await client.post('/api/now/table/sys_script_fix', {
-        name: fixScriptName,
+      const createResponse = await client.post('/api/now/table/sysauto_script', {
+        name: jobName,
         script: wrappedScript,
-        description: `Background script: ${description}. Execution ID: ${executionId}`,
-        active: true
+        active: true,
+        run_type: 'on_demand',
+        conditional: false
       });
 
       if (!createResponse.data?.result?.sys_id) {
         throw new SnowFlowError(
           ErrorType.SERVICENOW_API_ERROR,
-          'Failed to create Fix Script for background execution',
+          'Failed to create scheduled script job for background execution',
           { details: createResponse.data }
         );
       }
 
-      const fixScriptSysId = createResponse.data.result.sys_id;
+      const jobSysId = createResponse.data.result.sys_id;
 
-      // Attempt to run the Fix Script
+      // Create sys_trigger to execute immediately
+      const now = new Date();
+      const triggerTime = new Date(now.getTime() + 2000); // 2 seconds from now
+      const triggerTimeStr = triggerTime.toISOString().replace('T', ' ').substring(0, 19);
+
       try {
-        await client.patch(`/api/now/table/sys_script_fix/${fixScriptSysId}`, {
-          sys_run_script: 'true'
+        await client.post('/api/now/table/sys_trigger', {
+          name: jobName,
+          next_action: triggerTimeStr,
+          trigger_type: 0,  // Run Once
+          state: 0,         // Ready
+          document: 'sysauto_script',
+          document_key: jobSysId,
+          claimed_by: '',
+          system_id: 'snow-flow'
         });
-      } catch (runError) {
-        // Try PUT approach
-        try {
-          await client.put(`/api/now/table/sys_script_fix/${fixScriptSysId}`, {
-            run: 'true',
-            active: true
-          });
-        } catch (putError) {
-          // Script saved, may need manual execution
-        }
+      } catch (triggerError) {
+        // If trigger creation fails, job won't auto-execute
       }
 
       // Poll for execution results
@@ -225,9 +229,9 @@ gs.info('${outputMarker}:COMPLETE');
         }
       }
 
-      // Cleanup Fix Script
+      // Cleanup scheduled job
       try {
-        await client.delete(`/api/now/table/sys_script_fix/${fixScriptSysId}`);
+        await client.delete(`/api/now/table/sysauto_script/${jobSysId}`);
       } catch (cleanupError) {
         // Ignore
       }
@@ -244,20 +248,20 @@ gs.info('${outputMarker}:COMPLETE');
           auto_confirmed: true,
           security_analysis: securityAnalysis
         }, {
-          method: 'fix_script',
+          method: 'sysauto_script_with_trigger',
           description
         });
       } else {
         return createSuccessResult({
           executed: false,
           execution_id: executionId,
-          fix_script_sys_id: fixScriptSysId,
+          scheduled_job_sys_id: jobSysId,
           auto_confirmed: true,
           security_analysis: securityAnalysis,
-          message: 'Script was saved as Fix Script but automatic execution could not be confirmed.',
-          action_required: `Navigate to System Definition > Fix Scripts and run: ${fixScriptName}`
+          message: 'Script was saved as scheduled job but automatic execution could not be confirmed. The sys_trigger may not have been created (permissions) or the scheduler has not yet picked it up.',
+          action_required: `Navigate to System Scheduler > Scheduled Jobs and run: ${jobName}`
         }, {
-          method: 'fix_script_pending',
+          method: 'scheduled_job_pending',
           description
         });
       }

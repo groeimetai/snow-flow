@@ -43,6 +43,11 @@ export const toolDefinition: MCPToolDefinition = {
         type: 'boolean',
         description: 'Create Update Set if it doesn\'t exist',
         default: true
+      },
+      application_scope: {
+        type: 'string',
+        description: 'Application scope for the Update Set. Use "global" (default) for global scope, or provide a scoped application sys_id or scope name.',
+        default: 'global'
       }
     },
     required: ['name']
@@ -54,11 +59,48 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     name,
     description = `Snow-Flow: ${name}`,
     sync_with_user = true,
-    create_if_missing = true
+    create_if_missing = true,
+    application_scope = 'global'
   } = args;
 
   try {
     const client = await getAuthenticatedClient(context);
+
+    // Resolve application scope
+    let resolvedApplicationId = 'global';
+    let resolvedApplicationName = 'Global';
+    let resolvedApplicationScope = 'global';
+
+    if (application_scope && application_scope !== 'global') {
+      // Try to find by sys_id first
+      let appResponse = await client.get('/api/now/table/sys_app', {
+        params: {
+          sysparm_query: `sys_id=${application_scope}`,
+          sysparm_fields: 'sys_id,name,scope',
+          sysparm_limit: 1
+        }
+      });
+
+      // Try by scope name
+      if (!appResponse.data.result || appResponse.data.result.length === 0) {
+        appResponse = await client.get('/api/now/table/sys_app', {
+          params: {
+            sysparm_query: `scope=${application_scope}`,
+            sysparm_fields: 'sys_id,name,scope',
+            sysparm_limit: 1
+          }
+        });
+      }
+
+      if (appResponse.data.result && appResponse.data.result.length > 0) {
+        const app = appResponse.data.result[0];
+        resolvedApplicationId = app.sys_id;
+        resolvedApplicationName = app.name;
+        resolvedApplicationScope = app.scope;
+      } else {
+        return createErrorResult(`Application not found: "${application_scope}". Use "global" for global scope.`);
+      }
+    }
 
     // Check if Update Set exists
     const existingResponse = await client.get('/api/now/table/sys_update_set', {
@@ -81,12 +123,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       }
 
     } else if (create_if_missing) {
-      // Create new Update Set
+      // Create new Update Set with resolved application scope
       const createResponse = await client.post('/api/now/table/sys_update_set', {
         name,
         description,
         state: 'in progress',
-        application: 'global'
+        application: resolvedApplicationId
       });
       updateSet = createResponse.data.result;
 
@@ -114,7 +156,13 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       description: updateSet.description,
       state: 'in progress',
       is_current: sync_with_user,
-      created: existingResponse.data.result.length === 0
+      created: existingResponse.data.result.length === 0,
+      application_scope: {
+        sys_id: resolvedApplicationId,
+        name: resolvedApplicationName,
+        scope: resolvedApplicationScope,
+        is_global: resolvedApplicationId === 'global'
+      }
     });
 
   } catch (error: any) {

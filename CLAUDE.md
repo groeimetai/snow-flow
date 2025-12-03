@@ -350,6 +350,113 @@ await snow_update_set_manage({
 
 ---
 
+## 📦 APPLICATION SCOPE MANAGEMENT
+
+### When to Create a New Application
+
+ServiceNow applications (scoped apps) provide isolation, clear ownership, and easy deployment across instances.
+
+**✅ CREATE APPLICATION when:**
+- Building a complete feature set (e.g., HR Portal, Customer Onboarding)
+- Creating functionality that needs to be deployed as a single unit
+- Building integrations with external systems
+- Developing for multiple ServiceNow instances
+- Need clear ownership, versioning, and dependency management
+
+**❌ USE GLOBAL SCOPE when:**
+- Making small fixes or patches
+- Creating shared utilities used across applications
+- Quick prototypes or POCs
+- Cross-application functionality
+
+### Application + Update Set Workflow
+
+```javascript
+// 1. CREATE APPLICATION (with auto Update Set and scope switch!)
+const app = await snow_create_application({
+  name: "HR Self-Service Portal",
+  scope: "x_myco_hr_portal",  // Must start with x_
+  version: "1.0.0",
+  short_description: "Employee self-service HR portal",
+  vendor: "My Company",
+  vendor_prefix: "myco"
+  // auto_create_update_set: true (default) → Creates Update Set automatically
+  // auto_switch_scope: true (default) → Switches to new scope automatically
+});
+
+// 2. DEVELOP (all artifacts are tracked in the application scope!)
+await snow_create_artifact({
+  type: 'sp_widget',
+  name: 'hr_dashboard',
+  // ... widget config
+});
+
+// 3. COMPLETE UPDATE SET when done
+await snow_update_set_manage({
+  action: 'complete',
+  update_set_id: app.update_set.sys_id
+});
+```
+
+### Update Sets with Application Scope
+
+```javascript
+// Create Update Set in a SPECIFIC application scope
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: New HR Dashboard",
+  description: "Adding dashboard functionality",
+  application_scope: "x_myco_hr_portal"  // ← Specify the application!
+});
+
+// Or use application sys_id
+const updateSet = await snow_update_set_manage({
+  action: 'create',
+  name: "Feature: New HR Dashboard",
+  description: "Adding dashboard functionality",
+  application_scope: "abc123def456"  // sys_id of the application
+});
+```
+
+### Switching Between Scopes
+
+```javascript
+// Switch to a scoped application
+await snow_switch_application_scope({
+  scope: "x_myco_hr_portal",
+  create_update_set: true  // Also create Update Set in this scope
+});
+
+// Switch back to global
+await snow_switch_application_scope({
+  scope: "global"
+});
+```
+
+### Application Scope Decision Matrix
+
+| Scenario                           | Recommended Scope | Rationale                                    |
+|------------------------------------|-------------------|----------------------------------------------|
+| Complete feature set (HR Portal)   | ✅ Scoped App     | Isolated, versioned, deployable as unit     |
+| Customer-specific integration      | ✅ Scoped App     | Easy to deploy/remove per customer          |
+| Third-party connector              | ✅ Scoped App     | Clear ownership and dependency tracking     |
+| Multi-instance deployment          | ✅ Scoped App     | Export/import as single package             |
+| Shared utility script              | 🌐 Global         | Needs to be used across all applications    |
+| Quick bug fix or patch             | 🌐 Global         | Not worth creating dedicated application    |
+| System-wide business rule          | 🌐 Global         | Affects multiple tables/applications        |
+| Cross-application functionality    | 🌐 Global         | Shared between multiple scoped apps         |
+| Prototype or POC                   | 🌐 Global         | Temporary, may be discarded                 |
+
+### Application Scope Best Practices
+
+- **Scope naming**: Always use `x_<vendor>_<app>` format (e.g., `x_myco_hr_portal`)
+- **One app per feature set**: Don't mix unrelated functionality
+- **Update Sets match scope**: Always create Update Sets in the same scope as your development
+- **Document dependencies**: Track which other apps/scopes your app depends on
+- **Version properly**: Use semantic versioning (1.0.0, 1.1.0, 2.0.0)
+
+---
+
 ## 🎨 WIDGET COHERENCE
 
 Widgets require **perfect synchronization** between Server, Client, and HTML scripts.
@@ -416,6 +523,8 @@ function($scope) {
 |---------------------------|---------------------------------------------------|
 | Create Update Set         | `snow_update_set_manage({ action: 'create' })`    |
 | Complete Update Set       | `snow_update_set_manage({ action: 'complete' })`  |
+| Create Application        | `snow_create_application()`                       |
+| Switch Application Scope  | `snow_switch_application_scope()`                 |
 | Create Widget             | `snow_create_artifact({ type: 'sp_widget' })`     |
 | Create Business Rule      | `snow_create_business_rule()`                     |
 | Create Script Include     | `snow_create_script_include()`                    |
@@ -658,6 +767,87 @@ const incidents = await snow_query_incidents({
 });
 
 console.log(`Found ${incidents.length} high-priority active incidents`);
+```
+
+### Pattern 5: Scoped Application Development
+
+```javascript
+// 1. Pre-flight: Activity Tracking
+const activity = await activity_start({
+  source: "request",
+  storyTitle: "Build HR Self-Service Portal"
+});
+
+// 2. Create Application (auto-creates Update Set and switches scope!)
+const app = await snow_create_application({
+  name: "HR Self-Service Portal",
+  scope: "x_myco_hr_portal",
+  version: "1.0.0",
+  short_description: "Employee self-service for HR requests",
+  vendor: "My Company",
+  vendor_prefix: "myco"
+  // auto_create_update_set: true (default)
+  // auto_switch_scope: true (default)
+});
+
+// 3. Log the application
+await activity_add_artifact({
+  activityId: activity.activityId,
+  artifactType: 'application',
+  artifactName: 'HR Self-Service Portal',
+  artifactSysId: app.application.sys_id
+});
+
+// 4. Create widgets (automatically in the scoped application!)
+const widget = await snow_create_artifact({
+  type: 'sp_widget',
+  name: 'hr_request_form',
+  title: 'HR Request Form',
+  template: '...',
+  server_script: '...',
+  client_script: '...'
+});
+
+await activity_add_artifact({
+  activityId: activity.activityId,
+  artifactType: 'widget',
+  artifactName: 'hr_request_form',
+  artifactSysId: widget.sys_id
+});
+
+// 5. Complete
+await activity_complete({
+  activityId: activity.activityId,
+  summary: "Created HR Self-Service Portal with request form widget"
+});
+await snow_update_set_manage({
+  action: 'complete',
+  update_set_id: app.update_set.sys_id
+});
+```
+
+### Pattern 6: Working with Existing Scoped Application
+
+```javascript
+// 1. Switch to the existing application scope
+await snow_switch_application_scope({
+  scope: "x_myco_hr_portal",  // or use sys_id
+  create_update_set: true,     // Create new Update Set for this work
+  update_set_name: "Feature: Add Leave Request"
+});
+
+// 2. Develop new features (tracked in application scope)
+await snow_create_business_rule({
+  name: "Auto-approve short leave",
+  table: "x_myco_hr_portal_leave_request",
+  // ... config
+});
+
+// 3. Complete Update Set
+await snow_update_set_manage({ action: 'complete' });
+
+// 4. Switch back to global if needed
+await snow_switch_application_scope({ scope: "global" });
 ```
 
 ---

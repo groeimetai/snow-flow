@@ -25,6 +25,12 @@ HOW TRACKING WORKS:
 - auto_switch=true (DEFAULT) → Changes ARE tracked automatically ✅
 - auto_switch=false → Changes are NOT tracked ❌
 
+APPLICATION SCOPE:
+- Use application_scope parameter to create Update Sets within a scoped application
+- Default is "global" for global scope development
+- Provide application sys_id or scope name for scoped application development
+- Update Sets in scoped apps only track changes to artifacts in that scope
+
 UI VISIBILITY:
 - Update Set current for service account ≠ visible in YOUR UI
 - To see it as current in YOUR ServiceNow UI, provide servicenow_username parameter
@@ -33,6 +39,7 @@ UI VISIBILITY:
 RECOMMENDED USAGE:
 - Always use auto_switch=true (default) for development work
 - Add servicenow_username if you want to see it in your UI
+- Use application_scope for scoped application development
 - Only use auto_switch=false for non-development operations`,
   // Metadata for tool discovery (not sent to LLM)
   category: 'development',
@@ -83,6 +90,11 @@ RECOMMENDED USAGE:
         type: 'boolean',
         description: '[create] Automatically switch to created Update Set for the service account (default: true). MUST be true for automatic change tracking. Only set to false if you are NOT making development changes.',
         default: true
+      },
+      application_scope: {
+        type: 'string',
+        description: '[create] Application scope for this Update Set. Use "global" (default) for global scope, or provide a scoped application sys_id or scope name (e.g., "x_myco_hr_portal"). When set to a scoped application, the Update Set will only track changes to artifacts within that application scope.',
+        default: 'global'
       },
       // COMPLETE parameters
       notes: {
@@ -154,7 +166,8 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
     user_story,
     release_date,
     auto_switch = true,  // Default TRUE for automatic change tracking!
-    servicenow_username
+    servicenow_username,
+    application_scope = 'global'  // Default to global scope
   } = args;
 
   if (!name || !description) {
@@ -163,12 +176,63 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
 
   const client = await getAuthenticatedClient(context);
 
-  // Create Update Set
+  // Resolve application scope - can be 'global', sys_id, or scope name
+  let resolvedApplicationId = 'global';
+  let resolvedApplicationName = 'Global';
+  let resolvedApplicationScope = 'global';
+
+  if (application_scope && application_scope !== 'global') {
+    try {
+      // First try to find by sys_id
+      let appResponse = await client.get('/api/now/table/sys_app', {
+        params: {
+          sysparm_query: `sys_id=${application_scope}`,
+          sysparm_fields: 'sys_id,name,scope',
+          sysparm_limit: 1
+        }
+      });
+
+      // If not found by sys_id, try by scope name
+      if (!appResponse.data.result || appResponse.data.result.length === 0) {
+        appResponse = await client.get('/api/now/table/sys_app', {
+          params: {
+            sysparm_query: `scope=${application_scope}`,
+            sysparm_fields: 'sys_id,name,scope',
+            sysparm_limit: 1
+          }
+        });
+      }
+
+      // If still not found, try by name
+      if (!appResponse.data.result || appResponse.data.result.length === 0) {
+        appResponse = await client.get('/api/now/table/sys_app', {
+          params: {
+            sysparm_query: `name=${application_scope}`,
+            sysparm_fields: 'sys_id,name,scope',
+            sysparm_limit: 1
+          }
+        });
+      }
+
+      if (appResponse.data.result && appResponse.data.result.length > 0) {
+        const app = appResponse.data.result[0];
+        resolvedApplicationId = app.sys_id;
+        resolvedApplicationName = app.name;
+        resolvedApplicationScope = app.scope;
+      } else {
+        return createErrorResult(`Application not found: "${application_scope}". Please provide a valid application sys_id, scope name (e.g., "x_myco_app"), or application name. Use "global" for global scope.`);
+      }
+    } catch (error: any) {
+      return createErrorResult(`Failed to resolve application scope: ${error.message}`);
+    }
+  }
+
+  // Create Update Set with resolved application scope
   const response = await client.post('/api/now/table/sys_update_set', {
     name,
     description,
     state: 'in progress',
-    application: 'global',
+    application: resolvedApplicationId,
     release_date: release_date || ''
   });
 
@@ -213,11 +277,20 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
     created_at: updateSet.sys_created_on,
     created_by: updateSet.sys_created_by,
     user_story,
+    application_scope: {
+      sys_id: resolvedApplicationId,
+      name: resolvedApplicationName,
+      scope: resolvedApplicationScope,
+      is_global: resolvedApplicationId === 'global'
+    },
     switching: switchResult,
     oauth_context_info: {
       message: '⚠️ snow-flow uses OAuth service account - Update Sets apply to service account context',
       note: 'To see Update Set as current in your ServiceNow UI, provide your ServiceNow username in servicenow_username parameter'
-    }
+    },
+    scope_info: resolvedApplicationId === 'global'
+      ? 'Update Set created in GLOBAL scope - changes to any artifact will be tracked'
+      : `Update Set created in APPLICATION scope "${resolvedApplicationName}" (${resolvedApplicationScope}) - only changes to artifacts in this scope will be tracked`
   });
 }
 

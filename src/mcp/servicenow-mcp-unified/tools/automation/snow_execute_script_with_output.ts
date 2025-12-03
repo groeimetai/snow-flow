@@ -170,51 +170,45 @@ gs.setProperty('${outputMarker}', JSON.stringify(__sfResultObj));
 gs.info('${outputMarker}:DONE');
 `;
 
-    // Step 1: Create Fix Script record
-    const fixScriptName = `Snow-Flow Output Capture - ${executionId}`;
+    // Step 1: Create Scheduled Script Job (sysauto_script)
+    const jobName = `Snow-Flow Output Capture - ${executionId}`;
 
-    const createResponse = await client.post('/api/now/table/sys_script_fix', {
-      name: fixScriptName,
+    const createResponse = await client.post('/api/now/table/sysauto_script', {
+      name: jobName,
       script: wrappedScript,
-      description: `Script execution with output capture. ID: ${executionId}. Scope: ${scope}`,
-      active: true
+      active: true,
+      run_type: 'on_demand',
+      conditional: false
     });
 
     if (!createResponse.data?.result?.sys_id) {
       throw new SnowFlowError(
         ErrorType.SERVICENOW_API_ERROR,
-        'Failed to create Fix Script for execution',
+        'Failed to create scheduled script job',
         { details: createResponse.data }
       );
     }
 
-    const fixScriptSysId = createResponse.data.result.sys_id;
+    const jobSysId = createResponse.data.result.sys_id;
 
-    // Step 2: Attempt to run the Fix Script
-    // Try multiple approaches to trigger execution
-    let executionTriggered = false;
+    // Step 2: Create sys_trigger to execute immediately
+    const now = new Date();
+    const triggerTime = new Date(now.getTime() + 2000); // 2 seconds from now
+    const triggerTimeStr = triggerTime.toISOString().replace('T', ' ').substring(0, 19);
 
-    // Approach 1: PATCH with sys_run_script
     try {
-      await client.patch(`/api/now/table/sys_script_fix/${fixScriptSysId}`, {
-        sys_run_script: 'true'
+      await client.post('/api/now/table/sys_trigger', {
+        name: jobName,
+        next_action: triggerTimeStr,
+        trigger_type: 0,  // Run Once
+        state: 0,         // Ready
+        document: 'sysauto_script',
+        document_key: jobSysId,
+        claimed_by: '',
+        system_id: 'snow-flow'
       });
-      executionTriggered = true;
-    } catch (patchError) {
-      // Try next approach
-    }
-
-    // Approach 2: If PATCH didn't work, try PUT with run field
-    if (!executionTriggered) {
-      try {
-        await client.put(`/api/now/table/sys_script_fix/${fixScriptSysId}`, {
-          run: 'true',
-          active: true
-        });
-        executionTriggered = true;
-      } catch (putError) {
-        // Script saved but may need manual execution
-      }
+    } catch (triggerError) {
+      // If trigger creation fails, job won't auto-execute
     }
 
     // Step 3: Poll for execution results
@@ -256,9 +250,9 @@ gs.info('${outputMarker}:DONE');
       }
     }
 
-    // Step 4: Cleanup - delete the Fix Script
+    // Step 4: Cleanup - delete the scheduled job
     try {
-      await client.delete(`/api/now/table/sys_script_fix/${fixScriptSysId}`);
+      await client.delete(`/api/now/table/sysauto_script/${jobSysId}`);
     } catch (cleanupError) {
       // Ignore cleanup errors
     }
@@ -286,22 +280,22 @@ gs.info('${outputMarker}:DONE');
         script_length: script.length,
         scope,
         es5_validated: validate_es5,
-        method: 'fix_script'
+        method: 'sysauto_script_with_trigger'
       });
     } else {
       // Script was saved but execution couldn't be confirmed
       return createSuccessResult({
         success: true,
         execution_id: executionId,
-        message: 'Script was saved as Fix Script but automatic execution could not be confirmed.',
-        fix_script_sys_id: fixScriptSysId,
-        action_required: 'Navigate to System Definition > Fix Scripts and run the script manually',
-        script_name: fixScriptName
+        message: 'Script was saved as scheduled job but automatic execution could not be confirmed. The sys_trigger may not have been created (permissions) or the scheduler has not yet picked it up.',
+        scheduled_job_sys_id: jobSysId,
+        action_required: 'Navigate to System Scheduler > Scheduled Jobs and run the script manually',
+        script_name: jobName
       }, {
         script_length: script.length,
         scope,
         es5_validated: validate_es5,
-        method: 'fix_script_pending'
+        method: 'scheduled_job_pending'
       });
     }
 
