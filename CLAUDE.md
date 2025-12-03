@@ -171,7 +171,7 @@ console.log(`✅ Created Update Set: ${updateSet.name} (sys_id: ${updateSet.sys_
 
 ```javascript
 // ✅ CORRECT - Verify first
-const tableCheck = await snow_execute_script_with_output({
+const tableCheck = await snow_execute_script({
   script: `
     var gr = new GlideRecord('u_custom_table');
     gs.info('Table exists: ' + gr.isValid());
@@ -179,7 +179,8 @@ const tableCheck = await snow_execute_script_with_output({
       gr.query();
       gs.info('Record count: ' + gr.getRowCount());
     }
-  `
+  `,
+  description: 'Verify custom table exists'
 });
 
 // ❌ WRONG - Assuming
@@ -574,7 +575,7 @@ function($scope) {
 | Create Client Script      | `snow_create_client_script()`                     |
 | Query Incidents           | `snow_query_incidents()`                          |
 | Query Any Table           | `snow_query_table()`                              |
-| Execute Script            | `snow_execute_script_with_output()`               |
+| Execute Script            | `snow_execute_script()`                           |
 | Pull Widget to Local      | `snow_pull_artifact()`                            |
 | Push Widget to Instance   | `snow_push_artifact()`                            |
 | Get Instance Info         | `snow_get_instance_info()`                        |
@@ -621,9 +622,10 @@ await snow_create_ui_page({
 **Background scripts are for VERIFICATION ONLY, not creating artifacts!**
 
 ```javascript
-// ❌ WRONG
-await snow_execute_background_script({
-  script: `var gr = new GlideRecord('sys_script'); gr.insert();`
+// ❌ WRONG - Using script execution to create artifacts
+await snow_execute_script({
+  script: `var gr = new GlideRecord('sys_script'); gr.insert();`,
+  description: 'Create business rule via script'
 });
 
 // ✅ CORRECT - Use dedicated tools
@@ -667,11 +669,12 @@ data.items = items;
 "The table u_custom_routing doesn't exist because it's not standard."
 
 // ✅ CORRECT - Verify first
-const check = await snow_execute_script_with_output({
+const check = await snow_execute_script({
   script: `
     var gr = new GlideRecord('u_custom_routing');
     gs.info('Table exists: ' + gr.isValid());
-  `
+  `,
+  description: 'Check if custom routing table exists'
 });
 ```
 

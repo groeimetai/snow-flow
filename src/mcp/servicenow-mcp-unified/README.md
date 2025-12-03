@@ -48,7 +48,7 @@ servicenow-mcp-unified/
 │   │   ├── snow_add_uib_page_element.ts
 │   │   └── index.ts
 │   ├── automation/              # Script execution, jobs
-│   │   ├── snow_execute_script_with_output.ts
+│   │   ├── snow_execute_script.ts    # Unified script execution
 │   │   ├── snow_schedule_job.ts
 │   │   └── index.ts
 │   ├── advanced/                # Batch API, analytics
@@ -102,7 +102,8 @@ Tools are organized by **domain** (functional area), not by original server:
 
 ### 4. Automation Tools (automation/)
 **Purpose:** Script execution and job scheduling
-- `snow_execute_script_with_output` - Run scripts
+- `snow_execute_script` - Run scripts with output capture (unified tool)
+- `snow_confirm_script_execution` - Confirm scripts requiring approval
 - `snow_schedule_job` - Create scheduled jobs
 - `snow_get_logs` - Access system logs
 - `snow_trace_execution` - Performance tracing
