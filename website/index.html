@@ -1693,9 +1693,9 @@
 
                 <div class="user-story-body">
                     <div class="user-story-label">User Story</div>
-                    <h3 class="user-story-title">Implement Snow-Flow for ServiceNow Development</h3>
+                    <h3 class="user-story-title" id="storyTitle">Implement Snow-Flow for ServiceNow Development</h3>
                     <p class="user-story-text">
-                        <strong>As a</strong> ServiceNow developer,<br>
+                        <strong>As a</strong> <span id="storyRole">ServiceNow developer</span>,<br>
                         <strong>I want to</strong> implement Snow-Flow<br>
                         <strong>So that</strong> <span class="user-story-completion" id="storyCompletion">we can use our own AI models</span>
                     </p>
@@ -1766,9 +1766,9 @@
         <div class="container">
             <div class="section-header">
                 <span class="section-label">Autonomous Development</span>
-                <h2 class="section-title">From Jira ticket to deployed code.<br>Automatically.</h2>
+                <h2 class="section-title">From issue to deployed code.<br>Automatically.</h2>
                 <p class="section-subtitle">
-                    Snow-Flow agents autonomously complete stories from Jira & Azure DevOps, create isolated update sets, and write documentation to Confluence or ServiceNow.
+                    Snow-Flow agents autonomously complete stories from GitHub, GitLab, Jira & Azure DevOps, create isolated update sets, and write documentation to Confluence or ServiceNow.
                 </p>
             </div>
 
@@ -1785,6 +1785,20 @@
                     <div class="feature-card-icon">A</div>
                     <h3 class="feature-card-title">Azure DevOps</h3>
                     <p class="feature-card-desc">Connect to Azure Boards. Complete work items autonomously with full traceability back to your sprint backlog.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-card-badge">Enterprise</span>
+                    <div class="feature-card-icon">G</div>
+                    <h3 class="feature-card-title">GitHub Issues</h3>
+                    <p class="feature-card-desc">Turn GitHub issues into deployed ServiceNow code. Link commits, track progress, and auto-close issues on completion.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-card-badge">Enterprise</span>
+                    <div class="feature-card-icon">L</div>
+                    <h3 class="feature-card-title">GitLab Integration</h3>
+                    <p class="feature-card-desc">Sync with GitLab issues and merge requests. Full CI/CD integration for ServiceNow development workflows.</p>
                 </div>
 
                 <div class="feature-card">
@@ -1818,7 +1832,7 @@
                 <div class="workflow-step">
                     <div class="workflow-step-num">1</div>
                     <div class="workflow-step-title">Pull Story</div>
-                    <div class="workflow-step-desc">From Jira or Azure DevOps</div>
+                    <div class="workflow-step-desc">From GitHub, GitLab, Jira, or Azure DevOps</div>
                 </div>
                 <div class="workflow-step">
                     <div class="workflow-step-num">2</div>
@@ -1887,7 +1901,7 @@
                         </tr>
                         <tr>
                             <td>External Integrations</td>
-                            <td><span class="comparison-highlight">Jira, Azure DevOps, Confluence</span></td>
+                            <td><span class="comparison-highlight">GitHub, GitLab, Jira, Azure DevOps, Confluence</span></td>
                             <td>ServiceNow ecosystem only</td>
                         </tr>
                         <tr>
@@ -2215,34 +2229,70 @@
             observer.observe(el);
         });
 
-        // User Story Typewriter Animation
+        // User Story Typewriter Animation with Multiple Personas
         (function() {
-            const completions = [
-                "we can use our own AI models",
-                "we never have to leave our IDE again",
-                "our Jira stories complete themselves",
-                "we stop paying $150K for vendor lock-in",
-                "every update set is automatically tracked",
-                "we can deploy widgets in minutes, not days",
-                "we get full audit trails on every change",
-                "our Azure DevOps backlog deploys itself",
-                "we write ServiceNow code with Claude, GPT, or DeepSeek",
-                "documentation writes itself to Confluence",
-                "we finally escape NowLLM-only restrictions",
-                "junior devs ship like seniors",
-                "we automate the boring stuff"
+            const personas = [
+                {
+                    role: "ServiceNow developer",
+                    title: "Implement Snow-Flow for ServiceNow Development",
+                    completions: [
+                        "we can use our own AI models",
+                        "we never have to leave our IDE again",
+                        "we stop paying $150K for vendor lock-in",
+                        "we can deploy widgets in minutes, not days",
+                        "we write ServiceNow code with Claude, GPT, or DeepSeek",
+                        "we finally escape NowLLM-only restrictions",
+                        "we automate the boring stuff"
+                    ]
+                },
+                {
+                    role: "Platform team lead",
+                    title: "Automate ServiceNow Delivery Pipeline",
+                    completions: [
+                        "our GitHub issues deploy themselves",
+                        "every GitLab merge request triggers development",
+                        "Jira stories complete autonomously",
+                        "Azure DevOps work items build themselves",
+                        "junior devs ship like seniors",
+                        "every update set is automatically tracked",
+                        "we get full audit trails on every change"
+                    ]
+                }
             ];
 
-            const element = document.getElementById('storyCompletion');
-            if (!element) return;
+            const completionEl = document.getElementById('storyCompletion');
+            const roleEl = document.getElementById('storyRole');
+            const titleEl = document.getElementById('storyTitle');
+            if (!completionEl || !roleEl || !titleEl) return;
 
-            let currentIndex = 0;
+            let personaIndex = 0;
+            let completionIndex = 0;
             let currentText = '';
             let isDeleting = false;
             let typingSpeed = 50;
+            let completionsShownForPersona = 0;
+            const completionsPerPersona = 3; // Show 3 completions before switching persona
+
+            function updatePersonaDisplay() {
+                const persona = personas[personaIndex];
+                roleEl.style.opacity = '0';
+                titleEl.style.opacity = '0';
+
+                setTimeout(function() {
+                    roleEl.textContent = persona.role;
+                    titleEl.textContent = persona.title;
+                    roleEl.style.opacity = '1';
+                    titleEl.style.opacity = '1';
+                }, 300);
+            }
+
+            // Add transition styles
+            roleEl.style.transition = 'opacity 0.3s ease';
+            titleEl.style.transition = 'opacity 0.3s ease';
 
             function typeWriter() {
-                const fullText = completions[currentIndex];
+                const persona = personas[personaIndex];
+                const fullText = persona.completions[completionIndex];
 
                 if (isDeleting) {
                     currentText = fullText.substring(0, currentText.length - 1);
@@ -2252,7 +2302,7 @@
                     typingSpeed = 50;
                 }
 
-                element.textContent = currentText;
+                completionEl.textContent = currentText;
 
                 if (!isDeleting && currentText === fullText) {
                     // Pause at end of word
@@ -2260,8 +2310,21 @@
                     isDeleting = true;
                 } else if (isDeleting && currentText === '') {
                     isDeleting = false;
-                    currentIndex = (currentIndex + 1) % completions.length;
-                    typingSpeed = 500;
+                    completionsShownForPersona++;
+
+                    // Move to next completion in current persona
+                    completionIndex = (completionIndex + 1) % persona.completions.length;
+
+                    // Switch persona after showing enough completions
+                    if (completionsShownForPersona >= completionsPerPersona) {
+                        completionsShownForPersona = 0;
+                        personaIndex = (personaIndex + 1) % personas.length;
+                        completionIndex = 0;
+                        updatePersonaDisplay();
+                        typingSpeed = 800; // Longer pause when switching personas
+                    } else {
+                        typingSpeed = 500;
+                    }
                 }
 
                 setTimeout(typeWriter, typingSpeed);
