@@ -288,11 +288,11 @@
         /* Mobile Menu */
         .mobile-nav {
             position: fixed;
-            top: 0;
+            top: 60px;
             right: 0;
             width: 100%;
             max-width: 400px;
-            height: 100vh;
+            height: calc(100vh - 60px);
             background: linear-gradient(180deg, rgba(10, 10, 15, 0.99) 0%, rgba(5, 5, 8, 0.99) 100%);
             backdrop-filter: blur(40px);
             -webkit-backdrop-filter: blur(40px);
@@ -327,65 +327,6 @@
             opacity: 1;
             pointer-events: auto;
             clip-path: inset(0 0 0 0);
-        }
-
-        .mobile-nav-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border-subtle);
-            position: relative;
-            z-index: 1;
-        }
-
-        .mobile-nav-logo {
-            display: flex;
-            align-items: center;
-            gap: 0.625rem;
-            text-decoration: none;
-        }
-
-        .mobile-nav-logo svg {
-            width: 32px;
-            height: 32px;
-        }
-
-        .mobile-nav-logo-text {
-            font-size: 1.25rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }
-
-        .mobile-nav-logo-text .snow {
-            color: var(--text-primary);
-        }
-
-        .mobile-nav-logo-text .flow {
-            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .mobile-nav-close {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-subtle);
-            border-radius: 10px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .mobile-nav-close:hover {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: var(--accent-red);
-            color: var(--accent-red);
         }
 
         .mobile-nav-body {
@@ -1765,29 +1706,6 @@
 
     <!-- Mobile Navigation -->
     <nav class="mobile-nav" id="mobileNav">
-        <div class="mobile-nav-header">
-            <a href="#" class="mobile-nav-logo">
-                <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="mobile-logo-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
-                            <stop offset="0%" stop-color="#FFFFFF"/>
-                            <stop offset="100%" stop-color="#00D9FF"/>
-                        </linearGradient>
-                    </defs>
-                    <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#mobile-logo-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
-                </svg>
-                <span class="mobile-nav-logo-text">
-                    <span class="snow">SNOW</span><span class="flow">FLOW</span>
-                </span>
-            </a>
-            <button class="mobile-nav-close" id="mobileNavClose" aria-label="Close menu">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-
         <div class="mobile-nav-body">
             <div class="mobile-nav-section">
                 <div class="mobile-nav-section-title">Navigate</div>
@@ -2428,7 +2346,6 @@
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const mobileNav = document.getElementById('mobileNav');
         const mobileBackdrop = document.getElementById('mobileBackdrop');
-        const mobileNavClose = document.getElementById('mobileNavClose');
 
         function toggleMobileMenu() {
             mobileMenuBtn.classList.toggle('active');
@@ -2446,7 +2363,6 @@
 
         mobileMenuBtn.addEventListener('click', toggleMobileMenu);
         mobileBackdrop.addEventListener('click', closeMobileMenu);
-        mobileNavClose.addEventListener('click', closeMobileMenu);
 
         // Close mobile menu on link click
         document.querySelectorAll('.mobile-nav-links a').forEach(link => {
