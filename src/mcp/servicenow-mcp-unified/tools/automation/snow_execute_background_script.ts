@@ -1,8 +1,8 @@
 /**
  * snow_execute_background_script - Execute background scripts with user confirmation
  *
- * Executes JavaScript background scripts in ServiceNow with security analysis
- * and user confirmation (unless autoConfirm=true).
+ * Executes JavaScript background scripts in ServiceNow using Fix Scripts.
+ * Includes security analysis and user confirmation (unless autoConfirm=true).
  *
  * ⚠️ CRITICAL: ALL SCRIPTS MUST BE ES5 ONLY!
  * ServiceNow runs on Rhino engine - no const/let/arrow functions/template literals.
@@ -14,7 +14,7 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_execute_background_script',
-  description: '🚨 REQUIRES USER CONFIRMATION (unless autoConfirm=true): Execute background script with security analysis (ES5 only)',
+  description: '🚨 REQUIRES USER CONFIRMATION (unless autoConfirm=true): Execute background script using Fix Scripts (ES5 only)',
   // Metadata for tool discovery (not sent to LLM)
   category: 'automation',
   subcategory: 'script-execution',
@@ -50,6 +50,11 @@ export const toolDefinition: MCPToolDefinition = {
         type: 'boolean',
         description: '⚠️ DANGEROUS: Skip user confirmation and execute immediately',
         default: false
+      },
+      timeout: {
+        type: 'number',
+        description: 'Timeout in milliseconds for polling execution results',
+        default: 30000
       }
     },
     required: ['script', 'description']
@@ -57,7 +62,7 @@ export const toolDefinition: MCPToolDefinition = {
 };
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { script, description, runAsUser, allowDataModification = false, autoConfirm = false } = args;
+  const { script, description, runAsUser, allowDataModification = false, autoConfirm = false, timeout = 30000 } = args;
 
   try {
     // ES5 validation
@@ -79,31 +84,183 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Security analysis
     const securityAnalysis = analyzeScriptSecurity(script);
 
-    // Auto-confirm mode - execute immediately
+    // Auto-confirm mode - execute immediately using Fix Scripts
     if (autoConfirm === true) {
-      const executionId = `snow_flow_exec_auto_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const executionId = `bg_auto_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const outputMarker = `SNOW_FLOW_BG_${executionId}`;
 
       const client = await getAuthenticatedClient(context);
 
-      // Create background script record
-      const scriptData = {
-        name: `Snow-Flow Background Script - ${executionId}`,
-        script: script,
-        active: true,
-        description: `Auto-confirmed: ${description}`
-      };
+      // Wrap script with output capture
+      const wrappedScript = `
+// Snow-Flow Background Script - ID: ${executionId}
+// Description: ${description}
+// Auto-confirmed execution
+var __bgOutput = [];
+var __bgStartTime = new GlideDateTime();
+var __bgResult = null;
+var __bgError = null;
 
-      const response = await client.post('/api/now/table/sys_script', scriptData);
-      const scriptRecord = response.data.result;
+// Capture gs methods
+var __bgOrigPrint = gs.print;
+var __bgOrigInfo = gs.info;
+var __bgOrigWarn = gs.warn;
+var __bgOrigError = gs.error;
 
-      return createSuccessResult({
-        executed: true,
-        execution_id: executionId,
-        script_sys_id: scriptRecord.sys_id,
-        auto_confirmed: true,
-        security_analysis: securityAnalysis,
-        message: 'Script saved for execution - run manually from Background Scripts module'
+gs.print = function(msg) { __bgOutput.push({level: 'print', msg: String(msg)}); __bgOrigPrint(msg); };
+gs.info = function(msg) { __bgOutput.push({level: 'info', msg: String(msg)}); __bgOrigInfo(msg); };
+gs.warn = function(msg) { __bgOutput.push({level: 'warn', msg: String(msg)}); __bgOrigWarn(msg); };
+gs.error = function(msg) { __bgOutput.push({level: 'error', msg: String(msg)}); __bgOrigError(msg); };
+
+try {
+  gs.info('=== Snow-Flow Background Script Started ===');
+  gs.info('Description: ${description.replace(/'/g, "\\'")}');
+
+  __bgResult = (function() {
+    ${script}
+  })();
+
+  gs.info('=== Snow-Flow Background Script Completed ===');
+} catch(e) {
+  __bgError = e.toString();
+  gs.error('Background Script Error: ' + e.toString());
+}
+
+// Restore gs methods
+gs.print = __bgOrigPrint;
+gs.info = __bgOrigInfo;
+gs.warn = __bgOrigWarn;
+gs.error = __bgOrigError;
+
+// Store result
+var __bgEndTime = new GlideDateTime();
+var __bgExecTime = Math.abs(GlideDateTime.subtract(__bgStartTime, __bgEndTime).getNumericValue());
+
+var __bgResultObj = {
+  executionId: '${executionId}',
+  success: __bgError === null,
+  result: __bgResult,
+  error: __bgError,
+  output: __bgOutput,
+  executionTimeMs: __bgExecTime,
+  description: '${description.replace(/'/g, "\\'")}'
+};
+
+gs.setProperty('${outputMarker}', JSON.stringify(__bgResultObj));
+gs.info('${outputMarker}:COMPLETE');
+`;
+
+      // Create Fix Script
+      const fixScriptName = `Snow-Flow BG Script - ${executionId}`;
+
+      const createResponse = await client.post('/api/now/table/sys_script_fix', {
+        name: fixScriptName,
+        script: wrappedScript,
+        description: `Background script: ${description}. Execution ID: ${executionId}`,
+        active: true
       });
+
+      if (!createResponse.data?.result?.sys_id) {
+        throw new SnowFlowError(
+          ErrorType.SERVICENOW_API_ERROR,
+          'Failed to create Fix Script for background execution',
+          { details: createResponse.data }
+        );
+      }
+
+      const fixScriptSysId = createResponse.data.result.sys_id;
+
+      // Attempt to run the Fix Script
+      try {
+        await client.patch(`/api/now/table/sys_script_fix/${fixScriptSysId}`, {
+          sys_run_script: 'true'
+        });
+      } catch (runError) {
+        // Try PUT approach
+        try {
+          await client.put(`/api/now/table/sys_script_fix/${fixScriptSysId}`, {
+            run: 'true',
+            active: true
+          });
+        } catch (putError) {
+          // Script saved, may need manual execution
+        }
+      }
+
+      // Poll for execution results
+      const startTime = Date.now();
+      let result: any = null;
+      let attempts = 0;
+      const maxAttempts = Math.ceil(timeout / 2000);
+
+      while (Date.now() - startTime < timeout && attempts < maxAttempts) {
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        try {
+          const propResponse = await client.get('/api/now/table/sys_properties', {
+            params: {
+              sysparm_query: `name=${outputMarker}`,
+              sysparm_fields: 'value,sys_id',
+              sysparm_limit: 1
+            }
+          });
+
+          if (propResponse.data?.result?.[0]?.value) {
+            try {
+              result = JSON.parse(propResponse.data.result[0].value);
+
+              // Cleanup property
+              const propSysId = propResponse.data.result[0].sys_id;
+              if (propSysId) {
+                await client.delete(`/api/now/table/sys_properties/${propSysId}`).catch(() => {});
+              }
+              break;
+            } catch (parseErr) {
+              // Continue polling
+            }
+          }
+        } catch (pollError) {
+          // Continue polling
+        }
+      }
+
+      // Cleanup Fix Script
+      try {
+        await client.delete(`/api/now/table/sys_script_fix/${fixScriptSysId}`);
+      } catch (cleanupError) {
+        // Ignore
+      }
+
+      if (result) {
+        return createSuccessResult({
+          executed: true,
+          execution_id: executionId,
+          success: result.success,
+          result: result.result,
+          error: result.error,
+          output: result.output,
+          execution_time_ms: result.executionTimeMs,
+          auto_confirmed: true,
+          security_analysis: securityAnalysis
+        }, {
+          method: 'fix_script',
+          description
+        });
+      } else {
+        return createSuccessResult({
+          executed: false,
+          execution_id: executionId,
+          fix_script_sys_id: fixScriptSysId,
+          auto_confirmed: true,
+          security_analysis: securityAnalysis,
+          message: 'Script was saved as Fix Script but automatic execution could not be confirmed.',
+          action_required: `Navigate to System Definition > Fix Scripts and run: ${fixScriptName}`
+        }, {
+          method: 'fix_script_pending',
+          description
+        });
+      }
     }
 
     // Standard mode - return confirmation request

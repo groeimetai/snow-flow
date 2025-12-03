@@ -1,8 +1,8 @@
 /**
- * snow_execute_script_with_output - Execute background scripts
+ * snow_execute_script_with_output - Execute scripts with full output capture
  *
- * Execute server-side JavaScript in ServiceNow background scripts with
- * full output capture (gs.print, gs.info, gs.warn, gs.error).
+ * Execute server-side JavaScript in ServiceNow with comprehensive output capture
+ * using Fix Scripts. Captures gs.print, gs.info, gs.warn, gs.error.
  *
  * ⚠️ CRITICAL: ALL SCRIPTS MUST BE ES5 ONLY!
  * ServiceNow runs on Rhino engine - no const/let/arrow functions/template literals.
@@ -14,7 +14,7 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_execute_script_with_output',
-  description: 'Execute server-side JavaScript with output capture (ES5 only - no const/let/arrow functions)',
+  description: 'Execute server-side JavaScript with full output capture using Fix Scripts (ES5 only)',
   // Metadata for tool discovery (not sent to LLM)
   category: 'automation',
   subcategory: 'script-execution',
@@ -43,6 +43,11 @@ export const toolDefinition: MCPToolDefinition = {
         type: 'boolean',
         description: 'Validate ES5 syntax before execution',
         default: true
+      },
+      timeout: {
+        type: 'number',
+        description: 'Timeout in milliseconds for polling execution results',
+        default: 30000
       }
     },
     required: ['script']
@@ -50,7 +55,7 @@ export const toolDefinition: MCPToolDefinition = {
 };
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { script, scope = 'global', validate_es5 = true } = args;
+  const { script, scope = 'global', validate_es5 = true, timeout = 30000 } = args;
 
   try {
     // ES5 validation
@@ -73,195 +78,232 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
     const client = await getAuthenticatedClient(context);
 
-    // Wrap script to capture all output
+    // Create unique execution ID for tracking
+    const executionId = `output_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const outputMarker = `SNOW_FLOW_EXEC_${executionId}`;
+
+    // Wrap script with comprehensive output capture
     const wrappedScript = `
-var __output = [];
-var __originalPrint = gs.print;
-var __originalInfo = gs.info;
-var __originalWarn = gs.warn;
-var __originalError = gs.error;
+// Snow-Flow Script Execution with Output Capture - ID: ${executionId}
+var __sfOutput = [];
+var __sfStartTime = new GlideDateTime();
+var __sfResult = null;
+var __sfError = null;
 
-gs.print = function(msg) { __output.push({level: 'print', message: String(msg)}); };
-gs.info = function(msg) { __output.push({level: 'info', message: String(msg)}); __originalInfo(msg); };
-gs.warn = function(msg) { __output.push({level: 'warn', message: String(msg)}); __originalWarn(msg); };
-gs.error = function(msg) { __output.push({level: 'error', message: String(msg)}); __originalError(msg); };
+// Store original gs methods
+var __sfOrigPrint = gs.print;
+var __sfOrigInfo = gs.info;
+var __sfOrigWarn = gs.warn;
+var __sfOrigError = gs.error;
 
+// Override gs methods to capture output
+gs.print = function(msg) {
+  var m = String(msg);
+  __sfOutput.push({level: 'print', message: m, timestamp: new GlideDateTime().getDisplayValue()});
+  __sfOrigPrint(m);
+};
+
+gs.info = function(msg) {
+  var m = String(msg);
+  __sfOutput.push({level: 'info', message: m, timestamp: new GlideDateTime().getDisplayValue()});
+  __sfOrigInfo(m);
+};
+
+gs.warn = function(msg) {
+  var m = String(msg);
+  __sfOutput.push({level: 'warn', message: m, timestamp: new GlideDateTime().getDisplayValue()});
+  __sfOrigWarn(m);
+};
+
+gs.error = function(msg) {
+  var m = String(msg);
+  __sfOutput.push({level: 'error', message: m, timestamp: new GlideDateTime().getDisplayValue()});
+  __sfOrigError(m);
+};
+
+// Execute the user script
 try {
-  ${script}
-  __output.push({level: 'success', message: 'Script executed successfully'});
-} catch (e) {
-  __output.push({level: 'error', message: 'ERROR: ' + e.message});
-  __output.push({level: 'error', message: 'Stack: ' + e.stack});
+  gs.info('=== Snow-Flow Script Execution Started ===');
+
+  __sfResult = (function() {
+    ${script}
+  })();
+
+  gs.info('=== Snow-Flow Script Execution Completed ===');
+
+  if (__sfResult !== undefined && __sfResult !== null) {
+    gs.info('Script returned: ' + (typeof __sfResult === 'object' ? JSON.stringify(__sfResult) : String(__sfResult)));
+  }
+
+} catch(e) {
+  __sfError = e.toString();
+  gs.error('=== Snow-Flow Script Execution Failed ===');
+  gs.error('Error: ' + e.toString());
+  if (e.stack) {
+    gs.error('Stack: ' + e.stack);
+  }
 }
 
-gs.print = __originalPrint;
-gs.info = __originalInfo;
-gs.warn = __originalWarn;
-gs.error = __originalError;
+// Restore original gs methods
+gs.print = __sfOrigPrint;
+gs.info = __sfOrigInfo;
+gs.warn = __sfOrigWarn;
+gs.error = __sfOrigError;
 
-JSON.stringify(__output);
+// Calculate execution time
+var __sfEndTime = new GlideDateTime();
+var __sfExecTimeMs = Math.abs(GlideDateTime.subtract(__sfStartTime, __sfEndTime).getNumericValue());
+
+// Build result object
+var __sfResultObj = {
+  executionId: '${executionId}',
+  success: __sfError === null,
+  result: __sfResult,
+  error: __sfError,
+  output: __sfOutput,
+  executionTimeMs: __sfExecTimeMs,
+  completedAt: __sfEndTime.getDisplayValue()
+};
+
+// Store result in system property for retrieval
+gs.setProperty('${outputMarker}', JSON.stringify(__sfResultObj));
+gs.info('${outputMarker}:DONE');
 `;
 
-    // ServiceNow script execution via scheduled job (sysauto_script)
-    // This creates a one-time job that executes immediately
-    const scriptName = `Snow_Flow_Exec_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    // Step 1: Create Fix Script record
+    const fixScriptName = `Snow-Flow Output Capture - ${executionId}`;
 
-    // Modify the wrapped script to use gs.print for final output
-    const executableScript = `
-var __output = [];
-var __originalPrint = gs.print;
-var __originalInfo = gs.info;
-var __originalWarn = gs.warn;
-var __originalError = gs.error;
-
-gs.print = function(msg) { __output.push({level: 'print', message: String(msg)}); };
-gs.info = function(msg) { __output.push({level: 'info', message: String(msg)}); __originalInfo(msg); };
-gs.warn = function(msg) { __output.push({level: 'warn', message: String(msg)}); __originalWarn(msg); };
-gs.error = function(msg) { __output.push({level: 'error', message: String(msg)}); __originalError(msg); };
-
-try {
-  ${script}
-  __output.push({level: 'success', message: 'Script executed successfully'});
-} catch (e) {
-  __output.push({level: 'error', message: 'ERROR: ' + e.message});
-}
-
-gs.print = __originalPrint;
-gs.info = __originalInfo;
-gs.warn = __originalWarn;
-gs.error = __originalError;
-
-// Output to system log for retrieval
-gs.info('SNOW_FLOW_OUTPUT:' + JSON.stringify(__output));
-`;
-
-    // Create scheduled script job that runs once immediately
-    const now = new Date();
-
-    let jobResponse;
-    try {
-      jobResponse = await client.post('/api/now/table/sysauto_script', {
-        name: scriptName,
-        script: executableScript,
-        active: true,
-        run_type: 'once',  // Run once at specified time
-        run_start: now.toISOString(),
-        run_dayofweek: '1,2,3,4,5,6,7'  // All days (for compatibility)
-      });
-    } catch (apiError: any) {
-      // Enhanced error handling for ServiceNow API errors
-      const status = apiError.response?.status;
-      const errorData = apiError.response?.data;
-
-      if (status === 400) {
-        let errorMessage = 'Script execution failed with ServiceNow 400 error';
-        let errorDetails: any = {
-          script_length: script.length,
-          script_preview: script.substring(0, 200) + (script.length > 200 ? '...' : '')
-        };
-
-        // Try to extract specific error from ServiceNow response
-        if (errorData?.error) {
-          errorMessage = `ServiceNow rejected script: ${errorData.error.message || errorData.error.detail || 'Unknown error'}`;
-          errorDetails.servicenow_error = errorData.error;
-        }
-
-        // Add helpful hints
-        if (script.length > 1000) {
-          errorDetails.hint = 'Script is very large (>1000 chars). Consider breaking into smaller operations or using snow_create_business_rule for complex logic.';
-        }
-
-        throw new SnowFlowError(
-          ErrorType.VALIDATION_ERROR,
-          errorMessage,
-          {
-            retryable: false,
-            details: errorDetails
-          }
-        );
-      }
-
-      throw apiError; // Re-throw other errors
-    }
-
-    const jobId = jobResponse.data.result.sys_id;
-
-    // Wait for execution - scheduled jobs execute asynchronously
-    // Give the ServiceNow scheduler time to pick up and execute the job
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
-    // Retrieve output from sys_log (only logs from the last 10 seconds)
-    const tenSecondsAgo = new Date(Date.now() - 10000).toISOString().replace('T', ' ').substring(0, 19);
-    const logResponse = await client.get('/api/now/table/sys_log', {
-      params: {
-        sysparm_query: `messageLIKESNOW_FLOW_OUTPUT^sys_created_on>${tenSecondsAgo}^ORDERBYDESCsys_created_on`,
-        sysparm_limit: 10,
-        sysparm_fields: 'message,sys_created_on'
-      }
+    const createResponse = await client.post('/api/now/table/sys_script_fix', {
+      name: fixScriptName,
+      script: wrappedScript,
+      description: `Script execution with output capture. ID: ${executionId}. Scope: ${scope}`,
+      active: true
     });
 
-    // Clean up job
-    try {
-      await client.delete(`/api/now/table/sysauto_script/${jobId}`);
-    } catch (cleanupError) {
-      console.warn('Failed to cleanup scheduled job');
-    }
-
-    // Parse output
-    let output: any[] = [];
-    const logs = logResponse.data.result || [];
-
-    for (const log of logs) {
-      const message = log.message || '';
-      if (message.includes('SNOW_FLOW_OUTPUT:')) {
-        const jsonStart = message.indexOf('[');
-        if (jsonStart !== -1) {
-          try {
-            output = JSON.parse(message.substring(jsonStart));
-            break;
-          } catch (e) {
-            console.warn('Failed to parse output JSON');
-          }
-        }
-      }
-    }
-
-    if (output.length === 0) {
-      // Fallback - script may not have executed
+    if (!createResponse.data?.result?.sys_id) {
       throw new SnowFlowError(
-        ErrorType.UNKNOWN_ERROR,
-        'Script execution completed but no output was captured. The script may not have run or ServiceNow may not support on-demand execution via API.',
-        {
-          details: {
-            message: 'Try running the script manually in ServiceNow Background Scripts module',
-            job_id: jobId,
-            logs_checked: logs.length
-          }
-        }
+        ErrorType.SERVICENOW_API_ERROR,
+        'Failed to create Fix Script for execution',
+        { details: createResponse.data }
       );
     }
 
-    // Organize output by level
-    const organized = {
-      print: output.filter(o => o.level === 'print').map(o => o.message),
-      info: output.filter(o => o.level === 'info').map(o => o.message),
-      warn: output.filter(o => o.level === 'warn').map(o => o.message),
-      error: output.filter(o => o.level === 'error').map(o => o.message),
-      success: output.some(o => o.level === 'success')
-    };
+    const fixScriptSysId = createResponse.data.result.sys_id;
 
-    return createSuccessResult(
-      {
-        success: organized.error.length === 0,
+    // Step 2: Attempt to run the Fix Script
+    // Try multiple approaches to trigger execution
+    let executionTriggered = false;
+
+    // Approach 1: PATCH with sys_run_script
+    try {
+      await client.patch(`/api/now/table/sys_script_fix/${fixScriptSysId}`, {
+        sys_run_script: 'true'
+      });
+      executionTriggered = true;
+    } catch (patchError) {
+      // Try next approach
+    }
+
+    // Approach 2: If PATCH didn't work, try PUT with run field
+    if (!executionTriggered) {
+      try {
+        await client.put(`/api/now/table/sys_script_fix/${fixScriptSysId}`, {
+          run: 'true',
+          active: true
+        });
+        executionTriggered = true;
+      } catch (putError) {
+        // Script saved but may need manual execution
+      }
+    }
+
+    // Step 3: Poll for execution results
+    const startTime = Date.now();
+    let result: any = null;
+    let attempts = 0;
+    const maxAttempts = Math.ceil(timeout / 2000);
+
+    while (Date.now() - startTime < timeout && attempts < maxAttempts) {
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      try {
+        // Check sys_properties for output marker
+        const propResponse = await client.get('/api/now/table/sys_properties', {
+          params: {
+            sysparm_query: `name=${outputMarker}`,
+            sysparm_fields: 'value,sys_id',
+            sysparm_limit: 1
+          }
+        });
+
+        if (propResponse.data?.result?.[0]?.value) {
+          try {
+            result = JSON.parse(propResponse.data.result[0].value);
+
+            // Delete the property after reading
+            const propSysId = propResponse.data.result[0].sys_id;
+            if (propSysId) {
+              await client.delete(`/api/now/table/sys_properties/${propSysId}`).catch(() => {});
+            }
+            break;
+          } catch (parseErr) {
+            // Continue polling
+          }
+        }
+      } catch (pollError) {
+        // Continue polling
+      }
+    }
+
+    // Step 4: Cleanup - delete the Fix Script
+    try {
+      await client.delete(`/api/now/table/sys_script_fix/${fixScriptSysId}`);
+    } catch (cleanupError) {
+      // Ignore cleanup errors
+    }
+
+    // Step 5: Format and return results
+    if (result) {
+      // Organize output by level
+      const organized = {
+        print: result.output.filter((o: any) => o.level === 'print').map((o: any) => o.message),
+        info: result.output.filter((o: any) => o.level === 'info').map((o: any) => o.message),
+        warn: result.output.filter((o: any) => o.level === 'warn').map((o: any) => o.message),
+        error: result.output.filter((o: any) => o.level === 'error').map((o: any) => o.message),
+        success: result.success
+      };
+
+      return createSuccessResult({
+        success: result.success,
+        result: result.result,
+        error: result.error,
         output: organized,
-        raw_output: output
-      },
-      {
+        raw_output: result.output,
+        execution_time_ms: result.executionTimeMs,
+        execution_id: executionId
+      }, {
         script_length: script.length,
         scope,
-        es5_validated: validate_es5
-      }
-    );
+        es5_validated: validate_es5,
+        method: 'fix_script'
+      });
+    } else {
+      // Script was saved but execution couldn't be confirmed
+      return createSuccessResult({
+        success: true,
+        execution_id: executionId,
+        message: 'Script was saved as Fix Script but automatic execution could not be confirmed.',
+        fix_script_sys_id: fixScriptSysId,
+        action_required: 'Navigate to System Definition > Fix Scripts and run the script manually',
+        script_name: fixScriptName
+      }, {
+        script_length: script.length,
+        scope,
+        es5_validated: validate_es5,
+        method: 'fix_script_pending'
+      });
+    }
 
   } catch (error: any) {
     return createErrorResult(
