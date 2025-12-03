@@ -546,6 +546,187 @@
         }
 
         /* =====================================================
+           DEVELOPER PROMINENCE SECTION
+           ===================================================== */
+
+        .dev-prominence-section {
+            padding: 5rem 0;
+            position: relative;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+        }
+
+        .dev-prominence-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-medium), transparent);
+        }
+
+        .user-story-card {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .user-story-card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 25px 50px -12px rgba(0, 217, 255, 0.15);
+        }
+
+        .user-story-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(139, 92, 246, 0.05));
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .user-story-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.875rem;
+            background: linear-gradient(135deg, var(--accent-green), #059669);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: white;
+        }
+
+        .user-story-type svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .user-story-id {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .user-story-status {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+
+        .user-story-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .user-story-body {
+            padding: 2rem;
+        }
+
+        .user-story-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent-cyan);
+            margin-bottom: 1rem;
+        }
+
+        .user-story-title {
+            font-size: clamp(1.25rem, 3vw, 1.75rem);
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .user-story-text {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        .user-story-text strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .user-story-completion {
+            display: inline;
+            color: var(--accent-cyan);
+            font-weight: 600;
+            position: relative;
+        }
+
+        .user-story-completion::after {
+            content: '|';
+            position: absolute;
+            right: -4px;
+            animation: blink 1s step-end infinite;
+            color: var(--accent-cyan);
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .user-story-footer {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1rem 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .user-story-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .user-story-meta svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.6;
+        }
+
+        .user-story-points {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.625rem;
+            background: rgba(139, 92, 246, 0.15);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+        }
+
+        /* =====================================================
            SECTION STYLING
            ===================================================== */
 
@@ -1489,6 +1670,56 @@
         </div>
     </section>
 
+    <!-- Developer Prominence Section -->
+    <section class="dev-prominence-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">The Last User Story You'll Ever Need</span>
+                <h2 class="section-title">Write once. Deploy forever.</h2>
+            </div>
+
+            <div class="user-story-card">
+                <div class="user-story-header">
+                    <span class="user-story-type">
+                        <svg viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8z"/>
+                            <path d="M8 4a.75.75 0 01.75.75v2.5h2.5a.75.75 0 010 1.5h-2.5v2.5a.75.75 0 01-1.5 0v-2.5h-2.5a.75.75 0 010-1.5h2.5v-2.5A.75.75 0 018 4z"/>
+                        </svg>
+                        Story
+                    </span>
+                    <span class="user-story-id">SNOW-FLOW-001</span>
+                    <span class="user-story-status">Ready for Dev</span>
+                </div>
+
+                <div class="user-story-body">
+                    <div class="user-story-label">User Story</div>
+                    <h3 class="user-story-title">Implement Snow-Flow for ServiceNow Development</h3>
+                    <p class="user-story-text">
+                        <strong>As a</strong> ServiceNow developer,<br>
+                        <strong>I want to</strong> implement Snow-Flow<br>
+                        <strong>So that</strong> <span class="user-story-completion" id="storyCompletion">we can use our own AI models</span>
+                    </p>
+                </div>
+
+                <div class="user-story-footer">
+                    <div class="user-story-meta">
+                        <svg viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 8a3 3 0 100-6 3 3 0 000 6zm2-3a2 2 0 11-4 0 2 2 0 014 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                        </svg>
+                        Your Team
+                    </div>
+                    <div class="user-story-meta">
+                        <svg viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M3.5 0a.5.5 0 01.5.5V1h8V.5a.5.5 0 011 0V1h1a2 2 0 012 2v11a2 2 0 01-2 2H2a2 2 0 01-2-2V3a2 2 0 012-2h1V.5a.5.5 0 01.5-.5zM1 4v10a1 1 0 001 1h12a1 1 0 001-1V4H1z"/>
+                        </svg>
+                        Sprint 1
+                    </div>
+                    <span class="user-story-points">8 pts</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Why Snow-Flow Section -->
     <section id="why" class="section why-section">
         <div class="container">
@@ -1983,6 +2214,62 @@
         document.querySelectorAll('.animate-on-scroll').forEach(el => {
             observer.observe(el);
         });
+
+        // User Story Typewriter Animation
+        (function() {
+            const completions = [
+                "we can use our own AI models",
+                "we never have to leave our IDE again",
+                "our Jira stories complete themselves",
+                "we stop paying $150K for vendor lock-in",
+                "every update set is automatically tracked",
+                "we can deploy widgets in minutes, not days",
+                "we get full audit trails on every change",
+                "our Azure DevOps backlog deploys itself",
+                "we write ServiceNow code with Claude, GPT, or DeepSeek",
+                "documentation writes itself to Confluence",
+                "we finally escape NowLLM-only restrictions",
+                "junior devs ship like seniors",
+                "we automate the boring stuff"
+            ];
+
+            const element = document.getElementById('storyCompletion');
+            if (!element) return;
+
+            let currentIndex = 0;
+            let currentText = '';
+            let isDeleting = false;
+            let typingSpeed = 50;
+
+            function typeWriter() {
+                const fullText = completions[currentIndex];
+
+                if (isDeleting) {
+                    currentText = fullText.substring(0, currentText.length - 1);
+                    typingSpeed = 30;
+                } else {
+                    currentText = fullText.substring(0, currentText.length + 1);
+                    typingSpeed = 50;
+                }
+
+                element.textContent = currentText;
+
+                if (!isDeleting && currentText === fullText) {
+                    // Pause at end of word
+                    typingSpeed = 2500;
+                    isDeleting = true;
+                } else if (isDeleting && currentText === '') {
+                    isDeleting = false;
+                    currentIndex = (currentIndex + 1) % completions.length;
+                    typingSpeed = 500;
+                }
+
+                setTimeout(typeWriter, typingSpeed);
+            }
+
+            // Start the animation
+            setTimeout(typeWriter, 1000);
+        })();
 
         // Console easter egg
         console.log('%cSnow-Flow', 'font-size: 40px; font-weight: bold; background: linear-gradient(135deg, #00D9FF 0%, #8B5CF6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;');
