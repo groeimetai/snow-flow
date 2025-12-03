@@ -83,7 +83,7 @@ export * from './dashboards/index.js';
 // Menus (2 tools)
 export * from './menus/index.js';
 
-// Applications (3 tools)
+// Applications (5 tools)
 export * from './applications/index.js';
 
 // Queues (2 tools)

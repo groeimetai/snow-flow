@@ -30,58 +30,98 @@ const activity = await activity_start({
 const activityId = activity.activityId;  // Store this!
 ```
 
-### Step 2: Create Update Set
+### Step 2: Decide Application Scope (NEW!)
 
 ```javascript
-// ALWAYS do this BEFORE creating any artifacts!
+// ASK YOURSELF: Does this need a scoped application?
+// ✅ Scoped App: Complete feature set, customer-specific, deployable unit
+// 🌐 Global: Quick fix, shared utility, cross-app functionality
+
+// Check current scope first
+const currentScope = await snow_get_current_scope();
+console.log(`Current scope: ${currentScope.current_scope.name}`);
+
+// Option A: Create NEW application (for new feature sets)
+const app = await snow_create_application({
+  name: "HR Self-Service Portal",
+  scope: "x_myco_hr_portal",
+  version: "1.0.0"
+  // auto_create_update_set: true (default)
+  // auto_switch_scope: true (default)
+});
+
+// Option B: Switch to EXISTING application
+await snow_switch_application_scope({
+  scope: "x_myco_existing_app",
+  create_update_set: true
+});
+
+// Option C: Use GLOBAL scope (default)
+// Just proceed to Step 3 - global is the default
+```
+
+### Step 3: Create Update Set (if not auto-created)
+
+```javascript
+// If you created an application in Step 2 with auto_create_update_set=true,
+// skip this step - Update Set was already created!
+
+// Otherwise, create Update Set in the correct scope:
 const updateSet = await snow_update_set_manage({
   action: "create",
   name: "Feature: [Descriptive Name]",
-  description: "What and why"
+  description: "What and why",
+  application_scope: "x_myco_hr_portal"  // Optional: specify scope explicitly
 });
 ```
 
-### Step 3: Do Your Development Work
+### Step 4: Do Your Development Work
 
 ```javascript
-// NOW you can create artifacts
-const artifact = await snow_create_business_rule({ /* config */ });
+// NOW you can create artifacts (they'll go into the current scope!)
+const artifact = await snow_create_artifact({
+  type: 'sp_widget',
+  name: 'my_widget',
+  // ... config
+  // application_scope: "x_myco_app"  // Optional: override scope per-artifact
+});
 ```
 
-### Step 4: Log Each Artifact
+### Step 5: Log Each Artifact
 
 ```javascript
 // After EACH artifact, log it!
 await activity_add_artifact({
   activityId: activityId,
-  artifactType: "business_rule",
-  artifactName: "My Business Rule",
+  artifactType: "widget",
+  artifactName: "My Widget",
   artifactSysId: artifact.sys_id
 });
 ```
 
-### Step 5: Complete Activity
+### Step 6: Complete Activity
 
 ```javascript
 // When done, complete the activity
 await activity_complete({
   activityId: activityId,
-  summary: "Created Business Rule for X. Update Set: Y."
+  summary: "Created Widget for X. Update Set: Y. Scope: Z."
 });
 ```
 
 ### ⚠️ THIS APPLIES TO ALL DEVELOPMENT REQUESTS!
 
-| User Request Type         | Requires Activity? | Requires Update Set? |
-|---------------------------|:------------------:|:--------------------:|
-| "Create a widget"         |         ✅         |          ✅          |
-| "Make a UI action"        |         ✅         |          ✅          |
-| "Add a business rule"     |         ✅         |          ✅          |
-| "Fix this script"         |         ✅         |          ✅          |
-| "Query some data"         |         ❌         |          ❌          |
-| "Explain how X works"     |         ❌         |          ❌          |
+| User Request Type              | Activity? | Update Set? | Scope Decision? |
+|--------------------------------|:---------:|:-----------:|:---------------:|
+| "Create a widget"              |     ✅    |      ✅     |       ✅        |
+| "Build HR Portal"              |     ✅    |      ✅     | ✅ Scoped App   |
+| "Add a business rule"          |     ✅    |      ✅     |       ✅        |
+| "Fix this script"              |     ✅    |      ✅     |    🌐 Global    |
+| "Create shared utility"        |     ✅    |      ✅     |    🌐 Global    |
+| "Query some data"              |     ❌    |      ❌     |       ❌        |
+| "Explain how X works"          |     ❌    |      ❌     |       ❌        |
 
-**Rule of thumb:** If you're CREATING or MODIFYING a ServiceNow artifact → Activity + Update Set FIRST!
+**Rule of thumb:** If you're CREATING or MODIFYING a ServiceNow artifact → Activity + Scope Decision + Update Set FIRST!
 
 ---
 
@@ -525,6 +565,8 @@ function($scope) {
 | Complete Update Set       | `snow_update_set_manage({ action: 'complete' })`  |
 | Create Application        | `snow_create_application()`                       |
 | Switch Application Scope  | `snow_switch_application_scope()`                 |
+| Get Current Scope         | `snow_get_current_scope()`                        |
+| List Applications         | `snow_list_applications()`                        |
 | Create Widget             | `snow_create_artifact({ type: 'sp_widget' })`     |
 | Create Business Rule      | `snow_create_business_rule()`                     |
 | Create Script Include     | `snow_create_script_include()`                    |

@@ -952,6 +952,8 @@ await snow_update_set_manage({ action: 'complete', update_set_id: us.sys_id });
 | Create workspace | `snow_create_complete_workspace` | One call, handles all steps |
 | Create application | `snow_create_application` | Creates app + Update Set + switches scope |
 | Switch app scope | `snow_switch_application_scope` | Switch between scopes |
+| Get current scope | `snow_get_current_scope` | Check current scope + Update Set |
+| List applications | `snow_list_applications` | Find available scopes |
 | Create widget | `snow_create_artifact({ type: 'sp_widget' })` | After Update Set |
 | Fix widget | `snow_pull_artifact` | Local sync, NOT query! |
 | Create business rule | `snow_create_business_rule` | ES5 only! |

@@ -10,9 +10,8 @@ export { toolDefinition as snow_create_workflow_activity_def, execute as snow_cr
 export { toolDefinition as snow_discover_automation_jobs_def, execute as snow_discover_automation_jobs_exec } from './snow_discover_automation_jobs.js';
 export { toolDefinition as snow_discover_events_def, execute as snow_discover_events_exec } from './snow_discover_events.js';
 export { toolDefinition as snow_discover_schedules_def, execute as snow_discover_schedules_exec } from './snow_discover_schedules.js';
-export { toolDefinition as snow_execute_background_script_def, execute as snow_execute_background_script_exec } from './snow_execute_background_script.js';
-export { toolDefinition as snow_execute_script_sync_def, execute as snow_execute_script_sync_exec } from './snow_execute_script_sync.js';
-export { toolDefinition as snow_execute_script_with_output_def, execute as snow_execute_script_with_output_exec } from './snow_execute_script_with_output.js';
+// Unified script execution tool (replaces snow_execute_script_sync, snow_execute_script_with_output, snow_execute_background_script)
+export { toolDefinition as snow_execute_script_def, execute as snow_execute_script_exec } from './snow_execute_script.js';
 export { toolDefinition as snow_get_logs_def, execute as snow_get_logs_exec } from './snow_get_logs.js';
 export { toolDefinition as snow_get_email_logs_def, execute as snow_get_email_logs_exec } from './snow_get_email_logs.js';
 export { toolDefinition as snow_get_outbound_http_logs_def, execute as snow_get_outbound_http_logs_exec } from './snow_get_outbound_http_logs.js';

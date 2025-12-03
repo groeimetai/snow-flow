@@ -11,7 +11,13 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_artifact',
-  description: 'Create ServiceNow artifacts (Service Portal widgets, UI pages, scripts, etc.) with a unified interface',
+  description: `Create ServiceNow artifacts (Service Portal widgets, UI pages, scripts, etc.) with a unified interface.
+
+📦 APPLICATION SCOPE:
+- By default, artifacts are created in the CURRENT application scope
+- Use application_scope parameter to explicitly specify a scope
+- Use "global" for global scope artifacts
+- Artifacts created in a scoped application will only be visible/accessible within that scope`,
   // Metadata for tool discovery (not sent to LLM)
   category: 'development',
   subcategory: 'deployment',
@@ -72,6 +78,12 @@ export const toolDefinition: MCPToolDefinition = {
         type: 'boolean',
         description: 'Validate ES5 syntax for server scripts',
         default: true
+      },
+
+      // Application scope
+      application_scope: {
+        type: 'string',
+        description: 'Application scope for the artifact. Use "global" for global scope, or provide application sys_id/scope name. If not specified, uses the current active scope.'
       }
     },
     required: ['type', 'name']
@@ -98,11 +110,65 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     delete: deleteOp,
     query: queryOp,
     active = true,
-    validate_es5 = true
+    validate_es5 = true,
+    application_scope
   } = args;
 
   try {
     const client = await getAuthenticatedClient(context);
+
+    // Resolve application scope
+    let resolvedScopeId: string | null = null;
+    let resolvedScopeName: string = 'Current Scope';
+    let resolvedScopePrefix: string = '';
+
+    if (application_scope) {
+      if (application_scope === 'global') {
+        resolvedScopeId = 'global';
+        resolvedScopeName = 'Global';
+        resolvedScopePrefix = 'global';
+      } else {
+        // Try to find by sys_id first
+        let appResponse = await client.get('/api/now/table/sys_app', {
+          params: {
+            sysparm_query: `sys_id=${application_scope}`,
+            sysparm_fields: 'sys_id,name,scope',
+            sysparm_limit: 1
+          }
+        });
+
+        // Try by scope name
+        if (!appResponse.data.result || appResponse.data.result.length === 0) {
+          appResponse = await client.get('/api/now/table/sys_app', {
+            params: {
+              sysparm_query: `scope=${application_scope}`,
+              sysparm_fields: 'sys_id,name,scope',
+              sysparm_limit: 1
+            }
+          });
+        }
+
+        // Try by name
+        if (!appResponse.data.result || appResponse.data.result.length === 0) {
+          appResponse = await client.get('/api/now/table/sys_app', {
+            params: {
+              sysparm_query: `name=${application_scope}`,
+              sysparm_fields: 'sys_id,name,scope',
+              sysparm_limit: 1
+            }
+          });
+        }
+
+        if (appResponse.data.result && appResponse.data.result.length > 0) {
+          const app = appResponse.data.result[0];
+          resolvedScopeId = app.sys_id;
+          resolvedScopeName = app.name;
+          resolvedScopePrefix = app.scope;
+        } else {
+          throw new Error(`Application not found: "${application_scope}". Use "global" for global scope, or provide a valid application sys_id, scope name, or application name.`);
+        }
+      }
+    }
 
     // ES5 validation for server scripts
     if (validate_es5 && server_script) {
@@ -152,7 +218,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           script: server_script || '',
           client_script: client_script || '',
           css: css || '',
-          option_schema: option_schema || ''
+          option_schema: option_schema || '',
+          sys_scope: resolvedScopeId
         });
         tableName = 'sp_widget';
         break;
@@ -161,7 +228,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         result = await createServicePortalPage(client, {
           id: name,
           title: title || name,
-          description
+          description,
+          sys_scope: resolvedScopeId
         });
         tableName = 'sp_page';
         break;
@@ -170,7 +238,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         result = await createUIBuilderPage(client, {
           name,
           title: title || name,
-          description
+          description,
+          sys_scope: resolvedScopeId
         });
         tableName = 'sys_ux_page';
         break;
@@ -181,7 +250,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           api_name: api_name || name,
           script: script || '',
           description,
-          active
+          active,
+          sys_scope: resolvedScopeId
         });
         tableName = 'sys_script_include';
         break;
@@ -200,7 +270,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           update: update || false,
           delete: deleteOp || false,
           query: queryOp || false,
-          active
+          active,
+          sys_scope: resolvedScopeId
         });
         tableName = 'sys_script';
         break;
@@ -214,7 +285,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           table,
           script: script || '',
           description,
-          active
+          active,
+          sys_scope: resolvedScopeId
         });
         tableName = 'sys_script_client';
         break;
@@ -229,6 +301,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       name: result.name || name,
       type,
       table: tableName,
+      application_scope: resolvedScopeId ? {
+        sys_id: resolvedScopeId,
+        name: resolvedScopeName,
+        scope: resolvedScopePrefix
+      } : null,
       url: `${context.instanceUrl}/nav_to.do?uri=${tableName}.do?sys_id=${result.sys_id}`
     });
 
@@ -245,7 +322,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
  * Create Service Portal widget
  */
 async function createServicePortalWidget(client: any, config: any) {
-  const widgetData = {
+  const widgetData: any = {
     id: config.id,
     name: config.name,
     description: config.description || '',
@@ -255,6 +332,11 @@ async function createServicePortalWidget(client: any, config: any) {
     css: config.css || '',
     option_schema: config.option_schema || ''
   };
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    widgetData.sys_scope = config.sys_scope;
+  }
 
   // Check if widget exists
   const existingResponse = await client.get('/api/now/table/sp_widget', {
@@ -277,11 +359,16 @@ async function createServicePortalWidget(client: any, config: any) {
  * Create Service Portal page
  */
 async function createServicePortalPage(client: any, config: any) {
-  const pageData = {
+  const pageData: any = {
     id: config.id,
     title: config.title,
     description: config.description || ''
   };
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    pageData.sys_scope = config.sys_scope;
+  }
 
   const response = await client.post('/api/now/table/sp_page', pageData);
   return response.data.result;
@@ -291,11 +378,16 @@ async function createServicePortalPage(client: any, config: any) {
  * Create UI Builder page
  */
 async function createUIBuilderPage(client: any, config: any) {
-  const pageData = {
+  const pageData: any = {
     name: config.name,
     title: config.title,
     description: config.description || ''
   };
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    pageData.sys_scope = config.sys_scope;
+  }
 
   const response = await client.post('/api/now/table/sys_ux_page', pageData);
   return response.data.result;
@@ -305,13 +397,18 @@ async function createUIBuilderPage(client: any, config: any) {
  * Create Script Include
  */
 async function createScriptInclude(client: any, config: any) {
-  const scriptData = {
+  const scriptData: any = {
     name: config.name,
     api_name: config.api_name,
     script: config.script,
     description: config.description || '',
     active: config.active
   };
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    scriptData.sys_scope = config.sys_scope;
+  }
 
   const response = await client.post('/api/now/table/sys_script_include', scriptData);
   return response.data.result;
@@ -321,7 +418,7 @@ async function createScriptInclude(client: any, config: any) {
  * Create Business Rule
  */
 async function createBusinessRule(client: any, config: any) {
-  const ruleData = {
+  const ruleData: any = {
     name: config.name,
     collection: config.table,
     script: config.script,
@@ -334,6 +431,11 @@ async function createBusinessRule(client: any, config: any) {
     active: config.active
   };
 
+  // Add scope if specified
+  if (config.sys_scope) {
+    ruleData.sys_scope = config.sys_scope;
+  }
+
   const response = await client.post('/api/now/table/sys_script', ruleData);
   return response.data.result;
 }
@@ -342,13 +444,18 @@ async function createBusinessRule(client: any, config: any) {
  * Create Client Script
  */
 async function createClientScript(client: any, config: any) {
-  const scriptData = {
+  const scriptData: any = {
     name: config.name,
     table: config.table,
     script: config.script,
     description: config.description || '',
     active: config.active
   };
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    scriptData.sys_scope = config.sys_scope;
+  }
 
   const response = await client.post('/api/now/table/sys_script_client', scriptData);
   return response.data.result;

@@ -88,7 +88,7 @@ console.log(\`✅ Created Update Set: \${updateSet.name} (sys_id: \${updateSet.s
 **Always verify before assuming:**
 \`\`\`javascript
 // ✅ CORRECT - Verify first
-const tableCheck = await snow_execute_script_with_output({
+const tableCheck = await snow_execute_script({
   script: \`
     var gr = new GlideRecord('u_custom_incident_routing');
     gs.info('Table exists: ' + gr.isValid());
@@ -96,7 +96,8 @@ const tableCheck = await snow_execute_script_with_output({
       gr.query();
       gs.info('Record count: ' + gr.getRowCount());
     }
-  \`
+  \`,
+  description: 'Verify custom table exists'
 });
 // Now you know if the table exists and can proceed accordingly
 
@@ -381,7 +382,7 @@ Examples:
 
 2. **High-level tool > Low-level script**
    - Use \`snow_create_complete_workspace\` instead of manual GlideRecord operations
-   - Use dedicated tools instead of \`snow_execute_script_with_output\` when possible
+   - Use dedicated tools instead of \`snow_execute_script\` when possible
 
 3. **Merged tool > Individual actions** (v8.2.0+)
    - Use \`snow_update_set_manage({ action: 'create' })\` instead of searching for \`snow_update_set_create\`
@@ -481,7 +482,7 @@ await snow_create_business_rule({
 });
 
 // 3. TEST
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: \`
     var gr = new GlideRecord('sys_script');
     gr.addQuery('name', 'Auto-assign incidents');
@@ -489,7 +490,8 @@ await snow_execute_script_with_output({
     if (gr.next()) {
       gs.info('Business rule created: ' + gr.sys_id);
     }
-  \`
+  \`,
+  description: 'Verify business rule creation'
 });
 
 // 4. COMPLETE UPDATE SET
@@ -637,14 +639,15 @@ await snow_update_set_manage({
 **Background scripts are for VERIFICATION ONLY, not development!**
 
 \`\`\`javascript
-// ❌ WRONG: Using background script to create workspace
-await snow_execute_background_script({
+// ❌ WRONG: Using script execution to create workspace
+await snow_execute_script({
   script: \`
     var gr = new GlideRecord('sys_ux_app_config');
     gr.initialize();
     gr.name = 'IT Support Workspace';
     gr.insert();
-  \`
+  \`,
+  description: 'Create workspace via script'
 });
 
 // ✅ CORRECT: Use dedicated MCP tool
@@ -655,10 +658,11 @@ await snow_create_complete_workspace({
 });
 \`\`\`
 
-**When to use background scripts:**
+**When to use snow_execute_script:**
 - ✅ Testing if a table exists
 - ✅ Verifying a property value
 - ✅ Checking data before operations
+- ✅ Debugging and diagnostics
 - ❌ Creating/updating artifacts (use dedicated tools!)
 
 ### Anti-Pattern 3: No Mock Data, No Placeholders
@@ -703,11 +707,12 @@ data.items = items;
 "The table u_custom_routing doesn't exist because it's not standard."
 
 // ✅ CORRECT: Verify first
-const tableCheck = await snow_execute_script_with_output({
+const tableCheck = await snow_execute_script({
   script: \`
     var gr = new GlideRecord('u_custom_routing');
     gs.info('Table exists: ' + gr.isValid());
-  \`
+  \`,
+  description: 'Check if custom routing table exists'
 });
 
 if (tableCheck.includes('Table exists: true')) {
@@ -752,7 +757,7 @@ await snow_update_set_manage({ action: 'complete', update_set_id: us.sys_id });
 | Create business rule | \`snow_create_business_rule\` | ES5 only! |
 | Query incidents | \`snow_query_incidents\` | Specialized tool |
 | Create UI Builder page | \`snow_create_uib_page\` | Modern UI framework |
-| Test script | \`snow_execute_script_with_output\` | Verification only |
+| Test script | \`snow_execute_script\` | Verification & debugging |
 | Get property | \`snow_property_manage({ action: 'get' })\` | System config |
 | Create change | \`snow_change_manage({ action: 'create' })\` | ITSM workflow |
 | View system logs | \`snow_get_logs\` | Filter by level, source |
