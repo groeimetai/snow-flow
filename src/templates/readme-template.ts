@@ -50,7 +50,7 @@ This will:
 # Use the agent command to build anything in ServiceNow
 snow-flow agent "create an incident dashboard widget"
 
-# Or use SnowCode/Claude Code directly (MCP servers auto-configured)
+# Or use SnowCode/snow-code directly (MCP servers auto-configured)
 snow-code  # All 22 MCP servers available automatically
 \`\`\`
 
@@ -111,7 +111,7 @@ Snow-Flow works seamlessly with both AI platforms:
 Pull ServiceNow artifacts to local files, edit with your favorite tools, and push back:
 
 \`\`\`bash
-# Example via SnowCode/Claude Code with MCP tools:
+# Example via SnowCode/snow-code with MCP tools:
 # 1. Pull widget to local files
 snow_pull_artifact({ sys_id: 'widget_sys_id', table: 'sp_widget' })
 
@@ -290,14 +290,14 @@ npm install -g @groeimetai/snow-code
 
 1. Make sure you ran \`snow-flow init\` in your project directory
 2. Check that .snow-code/config.json exists
-3. Restart SnowCode/Claude Code after running init
+3. Restart snow-code after running init
 
 ### "Widget coherence validation failed"
 
 This means your widget's HTML, client script, and server script don't communicate properly. Use Local Sync to debug:
 
 \`\`\`javascript
-// In SnowCode/Claude Code:
+// In snow-code
 snow_pull_artifact({ sys_id: 'your_widget_sys_id', table: 'sp_widget' })
 // Edit locally, then push back
 snow_push_artifact({ sys_id: 'your_widget_sys_id' })
@@ -319,14 +319,6 @@ Elastic License 2.0 - see LICENSE file for details
 - ⚠️ Cannot remove or obscure licensing/copyright notices
 
 For full license details: https://www.elastic.co/licensing/elastic-license
-
-## 🙏 Acknowledgments
-
-Built with ❤️ using:
-- [ServiceNow Platform](https://www.servicenow.com)
-- [Anthropic Claude](https://www.anthropic.com/claude)
-- [SnowCode AI](https://snowcode.ai)
-- [Model Context Protocol (MCP)](https://modelcontextprotocol.io)
 
 ---
 
