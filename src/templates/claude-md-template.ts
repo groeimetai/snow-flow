@@ -343,6 +343,52 @@ await snow_check_widget_coherence({
 
 ---
 
+## 🧪 TEST-DRIVEN DEVELOPMENT (TDD)
+
+**Core principle: Test after EVERY change. Only proceed when it works.**
+
+### TDD Workflow
+
+1. **Define expected behavior** - Write verification script BEFORE implementing
+2. **Implement ONE thing** - Make a single change
+3. **Test immediately** - Verify it works as expected
+4. **Only proceed if passing** - Never continue to the next step if current test fails
+5. **Repeat** - For each subsequent change: implement → test → verify → proceed
+
+### Example Pattern
+
+\`\`\`javascript
+// Step 1: Create business rule
+await snow_create_business_rule({ name: 'Auto-assign', table: 'incident', /* ... */ });
+
+// Step 2: TEST IT - Does it work?
+await snow_execute_script({
+  script: 'var gr = new GlideRecord("incident"); /* verify logic */;',
+  description: 'Verify business rule works'
+});
+// ✅ PASS? → Continue to next step
+// ❌ FAIL? → Fix before proceeding!
+
+// Step 3: Create related script include
+await snow_create_script_include({ /* ... */ });
+
+// Step 4: TEST IT - Does it work with the business rule?
+await snow_execute_script({ script: '/* verify integration */', description: 'Verify script include' });
+// ✅ PASS? → Continue
+// ❌ FAIL? → Fix first!
+\`\`\`
+
+### Key Rules
+
+- **Never skip verification** - Every artifact gets tested before moving on
+- **Fix immediately** - If test fails, fix it NOW, don't accumulate broken code
+- **Incremental progress** - Small steps with verification beats big bang deployment
+- **Offer ATF for critical features** - Formal automated tests for regression prevention
+
+**ATF Tools:** \`snow_create_atf_test\`, \`snow_create_atf_test_step\`, \`snow_execute_atf_test\`
+
+---
+
 ## 🛠️ MCP TOOL USAGE PATTERNS
 
 ### Tool Discovery Decision Tree
@@ -776,6 +822,8 @@ await snow_update_set_manage({ action: 'complete', update_set_id: us.sys_id });
 | List MID Servers | \`snow_configure_mid_server\` | On-premise integration |
 | Test MID connectivity | \`snow_test_mid_connectivity\` | Network diagnostics |
 | Manage MID capabilities | \`snow_manage_mid_capabilities\` | Discovery, Orchestration |
+| Create ATF test | \`snow_create_atf_test\` | TDD for complex features |
+| Run ATF test | \`snow_execute_atf_test\` | Execute and validate |
 
 ### ES5 Quick Conversion
 
@@ -853,6 +901,8 @@ Your process:
 6. ✅ Manage context efficiently with lazy loading
 7. ✅ Follow the tool discovery decision tree
 8. ✅ Respect widget coherence (HTML ↔ Client ↔ Server)
+9. ✅ **Offer ATF tests for complex features** (TDD approach)
+10. ✅ **Validate coherence before deployment**
 
 **Failure modes to avoid:**
 1. ❌ Skipping Update Set workflow
@@ -862,6 +912,8 @@ Your process:
 5. ❌ Using background scripts for development work
 6. ❌ Assuming instead of verifying
 7. ❌ Loading all tools instead of lazy loading
+8. ❌ **Deploying complex features without offering tests**
+9. ❌ **Skipping coherence validation for widgets**
 
 **Remember:**
 - You are not documenting features - you are **building them**
@@ -871,4 +923,4 @@ Your process:
 **Now go build amazing ServiceNow solutions! 🚀**
 `;
 
-export const CLAUDE_MD_TEMPLATE_VERSION = '9.3.0-EXTERNAL-INTEGRATION';
+export const CLAUDE_MD_TEMPLATE_VERSION = '9.4.0-TDD-ATF';

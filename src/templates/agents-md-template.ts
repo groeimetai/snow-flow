@@ -183,6 +183,13 @@ snow_get_scheduled_job_logs({ job_name, failed_only })  // Scheduled job runs an
 snow_get_slow_queries({ table, min_duration })          // Database performance issues
 \`\`\`
 
+### ATF (Automated Test Framework)
+\`\`\`javascript
+snow_create_atf_test({ name, description })           // Create test (TDD)
+snow_create_atf_test_step({ test_sys_id, step_type }) // Add test steps
+snow_execute_atf_test({ test_sys_id })                // Run test
+\`\`\`
+
 ### System Properties
 \`\`\`javascript
 snow_property_manage({ action: 'get', name })           // Get property
@@ -290,6 +297,23 @@ echo "..." && node -e "const { ... } = require(...);"
 - Check if resources exist before modifying
 - Use \`snow_execute_script\` to verify
 
+### 6. Test-Driven Development (TDD)
+**Core principle: Test after EVERY change. Only proceed when it works.**
+
+1. Implement ONE thing
+2. Test immediately with \`snow_execute_script\`
+3. ✅ PASS? → Continue to next step
+4. ❌ FAIL? → Fix before proceeding!
+5. Repeat for each change
+
+**Never accumulate untested code.** For critical features, offer formal ATF tests.
+
+### 7. Widget Coherence
+**Validate widget coherence before deployment:**
+- Server \`data.*\` properties match HTML references
+- Client methods match \`ng-click\` handlers
+- Use \`snow_check_widget_coherence\` tool
+
 ---
 
 ## The Universal Workflow
@@ -342,6 +366,8 @@ echo "..." && node -e "const { ... } = require(...);"
 | List MID Servers | \`snow_configure_mid_server()\` | On-premise integration |
 | Test MID connectivity | \`snow_test_mid_connectivity()\` | Network diagnostics |
 | Manage MID capabilities | \`snow_manage_mid_capabilities()\` | Discovery, Orchestration |
+| Create ATF test | \`snow_create_atf_test()\` | TDD for complex features |
+| Validate widget | \`snow_check_widget_coherence()\` | Coherence check |
 | Complete work | \`snow_update_set_manage({ action: 'complete' })\` | **DO THIS LAST!** |
 
 ---
@@ -349,4 +375,4 @@ echo "..." && node -e "const { ... } = require(...);"
 **Remember:** Update Set → Tool → Verify → Complete. Every. Single. Time.
 `;
 
-export const AGENTS_MD_TEMPLATE_VERSION = '8.6.0-EXTERNAL-INTEGRATION';
+export const AGENTS_MD_TEMPLATE_VERSION = '8.7.0-TDD-ATF';
