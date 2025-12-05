@@ -44,6 +44,10 @@ export const toolDefinition: MCPToolDefinition = {
           'ui_policy',           // UI Policy
           'ui_action',           // UI Action
           'rest_message',        // REST Message
+          'scheduled_job',       // Scheduled Job
+          'transform_map',       // Transform Map
+          'fix_script',          // Fix Script
+          'flow',                // Flow Designer Flow
           'table',               // Custom table
           'field'                // Custom field
         ]
@@ -72,6 +76,43 @@ export const toolDefinition: MCPToolDefinition = {
       delete: { type: 'boolean', description: 'Run on delete (business rules)' },
       query: { type: 'boolean', description: 'Run on query (business rules)' },
       active: { type: 'boolean', description: 'Activate immediately', default: true },
+
+      // REST Message fields
+      rest_endpoint: { type: 'string', description: 'Base REST endpoint URL (for REST messages)' },
+      authentication_type: {
+        type: 'string',
+        enum: ['no_authentication', 'basic', 'oauth2'],
+        description: 'Authentication type (for REST messages)'
+      },
+      http_method: {
+        type: 'string',
+        enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+        description: 'HTTP method for REST message functions'
+      },
+
+      // Scheduled Job fields
+      run_as: { type: 'string', description: 'User to run scheduled job as (sys_id)' },
+      run_start: { type: 'string', description: 'Start date/time for scheduled job (ISO format)' },
+      repeat_interval: { type: 'string', description: 'Repeat interval (e.g., "0 0 * * *" for daily)' },
+
+      // Transform Map fields
+      source_table: { type: 'string', description: 'Source table for transform map' },
+      target_table: { type: 'string', description: 'Target table for transform map' },
+
+      // UI Action fields
+      form_action: { type: 'boolean', description: 'Show as form button (UI actions)' },
+      form_style: { type: 'string', description: 'Button style (UI actions)' },
+      list_action: { type: 'boolean', description: 'Show in list context menu (UI actions)' },
+      order: { type: 'number', description: 'Display order' },
+      condition: { type: 'string', description: 'Condition for when to show/execute' },
+
+      // UI Policy fields
+      on_load: { type: 'boolean', description: 'Run on form load (UI policies)' },
+      reverse_if_false: { type: 'boolean', description: 'Reverse actions if condition false (UI policies)' },
+
+      // Flow fields
+      flow_trigger: { type: 'string', description: 'Flow trigger type (record, schedule, etc.)' },
+      flow_definition: { type: 'object', description: 'Flow definition JSON object' },
 
       // Validation options
       validate_es5: {
@@ -111,7 +152,30 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     query: queryOp,
     active = true,
     validate_es5 = true,
-    application_scope
+    application_scope,
+    // REST Message fields
+    rest_endpoint,
+    authentication_type,
+    http_method,
+    // Scheduled Job fields
+    run_as,
+    run_start,
+    repeat_interval,
+    // Transform Map fields
+    source_table,
+    target_table,
+    // UI Action fields
+    form_action,
+    form_style,
+    list_action,
+    order,
+    condition,
+    // UI Policy fields
+    on_load,
+    reverse_if_false,
+    // Flow fields
+    flow_trigger,
+    flow_definition
   } = args;
 
   try {
@@ -291,6 +355,108 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         tableName = 'sys_script_client';
         break;
 
+      case 'ui_policy':
+        if (!table) {
+          throw new Error('table parameter required for UI policies');
+        }
+        result = await createUIPolicy(client, {
+          name,
+          table,
+          script_true: script || '',
+          description,
+          condition: condition || '',
+          on_load: on_load || true,
+          reverse_if_false: reverse_if_false || false,
+          active,
+          order: order || 100,
+          sys_scope: resolvedScopeId
+        });
+        tableName = 'sys_ui_policy';
+        break;
+
+      case 'ui_action':
+        if (!table) {
+          throw new Error('table parameter required for UI actions');
+        }
+        result = await createUIAction(client, {
+          name,
+          table,
+          script: script || '',
+          description,
+          condition: condition || '',
+          form_action: form_action !== false,
+          form_style: form_style || '',
+          list_action: list_action || false,
+          order: order || 100,
+          active,
+          sys_scope: resolvedScopeId
+        });
+        tableName = 'sys_ui_action';
+        break;
+
+      case 'rest_message':
+        result = await createRESTMessage(client, {
+          name,
+          description,
+          rest_endpoint: rest_endpoint || '',
+          authentication_type: authentication_type || 'no_authentication',
+          sys_scope: resolvedScopeId
+        });
+        tableName = 'sys_rest_message';
+        break;
+
+      case 'scheduled_job':
+        result = await createScheduledJob(client, {
+          name,
+          script: script || '',
+          description,
+          run_as,
+          run_start,
+          repeat_interval,
+          active,
+          sys_scope: resolvedScopeId
+        });
+        tableName = 'sysauto_script';
+        break;
+
+      case 'transform_map':
+        if (!source_table || !target_table) {
+          throw new Error('source_table and target_table parameters required for transform maps');
+        }
+        result = await createTransformMap(client, {
+          name,
+          source_table,
+          target_table,
+          script: script || '',
+          description,
+          active,
+          sys_scope: resolvedScopeId
+        });
+        tableName = 'sys_transform_map';
+        break;
+
+      case 'fix_script':
+        result = await createFixScript(client, {
+          name,
+          script: script || '',
+          description,
+          sys_scope: resolvedScopeId
+        });
+        tableName = 'sys_script_fix';
+        break;
+
+      case 'flow':
+        result = await createFlow(client, {
+          name,
+          description,
+          trigger_type: flow_trigger || 'record',
+          definition: flow_definition,
+          active,
+          sys_scope: resolvedScopeId
+        });
+        tableName = 'sys_hub_flow';
+        break;
+
       default:
         throw new Error(`Unsupported artifact type: ${type}`);
     }
@@ -458,6 +624,185 @@ async function createClientScript(client: any, config: any) {
   }
 
   const response = await client.post('/api/now/table/sys_script_client', scriptData);
+  return response.data.result;
+}
+
+/**
+ * Create UI Policy
+ */
+async function createUIPolicy(client: any, config: any) {
+  const policyData: any = {
+    short_description: config.name,
+    table: config.table,
+    script_true: config.script_true || '',
+    description: config.description || '',
+    conditions: config.condition || '',
+    on_load: config.on_load,
+    reverse_if_false: config.reverse_if_false,
+    active: config.active,
+    order: config.order
+  };
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    policyData.sys_scope = config.sys_scope;
+  }
+
+  const response = await client.post('/api/now/table/sys_ui_policy', policyData);
+  return response.data.result;
+}
+
+/**
+ * Create UI Action
+ */
+async function createUIAction(client: any, config: any) {
+  const actionData: any = {
+    name: config.name,
+    table: config.table,
+    script: config.script,
+    comments: config.description || '',
+    condition: config.condition || '',
+    form_action: config.form_action,
+    form_style: config.form_style || '',
+    list_action: config.list_action,
+    order: config.order,
+    active: config.active
+  };
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    actionData.sys_scope = config.sys_scope;
+  }
+
+  const response = await client.post('/api/now/table/sys_ui_action', actionData);
+  return response.data.result;
+}
+
+/**
+ * Create REST Message
+ */
+async function createRESTMessage(client: any, config: any) {
+  const messageData: any = {
+    name: config.name,
+    description: config.description || '',
+    rest_endpoint: config.rest_endpoint || '',
+    authentication_type: config.authentication_type || 'no_authentication'
+  };
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    messageData.sys_scope = config.sys_scope;
+  }
+
+  const response = await client.post('/api/now/table/sys_rest_message', messageData);
+  return response.data.result;
+}
+
+/**
+ * Create Scheduled Job
+ */
+async function createScheduledJob(client: any, config: any) {
+  const jobData: any = {
+    name: config.name,
+    script: config.script,
+    comments: config.description || '',
+    active: config.active
+  };
+
+  // Add run_as if specified
+  if (config.run_as) {
+    jobData.run_as = config.run_as;
+  }
+
+  // Add run_start if specified
+  if (config.run_start) {
+    jobData.run_start = config.run_start;
+  }
+
+  // Add repeat_interval if specified
+  if (config.repeat_interval) {
+    jobData.repeat_interval = config.repeat_interval;
+  }
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    jobData.sys_scope = config.sys_scope;
+  }
+
+  const response = await client.post('/api/now/table/sysauto_script', jobData);
+  return response.data.result;
+}
+
+/**
+ * Create Transform Map
+ */
+async function createTransformMap(client: any, config: any) {
+  const mapData: any = {
+    name: config.name,
+    source_table: config.source_table,
+    target_table: config.target_table,
+    script: config.script || '',
+    description: config.description || '',
+    active: config.active
+  };
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    mapData.sys_scope = config.sys_scope;
+  }
+
+  const response = await client.post('/api/now/table/sys_transform_map', mapData);
+  return response.data.result;
+}
+
+/**
+ * Create Fix Script
+ */
+async function createFixScript(client: any, config: any) {
+  const scriptData: any = {
+    name: config.name,
+    script: config.script,
+    description: config.description || ''
+  };
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    scriptData.sys_scope = config.sys_scope;
+  }
+
+  const response = await client.post('/api/now/table/sys_script_fix', scriptData);
+  return response.data.result;
+}
+
+/**
+ * Create Flow Designer Flow
+ */
+async function createFlow(client: any, config: any) {
+  const flowData: any = {
+    name: config.name,
+    label: config.name,
+    description: config.description || '',
+    active: config.active
+  };
+
+  // Add trigger type if specified
+  if (config.trigger_type) {
+    flowData.trigger_type = config.trigger_type;
+  }
+
+  // Add definition if specified (JSON structure)
+  if (config.definition) {
+    flowData.definition = typeof config.definition === 'string'
+      ? config.definition
+      : JSON.stringify(config.definition);
+  }
+
+  // Add scope if specified
+  if (config.sys_scope) {
+    flowData.sys_scope = config.sys_scope;
+  }
+
+  const response = await client.post('/api/now/table/sys_hub_flow', flowData);
   return response.data.result;
 }
 
