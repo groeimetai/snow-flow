@@ -47,7 +47,6 @@ export const toolDefinition: MCPToolDefinition = {
           'scheduled_job',       // Scheduled Job
           'transform_map',       // Transform Map
           'fix_script',          // Fix Script
-          'flow',                // Flow Designer Flow
           'table',               // Custom table
           'field'                // Custom field
         ]
@@ -110,10 +109,6 @@ export const toolDefinition: MCPToolDefinition = {
       on_load: { type: 'boolean', description: 'Run on form load (UI policies)' },
       reverse_if_false: { type: 'boolean', description: 'Reverse actions if condition false (UI policies)' },
 
-      // Flow fields
-      flow_trigger: { type: 'string', description: 'Flow trigger type (record, schedule, etc.)' },
-      flow_definition: { type: 'object', description: 'Flow definition JSON object' },
-
       // Validation options
       validate_es5: {
         type: 'boolean',
@@ -172,10 +167,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     condition,
     // UI Policy fields
     on_load,
-    reverse_if_false,
-    // Flow fields
-    flow_trigger,
-    flow_definition
+    reverse_if_false
   } = args;
 
   try {
@@ -443,18 +435,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           sys_scope: resolvedScopeId
         });
         tableName = 'sys_script_fix';
-        break;
-
-      case 'flow':
-        result = await createFlow(client, {
-          name,
-          description,
-          trigger_type: flow_trigger || 'record',
-          definition: flow_definition,
-          active,
-          sys_scope: resolvedScopeId
-        });
-        tableName = 'sys_hub_flow';
         break;
 
       default:
@@ -771,38 +751,6 @@ async function createFixScript(client: any, config: any) {
   }
 
   const response = await client.post('/api/now/table/sys_script_fix', scriptData);
-  return response.data.result;
-}
-
-/**
- * Create Flow Designer Flow
- */
-async function createFlow(client: any, config: any) {
-  const flowData: any = {
-    name: config.name,
-    label: config.name,
-    description: config.description || '',
-    active: config.active
-  };
-
-  // Add trigger type if specified
-  if (config.trigger_type) {
-    flowData.trigger_type = config.trigger_type;
-  }
-
-  // Add definition if specified (JSON structure)
-  if (config.definition) {
-    flowData.definition = typeof config.definition === 'string'
-      ? config.definition
-      : JSON.stringify(config.definition);
-  }
-
-  // Add scope if specified
-  if (config.sys_scope) {
-    flowData.sys_scope = config.sys_scope;
-  }
-
-  const response = await client.post('/api/now/table/sys_hub_flow', flowData);
   return response.data.result;
 }
 
