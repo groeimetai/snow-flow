@@ -132,7 +132,21 @@ async function findArtifact(client: any, tableName: string, identifier: string):
       return response.data.result;
     }
   } catch {
-    // Not a valid sys_id, try by name
+    // Not a valid sys_id, try by name/id
+  }
+
+  // For widgets, try by 'id' field first (this is the widget's technical identifier)
+  if (tableName === 'sp_widget') {
+    const idResponse = await client.get(`/api/now/table/${tableName}`, {
+      params: {
+        sysparm_query: `id=${identifier}`,
+        sysparm_limit: 1
+      }
+    });
+
+    if (idResponse.data.result && idResponse.data.result.length > 0) {
+      return idResponse.data.result[0];
+    }
   }
 
   // Try by name
