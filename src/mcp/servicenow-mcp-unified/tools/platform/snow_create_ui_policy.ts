@@ -9,6 +9,20 @@ import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/t
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
 
+/**
+ * Extract sys_id from API response - handles both string and object formats
+ * ServiceNow Table API can return sys_id as:
+ * - String: "abc123def456"
+ * - Object: { value: "abc123def456", link: "...", display_value: "..." }
+ */
+function extractSysId(value: any): string {
+  if (!value) return '';
+  if (typeof value === 'object' && value.value) {
+    return value.value;
+  }
+  return String(value);
+}
+
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_ui_policy',
   description: 'Create UI Policy for form field control (visibility, mandatory, readonly)',
@@ -110,11 +124,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const policyResponse = await client.post('/api/now/table/sys_ui_policy', uiPolicyData);
     const uiPolicy = policyResponse.data.result;
 
+    // Extract the sys_id properly - API can return string or object
+    const policySysId = extractSysId(uiPolicy.sys_id);
+
     // Create UI Policy Actions
     const createdActions = [];
     for (const action of actions) {
       const actionData: any = {
-        ui_policy: uiPolicy.sys_id,
+        ui_policy: policySysId,
         field: action.field_name,
         visible: action.visible !== undefined ? action.visible : true,
         mandatory: action.mandatory || false,
@@ -129,7 +146,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     return createSuccessResult({
       created: true,
       ui_policy: {
-        sys_id: uiPolicy.sys_id,
+        sys_id: policySysId,
         name: uiPolicy.short_description,
         table: uiPolicy.table,
         condition: uiPolicy.conditions,
@@ -138,12 +155,13 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         active: uiPolicy.active === 'true'
       },
       actions: createdActions.map(action => ({
-        sys_id: action.sys_id,
+        sys_id: extractSysId(action.sys_id),
         field: action.field,
         visible: action.visible === 'true',
         mandatory: action.mandatory === 'true',
         readonly: action.readonly === 'true',
-        cleared: action.cleared === 'true'
+        cleared: action.cleared === 'true',
+        ui_policy_reference: policySysId
       })),
       total_actions: createdActions.length,
       best_practices: [
@@ -160,5 +178,5 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = '1.1.0';
+export const author = 'Snow-Flow v8.41.16';
