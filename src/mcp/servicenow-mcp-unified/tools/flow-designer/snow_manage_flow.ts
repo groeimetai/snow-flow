@@ -823,11 +823,12 @@ async function getTriggerTypeSysId(client: any, triggerType: string, when?: stri
   }
 
   try {
+    // Note: sys_hub_trigger_type doesn't have 'label' or 'active' fields
     const response = await client.get('/api/now/table/sys_hub_trigger_type', {
       params: {
-        sysparm_query: `nameLIKE${searchName}^ORlabelLIKE${searchName}`,
+        sysparm_query: `nameLIKE${searchName}`,
         sysparm_limit: 1,
-        sysparm_fields: 'sys_id,name,label'
+        sysparm_fields: 'sys_id,name,description'
       }
     });
 
@@ -850,17 +851,18 @@ async function getActionTypeSysId(client: any, actionType: string): Promise<{ sy
   }
 
   try {
+    // Note: sys_hub_action_type_base doesn't have 'label' or 'active' fields
     const response = await client.get('/api/now/table/sys_hub_action_type_base', {
       params: {
-        sysparm_query: `nameLIKE${actionType}^ORlabelLIKE${actionType}^active=true`,
+        sysparm_query: `nameLIKE${actionType}`,
         sysparm_limit: 1,
-        sysparm_fields: 'sys_id,name,label'
+        sysparm_fields: 'sys_id,name,description'
       }
     });
 
     if (response.data.result && response.data.result.length > 0) {
       const result = response.data.result[0];
-      return { sys_id: result.sys_id, name: result.name || result.label };
+      return { sys_id: result.sys_id, name: result.name };
     }
   } catch (error) {
     console.error('Failed to get action type:', error);
@@ -1063,9 +1065,10 @@ async function handleCreate(args: ManageFlowArgs, client: any, versionInfo: Vers
       'glide_date_time': 'glide_date_time'
     };
 
+    // Note: sys_hub_flow_variable uses 'model' field (not 'flow') to reference the parent flow
     const variableData: Record<string, any> = {
       sys_id: variableSysId,
-      flow: flowSysId,
+      model: flowSysId,
       name: variable.name,
       label: variable.label || variable.name,
       description: variable.description || '',
@@ -1531,8 +1534,9 @@ async function handleDelete(args: ManageFlowArgs, client: any, versionInfo: Vers
   await deleteFromTable(triggerTable, `flow=${flow.sys_id}`);
 
   // 5. DELETE VARIABLES
+  // Note: sys_hub_flow_variable uses 'model' field (not 'flow')
   console.log('Deleting variables...');
-  await deleteFromTable(FLOW_TABLES.VARIABLE, `flow=${flow.sys_id}`);
+  await deleteFromTable(FLOW_TABLES.VARIABLE, `model=${flow.sys_id}`);
 
   // 6. DELETE SNAPSHOTS
   console.log('Deleting snapshots...');
@@ -1632,9 +1636,10 @@ async function handleClone(args: ManageFlowArgs, client: any, versionInfo: Versi
   }
 
   // ==================== 2. CLONE VARIABLES ====================
+  // Note: sys_hub_flow_variable uses 'model' field (not 'flow')
   try {
     const variablesResponse = await client.get(`/api/now/table/${FLOW_TABLES.VARIABLE}`, {
-      params: { sysparm_query: `flow=${sourceFlow.sys_id}`, sysparm_orderby: 'order' }
+      params: { sysparm_query: `model=${sourceFlow.sys_id}`, sysparm_orderby: 'order' }
     });
 
     if (variablesResponse.data.result) {
@@ -1642,9 +1647,10 @@ async function handleClone(args: ManageFlowArgs, client: any, versionInfo: Versi
         const newVariableId = generateSysId();
         sysIdMap.set(variable.sys_id, newVariableId);
 
+        // Note: sys_hub_flow_variable uses 'model' field (not 'flow')
         const newVariable: Record<string, any> = {
           sys_id: newVariableId,
-          flow: newFlowId,
+          model: newFlowId,
           name: variable.name,
           label: variable.label,
           description: variable.description,
@@ -2279,11 +2285,12 @@ async function handleAddVariable(args: ManageFlowArgs, client: any): Promise<Too
   const variableSysId = generateSysId();
 
   // Get max order for variables
+  // Note: sys_hub_flow_variable uses 'model' field (not 'flow')
   let maxOrder = 0;
   try {
     const response = await client.get(`/api/now/table/${FLOW_TABLES.VARIABLE}`, {
       params: {
-        sysparm_query: `flow=${flow.sys_id}`,
+        sysparm_query: `model=${flow.sys_id}`,
         sysparm_fields: 'order',
         sysparm_orderby: 'DESCorder',
         sysparm_limit: 1
@@ -2296,7 +2303,7 @@ async function handleAddVariable(args: ManageFlowArgs, client: any): Promise<Too
 
   const variableData: Record<string, any> = {
     sys_id: variableSysId,
-    flow: flow.sys_id,
+    model: flow.sys_id,
     name: variable_config.name,
     label: variable_config.label || variable_config.name,
     description: variable_config.description || '',
@@ -2407,9 +2414,10 @@ async function handleGetDetails(args: ManageFlowArgs, client: any, versionInfo: 
   } catch (e) {}
 
   // Get variables
+  // Note: sys_hub_flow_variable uses 'model' field (not 'flow')
   try {
     const response = await client.get(`/api/now/table/${FLOW_TABLES.VARIABLE}`, {
-      params: { sysparm_query: `flow=${flow.sys_id}`, sysparm_orderby: 'order' }
+      params: { sysparm_query: `model=${flow.sys_id}`, sysparm_orderby: 'order' }
     });
     if (response.data.result) {
       details.variables = response.data.result;

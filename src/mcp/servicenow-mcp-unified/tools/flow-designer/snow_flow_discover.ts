@@ -111,20 +111,21 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const results: any = {};
 
     // ==================== TRIGGER TYPES ====================
+    // Note: sys_hub_trigger_type doesn't have 'label' or 'active' fields
     if (discover === 'trigger_types' || discover === 'all') {
       console.log('Discovering trigger types...');
 
       try {
         let query = '';
         if (search) {
-          query = `nameLIKE${search}^ORlabelLIKE${search}`;
+          query = `nameLIKE${search}`;
         }
 
         const response = await client.get('/api/now/table/sys_hub_trigger_type', {
           params: {
             sysparm_query: query,
             sysparm_limit: limit,
-            sysparm_fields: 'sys_id,name,label,description,table_name'
+            sysparm_fields: 'sys_id,name,description,table_name'
           }
         });
 
@@ -132,7 +133,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           results.trigger_types = response.data.result.map((t: any) => ({
             sys_id: t.sys_id,
             name: t.name,
-            label: t.label || t.name,
+            label: t.name, // Use name as label (label field doesn't exist)
             description: t.description,
             table_name: t.table_name
           }));
@@ -145,25 +146,26 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     }
 
     // ==================== ACTION TYPES ====================
+    // Note: sys_hub_action_type_base doesn't have 'label' or 'active' fields
     if (discover === 'action_types' || discover === 'all') {
       console.log('Discovering action types...');
 
       try {
-        let query = include_inactive ? '' : 'active=true';
+        let query = '';  // No 'active' field on this table
 
         if (category) {
           query += (query ? '^' : '') + `category=${category}`;
         }
 
         if (search) {
-          query += (query ? '^' : '') + `nameLIKE${search}^ORlabelLIKE${search}`;
+          query += (query ? '^' : '') + `nameLIKE${search}`;
         }
 
         const response = await client.get('/api/now/table/sys_hub_action_type_base', {
           params: {
             sysparm_query: query,
             sysparm_limit: limit,
-            sysparm_fields: 'sys_id,name,label,category,description,spoke'
+            sysparm_fields: 'sys_id,name,category,description,spoke'
           }
         });
 
@@ -171,7 +173,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           results.action_types = response.data.result.map((a: any) => ({
             sys_id: a.sys_id,
             name: a.name,
-            label: a.label || a.name,
+            label: a.name, // Use name as label (label field doesn't exist)
             category: a.category,
             description: a.description,
             spoke: a.spoke
