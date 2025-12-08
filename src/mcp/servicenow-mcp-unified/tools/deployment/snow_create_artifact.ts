@@ -11,7 +11,17 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_artifact',
-  description: `Create ServiceNow artifacts (Service Portal widgets, UI pages, scripts, etc.) with a unified interface.
+  description: `Create ServiceNow artifacts (Service Portal widgets, UI pages, scripts, tables, fields, etc.) with a unified interface.
+
+🗃️ TABLE & FIELD CREATION:
+- type='table': Create custom tables (sys_db_object)
+  - extends_table: Extend from task, cmdb_ci, core_company, etc.
+  - create_module: Auto-create navigation module (default: true)
+  - create_access_controls: Auto-create read/write/create/delete ACLs
+- type='field': Add fields to existing tables (sys_dictionary)
+  - internal_type: string, integer, boolean, reference, choice, etc.
+  - choice_options: For choice fields, provide [{label, value}] array
+  - reference_table: Required for reference type fields
 
 📦 APPLICATION SCOPE:
 - By default, artifacts are created in the CURRENT application scope
@@ -21,7 +31,7 @@ export const toolDefinition: MCPToolDefinition = {
   // Metadata for tool discovery (not sent to LLM)
   category: 'development',
   subcategory: 'deployment',
-  use_cases: ['deployment', 'creation', 'artifacts', 'widgets'],
+  use_cases: ['deployment', 'creation', 'artifacts', 'widgets', 'tables', 'fields', 'schema'],
   complexity: 'intermediate',
   frequency: 'high',
 
@@ -109,6 +119,39 @@ export const toolDefinition: MCPToolDefinition = {
       on_load: { type: 'boolean', description: 'Run on form load (UI policies)' },
       reverse_if_false: { type: 'boolean', description: 'Reverse actions if condition false (UI policies)' },
 
+      // Table creation fields
+      label: { type: 'string', description: 'Table label (for tables) or field label (for fields)' },
+      extends_table: { type: 'string', description: 'Parent table to extend (for tables). Common options: task, cmdb_ci, core_company' },
+      is_extendable: { type: 'boolean', description: 'Whether the table can be extended (for tables)', default: true },
+      create_module: { type: 'boolean', description: 'Create navigation module for the table', default: true },
+      create_access_controls: { type: 'boolean', description: 'Create default ACLs for the table', default: false },
+
+      // Field creation fields (when type='field')
+      column_name: { type: 'string', description: 'Column/field name (for fields)' },
+      column_label: { type: 'string', description: 'Column/field display label (for fields)' },
+      internal_type: {
+        type: 'string',
+        description: 'Field type (for fields)',
+        enum: ['string', 'integer', 'boolean', 'reference', 'glide_date', 'glide_date_time',
+               'decimal', 'float', 'choice', 'journal', 'journal_input', 'html', 'url',
+               'email', 'phone_number_e164', 'currency', 'price', 'sys_class_name', 'document_id']
+      },
+      reference_table: { type: 'string', description: 'Reference table name (required for reference fields)' },
+      max_length: { type: 'number', description: 'Maximum length for string fields', default: 255 },
+      mandatory: { type: 'boolean', description: 'Whether the field is mandatory', default: false },
+      default_value: { type: 'string', description: 'Default value for the field' },
+      choice_options: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            label: { type: 'string' },
+            value: { type: 'string' }
+          }
+        },
+        description: 'Choice options for choice fields (array of {label, value} objects)'
+      },
+
       // Validation options
       validate_es5: {
         type: 'boolean',
@@ -167,7 +210,22 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     condition,
     // UI Policy fields
     on_load,
-    reverse_if_false
+    reverse_if_false,
+    // Table creation fields
+    label,
+    extends_table,
+    is_extendable = true,
+    create_module = true,
+    create_access_controls = false,
+    // Field creation fields
+    column_name,
+    column_label,
+    internal_type,
+    reference_table,
+    max_length = 255,
+    mandatory = false,
+    default_value,
+    choice_options
   } = args;
 
   try {
@@ -435,6 +493,44 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           sys_scope: resolvedScopeId
         });
         tableName = 'sys_script_fix';
+        break;
+
+      case 'table':
+        if (!label) {
+          throw new Error('label parameter required for table creation');
+        }
+        result = await createTable(client, {
+          name,
+          label,
+          extends_table,
+          is_extendable,
+          create_module,
+          create_access_controls,
+          sys_scope: resolvedScopeId
+        }, context);
+        tableName = 'sys_db_object';
+        break;
+
+      case 'field':
+        if (!table) {
+          throw new Error('table parameter required for field creation');
+        }
+        if (!internal_type) {
+          throw new Error('internal_type parameter required for field creation');
+        }
+        result = await createField(client, {
+          table,
+          column_name: column_name || name,
+          column_label: column_label || label || name,
+          internal_type,
+          reference_table,
+          max_length,
+          mandatory,
+          default_value,
+          choice_options,
+          sys_scope: resolvedScopeId
+        }, context);
+        tableName = 'sys_dictionary';
         break;
 
       default:
@@ -752,6 +848,226 @@ async function createFixScript(client: any, config: any) {
 
   const response = await client.post('/api/now/table/sys_script_fix', scriptData);
   return response.data.result;
+}
+
+/**
+ * Create Table (sys_db_object)
+ */
+async function createTable(client: any, config: any, context: any) {
+  // Build table data
+  const tableData: any = {
+    name: config.name,
+    label: config.label,
+    is_extendable: config.is_extendable !== false
+  };
+
+  // Set parent table if extending
+  if (config.extends_table) {
+    // Look up the parent table sys_id
+    const parentResponse = await client.get('/api/now/table/sys_db_object', {
+      params: {
+        sysparm_query: `name=${config.extends_table}`,
+        sysparm_fields: 'sys_id,name,label',
+        sysparm_limit: 1
+      }
+    });
+
+    if (parentResponse.data.result && parentResponse.data.result.length > 0) {
+      tableData.super_class = parentResponse.data.result[0].sys_id;
+    } else {
+      throw new Error(`Parent table '${config.extends_table}' not found. Cannot extend a non-existent table.`);
+    }
+  }
+
+  // Add scope if specified
+  if (config.sys_scope && config.sys_scope !== 'global') {
+    tableData.sys_scope = config.sys_scope;
+  }
+
+  // Check if table already exists
+  const existingResponse = await client.get('/api/now/table/sys_db_object', {
+    params: {
+      sysparm_query: `name=${config.name}`,
+      sysparm_limit: 1
+    }
+  });
+
+  if (existingResponse.data.result && existingResponse.data.result.length > 0) {
+    throw new Error(`Table '${config.name}' already exists. Use snow_update to modify it.`);
+  }
+
+  // Create the table
+  const createResponse = await client.post('/api/now/table/sys_db_object', tableData);
+  const createdTable = createResponse.data.result;
+
+  const additionalInfo: any = {};
+
+  // Create navigation module if requested
+  if (config.create_module) {
+    try {
+      const moduleData = {
+        title: config.label,
+        name: config.name,
+        table_name: config.name,
+        view_name: 'default',
+        order: 100,
+        active: true
+      };
+
+      const moduleResponse = await client.post('/api/now/table/sys_app_module', moduleData);
+      additionalInfo.module = {
+        sys_id: moduleResponse.data.result.sys_id,
+        title: config.label
+      };
+    } catch (moduleError: any) {
+      additionalInfo.module_error = `Could not create module: ${moduleError.message}`;
+    }
+  }
+
+  // Create default ACLs if requested
+  if (config.create_access_controls) {
+    try {
+      const acls = [];
+
+      // Read ACL
+      const readAcl = await client.post('/api/now/table/sys_security_acl', {
+        name: config.name,
+        operation: 'read',
+        type: 'record',
+        admin_overrides: true,
+        active: true
+      });
+      acls.push({ type: 'read', sys_id: readAcl.data.result.sys_id });
+
+      // Write ACL
+      const writeAcl = await client.post('/api/now/table/sys_security_acl', {
+        name: config.name,
+        operation: 'write',
+        type: 'record',
+        admin_overrides: true,
+        active: true
+      });
+      acls.push({ type: 'write', sys_id: writeAcl.data.result.sys_id });
+
+      // Create ACL
+      const createAcl = await client.post('/api/now/table/sys_security_acl', {
+        name: config.name,
+        operation: 'create',
+        type: 'record',
+        admin_overrides: true,
+        active: true
+      });
+      acls.push({ type: 'create', sys_id: createAcl.data.result.sys_id });
+
+      // Delete ACL
+      const deleteAcl = await client.post('/api/now/table/sys_security_acl', {
+        name: config.name,
+        operation: 'delete',
+        type: 'record',
+        admin_overrides: true,
+        active: true
+      });
+      acls.push({ type: 'delete', sys_id: deleteAcl.data.result.sys_id });
+
+      additionalInfo.access_controls = acls;
+    } catch (aclError: any) {
+      additionalInfo.acl_error = `Could not create ACLs: ${aclError.message}`;
+    }
+  }
+
+  return {
+    ...createdTable,
+    ...additionalInfo
+  };
+}
+
+/**
+ * Create Field (sys_dictionary)
+ */
+async function createField(client: any, config: any, context: any) {
+  // Build field data
+  const fieldData: any = {
+    name: config.table,
+    element: config.column_name,
+    column_label: config.column_label || config.column_name,
+    internal_type: config.internal_type,
+    mandatory: config.mandatory || false
+  };
+
+  // Add reference table for reference fields
+  if (config.internal_type === 'reference' && config.reference_table) {
+    fieldData.reference = config.reference_table;
+  }
+
+  // Add max_length for string fields
+  if (['string', 'url', 'email', 'phone_number_e164'].includes(config.internal_type)) {
+    fieldData.max_length = config.max_length || 255;
+  }
+
+  // Add default value if specified
+  if (config.default_value !== undefined) {
+    fieldData.default_value = config.default_value;
+  }
+
+  // Add scope if specified
+  if (config.sys_scope && config.sys_scope !== 'global') {
+    fieldData.sys_scope = config.sys_scope;
+  }
+
+  // Check if field already exists
+  const existingResponse = await client.get('/api/now/table/sys_dictionary', {
+    params: {
+      sysparm_query: `name=${config.table}^element=${config.column_name}`,
+      sysparm_limit: 1
+    }
+  });
+
+  if (existingResponse.data.result && existingResponse.data.result.length > 0) {
+    throw new Error(`Field '${config.column_name}' already exists on table '${config.table}'. Use snow_update to modify it.`);
+  }
+
+  // Create the field
+  const createResponse = await client.post('/api/now/table/sys_dictionary', fieldData);
+  const createdField = createResponse.data.result;
+
+  // Create choice options if specified for choice fields
+  if (config.internal_type === 'choice' && config.choice_options && config.choice_options.length > 0) {
+    const choices: any[] = [];
+
+    for (let i = 0; i < config.choice_options.length; i++) {
+      const option = config.choice_options[i];
+      try {
+        const choiceData: any = {
+          name: config.table,
+          element: config.column_name,
+          label: option.label,
+          value: option.value,
+          sequence: (i + 1) * 10, // 10, 20, 30...
+          inactive: false
+        };
+
+        if (config.sys_scope && config.sys_scope !== 'global') {
+          choiceData.sys_scope = config.sys_scope;
+        }
+
+        const choiceResponse = await client.post('/api/now/table/sys_choice', choiceData);
+        choices.push({
+          sys_id: choiceResponse.data.result.sys_id,
+          label: option.label,
+          value: option.value
+        });
+      } catch (choiceError: any) {
+        // Continue with other choices even if one fails
+        choices.push({
+          error: `Failed to create choice '${option.label}': ${choiceError.message}`
+        });
+      }
+    }
+
+    createdField.choices = choices;
+  }
+
+  return createdField;
 }
 
 /**
