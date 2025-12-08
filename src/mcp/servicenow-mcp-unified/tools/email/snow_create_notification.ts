@@ -39,9 +39,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   const { name, table, condition, recipients, subject, message, active = true } = args;
   try {
     const client = await getAuthenticatedClient(context);
+    // Note: sysevent_email_action table uses 'collection' field, not 'table'
     const notificationData: any = {
       name,
-      table,
+      collection: table,
       condition,
       active
     };
@@ -55,5 +56,5 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = '1.1.0';
+export const author = 'Snow-Flow v8.41.17';

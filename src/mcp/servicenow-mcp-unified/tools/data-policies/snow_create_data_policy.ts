@@ -37,13 +37,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   const { short_description, table, condition, reverse_if_false = true, active = true } = args;
   try {
     const client = await getAuthenticatedClient(context);
+    // Note: sys_data_policy2 table uses 'model_table' and 'conditions' (plural) fields
     const policyData: any = {
       short_description,
-      table,
+      model_table: table,
       reverse_if_false,
       active
     };
-    if (condition) policyData.condition = condition;
+    if (condition) policyData.conditions = condition;
     const response = await client.post('/api/now/table/sys_data_policy2', policyData);
     return createSuccessResult({ created: true, data_policy: response.data.result });
   } catch (error: any) {
@@ -51,5 +52,5 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = '1.1.0';
+export const author = 'Snow-Flow v8.41.17';

@@ -91,9 +91,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
     try {
       // Create REST message via Table API
+      // Note: sys_rest_message table uses 'rest_endpoint' field, not 'endpoint'
       const restMessageData: any = {
         name,
-        endpoint,
+        rest_endpoint: endpoint,
         description,
         use_mid_server,
         authentication_type: authentication
@@ -244,5 +245,5 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = '1.1.0';
+export const author = 'Snow-Flow v8.41.17';
