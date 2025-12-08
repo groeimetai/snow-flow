@@ -102,6 +102,32 @@ registerSessionCommands(program);
 // Register enterprise commands (login, status, portal, logout)
 registerEnterpriseCommands(program);
 
+// Flow deprecation handler - check for flow-related commands
+function checkFlowDeprecation(command: string, objective?: string) {
+  const flowKeywords = ['flow', 'create-flow', 'xml-flow', 'flow-designer'];
+  const isFlowCommand = flowKeywords.some(keyword => command.includes(keyword));
+  const isFlowObjective = objective && objective.toLowerCase().includes('flow') &&
+                         !objective.toLowerCase().includes('workflow') &&
+                         !objective.toLowerCase().includes('data flow') &&
+                         !objective.toLowerCase().includes('snow-flow');
+
+  if (isFlowCommand || isFlowObjective) {
+    console.error('❌ Flow creation has been removed from snow-flow v1.4.0+');
+    console.error('');
+    console.error('Please use ServiceNow Flow Designer directly:');
+    console.error('1. Log into your ServiceNow instance');
+    console.error('2. Navigate to: Flow Designer > Designer');
+    console.error('3. Create flows using the visual interface');
+    console.error('');
+    console.error('Snow-flow continues to support:');
+    console.error('- Widget development');
+    console.error('- Update Set management');
+    console.error('- Table/field discovery');
+    console.error('- General ServiceNow operations');
+    process.exit(1);
+  }
+}
+
 // Agent command - the main orchestration command with EVERYTHING
 // Note: 'swarm' is kept as an alias for backward compatibility
 program
@@ -159,6 +185,9 @@ program
   .option('--debug-servicenow', 'Enable ServiceNow API debugging')
   .option('--debug-all', 'Enable ALL debug output (WARNING: Very verbose!)')
   .action(async (objective: string, options) => {
+    // Check for flow deprecation first
+    checkFlowDeprecation('agent', objective);
+
     // Set debug levels based on options
     if (options.debugAll) {
       process.env.DEBUG = '*';
