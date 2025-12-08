@@ -46,10 +46,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       name,
       collection: table,
       when,
-      insert,
-      update,
-      delete: del,
-      query,
+      action_insert: insert,
+      action_update: update,
+      action_delete: del,
+      action_query: query,
       script,
       active
     };
