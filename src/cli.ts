@@ -52,6 +52,35 @@ dotenv.config();
 // Create CLI logger instance
 const cliLogger = new Logger('cli');
 
+// ASCII Art Banner for Snow-Flow (matching snow-code style)
+function showSnowFlowBanner(): void {
+  // SNOW in dimmed color (same style as snow-code)
+  const snow = chalk.dim(`█▀▀▀ █▀▀▄ █▀▀█ █   █
+▀▀▀█ █  █ █  █ █ █ █
+▀▀▀▀ ▀  ▀ ▀▀▀▀ ▀▀▀▀▀`);
+
+  // FLOW in blue (matching the CODE style from snow-code)
+  const flow = chalk.blue(`  █▀▀▀ █    █▀▀█ █   █
+  █▀▀▀ █    █  █ █ █ █
+  ▀    ▀▀▀▀ ▀▀▀▀ ▀▀▀▀▀`);
+
+  // Combine side by side
+  const snowLines = snow.split('\n');
+  const flowLines = flow.split('\n');
+
+  console.log('');
+  for (let i = 0; i < snowLines.length; i++) {
+    console.log(snowLines[i] + flowLines[i]);
+  }
+
+  // Version right-aligned under the logo
+  const versionText = `v${VERSION}`;
+  const totalWidth = 45;
+  const padding = ' '.repeat(Math.max(0, totalWidth - versionText.length));
+  console.log(chalk.dim(padding + versionText));
+  console.log('');
+}
+
 // Helper function to fix binary permissions (critical for containers/codespaces)
 function fixSnowCodeBinaryPermissions(): void {
   try {
@@ -236,12 +265,13 @@ program
       }
     }
 
-    // Show clean intro for non-verbose mode
+    // Show ASCII art banner for snow-flow agent command
+    showSnowFlowBanner();
+
+    // Show objective
     if (!options.verbose) {
-      prompts.intro(chalk.blue.bold(`🚀 Snow-Flow v${VERSION}`));
       prompts.log.message(chalk.dim(objective));
     } else {
-      cliLogger.info(`\n🚀 Snow-Flow v${VERSION}`);
       console.log(chalk.blue(`📋 ${objective}`));
     }
 

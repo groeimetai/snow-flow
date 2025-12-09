@@ -72,6 +72,7 @@ export const toolDefinition: MCPToolDefinition = {
       client_script: { type: 'string', description: 'Client-side script' },
       css: { type: 'string', description: 'CSS stylesheet (for widgets)' },
       option_schema: { type: 'string', description: 'Option schema JSON (for widgets)' },
+      data_table_enabled: { type: 'boolean', description: 'Enable widget preview/data table mode (for widgets). Default: true', default: true },
 
       // Script Include fields
       script: { type: 'string', description: 'Script content (for script includes, business rules, etc.)' },
@@ -180,6 +181,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     client_script,
     css,
     option_schema,
+    data_table_enabled = true,
     script,
     api_name,
     table,
@@ -333,6 +335,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           client_script: client_script || '',
           css: css || '',
           option_schema: option_schema || '',
+          data_table_enabled,
           sys_scope: resolvedScopeId
         });
         tableName = 'sp_widget';
@@ -572,7 +575,8 @@ async function createServicePortalWidget(client: any, config: any) {
     script: config.script || '',
     client_script: config.client_script || '',
     css: config.css || '',
-    option_schema: config.option_schema || ''
+    option_schema: config.option_schema || '',
+    data_table: config.data_table_enabled !== false // Default to true - ServiceNow field is 'data_table'
   };
 
   // Add scope if specified
