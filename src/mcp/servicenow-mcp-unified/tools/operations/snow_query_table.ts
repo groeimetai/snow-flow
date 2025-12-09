@@ -9,6 +9,42 @@ import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/t
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
 
+// Fields that typically contain large content and should be truncated
+const LARGE_CONTENT_FIELDS = [
+  'template', 'script', 'server_script', 'client_script', 'css', 'html',
+  'xml', 'json', 'payload', 'body', 'content', 'description', 'comments',
+  'work_notes', 'additional_comments', 'close_notes', 'resolution_notes',
+  'instructions', 'short_description', 'long_description'
+];
+
+// Maximum length for field values before truncation
+const MAX_FIELD_LENGTH = 200;
+
+/**
+ * Truncate large field values in records for cleaner output
+ */
+function truncateRecords(records: any[], truncate: boolean): any[] {
+  if (!truncate) return records;
+
+  return records.map(record => {
+    const truncated: any = {};
+    for (const [key, value] of Object.entries(record)) {
+      if (typeof value === 'string' && value.length > MAX_FIELD_LENGTH) {
+        // Check if it's a known large content field or just a long string
+        const isLargeField = LARGE_CONTENT_FIELDS.some(f => key.toLowerCase().includes(f));
+        if (isLargeField || value.length > MAX_FIELD_LENGTH * 2) {
+          truncated[key] = value.substring(0, MAX_FIELD_LENGTH) + `... [truncated, ${value.length} chars total]`;
+        } else {
+          truncated[key] = value;
+        }
+      } else {
+        truncated[key] = value;
+      }
+    }
+    return truncated;
+  });
+}
+
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_query_table',
   description: 'Query any ServiceNow table with filtering, pagination, and field selection',
@@ -62,6 +98,11 @@ export const toolDefinition: MCPToolDefinition = {
         type: 'boolean',
         description: 'Return display values instead of sys_ids for reference fields',
         default: false
+      },
+      truncate_output: {
+        type: 'boolean',
+        description: 'Truncate large field values (scripts, templates, etc.) for cleaner output',
+        default: true
       }
     },
     required: ['table']
@@ -76,7 +117,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     limit = 100,
     offset = 0,
     order_by,
-    display_value = false
+    display_value = false,
+    truncate_output = true
   } = args;
 
   try {
@@ -110,14 +152,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Execute query
     const response = await client.get(`/api/now/table/${table}`, { params });
 
-    const records = response.data.result;
+    const rawRecords = response.data.result;
+    const records = truncateRecords(rawRecords, truncate_output);
 
     return createSuccessResult(
       {
         records,
         count: records.length,
         total: records.length < limit ? records.length : '100+', // Actual total requires additional query
-        has_more: records.length === limit
+        has_more: records.length === limit,
+        truncated: truncate_output
       },
       {
         table,
