@@ -286,37 +286,20 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       }
     }
 
-    // ES5 validation for server scripts
+    // ES5 validation for server scripts (warning only, does not block creation)
+    const es5Warnings: string[] = [];
     if (validate_es5 && server_script) {
       const es5Validation = validateES5Syntax(server_script);
       if (!es5Validation.valid) {
-        throw new SnowFlowError(
-          ErrorType.ES5_SYNTAX_ERROR,
-          'Server script contains non-ES5 syntax',
-          {
-            retryable: false,
-            details: {
-              violations: es5Validation.violations
-            }
-          }
-        );
+        es5Warnings.push(`Server script contains ES6+ syntax (${es5Validation.violations.map((v: any) => v.type).join(', ')}). This may cause issues in some ServiceNow widgets. Consider using ES5 syntax for maximum compatibility.`);
       }
     }
 
-    // ES5 validation for regular scripts
+    // ES5 validation for regular scripts (warning only, does not block creation)
     if (validate_es5 && script) {
       const es5Validation = validateES5Syntax(script);
       if (!es5Validation.valid) {
-        throw new SnowFlowError(
-          ErrorType.ES5_SYNTAX_ERROR,
-          'Script contains non-ES5 syntax',
-          {
-            retryable: false,
-            details: {
-              violations: es5Validation.violations
-            }
-          }
-        );
+        es5Warnings.push(`Script contains ES6+ syntax (${es5Validation.violations.map((v: any) => v.type).join(', ')}). This may cause issues in some ServiceNow contexts. Consider using ES5 syntax for maximum compatibility.`);
       }
     }
 
@@ -540,7 +523,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         throw new Error(`Unsupported artifact type: ${type}`);
     }
 
-    return createSuccessResult({
+    const successData: any = {
       created: true,
       sys_id: result.sys_id,
       name: result.name || name,
@@ -552,7 +535,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         scope: resolvedScopePrefix
       } : null,
       url: `${context.instanceUrl}/nav_to.do?uri=${tableName}.do?sys_id=${result.sys_id}`
-    });
+    };
+
+    // Add ES5 warnings if any (non-blocking, informational only)
+    if (es5Warnings.length > 0) {
+      successData.warnings = es5Warnings;
+    }
+
+    return createSuccessResult(successData);
 
   } catch (error: any) {
     return createErrorResult(

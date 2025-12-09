@@ -94,22 +94,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     runAsUser
   } = args;
 
+  // ES5 validation (warning only, does not block execution)
+  const es5Warnings: string[] = [];
+
   try {
-    // ES5 validation
     if (validate_es5) {
       const es5Validation = validateES5(script);
       if (!es5Validation.valid) {
-        throw new SnowFlowError(
-          ErrorType.ES5_SYNTAX_ERROR,
-          'Script contains non-ES5 syntax',
-          {
-            retryable: false,
-            details: {
-              violations: es5Validation.violations,
-              message: 'ServiceNow uses Rhino engine - ES6+ syntax will fail'
-            }
-          }
-        );
+        es5Warnings.push(`Script contains ES6+ syntax (${es5Validation.violations.map((v: any) => v.type).join(', ')}). This may cause runtime errors in ServiceNow's Rhino engine. Consider using ES5 syntax.`);
       }
     }
 
@@ -148,7 +140,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       description,
       timeout,
       securityAnalysis,
-      autoConfirm
+      autoConfirm,
+      es5Warnings
     }, context);
 
   } catch (error: any) {
@@ -167,10 +160,11 @@ async function executeScript(
     timeout: number;
     securityAnalysis: any;
     autoConfirm: boolean;
+    es5Warnings: string[];
   },
   context: ServiceNowContext
 ): Promise<ToolResult> {
-  const { script, description, timeout, securityAnalysis, autoConfirm } = params;
+  const { script, description, timeout, securityAnalysis, autoConfirm, es5Warnings } = params;
 
   const client = await getAuthenticatedClient(context);
 
@@ -367,7 +361,7 @@ gs.info('${outputMarker}:DONE');
       success: result.success
     };
 
-    return createSuccessResult({
+    const successData: any = {
       executed: true,
       success: result.success,
       result: result.result,
@@ -378,14 +372,21 @@ gs.info('${outputMarker}:DONE');
       execution_id: executionId,
       auto_confirmed: autoConfirm,
       security_analysis: securityAnalysis
-    }, {
+    };
+
+    // Add ES5 warnings if any (non-blocking, informational only)
+    if (es5Warnings.length > 0) {
+      successData.warnings = es5Warnings;
+    }
+
+    return createSuccessResult(successData, {
       script_length: params.script.length,
       method: 'sysauto_script_with_trigger',
       description
     });
   } else {
     // Script was saved but execution couldn't be confirmed
-    return createSuccessResult({
+    const pendingData: any = {
       executed: false,
       execution_id: executionId,
       scheduled_job_sys_id: jobSysId,
@@ -393,7 +394,14 @@ gs.info('${outputMarker}:DONE');
       security_analysis: securityAnalysis,
       message: 'Script was saved as scheduled job but automatic execution could not be confirmed. The sys_trigger may not have been created (permissions) or the scheduler has not yet picked it up.',
       action_required: `Navigate to System Scheduler > Scheduled Jobs and run: ${jobName}`
-    }, {
+    };
+
+    // Add ES5 warnings if any (non-blocking, informational only)
+    if (es5Warnings.length > 0) {
+      pendingData.warnings = es5Warnings;
+    }
+
+    return createSuccessResult(pendingData, {
       script_length: params.script.length,
       method: 'scheduled_job_pending',
       description

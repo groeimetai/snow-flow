@@ -83,20 +83,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   try {
     const client = await getAuthenticatedClient(context);
 
-    // Validate ES5 compliance if requested
+    // Validate ES5 compliance if requested (warning only, does not block creation)
+    const es5Warnings: string[] = [];
     if (validate_es5) {
       const es5Violations = detectES5Violations(script);
       if (es5Violations.length > 0) {
-        throw new SnowFlowError(
-          ErrorType.ES5_SYNTAX_ERROR,
-          'Script contains ES6+ syntax not supported in ServiceNow',
-          {
-            details: {
-              violations: es5Violations,
-              message: 'Convert to ES5 before creating Script Include'
-            }
-          }
-        );
+        es5Warnings.push(`Script contains ES6+ syntax (${es5Violations.map((v: any) => v.type).join(', ')}). This may cause issues in some ServiceNow contexts. Consider using ES5 syntax for maximum compatibility.`);
       }
     }
 
@@ -129,7 +121,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const response = await client.post('/api/now/table/sys_script_include', scriptIncludeData);
     const scriptInclude = response.data.result;
 
-    return createSuccessResult({
+    const successData: any = {
       created: true,
       script_include: {
         sys_id: scriptInclude.sys_id,
@@ -147,7 +139,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         : {
             server: `var helper = new ${name}();\nvar result = helper.methodName();`
           }
-    });
+    };
+
+    // Add ES5 warnings if any (non-blocking, informational only)
+    if (es5Warnings.length > 0) {
+      successData.warnings = es5Warnings;
+    }
+
+    return createSuccessResult(successData);
 
   } catch (error: any) {
     return createErrorResult(
@@ -158,17 +157,27 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
 function detectES5Violations(code: string): any[] {
   const violations: any[] = [];
+
+  // Remove strings and comments before analyzing to avoid false positives
+  const codeWithoutStrings = code
+    .replace(/'[^'\\]*(?:\\.[^'\\]*)*'/g, '""')  // Single-quoted strings
+    .replace(/"[^"\\]*(?:\\.[^"\\]*)*"/g, '""')  // Double-quoted strings
+    .replace(/\/\/[^\n]*/g, '')                   // Single-line comments
+    .replace(/\/\*[\s\S]*?\*\//g, '');            // Multi-line comments
+
   const patterns = [
     { regex: /\bconst\s+/g, type: 'const' },
     { regex: /\blet\s+/g, type: 'let' },
     { regex: /=>\s*{|=>\s*\(/g, type: 'arrow_function' },
-    { regex: /`[^`]*`/g, type: 'template_literal' },
-    { regex: /\.\.\./g, type: 'spread' },
+    { regex: /`[^`]*`/g, type: 'template_literal', checkOriginal: true },
+    { regex: /\.\.\.[\w\[]/g, type: 'spread' },  // Spread must be followed by identifier or [
     { regex: /class\s+\w+/g, type: 'class' }
   ];
 
-  patterns.forEach(({ regex, type }) => {
-    const matches = code.match(regex);
+  patterns.forEach(({ regex, type, checkOriginal }) => {
+    // For template literals, check original code (they might be in strings)
+    const codeToCheck = checkOriginal ? code : codeWithoutStrings;
+    const matches = codeToCheck.match(regex);
     if (matches) {
       violations.push({ type, count: matches.length });
     }

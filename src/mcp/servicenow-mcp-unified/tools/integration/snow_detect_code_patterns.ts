@@ -74,23 +74,32 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
     // ES5 Compliance Check
     if (check_es5) {
+      // Remove strings and comments before analyzing to avoid false positives
+      const codeWithoutStrings = code
+        .replace(/'[^'\\]*(?:\\.[^'\\]*)*'/g, '""')  // Single-quoted strings
+        .replace(/"[^"\\]*(?:\\.[^"\\]*)*"/g, '""')  // Double-quoted strings
+        .replace(/\/\/[^\n]*/g, '')                   // Single-line comments
+        .replace(/\/\*[\s\S]*?\*\//g, '');            // Multi-line comments
+
       const es5Patterns = [
         { regex: /\bconst\s+/g, type: 'const', message: 'Use var instead of const' },
         { regex: /\blet\s+/g, type: 'let', message: 'Use var instead of let' },
         { regex: /=>\s*{|=>\s*\(/g, type: 'arrow_function', message: 'Use function() {} instead of arrow functions' },
-        { regex: /`[^`]*`/g, type: 'template_literal', message: 'Use string concatenation instead of template literals' },
-        { regex: /\.\.\./g, type: 'spread', message: 'Spread operator not supported in ES5' },
+        { regex: /`[^`]*`/g, type: 'template_literal', message: 'Use string concatenation instead of template literals', checkOriginal: true },
+        { regex: /\.\.\.[\w\[]/g, type: 'spread', message: 'Spread operator not supported in ES5' },  // Improved: must be followed by identifier
         { regex: /class\s+\w+/g, type: 'class', message: 'Use function constructors instead of classes' }
       ];
 
-      es5Patterns.forEach(pattern => {
-        const matches = code.match(pattern.regex);
+      es5Patterns.forEach((pattern: any) => {
+        // For template literals, check original code
+        const codeToCheck = pattern.checkOriginal ? code : codeWithoutStrings;
+        const matches = codeToCheck.match(pattern.regex);
         if (matches) {
           patterns.es5_violations.push({
             type: pattern.type,
             count: matches.length,
             message: pattern.message,
-            severity: 'error'
+            severity: 'warning'  // Changed from 'error' to 'warning' - ES6 often works
           });
         }
       });

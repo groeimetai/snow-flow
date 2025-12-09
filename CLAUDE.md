@@ -224,31 +224,37 @@ console.log(`View Update Set: ${url}`);
 
 ---
 
-## 🚫 ES5 ONLY - CRITICAL! ServiceNow Uses Rhino!
+## 🟡 ES5 Recommended - ServiceNow Compatibility
 
-**⚠️ THIS IS NON-NEGOTIABLE - ServiceNow WILL CRASH with ES6+ syntax!**
+**ℹ️ ServiceNow officially uses Rhino engine (ES5), but ES6+ often works in practice.**
 
-ServiceNow server-side JavaScript runs on Mozilla Rhino engine (2009). Rhino ONLY supports ES5 - any ES6+ syntax causes **SyntaxError at runtime**.
+ServiceNow server-side JavaScript officially runs on Mozilla Rhino engine (2009) which only supports ES5. However, in practice, many ES6+ features work fine in modern ServiceNow instances. The tools will show **warnings** (not errors) when ES6+ syntax is detected.
 
-### ES6+ Features That CRASH ServiceNow:
+### Debugging Approach for ES5/ES6 Issues
+
+When a script fails and ES6+ syntax might be the cause:
+
+1. **Check if error mentions "SyntaxError"** - this suggests ES5 compatibility issue
+2. **Use `snow_convert_es6_to_es5`** tool to convert problematic code
+3. **Test incrementally** - convert one feature at a time to isolate the issue
+
+### ES6+ Features That MAY Cause Issues:
 
 ```javascript
-// ❌ ALL OF THESE FAIL IN SERVICENOW:
-const data = [];                    // SyntaxError
-let items = [];                     // SyntaxError
-const fn = () => {};                // SyntaxError
-var msg = `Hello ${name}`;          // SyntaxError
-for (let item of items) {}          // SyntaxError
-var {name, id} = user;              // SyntaxError
-array.map(x => x.id);               // SyntaxError
-function test(p = 'default') {}     // SyntaxError
-class MyClass {}                    // SyntaxError
+// ⚠️ THESE MAY CAUSE ISSUES IN SOME SERVICENOW CONTEXTS:
+const data = [];                    // May fail in older instances
+let items = [];                     // May fail in older instances
+const fn = () => {};                // Arrow functions - risky
+var msg = `Hello ${name}`;          // Template literals - risky
+for (let item of items) {}          // for...of - risky
+var {name, id} = user;              // Destructuring - risky
+class MyClass {}                    // Classes - usually fails
 ```
 
-### ES5 Code That WORKS:
+### ES5 Code That ALWAYS Works:
 
 ```javascript
-// ✅ CORRECT ES5 SYNTAX:
+// ✅ SAFE ES5 SYNTAX:
 var data = [];
 var items = [];
 function fn() { return 'result'; }
@@ -266,7 +272,7 @@ function test(p) {
 
 ### Quick ES5 Conversion Table
 
-| ES6+ (CRASHES ServiceNow)       | ES5 (WORKS)                                      |
+| ES6+ (May cause issues)         | ES5 (Always works)                               |
 |---------------------------------|--------------------------------------------------|
 | `const x = 5;`                  | `var x = 5;`                                     |
 | `let items = [];`               | `var items = [];`                                |
@@ -278,9 +284,10 @@ function test(p) {
 | `arr.map(x => x.id)`            | `arr.map(function(x) { return x.id; })`          |
 
 **Your Responsibility:**
-- **ALWAYS validate** ServiceNow scripts for ES5 compliance before deploying
-- **Convert ES6+ to ES5** when users provide modern JavaScript
-- **Explain** why ES5 is required when users question it
+- **Be aware** that ES6+ may cause issues in some ServiceNow contexts
+- **When debugging runtime errors**, try converting ES6+ to ES5 as a troubleshooting step
+- **Use `snow_convert_es6_to_es5`** tool when you need to convert code
+- **Don't block deployments** just because of ES6+ warnings - let users test first
 
 ---
 

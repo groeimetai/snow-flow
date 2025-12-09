@@ -153,29 +153,27 @@ await snow_update_set_manage({
 
 ### ServiceNow Architecture (What You Must Know)
 
-**1. ServiceNow Runs on Rhino (ES5 JavaScript ONLY!)**
+**1. ServiceNow Runs on Rhino (ES5 Recommended)**
 
-**This is CRITICAL and NON-NEGOTIABLE:**
-- ServiceNow server-side JavaScript = Mozilla Rhino engine (2009 technology)
-- Rhino ONLY supports ES5 - any ES6+ syntax will cause **SyntaxError at runtime**
+**ℹ️ ServiceNow officially uses Rhino engine (ES5), but ES6+ often works in practice.**
 
-**ES6+ Features That WILL CRASH ServiceNow:**
+ServiceNow server-side JavaScript officially runs on Mozilla Rhino engine (2009) which supports ES5. However, **in practice, many ES6+ features work fine** in modern ServiceNow instances. The tools will show **warnings** (not errors) when ES6+ syntax is detected.
+
+**ES6+ Features That MAY Cause Issues:**
 \`\`\`javascript
-// ❌ ALL OF THESE FAIL IN SERVICENOW:
-const data = [];                    // SyntaxError: missing ; after for-loop initializer
-let items = [];                     // SyntaxError: missing ; after for-loop initializer
-const fn = () => {};                // SyntaxError: syntax error
-var msg = \\\`Hello \${name}\\\`;         // SyntaxError: syntax error
-for (let item of items) {}          // SyntaxError: missing ; after for-loop initializer
-var {name, id} = user;              // SyntaxError: destructuring not supported
-array.map(x => x.id);               // SyntaxError: syntax error
-function test(p = 'default') {}     // SyntaxError: syntax error
-class MyClass {}                    // SyntaxError: missing ; after for-loop initializer
+// ⚠️ THESE MAY CAUSE ISSUES IN SOME SERVICENOW CONTEXTS:
+const data = [];                    // Usually works, but may fail in older instances
+let items = [];                     // Usually works, but may fail in older instances
+const fn = () => {};                // Arrow functions - may cause issues
+var msg = \\\`Hello \${name}\\\`;         // Template literals - may cause issues
+for (let item of items) {}          // for...of - may cause issues
+var {name, id} = user;              // Destructuring - may cause issues
+class MyClass {}                    // Classes - often fails
 \`\`\`
 
-**ES5 Code That WORKS:**
+**ES5 Code That ALWAYS Works:**
 \`\`\`javascript
-// ✅ CORRECT ES5 SYNTAX:
+// ✅ SAFE ES5 SYNTAX:
 var data = [];
 var items = [];
 function fn() { return 'result'; }
@@ -197,9 +195,10 @@ function test(p) {
 \`\`\`
 
 **Your Responsibility:**
-- **ALWAYS validate** ServiceNow scripts for ES5 compliance before suggesting/deploying
-- **Convert ES6+ to ES5** when users provide modern JavaScript
-- **Explain** why ES5 is required (Rhino engine) when users question it
+- **Be aware** that ES6+ may cause issues in some ServiceNow contexts
+- **When debugging runtime errors**, try converting ES6+ to ES5 as a troubleshooting step
+- **Use \`snow_convert_es6_to_es5\`** tool when you need to convert code
+- **Don't block deployments** just because of ES6+ warnings - let users test first
 
 **2. Update Sets Track ALL Changes**
 
@@ -825,9 +824,11 @@ await snow_update_set_manage({ action: 'complete', update_set_id: us.sys_id });
 | Create ATF test | \`snow_create_atf_test\` | TDD for complex features |
 | Run ATF test | \`snow_execute_atf_test\` | Execute and validate |
 
-### ES5 Quick Conversion
+### ES5 Conversion Guide (For Debugging)
 
-| ES6+ (BREAKS ServiceNow) | ES5 (WORKS) |
+When you encounter SyntaxErrors, try converting ES6+ to ES5:
+
+| ES6+ (May cause issues) | ES5 (Always works) |
 |-------------------------|-------------|
 | \`const x = 5;\` | \`var x = 5;\` |
 | \`let items = [];\` | \`var items = [];\` |
@@ -836,6 +837,8 @@ await snow_update_set_manage({ action: 'complete', update_set_id: us.sys_id });
 | \`{a, b} = obj\` | \`var a = obj.a; var b = obj.b;\` |
 | \`for (x of arr)\` | \`for (var i = 0; i < arr.length; i++)\` |
 | \`fn(x = 'default')\` | \`if (typeof x === 'undefined') x = 'default';\` |
+
+**Tip:** Use \`snow_convert_es6_to_es5\` tool for automatic conversion when debugging.
 
 ---
 
@@ -923,4 +926,4 @@ Your process:
 **Now go build amazing ServiceNow solutions! 🚀**
 `;
 
-export const CLAUDE_MD_TEMPLATE_VERSION = '9.4.0-TDD-ATF';
+export const CLAUDE_MD_TEMPLATE_VERSION = '9.5.0-ES5-SOFT-WARNINGS';

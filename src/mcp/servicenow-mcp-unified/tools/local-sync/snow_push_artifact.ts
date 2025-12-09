@@ -60,18 +60,17 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Detect artifact type from directory structure
     const { table, artifact } = await loadArtifactFromDirectory(directory);
 
+    // Validation results (warnings only, don't block)
+    const validationWarnings: string[] = [];
+
     // Validate if requested
     if (validate && !force) {
       if (table === 'sp_widget') {
-        // ES5 validation
+        // ES5 validation (warning only, does not block push)
         if (artifact.script) {
           const es5Check = validateES5(artifact.script);
           if (!es5Check.valid) {
-            throw new SnowFlowError(
-              ErrorType.ES5_SYNTAX_ERROR,
-              'Server script contains non-ES5 syntax',
-              { details: { violations: es5Check.violations } }
-            );
+            validationWarnings.push(`Server script contains ES6+ syntax (${es5Check.violations.map((v: any) => v.type).join(', ')}). This may cause issues in ServiceNow's Rhino engine.`);
           }
         }
 
@@ -93,13 +92,20 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Push to ServiceNow
     const updateResponse = await client.put(`/api/now/table/${table}/${sys_id}`, artifact);
 
-    return createSuccessResult({
+    const successData: any = {
       updated: true,
       sys_id,
       table,
       artifact: updateResponse.data.result,
-      validation: validate ? 'passed' : 'skipped'
-    });
+      validation: validate ? (validationWarnings.length > 0 ? 'passed_with_warnings' : 'passed') : 'skipped'
+    };
+
+    // Add validation warnings if any (non-blocking, informational only)
+    if (validationWarnings.length > 0) {
+      successData.warnings = validationWarnings;
+    }
+
+    return createSuccessResult(successData);
 
   } catch (error: any) {
     return createErrorResult(

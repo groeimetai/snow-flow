@@ -54,23 +54,24 @@ const cliLogger = new Logger('cli');
 
 // ASCII Art Banner for Snow-Flow (matching snow-code style)
 function showSnowFlowBanner(): void {
-  // SNOW in dimmed color (same style as snow-code)
-  const snow = chalk.dim(`█▀▀▀ █▀▀▄ █▀▀█ █   █
-▀▀▀█ █  █ █  █ █ █ █
-▀▀▀▀ ▀  ▀ ▀▀▀▀ ▀▀▀▀▀`);
+  // SNOW lines (raw, will be styled per-line)
+  const snowLines = [
+    '█▀▀▀ █▀▀▄ █▀▀█ █   █',
+    '▀▀▀█ █  █ █  █ █ █ █',
+    '▀▀▀▀ ▀  ▀ ▀▀▀▀ ▀▀▀▀▀'
+  ];
 
-  // FLOW in blue (matching the CODE style from snow-code)
-  const flow = chalk.blue(`  █▀▀▀ █    █▀▀█ █   █
-  █▀▀▀ █    █  █ █ █ █
-  ▀    ▀▀▀▀ ▀▀▀▀ ▀▀▀▀▀`);
+  // FLOW lines (raw, will be styled per-line)
+  const flowLines = [
+    '  █▀▀▀ █    █▀▀█ █   █',
+    '  █▀▀▀ █    █  █ █ █ █',
+    '  ▀    ▀▀▀▀ ▀▀▀▀ ▀▀▀▀▀'
+  ];
 
-  // Combine side by side
-  const snowLines = snow.split('\n');
-  const flowLines = flow.split('\n');
-
+  // Combine side by side with chalk applied PER LINE (fixes color escape code issue)
   console.log('');
   for (let i = 0; i < snowLines.length; i++) {
-    console.log(snowLines[i] + flowLines[i]);
+    console.log(chalk.dim(snowLines[i]) + chalk.blue(flowLines[i]));
   }
 
   // Version right-aligned under the logo
