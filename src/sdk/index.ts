@@ -1,20 +1,11 @@
 /**
- * Snow-Flow Claude Agent SDK Integration
+ * Snow-Flow SDK
  * @module sdk
  *
- * Exports the SDK-based architecture:
- * - ClaudeAgentSDKIntegration: Replaces RealAgentSpawner (701 lines → SDK)
+ * Note: The ClaudeAgentSDKIntegration was removed as it was unused.
+ * Snow-code handles all LLM conversation management.
+ * Snow-flow provides MCP servers for ServiceNow integration.
  */
 
-export { ClaudeAgentSDKIntegration } from './claude-agent-sdk-integration.js';
-export type { SnowFlowAgentConfig, AgentExecutionResult, AgentType } from './claude-agent-sdk-integration.js';
-
-// Re-export SDK types for convenience
-export type {
-  AgentDefinition,
-  Options,
-  SDKMessage,
-  Query,
-  HookInput,
-  HookCallback
-} from '@anthropic-ai/claude-agent-sdk';
+// This module is kept for potential future SDK integrations
+// Currently empty as snow-code handles LLM management
