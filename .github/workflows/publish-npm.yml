@@ -3,14 +3,12 @@ name: Publish to npm
 on:
   push:
     tags:
-      - 'v*.*.*'  # Trigger on version tags (v8.31.22, etc.)
+      - 'v*'  # Triggers on version tags like v8.41.24
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # Required for creating GitHub releases
-      id-token: write  # Required for npm provenance
 
     steps:
       - name: Checkout code
@@ -25,26 +23,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build package
-        run: npm run build || true  # Continue even if there are TS errors
+      - name: Build
+        run: npm run build
+
+      - name: Extract version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Publishing version: $VERSION"
+
+      - name: Verify version matches package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if [ "$VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "Tag version ($VERSION) does not match package.json version ($PACKAGE_VERSION)"
+            echo "Updating package.json to match tag..."
+            npm version $VERSION --no-git-tag-version --allow-same-version
+          fi
 
       - name: Publish to npm
-        run: npm publish --access public --provenance
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
-          body: |
-            ## What's Changed
-
-            Published to npm: https://www.npmjs.com/package/snow-flow/v/${{ github.ref_name }}
-
-            Install with:
-            ```bash
-            npm install -g snow-flow@${{ github.ref_name }}
-            ```
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
