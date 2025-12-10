@@ -9,7 +9,7 @@
  * - Background updates don't block swarm startup
  */
 
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import os from 'os';
@@ -133,6 +133,7 @@ async function getLatestVersionAsync(packageName: string): Promise<string | null
 
 /**
  * Get currently installed version of a package (sync but fast - just reads local file)
+ * @deprecated Use getUsedSnowCodeVersion() instead for checking the actual binary version
  */
 function getInstalledVersion(packageName: string, targetDir?: string): string | null {
   try {
@@ -151,7 +152,45 @@ function getInstalledVersion(packageName: string, targetDir?: string): string | 
 }
 
 /**
+ * Get the version of the snow-code binary that is actually used by spawn()
+ * This checks the GLOBAL installation in PATH, not local node_modules
+ *
+ * CRITICAL: spawn('snow-code', ...) uses PATH lookup, so we need to check
+ * the version of the binary that will actually be executed.
+ */
+function getUsedSnowCodeVersion(): string | null {
+  try {
+    const version = execSync('snow-code --version', {
+      encoding: 'utf8',
+      timeout: 5000,
+      stdio: ['pipe', 'pipe', 'ignore'] // Suppress stderr
+    }).trim();
+    return version || null;
+  } catch (error) {
+    logger.debug('Could not get snow-code version from PATH:', error);
+    return null;
+  }
+}
+
+/**
+ * Check if snow-code is installed globally (in PATH)
+ */
+function isSnowCodeInPath(): boolean {
+  try {
+    execSync('which snow-code', {
+      encoding: 'utf8',
+      timeout: 2000,
+      stdio: ['pipe', 'pipe', 'ignore']
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Run npm install in background (ASYNC - non-blocking)
+ * For global installs, uses --force to handle ENOTEMPTY errors
  */
 function runNpmInstallAsync(
   packageName: string,
@@ -159,8 +198,9 @@ function runNpmInstallAsync(
   targetDir?: string
 ): Promise<boolean> {
   return new Promise((resolve) => {
+    // Use --force for global installs to handle ENOTEMPTY and other directory issues
     const args = global
-      ? ['install', '-g', `${packageName}@latest`, '--silent', '--no-audit', '--no-fund']
+      ? ['install', '-g', `${packageName}@latest`, '--force', '--silent', '--no-audit', '--no-fund']
       : ['install', `${packageName}@latest`, '--silent', '--no-audit', '--no-fund'];
 
     const npmProcess = spawn('npm', args, {
@@ -181,6 +221,10 @@ function runNpmInstallAsync(
 /**
  * Quick check if update is needed using cache
  * Returns immediately if cache is valid
+ *
+ * IMPORTANT: This now checks the GLOBAL snow-code binary version (from PATH),
+ * not the local node_modules version. This is because spawn('snow-code', ...)
+ * uses PATH lookup and executes the global binary.
  */
 export async function checkForUpdatesWithCache(): Promise<{
   updateAvailable: boolean;
@@ -202,8 +246,10 @@ export async function checkForUpdatesWithCache(): Promise<{
     };
   }
 
-  // Cache miss or expired - check npm (async)
-  const currentVersion = getInstalledVersion(packageName);
+  // Cache miss or expired - check versions
+  // CRITICAL FIX: Use getUsedSnowCodeVersion() to check the GLOBAL binary,
+  // not getInstalledVersion() which only checks local node_modules
+  const currentVersion = getUsedSnowCodeVersion();
   const latestVersion = await getLatestVersionAsync(packageName);
 
   const updateAvailable = currentVersion !== null &&
@@ -231,6 +277,9 @@ export async function checkForUpdatesWithCache(): Promise<{
  * - Returns immediately if cache is valid and no update needed
  * - Triggers background update if needed (non-blocking)
  * - Never blocks the main thread
+ *
+ * CRITICAL FIX: Now updates the GLOBAL installation (npm install -g)
+ * because spawn('snow-code', ...) uses the global binary from PATH.
  */
 export async function autoUpdateSnowCode(
   targetDir?: string,
@@ -261,29 +310,29 @@ export async function autoUpdateSnowCode(
       return result;
     }
 
-    // Update available - trigger background install (non-blocking)
-    if (verbose) {
-      logger.info(`🔄 Updating snow-code v${versionInfo.currentVersion} → v${versionInfo.latestVersion} (background)...`);
-    }
+    // Update available - notify user and trigger background install
+    // Always show update notification to user (not just in verbose mode)
+    console.log(`\n⚡ snow-code update available: v${versionInfo.currentVersion} → v${versionInfo.latestVersion}`);
+    console.log('   Updating in background...\n');
 
-    // Fire and forget - these run in background
-    runNpmInstallAsync('@groeimetai/snow-code', true, targetDir);
-    runNpmInstallAsync('@groeimetai/snow-code', false, targetDir);
+    // CRITICAL FIX: Update the GLOBAL installation
+    // spawn('snow-code', ...) uses PATH lookup, so we need to update globally
+    runNpmInstallAsync('@groeimetai/snow-code', true); // global = true
 
-    // Update current platform binary only (not all platforms)
+    // Also update the global platform-specific binary
     const platform = process.platform;
     const arch = process.arch;
     const currentPlatformPackage = `@groeimetai/snow-code-${platform}-${arch}`;
 
     if (BINARY_PACKAGES.includes(currentPlatformPackage)) {
-      runNpmInstallAsync(currentPlatformPackage, false, targetDir);
+      runNpmInstallAsync(currentPlatformPackage, true); // global = true
       result.binaryPackagesUpdated = 1;
     }
 
     result.mainPackageUpdated = true;
 
     if (verbose) {
-      logger.info('✓ Update started in background (non-blocking)');
+      logger.info('✓ Global update started in background (non-blocking)');
     }
 
     return result;
