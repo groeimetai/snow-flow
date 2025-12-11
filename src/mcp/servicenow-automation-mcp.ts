@@ -340,12 +340,12 @@ class ServiceNowAutomationMCP {
           }
         },
         {
-          name: 'snow_execute_script_with_output',
-          description: 'Executes a background script and retrieves the actual output. ⚠️ CRITICAL: Script MUST be ES5-only (Rhino engine) - no const/let/arrows/templates!',
+          name: 'snow_schedule_script_with_output',
+          description: '⚠️ DEPRECATED - Use snow_schedule_script_job instead. SCHEDULES (not executes directly) a script via scheduled job. May return executed=false. ES5 only!',
           inputSchema: {
             type: 'object',
             properties: {
-              script: { type: 'string', description: '🚨 ES5 ONLY! Use var, function(){}, string+concatenation. JavaScript code to execute on ServiceNow server.' },
+              script: { type: 'string', description: '🚨 ES5 ONLY! Use var, function(){}, string+concatenation. JavaScript code to schedule.' },
               return_output: { type: 'boolean', description: 'Return script output', default: true },
               max_wait: { type: 'number', description: 'Maximum wait time in milliseconds', default: 5000 },
               capture_logs: { type: 'boolean', description: 'Capture system logs during execution', default: true }
@@ -365,12 +365,12 @@ class ServiceNowAutomationMCP {
           }
         },
         {
-          name: 'snow_execute_script_sync',
-          description: 'Synchronously executes a script and waits for the result. ⚠️ CRITICAL: Script MUST be ES5-only (Rhino engine)!',
+          name: 'snow_schedule_script_sync',
+          description: '⚠️ DEPRECATED - Use snow_schedule_script_job instead. SCHEDULES (not sync executes) a script via scheduled job. The "sync" name is misleading - this still uses async scheduling. ES5 only!',
           inputSchema: {
             type: 'object',
             properties: {
-              script: { type: 'string', description: '🚨 ES5 ONLY! No const/let/arrows/templates. JavaScript code to execute synchronously.' },
+              script: { type: 'string', description: '🚨 ES5 ONLY! No const/let/arrows/templates. JavaScript code to schedule.' },
               timeout: { type: 'number', description: 'Timeout in milliseconds', default: 3000 },
               capture_output: { type: 'boolean', description: 'Capture and return output', default: true }
             },
@@ -524,13 +524,13 @@ class ServiceNowAutomationMCP {
           case 'snow_discover_atf_tests':
             result = await this.discoverATFTests(args);
             break;
-          case 'snow_execute_script_with_output':
+          case 'snow_schedule_script_with_output':
             result = await this.executeScriptWithOutput(args);
             break;
           case 'snow_get_script_output':
             result = await this.getScriptOutput(args);
             break;
-          case 'snow_execute_script_sync':
+          case 'snow_schedule_script_sync':
             result = await this.executeScriptSync(args);
             break;
           case 'snow_get_logs':

@@ -1,13 +1,19 @@
 /**
- * snow_execute_script - Unified script execution tool
+ * snow_schedule_script_job - Schedule server-side script execution
  *
- * Executes server-side JavaScript in ServiceNow with comprehensive output capture.
- * Combines functionality of:
- * - snow_execute_script_sync (deprecated)
- * - snow_execute_script_with_output (deprecated)
- * - snow_execute_background_script (deprecated)
+ * ⚠️ IMPORTANT: This tool does NOT execute scripts directly!
+ * It creates a Scheduled Script Job (sysauto_script) and attempts to trigger it.
  *
- * Uses sysauto_script + sys_trigger approach for reliable execution.
+ * How it works:
+ * 1. Creates a scheduled job in sysauto_script table
+ * 2. Attempts to create a sys_trigger to run it immediately
+ * 3. Polls for results via sys_properties (max 30 seconds)
+ * 4. If trigger fails or scheduler is slow, returns executed=false
+ *
+ * When executed=false is returned:
+ * - The script job WAS created successfully
+ * - You need to manually run it: System Scheduler > Scheduled Jobs
+ * - Or wait for the scheduler to pick it up
  *
  * ⚠️ CRITICAL: ALL SCRIPTS MUST BE ES5 ONLY!
  * ServiceNow runs on Rhino engine - no const/let/arrow functions/template literals.
@@ -18,12 +24,12 @@ import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_execute_script',
-  description: 'Execute server-side JavaScript in ServiceNow with output capture (ES5 only). Replaces snow_execute_script_sync, snow_execute_script_with_output, and snow_execute_background_script.',
+  name: 'snow_schedule_script_job',
+  description: '⚠️ SCHEDULES (not executes directly) server-side JavaScript via Scheduled Script Job. Creates sysauto_script + sys_trigger. Returns executed=false if scheduler doesn\'t pick it up within 30s - check System Scheduler > Scheduled Jobs to run manually. ES5 only!',
   // Metadata for tool discovery (not sent to LLM)
   category: 'automation',
-  subcategory: 'script-execution',
-  use_cases: ['automation', 'scripts', 'execution', 'debugging', 'verification'],
+  subcategory: 'scheduled-jobs',
+  use_cases: ['automation', 'scripts', 'scheduled-jobs', 'debugging', 'verification'],
   complexity: 'advanced',
   frequency: 'high',
 
@@ -84,7 +90,7 @@ export const toolDefinition: MCPToolDefinition = {
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   const {
     script,
-    description = 'Script execution via snow_execute_script',
+    description = 'Script scheduled via snow_schedule_script_job',
     scope = 'global',
     timeout = 30000,
     validate_es5 = true,

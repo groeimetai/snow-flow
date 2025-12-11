@@ -87,8 +87,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       size_kb: parseFloat(sizeInKB)
     });
 
-  } catch (error) {
-    return createErrorResult(error, {
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return createErrorResult(errorMessage, {
       sys_id,
       table
     });

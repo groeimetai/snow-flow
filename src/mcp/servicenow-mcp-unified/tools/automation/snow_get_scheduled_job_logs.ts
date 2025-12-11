@@ -254,13 +254,23 @@ function formatSchedule(job: any): string {
 
   var schedule = '';
   if (job.run_dayofweek) {
-    var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    var dayNums = job.run_dayofweek.split(',');
-    var dayNames = dayNums.map(function(d: string) { return days[parseInt(d) - 1] || d; });
-    schedule = dayNames.join(', ');
+    // Handle both string and object (display_value) formats
+    var dayOfWeekValue = typeof job.run_dayofweek === 'string'
+      ? job.run_dayofweek
+      : (job.run_dayofweek.value || job.run_dayofweek.display_value || '');
+
+    if (dayOfWeekValue && typeof dayOfWeekValue === 'string') {
+      var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      var dayNums = dayOfWeekValue.split(',');
+      var dayNames = dayNums.map(function(d: string) { return days[parseInt(d) - 1] || d; });
+      schedule = dayNames.join(', ');
+    }
   }
   if (job.run_time) {
-    schedule += (schedule ? ' at ' : '') + job.run_time;
+    var runTimeValue = typeof job.run_time === 'string'
+      ? job.run_time
+      : (job.run_time.value || job.run_time.display_value || '');
+    schedule += (schedule ? ' at ' : '') + runTimeValue;
   }
   return schedule || 'Periodic';
 }

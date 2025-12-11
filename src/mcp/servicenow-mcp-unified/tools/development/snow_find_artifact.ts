@@ -96,8 +96,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       table: table || 'multiple'
     });
 
-  } catch (error) {
-    return createErrorResult(error, {
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return createErrorResult(errorMessage, {
       query,
       type
     });

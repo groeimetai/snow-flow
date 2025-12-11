@@ -172,7 +172,7 @@ snow_create_workspace_tab({ workspace, tab_config })        // Add tab
 
 ### Automation & Scripts
 \`\`\`javascript
-snow_execute_script({ script, description })            // Test/verify scripts (ES5 ONLY!)
+snow_schedule_script_job({ script, description })       // Schedule script job (ES5 ONLY!) ⚠️ NOT direct execution!
 snow_schedule_job({ name, script, interval })           // Scheduled jobs
 snow_get_logs({ level, source, since })                 // View system logs
 snow_get_email_logs({ type, recipient, since })         // View sent/received emails
@@ -295,13 +295,13 @@ echo "..." && node -e "const { ... } = require(...);"
 ### 5. Verify First
 - Test before claiming something is broken
 - Check if resources exist before modifying
-- Use \`snow_execute_script\` to verify
+- Use \`snow_schedule_script_job\` to verify (note: schedules, doesn't execute directly)
 
 ### 6. Test-Driven Development (TDD)
 **Core principle: Test after EVERY change. Only proceed when it works.**
 
 1. Implement ONE thing
-2. Test immediately with \`snow_execute_script\`
+2. Test immediately with \`snow_schedule_script_job\` (schedules verification)
 3. ✅ PASS? → Continue to next step
 4. ❌ FAIL? → Fix before proceeding!
 5. Repeat for each change
@@ -331,7 +331,7 @@ echo "..." && node -e "const { ... } = require(...);"
    - Widget development? → \`snow_pull_artifact\` + \`snow_push_artifact\` (local sync!)
 
 3. **✅ VERIFY**
-   - \`snow_execute_script\` for testing
+   - \`snow_schedule_script_job\` for testing (schedules job)
    - Check logs with \`snow_get_logs\`
    - Validate with \`snow_update_set_query({ action: 'current' })\`
 
@@ -350,7 +350,7 @@ echo "..." && node -e "const { ... } = require(...);"
 | Create business rule | \`snow_create_business_rule()\` | ES5 only! |
 | Query incidents | \`snow_query_incidents()\` | Specialized tool |
 | Get property | \`snow_property_manage({ action: 'get' })\` | System properties |
-| Test script | \`snow_execute_script()\` | ES5 verification |
+| Schedule test script | \`snow_schedule_script_job()\` | ES5 verification (scheduled) |
 | View emails | \`snow_get_email_logs()\` | Sent/received emails |
 | Debug integrations | \`snow_get_outbound_http_logs()\` | Outgoing HTTP calls |
 | Monitor API usage | \`snow_get_inbound_http_logs()\` | Incoming requests |

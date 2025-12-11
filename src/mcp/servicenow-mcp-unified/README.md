@@ -48,7 +48,7 @@ servicenow-mcp-unified/
 │   │   ├── snow_add_uib_page_element.ts
 │   │   └── index.ts
 │   ├── automation/              # Script execution, jobs
-│   │   ├── snow_execute_script.ts    # Unified script execution
+│   │   ├── snow_schedule_script_job.ts    # Schedule script jobs (NOT direct execution!)
 │   │   ├── snow_schedule_job.ts
 │   │   └── index.ts
 │   ├── advanced/                # Batch API, analytics
@@ -101,12 +101,12 @@ Tools are organized by **domain** (functional area), not by original server:
 - `snow_create_workspace` - Complete workspaces
 
 ### 4. Automation Tools (automation/)
-**Purpose:** Script execution and job scheduling
-- `snow_execute_script` - Run scripts with output capture (unified tool)
-- `snow_confirm_script_execution` - Confirm scripts requiring approval
+**Purpose:** Script scheduling and job management
+- `snow_schedule_script_job` - ⚠️ SCHEDULES scripts (NOT direct execution!) via sysauto_script + sys_trigger
+- `snow_confirm_script_execution` - Confirm scripts requiring approval (also uses scheduling)
 - `snow_schedule_job` - Create scheduled jobs
 - `snow_get_logs` - Access system logs
-- `snow_trace_execution` - Performance tracing
+- `snow_trace_execution` - Set up execution tracing configuration
 
 ### 5. Advanced Tools (advanced/)
 **Purpose:** Performance and analytics

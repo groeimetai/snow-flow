@@ -90,11 +90,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       field
     });
 
-  } catch (error) {
-    return createErrorResult(error, {
+  } catch (error: any) {
+    // createErrorResult expects SnowFlowError or string, not generic Error
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return createErrorResult(errorMessage, {
       sys_id,
       table,
-      field
+      field,
+      errorType: 'UNKNOWN_ERROR'
     });
   }
 }

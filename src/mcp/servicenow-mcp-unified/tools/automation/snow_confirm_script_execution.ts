@@ -2,7 +2,7 @@
  * snow_confirm_script_execution - Confirm and execute approved script
  *
  * Executes a script after user approval. Only call this after user
- * explicitly approves script execution from snow_execute_script with requireConfirmation=true.
+ * explicitly approves script execution from snow_schedule_script_job with requireConfirmation=true.
  *
  * Uses sysauto_script + sys_trigger approach for reliable execution.
  *
@@ -15,7 +15,7 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_confirm_script_execution',
-  description: '⚡ Confirms and executes script after user approval (use after snow_execute_script with requireConfirmation=true)',
+  description: '⚡ Confirms and schedules script after user approval (use after snow_schedule_script_job with requireConfirmation=true). Note: Uses same scheduled job approach.',
   // Metadata for tool discovery (not sent to LLM)
   category: 'automation',
   subcategory: 'script-execution',

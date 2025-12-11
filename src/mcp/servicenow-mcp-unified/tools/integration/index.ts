@@ -6,6 +6,7 @@ export { toolDefinition as snow_batch_api_def, execute as snow_batch_api_exec } 
 export { toolDefinition as snow_analyze_query_def, execute as snow_analyze_query_exec } from './snow_analyze_query.js';
 export { toolDefinition as snow_detect_code_patterns_def, execute as snow_detect_code_patterns_exec } from './snow_detect_code_patterns.js';
 export { toolDefinition as snow_create_rest_message_def, execute as snow_create_rest_message_exec } from './snow_create_rest_message.js';
+export { toolDefinition as snow_rest_message_manage_def, execute as snow_rest_message_manage_exec } from './snow_rest_message_manage.js';
 export { toolDefinition as snow_test_rest_connection_def, execute as snow_test_rest_connection_exec } from './snow_test_rest_connection.js';
 export { toolDefinition as snow_schedule_job_def, execute as snow_schedule_job_exec } from './snow_schedule_job.js';
 export { toolDefinition as snow_test_integration_def, execute as snow_test_integration_exec } from './snow_test_integration.js';

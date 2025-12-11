@@ -75,6 +75,11 @@ function processSearchQuery(query: string): string {
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   const { query, ci_type = 'any', limit = 10, include_relationships = false } = args;
 
+  // Validate required parameters
+  if (!query || typeof query !== 'string' || query.trim() === '') {
+    return createErrorResult('Parameter "query" is required and must be a non-empty string');
+  }
+
   try {
     const client = await getAuthenticatedClient(context);
 
@@ -82,15 +87,32 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const ciTable = ciTableMapping[ci_type] || 'cmdb_ci';
 
     // Process query
-    const processedQuery = processSearchQuery(query);
+    const processedQuery = processSearchQuery(query.trim());
 
-    // Search CIs
-    const response = await client.get(`/api/now/table/${ciTable}`, {
-      params: {
-        sysparm_query: processedQuery,
-        sysparm_limit: limit
+    // Search CIs with better error handling
+    var response;
+    try {
+      response = await client.get(`/api/now/table/${ciTable}`, {
+        params: {
+          sysparm_query: processedQuery,
+          sysparm_limit: limit,
+          sysparm_fields: 'sys_id,name,short_description,operational_status,support_group,sys_class_name'
+        }
+      });
+    } catch (apiError: any) {
+      // If specific table fails, fall back to base cmdb_ci table
+      if (ciTable !== 'cmdb_ci' && apiError.response?.status === 400) {
+        response = await client.get('/api/now/table/cmdb_ci', {
+          params: {
+            sysparm_query: processedQuery,
+            sysparm_limit: limit,
+            sysparm_fields: 'sys_id,name,short_description,operational_status,support_group,sys_class_name'
+          }
+        });
+      } else {
+        throw apiError;
       }
-    });
+    }
 
     const configItems = response.data.result || [];
 

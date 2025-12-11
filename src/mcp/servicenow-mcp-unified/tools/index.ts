@@ -59,8 +59,7 @@ export * from './business-rules/index.js';
 // Script Includes (1 tool)
 export * from './script-includes/index.js';
 
-// REST API (3 tools)
-export * from './rest-api/index.js';
+// REST API tools moved to Integration folder (see snow_rest_message_manage, snow_create_rest_message)
 
 // SLA (2 tools)
 export * from './sla/index.js';

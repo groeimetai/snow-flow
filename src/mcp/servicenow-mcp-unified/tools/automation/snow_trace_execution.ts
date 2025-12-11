@@ -1,7 +1,15 @@
 /**
- * snow_trace_execution - Trace execution flow
+ * snow_trace_execution - Set up execution tracing via sys_properties
  *
- * Traces execution flow with real-time tracking of scripts, REST calls, and errors.
+ * ⚠️ IMPORTANT: This tool sets up tracing configuration, it does NOT execute scripts.
+ * Tracing data is stored in sys_properties for later retrieval.
+ *
+ * How it works:
+ * 1. Creates a trace configuration in sys_properties
+ * 2. Returns a trace_id for reference
+ * 3. Use snow_get_script_output with the trace_id to retrieve trace data
+ *
+ * Note: Actual tracing requires scripts to write to the trace property.
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
@@ -10,7 +18,7 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_trace_execution',
-  description: 'Trace execution flow with real-time tracking of scripts, REST calls, and errors',
+  description: 'Set up execution tracing configuration. Creates a trace session that scripts can write to. Use snow_get_script_output to retrieve trace data later.',
   // Metadata for tool discovery (not sent to LLM)
   category: 'automation',
   subcategory: 'monitoring',
@@ -19,15 +27,14 @@ export const toolDefinition: MCPToolDefinition = {
   frequency: 'low',
 
   // Permission enforcement
-  // Classification: READ - Query/analysis operation
-  permission: 'read',
-  allowedRoles: ['developer', 'stakeholder', 'admin'],
+  permission: 'write',
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {
       track_id: {
         type: 'string',
-        description: 'Tracking ID for the execution session'
+        description: 'Unique tracking ID for this trace session'
       },
       include: {
         type: 'array',
@@ -35,15 +42,15 @@ export const toolDefinition: MCPToolDefinition = {
         description: 'What to track: scripts, rest_calls, errors, queries, all',
         default: ['all']
       },
-      real_time: {
-        type: 'boolean',
-        description: 'Enable real-time tracking',
-        default: true
-      },
       max_entries: {
         type: 'number',
-        description: 'Maximum trace entries',
+        description: 'Maximum trace entries to store',
         default: 1000
+      },
+      ttl_minutes: {
+        type: 'number',
+        description: 'Time-to-live for trace data in minutes',
+        default: 60
       }
     },
     required: ['track_id']
@@ -54,8 +61,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   const {
     track_id,
     include = ['all'],
-    real_time = true,
-    max_entries = 1000
+    max_entries = 1000,
+    ttl_minutes = 60
   } = args;
 
   try {
@@ -70,68 +77,71 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       queries: trackAll || include.includes('queries')
     };
 
-    // Create trace configuration script
-    const traceScript = `
-var traceId = '${track_id}';
-var tracking = ${JSON.stringify(tracking)};
-var maxEntries = ${max_entries};
+    // Create trace configuration in sys_properties
+    const traceConfig = {
+      trace_id: track_id,
+      started_at: new Date().toISOString(),
+      tracking: tracking,
+      max_entries: max_entries,
+      ttl_minutes: ttl_minutes,
+      entries: [],
+      status: 'active'
+    };
 
-// Store trace configuration in session
-gs.getSession().putClientData('snow_flow_trace_id', traceId);
-gs.getSession().putClientData('snow_flow_trace_config', JSON.stringify(tracking));
-gs.getSession().putClientData('snow_flow_trace_start', new GlideDateTime().getDisplayValue());
+    const propertyName = `snow_flow.trace.${track_id}`;
 
-// Initialize trace storage in sys_properties
-var traceProp = new GlideRecord('sys_properties');
-traceProp.initialize();
-traceProp.name = 'snow_flow.trace.' + traceId;
-traceProp.value = JSON.stringify({
-  trace_id: traceId,
-  started_at: new GlideDateTime().getDisplayValue(),
-  tracking: tracking,
-  max_entries: maxEntries,
-  entries: []
-});
-traceProp.type = 'string';
-traceProp.description = 'Snow-Flow execution trace - ' + traceId;
-traceProp.insert();
-
-JSON.stringify({
-  success: true,
-  trace_id: traceId,
-  tracking: tracking,
-  message: 'Execution tracing enabled'
-});
-`;
-
-    // Execute trace initialization
-    const response = await client.post('/api/now/table/sys_script_execution', {
-      script: traceScript
+    // Check if trace already exists
+    const existingCheck = await client.get('/api/now/table/sys_properties', {
+      params: {
+        sysparm_query: `name=${propertyName}`,
+        sysparm_fields: 'sys_id',
+        sysparm_limit: 1
+      }
     });
 
-    let result;
-    try {
-      const resultData = response.data.result || response.data;
-      result = JSON.parse(typeof resultData === 'string' ? resultData : JSON.stringify(resultData));
-    } catch (parseError) {
-      result = {
-        success: true,
-        trace_id: track_id,
-        message: 'Trace initialized'
-      };
+    let propertySysId: string;
+
+    if (existingCheck.data?.result?.[0]?.sys_id) {
+      // Update existing trace
+      propertySysId = existingCheck.data.result[0].sys_id;
+      await client.patch(`/api/now/table/sys_properties/${propertySysId}`, {
+        value: JSON.stringify(traceConfig)
+      });
+    } else {
+      // Create new trace property
+      const createResponse = await client.post('/api/now/table/sys_properties', {
+        name: propertyName,
+        value: JSON.stringify(traceConfig),
+        type: 'string',
+        description: `Snow-Flow execution trace - ${track_id}. Auto-expires after ${ttl_minutes} minutes.`
+      });
+
+      if (!createResponse.data?.result?.sys_id) {
+        throw new SnowFlowError(
+          ErrorType.SERVICENOW_API_ERROR,
+          'Failed to create trace configuration property',
+          { details: createResponse.data }
+        );
+      }
+
+      propertySysId = createResponse.data.result.sys_id;
     }
 
     return createSuccessResult({
       trace_id: track_id,
+      property_name: propertyName,
+      property_sys_id: propertySysId,
       tracking_enabled: tracking,
-      real_time,
       max_entries,
-      started_at: new Date().toISOString(),
+      ttl_minutes,
+      started_at: traceConfig.started_at,
       status: 'active',
-      instructions: {
+      usage: {
         retrieve_trace: `Use snow_get_script_output with execution_id="${track_id}" to retrieve trace data`,
-        stop_trace: 'Delete the trace property when done'
-      }
+        add_entry: `In your scripts, use: gs.setProperty('${propertyName}', JSON.stringify(updatedTraceData))`,
+        stop_trace: `Delete the property or let it expire after ${ttl_minutes} minutes`
+      },
+      note: 'This tool creates a trace configuration. Your scripts must write to the trace property to record entries.'
     }, {
       operation: 'trace_execution',
       trace_id: track_id
@@ -146,5 +156,5 @@ JSON.stringify({
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = '2.0.0';
+export const author = 'Snow-Flow SDK';

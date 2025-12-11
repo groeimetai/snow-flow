@@ -131,7 +131,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       table
     });
 
-  } catch (error) {
-    return createErrorResult(error, { operation, sys_id, table });
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return createErrorResult(errorMessage, { operation, sys_id, table });
   }
 }

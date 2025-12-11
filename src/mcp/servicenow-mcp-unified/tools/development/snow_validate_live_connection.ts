@@ -131,11 +131,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       include_performance
     });
 
-  } catch (error) {
+  } catch (error: any) {
     diagnostics.connection.status = 'error';
     diagnostics.authentication.status = 'error';
 
-    return createErrorResult(error, {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return createErrorResult(errorMessage, {
       test_level,
       diagnostics
     });

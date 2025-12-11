@@ -10,8 +10,8 @@ export { toolDefinition as snow_create_workflow_activity_def, execute as snow_cr
 export { toolDefinition as snow_discover_automation_jobs_def, execute as snow_discover_automation_jobs_exec } from './snow_discover_automation_jobs.js';
 export { toolDefinition as snow_discover_events_def, execute as snow_discover_events_exec } from './snow_discover_events.js';
 export { toolDefinition as snow_discover_schedules_def, execute as snow_discover_schedules_exec } from './snow_discover_schedules.js';
-// Unified script execution tool (replaces snow_execute_script_sync, snow_execute_script_with_output, snow_execute_background_script)
-export { toolDefinition as snow_execute_script_def, execute as snow_execute_script_exec } from './snow_execute_script.js';
+// Scheduled script job tool - schedules scripts via sysauto_script + sys_trigger (does NOT execute directly!)
+export { toolDefinition as snow_schedule_script_job_def, execute as snow_schedule_script_job_exec } from './snow_schedule_script_job.js';
 export { toolDefinition as snow_get_logs_def, execute as snow_get_logs_exec } from './snow_get_logs.js';
 export { toolDefinition as snow_get_email_logs_def, execute as snow_get_email_logs_exec } from './snow_get_email_logs.js';
 export { toolDefinition as snow_get_outbound_http_logs_def, execute as snow_get_outbound_http_logs_exec } from './snow_get_outbound_http_logs.js';
@@ -22,6 +22,6 @@ export { toolDefinition as snow_get_slow_queries_def, execute as snow_get_slow_q
 export { toolDefinition as snow_get_script_output_def, execute as snow_get_script_output_exec } from './snow_get_script_output.js';
 export { toolDefinition as snow_property_manager_def, execute as snow_property_manager_exec } from './snow_property_manager.js';
 export { toolDefinition as snow_rest_message_test_suite_def, execute as snow_rest_message_test_suite_exec } from './snow_rest_message_test_suite.js';
-export { toolDefinition as snow_test_rest_connection_def, execute as snow_test_rest_connection_exec } from './snow_test_rest_connection.js';
+// snow_test_rest_connection moved to integration folder
 export { toolDefinition as snow_test_scheduled_job_def, execute as snow_test_scheduled_job_exec } from './snow_test_scheduled_job.js';
 export { toolDefinition as snow_trace_execution_def, execute as snow_trace_execution_exec } from './snow_trace_execution.js';

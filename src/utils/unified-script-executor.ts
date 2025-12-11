@@ -33,7 +33,8 @@ export class UnifiedScriptExecutor {
   }
 
   /**
-   * Execute script with complete output capture
+   * Schedule script with output capture via scheduled job
+   * Note: This does NOT execute directly - it creates a scheduled job
    * Replaces: snow_execute_script_with_output, snow_execute_script_sync, snow_execute_background_script
    */
   async executeScript(script: string, description?: string): Promise<UnifiedScriptResult> {
@@ -196,8 +197,8 @@ export class UnifiedScriptExecutor {
 // Export as MCP tool helper
 export function createUnifiedScriptTool() {
   return {
-    name: 'snow_execute_script_unified',
-    description: '🚀 UNIFIED: Execute script with complete output capture (replaces all other script tools). ⚠️ ES5 ONLY!',
+    name: 'snow_schedule_script_unified',
+    description: '⚠️ SCHEDULES (not executes directly) script via scheduled job. Creates sysauto_script + sys_trigger. May return executed=false if scheduler is slow. ES5 ONLY!',
     inputSchema: {
       type: 'object',
       properties: {

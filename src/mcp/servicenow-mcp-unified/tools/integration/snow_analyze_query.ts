@@ -121,48 +121,66 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     analysis.anti_patterns = antiPatterns;
 
     // Get table record count for performance estimation
-    const countResponse = await client.get(`/api/now/stats/${table}`, {
-      params: {
-        sysparm_count: 'true',
-        sysparm_query: query
-      }
-    });
-
-    const totalRecords = parseInt(countResponse.data.result?.stats?.count || '0');
+    // Use standard table API with count instead of stats API (more compatible)
+    var totalRecords = 0;
+    try {
+      const countResponse = await client.get(`/api/now/table/${table}`, {
+        params: {
+          sysparm_query: query,
+          sysparm_limit: 1,
+          sysparm_fields: 'sys_id'
+        },
+        headers: {
+          'X-Total-Count': 'true'
+        }
+      });
+      totalRecords = parseInt(countResponse.headers['x-total-count'] || '0');
+    } catch (countError: any) {
+      // If count fails, continue without it
+      console.warn('Could not get record count:', countError.message);
+    }
     analysis.matching_records = totalRecords;
 
     // Analyze indexes if requested
     if (analyze_indexes) {
-      const indexResponse = await client.get('/api/now/table/sys_db_index', {
-        params: {
-          sysparm_query: `table=${table}^active=true`,
-          sysparm_fields: 'name,indexed_column,unique',
-          sysparm_limit: 100
-        }
-      });
-
-      const indexes = indexResponse.data.result || [];
-      const indexedFields = indexes.map((idx: any) => idx.indexed_column?.value || idx.indexed_column);
-
-      // Check which query fields are indexed
-      const queryFields = conditions.map((c: string) => c.split(/[!=<>]/)[0]);
-      const indexedQueryFields = queryFields.filter((f: string) => indexedFields.includes(f));
-      const unindexedQueryFields = queryFields.filter((f: string) => !indexedFields.includes(f));
-
-      analysis.index_analysis = {
-        total_indexes: indexes.length,
-        indexed_query_fields: indexedQueryFields,
-        unindexed_query_fields: unindexedQueryFields,
-        index_coverage: indexedQueryFields.length / queryFields.length
-      };
-
-      if (unindexedQueryFields.length > 0) {
-        analysis.suggestions.push({
-          type: 'INDEX_RECOMMENDATION',
-          priority: 'high',
-          description: `Consider adding indexes for: ${unindexedQueryFields.join(', ')}`,
-          estimated_improvement: totalRecords > 10000 ? 'significant' : 'moderate'
+      try {
+        const indexResponse = await client.get('/api/now/table/sys_db_index', {
+          params: {
+            sysparm_query: `table=${table}^active=true`,
+            sysparm_fields: 'name,indexed_column,unique',
+            sysparm_limit: 100
+          }
         });
+
+        const indexes = indexResponse.data.result || [];
+        const indexedFields = indexes.map((idx: any) => idx.indexed_column?.value || idx.indexed_column);
+
+        // Check which query fields are indexed
+        const queryFields = conditions.map((c: string) => c.split(/[!=<>]/)[0]);
+        const indexedQueryFields = queryFields.filter((f: string) => indexedFields.includes(f));
+        const unindexedQueryFields = queryFields.filter((f: string) => !indexedFields.includes(f));
+
+        analysis.index_analysis = {
+          total_indexes: indexes.length,
+          indexed_query_fields: indexedQueryFields,
+          unindexed_query_fields: unindexedQueryFields,
+          index_coverage: queryFields.length > 0 ? indexedQueryFields.length / queryFields.length : 0
+        };
+
+        if (unindexedQueryFields.length > 0) {
+          analysis.suggestions.push({
+            type: 'INDEX_RECOMMENDATION',
+            priority: 'high',
+            description: `Consider adding indexes for: ${unindexedQueryFields.join(', ')}`,
+            estimated_improvement: totalRecords > 10000 ? 'significant' : 'moderate'
+          });
+        }
+      } catch (indexError: any) {
+        // Index analysis not available - continue without it
+        analysis.index_analysis = {
+          error: 'Index analysis not available',
+          reason: indexError.message
+        };
       }
     }
 
