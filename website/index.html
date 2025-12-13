@@ -1494,17 +1494,31 @@
             background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-primary) 100%);
         }
 
-        /* Comparison Header Cards */
-        .comparison-header {
+        /* Brand cards container - aligned with table columns */
+        .comparison-brands {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 280px 1fr 1fr;
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
+        .comparison-brands::before {
+            content: '';
+            /* Empty first column to align with Feature column */
+        }
+
+        @media (max-width: 1024px) {
+            .comparison-brands {
+                grid-template-columns: 220px 1fr 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
-            .comparison-header {
+            .comparison-brands {
                 grid-template-columns: 1fr;
+            }
+            .comparison-brands::before {
+                display: none;
             }
         }
 
@@ -3580,8 +3594,8 @@
                 </p>
             </div>
 
-            <!-- Brand Headers -->
-            <div class="comparison-header">
+            <!-- Brand Headers (aligned with table columns) -->
+            <div class="comparison-brands">
                 <div class="comparison-brand snow-flow">
                     <div class="comparison-brand-logo">Snow-Flow</div>
                     <div class="comparison-brand-tagline">Open-source AI development platform</div>
