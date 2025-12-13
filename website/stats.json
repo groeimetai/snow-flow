@@ -1,59 +1,50 @@
 {
-  "generated": "2025-12-13T11:41:57.080Z",
+  "generated": "2025-12-13T19:20:32.429Z",
   "generatedFormatted": "December 13, 2025",
   "repos": [
     {
       "name": "snow-flow",
       "description": "Core MCP Servers & Tools",
       "color": "cyan",
-      "lines": 213368,
+      "lines": 215692,
       "files": 737,
       "byExtension": {
         "ts": 180000,
         "js": 7429,
         "jsx": 1658,
         "sh": 680,
-        "html": 13978,
+        "html": 16302,
         "css": 9623
       },
-      "percentage": "57.9"
+      "percentage": "72.0"
     },
     {
       "name": "snow-code",
       "description": "CLI & Authentication",
       "color": "purple",
-      "lines": 77861,
-      "files": 427,
+      "lines": 83985,
+      "files": 441,
       "byExtension": {
-        "ts": 50663,
+        "ts": 56795,
         "js": 105,
         "tsx": 17353,
-        "sh": 8,
         "html": 37,
         "css": 9695
       },
-      "percentage": "21.1"
+      "percentage": "28.0"
     },
     {
       "name": "snow-flow-enterprise",
       "description": "Portal & Integrations",
       "color": "orange",
-      "lines": 77581,
-      "files": 161,
-      "byExtension": {
-        "ts": 57771,
-        "js": 72,
-        "tsx": 18587,
-        "py": 424,
-        "sh": 602,
-        "html": 21,
-        "css": 104
-      },
-      "percentage": "21.0"
+      "lines": 0,
+      "files": 0,
+      "byExtension": {},
+      "percentage": "0.0"
     }
   ],
   "total": {
-    "lines": 368810,
-    "files": 1325
+    "lines": 299677,
+    "files": 1178
   }
 }
