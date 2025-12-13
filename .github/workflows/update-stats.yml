@@ -1,0 +1,56 @@
+name: Update Code Statistics
+
+on:
+  push:
+    branches: [main, master]
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-stats:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout snow-flow
+        uses: actions/checkout@v4
+        with:
+          path: snow-flow
+
+      - name: Checkout snow-code
+        uses: actions/checkout@v4
+        with:
+          repository: groeimetai/snow-code
+          path: snow-code
+          token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Checkout snow-flow-enterprise
+        uses: actions/checkout@v4
+        with:
+          repository: groeimetai/snow-flow-enterprise
+          path: snow-flow-enterprise
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        continue-on-error: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run stats update script
+        run: |
+          cd snow-flow/website
+          node scripts/update-stats.js
+
+      - name: Commit and push changes
+        run: |
+          cd snow-flow
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add website/stats.html website/stats.json
+          git diff --staged --quiet || git commit -m "chore: update code statistics [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

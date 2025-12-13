@@ -139,7 +139,7 @@
         }
 
         /* =====================================================
-           NAVIGATION
+           NAVIGATION - ULTRA MODERN 2025
            ===================================================== */
 
         .navbar {
@@ -148,17 +148,40 @@
             left: 0;
             right: 0;
             z-index: 1000;
-            padding: 1rem 0;
-            background: rgba(5, 5, 8, 0.8);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-bottom: 1px solid var(--border-subtle);
-            transition: all 0.3s ease;
+            padding: 0.875rem 0;
+            background: linear-gradient(180deg, rgba(5, 5, 8, 0.95) 0%, rgba(5, 5, 8, 0.85) 100%);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Gradient border glow effect */
+        .navbar::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--accent-cyan) 20%,
+                var(--accent-purple) 50%,
+                var(--accent-cyan) 80%,
+                transparent 100%);
+            opacity: 0.4;
+            transition: opacity 0.4s ease;
+        }
+
+        .navbar:hover::after {
+            opacity: 0.7;
         }
 
         .navbar.scrolled {
-            padding: 0.75rem 0;
-            background: rgba(5, 5, 8, 0.95);
+            padding: 0.625rem 0;
+            background: rgba(5, 5, 8, 0.98);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px rgba(0, 217, 255, 0.05);
         }
 
         .navbar-content {
@@ -167,42 +190,86 @@
             align-items: center;
         }
 
+        /* Logo with enhanced hover */
         .logo {
             display: flex;
             align-items: center;
             gap: 0.75rem;
             text-decoration: none;
-            transition: transform 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .logo::before {
+            content: '';
+            position: absolute;
+            inset: -8px -12px;
+            background: radial-gradient(ellipse at center, rgba(0, 217, 255, 0.15) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            border-radius: 16px;
         }
 
         .logo:hover {
-            transform: translateY(-2px);
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .logo:hover::before {
+            opacity: 1;
         }
 
         .logo-svg {
-            width: 36px;
-            height: 36px;
+            width: 38px;
+            height: 38px;
+            filter: drop-shadow(0 0 8px rgba(0, 217, 255, 0.3));
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover .logo-svg {
+            filter: drop-shadow(0 0 16px rgba(0, 217, 255, 0.5));
+            transform: scale(1.05);
         }
 
         .logo-text {
             font-size: 1.375rem;
             font-weight: 800;
             letter-spacing: -0.02em;
+            position: relative;
         }
 
-        .logo-text .snow { color: var(--text-primary); }
+        .logo-text .snow {
+            color: var(--text-primary);
+            transition: text-shadow 0.3s ease;
+        }
+
+        .logo:hover .logo-text .snow {
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
         .logo-text .flow {
             background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
+            background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: gradient-shift 4s ease infinite;
         }
 
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Nav Links Container with pill background */
         .nav-links {
             display: none;
             list-style: none;
-            gap: 2rem;
+            gap: 0.25rem;
             align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.375rem;
+            border-radius: 100px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         @media (min-width: 1024px) {
@@ -211,46 +278,130 @@
             }
         }
 
+        /* Individual nav links with pill hover */
+        .nav-links li {
+            position: relative;
+        }
+
         .nav-links a {
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.9375rem;
+            font-size: 0.875rem;
             font-weight: 500;
-            transition: color 0.2s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Shimmer effect on hover */
+        .nav-links a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .nav-links a:hover::before {
+            left: 100%;
         }
 
         .nav-links a:hover {
             color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.08);
         }
 
-        .nav-cta {
+        /* Active nav indicator */
+        .nav-links a.active {
+            color: var(--text-primary);
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
             background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+
+        /* CTA Button with glow */
+        .nav-cta {
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, #00b8d9 100%) !important;
             color: var(--bg-primary) !important;
-            padding: 0.625rem 1.25rem;
-            border-radius: 8px;
+            padding: 0.625rem 1.5rem !important;
+            border-radius: 100px !important;
             font-weight: 600 !important;
-            transition: all 0.2s ease !important;
+            font-size: 0.875rem !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+
+        .nav-cta::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: -100% !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+            transition: left 0.6s ease !important;
+        }
+
+        .nav-cta:hover::before {
+            left: 100% !important;
         }
 
         .nav-cta:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--glow-cyan);
+            transform: translateY(-2px) scale(1.02) !important;
+            box-shadow: 0 8px 32px rgba(0, 217, 255, 0.4), 0 0 40px rgba(0, 217, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
         }
 
-        /* Mobile Menu Button */
+        .nav-cta:active {
+            transform: translateY(0) scale(0.98) !important;
+        }
+
+        /* Mobile Menu Button - Modern Hamburger */
         .mobile-menu-btn {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 5px;
-            width: 44px;
-            height: 44px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-medium);
-            border-radius: 10px;
+            gap: 6px;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
             cursor: pointer;
-            padding: 12px;
-            transition: all 0.3s ease;
+            padding: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mobile-menu-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: inherit;
         }
 
         @media (min-width: 1024px) {
@@ -260,65 +411,93 @@
         }
 
         .mobile-menu-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
             border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .mobile-menu-btn:hover::before {
+            opacity: 0.1;
         }
 
         .mobile-menu-btn span {
             display: block;
             width: 100%;
             height: 2px;
-            background: var(--text-primary);
+            background: linear-gradient(90deg, var(--accent-cyan), var(--text-primary));
             border-radius: 2px;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .mobile-menu-btn.active {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 25px rgba(0, 217, 255, 0.3);
         }
 
         .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
+            transform: rotate(45deg) translate(6px, 6px);
+            background: var(--accent-cyan);
         }
 
         .mobile-menu-btn.active span:nth-child(2) {
             opacity: 0;
+            transform: scaleX(0);
         }
 
         .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(5px, -5px);
+            transform: rotate(-45deg) translate(6px, -6px);
+            background: var(--accent-cyan);
         }
 
-        /* Mobile Menu */
+        /* Mobile Menu - Slide-in Panel */
         .mobile-nav {
             position: fixed;
-            top: 60px;
+            top: 0;
             right: 0;
             width: 100%;
-            max-width: 400px;
-            height: calc(100vh - 60px);
-            background: linear-gradient(180deg, rgba(10, 10, 15, 0.99) 0%, rgba(5, 5, 8, 0.99) 100%);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
+            max-width: 380px;
+            height: 100vh;
+            background: linear-gradient(180deg,
+                rgba(8, 8, 15, 0.98) 0%,
+                rgba(5, 5, 10, 0.99) 50%,
+                rgba(5, 5, 8, 1) 100%);
+            backdrop-filter: blur(40px) saturate(150%);
+            -webkit-backdrop-filter: blur(40px) saturate(150%);
             z-index: 999;
             padding: 0;
             transform: translateX(100%);
             visibility: hidden;
             opacity: 0;
             pointer-events: none;
-            clip-path: inset(0 0 0 100%);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s, opacity 0.4s, clip-path 0.4s;
-            border-left: 1px solid var(--border-medium);
+            transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+            border-left: 1px solid rgba(0, 217, 255, 0.15);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+            box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
         }
 
+        /* Ambient glow in mobile nav */
         .mobile-nav::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 200px;
-            background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 217, 255, 0.15), transparent);
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(ellipse 40% 30% at 30% 20%, rgba(0, 217, 255, 0.12), transparent),
+                radial-gradient(ellipse 30% 25% at 70% 80%, rgba(139, 92, 246, 0.08), transparent);
             pointer-events: none;
+            animation: mobile-nav-glow 8s ease-in-out infinite;
+        }
+
+        @keyframes mobile-nav-glow {
+            0%, 100% { transform: translate(0, 0); opacity: 1; }
+            50% { transform: translate(5%, 5%); opacity: 0.8; }
         }
 
         .mobile-nav.active {
@@ -326,106 +505,162 @@
             visibility: visible;
             opacity: 1;
             pointer-events: auto;
-            clip-path: inset(0 0 0 0);
+        }
+
+        /* Close area indicator */
+        .mobile-nav::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple), var(--accent-cyan));
+            opacity: 0.6;
         }
 
         .mobile-nav-body {
             flex: 1;
-            padding: 1.5rem;
+            padding: 6rem 1.5rem 2rem;
             position: relative;
             z-index: 1;
         }
 
         .mobile-nav-section {
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
 
         .mobile-nav-section-title {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.15em;
-            color: var(--text-muted);
+            letter-spacing: 0.2em;
+            color: var(--accent-cyan);
             padding: 0 1rem;
-            margin-bottom: 0.75rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .mobile-nav-section-title::before {
+            content: '';
+            width: 12px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-cyan), transparent);
+            border-radius: 1px;
         }
 
         .mobile-nav-links {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
+            gap: 0.375rem;
         }
 
         .mobile-nav-links a {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.875rem 1rem;
+            gap: 0.875rem;
+            padding: 1rem 1.25rem;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 1rem;
+            font-size: 1.0625rem;
             font-weight: 500;
-            border-radius: 12px;
-            transition: all 0.2s ease;
+            border-radius: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            overflow: hidden;
         }
 
+        /* Gradient hover background */
         .mobile-nav-links a::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg,
+                rgba(0, 217, 255, 0.12) 0%,
+                rgba(139, 92, 246, 0.08) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: inherit;
+        }
+
+        /* Left accent bar */
+        .mobile-nav-links a::after {
             content: '';
             position: absolute;
             left: 0;
             top: 50%;
-            transform: translateY(-50%);
+            transform: translateY(-50%) scaleY(0);
             width: 3px;
-            height: 0;
+            height: 60%;
             background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple));
-            border-radius: 0 2px 2px 0;
-            transition: height 0.2s ease;
+            border-radius: 0 3px 3px 0;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .mobile-nav-links a:hover {
             color: var(--text-primary);
-            background: rgba(0, 217, 255, 0.08);
+            transform: translateX(4px);
         }
 
         .mobile-nav-links a:hover::before {
-            height: 60%;
+            opacity: 1;
+        }
+
+        .mobile-nav-links a:hover::after {
+            transform: translateY(-50%) scaleY(1);
         }
 
         .mobile-nav-links a svg {
-            width: 20px;
-            height: 20px;
-            opacity: 0.6;
+            width: 22px;
+            height: 22px;
+            opacity: 0.5;
             flex-shrink: 0;
+            transition: all 0.3s ease;
         }
 
         .mobile-nav-links a:hover svg {
             opacity: 1;
+            color: var(--accent-cyan);
+            filter: drop-shadow(0 0 6px rgba(0, 217, 255, 0.4));
         }
 
+        /* Mobile CTA Button */
         .mobile-nav-links .nav-cta {
-            margin-top: 0.5rem;
-            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
+            margin-top: 1rem;
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, #00b8d9 50%, var(--accent-blue) 100%) !important;
+            background-size: 200% 200% !important;
             color: var(--bg-primary) !important;
             justify-content: center;
             font-weight: 600;
-            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+            font-size: 1rem;
+            padding: 1rem 1.5rem !important;
+            box-shadow: 0 4px 24px rgba(0, 217, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            animation: cta-gradient 3s ease infinite;
         }
 
-        .mobile-nav-links .nav-cta::before {
-            display: none;
+        @keyframes cta-gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .mobile-nav-links .nav-cta::before,
+        .mobile-nav-links .nav-cta::after {
+            display: none !important;
         }
 
         .mobile-nav-links .nav-cta:hover {
-            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(0, 217, 255, 0.4);
+            transform: translateY(-3px) scale(1.02) !important;
+            box-shadow: 0 8px 32px rgba(0, 217, 255, 0.45), 0 0 40px rgba(0, 217, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
         }
 
+        /* Mobile Nav Footer */
         .mobile-nav-footer {
             padding: 1.5rem;
-            border-top: 1px solid var(--border-subtle);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 217, 255, 0.03) 100%);
             position: relative;
             z-index: 1;
         }
@@ -433,48 +668,55 @@
         .mobile-nav-social {
             display: flex;
             justify-content: center;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
+            gap: 0.875rem;
+            margin-bottom: 1.25rem;
         }
 
         .mobile-nav-social a {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
             color: var(--text-secondary);
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .mobile-nav-social a:hover {
-            background: rgba(0, 217, 255, 0.1);
+            background: rgba(0, 217, 255, 0.12);
             border-color: var(--accent-cyan);
             color: var(--accent-cyan);
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 217, 255, 0.2);
         }
 
         .mobile-nav-tagline {
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.8125rem;
             color: var(--text-muted);
-            line-height: 1.5;
+            line-height: 1.6;
+            background: linear-gradient(90deg, var(--text-muted), var(--text-secondary), var(--text-muted));
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
+        /* Mobile backdrop with blur */
         .mobile-backdrop {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(5, 5, 15, 0.8) 100%);
+            backdrop-filter: blur(12px) saturate(120%);
+            -webkit-backdrop-filter: blur(12px) saturate(120%);
             z-index: 998;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .mobile-backdrop.active {
@@ -484,39 +726,47 @@
         }
 
         /* =====================================================
-           HERO SECTION
+           HERO SECTION - Optimized for UI/UX
            ===================================================== */
 
         .hero {
-            min-height: 100vh;
+            min-height: auto;
             display: flex;
             align-items: center;
-            padding: 8rem 0 6rem;
+            padding: 7rem 0 4rem;
             position: relative;
             overflow: hidden;
         }
 
+        @media (min-width: 768px) {
+            .hero {
+                padding: 8rem 0 5rem;
+                min-height: calc(100vh - 80px);
+                max-height: 900px;
+            }
+        }
+
         .hero-glow {
             position: absolute;
-            top: 20%;
+            top: 15%;
             left: 50%;
             transform: translateX(-50%);
-            width: 800px;
-            height: 600px;
-            background: radial-gradient(ellipse, rgba(0, 217, 255, 0.2) 0%, transparent 70%);
-            filter: blur(60px);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(ellipse, rgba(0, 217, 255, 0.15) 0%, transparent 70%);
+            filter: blur(50px);
             pointer-events: none;
-            animation: pulse-glow 8s ease-in-out infinite;
+            animation: pulse-glow 10s ease-in-out infinite;
         }
 
         @keyframes pulse-glow {
-            0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); }
-            50% { opacity: 0.8; transform: translateX(-50%) scale(1.1); }
+            0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.6; transform: translateX(-50%) scale(1.05); }
         }
 
         .hero-content {
             text-align: center;
-            max-width: 1000px;
+            max-width: 900px;
             margin: 0 auto;
             position: relative;
             z-index: 2;
@@ -526,75 +776,79 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: rgba(0, 217, 255, 0.1);
-            border: 1px solid rgba(0, 217, 255, 0.3);
+            padding: 0.4rem 0.875rem;
+            background: rgba(0, 217, 255, 0.08);
+            border: 1px solid rgba(0, 217, 255, 0.25);
             border-radius: 100px;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 600;
             color: var(--accent-cyan);
-            margin-bottom: 2rem;
+            margin-bottom: 1.25rem;
             animation: fade-in 0.6s ease-out;
         }
 
         .hero-badge .pulse {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             background: var(--accent-green);
             border-radius: 50%;
             animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 0 8px var(--accent-green);
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
         }
 
         .hero-title {
-            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-size: clamp(2rem, 6vw, 3.75rem);
             font-weight: 900;
-            line-height: 1.05;
+            line-height: 1.1;
             letter-spacing: -0.03em;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             animation: fade-in-up 0.8s ease-out;
         }
 
         .hero-title .gradient {
             background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
+            background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: gradient-shift 4s ease infinite;
         }
 
         .hero-title .small {
             display: block;
-            font-size: 0.35em;
+            font-size: 0.4em;
             font-weight: 600;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--text-muted);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.375rem;
         }
 
         .hero-subtitle {
-            font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+            font-size: clamp(1rem, 2vw, 1.25rem);
             color: var(--text-secondary);
-            max-width: 700px;
-            margin: 0 auto 2.5rem;
-            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            line-height: 1.7;
             animation: fade-in-up 0.8s ease-out 0.2s backwards;
         }
 
         .hero-subtitle strong {
             color: var(--text-primary);
+            font-weight: 600;
         }
 
         .hero-ctas {
             display: flex;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 0.875rem;
             justify-content: center;
-            margin-bottom: 4rem;
+            margin-bottom: 2.5rem;
             animation: fade-in-up 0.8s ease-out 0.4s backwards;
         }
 
@@ -602,12 +856,12 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 1rem 2rem;
-            font-size: 1rem;
+            padding: 0.875rem 1.75rem;
+            font-size: 0.9375rem;
             font-weight: 600;
             text-decoration: none;
-            border-radius: 12px;
-            transition: all 0.3s ease;
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             border: none;
         }
@@ -615,33 +869,33 @@
         .btn-primary {
             background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
             color: var(--bg-primary);
-            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 217, 255, 0.25);
         }
 
         .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(0, 217, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(0, 217, 255, 0.35);
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.04);
             color: var(--text-primary);
             border: 1px solid var(--border-medium);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--accent-cyan);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 217, 255, 0.4);
         }
 
-        /* Hero Stats */
+        /* Hero Stats - Compact */
         .hero-stats {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-            max-width: 800px;
+            gap: 1rem;
+            max-width: 600px;
             margin: 0 auto;
-            padding-top: 3rem;
+            padding-top: 2rem;
             border-top: 1px solid var(--border-subtle);
             animation: fade-in-up 0.8s ease-out 0.6s backwards;
         }
@@ -649,24 +903,69 @@
         @media (min-width: 768px) {
             .hero-stats {
                 grid-template-columns: repeat(4, 1fr);
+                gap: 1.5rem;
             }
         }
 
         .stat {
             text-align: center;
+            padding: 0.5rem;
         }
 
         .stat-value {
-            font-size: clamp(2rem, 4vw, 2.5rem);
+            font-size: clamp(1.5rem, 3vw, 2rem);
             font-weight: 800;
-            color: var(--accent-cyan);
-            line-height: 1;
-            margin-bottom: 0.25rem;
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+            margin-bottom: 0.125rem;
         }
 
         .stat-label {
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Scroll indicator */
+        .hero-scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.6;
+            animation: fade-in 1s ease-out 1.2s backwards, bounce 2s ease-in-out infinite 2s;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .hero-scroll-indicator:hover {
+            opacity: 1;
+        }
+
+        .hero-scroll-indicator span {
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+        }
+
+        .hero-scroll-indicator svg {
+            width: 20px;
+            height: 20px;
+            color: var(--accent-cyan);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(6px); }
         }
 
         @keyframes fade-in {
@@ -675,8 +974,15 @@
         }
 
         @keyframes fade-in-up {
-            from { opacity: 0; transform: translateY(30px); }
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Hide scroll indicator on mobile when content is already visible */
+        @media (max-width: 767px) {
+            .hero-scroll-indicator {
+                display: none;
+            }
         }
 
         /* =====================================================
@@ -1185,102 +1491,387 @@
            ===================================================== */
 
         .comparison-section {
-            background: var(--bg-primary);
+            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-primary) 100%);
         }
 
-        .comparison-wrapper {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            margin: 0 -1.5rem;
-            padding: 0 1.5rem;
+        /* Comparison Header Cards */
+        .comparison-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
-        .comparison-table {
-            width: 100%;
-            min-width: 700px;
-            border-collapse: separate;
-            border-spacing: 0;
-            background: var(--bg-card);
-            border-radius: 16px;
+        @media (max-width: 768px) {
+            .comparison-header {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-brand {
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            position: relative;
             overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .comparison-brand.snow-flow {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(139, 92, 246, 0.08) 100%);
+            border: 2px solid rgba(0, 217, 255, 0.3);
+        }
+
+        .comparison-brand.snow-flow::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+        }
+
+        .comparison-brand.build-agent {
+            background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border-subtle);
         }
 
-        .comparison-table thead {
-            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(139, 92, 246, 0.05));
+        .comparison-brand-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
         }
 
-        .comparison-table th {
-            padding: 1.25rem 1.5rem;
-            text-align: left;
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--border-subtle);
+        .comparison-brand.snow-flow .comparison-brand-logo {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .comparison-table th:first-child {
-            width: 25%;
-        }
-
-        .comparison-table td {
-            padding: 1.25rem 1.5rem;
-            vertical-align: top;
-            border-bottom: 1px solid var(--border-subtle);
+        .comparison-brand.build-agent .comparison-brand-logo {
             color: var(--text-secondary);
-            line-height: 1.5;
         }
 
-        .comparison-table tr:last-child td {
-            border-bottom: none;
+        .comparison-brand-tagline {
+            font-size: 0.875rem;
+            color: var(--text-muted);
         }
 
-        .comparison-table td:first-child {
-            font-weight: 600;
-            color: var(--accent-cyan);
-        }
-
-        .comparison-highlight {
+        .comparison-brand-badge {
             display: inline-flex;
             align-items: center;
             gap: 0.375rem;
-            padding: 0.25rem 0.75rem;
-            background: rgba(0, 217, 255, 0.15);
-            border-radius: 6px;
+            padding: 0.375rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.7rem;
             font-weight: 600;
-            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 1rem;
         }
 
-        .comparison-note {
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(139, 92, 246, 0.05));
-            border-left: 4px solid var(--accent-cyan);
-            border-radius: 8px;
+        .comparison-brand.snow-flow .comparison-brand-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
-        .comparison-note-title {
-            font-weight: 700;
-            color: var(--accent-cyan);
+        .comparison-brand.build-agent .comparison-brand-badge {
+            background: rgba(239, 68, 68, 0.1);
+            color: #EF4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* Comparison Header Row */
+        .comparison-header {
+            display: grid;
+            grid-template-columns: 280px 1fr 1fr;
+            gap: 0;
             margin-bottom: 0.75rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            border-radius: 12px;
+            overflow: hidden;
         }
 
-        .comparison-note-list {
-            list-style: none;
+        .comparison-header-cell {
+            padding: 1.25rem 1.5rem;
+            font-weight: 700;
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-right: 2px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .comparison-header-cell:last-child {
+            border-right: none;
+        }
+
+        .comparison-header-cell.feature-header {
+            color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.3);
+            border-right-color: rgba(0, 217, 255, 0.2);
+        }
+
+        .comparison-header-cell.snow-flow-header {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%);
+            color: var(--accent-cyan);
+            text-align: center;
+            border-right-color: rgba(139, 92, 246, 0.2);
+            position: relative;
+        }
+
+        .comparison-header-cell.snow-flow-header::after {
+            content: 'Recommended';
+            display: block;
+            font-size: 0.625rem;
+            font-weight: 500;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+
+        .comparison-header-cell.build-agent-header {
+            color: var(--text-secondary);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        @media (max-width: 1024px) {
+            .comparison-header {
+                grid-template-columns: 220px 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .comparison-header {
+                display: none;
+            }
+        }
+
+        /* Comparison Rows */
+        .comparison-rows {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
         }
 
-        .comparison-note-list li {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.5rem;
-            color: var(--text-secondary);
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 280px 1fr 1fr;
+            gap: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .comparison-note-list li strong {
+        .comparison-row:hover {
+            border-color: rgba(0, 217, 255, 0.4);
+            transform: translateX(4px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .comparison-row {
+                grid-template-columns: 220px 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .comparison-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-cell {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            border-right: 2px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+
+        .comparison-cell:last-child {
+            border-right: none;
+        }
+
+        .comparison-cell.feature {
+            background: rgba(0, 0, 0, 0.3);
+            border-right-color: rgba(0, 217, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .comparison-cell {
+                border-right: none;
+                border-bottom: 1px solid var(--border-medium);
+            }
+
+            .comparison-cell:last-child {
+                border-bottom: none;
+            }
+
+            .comparison-cell.feature {
+                background: linear-gradient(90deg, rgba(0, 217, 255, 0.1), transparent);
+            }
+
+            .comparison-cell::before {
+                content: attr(data-column);
+                display: block;
+                font-size: 0.7rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 0.5rem;
+                opacity: 0.6;
+            }
+
+            .comparison-cell.snow-flow-cell::before {
+                color: var(--accent-cyan);
+            }
+
+            .comparison-cell.build-agent-cell::before {
+                color: var(--text-muted);
+            }
+        }
+
+        .comparison-cell.snow-flow-cell {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%);
+            border-right-color: rgba(139, 92, 246, 0.2);
+            border-left: 3px solid var(--accent-cyan);
+        }
+
+        .comparison-cell.build-agent-cell {
+            background: rgba(0, 0, 0, 0.15);
+            border-left: 3px solid rgba(100, 116, 139, 0.3);
+        }
+
+        .comparison-cell-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .comparison-cell-icon.check {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+        }
+
+        .comparison-cell-icon.partial {
+            background: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
+        }
+
+        .comparison-cell-icon.x {
+            background: rgba(239, 68, 68, 0.1);
+            color: #EF4444;
+        }
+
+        .comparison-cell-content {
+            flex: 1;
+        }
+
+        .comparison-cell-title {
+            font-weight: 600;
             color: var(--text-primary);
+            font-size: 0.9375rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .comparison-cell.feature .comparison-cell-title {
+            color: var(--accent-cyan);
+        }
+
+        .comparison-cell-desc {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .comparison-cell.build-agent-cell .comparison-cell-desc {
+            color: var(--text-muted);
+        }
+
+        /* Highlight tag */
+        .comparison-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.125rem 0.5rem;
+            background: rgba(0, 217, 255, 0.15);
+            border-radius: 4px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-left: 0.5rem;
+        }
+
+        /* Bottom Summary Cards */
+        .comparison-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 2.5rem;
+        }
+
+        .comparison-summary-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .comparison-summary-card:hover {
+            border-color: rgba(0, 217, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .comparison-summary-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(0, 217, 255, 0.1);
+            color: var(--accent-cyan);
+        }
+
+        .comparison-summary-content h4 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .comparison-summary-content p {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .comparison-summary-stat {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--accent-cyan);
         }
 
         /* =====================================================
@@ -1693,6 +2284,924 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* =====================================================
+           STATS SECTION
+           ===================================================== */
+
+        .stats-section {
+            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-primary) 100%);
+            padding: 6rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 800px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+        }
+
+        .stats-showcase {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            margin-top: 3rem;
+            align-items: center;
+        }
+
+        @media (min-width: 1024px) {
+            .stats-showcase {
+                grid-template-columns: 1fr 1.2fr;
+                gap: 4rem;
+            }
+        }
+
+        /* Circle Chart */
+        .stats-main {
+            display: flex;
+            justify-content: center;
+        }
+
+        .circle-chart-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+        }
+
+        @media (min-width: 768px) {
+            .circle-chart-container {
+                width: 320px;
+                height: 320px;
+            }
+        }
+
+        .circle-chart {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .chart-segment {
+            transition: stroke-dasharray 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .segment-1 { stroke-dasharray: 0 534; }
+        .segment-2 { stroke-dasharray: 0 534; }
+        .segment-3 { stroke-dasharray: 0 534; }
+
+        .stats-section.animated .segment-1 { stroke-dasharray: 309 534; }
+        .stats-section.animated .segment-2 { stroke-dasharray: 113 534; }
+        .stats-section.animated .segment-3 { stroke-dasharray: 112 534; }
+
+        .circle-chart-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .total-lines {
+            font-family: var(--font-mono);
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        @media (min-width: 768px) {
+            .total-lines {
+                font-size: 3rem;
+            }
+        }
+
+        .total-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.25rem;
+        }
+
+        /* Stats Bars */
+        .stats-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stat-bar-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-bar-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--border-medium);
+            transform: translateX(4px);
+        }
+
+        .stat-bar-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-bar-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-bar-icon.cyan {
+            background: rgba(0, 217, 255, 0.15);
+            color: var(--accent-cyan);
+        }
+
+        .stat-bar-icon.purple {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+        }
+
+        .stat-bar-icon.orange {
+            background: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
+        }
+
+        .stat-bar-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .stat-bar-name {
+            display: block;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-bar-desc {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .stat-bar-value {
+            text-align: right;
+        }
+
+        .stat-number {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-percent {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .stat-bar-track {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            width: 0;
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-bar-fill.cyan {
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+        }
+
+        .stat-bar-fill.purple {
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+        }
+
+        .stat-bar-fill.orange {
+            background: linear-gradient(90deg, #F59E0B, var(--accent-green));
+        }
+
+        /* Quick Stats Grid */
+        .quick-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 3rem;
+        }
+
+        @media (min-width: 768px) {
+            .quick-stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1.5rem;
+            }
+        }
+
+        .quick-stat {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .quick-stat:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--accent-cyan);
+            transform: translateY(-4px);
+        }
+
+        .quick-stat-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            background: rgba(0, 217, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+        }
+
+        .quick-stat-value {
+            font-family: var(--font-mono);
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .quick-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Stats CTA */
+        .stats-cta {
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .stats-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .stats-link:hover {
+            background: rgba(0, 217, 255, 0.1);
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+
+        .stats-link svg {
+            transition: transform 0.3s ease;
+        }
+
+        .stats-link:hover svg {
+            transform: translateX(4px);
+        }
+
+        /* Open/Closed Source Badges */
+        .badge-open, .badge-closed {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .badge-open {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-closed {
+            background: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* Enterprise Explainer */
+        .enterprise-explainer {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            background: rgba(245, 158, 11, 0.05);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .explainer-icon {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            background: rgba(245, 158, 11, 0.15);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #F59E0B;
+        }
+
+        .explainer-content h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .explainer-content p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        @media (max-width: 640px) {
+            .enterprise-explainer {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .explainer-icon {
+                margin: 0 auto;
+            }
+        }
+
+        /* Section Badge */
+        .section-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent-cyan);
+            padding: 0.4rem 1rem;
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 20px;
+            margin-bottom: 1rem;
+        }
+
+        /* Platform Grid */
+        .platform-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .platform-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 2rem;
+            }
+        }
+
+        .platform-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Colored top border like stats.html */
+        .platform-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .platform-card:hover::before {
+            opacity: 1;
+        }
+
+        .platform-card:hover {
+            border-color: var(--border-medium);
+            transform: translateY(-6px);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 217, 255, 0.1);
+        }
+
+        /* Snow-Code card (purple gradient) */
+        .platform-card:nth-child(2)::before {
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+        }
+
+        .platform-card:nth-child(2):hover {
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.1);
+        }
+
+        /* Enterprise card (orange/green gradient) */
+        .platform-card.enterprise-card::before {
+            background: linear-gradient(90deg, #F59E0B, var(--accent-green));
+        }
+
+        .platform-card.enterprise-card:hover {
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(245, 158, 11, 0.1);
+        }
+
+        .platform-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .platform-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .platform-icon.cyan {
+            background: rgba(0, 217, 255, 0.15);
+            color: var(--accent-cyan);
+        }
+
+        .platform-icon.purple {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+        }
+
+        .platform-icon.orange {
+            background: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
+        }
+
+        .platform-badge {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+        }
+
+        .platform-badge.open {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .platform-badge.closed {
+            background: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .platform-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .platform-tagline {
+            font-size: 0.9rem;
+            color: var(--accent-cyan);
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .enterprise-card .platform-tagline {
+            color: #F59E0B;
+        }
+
+        .platform-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            flex: 1;
+            margin-bottom: 1.5rem;
+        }
+
+        .platform-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin-bottom: 1.5rem;
+            padding-top: 0;
+        }
+
+        /* Stat rows like stats.html */
+        .platform-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .platform-stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .platform-stat-row.highlight {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+            margin: 0 -1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border-bottom: none;
+        }
+
+        .platform-stat-row.highlight .platform-stat-label {
+            color: #FFD700;
+        }
+
+        .platform-stat-row.highlight .platform-stat-label svg {
+            fill: #FFD700;
+        }
+
+        .platform-stat-row.highlight .platform-stat-value {
+            color: #FFD700;
+        }
+
+        .platform-stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .platform-stat-value {
+            font-family: var(--font-mono);
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .platform-stat-value.star-count {
+            color: #FFD700;
+        }
+
+        /* Progress bar like stats.html */
+        .platform-progress {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            width: 0;
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .progress-fill.cyan {
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+        }
+
+        .progress-fill.purple {
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+        }
+
+        .progress-fill.orange {
+            background: linear-gradient(90deg, #F59E0B, var(--accent-green));
+        }
+
+        /* Legacy stat style for backwards compatibility */
+        .platform-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .platform-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .platform-link:hover {
+            color: var(--accent-cyan);
+        }
+
+        .platform-link.enterprise-link:hover {
+            color: #F59E0B;
+        }
+
+        /* Growth Chart Section */
+        .growth-chart-section {
+            margin-top: 4rem;
+            padding: 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+        }
+
+        .growth-chart-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .growth-chart-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .growth-chart-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .growth-chart {
+            width: 100%;
+            min-width: 600px;
+            height: auto;
+        }
+
+        .chart-line {
+            stroke-dasharray: 2000;
+            stroke-dashoffset: 2000;
+            transition: stroke-dashoffset 2s ease-out;
+        }
+
+        .chart-area {
+            opacity: 0;
+            transition: opacity 1.5s ease-out;
+        }
+
+        .chart-point {
+            opacity: 0;
+            transform-origin: center;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .stats-section.animated .chart-line {
+            stroke-dashoffset: 0;
+        }
+
+        .stats-section.animated .chart-area {
+            opacity: 1;
+        }
+
+        .stats-section.animated .chart-point {
+            opacity: 1;
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.cyan {
+            background: var(--accent-cyan);
+        }
+
+        .legend-dot.purple {
+            background: var(--accent-purple);
+        }
+
+        .legend-dot.orange {
+            background: #F59E0B;
+        }
+
+        /* Total Stats Bar - Enhanced like stats.html highlights */
+        .total-stats-bar {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 3rem;
+            padding: 2rem 1.5rem;
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+            border: 1px solid rgba(0, 217, 255, 0.25);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .total-stats-bar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        @media (min-width: 768px) {
+            .total-stats-bar {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 2rem;
+                padding: 2.5rem 3rem;
+            }
+        }
+
+        .total-stat {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .total-stat-value {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+            margin-bottom: 0.375rem;
+        }
+
+        @media (min-width: 768px) {
+            .total-stat-value {
+                font-size: 2.5rem;
+            }
+        }
+
+        .total-stat-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Philosophy Section - Enhanced like stats.html */
+        .philosophy-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        @media (min-width: 768px) {
+            .philosophy-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .philosophy-card {
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .philosophy-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .philosophy-card.open-source {
+            background: rgba(16, 185, 129, 0.05);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .philosophy-card.open-source:hover {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 16px 32px rgba(16, 185, 129, 0.1);
+        }
+
+        .philosophy-card.closed-source {
+            background: rgba(245, 158, 11, 0.05);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .philosophy-card.closed-source:hover {
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 16px 32px rgba(245, 158, 11, 0.1);
+        }
+
+        .philosophy-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .philosophy-card:hover .philosophy-icon {
+            transform: scale(1.1);
+        }
+
+        .philosophy-card.open-source .philosophy-icon {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+        }
+
+        .philosophy-card.closed-source .philosophy-icon {
+            background: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
+        }
+
+        .philosophy-card h4 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .philosophy-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -1743,6 +3252,10 @@
                     <li><a href="https://status.snow-flow.dev">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
                         Status
+                    </a></li>
+                    <li><a href="stats.html">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        Stats
                     </a></li>
                 </ul>
             </div>
@@ -1798,6 +3311,7 @@
                     <li><a href="#autonomous">Features</a></li>
                     <li><a href="#comparison">vs Build Agent</a></li>
                     <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="stats.html">Stats</a></li>
                     <li><a href="https://github.com/groeimetai/snow-flow">GitHub</a></li>
                     <li><a href="https://portal.snow-flow.dev" class="nav-cta">Start Free</a></li>
                 </ul>
@@ -1862,6 +3376,14 @@
                 </div>
             </div>
         </div>
+
+        <!-- Scroll Indicator -->
+        <a href="#why" class="hero-scroll-indicator" aria-label="Scroll to content">
+            <span>Scroll</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M19 12l-7 7-7-7"/>
+            </svg>
+        </a>
     </section>
 
     <!-- Developer Prominence Section -->
@@ -2054,67 +3576,274 @@
                 <span class="section-label">Platform Comparison</span>
                 <h2 class="section-title">Snow-Flow vs ServiceNow Build Agent</h2>
                 <p class="section-subtitle">
-                    A side-by-side comparison of Snow-Flow's open approach versus ServiceNow's proprietary AI solution.
+                    See how Snow-Flow's open, flexible approach compares to ServiceNow's proprietary AI solution.
                 </p>
             </div>
 
-            <div class="comparison-wrapper">
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Capability</th>
-                            <th><span class="comparison-highlight">Snow-Flow</span></th>
-                            <th>Build Agent</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>AI Models</td>
-                            <td><span class="comparison-highlight">75+ providers</span> - Use YOUR approved models (Claude, GPT, DeepSeek, local)</td>
-                            <td>NowLLM only + optional Azure OpenAI</td>
-                        </tr>
-                        <tr>
-                            <td>Source Code</td>
-                            <td><span class="comparison-highlight">Open source</span> - Elastic License 2.0, audit & customize</td>
-                            <td>Proprietary closed-source</td>
-                        </tr>
-                        <tr>
-                            <td>Development Environment</td>
-                            <td><span class="comparison-highlight">Any IDE</span> - VS Code, Cursor, JetBrains, terminal</td>
-                            <td>Browser-based Studio only</td>
-                        </tr>
-                        <tr>
-                            <td>Starting Cost</td>
-                            <td><span class="comparison-highlight">$0</span> (open source) or $99/dev/month</td>
-                            <td>$100-200/user/mo + $150K-$4.5M implementation</td>
-                        </tr>
-                        <tr>
-                            <td>MCP Tools</td>
-                            <td><span class="comparison-highlight">410+ tools</span> across 23 specialized servers</td>
-                            <td>Proprietary non-MCP API</td>
-                        </tr>
-                        <tr>
-                            <td>External Integrations</td>
-                            <td><span class="comparison-highlight">GitHub, GitLab, Jira, Azure DevOps, Confluence</span></td>
-                            <td>ServiceNow ecosystem only</td>
-                        </tr>
-                        <tr>
-                            <td>Update Set Management</td>
-                            <td><span class="comparison-highlight">1 story = 1 update set</span> automatically</td>
-                            <td>Manual update set management</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Brand Headers -->
+            <div class="comparison-header">
+                <div class="comparison-brand snow-flow">
+                    <div class="comparison-brand-logo">Snow-Flow</div>
+                    <div class="comparison-brand-tagline">Open-source AI development platform</div>
+                    <span class="comparison-brand-badge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Open Source
+                    </span>
+                </div>
+                <div class="comparison-brand build-agent">
+                    <div class="comparison-brand-logo">Build Agent</div>
+                    <div class="comparison-brand-tagline">ServiceNow's proprietary AI tool</div>
+                    <span class="comparison-brand-badge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        Closed Source
+                    </span>
+                </div>
             </div>
 
-            <div class="comparison-note">
-                <div class="comparison-note-title">Why developers choose Snow-Flow</div>
-                <ul class="comparison-note-list">
-                    <li><strong>No vendor lock-in:</strong> Use any AI model your organization approves</li>
-                    <li><strong>90% cost reduction:</strong> Open-source foundation vs $150K+ ServiceNow implementation</li>
-                    <li><strong>Developer freedom:</strong> Code in your favorite IDE, not a browser</li>
-                    <li><strong>Full transparency:</strong> Every line of code on GitHub, audit and customize freely</li>
-                </ul>
+            <!-- Column Headers -->
+            <div class="comparison-header">
+                <div class="comparison-header-cell feature-header">Feature</div>
+                <div class="comparison-header-cell snow-flow-header">Snow-Flow</div>
+                <div class="comparison-header-cell build-agent-header">Build Agent</div>
+            </div>
+
+            <!-- Comparison Rows -->
+            <div class="comparison-rows">
+                <!-- AI Models -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">AI Model Choice</div>
+                            <div class="comparison-cell-desc">Which AI models can you use?</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell snow-flow-cell">
+                        <span class="comparison-cell-icon check">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">75+ AI Providers<span class="comparison-tag">Your choice</span></div>
+                            <div class="comparison-cell-desc">Claude, GPT-4o, DeepSeek, Gemini, Llama, local models, and even MID Server-hosted LLMs</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell build-agent-cell">
+                        <span class="comparison-cell-icon partial">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">NowLLM Only</div>
+                            <div class="comparison-cell-desc">Limited to ServiceNow's proprietary model, optional Azure OpenAI, no MID Server LLM support</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Development Environment -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Development Environment</div>
+                            <div class="comparison-cell-desc">Where do you write code?</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell snow-flow-cell">
+                        <span class="comparison-cell-icon check">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Any IDE or Terminal<span class="comparison-tag">Flexible</span></div>
+                            <div class="comparison-cell-desc">VS Code, Cursor, JetBrains, Neovim, terminal - work where you're productive</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell build-agent-cell">
+                        <span class="comparison-cell-icon x">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Browser Only</div>
+                            <div class="comparison-cell-desc">Limited to ServiceNow Studio in browser, no local development</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tooling -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">MCP Tooling</div>
+                            <div class="comparison-cell-desc">Available development tools</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell snow-flow-cell">
+                        <span class="comparison-cell-icon check">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">410+ MCP Tools<span class="comparison-tag">Standard</span></div>
+                            <div class="comparison-cell-desc">23 specialized servers, open protocol, works with any MCP-compatible client</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell build-agent-cell">
+                        <span class="comparison-cell-icon x">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Proprietary API</div>
+                            <div class="comparison-cell-desc">Custom non-standard interface, limited to Build Agent capabilities</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integrations -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">External Integrations</div>
+                            <div class="comparison-cell-desc">Connect to your existing tools</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell snow-flow-cell">
+                        <span class="comparison-cell-icon check">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Full DevOps Stack<span class="comparison-tag">Enterprise</span></div>
+                            <div class="comparison-cell-desc">GitHub, GitLab, Jira, Azure DevOps, Confluence, Slack - bidirectional sync</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell build-agent-cell">
+                        <span class="comparison-cell-icon x">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">ServiceNow Only</div>
+                            <div class="comparison-cell-desc">Limited to ServiceNow ecosystem, manual handoffs to external tools</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Update Sets -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Update Set Management</div>
+                            <div class="comparison-cell-desc">How changes are tracked</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell snow-flow-cell">
+                        <span class="comparison-cell-icon check">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Automatic Tracking<span class="comparison-tag">AI-Managed</span></div>
+                            <div class="comparison-cell-desc">1 story = 1 update set, automatic creation, scoped apps, full audit trail</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell build-agent-cell">
+                        <span class="comparison-cell-icon partial">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Manual Process</div>
+                            <div class="comparison-cell-desc">Developer must manually create and manage update sets</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cost -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Pricing</div>
+                            <div class="comparison-cell-desc">Total cost of ownership</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell snow-flow-cell">
+                        <span class="comparison-cell-icon check">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">$0 or $99/dev/month<span class="comparison-tag">90% savings</span></div>
+                            <div class="comparison-cell-desc">Open source free forever, Enterprise at $99/dev with integrations</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell build-agent-cell">
+                        <span class="comparison-cell-icon x">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">$150K+ Implementation</div>
+                            <div class="comparison-cell-desc">Plus $100-200/user/month licensing, typically $300K-$4.5M total</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Source Code -->
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Source Code Access</div>
+                            <div class="comparison-cell-desc">Transparency and customization</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell snow-flow-cell">
+                        <span class="comparison-cell-icon check">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Fully Open Source<span class="comparison-tag">Audit</span></div>
+                            <div class="comparison-cell-desc">Elastic License 2.0, audit every line, customize freely, community-driven</div>
+                        </div>
+                    </div>
+                    <div class="comparison-cell build-agent-cell">
+                        <span class="comparison-cell-icon x">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </span>
+                        <div class="comparison-cell-content">
+                            <div class="comparison-cell-title">Closed Source</div>
+                            <div class="comparison-cell-desc">Proprietary black box, no visibility into how it works</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="comparison-summary">
+                <div class="comparison-summary-card">
+                    <div class="comparison-summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M16 8l-4 4-4-4"></path><path d="M12 12v6"></path></svg>
+                    </div>
+                    <div class="comparison-summary-content">
+                        <h4>No Vendor Lock-in</h4>
+                        <p>Switch AI models anytime. Your prompts, your data, your choice.</p>
+                    </div>
+                </div>
+                <div class="comparison-summary-card">
+                    <div class="comparison-summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                    <div class="comparison-summary-content">
+                        <h4><span class="comparison-summary-stat">90%</span> Cost Reduction</h4>
+                        <p>Open source core vs $150K+ implementation fees.</p>
+                    </div>
+                </div>
+                <div class="comparison-summary-card">
+                    <div class="comparison-summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                    </div>
+                    <div class="comparison-summary-content">
+                        <h4>Developer Freedom</h4>
+                        <p>Code in your IDE, not a browser. Works with your existing workflow.</p>
+                    </div>
+                </div>
+                <div class="comparison-summary-card">
+                    <div class="comparison-summary-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
+                    </div>
+                    <div class="comparison-summary-content">
+                        <h4>Full Transparency</h4>
+                        <p>Every line on GitHub. Audit, customize, and contribute freely.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -2253,6 +3982,183 @@
                         <span class="terminal-success">Story complete. Update set ready for promotion.</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section id="stats" class="section stats-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">The Platform</span>
+                <h2 class="section-title">Three Projects. One Mission.</h2>
+                <p class="section-subtitle">Snow-Flow is built as a modular platform. Choose what you need - from the open-source core to enterprise integrations.</p>
+            </div>
+
+            <!-- Platform Cards -->
+            <div class="platform-grid">
+                <!-- Snow-Flow -->
+                <div class="platform-card">
+                    <div class="platform-card-header">
+                        <div class="platform-icon cyan">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                        <span class="platform-badge open">Open Source</span>
+                    </div>
+                    <h3 class="platform-name">Snow-Flow</h3>
+                    <p class="platform-tagline">The Engine</p>
+                    <p class="platform-desc">The core of the platform. 225+ MCP tools that connect any AI model to ServiceNow. Conversational development, ES5 validation, Update Set management, and local IDE integration.</p>
+                    <div class="platform-stats">
+                        <div class="platform-stat-row highlight">
+                            <span class="platform-stat-label">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: -2px; margin-right: 4px;"><path d="M12 .587l3.668 7.431 8.2 1.191-5.934 5.782 1.4 8.172L12 19.896l-7.334 3.855 1.4-8.172L.132 9.797l8.2-1.191z"/></svg>
+                                GitHub Stars
+                            </span>
+                            <span class="platform-stat-value star-count" id="snowFlowStars">-</span>
+                        </div>
+                        <div class="platform-stat-row">
+                            <span class="platform-stat-label">MCP Tools</span>
+                            <span class="platform-stat-value">225+</span>
+                        </div>
+                        <div class="platform-stat-row">
+                            <span class="platform-stat-label">ServiceNow APIs</span>
+                            <span class="platform-stat-value">18</span>
+                        </div>
+                    </div>
+                    <a href="https://github.com/groeimetai/snow-flow" class="platform-link" target="_blank">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                        View on GitHub
+                    </a>
+                </div>
+
+                <!-- Snow-Code -->
+                <div class="platform-card">
+                    <div class="platform-card-header">
+                        <div class="platform-icon purple">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="16 18 22 12 16 6"></polyline>
+                                <polyline points="8 6 2 12 8 18"></polyline>
+                            </svg>
+                        </div>
+                        <span class="platform-badge open">Open Source</span>
+                    </div>
+                    <h3 class="platform-name">Snow-Code</h3>
+                    <p class="platform-tagline">The Interface</p>
+                    <p class="platform-desc">Your development environment. A terminal-based AI IDE with OAuth authentication, multi-instance support, MID Server connectivity, and project management. Works with any LLM.</p>
+                    <div class="platform-stats">
+                        <div class="platform-stat-row highlight">
+                            <span class="platform-stat-label">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: -2px; margin-right: 4px;"><path d="M12 .587l3.668 7.431 8.2 1.191-5.934 5.782 1.4 8.172L12 19.896l-7.334 3.855 1.4-8.172L.132 9.797l8.2-1.191z"/></svg>
+                                GitHub Stars
+                            </span>
+                            <span class="platform-stat-value star-count" id="snowCodeStars">-</span>
+                        </div>
+                        <div class="platform-stat-row">
+                            <span class="platform-stat-label">LLM Providers</span>
+                            <span class="platform-stat-value">75+</span>
+                        </div>
+                        <div class="platform-stat-row">
+                            <span class="platform-stat-label">IDE Integrations</span>
+                            <span class="platform-stat-value">5</span>
+                        </div>
+                    </div>
+                    <a href="https://github.com/groeimetai/snow-code" class="platform-link" target="_blank">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                        View on GitHub
+                    </a>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="platform-card enterprise-card">
+                    <div class="platform-card-header">
+                        <div class="platform-icon orange">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <span class="platform-badge closed">Closed Source</span>
+                    </div>
+                    <h3 class="platform-name">Enterprise</h3>
+                    <p class="platform-tagline">The Integrations</p>
+                    <p class="platform-desc">Connect to the rest of your stack. Managed SaaS with encrypted credential storage, Jira/Azure DevOps/Confluence connectors, monitoring dashboards, and stakeholder access.</p>
+                    <div class="platform-stats">
+                        <div class="platform-stat-row">
+                            <span class="platform-stat-label">Integrations</span>
+                            <span class="platform-stat-value">40+</span>
+                        </div>
+                        <div class="platform-stat-row">
+                            <span class="platform-stat-label">Stakeholder Seats</span>
+                            <span class="platform-stat-value">Unlimited</span>
+                        </div>
+                        <div class="platform-stat-row">
+                            <span class="platform-stat-label">Security</span>
+                            <span class="platform-stat-value">SOC 2</span>
+                        </div>
+                    </div>
+                    <a href="#pricing" class="platform-link enterprise-link">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        View Pricing
+                    </a>
+                </div>
+            </div>
+
+            <!-- Value Metrics -->
+            <div class="total-stats-bar">
+                <div class="total-stat">
+                    <span class="total-stat-value" id="totalStars">-</span>
+                    <span class="total-stat-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: -2px; margin-right: 4px;"><path d="M12 .587l3.668 7.431 8.2 1.191-5.934 5.782 1.4 8.172L12 19.896l-7.334 3.855 1.4-8.172L.132 9.797l8.2-1.191z"/></svg>
+                        Total Stars
+                    </span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-stat-value">265+</span>
+                    <span class="total-stat-label">MCP Tools</span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-stat-value">75+</span>
+                    <span class="total-stat-label">LLM Providers</span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-stat-value">40+</span>
+                    <span class="total-stat-label">Integrations</span>
+                </div>
+            </div>
+
+            <!-- Open Source Philosophy -->
+            <div class="philosophy-section">
+                <div class="philosophy-card open-source">
+                    <div class="philosophy-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 16v-4M12 8h.01"></path>
+                        </svg>
+                    </div>
+                    <h4>Why Open Source?</h4>
+                    <p>We believe ServiceNow development should be accessible to everyone. Open source means you can verify what runs on your systems, customize for your needs, and never get locked into a single vendor. Snow-Flow and Snow-Code will always be free.</p>
+                </div>
+                <div class="philosophy-card closed-source">
+                    <div class="philosophy-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <h4>Why Enterprise is Closed?</h4>
+                    <p>Enterprise stores your Jira, Azure DevOps, and Confluence credentials. This requires bank-grade encryption (Google Cloud KMS), SOC 2 compliance, and audit trails. We keep this closed to protect your secrets and maintain security certifications.</p>
+                </div>
+            </div>
+
+            <div class="stats-cta">
+                <a href="stats.html" class="stats-link">
+                    View Detailed Statistics
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </a>
             </div>
         </div>
     </section>
@@ -2396,6 +4302,38 @@
             lastScroll = currentScroll;
         });
 
+        // Active section detection for nav links
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+
+        function setActiveLink() {
+            const scrollY = window.pageYOffset;
+
+            sections.forEach(section => {
+                const sectionHeight = section.offsetHeight;
+                const sectionTop = section.offsetTop - 100;
+                const sectionId = section.getAttribute('id');
+
+                if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === '#' + sectionId) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+
+            // If at top of page, activate first link
+            if (scrollY < 100) {
+                navLinks.forEach(link => link.classList.remove('active'));
+                if (navLinks[0]) navLinks[0].classList.add('active');
+            }
+        }
+
+        window.addEventListener('scroll', setActiveLink);
+        setActiveLink(); // Initial call
+
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
@@ -2533,6 +4471,99 @@
 
             // Start the animation
             setTimeout(typeWriter, 1000);
+        })();
+
+        // Stats Section Animation
+        (function() {
+            const statsSection = document.querySelector('.stats-section');
+            if (!statsSection) return;
+
+            // Animated counter function
+            function animateCounter(element, target, duration = 2000) {
+                if (!element) return;
+                const start = 0;
+                const startTime = performance.now();
+
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+                    const current = Math.floor(start + (target - start) * easeOutQuart);
+                    element.textContent = current.toLocaleString();
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    }
+                }
+
+                requestAnimationFrame(update);
+            }
+
+            // GitHub stars data
+            const starsData = {
+                snowFlow: 0,
+                snowCode: 0,
+                total: 0
+            };
+
+            // Fetch GitHub stars for both repos
+            async function fetchGitHubStars() {
+                const repos = [
+                    { key: 'snowFlow', url: 'https://api.github.com/repos/groeimetai/snow-flow' },
+                    { key: 'snowCode', url: 'https://api.github.com/repos/groeimetai/snow-code' }
+                ];
+
+                for (const repo of repos) {
+                    try {
+                        const response = await fetch(repo.url);
+                        if (response.ok) {
+                            const data = await response.json();
+                            starsData[repo.key] = data.stargazers_count || 0;
+                        }
+                    } catch (e) {
+                        // Use fallback of 0
+                    }
+                }
+                starsData.total = starsData.snowFlow + starsData.snowCode;
+            }
+
+            // Fetch stars on page load
+            fetchGitHubStars();
+
+            const statsObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // Add animated class to trigger CSS animations
+                        statsSection.classList.add('animated');
+
+                        // Update and animate star counters
+                        const snowFlowStarsEl = document.getElementById('snowFlowStars');
+                        const snowCodeStarsEl = document.getElementById('snowCodeStars');
+                        const totalStarsEl = document.getElementById('totalStars');
+
+                        if (starsData.snowFlow > 0) {
+                            animateCounter(snowFlowStarsEl, starsData.snowFlow, 1500);
+                        } else {
+                            snowFlowStarsEl.textContent = '-';
+                        }
+
+                        if (starsData.snowCode > 0) {
+                            animateCounter(snowCodeStarsEl, starsData.snowCode, 1500);
+                        } else {
+                            snowCodeStarsEl.textContent = '-';
+                        }
+
+                        if (starsData.total > 0) {
+                            animateCounter(totalStarsEl, starsData.total, 2000);
+                        } else {
+                            totalStarsEl.textContent = '-';
+                        }
+
+                        statsObserver.disconnect();
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            statsObserver.observe(statsSection);
         })();
 
         // Console easter egg
