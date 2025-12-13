@@ -4502,8 +4502,41 @@
             const starsData = {
                 snowFlow: 0,
                 snowCode: 0,
-                total: 0
+                total: 0,
+                fetched: false
             };
+
+            let starsAnimated = false;
+
+            function updateStarCounters() {
+                if (starsAnimated) return;
+
+                const snowFlowStarsEl = document.getElementById('snowFlowStars');
+                const snowCodeStarsEl = document.getElementById('snowCodeStars');
+                const totalStarsEl = document.getElementById('totalStars');
+
+                if (starsData.snowFlow > 0) {
+                    animateCounter(snowFlowStarsEl, starsData.snowFlow, 1500);
+                } else if (starsData.fetched) {
+                    snowFlowStarsEl.textContent = '0';
+                }
+
+                if (starsData.snowCode > 0) {
+                    animateCounter(snowCodeStarsEl, starsData.snowCode, 1500);
+                } else if (starsData.fetched) {
+                    snowCodeStarsEl.textContent = '0';
+                }
+
+                if (starsData.total > 0) {
+                    animateCounter(totalStarsEl, starsData.total, 2000);
+                } else if (starsData.fetched) {
+                    totalStarsEl.textContent = '0';
+                }
+
+                if (starsData.fetched) {
+                    starsAnimated = true;
+                }
+            }
 
             // Fetch GitHub stars for both repos
             async function fetchGitHubStars() {
@@ -4524,6 +4557,12 @@
                     }
                 }
                 starsData.total = starsData.snowFlow + starsData.snowCode;
+                starsData.fetched = true;
+
+                // Update counters if stats section is already visible
+                if (statsSection.classList.contains('animated')) {
+                    updateStarCounters();
+                }
             }
 
             // Fetch stars on page load
@@ -4536,27 +4575,7 @@
                         statsSection.classList.add('animated');
 
                         // Update and animate star counters
-                        const snowFlowStarsEl = document.getElementById('snowFlowStars');
-                        const snowCodeStarsEl = document.getElementById('snowCodeStars');
-                        const totalStarsEl = document.getElementById('totalStars');
-
-                        if (starsData.snowFlow > 0) {
-                            animateCounter(snowFlowStarsEl, starsData.snowFlow, 1500);
-                        } else {
-                            snowFlowStarsEl.textContent = '-';
-                        }
-
-                        if (starsData.snowCode > 0) {
-                            animateCounter(snowCodeStarsEl, starsData.snowCode, 1500);
-                        } else {
-                            snowCodeStarsEl.textContent = '-';
-                        }
-
-                        if (starsData.total > 0) {
-                            animateCounter(totalStarsEl, starsData.total, 2000);
-                        } else {
-                            totalStarsEl.textContent = '-';
-                        }
+                        updateStarCounters();
 
                         statsObserver.disconnect();
                     }
