@@ -1,6 +1,6 @@
 {
-  "generated": "2025-12-15T00:06:30.931Z",
-  "generatedFormatted": "December 15, 2025",
+  "generated": "2025-12-16T00:07:08.647Z",
+  "generatedFormatted": "December 16, 2025",
   "repos": [
     {
       "name": "snow-flow",
@@ -16,22 +16,22 @@
         "html": 16302,
         "css": 9623
       },
-      "percentage": "71.9"
+      "percentage": "71.7"
     },
     {
       "name": "snow-code",
       "description": "CLI & Authentication",
       "color": "purple",
-      "lines": 84107,
-      "files": 441,
+      "lines": 85039,
+      "files": 442,
       "byExtension": {
-        "ts": 56917,
+        "ts": 57849,
         "js": 105,
         "tsx": 17353,
         "html": 37,
         "css": 9695
       },
-      "percentage": "28.1"
+      "percentage": "28.3"
     },
     {
       "name": "snow-flow-enterprise",
@@ -44,7 +44,7 @@
     }
   ],
   "total": {
-    "lines": 299799,
-    "files": 1178
+    "lines": 300731,
+    "files": 1179
   }
 }
