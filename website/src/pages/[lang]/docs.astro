@@ -438,12 +438,12 @@ snow-flow agent <span class="string">"Build a complete workspace for IT support"
                     <div class="code-content">
 <pre><span class="comment">// ✅ ES5 - Always works</span>
 <span class="keyword">var</span> items = [];
-<span class="keyword">for</span> (<span class="keyword">var</span> i = 0; i < data.length; i++) {
+<span class="keyword">for</span> (<span class="keyword">var</span> i = 0; i &lt; data.length; i++) &#123;
   items.push(data[i].name);
-}
+&#125;
 
 <span class="comment">// ⚠️ ES6 - May cause issues</span>
-<span class="keyword">const</span> items = data.map(d => d.name);</pre>
+<span class="keyword">const</span> items = data.map(d =&gt; d.name);</pre>
                     </div>
                 </div>
 
@@ -467,13 +467,13 @@ snow-flow agent <span class="string">"Build a complete workspace for IT support"
                     </div>
                     <div class="code-content">
 <pre><span class="comment">// Create Update Set first</span>
-snow_update_set_manage({
+snow_update_set_manage(&#123;
   action: <span class="string">'create'</span>,
   name: <span class="string">'Feature: My New Feature'</span>
-});
+&#125;);
 
 <span class="comment">// Complete when done</span>
-snow_update_set_manage({ action: <span class="string">'complete'</span> });</pre>
+snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#125;);</pre>
                     </div>
                 </div>
             </section>
