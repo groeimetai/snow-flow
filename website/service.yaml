@@ -1,0 +1,61 @@
+# Snow-Flow Website - Cloud Run Service Configuration
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: snow-flow-website
+  labels:
+    cloud.googleapis.com/location: europe-west1
+    run.googleapis.com/cpu-throttling: "true"
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      labels:
+        run.googleapis.com/startupProbeType: Default
+      annotations:
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/minScale: "1"
+        run.googleapis.com/cpu-throttling: "true"
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/startup-cpu-boost: "true"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      serviceAccountName: PROJECT_NUMBER-compute@developer.gserviceaccount.com
+      containers:
+      - image: gcr.io/PROJECT_ID/snow-flow-website:latest
+        ports:
+        - name: http1
+          containerPort: 80
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: PORT
+          value: "80"
+        resources:
+          limits:
+            cpu: "1"
+            memory: 512Mi
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 0
+          timeoutSeconds: 1
+          periodSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+  traffic:
+  - percent: 100
+    latestRevision: true

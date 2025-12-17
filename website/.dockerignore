@@ -1,0 +1,64 @@
+# Docker ignore file for Snow-Flow Website
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Node modules (if any)
+node_modules
+npm-debug.log*
+
+# Build artifacts
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Coverage directory used by tools like istanbul
+coverage
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Docker files (except the one we need)
+Dockerfile.*
+!Dockerfile
+
+# Cloud Build
+cloudbuild.yaml
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Temporary files
+tmp/
+temp/
