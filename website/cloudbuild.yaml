@@ -28,7 +28,7 @@ steps:
       '--region', 'europe-west1',
       '--platform', 'managed',
       '--allow-unauthenticated',
-      '--port', '80',
+      '--port', '8080',
       '--memory', '512Mi',
       '--cpu', '1',
       '--concurrency', '80',

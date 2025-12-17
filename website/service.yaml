@@ -28,32 +28,32 @@ spec:
       - image: gcr.io/PROJECT_ID/snow-flow-website:latest
         ports:
         - name: http1
-          containerPort: 80
+          containerPort: 8080
         env:
         - name: NODE_ENV
           value: production
         - name: PORT
-          value: "80"
+          value: "8080"
         resources:
           limits:
             cpu: "1"
             memory: 512Mi
         startupProbe:
           httpGet:
-            path: /health
-            port: 80
+            path: /en/
+            port: 8080
           initialDelaySeconds: 0
-          timeoutSeconds: 1
-          periodSeconds: 3
+          timeoutSeconds: 3
+          periodSeconds: 5
           successThreshold: 1
-          failureThreshold: 3
+          failureThreshold: 10
         livenessProbe:
           httpGet:
-            path: /health
-            port: 80
+            path: /en/
+            port: 8080
           initialDelaySeconds: 30
-          timeoutSeconds: 1
-          periodSeconds: 10
+          timeoutSeconds: 3
+          periodSeconds: 30
           successThreshold: 1
           failureThreshold: 3
   traffic:
