@@ -1,0 +1,54 @@
+/* =========================================
+   FONT STANDARDIZATION ACROSS WEBSITE
+   ========================================= */
+
+/* Override all font inconsistencies with standard Snow-Flow fonts */
+
+/* Main font family for all text */
+body, 
+html,
+h1, h2, h3, h4, h5, h6,
+p, span, div, a, button,
+.btn, .card, .pill,
+.hero-title, .hero-subtitle,
+.stat-label, .feature-title {
+  font-family: var(--font-sans) !important;
+}
+
+/* Code and monospace elements */
+code, 
+pre,
+.code-block,
+.btn-badge,
+.version-badge,
+.copy-btn,
+kbd {
+  font-family: var(--font-mono) !important;
+}
+
+/* Specific overrides for consistency */
+.api-docs code,
+.api-docs pre {
+  font-family: var(--font-mono) !important; /* Override Fira Code references */
+}
+
+/* Button text standardization */
+.btn-text,
+.btn-inner,
+.hero-actions .btn {
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+}
+
+/* Ensure consistent font rendering */
+* {
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* High DPI display optimization */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  body {
+    font-weight: 400 !important; /* Slightly lighter on high DPI */
+  }
+}

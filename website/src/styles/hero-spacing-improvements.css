@@ -1,0 +1,139 @@
+/* =========================================
+   HERO SPACING IMPROVEMENTS - More Breathing Room
+   ========================================= */
+
+/* Hero section - more spacious and better flow */
+.hero {
+  min-height: 100vh !important;
+  padding: 0 0 var(--space-20) !important; /* More bottom padding to prevent overlap */
+  position: relative !important;
+  margin-bottom: var(--space-16) !important; /* Clear separation from next section */
+}
+
+/* Hero content - more generous spacing */
+.hero-content {
+  padding: var(--space-16) var(--space-6) var(--space-12) !important; /* More generous padding */
+  max-width: 95% !important;
+  margin: 0 auto !important;
+  /* Better vertical centering with more space */
+  min-height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+/* Mountain logo - more breathing room */
+.hero-logo-container {
+  margin: var(--space-6) 0 var(--space-8) !important; /* More space around logo */
+}
+
+/* Title spacing improvements */
+.hero-title {
+  margin: var(--space-6) auto var(--space-8) auto !important; /* More space around title */
+}
+
+/* Subtitle - better spacing */
+.hero-subtitle {
+  margin-bottom: var(--space-8) !important; /* More space before pills */
+  max-width: 800px !important; /* Constrain width for better readability */
+  line-height: var(--leading-relaxed) !important; /* More line spacing */
+}
+
+/* Feature pills - more generous spacing */
+.feature-pills {
+  margin: var(--space-8) 0 var(--space-10) !important; /* More generous margins */
+  gap: var(--space-3) !important; /* Better gap between pills */
+  max-width: 900px !important; /* Constrain width */
+  justify-content: center !important;
+}
+
+/* CTA buttons - better spacing */
+.hero-actions {
+  margin: var(--space-10) 0 var(--space-12) !important; /* More space around buttons */
+  gap: var(--space-4) !important; /* Better gap between buttons */
+}
+
+/* Hero stats - more breathing room */
+.hero-stats {
+  margin: var(--space-12) auto var(--space-16) !important; /* Much more space around stats */
+  padding: var(--space-6) var(--space-8) !important; /* More internal padding */
+  max-width: 750px !important; /* Slightly wider for better proportion */
+}
+
+/* Section separation - prevent overlap */
+.section {
+  position: relative !important;
+  margin-top: var(--space-20) !important; /* Clear separation from hero */
+  padding-top: var(--space-16) !important; /* Extra top padding */
+}
+
+/* First section after hero - extra separation */
+#servers {
+  margin-top: var(--space-24) !important; /* Even more separation */
+  padding-top: var(--space-20) !important;
+}
+
+/* Scroll indicator positioning */
+.scroll-indicator {
+  position: absolute !important;
+  bottom: var(--space-8) !important; /* More space from edge */
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+/* Mobile spacing adjustments */
+@media (max-width: 768px) {
+  .hero {
+    padding-bottom: var(--space-16) !important;
+    margin-bottom: var(--space-12) !important;
+  }
+  
+  .hero-content {
+    padding: var(--space-12) var(--space-4) var(--space-8) !important;
+    min-height: 85vh !important;
+  }
+  
+  .hero-title {
+    margin: var(--space-4) auto var(--space-6) auto !important;
+  }
+  
+  .hero-subtitle {
+    margin-bottom: var(--space-6) !important;
+  }
+  
+  .feature-pills {
+    margin: var(--space-6) 0 var(--space-8) !important;
+    gap: var(--space-2) !important;
+  }
+  
+  .hero-actions {
+    margin: var(--space-8) 0 var(--space-10) !important;
+    gap: var(--space-3) !important;
+  }
+  
+  .hero-stats {
+    margin: var(--space-10) auto var(--space-12) !important;
+    padding: var(--space-4) var(--space-6) !important;
+  }
+  
+  .section {
+    margin-top: var(--space-16) !important;
+    padding-top: var(--space-12) !important;
+  }
+  
+  #servers {
+    margin-top: var(--space-20) !important;
+    padding-top: var(--space-16) !important;
+  }
+}
+
+/* Smooth scroll behavior for better transitions */
+html {
+  scroll-behavior: smooth !important;
+}
+
+/* Section transitions */
+.section {
+  scroll-margin-top: 100px !important; /* Account for navbar when scrolling */
+}

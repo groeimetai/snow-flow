@@ -1,0 +1,280 @@
+/* =========================================
+   MOBILE HERO FIXES - Complete Mobile Redesign
+   ========================================= */
+
+/* Mobile hero specific improvements */
+@media (max-width: 768px) {
+  /* Hero container - better mobile proportions */
+  .hero {
+    min-height: 100vh !important;
+    padding: var(--space-2) 0 !important;
+    overflow-x: hidden !important; /* Prevent horizontal scroll */
+  }
+  
+  /* Hero content - mobile optimized */
+  .hero-content {
+    padding: var(--space-6) var(--space-3) var(--space-4) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: center !important;
+  }
+  
+  /* SNOW-FLOW title - much better mobile sizing */
+  .hero-title {
+    font-size: clamp(var(--font-xl), 7vw, var(--font-3xl)) !important;
+    margin: var(--space-3) 0 var(--space-4) !important;
+    line-height: 1.1 !important;
+    /* Better mobile letter spacing */
+    letter-spacing: -0.02em !important;
+    word-break: keep-all !important; /* Keep SNOW-FLOW together */
+  }
+  
+  /* Title letters - mobile optimized */
+  .title-letter {
+    margin-right: 0.08em !important; /* Better mobile spacing */
+  }
+  
+  /* Version badge - mobile friendly */
+  .version-badge {
+    font-size: var(--font-sm) !important;
+    padding: var(--space-1) var(--space-3) !important;
+    top: -10px !important;
+    right: -15px !important;
+    transform: rotate(-3deg) scale(0.9) !important;
+  }
+  
+  /* Hero subtitle - mobile optimized */
+  .hero-subtitle {
+    font-size: clamp(var(--font-sm), 3.5vw, var(--font-base)) !important;
+    margin-bottom: var(--space-4) !important;
+    padding: 0 var(--space-2) !important;
+    line-height: var(--leading-relaxed) !important;
+    max-width: 90% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  
+  /* Feature pills - mobile 2x2 grid */
+  .feature-pills {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--space-2) !important;
+    margin: var(--space-6) 0 !important;
+    max-width: 100% !important;
+    padding: 0 var(--space-2) !important;
+  }
+  
+  .pill {
+    width: 100% !important;
+    max-width: none !important;
+    justify-content: center !important;
+    font-size: var(--font-xs) !important;
+    padding: var(--space-2) var(--space-1) !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  /* CTA buttons - mobile stack */
+  .hero-actions {
+    flex-direction: column !important;
+    gap: var(--space-3) !important;
+    margin: var(--space-8) 0 !important;
+    width: 100% !important;
+  }
+  
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    width: 100% !important;
+    max-width: 300px !important;
+    padding: var(--space-3) var(--space-6) !important;
+    font-size: var(--font-base) !important;
+    justify-content: center !important;
+  }
+  
+  /* Hero stats - wider mobile layout */
+  .hero-stats {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    gap: var(--space-2) !important;
+    padding: var(--space-4) var(--space-3) !important;
+    margin: var(--space-8) auto var(--space-6) !important;
+    max-width: 95% !important;
+    width: 100% !important;
+  }
+  
+  .stat-item {
+    flex: 1 !important;
+    min-width: calc(33.333% - var(--space-1)) !important;
+    padding: var(--space-2) var(--space-1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: var(--radius-lg) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    text-align: center !important;
+  }
+  
+  .stat-divider {
+    display: none !important; /* Hide dividers in mobile grid */
+  }
+  
+  .stat-icon {
+    font-size: var(--font-lg) !important;
+    margin-bottom: var(--space-1) !important;
+  }
+  
+  .stat-number {
+    font-size: var(--font-2xl) !important;
+    margin-bottom: var(--space-1) !important;
+  }
+  
+  .stat-label {
+    font-size: var(--font-xs) !important;
+    margin-top: var(--space-1) !important;
+  }
+  
+  /* Mobile floating orbs - reduce interference */
+  .floating-orb {
+    opacity: 0.1 !important; /* Much more subtle on mobile */
+    filter: blur(60px) !important; /* More blur to reduce visual noise */
+  }
+  
+  /* Mobile navigation spacing */
+  .navbar {
+    padding: var(--space-2) 0 !important;
+  }
+  
+  .navbar-container {
+    padding: 0 var(--space-3) !important;
+  }
+}
+
+/* iPhone specific optimizations */
+@media (max-width: 480px) {
+  .hero {
+    min-height: 100vh !important;
+    padding: var(--space-1) 0 !important;
+    position: relative !important;
+  }
+  
+  .hero-content {
+    padding: var(--space-4) var(--space-2) var(--space-3) !important;
+    position: relative !important;
+    z-index: 10 !important;
+  }
+  
+  /* Logo container - iPhone optimized */
+  .hero-logo-container {
+    margin-bottom: var(--space-2) !important;
+    transform: scale(0.8) !important;
+  }
+  
+  .hero-title {
+    font-size: clamp(1.5rem, 6vw, 2rem) !important;
+    margin: var(--space-2) 0 var(--space-3) !important;
+    text-align: center !important;
+  }
+  
+  .title-letter {
+    margin-right: 0.04em !important;
+  }
+  
+  .version-badge {
+    font-size: var(--font-xs) !important;
+    padding: 4px 8px !important;
+    top: -8px !important;
+    right: -10px !important;
+  }
+  
+  .hero-subtitle {
+    font-size: 0.9rem !important;
+    padding: 0 var(--space-1) !important;
+    margin-bottom: var(--space-3) !important;
+    line-height: 1.4 !important;
+    max-width: 95% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  
+  /* Subtitle lines - better iPhone spacing */
+  .subtitle-line,
+  .subtitle-line-2 {
+    display: block !important;
+    margin-bottom: var(--space-1) !important;
+  }
+  
+  /* Feature pills - iPhone SE 2x2 grid */
+  .feature-pills {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--space-1) !important;
+    margin: var(--space-4) 0 var(--space-6) !important;
+    width: 100% !important;
+    max-width: 320px !important;
+  }
+  
+  .pill {
+    max-width: none !important;
+    font-size: 0.7rem !important;
+    padding: var(--space-1) var(--space-1) !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 2px !important;
+  }
+  
+  .pill-text {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    font-size: 0.65rem !important;
+  }
+  
+  .hero-actions {
+    margin: var(--space-4) 0 var(--space-6) !important;
+    gap: var(--space-2) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    max-width: 260px !important;
+    font-size: var(--font-sm) !important;
+    padding: var(--space-2) var(--space-4) !important;
+  }
+  
+  .hero-stats {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    max-width: 95% !important;
+    width: 100% !important;
+    padding: var(--space-2) !important;
+    margin: var(--space-4) auto var(--space-3) !important;
+    border-radius: var(--radius-lg) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .stat-item {
+    padding: var(--space-2) !important;
+  }
+  
+  .stat-icon {
+    font-size: var(--font-base) !important;
+  }
+  
+  .stat-number {
+    font-size: var(--font-xl) !important;
+  }
+  
+  .stat-label {
+    font-size: 10px !important;
+  }
+}

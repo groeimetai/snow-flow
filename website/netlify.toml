@@ -1,37 +1,48 @@
-# Netlify deployment configuration for Snow-Flow website
-
 [build]
-  publish = "."
+  command = "npm run build"
+  publish = "dist"
 
+# Redirect root to default language
+[[redirects]]
+  from = "/"
+  to = "/en/"
+  status = 302
+
+# Language-specific routing
+[[redirects]]
+  from = "/en/*"
+  to = "/en/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/nl/*"
+  to = "/nl/:splat"
+  status = 200
+
+# Fallback for SPA behavior
+[[redirects]]
+  from = "/*"
+  to = "/en/index.html"
+  status = 200
+
+# Security headers
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
+    X-Frame-Options = "SAMEORIGIN"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
 
+# Cache static assets
 [[headers]]
-  for = "/*.js"
+  for = "/_astro/*"
   [headers.values]
-    Cache-Control = "public, max-age=604800"
+    Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=604800"
-
-[[headers]]
-  for = "/images/*"
+  for = "/logos/*"
   [headers.values]
     Cache-Control = "public, max-age=2592000"
-
-[[redirects]]
-  from = "/api"
-  to = "/docs/api-full.html"
-  status = 301
-
-[[redirects]]
-  from = "/docs"
-  to = "/docs/api-full.html"
-  status = 301

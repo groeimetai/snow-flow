@@ -1,37 +1,35 @@
-# Snow-Flow Website - Production Docker Image
+# Build stage
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source files
+COPY . .
+
+# Build the site
+RUN npm run build
+
+# Production stage
 FROM nginx:alpine
 
-# Install security updates and curl for healthcheck
-RUN apk update && apk upgrade && apk add --no-cache curl
-
-# Remove default nginx website
-RUN rm -rf /usr/share/nginx/html/*
-
-# Copy website files
-COPY . /usr/share/nginx/html/
-
-# Copy custom nginx configuration
+# Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Create directory for logs
-RUN mkdir -p /var/log/nginx
+# Copy built files from build stage
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# Set proper permissions
-RUN chown -R nginx:nginx /usr/share/nginx/html && \
-    chmod -R 755 /usr/share/nginx/html
+# Expose port
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost/ || exit 1
-
-# Expose port 80
-EXPOSE 80
-
-# Add metadata
-LABEL maintainer="Snow-Flow Team" \
-      description="Snow-Flow Enterprise Website v4.3.0" \
-      version="4.3.0" \
-      features="18 MCP Servers, 410+ Tools, Seat-Based Licensing, User Management, Enterprise Analytics"
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/en/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

@@ -1,0 +1,195 @@
+/* =========================================
+   HERO CONTRAST & READABILITY FIXES v4.2.0
+   ========================================= */
+
+/* Critical contrast improvements for hero section */
+
+/* Ensure all hero text has proper z-index layering */
+.hero-content * {
+  z-index: 10;
+}
+
+/* CENTERING FIX: Force hero content center alignment */
+.hero-content {
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  max-width: 100% !important;
+}
+
+/* Individual title centering - NORMAL HORIZONTAL TEXT */
+.hero-title {
+  text-align: center !important;
+  width: 100% !important;
+  display: block !important; /* NORMAL: Just a regular centered heading */
+  margin: 0 auto !important;
+}
+
+/* Fade-in word animations with better contrast */
+.fade-in-word span {
+  opacity: 0;
+  animation: fadeInUp 0.6s ease forwards;
+  color: var(--gray-100); /* CONTRAST FIX: Very light gray for excellent readability */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Version badge MAXIMUM VISIBILITY - NEON BRIGHT */
+.version-badge {
+  /* CRITICAL VISIBILITY FIX: Ultra bright neon colors */
+  font-size: var(--font-xl) !important; /* Very large */
+  padding: var(--space-4) var(--space-6) !important; /* Large padding */
+  background: linear-gradient(135deg, #ff0080 0%, #ff4d6d 100%) !important; /* Bright pink/red neon */
+  color: var(--white) !important; /* White text */
+  font-weight: 900 !important; /* Maximum boldness */
+  border: 4px solid var(--white) !important; /* Thick white border */
+  border-radius: var(--radius-2xl) !important; /* Large radius */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important; /* Strong shadow */
+  box-shadow: 
+    0 0 30px rgba(255, 0, 128, 0.8),
+    0 0 60px rgba(255, 77, 109, 0.6),
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3) !important; /* Neon glow effect */
+  position: absolute !important; /* Absolute positioning for precise control */
+  top: -20px !important;
+  right: -30px !important;
+  transform: rotate(-5deg) scale(1.2) !important; /* Angled and scaled */
+  z-index: 1000 !important; /* Absolute highest z-index */
+  animation: neon-pulse 2s ease-in-out infinite !important;
+}
+
+@keyframes neon-pulse {
+  0%, 100% { 
+    box-shadow: 
+      0 0 30px rgba(255, 0, 128, 0.8),
+      0 0 60px rgba(255, 77, 109, 0.6),
+      0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  50% { 
+    box-shadow: 
+      0 0 40px rgba(255, 0, 128, 1),
+      0 0 80px rgba(255, 77, 109, 0.8),
+      0 12px 40px rgba(0, 0, 0, 0.5);
+  }
+}
+
+.animated-badge {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3); }
+  50% { transform: scale(1.05); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.5); }
+}
+
+/* Title letters enhanced contrast - INLINE HORIZONTAL */
+.title-letter {
+  display: inline-block !important; /* CRITICAL: Inline-block for horizontal letters with animation support */
+  opacity: 0;
+  animation: letterDrop 0.6s ease forwards;
+  /* CRITICAL FIX: Force white color for title letters */
+  color: var(--white) !important;
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.8),
+    0 4px 8px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(255, 255, 255, 0.1); /* Subtle white glow */
+  /* Ensure horizontal spacing */
+  margin-right: 2px !important;
+}
+
+/* Hero title force white color and CENTER - NO DISPLAY OVERRIDE */
+.hero-title {
+  color: var(--white) !important;
+  -webkit-text-fill-color: var(--white) !important;
+  text-align: center !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+}
+
+/* Only target non-letter elements to avoid breaking inline letters */
+.hero-title .version-badge {
+  display: inline-block !important;
+}
+
+@keyframes letterDrop {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px) rotateX(90deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg);
+  }
+}
+
+/* Feature pills enhanced visibility */
+.feature-pills .pill {
+  /* VISIBILITY FIX: Much stronger background for better text contrast */
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.feature-pills .pill:hover {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Subtitle lines enhanced readability */
+.subtitle-line,
+.subtitle-line-2 {
+  display: block;
+  line-height: var(--leading-relaxed);
+}
+
+.subtitle-line-2 {
+  margin-top: var(--space-2);
+}
+
+/* Background orbs - ensure they don't interfere */
+.floating-orb {
+  /* INTERFERENCE FIX: Move orbs further back and reduce impact */
+  z-index: 0 !important;
+  opacity: 0.15 !important; /* Even more subtle */
+  mix-blend-mode: soft-light; /* Softer blending with background */
+}
+
+/* Responsive contrast adjustments */
+@media (max-width: 768px) {
+  .hero-content {
+    /* MOBILE FIX: Even stronger backdrop on mobile */
+    background: rgba(0, 0, 0, 0.5);
+    padding: var(--space-6);
+  }
+  
+  .hero-title {
+    text-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.9),
+      0 4px 8px rgba(0, 0, 0, 0.7),
+      0 0 30px rgba(255, 255, 255, 0.2);
+  }
+  
+  .hero-subtitle {
+    color: var(--gray-100); /* Even lighter on mobile */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* Dark mode safeguards */
+@media (prefers-color-scheme: dark) {
+  .hero-title {
+    color: var(--white) !important;
+  }
+  
+  .hero-subtitle {
+    color: var(--gray-200) !important;
+  }
+  
+  .pill {
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: var(--white) !important;
+  }
+}

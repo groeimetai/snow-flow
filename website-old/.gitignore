@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+*.min.css
+*.min.js
+dist/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Deployment
+.netlify/
+.vercel/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment variables
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.temp

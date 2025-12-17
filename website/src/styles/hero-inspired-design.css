@@ -1,0 +1,135 @@
+/* =========================================
+   HERO-INSPIRED DESIGN SYSTEM FOR ENTIRE WEBSITE
+   ========================================= */
+
+/* Use hero's beautiful styling throughout the website */
+
+/* HERO-INSPIRED BUTTONS - Beautiful like the hero background */
+.btn-hero-primary {
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.9) 0%, 
+    rgba(118, 75, 162, 0.9) 50%, 
+    rgba(240, 147, 251, 0.9) 100%) !important;
+  color: var(--white) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-radius: var(--radius-2xl) !important;
+  padding: var(--space-4) var(--space-8) !important;
+  font-weight: 600 !important;
+  font-size: var(--font-lg) !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 
+    0 8px 32px rgba(102, 126, 234, 0.3),
+    0 0 40px rgba(118, 75, 162, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.btn-hero-primary:before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: rotate(45deg);
+  transition: all 0.6s ease;
+  opacity: 0;
+}
+
+.btn-hero-primary:hover:before {
+  animation: shine 0.6s ease-in-out;
+}
+
+.btn-hero-primary:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: 
+    0 12px 40px rgba(102, 126, 234, 0.4),
+    0 0 60px rgba(118, 75, 162, 0.3) !important;
+}
+
+/* HERO-INSPIRED SECONDARY BUTTON */
+.btn-hero-secondary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--white) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-radius: var(--radius-2xl) !important;
+  padding: var(--space-4) var(--space-8) !important;
+  font-weight: 500 !important;
+  font-size: var(--font-lg) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+}
+
+.btn-hero-secondary:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+/* SECTION BACKGROUNDS - HERO INSPIRED */
+.hero-inspired-section {
+  background: 
+    radial-gradient(at 20% 80%, hsla(240, 60%, 20%, 0.3) 0%, transparent 50%),
+    radial-gradient(at 80% 20%, hsla(260, 60%, 25%, 0.3) 0%, transparent 50%),
+    radial-gradient(at 40% 40%, hsla(280, 60%, 15%, 0.3) 0%, transparent 50%),
+    var(--black) !important;
+}
+
+/* CARDS WITH HERO GLASS EFFECT */
+.hero-inspired-card {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: var(--radius-2xl) !important;
+  padding: var(--space-8) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.3s ease !important;
+}
+
+.hero-inspired-card:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-4px) !important;
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+@keyframes shine {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* TEXT HIERARCHY - HERO INSPIRED */
+.hero-inspired-title {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 50%, #e0f2fe 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
+}
+
+.hero-inspired-subtitle {
+  color: var(--gray-200) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+}
