@@ -1,22 +1,22 @@
 {
-  "generated": "2025-12-17T00:05:23.711Z",
+  "generated": "2025-12-17T09:17:42.410Z",
   "generatedFormatted": "December 17, 2025",
   "repos": [
     {
       "name": "snow-flow",
       "description": "Core MCP Servers & Tools",
       "color": "cyan",
-      "lines": 215692,
-      "files": 737,
+      "lines": 216744,
+      "files": 739,
       "byExtension": {
-        "ts": 180000,
+        "ts": 180056,
         "js": 7429,
         "jsx": 1658,
         "sh": 680,
-        "html": 16302,
-        "css": 9623
+        "html": 16626,
+        "css": 10295
       },
-      "percentage": "71.7"
+      "percentage": "71.8"
     },
     {
       "name": "snow-code",
@@ -31,7 +31,7 @@
         "html": 37,
         "css": 9695
       },
-      "percentage": "28.3"
+      "percentage": "28.2"
     },
     {
       "name": "snow-flow-enterprise",
@@ -44,7 +44,7 @@
     }
   ],
   "total": {
-    "lines": 300731,
-    "files": 1179
+    "lines": 301783,
+    "files": 1181
   }
 }
