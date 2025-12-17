@@ -1,12 +1,13 @@
 name: Update Code Statistics
 
+# DISABLED: The Astro website now fetches stats dynamically via GitHub API
+# This workflow was for the old static HTML site
 on:
-  push:
-    branches: [main, master]
-  schedule:
-    # Run daily at midnight UTC
-    - cron: '0 0 * * *'
-  workflow_dispatch:
+  workflow_dispatch:  # Only manual trigger now
+  # push:
+  #   branches: [main, master]
+  # schedule:
+  #   - cron: '0 0 * * *'
 
 permissions:
   contents: write
