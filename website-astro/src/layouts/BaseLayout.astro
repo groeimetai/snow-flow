@@ -1,6 +1,6 @@
 ---
 import SEO from '../components/SEO.astro';
-import LanguageSelector from '../components/LanguageSelector.astro';
+import Navigation from '../components/Navigation.astro';
 import { getLangFromUrl, useTranslations, type Lang } from '../i18n/utils';
 import '../styles/global.css';
 
@@ -44,7 +44,7 @@ const locale = lang === 'nl' ? 'nl_NL' : 'en_US';
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- JSON-LD Organization Schema (global) -->
+  <!-- JSON-LD Organization Schema -->
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -55,110 +55,7 @@ const locale = lang === 'nl' ? 'nl_NL' : 'en_US';
   })} />
 </head>
 <body>
-  <!-- Background Effects -->
-  <div class="bg-grid"></div>
-  <div class="bg-gradient"></div>
-  <div class="bg-noise"></div>
-
-  <!-- Navigation -->
-  <nav class="navbar">
-    <div class="container navbar-content">
-      <a href={`/${lang}/`} class="logo">
-        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
-          <defs>
-            <linearGradient id="mountainGrad" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#FFFFFF"/>
-              <stop offset="100%" stop-color="#00D9FF"/>
-            </linearGradient>
-          </defs>
-          <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#mountainGrad)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
-        </svg>
-        <span class="logo-text">Snow-Flow</span>
-      </a>
-
-      <div class="nav-links">
-        <a href={`/${lang}/docs`} class="nav-link">{t('nav.docs')}</a>
-        <a href={`/${lang}/mcp-reference`} class="nav-link">{t('nav.mcpReference')}</a>
-        <a href={`/${lang}/stats`} class="nav-link">{t('nav.stats')}</a>
-        <a href="https://github.com/groeimetai/snow-flow" class="nav-link" target="_blank" rel="noopener">{t('nav.github')}</a>
-        <LanguageSelector />
-        <a href="https://github.com/groeimetai/snow-flow#quick-start" class="btn btn-primary">{t('nav.getStarted')}</a>
-      </div>
-
-      <button class="mobile-menu-btn" aria-label="Toggle menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-  </nav>
-
-  <!-- Main Content -->
-  <main>
-    <slot />
-  </main>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <a href={`/${lang}/`} class="logo">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
-              <defs>
-                <linearGradient id="mountainGrad2" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#FFFFFF"/>
-                  <stop offset="100%" stop-color="#00D9FF"/>
-                </linearGradient>
-              </defs>
-              <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#mountainGrad2)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
-            </svg>
-            <span class="logo-text">Snow-Flow</span>
-          </a>
-          <p class="footer-tagline">{t('footer.tagline')}</p>
-        </div>
-
-        <div class="footer-links">
-          <div class="footer-section">
-            <h4>{t('footer.quickLinks')}</h4>
-            <a href={`/${lang}/docs`}>{t('nav.docs')}</a>
-            <a href={`/${lang}/mcp-reference`}>{t('nav.mcpReference')}</a>
-            <a href={`/${lang}/stats`}>{t('nav.stats')}</a>
-          </div>
-          <div class="footer-section">
-            <h4>{t('footer.community')}</h4>
-            <a href="https://github.com/groeimetai/snow-flow" target="_blank" rel="noopener">GitHub</a>
-            <a href="https://github.com/groeimetai/snow-flow/issues" target="_blank" rel="noopener">Issues</a>
-            <a href="https://github.com/groeimetai/snow-flow/discussions" target="_blank" rel="noopener">Discussions</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer-bottom">
-        <p>&copy; {t('footer.copyright')}</p>
-      </div>
-    </div>
-  </footer>
-
-  <script>
-    // Mobile menu toggle
-    const menuBtn = document.querySelector('.mobile-menu-btn');
-    const navLinks = document.querySelector('.nav-links');
-
-    menuBtn?.addEventListener('click', () => {
-      navLinks?.classList.toggle('active');
-      menuBtn.classList.toggle('active');
-    });
-
-    // Navbar scroll effect
-    const navbar = document.querySelector('.navbar');
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 50) {
-        navbar?.classList.add('scrolled');
-      } else {
-        navbar?.classList.remove('scrolled');
-      }
-    });
-  </script>
+  <Navigation />
+  <slot />
 </body>
 </html>

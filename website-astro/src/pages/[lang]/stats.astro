@@ -10,229 +10,749 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: Lang };
 const t = useTranslations(lang);
-
-const stats = [
-  { value: '410+', label: t('stats.tools'), icon: '🛠️' },
-  { value: '18', label: t('stats.servers'), icon: '🖥️' },
-  { value: '75+', label: t('stats.providers'), icon: '🤖' },
-  { value: '50K+', label: t('stats.lines'), icon: '📝' }
-];
 ---
 
 <BaseLayout
   title={t('meta.stats.title')}
   description={t('meta.stats.description')}
 >
+  <div class="bg-grid"></div>
+  <div class="bg-gradient"></div>
+
+  <!-- Hero -->
   <section class="stats-hero">
     <div class="container">
-      <h1>{t('nav.stats')}</h1>
-      <p class="stats-intro">{t('meta.stats.description')}</p>
+      <h1>Platform Statistics</h1>
+      <p>Three projects. One mission. Explore the platform that powers AI-driven ServiceNow development.</p>
     </div>
   </section>
 
-  <section class="stats-grid-section">
+  <!-- Total Counter -->
+  <section class="total-section">
     <div class="container">
-      <div class="stats-grid">
-        {stats.map((stat) => (
-          <div class="stat-card">
-            <span class="stat-icon">{stat.icon}</span>
-            <span class="stat-value">{stat.value}</span>
-            <span class="stat-label">{stat.label}</span>
+      <div class="total-counter">
+        <div class="total-label">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFD700" style="vertical-align: -3px; margin-right: 6px;"><path d="M12 .587l3.668 7.431 8.2 1.191-5.934 5.782 1.4 8.172L12 19.896l-7.334 3.855 1.4-8.172L.132 9.797l8.2-1.191z"/></svg>
+          Total GitHub Stars
+        </div>
+        <div class="total-number" id="totalCounter">-</div>
+        <div class="total-suffix">across open source repositories</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects Grid -->
+  <section class="projects-section">
+    <div class="container">
+      <h2 class="section-title">Platform Components</h2>
+
+      <div class="projects-grid">
+        <!-- Snow-Flow: Open Source -->
+        <div class="project-card snow-flow">
+          <div class="project-header">
+            <div class="project-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <div>
+              <div class="project-name">Snow-Flow <span class="badge open">Open Source</span></div>
+              <div class="project-desc">The Engine - 410+ MCP tools that connect any AI model to ServiceNow</div>
+            </div>
           </div>
-        ))}
+          <div class="project-stats">
+            <div class="stat-row star-highlight">
+              <span class="stat-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700" style="vertical-align: -2px; margin-right: 4px;"><path d="M12 .587l3.668 7.431 8.2 1.191-5.934 5.782 1.4 8.172L12 19.896l-7.334 3.855 1.4-8.172L.132 9.797l8.2-1.191z"/></svg>
+                GitHub Stars
+              </span>
+              <span class="stat-value star-value" id="snowFlowStars">-</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">MCP Tools</span>
+              <span class="stat-value">410+</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">MCP Servers</span>
+              <span class="stat-value">18</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Snow-Code: Open Source -->
+        <div class="project-card snow-code">
+          <div class="project-header">
+            <div class="project-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+              </svg>
+            </div>
+            <div>
+              <div class="project-name">Snow-Code <span class="badge open">Open Source</span></div>
+              <div class="project-desc">The Interface - Terminal-based AI IDE with OAuth and multi-instance support</div>
+            </div>
+          </div>
+          <div class="project-stats">
+            <div class="stat-row star-highlight">
+              <span class="stat-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700" style="vertical-align: -2px; margin-right: 4px;"><path d="M12 .587l3.668 7.431 8.2 1.191-5.934 5.782 1.4 8.172L12 19.896l-7.334 3.855 1.4-8.172L.132 9.797l8.2-1.191z"/></svg>
+                GitHub Stars
+              </span>
+              <span class="stat-value star-value" id="snowCodeStars">-</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">LLM Providers</span>
+              <span class="stat-value">75+</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">IDE Integrations</span>
+              <span class="stat-value">5</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Enterprise: Closed Source -->
+        <div class="project-card enterprise">
+          <div class="project-header">
+            <div class="project-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="project-name">Enterprise <span class="badge closed">Closed Source</span></div>
+              <div class="project-desc">The Integrations - Managed SaaS with encrypted credentials and connectors</div>
+            </div>
+          </div>
+          <div class="project-stats">
+            <div class="stat-row">
+              <span class="stat-label">Integrations</span>
+              <span class="stat-value">40+</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Stakeholder Seats</span>
+              <span class="stat-value">Unlimited</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Security</span>
+              <span class="stat-value">SOC 2</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Philosophy Section -->
+      <div class="philosophy-grid">
+        <div class="philosophy-card open-source">
+          <div class="philosophy-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 16v-4M12 8h.01"></path>
+            </svg>
+          </div>
+          <h3>Why Open Source?</h3>
+          <p>We believe ServiceNow development should be accessible to everyone. Open source means you can verify what runs on your systems, customize for your needs, and never get locked into a single vendor. Snow-Flow and Snow-Code will always be free.</p>
+        </div>
+        <div class="philosophy-card closed-source">
+          <div class="philosophy-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h3>Why Enterprise is Closed?</h3>
+          <p>Enterprise stores your Jira, Azure DevOps, and Confluence credentials. This requires bank-grade encryption (Google Cloud KMS), SOC 2 compliance, and audit trails. We keep this closed to protect your secrets and maintain security certifications.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="servers-section">
+  <!-- Platform Capabilities -->
+  <section class="growth-section">
     <div class="container">
-      <h2 class="section-title">MCP Servers</h2>
-      <div class="grid grid-3">
-        <div class="server-card">
-          <h3>Deployment Server</h3>
-          <span class="tool-count">10 tools</span>
-          <p>Widget & artifact deployment</p>
+      <div class="growth-content">
+        <h2 class="growth-title">Platform Capabilities</h2>
+        <p class="growth-text">
+          Snow-Flow delivers enterprise-grade ServiceNow development tools without vendor lock-in.
+          Use any AI model, connect to any instance, and build faster than ever before.
+        </p>
+      </div>
+
+      <div class="growth-highlights">
+        <div class="highlight-item">
+          <div class="highlight-number">410+</div>
+          <div class="highlight-label">MCP Tools</div>
         </div>
-        <div class="server-card">
-          <h3>Operations Server</h3>
-          <span class="tool-count">12 tools</span>
-          <p>Core ServiceNow operations</p>
+        <div class="highlight-item">
+          <div class="highlight-number">75+</div>
+          <div class="highlight-label">LLM Providers</div>
         </div>
-        <div class="server-card">
-          <h3>Automation Server</h3>
-          <span class="tool-count">27 tools</span>
-          <p>Script execution & automation</p>
+        <div class="highlight-item">
+          <div class="highlight-number">40+</div>
+          <div class="highlight-label">Integrations</div>
         </div>
-        <div class="server-card">
-          <h3>Platform Development</h3>
-          <span class="tool-count">25 tools</span>
-          <p>Business rules, UI actions</p>
-        </div>
-        <div class="server-card">
-          <h3>Integration Server</h3>
-          <span class="tool-count">18 tools</span>
-          <p>REST, SOAP, imports</p>
-        </div>
-        <div class="server-card">
-          <h3>System Properties</h3>
-          <span class="tool-count">15 tools</span>
-          <p>Property management</p>
-        </div>
-        <div class="server-card">
-          <h3>Update Set Server</h3>
-          <span class="tool-count">12 tools</span>
-          <p>Change management</p>
-        </div>
-        <div class="server-card">
-          <h3>Development Assistant</h3>
-          <span class="tool-count">20 tools</span>
-          <p>AI-assisted development</p>
-        </div>
-        <div class="server-card">
-          <h3>Security & Compliance</h3>
-          <span class="tool-count">15 tools</span>
-          <p>ACLs, policies, auditing</p>
-        </div>
-        <div class="server-card">
-          <h3>Reporting & Analytics</h3>
-          <span class="tool-count">18 tools</span>
-          <p>Reports, dashboards, KPIs</p>
-        </div>
-        <div class="server-card">
-          <h3>Machine Learning</h3>
-          <span class="tool-count">22 tools</span>
-          <p>Predictive analytics, ML models</p>
-        </div>
-        <div class="server-card">
-          <h3>Orchestration</h3>
-          <span class="tool-count">28 tools</span>
-          <p>Multi-agent coordination</p>
+        <div class="highlight-item">
+          <div class="highlight-number">2/3</div>
+          <div class="highlight-label">Open Source</div>
         </div>
       </div>
     </div>
   </section>
+
+  <!-- GitHub Links -->
+  <section class="github-section">
+    <div class="container">
+      <h2 class="section-title">Explore the Code</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">Snow-Flow and Snow-Code are fully open source. Dive into the code and contribute!</p>
+
+      <div class="github-links">
+        <a href="https://github.com/groeimetai/snow-flow" target="_blank" class="github-link">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+          snow-flow
+        </a>
+        <a href="https://github.com/groeimetai/snow-code" target="_blank" class="github-link">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+          snow-code
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div class="stats-footer">
+    <div class="container">
+      <p>Last updated: December 17, 2025 | Stats generated from GitHub repositories</p>
+    </div>
+  </div>
 </BaseLayout>
 
 <style>
+  /* Stats Hero */
   .stats-hero {
-    padding: 8rem 0 3rem;
+    padding: 10rem 0 4rem;
     text-align: center;
+    position: relative;
   }
 
   .stats-hero h1 {
-    font-size: 3rem;
-    font-weight: 800;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 900;
+    letter-spacing: -0.03em;
     margin-bottom: 1rem;
-    background: linear-gradient(135deg, #FFFFFF 0%, var(--accent-cyan) 100%);
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .stats-intro {
-    color: var(--text-secondary);
+  .stats-hero p {
     font-size: 1.25rem;
+    color: var(--text-secondary);
     max-width: 600px;
     margin: 0 auto;
   }
 
-  .stats-grid-section {
-    padding: 3rem 0;
+  /* Total Counter */
+  .total-section {
+    padding: 4rem 0;
+    text-align: center;
   }
 
-  .stats-grid {
+  .total-counter {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border: 1px solid rgba(0, 217, 255, 0.3);
+    border-radius: 24px;
+    padding: 3rem 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .total-counter::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .total-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--accent-cyan);
+    margin-bottom: 0.5rem;
+  }
+
+  .total-number {
+    font-family: var(--font-mono);
+    font-size: clamp(3rem, 10vw, 6rem);
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+
+  .total-suffix {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+  }
+
+  /* Projects Section */
+  .projects-section {
+    padding: 4rem 0 8rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  .projects-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 4rem;
   }
 
-  .stat-card {
+  .project-card {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     border-radius: 16px;
     padding: 2rem;
-    text-align: center;
+    position: relative;
+    overflow: hidden;
     transition: all 0.3s ease;
   }
 
-  .stat-card:hover {
-    border-color: var(--accent-cyan);
+  .project-card:hover {
+    border-color: var(--border-medium);
     transform: translateY(-4px);
-    box-shadow: var(--glow-cyan);
   }
 
-  .stat-icon {
-    font-size: 2.5rem;
-    display: block;
-    margin-bottom: 1rem;
+  .project-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .project-card.snow-flow::before {
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+  }
+
+  .project-card.snow-code::before {
+    background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+  }
+
+  .project-card.enterprise::before {
+    background: linear-gradient(90deg, #F59E0B, var(--accent-green));
+  }
+
+  .project-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .project-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .snow-flow .project-icon {
+    background: rgba(0, 217, 255, 0.15);
+    color: var(--accent-cyan);
+  }
+
+  .snow-code .project-icon {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-purple);
+  }
+
+  .enterprise .project-icon {
+    background: rgba(245, 158, 11, 0.15);
+    color: #F59E0B;
+  }
+
+  .project-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .project-desc {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .project-stats {
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .stat-row:last-child {
+    border-bottom: none;
+  }
+
+  .stat-row.star-highlight {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+    margin: 0 -1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border-bottom: none;
+  }
+
+  .stat-row.star-highlight .stat-label {
+    color: #FFD700;
+  }
+
+  .stat-row.star-highlight .stat-value {
+    color: #FFD700;
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
   }
 
   .stat-value {
-    font-size: 3rem;
+    font-family: var(--font-mono);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .stat-value.star-value {
+    color: #FFD700;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+
+  .badge.open {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-green);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .badge.closed {
+    background: rgba(245, 158, 11, 0.15);
+    color: #F59E0B;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  /* Philosophy Grid */
+  .philosophy-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+
+  @media (min-width: 768px) {
+    .philosophy-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .philosophy-card {
+    padding: 2rem;
+    border-radius: 16px;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .philosophy-card.open-source {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.2);
+  }
+
+  .philosophy-card.closed-source {
+    background: rgba(245, 158, 11, 0.05);
+    border-color: rgba(245, 158, 11, 0.2);
+  }
+
+  .philosophy-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .philosophy-card.open-source .philosophy-icon {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-green);
+  }
+
+  .philosophy-card.closed-source .philosophy-icon {
+    background: rgba(245, 158, 11, 0.15);
+    color: #F59E0B;
+  }
+
+  .philosophy-card h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+  }
+
+  .philosophy-card p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* Growth Section */
+  .growth-section {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 6rem 0;
+  }
+
+  .growth-content {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .growth-title {
+    font-size: 2rem;
     font-weight: 800;
-    display: block;
-    background: linear-gradient(135deg, #FFFFFF 0%, var(--accent-cyan) 100%);
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .stat-label {
-    font-size: 0.9rem;
+  .growth-text {
+    font-size: 1.125rem;
     color: var(--text-secondary);
-    margin-top: 0.5rem;
-    display: block;
+    line-height: 1.8;
+    margin-bottom: 2rem;
   }
 
-  .servers-section {
-    padding: 4rem 0 6rem;
+  .growth-highlights {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
   }
 
-  .server-card {
+  .highlight-item {
+    text-align: center;
+  }
+
+  .highlight-number {
+    font-family: var(--font-mono);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    margin-bottom: 0.5rem;
+  }
+
+  .highlight-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* GitHub Section */
+  .github-section {
+    padding: 6rem 0;
+    text-align: center;
+  }
+
+  .github-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     border-radius: 12px;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-  }
-
-  .server-card:hover {
-    border-color: var(--accent-purple);
-    transform: translateY(-2px);
-  }
-
-  .server-card h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
     color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
   }
 
-  .tool-count {
-    display: inline-block;
-    background: rgba(0, 217, 255, 0.1);
-    color: var(--accent-cyan);
-    padding: 0.25rem 0.75rem;
-    border-radius: 100px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+  .github-link:hover {
+    border-color: var(--accent-cyan);
+    transform: translateY(-2px);
+    box-shadow: var(--glow-cyan);
   }
 
-  .server-card p {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
+  .github-link svg {
+    width: 24px;
+    height: 24px;
   }
 
-  @media (max-width: 1024px) {
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr);
+  /* Stats Footer */
+  .stats-footer {
+    padding: 2rem 0;
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+  }
+
+  .stats-footer p {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .total-counter {
+      padding: 2rem 2.5rem;
     }
-  }
 
-  @media (max-width: 640px) {
-    .stats-grid {
+    .projects-grid {
       grid-template-columns: 1fr;
+    }
+
+    .github-links {
+      flex-direction: column;
+      align-items: center;
     }
   }
 </style>
+
+<script>
+  // Animated counter function
+  function animateCounter(element: HTMLElement, target: number, duration = 2000) {
+    const start = 0;
+    const startTime = performance.now();
+
+    function update(currentTime: number) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const current = Math.floor(start + (target - start) * easeOutQuart);
+
+      element.textContent = current.toLocaleString();
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      }
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  // GitHub stars data
+  const starsData = {
+    snowFlow: 0,
+    snowCode: 0,
+    total: 0
+  };
+
+  // Fetch GitHub stars for both repos
+  async function fetchGitHubStars() {
+    const repos = [
+      { key: 'snowFlow', url: 'https://api.github.com/repos/groeimetai/snow-flow' },
+      { key: 'snowCode', url: 'https://api.github.com/repos/groeimetai/snow-code' }
+    ];
+
+    for (const repo of repos) {
+      try {
+        const response = await fetch(repo.url);
+        if (response.ok) {
+          const data = await response.json();
+          (starsData as any)[repo.key] = data.stargazers_count || 0;
+        }
+      } catch (e) {
+        // Use fallback of 0
+      }
+    }
+    starsData.total = starsData.snowFlow + starsData.snowCode;
+  }
+
+  // Fetch stars on page load
+  fetchGitHubStars();
+
+  // Initialize counters when visible
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const totalEl = document.getElementById('totalCounter');
+        const snowFlowStarsEl = document.getElementById('snowFlowStars');
+        const snowCodeStarsEl = document.getElementById('snowCodeStars');
+
+        if (starsData.total > 0 && totalEl) {
+          animateCounter(totalEl, starsData.total, 2500);
+        }
+
+        if (starsData.snowFlow > 0 && snowFlowStarsEl) {
+          animateCounter(snowFlowStarsEl, starsData.snowFlow, 2000);
+        }
+
+        if (starsData.snowCode > 0 && snowCodeStarsEl) {
+          animateCounter(snowCodeStarsEl, starsData.snowCode, 2000);
+        }
+
+        observer.disconnect();
+      }
+    });
+  }, { threshold: 0.1 });
+
+  const totalSection = document.querySelector('.total-section');
+  if (totalSection) {
+    observer.observe(totalSection);
+  }
+</script>

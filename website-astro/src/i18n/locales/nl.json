@@ -1,110 +1,218 @@
 {
   "nav": {
     "home": "Home",
-    "docs": "Documentatie",
-    "mcpReference": "MCP Referentie",
+    "whySnowFlow": "Waarom Snow-Flow",
+    "features": "Functies",
+    "vsBuildAgent": "vs Build Agent",
+    "pricing": "Prijzen",
+    "docs": "Docs",
+    "mcpReference": "MCP Tools",
     "stats": "Statistieken",
     "github": "GitHub",
-    "getStarted": "Aan de slag"
+    "startFree": "Start Gratis",
+    "startFreeTrial": "Start Gratis Proefperiode",
+    "navigate": "Navigatie",
+    "resources": "Bronnen",
+    "documentation": "Documentatie",
+    "status": "Status",
+    "getStarted": "Aan de Slag"
   },
   "hero": {
-    "badge": "Open Source",
-    "title": "Breek los van ServiceNow Vendor Lock-in",
+    "badge": "Open Source · 410+ Tools · Elke AI",
+    "title": "Breek Vrij van ServiceNow Vendor Lock-in",
     "subtitle": "Het open-source alternatief voor ServiceNow Build Agent. Gebruik JOUW goedgekeurde AI-modellen. Gebouwd door developers, voor developers. Autonome story-afronding vanuit Jira & Azure DevOps.",
-    "cta": {
-      "primary": "Aan de slag",
-      "secondary": "Bekijk Documentatie"
-    }
+    "cta": "Start Gratis",
+    "ctaSecondary": "Bekijk op GitHub",
+    "scroll": "Scroll",
+    "tools": "MCP Tools",
+    "providers": "AI Providers",
+    "openSource": "Open Source",
+    "vendorLockIn": "Vendor Lock-in"
   },
-  "features": {
-    "title": "Waarom Snow-Flow?",
-    "tools": {
-      "title": "410+ MCP Tools",
-      "description": "Uitgebreide toolkit voor elke ServiceNow ontwikkeltaak - van widgets tot workflows."
-    },
-    "aiModels": {
-      "title": "Jouw AI Modellen",
-      "description": "Gebruik Claude, GPT-4, Gemini, Llama, of elk model dat jouw organisatie heeft goedgekeurd. Geen vendor lock-in."
-    },
-    "enterprise": {
-      "title": "Enterprise Ready",
-      "description": "Jira, Azure DevOps en Confluence integraties. Stakeholder seats voor alleen-lezen toegang."
-    },
-    "autonomous": {
-      "title": "Autonome Ontwikkeling",
-      "description": "Voltooi stories end-to-end. Van requirements tot gedeployde code met volledige traceerbaarheid."
-    }
+  "devProminence": {
+    "label": "De Laatste User Story Die Je Ooit Nodig Hebt",
+    "title": "Schrijf één keer. Deploy voor altijd.",
+    "storyType": "User Story",
+    "storyTitle": "Implementeer Snow-Flow voor ServiceNow Development",
+    "storyDesc": "Als ServiceNow developer wil ik mijn favoriete AI-model gebruiken zodat ik niet vast zit aan het ecosysteem van één leverancier.",
+    "acceptance": "Acceptatiecriteria",
+    "criteria1": "Ondersteuning voor 75+ AI providers inclusief Claude, GPT-4, Gemini en lokale modellen",
+    "criteria2": "Volledige MCP protocol implementatie met 410+ gespecialiseerde tools",
+    "criteria3": "Integratie met Jira, Azure DevOps en GitHub voor autonome story-afronding",
+    "criteria4": "Geen vendor lock-in - wissel van AI-model zonder workflows aan te passen",
+    "points": "8 pts"
+  },
+  "why": {
+    "label": "Het Probleem Dat We Oplossen",
+    "title": "ServiceNow's AI komt met voorwaarden",
+    "subtitle": "Build Agent bindt je aan NowLLM. Snow-Flow laat je ELK AI-model gebruiken dat je organisatie al heeft goedgekeurd.",
+    "problemTitle": "ServiceNow Build Agent",
+    "problem1": "Gebonden aan alleen NowLLM - geen keuze in AI-modellen",
+    "problem2": "Alleen browser-gebaseerde Studio omgeving",
+    "problem3": "Gesloten proprietary systeem",
+    "problem4": "€140K-€4.2M implementatiekosten",
+    "problem5": "Single-agent architectuur",
+    "problem6": "Kan de goedgekeurde AI-modellen van je bedrijf niet gebruiken",
+    "solutionTitle": "Snow-Flow Platform",
+    "solution1": "75+ AI providers - Claude, GPT, DeepSeek, lokale modellen",
+    "solution2": "Elke IDE - VS Code, Cursor, JetBrains, terminal",
+    "solution3": "100% open source (Elastic License 2.0)",
+    "solution4": "Voor altijd gratis of €99/maand voor managed cloud",
+    "solution5": "Multi-agent orchestratie voor complexe taken",
+    "solution6": "Gebruik ALLEEN de goedgekeurde modellen van je organisatie"
+  },
+  "autonomous": {
+    "label": "Autonome Development",
+    "title": "Van issue naar gedeployde code.",
+    "titleBreak": "Automatisch.",
+    "subtitle": "Verbind je projectmanagement tools. Snow-Flow leest requirements, schrijft code, maakt update sets en deployt—alles zonder handmatige interventie.",
+    "enterprise": "Enterprise",
+    "jiraTitle": "Jira Integratie",
+    "jiraDesc": "Haal stories direct uit Jira. Snow-Flow leest requirements, bouwt oplossingen en update de ticket status automatisch.",
+    "azureTitle": "Azure DevOps",
+    "azureDesc": "Sync met Azure DevOps work items. Volledige bidirectionele sync houdt je boards en ServiceNow in perfecte harmonie.",
+    "githubTitle": "GitHub Issues",
+    "githubDesc": "Zet GitHub issues om naar gedeployde ServiceNow code. Geautomatiseerde commits, PRs en deployment tracking.",
+    "gitlabTitle": "GitLab Integratie",
+    "gitlabDesc": "Native GitLab ondersteuning voor issues, merge requests en CI/CD pipeline triggers.",
+    "updateSetsTitle": "Geïsoleerde Update Sets",
+    "updateSetsDesc": "Elke story krijgt zijn eigen update set. Schone scheiding, makkelijke rollback, audit-ready deployments.",
+    "confluenceTitle": "Confluence Docs",
+    "confluenceDesc": "Genereer automatisch technische documentatie in Confluence. Houd stakeholders automatisch op de hoogte.",
+    "kbTitle": "ServiceNow KB",
+    "kbDesc": "Maak en update ServiceNow Knowledge Base artikelen als onderdeel van je development workflow.",
+    "multiAgentTitle": "Multi-Agent",
+    "multiAgentDesc": "Gespecialiseerde AI agents werken samen. Code review, testen, documentatie—alles parallel."
   },
   "comparison": {
     "title": "Snow-Flow vs ServiceNow Build Agent",
+    "feature": "Functie",
     "snowFlow": "Snow-Flow",
     "buildAgent": "Build Agent",
-    "aiChoice": {
-      "label": "AI Model Keuze",
-      "snowFlow": "Elk goedgekeurd model",
-      "buildAgent": "Alleen ServiceNow AI"
-    },
-    "pricing": {
-      "label": "Prijzen",
-      "snowFlow": "Open source + Enterprise",
-      "buildAgent": "Per-seat licenties"
-    },
-    "integrations": {
-      "label": "Integraties",
-      "snowFlow": "Jira, Azure DevOps, Confluence",
-      "buildAgent": "Alleen ServiceNow ecosysteem"
-    },
-    "deployment": {
-      "label": "Deployment",
-      "snowFlow": "Self-hosted of cloud",
-      "buildAgent": "Alleen ServiceNow cloud"
-    }
+    "aiChoice": "AI Model Keuze",
+    "aiSnowFlow": "75+ providers: Claude, GPT-4, Gemini, DeepSeek, Llama, lokale modellen",
+    "aiBuildAgent": "Alleen NowLLM - geen alternatieven",
+    "ide": "IDE/Omgeving",
+    "ideSnowFlow": "Elke IDE: VS Code, Cursor, JetBrains, Vim, terminal",
+    "ideBuildAgent": "Alleen browser-gebaseerde Studio",
+    "source": "Broncode",
+    "sourceSnowFlow": "100% open source (Elastic License 2.0)",
+    "sourceBuildAgent": "Proprietary, gesloten source",
+    "pricing": "Prijzen",
+    "pricingSnowFlow": "Gratis (self-hosted) of €99/maand (cloud)",
+    "pricingBuildAgent": "€140K-€4.2M implementatie",
+    "integrations": "Integraties",
+    "integrationsSnowFlow": "Jira, Azure DevOps, GitHub, GitLab, Confluence",
+    "integrationsBuildAgent": "Alleen ServiceNow ecosysteem",
+    "tools": "MCP Tools",
+    "toolsSnowFlow": "410+ gespecialiseerde tools",
+    "toolsBuildAgent": "Beperkte, proprietary toolset",
+    "agents": "Agent Architectuur",
+    "agentsSnowFlow": "Multi-agent orchestratie",
+    "agentsBuildAgent": "Enkele agent",
+    "compliance": "Data Compliance",
+    "complianceSnowFlow": "Je data blijft in je eigen infrastructuur",
+    "complianceBuildAgent": "Data verwerkt door ServiceNow AI"
   },
   "pricing": {
     "title": "Van gratis tot enterprise",
-    "subtitle": "Begin met open source. Schaal naar enterprise wanneer je klaar bent.",
+    "subtitle": "Begin met open source. Schaal naar enterprise wanneer je er klaar voor bent.",
     "free": {
-      "title": "Open Source",
-      "price": "Gratis",
-      "description": "Volledige toegang tot Snow-Flow core",
-      "features": [
-        "410+ MCP tools",
-        "Elke LLM provider",
-        "CLI & IDE integratie",
-        "Community support"
-      ],
-      "cta": "Aan de slag"
+      "name": "Gratis",
+      "price": "€0",
+      "period": "voor altijd",
+      "desc": "Alles wat je nodig hebt om te starten",
+      "cta": "Aan de Slag"
+    },
+    "individual": {
+      "name": "Individueel",
+      "price": "€29",
+      "period": "/maand",
+      "desc": "Voor serieuze developers",
+      "cta": "Start Proefperiode"
+    },
+    "teams": {
+      "name": "Teams",
+      "price": "€99",
+      "period": "/gebruiker/maand",
+      "badge": "Populair",
+      "desc": "Voor development teams",
+      "cta": "Start Proefperiode"
     },
     "enterprise": {
-      "title": "Enterprise",
-      "price": "Neem contact op",
-      "description": "Voor teams en organisaties",
-      "features": [
-        "Alles in Open Source",
-        "Jira & Azure DevOps integratie",
-        "Confluence documentatie",
-        "Stakeholder seats",
-        "Priority support",
-        "Custom integraties"
-      ],
-      "cta": "Contact Sales"
+      "name": "Enterprise",
+      "price": "Op Maat",
+      "desc": "Voor grote organisaties",
+      "cta": "Neem Contact Op"
+    },
+    "features": {
+      "mcpTools": "410+ MCP Tools",
+      "anyProvider": "Elke LLM Provider",
+      "cliIde": "CLI & IDE Integratie",
+      "communitySupport": "Community Support",
+      "unlimited": "Onbeperkte Projecten",
+      "prioritySupport": "Prioriteit Support",
+      "earlyAccess": "Vroege Toegang Features",
+      "privateDiscord": "Privé Discord Kanaal",
+      "everything": "Alles in",
+      "jira": "Jira Integratie",
+      "azure": "Azure DevOps Integratie",
+      "dashboard": "Team Dashboard",
+      "shared": "Gedeelde Configuraties",
+      "confluence": "Confluence Integratie",
+      "stakeholder": "Stakeholder Seats",
+      "sso": "SSO/SAML",
+      "dedicated": "Dedicated Support",
+      "custom": "Custom Integraties",
+      "onprem": "On-Premise Optie"
     }
+  },
+  "developers": {
+    "title": "Gebouwd door developers.",
+    "titleBreak": "Voor developers.",
+    "subtitle": "We hebben in de ServiceNow loopgraven gezeten. We bouwden Snow-Flow omdat we het zelf nodig hadden.",
+    "install": "# Installeer in seconden",
+    "start": "# Start met bouwen",
+    "prompt": "Wat wil je vandaag bouwen?"
   },
   "projects": {
     "title": "Drie Projecten. Eén Missie.",
     "subtitle": "Snow-Flow is gebouwd op drie onderling verbonden open-source projecten.",
     "snowFlow": {
-      "title": "Snow-Flow",
-      "description": "De MCP servers - 410+ tools voor ServiceNow ontwikkeling"
+      "name": "Snow-Flow",
+      "tools": "410+ Tools",
+      "desc": "De MCP servers. 410+ tools voor ServiceNow development. Widgets, business rules, flows, integraties—alles wat je nodig hebt."
     },
     "snowCode": {
-      "title": "Snow-Code",
-      "description": "De CLI & TUI - Authenticatie, configuratie en developer experience"
+      "name": "Snow-Code",
+      "tools": "CLI & TUI",
+      "desc": "De developer interface. OAuth authenticatie, MCP configuratie, en een mooie terminal UI voor elke LLM."
     },
     "enterprise": {
-      "title": "Snow-Flow Enterprise",
-      "description": "De business laag - Portal, integraties en stakeholder toegang"
+      "name": "Enterprise",
+      "tools": "Business Layer",
+      "desc": "Het business platform. Portal, Jira/Azure DevOps integratie, stakeholder seats, en team management."
     }
+  },
+  "footer": {
+    "tagline": "Het open-source ServiceNow development platform. Gebruik jouw AI. Behoud je vrijheid.",
+    "product": "Product",
+    "resources": "Bronnen",
+    "company": "Bedrijf",
+    "connect": "Verbinden",
+    "about": "Over Ons",
+    "blog": "Blog",
+    "careers": "Vacatures",
+    "contact": "Contact",
+    "copyright": "2025 Snow-Flow. Open source.",
+    "madeWith": "Gemaakt met",
+    "by": "door",
+    "quickLinks": "Snelle Links",
+    "community": "Community"
+  },
+  "mobile": {
+    "breakFree": "Breek vrij van vendor lock-in.",
+    "useYourAI": "Gebruik JOUW AI."
   },
   "stats": {
     "tools": "MCP Tools",
@@ -112,29 +220,18 @@
     "providers": "LLM Providers",
     "lines": "Regels Code"
   },
-  "footer": {
-    "tagline": "Gebouwd door developers, voor developers. Breek los van vendor lock-in.",
-    "quickLinks": "Snelle Links",
-    "community": "Community",
-    "legal": "Juridisch",
-    "copyright": "2025 Snow-Flow. Open source onder MIT Licentie."
-  },
   "meta": {
     "home": {
-      "title": "Snow-Flow | Breek los van ServiceNow Vendor Lock-in",
-      "description": "Het open-source alternatief voor ServiceNow Build Agent. Gebruik jouw goedgekeurde AI-modellen. Gebouwd door developers, voor developers. Autonome story-afronding vanuit Jira & Azure DevOps."
+      "title": "Snow-Flow | Breek Vrij van ServiceNow Vendor Lock-in",
+      "description": "Het open-source alternatief voor ServiceNow Build Agent. Gebruik JOUW goedgekeurde AI-modellen. Gebouwd door developers, voor developers."
     },
     "docs": {
       "title": "Documentatie | Snow-Flow",
-      "description": "Complete documentatie voor Snow-Flow - het open-source ServiceNow development platform. Installatie, authenticatie, CLI commando's, MCP tools en best practices."
+      "description": "Complete documentatie voor Snow-Flow - het open-source ServiceNow development platform."
     },
     "stats": {
       "title": "Project Statistieken | Snow-Flow",
-      "description": "Snow-Flow platform statistieken - 410+ MCP tools, 75+ LLM providers en community groei van ons open-source ServiceNow development platform."
-    },
-    "mcpReference": {
-      "title": "Complete MCP Referentie | Snow-Flow",
-      "description": "Complete referentie van 410+ MCP tools voor ServiceNow ontwikkeling. Bekijk alle tools verdeeld over 18 gespecialiseerde servers."
+      "description": "Snow-Flow platform statistieken - 410+ MCP tools, 75+ LLM providers."
     }
   }
 }
