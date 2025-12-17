@@ -1,0 +1,140 @@
+{
+  "nav": {
+    "home": "Home",
+    "docs": "Documentation",
+    "mcpReference": "MCP Reference",
+    "stats": "Stats",
+    "github": "GitHub",
+    "getStarted": "Get Started"
+  },
+  "hero": {
+    "badge": "Open Source",
+    "title": "Break Free from ServiceNow Vendor Lock-in",
+    "subtitle": "The open-source alternative to ServiceNow Build Agent. Use YOUR approved AI models. Built by developers, for developers. Autonomous story completion from Jira & Azure DevOps.",
+    "cta": {
+      "primary": "Get Started",
+      "secondary": "View Documentation"
+    }
+  },
+  "features": {
+    "title": "Why Snow-Flow?",
+    "tools": {
+      "title": "410+ MCP Tools",
+      "description": "Comprehensive toolkit covering every ServiceNow development task - from widgets to workflows."
+    },
+    "aiModels": {
+      "title": "Your AI Models",
+      "description": "Use Claude, GPT-4, Gemini, Llama, or any model your organization has approved. No vendor lock-in."
+    },
+    "enterprise": {
+      "title": "Enterprise Ready",
+      "description": "Jira, Azure DevOps, and Confluence integrations. Stakeholder seats for read-only access."
+    },
+    "autonomous": {
+      "title": "Autonomous Development",
+      "description": "Complete stories end-to-end. From requirements to deployed code with full traceability."
+    }
+  },
+  "comparison": {
+    "title": "Snow-Flow vs ServiceNow Build Agent",
+    "snowFlow": "Snow-Flow",
+    "buildAgent": "Build Agent",
+    "aiChoice": {
+      "label": "AI Model Choice",
+      "snowFlow": "Any approved model",
+      "buildAgent": "ServiceNow AI only"
+    },
+    "pricing": {
+      "label": "Pricing",
+      "snowFlow": "Open source + Enterprise",
+      "buildAgent": "Per-seat licensing"
+    },
+    "integrations": {
+      "label": "Integrations",
+      "snowFlow": "Jira, Azure DevOps, Confluence",
+      "buildAgent": "ServiceNow ecosystem only"
+    },
+    "deployment": {
+      "label": "Deployment",
+      "snowFlow": "Self-hosted or cloud",
+      "buildAgent": "ServiceNow cloud only"
+    }
+  },
+  "pricing": {
+    "title": "From free to enterprise",
+    "subtitle": "Start with open source. Scale to enterprise when you're ready.",
+    "free": {
+      "title": "Open Source",
+      "price": "Free",
+      "description": "Full access to Snow-Flow core",
+      "features": [
+        "410+ MCP tools",
+        "Any LLM provider",
+        "CLI & IDE integration",
+        "Community support"
+      ],
+      "cta": "Get Started"
+    },
+    "enterprise": {
+      "title": "Enterprise",
+      "price": "Contact us",
+      "description": "For teams and organizations",
+      "features": [
+        "Everything in Open Source",
+        "Jira & Azure DevOps integration",
+        "Confluence documentation",
+        "Stakeholder seats",
+        "Priority support",
+        "Custom integrations"
+      ],
+      "cta": "Contact Sales"
+    }
+  },
+  "projects": {
+    "title": "Three Projects. One Mission.",
+    "subtitle": "Snow-Flow is built on three interconnected open-source projects.",
+    "snowFlow": {
+      "title": "Snow-Flow",
+      "description": "The MCP servers - 410+ tools for ServiceNow development"
+    },
+    "snowCode": {
+      "title": "Snow-Code",
+      "description": "The CLI & TUI - Authentication, configuration, and developer experience"
+    },
+    "enterprise": {
+      "title": "Snow-Flow Enterprise",
+      "description": "The business layer - Portal, integrations, and stakeholder access"
+    }
+  },
+  "stats": {
+    "tools": "MCP Tools",
+    "servers": "MCP Servers",
+    "providers": "LLM Providers",
+    "lines": "Lines of Code"
+  },
+  "footer": {
+    "tagline": "Built by developers, for developers. Break free from vendor lock-in.",
+    "quickLinks": "Quick Links",
+    "community": "Community",
+    "legal": "Legal",
+    "copyright": "2025 Snow-Flow. Open source under MIT License."
+  },
+  "meta": {
+    "home": {
+      "title": "Snow-Flow | Break Free from ServiceNow Vendor Lock-in",
+      "description": "The open-source alternative to ServiceNow Build Agent. Use YOUR approved AI models. Built by developers, for developers. Autonomous story completion from Jira & Azure DevOps."
+    },
+    "docs": {
+      "title": "Documentation | Snow-Flow",
+      "description": "Complete documentation for Snow-Flow - the open-source ServiceNow development platform. Installation, authentication, CLI commands, MCP tools, and best practices."
+    },
+    "stats": {
+      "title": "Project Stats | Snow-Flow",
+      "description": "Snow-Flow platform statistics - 410+ MCP tools, 75+ LLM providers, and community growth across our open-source ServiceNow development platform."
+    },
+    "mcpReference": {
+      "title": "Complete MCP Reference | Snow-Flow",
+      "description": "Complete reference of 410+ MCP tools for ServiceNow development. Browse all tools across 18 specialized servers."
+    }
+  }
+}

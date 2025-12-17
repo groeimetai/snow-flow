@@ -1,0 +1,306 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { languages, useTranslations, type Lang } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return Object.keys(languages).map((lang) => ({
+    params: { lang }
+  }));
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const t = useTranslations(lang);
+---
+
+<BaseLayout
+  title={t('meta.docs.title')}
+  description={t('meta.docs.description')}
+  type="article"
+>
+  <section class="docs-hero">
+    <div class="container">
+      <h1>{t('nav.docs')}</h1>
+      <p class="docs-intro">{t('meta.docs.description')}</p>
+    </div>
+  </section>
+
+  <section class="docs-content">
+    <div class="container">
+      <div class="docs-grid">
+        <aside class="docs-sidebar">
+          <nav class="docs-nav">
+            <h3>Getting Started</h3>
+            <ul>
+              <li><a href="#installation">Installation</a></li>
+              <li><a href="#authentication">Authentication</a></li>
+              <li><a href="#quick-start">Quick Start</a></li>
+            </ul>
+            <h3>CLI Commands</h3>
+            <ul>
+              <li><a href="#init">snow-flow init</a></li>
+              <li><a href="#auth">snow-flow auth</a></li>
+              <li><a href="#run">snow-flow run</a></li>
+            </ul>
+            <h3>MCP Tools</h3>
+            <ul>
+              <li><a href="#deployment">Deployment Server</a></li>
+              <li><a href="#operations">Operations Server</a></li>
+              <li><a href="#automation">Automation Server</a></li>
+            </ul>
+          </nav>
+        </aside>
+
+        <main class="docs-main">
+          <article>
+            <section id="installation">
+              <h2>Installation</h2>
+              <p>Install Snow-Flow globally using npm:</p>
+              <pre><code>npm install -g snow-flow</code></pre>
+              <p>Or with yarn:</p>
+              <pre><code>yarn global add snow-flow</code></pre>
+            </section>
+
+            <section id="authentication">
+              <h2>Authentication</h2>
+              <p>Snow-Flow requires authentication with your ServiceNow instance. Run the authentication flow:</p>
+              <pre><code>snow-flow auth login</code></pre>
+              <p>This will open a browser window for OAuth authentication with your ServiceNow instance.</p>
+            </section>
+
+            <section id="quick-start">
+              <h2>Quick Start</h2>
+              <p>After authentication, initialize Snow-Flow in your project:</p>
+              <pre><code>snow-flow init</code></pre>
+              <p>This creates the necessary configuration files and sets up your MCP connection.</p>
+            </section>
+
+            <section id="init">
+              <h2>snow-flow init</h2>
+              <p>Initialize a new Snow-Flow project. Creates configuration files and establishes connection to ServiceNow.</p>
+              <pre><code>snow-flow init [options]
+
+Options:
+  --instance &lt;url&gt;    ServiceNow instance URL
+  --scope &lt;scope&gt;     Application scope
+  --force            Overwrite existing configuration</code></pre>
+            </section>
+
+            <section id="auth">
+              <h2>snow-flow auth</h2>
+              <p>Manage authentication for ServiceNow and integrations.</p>
+              <pre><code>snow-flow auth login     # Start OAuth login flow
+snow-flow auth logout    # Clear stored credentials
+snow-flow auth status    # Check authentication status</code></pre>
+            </section>
+
+            <section id="run">
+              <h2>snow-flow run</h2>
+              <p>Execute Snow-Flow with your configured LLM provider.</p>
+              <pre><code>snow-flow run [options]
+
+Options:
+  --model &lt;model&gt;    LLM model to use (default: claude-3-opus)
+  --mode &lt;mode&gt;      Execution mode (interactive, autonomous)
+  --verbose          Enable verbose logging</code></pre>
+            </section>
+
+            <section id="deployment">
+              <h2>Deployment Server</h2>
+              <p>The Deployment Server provides tools for deploying widgets, scripts, and other artifacts to ServiceNow.</p>
+              <h3>Available Tools:</h3>
+              <ul>
+                <li><code>snow_create_artifact</code> - Create new artifacts</li>
+                <li><code>snow_update</code> - Update existing artifacts</li>
+                <li><code>snow_delete</code> - Delete artifacts</li>
+                <li><code>snow_validate_deployment</code> - Validate before deploy</li>
+                <li><code>snow_preview_widget</code> - Preview widgets</li>
+              </ul>
+            </section>
+
+            <section id="operations">
+              <h2>Operations Server</h2>
+              <p>Core ServiceNow operations including queries, incident management, and CMDB access.</p>
+              <h3>Available Tools:</h3>
+              <ul>
+                <li><code>snow_query_table</code> - Query any table</li>
+                <li><code>snow_query_incidents</code> - Query incidents</li>
+                <li><code>snow_cmdb_search</code> - Search CMDB</li>
+                <li><code>snow_user_lookup</code> - Find users</li>
+                <li><code>snow_knowledge_search</code> - Search knowledge base</li>
+              </ul>
+            </section>
+
+            <section id="automation">
+              <h2>Automation Server</h2>
+              <p>Script execution, background jobs, and automation workflows.</p>
+              <h3>Available Tools:</h3>
+              <ul>
+                <li><code>snow_execute_background_script</code> - Run background scripts</li>
+                <li><code>snow_schedule_job</code> - Schedule jobs</li>
+                <li><code>snow_create_event</code> - Trigger events</li>
+                <li><code>snow_get_logs</code> - Access system logs</li>
+              </ul>
+            </section>
+          </article>
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <!-- JSON-LD for Documentation -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": t('meta.docs.title'),
+    "description": t('meta.docs.description'),
+    "author": { "@type": "Organization", "name": "Snow-Flow Team" },
+    "publisher": { "@type": "Organization", "name": "Snow-Flow" }
+  })} />
+</BaseLayout>
+
+<style>
+  .docs-hero {
+    padding: 8rem 0 3rem;
+    text-align: center;
+  }
+
+  .docs-hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--accent-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .docs-intro {
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .docs-content {
+    padding: 3rem 0 6rem;
+  }
+
+  .docs-grid {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 3rem;
+  }
+
+  .docs-sidebar {
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+  }
+
+  .docs-nav h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  .docs-nav h3:first-child {
+    margin-top: 0;
+  }
+
+  .docs-nav ul {
+    list-style: none;
+  }
+
+  .docs-nav a {
+    display: block;
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+  }
+
+  .docs-nav a:hover {
+    color: var(--accent-cyan);
+  }
+
+  .docs-main article {
+    max-width: 800px;
+  }
+
+  .docs-main section {
+    margin-bottom: 4rem;
+    scroll-margin-top: 100px;
+  }
+
+  .docs-main h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+  }
+
+  .docs-main h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.75rem;
+    color: var(--text-primary);
+  }
+
+  .docs-main p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+
+  .docs-main ul {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .docs-main li {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 0.5rem;
+  }
+
+  .docs-main code {
+    font-family: var(--font-mono);
+    background: var(--bg-card);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: var(--accent-cyan);
+  }
+
+  .docs-main pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+  }
+
+  .docs-main pre code {
+    background: none;
+    padding: 0;
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 1024px) {
+    .docs-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .docs-sidebar {
+      position: static;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 2rem;
+      margin-bottom: 2rem;
+    }
+  }
+</style>

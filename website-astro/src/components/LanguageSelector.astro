@@ -1,0 +1,125 @@
+---
+import { languages, getLangFromUrl } from '../i18n/utils';
+
+const currentLang = getLangFromUrl(Astro.url);
+const currentPath = Astro.url.pathname.replace(/^\/(en|nl)/, '') || '/';
+---
+
+<div class="language-selector">
+  <button class="language-button" aria-label="Select language" aria-expanded="false">
+    <svg class="globe-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </svg>
+    <span class="current-lang">{languages[currentLang]}</span>
+    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+      <path d="M6 9l6 6 6-6"/>
+    </svg>
+  </button>
+
+  <div class="language-dropdown" role="menu">
+    {Object.entries(languages).map(([code, name]) => (
+      <a
+        href={`/${code}${currentPath}`}
+        class:list={['language-option', { active: code === currentLang }]}
+        hreflang={code}
+        role="menuitem"
+      >
+        {name}
+      </a>
+    ))}
+  </div>
+</div>
+
+<style>
+  .language-selector {
+    position: relative;
+  }
+
+  .language-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #94A3B8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    font-size: 0.875rem;
+  }
+
+  .language-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #00D9FF;
+    color: #FFFFFF;
+  }
+
+  .globe-icon, .chevron {
+    flex-shrink: 0;
+  }
+
+  .chevron {
+    transition: transform 0.2s ease;
+  }
+
+  .language-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 150px;
+    background: #0d0d14;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 100;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .language-selector:hover .language-dropdown,
+  .language-selector:focus-within .language-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .language-selector:hover .chevron {
+    transform: rotate(180deg);
+  }
+
+  .language-option {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: #94A3B8;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+  }
+
+  .language-option:hover {
+    background: rgba(0, 217, 255, 0.1);
+    color: #FFFFFF;
+  }
+
+  .language-option.active {
+    background: rgba(0, 217, 255, 0.15);
+    color: #00D9FF;
+  }
+
+  @media (max-width: 768px) {
+    .current-lang {
+      display: none;
+    }
+
+    .language-button {
+      padding: 0.5rem;
+    }
+  }
+</style>

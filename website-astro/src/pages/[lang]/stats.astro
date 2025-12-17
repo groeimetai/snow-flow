@@ -1,0 +1,238 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { languages, useTranslations, type Lang } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return Object.keys(languages).map((lang) => ({
+    params: { lang }
+  }));
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const t = useTranslations(lang);
+
+const stats = [
+  { value: '410+', label: t('stats.tools'), icon: '🛠️' },
+  { value: '18', label: t('stats.servers'), icon: '🖥️' },
+  { value: '75+', label: t('stats.providers'), icon: '🤖' },
+  { value: '50K+', label: t('stats.lines'), icon: '📝' }
+];
+---
+
+<BaseLayout
+  title={t('meta.stats.title')}
+  description={t('meta.stats.description')}
+>
+  <section class="stats-hero">
+    <div class="container">
+      <h1>{t('nav.stats')}</h1>
+      <p class="stats-intro">{t('meta.stats.description')}</p>
+    </div>
+  </section>
+
+  <section class="stats-grid-section">
+    <div class="container">
+      <div class="stats-grid">
+        {stats.map((stat) => (
+          <div class="stat-card">
+            <span class="stat-icon">{stat.icon}</span>
+            <span class="stat-value">{stat.value}</span>
+            <span class="stat-label">{stat.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="servers-section">
+    <div class="container">
+      <h2 class="section-title">MCP Servers</h2>
+      <div class="grid grid-3">
+        <div class="server-card">
+          <h3>Deployment Server</h3>
+          <span class="tool-count">10 tools</span>
+          <p>Widget & artifact deployment</p>
+        </div>
+        <div class="server-card">
+          <h3>Operations Server</h3>
+          <span class="tool-count">12 tools</span>
+          <p>Core ServiceNow operations</p>
+        </div>
+        <div class="server-card">
+          <h3>Automation Server</h3>
+          <span class="tool-count">27 tools</span>
+          <p>Script execution & automation</p>
+        </div>
+        <div class="server-card">
+          <h3>Platform Development</h3>
+          <span class="tool-count">25 tools</span>
+          <p>Business rules, UI actions</p>
+        </div>
+        <div class="server-card">
+          <h3>Integration Server</h3>
+          <span class="tool-count">18 tools</span>
+          <p>REST, SOAP, imports</p>
+        </div>
+        <div class="server-card">
+          <h3>System Properties</h3>
+          <span class="tool-count">15 tools</span>
+          <p>Property management</p>
+        </div>
+        <div class="server-card">
+          <h3>Update Set Server</h3>
+          <span class="tool-count">12 tools</span>
+          <p>Change management</p>
+        </div>
+        <div class="server-card">
+          <h3>Development Assistant</h3>
+          <span class="tool-count">20 tools</span>
+          <p>AI-assisted development</p>
+        </div>
+        <div class="server-card">
+          <h3>Security & Compliance</h3>
+          <span class="tool-count">15 tools</span>
+          <p>ACLs, policies, auditing</p>
+        </div>
+        <div class="server-card">
+          <h3>Reporting & Analytics</h3>
+          <span class="tool-count">18 tools</span>
+          <p>Reports, dashboards, KPIs</p>
+        </div>
+        <div class="server-card">
+          <h3>Machine Learning</h3>
+          <span class="tool-count">22 tools</span>
+          <p>Predictive analytics, ML models</p>
+        </div>
+        <div class="server-card">
+          <h3>Orchestration</h3>
+          <span class="tool-count">28 tools</span>
+          <p>Multi-agent coordination</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .stats-hero {
+    padding: 8rem 0 3rem;
+    text-align: center;
+  }
+
+  .stats-hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--accent-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stats-intro {
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .stats-grid-section {
+    padding: 3rem 0;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  .stat-card:hover {
+    border-color: var(--accent-cyan);
+    transform: translateY(-4px);
+    box-shadow: var(--glow-cyan);
+  }
+
+  .stat-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .stat-value {
+    font-size: 3rem;
+    font-weight: 800;
+    display: block;
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--accent-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    display: block;
+  }
+
+  .servers-section {
+    padding: 4rem 0 6rem;
+  }
+
+  .server-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+
+  .server-card:hover {
+    border-color: var(--accent-purple);
+    transform: translateY(-2px);
+  }
+
+  .server-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+  }
+
+  .tool-count {
+    display: inline-block;
+    background: rgba(0, 217, 255, 0.1);
+    color: var(--accent-cyan);
+    padding: 0.25rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .server-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 1024px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

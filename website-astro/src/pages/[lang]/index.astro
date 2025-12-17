@@ -1,0 +1,276 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { languages, useTranslations, type Lang } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return Object.keys(languages).map((lang) => ({
+    params: { lang }
+  }));
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const t = useTranslations(lang);
+---
+
+<BaseLayout
+  title={t('meta.home.title')}
+  description={t('meta.home.description')}
+>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <span class="hero-badge">{t('hero.badge')}</span>
+        <h1 class="hero-title">{t('hero.title')}</h1>
+        <p class="hero-subtitle">{t('hero.subtitle')}</p>
+        <div class="hero-cta">
+          <a href="https://github.com/groeimetai/snow-flow#quick-start" class="btn btn-primary">
+            {t('hero.cta.primary')}
+          </a>
+          <a href={`/${lang}/docs`} class="btn btn-secondary">
+            {t('hero.cta.secondary')}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="container">
+      <h2 class="section-title">{t('features.title')}</h2>
+      <div class="grid grid-4">
+        <div class="card">
+          <div class="card-icon">🛠️</div>
+          <h3 class="card-title">{t('features.tools.title')}</h3>
+          <p class="card-description">{t('features.tools.description')}</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🤖</div>
+          <h3 class="card-title">{t('features.aiModels.title')}</h3>
+          <p class="card-description">{t('features.aiModels.description')}</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🏢</div>
+          <h3 class="card-title">{t('features.enterprise.title')}</h3>
+          <p class="card-description">{t('features.enterprise.description')}</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">{t('features.autonomous.title')}</h3>
+          <p class="card-description">{t('features.autonomous.description')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Section -->
+  <section class="comparison">
+    <div class="container">
+      <h2 class="section-title">{t('comparison.title')}</h2>
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th class="highlight">{t('comparison.snowFlow')}</th>
+              <th>{t('comparison.buildAgent')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{t('comparison.aiChoice.label')}</td>
+              <td class="highlight">✓ {t('comparison.aiChoice.snowFlow')}</td>
+              <td>✗ {t('comparison.aiChoice.buildAgent')}</td>
+            </tr>
+            <tr>
+              <td>{t('comparison.pricing.label')}</td>
+              <td class="highlight">✓ {t('comparison.pricing.snowFlow')}</td>
+              <td>✗ {t('comparison.pricing.buildAgent')}</td>
+            </tr>
+            <tr>
+              <td>{t('comparison.integrations.label')}</td>
+              <td class="highlight">✓ {t('comparison.integrations.snowFlow')}</td>
+              <td>✗ {t('comparison.integrations.buildAgent')}</td>
+            </tr>
+            <tr>
+              <td>{t('comparison.deployment.label')}</td>
+              <td class="highlight">✓ {t('comparison.deployment.snowFlow')}</td>
+              <td>✗ {t('comparison.deployment.buildAgent')}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing">
+    <div class="container">
+      <h2 class="section-title">{t('pricing.title')}</h2>
+      <p class="section-subtitle">{t('pricing.subtitle')}</p>
+      <div class="grid grid-2 pricing-grid">
+        <div class="card pricing-card">
+          <h3 class="pricing-tier">{t('pricing.free.title')}</h3>
+          <div class="pricing-price">{t('pricing.free.price')}</div>
+          <p class="pricing-description">{t('pricing.free.description')}</p>
+          <ul class="pricing-features">
+            {(t('pricing.free.features') as unknown as string[]).map((feature: string) => (
+              <li>{feature}</li>
+            ))}
+          </ul>
+          <a href="https://github.com/groeimetai/snow-flow#quick-start" class="btn btn-primary btn-full">
+            {t('pricing.free.cta')}
+          </a>
+        </div>
+        <div class="card pricing-card featured">
+          <h3 class="pricing-tier">{t('pricing.enterprise.title')}</h3>
+          <div class="pricing-price">{t('pricing.enterprise.price')}</div>
+          <p class="pricing-description">{t('pricing.enterprise.description')}</p>
+          <ul class="pricing-features">
+            {(t('pricing.enterprise.features') as unknown as string[]).map((feature: string) => (
+              <li>{feature}</li>
+            ))}
+          </ul>
+          <a href="mailto:contact@snow-flow.dev" class="btn btn-secondary btn-full">
+            {t('pricing.enterprise.cta')}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects Section -->
+  <section class="projects">
+    <div class="container">
+      <h2 class="section-title">{t('projects.title')}</h2>
+      <p class="section-subtitle">{t('projects.subtitle')}</p>
+      <div class="grid grid-3">
+        <div class="card">
+          <h3 class="card-title">{t('projects.snowFlow.title')}</h3>
+          <p class="card-description">{t('projects.snowFlow.description')}</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">{t('projects.snowCode.title')}</h3>
+          <p class="card-description">{t('projects.snowCode.description')}</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">{t('projects.enterprise.title')}</h3>
+          <p class="card-description">{t('projects.enterprise.description')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JSON-LD for Homepage -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Snow-Flow",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Cross-platform",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": t('meta.home.description'),
+    "url": "https://snow-flow.dev",
+    "downloadUrl": "https://github.com/groeimetai/snow-flow",
+    "author": {
+      "@type": "Organization",
+      "name": "GroeiMetAI"
+    }
+  })} />
+</BaseLayout>
+
+<style>
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .comparison-table {
+    overflow-x: auto;
+  }
+
+  .comparison-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .comparison-table th {
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .comparison-table th.highlight,
+  .comparison-table td.highlight {
+    background: rgba(0, 217, 255, 0.05);
+    color: var(--accent-cyan);
+  }
+
+  .pricing-grid {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .pricing-card {
+    text-align: center;
+  }
+
+  .pricing-card.featured {
+    border-color: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+  }
+
+  .pricing-tier {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .pricing-price {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent-cyan);
+    margin-bottom: 1rem;
+  }
+
+  .pricing-description {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+  }
+
+  .pricing-features {
+    list-style: none;
+    text-align: left;
+    margin-bottom: 2rem;
+  }
+
+  .pricing-features li {
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .pricing-features li::before {
+    content: '✓';
+    color: var(--accent-green);
+    font-weight: 600;
+  }
+
+  .btn-full {
+    width: 100%;
+  }
+</style>

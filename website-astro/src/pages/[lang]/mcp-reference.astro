@@ -1,0 +1,285 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { languages, useTranslations, type Lang } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return Object.keys(languages).map((lang) => ({
+    params: { lang }
+  }));
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const t = useTranslations(lang);
+
+const servers = [
+  {
+    name: 'Deployment Server',
+    icon: '🚀',
+    description: 'Widget & artifact deployment',
+    tools: ['snow_create_artifact', 'snow_update', 'snow_delete', 'snow_validate_deployment', 'snow_rollback_deployment', 'snow_preview_widget', 'snow_widget_test', 'snow_batch_deploy', 'snow_deployment_status', 'snow_deployment_history']
+  },
+  {
+    name: 'Operations Server',
+    icon: '⚙️',
+    description: 'Core ServiceNow operations',
+    tools: ['snow_query_table', 'snow_query_incidents', 'snow_cmdb_search', 'snow_user_lookup', 'snow_operational_metrics', 'snow_knowledge_search', 'snow_create_incident', 'snow_update_incident', 'snow_close_incident', 'snow_create_change_request']
+  },
+  {
+    name: 'Automation Server',
+    icon: '⚡',
+    description: 'Script execution and automation',
+    tools: ['snow_execute_background_script', 'snow_execute_script_with_output', 'snow_get_script_output', 'snow_execute_script_sync', 'snow_get_logs', 'snow_test_rest_connection', 'snow_trace_execution', 'snow_schedule_job', 'snow_create_event']
+  },
+  {
+    name: 'Platform Development',
+    icon: '🏗️',
+    description: 'Platform development artifacts',
+    tools: ['snow_create_ui_page', 'snow_create_script_include', 'snow_create_business_rule', 'snow_create_client_script', 'snow_create_ui_policy', 'snow_create_ui_action']
+  },
+  {
+    name: 'Integration Server',
+    icon: '🔗',
+    description: 'Integration and data management',
+    tools: ['snow_create_rest_message', 'snow_create_transform_map', 'snow_create_import_set', 'snow_test_web_service', 'snow_configure_email']
+  },
+  {
+    name: 'System Properties',
+    icon: '⚙️',
+    description: 'System property management',
+    tools: ['snow_property_get', 'snow_property_set', 'snow_property_list', 'snow_property_delete', 'snow_property_bulk_update', 'snow_property_export', 'snow_property_import']
+  },
+  {
+    name: 'Update Set Server',
+    icon: '📦',
+    description: 'Change management and deployment',
+    tools: ['snow_update_set_create', 'snow_update_set_switch', 'snow_update_set_current', 'snow_update_set_complete', 'snow_update_set_export', 'snow_ensure_active_update_set']
+  },
+  {
+    name: 'Development Assistant',
+    icon: '🤖',
+    description: 'Intelligent development assistance',
+    tools: ['snow_find_artifact', 'snow_edit_artifact', 'snow_get_by_sysid', 'snow_analyze_artifact', 'snow_comprehensive_search', 'snow_analyze_requirements']
+  }
+];
+---
+
+<BaseLayout
+  title={t('meta.mcpReference.title')}
+  description={t('meta.mcpReference.description')}
+  type="article"
+>
+  <section class="reference-hero">
+    <div class="container">
+      <h1>{t('nav.mcpReference')}</h1>
+      <p class="reference-intro">{t('meta.mcpReference.description')}</p>
+    </div>
+  </section>
+
+  <section class="reference-content">
+    <div class="container">
+      <div class="search-container">
+        <input type="text" class="search-input" placeholder="Search tools..." id="tool-search">
+      </div>
+
+      <div class="servers-list">
+        {servers.map((server) => (
+          <div class="server-section" data-server={server.name.toLowerCase()}>
+            <div class="server-header">
+              <span class="server-icon">{server.icon}</span>
+              <div>
+                <h2>{server.name}</h2>
+                <p>{server.description}</p>
+              </div>
+              <span class="tool-badge">{server.tools.length} tools</span>
+            </div>
+            <div class="tools-grid">
+              {server.tools.map((tool) => (
+                <div class="tool-card" data-tool={tool.toLowerCase()}>
+                  <code>{tool}</code>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- JSON-LD for MCP Reference -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Snow-Flow MCP Tools",
+    "description": t('meta.mcpReference.description'),
+    "numberOfItems": 410,
+    "itemListElement": servers.map((server, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": server.name,
+      "description": server.description
+    }))
+  })} />
+
+  <script>
+    const searchInput = document.getElementById('tool-search') as HTMLInputElement;
+    const toolCards = document.querySelectorAll('.tool-card');
+    const serverSections = document.querySelectorAll('.server-section');
+
+    searchInput?.addEventListener('input', (e) => {
+      const query = (e.target as HTMLInputElement).value.toLowerCase();
+
+      toolCards.forEach((card) => {
+        const tool = card.getAttribute('data-tool') || '';
+        const match = tool.includes(query);
+        (card as HTMLElement).style.display = match || !query ? 'block' : 'none';
+      });
+
+      serverSections.forEach((section) => {
+        const visibleTools = section.querySelectorAll('.tool-card[style="display: block"], .tool-card:not([style])');
+        const hasVisibleTools = Array.from(visibleTools).some((t) =>
+          (t as HTMLElement).style.display !== 'none'
+        );
+        (section as HTMLElement).style.display = hasVisibleTools || !query ? 'block' : 'none';
+      });
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .reference-hero {
+    padding: 8rem 0 3rem;
+    text-align: center;
+  }
+
+  .reference-hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--accent-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .reference-intro {
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .reference-content {
+    padding: 2rem 0 6rem;
+  }
+
+  .search-container {
+    max-width: 600px;
+    margin: 0 auto 3rem;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+  }
+
+  .search-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .servers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+
+  .server-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 2rem;
+  }
+
+  .server-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .server-icon {
+    font-size: 2rem;
+  }
+
+  .server-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+  }
+
+  .server-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .tool-badge {
+    margin-left: auto;
+    background: rgba(0, 217, 255, 0.1);
+    color: var(--accent-cyan);
+    padding: 0.5rem 1rem;
+    border-radius: 100px;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .tool-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+  }
+
+  .tool-card:hover {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 217, 255, 0.05);
+  }
+
+  .tool-card code {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 768px) {
+    .server-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .tool-badge {
+      margin-left: 0;
+    }
+  }
+</style>

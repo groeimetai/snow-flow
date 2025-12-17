@@ -1,0 +1,66 @@
+---
+import { getAlternateLocales, type Lang } from '../i18n/utils';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  locale?: string;
+  lang?: Lang;
+  publishedTime?: string;
+  modifiedTime?: string;
+}
+
+const {
+  title,
+  description,
+  canonical = Astro.url.href,
+  image = '/logos/linkedin-banner.png',
+  type = 'website',
+  locale = 'en_US',
+  lang = 'en',
+  publishedTime,
+  modifiedTime
+} = Astro.props;
+
+const absoluteImage = new URL(image, Astro.site).href;
+const alternateLocales = getAlternateLocales(Astro.url.pathname, lang);
+const defaultUrl = canonical.replace(/\/(nl)\//, '/en/');
+---
+
+<!-- Primary Meta Tags -->
+<meta name="title" content={title}>
+<meta name="description" content={description}>
+
+<!-- Canonical URL -->
+<link rel="canonical" href={canonical}>
+
+<!-- Alternate Languages (hreflang) -->
+{alternateLocales.map(({ lang: hrefLang, url }) => (
+  <link rel="alternate" hreflang={hrefLang} href={url} />
+))}
+<link rel="alternate" hreflang="x-default" href={defaultUrl} />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content={type}>
+<meta property="og:url" content={canonical}>
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:image" content={absoluteImage}>
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:site_name" content="Snow-Flow">
+<meta property="og:locale" content={locale}>
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content={canonical}>
+<meta name="twitter:title" content={title}>
+<meta name="twitter:description" content={description}>
+<meta name="twitter:image" content={absoluteImage}>
+
+<!-- Article specific -->
+{publishedTime && <meta property="article:published_time" content={publishedTime} />}
+{modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}

@@ -1,0 +1,140 @@
+{
+  "nav": {
+    "home": "Home",
+    "docs": "Documentatie",
+    "mcpReference": "MCP Referentie",
+    "stats": "Statistieken",
+    "github": "GitHub",
+    "getStarted": "Aan de slag"
+  },
+  "hero": {
+    "badge": "Open Source",
+    "title": "Breek los van ServiceNow Vendor Lock-in",
+    "subtitle": "Het open-source alternatief voor ServiceNow Build Agent. Gebruik JOUW goedgekeurde AI-modellen. Gebouwd door developers, voor developers. Autonome story-afronding vanuit Jira & Azure DevOps.",
+    "cta": {
+      "primary": "Aan de slag",
+      "secondary": "Bekijk Documentatie"
+    }
+  },
+  "features": {
+    "title": "Waarom Snow-Flow?",
+    "tools": {
+      "title": "410+ MCP Tools",
+      "description": "Uitgebreide toolkit voor elke ServiceNow ontwikkeltaak - van widgets tot workflows."
+    },
+    "aiModels": {
+      "title": "Jouw AI Modellen",
+      "description": "Gebruik Claude, GPT-4, Gemini, Llama, of elk model dat jouw organisatie heeft goedgekeurd. Geen vendor lock-in."
+    },
+    "enterprise": {
+      "title": "Enterprise Ready",
+      "description": "Jira, Azure DevOps en Confluence integraties. Stakeholder seats voor alleen-lezen toegang."
+    },
+    "autonomous": {
+      "title": "Autonome Ontwikkeling",
+      "description": "Voltooi stories end-to-end. Van requirements tot gedeployde code met volledige traceerbaarheid."
+    }
+  },
+  "comparison": {
+    "title": "Snow-Flow vs ServiceNow Build Agent",
+    "snowFlow": "Snow-Flow",
+    "buildAgent": "Build Agent",
+    "aiChoice": {
+      "label": "AI Model Keuze",
+      "snowFlow": "Elk goedgekeurd model",
+      "buildAgent": "Alleen ServiceNow AI"
+    },
+    "pricing": {
+      "label": "Prijzen",
+      "snowFlow": "Open source + Enterprise",
+      "buildAgent": "Per-seat licenties"
+    },
+    "integrations": {
+      "label": "Integraties",
+      "snowFlow": "Jira, Azure DevOps, Confluence",
+      "buildAgent": "Alleen ServiceNow ecosysteem"
+    },
+    "deployment": {
+      "label": "Deployment",
+      "snowFlow": "Self-hosted of cloud",
+      "buildAgent": "Alleen ServiceNow cloud"
+    }
+  },
+  "pricing": {
+    "title": "Van gratis tot enterprise",
+    "subtitle": "Begin met open source. Schaal naar enterprise wanneer je klaar bent.",
+    "free": {
+      "title": "Open Source",
+      "price": "Gratis",
+      "description": "Volledige toegang tot Snow-Flow core",
+      "features": [
+        "410+ MCP tools",
+        "Elke LLM provider",
+        "CLI & IDE integratie",
+        "Community support"
+      ],
+      "cta": "Aan de slag"
+    },
+    "enterprise": {
+      "title": "Enterprise",
+      "price": "Neem contact op",
+      "description": "Voor teams en organisaties",
+      "features": [
+        "Alles in Open Source",
+        "Jira & Azure DevOps integratie",
+        "Confluence documentatie",
+        "Stakeholder seats",
+        "Priority support",
+        "Custom integraties"
+      ],
+      "cta": "Contact Sales"
+    }
+  },
+  "projects": {
+    "title": "Drie Projecten. Eén Missie.",
+    "subtitle": "Snow-Flow is gebouwd op drie onderling verbonden open-source projecten.",
+    "snowFlow": {
+      "title": "Snow-Flow",
+      "description": "De MCP servers - 410+ tools voor ServiceNow ontwikkeling"
+    },
+    "snowCode": {
+      "title": "Snow-Code",
+      "description": "De CLI & TUI - Authenticatie, configuratie en developer experience"
+    },
+    "enterprise": {
+      "title": "Snow-Flow Enterprise",
+      "description": "De business laag - Portal, integraties en stakeholder toegang"
+    }
+  },
+  "stats": {
+    "tools": "MCP Tools",
+    "servers": "MCP Servers",
+    "providers": "LLM Providers",
+    "lines": "Regels Code"
+  },
+  "footer": {
+    "tagline": "Gebouwd door developers, voor developers. Breek los van vendor lock-in.",
+    "quickLinks": "Snelle Links",
+    "community": "Community",
+    "legal": "Juridisch",
+    "copyright": "2025 Snow-Flow. Open source onder MIT Licentie."
+  },
+  "meta": {
+    "home": {
+      "title": "Snow-Flow | Breek los van ServiceNow Vendor Lock-in",
+      "description": "Het open-source alternatief voor ServiceNow Build Agent. Gebruik jouw goedgekeurde AI-modellen. Gebouwd door developers, voor developers. Autonome story-afronding vanuit Jira & Azure DevOps."
+    },
+    "docs": {
+      "title": "Documentatie | Snow-Flow",
+      "description": "Complete documentatie voor Snow-Flow - het open-source ServiceNow development platform. Installatie, authenticatie, CLI commando's, MCP tools en best practices."
+    },
+    "stats": {
+      "title": "Project Statistieken | Snow-Flow",
+      "description": "Snow-Flow platform statistieken - 410+ MCP tools, 75+ LLM providers en community groei van ons open-source ServiceNow development platform."
+    },
+    "mcpReference": {
+      "title": "Complete MCP Referentie | Snow-Flow",
+      "description": "Complete referentie van 410+ MCP tools voor ServiceNow ontwikkeling. Bekijk alle tools verdeeld over 18 gespecialiseerde servers."
+    }
+  }
+}
