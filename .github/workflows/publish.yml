@@ -17,12 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Clear npm auth for OIDC
-        run: |
-          echo "Removing npm token for OIDC authentication"
-          rm -f ~/.npmrc || true
+          # NO registry-url for OIDC - it creates .npmrc with token placeholder
 
       - run: npm ci
 
