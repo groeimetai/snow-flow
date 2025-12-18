@@ -38,8 +38,29 @@ let cachedJwtToken: string | null = null;
 let jwtTokenExpiry: number = 0;
 
 /**
- * Exchange license key for JWT token
- * Caches the JWT token until it expires
+ * Check if a string is a JWT token
+ * JWT tokens are base64url encoded and have 3 parts separated by dots
+ */
+function isJwtToken(value: string): boolean {
+  // JWT tokens start with "eyJ" (base64 encoded '{"')
+  if (!value.startsWith('eyJ')) {
+    return false;
+  }
+  // JWT tokens have exactly 3 parts separated by dots
+  const parts = value.split('.');
+  return parts.length === 3;
+}
+
+/**
+ * Get JWT token for authentication
+ *
+ * Supports two modes:
+ * 1. Direct JWT token: If SNOW_LICENSE_KEY is already a JWT token (from device auth),
+ *    use it directly without exchanging.
+ * 2. License key exchange: If SNOW_LICENSE_KEY is a raw license key (SNOW-ENT-*),
+ *    exchange it for a JWT token via /api/auth/mcp/login.
+ *
+ * Caches the JWT token until it expires.
  */
 async function getJwtToken(): Promise<string> {
   // Return cached token if still valid (with 5 minute buffer)
@@ -55,6 +76,26 @@ async function getJwtToken(): Promise<string> {
     throw new Error('SNOW_LICENSE_KEY or SNOW_ENTERPRISE_LICENSE_KEY not configured. Run: snow-flow auth login');
   }
 
+  // Check if SNOW_LICENSE_KEY is already a JWT token (from device auth)
+  // Device auth flow sets SNOW_LICENSE_KEY to a JWT token directly
+  if (isJwtToken(TRIMMED_LICENSE_KEY)) {
+    proxyLogger.log('info', 'Using JWT token directly from SNOW_LICENSE_KEY (device auth mode)', {
+      tokenLength: TRIMMED_LICENSE_KEY.length,
+      tokenPreview: TRIMMED_LICENSE_KEY.substring(0, 20) + '...'
+    });
+
+    // Cache the JWT token
+    // Note: We don't know the exact expiry from the token without decoding it,
+    // but device auth tokens are valid for 7 days. We'll use a shorter cache
+    // to ensure we don't use an expired token.
+    cachedJwtToken = TRIMMED_LICENSE_KEY;
+    jwtTokenExpiry = now + 6 * 24 * 60 * 60 * 1000; // 6 days cache (1 day buffer)
+
+    return TRIMMED_LICENSE_KEY;
+  }
+
+  // SNOW_LICENSE_KEY is a raw license key (SNOW-ENT-* format)
+  // Exchange it for a JWT token via the portal API
   proxyLogger.log('info', 'Exchanging license key for JWT token', {
     licenseKeyLength: TRIMMED_LICENSE_KEY.length,
     licenseKeyPreview: TRIMMED_LICENSE_KEY.substring(0, 20) + '...',
