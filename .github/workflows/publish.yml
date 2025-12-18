@@ -17,12 +17,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # NO registry-url for OIDC - it creates .npmrc with token placeholder
+          registry-url: 'https://registry.npmjs.org'
 
       - run: npm ci
 
       - run: npm run build
 
-      - name: Publish with provenance (OIDC)
-        run: npm publish --provenance --access public
-        # No NODE_AUTH_TOKEN needed - uses OIDC from GitHub
+      - name: Publish (OIDC trusted publishing)
+        run: npm publish --access public
+        # npm CLI automatically uses OIDC when id-token: write is set
