@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write  # Required for creating GitHub releases
+  id-token: write  # Required for npm provenance/OIDC
 
 jobs:
   publish:
@@ -46,10 +47,9 @@ jobs:
             npm version $VERSION --no-git-tag-version --allow-same-version
           fi
 
-      - name: Publish to npm
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm with provenance (OIDC)
+        run: npm publish --provenance --access public
+        # No NODE_AUTH_TOKEN needed - uses OIDC from GitHub
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')

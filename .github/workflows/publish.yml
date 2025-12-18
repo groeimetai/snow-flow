@@ -1,4 +1,4 @@
-name: Publish to npm
+name: Publish to npm (OIDC)
 
 on:
   release:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      id-token: write  # Required for npm provenance/OIDC
     steps:
       - uses: actions/checkout@v4
 
@@ -18,17 +18,12 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          # NOTE: Do NOT set NODE_AUTH_TOKEN for OIDC!
 
       - run: npm ci
+
       - run: npm run build
 
-      # Remove the auth token line that setup-node creates
-      - name: Clear npm auth for OIDC
-        run: |
-          cat ~/.npmrc
-          sed -i '/_authToken/d' ~/.npmrc || true
-          echo "--- After cleanup ---"
-          cat ~/.npmrc
-
-      - name: Publish with provenance
+      - name: Publish with provenance (OIDC)
         run: npm publish --provenance --access public
+        # No NODE_AUTH_TOKEN needed - uses OIDC from GitHub
