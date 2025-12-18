@@ -18,7 +18,11 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-          # NOTE: Do NOT set NODE_AUTH_TOKEN for OIDC!
+
+      - name: Clear npm auth for OIDC
+        run: |
+          echo "Removing npm token for OIDC authentication"
+          rm -f ~/.npmrc || true
 
       - run: npm ci
 
