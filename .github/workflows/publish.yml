@@ -17,12 +17,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Setup npm for provenance
-        run: npm config set registry https://registry.npmjs.org/
+          registry-url: 'https://registry.npmjs.org'
 
       - run: npm ci
       - run: npm run build
+
+      # Remove the auth token line that setup-node creates
+      - name: Clear npm auth for OIDC
+        run: |
+          cat ~/.npmrc
+          sed -i '/_authToken/d' ~/.npmrc || true
+          echo "--- After cleanup ---"
+          cat ~/.npmrc
 
       - name: Publish with provenance
         run: npm publish --provenance --access public
