@@ -29,13 +29,22 @@ export interface SnowCodeConfig {
 }
 
 /**
- * Enterprise MCP server configuration options
+ * Enterprise MCP server configuration options (for license key auth)
  */
 export interface EnterpriseMcpConfig {
   licenseKey: string;
   role: 'developer' | 'stakeholder' | 'admin';
   serverUrl?: string;
   // Credentials are now stored server-side only (not in local config)
+}
+
+/**
+ * Enterprise MCP server configuration with existing JWT token
+ * Used when snow-code auth login has already generated a token
+ */
+export interface EnterpriseMcpConfigWithToken {
+  token: string;
+  serverUrl?: string;
 }
 
 /**
@@ -257,6 +266,124 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
             SNOW_ENTERPRISE_URL: mcpServerUrl,
             SNOW_LICENSE_KEY: jwtToken,
             // Credentials are fetched from portal API by enterprise MCP server
+          },
+          enabled: true,
+        };
+
+        await fs.writeFile(claudeMcpConfigPath, JSON.stringify(claudeMcpConfig, null, 2), 'utf-8');
+        logger.debug(`Successfully configured enterprise MCP server in ${claudeMcpConfigPath}`);
+      } catch (err: any) {
+        logger.warn(`Could not update .claude/mcp-config.json: ${err.message}`);
+      }
+    }
+  } catch (error: any) {
+    logger.error(`Failed to add enterprise MCP server: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Add or update enterprise MCP server using an existing JWT token
+ * Used when snow-code auth login has already authenticated and generated a token
+ * @param config - Enterprise MCP configuration with JWT token
+ */
+export async function addEnterpriseMcpServerWithToken(config: EnterpriseMcpConfigWithToken): Promise<void> {
+  try {
+    // Write to .mcp.json in current working directory (where snow-code is run)
+    const mcpConfigPath = path.join(process.cwd(), '.mcp.json');
+
+    // Check if .mcp.json exists - if not, user must run `snow-flow init` first!
+    if (!existsSync(mcpConfigPath)) {
+      logger.warn('.mcp.json not found in current directory');
+      logger.warn('Please run: snow-flow init');
+      logger.warn('Then run: snow-flow auth login again');
+      throw new Error(
+        '.mcp.json not found!\n' +
+        'Run "snow-flow init" first to initialize the project.\n' +
+        'Then run "snow-flow auth login" again to configure enterprise features.'
+      );
+    }
+
+    // Read existing .mcp.json
+    const content = await fs.readFile(mcpConfigPath, 'utf-8');
+    const mcpConfig = JSON.parse(content);
+    if (!mcpConfig.mcp) {
+      mcpConfig.mcp = {};
+    }
+
+    // Portal and MCP server URLs
+    const portalUrl = config.serverUrl || 'https://portal.snow-flow.dev';
+    const mcpServerUrl = 'https://enterprise.snow-flow.dev';
+
+    // Use the existing JWT token (no re-authentication needed!)
+    logger.debug('Using existing JWT token from snow-code auth login');
+    const jwtToken = config.token;
+
+    // Get enterprise proxy path
+    const enterpriseProxyPath = getEnterpriseProxyPath();
+    logger.debug(`Found enterprise proxy at: ${enterpriseProxyPath}`);
+
+    // Configure enterprise MCP server with LOCAL proxy
+    mcpConfig.mcp['snow-flow-enterprise'] = {
+      type: 'local',
+      command: ['node', enterpriseProxyPath],
+      environment: {
+        SNOW_ENTERPRISE_URL: mcpServerUrl,
+        SNOW_LICENSE_KEY: jwtToken,  // JWT token, not license key!
+        // Credentials are fetched from portal API by enterprise MCP server
+      },
+      enabled: true,
+    };
+
+    // Write updated .mcp.json
+    await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), 'utf-8');
+    logger.debug(`Configured enterprise MCP server in ${mcpConfigPath}`);
+
+    // Also update .snow-code/config.json for snow-code CLI compatibility
+    const snowCodeConfigPath = path.join(process.cwd(), '.snow-code', 'config.json');
+    if (existsSync(snowCodeConfigPath)) {
+      try {
+        const snowCodeContent = await fs.readFile(snowCodeConfigPath, 'utf-8');
+        const snowCodeConfig = JSON.parse(snowCodeContent);
+
+        if (!snowCodeConfig.mcp) {
+          snowCodeConfig.mcp = {};
+        }
+
+        snowCodeConfig.mcp['snow-flow-enterprise'] = {
+          type: 'local',
+          command: ['node', enterpriseProxyPath],
+          environment: {
+            SNOW_ENTERPRISE_URL: mcpServerUrl,
+            SNOW_LICENSE_KEY: jwtToken,
+          },
+          enabled: true,
+        };
+
+        await fs.writeFile(snowCodeConfigPath, JSON.stringify(snowCodeConfig, null, 2), 'utf-8');
+        logger.debug(`Configured enterprise MCP server in ${snowCodeConfigPath}`);
+      } catch (err: any) {
+        logger.warn(`Could not update .snow-code/config.json: ${err.message}`);
+      }
+    }
+
+    // Also update .claude/mcp-config.json for Claude Code compatibility
+    const claudeMcpConfigPath = path.join(process.cwd(), '.claude', 'mcp-config.json');
+    if (existsSync(claudeMcpConfigPath)) {
+      try {
+        const claudeContent = await fs.readFile(claudeMcpConfigPath, 'utf-8');
+        const claudeMcpConfig = JSON.parse(claudeContent);
+
+        if (!claudeMcpConfig.mcpServers) {
+          claudeMcpConfig.mcpServers = {};
+        }
+
+        claudeMcpConfig.mcpServers['snow-flow-enterprise'] = {
+          type: 'local',
+          command: ['node', enterpriseProxyPath],
+          environment: {
+            SNOW_ENTERPRISE_URL: mcpServerUrl,
+            SNOW_LICENSE_KEY: jwtToken,
           },
           enabled: true,
         };

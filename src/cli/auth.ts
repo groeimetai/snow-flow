@@ -8,8 +8,10 @@ import { Logger } from '../utils/logger.js';
 import { existsSync, chmodSync } from 'fs';
 import {
   addEnterpriseMcpServer,
+  addEnterpriseMcpServerWithToken,
   isEnterpriseMcpConfigured,
   type EnterpriseMcpConfig,
+  type EnterpriseMcpConfigWithToken,
 } from '../config/snow-code-config.js';
 import { validateLicenseKey } from '../mcp/enterprise-proxy/proxy.js';
 import { syncMcpConfigs } from '../utils/sync-mcp-configs.js';
@@ -526,34 +528,38 @@ export function registerAuthCommands(program: Command) {
         await updateMCPServerConfig();
 
         // 🔥 FIX: After snow-code auth login, check if enterprise was configured
-        // If so, we need to convert LOCAL config to REMOTE config with JWT
-        const authPath = path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json');
+        // Read from the CORRECT location: ~/.snow-code/enterprise.json (where snow-code saves it)
+        const enterpriseConfigPath = path.join(os.homedir(), '.snow-code', 'enterprise.json');
         try {
-          const authJson = JSON.parse(await fs.readFile(authPath, 'utf-8'));
-          const enterpriseCreds = authJson['enterprise'];
+          // Check if enterprise config exists
+          await fs.access(enterpriseConfigPath);
 
-          if (enterpriseCreds && enterpriseCreds.type === 'enterprise') {
-            // Use role from auth.json (already asked by snow-code)
-            const role = enterpriseCreds.role || 'developer';
-            authLogger.debug(`Using role from snow-code auth: ${role}`);
+          const enterpriseConfig = JSON.parse(await fs.readFile(enterpriseConfigPath, 'utf-8'));
 
-            // Convert to JWT-based MCP config
-            await addEnterpriseMcpServer({
-              licenseKey: enterpriseCreds.licenseKey,
-              role: role as 'developer' | 'stakeholder' | 'admin',
+          if (enterpriseConfig && enterpriseConfig.token) {
+            authLogger.debug('Found enterprise configuration from snow-code auth login');
+
+            // Use the JWT token directly from snow-code (already validated!)
+            // No need to re-authenticate - just configure the MCP server with the existing token
+            await addEnterpriseMcpServerWithToken({
+              token: enterpriseConfig.token,
               serverUrl: 'https://portal.snow-flow.dev',
             });
 
             // Sync MCP configurations
             try {
               await syncMcpConfigs(process.cwd());
+              prompts.log.success('✓ Enterprise MCP server configured!');
             } catch (syncErr: any) {
               authLogger.warn(`MCP sync error: ${syncErr.message}`);
             }
           }
         } catch (err: any) {
           // Show warning if enterprise configuration failed
-          if (err.message && err.message.includes('.mcp.json not found')) {
+          if (err.code === 'ENOENT') {
+            // No enterprise config - user didn't select enterprise option
+            authLogger.debug('No enterprise configuration found (user may have chosen manual setup)');
+          } else if (err.message && err.message.includes('.mcp.json not found')) {
             prompts.log.message('');
             prompts.log.warn('⚠️  Enterprise MCP configuration skipped');
             prompts.log.info('   Run "snow-flow init" first to create .mcp.json');
@@ -565,7 +571,7 @@ export function registerAuthCommands(program: Command) {
             prompts.log.info(`   ${err.message}`);
             authLogger.error(`Enterprise MCP configuration error: ${err.stack || err.message}`);
           } else {
-            // Silently continue for expected cases (no auth.json, no enterprise creds)
+            // Silently continue for expected cases
             authLogger.debug(`Enterprise conversion check: ${err.message}`);
           }
         }
