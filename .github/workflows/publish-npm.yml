@@ -24,6 +24,29 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Upgrade npm to latest (required for OIDC)
+        run: npm install -g npm@latest
+
+      - name: Debug npm and OIDC setup
+        run: |
+          echo "=== npm version ==="
+          npm --version
+          echo "=== Node version ==="
+          node --version
+          echo "=== .npmrc contents ==="
+          cat ~/.npmrc || echo "No .npmrc found"
+          echo "=== OIDC token available? ==="
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            echo "✅ OIDC token request token is available"
+          else
+            echo "❌ OIDC token request token NOT available"
+          fi
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "✅ OIDC token request URL is available"
+          else
+            echo "❌ OIDC token request URL NOT available"
+          fi
+
       - name: Install dependencies
         run: npm ci
 
@@ -46,6 +69,12 @@ jobs:
             echo "Updating package.json to match tag..."
             npm version $VERSION --no-git-tag-version --allow-same-version
           fi
+
+      - name: Remove .npmrc for pure OIDC auth
+        run: |
+          echo "Removing .npmrc to force OIDC authentication"
+          rm -f ~/.npmrc
+          echo "✅ .npmrc removed"
 
       - name: Publish to npm (OIDC trusted publishing)
         run: npm publish --access public
