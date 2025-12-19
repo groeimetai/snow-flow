@@ -18,19 +18,7 @@ Transform user intent expressed in natural language into concrete ServiceNow art
 
 **STOP! Before you create ANY ServiceNow artifact, you MUST complete these steps IN ORDER:**
 
-### Step 1: Start Activity Tracking
-
-```javascript
-// ALWAYS do this FIRST - even for simple user requests!
-const activity = await activity_start({
-  source: "request",           // 'request', 'jira', 'azure-devops', etc.
-  storyTitle: "Short description of what user asked for",
-  storyType: "request"         // 'request', 'story', 'bug', 'task'
-});
-const activityId = activity.activityId;  // Store this!
-```
-
-### Step 2: Decide Application Scope (NEW!)
+### Step 1: Decide Application Scope
 
 ```javascript
 // ASK YOURSELF: Does this need a scoped application?
@@ -57,13 +45,13 @@ await snow_switch_application_scope({
 });
 
 // Option C: Use GLOBAL scope (default)
-// Just proceed to Step 3 - global is the default
+// Just proceed to Step 2 - global is the default
 ```
 
-### Step 3: Create Update Set (if not auto-created)
+### Step 2: Create Update Set (if not auto-created)
 
 ```javascript
-// If you created an application in Step 2 with auto_create_update_set=true,
+// If you created an application in Step 1 with auto_create_update_set=true,
 // skip this step - Update Set was already created!
 
 // Otherwise, create Update Set in the correct scope:
@@ -75,7 +63,7 @@ const updateSet = await snow_update_set_manage({
 });
 ```
 
-### Step 4: Do Your Development Work
+### Step 3: Do Your Development Work
 
 ```javascript
 // NOW you can create artifacts (they'll go into the current scope!)
@@ -87,41 +75,29 @@ const artifact = await snow_create_artifact({
 });
 ```
 
-### Step 5: Log Each Artifact
+### Step 4: Complete Update Set
 
 ```javascript
-// After EACH artifact, log it!
-await activity_add_artifact({
-  activityId: activityId,
-  artifactType: "widget",
-  artifactName: "My Widget",
-  artifactSysId: artifact.sys_id
-});
-```
-
-### Step 6: Complete Activity
-
-```javascript
-// When done, complete the activity
-await activity_complete({
-  activityId: activityId,
-  summary: "Created Widget for X. Update Set: Y. Scope: Z."
+// When done, complete the update set
+await snow_update_set_manage({
+  action: 'complete',
+  update_set_id: updateSet.sys_id
 });
 ```
 
 ### ⚠️ THIS APPLIES TO ALL DEVELOPMENT REQUESTS!
 
-| User Request Type              | Activity? | Update Set? | Scope Decision? |
-|--------------------------------|:---------:|:-----------:|:---------------:|
-| "Create a widget"              |     ✅    |      ✅     |       ✅        |
-| "Build HR Portal"              |     ✅    |      ✅     | ✅ Scoped App   |
-| "Add a business rule"          |     ✅    |      ✅     |       ✅        |
-| "Fix this script"              |     ✅    |      ✅     |    🌐 Global    |
-| "Create shared utility"        |     ✅    |      ✅     |    🌐 Global    |
-| "Query some data"              |     ❌    |      ❌     |       ❌        |
-| "Explain how X works"          |     ❌    |      ❌     |       ❌        |
+| User Request Type              | Update Set? | Scope Decision? |
+|--------------------------------|:-----------:|:---------------:|
+| "Create a widget"              |      ✅     |       ✅        |
+| "Build HR Portal"              |      ✅     | ✅ Scoped App   |
+| "Add a business rule"          |      ✅     |       ✅        |
+| "Fix this script"              |      ✅     |    🌐 Global    |
+| "Create shared utility"        |      ✅     |    🌐 Global    |
+| "Query some data"              |      ❌     |       ❌        |
+| "Explain how X works"          |      ❌     |       ❌        |
 
-**Rule of thumb:** If you're CREATING or MODIFYING a ServiceNow artifact → Activity + Scope Decision + Update Set FIRST!
+**Rule of thumb:** If you're CREATING or MODIFYING a ServiceNow artifact → Scope Decision + Update Set FIRST!
 
 ---
 
@@ -695,11 +671,7 @@ const check = await snow_schedule_script_job({
 ### Pattern 1: Complete Widget Development
 
 ```javascript
-// 1. Pre-flight: Activity + Update Set
-const activity = await activity_start({
-  source: "request",
-  storyTitle: "Create incident dashboard widget"
-});
+// 1. Create Update Set first
 const updateSet = await snow_update_set_manage({
   action: 'create',
   name: "Feature: Incident Dashboard Widget"
@@ -727,23 +699,11 @@ const widget = await snow_create_artifact({
   client_script: 'function($scope) { var c = this; }'
 });
 
-// 3. Log artifact
-await activity_add_artifact({
-  activityId: activity.activityId,
-  artifactType: 'widget',
-  artifactName: 'incident_dashboard',
-  artifactSysId: widget.sys_id
-});
-
-// 4. Get instance URL for user
+// 3. Get instance URL for user
 const info = await snow_get_instance_info();
 console.log(`Preview: ${info.data.instance_url}/sp?id=incident_dashboard`);
 
-// 5. Complete
-await activity_complete({
-  activityId: activity.activityId,
-  summary: "Created incident dashboard widget"
-});
+// 4. Complete Update Set
 await snow_update_set_manage({
   action: 'complete',
   update_set_id: updateSet.sys_id
@@ -827,13 +787,7 @@ console.log(`Found ${incidents.length} high-priority active incidents`);
 ### Pattern 5: Scoped Application Development
 
 ```javascript
-// 1. Pre-flight: Activity Tracking
-const activity = await activity_start({
-  source: "request",
-  storyTitle: "Build HR Self-Service Portal"
-});
-
-// 2. Create Application (auto-creates Update Set and switches scope!)
+// 1. Create Application (auto-creates Update Set and switches scope!)
 const app = await snow_create_application({
   name: "HR Self-Service Portal",
   scope: "x_myco_hr_portal",
@@ -845,15 +799,7 @@ const app = await snow_create_application({
   // auto_switch_scope: true (default)
 });
 
-// 3. Log the application
-await activity_add_artifact({
-  activityId: activity.activityId,
-  artifactType: 'application',
-  artifactName: 'HR Self-Service Portal',
-  artifactSysId: app.application.sys_id
-});
-
-// 4. Create widgets (automatically in the scoped application!)
+// 2. Create widgets (automatically in the scoped application!)
 const widget = await snow_create_artifact({
   type: 'sp_widget',
   name: 'hr_request_form',
@@ -863,18 +809,7 @@ const widget = await snow_create_artifact({
   client_script: '...'
 });
 
-await activity_add_artifact({
-  activityId: activity.activityId,
-  artifactType: 'widget',
-  artifactName: 'hr_request_form',
-  artifactSysId: widget.sys_id
-});
-
-// 5. Complete
-await activity_complete({
-  activityId: activity.activityId,
-  summary: "Created HR Self-Service Portal with request form widget"
-});
+// 3. Complete Update Set
 await snow_update_set_manage({
   action: 'complete',
   update_set_id: app.update_set.sys_id
@@ -911,7 +846,7 @@ await snow_switch_application_scope({ scope: "global" });
 
 **Your mission is successful when:**
 
-1. ✅ Always Activity Track + Update Set before development
+1. ✅ Always create Update Set before development
 2. ✅ ES5 JavaScript only for ServiceNow scripts
 3. ✅ Execute tools, don't just explain them
 4. ✅ Verify before assuming
@@ -922,7 +857,7 @@ await snow_switch_application_scope({ scope: "global" });
 
 **Failure modes to avoid:**
 
-1. ❌ Skipping Activity Tracking or Update Set workflow
+1. ❌ Skipping Update Set workflow
 2. ❌ Using ES6+ syntax in ServiceNow scripts
 3. ❌ Trying to use bash/node/require for MCP tools
 4. ❌ Mock data or placeholders instead of real implementations
