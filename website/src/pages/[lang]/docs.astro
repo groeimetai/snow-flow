@@ -961,25 +961,40 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
     /* Sidebar Toggle */
     .sidebar-toggle {
         position: fixed;
-        bottom: 2rem;
+        bottom: 1.5rem;
         left: 1rem;
-        width: 52px;
-        height: 52px;
-        background: var(--accent-cyan);
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--accent-cyan) 0%, #00a8cc 100%);
         border: none;
         color: var(--bg-primary);
-        border-radius: 14px;
+        border-radius: 12px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 100;
-        box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
-        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0, 217, 255, 0.35);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sidebar-toggle svg {
+        width: 22px;
+        height: 22px;
+        transition: transform 0.3s ease;
     }
 
     .sidebar-toggle:hover {
         transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 217, 255, 0.45);
+    }
+
+    .sidebar-toggle:active {
+        transform: scale(0.95);
+    }
+
+    .sidebar-toggle.active svg {
+        transform: rotate(180deg);
     }
 
     @media (min-width: 1024px) {
@@ -991,22 +1006,24 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
     /* Scroll to Top */
     .scroll-top {
         position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        width: 48px;
-        height: 48px;
-        background: var(--accent-cyan);
-        color: var(--bg-primary);
-        border: none;
-        border-radius: 12px;
+        bottom: 1.5rem;
+        right: 1rem;
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--text-secondary);
+        border-radius: 10px;
         cursor: pointer;
         opacity: 0;
         visibility: hidden;
-        transition: all 0.3s;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 100;
         display: flex;
         align-items: center;
         justify-content: center;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
 
     .scroll-top.visible {
@@ -1015,28 +1032,415 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
     }
 
     .scroll-top:hover {
-        transform: translateY(-4px);
+        background: rgba(0, 217, 255, 0.15);
+        border-color: rgba(0, 217, 255, 0.3);
+        color: var(--accent-cyan);
+        transform: translateY(-3px);
     }
 
-    /* Mobile */
-    @media (max-width: 480px) {
+    /* =========================================
+       TABLET OPTIMIZATIONS (768px - 1024px)
+       ========================================= */
+    @media (max-width: 1024px) and (min-width: 769px) {
         .docs-content {
-            padding: 1.5rem 1rem;
+            padding: 2.5rem 2rem;
         }
 
         .docs-content h1 {
-            font-size: 1.75rem;
+            font-size: 2rem;
         }
 
         .docs-content h2 {
-            font-size: 1.35rem;
+            font-size: 1.5rem;
+            margin: 2.5rem 0 1.25rem;
         }
 
+        .docs-content h3 {
+            font-size: 1.125rem;
+        }
+
+        .card-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* =========================================
+       MOBILE OPTIMIZATIONS (max-width: 768px)
+       ========================================= */
+    @media (max-width: 768px) {
+        .docs-layout {
+            padding-top: 60px;
+        }
+
+        /* Mobile Sidebar */
+        .sidebar {
+            top: 0;
+            width: 280px;
+            max-width: 85vw;
+            height: 100vh;
+            height: 100dvh;
+            padding-top: 70px;
+            background: linear-gradient(180deg, rgba(12, 12, 16, 0.98) 0%, rgba(8, 8, 12, 0.99) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(0, 217, 255, 0.1);
+            box-shadow: 10px 0 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar-section {
+            padding: 0 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-title {
+            font-size: 0.625rem;
+            color: rgba(0, 217, 255, 0.6);
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-links a {
+            padding: 0.625rem 0.75rem;
+            font-size: 0.8125rem;
+            border-radius: 6px;
+        }
+
+        .sidebar-backdrop {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 10, 20, 0.8) 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Mobile Content */
+        .docs-content {
+            padding: 1.5rem 1rem;
+            margin-left: 0;
+        }
+
+        .docs-content h1 {
+            font-size: 1.625rem;
+            line-height: 1.25;
+        }
+
+        .docs-content h2 {
+            font-size: 1.25rem;
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .docs-content h3 {
+            font-size: 1rem;
+            margin: 1.5rem 0 0.75rem;
+        }
+
+        .docs-content p {
+            font-size: 0.9375rem;
+            line-height: 1.65;
+            margin-bottom: 1rem;
+        }
+
+        .docs-intro p {
+            font-size: 1rem;
+        }
+
+        /* Mobile Version Badge */
+        .version-badge {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Mobile Code Blocks */
         .code-block {
             margin: 1rem -1rem;
             border-radius: 0;
             border-left: none;
             border-right: none;
+        }
+
+        .code-header {
+            padding: 0.625rem 1rem;
+        }
+
+        .code-lang {
+            font-size: 0.6875rem;
+        }
+
+        .code-copy {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.6875rem;
+        }
+
+        .code-content {
+            padding: 0.875rem 1rem;
+        }
+
+        .code-content pre {
+            font-size: 0.75rem;
+            line-height: 1.5;
+        }
+
+        /* Mobile Inline Code */
+        .docs-content code {
+            font-size: 0.8em;
+            padding: 0.15em 0.35em;
+        }
+
+        /* Mobile Callouts */
+        .callout {
+            padding: 1rem 1rem 1rem 1.25rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left-width: 3px;
+        }
+
+        .callout-title {
+            font-size: 0.875rem;
+            margin-bottom: 0.375rem;
+        }
+
+        .callout p {
+            font-size: 0.875rem;
+            line-height: 1.55;
+        }
+
+        /* Mobile Cards */
+        .card-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .card {
+            padding: 1.25rem;
+            border-radius: 10px;
+        }
+
+        .card-title {
+            font-size: 0.9375rem;
+        }
+
+        .card-desc {
+            font-size: 0.8125rem;
+        }
+
+        /* Mobile Tables */
+        .table-wrapper {
+            margin: 1rem -1rem;
+            padding: 0 1rem;
+            border-radius: 0;
+        }
+
+        table {
+            font-size: 0.8125rem;
+            min-width: 500px;
+        }
+
+        th, td {
+            padding: 0.625rem 0.75rem;
+        }
+
+        /* Mobile Lists */
+        .docs-content ul, .docs-content ol {
+            margin: 0.75rem 0 1rem 1.25rem;
+        }
+
+        .docs-content li {
+            font-size: 0.9375rem;
+            margin-bottom: 0.375rem;
+        }
+
+        /* Mobile Buttons */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            font-size: 0.875rem;
+        }
+
+        /* Mobile CTA */
+        .docs-cta {
+            padding: 2rem 1.25rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+        }
+
+        .docs-cta h2 {
+            font-size: 1.25rem;
+        }
+
+        /* Mobile scroll-top position */
+        .scroll-top {
+            bottom: 1.25rem;
+            right: 0.75rem;
+            width: 40px;
+            height: 40px;
+        }
+
+        /* Mobile sidebar-toggle position */
+        .sidebar-toggle {
+            bottom: 1.25rem;
+            left: 0.75rem;
+            width: 44px;
+            height: 44px;
+        }
+
+        .sidebar-toggle svg {
+            width: 20px;
+            height: 20px;
+        }
+    }
+
+    /* =========================================
+       SMALL MOBILE (max-width: 480px)
+       ========================================= */
+    @media (max-width: 480px) {
+        .docs-layout {
+            padding-top: 56px;
+        }
+
+        .sidebar {
+            width: 260px;
+            padding-top: 60px;
+        }
+
+        .sidebar-section {
+            padding: 0 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .sidebar-title {
+            font-size: 0.5625rem;
+        }
+
+        .sidebar-links a {
+            padding: 0.5rem 0.625rem;
+            font-size: 0.75rem;
+        }
+
+        .docs-content {
+            padding: 1.25rem 0.875rem;
+        }
+
+        .docs-content h1 {
+            font-size: 1.5rem;
+        }
+
+        .docs-content h2 {
+            font-size: 1.125rem;
+        }
+
+        .docs-content h3 {
+            font-size: 0.9375rem;
+        }
+
+        .docs-content p,
+        .docs-content li {
+            font-size: 0.875rem;
+        }
+
+        .docs-intro p {
+            font-size: 0.9375rem;
+        }
+
+        .version-badge {
+            padding: 0.3rem 0.625rem;
+            font-size: 0.6875rem;
+        }
+
+        .code-content pre {
+            font-size: 0.6875rem;
+        }
+
+        .callout {
+            padding: 0.875rem;
+        }
+
+        .callout-title {
+            font-size: 0.8125rem;
+        }
+
+        .callout p {
+            font-size: 0.8125rem;
+        }
+
+        .card {
+            padding: 1rem;
+        }
+
+        .card-title {
+            font-size: 0.875rem;
+        }
+
+        .card-desc {
+            font-size: 0.75rem;
+        }
+
+        table {
+            font-size: 0.75rem;
+        }
+
+        th, td {
+            padding: 0.5rem 0.625rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.8125rem;
+        }
+
+        .docs-cta {
+            padding: 1.5rem 1rem;
+        }
+
+        .docs-cta h2 {
+            font-size: 1.125rem;
+        }
+
+        .scroll-top {
+            width: 36px;
+            height: 36px;
+        }
+
+        .sidebar-toggle {
+            width: 40px;
+            height: 40px;
+        }
+
+        .sidebar-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+    }
+
+    /* =========================================
+       VERY SMALL SCREENS (max-width: 360px)
+       ========================================= */
+    @media (max-width: 360px) {
+        .sidebar {
+            width: 240px;
+        }
+
+        .sidebar-links a {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.6875rem;
+        }
+
+        .docs-content {
+            padding: 1rem 0.75rem;
+        }
+
+        .docs-content h1 {
+            font-size: 1.375rem;
+        }
+
+        .docs-content h2 {
+            font-size: 1.0625rem;
+        }
+
+        .code-content pre {
+            font-size: 0.625rem;
+        }
+
+        .version-badge {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.625rem;
         }
     }
 </style>
@@ -1050,6 +1454,8 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
     function toggleSidebar() {
         sidebar?.classList.toggle('active');
         sidebarBackdrop?.classList.toggle('active');
+        sidebarToggle?.classList.toggle('active');
+        document.body.style.overflow = sidebar?.classList.contains('active') ? 'hidden' : '';
     }
 
     sidebarToggle?.addEventListener('click', toggleSidebar);
@@ -1058,10 +1464,17 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
     // Close sidebar on link click (mobile)
     sidebar?.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', () => {
-            if (window.innerWidth < 1024) {
+            if (window.innerWidth < 1024 && sidebar?.classList.contains('active')) {
                 toggleSidebar();
             }
         });
+    });
+
+    // Close sidebar on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar?.classList.contains('active')) {
+            toggleSidebar();
+        }
     });
 
     // Scroll to top
