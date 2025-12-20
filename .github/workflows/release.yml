@@ -128,16 +128,25 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Upgrade npm
+      - name: Upgrade npm (required for OIDC)
         run: npm install -g npm@latest
 
-      - name: Configure npm for publishing
+      - name: Debug OIDC setup
         run: |
-          npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
-          npm whoami
+          echo "=== npm version ==="
+          npm --version
+          echo "=== OIDC token available? ==="
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            echo "✅ OIDC token request token is available"
+          else
+            echo "❌ OIDC token request token NOT available"
+          fi
+
+      - name: Remove .npmrc for pure OIDC auth
+        run: |
+          rm -f ~/.npmrc
+          echo "✅ .npmrc removed for OIDC"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -172,7 +181,7 @@ jobs:
             fi
           done
 
-      - name: Publish platform binaries
+      - name: Publish platform binaries (OIDC)
         run: |
           cd packages/snowcode/dist/@groeimetai
           for dir in snow-flow-*; do
@@ -183,22 +192,17 @@ jobs:
               cd ..
             fi
           done
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # npm CLI automatically uses OIDC when id-token: write is set
 
-      - name: Publish main package
+      - name: Publish main package (OIDC)
         run: |
           cd packages/snowcode
           npm publish --access public --tag latest --provenance || echo "Failed: main package"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish core package
+      - name: Publish core package (OIDC)
         run: |
           cd packages/core
           npm publish --access public --tag latest --provenance || echo "Failed: core package"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')

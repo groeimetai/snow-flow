@@ -1,0 +1,117 @@
+name: Publish to npm (OIDC)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 9.0.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write  # Required for npm provenance/OIDC
+
+jobs:
+  publish-binaries:
+    name: Publish Platform Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm to latest (required for OIDC)
+        run: npm install -g npm@latest
+
+      - name: Debug OIDC setup
+        run: |
+          echo "=== npm version ==="
+          npm --version
+          echo "=== OIDC token available? ==="
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            echo "✅ OIDC token request token is available"
+          else
+            echo "❌ OIDC token request token NOT available"
+          fi
+
+      - name: Download artifacts from release
+        uses: actions/download-artifact@v4
+        with:
+          path: packages/snowcode/dist/@groeimetai/
+        continue-on-error: true
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ github.event.release.tag_name }}" ]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(cat packages/snowcode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Remove .npmrc for pure OIDC auth
+        run: |
+          echo "Removing .npmrc to force OIDC authentication"
+          rm -f ~/.npmrc
+          echo "✅ .npmrc removed"
+
+      - name: Publish platform binaries (OIDC)
+        run: |
+          cd packages/snowcode/dist/@groeimetai
+          for dir in snow-flow-*; do
+            if [ -d "$dir" ]; then
+              echo "Publishing $dir..."
+              cd "$dir"
+              npm publish --access public --provenance || echo "Failed: $dir"
+              cd ..
+            fi
+          done
+        # npm CLI automatically uses OIDC when id-token: write is set
+
+  publish-main:
+    name: Publish Main Package
+    runs-on: ubuntu-latest
+    needs: publish-binaries
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.3.0
+
+      - name: Upgrade npm to latest
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Remove .npmrc for pure OIDC auth
+        run: rm -f ~/.npmrc
+
+      - name: Publish main package (OIDC)
+        run: |
+          cd packages/snowcode
+          npm publish --access public --provenance || echo "Failed: main package"
+
+      - name: Publish core package (OIDC)
+        run: |
+          cd packages/core
+          npm publish --access public --provenance || echo "Failed: core package"
