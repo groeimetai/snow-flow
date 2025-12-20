@@ -47,9 +47,12 @@ servicenow/
 reports/
 logs/
 .roo/
-config/
-test/
+/config/
+/test/
 .claude-flow/
+# Keep package source directories
+!packages/*/src/config/
+!packages/*/src/test/
 
 # Local configuration
 .mcp.json
