@@ -596,6 +596,60 @@ html, body {
     font-size: 1rem !important;
     padding: 1rem !important;
   }
+
+  /* Mobile menu optimizations for small phones */
+  .mobile-nav {
+    max-width: 260px !important;
+  }
+
+  .mobile-nav-body {
+    padding: 3.5rem 1rem 0.75rem !important;
+    gap: 0.25rem !important;
+  }
+
+  .mobile-nav-section {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .mobile-nav-section-title {
+    font-size: 0.5625rem !important;
+    margin-bottom: 0.375rem !important;
+  }
+
+  .mobile-nav-links a {
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .mobile-nav-links a svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .mobile-nav-links .nav-cta {
+    padding: 0.625rem 0.875rem !important;
+    font-size: 0.75rem !important;
+    margin-top: 0.5rem !important;
+  }
+
+  .mobile-nav-footer {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .mobile-nav-social a {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .mobile-nav-social a svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .mobile-nav-tagline {
+    font-size: 0.625rem !important;
+  }
 }
 
 /* =========================================
@@ -653,6 +707,52 @@ html, body {
   .comparison-table td:nth-child(2) .comparison-highlight {
     font-size: 0.85rem !important;
     padding: 0.15rem 0.5rem !important;
+  }
+
+  /* Mobile menu - ultra compact for tiny screens */
+  .mobile-nav {
+    max-width: 240px !important;
+  }
+
+  .mobile-nav-body {
+    padding: 3rem 0.75rem 0.5rem !important;
+  }
+
+  .mobile-nav-links a {
+    padding: 0.4rem !important;
+    font-size: 0.6875rem !important;
+  }
+
+  .mobile-nav-links a svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .mobile-nav-section-title {
+    font-size: 0.5rem !important;
+  }
+
+  .mobile-nav-links .nav-cta {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.6875rem !important;
+  }
+
+  .mobile-nav-footer {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  .mobile-nav-social a {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .mobile-nav-social a svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .mobile-nav-tagline {
+    font-size: 0.5625rem !important;
   }
 }
 
