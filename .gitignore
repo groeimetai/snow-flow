@@ -107,6 +107,8 @@ THEMES.md
 # Snow-Code personal configuration (confidential)
 .snow-code/
 themes/
+# But keep TUI themes (required for Go embed)
+!packages/tui/internal/theme/themes/
 
 # Optimization internals (not needed by users)
 docs/MCP_OPTIMIZATION_STRATEGY.md
