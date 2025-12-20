@@ -1,0 +1,4 @@
+#!/usr/bin/env bun
+
+// Snow-Flow CLI entry point
+import '../dist/cli.js';

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@groeimetai/snow-flow-sdk",
+  "version": "0.15.22",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "build": "./script/build.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.81.0",
+    "@tsconfig/node22": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "@typescript/native-preview": "catalog:"
+  },
+  "dependencies": {},
+  "publishConfig": {
+    "directory": "dist"
+  }
+}

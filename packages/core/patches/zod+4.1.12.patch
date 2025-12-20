@@ -1,0 +1,13 @@
+diff --git a/node_modules/zod/v4/core/to-json-schema.js b/node_modules/zod/v4/core/to-json-schema.js
+index a0911b3..868b91d 100644
+--- a/node_modules/zod/v4/core/to-json-schema.js
++++ b/node_modules/zod/v4/core/to-json-schema.js
+@@ -12,7 +12,7 @@ export class JSONSchemaGenerator {
+     }
+     process(schema, _params = { path: [], schemaPath: [] }) {
+         var _a;
+-        const def = schema._zod.def;
++        const def = schema._def;
+         const formatMap = {
+             guid: "uuid",
+             url: "uri",

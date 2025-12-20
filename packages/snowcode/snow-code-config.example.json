@@ -1,0 +1,39 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "tui": {
+    "scroll_speed": 5
+  },
+  "mcp": {
+    "servicenow-unified": {
+      "type": "local",
+      "command": ["node", "dist/mcp/servicenow-mcp-unified/index.js"],
+      "environment": {
+        "SERVICENOW_INSTANCE_URL": "https://dev12345.service-now.com",
+        "SERVICENOW_CLIENT_ID": "your-client-id-here",
+        "SERVICENOW_CLIENT_SECRET": "your-client-secret-here",
+        "SERVICENOW_USERNAME": "your-username-here",
+        "SERVICENOW_PASSWORD": "your-password-here"
+      },
+      "enabled": true
+    },
+    "snow-flow-orchestration": {
+      "type": "local",
+      "command": ["node", "dist/mcp/snow-flow-mcp.js"],
+      "environment": {
+        "SNOW_FLOW_ENV": "production"
+      },
+      "enabled": true
+    },
+    "snow-flow-enterprise": {
+      "type": "local",
+      "command": ["node", "../snow-flow-enterprise/mcp-proxy/dist/enterprise-proxy.js"],
+      "description": "Enterprise integrations - Jira, Azure DevOps, Confluence (local proxy to remote server)",
+      "environment": {
+        "SNOW_ENTERPRISE_URL": "https://enterprise.snow-flow.dev",
+        "SNOW_LICENSE_KEY": ""
+      },
+      "enabled": false,
+      "_comment": "Run 'snow-flow auth login' to configure and enable this server"
+    }
+  }
+}

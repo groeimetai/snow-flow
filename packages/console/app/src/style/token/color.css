@@ -1,0 +1,99 @@
+:root {
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Snow-Flow Brand Colors */
+  --color-brand-cyan: #00D9FF;
+  --color-brand-blue: #3B82F6;
+  --color-brand-dark: #1E2531;
+  --color-brand-darker: #151A23;
+  --color-brand-cyan-secondary: #00C4E6;
+
+  /* Default light theme colors */
+  --color-bg: #ffffff;
+  --color-bg-surface: #f5f5f7;
+  --color-bg-elevated: #ffffff;
+
+  --color-text: #1d1d1f;
+  --color-text-secondary: #424245;
+  --color-text-muted: #6e6e73;
+  --color-text-disabled: #86868b;
+
+  --color-accent: var(--color-brand-cyan);
+  --color-accent-hover: var(--color-brand-cyan-secondary);
+  --color-accent-active: var(--color-brand-blue);
+
+  --color-success: #30d158;
+  --color-warning: #ff9f0a;
+  --color-danger: #EF4444;
+
+  --color-border: #d2d2d7;
+  --color-border-muted: #e5e5ea;
+
+  /* Button colors */
+  --color-primary: var(--color-accent);
+  --color-primary-hover: var(--color-accent-hover);
+  --color-primary-active: var(--color-accent-active);
+  --color-primary-text: #ffffff;
+
+  --color-danger: #EF4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-active: #b91c1c;
+  --color-danger-text: #ffffff;
+
+  --color-warning: #ff9f0a;
+  --color-warning-hover: #cc7f08;
+  --color-warning-active: #995f06;
+  --color-warning-text: #000000;
+
+  /* Surface colors */
+  --color-surface: var(--color-bg-surface);
+  --color-surface-hover: var(--color-bg-elevated);
+  --color-surface-border: var(--color-border);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Snow-Flow Dark Theme */
+    --color-bg: var(--color-brand-darker);
+    --color-bg-surface: var(--color-brand-dark);
+    --color-bg-elevated: #232936;
+
+    --color-text: #ffffff;
+    --color-text-secondary: #94A3B8;
+    --color-text-muted: #64748b;
+    --color-text-disabled: #475569;
+
+    --color-accent: var(--color-brand-cyan);
+    --color-accent-hover: var(--color-brand-cyan-secondary);
+    --color-accent-active: var(--color-brand-blue);
+
+    --color-success: #30d158;
+    --color-warning: #ff9f0a;
+    --color-danger: #EF4444;
+
+    --color-border: #2D3748;
+    --color-border-muted: #1E293B;
+
+    /* Button colors */
+    --color-primary: var(--color-accent);
+    --color-primary-hover: var(--color-accent-hover);
+    --color-primary-active: var(--color-accent-active);
+    --color-primary-text: var(--color-brand-darker);
+
+    --color-danger: #EF4444;
+    --color-danger-hover: #dc2626;
+    --color-danger-active: #b91c1c;
+    --color-danger-text: #ffffff;
+
+    --color-warning: #ff9f0a;
+    --color-warning-hover: #cc7f08;
+    --color-warning-active: #995f06;
+    --color-warning-text: #000000;
+
+    /* Surface colors */
+    --color-surface: var(--color-bg-surface);
+    --color-surface-hover: var(--color-bg-elevated);
+    --color-surface-border: var(--color-border);
+  }
+}
