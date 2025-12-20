@@ -211,7 +211,7 @@ export default {
             await Workspace.create({ name: "Default" })
           }
         })
-        return ctx.subject("account", accountID, { accountID, email })
+        return ctx.subject("account", { accountID, email })
       },
     }).fetch(request, env, ctx)
     return result

@@ -13,6 +13,7 @@
     }
   },
   "devDependencies": {
-    "@tsconfig/node22": "22.0.2"
+    "@tsconfig/node22": "22.0.2",
+    "sst": "^3.3.68"
   }
 }
