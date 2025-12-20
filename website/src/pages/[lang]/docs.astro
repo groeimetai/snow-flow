@@ -1225,13 +1225,16 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
         /* Mobile Tables */
         .table-wrapper {
             margin: 1rem -1rem;
-            padding: 0 1rem;
+            padding: 0;
             border-radius: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        table {
+        .table-wrapper table {
             font-size: 0.8125rem;
-            min-width: 500px;
+            min-width: 420px;
+            margin: 0;
         }
 
         th, td {
