@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Check for and install updated snow-code binary packages
+ * Check for and install updated snow-flow binary packages
  * Runs at runtime to ensure users always have the latest binaries
  */
 
@@ -10,11 +10,11 @@ const fs = require('fs');
 const path = require('path');
 
 const BINARY_PACKAGES = [
-  '@groeimetai/snow-code-darwin-arm64',
-  '@groeimetai/snow-code-darwin-x64',
-  '@groeimetai/snow-code-linux-arm64',
-  '@groeimetai/snow-code-linux-x64',
-  '@groeimetai/snow-code-windows-x64'
+  '@groeimetai/snow-flow-darwin-arm64',
+  '@groeimetai/snow-flow-darwin-x64',
+  '@groeimetai/snow-flow-linux-arm64',
+  '@groeimetai/snow-flow-linux-x64',
+  '@groeimetai/snow-flow-windows-x64'
 ];
 
 async function getLatestVersionFromNPM(packageName) {
@@ -46,7 +46,7 @@ async function checkBinaryUpdates(options = {}) {
   const { silent = false, autoUpdate = false } = options;
 
   if (!silent) {
-    console.log('🔍 Checking for snow-code binary updates...\n');
+    console.log('🔍 Checking for snow-flow binary updates...\n');
   }
 
   const updates = [];

@@ -1,486 +1,60 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "snow-flow",
-  "version": "8.42.12",
-  "description": "ServiceNow development with SnowCode - 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, Groq, Ollama) • 395 Optimized Tools • 2 MCP Servers • Multi-agent orchestration • Use ANY AI coding assistant (ML tools moved to Enterprise)",
-  "main": "dist/index.js",
-  "type": "commonjs",
-  "bin": {
-    "snow-flow": "bin/snow-flow",
-    "snowcode-with-mcp": "bin/snowcode-with-mcp"
-  },
-  "files": [
-    "dist/",
-    "bin/",
-    "patches/",
-    ".env.example",
-    ".mcp.json.template",
-    ".snow-code/",
-    "snow-code-config.example.json",
-    "themes/",
-    "README.md",
-    "CLAUDE.md",
-    "THEMES.md",
-    "SNOWCODE-SETUP.md",
-    "SNOWCODE-TROUBLESHOOTING.md",
-    "SNOWCODE-MCP-FIX.md",
-    "ENTERPRISE-SETUP.md",
-    "LICENSE"
-  ],
+  "version": "9.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.0",
+  "description": "Snow-Flow - AI-Powered ServiceNow Development Platform with 410+ MCP tools",
   "scripts": {
-    "build": "tsc --noEmitOnError false || true",
-    "postinstall": "patch-package && node scripts/postinstall.js && node scripts/check-binary-updates.js --silent && node scripts/update-mcp-config.js || true",
-    "prepublishOnly": "node scripts/check-npm-version.js && node scripts/sync-snow-code-version.js && npm run build",
-    "dev": "tsc --watch",
-    "start": "node dist/index.js",
-    "test": "jest",
-    "test:memory": "node dist/memory/memory-test.js",
-    "test:mcp-integration": "node dist/memory/mcp-integration-example.js",
-    "test:health": "node dist/health/test-system-health.js",
-    "test:benchmark": "node dist/benchmark-performance.js",
-    "lint": "eslint src/**/*.ts",
-    "typecheck": "tsc --noEmit",
-    "setup-mcp": "node scripts/setup-mcp.js",
-    "update-mcp": "node scripts/update-mcp-config.js",
-    "reset-mcp": "node scripts/reset-mcp-servers.js",
-    "reset-mcp:restart": "node scripts/reset-mcp-servers.js --restart",
-    "cleanup-mcp": "node scripts/cleanup-mcp-servers.js",
-    "mcp:safe-cleanup": "node scripts/safe-mcp-cleanup.js",
-    "mcp:emergency-stop": "pkill -f mcp || true",
-    "mcp:clean": "node scripts/cleanup-mcp-servers.js && npm run build",
-    "mcp:start": "node scripts/start-mcp-proper.js",
-    "mcp:start-proper": "node scripts/start-mcp-proper.js",
-    "mcp:sysprops": "node scripts/start-sysprops-mcp.js",
-    "mcp:unified": "node dist/mcp/servicenow-mcp-unified/index.js",
-    "test:unified": "node dist/mcp/servicenow-mcp-unified/scripts/validate-tools.js",
-    "test:integration": "npm run build && node dist/tests/integration-test.js",
-    "update-deps": "node scripts/update-dependencies.js",
-    "check-binaries": "node scripts/check-binary-updates.js",
-    "update-binaries": "node scripts/check-binary-updates.js --auto-update",
-    "postbuild-disabled": "npm run setup-mcp",
-    "version": "npm run build",
-    "postversion": "git push origin main && git push origin --tags"
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "prepare": "husky || true"
   },
-  "keywords": [
-    "servicenow",
-    "multiagent",
-    "automation",
-    "development",
-    "mcp",
-    "ai",
-    "llm",
-    "snowcode",
-    "claude",
-    "gpt-5",
-    "gemini",
-    "llama",
-    "mistral",
-    "deepseek",
-    "ollama",
-    "anthropic",
-    "openai",
-    "google",
-    "multi-llm",
-    "analytics",
-    "performance",
-    "optimization",
-    "process-mining",
-    "intelligence",
-    "batch-api",
-    "deployment",
-    "natural-language",
-    "local-ml",
-    "local-machine-learning",
-    "tensorflow-js",
-    "neural-networks-local",
-    "incident-classification-local",
-    "anomaly-detection-local",
-    "ml-training",
-    "servicenow-data-analysis"
-  ],
-  "mcpTools": {
-    "snow_batch_api": {
-      "name": "Smart Batch API Operations",
-      "description": "Execute multiple ServiceNow API operations in optimized batches with 80% API call reduction through intelligent query optimization, parallel execution, and result caching.",
-      "category": "performance",
-      "features": [
-        "batch_execution",
-        "query_optimization",
-        "parallel_processing",
-        "transaction_support",
-        "cache_management"
-      ],
-      "metrics": {
-        "api_reduction": "80%",
-        "performance_gain": "300%",
-        "optimization": "real_time"
-      }
-    },
-    "snow_get_table_relationships": {
-      "name": "Table Relationship Mapping",
-      "description": "Deep relationship discovery across table hierarchies with visual relationship diagrams (Mermaid format), impact analysis for schema changes, and performance optimization recommendations.",
-      "category": "analysis",
-      "features": [
-        "hierarchy_discovery",
-        "visual_diagrams",
-        "impact_analysis",
-        "relationship_mapping",
-        "schema_optimization"
-      ],
-      "metrics": {
-        "discovery_depth": "unlimited",
-        "visualization": "mermaid_diagrams",
-        "analysis_scope": "comprehensive"
-      }
-    },
-    "snow_analyze_query": {
-      "name": "Query Performance Analyzer",
-      "description": "Query execution analysis with bottleneck detection, index recommendations for performance optimization, alternative query suggestions, and risk assessment with execution time prediction.",
-      "category": "performance",
-      "features": [
-        "bottleneck_detection",
-        "index_recommendations",
-        "query_optimization",
-        "risk_assessment",
-        "execution_prediction"
-      ],
-      "metrics": {
-        "optimization_suggestions": "real_time",
-        "performance_scoring": "intelligent",
-        "index_analysis": "comprehensive"
-      }
-    },
-    "snow_analyze_field_usage": {
-      "name": "Field Usage Intelligence",
-      "description": "Comprehensive field usage analysis across all ServiceNow components, unused field detection with deprecation recommendations, technical debt scoring, and cross-component impact analysis.",
-      "category": "analysis",
-      "features": [
-        "usage_analytics",
-        "deprecation_analysis",
-        "technical_debt_scoring",
-        "cross_component_analysis",
-        "optimization_opportunities"
-      ],
-      "metrics": {
-        "analysis_scope": "all_components",
-        "usage_tracking": "comprehensive",
-        "optimization_potential": "quantified"
-      }
-    },
-    "snow_create_migration_plan": {
-      "name": "Migration Helper",
-      "description": "Automated migration planning with risk assessment, data transformation scripts generation, performance impact estimation, and rollback strategy creation for safe ServiceNow changes.",
-      "category": "migration",
-      "features": [
-        "risk_assessment",
-        "automation_scripts",
-        "performance_impact",
-        "rollback_strategies",
-        "migration_planning"
-      ],
-      "metrics": {
-        "automation_level": "90%",
-        "risk_mitigation": "comprehensive",
-        "rollback_safety": "guaranteed"
-      }
-    },
-    "snow_analyze_table_deep": {
-      "name": "Deep Table Analysis",
-      "description": "Multi-dimensional table analysis including structure, data quality, performance, security and compliance assessment, usage pattern analysis, and optimization recommendations with risk scoring.",
-      "category": "analysis",
-      "features": [
-        "structure_analysis",
-        "data_quality",
-        "performance_metrics",
-        "security_assessment",
-        "compliance_check",
-        "usage_patterns"
-      ],
-      "metrics": {
-        "analysis_dimensions": "6+",
-        "quality_scoring": "intelligent",
-        "recommendations": "actionable"
-      }
-    },
-    "snow_detect_code_patterns": {
-      "name": "Code Pattern Detector",
-      "description": "Advanced pattern recognition across all script types, performance anti-pattern detection, security vulnerability scanning, and maintainability scoring with refactoring suggestions.",
-      "category": "code_quality",
-      "features": [
-        "pattern_recognition",
-        "anti_pattern_detection",
-        "security_scanning",
-        "maintainability_scoring",
-        "refactoring_suggestions"
-      ],
-      "metrics": {
-        "pattern_categories": "10+",
-        "security_coverage": "comprehensive",
-        "maintainability_metrics": "detailed"
-      }
-    },
-    "snow_predict_change_impact": {
-      "name": "Predictive Impact Analysis",
-      "description": "AI-powered change impact prediction with risk assessment and confidence scoring, dependency chain analysis, and rollback requirement prediction for safe ServiceNow modifications.",
-      "category": "ai_intelligence",
-      "features": [
-        "ai_prediction",
-        "risk_assessment",
-        "confidence_scoring",
-        "dependency_analysis",
-        "rollback_prediction"
-      ],
-      "metrics": {
-        "prediction_accuracy": "90%+",
-        "risk_scoring": "intelligent",
-        "dependency_depth": "unlimited"
-      }
-    },
-    "snow_generate_documentation": {
-      "name": "Auto Documentation Generator",
-      "description": "Intelligent documentation generation from code and configuration with multiple output formats (Markdown, HTML, PDF), relationship diagrams, architecture documentation, and usage examples.",
-      "category": "documentation",
-      "features": [
-        "intelligent_generation",
-        "multiple_formats",
-        "relationship_diagrams",
-        "architecture_docs",
-        "usage_examples",
-        "best_practices"
-      ],
-      "metrics": {
-        "automation_level": "95%",
-        "output_formats": "3+",
-        "documentation_quality": "professional"
-      }
-    },
-    "snow_refactor_code": {
-      "name": "Intelligent Refactoring",
-      "description": "AI-driven code refactoring with performance optimization, modern JavaScript patterns and best practices, security hardening, error handling improvements, and preview validation.",
-      "category": "code_quality",
-      "features": [
-        "ai_refactoring",
-        "performance_optimization",
-        "modern_patterns",
-        "security_hardening",
-        "error_handling",
-        "preview_validation"
-      ],
-      "metrics": {
-        "refactoring_accuracy": "95%+",
-        "performance_improvement": "60%+",
-        "security_enhancement": "comprehensive"
-      }
-    },
-    "snow_discover_process": {
-      "name": "Process Mining Engine",
-      "description": "Real process discovery from ServiceNow event logs, process variant analysis and bottleneck identification, compliance checking against reference models, and optimization recommendations with ROI calculation.",
-      "category": "process_mining",
-      "features": [
-        "process_discovery",
-        "variant_analysis",
-        "bottleneck_identification",
-        "compliance_checking",
-        "roi_calculation",
-        "optimization_recommendations"
-      ],
-      "metrics": {
-        "discovery_accuracy": "90%+",
-        "variant_detection": "comprehensive",
-        "optimization_roi": "quantified"
-      }
-    },
-    "snow_analyze_workflow_execution": {
-      "name": "Workflow Reality Analyzer",
-      "description": "Real workflow execution analysis vs. designed processes, performance bottleneck identification, SLA compliance monitoring, and resource utilization optimization with actionable insights.",
-      "category": "process_mining",
-      "features": [
-        "execution_analysis",
-        "performance_bottlenecks",
-        "sla_monitoring",
-        "resource_optimization",
-        "reality_vs_design"
-      ],
-      "metrics": {
-        "execution_accuracy": "real_time",
-        "sla_compliance": "monitored",
-        "optimization_potential": "identified"
-      }
-    },
-    "snow_discover_cross_table_process": {
-      "name": "Cross Table Process Discovery",
-      "description": "Multi-table process flow discovery, data lineage and transformation tracking, integration point analysis, and process automation opportunities identification across ServiceNow tables.",
-      "category": "process_mining",
-      "features": [
-        "cross_table_discovery",
-        "data_lineage",
-        "transformation_tracking",
-        "integration_analysis",
-        "automation_opportunities"
-      ],
-      "metrics": {
-        "cross_table_scope": "unlimited",
-        "lineage_tracking": "comprehensive",
-        "automation_potential": "identified"
-      }
-    },
-    "snow_monitor_process": {
-      "name": "Real Time Process Monitoring",
-      "description": "Live process monitoring with real-time alerts, anomaly detection using machine learning, performance trend analysis, and predictive failure detection for proactive ServiceNow management.",
-      "category": "monitoring",
-      "features": [
-        "real_time_monitoring",
-        "anomaly_detection",
-        "machine_learning",
-        "trend_analysis",
-        "predictive_failure",
-        "proactive_alerts"
-      ],
-      "metrics": {
-        "monitoring_scope": "real_time",
-        "anomaly_accuracy": "95%+",
-        "prediction_reliability": "90%+"
-      }
-    },
-    "ml_train_incident_classifier": {
-      "name": "Incident Classification Neural Network",
-      "description": "Train LSTM neural networks with INTELLIGENT data selection. Snow-Flow automatically balances training data across categories, priorities & time periods. Accepts custom queries for full control. Use when: 1) PI not available, 2) Custom patterns needed, 3) Client-side predictions required.",
-      "category": "machine_learning",
-      "features": [
-        "intelligent_data_selection",
-        "balanced_datasets",
-        "custom_queries",
-        "lstm_networks",
-        "text_embedding",
-        "multi_class_prediction",
-        "transfer_learning",
-        "model_persistence"
-      ],
-      "metrics": {
-        "accuracy": "95%+",
-        "training_speed": "real_time",
-        "prediction_time": "<100ms"
-      }
-    },
-    "ml_performance_analytics": {
-      "name": "ServiceNow PA ML Integration",
-      "description": "Access ServiceNow's native Performance Analytics ML capabilities for KPI forecasting, trend analysis, seasonality detection, and anomaly identification.",
-      "category": "machine_learning",
-      "features": [
-        "kpi_forecasting",
-        "trend_analysis",
-        "seasonality_detection",
-        "anomaly_alerts",
-        "confidence_intervals"
-      ],
-      "metrics": {
-        "forecast_horizon": "90_days",
-        "accuracy": "native_ml",
-        "integration": "seamless"
-      }
-    },
-    "ml_hybrid_recommendation": {
-      "name": "Hybrid ML Recommendations",
-      "description": "Intelligently combines native ML (when licensed) with TensorFlow.js. AUTO-SELECTS best approach: Native ML for standard objects, TensorFlow for custom tables/client-side/offline. See ML Decision Tree in docs.",
-      "category": "machine_learning",
-      "features": [
-        "ensemble_learning",
-        "weighted_scoring",
-        "fallback_logic",
-        "multi_model_fusion",
-        "best_of_both_worlds"
-      ],
-      "metrics": {
-        "accuracy_improvement": "20%+",
-        "robustness": "high",
-        "flexibility": "maximum"
-      }
-    },
-    "snow_create_uib_page": {
-      "name": "UI Builder Page Creation",
-      "description": "Create complete UI Builder pages in Now Experience Framework using official ServiceNow sys_ux_page API. Includes automatic routing configuration and full UXF integration for modern ServiceNow UI development.",
-      "category": "ui_builder",
-      "features": [
-        "uxf_integration",
-        "automatic_routing",
-        "page_management",
-        "responsive_design",
-        "theme_support",
-        "access_control"
-      ],
-      "metrics": {
-        "page_creation": "conversational",
-        "routing": "automatic",
-        "framework": "now_experience"
-      }
-    },
-    "snow_create_uib_component": {
-      "name": "UI Builder Component Development",
-      "description": "Create custom UI Builder components using official ServiceNow sys_ux_lib_component and sys_ux_lib_source_script APIs. Full component lifecycle management including source code, properties schema, and dependency management.",
-      "category": "ui_builder",
-      "features": [
-        "custom_components",
-        "source_code_management",
-        "properties_schema",
-        "dependency_tracking",
-        "version_control",
-        "component_cloning"
-      ],
-      "metrics": {
-        "component_types": "unlimited",
-        "reusability": "high",
-        "customization": "complete"
-      }
-    },
-    "snow_add_uib_page_element": {
-      "name": "UI Builder Layout Management",
-      "description": "Add and manage components on UI Builder pages using official ServiceNow sys_ux_page_element API. Full layout control with responsive design, data broker binding, and conditional display logic.",
-      "category": "ui_builder",
-      "features": [
-        "drag_drop_equivalent",
-        "responsive_config",
-        "data_broker_binding",
-        "conditional_display",
-        "css_management",
-        "position_control"
-      ],
-      "metrics": {
-        "layout_flexibility": "complete",
-        "data_binding": "automatic",
-        "responsive": "native"
-      }
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "packages/console/*",
+      "packages/sdk/js",
+      "packages/slack"
+    ],
+    "catalog": {
+      "@types/bun": "1.3.0",
+      "@hono/zod-validator": "0.4.2",
+      "@kobalte/core": "0.13.11",
+      "@types/node": "22.13.9",
+      "@tsconfig/node22": "22.0.2",
+      "@tsconfig/bun": "1.0.9",
+      "@cloudflare/workers-types": "4.20251008.0",
+      "@openauthjs/openauth": "^0.4.3",
+      "@pierre/precision-diffs": "0.0.2-alpha.1-1",
+      "@solidjs/meta": "0.29.4",
+      "@tailwindcss/vite": "4.1.11",
+      "diff": "8.0.2",
+      "ai": "5.0.8",
+      "hono": "4.7.10",
+      "fuzzysort": "3.1.0",
+      "luxon": "3.6.1",
+      "typescript": "5.8.2",
+      "@typescript/native-preview": "7.0.0-dev.20251014.1",
+      "zod": "4.1.8",
+      "remeda": "2.26.0",
+      "solid-js": "1.9.9",
+      "solid-list": "0.3.0",
+      "tailwindcss": "4.1.11",
+      "virtua": "0.42.3",
+      "vite": "7.1.4",
+      "vite-plugin-solid": "2.11.8"
     }
   },
-  "mcpCapabilities": {
-    "realApiIntegration": true,
-    "noMockData": true,
-    "mockDataNote": "🔥 ZERO MOCK DATA GUARANTEE - All reports, dashboards, and analytics use 100% REAL ServiceNow data from your actual instance. NO demo/sample/test data ever used.",
-    "reportingDataPolicy": "ALL LIVE DATA - Every report, dashboard, chart, and KPI populated exclusively with real records from your ServiceNow tables",
-    "productionReady": true,
-    "batchOptimization": true,
-    "intelligentAnalysis": true,
-    "machineLearning": true,
-    "neuralNetworks": true,
-    "hybridML": true,
-    "nativeMLSupport": {
-      "performanceAnalytics": "Requires PA plugin license",
-      "predictiveIntelligence": "Requires PI plugin license",
-      "agentIntelligence": "Requires Agent Intelligence license",
-      "fallbackMode": "No fallback - proper error messages when licenses unavailable"
-    },
-    "processMining": true,
-    "uiBuilderIntegration": true,
-    "nowExperienceFramework": true,
-    "performanceMetrics": {
-      "apiCallReduction": "80%",
-      "analysisSpeed": "60% faster",
-      "automationLevel": "90%",
-      "dataAccuracy": "100% real",
-      "uiBuilderToolsCount": "15",
-      "totalToolsCount": "225"
-    }
+  "devDependencies": {
+    "@tsconfig/bun": "1.0.9",
+    "husky": "9.1.7",
+    "prettier": "3.6.2",
+    "turbo": "2.5.6"
   },
-  "author": "Snow-Flow Team",
-  "license": "Elastic-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/groeimetai/snow-flow.git"
@@ -489,75 +63,19 @@
     "url": "https://github.com/groeimetai/snow-flow/issues"
   },
   "homepage": "https://github.com/groeimetai/snow-flow#readme",
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+  "author": "Snow-Flow Team",
+  "license": "Elastic-2.0",
+  "prettier": {
+    "semi": false,
+    "printWidth": 120
   },
-  "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "0.1.1",
-    "@anthropic-ai/sdk": "0.67.0",
-    "@clack/prompts": "^0.11.0",
-    "@groeimetai/snow-code": "^1.0.103",
-    "@modelcontextprotocol/sdk": "1.20.1",
-    "@tensorflow/tfjs": "^4.22.0",
-    "@types/node-fetch": "^2.6.13",
-    "axios": "1.12.2",
-    "better-sqlite3": "12.4.1",
-    "boxen": "^8.0.1",
-    "chalk": "^4.1.2",
-    "chalk-animation": "^2.0.3",
-    "commander": "14.0.1",
-    "conf": "15.0.2",
-    "dotenv": "^16.6.1",
-    "figlet": "1.9.3",
-    "gradient-string": "^3.0.0",
-    "inquirer": "^8.2.7",
-    "neo4j-driver": "6.0.0",
-    "node-machine-id": "^1.1.12",
-    "ora": "^5.4.1",
-    "uuid": "13.0.0",
-    "winston": "3.18.3",
-    "zod": "4.1.12"
-  },
-  "optionalDependencies": {
-    "@groeimetai/snow-code-darwin-arm64": "*",
-    "@groeimetai/snow-code-darwin-x64": "*",
-    "@groeimetai/snow-code-linux-arm64": "*",
-    "@groeimetai/snow-code-linux-x64": "*",
-    "@groeimetai/snow-code-windows-x64": "*"
-  },
-  "devDependencies": {
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^11.0.6",
-    "@semantic-release/npm": "^12.0.2",
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "24.9.1",
-    "@typescript-eslint/eslint-plugin": "8.46.2",
-    "@typescript-eslint/parser": "8.46.2",
-    "eslint": "9.38.0",
-    "jest": "30.2.0",
-    "lint-staged": "16.2.5",
-    "patch-package": "^8.0.1",
-    "prettier": "^3.6.2",
-    "semantic-release": "^24.2.9",
-    "ts-jest": "29.4.5",
-    "typescript": "5.9.3"
-  },
-  "overrides": {
-    "zod": "4.1.12"
-  },
-  "lint-staged": {
-    "*.ts": [
-      "eslint --fix",
-      "git add"
-    ],
-    "*.{ts,js,json,md}": [
-      "prettier --write",
-      "git add"
-    ]
-  },
-  "peerDependencies": {
-    "@groeimetai/snow-code": "*"
-  }
+  "trustedDependencies": [
+    "esbuild",
+    "protobufjs",
+    "sharp",
+    "tree-sitter",
+    "tree-sitter-bash",
+    "web-tree-sitter",
+    "better-sqlite3"
+  ]
 }
