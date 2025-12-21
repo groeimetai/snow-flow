@@ -1161,8 +1161,10 @@ func (a Model) chat() (string, int, int) {
 	mainLayout := messagesView + "\n" + editorView
 	editorX := max(0, (effectiveWidth-editorWidth)/2)
 	editorY := a.height - editorHeight
+	editorYDelta := 3
 
 	if lines > 1 {
+		editorYDelta = 2
 		content := a.editor.Content()
 		editorHeight := lipgloss.Height(content)
 		if editorY+editorHeight > a.height {
@@ -1191,7 +1193,7 @@ func (a Model) chat() (string, int, int) {
 		)
 	}
 
-	return mainLayout, editorX + 5, editorY + 1
+	return mainLayout, editorX + 5, editorY + editorYDelta
 }
 
 func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
