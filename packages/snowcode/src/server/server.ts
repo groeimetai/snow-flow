@@ -1360,6 +1360,40 @@ export namespace Server {
         },
       )
       .post(
+        "/mcp/:name/restart",
+        describeRoute({
+          description: "Restart a specific MCP server with fresh config from disk",
+          operationId: "mcp.restart",
+          responses: {
+            200: {
+              description: "Restart result",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    z.object({
+                      success: z.boolean(),
+                      name: z.string(),
+                    }),
+                  ),
+                },
+              },
+            },
+            ...errors(400),
+          },
+        }),
+        validator(
+          "param",
+          z.object({
+            name: z.string().meta({ description: "MCP server name" }),
+          }),
+        ),
+        async (c) => {
+          const name = c.req.valid("param").name
+          const success = await MCP.restart(name)
+          return c.json({ success, name })
+        },
+      )
+      .post(
         "/mcp/reconnect-all",
         describeRoute({
           description: "Reconnect all disconnected MCP servers",

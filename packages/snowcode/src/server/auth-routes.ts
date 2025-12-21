@@ -145,6 +145,8 @@ async function updateSnowCodeMCPConfigs(instance: string, clientId: string, clie
     path.join(os.homedir(), ".config", "snow-code", "config.json"),
   ]
 
+  const updatedServers = new Set<string>()
+
   for (const configPath of configPaths) {
     try {
       const file = Bun.file(configPath)
@@ -158,12 +160,15 @@ async function updateSnowCodeMCPConfigs(instance: string, clientId: string, clie
         if (serverConfig.environment) {
           if (serverConfig.environment.SERVICENOW_INSTANCE_URL !== undefined) {
             serverConfig.environment.SERVICENOW_INSTANCE_URL = instanceUrl
+            updatedServers.add(serverName)
           }
           if (serverConfig.environment.SERVICENOW_CLIENT_ID !== undefined) {
             serverConfig.environment.SERVICENOW_CLIENT_ID = clientId
+            updatedServers.add(serverName)
           }
           if (serverConfig.environment.SERVICENOW_CLIENT_SECRET !== undefined) {
             serverConfig.environment.SERVICENOW_CLIENT_SECRET = clientSecret
+            updatedServers.add(serverName)
           }
         }
       }
@@ -171,6 +176,20 @@ async function updateSnowCodeMCPConfigs(instance: string, clientId: string, clie
       await Bun.write(configPath, JSON.stringify(config, null, 2))
     } catch {
       // Skip failed updates
+    }
+  }
+
+  // Restart any ServiceNow MCP servers that had their credentials updated
+  for (const serverName of updatedServers) {
+    try {
+      const result = await MCP.restart(serverName)
+      if (result) {
+        console.log(`MCP restart: ${serverName} restarted with new credentials`)
+      } else {
+        console.warn(`MCP restart: ${serverName} failed to restart`)
+      }
+    } catch (error: any) {
+      console.warn(`MCP restart failed for ${serverName}: ${error.message}`)
     }
   }
 }

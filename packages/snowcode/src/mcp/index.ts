@@ -449,6 +449,57 @@ export namespace MCP {
     return results
   }
 
+  /**
+   * Restart a specific MCP server with fresh config from disk
+   * This is needed when environment variables are updated (e.g., ServiceNow credentials)
+   */
+  export async function restart(name: string): Promise<boolean> {
+    const s = await state()
+    const managed = s.clients[name]
+
+    if (!managed) {
+      log.warn("mcp client not found for restart", { name })
+      return false
+    }
+
+    log.info("restarting mcp server with fresh config", { name })
+
+    // Close the existing client
+    try {
+      managed.manager.disconnect()
+      managed.client.close()
+    } catch (error) {
+      log.debug("error closing existing client", { name, error })
+    }
+
+    // Remove from state
+    delete s.clients[name]
+
+    // Read fresh config from disk
+    const freshConfig = await Config.get()
+    const newConfig = freshConfig.mcp?.[name]
+
+    if (!newConfig) {
+      log.warn("mcp server config not found after restart", { name })
+      return false
+    }
+
+    // Create new client with fresh config
+    const result = await createWithRetry(name, newConfig).catch((error) => {
+      log.error("failed to restart mcp server", { name, error: error instanceof Error ? error.message : String(error) })
+      return undefined
+    })
+
+    if (result) {
+      s.clients[name] = result
+      s.config[name] = newConfig
+      log.info("mcp server restarted successfully", { name })
+      return true
+    }
+
+    return false
+  }
+
   export async function status() {
     return state().then((state) => {
       const result: Record<string, "connected" | "connecting" | "disconnected" | "failed" | "disabled"> = {}
