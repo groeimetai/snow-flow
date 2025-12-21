@@ -17,6 +17,7 @@ gen/
 
 # Platform-specific binaries (downloaded during postinstall)
 dist/snow-flow-*/
+dist/*.tar.gz
 
 # MCP bundles (downloaded during postinstall)
 dist/mcp/

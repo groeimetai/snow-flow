@@ -238,6 +238,12 @@ jobs:
           echo "MCP contents:"
           ls -la dist/mcp/ || echo "No mcp folder"
 
+      - name: Publish snow-flow package (OIDC)
+        run: |
+          cd packages/snowcode
+          echo "Publishing snow-flow main package..."
+          npm publish --access public --provenance
+
       - name: Create platform tarballs for GitHub release
         run: |
           cd packages/snowcode/dist
@@ -258,12 +264,6 @@ jobs:
           fi
 
           ls -la *.tar.gz
-
-      - name: Publish snow-flow package (OIDC)
-        run: |
-          cd packages/snowcode
-          echo "Publishing snow-flow main package..."
-          npm publish --access public --provenance
 
       - name: Create GitHub Release with binaries
         if: startsWith(github.ref, 'refs/tags/v')
