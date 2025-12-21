@@ -104,7 +104,7 @@ jobs:
           path: packages/snowcode/dist/snow-flow-${{ matrix.os }}-${{ matrix.arch }}/
           retention-days: 7
 
-  # Publish all packages to npm
+  # Publish all packages to npm using OIDC
   publish:
     name: Publish to npm
     needs: build
@@ -118,14 +118,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Use setup-node WITHOUT registry-url to avoid token-based .npmrc
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm (required for OIDC)
         run: npm install -g npm@latest
+
+      - name: Configure npm for OIDC publishing
+        run: |
+          # Remove any existing .npmrc files that might interfere
+          rm -f ~/.npmrc
+          rm -f .npmrc
+          rm -f /home/runner/work/_temp/.npmrc 2>/dev/null || true
+
+          # Create fresh .npmrc for OIDC
+          echo "registry=https://registry.npmjs.org/" > ~/.npmrc
+          echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
+
+          echo "✅ npm configured for OIDC"
+          cat ~/.npmrc
 
       - name: Debug OIDC setup
         run: |
@@ -137,11 +151,8 @@ jobs:
           else
             echo "❌ OIDC token request token NOT available"
           fi
-
-      - name: Remove .npmrc for pure OIDC auth
-        run: |
-          rm -f ~/.npmrc
-          echo "✅ .npmrc removed for OIDC"
+          echo "=== .npmrc contents ==="
+          cat ~/.npmrc || echo "No ~/.npmrc"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -189,18 +200,16 @@ jobs:
             if [ -d "$dir" ]; then
               echo "Publishing $dir..."
               cd "$dir"
-              npm publish --access public || echo "⚠️ Failed: $dir (may already exist or need token)"
+              npm publish --access public --provenance 2>&1 || echo "⚠️ Failed: $dir"
               cd ..
             fi
           done
-        # npm CLI automatically uses OIDC when id-token: write is set
 
       - name: Publish main snow-flow package (OIDC)
         run: |
           cd packages/snowcode
           echo "Publishing snow-flow main package..."
-          npm publish --access public
-        # This should work since 'snow-flow' already exists on npm
+          npm publish --access public --provenance
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
