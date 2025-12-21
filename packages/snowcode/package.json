@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "9.0.6",
+  "version": "9.0.7",
   "name": "snow-flow",
   "description": "Snow-Flow - AI-powered ServiceNow development CLI with 410+ MCP tools",
   "type": "module",
@@ -82,6 +82,7 @@
     "@standard-schema/spec": "1.0.0",
     "@zip.js/zip.js": "2.7.62",
     "ai": "5.0.8",
+    "axios": "1.7.9",
     "chokidar": "4.0.3",
     "decimal.js": "10.5.0",
     "diff": "8.0.2",

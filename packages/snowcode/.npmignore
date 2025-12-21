@@ -1,0 +1,42 @@
+# Source files (not needed in npm package)
+src/
+script/
+test/
+*.ts
+tsconfig.json
+
+# Development files
+.env
+.gitignore
+.snow-code/
+.snow-flow/
+*.log
+logs/
+research/
+gen/
+
+# Platform-specific binaries (downloaded during postinstall)
+dist/snow-flow-*/
+
+# Documentation (optional)
+BUILD_GUIDE.md
+AGENTS.md
+bunfig.toml
+sst-env.d.ts
+test-*.js
+test-*.ts
+snow-code-config.example.json
+
+# Config files
+.mcp.json
+.npmrc
+
+# Node modules
+node_modules/
+
+# Keep these in npm package:
+# - bin/snow-code.cjs (launcher script)
+# - dist/mcp/ (MCP servers)
+# - postinstall.cjs (downloads binary)
+# - package.json
+# - README.md

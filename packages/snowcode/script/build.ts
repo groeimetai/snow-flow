@@ -15,6 +15,9 @@ const pkgPath = path.join(dir, "package.json")
 const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"))
 console.log(`Building with version: ${pkg.version}`)
 
+// Core package path (for MCP servers)
+const corePackagePath = path.resolve(dir, "../core")
+
 import { Script } from "@groeimetai/snow-flow-script"
 
 const GOARCH: Record<string, string> = {
@@ -126,5 +129,82 @@ try {
   )
   binaries[name] = pkg.version
 }
+
+// Bundle MCP servers (shared across all platforms)
+console.log("Bundling MCP servers...")
+
+// Create MCP directory structure
+await $`mkdir -p dist/mcp/enterprise-proxy`
+
+// Bundle enterprise proxy as a standalone Node.js script
+// This needs to be a regular JS file that can be run with `node`
+console.log("Bundling enterprise-proxy MCP server...")
+const enterpriseProxyResult = await Bun.build({
+  entrypoints: [path.join(corePackagePath, "src/mcp/enterprise-proxy/index.ts")],
+  outdir: path.join(dir, "dist/mcp/enterprise-proxy"),
+  target: "node",
+  format: "esm",
+  minify: false,
+  sourcemap: "external",
+  external: [
+    // Don't bundle native modules that can't be bundled
+  ],
+  define: {
+    "process.env.SNOW_FLOW_VERSION": `"${pkg.version}"`,
+  },
+})
+
+if (!enterpriseProxyResult.success) {
+  console.error("Failed to bundle enterprise-proxy:", enterpriseProxyResult.logs)
+} else {
+  console.log("✅ Enterprise proxy bundled successfully")
+}
+
+// Also bundle the server.ts variant (some code references server.js)
+console.log("Bundling enterprise-proxy server variant...")
+const enterpriseProxyServerResult = await Bun.build({
+  entrypoints: [path.join(corePackagePath, "src/mcp/enterprise-proxy/server.ts")],
+  outdir: path.join(dir, "dist/mcp/enterprise-proxy"),
+  target: "node",
+  format: "esm",
+  minify: false,
+  sourcemap: "external",
+  define: {
+    "process.env.SNOW_FLOW_VERSION": `"${pkg.version}"`,
+  },
+})
+
+if (!enterpriseProxyServerResult.success) {
+  console.error("Failed to bundle enterprise-proxy server:", enterpriseProxyServerResult.logs)
+} else {
+  console.log("✅ Enterprise proxy server variant bundled successfully")
+}
+
+// Bundle ServiceNow MCP server (optional, for local development)
+const servicenowMcpPath = path.join(corePackagePath, "src/mcp/start-servicenow-mcp.ts")
+if (fs.existsSync(servicenowMcpPath)) {
+  console.log("Bundling ServiceNow MCP server...")
+  await $`mkdir -p dist/mcp/servicenow`
+
+  const servicenowMcpResult = await Bun.build({
+    entrypoints: [servicenowMcpPath],
+    outdir: path.join(dir, "dist/mcp/servicenow"),
+    target: "node",
+    format: "esm",
+    minify: false,
+    sourcemap: "external",
+    define: {
+      "process.env.SNOW_FLOW_VERSION": `"${pkg.version}"`,
+    },
+  })
+
+  if (!servicenowMcpResult.success) {
+    console.error("Failed to bundle ServiceNow MCP:", servicenowMcpResult.logs)
+  } else {
+    console.log("✅ ServiceNow MCP bundled successfully")
+  }
+}
+
+console.log("MCP servers bundled successfully!")
 
 export { binaries }

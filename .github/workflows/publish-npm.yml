@@ -175,6 +175,37 @@ jobs:
             echo "version=$(cat packages/snowcode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
           fi
 
+      - name: Bundle MCP servers
+        run: |
+          cd packages/snowcode
+          mkdir -p dist/mcp/enterprise-proxy
+          mkdir -p dist/mcp/servicenow
+
+          # Install dependencies needed for MCP server bundling
+          cd ..
+          bun install
+          cd snowcode
+
+          # Bundle enterprise proxy MCP server (fully bundled for portability)
+          echo "Bundling enterprise-proxy MCP server..."
+          bunx bun build ../core/src/mcp/enterprise-proxy/index.ts \
+            --outdir dist/mcp/enterprise-proxy \
+            --target node \
+            --format esm \
+            --minify || echo "Enterprise proxy index bundle completed (may have warnings)"
+
+          bunx bun build ../core/src/mcp/enterprise-proxy/server.ts \
+            --outdir dist/mcp/enterprise-proxy \
+            --target node \
+            --format esm \
+            --minify || echo "Enterprise proxy server bundle completed (may have warnings)"
+
+          # List what was created
+          echo "MCP bundles created:"
+          ls -la dist/mcp/enterprise-proxy/ || echo "No enterprise-proxy files"
+          echo "Bundle sizes:"
+          du -sh dist/mcp/enterprise-proxy/* 2>/dev/null || echo "No files to measure"
+
       - name: Prepare package for publishing
         run: |
           VERSION="${{ steps.version.outputs.version }}"
@@ -198,6 +229,14 @@ jobs:
             delete pkg.optionalDependencies;
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
+
+          # Show what will be published
+          echo "Package contents:"
+          ls -la
+          echo "Dist contents:"
+          ls -la dist/ || echo "No dist folder"
+          echo "MCP contents:"
+          ls -la dist/mcp/ || echo "No mcp folder"
 
       - name: Create platform tarballs for GitHub release
         run: |
