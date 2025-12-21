@@ -12,6 +12,7 @@ import path from "path"
 import fs from "fs"
 import open from "open"
 import { UI } from "../ui"
+import { detectHeadlessEnvironment } from "../../util/headless"
 
 // Enterprise portal URL
 const PORTAL_URL = process.env.SNOW_FLOW_PORTAL_URL || "https://portal.snow-flow.dev"
@@ -167,17 +168,33 @@ export const AuthEnterpriseLoginCommand = cmd({
       prompts.log.info("")
       prompts.log.success("✓ Device authorization session created")
       prompts.log.info("")
-      prompts.log.info("🌐 Opening browser for authorization...")
-      prompts.log.info("")
-      prompts.log.info(`   If browser doesn't open automatically, visit:`)
-      prompts.log.info(`   ${verificationUrl}`)
-      prompts.log.info("")
 
-      // Open browser
-      try {
-        await open(verificationUrl)
-      } catch (openError) {
-        prompts.log.warn("   ⚠️  Could not open browser automatically")
+      // Check for headless environment
+      const headlessEnv = detectHeadlessEnvironment()
+
+      if (headlessEnv.isHeadless) {
+        // Headless environment - show URL prominently
+        prompts.log.info(`🌐 ${headlessEnv.reason}`)
+        prompts.log.warn("Cannot auto-open browser in this environment")
+        prompts.log.info("")
+        prompts.log.step("Please open this URL in your browser:")
+        prompts.log.info("")
+        prompts.log.info(`   ${verificationUrl}`)
+        prompts.log.info("")
+      } else {
+        // Normal environment - try to auto-open
+        prompts.log.info("🌐 Opening browser for authorization...")
+        prompts.log.info("")
+        prompts.log.info(`   If browser doesn't open automatically, visit:`)
+        prompts.log.info(`   ${verificationUrl}`)
+        prompts.log.info("")
+
+        // Open browser
+        try {
+          await open(verificationUrl)
+        } catch (openError) {
+          prompts.log.warn("   ⚠️  Could not open browser automatically")
+        }
       }
 
       // Step 3: Wait for user to approve and paste code

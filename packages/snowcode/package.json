@@ -105,12 +105,5 @@
     "zod": "3.25.76",
     "zod-to-json-schema": "3.24.5",
     "tsx": "4.20.6"
-  },
-  "optionalDependencies": {
-    "snow-flow-darwin-arm64": "*",
-    "snow-flow-darwin-x64": "*",
-    "snow-flow-linux-arm64": "*",
-    "snow-flow-linux-x64": "*",
-    "snow-flow-windows-x64": "*"
   }
 }

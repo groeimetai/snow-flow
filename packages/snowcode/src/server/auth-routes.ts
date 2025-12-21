@@ -9,6 +9,7 @@ import os from "os"
 import crypto from "crypto"
 import { ServiceNowOAuth } from "../auth/servicenow-oauth"
 import open from "open"
+import { detectHeadlessEnvironment } from "../util/headless"
 import {
   generateEnterpriseInstructions,
   generateStakeholderDocumentation,
@@ -1217,9 +1218,16 @@ export const AuthRoute = new Hono()
           })
         }
 
-        // Open browser automatically
-        if (authResult.url) {
-          await open(authResult.url)
+        // Check for headless environment
+        const headlessEnv = detectHeadlessEnvironment()
+
+        // Only auto-open browser if not in headless environment
+        if (authResult.url && !headlessEnv.isHeadless) {
+          try {
+            await open(authResult.url)
+          } catch {
+            // Ignore browser open errors
+          }
         }
 
         return c.json({
@@ -1228,6 +1236,8 @@ export const AuthRoute = new Hono()
           url: authResult.url,
           instructions: authResult.instructions,
           method: authResult.method,
+          headless: headlessEnv.isHeadless,
+          headlessReason: headlessEnv.isHeadless ? headlessEnv.reason : undefined,
         })
       } catch (error: any) {
         return c.json({ success: false, error: error.message })
