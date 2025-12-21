@@ -10,9 +10,54 @@ import z from "zod/v4"
 import { Bus } from "../bus"
 import { Instance } from "../project/instance"
 import { withTimeout } from "@/util/timeout"
+import path from "path"
+import os from "os"
 
 export namespace MCP {
   const log = Log.create({ service: "mcp" })
+
+  /**
+   * Read MCP config directly from disk files, bypassing Config.get() cache.
+   * This is necessary because auth-routes writes new config to disk,
+   * but Config.get() returns cached values.
+   */
+  async function readFreshMCPConfigFromDisk(): Promise<Record<string, Config.Mcp>> {
+    const mcpConfig: Record<string, Config.Mcp> = {}
+
+    // Config file locations (same as Config module uses)
+    const configPaths = [
+      path.join(process.cwd(), ".mcp.json"),
+      path.join(process.cwd(), ".snow-code", "opencode.json"),
+      path.join(os.homedir(), ".config", "snow-code", "opencode.json"),
+    ]
+
+    for (const configPath of configPaths) {
+      try {
+        const file = Bun.file(configPath)
+        if (await file.exists()) {
+          const content = await file.text()
+          const parsed = JSON.parse(content)
+
+          // Handle both .mcp.json format and opencode.json format
+          const mcpSection = parsed.mcp ?? parsed.mcpServers ?? {}
+
+          // Merge into result (later files override earlier ones)
+          for (const [name, config] of Object.entries(mcpSection)) {
+            mcpConfig[name] = config as Config.Mcp
+          }
+
+          log.debug("read mcp config from disk", { path: configPath, servers: Object.keys(mcpSection) })
+        }
+      } catch (error) {
+        log.debug("failed to read config file", {
+          path: configPath,
+          error: error instanceof Error ? error.message : String(error)
+        })
+      }
+    }
+
+    return mcpConfig
+  }
 
   export const Failed = NamedError.create(
     "MCPFailed",
@@ -125,8 +170,9 @@ export namespace MCP {
    */
   export async function reload(): Promise<{ added: string[]; failed: string[] }> {
     const s = await state()
-    const freshConfig = await Config.get()
-    const newConfig = freshConfig.mcp ?? {}
+    // Read directly from disk to bypass Config.get() cache
+    const newConfig = await readFreshMCPConfigFromDisk()
+    log.info("reloading mcp config from disk", { servers: Object.keys(newConfig) })
 
     const added: string[] = []
     const failed: string[] = []
@@ -472,9 +518,9 @@ export namespace MCP {
       log.info("starting mcp server (was not running)", { name })
     }
 
-    // Read fresh config from disk
-    const freshConfig = await Config.get()
-    const newConfig = freshConfig.mcp?.[name]
+    // Read fresh config directly from disk (bypasses Config.get() cache)
+    const freshMcpConfig = await readFreshMCPConfigFromDisk()
+    const newConfig = freshMcpConfig[name]
 
     if (!newConfig) {
       log.warn("mcp server config not found", { name })
