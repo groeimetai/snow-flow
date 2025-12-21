@@ -77,6 +77,7 @@ type Model struct {
 	interruptKeyState    InterruptKeyState
 	exitKeyState         ExitKeyState
 	messagesRight        bool
+	lastNotifiedVersion  string
 }
 
 func (a Model) Init() tea.Cmd {
@@ -485,10 +486,14 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dialog.CompletionDialogCloseMsg:
 		a.showCompletionDialog = false
 	case opencode.EventListResponseEventInstallationUpdated:
-		return a, toast.NewSuccessToast(
-			"snow-code updated to "+msg.Properties.Version+", restart to apply.",
-			toast.WithTitle("New version installed"),
-		)
+		// Only show toast if version changed and not already notified
+		if msg.Properties.Version != "" && msg.Properties.Version != a.lastNotifiedVersion {
+			a.lastNotifiedVersion = msg.Properties.Version
+			return a, toast.NewSuccessToast(
+				"snow-flow updated to "+msg.Properties.Version+", restart to apply.",
+				toast.WithTitle("New version installed"),
+			)
+		}
 		/*
 			case opencode.EventListResponseEventIdeInstalled:
 				return a, toast.NewSuccessToast(
