@@ -1380,6 +1380,29 @@ export namespace Server {
         },
       )
       .post(
+        "/mcp/reload",
+        describeRoute({
+          description: "Reload MCP configuration and add any new servers",
+          operationId: "mcp.reload",
+          responses: {
+            200: {
+              description: "Reload results showing added and failed servers",
+              content: {
+                "application/json": {
+                  schema: resolver(z.object({
+                    added: z.array(z.string()),
+                    failed: z.array(z.string()),
+                  })),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          return c.json(await MCP.reload())
+        },
+      )
+      .post(
         "/tui/append-prompt",
         describeRoute({
           description: "Append prompt to the TUI",

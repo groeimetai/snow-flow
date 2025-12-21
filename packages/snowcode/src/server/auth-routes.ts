@@ -17,6 +17,7 @@ import {
 import { AnthropicAuthProvider } from "../auth/providers/anthropic"
 import { GitHubCopilotAuthProvider } from "../auth/providers/github-copilot"
 import type { BuiltInAuthProvider, AuthMethod } from "../auth/providers/types"
+import { MCP } from "../mcp"
 
 // Registry of built-in auth providers with OAuth support
 const AUTH_PROVIDERS: Record<string, BuiltInAuthProvider> = {
@@ -2602,6 +2603,19 @@ async function updateEnterpriseMcpConfig(token: string, mcpServerUrl: string) {
     }
   } catch {
     // Skip on error
+  }
+
+  // Reload MCP configuration to pick up the new enterprise server
+  try {
+    const result = await MCP.reload()
+    if (result.added.length > 0) {
+      console.log(`MCP reload: added servers: ${result.added.join(', ')}`)
+    }
+    if (result.failed.length > 0) {
+      console.warn(`MCP reload: failed to add servers: ${result.failed.join(', ')}`)
+    }
+  } catch (error: any) {
+    console.warn(`MCP reload failed: ${error.message}`)
   }
 }
 

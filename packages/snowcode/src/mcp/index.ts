@@ -120,6 +120,56 @@ export namespace MCP {
   }
 
   /**
+   * Reload MCP configuration from disk and add any new servers
+   * This is useful after auth updates the MCP config
+   */
+  export async function reload(): Promise<{ added: string[]; failed: string[] }> {
+    const s = await state()
+    const freshConfig = await Config.get()
+    const newConfig = freshConfig.mcp ?? {}
+
+    const added: string[] = []
+    const failed: string[] = []
+
+    // Find servers in config that aren't in current state
+    await Promise.all(
+      Object.entries(newConfig).map(async ([name, mcp]) => {
+        // Skip if already loaded
+        if (s.clients[name]) {
+          log.debug("mcp server already loaded, skipping", { name })
+          return
+        }
+
+        // Skip disabled servers
+        if (mcp.enabled === false) {
+          log.debug("mcp server disabled, skipping", { name })
+          return
+        }
+
+        log.info("loading new mcp server from config", { name })
+        const result = await createWithRetry(name, mcp).catch((error) => {
+          log.error("failed to load new mcp server", { name, error: error instanceof Error ? error.message : String(error) })
+          return undefined
+        })
+
+        if (result) {
+          s.clients[name] = result
+          s.config[name] = mcp
+          added.push(name)
+        } else {
+          failed.push(name)
+        }
+      }),
+    )
+
+    if (added.length > 0) {
+      log.info("mcp reload complete", { added, failed })
+    }
+
+    return { added, failed }
+  }
+
+  /**
    * Get retry options from config with defaults
    */
   function getRetryOptions(mcp: Config.Mcp, serverName?: string): Retry.Options {
