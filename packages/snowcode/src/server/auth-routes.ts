@@ -182,14 +182,9 @@ async function updateSnowCodeMCPConfigs(instance: string, clientId: string, clie
   // Restart any ServiceNow MCP servers that had their credentials updated
   for (const serverName of updatedServers) {
     try {
-      const result = await MCP.restart(serverName)
-      if (result) {
-        console.log(`MCP restart: ${serverName} restarted with new credentials`)
-      } else {
-        console.warn(`MCP restart: ${serverName} failed to restart`)
-      }
-    } catch (error: any) {
-      console.warn(`MCP restart failed for ${serverName}: ${error.message}`)
+      await MCP.restart(serverName)
+    } catch {
+      // Silently continue - MCP module has its own logging
     }
   }
 }
@@ -2626,15 +2621,9 @@ async function updateEnterpriseMcpConfig(token: string, mcpServerUrl: string) {
 
   // Reload MCP configuration to pick up the new enterprise server
   try {
-    const result = await MCP.reload()
-    if (result.added.length > 0) {
-      console.log(`MCP reload: added servers: ${result.added.join(', ')}`)
-    }
-    if (result.failed.length > 0) {
-      console.warn(`MCP reload: failed to add servers: ${result.failed.join(', ')}`)
-    }
-  } catch (error: any) {
-    console.warn(`MCP reload failed: ${error.message}`)
+    await MCP.reload()
+  } catch {
+    // Silently continue - MCP module has its own logging
   }
 }
 
