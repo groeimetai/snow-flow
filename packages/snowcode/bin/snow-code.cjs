@@ -8,18 +8,16 @@ const platform = os.platform() === 'win32' ? 'windows' : os.platform();
 const arch = os.arch() === 'arm64' ? 'arm64' : 'x64';
 
 const binaryName = platform === 'windows' ? 'snow-code.exe' : 'snow-code';
-const platformDir = `snow-flow-${platform}-${arch}`;
-
-// Look for binary in package's bin directory
 const packageDir = path.dirname(__dirname);
-const binaryPath = path.join(packageDir, 'bin', platformDir, binaryName);
+const binaryPath = path.join(packageDir, 'bin', binaryName);
 
 if (!fs.existsSync(binaryPath)) {
-  console.error(`Error: Could not find snow-flow binary for ${platform}-${arch}`);
-  console.error(`Expected: ${binaryPath}`);
+  console.error('Error: snow-flow binary not found.');
   console.error('');
-  console.error('Your platform may not be supported, or the package was not installed correctly.');
+  console.error('The binary should have been downloaded during installation.');
   console.error('Try reinstalling: npm install -g snow-flow');
+  console.error('');
+  console.error(`Expected binary at: ${binaryPath}`);
   process.exit(1);
 }
 

@@ -175,17 +175,16 @@ jobs:
             echo "version=$(cat packages/snowcode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
           fi
 
-      - name: Bundle platform binaries into main package
+      - name: Prepare package for publishing
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          echo "Bundling all platform binaries into main package"
-
           cd packages/snowcode
 
           # Update version
           sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
 
           # Remove devDependencies with workspace:* protocol
+          # Remove optionalDependencies (binaries downloaded on postinstall)
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -196,25 +195,22 @@ jobs:
                 }
               });
             }
-            // Remove optionalDependencies since binaries are bundled
             delete pkg.optionalDependencies;
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
 
-          # Copy all platform binaries into bin/ directory
-          for dir in dist/snow-flow-*/; do
+      - name: Create platform tarballs for GitHub release
+        run: |
+          cd packages/snowcode/dist
+          for dir in snow-flow-*/; do
             if [ -d "$dir" ]; then
               platform_name=$(basename "$dir")
-              echo "Copying $platform_name binary..."
-              mkdir -p "bin/$platform_name"
-              cp -r "$dir/bin/"* "bin/$platform_name/" 2>/dev/null || true
-              # Make binaries executable
-              chmod +x "bin/$platform_name/"* 2>/dev/null || true
+              echo "Creating tarball for $platform_name..."
+              tar -czf "${platform_name}.tar.gz" -C "$dir" bin
+              echo "Created ${platform_name}.tar.gz"
             fi
           done
-
-          echo "Platform binaries bundled:"
-          ls -la bin/
+          ls -la *.tar.gz
 
       - name: Publish snow-flow package (OIDC)
         run: |
@@ -222,11 +218,17 @@ jobs:
           echo "Publishing snow-flow main package..."
           npm publish --access public --provenance
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release with binaries
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
+          files: |
+            packages/snowcode/dist/snow-flow-darwin-arm64.tar.gz
+            packages/snowcode/dist/snow-flow-darwin-x64.tar.gz
+            packages/snowcode/dist/snow-flow-linux-arm64.tar.gz
+            packages/snowcode/dist/snow-flow-linux-x64.tar.gz
+            packages/snowcode/dist/snow-flow-windows-x64.tar.gz
           body: |
             ## Installation
 
@@ -239,5 +241,10 @@ jobs:
             - Monorepo structure with snow-code integration
             - 410+ MCP tools for ServiceNow development
             - Multi-platform binary support
+
+            ## Platform Binaries
+
+            Binaries are automatically downloaded during npm install.
+            Manual download available above if needed.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
