@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "9.0.3",
+  "version": "9.0.4",
   "name": "snow-flow",
   "description": "Snow-Flow - AI-powered ServiceNow development CLI with 410+ MCP tools",
   "type": "module",
@@ -33,9 +33,9 @@
     "release:major": "npm version major -m 'chore: Bump version to %s' && git push --no-verify && git push --tags --no-verify"
   },
   "bin": {
-    "snow-flow": "./bin/snow-code.js",
-    "snow-code": "./bin/snow-code.js",
-    "snowcode": "./bin/snow-code.js"
+    "snow-flow": "./bin/snow-code.cjs",
+    "snow-code": "./bin/snow-code.cjs",
+    "snowcode": "./bin/snow-code.cjs"
   },
   "exports": {
     "./*": "./src/*.ts"
