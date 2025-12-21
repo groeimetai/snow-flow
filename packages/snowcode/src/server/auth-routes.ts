@@ -134,27 +134,121 @@ async function saveProviderConfig(providerId: string, providerInfo?: { api?: str
   }
 }
 
+// Get the path to ServiceNow MCP unified server
+function getServiceNowUnifiedMCPPath(): string | undefined {
+  const { existsSync } = require("fs")
+
+  // Paths to check for the unified MCP server
+  const possiblePaths = [
+    // Global npm installation
+    (() => {
+      try {
+        const { execSync } = require("child_process")
+        const npmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim()
+        return path.join(npmRoot, 'snow-flow', 'dist', 'mcp', 'servicenow-mcp-unified', 'index.js')
+      } catch {
+        return null
+      }
+    })(),
+    // Local node_modules
+    path.join(process.cwd(), 'node_modules', 'snow-flow', 'dist', 'mcp', 'servicenow-mcp-unified', 'index.js'),
+    // Development - relative to this file (packages/snowcode/src/server/auth-routes.ts)
+    path.resolve(__dirname, '..', '..', '..', 'core', 'dist', 'mcp', 'servicenow-mcp-unified', 'index.js'),
+  ].filter(Boolean) as string[]
+
+  for (const mcpPath of possiblePaths) {
+    if (existsSync(mcpPath)) {
+      return mcpPath
+    }
+  }
+
+  return undefined
+}
+
+// Get the path to Snow-Flow orchestration MCP server
+function getSnowFlowOrchestrationMCPPath(): string | undefined {
+  const { existsSync } = require("fs")
+
+  const possiblePaths = [
+    // Global npm installation
+    (() => {
+      try {
+        const { execSync } = require("child_process")
+        const npmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim()
+        return path.join(npmRoot, 'snow-flow', 'dist', 'mcp', 'snow-flow-mcp.js')
+      } catch {
+        return null
+      }
+    })(),
+    // Local node_modules
+    path.join(process.cwd(), 'node_modules', 'snow-flow', 'dist', 'mcp', 'snow-flow-mcp.js'),
+    // Development
+    path.resolve(__dirname, '..', '..', '..', 'core', 'dist', 'mcp', 'snow-flow-mcp.js'),
+  ].filter(Boolean) as string[]
+
+  for (const mcpPath of possiblePaths) {
+    if (existsSync(mcpPath)) {
+      return mcpPath
+    }
+  }
+
+  return undefined
+}
+
 // Update MCP configs with ServiceNow credentials
 async function updateSnowCodeMCPConfigs(instance: string, clientId: string, clientSecret: string) {
   const instanceUrl = instance.startsWith("http") ? instance : `https://${instance}`
   const configPaths = [
     path.join(process.cwd(), ".mcp.json"),
-    path.join(process.cwd(), ".snow-code", "opencode.json"),
-    path.join(process.cwd(), ".snow-code", "config.json"),
     path.join(os.homedir(), ".config", "snow-code", "opencode.json"),
-    path.join(os.homedir(), ".config", "snow-code", "config.json"),
   ]
 
   const updatedServers = new Set<string>()
 
+  // Get paths to MCP servers
+  const serviceNowUnifiedPath = getServiceNowUnifiedMCPPath()
+  const snowFlowOrchestrationPath = getSnowFlowOrchestrationMCPPath()
+
   for (const configPath of configPaths) {
     try {
       const file = Bun.file(configPath)
-      if (!(await file.exists())) continue
+      let config: any = {}
 
-      const config = JSON.parse(await file.text())
-      if (!config.mcp) continue
+      if (await file.exists()) {
+        config = JSON.parse(await file.text())
+      }
 
+      config.mcp = config.mcp || {}
+
+      // CREATE servicenow-unified if not exists AND we found the path
+      if (serviceNowUnifiedPath && !config.mcp["servicenow-unified"]) {
+        config.mcp["servicenow-unified"] = {
+          type: "local",
+          command: ["node", serviceNowUnifiedPath],
+          environment: {
+            SERVICENOW_INSTANCE_URL: instanceUrl,
+            SERVICENOW_CLIENT_ID: clientId,
+            SERVICENOW_CLIENT_SECRET: clientSecret,
+          },
+          enabled: true,
+        }
+        updatedServers.add("servicenow-unified")
+      }
+
+      // CREATE snow-flow-orchestration if not exists AND we found the path
+      if (snowFlowOrchestrationPath && !config.mcp["snow-flow-orchestration"]) {
+        config.mcp["snow-flow-orchestration"] = {
+          type: "local",
+          command: ["node", snowFlowOrchestrationPath],
+          environment: {
+            SNOW_FLOW_ENV: "production",
+          },
+          enabled: true,
+        }
+        updatedServers.add("snow-flow-orchestration")
+      }
+
+      // UPDATE existing servers with ServiceNow credentials
       for (const serverName in config.mcp) {
         const serverConfig = config.mcp[serverName]
         if (serverConfig.environment) {
@@ -182,18 +276,20 @@ async function updateSnowCodeMCPConfigs(instance: string, clientId: string, clie
   // Restart any ServiceNow MCP servers that had their credentials updated
   // and reload to pick up any new servers
   if (updatedServers.size > 0) {
+    // First reload to pick up newly created configs
+    try {
+      await MCP.reload()
+    } catch {
+      // Silently continue
+    }
+
+    // Then restart each server to apply new credentials
     for (const serverName of updatedServers) {
       try {
         await MCP.restart(serverName)
       } catch {
         // Silently continue - MCP module has its own logging
       }
-    }
-
-    try {
-      await MCP.reload()
-    } catch {
-      // Silently continue
     }
   }
 }
