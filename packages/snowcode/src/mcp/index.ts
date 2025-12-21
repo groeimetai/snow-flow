@@ -452,48 +452,50 @@ export namespace MCP {
   /**
    * Restart a specific MCP server with fresh config from disk
    * This is needed when environment variables are updated (e.g., ServiceNow credentials)
+   * Also works to start a server that failed initial startup (e.g., due to placeholder credentials)
    */
   export async function restart(name: string): Promise<boolean> {
     const s = await state()
     const managed = s.clients[name]
 
-    if (!managed) {
-      log.warn("mcp client not found for restart", { name })
-      return false
+    // If client exists, close it first
+    if (managed) {
+      log.info("restarting mcp server with fresh config", { name })
+      try {
+        managed.manager.disconnect()
+        managed.client.close()
+      } catch (error) {
+        log.debug("error closing existing client", { name, error })
+      }
+      delete s.clients[name]
+    } else {
+      log.info("starting mcp server (was not running)", { name })
     }
-
-    log.info("restarting mcp server with fresh config", { name })
-
-    // Close the existing client
-    try {
-      managed.manager.disconnect()
-      managed.client.close()
-    } catch (error) {
-      log.debug("error closing existing client", { name, error })
-    }
-
-    // Remove from state
-    delete s.clients[name]
 
     // Read fresh config from disk
     const freshConfig = await Config.get()
     const newConfig = freshConfig.mcp?.[name]
 
     if (!newConfig) {
-      log.warn("mcp server config not found after restart", { name })
+      log.warn("mcp server config not found", { name })
+      return false
+    }
+
+    if (newConfig.enabled === false) {
+      log.info("mcp server is disabled in config", { name })
       return false
     }
 
     // Create new client with fresh config
     const result = await createWithRetry(name, newConfig).catch((error) => {
-      log.error("failed to restart mcp server", { name, error: error instanceof Error ? error.message : String(error) })
+      log.error("failed to start mcp server", { name, error: error instanceof Error ? error.message : String(error) })
       return undefined
     })
 
     if (result) {
       s.clients[name] = result
       s.config[name] = newConfig
-      log.info("mcp server restarted successfully", { name })
+      log.info("mcp server started successfully", { name })
       return true
     }
 
