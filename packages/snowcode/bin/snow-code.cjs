@@ -1,52 +1,24 @@
 #!/usr/bin/env node
-const { execSync, spawn } = require('child_process');
+const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
 const platform = os.platform() === 'win32' ? 'windows' : os.platform();
-const arch = os.arch();
+const arch = os.arch() === 'arm64' ? 'arm64' : 'x64';
 
-// Map architecture names
-const archMap = {
-  'arm64': 'arm64',
-  'x64': 'x64',
-  'x86_64': 'x64'
-};
+const binaryName = platform === 'windows' ? 'snow-code.exe' : 'snow-code';
+const platformDir = `snow-flow-${platform}-${arch}`;
 
-const mappedArch = archMap[arch] || 'x64';
-const packageName = `snow-flow-${platform}-${mappedArch}`;
+// Look for binary in package's bin directory
+const packageDir = path.dirname(__dirname);
+const binaryPath = path.join(packageDir, 'bin', platformDir, binaryName);
 
-// Search for binary in node_modules
-function findBinary() {
-  let dir = __dirname;
-
-  // Walk up looking for node_modules
-  while (dir !== path.dirname(dir)) {
-    // Check in sibling node_modules (for global install)
-    const globalPath = path.join(path.dirname(dir), 'node_modules', packageName, 'bin', platform === 'windows' ? 'snow-code.exe' : 'snow-code');
-    if (fs.existsSync(globalPath)) {
-      return globalPath;
-    }
-
-    // Check in parent's node_modules
-    const localPath = path.join(dir, 'node_modules', packageName, 'bin', platform === 'windows' ? 'snow-code.exe' : 'snow-code');
-    if (fs.existsSync(localPath)) {
-      return localPath;
-    }
-
-    dir = path.dirname(dir);
-  }
-
-  return null;
-}
-
-const binaryPath = findBinary();
-
-if (!binaryPath) {
-  console.error(`Error: Could not find snow-flow binary for ${platform}-${mappedArch}`);
-  console.error(`Expected package: ${packageName}`);
+if (!fs.existsSync(binaryPath)) {
+  console.error(`Error: Could not find snow-flow binary for ${platform}-${arch}`);
+  console.error(`Expected: ${binaryPath}`);
   console.error('');
+  console.error('Your platform may not be supported, or the package was not installed correctly.');
   console.error('Try reinstalling: npm install -g snow-flow');
   process.exit(1);
 }

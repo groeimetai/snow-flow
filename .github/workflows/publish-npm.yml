@@ -175,17 +175,17 @@ jobs:
             echo "version=$(cat packages/snowcode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
           fi
 
-      - name: Update package versions
+      - name: Bundle platform binaries into main package
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          echo "Updating all packages to version $VERSION"
+          echo "Bundling all platform binaries into main package"
 
-          # Update main package
           cd packages/snowcode
+
+          # Update version
           sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
 
-          # Remove devDependencies with workspace:* protocol before publishing
-          # These are bundled at build time by Bun and not needed for npm install
+          # Remove devDependencies with workspace:* protocol
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -196,32 +196,27 @@ jobs:
                 }
               });
             }
+            // Remove optionalDependencies since binaries are bundled
+            delete pkg.optionalDependencies;
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
-          echo "Removed workspace:* devDependencies for npm publish"
 
-          # Update platform binaries
-          cd dist
-          for dir in snow-flow-*/; do
-            if [ -d "$dir" ] && [ -f "$dir/package.json" ]; then
-              sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" "$dir/package.json"
-              echo "Updated $dir to version $VERSION"
-            fi
-          done
-
-      - name: Publish platform binaries (OIDC)
-        run: |
-          cd packages/snowcode/dist
-          for dir in snow-flow-*/; do
+          # Copy all platform binaries into bin/ directory
+          for dir in dist/snow-flow-*/; do
             if [ -d "$dir" ]; then
-              echo "Publishing $dir..."
-              cd "$dir"
-              npm publish --access public --provenance 2>&1 || echo "⚠️ Failed: $dir"
-              cd ..
+              platform_name=$(basename "$dir")
+              echo "Copying $platform_name binary..."
+              mkdir -p "bin/$platform_name"
+              cp -r "$dir/bin/"* "bin/$platform_name/" 2>/dev/null || true
+              # Make binaries executable
+              chmod +x "bin/$platform_name/"* 2>/dev/null || true
             fi
           done
 
-      - name: Publish main snow-flow package (OIDC)
+          echo "Platform binaries bundled:"
+          ls -la bin/
+
+      - name: Publish snow-flow package (OIDC)
         run: |
           cd packages/snowcode
           echo "Publishing snow-flow main package..."
