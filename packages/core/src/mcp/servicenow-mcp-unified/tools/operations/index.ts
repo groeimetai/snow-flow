@@ -12,7 +12,7 @@ export { toolDefinition as snow_search_artifacts_def, toolDefinitionAlias as sno
 
 // Record Operations (v8.2.0 Merged: create, update, delete → manage)
 export { toolDefinition as snow_record_manage_def, execute as snow_record_manage_exec } from './snow_record_manage.js';
-export { toolDefinition as snow_bulk_update_def, execute as snow_bulk_update_exec } from './snow_bulk_update.js';
+// Note: snow_bulk_update removed - functionality merged into snow_record_manage
 export { toolDefinition as snow_attach_file_def, execute as snow_attach_file_exec } from './snow_attach_file.js';
 
 // Incident Management

@@ -3,7 +3,7 @@
  */
 
 export { toolDefinition as snow_create_script_include_def, execute as snow_create_script_include_exec } from './snow_create_script_include.js';
-export { toolDefinition as snow_create_business_rule_def, execute as snow_create_business_rule_exec } from './snow_create_business_rule.js';
+// Note: snow_create_business_rule is in business-rules domain
 export { toolDefinition as snow_create_client_script_def, execute as snow_create_client_script_exec } from './snow_create_client_script.js';
 export { toolDefinition as snow_create_ui_policy_def, execute as snow_create_ui_policy_exec } from './snow_create_ui_policy.js';
 export { toolDefinition as snow_create_ui_action_def, execute as snow_create_ui_action_exec } from './snow_create_ui_action.js';
