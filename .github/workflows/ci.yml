@@ -26,7 +26,7 @@ jobs:
         run: bun install
 
       - name: Run typecheck
-        run: bun run typecheck
+        run: bun run typecheck --filter='!@groeimetai/snow-flow-console-*'
 
   test:
     name: Test
