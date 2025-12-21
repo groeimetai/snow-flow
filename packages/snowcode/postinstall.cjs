@@ -13,6 +13,9 @@ const binaryName = platform === 'windows' ? 'snow-code.exe' : 'snow-code';
 const packageDir = __dirname;
 const binDir = path.join(packageDir, 'bin');
 const binaryPath = path.join(binDir, binaryName);
+const distDir = path.join(packageDir, 'dist');
+const mcpDir = path.join(distDir, 'mcp');
+const mcpIndexPath = path.join(mcpDir, 'enterprise-proxy', 'index.js');
 
 // Get version from package.json
 function getVersion() {
@@ -95,16 +98,67 @@ async function downloadBinary() {
   }
 }
 
-// Only run if binary doesn't exist
-if (!fs.existsSync(binaryPath)) {
-  downloadBinary().catch(err => {
-    console.log(`Download failed: ${err.message}`);
-  });
-} else {
-  // Make sure it's executable
-  if (platform !== 'windows') {
-    try {
-      fs.chmodSync(binaryPath, 0o755);
-    } catch {}
+async function downloadMcpServers() {
+  const version = getVersion();
+  if (!version) {
+    console.log('Could not determine version, skipping MCP download');
+    return false;
+  }
+
+  const tarballName = 'snow-flow-mcp.tar.gz';
+  const releaseUrl = `https://github.com/groeimetai/snow-flow/releases/download/v${version}/${tarballName}`;
+
+  console.log('Downloading MCP servers...');
+
+  try {
+    // Download the tarball
+    const tarballData = await download(releaseUrl);
+
+    // Create temp file
+    const tmpDir = os.tmpdir();
+    const tarballPath = path.join(tmpDir, tarballName);
+    fs.writeFileSync(tarballPath, tarballData);
+
+    // Ensure dist directory exists
+    if (!fs.existsSync(distDir)) {
+      fs.mkdirSync(distDir, { recursive: true });
+    }
+
+    // Extract MCP servers
+    console.log('Extracting MCP servers...');
+    execSync(`tar -xzf "${tarballPath}" -C "${distDir}"`, { stdio: 'pipe' });
+
+    // Clean up
+    fs.unlinkSync(tarballPath);
+
+    console.log('✅ MCP servers installed successfully!');
+    return true;
+  } catch (error) {
+    console.log(`Note: Could not download MCP servers (${error.message})`);
+    console.log('Enterprise features may not be available.');
+    return false;
   }
 }
+
+async function main() {
+  // Download binary if needed
+  if (!fs.existsSync(binaryPath)) {
+    await downloadBinary();
+  } else {
+    // Make sure it's executable
+    if (platform !== 'windows') {
+      try {
+        fs.chmodSync(binaryPath, 0o755);
+      } catch {}
+    }
+  }
+
+  // Download MCP servers if needed
+  if (!fs.existsSync(mcpIndexPath)) {
+    await downloadMcpServers();
+  }
+}
+
+main().catch(err => {
+  console.log(`Postinstall failed: ${err.message}`);
+});

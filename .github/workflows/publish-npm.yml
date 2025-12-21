@@ -249,6 +249,14 @@ jobs:
               echo "Created ${platform_name}.tar.gz"
             fi
           done
+
+          # Create MCP servers tarball
+          if [ -d "mcp" ]; then
+            echo "Creating MCP servers tarball..."
+            tar -czf "snow-flow-mcp.tar.gz" mcp
+            echo "Created snow-flow-mcp.tar.gz"
+          fi
+
           ls -la *.tar.gz
 
       - name: Publish snow-flow package (OIDC)
@@ -268,6 +276,7 @@ jobs:
             packages/snowcode/dist/snow-flow-linux-arm64.tar.gz
             packages/snowcode/dist/snow-flow-linux-x64.tar.gz
             packages/snowcode/dist/snow-flow-windows-x64.tar.gz
+            packages/snowcode/dist/snow-flow-mcp.tar.gz
           body: |
             ## Installation
 

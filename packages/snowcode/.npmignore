@@ -18,6 +18,9 @@ gen/
 # Platform-specific binaries (downloaded during postinstall)
 dist/snow-flow-*/
 
+# MCP bundles (downloaded during postinstall)
+dist/mcp/
+
 # Documentation (optional)
 BUILD_GUIDE.md
 AGENTS.md
