@@ -47,8 +47,8 @@ await $`rm -rf dist`
 const binaries: Record<string, string> = {}
 for (const [os, arch] of targets) {
   console.log(`building ${os}-${arch}`)
-  // Use @groeimetai/snow-flow as base name for binary packages (workflow expects this pattern)
-  const name = `@groeimetai/snow-flow-${os}-${arch}`
+  // Use unscoped snow-flow as base name for binary packages (works with OIDC)
+  const name = `snow-flow-${os}-${arch}`
   await $`mkdir -p dist/${name}/bin`
   await $`CGO_ENABLED=0 GOOS=${os} GOARCH=${GOARCH[arch]} go build -ldflags="-s -w -X main.Version=${pkg.version}" -o ../snowcode/dist/${name}/bin/tui ../tui/cmd/snowcode/snowcode/main.go`
     .cwd("../tui")

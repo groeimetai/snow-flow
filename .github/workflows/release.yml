@@ -19,23 +19,18 @@ jobs:
     strategy:
       matrix:
         include:
-          # macOS builds
           - os: darwin
             arch: arm64
             runner: macos-latest
           - os: darwin
             arch: x64
             runner: macos-15
-
-          # Linux builds
           - os: linux
             arch: x64
             runner: ubuntu-latest
           - os: linux
             arch: arm64
             runner: ubuntu-latest
-
-          # Windows builds
           - os: windows
             arch: x64
             runner: windows-latest
@@ -106,10 +101,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: snow-flow-${{ matrix.os }}-${{ matrix.arch }}
-          path: packages/snowcode/dist/@groeimetai/snow-flow-${{ matrix.os }}-${{ matrix.arch }}/
+          path: packages/snowcode/dist/snow-flow-${{ matrix.os }}-${{ matrix.arch }}/
           retention-days: 7
 
-  # Publish all binaries to npm
+  # Publish all packages to npm
   publish:
     name: Publish to npm
     needs: build
@@ -117,7 +112,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
-      id-token: write
+      id-token: write  # Required for npm OIDC
 
     steps:
       - name: Checkout code
@@ -156,7 +151,7 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: packages/snowcode/dist/@groeimetai/
+          path: packages/snowcode/dist/
 
       - name: Get version
         id: version
@@ -172,37 +167,40 @@ jobs:
       - name: Update package versions
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          echo "Updating all packages to version $VERSION"
+
+          # Update main package
           cd packages/snowcode
           sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
-          cd dist/@groeimetai
-          for dir in snow-flow-*; do
+
+          # Update platform binaries
+          cd dist
+          for dir in snow-flow-*/; do
             if [ -d "$dir" ] && [ -f "$dir/package.json" ]; then
               sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" "$dir/package.json"
+              echo "Updated $dir to version $VERSION"
             fi
           done
 
       - name: Publish platform binaries (OIDC)
         run: |
-          cd packages/snowcode/dist/@groeimetai
-          for dir in snow-flow-*; do
+          cd packages/snowcode/dist
+          for dir in snow-flow-*/; do
             if [ -d "$dir" ]; then
               echo "Publishing $dir..."
               cd "$dir"
-              npm publish --access public --tag latest --provenance || echo "Failed: $dir"
+              npm publish --access public || echo "⚠️ Failed: $dir (may already exist or need token)"
               cd ..
             fi
           done
         # npm CLI automatically uses OIDC when id-token: write is set
 
-      - name: Publish main package (OIDC)
+      - name: Publish main snow-flow package (OIDC)
         run: |
           cd packages/snowcode
-          npm publish --access public --tag latest --provenance || echo "Failed: main package"
-
-      - name: Publish core package (OIDC)
-        run: |
-          cd packages/core
-          npm publish --access public --tag latest --provenance || echo "Failed: core package"
+          echo "Publishing snow-flow main package..."
+          npm publish --access public
+        # This should work since 'snow-flow' already exists on npm
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -216,12 +214,10 @@ jobs:
             npm install -g snow-flow@${{ steps.version.outputs.version }}
             ```
 
-            ## Platform Binaries
+            ## What's New in v9
 
-            - `@groeimetai/snow-flow-darwin-arm64`
-            - `@groeimetai/snow-flow-darwin-x64`
-            - `@groeimetai/snow-flow-linux-arm64`
-            - `@groeimetai/snow-flow-linux-x64`
-            - `@groeimetai/snow-flow-windows-x64`
+            - Monorepo structure with snow-code integration
+            - 410+ MCP tools for ServiceNow development
+            - Multi-platform binary support
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

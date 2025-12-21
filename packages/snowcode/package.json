@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "version": "9.0.0",
-  "name": "@groeimetai/snow-flow-snowcode",
-  "description": "Snow-Flow Snowcode - AI-powered ServiceNow development CLI",
+  "name": "snow-flow",
+  "description": "Snow-Flow - AI-powered ServiceNow development CLI with 410+ MCP tools",
   "type": "module",
   "author": "Snow-Flow Team",
   "license": "Apache-2.0",
@@ -105,10 +105,10 @@
     "tsx": "4.20.6"
   },
   "optionalDependencies": {
-    "@groeimetai/snow-flow-darwin-arm64": "*",
-    "@groeimetai/snow-flow-darwin-x64": "*",
-    "@groeimetai/snow-flow-linux-arm64": "*",
-    "@groeimetai/snow-flow-linux-x64": "*",
-    "@groeimetai/snow-flow-windows-x64": "*"
+    "snow-flow-darwin-arm64": "*",
+    "snow-flow-darwin-x64": "*",
+    "snow-flow-linux-arm64": "*",
+    "snow-flow-linux-x64": "*",
+    "snow-flow-windows-x64": "*"
   }
 }
