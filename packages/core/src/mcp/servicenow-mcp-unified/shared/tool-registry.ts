@@ -1,7 +1,8 @@
 /**
- * Tool Registry with Auto-Discovery
+ * Tool Registry with Auto-Discovery and Static Fallback
  *
  * Automatically discovers and registers tools from the tools/ directory.
+ * Falls back to static imports when running in bundled mode.
  * Supports dynamic loading, validation, and hot-reload during development.
  */
 
@@ -17,10 +18,136 @@ import {
   ToolMetadata
 } from './types';
 
+// Static tool imports for bundled mode
+// These are imported at build time and included in the bundle
+import * as operationsTools from '../tools/operations/index.js';
+import * as deploymentTools from '../tools/deployment/index.js';
+import * as cmdbTools from '../tools/cmdb/index.js';
+import * as knowledgeTools from '../tools/knowledge/index.js';
+import * as catalogTools from '../tools/catalog/index.js';
+import * as changeTools from '../tools/change/index.js';
+import * as eventsTools from '../tools/events/index.js';
+import * as userAdminTools from '../tools/user-admin/index.js';
+import * as accessControlTools from '../tools/access-control/index.js';
+import * as dataManagementTools from '../tools/data-management/index.js';
+import * as importExportTools from '../tools/import-export/index.js';
+import * as workflowTools from '../tools/workflow/index.js';
+import * as scheduledJobsTools from '../tools/scheduled-jobs/index.js';
+import * as emailTools from '../tools/email/index.js';
+import * as formsTools from '../tools/forms/index.js';
+import * as listsTools from '../tools/lists/index.js';
+import * as businessRulesTools from '../tools/business-rules/index.js';
+import * as slaTools from '../tools/sla/index.js';
+import * as approvalsTools from '../tools/approvals/index.js';
+import * as attachmentsTools from '../tools/attachments/index.js';
+import * as uiPoliciesTools from '../tools/ui-policies/index.js';
+import * as metricsTools from '../tools/metrics/index.js';
+import * as dashboardsTools from '../tools/dashboards/index.js';
+import * as menusTools from '../tools/menus/index.js';
+import * as applicationsTools from '../tools/applications/index.js';
+import * as queuesTools from '../tools/queues/index.js';
+import * as journalsTools from '../tools/journals/index.js';
+import * as dataPoliciesTools from '../tools/data-policies/index.js';
+import * as workspaceTools from '../tools/workspace/index.js';
+import * as templatesTools from '../tools/templates/index.js';
+import * as schedulesTools from '../tools/schedules/index.js';
+import * as variablesTools from '../tools/variables/index.js';
+import * as validatorsTools from '../tools/validators/index.js';
+import * as connectorsTools from '../tools/connectors/index.js';
+import * as adaptersTools from '../tools/adapters/index.js';
+import * as handlersTools from '../tools/handlers/index.js';
+import * as filtersTools from '../tools/filters/index.js';
+import * as formattersTools from '../tools/formatters/index.js';
+import * as encodersTools from '../tools/encoders/index.js';
+import * as utilitiesTools from '../tools/utilities/index.js';
+import * as helpersTools from '../tools/helpers/index.js';
+import * as extensionsTools from '../tools/extensions/index.js';
+import * as convertersTools from '../tools/converters/index.js';
+import * as advancedTools from '../tools/advanced/index.js';
+import * as assetTools from '../tools/asset/index.js';
+import * as securityTools from '../tools/security/index.js';
+import * as reportingTools from '../tools/reporting/index.js';
+import * as hrCsmTools from '../tools/hr-csm/index.js';
+import * as notificationsTools from '../tools/notifications/index.js';
+import * as mobileTools from '../tools/mobile/index.js';
+import * as atfTools from '../tools/atf/index.js';
+import * as automationTools from '../tools/automation/index.js';
+import * as updateSetsTools from '../tools/update-sets/index.js';
+import * as localSyncTools from '../tools/local-sync/index.js';
+import * as uiBuilderTools from '../tools/ui-builder/index.js';
+import * as integrationTools from '../tools/integration/index.js';
+import * as platformTools from '../tools/platform/index.js';
+import * as devopsTools from '../tools/devops/index.js';
+import * as virtualAgentTools from '../tools/virtual-agent/index.js';
+
+// Map of domain name to imported tools module
+const STATIC_TOOL_MODULES: Record<string, any> = {
+  'operations': operationsTools,
+  'deployment': deploymentTools,
+  'cmdb': cmdbTools,
+  'knowledge': knowledgeTools,
+  'catalog': catalogTools,
+  'change': changeTools,
+  'events': eventsTools,
+  'user-admin': userAdminTools,
+  'access-control': accessControlTools,
+  'data-management': dataManagementTools,
+  'import-export': importExportTools,
+  'workflow': workflowTools,
+  'scheduled-jobs': scheduledJobsTools,
+  'email': emailTools,
+  'forms': formsTools,
+  'lists': listsTools,
+  'business-rules': businessRulesTools,
+  'sla': slaTools,
+  'approvals': approvalsTools,
+  'attachments': attachmentsTools,
+  'ui-policies': uiPoliciesTools,
+  'metrics': metricsTools,
+  'dashboards': dashboardsTools,
+  'menus': menusTools,
+  'applications': applicationsTools,
+  'queues': queuesTools,
+  'journals': journalsTools,
+  'data-policies': dataPoliciesTools,
+  'workspace': workspaceTools,
+  'templates': templatesTools,
+  'schedules': schedulesTools,
+  'variables': variablesTools,
+  'validators': validatorsTools,
+  'connectors': connectorsTools,
+  'adapters': adaptersTools,
+  'handlers': handlersTools,
+  'filters': filtersTools,
+  'formatters': formattersTools,
+  'encoders': encodersTools,
+  'utilities': utilitiesTools,
+  'helpers': helpersTools,
+  'extensions': extensionsTools,
+  'converters': convertersTools,
+  'advanced': advancedTools,
+  'asset': assetTools,
+  'security': securityTools,
+  'reporting': reportingTools,
+  'hr-csm': hrCsmTools,
+  'notifications': notificationsTools,
+  'mobile': mobileTools,
+  'atf': atfTools,
+  'automation': automationTools,
+  'update-sets': updateSetsTools,
+  'local-sync': localSyncTools,
+  'ui-builder': uiBuilderTools,
+  'integration': integrationTools,
+  'platform': platformTools,
+  'devops': devopsTools,
+  'virtual-agent': virtualAgentTools,
+};
+
 export class ToolRegistry {
   private tools: Map<string, RegisteredTool> = new Map();
   private config: ToolRegistryConfig;
   private discoveryInProgress = false;
+  private useStaticMode = false;
 
   constructor(config: Partial<ToolRegistryConfig> = {}) {
     this.config = {
@@ -34,10 +161,10 @@ export class ToolRegistry {
   }
 
   /**
-   * Initialize tool registry with auto-discovery
+   * Initialize tool registry with auto-discovery or static fallback
    */
   async initialize(): Promise<ToolDiscoveryResult> {
-    console.log('[ToolRegistry] Initializing with auto-discovery...');
+    console.log('[ToolRegistry] Initializing...');
 
     const startTime = Date.now();
     const result: ToolDiscoveryResult = {
@@ -49,13 +176,15 @@ export class ToolRegistry {
       duration: 0
     };
 
-    try {
-      // Discover all domains (subdirectories in tools/)
-      const domains = await this.discoverDomains();
+    // First, try file-based discovery
+    const domains = await this.discoverDomains();
+
+    if (domains.length > 0) {
+      // File discovery worked - use dynamic loading
+      console.log('[ToolRegistry] Using file-based discovery mode');
       result.domains = domains;
       console.log(`[ToolRegistry] Found ${domains.length} domains: ${domains.join(', ')}`);
 
-      // Discover and register tools from each domain
       for (const domain of domains) {
         const domainPath = path.join(this.config.toolsDirectory, domain);
         const domainResult = await this.discoverDomainTools(domain, domainPath);
@@ -65,25 +194,90 @@ export class ToolRegistry {
         result.toolsFailed += domainResult.toolsFailed;
         result.errors.push(...domainResult.errors);
       }
+    } else {
+      // File discovery failed - use static imports (bundled mode)
+      console.log('[ToolRegistry] File discovery failed, using static imports (bundled mode)');
+      this.useStaticMode = true;
 
-      result.duration = Date.now() - startTime;
-
-      console.log('[ToolRegistry] Discovery complete:');
-      console.log(`  - Tools found: ${result.toolsFound}`);
-      console.log(`  - Tools registered: ${result.toolsRegistered}`);
-      console.log(`  - Tools failed: ${result.toolsFailed}`);
-      console.log(`  - Duration: ${result.duration}ms`);
-
-      // Export tool definitions to JSON
-      if (result.toolsRegistered > 0) {
-        await this.exportToolDefinitions();
-      }
-
-    } catch (error: any) {
-      console.error('[ToolRegistry] Discovery failed:', error.message);
-      throw error;
+      const staticResult = await this.loadStaticTools();
+      result.domains = staticResult.domains;
+      result.toolsFound = staticResult.toolsFound;
+      result.toolsRegistered = staticResult.toolsRegistered;
+      result.toolsFailed = staticResult.toolsFailed;
+      result.errors = staticResult.errors;
     }
 
+    result.duration = Date.now() - startTime;
+
+    console.log('[ToolRegistry] Initialization complete:');
+    console.log(`  - Mode: ${this.useStaticMode ? 'static (bundled)' : 'dynamic (file-based)'}`);
+    console.log(`  - Domains: ${result.domains.length}`);
+    console.log(`  - Tools found: ${result.toolsFound}`);
+    console.log(`  - Tools registered: ${result.toolsRegistered}`);
+    console.log(`  - Tools failed: ${result.toolsFailed}`);
+    console.log(`  - Duration: ${result.duration}ms`);
+
+    return result;
+  }
+
+  /**
+   * Load tools from static imports (for bundled mode)
+   */
+  private async loadStaticTools(): Promise<ToolDiscoveryResult> {
+    const result: ToolDiscoveryResult = {
+      toolsFound: 0,
+      toolsRegistered: 0,
+      toolsFailed: 0,
+      domains: [],
+      errors: [],
+      duration: 0
+    };
+
+    for (const [domain, toolModule] of Object.entries(STATIC_TOOL_MODULES)) {
+      result.domains.push(domain);
+
+      // Find all tool definitions and executors in the module
+      // Pattern: toolDefinition ends with _def, execute function ends with _exec
+      const exports = Object.keys(toolModule);
+      const defExports = exports.filter(key => key.endsWith('_def'));
+
+      for (const defKey of defExports) {
+        const baseName = defKey.replace(/_def$/, '');
+        const execKey = baseName + '_exec';
+
+        const definition = toolModule[defKey];
+        const executor = toolModule[execKey];
+
+        if (definition && executor) {
+          result.toolsFound++;
+
+          try {
+            // Register the tool
+            const registeredTool: RegisteredTool = {
+              definition,
+              executor,
+              domain,
+              filePath: `static:${domain}/${baseName}`,
+              metadata: {
+                addedAt: new Date(),
+                version: '1.0.0'
+              }
+            };
+
+            this.tools.set(definition.name, registeredTool);
+            result.toolsRegistered++;
+          } catch (error: any) {
+            result.toolsFailed++;
+            result.errors.push({
+              filePath: `static:${domain}/${baseName}`,
+              error: error.message
+            });
+          }
+        }
+      }
+    }
+
+    console.log(`[ToolRegistry] Loaded ${result.toolsRegistered} tools from ${result.domains.length} domains (static mode)`);
     return result;
   }
 
