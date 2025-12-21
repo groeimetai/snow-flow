@@ -18,6 +18,7 @@ import { AnthropicAuthProvider } from "../auth/providers/anthropic"
 import { GitHubCopilotAuthProvider } from "../auth/providers/github-copilot"
 import type { BuiltInAuthProvider, AuthMethod } from "../auth/providers/types"
 import { MCP } from "../mcp"
+import { Instance } from "../project/instance"
 
 // Registry of built-in auth providers with OAuth support
 const AUTH_PROVIDERS: Record<string, BuiltInAuthProvider> = {
@@ -179,12 +180,28 @@ async function updateSnowCodeMCPConfigs(instance: string, clientId: string, clie
     }
   }
 
-  // Restart any ServiceNow MCP servers that had their credentials updated
-  for (const serverName of updatedServers) {
+  // Clear config cache so MCP reads fresh config from disk
+  if (updatedServers.size > 0) {
     try {
-      await MCP.restart(serverName)
+      await Instance.dispose()
     } catch {
-      // Silently continue - MCP module has its own logging
+      // Ignore disposal errors
+    }
+
+    // Restart any ServiceNow MCP servers that had their credentials updated
+    for (const serverName of updatedServers) {
+      try {
+        await MCP.restart(serverName)
+      } catch {
+        // Silently continue - MCP module has its own logging
+      }
+    }
+
+    // Also reload to pick up any new servers
+    try {
+      await MCP.reload()
+    } catch {
+      // Silently continue
     }
   }
 }
@@ -2619,8 +2636,9 @@ async function updateEnterpriseMcpConfig(token: string, mcpServerUrl: string) {
     // Skip on error
   }
 
-  // Reload MCP configuration to pick up the new enterprise server
+  // Clear config cache and reload MCP configuration to pick up the new enterprise server
   try {
+    await Instance.dispose()
     await MCP.reload()
   } catch {
     // Silently continue - MCP module has its own logging
