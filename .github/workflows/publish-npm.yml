@@ -184,6 +184,22 @@ jobs:
           cd packages/snowcode
           sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
 
+          # Remove devDependencies with workspace:* protocol before publishing
+          # These are bundled at build time by Bun and not needed for npm install
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            if (pkg.devDependencies) {
+              Object.keys(pkg.devDependencies).forEach(key => {
+                if (pkg.devDependencies[key].includes('workspace:')) {
+                  delete pkg.devDependencies[key];
+                }
+              });
+            }
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "Removed workspace:* devDependencies for npm publish"
+
           # Update platform binaries
           cd dist
           for dir in snow-flow-*/; do

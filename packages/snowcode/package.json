@@ -41,6 +41,8 @@
   },
   "devDependencies": {
     "@groeimetai/snow-flow-script": "workspace:*",
+    "@groeimetai/snow-flow-sdk": "workspace:*",
+    "@groeimetai/snow-flow-plugin": "workspace:*",
     "@ai-sdk/amazon-bedrock": "2.2.10",
     "@ai-sdk/google-vertex": "3.0.16",
     "@octokit/webhooks-types": "7.6.1",
@@ -62,8 +64,6 @@
     "zod-to-json-schema": "3.24.5"
   },
   "dependencies": {
-    "@groeimetai/snow-flow-sdk": "workspace:*",
-    "@groeimetai/snow-flow-plugin": "workspace:*",
     "@actions/core": "1.11.1",
     "@actions/github": "6.0.1",
     "@agentclientprotocol/sdk": "0.4.9",
