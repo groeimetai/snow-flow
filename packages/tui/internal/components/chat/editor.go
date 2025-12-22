@@ -427,11 +427,10 @@ func (m *editorComponent) Content() string {
 
 func (m *editorComponent) Cursor() *tea.Cursor {
 	c := m.textarea.Cursor()
-	if c != nil {
-		// Adjust cursor position to account for:
-		// 1. Empty line before content (from strings.Join with "")
-		// 2. PaddingTop(1) added when styling the textarea
-		c.Position.Y += 2
+	if c != nil && m.app.Session.ID != "" {
+		// Only adjust for chat view (not home screen)
+		// The chat layout has different positioning that requires adjustment
+		c.Position.Y -= 1
 	}
 	return c
 }
