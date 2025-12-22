@@ -1,5 +1,6 @@
 steps:
   # Build the Health API Docker image
+  # NOTE: Build context is repo root (.) because Dockerfile needs package.json from root
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -11,7 +12,7 @@ steps:
       - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-health-api:latest'
       - '-f'
       - 'apps/health-api/Dockerfile'
-      - 'apps/health-api'
+      - '.'
 
   # Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
