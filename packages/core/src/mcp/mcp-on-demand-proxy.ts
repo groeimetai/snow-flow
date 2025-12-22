@@ -73,15 +73,7 @@ const TOOL_SERVER_MAP: Record<string, string> = {
   // Intelligent tools
   'snow_batch_api': 'servicenow-intelligent',
   'snow_analyze_query': 'servicenow-intelligent',
-  'snow_predict_change_impact': 'servicenow-intelligent',
-  
-  // Snow-Flow tools
-  'swarm_init': 'snow-flow',
-  'agent_spawn': 'snow-flow',
-  'task_orchestrate': 'snow-flow',
-  'memory_usage': 'snow-flow',
-  'neural_status': 'snow-flow',
-  'task_categorize': 'snow-flow'
+  'snow_predict_change_impact': 'servicenow-intelligent'
 };
 
 class MCPOnDemandProxy {

@@ -11,14 +11,6 @@
       },
       "enabled": true
     },
-    "snow-flow-orchestration": {
-      "type": "local",
-      "command": ["node", "{{PROJECT_ROOT}}/dist/mcp/snow-flow-mcp.js"],
-      "environment": {
-        "SNOW_FLOW_ENV": "{{SNOW_FLOW_ENV}}"
-      },
-      "enabled": true
-    },
     "snow-flow-enterprise": {
       "type": "local",
       "command": ["node", "{{PROJECT_ROOT}}/dist/mcp/enterprise-proxy/server.js"],

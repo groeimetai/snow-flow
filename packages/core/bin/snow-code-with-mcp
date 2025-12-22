@@ -115,7 +115,7 @@ setTimeout(function() {
       // Kill all node processes running MCP servers
       var { execSync } = require('child_process');
       try {
-        execSync('pkill -f "servicenow-mcp-unified\\|snow-flow-mcp" 2>/dev/null || true');
+        execSync('pkill -f "servicenow-mcp-unified" 2>/dev/null || true');
         console.log('   ✅ MCP servers stopped');
       } catch (e) {
         // Ignore errors

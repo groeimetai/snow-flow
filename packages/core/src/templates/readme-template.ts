@@ -1,6 +1,6 @@
 export const README_TEMPLATE = `# Snow-Flow: AI-Powered ServiceNow Development Platform 🚀
 
-Snow-Flow is a powerful AI development platform for ServiceNow that combines **22 specialized MCP servers** with **multi-agent orchestration** to revolutionize ServiceNow development. Build widgets, flows, workspaces, and complete applications using natural language commands.
+Snow-Flow is a powerful AI development platform for ServiceNow that combines **17 specialized MCP servers** with **intelligent automation** to revolutionize ServiceNow development. Build widgets, flows, workspaces, and complete applications using natural language commands.
 
 ## 🎯 What Can Snow-Flow Do?
 
@@ -10,9 +10,9 @@ Snow-Flow is a powerful AI development platform for ServiceNow that combines **2
 - **Deploy UI Builder Pages** - "Build a customer portal page with service catalog"
 - **Manage CMDB** - "Find all Windows servers and update their maintenance windows"
 - **Train ML Models** - "Create a Predictive Intelligence solution to categorize incidents"
-- **And much more!** - 22 MCP servers with 400+ tools for complete ServiceNow development
+- **And much more!** - 17 MCP servers with 400+ tools for complete ServiceNow development
 
-## 🚀 Quick Start (5 Minutes)
+## 🚀 Quick Start (2 Minutes)
 
 ### 1. Install Snow-Flow
 
@@ -20,43 +20,37 @@ Snow-Flow is a powerful AI development platform for ServiceNow that combines **2
 npm install -g snow-flow
 \`\`\`
 
-### 2. Initialize Your Project
+### 2. Start Snow-Flow
 
 \`\`\`bash
-# Create a new directory or use existing project
-mkdir my-servicenow-project
-cd my-servicenow-project
-
-# Initialize Snow-Flow (creates .env, CLAUDE.md, MCP config)
-snow-flow init
+# Start the TUI (auto-initializes on first run)
+snow-flow
 \`\`\`
 
-### 3. Authenticate
+### 3. Authenticate (in TUI)
 
 \`\`\`bash
-# Authenticate with LLM provider (Claude/OpenAI/Gemini) AND ServiceNow
-snow-flow auth login
+# In the TUI, type /auth to authenticate
+/auth
 \`\`\`
 
 This will:
-- ✅ Authenticate with your preferred LLM provider (via SnowCode)
+- ✅ Authenticate with your preferred LLM provider
 - ✅ Save your provider choice to .env
 - ✅ Configure ServiceNow OAuth credentials
 - ✅ Test the connection and show your username
 
 ### 4. Start Building!
 
-\`\`\`bash
-# Use the agent command to build anything in ServiceNow
-snow-flow agent "create an incident dashboard widget"
+Just type your request in natural language:
 
-# Or use SnowCode/snow-code directly (MCP servers auto-configured)
-snow-code  # All 22 MCP servers available automatically
+\`\`\`
+Create an incident dashboard widget
 \`\`\`
 
 ## 🎯 Key Features
 
-### 🤖 22 Specialized MCP Servers (400+ Tools)
+### 🤖 17 Specialized MCP Servers (400+ Tools)
 
 Snow-Flow includes the most comprehensive ServiceNow MCP server collection:
 
@@ -77,26 +71,20 @@ Snow-Flow includes the most comprehensive ServiceNow MCP server collection:
 15. **ServiceNow CMDB, Event, HR, CSM & DevOps** - Configuration management, HR services, customer service
 16. **ServiceNow Advanced Features** - Batch operations, query optimization, process mining
 17. **ServiceNow Local Development** - Artifact sync with local files for debugging
-18. **Snow-Flow Orchestration** - Multi-agent coordination and task management
-19. **Snow-Flow Memory** - Persistent memory and context management
-20. **Snow-Flow Neural** - Neural network training with TensorFlow.js
-21. **Snow-Flow Graph** - Relationship tracking and impact analysis
-22. **Snow-Flow Performance** - Performance monitoring and optimization
 
 ### 🔄 Multi-Agent Orchestration
 
-The \`agent\` command coordinates multiple specialized agents to handle complex tasks:
+Snow-Flow coordinates multiple specialized agents to handle complex tasks. Just describe what you want:
 
-\`\`\`bash
-# Single command handles everything: planning, execution, testing, deployment
-snow-flow agent "build a complete incident management workspace with dashboards"
+\`\`\`
+Build a complete incident management workspace with dashboards
 \`\`\`
 
-### 🎨 SnowCode + Claude Code Support
+### 🎨 Built-in TUI + Claude Code Support
 
-Snow-Flow works seamlessly with both AI platforms:
+Snow-Flow works seamlessly with multiple AI platforms:
 
-- **SnowCode**: Native Task() integration, all 22 MCP servers auto-configured
+- **Snow-Flow TUI**: Built-in terminal interface with all MCP servers
 - **Claude Code**: Full MCP support via .claude/config.json
 - **Both**: Share the same CLAUDE.md instructions and .env configuration
 
@@ -127,79 +115,73 @@ snow_push_artifact({ sys_id: 'widget_sys_id' })
 
 ## 📚 Usage Examples
 
+Just type your request in the Snow-Flow TUI:
+
 ### Create a Service Portal Widget
 
-\`\`\`bash
-snow-flow agent "create a widget showing top 10 open incidents with priority indicators"
+\`\`\`
+Create a widget showing top 10 open incidents with priority indicators
 \`\`\`
 
 ### Build an Agent Workspace
 
-\`\`\`bash
-snow-flow agent "create an agent workspace for ITIL fulfillment with task lists and approvals"
+\`\`\`
+Create an agent workspace for ITIL fulfillment with task lists and approvals
 \`\`\`
 
 ### Design a Flow Designer Flow
 
-\`\`\`bash
-snow-flow agent "create an approval flow for purchase requests over $5000"
+\`\`\`
+Create an approval flow for purchase requests over $5000
 \`\`\`
 
 ### Train a Machine Learning Model
 
-\`\`\`bash
-snow-flow agent "create a Predictive Intelligence solution to predict incident categories"
+\`\`\`
+Create a Predictive Intelligence solution to predict incident categories
 \`\`\`
 
 ### Build a UI Builder Page
 
-\`\`\`bash
-snow-flow agent "create a UI Builder page with a list of incidents and a detail panel"
+\`\`\`
+Create a UI Builder page with a list of incidents and a detail panel
 \`\`\`
 
 ### Update CMDB Configuration Items
 
-\`\`\`bash
-snow-flow agent "find all Linux servers in Boston datacenter and update their support group"
+\`\`\`
+Find all Linux servers in Boston datacenter and update their support group
 \`\`\`
 
 ### Generate Reports and Dashboards
 
-\`\`\`bash
-snow-flow agent "create a dashboard showing SLA compliance trends for the last 30 days"
+\`\`\`
+Create a dashboard showing SLA compliance trends for the last 30 days
 \`\`\`
 
 ## 🔧 Commands Reference
 
-### Authentication
+### CLI Commands
 \`\`\`bash
-snow-flow auth login   # Authenticate with LLM provider and ServiceNow
-snow-flow auth logout  # Logout from ServiceNow
-snow-flow auth status  # Check authentication status
+snow-flow              # Start the TUI (auto-initializes on first run)
+snow-flow --version    # Show Snow-Flow version
+snow-flow --help       # Show help
 \`\`\`
 
-### Project Management
-\`\`\`bash
-snow-flow init         # Initialize Snow-Flow in current directory
-snow-flow version      # Show Snow-Flow version
+### TUI Commands (inside Snow-Flow)
 \`\`\`
-
-### Development
-\`\`\`bash
-snow-flow agent "<task>"  # Multi-agent orchestration for complex tasks
-\`\`\`
-
-### Direct AI Usage
-\`\`\`bash
-snow-code              # Start SnowCode with all 22 MCP servers
-claude                 # Start Claude Code with MCP servers (if installed)
+/auth                  # Authenticate with LLM, ServiceNow, and Enterprise
+/help                  # Show available commands
+/clear                 # Clear conversation
+/compact               # Toggle compact mode
+/exit                  # Exit Snow-Flow
 \`\`\`
 
 ## 🛠️ Configuration
 
 ### .env File
 
-Created by \`snow-flow init\`, configure these variables:
+Created automatically on first run, configure these variables:
 
 \`\`\`env
 # ServiceNow Instance
@@ -225,11 +207,11 @@ ANTHROPIC_API_KEY=sk-ant-...
    - **Client Secret**: (auto-generated, copy this)
    - **Redirect URL**: http://localhost:3000/oauth/callback
 5. Save and copy Client ID and Secret to your .env file
-6. Run \`snow-flow auth login\` to complete authentication
+6. Run \`snow-flow\` and use \`/auth\` to complete authentication
 
 ## 📁 Project Structure
 
-After running \`snow-flow init\`:
+After first run of \`snow-flow\`:
 
 \`\`\`
 your-project/
@@ -273,24 +255,18 @@ your-project/
 
 ## 🐛 Troubleshooting
 
-### "SnowCode is not installed"
-
-\`\`\`bash
-npm install -g @groeimetai/snow-code
-\`\`\`
-
 ### "ServiceNow authentication failed"
 
 1. Check your .env credentials are correct
 2. Verify OAuth application is configured in ServiceNow
 3. Ensure redirect URL is http://localhost:3000/oauth/callback
-4. Run \`snow-flow auth status\` to see detailed error
+4. Run \`/auth\` again in the TUI
 
 ### "MCP servers not loading"
 
-1. Make sure you ran \`snow-flow init\` in your project directory
+1. Make sure you ran \`snow-flow\` in your project directory
 2. Check that .snow-code/config.json exists
-3. Restart snow-code after running init
+3. Restart snow-flow
 
 ### "Widget coherence validation failed"
 
@@ -326,10 +302,10 @@ For full license details: https://www.elastic.co/licensing/elastic-license
 
 \`\`\`bash
 npm install -g snow-flow
-snow-flow init
-snow-flow auth login
-snow-flow agent "create an awesome ServiceNow widget"
+snow-flow
 \`\`\`
+
+Then type \`/auth\` to authenticate and start building!
 
 🚀 **Happy building!**
 `;

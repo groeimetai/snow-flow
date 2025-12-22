@@ -324,8 +324,7 @@ export class MCPOnDemandManager {
       'servicenow-flow-composer': 'servicenow-flow-composer-mcp.js',
       'servicenow-intelligent': 'servicenow-intelligent-mcp.js',
       'servicenow-development-assistant': 'servicenow-development-assistant-mcp.js',
-      'servicenow-graph-memory': 'servicenow-graph-memory-mcp.js',
-      'snow-flow': 'snow-flow-mcp.js'
+      'servicenow-graph-memory': 'servicenow-graph-memory-mcp.js'
     };
     
     const scriptFile = serverMap[serverName];

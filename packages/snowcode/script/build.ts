@@ -232,32 +232,6 @@ if (fs.existsSync(servicenowUnifiedMcpPath)) {
   console.warn("⚠️ ServiceNow Unified MCP not found at:", servicenowUnifiedMcpPath)
 }
 
-// Bundle Snow-Flow Orchestration MCP server (required for .mcp.json snow-flow-orchestration)
-const snowFlowMcpPath = path.join(corePackagePath, "src/mcp/snow-flow-mcp.ts")
-if (fs.existsSync(snowFlowMcpPath)) {
-  console.log("Bundling Snow-Flow Orchestration MCP server...")
-
-  const snowFlowMcpResult = await Bun.build({
-    entrypoints: [snowFlowMcpPath],
-    outdir: path.join(dir, "dist/mcp"),
-    target: "node",
-    format: "esm",
-    minify: false,
-    sourcemap: "external",
-    define: {
-      "process.env.SNOW_FLOW_VERSION": `"${pkg.version}"`,
-    },
-  })
-
-  if (!snowFlowMcpResult.success) {
-    console.error("Failed to bundle Snow-Flow MCP:", snowFlowMcpResult.logs)
-  } else {
-    console.log("✅ Snow-Flow Orchestration MCP bundled successfully")
-  }
-} else {
-  console.warn("⚠️ Snow-Flow MCP not found at:", snowFlowMcpPath)
-}
-
 console.log("MCP servers bundled successfully!")
 
 export { binaries }

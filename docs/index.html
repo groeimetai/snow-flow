@@ -1211,7 +1211,7 @@ snow-flow --version</pre>
 
                 <div class="callout info">
                     <div class="callout-title">Tip</div>
-                    <p>For the best experience, we recommend using Snow-Flow with <a href="https://github.com/groeimetai/snow-code">snow-code</a> - our AI-powered terminal interface based on Claude Code.</p>
+                    <p>Snow-Flow includes a built-in TUI (Terminal User Interface). Just run <code>snow-flow</code> to start the interactive AI development experience.</p>
                 </div>
             </section>
 
@@ -1219,52 +1219,52 @@ snow-flow --version</pre>
             <section id="quickstart">
                 <h2>Quick Start</h2>
 
-                <h3>1. Initialize Project</h3>
+                <h3>1. Start Snow-Flow</h3>
                 <div class="code-block">
                     <div class="code-header">
                         <span class="code-lang">bash</span>
                         <button class="code-copy" onclick="copyCode(this)">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># Initialize Snow-Flow in your project</span>
-snow-flow init
+<pre><span class="comment"># Start the TUI (auto-initializes on first run)</span>
+snow-flow
 
-<span class="comment"># This creates:</span>
+<span class="comment"># This automatically creates:</span>
 <span class="comment"># - .mcp.json (MCP server configuration)</span>
-<span class="comment"># - CLAUDE.md (AI agent instructions)</span></pre>
+<span class="comment"># - CLAUDE.md (AI agent instructions)</span>
+<span class="comment"># - .env (environment configuration)</span></pre>
                     </div>
                 </div>
 
-                <h3>2. Authenticate</h3>
+                <h3>2. Authenticate (in TUI)</h3>
                 <div class="code-block">
                     <div class="code-header">
-                        <span class="code-lang">bash</span>
+                        <span class="code-lang">TUI Command</span>
                         <button class="code-copy" onclick="copyCode(this)">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># Login to ServiceNow and configure LLM provider</span>
-snow-flow auth login
+<pre><span class="comment"># In the TUI, type /auth to authenticate</span>
+/auth
 
-<span class="comment"># Check authentication status</span>
-snow-flow auth status</pre>
+<span class="comment"># This configures:</span>
+<span class="comment"># - LLM provider (Claude, GPT, Gemini, Ollama)</span>
+<span class="comment"># - ServiceNow OAuth credentials</span>
+<span class="comment"># - Enterprise features (optional)</span></pre>
                     </div>
                 </div>
 
                 <h3>3. Start Building</h3>
                 <div class="code-block">
                     <div class="code-header">
-                        <span class="code-lang">bash</span>
-                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        <span class="code-lang">TUI Conversation</span>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># Run an autonomous task</span>
-snow-flow agent <span class="string">"Create a widget showing high-priority incidents"</span>
+<pre><span class="comment"># Just type your request in natural language:</span>
+<span class="string">"Create a widget showing high-priority incidents"</span>
 
-<span class="comment"># Query data</span>
-snow-flow agent <span class="string">"Show me all incidents from last week"</span>
+<span class="string">"Show me all incidents from last week"</span>
 
-<span class="comment"># Create automation</span>
-snow-flow agent <span class="string">"Create a business rule for auto-assignment"</span></pre>
+<span class="string">"Create a business rule for auto-assignment"</span></pre>
                     </div>
                 </div>
             </section>
@@ -1283,9 +1283,9 @@ snow-flow agent <span class="string">"Create a business rule for auto-assignment
                 <p>Snow-Flow checks credentials in this order:</p>
                 <ol>
                     <li><strong>Environment variables</strong> - Highest priority</li>
-                    <li><strong>auth.json</strong> - Auto-loaded from snow-code</li>
+                    <li><strong>auth.json</strong> - Auto-loaded from Snow-Flow TUI</li>
                     <li><strong>.mcp.json credentials</strong> - Project-specific</li>
-                    <li><strong>Interactive login</strong> - Prompts if none found</li>
+                    <li><strong>Interactive login</strong> - Via <code>/auth</code> command in TUI</li>
                 </ol>
             </section>
 
@@ -1325,13 +1325,13 @@ snow-flow agent <span class="string">"Create a business rule for auto-assignment
                         <span class="code-lang">path</span>
                     </div>
                     <div class="code-content">
-<pre>~/.local/share/snow-code/auth.json</pre>
+<pre>~/.local/share/snow-flow/auth.json</pre>
                     </div>
                 </div>
 
                 <p>This file is:</p>
                 <ul>
-                    <li>Created automatically by <code>snow-flow auth login</code></li>
+                    <li>Created automatically by <code>/auth</code> command in TUI</li>
                     <li>Contains encrypted OAuth tokens</li>
                     <li>Tokens are automatically refreshed</li>
                     <li>Never synced to cloud or version control</li>
@@ -1430,8 +1430,9 @@ ollama pull llama3.3
 
             <!-- CLI Commands -->
             <section id="cli-commands">
-                <h2>CLI Commands</h2>
+                <h2>Commands Reference</h2>
 
+                <h3>CLI Commands</h3>
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -1442,88 +1443,84 @@ ollama pull llama3.3
                         </thead>
                         <tbody>
                             <tr>
-                                <td><code>snow-flow init</code></td>
-                                <td>Initialize project with config files</td>
+                                <td><code>snow-flow</code></td>
+                                <td>Start the TUI (auto-initializes on first run)</td>
                             </tr>
                             <tr>
-                                <td><code>snow-flow auth login</code></td>
-                                <td>Authenticate with ServiceNow & LLM provider</td>
+                                <td><code>snow-flow --version</code></td>
+                                <td>Show Snow-Flow version</td>
                             </tr>
                             <tr>
-                                <td><code>snow-flow auth status</code></td>
-                                <td>Check authentication status</td>
+                                <td><code>snow-flow --help</code></td>
+                                <td>Show help information</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>TUI Commands (inside Snow-Flow)</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>/auth</code></td>
+                                <td>Authenticate with LLM, ServiceNow, and Enterprise</td>
                             </tr>
                             <tr>
-                                <td><code>snow-flow agent "task"</code></td>
-                                <td>Execute any ServiceNow task autonomously</td>
+                                <td><code>/help</code></td>
+                                <td>Show available commands</td>
                             </tr>
                             <tr>
-                                <td><code>snow-flow status</code></td>
-                                <td>Show system status</td>
+                                <td><code>/clear</code></td>
+                                <td>Clear conversation</td>
                             </tr>
                             <tr>
-                                <td><code>snow-flow monitor</code></td>
-                                <td>Real-time monitoring dashboard</td>
+                                <td><code>/compact</code></td>
+                                <td>Toggle compact mode</td>
+                            </tr>
+                            <tr>
+                                <td><code>/exit</code></td>
+                                <td>Exit Snow-Flow</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </section>
 
-            <!-- CLI Auth -->
-            <section id="cli-auth">
-                <h3>Auth Commands</h3>
+            <!-- TUI Usage -->
+            <section id="tui-usage">
+                <h3>TUI Workflow</h3>
+
+                <p>The Snow-Flow TUI provides an interactive conversational interface for ServiceNow development:</p>
 
                 <div class="code-block">
                     <div class="code-header">
-                        <span class="code-lang">bash</span>
-                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
-                    </div>
-                    <div class="code-content">
-<pre><span class="comment"># Full interactive login</span>
-snow-flow auth login
-
-<span class="comment"># Check current authentication</span>
-snow-flow auth status
-
-<span class="comment"># Logout and clear credentials</span>
-snow-flow auth logout
-
-<span class="comment"># Refresh OAuth token manually</span>
-snow-flow auth refresh</pre>
-                    </div>
-                </div>
-            </section>
-
-            <!-- CLI Agent -->
-            <section id="cli-agent">
-                <h3>Agent Mode</h3>
-
-                <p>Agent mode enables autonomous, multi-agent task execution:</p>
-
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">bash</span>
-                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        <span class="code-lang">TUI Conversation</span>
                     </div>
                     <div class="code-content">
 <pre><span class="comment"># Create a widget</span>
-snow-flow agent <span class="string">"Create a dashboard widget for incident metrics"</span>
+<span class="string">"Create a dashboard widget for incident metrics"</span>
 
 <span class="comment"># Automate a process</span>
-snow-flow agent <span class="string">"Create business rule to auto-assign incidents by category"</span>
+<span class="string">"Create business rule to auto-assign incidents by category"</span>
 
 <span class="comment"># Query and analyze</span>
-snow-flow agent <span class="string">"Analyze incident trends from the past month"</span>
+<span class="string">"Analyze incident trends from the past month"</span>
 
 <span class="comment"># Complex task with multiple agents</span>
-snow-flow agent <span class="string">"Build a complete workspace for IT support"</span></pre>
+<span class="string">"Build a complete workspace for IT support"</span></pre>
                     </div>
                 </div>
 
                 <div class="callout success">
                     <div class="callout-title">Automatic Update Sets</div>
-                    <p>Agent mode automatically creates isolated update sets for each task, ensuring clean deployments and easy rollbacks.</p>
+                    <p>Snow-Flow automatically creates isolated update sets for each task, ensuring clean deployments and easy rollbacks.</p>
                 </div>
             </section>
 
@@ -2084,31 +2081,6 @@ snow-flow agent <span class="string">"Build a complete workspace for IT support"
                     </table>
                 </div>
 
-                <!-- Agent Orchestration Domain -->
-                <h4>Agent Orchestration (12 tools)</h4>
-                <p>Multi-agent coordination via snow-flow-mcp.</p>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Tool</th><th>Description</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>agent_init</code></td><td>Initialize agent orchestration</td></tr>
-                            <tr><td><code>agent_spawn</code></td><td>Create specialized agents</td></tr>
-                            <tr><td><code>agent_status</code></td><td>Monitor agent health</td></tr>
-                            <tr><td><code>agent_discover</code></td><td>Discover agent types</td></tr>
-                            <tr><td><code>neural_train</code></td><td>Train TensorFlow.js neural networks</td></tr>
-                            <tr><td><code>neural_status</code></td><td>Check training progress</td></tr>
-                            <tr><td><code>neural_patterns</code></td><td>Analyze patterns with ML</td></tr>
-                            <tr><td><code>memory_search</code></td><td>Search in-memory data</td></tr>
-                            <tr><td><code>memory_usage</code></td><td>Manage memory storage</td></tr>
-                            <tr><td><code>task_categorize</code></td><td>Categorize tasks for agents</td></tr>
-                            <tr><td><code>performance_report</code></td><td>Generate performance reports</td></tr>
-                            <tr><td><code>token_usage</code></td><td>Analyze token consumption</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
                 <div class="callout info">
                     <div class="callout-title">Additional Domains</div>
                     <p>Plus 50+ more domains including: HR Service Delivery, CSM, DevOps, GRC, Project Portfolio, Service Level Management, Event Management, Discovery, Cost Management, and many more. All tools follow the same <code>snow_*</code> naming pattern.</p>
@@ -2149,7 +2121,7 @@ snow-flow agent <span class="string">"Build a complete workspace for IT support"
             <section id="ide-integrations">
                 <h3>Use With Any AI IDE</h3>
 
-                <p>Snow-Flow works with any MCP-compatible AI tool. After running <code>snow-flow init</code>, the configuration is generated at <code>.mcp.json</code> and synced to <code>.snow-code/config.json</code>.</p>
+                <p>Snow-Flow works with any MCP-compatible AI tool. When you start Snow-Flow for the first time, it automatically generates configuration at <code>.mcp.json</code> and syncs to <code>.snow-code/config.json</code>.</p>
 
                 <div class="table-wrapper">
                     <table>
@@ -2162,9 +2134,9 @@ snow-flow agent <span class="string">"Build a complete workspace for IT support"
                         </thead>
                         <tbody>
                             <tr>
-                                <td><strong>snow-code</strong> <span class="badge badge-new">Recommended</span></td>
+                                <td><strong>Snow-Flow TUI</strong> <span class="badge badge-new">Recommended</span></td>
                                 <td>Built-in</td>
-                                <td>Just run <code>snow-flow agent</code></td>
+                                <td>Just run <code>snow-flow</code></td>
                             </tr>
                             <tr>
                                 <td><strong>Claude Desktop</strong></td>
@@ -2242,7 +2214,7 @@ snow-flow agent <span class="string">"Build a complete workspace for IT support"
                         <button class="code-copy" onclick="copyCode(this)">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># After snow-flow init, copy config to Cursor</span>
+<pre><span class="comment"># After starting snow-flow once, copy config to Cursor</span>
 cp .mcp.json .cursor/mcp.json
 
 <span class="comment"># Or create .cursor directory first</span>
@@ -2257,7 +2229,7 @@ mkdir -p .cursor && cp .mcp.json .cursor/mcp.json</pre>
                         <button class="code-copy" onclick="copyCode(this)">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># After snow-flow init, copy config to Windsurf</span>
+<pre><span class="comment"># After starting snow-flow once, copy config to Windsurf</span>
 cp .mcp.json mcp_config.json</pre>
                     </div>
                 </div>
@@ -2492,14 +2464,14 @@ c.loadItems = <span class="keyword">function</span>() {
                         <button class="code-copy" onclick="copyCode(this)">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># Login with enterprise features</span>
-snow-flow auth login
+<pre><span class="comment"># In the TUI, authenticate with enterprise features</span>
+/auth
 
 <span class="comment"># Connect Jira</span>
 <span class="comment"># (Follow prompts to authorize)</span>
 
-<span class="comment"># Complete a Jira story autonomously</span>
-snow-flow agent <span class="string">"Complete JIRA-1234"</span></pre>
+<span class="comment"># Then in the TUI, complete a Jira story:</span>
+<span class="string">"Complete JIRA-1234"</span></pre>
                     </div>
                 </div>
 

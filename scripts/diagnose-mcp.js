@@ -195,7 +195,7 @@ try {
 // 6. Check for running MCP processes
 console.log('\n6️⃣  Checking for running MCP processes...');
 try {
-  var processes = execSync('ps aux | grep -i "servicenow-mcp\\|snow-flow-mcp" | grep -v grep || echo "No MCP processes"', {
+  var processes = execSync('ps aux | grep -i "servicenow-mcp" | grep -v grep || echo "No MCP processes"', {
     encoding: 'utf-8'
   }).trim();
 

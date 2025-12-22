@@ -165,36 +165,6 @@ function getServiceNowUnifiedMCPPath(): string | undefined {
   return undefined
 }
 
-// Get the path to Snow-Flow orchestration MCP server
-function getSnowFlowOrchestrationMCPPath(): string | undefined {
-  const { existsSync } = require("fs")
-
-  const possiblePaths = [
-    // Global npm installation
-    (() => {
-      try {
-        const { execSync } = require("child_process")
-        const npmRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim()
-        return path.join(npmRoot, 'snow-flow', 'dist', 'mcp', 'snow-flow-mcp.js')
-      } catch {
-        return null
-      }
-    })(),
-    // Local node_modules
-    path.join(process.cwd(), 'node_modules', 'snow-flow', 'dist', 'mcp', 'snow-flow-mcp.js'),
-    // Development
-    path.resolve(__dirname, '..', '..', '..', 'core', 'dist', 'mcp', 'snow-flow-mcp.js'),
-  ].filter(Boolean) as string[]
-
-  for (const mcpPath of possiblePaths) {
-    if (existsSync(mcpPath)) {
-      return mcpPath
-    }
-  }
-
-  return undefined
-}
-
 // Update MCP configs with ServiceNow credentials
 async function updateSnowCodeMCPConfigs(instance: string, clientId: string, clientSecret: string) {
   const instanceUrl = instance.startsWith("http") ? instance : `https://${instance}`
@@ -207,7 +177,6 @@ async function updateSnowCodeMCPConfigs(instance: string, clientId: string, clie
 
   // Get paths to MCP servers
   const serviceNowUnifiedPath = getServiceNowUnifiedMCPPath()
-  const snowFlowOrchestrationPath = getSnowFlowOrchestrationMCPPath()
 
   for (const configPath of configPaths) {
     try {
@@ -233,19 +202,6 @@ async function updateSnowCodeMCPConfigs(instance: string, clientId: string, clie
           enabled: true,
         }
         updatedServers.add("servicenow-unified")
-      }
-
-      // CREATE snow-flow-orchestration if not exists AND we found the path
-      if (snowFlowOrchestrationPath && !config.mcp["snow-flow-orchestration"]) {
-        config.mcp["snow-flow-orchestration"] = {
-          type: "local",
-          command: ["node", snowFlowOrchestrationPath],
-          environment: {
-            SNOW_FLOW_ENV: "production",
-          },
-          enabled: true,
-        }
-        updatedServers.add("snow-flow-orchestration")
       }
 
       // UPDATE existing servers with ServiceNow credentials

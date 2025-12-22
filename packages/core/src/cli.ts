@@ -531,7 +531,7 @@ program
           cliLogger.error('SnowCode failed to start - check configuration');
         } else {
           prompts.log.error('SnowCode failed to start');
-          prompts.log.info('Run: snow-flow init');
+          prompts.log.info('Run: snow-flow');
         }
       }
       
@@ -607,7 +607,7 @@ async function startMCPServers(): Promise<number[]> {
 function stopMCPServers(): void {
   try {
     const { execSync } = require('child_process');
-    execSync('pkill -f "servicenow-mcp-unified\\|snow-flow-mcp" 2>/dev/null || true');
+    execSync('pkill -f "servicenow-mcp-unified" 2>/dev/null || true');
   } catch (e) {
     // Ignore errors
   }
@@ -636,14 +636,14 @@ async function executeSnowCode(objective: string, options: any): Promise<boolean
     const snowcodeConfigPath = join(process.cwd(), '.snow-code', 'config.json');
     const snowcodeConfigPathAlt = join(process.cwd(), '.snow-code', 'snow-code.json');
     if (!existsSync(snowcodeConfigPath) && !existsSync(snowcodeConfigPathAlt)) {
-      cliLogger.error('SnowCode config not found - run: snow-flow init');
+      cliLogger.error('SnowCode config not found - run: snow-flow');
       return false;
     }
 
     // Check for .env file
     const envPath = join(process.cwd(), '.env');
     if (!existsSync(envPath)) {
-      cliLogger.error('.env file not found - run: snow-flow init');
+      cliLogger.error('.env file not found - run: snow-flow');
       return false;
     }
 
@@ -1125,25 +1125,30 @@ program
     console.log(`
 🚀 Snow-Flow v${VERSION} - ServiceNow AI Development Platform
 
-📋 Essential Commands:
-  snow-flow init              Initialize project with MCP servers
-  snow-flow auth login        Complete authentication setup
-  snow-flow agent "task"      Execute AI-powered ServiceNow development
+📋 Getting Started:
+  snow-flow                   Start the TUI (auto-initializes on first run)
 
 🎯 Quick Start:
-  1. snow-flow init                           # Set up your project
-  2. snow-flow auth login                     # Authenticate (LLM + ServiceNow + Enterprise)
-  3. snow-flow agent "your task"              # Let AI build your solution
+  1. snow-flow                                # Start Snow-Flow TUI
+  2. /auth                                    # Authenticate (LLM + ServiceNow + Enterprise)
+  3. Just type your request!                  # Let AI build your solution
 
-💡 Example Tasks:
-  snow-flow agent "create incident dashboard widget"
-  snow-flow agent "build auto-assignment business rule"
-  snow-flow agent "generate 5000 test incidents with realistic data"
-  snow-flow agent "refactor legacy client scripts to modern patterns"
+💡 TUI Commands:
+  /auth                       Authenticate with LLM, ServiceNow, and Enterprise
+  /help                       Show available commands
+  /clear                      Clear conversation
+  /compact                    Toggle compact mode
+  /exit                       Exit Snow-Flow
+
+💡 Example Requests (in TUI):
+  "create incident dashboard widget"
+  "build auto-assignment business rule"
+  "generate 5000 test incidents with realistic data"
+  "refactor legacy client scripts to modern patterns"
 
 🔗 What You Get:
   • 75+ LLM providers (Claude, GPT, Gemini, Llama, Mistral, DeepSeek, etc.)
-  • 393 optimized ServiceNow tools via MCP protocol
+  • 410+ optimized ServiceNow tools via MCP protocol
   • Multi-agent AI orchestration for complex tasks
   • Automatic Update Set management
   • Direct ServiceNow instance integration
@@ -2665,7 +2670,7 @@ program
       // Check if project is initialized
       const envPath = join(process.cwd(), '.env');
       if (!existsSync(envPath)) {
-        prompts.log.error('No .env file found. Please run "snow-flow init" first.');
+        prompts.log.error('No .env file found. Please run "snow-flow" first.');
         process.exit(1);
       }
 
@@ -2929,12 +2934,10 @@ async function startTUIWithSetup() {
     const snowcodeBinaryPath = getSnowcodeBinaryPath();
 
     if (!snowcodeBinaryPath) {
-      console.error(chalk.red('Could not find snowcode binary for your platform.'));
+      console.error(chalk.red('Could not find TUI binary for your platform.'));
       console.log('');
-      console.log(chalk.dim('You can still use snow-flow commands directly:'));
-      console.log(chalk.dim('  snow-flow agent "your task"'));
-      console.log(chalk.dim('  snow-flow init'));
-      console.log(chalk.dim('  snow-flow auth login'));
+      console.log(chalk.dim('Please try reinstalling snow-flow:'));
+      console.log(chalk.dim('  npm install -g snow-flow'));
       process.exit(1);
       return;
     }
@@ -2954,10 +2957,8 @@ async function startTUIWithSetup() {
     snowcodeProcess.on('error', (err) => {
       console.error(chalk.red(`Failed to start TUI: ${err.message}`));
       console.log('');
-      console.log(chalk.dim('You can still use snow-flow commands directly:'));
-      console.log(chalk.dim('  snow-flow agent "your task"'));
-      console.log(chalk.dim('  snow-flow init'));
-      console.log(chalk.dim('  snow-flow auth login'));
+      console.log(chalk.dim('Please try reinstalling snow-flow:'));
+      console.log(chalk.dim('  npm install -g snow-flow'));
       process.exit(1);
     });
 

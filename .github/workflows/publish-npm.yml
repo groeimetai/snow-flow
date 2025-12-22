@@ -209,19 +209,10 @@ jobs:
             --format esm \
             --minify || echo "ServiceNow Unified MCP bundle completed (may have warnings)"
 
-          # Bundle Snow-Flow Orchestration MCP server (required for .mcp.json snow-flow-orchestration)
-          echo "Bundling Snow-Flow Orchestration MCP server..."
-          bunx bun build ../core/src/mcp/snow-flow-mcp.ts \
-            --outdir dist/mcp \
-            --target node \
-            --format esm \
-            --minify || echo "Snow-Flow Orchestration MCP bundle completed (may have warnings)"
-
           # List what was created
           echo "MCP bundles created:"
           ls -la dist/mcp/enterprise-proxy/ || echo "No enterprise-proxy files"
           ls -la dist/mcp/servicenow-mcp-unified/ || echo "No servicenow-mcp-unified files"
-          ls -la dist/mcp/snow-flow-mcp.js || echo "No snow-flow-mcp.js file"
           echo "Bundle sizes:"
           du -sh dist/mcp/* 2>/dev/null || echo "No files to measure"
 

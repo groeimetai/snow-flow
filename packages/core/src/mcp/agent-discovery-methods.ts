@@ -1,6 +1,6 @@
 /**
  * Dynamic Agent Discovery Methods
- * To be integrated into snow-flow-mcp.ts
+ * Provides intelligent agent type discovery for complex tasks
  */
 
 export const agentDiscoveryMethods = {
