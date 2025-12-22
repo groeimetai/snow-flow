@@ -469,7 +469,18 @@ export const AuthEnterpriseLoginCommand = cmd({
       prompts.log.info("   ℹ️  Note: Credentials are managed server-side by the enterprise MCP server.")
       prompts.log.info("   ℹ️  No sensitive data is stored locally.")
       prompts.log.info("")
-      prompts.log.info("   📖 CLAUDE.md will be configured automatically at startup")
+
+      // Step 8: Update AGENTS.md with enterprise documentation
+      if (availableIntegrations.length > 0) {
+        try {
+          await updateDocumentationWithEnterprise(availableIntegrations, isEnterpriseUser && user?.role === 'stakeholder' ? 'stakeholder' : undefined)
+          prompts.log.success("   📖 AGENTS.md configured with enterprise development guidelines")
+        } catch (docError: any) {
+          prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
+        }
+      }
+
+      prompts.log.info("")
       prompts.log.info("   Next: Just type your request in the TUI to start developing")
       prompts.log.info("")
 
@@ -603,6 +614,33 @@ export const AuthEnterpriseSyncCommand = cmd({
       prompts.log.info("   ℹ️  Note: Credentials are fetched server-side by the enterprise MCP server.")
       prompts.log.info("   ℹ️  No sensitive data is stored locally.")
       prompts.log.info("")
+
+      // Update AGENTS.md with enterprise documentation
+      const availableIntegrations: string[] = []
+      if (credentials.jira?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'jira'))) {
+        availableIntegrations.push('jira')
+      }
+      if (credentials["azure-devops"]?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'azure-devops'))) {
+        availableIntegrations.push('azure-devops')
+      }
+      if (credentials.confluence?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'confluence'))) {
+        availableIntegrations.push('confluence')
+      }
+      if (credentials.github?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'github'))) {
+        availableIntegrations.push('github')
+      }
+      if (credentials.gitlab?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'gitlab'))) {
+        availableIntegrations.push('gitlab')
+      }
+
+      if (availableIntegrations.length > 0) {
+        try {
+          await updateDocumentationWithEnterprise(availableIntegrations, existingConfig.role === 'stakeholder' ? 'stakeholder' : undefined)
+          prompts.log.success("   📖 AGENTS.md updated with enterprise development guidelines")
+        } catch (docError: any) {
+          prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
+        }
+      }
 
     } catch (error: any) {
       prompts.log.error("")
@@ -777,6 +815,90 @@ export const AuthEnterpriseThemeExportCommand = cmd<object, { format: string; ou
     prompts.log.info("")
   }
 })
+
+/**
+ * Update project documentation (AGENTS.md) with enterprise server information
+ * Uses the comprehensive enterprise-docs-generator for detailed workflow instructions
+ *
+ * @param enabledServices - Array of enabled services (e.g., ['jira', 'azure-devops', 'confluence'])
+ * @param role - Optional user role (if 'stakeholder', replaces with read-only docs)
+ */
+async function updateDocumentationWithEnterprise(enabledServices: string[], role?: string): Promise<void> {
+  try {
+    const projectRoot = process.cwd()
+    const agentsMdPath = path.join(projectRoot, "AGENTS.md")
+
+    // Import the comprehensive documentation generator
+    const { generateEnterpriseInstructions, generateStakeholderDocumentation } = await import("./enterprise-docs-generator.js")
+
+    // For stakeholders, completely replace with read-only documentation
+    if (role === 'stakeholder') {
+      const stakeholderDocs = generateStakeholderDocumentation()
+      fs.writeFileSync(agentsMdPath, stakeholderDocs)
+      prompts.log.info("🔒 Stakeholder documentation configured - READ-ONLY access enabled")
+      return
+    }
+
+    // Generate comprehensive enterprise documentation based on enabled services
+    const enterpriseDocSection = generateEnterpriseInstructions(enabledServices)
+
+    // Check markers for both old (short) and new (comprehensive) documentation
+    const oldMarker = "## 🚀 Enterprise Features"
+    const newMarker = "ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW"
+
+    // Check if AGENTS.md exists
+    if (!fs.existsSync(agentsMdPath)) {
+      // Create new file with enterprise docs
+      fs.writeFileSync(agentsMdPath, enterpriseDocSection)
+      return
+    }
+
+    let content = fs.readFileSync(agentsMdPath, "utf-8")
+
+    // Check if comprehensive docs already exist
+    if (content.includes(newMarker)) {
+      // Already has comprehensive docs - no update needed
+      return
+    }
+
+    // Remove old short documentation if it exists (replace with comprehensive)
+    if (content.includes(oldMarker)) {
+      // Find the start of the old enterprise section
+      const oldStart = content.indexOf(oldMarker)
+      // Find the end (next ## heading or end of file)
+      let oldEnd = content.indexOf("\n## ", oldStart + 1)
+      if (oldEnd === -1) {
+        // Check for --- separator
+        oldEnd = content.indexOf("\n---", oldStart + 1)
+      }
+      if (oldEnd === -1) {
+        oldEnd = content.length
+      }
+
+      // Remove the old section
+      content = content.slice(0, oldStart) + content.slice(oldEnd)
+      prompts.log.info("Replacing old enterprise docs in AGENTS.md with comprehensive version")
+    }
+
+    // Find the best insertion point (before "## Conclusion" or at the end)
+    let insertionPoint = content.lastIndexOf("## Conclusion")
+    if (insertionPoint === -1) {
+      insertionPoint = content.lastIndexOf("---")
+      if (insertionPoint === -1) {
+        insertionPoint = content.length
+      }
+    }
+
+    const updatedContent =
+      content.slice(0, insertionPoint) + enterpriseDocSection + "\n\n" + content.slice(insertionPoint)
+
+    fs.writeFileSync(agentsMdPath, updatedContent)
+
+  } catch (error: any) {
+    prompts.log.info(`Failed to update documentation: ${error.message}`)
+    // Don't throw - this is not critical
+  }
+}
 
 // Export for use in main auth command
 export { readEnterpriseConfig }
