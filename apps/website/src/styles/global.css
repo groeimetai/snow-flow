@@ -231,6 +231,57 @@
             transform: scale(1.08) rotate(-3deg);
         }
 
+        /* ASCII Art Logo Styling */
+        .logo-ascii {
+            font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            padding: 0.3rem 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover .logo-ascii {
+            background: rgba(0, 217, 255, 0.1);
+            border-color: rgba(0, 217, 255, 0.6);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+        }
+
+        .logo-ascii .ascii-bracket {
+            color: var(--text-muted);
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover .logo-ascii .ascii-bracket {
+            color: var(--accent-cyan);
+            opacity: 1;
+        }
+
+        .logo-ascii .snow {
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .logo-ascii .flow {
+            color: var(--accent-cyan);
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover .logo-ascii .flow {
+            text-shadow: 0 0 12px rgba(0, 217, 255, 0.6);
+        }
+
+        /* Legacy logo-text support (remove SVG) */
+        .logo-svg {
+            display: none;
+        }
+
         .logo-text {
             font-size: 1.25rem;
             font-weight: 700;
@@ -330,44 +381,48 @@
 
         /* CTA Button - Impressive with Glow */
         .nav-cta {
-            background: linear-gradient(135deg, var(--accent-cyan) 0%, #00b8d9 100%) !important;
-            color: var(--bg-primary) !important;
-            padding: 0.5rem 1.25rem !important;
-            border-radius: 8px !important;
+            font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace !important;
+            background: transparent !important;
+            color: var(--accent-cyan) !important;
+            padding: 0.45rem 1rem !important;
+            border-radius: 4px !important;
+            border: 1px solid var(--accent-cyan) !important;
             font-weight: 600 !important;
-            font-size: 0.8125rem !important;
+            font-size: 0.75rem !important;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            letter-spacing: -0.01em !important;
-            box-shadow: 0 0 0 0 rgba(0, 217, 255, 0), 0 2px 8px rgba(0, 217, 255, 0.15) !important;
+            letter-spacing: 0.05em !important;
+            text-transform: uppercase !important;
+            box-shadow: 0 0 0 0 rgba(0, 217, 255, 0) !important;
             position: relative !important;
             overflow: hidden !important;
+            text-decoration: none !important;
         }
 
-        /* Shine effect */
-        .nav-cta::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
+        /* Terminal cursor blink effect */
+        .nav-cta::after {
+            content: '_';
+            opacity: 0;
+            animation: blink 1s infinite;
+            margin-left: 2px;
         }
 
-        .nav-cta:hover::before {
-            left: 100%;
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
         }
 
         .nav-cta:hover {
-            background: linear-gradient(135deg, #00e5ff 0%, var(--accent-cyan) 100%) !important;
-            transform: translateY(-2px) !important;
-            box-shadow: 0 0 20px rgba(0, 217, 255, 0.4), 0 6px 20px rgba(0, 217, 255, 0.25) !important;
+            background: rgba(0, 217, 255, 0.15) !important;
+            color: #fff !important;
+            border-color: var(--accent-cyan) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3), inset 0 0 20px rgba(0, 217, 255, 0.1) !important;
+            text-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
         }
 
         .nav-cta:active {
             transform: translateY(0) !important;
-            box-shadow: 0 0 10px rgba(0, 217, 255, 0.3), 0 2px 8px rgba(0, 217, 255, 0.2) !important;
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.2) !important;
         }
 
         /* Mobile Menu Button - Clean & Simple */
@@ -554,25 +609,33 @@
         /* Mobile CTA Button */
         .mobile-nav-links .nav-cta {
             margin-top: 0.75rem;
-            background: linear-gradient(135deg, var(--accent-cyan) 0%, #00a8cc 100%) !important;
-            color: #0a0a0e !important;
+            background: transparent !important;
+            color: var(--accent-cyan) !important;
             justify-content: center;
+            font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace !important;
             font-weight: 600;
-            font-size: 0.8125rem;
+            font-size: 0.75rem;
             padding: 0.75rem 1rem !important;
-            border-radius: 6px !important;
-            box-shadow: 0 4px 16px rgba(0, 217, 255, 0.25);
+            border-radius: 4px !important;
+            border: 1px solid var(--accent-cyan) !important;
+            letter-spacing: 0.05em !important;
+            text-transform: uppercase !important;
+            box-shadow: none;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
 
-        .mobile-nav-links .nav-cta::before {
-            display: none;
+        .mobile-nav-links .nav-cta::after {
+            content: '_';
+            opacity: 0;
+            animation: blink 1s infinite;
+            margin-left: 2px;
         }
 
         .mobile-nav-links .nav-cta:hover,
         .mobile-nav-links .nav-cta:active {
-            background: linear-gradient(135deg, #00e5ff 0%, var(--accent-cyan) 100%) !important;
-            box-shadow: 0 6px 24px rgba(0, 217, 255, 0.35);
+            background: rgba(0, 217, 255, 0.15) !important;
+            color: #fff !important;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
             transform: translateY(-1px) !important;
         }
 
@@ -850,7 +913,7 @@
             letter-spacing: 0.05em;
         }
 
-        /* Scroll indicator */
+        /* Scroll indicator - Terminal style */
         .hero-scroll-indicator {
             position: absolute;
             bottom: 2rem;
@@ -860,26 +923,35 @@
             flex-direction: column;
             align-items: center;
             gap: 0.5rem;
-            opacity: 0.6;
+            opacity: 0.7;
             animation: fade-in 1s ease-out 1.2s backwards, bounce 2s ease-in-out infinite 2s;
             cursor: pointer;
-            transition: opacity 0.3s ease;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 4px;
         }
 
         .hero-scroll-indicator:hover {
             opacity: 1;
+            background: rgba(0, 217, 255, 0.1);
+            border-color: rgba(0, 217, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
         }
 
         .hero-scroll-indicator span {
-            font-size: 0.6875rem;
+            font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+            font-size: 0.625rem;
             text-transform: uppercase;
             letter-spacing: 0.15em;
             color: var(--text-muted);
         }
 
         .hero-scroll-indicator svg {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             color: var(--accent-cyan);
         }
 
@@ -2117,10 +2189,54 @@
         }
 
         .footer-logo-svg {
-            width: 48px;
-            height: 48px;
+            display: none;
         }
 
+        .footer-logo-ascii {
+            font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            padding: 0.4rem 0.7rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .footer-logo:hover .footer-logo-ascii {
+            background: rgba(0, 217, 255, 0.1);
+            border-color: rgba(0, 217, 255, 0.6);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+        }
+
+        .footer-logo-ascii .ascii-bracket {
+            color: var(--text-muted);
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+        .footer-logo:hover .footer-logo-ascii .ascii-bracket {
+            color: var(--accent-cyan);
+            opacity: 1;
+        }
+
+        .footer-logo-ascii .snow {
+            color: var(--text-primary);
+        }
+
+        .footer-logo-ascii .flow {
+            color: var(--accent-cyan);
+            transition: all 0.3s ease;
+        }
+
+        .footer-logo:hover .footer-logo-ascii .flow {
+            text-shadow: 0 0 12px rgba(0, 217, 255, 0.6);
+        }
+
+        /* Legacy footer-logo-text support */
         .footer-logo-text {
             font-size: 1.75rem;
             font-weight: 800;
