@@ -426,7 +426,14 @@ func (m *editorComponent) Content() string {
 }
 
 func (m *editorComponent) Cursor() *tea.Cursor {
-	return m.textarea.Cursor()
+	c := m.textarea.Cursor()
+	if c != nil {
+		// Adjust cursor position to account for:
+		// 1. Empty line before content (from strings.Join with "")
+		// 2. PaddingTop(1) added when styling the textarea
+		c.Position.Y += 2
+	}
+	return c
 }
 
 func (m *editorComponent) View() string {
