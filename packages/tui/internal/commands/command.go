@@ -65,13 +65,12 @@ func (r CommandRegistry) Sorted() []Command {
 		commands = append(commands, command)
 	}
 	slices.SortFunc(commands, func(a, b Command) int {
-		// Priority order: session_new, session_share, model_list, agent_list, app_help first, app_exit last
+		// Priority order: session_new, session_list (resume), auth_login, app_help first, app_exit last
 		priorityOrder := map[CommandName]int{
-			SessionNewCommand:   0,
-			AppHelpCommand:      1,
-			SessionShareCommand: 2,
-			ModelListCommand:    3,
-			AgentListCommand:    4,
+			SessionNewCommand:  0,
+			SessionListCommand: 1,
+			AuthLoginCommand:   2,
+			AppHelpCommand:     3,
 		}
 
 		aPriority, aHasPriority := priorityOrder[a.Name]
