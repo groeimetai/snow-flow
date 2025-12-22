@@ -11,8 +11,8 @@ steps:
       - '-t'
       - 'europe-west4-docker.pkg.dev/snow-flow-ai/cloud-run-source-deploy/snow-flow-health-api:latest'
       - '-f'
-      - 'Dockerfile'
-      - '.'
+      - 'apps/health-api/Dockerfile'
+      - 'apps/health-api'
 
   # Step 2: Push the image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'

@@ -159,10 +159,8 @@ scripts/*
 # ===========================================
 # Directories NOT needed in npm package
 # ===========================================
-website/
-website-old/
-health-api/
-status-page/
+apps/
+infra/
 assets/
 !assets/snow-flow-logo.svg
 examples/

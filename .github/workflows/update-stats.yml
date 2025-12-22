@@ -44,7 +44,7 @@ jobs:
 
       - name: Run stats update script
         run: |
-          cd snow-flow/website
+          cd snow-flow/apps/website
           node scripts/update-stats.js
 
       - name: Commit and push changes
@@ -52,7 +52,7 @@ jobs:
           cd snow-flow
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add website/stats.html website/stats.json
+          git add apps/website/stats.html apps/website/stats.json
           git diff --staged --quiet || git commit -m "chore: update code statistics [skip ci]"
           git push
         env:

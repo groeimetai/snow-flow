@@ -16,7 +16,7 @@ steps:
         cat /workspace/changed-files.txt
 
         # Check which directories changed
-        if grep -q "^status-page/" /workspace/changed-files.txt || ! git rev-parse origin/main > /dev/null 2>&1; then
+        if grep -q "^apps/status-page/" /workspace/changed-files.txt || ! git rev-parse origin/main > /dev/null 2>&1; then
           echo "true" > /workspace/build-status-page.txt
           echo "Status page changed - will build"
         else
@@ -24,7 +24,7 @@ steps:
           echo "Status page unchanged - skip build"
         fi
 
-        if grep -q "^website/" /workspace/changed-files.txt || ! git rev-parse origin/main > /dev/null 2>&1; then
+        if grep -q "^apps/website/" /workspace/changed-files.txt || ! git rev-parse origin/main > /dev/null 2>&1; then
           echo "true" > /workspace/build-website.txt
           echo "Website changed - will build"
         else
@@ -46,8 +46,8 @@ steps:
             -t europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:$COMMIT_SHA \
             -t europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest \
             --cache-from europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest \
-            -f status-page/Dockerfile \
-            status-page/
+            -f apps/status-page/Dockerfile \
+            apps/status-page/
         else
           echo "Skipping status page build - no changes detected"
         fi
@@ -117,8 +117,8 @@ steps:
             -t gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA \
             -t gcr.io/$PROJECT_ID/snow-flow-website:latest \
             --cache-from gcr.io/$PROJECT_ID/snow-flow-website:latest \
-            -f website/Dockerfile \
-            website/
+            -f apps/website/Dockerfile \
+            apps/website/
         else
           echo "Skipping website build - no changes detected"
         fi

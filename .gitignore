@@ -124,5 +124,5 @@ CHANGELOG-v8.2.0.md
 snow-flow-test-run/
 
 # Website build artifacts
-website/.astro/
-website/dist/
+apps/website/.astro/
+apps/website/dist/
