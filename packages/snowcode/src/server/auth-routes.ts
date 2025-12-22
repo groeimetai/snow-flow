@@ -948,6 +948,18 @@ export const AuthRoute = new Hono()
         // Fetch third-party credentials
         const { enabledServices } = await fetchThirdPartyCredentials(token)
 
+        // DEBUG: Write to file to trace if this code is reached
+        const debugTraceFile = path.join(os.homedir(), ".snow-code", "debug-auth-trace.log")
+        try {
+          const traceDir = path.join(os.homedir(), ".snow-code")
+          await Bun.write(path.join(traceDir, ".keep"), "")
+          const timestamp = new Date().toISOString()
+          const existingTrace = await Bun.file(debugTraceFile).text().catch(() => "")
+          await Bun.write(debugTraceFile, existingTrace + `\n[${timestamp}] /enterprise/verify handler reached\n[${timestamp}] enabledServices: ${JSON.stringify(enabledServices)}\n[${timestamp}] role: ${role}\n[${timestamp}] token exists: ${!!token}\n`)
+        } catch (traceErr: any) {
+          console.error(`[DEBUG TRACE ERROR] ${traceErr.message}`)
+        }
+
         // For stakeholders, replace docs with read-only version
         try {
           await replaceDocumentationForStakeholder(role)
@@ -963,6 +975,12 @@ export const AuthRoute = new Hono()
           }
         } else {
           console.log('[auth-routes] No enabled services, skipping AGENTS.md update')
+          // Also write to trace file
+          try {
+            const timestamp = new Date().toISOString()
+            const existingTrace = await Bun.file(debugTraceFile).text().catch(() => "")
+            await Bun.write(debugTraceFile, existingTrace + `[${timestamp}] SKIPPED: enabledServices is empty\n`)
+          } catch {}
         }
 
         // Save enterprise config locally
@@ -1117,6 +1135,18 @@ export const AuthRoute = new Hono()
           // Fetch third-party credentials (Jira, Azure DevOps, Confluence)
           const { enabledServices } = await fetchThirdPartyCredentials(data.token)
 
+          // DEBUG: Write to file to trace if this code is reached
+          const debugTraceFile = path.join(os.homedir(), ".snow-code", "debug-auth-trace.log")
+          try {
+            const traceDir = path.join(os.homedir(), ".snow-code")
+            await Bun.write(path.join(traceDir, ".keep"), "")
+            const timestamp = new Date().toISOString()
+            const existingTrace = await Bun.file(debugTraceFile).text().catch(() => "")
+            await Bun.write(debugTraceFile, existingTrace + `\n[${timestamp}] /enterprise/device-auth/poll handler reached (success)\n[${timestamp}] enabledServices: ${JSON.stringify(enabledServices)}\n[${timestamp}] role: ${role}\n[${timestamp}] token exists: ${!!data.token}\n`)
+          } catch (traceErr: any) {
+            console.error(`[DEBUG TRACE ERROR] ${traceErr.message}`)
+          }
+
           // For stakeholders, replace docs with read-only version
           try {
             await replaceDocumentationForStakeholder(role)
@@ -1132,6 +1162,12 @@ export const AuthRoute = new Hono()
             }
           } else {
             console.log('[auth-routes] No enabled services, skipping AGENTS.md update')
+            // Also write to trace file
+            try {
+              const timestamp = new Date().toISOString()
+              const existingTrace = await Bun.file(debugTraceFile).text().catch(() => "")
+              await Bun.write(debugTraceFile, existingTrace + `[${timestamp}] SKIPPED: enabledServices is empty\n`)
+            } catch {}
           }
 
           return c.json({
