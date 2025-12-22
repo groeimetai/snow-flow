@@ -42,9 +42,27 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.0
+          bun-version: latest
+        continue-on-error: true
+
+      - name: Fallback Bun install (if setup failed)
+        if: failure()
+        shell: bash
+        run: |
+          echo "Bun setup failed, trying manual install..."
+          for i in 1 2 3 4 5; do
+            echo "Attempt $i of 5..."
+            if curl -fsSL https://bun.sh/install | bash; then
+              echo 'export BUN_INSTALL="$HOME/.bun"' >> $GITHUB_ENV
+              echo 'export PATH="$HOME/.bun/bin:$PATH"' >> $GITHUB_ENV
+              echo "$HOME/.bun/bin" >> $GITHUB_PATH
+              break
+            fi
+            echo "Failed, waiting 30 seconds..."
+            sleep 30
+          done
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -80,12 +98,14 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          for i in 1 2 3; do
-            echo "Attempt $i of 3..."
-            if bun install; then
+          for i in 1 2 3 4 5; do
+            echo "Attempt $i of 5..."
+            if bun install --no-save; then
+              echo "✅ Dependencies installed successfully"
               break
             fi
-            sleep 10
+            echo "⚠️ Install failed, waiting 30 seconds..."
+            sleep 30
           done
 
       - name: Build platform binary
@@ -155,9 +175,27 @@ jobs:
           cat ~/.npmrc || echo "No ~/.npmrc"
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.0
+          bun-version: latest
+        continue-on-error: true
+
+      - name: Fallback Bun install (if setup failed)
+        if: failure()
+        shell: bash
+        run: |
+          echo "Bun setup failed, trying manual install..."
+          for i in 1 2 3 4 5; do
+            echo "Attempt $i of 5..."
+            if curl -fsSL https://bun.sh/install | bash; then
+              echo 'export BUN_INSTALL="$HOME/.bun"' >> $GITHUB_ENV
+              echo 'export PATH="$HOME/.bun/bin:$PATH"' >> $GITHUB_ENV
+              echo "$HOME/.bun/bin" >> $GITHUB_PATH
+              break
+            fi
+            echo "Failed, waiting 30 seconds..."
+            sleep 30
+          done
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
