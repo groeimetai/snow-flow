@@ -22,10 +22,10 @@ const imageAttrs = {
 const github = config.social.filter(s => s.icon === 'github')[0];
 const discord = config.social.filter(s => s.icon === 'discord')[0];
 
-const command = "curl -fsSL"
-const protocol = "https://"
-const url = "opencode.ai/install"
-const bash = "| bash"
+const command = "npm install -g"
+const protocol = ""
+const url = "snow-flow"
+const bash = ""
 
 let darkImage: ImageMetadata | undefined;
 let lightImage: ImageMetadata | undefined;
@@ -51,7 +51,7 @@ if (image) {
         />
         <Image src={lightImage} {...imageAttrs} class="dark:sl-hidden" />
       </div>
-      <h1>The AI coding agent built for the terminal.</h1>
+      <h1>AI-Powered ServiceNow Development Platform</h1>
     </section>
 
     <section class="cta">
@@ -73,21 +73,21 @@ if (image) {
 
     <section class="content">
       <ul>
-        <li><b>Native TUI</b>: A responsive, native, themeable terminal UI.</li>
-        <li><b>LSP enabled</b>: Automatically loads the right LSPs for the LLM.</li>
+        <li><b>410+ MCP Tools</b>: Complete ServiceNow development toolkit via Model Context Protocol.</li>
+        <li><b>Any LLM Provider</b>: Supports 75+ providers through <a href="https://models.dev">Models.dev</a>, including local models.</li>
+        <li><b>Native TUI</b>: A responsive, themeable terminal UI built for developers.</li>
         <li><b>Multi-session</b>: Start multiple agents in parallel on the same project.</li>
-        <li><b>Shareable links</b>: Share a link to any sessions for reference or to debug.</li>
-        <li><b>Claude Pro</b>: Log in with Anthropic to use your Claude Pro or Max account.</li>
-        <li><b>Use any model</b>: Supports 75+ LLM providers through <a href="https://models.dev">Models.dev</a>, including local models.</li>
+        <li><b>Enterprise Ready</b>: Secure OAuth authentication and stakeholder access controls.</li>
+        <li><b>ServiceNow Native</b>: Direct integration with instances, update sets, and scoped apps.</li>
       </ul>
     </section>
 
     <section class="alternatives">
       <div class="col1">
         <h3>npm</h3>
-        <button class="command" data-command="npm install -g opencode-ai">
+        <button class="command" data-command="npm install -g snow-flow">
           <code>
-            <span>npm install -g</span> <span class="highlight">opencode-ai</span>
+            <span>npm install -g</span> <span class="highlight">snow-flow</span>
           </code>
           <span class="copy">
             <CopyIcon />
@@ -97,9 +97,9 @@ if (image) {
       </div>
       <div class="col2">
         <h3>Bun</h3>
-        <button class="command" data-command="bun install -g opencode-ai">
+        <button class="command" data-command="bun install -g snow-flow">
           <code>
-            <span>bun install -g</span> <span class="highlight">opencode-ai</span>
+            <span>bun install -g</span> <span class="highlight">snow-flow</span>
           </code>
           <span class="copy">
             <CopyIcon />
@@ -108,10 +108,10 @@ if (image) {
         </button>
       </div>
       <div class="col3">
-        <h3>Homebrew</h3>
-        <button class="command" data-command="brew install sst/tap/opencode">
+        <h3>npx</h3>
+        <button class="command" data-command="npx snow-flow">
           <code>
-            <span>brew install</span> <span class="highlight">sst/tap/opencode</span>
+            <span>npx</span> <span class="highlight">snow-flow</span>
           </code>
           <span class="copy">
             <CopyIcon />
@@ -120,10 +120,10 @@ if (image) {
         </button>
       </div>
       <div class="col4">
-        <h3>Paru</h3>
-        <button class="command" data-command="paru -S opencode-bin">
+        <h3>bunx</h3>
+        <button class="command" data-command="bunx snow-flow">
           <code>
-            <span>paru -S</span> <span class="highlight">opencode-bin</span>
+            <span>bunx</span> <span class="highlight">snow-flow</span>
           </code>
           <span class="copy">
             <CopyIcon />
@@ -136,26 +136,26 @@ if (image) {
     <section class="images">
       <div class="left">
         <figure>
-          <figcaption>opencode TUI with the tokyonight theme</figcaption>
+          <figcaption>Snow-Flow TUI with the tokyonight theme</figcaption>
           <a href="/docs/cli">
-            <Image src={TuiScreenshot} alt="opencode TUI with the tokyonight theme" />
+            <Image src={TuiScreenshot} alt="Snow-Flow TUI with the tokyonight theme" />
           </a>
         </figure>
       </div>
       <div class="right">
         <div class="row1">
           <figure>
-            <figcaption>opencode in VS Code</figcaption>
+            <figcaption>Snow-Flow in VS Code</figcaption>
             <a href="/docs/ide">
-              <Image src={VscodeScreenshot} alt="opencode in VS Code" />
+              <Image src={VscodeScreenshot} alt="Snow-Flow in VS Code" />
             </a>
           </figure>
         </div>
         <div class="row2">
           <figure>
-            <figcaption>opencode in GitHub</figcaption>
+            <figcaption>Snow-Flow in GitHub</figcaption>
             <a href="/docs/github">
-              <Image src={GithubScreenshot} alt="opencode in GitHub" />
+              <Image src={GithubScreenshot} alt="Snow-Flow in GitHub" />
             </a>
           </figure>
         </div>
@@ -170,7 +170,7 @@ if (image) {
         <a href={discord.href} target="_blank" rel="noopener noreferrer">Discord</a>
       </div>
       <div class="col3">
-      <span>&copy;2025 <a href="https://anoma.ly" target="_blank" rel="noopener noreferrer">Anomaly Innovations</a></span>
+      <span>&copy;2025 <a href="https://groeimetai.com" target="_blank" rel="noopener noreferrer">GroeiMetAI</a></span>
       </div>
     </section>
 </div>

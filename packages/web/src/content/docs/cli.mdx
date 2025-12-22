@@ -1,36 +1,36 @@
 ---
 title: CLI
-description: OpenCode CLI options and commands.
+description: Snow-Flow CLI options and commands.
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components"
 
-The OpenCode CLI by default starts the [TUI](/docs/tui) when run without any arguments.
+The Snow-Flow CLI by default starts the [TUI](/docs/tui) when run without any arguments.
 
 ```bash
-opencode
+snow-flow
 ```
 
-But it also accepts commands as documented on this page. This allows you to interact with OpenCode programmatically.
+But it also accepts commands as documented on this page. This allows you to interact with Snow-Flow programmatically.
 
 ```bash
-opencode run "Explain how closures work in JavaScript"
+snow-flow run "Explain how closures work in JavaScript"
 ```
 
 ---
 
 ## Commands
 
-The OpenCode CLI also has the following commands.
+The Snow-Flow CLI also has the following commands.
 
 ---
 
 ### agent
 
-Manage agents for OpenCode.
+Manage agents for Snow-Flow.
 
 ```bash
-opencode agent [command]
+snow-flow agent [command]
 ```
 
 ---
@@ -40,7 +40,7 @@ opencode agent [command]
 Create a new agent with custom configuration.
 
 ```bash
-opencode agent create
+snow-flow agent create
 ```
 
 This command will guide you through creating a new agent with a custom system prompt and tool configuration.
@@ -52,20 +52,20 @@ This command will guide you through creating a new agent with a custom system pr
 Command to manage credentials and login for providers.
 
 ```bash
-opencode auth [command]
+snow-flow auth [command]
 ```
 
 ---
 
 #### login
 
-OpenCode is powered by the provider list at [Models.dev](https://models.dev), so you can use `opencode auth login` to configure API keys for any provider you'd like to use. This is stored in `~/.local/share/opencode/auth.json`.
+Snow-Flow is powered by the provider list at [Models.dev](https://models.dev), so you can use `snow-flow auth login` to configure API keys for any provider you'd like to use. This is stored in `~/.local/share/snow-flow/auth.json`.
 
 ```bash
-opencode auth login
+snow-flow auth login
 ```
 
-When OpenCode starts up it loads the providers from the credentials file. And if there are any keys defined in your environments or a `.env` file in your project.
+When Snow-Flow starts up it loads the providers from the credentials file. And if there are any keys defined in your environments or a `.env` file in your project.
 
 ---
 
@@ -74,13 +74,13 @@ When OpenCode starts up it loads the providers from the credentials file. And if
 Lists all the authenticated providers as stored in the credentials file.
 
 ```bash
-opencode auth list
+snow-flow auth list
 ```
 
 Or the short version.
 
 ```bash
-opencode auth ls
+snow-flow auth ls
 ```
 
 ---
@@ -90,7 +90,7 @@ opencode auth ls
 Logs you out of a provider by clearing it from the credentials file.
 
 ```bash
-opencode auth logout
+snow-flow auth logout
 ```
 
 ---
@@ -100,7 +100,7 @@ opencode auth logout
 Manage the GitHub agent for repository automation.
 
 ```bash
-opencode github [command]
+snow-flow github [command]
 ```
 
 ---
@@ -110,7 +110,7 @@ opencode github [command]
 Install the GitHub agent in your repository.
 
 ```bash
-opencode github install
+snow-flow github install
 ```
 
 This sets up the necessary GitHub Actions workflow and guides you through the configuration process. [Learn more](/docs/github).
@@ -122,7 +122,7 @@ This sets up the necessary GitHub Actions workflow and guides you through the co
 Run the GitHub agent. This is typically used in GitHub Actions.
 
 ```bash
-opencode github run
+snow-flow github run
 ```
 
 ##### Flags
@@ -139,7 +139,7 @@ opencode github run
 List all available models from configured providers.
 
 ```bash
-opencode models
+snow-flow models
 ```
 
 This command displays all models available across your configured providers in the format `provider/model`.
@@ -150,16 +150,16 @@ This is useful for figuring out the exact model name to use in [your config](/do
 
 ### run
 
-Run opencode in non-interactive mode by passing a prompt directly.
+Run snow-flow in non-interactive mode by passing a prompt directly.
 
 ```bash
-opencode run [message..]
+snow-flow run [message..]
 ```
 
 This is useful for scripting, automation, or when you want a quick answer without launching the full TUI. For example.
 
-```bash "opencode run"
-opencode run Explain the use of context in Go
+```bash "snow-flow run"
+snow-flow run Explain the use of context in Go
 ```
 
 #### Flags
@@ -176,13 +176,13 @@ opencode run Explain the use of context in Go
 
 ### serve
 
-Start a headless opencode server for API access. Check out the [server docs](/docs/server) for the full HTTP interface.
+Start a headless snow-flow server for API access. Check out the [server docs](/docs/server) for the full HTTP interface.
 
 ```bash
-opencode serve
+snow-flow serve
 ```
 
-This starts an HTTP server that provides API access to opencode functionality without the TUI interface.
+This starts an HTTP server that provides API access to snow-flow functionality without the TUI interface.
 
 #### Flags
 
@@ -195,22 +195,22 @@ This starts an HTTP server that provides API access to opencode functionality wi
 
 ### upgrade
 
-Updates opencode to the latest version or a specific version.
+Updates snow-flow to the latest version or a specific version.
 
 ```bash
-opencode upgrade [target]
+snow-flow upgrade [target]
 ```
 
 To upgrade to the latest version.
 
 ```bash
-opencode upgrade
+snow-flow upgrade
 ```
 
 To upgrade to a specific version.
 
 ```bash
-opencode upgrade v0.1.48
+snow-flow upgrade v0.1.48
 ```
 
 #### Flags
@@ -223,7 +223,7 @@ opencode upgrade v0.1.48
 
 ## Flags
 
-The opencode CLI takes the following global flags.
+The snow-flow CLI takes the following global flags.
 
 | Flag           | Short | Description                                |
 | -------------- | ----- | ------------------------------------------ |

@@ -3,7 +3,7 @@ title: Tools
 description: Manage the tools an LLM can use.
 ---
 
-Tools allow the LLM to perform actions in your codebase. OpenCode comes with a set of built-in tools, but you can extend it with [custom tools](/docs/custom-tools) or [MCP servers](/docs/mcp-servers).
+Tools allow the LLM to perform actions in your codebase. Snow-Flow comes with a set of built-in tools, but you can extend it with [custom tools](/docs/custom-tools) or [MCP servers](/docs/mcp-servers).
 
 By default, all tools are **enabled** and don't need permission to run. But you can configure this and control the [permissions](/docs/permissions) through your config.
 
@@ -21,9 +21,9 @@ By default, all tools are set to `true`. To disable a tool, set it to `false`.
 
 Disable or enable tools globally using the `tools` option.
 
-```json title="opencode.json"
+```json title=".mcp.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "write": false,
     "bash": false,
@@ -34,9 +34,9 @@ Disable or enable tools globally using the `tools` option.
 
 You can also use wildcards to control multiple tools at once. For example, to disable all tools from an MCP server:
 
-```json title="opencode.json"
+```json title=".mcp.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "mymcp_*": false
   }
@@ -49,9 +49,9 @@ You can also use wildcards to control multiple tools at once. For example, to di
 
 Override global tool settings for specific agents using the `tools` config in the agent definition.
 
-```json title="opencode.json" {3-6,9-12}
+```json title=".mcp.json" {3-6,9-12}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "write": true,
     "bash": true
@@ -71,7 +71,7 @@ For example, here the `plan` agent overrides the global config to disable `write
 
 You can also configure tools for agents in Markdown.
 
-```markdown title="~/.config/opencode/agent/readonly.md"
+```markdown title="~/.config/snow-flow/agent/readonly.md"
 ---
 description: Read-only analysis agent
 mode: subagent
@@ -90,7 +90,7 @@ Analyze code without making any modifications.
 
 ## Built-in
 
-Here are all the built-in tools available in OpenCode.
+Here are all the built-in tools available in Snow-Flow.
 
 ---
 
@@ -98,9 +98,9 @@ Here are all the built-in tools available in OpenCode.
 
 Execute shell commands in your project environment.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "bash": true
   }
@@ -115,9 +115,9 @@ This tool allows the LLM to run terminal commands like `npm install`, `git statu
 
 Modify existing files using exact string replacements.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "edit": true
   }
@@ -132,9 +132,9 @@ This tool performs precise edits to files by replacing exact text matches. It's 
 
 Create new files or overwrite existing ones.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "write": true
   }
@@ -149,9 +149,9 @@ Use this to allow the LLM to create new files. It will overwrite existing files 
 
 Read file contents from your codebase.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "read": true
   }
@@ -166,9 +166,9 @@ This tool reads files and returns their contents. It supports reading specific l
 
 Search file contents using regular expressions.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "grep": true
   }
@@ -183,9 +183,9 @@ Fast content search across your codebase. Supports full regex syntax and file pa
 
 Find files by pattern matching.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "glob": true
   }
@@ -200,9 +200,9 @@ Search for files using glob patterns like `**/*.js` or `src/**/*.ts`. Returns ma
 
 List files and directories in a given path.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "list": true
   }
@@ -217,9 +217,9 @@ This tool lists directory contents. It accepts glob patterns to filter results.
 
 Apply patches to files.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "patch": true
   }
@@ -234,9 +234,9 @@ This tool applies patch files to your codebase. Useful for applying diffs and pa
 
 Manage todo lists during coding sessions.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "todowrite": true
   }
@@ -251,9 +251,9 @@ Creates and updates task lists to track progress during complex operations. The 
 
 Read existing todo lists.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "todoread": true
   }
@@ -268,9 +268,9 @@ Reads the current todo list state. Used by the LLM to track what tasks are pendi
 
 Fetch web content.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "tools": {
     "webfetch": true
   }

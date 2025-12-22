@@ -3,11 +3,11 @@ title: Permissions
 description: Control which actions require approval to run.
 ---
 
-By default, OpenCode **allows all operations** without requiring explicit approval. You can configure this using the `permission` option.
+By default, Snow-Flow **allows all operations** without requiring explicit approval. You can configure this using the `permission` option.
 
-```json title="opencode.json"
+```json title=".mcp.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "permission": {
     "edit": "allow",
     "bash": "ask",
@@ -34,9 +34,9 @@ Currently, the permissions for the `edit`, `bash`, and `webfetch` tools can be c
 
 Use the `permission.edit` key to control whether file editing operations require user approval.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "permission": {
     "edit": "ask"
   }
@@ -50,9 +50,9 @@ Use the `permission.edit` key to control whether file editing operations require
 You can use the `permission.bash` key to control whether bash commands as a
 whole need user approval.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "permission": {
     "bash": "ask"
   }
@@ -61,9 +61,9 @@ whole need user approval.
 
 Or, you can target specific commands and set it to `allow`, `ask`, or `deny`.
 
-```json title="opencode.json"
+```json title=".mcp.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "permission": {
     "bash": {
       "git push": "ask",
@@ -89,9 +89,9 @@ You can use wildcards to manage permissions for specific bash commands.
 
 For example, **disable all** Terraform commands.
 
-```json title="opencode.json" {5}
+```json title=".mcp.json" {5}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "permission": {
     "bash": {
       "terraform *": "deny"
@@ -103,9 +103,9 @@ For example, **disable all** Terraform commands.
 You can also use the `*` wildcard to manage permissions for all commands. For
 example, **deny all commands** except a couple of specific ones.
 
-```json title="opencode.json" {5}
+```json title=".mcp.json" {5}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "permission": {
     "bash": {
       "*": "deny",
@@ -134,9 +134,9 @@ The wildcard uses simple regex globbing patterns.
 
 Use the `permission.webfetch` key to control whether the LLM can fetch web pages.
 
-```json title="opencode.json" {4}
+```json title=".mcp.json" {4}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "permission": {
     "webfetch": "ask"
   }
@@ -150,9 +150,9 @@ Use the `permission.webfetch` key to control whether the LLM can fetch web pages
 You can also configure permissions per agent. Where the agent specific config
 overrides the global config. [Learn more](/docs/agents#permissions) about agent permissions.
 
-```json title="opencode.json" {3-7,10-14}
+```json title=".mcp.json" {3-7,10-14}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://snow-flow.dev/config.json",
   "permission": {
     "bash": {
       "git push": "ask"
@@ -175,7 +175,7 @@ allow `git push` commands.
 
 You can also configure permissions for agents in Markdown.
 
-```markdown title="~/.config/opencode/agent/review.md"
+```markdown title="~/.config/snow-flow/agent/review.md"
 ---
 description: Code review without edits
 mode: subagent

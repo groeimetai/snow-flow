@@ -12,10 +12,10 @@ export function getStaticPaths() {
 const lang = getLangFromUrl(Astro.url) as Lang;
 const t = useTranslations(lang);
 
-const title = lang === 'en' ? 'Documentation | Snow-Flow' : 'Documentatie | Snow-Flow';
+const title = lang === 'en' ? 'Quick Start | Snow-Flow' : 'Snelle Start | Snow-Flow';
 const description = lang === 'en'
-  ? 'Complete documentation for Snow-Flow - the open-source ServiceNow development platform. Installation, authentication, CLI commands, MCP tools, and best practices.'
-  : 'Complete documentatie voor Snow-Flow - het open-source ServiceNow ontwikkelplatform. Installatie, authenticatie, CLI-commando\'s, MCP tools en best practices.';
+  ? 'Get started with Snow-Flow - the AI-powered ServiceNow development platform. Install, authenticate, and start building in minutes.'
+  : 'Begin met Snow-Flow - het AI-aangedreven ServiceNow ontwikkelplatform. Installeer, authenticeer en begin binnen minuten met bouwen.';
 ---
 
 <BaseLayout title={title} description={description}>
@@ -23,595 +23,163 @@ const description = lang === 'en'
     <div class="bg-grid"></div>
     <div class="bg-gradient"></div>
 
-    <!-- Sidebar Backdrop -->
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-    <!-- Layout -->
-    <div class="docs-layout">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-section">
-                <div class="sidebar-title">{lang === 'en' ? 'Getting Started' : 'Aan de Slag'}</div>
-                <ul class="sidebar-links">
-                    <li><a href="#introduction" class="active">{lang === 'en' ? 'Introduction' : 'Introductie'}</a></li>
-                    <li><a href="#installation">{lang === 'en' ? 'Installation' : 'Installatie'}</a></li>
-                    <li><a href="#quickstart">{lang === 'en' ? 'Quick Start' : 'Snelle Start'}</a></li>
-                </ul>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title">{lang === 'en' ? 'Authentication' : 'Authenticatie'}</div>
-                <ul class="sidebar-links">
-                    <li><a href="#auth-overview">{lang === 'en' ? 'Overview' : 'Overzicht'}</a></li>
-                    <li><a href="#servicenow-oauth">ServiceNow OAuth</a></li>
-                    <li><a href="#llm-providers">LLM Providers</a></li>
-                </ul>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title">CLI Reference</div>
-                <ul class="sidebar-links">
-                    <li><a href="#cli-commands">{lang === 'en' ? 'Commands' : 'Commando\'s'}</a></li>
-                    <li><a href="#cli-agent">Agent Mode</a></li>
-                </ul>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title">MCP Tools</div>
-                <ul class="sidebar-links">
-                    <li><a href="#mcp-overview">{lang === 'en' ? 'Overview' : 'Overzicht'}</a></li>
-                    <li><a href="#mcp-tools">{lang === 'en' ? 'Tool Categories' : 'Tool Categorieën'}</a></li>
-                    <li><a href={`/${lang}/mcp-reference`}>{lang === 'en' ? 'Complete Reference' : 'Complete Referentie'}</a></li>
-                </ul>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title">Best Practices</div>
-                <ul class="sidebar-links">
-                    <li><a href="#es5-javascript">ES5 JavaScript</a></li>
-                    <li><a href="#update-sets">Update Sets</a></li>
-                </ul>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="docs-content">
-            <div class="docs-intro" id="introduction">
+    <!-- Main Content -->
+    <main class="quickstart-page">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero-section">
                 <div class="version-badge">
                     <span class="v">Version</span>
                     <span class="num" id="npm-version">loading...</span>
                 </div>
-                <h1>{lang === 'en' ? 'Snow-Flow Documentation' : 'Snow-Flow Documentatie'}</h1>
-                <p>
+                <h1>{lang === 'en' ? 'Quick Start' : 'Snelle Start'}</h1>
+                <p class="hero-desc">
                     {lang === 'en'
-                        ? 'Snow-Flow is an open-source, autonomous ServiceNow development platform. Use '
-                        : 'Snow-Flow is een open-source, autonoom ServiceNow ontwikkelplatform. Gebruik '}
-                    <strong>{lang === 'en' ? 'your approved AI models' : 'jouw goedgekeurde AI-modellen'}</strong>
-                    {lang === 'en'
-                        ? ' (Claude, GPT, DeepSeek, or local models) to build ServiceNow solutions through natural conversation in your terminal.'
-                        : ' (Claude, GPT, DeepSeek, of lokale modellen) om ServiceNow oplossingen te bouwen via natuurlijke conversatie in je terminal.'}
+                        ? 'Get up and running with Snow-Flow in under 5 minutes. Use your approved AI models to build ServiceNow solutions through natural conversation.'
+                        : 'Binnen 5 minuten aan de slag met Snow-Flow. Gebruik je goedgekeurde AI-modellen om ServiceNow oplossingen te bouwen via natuurlijke conversatie.'}
                 </p>
-            </div>
-
-            <!-- Installation -->
-            <section id="installation">
-                <h2>{lang === 'en' ? 'Installation' : 'Installatie'}</h2>
-
-                <h3>{lang === 'en' ? 'Requirements' : 'Vereisten'}</h3>
-                <ul>
-                    <li><strong>Node.js 18+</strong> - {lang === 'en' ? 'Required runtime' : 'Vereiste runtime'}</li>
-                    <li><strong>npm 8.0+</strong> - Package manager</li>
-                    <li><strong>ServiceNow instance</strong> - {lang === 'en' ? 'With OAuth configured' : 'Met OAuth geconfigureerd'}</li>
-                    <li><strong>LLM provider</strong> - {lang === 'en' ? 'API key or local Ollama' : 'API key of lokale Ollama'}</li>
-                </ul>
-
-                <h3>{lang === 'en' ? 'Install via npm' : 'Installeer via npm'}</h3>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">bash</span>
-                        <button class="code-copy">Copy</button>
-                    </div>
-                    <div class="code-content">
-<pre><span class="comment"># Global installation (recommended)</span>
-npm install -g snow-flow
-
-<span class="comment"># Verify installation</span>
-snow-flow --version</pre>
-                    </div>
-                </div>
-
-                <div class="callout info">
-                    <div class="callout-title">Tip</div>
-                    <p>{lang === 'en'
-                        ? 'Snow-Flow includes a built-in AI-powered terminal interface (TUI). Just run '
-                        : 'Snow-Flow bevat een ingebouwde AI-aangedreven terminal interface (TUI). Voer gewoon '}
-                        <code>snow-flow</code>
-                        {lang === 'en'
-                            ? ' to start developing through natural conversation.'
-                            : ' uit om te beginnen met ontwikkelen via natuurlijke conversatie.'}
-                    </p>
-                </div>
             </section>
 
-            <!-- Quick Start -->
-            <section id="quickstart">
-                <h2>{lang === 'en' ? 'Quick Start' : 'Snelle Start'}</h2>
-
-                <h3>1. {lang === 'en' ? 'Start Snow-Flow' : 'Start Snow-Flow'}</h3>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">bash</span>
-                        <button class="code-copy">Copy</button>
-                    </div>
-                    <div class="code-content">
-<pre><span class="comment"># Start Snow-Flow (auto-initializes on first run)</span>
-snow-flow
-
-<span class="comment"># This starts the TUI and creates config files automatically</span></pre>
-                    </div>
-                </div>
-
-                <h3>2. {lang === 'en' ? 'Authenticate' : 'Authenticeren'}</h3>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">bash</span>
-                        <button class="code-copy">Copy</button>
-                    </div>
-                    <div class="code-content">
-<pre><span class="comment"># In the TUI, type /auth to authenticate</span>
-/auth
-
-<span class="comment"># This connects to ServiceNow, your LLM provider, and Enterprise (optional)</span></pre>
+            <!-- Quick Start Steps -->
+            <section class="steps-section">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>{lang === 'en' ? 'Install' : 'Installeren'}</h3>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">bash</span>
+                                <button class="code-copy">Copy</button>
+                            </div>
+                            <div class="code-content">
+<pre>npm install -g snow-flow</pre>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <h3>3. {lang === 'en' ? 'Start Building' : 'Begin met Bouwen'}</h3>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">bash</span>
-                        <button class="code-copy">Copy</button>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>{lang === 'en' ? 'Start' : 'Starten'}</h3>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">bash</span>
+                                <button class="code-copy">Copy</button>
+                            </div>
+                            <div class="code-content">
+<pre>snow-flow</pre>
+                            </div>
+                        </div>
                     </div>
-                    <div class="code-content">
-<pre><span class="comment"># Just type your request in natural language</span>
-<span class="string">Create a widget showing high-priority incidents</span>
+                </div>
 
-<span class="comment"># Query data</span>
-<span class="string">Show me all incidents from last week</span></pre>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>{lang === 'en' ? 'Authenticate' : 'Authenticeren'}</h3>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">TUI</span>
+                                <button class="code-copy">Copy</button>
+                            </div>
+                            <div class="code-content">
+<pre>/auth</pre>
+                            </div>
+                        </div>
+                        <p class="step-note">
+                            {lang === 'en'
+                                ? 'Connects to your LLM provider and ServiceNow instance.'
+                                : 'Verbindt met je LLM provider en ServiceNow instance.'}
+                        </p>
                     </div>
                 </div>
             </section>
 
-            <div class="section-divider"></div>
-
-            <!-- Authentication Overview -->
-            <section id="auth-overview">
-                <h2>{lang === 'en' ? 'Authentication Overview' : 'Authenticatie Overzicht'}</h2>
-                <p>
-                    {lang === 'en'
-                        ? 'Snow-Flow uses OAuth 2.0 for secure ServiceNow authentication. Credentials are stored securely and automatically refreshed.'
-                        : 'Snow-Flow gebruikt OAuth 2.0 voor veilige ServiceNow authenticatie. Credentials worden veilig opgeslagen en automatisch vernieuwd.'}
-                </p>
-
-                <h3>{lang === 'en' ? 'Authentication Priority' : 'Authenticatie Prioriteit'}</h3>
-                <ol>
-                    <li><strong>{lang === 'en' ? 'Environment variables' : 'Environment variabelen'}</strong> - {lang === 'en' ? 'Highest priority' : 'Hoogste prioriteit'}</li>
-                    <li><strong>auth.json</strong> - {lang === 'en' ? 'Auto-loaded from Snow-Flow' : 'Automatisch geladen van Snow-Flow'}</li>
-                    <li><strong>.mcp.json credentials</strong> - {lang === 'en' ? 'Project-specific' : 'Project-specifiek'}</li>
-                    <li><strong>{lang === 'en' ? 'Interactive login' : 'Interactieve login'}</strong> - {lang === 'en' ? 'Prompts if none found' : 'Vraagt indien geen gevonden'}</li>
-                </ol>
-            </section>
-
-            <!-- ServiceNow OAuth -->
-            <section id="servicenow-oauth">
-                <h3>ServiceNow OAuth Setup</h3>
-
-                <ol>
-                    <li>{lang === 'en' ? 'Navigate to' : 'Navigeer naar'} <strong>System OAuth → Application Registry</strong></li>
-                    <li>{lang === 'en' ? 'Click' : 'Klik op'} <strong>New</strong> → Create an OAuth API endpoint</li>
-                    <li>{lang === 'en' ? 'Configure:' : 'Configureer:'}
-                        <ul>
-                            <li><code>Name</code>: Snow-Flow</li>
-                            <li><code>Redirect URL</code>: <code>http://localhost:3005/callback</code></li>
-                            <li><code>Refresh Token Lifespan</code>: <code>0</code></li>
-                        </ul>
-                    </li>
-                    <li>{lang === 'en' ? 'Copy the' : 'Kopieer de'} <strong>Client ID</strong> {lang === 'en' ? 'and' : 'en'} <strong>Client Secret</strong></li>
-                </ol>
-
-                <div class="callout warning">
-                    <div class="callout-title">{lang === 'en' ? 'Security Note' : 'Beveiligingsnotitie'}</div>
-                    <p>{lang === 'en'
-                        ? 'Never commit OAuth credentials to version control.'
-                        : 'Commit nooit OAuth credentials naar version control.'}</p>
-                </div>
-            </section>
-
-            <!-- LLM Providers -->
-            <section id="llm-providers">
-                <h3>LLM Providers</h3>
-
-                <p>{lang === 'en'
-                    ? 'Snow-Flow supports '
-                    : 'Snow-Flow ondersteunt '}<strong>75+ AI providers</strong> via <a href="https://models.dev" target="_blank">Models.dev</a>.</p>
-
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Provider</th>
-                                <th>Environment Variable</th>
-                                <th>{lang === 'en' ? 'Notes' : 'Notities'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Claude</strong></td>
-                                <td><code>ANTHROPIC_API_KEY</code></td>
-                                <td>{lang === 'en' ? 'Recommended' : 'Aanbevolen'}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>GPT-4</strong></td>
-                                <td><code>OPENAI_API_KEY</code></td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td><strong>DeepSeek</strong></td>
-                                <td><code>DEEPSEEK_API_KEY</code></td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td><strong>Ollama</strong></td>
-                                <td><code>OLLAMA_BASE_URL</code></td>
-                                <td>100% {lang === 'en' ? 'Free, local' : 'Gratis, lokaal'}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <div class="section-divider"></div>
-
-            <!-- CLI Commands -->
-            <section id="cli-commands">
-                <h2>{lang === 'en' ? 'Commands' : 'Commando\'s'}</h2>
-
-                <h3>{lang === 'en' ? 'TUI Commands (inside Snow-Flow)' : 'TUI Commando\'s (in Snow-Flow)'}</h3>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Command</th>
-                                <th>{lang === 'en' ? 'Description' : 'Beschrijving'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>/auth</code></td>
-                                <td>{lang === 'en' ? 'Authenticate with LLM, ServiceNow, and Enterprise' : 'Authenticeer met LLM, ServiceNow en Enterprise'}</td>
-                            </tr>
-                            <tr>
-                                <td><code>/help</code></td>
-                                <td>{lang === 'en' ? 'Show available commands' : 'Toon beschikbare commando\'s'}</td>
-                            </tr>
-                            <tr>
-                                <td><code>/clear</code></td>
-                                <td>{lang === 'en' ? 'Clear conversation' : 'Wis conversatie'}</td>
-                            </tr>
-                            <tr>
-                                <td><code>/compact</code></td>
-                                <td>{lang === 'en' ? 'Toggle compact mode' : 'Schakel compacte modus'}</td>
-                            </tr>
-                            <tr>
-                                <td><code>/exit</code></td>
-                                <td>{lang === 'en' ? 'Exit Snow-Flow' : 'Sluit Snow-Flow'}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <h3>{lang === 'en' ? 'CLI Commands' : 'CLI Commando\'s'}</h3>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Command</th>
-                                <th>{lang === 'en' ? 'Description' : 'Beschrijving'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>snow-flow</code></td>
-                                <td>{lang === 'en' ? 'Start the TUI (auto-initializes on first run)' : 'Start de TUI (auto-initialiseert bij eerste run)'}</td>
-                            </tr>
-                            <tr>
-                                <td><code>snow-flow --version</code></td>
-                                <td>{lang === 'en' ? 'Show version' : 'Toon versie'}</td>
-                            </tr>
-                            <tr>
-                                <td><code>snow-flow --help</code></td>
-                                <td>{lang === 'en' ? 'Show help' : 'Toon help'}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- TUI Workflow -->
-            <section id="cli-agent">
-                <h3>{lang === 'en' ? 'TUI Workflow' : 'TUI Workflow'}</h3>
-
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">bash</span>
-                        <button class="code-copy">Copy</button>
+            <!-- Features Grid -->
+            <section class="features-section">
+                <h2>{lang === 'en' ? 'What You Get' : 'Wat Je Krijgt'}</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🛠️</div>
+                        <h3>410+ MCP Tools</h3>
+                        <p>{lang === 'en'
+                            ? 'Complete ServiceNow development toolkit via Model Context Protocol.'
+                            : 'Complete ServiceNow development toolkit via Model Context Protocol.'}</p>
                     </div>
-                    <div class="code-content">
-<pre><span class="comment"># Start Snow-Flow</span>
-$ snow-flow
-
-<span class="comment"># In the TUI, just type your request:</span>
-> <span class="string">Create a dashboard widget for incident metrics</span>
-
-<span class="comment"># Or automate a process:</span>
-> <span class="string">Create business rule to auto-assign incidents</span>
-
-<span class="comment"># Or build complete solutions:</span>
-> <span class="string">Build a complete workspace for IT support</span></pre>
+                    <div class="feature-card">
+                        <div class="feature-icon">🤖</div>
+                        <h3>75+ LLM Providers</h3>
+                        <p>{lang === 'en'
+                            ? 'Use Claude, GPT, DeepSeek, Ollama, or any provider via Models.dev.'
+                            : 'Gebruik Claude, GPT, DeepSeek, Ollama, of elke provider via Models.dev.'}</p>
                     </div>
-                </div>
-
-                <div class="callout success">
-                    <div class="callout-title">{lang === 'en' ? 'Automatic Update Sets' : 'Automatische Update Sets'}</div>
-                    <p>{lang === 'en'
-                        ? 'Snow-Flow automatically creates isolated update sets for each task.'
-                        : 'Snow-Flow maakt automatisch geïsoleerde update sets aan voor elke taak.'}</p>
-                </div>
-            </section>
-
-            <div class="section-divider"></div>
-
-            <!-- MID Server Management -->
-            <section id="mid-server">
-                <h2>{lang === 'en' ? 'MID Server Management' : 'MID Server Beheer'}</h2>
-                <p>{lang === 'en'
-                    ? 'Snow-Flow includes tools for managing ServiceNow MID Servers for on-premise integrations and Discovery.'
-                    : 'Snow-Flow bevat tools voor het beheren van ServiceNow MID Servers voor on-premise integraties en Discovery.'}</p>
-
-                <h3>{lang === 'en' ? 'Available Tools' : 'Beschikbare Tools'}</h3>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Tool</th>
-                                <th>{lang === 'en' ? 'Description' : 'Beschrijving'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>snow_configure_mid_server</code></td>
-                                <td>{lang === 'en' ? 'List, configure, validate, and restart MID Servers' : 'Lijst, configureer, valideer en herstart MID Servers'}</td>
-                            </tr>
-                            <tr>
-                                <td><code>snow_test_mid_connectivity</code></td>
-                                <td>{lang === 'en' ? 'Test connectivity to external endpoints' : 'Test connectiviteit naar externe endpoints'}</td>
-                            </tr>
-                            <tr>
-                                <td><code>snow_manage_mid_capabilities</code></td>
-                                <td>{lang === 'en' ? 'Manage MID Server capabilities' : 'Beheer MID Server capabilities'}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <h3>{lang === 'en' ? 'Example Usage' : 'Voorbeeld Gebruik'}</h3>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">TUI</span>
-                        <button class="code-copy">Copy</button>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>{lang === 'en' ? 'Native TUI' : 'Native TUI'}</h3>
+                        <p>{lang === 'en'
+                            ? 'Beautiful, themeable terminal interface built for developers.'
+                            : 'Mooie, thematische terminal interface gebouwd voor developers.'}</p>
                     </div>
-                    <div class="code-content">
-<pre><span class="comment"># List all MID Servers</span>
-> <span class="string">List all MID Servers and their status</span>
-
-<span class="comment"># Test connectivity</span>
-> <span class="string">Test connectivity from MID-Server-01 to api.example.com:443</span>
-
-<span class="comment"># Configure for Discovery</span>
-> <span class="string">Validate and configure the new MID Server for Discovery</span>
-
-<span class="comment"># Full diagnostic</span>
-> <span class="string">Run a full diagnostic from MID-Server-02 to our database server</span></pre>
-                    </div>
-                </div>
-
-                <h3>{lang === 'en' ? 'MID Server Actions' : 'MID Server Acties'}</h3>
-                <ul>
-                    <li><strong>list</strong> - {lang === 'en' ? 'List all MID Servers with status and capabilities' : 'Lijst alle MID Servers met status en capabilities'}</li>
-                    <li><strong>status</strong> - {lang === 'en' ? 'Get detailed status and health score' : 'Krijg gedetailleerde status en health score'}</li>
-                    <li><strong>configure</strong> - {lang === 'en' ? 'Update IP address, network range, memory settings' : 'Update IP adres, netwerk bereik, geheugen instellingen'}</li>
-                    <li><strong>validate</strong> - {lang === 'en' ? 'Mark a MID Server as validated' : 'Markeer een MID Server als gevalideerd'}</li>
-                    <li><strong>restart</strong> - {lang === 'en' ? 'Queue a restart command' : 'Queue een herstart commando'}</li>
-                    <li><strong>assign_application</strong> - {lang === 'en' ? 'Assign applications to MID Servers' : 'Wijs applicaties toe aan MID Servers'}</li>
-                </ul>
-
-                <h3>{lang === 'en' ? 'Connectivity Tests' : 'Connectiviteit Tests'}</h3>
-                <ul>
-                    <li><strong>test_endpoint</strong> - {lang === 'en' ? 'Test HTTP/HTTPS endpoint accessibility' : 'Test HTTP/HTTPS endpoint bereikbaarheid'}</li>
-                    <li><strong>test_port</strong> - {lang === 'en' ? 'Test TCP/UDP port connectivity' : 'Test TCP/UDP poort connectiviteit'}</li>
-                    <li><strong>ping</strong> - {lang === 'en' ? 'ICMP ping test' : 'ICMP ping test'}</li>
-                    <li><strong>dns_lookup</strong> - {lang === 'en' ? 'DNS resolution test' : 'DNS resolutie test'}</li>
-                    <li><strong>full_diagnostic</strong> - {lang === 'en' ? 'Run all tests at once' : 'Voer alle tests tegelijk uit'}</li>
-                </ul>
-            </section>
-
-            <div class="section-divider"></div>
-
-            <!-- MCP Overview -->
-            <section id="mcp-overview">
-                <h2>MCP Tools {lang === 'en' ? 'Overview' : 'Overzicht'}</h2>
-
-                <p>{lang === 'en'
-                    ? 'Snow-Flow includes '
-                    : 'Snow-Flow bevat '}<strong>410+ MCP tools</strong>{lang === 'en'
-                    ? ' across 18 specialized servers.'
-                    : ' verdeeld over 18 gespecialiseerde servers.'}</p>
-
-                <div class="card-grid">
-                    <div class="card">
-                        <div class="card-title">Deployment Server</div>
-                        <div class="card-desc">{lang === 'en' ? 'Widget & artifact deployment' : 'Widget & artifact deployment'}</div>
-                    </div>
-                    <div class="card">
-                        <div class="card-title">Operations Server</div>
-                        <div class="card-desc">{lang === 'en' ? 'Core ServiceNow operations' : 'Core ServiceNow operaties'}</div>
-                    </div>
-                    <div class="card">
-                        <div class="card-title">Automation Server</div>
-                        <div class="card-desc">{lang === 'en' ? 'Script execution' : 'Script executie'}</div>
-                    </div>
-                    <div class="card">
-                        <div class="card-title">Platform Development</div>
-                        <div class="card-desc">{lang === 'en' ? 'Business rules, scripts' : 'Business rules, scripts'}</div>
-                    </div>
-                </div>
-
-                <a href={`/${lang}/mcp-reference`} class="btn btn-secondary" style="margin-top: 1rem; display: inline-block;">
-                    {lang === 'en' ? 'View Complete MCP Reference' : 'Bekijk Complete MCP Referentie'} →
-                </a>
-            </section>
-
-            <!-- MCP Tools -->
-            <section id="mcp-tools">
-                <h3>{lang === 'en' ? 'Tool Categories' : 'Tool Categorieën'}</h3>
-
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Server</th>
-                                <th>{lang === 'en' ? 'Purpose' : 'Doel'}</th>
-                                <th>Tools</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Deployment</strong></td>
-                                <td>{lang === 'en' ? 'Widget & artifact management' : 'Widget & artifact beheer'}</td>
-                                <td>25+</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Operations</strong></td>
-                                <td>{lang === 'en' ? 'CRUD, queries, CMDB' : 'CRUD, queries, CMDB'}</td>
-                                <td>30+</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Automation</strong></td>
-                                <td>{lang === 'en' ? 'Scripts, jobs, events' : 'Scripts, jobs, events'}</td>
-                                <td>20+</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Platform Dev</strong></td>
-                                <td>{lang === 'en' ? 'Business rules, scripts' : 'Business rules, scripts'}</td>
-                                <td>35+</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Update Sets</strong></td>
-                                <td>{lang === 'en' ? 'Change management' : 'Change management'}</td>
-                                <td>15+</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <div class="section-divider"></div>
-
-            <!-- ES5 JavaScript -->
-            <section id="es5-javascript">
-                <h2>ES5 JavaScript Best Practices</h2>
-
-                <p>{lang === 'en'
-                    ? 'ServiceNow runs on the Rhino engine (ES5). ES6+ may cause issues.'
-                    : 'ServiceNow draait op de Rhino engine (ES5). ES6+ kan problemen veroorzaken.'}</p>
-
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">javascript</span>
-                    </div>
-                    <div class="code-content">
-<pre><span class="comment">// ✅ ES5 - Always works</span>
-<span class="keyword">var</span> items = [];
-<span class="keyword">for</span> (<span class="keyword">var</span> i = 0; i &lt; data.length; i++) &#123;
-  items.push(data[i].name);
-&#125;
-
-<span class="comment">// ⚠️ ES6 - May cause issues</span>
-<span class="keyword">const</span> items = data.map(d =&gt; d.name);</pre>
-                    </div>
-                </div>
-
-                <div class="callout warning">
-                    <div class="callout-title">{lang === 'en' ? 'Quick Conversion' : 'Snelle Conversie'}</div>
-                    <p><code>const/let</code> → <code>var</code> | <code>() =></code> → <code>function()</code> | <code>`${}`</code> → <code>''+</code></p>
-                </div>
-            </section>
-
-            <!-- Update Sets -->
-            <section id="update-sets">
-                <h3>Update Sets</h3>
-
-                <p>{lang === 'en'
-                    ? 'All changes MUST be tracked in Update Sets for proper change management.'
-                    : 'Alle wijzigingen MOETEN worden bijgehouden in Update Sets.'}</p>
-
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">javascript</span>
-                    </div>
-                    <div class="code-content">
-<pre><span class="comment">// Create Update Set first</span>
-snow_update_set_manage(&#123;
-  action: <span class="string">'create'</span>,
-  name: <span class="string">'Feature: My New Feature'</span>
-&#125;);
-
-<span class="comment">// Complete when done</span>
-snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#125;);</pre>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔐</div>
+                        <h3>{lang === 'en' ? 'Enterprise Ready' : 'Enterprise Ready'}</h3>
+                        <p>{lang === 'en'
+                            ? 'Secure OAuth authentication and stakeholder access controls.'
+                            : 'Veilige OAuth authenticatie en stakeholder toegangscontroles.'}</p>
                     </div>
                 </div>
             </section>
 
-            <div class="section-divider"></div>
-
-            <!-- Full Documentation Link -->
+            <!-- Full Documentation CTA -->
             <section class="docs-cta">
-                <h2>{lang === 'en' ? 'Full Documentation' : 'Volledige Documentatie'}</h2>
+                <h2>{lang === 'en' ? 'Ready to Dive Deeper?' : 'Klaar om Dieper te Duiken?'}</h2>
                 <p>{lang === 'en'
-                    ? 'For the complete documentation with advanced topics, visit our dedicated docs site.'
-                    : 'Voor de complete documentatie, bezoek onze speciale docs site.'}</p>
+                    ? 'Explore the complete documentation for advanced configuration, all MCP tools, and best practices.'
+                    : 'Verken de complete documentatie voor geavanceerde configuratie, alle MCP tools en best practices.'}</p>
                 <a href="https://docs.snow-flow.dev/" class="btn btn-primary" target="_blank">
-                    {lang === 'en' ? 'Visit Full Documentation' : 'Bezoek Volledige Documentatie'} →
+                    {lang === 'en' ? 'Explore Full Documentation' : 'Bekijk Volledige Documentatie'} →
                 </a>
             </section>
-        </main>
-    </div>
 
-    <!-- Mobile Sidebar Toggle -->
-    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-    </button>
-
-    <!-- Scroll to Top -->
-    <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="19" x2="12" y2="5"></line>
-            <polyline points="5 12 12 5 19 12"></polyline>
-        </svg>
-    </button>
+            <!-- Quick Links -->
+            <section class="quick-links">
+                <h2>{lang === 'en' ? 'Quick Links' : 'Snelle Links'}</h2>
+                <div class="links-grid">
+                    <a href="https://docs.snow-flow.dev/" class="link-card" target="_blank">
+                        <span class="link-icon">📖</span>
+                        <span class="link-title">{lang === 'en' ? 'Getting Started' : 'Aan de Slag'}</span>
+                        <span class="link-arrow">→</span>
+                    </a>
+                    <a href="https://docs.snow-flow.dev/config" class="link-card" target="_blank">
+                        <span class="link-icon">⚙️</span>
+                        <span class="link-title">{lang === 'en' ? 'Configuration' : 'Configuratie'}</span>
+                        <span class="link-arrow">→</span>
+                    </a>
+                    <a href="https://docs.snow-flow.dev/providers" class="link-card" target="_blank">
+                        <span class="link-icon">🔌</span>
+                        <span class="link-title">LLM Providers</span>
+                        <span class="link-arrow">→</span>
+                    </a>
+                    <a href="https://docs.snow-flow.dev/mcp-servers" class="link-card" target="_blank">
+                        <span class="link-icon">🔧</span>
+                        <span class="link-title">MCP Servers</span>
+                        <span class="link-arrow">→</span>
+                    </a>
+                    <a href="https://docs.snow-flow.dev/cli" class="link-card" target="_blank">
+                        <span class="link-icon">💻</span>
+                        <span class="link-title">CLI Reference</span>
+                        <span class="link-arrow">→</span>
+                    </a>
+                    <a href="https://docs.snow-flow.dev/themes" class="link-card" target="_blank">
+                        <span class="link-icon">🎨</span>
+                        <span class="link-title">Themes</span>
+                        <span class="link-arrow">→</span>
+                    </a>
+                </div>
+            </section>
+        </div>
+    </main>
 
     <!-- JSON-LD for Documentation -->
     <script type="application/ld+json" set:html={JSON.stringify({
@@ -625,195 +193,34 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
 </BaseLayout>
 
 <style>
-    /* Docs Layout */
-    .docs-layout {
-        display: flex;
+    .quickstart-page {
         min-height: 100vh;
-        padding-top: 70px;
+        padding: 100px 0 60px;
         position: relative;
         z-index: 1;
     }
 
-    /* Sidebar */
-    .sidebar {
-        position: fixed;
-        top: 70px;
-        left: 0;
-        width: 280px;
-        height: calc(100vh - 70px);
-        background: var(--bg-secondary);
-        border-right: 1px solid var(--border-subtle);
-        overflow-y: auto;
-        padding: 2rem 0;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        z-index: 100;
-    }
-
-    .sidebar.active {
-        transform: translateX(0);
-    }
-
-    @media (min-width: 1024px) {
-        .sidebar {
-            transform: translateX(0);
-        }
-    }
-
-    .sidebar-section {
-        padding: 0 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .sidebar-title {
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: var(--text-muted);
-        margin-bottom: 0.75rem;
-    }
-
-    .sidebar-links {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .sidebar-links a {
-        display: block;
-        padding: 0.5rem 0.75rem;
-        margin: 0.125rem 0;
-        color: var(--text-secondary);
-        text-decoration: none;
-        font-size: 0.875rem;
-        border-radius: 6px;
-        transition: all 0.2s;
-    }
-
-    .sidebar-links a:hover {
-        color: var(--text-primary);
-        background: rgba(0, 217, 255, 0.1);
-    }
-
-    .sidebar-links a.active {
-        color: var(--accent-cyan);
-        background: rgba(0, 217, 255, 0.1);
-    }
-
-    .sidebar-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.6);
-        z-index: 99;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-    }
-
-    .sidebar-backdrop.active {
-        opacity: 1;
-        visibility: visible;
-    }
-
-    @media (min-width: 1024px) {
-        .sidebar-backdrop {
-            display: none;
-        }
-    }
-
-    /* Main Content */
-    .docs-content {
-        flex: 1;
-        padding: 3rem 2rem;
+    .container {
         max-width: 900px;
-        margin-left: 0;
-        overflow-wrap: break-word;
+        margin: 0 auto;
+        padding: 0 2rem;
     }
 
-    @media (min-width: 1024px) {
-        .docs-content {
-            margin-left: 280px;
-            padding: 3rem 4rem;
-        }
-    }
-
-    /* Typography */
-    .docs-content h1 {
-        font-size: 2.5rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        margin-bottom: 1rem;
-        background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .docs-content h2 {
-        font-size: 1.75rem;
-        font-weight: 700;
-        margin: 3rem 0 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .docs-content h3 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin: 2rem 0 1rem;
-        color: var(--accent-cyan);
-    }
-
-    .docs-content p {
-        color: var(--text-secondary);
-        margin-bottom: 1.25rem;
-        line-height: 1.7;
-    }
-
-    .docs-content a {
-        color: var(--accent-cyan);
-        text-decoration: none;
-    }
-
-    .docs-content a:hover {
-        text-decoration: underline;
-    }
-
-    .docs-content ul, .docs-content ol {
-        margin: 1rem 0 1.5rem 1.5rem;
-        color: var(--text-secondary);
-    }
-
-    .docs-content li {
-        margin-bottom: 0.5rem;
-    }
-
-    .docs-content strong {
-        color: var(--text-primary);
-        font-weight: 600;
-    }
-
-    /* Intro Section */
-    .docs-intro {
-        padding-bottom: 2rem;
-        margin-bottom: 2rem;
-        border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .docs-intro p {
-        font-size: 1.125rem;
+    /* Hero Section */
+    .hero-section {
+        text-align: center;
+        margin-bottom: 4rem;
     }
 
     .version-badge {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.5rem 1rem;
         background: rgba(0, 217, 255, 0.1);
         border: 1px solid rgba(0, 217, 255, 0.3);
-        border-radius: 100px;
-        font-size: 0.875rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
         margin-bottom: 1.5rem;
     }
 
@@ -824,15 +231,74 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
     .version-badge .num {
         color: var(--accent-cyan);
         font-weight: 600;
-        font-family: var(--font-mono);
+    }
+
+    .hero-section h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero-desc {
+        font-size: 1.25rem;
+        color: var(--text-secondary);
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* Steps Section */
+    .steps-section {
+        margin-bottom: 4rem;
+    }
+
+    .step {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .step-number {
+        width: 48px;
+        height: 48px;
+        background: var(--accent-cyan);
+        color: var(--bg-primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .step-content {
+        flex: 1;
+    }
+
+    .step-content h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--text-primary);
+    }
+
+    .step-note {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
     }
 
     /* Code Blocks */
     .code-block {
-        background: var(--bg-code, #0f0f18);
+        background: var(--bg-card);
         border: 1px solid var(--border-subtle);
         border-radius: 12px;
-        margin: 1.5rem 0;
         overflow: hidden;
     }
 
@@ -840,23 +306,23 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem 1rem;
-        background: rgba(255, 255, 255, 0.02);
+        padding: 0.5rem 1rem;
+        background: rgba(0, 0, 0, 0.2);
         border-bottom: 1px solid var(--border-subtle);
     }
 
     .code-lang {
         font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-muted);
         text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 500;
     }
 
     .code-copy {
-        background: rgba(255, 255, 255, 0.05);
+        background: transparent;
         border: 1px solid var(--border-medium);
         color: var(--text-secondary);
-        padding: 0.375rem 0.75rem;
+        padding: 0.25rem 0.75rem;
         border-radius: 6px;
         font-size: 0.75rem;
         cursor: pointer;
@@ -864,161 +330,98 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
     }
 
     .code-copy:hover {
-        background: rgba(0, 217, 255, 0.1);
         border-color: var(--accent-cyan);
         color: var(--accent-cyan);
     }
 
     .code-content {
-        padding: 1rem 1.25rem;
-        overflow-x: auto;
+        padding: 1rem;
     }
 
     .code-content pre {
         margin: 0;
-        font-family: var(--font-mono);
-        font-size: 0.875rem;
-        line-height: 1.6;
-        color: var(--text-secondary);
-    }
-
-    .code-content .comment { color: var(--text-muted); }
-    .code-content .keyword { color: var(--accent-purple, #8B5CF6); }
-    .code-content .string { color: var(--accent-green, #10B981); }
-
-    /* Inline Code */
-    .docs-content code {
-        font-family: var(--font-mono);
-        font-size: 0.875em;
-        background: rgba(0, 217, 255, 0.1);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
         color: var(--accent-cyan);
-        padding: 0.2em 0.4em;
-        border-radius: 4px;
     }
 
-    /* Callouts */
-    .callout {
-        padding: 1.25rem 1.5rem;
-        border-radius: 12px;
-        margin: 1.5rem 0;
-        border-left: 4px solid;
+    /* Features Section */
+    .features-section {
+        margin-bottom: 4rem;
     }
 
-    .callout-title {
-        font-weight: 700;
-        margin-bottom: 0.5rem;
+    .features-section h2 {
+        text-align: center;
+        font-size: 1.75rem;
+        margin-bottom: 2rem;
     }
 
-    .callout p {
-        margin-bottom: 0;
-    }
-
-    .callout.info {
-        background: rgba(59, 130, 246, 0.1);
-        border-color: var(--accent-blue, #3B82F6);
-    }
-
-    .callout.info .callout-title {
-        color: var(--accent-blue, #3B82F6);
-    }
-
-    .callout.warning {
-        background: rgba(245, 158, 11, 0.1);
-        border-color: var(--accent-yellow, #F59E0B);
-    }
-
-    .callout.warning .callout-title {
-        color: var(--accent-yellow, #F59E0B);
-    }
-
-    .callout.success {
-        background: rgba(16, 185, 129, 0.1);
-        border-color: var(--accent-green, #10B981);
-    }
-
-    .callout.success .callout-title {
-        color: var(--accent-green, #10B981);
-    }
-
-    /* Cards */
-    .card-grid {
+    .features-grid {
         display: grid;
-        gap: 1rem;
-        margin: 1.5rem 0;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
     }
 
-    @media (min-width: 640px) {
-        .card-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    .card {
+    .feature-card {
         background: var(--bg-card);
         border: 1px solid var(--border-subtle);
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 1.5rem;
         transition: all 0.3s;
     }
 
-    .card:hover {
-        border-color: var(--accent-cyan);
+    .feature-card:hover {
+        border-color: rgba(0, 217, 255, 0.3);
         transform: translateY(-2px);
     }
 
-    .card-title {
-        font-weight: 700;
+    .feature-icon {
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .feature-card h3 {
+        font-size: 1rem;
+        font-weight: 600;
         margin-bottom: 0.5rem;
         color: var(--text-primary);
     }
 
-    .card-desc {
-        color: var(--text-muted);
+    .feature-card p {
         font-size: 0.875rem;
-    }
-
-    /* Tables */
-    .table-wrapper {
-        overflow-x: auto;
-        margin: 1.5rem 0;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.9rem;
-    }
-
-    th, td {
-        padding: 0.875rem 1rem;
-        text-align: left;
-        border-bottom: 1px solid var(--border-subtle);
-    }
-
-    th {
-        background: var(--bg-card);
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    td {
         color: var(--text-secondary);
+        line-height: 1.5;
     }
 
-    /* Section Divider */
-    .section-divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, var(--border-medium), transparent);
-        margin: 4rem 0;
+    /* Docs CTA */
+    .docs-cta {
+        text-align: center;
+        padding: 3rem;
+        background: var(--bg-card);
+        border-radius: 20px;
+        border: 1px solid var(--border-subtle);
+        margin-bottom: 4rem;
     }
 
-    /* Buttons */
+    .docs-cta h2 {
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .docs-cta p {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
     .btn {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
+        padding: 0.875rem 2rem;
+        border-radius: 10px;
         font-weight: 600;
         text-decoration: none;
         transition: all 0.3s;
@@ -1031,599 +434,99 @@ snow_update_set_manage(&#123; action: <span class="string">'complete'</span> &#1
 
     .btn-primary:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0, 217, 255, 0.3);
-        text-decoration: none;
+        box-shadow: 0 8px 24px rgba(0, 217, 255, 0.35);
     }
 
-    .btn-secondary {
-        background: transparent;
-        border: 1px solid var(--border-medium);
-        color: var(--text-primary);
-    }
-
-    .btn-secondary:hover {
-        border-color: var(--accent-cyan);
-        color: var(--accent-cyan);
-        text-decoration: none;
-    }
-
-    /* Docs CTA */
-    .docs-cta {
+    /* Quick Links */
+    .quick-links h2 {
         text-align: center;
-        padding: 3rem;
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .links-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .link-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
         background: var(--bg-card);
-        border-radius: 16px;
         border: 1px solid var(--border-subtle);
-    }
-
-    .docs-cta h2 {
-        border-bottom: none;
-        margin-top: 0;
-    }
-
-    /* Sidebar Toggle */
-    .sidebar-toggle {
-        position: fixed;
-        bottom: 1.5rem;
-        left: 1rem;
-        width: 48px;
-        height: 48px;
-        background: linear-gradient(135deg, var(--accent-cyan) 0%, #00a8cc 100%);
-        border: none;
-        color: var(--bg-primary);
         border-radius: 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 100;
-        box-shadow: 0 4px 20px rgba(0, 217, 255, 0.35);
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: all 0.3s;
     }
 
-    .sidebar-toggle svg {
-        width: 22px;
-        height: 22px;
-        transition: transform 0.3s ease;
+    .link-card:hover {
+        border-color: var(--accent-cyan);
+        transform: translateX(4px);
     }
 
-    .sidebar-toggle:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 24px rgba(0, 217, 255, 0.45);
+    .link-icon {
+        font-size: 1.25rem;
     }
 
-    .sidebar-toggle:active {
-        transform: scale(0.95);
+    .link-title {
+        flex: 1;
+        font-weight: 500;
     }
 
-    .sidebar-toggle.active svg {
-        transform: rotate(180deg);
-    }
-
-    @media (min-width: 1024px) {
-        .sidebar-toggle {
-            display: none;
-        }
-    }
-
-    /* Scroll to Top */
-    .scroll-top {
-        position: fixed;
-        bottom: 1.5rem;
-        right: 1rem;
-        width: 44px;
-        height: 44px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        color: var(--text-secondary);
-        border-radius: 10px;
-        cursor: pointer;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-    }
-
-    .scroll-top.visible {
-        opacity: 1;
-        visibility: visible;
-    }
-
-    .scroll-top:hover {
-        background: rgba(0, 217, 255, 0.15);
-        border-color: rgba(0, 217, 255, 0.3);
+    .link-arrow {
         color: var(--accent-cyan);
-        transform: translateY(-3px);
+        opacity: 0;
+        transition: opacity 0.2s;
     }
 
-    /* =========================================
-       TABLET OPTIMIZATIONS (768px - 1024px)
-       ========================================= */
-    @media (max-width: 1024px) and (min-width: 769px) {
-        .docs-content {
-            padding: 2.5rem 2rem;
+    .link-card:hover .link-arrow {
+        opacity: 1;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .container {
+            padding: 0 1rem;
         }
 
-        .docs-content h1 {
+        .hero-section h1 {
             font-size: 2rem;
         }
 
-        .docs-content h2 {
-            font-size: 1.5rem;
-            margin: 2.5rem 0 1.25rem;
-        }
-
-        .docs-content h3 {
-            font-size: 1.125rem;
-        }
-
-        .card-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* =========================================
-       MOBILE OPTIMIZATIONS (max-width: 768px)
-       ========================================= */
-    @media (max-width: 768px) {
-        .docs-layout {
-            padding-top: 60px;
-        }
-
-        /* Mobile Sidebar */
-        .sidebar {
-            top: 0;
-            width: 280px;
-            max-width: 85vw;
-            height: 100vh;
-            height: 100dvh;
-            padding-top: 70px;
-            background: linear-gradient(180deg, rgba(12, 12, 16, 0.98) 0%, rgba(8, 8, 12, 0.99) 100%);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(0, 217, 255, 0.1);
-            box-shadow: 10px 0 40px rgba(0, 0, 0, 0.5);
-        }
-
-        .sidebar-section {
-            padding: 0 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .sidebar-title {
-            font-size: 0.625rem;
-            color: rgba(0, 217, 255, 0.6);
-            margin-bottom: 0.5rem;
-        }
-
-        .sidebar-links a {
-            padding: 0.625rem 0.75rem;
-            font-size: 0.8125rem;
-            border-radius: 6px;
-        }
-
-        .sidebar-backdrop {
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 10, 20, 0.8) 100%);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-        }
-
-        /* Mobile Content */
-        .docs-content {
-            padding: 1.5rem 1rem;
-            margin-left: 0;
-        }
-
-        .docs-content h1 {
-            font-size: 1.625rem;
-            line-height: 1.25;
-        }
-
-        .docs-content h2 {
-            font-size: 1.25rem;
-            margin: 2rem 0 1rem;
-            padding-bottom: 0.5rem;
-        }
-
-        .docs-content h3 {
-            font-size: 1rem;
-            margin: 1.5rem 0 0.75rem;
-        }
-
-        .docs-content p {
-            font-size: 0.9375rem;
-            line-height: 1.65;
-            margin-bottom: 1rem;
-        }
-
-        .docs-intro p {
+        .hero-desc {
             font-size: 1rem;
         }
 
-        /* Mobile Version Badge */
-        .version-badge {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.75rem;
-            margin-bottom: 1rem;
+        .step {
+            flex-direction: column;
+            gap: 1rem;
         }
 
-        /* Mobile Code Blocks */
-        .code-block {
-            margin: 1rem -1rem;
-            border-radius: 0;
-            border-left: none;
-            border-right: none;
+        .step-number {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
         }
 
-        .code-header {
-            padding: 0.625rem 1rem;
-        }
-
-        .code-lang {
-            font-size: 0.6875rem;
-        }
-
-        .code-copy {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.6875rem;
-        }
-
-        .code-content {
-            padding: 0.875rem 1rem;
-        }
-
-        .code-content pre {
-            font-size: 0.75rem;
-            line-height: 1.5;
-        }
-
-        /* Mobile Inline Code */
-        .docs-content code {
-            font-size: 0.8em;
-            padding: 0.15em 0.35em;
-        }
-
-        /* Mobile Callouts */
-        .callout {
-            padding: 1rem 1rem 1rem 1.25rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-            border-left-width: 3px;
-        }
-
-        .callout-title {
-            font-size: 0.875rem;
-            margin-bottom: 0.375rem;
-        }
-
-        .callout p {
-            font-size: 0.875rem;
-            line-height: 1.55;
-        }
-
-        /* Mobile Cards */
-        .card-grid {
+        .features-grid {
             grid-template-columns: 1fr;
-            gap: 0.75rem;
         }
 
-        .card {
-            padding: 1.25rem;
-            border-radius: 10px;
-        }
-
-        .card-title {
-            font-size: 0.9375rem;
-        }
-
-        .card-desc {
-            font-size: 0.8125rem;
-        }
-
-        /* Mobile Tables */
-        .table-wrapper {
-            margin: 1rem -1rem;
-            padding: 0;
-            border-radius: 0;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .table-wrapper table {
-            font-size: 0.8125rem;
-            min-width: 420px;
-            margin: 0;
-        }
-
-        th, td {
-            padding: 0.625rem 0.75rem;
-        }
-
-        /* Mobile Lists */
-        .docs-content ul, .docs-content ol {
-            margin: 0.75rem 0 1rem 1.25rem;
-        }
-
-        .docs-content li {
-            font-size: 0.9375rem;
-            margin-bottom: 0.375rem;
-        }
-
-        /* Mobile Buttons */
-        .btn {
-            padding: 0.625rem 1.25rem;
-            font-size: 0.875rem;
-        }
-
-        /* Mobile CTA */
-        .docs-cta {
-            padding: 2rem 1.25rem;
-            border-radius: 12px;
-            margin: 2rem 0;
-        }
-
-        .docs-cta h2 {
-            font-size: 1.25rem;
-        }
-
-        /* Mobile scroll-top position */
-        .scroll-top {
-            bottom: 1.25rem;
-            right: 0.75rem;
-            width: 40px;
-            height: 40px;
-        }
-
-        /* Mobile sidebar-toggle position */
-        .sidebar-toggle {
-            bottom: 1.25rem;
-            left: 0.75rem;
-            width: 44px;
-            height: 44px;
-        }
-
-        .sidebar-toggle svg {
-            width: 20px;
-            height: 20px;
-        }
-    }
-
-    /* =========================================
-       SMALL MOBILE (max-width: 480px)
-       ========================================= */
-    @media (max-width: 480px) {
-        .docs-layout {
-            padding-top: 56px;
-        }
-
-        .sidebar {
-            width: 260px;
-            padding-top: 60px;
-        }
-
-        .sidebar-section {
-            padding: 0 1rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .sidebar-title {
-            font-size: 0.5625rem;
-        }
-
-        .sidebar-links a {
-            padding: 0.5rem 0.625rem;
-            font-size: 0.75rem;
-        }
-
-        .docs-content {
-            padding: 1.25rem 0.875rem;
-        }
-
-        .docs-content h1 {
-            font-size: 1.5rem;
-        }
-
-        .docs-content h2 {
-            font-size: 1.125rem;
-        }
-
-        .docs-content h3 {
-            font-size: 0.9375rem;
-        }
-
-        .docs-content p,
-        .docs-content li {
-            font-size: 0.875rem;
-        }
-
-        .docs-intro p {
-            font-size: 0.9375rem;
-        }
-
-        .version-badge {
-            padding: 0.3rem 0.625rem;
-            font-size: 0.6875rem;
-        }
-
-        .code-content pre {
-            font-size: 0.6875rem;
-        }
-
-        .callout {
-            padding: 0.875rem;
-        }
-
-        .callout-title {
-            font-size: 0.8125rem;
-        }
-
-        .callout p {
-            font-size: 0.8125rem;
-        }
-
-        .card {
-            padding: 1rem;
-        }
-
-        .card-title {
-            font-size: 0.875rem;
-        }
-
-        .card-desc {
-            font-size: 0.75rem;
-        }
-
-        table {
-            font-size: 0.75rem;
-        }
-
-        th, td {
-            padding: 0.5rem 0.625rem;
-        }
-
-        .btn {
-            padding: 0.5rem 1rem;
-            font-size: 0.8125rem;
+        .links-grid {
+            grid-template-columns: 1fr;
         }
 
         .docs-cta {
-            padding: 1.5rem 1rem;
-        }
-
-        .docs-cta h2 {
-            font-size: 1.125rem;
-        }
-
-        .scroll-top {
-            width: 36px;
-            height: 36px;
-        }
-
-        .sidebar-toggle {
-            width: 40px;
-            height: 40px;
-        }
-
-        .sidebar-toggle svg {
-            width: 18px;
-            height: 18px;
-        }
-    }
-
-    /* =========================================
-       VERY SMALL SCREENS (max-width: 360px)
-       ========================================= */
-    @media (max-width: 360px) {
-        .sidebar {
-            width: 240px;
-        }
-
-        .sidebar-links a {
-            padding: 0.4rem 0.5rem;
-            font-size: 0.6875rem;
-        }
-
-        .docs-content {
-            padding: 1rem 0.75rem;
-        }
-
-        .docs-content h1 {
-            font-size: 1.375rem;
-        }
-
-        .docs-content h2 {
-            font-size: 1.0625rem;
-        }
-
-        .code-content pre {
-            font-size: 0.625rem;
-        }
-
-        .version-badge {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.625rem;
+            padding: 2rem 1.5rem;
         }
     }
 </style>
 
 <script>
-    // Sidebar toggle
-    const sidebar = document.getElementById('sidebar');
-    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-    const sidebarToggle = document.getElementById('sidebarToggle');
-
-    function toggleSidebar() {
-        sidebar?.classList.toggle('active');
-        sidebarBackdrop?.classList.toggle('active');
-        sidebarToggle?.classList.toggle('active');
-        document.body.style.overflow = sidebar?.classList.contains('active') ? 'hidden' : '';
-    }
-
-    sidebarToggle?.addEventListener('click', toggleSidebar);
-    sidebarBackdrop?.addEventListener('click', toggleSidebar);
-
-    // Close sidebar on link click (mobile)
-    sidebar?.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', () => {
-            if (window.innerWidth < 1024 && sidebar?.classList.contains('active')) {
-                toggleSidebar();
-            }
-        });
-    });
-
-    // Close sidebar on escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && sidebar?.classList.contains('active')) {
-            toggleSidebar();
-        }
-    });
-
-    // Scroll to top
-    const scrollTopBtn = document.getElementById('scrollTop');
-
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 300) {
-            scrollTopBtn?.classList.add('visible');
-        } else {
-            scrollTopBtn?.classList.remove('visible');
-        }
-    });
-
-    scrollTopBtn?.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // Active sidebar link
-    const sections = document.querySelectorAll('section[id]');
-    const sidebarLinks = document.querySelectorAll('.sidebar-links a[href^="#"]');
-
-    function setActiveLink() {
-        const scrollY = window.pageYOffset;
-
-        sections.forEach(section => {
-            const sectionHeight = section.offsetHeight;
-            const sectionTop = section.offsetTop - 150;
-            const sectionId = section.getAttribute('id');
-
-            if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
-                sidebarLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === '#' + sectionId) {
-                        link.classList.add('active');
-                    }
-                });
-            }
-        });
-    }
-
-    window.addEventListener('scroll', setActiveLink);
-    setActiveLink();
-
     // Copy code
     document.querySelectorAll('.code-copy').forEach(button => {
         button.addEventListener('click', async () => {
