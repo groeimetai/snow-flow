@@ -499,10 +499,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
       case 'field':
         if (!table) {
-          throw new Error('table parameter required for field creation');
+          throw new Error(`table parameter required for field creation. When creating a field like "${name}", you must specify which table to add it to. Example: { type: 'field', name: '${name}', table: 'u_my_table', internal_type: 'string', column_label: '${name}' }`);
         }
         if (!internal_type) {
-          throw new Error('internal_type parameter required for field creation');
+          throw new Error(`internal_type parameter required for field creation. When creating field "${name}" on table "${table}", you must specify the field type. Example: { type: 'field', name: '${name}', table: '${table}', internal_type: 'string' }. Valid types: string, integer, boolean, reference, glide_date, glide_date_time, decimal, float, choice, journal, journal_input, html, url, email, phone_number_e164, currency, price, sys_class_name, document_id`);
         }
         result = await createField(client, {
           table,
