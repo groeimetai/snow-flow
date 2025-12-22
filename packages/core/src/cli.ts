@@ -58,7 +58,7 @@ const cliLogger = new Logger('cli');
 function showSnowFlowBanner(): void {
   // Triangle pattern (muted)
   const triangleLines = [
-    '    ▲  ▲  ▲     ',
+    '    ▲  ▲        ',
     '   ▲ ▼▲ ▼▲      ',
     '  ▲ ▼  ▼  ▼     '
   ];
