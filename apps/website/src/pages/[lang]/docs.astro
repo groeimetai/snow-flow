@@ -370,6 +370,82 @@ $ snow-flow
 
             <div class="section-divider"></div>
 
+            <!-- MID Server Management -->
+            <section id="mid-server">
+                <h2>{lang === 'en' ? 'MID Server Management' : 'MID Server Beheer'}</h2>
+                <p>{lang === 'en'
+                    ? 'Snow-Flow includes tools for managing ServiceNow MID Servers for on-premise integrations and Discovery.'
+                    : 'Snow-Flow bevat tools voor het beheren van ServiceNow MID Servers voor on-premise integraties en Discovery.'}</p>
+
+                <h3>{lang === 'en' ? 'Available Tools' : 'Beschikbare Tools'}</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tool</th>
+                                <th>{lang === 'en' ? 'Description' : 'Beschrijving'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>snow_configure_mid_server</code></td>
+                                <td>{lang === 'en' ? 'List, configure, validate, and restart MID Servers' : 'Lijst, configureer, valideer en herstart MID Servers'}</td>
+                            </tr>
+                            <tr>
+                                <td><code>snow_test_mid_connectivity</code></td>
+                                <td>{lang === 'en' ? 'Test connectivity to external endpoints' : 'Test connectiviteit naar externe endpoints'}</td>
+                            </tr>
+                            <tr>
+                                <td><code>snow_manage_mid_capabilities</code></td>
+                                <td>{lang === 'en' ? 'Manage MID Server capabilities' : 'Beheer MID Server capabilities'}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>{lang === 'en' ? 'Example Usage' : 'Voorbeeld Gebruik'}</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">TUI</span>
+                        <button class="code-copy">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># List all MID Servers</span>
+> <span class="string">List all MID Servers and their status</span>
+
+<span class="comment"># Test connectivity</span>
+> <span class="string">Test connectivity from MID-Server-01 to api.example.com:443</span>
+
+<span class="comment"># Configure for Discovery</span>
+> <span class="string">Validate and configure the new MID Server for Discovery</span>
+
+<span class="comment"># Full diagnostic</span>
+> <span class="string">Run a full diagnostic from MID-Server-02 to our database server</span></pre>
+                    </div>
+                </div>
+
+                <h3>{lang === 'en' ? 'MID Server Actions' : 'MID Server Acties'}</h3>
+                <ul>
+                    <li><strong>list</strong> - {lang === 'en' ? 'List all MID Servers with status and capabilities' : 'Lijst alle MID Servers met status en capabilities'}</li>
+                    <li><strong>status</strong> - {lang === 'en' ? 'Get detailed status and health score' : 'Krijg gedetailleerde status en health score'}</li>
+                    <li><strong>configure</strong> - {lang === 'en' ? 'Update IP address, network range, memory settings' : 'Update IP adres, netwerk bereik, geheugen instellingen'}</li>
+                    <li><strong>validate</strong> - {lang === 'en' ? 'Mark a MID Server as validated' : 'Markeer een MID Server als gevalideerd'}</li>
+                    <li><strong>restart</strong> - {lang === 'en' ? 'Queue a restart command' : 'Queue een herstart commando'}</li>
+                    <li><strong>assign_application</strong> - {lang === 'en' ? 'Assign applications to MID Servers' : 'Wijs applicaties toe aan MID Servers'}</li>
+                </ul>
+
+                <h3>{lang === 'en' ? 'Connectivity Tests' : 'Connectiviteit Tests'}</h3>
+                <ul>
+                    <li><strong>test_endpoint</strong> - {lang === 'en' ? 'Test HTTP/HTTPS endpoint accessibility' : 'Test HTTP/HTTPS endpoint bereikbaarheid'}</li>
+                    <li><strong>test_port</strong> - {lang === 'en' ? 'Test TCP/UDP port connectivity' : 'Test TCP/UDP poort connectiviteit'}</li>
+                    <li><strong>ping</strong> - {lang === 'en' ? 'ICMP ping test' : 'ICMP ping test'}</li>
+                    <li><strong>dns_lookup</strong> - {lang === 'en' ? 'DNS resolution test' : 'DNS resolutie test'}</li>
+                    <li><strong>full_diagnostic</strong> - {lang === 'en' ? 'Run all tests at once' : 'Voer alle tests tegelijk uit'}</li>
+                </ul>
+            </section>
+
+            <div class="section-divider"></div>
+
             <!-- MCP Overview -->
             <section id="mcp-overview">
                 <h2>MCP Tools {lang === 'en' ? 'Overview' : 'Overzicht'}</h2>

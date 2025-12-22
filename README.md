@@ -124,7 +124,7 @@ Snow-Flow provides **410+ tools** across **18 specialized MCP servers**:
 | **Automation** | 15 | Background scripts, scheduled jobs, events |
 | **Deployment** | 12 | Widgets, pages, flows, artifact management |
 | **Platform Dev** | 18 | Business rules, client scripts, UI policies |
-| **Integration** | 14 | REST messages, transform maps, import sets |
+| **Integration** | 14 | REST messages, transform maps, MID Server management |
 | **Update Sets** | 8 | Create, complete, export, switch |
 | **CMDB** | 22 | CI management, relationships, discovery |
 | **Reporting** | 16 | Reports, dashboards, KPIs, analytics |
@@ -312,6 +312,49 @@ This workflow gives you:
 - **Offline editing** - Work without constant API calls
 - **Diff support** - See exactly what changed
 - **Team collaboration** - Share artifacts via git
+
+---
+
+## MID Server Management
+
+Snow-Flow includes tools for managing ServiceNow MID Servers for on-premise integrations and Discovery:
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `snow_configure_mid_server` | List, configure, validate, and restart MID Servers |
+| `snow_test_mid_connectivity` | Test connectivity to external endpoints |
+| `snow_manage_mid_capabilities` | Manage MID Server capabilities |
+
+### Example Usage
+
+```
+You: List all MID Servers and their status
+
+You: Test connectivity from MID-Server-01 to api.example.com:443
+
+You: Validate and configure the new MID Server for Discovery
+
+You: Run a full diagnostic from MID-Server-02 to our database server
+```
+
+### MID Server Actions
+
+- **list** - List all MID Servers with status and capabilities
+- **status** - Get detailed status and health score
+- **configure** - Update IP address, network range, memory settings
+- **validate** - Mark a MID Server as validated
+- **restart** - Queue a restart command
+- **assign_application** - Assign applications to MID Servers
+
+### Connectivity Tests
+
+- **test_endpoint** - Test HTTP/HTTPS endpoint accessibility
+- **test_port** - Test TCP/UDP port connectivity
+- **ping** - ICMP ping test
+- **dns_lookup** - DNS resolution test
+- **full_diagnostic** - Run all tests at once
 
 ---
 
