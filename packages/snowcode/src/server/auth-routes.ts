@@ -993,18 +993,6 @@ export const AuthRoute = new Hono()
         // Fetch third-party credentials
         const { enabledServices } = await fetchThirdPartyCredentials(token)
 
-        // DEBUG: Write to file to trace if this code is reached
-        const debugTraceFile = path.join(os.homedir(), ".snow-code", "debug-auth-trace.log")
-        try {
-          const traceDir = path.join(os.homedir(), ".snow-code")
-          await Bun.write(path.join(traceDir, ".keep"), "")
-          const timestamp = new Date().toISOString()
-          const existingTrace = await Bun.file(debugTraceFile).text().catch(() => "")
-          await Bun.write(debugTraceFile, existingTrace + `\n[${timestamp}] /enterprise/verify handler reached\n[${timestamp}] enabledServices: ${JSON.stringify(enabledServices)}\n[${timestamp}] role: ${role}\n[${timestamp}] token exists: ${!!token}\n`)
-        } catch (traceErr: any) {
-          console.error(`[DEBUG TRACE ERROR] ${traceErr.message}`)
-        }
-
         // For stakeholders, replace docs with read-only version
         try {
           await replaceDocumentationForStakeholder(role)
@@ -1014,17 +1002,6 @@ export const AuthRoute = new Hono()
         if (enabledServices.length > 0) {
           try {
             await updateDocumentationWithEnterprise(enabledServices)
-            console.log(`[auth-routes] Updated AGENTS.md with enterprise docs for: ${enabledServices.join(', ')}`)
-          } catch (docErr: any) {
-            console.error(`[auth-routes] Failed to update AGENTS.md:`, docErr.message)
-          }
-        } else {
-          console.log('[auth-routes] No enabled services, skipping AGENTS.md update')
-          // Also write to trace file
-          try {
-            const timestamp = new Date().toISOString()
-            const existingTrace = await Bun.file(debugTraceFile).text().catch(() => "")
-            await Bun.write(debugTraceFile, existingTrace + `[${timestamp}] SKIPPED: enabledServices is empty\n`)
           } catch {}
         }
 
@@ -1180,18 +1157,6 @@ export const AuthRoute = new Hono()
           // Fetch third-party credentials (Jira, Azure DevOps, Confluence)
           const { enabledServices } = await fetchThirdPartyCredentials(data.token)
 
-          // DEBUG: Write to file to trace if this code is reached
-          const debugTraceFile = path.join(os.homedir(), ".snow-code", "debug-auth-trace.log")
-          try {
-            const traceDir = path.join(os.homedir(), ".snow-code")
-            await Bun.write(path.join(traceDir, ".keep"), "")
-            const timestamp = new Date().toISOString()
-            const existingTrace = await Bun.file(debugTraceFile).text().catch(() => "")
-            await Bun.write(debugTraceFile, existingTrace + `\n[${timestamp}] /enterprise/device-auth/poll handler reached (success)\n[${timestamp}] enabledServices: ${JSON.stringify(enabledServices)}\n[${timestamp}] role: ${role}\n[${timestamp}] token exists: ${!!data.token}\n`)
-          } catch (traceErr: any) {
-            console.error(`[DEBUG TRACE ERROR] ${traceErr.message}`)
-          }
-
           // For stakeholders, replace docs with read-only version
           try {
             await replaceDocumentationForStakeholder(role)
@@ -1201,17 +1166,6 @@ export const AuthRoute = new Hono()
           if (enabledServices.length > 0) {
             try {
               await updateDocumentationWithEnterprise(enabledServices)
-              console.log(`[auth-routes] Updated AGENTS.md with enterprise docs for: ${enabledServices.join(', ')}`)
-            } catch (docErr: any) {
-              console.error(`[auth-routes] Failed to update AGENTS.md:`, docErr.message)
-            }
-          } else {
-            console.log('[auth-routes] No enabled services, skipping AGENTS.md update')
-            // Also write to trace file
-            try {
-              const timestamp = new Date().toISOString()
-              const existingTrace = await Bun.file(debugTraceFile).text().catch(() => "")
-              await Bun.write(debugTraceFile, existingTrace + `[${timestamp}] SKIPPED: enabledServices is empty\n`)
             } catch {}
           }
 
@@ -2824,43 +2778,9 @@ async function replaceDocumentationForStakeholder(role: string): Promise<void> {
  * Users can optionally create CLAUDE.md for Claude-specific instructions.
  */
 async function updateDocumentationWithEnterprise(enabledServices?: string[]): Promise<void> {
-  // Debug log file path
-  const debugLogPath = path.join(os.homedir(), ".snow-code", "debug-agents-md.log")
-  const logLines: string[] = []
-
-  const log = (message: string) => {
-    const timestamp = new Date().toISOString()
-    const line = `[${timestamp}] ${message}`
-    logLines.push(line)
-    console.log(line) // Also log to console
-  }
-
-  const writeDebugLog = async () => {
-    try {
-      // Ensure directory exists
-      const debugDir = path.join(os.homedir(), ".snow-code")
-      try {
-        await Bun.write(path.join(debugDir, ".keep"), "")
-      } catch {}
-
-      // Append to log file
-      const existingContent = await Bun.file(debugLogPath).text().catch(() => "")
-      const newContent = existingContent + "\n" + logLines.join("\n") + "\n"
-      await Bun.write(debugLogPath, newContent)
-    } catch (err: any) {
-      console.error(`Failed to write debug log: ${err.message}`)
-    }
-  }
-
-  log(`========== updateDocumentationWithEnterprise START ==========`)
-  log(`Input services: ${JSON.stringify(enabledServices)}`)
-
   try {
     const projectRoot = process.cwd()
     const agentsMdPath = path.join(projectRoot, "AGENTS.md")
-
-    log(`Project root (cwd): ${projectRoot}`)
-    log(`AGENTS.md path: ${agentsMdPath}`)
 
     // Generate comprehensive enterprise documentation based on enabled services
     // Default to all services if not specified
@@ -2868,101 +2788,63 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
       ? enabledServices
       : ['jira', 'azdo', 'confluence']
 
-    log(`Using services: ${services.join(', ')}`)
-
     const enterpriseDocSection = generateEnterpriseInstructions(services)
-    log(`Generated doc section length: ${enterpriseDocSection.length} chars`)
 
     // Check markers for both old (short) and new (comprehensive) documentation
     const oldMarker = "## 🚀 Enterprise Features"
     const newMarker = "ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW"
 
-    // Helper function to update a documentation file
-    async function updateDocFile(filePath: string): Promise<void> {
-      try {
-        const file = Bun.file(filePath)
-        const exists = await file.exists()
+    const file = Bun.file(agentsMdPath)
+    const exists = await file.exists()
 
-        log(`File exists check: ${exists}`)
+    if (!exists) {
+      // Create new file with enterprise docs
+      await Bun.write(agentsMdPath, enterpriseDocSection)
+      return
+    }
 
-        if (!exists) {
-          // Create new file with enterprise docs
-          await Bun.write(filePath, enterpriseDocSection)
-          log(`SUCCESS: Created ${filePath} with enterprise documentation (${enterpriseDocSection.length} chars)`)
-          log(`========== updateDocumentationWithEnterprise END (created new file) ==========`)
-          await writeDebugLog()
-          return
-        }
+    let content = await file.text()
 
-        let content = await file.text()
-        log(`Current file length: ${content.length} chars`)
-        log(`File first 200 chars: ${content.substring(0, 200).replace(/\n/g, '\\n')}`)
+    // Check if comprehensive docs already exist
+    if (content.includes(newMarker)) {
+      // Already has comprehensive docs - no update needed
+      return
+    }
 
-        // Check if comprehensive docs already exist
-        if (content.includes(newMarker)) {
-          // Already has comprehensive docs - no update needed
-          log(`SKIPPING: File already contains marker "${newMarker}"`)
-          log(`========== updateDocumentationWithEnterprise END (skipped - marker exists) ==========`)
-          await writeDebugLog()
-          return
-        }
+    // Remove old short documentation if it exists (replace with comprehensive)
+    if (content.includes(oldMarker)) {
+      // Find the start of the old enterprise section
+      const oldStart = content.indexOf(oldMarker)
+      // Find the end (next ## heading or end of file)
+      let oldEnd = content.indexOf("\n## ", oldStart + 1)
+      if (oldEnd === -1) {
+        // Check for --- separator
+        oldEnd = content.indexOf("\n---", oldStart + 1)
+      }
+      if (oldEnd === -1) {
+        oldEnd = content.length
+      }
 
-        log(`File does NOT contain marker, proceeding with update...`)
+      // Remove the old section
+      content = content.slice(0, oldStart) + content.slice(oldEnd)
+    }
 
-        // Remove old short documentation if it exists (replace with comprehensive)
-        if (content.includes(oldMarker)) {
-          log(`Found old marker "${oldMarker}", removing old section...`)
-          // Find the start of the old enterprise section
-          const oldStart = content.indexOf(oldMarker)
-          // Find the end (next ## heading or end of file)
-          let oldEnd = content.indexOf("\n## ", oldStart + 1)
-          if (oldEnd === -1) {
-            // Check for --- separator
-            oldEnd = content.indexOf("\n---", oldStart + 1)
-          }
-          if (oldEnd === -1) {
-            oldEnd = content.length
-          }
-
-          // Remove the old section
-          content = content.slice(0, oldStart) + content.slice(oldEnd)
-          log(`Removed old section, new content length: ${content.length} chars`)
-        }
-
-        // Find the best insertion point (before "## Conclusion" or at the end)
-        let insertionPoint = content.lastIndexOf("## Conclusion")
-        if (insertionPoint === -1) {
-          insertionPoint = content.lastIndexOf("---")
-          if (insertionPoint === -1) {
-            insertionPoint = content.length
-          }
-        }
-        log(`Insertion point: ${insertionPoint}`)
-
-        const updatedContent =
-          content.slice(0, insertionPoint) + enterpriseDocSection + "\n\n" + content.slice(insertionPoint)
-
-        log(`Writing updated content (${updatedContent.length} chars) to ${filePath}...`)
-        await Bun.write(filePath, updatedContent)
-        log(`SUCCESS: Updated ${filePath} with enterprise documentation`)
-      } catch (err: any) {
-        log(`ERROR in updateDocFile: ${err.message}`)
-        log(`Stack: ${err.stack}`)
+    // Find the best insertion point (before "## Conclusion" or at the end)
+    let insertionPoint = content.lastIndexOf("## Conclusion")
+    if (insertionPoint === -1) {
+      insertionPoint = content.lastIndexOf("---")
+      if (insertionPoint === -1) {
+        insertionPoint = content.length
       }
     }
 
-    // Update AGENTS.md - the generic file that works for all LLMs
-    await updateDocFile(agentsMdPath)
+    const updatedContent =
+      content.slice(0, insertionPoint) + enterpriseDocSection + "\n\n" + content.slice(insertionPoint)
 
-    log(`========== updateDocumentationWithEnterprise END ==========`)
-    await writeDebugLog()
+    await Bun.write(agentsMdPath, updatedContent)
 
   } catch (error: any) {
     // Don't throw - this is not critical
-    log(`FATAL ERROR: ${error.message}`)
-    log(`Stack: ${error.stack}`)
-    log(`========== updateDocumentationWithEnterprise END (with error) ==========`)
-    await writeDebugLog()
   }
 }
 
