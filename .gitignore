@@ -1,24 +1,32 @@
+# ===========================================
+# Snow-Flow .gitignore
+# ===========================================
+
 # Dependencies
 node_modules/
-*.log
 
 # Build output
 dist/
 *.tsbuildinfo
 
-# IDE
+# Logs
+*.log
+logs/
+
+# IDE & Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
 
-# Environment
+# Environment & secrets
 .env
 .env.*
+!.env.example
 
 # Test coverage
 coverage/
@@ -28,7 +36,9 @@ coverage/
 tmp/
 temp/
 *.tmp
-.roomodes
+*.bak
+*.backup
+*.orig
 
 # Database files
 *.db
@@ -45,11 +55,12 @@ intelligent-mcp.db*
 coordination/
 servicenow/
 reports/
-logs/
 .roo/
+.roomodes
 /config/
 /test/
 .claude-flow/
+
 # Keep package source directories
 !packages/*/src/config/
 !packages/*/src/test/
@@ -58,21 +69,13 @@ logs/
 .mcp.json
 .claude/settings.local.json
 snow-flow.config.json
+claude-flow.config.json
 
-# Backup scripts and files
+# Backup files
 snow-flow-backup*
 hive-mind-prompt-*.txt
-*.bak
-*.backup
-*.orig
-
 
 # Claude Flow generated files
-.claude/settings.local.json
-.mcp.json
-claude-flow.config.json
-.swarm/
-.hive-mind/
 memory/claude-flow-data.json
 memory/sessions/*
 !memory/sessions/README.md
@@ -81,21 +84,23 @@ memory/agents/*
 coordination/memory_bank/*
 coordination/subtasks/*
 coordination/orchestration/*
-*.db
-*.db-journal
-*.db-wal
-*.sqlite
-*.sqlite-journal
-*.sqlite-wal
 claude-flow
 claude-flow.bat
 claude-flow.ps1
-hive-mind-prompt-*.txt
 
-# LinkedIn posts (private content)
-../docs/LinkedIn-Posts-ServiceNow-Developer-Pain-Points.md
+# Snow-Code personal configuration
+.snow-code/
+.snowcode/
+themes/
+# But keep TUI themes (required for Go embed)
+!packages/tui/internal/theme/themes/
 
-# Business strategy (private - confidential)
+# Enterprise (separate private repository)
+enterprise/
+.enterprise/
+
+# Private documentation
+CLAUDE.md
 MONETIZATION_STRATEGY.md
 BUSINESS_CHECKLIST.md
 CAPGEMINI_PARTNERSHIP_PROPOSAL.md
@@ -106,27 +111,18 @@ CHANGELOG-v8.2.0-SUMMARY.md
 PHASE2-COMPLETION-SUMMARY.md
 PHASE3-COMPLETION-SUMMARY.md
 THEMES.md
+../docs/LinkedIn-Posts-ServiceNow-Developer-Pain-Points.md
 
-# Snow-Code personal configuration (confidential)
-.snow-code/
-themes/
-# But keep TUI themes (required for Go embed)
-!packages/tui/internal/theme/themes/
-
-# Optimization internals (not needed by users)
+# Optimization internals
 docs/MCP_OPTIMIZATION_STRATEGY.md
 docs/optimization-report.json
 scripts/bulk-optimize-tools.js
 scripts/optimize-mcp-tools.ts
 CHANGELOG-v8.2.0.md
 
-dist/
-
+# Test directories
 snow-flow-test-run/
 
-# Enterprise (separate private repository - CRITICAL: NEVER commit!)
-enterprise/
-enterprise/**/*
-.enterprise/
-
-CLAUDE.md
+# Website build artifacts
+website/.astro/
+website/dist/

@@ -1,3 +1,8 @@
+# ===========================================
+# Snow-Flow .npmignore
+# Only publish what's needed for the npm package
+# ===========================================
+
 # Source files (only dist/ is needed)
 src/
 *.ts
@@ -10,18 +15,24 @@ src/
 !src/schemas/
 !src/schemas/**/*.json
 
-# Development files
+# ===========================================
+# Development & Runtime directories
+# ===========================================
 .claude/
 .claude-flow/
 .roo/
 .roomodes
 .snow-flow/
+.snow-code/
+.snowcode/
 .swarm/
 .hive-mind/
 .env*
 !.env.example
 
-# Build files
+# ===========================================
+# Build & Config files
+# ===========================================
 tsconfig.json
 jest.config.js
 .eslintrc*
@@ -30,23 +41,34 @@ cloudbuild*.yaml
 fix-*.sh
 *.test.json
 snowflow.config.example.ts
+turbo.json
+bunfig.toml
+bun.lock
 
+# ===========================================
 # Git and CI
+# ===========================================
 .git/
 .github/
 .gitignore
+.husky/
 
-# Documentation source
+# ===========================================
+# Documentation (keep only essential)
+# ===========================================
 docs/
 *.md
 !README.md
-!CLAUDE.md
 !LICENSE
 !TRADEMARK.md
-!LICENSE-ENTERPRISE
-!REPOSITORY_STRUCTURE.md
 
-# Business strategy (private - NEVER include in npm package)
+# Private/Internal documentation
+CLAUDE.md
+AGENTS.md
+AUTH-FLOW.md
+CHANGELOG.md
+PRIVACY.md
+TERMS.md
 MONETIZATION_STRATEGY.md
 BUSINESS_CHECKLIST.md
 CAPGEMINI_PARTNERSHIP_PROPOSAL.md
@@ -58,26 +80,21 @@ PHASE2-COMPLETION-SUMMARY.md
 PHASE3-COMPLETION-SUMMARY.md
 THEMES.md
 TOOLS-AUDIT-REPORT.md
-
-# OpenCode personal configuration (confidential)
-.opencode/
-themes/
-
-# Promotional and internal files
 LINKEDIN_POSTS_SERIES.md
 RELEASE_*.md
 CLOUD_BUILD_*.md
 AUDIT-LOGGING.md
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
-CHANGELOG.md
 DEBUG_GUIDE.md
 COMPLETE-MCP-*.md
 MCP-SERVERS-*.md
 coordination.md
 memory-bank.md
 
+# ===========================================
 # Test files
+# ===========================================
 test/
 tests/
 coverage/
@@ -85,64 +102,90 @@ coverage/
 *.spec.js
 __tests__/
 
-# Local files (not dist/)
-./memory/
-./coordination/
-./servicenow/
-./reports/
-./logs/
-./config/
+# ===========================================
+# Runtime data directories
+# ===========================================
+memory/
+coordination/
+servicenow/
+reports/
+logs/
+config/
+
+# ===========================================
+# Database files
+# ===========================================
 *.db
 *.db-*
 *.sqlite
 *.sqlite-*
 intelligent-mcp.db*
+
+# ===========================================
+# Logs & Temp files
+# ===========================================
 *.log
 *.tmp
+*.bak
+*.backup
+*.orig
+*-backup*
 
-# IDE
+# ===========================================
+# IDE & OS
+# ===========================================
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
 .DS_Store
 Thumbs.db
 
+# ===========================================
 # Build artifacts
+# ===========================================
 *.tsbuildinfo
 dist/**/*.map
 # CRITICAL: Ensure dist/memory/ is included for session tracking
 !dist/memory/**
 
-# Scripts (only exclude non-essential scripts)
+# ===========================================
+# Scripts (only include essential)
+# ===========================================
 scripts/*
 !scripts/postinstall.js
 !scripts/update-version.js
 
-# CRITICAL: Include bin/ directory for CLI executable
+# ===========================================
+# Directories NOT needed in npm package
+# ===========================================
+website/
+website-old/
+health-api/
+status-page/
+assets/
+!assets/snow-flow-logo.svg
+examples/
+patches/
+templates/
+
+# ===========================================
+# CRITICAL: bin/ directory for CLI executable
+# ===========================================
 !bin/
 !bin/snow-flow
 
-# Examples and assets (keep minimal)
-examples/
-assets/
-!assets/snow-flow-logo.svg
-
-# Backup files
-*-backup*
-*.bak
-
-# Package files
+# ===========================================
+# Package & Debug files
+# ===========================================
 *.tgz
 npm-debug.log*
 yarn-error.log*
 
-# CRITICAL: Enterprise (separate private repository - NEVER publish!)
+# ===========================================
+# Enterprise (NEVER publish!)
+# ===========================================
 enterprise/
-enterprise/**/*
 .enterprise/
 ../snow-flow-enterprise/
-../snow-flow-enterprise/**/*
 snow-flow-test-run/
