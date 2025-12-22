@@ -781,19 +781,14 @@ export const AuthRoute = new Hono()
         if (enabledServices && enabledServices.length > 0) {
           try {
             await updateDocumentationWithEnterprise(enabledServices)
-            console.log(`[auth-routes] Updated AGENTS.md for: ${enabledServices.join(', ')}`)
-          } catch (err: any) {
-            console.error(`[auth-routes] Failed to update AGENTS.md:`, err.message)
-          }
+          } catch {}
         }
 
         // Handle stakeholder documentation replacement
         if (role) {
           try {
             await replaceDocumentationForStakeholder(role)
-          } catch (err: any) {
-            console.error(`[auth-routes] Failed to update stakeholder docs:`, err.message)
-          }
+          } catch {}
         }
 
         return c.json({ success: true })
@@ -840,19 +835,14 @@ export const AuthRoute = new Hono()
         if (enabledServices && enabledServices.length > 0) {
           try {
             await updateDocumentationWithEnterprise(enabledServices)
-            console.log(`[auth-routes] Updated AGENTS.md for: ${enabledServices.join(', ')}`)
-          } catch (err: any) {
-            console.error(`[auth-routes] Failed to update AGENTS.md:`, err.message)
-          }
+          } catch {}
         }
 
         // Handle stakeholder documentation replacement
         if (role) {
           try {
             await replaceDocumentationForStakeholder(role)
-          } catch (err: any) {
-            console.error(`[auth-routes] Failed to update stakeholder docs:`, err.message)
-          }
+          } catch {}
         }
 
         return c.json({ success: true })
@@ -2329,12 +2319,7 @@ SnowFlowLLMService.prototype = {
         if (enabledServices.length > 0) {
           try {
             await updateDocumentationWithEnterprise(enabledServices)
-            console.log(`[auth-routes] Updated AGENTS.md with enterprise docs for: ${enabledServices.join(', ')}`)
-          } catch (docErr: any) {
-            console.error(`[auth-routes] Failed to update AGENTS.md:`, docErr.message)
-          }
-        } else {
-          console.log('[auth-routes] No enabled services, skipping AGENTS.md update')
+          } catch {}
         }
 
         // Update enterprise MCP config with token
@@ -2469,12 +2454,7 @@ SnowFlowLLMService.prototype = {
         if (enabledServices.length > 0) {
           try {
             await updateDocumentationWithEnterprise(enabledServices)
-            console.log(`[auth-routes] Updated AGENTS.md with enterprise docs for: ${enabledServices.join(', ')}`)
-          } catch (docErr: any) {
-            console.error(`[auth-routes] Failed to update AGENTS.md:`, docErr.message)
-          }
-        } else {
-          console.log('[auth-routes] No enabled services, skipping AGENTS.md update')
+          } catch {}
         }
 
         // Update enterprise MCP config with token
