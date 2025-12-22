@@ -5,7 +5,8 @@ import type { Props } from '@astrojs/starlight/props';
 
 import CopyIcon from "../assets/lander/copy.svg";
 import CheckIcon from "../assets/lander/check.svg";
-import TuiScreenshot from "../assets/lander/screenshot-splash.png";
+// Video is served from public folder
+const TuiVideoSrc = "/recording-snow-flow.mov";
 import VscodeScreenshot from "../assets/lander/screenshot-vscode.png";
 import GithubScreenshot from "../assets/lander/screenshot-github.png";
 
@@ -136,9 +137,16 @@ if (image) {
     <section class="images">
       <div class="left">
         <figure>
-          <figcaption>Snow-Flow TUI with the tokyonight theme</figcaption>
+          <figcaption>Snow-Flow TUI in action</figcaption>
           <a href="/docs/cli">
-            <Image src={TuiScreenshot} alt="Snow-Flow TUI with the tokyonight theme" />
+            <video
+              src={TuiVideoSrc}
+              autoplay
+              loop
+              muted
+              playsinline
+              aria-label="Snow-Flow TUI demo video"
+            />
           </a>
         </figure>
       </div>
@@ -425,11 +433,13 @@ section.images {
     box-sizing: border-box;
   }
 
-  & > div.left img {
+  & > div.left img,
+  & > div.left video {
     width: 100%;
     height: 100%;
     min-width: 0;
     object-fit: contain;
+    border-radius: 4px;
   }
 
   & > div.right img {
@@ -469,6 +479,7 @@ section.images {
     }
 
     & > div.left img,
+    & > div.left video,
     & > div.right img {
       width: 100%;
       height: auto;
