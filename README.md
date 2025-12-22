@@ -32,17 +32,15 @@
 # Install
 npm install -g snow-flow
 
-# Initialize (creates config files)
-snow-flow init
-
-# Authenticate (ServiceNow + optional enterprise services)
-snow-flow auth login
-
-# Start building
-snow-flow agent "create an incident dashboard widget"
+# Start Snow-Flow (auto-initializes on first run)
+snow-flow
 ```
 
-That's it. You're now developing ServiceNow through conversation.
+That's it! Snow-Flow starts an interactive TUI where you can:
+- Type `/auth` to authenticate with ServiceNow and your LLM provider
+- Start building through natural conversation
+
+> **Migrating from snow-code?** It's now fully integrated into snow-flow. Just run `snow-flow` to start.
 
 ---
 
@@ -78,20 +76,17 @@ Snow-Flow uses the Model Context Protocol (MCP) to give AI models direct access 
 3. Deploys to your ServiceNow instance
 4. Validates ES5 compliance and widget coherence
 
-All through natural conversation.
+All through natural conversation in the TUI.
 
-```bash
-# Create widgets
-snow-flow agent "create incident dashboard with priority charts and SLA timers"
+**Example conversations:**
+```
+You: Create an incident dashboard with priority charts and SLA timers
 
-# Build automation
-snow-flow agent "create business rule to auto-assign incidents by category"
+You: Build a business rule to auto-assign incidents by category
 
-# Query data
-snow-flow agent "show me all P1 incidents from last week"
+You: Show me all P1 incidents from last week
 
-# Complex workflows
-snow-flow agent "analyze incident patterns and create a knowledge article with recommendations"
+You: Analyze incident patterns and create a knowledge article with recommendations
 ```
 
 ---
@@ -124,7 +119,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 # Or Claude Pro/Max subscription (no API key needed)
 DEFAULT_LLM_PROVIDER=anthropic
 ANTHROPIC_API_KEY=
-# Then run: snow-flow auth login (opens browser)
+# Then use /auth in the TUI (opens browser)
 
 # GPT-4
 DEFAULT_LLM_PROVIDER=openai
@@ -177,15 +172,15 @@ Snow-Flow works with any MCP-compatible tool:
 
 | Tool | Setup |
 |------|-------|
-| **snow-code** (recommended) | Built-in, just run `snow-flow agent` |
+| **Snow-Flow TUI** (recommended) | Built-in, just run `snow-flow` |
 | **Claude Desktop** | Copy config to `claude_desktop_config.json` |
 | **Cursor** | Copy config to `.cursor/mcp.json` |
 | **Windsurf** | Copy config to `mcp_config.json` |
 | **Continue.dev** | Copy config to `.continue/mcpServers/` |
 
 ```bash
-# After snow-flow init, config is at:
-cat .snow-code/config.json
+# After first run, MCP config is at:
+cat ~/.snow-flow/mcp-config.json
 
 # Copy to your AI tool's MCP config location
 ```
@@ -194,16 +189,22 @@ cat .snow-code/config.json
 
 ## Commands
 
-```bash
-# Core workflow
-snow-flow init          # Initialize project
-snow-flow auth login    # Authenticate (ServiceNow + enterprise)
-snow-flow auth status   # Check authentication status
-snow-flow agent "task"  # Execute any ServiceNow task
+### TUI Commands (inside Snow-Flow)
 
-# Direct commands
-snow-flow deploy        # Deploy artifacts
-snow-flow status        # System status
+| Command | Description |
+|---------|-------------|
+| `/auth` | Authenticate with LLM, ServiceNow, and Enterprise |
+| `/help` | Show available commands |
+| `/clear` | Clear conversation |
+| `/compact` | Toggle compact mode |
+| `/exit` | Exit Snow-Flow |
+
+### CLI Commands
+
+```bash
+snow-flow              # Start the TUI
+snow-flow --version    # Show version
+snow-flow --help       # Show help
 ```
 
 ---
@@ -234,5 +235,5 @@ Elastic License 2.0 - Free for commercial use, cannot resell as competing SaaS.
 **Snow-Flow** - The free, open-source ServiceNow Build Agent alternative. Built by developers, for developers.
 
 ```bash
-npm install -g snow-flow && snow-flow init && snow-flow auth login && snow-flow agent "hello servicenow"
+npm install -g snow-flow && snow-flow
 ```
