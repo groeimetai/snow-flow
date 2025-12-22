@@ -2,7 +2,7 @@
 
 ## Overview
 
-Snow-Flow MCP tools now automatically authenticate with ServiceNow OAuth credentials stored by snow-code. This document explains how the authentication works and how to troubleshoot issues.
+Snow-Flow MCP tools automatically authenticate with ServiceNow OAuth credentials stored by the Snow-Flow TUI. This document explains how the authentication works and how to troubleshoot issues.
 
 ## Authentication Priority
 
@@ -16,24 +16,27 @@ The MCP server loads ServiceNow credentials in the following order:
    - `SERVICENOW_USERNAME` or `SNOW_USERNAME` (fallback, not recommended)
    - `SERVICENOW_PASSWORD` or `SNOW_PASSWORD` (fallback, not recommended)
 
-2. **snow-code auth.json** (automatic fallback)
+2. **Snow-Flow auth.json** (automatic fallback)
    - Location: `~/.local/share/snow-code/auth.json`
-   - Populated by: `snow-flow auth login`
-   - Contains OAuth credentials from snow-code authentication
+   - Populated by: `/auth` command in Snow-Flow TUI
+   - Contains OAuth credentials from authentication
 
 3. **Unauthenticated Mode** (last resort)
    - Server starts but all tool calls will fail with auth errors
-   - Prompts user to run: `snow-flow auth login`
+   - Prompts user to run: `snow-flow` and use `/auth` command
 
 ## How to Configure Authentication
 
-### Option 1: Using snow-flow auth login (Recommended)
+### Option 1: Using /auth in Snow-Flow TUI (Recommended)
 
 This is the easiest method and works **fully automatically**:
 
 ```bash
-# Run the authentication flow
-snow-flow auth login
+# Start Snow-Flow
+snow-flow
+
+# In the TUI, run the authentication flow
+/auth
 
 # This will:
 # 1. Authenticate with your LLM provider (Claude, GPT, etc.)
@@ -45,15 +48,15 @@ snow-flow auth login
 # 7. MCP server automatically reads from auth.json
 ```
 
-**🆕 NEW: Automatic Location Fix (v8.31.40+)**
+**🆕 Automatic Location Fix**
 
-If `snow-code` creates auth.json at the wrong location (`~/.local/share/snowcode/` without dash), `snow-flow auth login` will **automatically**:
+If auth.json is created at the wrong location (`~/.local/share/snowcode/` without dash), the `/auth` command will **automatically**:
 - ✅ Detect the incorrect location
 - ✅ Move auth.json to correct location (`~/.local/share/snow-code/` with dash)
 - ✅ Create a symlink at the old location for backwards compatibility
 - ✅ Show confirmation: "✅ Auth credentials stored at correct location"
 
-**No manual intervention needed!** After running `snow-flow auth login`, the MCP tools will automatically use the stored credentials without any additional configuration.
+**No manual intervention needed!** After running `/auth`, the MCP tools will automatically use the stored credentials without any additional configuration.
 
 ### Option 2: Using Environment Variables
 
@@ -93,16 +96,16 @@ The `.mcp.json` file can also contain credentials for the MCP server:
 }
 ```
 
-The `snow-flow auth login` command automatically updates `.mcp.json` with credentials from auth.json.
+The `/auth` command in the TUI automatically updates `.mcp.json` with credentials from auth.json.
 
 ## How It Works Internally
 
 ### 1. Authentication Flow
 
 ```
-User runs: snow-flow auth login
+User runs: snow-flow → then /auth in TUI
     ↓
-snow-code handles OAuth flow
+Snow-Flow TUI handles OAuth flow
     ↓
 Credentials stored in: ~/.local/share/snow-code/auth.json
     ↓
@@ -155,7 +158,7 @@ function loadContext() {
 **Problem:** MCP server cannot find valid credentials.
 
 **Solutions:**
-1. Run `snow-flow auth login` to configure credentials
+1. Run `snow-flow` and use `/auth` command to configure credentials
 2. Check `~/.local/share/snow-code/auth.json` exists and contains servicenow credentials
 3. Verify credentials are not placeholders (e.g., "your-instance", "your-client-id")
 4. Check environment variables if using manual configuration
@@ -166,7 +169,7 @@ function loadContext() {
 
 **Solutions:**
 1. Delete token cache: `rm -f ~/.snow-flow/token-cache.json`
-2. Re-authenticate: `snow-flow auth login`
+2. Re-authenticate: Run `snow-flow` and use `/auth` command
 3. Verify OAuth client credentials in ServiceNow are still valid
 4. Check if OAuth application is still active in ServiceNow
 
@@ -181,10 +184,10 @@ function loadContext() {
 [Auth]   1. Environment variables (SERVICENOW_* or SNOW_*)
 [Auth]   2. snow-code auth.json (~/.local/share/snow-code/auth.json)
 [Auth] Server starting in UNAUTHENTICATED mode - tools will return authentication errors
-[Auth] To configure credentials, run: snow-flow auth login
+[Auth] To configure credentials, run: snow-flow and use /auth
 ```
 
-**Solution:** Run `snow-flow auth login` to configure credentials.
+**Solution:** Run `snow-flow` and use `/auth` command to configure credentials.
 
 ### Issue: Credentials in auth.json but still failing
 
@@ -227,7 +230,7 @@ You can work with multiple ServiceNow instances by:
    cp ~/.local/share/snow-code/auth.json ~/.local/share/snow-code/auth-instance1.json
 
    # Run auth for instance 2
-   snow-flow auth login
+   snow-flow  # then /auth in TUI
 
    # Restore instance 1
    cp ~/.local/share/snow-code/auth-instance1.json ~/.local/share/snow-code/auth.json
@@ -247,7 +250,7 @@ You can work with multiple ServiceNow instances by:
 
 3. **Rotate credentials regularly**
    - Regenerate OAuth client secrets periodically
-   - Update credentials with `snow-flow auth login`
+   - Update credentials with `/auth` command in Snow-Flow TUI
 
 4. **Use different OAuth clients per environment**
    - Development instance: dev-oauth-client
@@ -286,7 +289,7 @@ private loadContext(): ServiceNowContext {
 
 ## FAQ
 
-**Q: Do I need to run `snow-flow auth login` every time?**
+**Q: Do I need to run `/auth` every time?**
 A: No, credentials are persisted in auth.json. Only re-run if credentials change or expire.
 
 **Q: Can I use snow-flow without OAuth?**
@@ -299,7 +302,7 @@ A: In `~/.snow-flow/token-cache.json`. This file is automatically managed and ca
 A: ServiceNow OAuth access tokens typically last 30 minutes. The auth manager automatically refreshes them before expiry.
 
 **Q: Can I manually edit auth.json?**
-A: Yes, but it's better to use `snow-flow auth login`. Manual edits must match the exact JSON structure shown above.
+A: Yes, but it's better to use `/auth` command in the TUI. Manual edits must match the exact JSON structure shown above.
 
 ## Support
 

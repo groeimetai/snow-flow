@@ -83,7 +83,7 @@ if [ -f ".opencode/package.json" ]; then
   display "  Full package.json" "cat .opencode/package.json"
 else
   echo -e "    ${YELLOW}⚠ .opencode/package.json not found${NC}"
-  echo -e "    ${YELLOW}  Run 'snow-flow init' to create it${NC}"
+  echo -e "    ${YELLOW}  Run 'snow-flow' to start the TUI (auto-initializes on first run)${NC}"
 fi
 
 echo ""

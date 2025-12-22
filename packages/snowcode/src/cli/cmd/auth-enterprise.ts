@@ -264,7 +264,7 @@ export const AuthEnterpriseLoginCommand = cmd({
         prompts.log.info("   1. Log in to the Snow-Flow Enterprise Portal")
         prompts.log.info("   2. Go to Settings → Team Management")
         prompts.log.info("   3. Invite users with their email addresses")
-        prompts.log.info("   4. Users can then log in with 'snow-code auth login'")
+        prompts.log.info("   4. Users can then log in with '/auth' in the TUI")
         prompts.log.info("")
         process.exit(1)
       }
@@ -470,7 +470,7 @@ export const AuthEnterpriseLoginCommand = cmd({
       prompts.log.info("   ℹ️  No sensitive data is stored locally.")
       prompts.log.info("")
       prompts.log.info("   📖 CLAUDE.md will be configured automatically at startup")
-      prompts.log.info("   Next: Run 'snow-flow agent \"<objective>\"' to start developing")
+      prompts.log.info("   Next: Just type your request in the TUI to start developing")
       prompts.log.info("")
 
     } catch (error: any) {

@@ -32,7 +32,7 @@ if (fs.existsSync(authPath)) {
       console.log('   Has Refresh Token:', !!servicenowCreds.refreshToken);
     } else {
       console.log('❌ No ServiceNow OAuth credentials in auth.json');
-      console.log('   Run: snow-flow auth login');
+      console.log('   Run: snow-flow and use /auth in the TUI');
     }
   } catch (error) {
     console.log('❌ Failed to parse auth.json:', error.message);
@@ -40,7 +40,7 @@ if (fs.existsSync(authPath)) {
 } else {
   console.log('❌ auth.json not found');
   console.log('   Expected location:', authPath);
-  console.log('   Run: snow-flow auth login');
+  console.log('   Run: snow-flow and use /auth in the TUI');
 }
 
 console.log('');
@@ -103,7 +103,7 @@ if (fs.existsSync(mcpPath)) {
   }
 } else {
   console.log('ℹ️  .mcp.json not found (this is OK)');
-  console.log('   Run: snow-flow init (to create project config)');
+  console.log('   Run: snow-flow (auto-initializes on first run)');
 }
 
 console.log('');
@@ -157,7 +157,7 @@ if (authJsonExists) {
   console.log('❌ No authentication configured');
   console.log('');
   console.log('To fix:');
-  console.log('   1. Run: snow-flow auth login');
+  console.log('   1. Run: snow-flow and use /auth in the TUI');
   console.log('   2. Or set environment variables manually');
 }
 

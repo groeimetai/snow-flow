@@ -118,15 +118,15 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     // Write to .mcp.json in current working directory (where snow-code is run)
     const mcpConfigPath = path.join(process.cwd(), '.mcp.json');
 
-    // 🔥 FIX: Check if .mcp.json exists - if not, user must run `snow-flow init` first!
+    // 🔥 FIX: Check if .mcp.json exists - if not, user must start snow-flow first!
     if (!existsSync(mcpConfigPath)) {
       logger.warn('.mcp.json not found in current directory');
-      logger.warn('Please run: snow-flow init');
-      logger.warn('Then run: snow-flow auth login again');
+      logger.warn('Please run: snow-flow (auto-initializes on first run)');
+      logger.warn('Then use /auth in the TUI to configure enterprise features');
       throw new Error(
         '.mcp.json not found!\n' +
-        'Run "snow-flow init" first to initialize the project.\n' +
-        'Then run "snow-flow auth login" again to configure enterprise features.'
+        'Run "snow-flow" first to start the TUI (auto-initializes on first run).\n' +
+        'Then use /auth in the TUI to configure enterprise features.'
       );
     }
 
@@ -292,15 +292,15 @@ export async function addEnterpriseMcpServerWithToken(config: EnterpriseMcpConfi
     // Write to .mcp.json in current working directory (where snow-code is run)
     const mcpConfigPath = path.join(process.cwd(), '.mcp.json');
 
-    // Check if .mcp.json exists - if not, user must run `snow-flow init` first!
+    // Check if .mcp.json exists - if not, user must start snow-flow first!
     if (!existsSync(mcpConfigPath)) {
       logger.warn('.mcp.json not found in current directory');
-      logger.warn('Please run: snow-flow init');
-      logger.warn('Then run: snow-flow auth login again');
+      logger.warn('Please run: snow-flow (auto-initializes on first run)');
+      logger.warn('Then use /auth in the TUI to configure enterprise features');
       throw new Error(
         '.mcp.json not found!\n' +
-        'Run "snow-flow init" first to initialize the project.\n' +
-        'Then run "snow-flow auth login" again to configure enterprise features.'
+        'Run "snow-flow" first to start the TUI (auto-initializes on first run).\n' +
+        'Then use /auth in the TUI to configure enterprise features.'
       );
     }
 

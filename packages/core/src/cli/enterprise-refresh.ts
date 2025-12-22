@@ -26,7 +26,7 @@ export async function refreshEnterpriseJWT(): Promise<void> {
       await fs.access(mcpConfigPath);
     } catch {
       prompts.log.error('⚠️  No .mcp.json found in current directory');
-      prompts.log.info('💡 Run: snow-flow init');
+      prompts.log.info('💡 Run: snow-flow (auto-initializes on first run)');
       prompts.outro('Failed to refresh JWT');
       return;
     }
@@ -39,7 +39,7 @@ export async function refreshEnterpriseJWT(): Promise<void> {
     const enterpriseServer = mcpConfig.mcp?.['snow-flow-enterprise'] || mcpConfig.mcpServers?.['snow-flow-enterprise'];
     if (!enterpriseServer) {
       prompts.log.error('⚠️  Enterprise MCP server not configured');
-      prompts.log.info('💡 Run: snow-flow auth login');
+      prompts.log.info('💡 Run: snow-flow and use /auth in the TUI');
       prompts.outro('Failed to refresh JWT');
       return;
     }
@@ -61,7 +61,7 @@ export async function refreshEnterpriseJWT(): Promise<void> {
       role = enterpriseCreds.role || 'developer';
     } catch (err: any) {
       prompts.log.error('⚠️  Enterprise credentials not found');
-      prompts.log.info('💡 Run: snow-flow auth login');
+      prompts.log.info('💡 Run: snow-flow and use /auth in the TUI');
       prompts.outro('Failed to refresh JWT');
       return;
     }

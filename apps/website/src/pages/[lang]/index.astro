@@ -624,54 +624,9 @@ const description = t('meta.home.description');
                 <p class="developers-quote-author">The Snow-Flow Team</p>
             </div>
 
-            <div class="terminal-demo">
-                <div class="terminal-header">
-                    <span class="terminal-dot red"></span>
-                    <span class="terminal-dot yellow"></span>
-                    <span class="terminal-dot green"></span>
-                    <span class="terminal-title">snow-flow</span>
-                </div>
-                <div class="terminal-body">
-                    <div class="terminal-line">
-                        <span class="terminal-prompt">$</span> <span class="terminal-command">snow-flow init</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-output">Initializing Snow-Flow MCP servers...</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-success">410 tools loaded from 23 servers</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-prompt">$</span> <span class="terminal-command">snow-flow auth login</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-output">? ServiceNow instance: dev123456.service-now.com</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-output">? LLM provider: Claude (Anthropic)</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-output">? Snow-Flow Enterprise: Yes</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-output">? Connect Jira, Confluence, Azure DevOps: Jira, Confluence</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-success">Authentication complete. All connections verified.</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-prompt">$</span> <span class="terminal-command">snow-flow agent "Complete JIRA-1234"</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-output">Creating update set: JIRA-1234-incident-dashboard</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-output">Building widget... Running tests... Deploying...</span>
-                    </div>
-                    <div class="terminal-line">
-                        <span class="terminal-success">Story complete. Update set ready for promotion.</span>
-                    </div>
-                </div>
+            <div class="tui-screenshot">
+                <img src="/snow-flow-tui.png" alt="Snow-Flow TUI - Interactive terminal interface for ServiceNow development" class="tui-image" loading="lazy" />
+                <p class="tui-caption">The Snow-Flow TUI - Your AI-powered ServiceNow development environment</p>
             </div>
         </div>
     </section>
@@ -681,8 +636,8 @@ const description = t('meta.home.description');
         <div class="container">
             <div class="section-header">
                 <span class="section-badge">The Platform</span>
-                <h2 class="section-title">Three Projects. One Mission.</h2>
-                <p class="section-subtitle">Snow-Flow is built as a modular platform. Choose what you need - from the open-source core to enterprise integrations.</p>
+                <h2 class="section-title">One Platform. Complete ServiceNow Development.</h2>
+                <p class="section-subtitle">Snow-Flow combines MCP tools, a built-in TUI, and optional enterprise integrations. Everything you need in one package.</p>
             </div>
 
             <!-- Platform Cards -->
@@ -723,7 +678,7 @@ const description = t('meta.home.description');
                     </a>
                 </div>
 
-                <!-- Snow-Code -->
+                <!-- Snow-Flow TUI (Built-in) -->
                 <div class="platform-card">
                     <div class="platform-card-header">
                         <div class="platform-icon purple">
@@ -732,19 +687,12 @@ const description = t('meta.home.description');
                                 <polyline points="8 6 2 12 8 18"></polyline>
                             </svg>
                         </div>
-                        <span class="platform-badge open">Open Source</span>
+                        <span class="platform-badge open">Built-in</span>
                     </div>
-                    <h3 class="platform-name">Snow-Code</h3>
+                    <h3 class="platform-name">Snow-Flow TUI</h3>
                     <p class="platform-tagline">The Interface</p>
-                    <p class="platform-desc">Your development environment. A terminal-based AI IDE with OAuth authentication, multi-instance support, MID Server connectivity, and project management. Works with any LLM.</p>
+                    <p class="platform-desc">Your development environment. A terminal-based AI IDE with OAuth authentication, multi-instance support, and project management. Works with any LLM. Just run <code>snow-flow</code> to start.</p>
                     <div class="platform-stats">
-                        <div class="platform-stat-row highlight">
-                            <span class="platform-stat-label">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: -2px; margin-right: 4px;"><path d="M12 .587l3.668 7.431 8.2 1.191-5.934 5.782 1.4 8.172L12 19.896l-7.334 3.855 1.4-8.172L.132 9.797l8.2-1.191z"/></svg>
-                                GitHub Stars
-                            </span>
-                            <span class="platform-stat-value star-count" id="snowCodeStars">-</span>
-                        </div>
                         <div class="platform-stat-row">
                             <span class="platform-stat-label">LLM Providers</span>
                             <span class="platform-stat-value">75+</span>
@@ -753,8 +701,12 @@ const description = t('meta.home.description');
                             <span class="platform-stat-label">IDE Integrations</span>
                             <span class="platform-stat-value">5</span>
                         </div>
+                        <div class="platform-stat-row">
+                            <span class="platform-stat-label">TUI Commands</span>
+                            <span class="platform-stat-value">/auth /help</span>
+                        </div>
                     </div>
-                    <a href="https://github.com/groeimetai/snow-code" class="platform-link" target="_blank">
+                    <a href="https://github.com/groeimetai/snow-flow" class="platform-link" target="_blank">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
                         View on GitHub
                     </a>
@@ -890,7 +842,7 @@ const description = t('meta.home.description');
                     <ul>
                         <li><a href="https://github.com/groeimetai/snow-flow">{t('nav.github')}</a></li>
                         <li><a href="https://discord.gg/snowflow">Discord</a></li>
-                        <li><a href="https://github.com/groeimetai/snow-code">Snow-Code</a></li>
+                        <li><a href="https://github.com/groeimetai/snow-flow">Snow-Flow TUI</a></li>
                     </ul>
                 </div>
                 <div class="footer-column">
@@ -1135,11 +1087,9 @@ const description = t('meta.home.description');
                 requestAnimationFrame(update);
             }
 
-            // GitHub stars data
+            // GitHub stars data (TUI is now part of snow-flow)
             const starsData = {
                 snowFlow: 0,
-                snowCode: 0,
-                total: 0,
                 fetched: false
             };
 
@@ -1149,25 +1099,19 @@ const description = t('meta.home.description');
                 if (starsAnimated) return;
 
                 const snowFlowStarsEl = document.getElementById('snowFlowStars');
-                const snowCodeStarsEl = document.getElementById('snowCodeStars');
                 const totalStarsEl = document.getElementById('totalStars');
 
                 if (starsData.snowFlow > 0) {
                     animateCounter(snowFlowStarsEl, starsData.snowFlow, 1500);
                 } else if (starsData.fetched) {
-                    snowFlowStarsEl.textContent = '0';
+                    if (snowFlowStarsEl) snowFlowStarsEl.textContent = '0';
                 }
 
-                if (starsData.snowCode > 0) {
-                    animateCounter(snowCodeStarsEl, starsData.snowCode, 1500);
+                // Total stars = just snow-flow now (TUI is integrated)
+                if (starsData.snowFlow > 0) {
+                    animateCounter(totalStarsEl, starsData.snowFlow, 2000);
                 } else if (starsData.fetched) {
-                    snowCodeStarsEl.textContent = '0';
-                }
-
-                if (starsData.total > 0) {
-                    animateCounter(totalStarsEl, starsData.total, 2000);
-                } else if (starsData.fetched) {
-                    totalStarsEl.textContent = '0';
+                    if (totalStarsEl) totalStarsEl.textContent = '0';
                 }
 
                 if (starsData.fetched) {
@@ -1175,11 +1119,10 @@ const description = t('meta.home.description');
                 }
             }
 
-            // Fetch GitHub stars for both repos
+            // Fetch GitHub stars for snow-flow repo (TUI is now integrated)
             async function fetchGitHubStars() {
                 const repos = [
-                    { key: 'snowFlow', url: 'https://api.github.com/repos/groeimetai/snow-flow' },
-                    { key: 'snowCode', url: 'https://api.github.com/repos/groeimetai/snow-code' }
+                    { key: 'snowFlow', url: 'https://api.github.com/repos/groeimetai/snow-flow' }
                 ];
 
                 for (const repo of repos) {
@@ -1193,7 +1136,7 @@ const description = t('meta.home.description');
                         // Use fallback of 0
                     }
                 }
-                starsData.total = starsData.snowFlow + starsData.snowCode;
+                // Total = just snow-flow (TUI is integrated)
                 starsData.fetched = true;
 
                 // Update counters if stats section is already visible

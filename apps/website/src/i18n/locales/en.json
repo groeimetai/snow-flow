@@ -176,22 +176,22 @@
     "prompt": "What would you like to build today?"
   },
   "projects": {
-    "title": "Three Projects. One Mission.",
-    "subtitle": "Snow-Flow is built on three interconnected open-source projects.",
+    "title": "One Platform. Complete ServiceNow Development.",
+    "subtitle": "Snow-Flow combines MCP tools, a built-in TUI, and optional enterprise integrations.",
     "snowFlow": {
       "name": "Snow-Flow",
       "tools": "410+ Tools",
-      "desc": "The MCP servers. 410+ tools for ServiceNow development. Widgets, business rules, flows, integrations—everything you need."
+      "desc": "The core platform. 410+ MCP tools for ServiceNow development. Widgets, business rules, flows, integrations—everything you need."
     },
-    "snowCode": {
-      "name": "Snow-Code",
-      "tools": "CLI & TUI",
-      "desc": "The developer interface. OAuth authentication, MCP configuration, and a beautiful terminal UI for any LLM."
+    "snowFlowTUI": {
+      "name": "Snow-Flow TUI",
+      "tools": "Built-in Interface",
+      "desc": "The development environment. A terminal-based AI IDE with OAuth authentication, multi-instance support, and project management. Just run snow-flow to start."
     },
     "enterprise": {
       "name": "Enterprise",
       "tools": "Business Layer",
-      "desc": "The business platform. Portal, Jira/Azure DevOps integration, stakeholder seats, and team management."
+      "desc": "Optional enterprise features. Portal, Jira/Azure DevOps/Confluence integration, stakeholder seats, and team management."
     }
   },
   "footer": {

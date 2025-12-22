@@ -48,7 +48,7 @@ try {
 
   if (isGlobalInstall) {
     console.log('✅ Snow-Flow installed globally');
-    console.log('📁 Run "snow-flow init" in your project directory to initialize');
+    console.log('📁 Run "snow-flow" in your project directory to start the TUI');
 
     // Create global config directory
     try {

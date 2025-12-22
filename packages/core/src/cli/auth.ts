@@ -248,8 +248,8 @@ async function enterpriseLicenseFlow(): Promise<void> {
       prompts.log.error('⚠️  Project not initialized');
       prompts.log.message('');
       prompts.log.info('💡 Next steps:');
-      prompts.log.message('  1. Run: snow-flow init');
-      prompts.log.message('  2. Then run: snow-flow auth login (to configure enterprise)');
+      prompts.log.message('  1. Run: snow-flow');
+      prompts.log.message('  2. Then use /auth in the TUI to configure enterprise');
       prompts.log.message('');
     } else {
       prompts.log.error(`Enterprise configuration failed: ${error.message}`);
@@ -261,16 +261,16 @@ async function enterpriseLicenseFlow(): Promise<void> {
 /**
  * Update project documentation (CLAUDE.md and AGENTS.md) with enterprise server information
  *
- * NOTE: Documentation generation has been moved to snow-code auth.ts
- * This function is now a no-op as snow-code handles the comprehensive documentation
- * generation when users run `snow-code auth login`.
+ * NOTE: Documentation generation has been moved to Snow-Flow TUI
+ * This function is now a no-op as the TUI handles the comprehensive documentation
+ * generation when users run `/auth`.
  *
- * @deprecated Use snow-code auth login instead for enterprise documentation
+ * @deprecated Use /auth in the Snow-Flow TUI for enterprise documentation
  */
 async function updateDocumentationWithEnterprise(_enabledServices?: string[]): Promise<void> {
-  // Documentation generation is now handled by snow-code auth login
+  // Documentation generation is now handled by /auth in the TUI
   // This prevents duplicate/conflicting documentation being written
-  authLogger.debug('Documentation generation delegated to snow-code auth login');
+  authLogger.debug('Documentation generation delegated to /auth in TUI');
 }
 
 /**
@@ -417,9 +417,9 @@ async function updateMCPServerConfig() {
       }
     } catch (err: any) {
       if (err.code === 'ENOENT') {
-        authLogger.warn('Project .mcp.json not found. Run "snow-flow init" to create one.');
+        authLogger.warn('Project .mcp.json not found. Run "snow-flow" to auto-initialize.');
         prompts.log.warn('⚠️  No .mcp.json found in current directory');
-        prompts.log.info('💡 Run: snow-flow init');
+        prompts.log.info('💡 Run: snow-flow');
       } else {
         authLogger.debug(`Could not update project .mcp.json: ${err.message}`);
       }
@@ -562,8 +562,8 @@ export function registerAuthCommands(program: Command) {
           } else if (err.message && err.message.includes('.mcp.json not found')) {
             prompts.log.message('');
             prompts.log.warn('⚠️  Enterprise MCP configuration skipped');
-            prompts.log.info('   Run "snow-flow init" first to create .mcp.json');
-            prompts.log.info('   Then run "snow-flow auth login" again to enable enterprise tools');
+            prompts.log.info('   Run "snow-flow" first to auto-create .mcp.json');
+            prompts.log.info('   Then use "/auth" again to enable enterprise tools');
           } else if (err.message && !err.message.includes('ENOENT')) {
             // Only show error if it's not just "file doesn't exist"
             prompts.log.message('');
@@ -804,7 +804,7 @@ export function registerAuthCommands(program: Command) {
       } catch (error: any) {
         if (error.code === 'ENOENT') {
           prompts.log.error('No .env file found in current directory');
-          prompts.log.info('Run: snow-flow auth login first');
+          prompts.log.info('Run: snow-flow and use /auth first');
         } else {
           prompts.log.error('Sync failed: ' + error.message);
         }

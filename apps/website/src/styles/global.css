@@ -2044,6 +2044,40 @@
             color: var(--accent-green);
         }
 
+        /* TUI Screenshot Section */
+        .tui-screenshot {
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .tui-image {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border-radius: 16px;
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                0 20px 60px -15px rgba(0, 0, 0, 0.5),
+                0 0 100px -20px rgba(0, 217, 255, 0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .tui-image:hover {
+            transform: scale(1.02);
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.15),
+                0 30px 80px -15px rgba(0, 0, 0, 0.6),
+                0 0 120px -20px rgba(0, 217, 255, 0.25);
+        }
+
+        .tui-caption {
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-style: italic;
+        }
+
         /* =====================================================
            FOOTER
            ===================================================== */

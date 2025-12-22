@@ -5,6 +5,42 @@ All notable changes to Snow-Flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [9.0.22] - 2025-12-22
+
+### ⚠️ Breaking Changes
+- **Unified TUI Experience**: The workflow has been completely simplified
+  - `snow-flow init` is now **automatic** on first run
+  - `snow-flow auth login` is now **`/auth`** command inside the TUI
+  - `snow-flow agent "objective"` is **removed** - just type your request in the TUI
+  - **Old**: `snow-flow init && snow-flow auth login && snow-flow agent "task"`
+  - **New**: `snow-flow` (start TUI) → `/auth` (authenticate) → type your request
+
+### Added
+- **Integrated TUI Commands**: New slash commands available inside Snow-Flow TUI:
+  - `/auth` - Authenticate with LLM, ServiceNow, and Enterprise
+  - `/help` - Show available commands
+  - `/clear` - Clear conversation
+  - `/compact` - Toggle compact mode
+  - `/exit` - Exit Snow-Flow
+
+### Changed
+- **snow-code Integration**: `snow-code` package is now fully integrated into `snow-flow`
+  - No longer a separate package or GitHub repository
+  - All functionality available by just running `snow-flow`
+  - Migrating users: simply run `snow-flow` instead of `snow-code`
+
+### Removed
+- **CLI Commands**: The following CLI commands have been replaced by TUI equivalents:
+  - `snow-flow init` → Automatic on first run
+  - `snow-flow auth login` → `/auth` in TUI
+  - `snow-flow agent "objective"` → Just type in TUI
+
+### Updated Documentation
+- README.md - New Getting Started workflow
+- Website pages - Updated terminal demos and command references
+- CLI help text - Reflects new TUI-based workflow
+- AUTH-FLOW.md - Updated authentication instructions
+
 ## [8.31.44] - 2025-11-13
 
 ### Changed

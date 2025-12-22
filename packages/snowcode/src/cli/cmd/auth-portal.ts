@@ -637,7 +637,7 @@ async function handlePortalAuthSuccess(data: {
 
   prompts.log.info("")
   prompts.log.info("   📖 CLAUDE.md will be configured automatically at startup")
-  prompts.log.info("   Next: Run 'snow-flow agent \"<objective>\"' to start developing")
+  prompts.log.info("   Next: Just type your request in the TUI to start developing")
   prompts.log.info("")
 }
 

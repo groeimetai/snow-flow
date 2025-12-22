@@ -123,12 +123,12 @@ snow-flow --version</pre>
                 <div class="callout info">
                     <div class="callout-title">Tip</div>
                     <p>{lang === 'en'
-                        ? 'For the best experience, we recommend using Snow-Flow with '
-                        : 'Voor de beste ervaring raden we aan Snow-Flow te gebruiken met '}
-                        <a href="https://github.com/groeimetai/snow-code">snow-code</a>
+                        ? 'Snow-Flow includes a built-in AI-powered terminal interface (TUI). Just run '
+                        : 'Snow-Flow bevat een ingebouwde AI-aangedreven terminal interface (TUI). Voer gewoon '}
+                        <code>snow-flow</code>
                         {lang === 'en'
-                            ? ' - our AI-powered terminal interface based on Claude Code.'
-                            : ' - onze AI-aangedreven terminal interface gebaseerd op Claude Code.'}
+                            ? ' to start developing through natural conversation.'
+                            : ' uit om te beginnen met ontwikkelen via natuurlijke conversatie.'}
                     </p>
                 </div>
             </section>
@@ -137,19 +137,17 @@ snow-flow --version</pre>
             <section id="quickstart">
                 <h2>{lang === 'en' ? 'Quick Start' : 'Snelle Start'}</h2>
 
-                <h3>1. {lang === 'en' ? 'Initialize Project' : 'Project Initialiseren'}</h3>
+                <h3>1. {lang === 'en' ? 'Start Snow-Flow' : 'Start Snow-Flow'}</h3>
                 <div class="code-block">
                     <div class="code-header">
                         <span class="code-lang">bash</span>
                         <button class="code-copy">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># Initialize Snow-Flow in your project</span>
-snow-flow init
+<pre><span class="comment"># Start Snow-Flow (auto-initializes on first run)</span>
+snow-flow
 
-<span class="comment"># This creates:</span>
-<span class="comment"># - .mcp.json (MCP server configuration)</span>
-<span class="comment"># - CLAUDE.md (AI agent instructions)</span></pre>
+<span class="comment"># This starts the TUI and creates config files automatically</span></pre>
                     </div>
                 </div>
 
@@ -160,11 +158,10 @@ snow-flow init
                         <button class="code-copy">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># Login to ServiceNow and configure LLM provider</span>
-snow-flow auth login
+<pre><span class="comment"># In the TUI, type /auth to authenticate</span>
+/auth
 
-<span class="comment"># Check authentication status</span>
-snow-flow auth status</pre>
+<span class="comment"># This connects to ServiceNow, your LLM provider, and Enterprise (optional)</span></pre>
                     </div>
                 </div>
 
@@ -175,11 +172,11 @@ snow-flow auth status</pre>
                         <button class="code-copy">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># Run an autonomous task</span>
-snow-flow agent <span class="string">"Create a widget showing high-priority incidents"</span>
+<pre><span class="comment"># Just type your request in natural language</span>
+<span class="string">Create a widget showing high-priority incidents</span>
 
 <span class="comment"># Query data</span>
-snow-flow agent <span class="string">"Show me all incidents from last week"</span></pre>
+<span class="string">Show me all incidents from last week</span></pre>
                     </div>
                 </div>
             </section>
@@ -198,7 +195,7 @@ snow-flow agent <span class="string">"Show me all incidents from last week"</spa
                 <h3>{lang === 'en' ? 'Authentication Priority' : 'Authenticatie Prioriteit'}</h3>
                 <ol>
                     <li><strong>{lang === 'en' ? 'Environment variables' : 'Environment variabelen'}</strong> - {lang === 'en' ? 'Highest priority' : 'Hoogste prioriteit'}</li>
-                    <li><strong>auth.json</strong> - {lang === 'en' ? 'Auto-loaded from snow-code' : 'Automatisch geladen van snow-code'}</li>
+                    <li><strong>auth.json</strong> - {lang === 'en' ? 'Auto-loaded from Snow-Flow' : 'Automatisch geladen van Snow-Flow'}</li>
                     <li><strong>.mcp.json credentials</strong> - {lang === 'en' ? 'Project-specific' : 'Project-specifiek'}</li>
                     <li><strong>{lang === 'en' ? 'Interactive login' : 'Interactieve login'}</strong> - {lang === 'en' ? 'Prompts if none found' : 'Vraagt indien geen gevonden'}</li>
                 </ol>
@@ -276,8 +273,9 @@ snow-flow agent <span class="string">"Show me all incidents from last week"</spa
 
             <!-- CLI Commands -->
             <section id="cli-commands">
-                <h2>CLI {lang === 'en' ? 'Commands' : 'Commando\'s'}</h2>
+                <h2>{lang === 'en' ? 'Commands' : 'Commando\'s'}</h2>
 
+                <h3>{lang === 'en' ? 'TUI Commands (inside Snow-Flow)' : 'TUI Commando\'s (in Snow-Flow)'}</h3>
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -288,33 +286,59 @@ snow-flow agent <span class="string">"Show me all incidents from last week"</spa
                         </thead>
                         <tbody>
                             <tr>
-                                <td><code>snow-flow init</code></td>
-                                <td>{lang === 'en' ? 'Initialize project with config files' : 'Initialiseer project'}</td>
+                                <td><code>/auth</code></td>
+                                <td>{lang === 'en' ? 'Authenticate with LLM, ServiceNow, and Enterprise' : 'Authenticeer met LLM, ServiceNow en Enterprise'}</td>
                             </tr>
                             <tr>
-                                <td><code>snow-flow auth login</code></td>
-                                <td>{lang === 'en' ? 'Authenticate with ServiceNow' : 'Authenticeer met ServiceNow'}</td>
+                                <td><code>/help</code></td>
+                                <td>{lang === 'en' ? 'Show available commands' : 'Toon beschikbare commando\'s'}</td>
                             </tr>
                             <tr>
-                                <td><code>snow-flow auth status</code></td>
-                                <td>{lang === 'en' ? 'Check authentication status' : 'Controleer status'}</td>
+                                <td><code>/clear</code></td>
+                                <td>{lang === 'en' ? 'Clear conversation' : 'Wis conversatie'}</td>
                             </tr>
                             <tr>
-                                <td><code>snow-flow agent "task"</code></td>
-                                <td>{lang === 'en' ? 'Execute task autonomously' : 'Voer taak autonoom uit'}</td>
+                                <td><code>/compact</code></td>
+                                <td>{lang === 'en' ? 'Toggle compact mode' : 'Schakel compacte modus'}</td>
                             </tr>
                             <tr>
-                                <td><code>snow-flow monitor</code></td>
-                                <td>{lang === 'en' ? 'Real-time monitoring' : 'Real-time monitoring'}</td>
+                                <td><code>/exit</code></td>
+                                <td>{lang === 'en' ? 'Exit Snow-Flow' : 'Sluit Snow-Flow'}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>{lang === 'en' ? 'CLI Commands' : 'CLI Commando\'s'}</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>{lang === 'en' ? 'Description' : 'Beschrijving'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>snow-flow</code></td>
+                                <td>{lang === 'en' ? 'Start the TUI (auto-initializes on first run)' : 'Start de TUI (auto-initialiseert bij eerste run)'}</td>
+                            </tr>
+                            <tr>
+                                <td><code>snow-flow --version</code></td>
+                                <td>{lang === 'en' ? 'Show version' : 'Toon versie'}</td>
+                            </tr>
+                            <tr>
+                                <td><code>snow-flow --help</code></td>
+                                <td>{lang === 'en' ? 'Show help' : 'Toon help'}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </section>
 
-            <!-- CLI Agent -->
+            <!-- TUI Workflow -->
             <section id="cli-agent">
-                <h3>Agent Mode</h3>
+                <h3>{lang === 'en' ? 'TUI Workflow' : 'TUI Workflow'}</h3>
 
                 <div class="code-block">
                     <div class="code-header">
@@ -322,22 +346,25 @@ snow-flow agent <span class="string">"Show me all incidents from last week"</spa
                         <button class="code-copy">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># Create a widget</span>
-snow-flow agent <span class="string">"Create a dashboard widget for incident metrics"</span>
+<pre><span class="comment"># Start Snow-Flow</span>
+$ snow-flow
 
-<span class="comment"># Automate a process</span>
-snow-flow agent <span class="string">"Create business rule to auto-assign incidents"</span>
+<span class="comment"># In the TUI, just type your request:</span>
+> <span class="string">Create a dashboard widget for incident metrics</span>
 
-<span class="comment"># Complex task with multiple agents</span>
-snow-flow agent <span class="string">"Build a complete workspace for IT support"</span></pre>
+<span class="comment"># Or automate a process:</span>
+> <span class="string">Create business rule to auto-assign incidents</span>
+
+<span class="comment"># Or build complete solutions:</span>
+> <span class="string">Build a complete workspace for IT support</span></pre>
                     </div>
                 </div>
 
                 <div class="callout success">
                     <div class="callout-title">{lang === 'en' ? 'Automatic Update Sets' : 'Automatische Update Sets'}</div>
                     <p>{lang === 'en'
-                        ? 'Agent mode automatically creates isolated update sets for each task.'
-                        : 'Agent mode maakt automatisch geïsoleerde update sets aan voor elke taak.'}</p>
+                        ? 'Snow-Flow automatically creates isolated update sets for each task.'
+                        : 'Snow-Flow maakt automatisch geïsoleerde update sets aan voor elke taak.'}</p>
                 </div>
             </section>
 

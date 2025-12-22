@@ -34,6 +34,9 @@ export { ErrorRecovery, FALLBACK_STRATEGIES } from './utils/error-recovery.js';
 export { PerformanceTracker } from './monitoring/performance-tracker.js';
 export { SystemHealth } from './health/system-health.js';
 
+// DAG Executor (moved from packages/snowcode)
+export { DAG } from './dag/executor.js';
+
 // Re-export integration types
 export type {
   SwarmSession,
@@ -68,5 +71,14 @@ export type {
   SystemResources,
   HealthThresholds
 } from './health/system-health.js';
+
+// DAG types
+export type {
+  Task as DAGTask,
+  Plan as DAGPlan,
+  TaskResult as DAGTaskResult,
+  PlanResult as DAGPlanResult,
+  ProgressCallback as DAGProgressCallback
+} from './dag/executor.js';
 
 console.log('Snow-Flow: ServiceNow Hive-Mind Intelligence Framework loaded');

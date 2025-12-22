@@ -206,7 +206,7 @@ async function loadSnowFlowMCPTemplate(): Promise<any> {
   }
   
   if (!fs.existsSync(templatePath)) {
-    throw new Error('Snow-Flow MCP template not found. Run "snow-flow init" first.');
+    throw new Error('Snow-Flow MCP template not found. Run "snow-flow" first (auto-initializes on first run).');
   }
   
   const templateContent = fs.readFileSync(templatePath, 'utf8');
