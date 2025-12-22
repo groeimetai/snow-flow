@@ -10,8 +10,8 @@ steps:
       - '--cache-from'
       - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest'
       - '-f'
-      - 'status-page/Dockerfile'
-      - 'status-page/'
+      - 'apps/status-page/Dockerfile'
+      - 'apps/status-page/'
 
   # Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'

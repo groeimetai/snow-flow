@@ -10,8 +10,8 @@ steps:
       - '--cache-from'
       - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-health-api:latest'
       - '-f'
-      - 'health-api/Dockerfile'
-      - '.'
+      - 'apps/health-api/Dockerfile'
+      - 'apps/health-api'
 
   # Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'

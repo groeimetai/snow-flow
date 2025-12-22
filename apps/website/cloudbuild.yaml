@@ -7,8 +7,8 @@ steps:
       '-t', 'gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA',
       '-t', 'gcr.io/$PROJECT_ID/snow-flow-website:latest',
       '--cache-from', 'gcr.io/$PROJECT_ID/snow-flow-website:latest',
-      '-f', 'website/Dockerfile',  # Specify Dockerfile location from root
-      'website/'  # Build context is website directory
+      '-f', 'apps/website/Dockerfile',  # Specify Dockerfile location from root
+      'apps/website/'  # Build context is website directory
     ]
     # Remove dir: 'website' to run from root
 

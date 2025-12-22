@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <img src="assets/logo.svg" alt="Snow-Flow logo" width="300">
+    <img src="apps/website/public/logo.svg" alt="Snow-Flow logo" width="300">
   </picture>
 </p>
 
