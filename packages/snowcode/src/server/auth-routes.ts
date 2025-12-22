@@ -2743,14 +2743,43 @@ async function replaceDocumentationForStakeholder(role: string): Promise<void> {
  * Users can optionally create CLAUDE.md for Claude-specific instructions.
  */
 async function updateDocumentationWithEnterprise(enabledServices?: string[]): Promise<void> {
-  console.log(`[updateDocumentationWithEnterprise] Starting with services:`, enabledServices)
+  // Debug log file path
+  const debugLogPath = path.join(os.homedir(), ".snow-code", "debug-agents-md.log")
+  const logLines: string[] = []
+
+  const log = (message: string) => {
+    const timestamp = new Date().toISOString()
+    const line = `[${timestamp}] ${message}`
+    logLines.push(line)
+    console.log(line) // Also log to console
+  }
+
+  const writeDebugLog = async () => {
+    try {
+      // Ensure directory exists
+      const debugDir = path.join(os.homedir(), ".snow-code")
+      try {
+        await Bun.write(path.join(debugDir, ".keep"), "")
+      } catch {}
+
+      // Append to log file
+      const existingContent = await Bun.file(debugLogPath).text().catch(() => "")
+      const newContent = existingContent + "\n" + logLines.join("\n") + "\n"
+      await Bun.write(debugLogPath, newContent)
+    } catch (err: any) {
+      console.error(`Failed to write debug log: ${err.message}`)
+    }
+  }
+
+  log(`========== updateDocumentationWithEnterprise START ==========`)
+  log(`Input services: ${JSON.stringify(enabledServices)}`)
 
   try {
     const projectRoot = process.cwd()
     const agentsMdPath = path.join(projectRoot, "AGENTS.md")
 
-    console.log(`[updateDocumentationWithEnterprise] Project root: ${projectRoot}`)
-    console.log(`[updateDocumentationWithEnterprise] AGENTS.md path: ${agentsMdPath}`)
+    log(`Project root (cwd): ${projectRoot}`)
+    log(`AGENTS.md path: ${agentsMdPath}`)
 
     // Generate comprehensive enterprise documentation based on enabled services
     // Default to all services if not specified
@@ -2758,10 +2787,10 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
       ? enabledServices
       : ['jira', 'azdo', 'confluence']
 
-    console.log(`[updateDocumentationWithEnterprise] Using services: ${services.join(', ')}`)
+    log(`Using services: ${services.join(', ')}`)
 
     const enterpriseDocSection = generateEnterpriseInstructions(services)
-    console.log(`[updateDocumentationWithEnterprise] Generated doc section length: ${enterpriseDocSection.length} chars`)
+    log(`Generated doc section length: ${enterpriseDocSection.length} chars`)
 
     // Check markers for both old (short) and new (comprehensive) documentation
     const oldMarker = "## 🚀 Enterprise Features"
@@ -2773,29 +2802,35 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
         const file = Bun.file(filePath)
         const exists = await file.exists()
 
-        console.log(`[updateDocFile] File exists: ${exists}`)
+        log(`File exists check: ${exists}`)
 
         if (!exists) {
           // Create new file with enterprise docs
           await Bun.write(filePath, enterpriseDocSection)
-          console.log(`[updateDocFile] Created ${filePath} with enterprise documentation`)
+          log(`SUCCESS: Created ${filePath} with enterprise documentation (${enterpriseDocSection.length} chars)`)
+          log(`========== updateDocumentationWithEnterprise END (created new file) ==========`)
+          await writeDebugLog()
           return
         }
 
         let content = await file.text()
-        console.log(`[updateDocFile] Current file length: ${content.length} chars`)
+        log(`Current file length: ${content.length} chars`)
+        log(`File first 200 chars: ${content.substring(0, 200).replace(/\n/g, '\\n')}`)
 
         // Check if comprehensive docs already exist
         if (content.includes(newMarker)) {
           // Already has comprehensive docs - no update needed
-          console.log(`[updateDocFile] SKIPPING: File already contains comprehensive enterprise docs marker`)
+          log(`SKIPPING: File already contains marker "${newMarker}"`)
+          log(`========== updateDocumentationWithEnterprise END (skipped - marker exists) ==========`)
+          await writeDebugLog()
           return
         }
 
-        console.log(`[updateDocFile] File does NOT contain marker, proceeding with update...`)
+        log(`File does NOT contain marker, proceeding with update...`)
 
         // Remove old short documentation if it exists (replace with comprehensive)
         if (content.includes(oldMarker)) {
+          log(`Found old marker "${oldMarker}", removing old section...`)
           // Find the start of the old enterprise section
           const oldStart = content.indexOf(oldMarker)
           // Find the end (next ## heading or end of file)
@@ -2810,6 +2845,7 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
 
           // Remove the old section
           content = content.slice(0, oldStart) + content.slice(oldEnd)
+          log(`Removed old section, new content length: ${content.length} chars`)
         }
 
         // Find the best insertion point (before "## Conclusion" or at the end)
@@ -2820,23 +2856,32 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
             insertionPoint = content.length
           }
         }
+        log(`Insertion point: ${insertionPoint}`)
 
         const updatedContent =
           content.slice(0, insertionPoint) + enterpriseDocSection + "\n\n" + content.slice(insertionPoint)
 
+        log(`Writing updated content (${updatedContent.length} chars) to ${filePath}...`)
         await Bun.write(filePath, updatedContent)
-        console.log(`Updated ${filePath} with enterprise documentation`)
+        log(`SUCCESS: Updated ${filePath} with enterprise documentation`)
       } catch (err: any) {
-        console.error(`Could not update documentation: ${err.message}`)
+        log(`ERROR in updateDocFile: ${err.message}`)
+        log(`Stack: ${err.stack}`)
       }
     }
 
     // Update AGENTS.md - the generic file that works for all LLMs
     await updateDocFile(agentsMdPath)
 
+    log(`========== updateDocumentationWithEnterprise END ==========`)
+    await writeDebugLog()
+
   } catch (error: any) {
     // Don't throw - this is not critical
-    console.error(`Failed to update documentation: ${error.message}`)
+    log(`FATAL ERROR: ${error.message}`)
+    log(`Stack: ${error.stack}`)
+    log(`========== updateDocumentationWithEnterprise END (with error) ==========`)
+    await writeDebugLog()
   }
 }
 
