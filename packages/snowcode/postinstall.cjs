@@ -27,6 +27,17 @@ function getVersion() {
   }
 }
 
+// Get version from installed binary
+function getBinaryVersion() {
+  try {
+    if (!fs.existsSync(binaryPath)) return null;
+    const result = execSync(`"${binaryPath}" --version`, { encoding: 'utf8', stdio: 'pipe' });
+    return result.trim();
+  } catch {
+    return null;
+  }
+}
+
 // Follow redirects and download file
 function download(url) {
   return new Promise((resolve, reject) => {
@@ -141,8 +152,20 @@ async function downloadMcpServers() {
 }
 
 async function main() {
-  // Download binary if needed
+  const packageVersion = getVersion();
+  const binaryVersion = getBinaryVersion();
+
+  // Download binary if missing or version mismatch
   if (!fs.existsSync(binaryPath)) {
+    console.log('Binary not found, downloading...');
+    await downloadBinary();
+  } else if (packageVersion && binaryVersion && packageVersion !== binaryVersion) {
+    console.log(`Version mismatch: binary is ${binaryVersion}, package is ${packageVersion}`);
+    console.log('Downloading correct version...');
+    // Remove old binary first
+    try {
+      fs.unlinkSync(binaryPath);
+    } catch {}
     await downloadBinary();
   } else {
     // Make sure it's executable
