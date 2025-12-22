@@ -226,7 +226,7 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
     }
 
     // Build affected services map from active incidents
-    var affectedServicesMap = {};
+    var affectedServicesMap: Record<string, string> = {};
     for (var i = 0; i < activeIncidents.length; i++) {
       var incident = activeIncidents[i];
       for (var j = 0; j < incident.affectedServices.length; j++) {
@@ -239,7 +239,7 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
     }
 
     // Helper function to determine service status
-    function getServiceStatus(serviceName, baseStatus) {
+    function getServiceStatus(serviceName: string, baseStatus: string): string {
       if (affectedServicesMap[serviceName]) {
         var severity = affectedServicesMap[serviceName];
         if (severity === 'critical') return 'outage';
