@@ -1,18 +1,20 @@
 # Snow-Flow Health API Docker Image
+# Build context: repo root (.)
+# Build with: docker build -f apps/health-api/Dockerfile .
+
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files from root (build context is repo root)
-COPY package*.json ./
-COPY tsconfig.json ./
+# Copy package files from health-api app
+COPY apps/health-api/package*.json ./
+COPY apps/health-api/tsconfig.json ./
 
-# Install dependencies (use npm install for dynamic version resolution)
-# This will install the latest @groeimetai/snow-code version specified in package.json
-RUN npm install --production=false
+# Install dependencies
+RUN npm install
 
 # Copy source files
-COPY src/ ./src/
+COPY apps/health-api/src/ ./src/
 
 # Build TypeScript
 RUN npm run build
@@ -22,14 +24,14 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Install production dependencies only (use npm install for dynamic version resolution)
-COPY package*.json ./
+# Install production dependencies only
+COPY apps/health-api/package*.json ./
 RUN npm install --production && npm cache clean --force
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
-# Create data directory for SQLite
+# Create data directory
 RUN mkdir -p /app/data && chmod 777 /app/data
 
 # Health check - Cloud Run uses PORT environment variable (default 8080)
@@ -43,4 +45,4 @@ USER node
 EXPOSE 8080
 
 # Start the API
-CMD ["node", "dist/api/simple-health-api.js"]
+CMD ["node", "dist/simple-health-api.js"]
