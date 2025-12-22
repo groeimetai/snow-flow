@@ -2743,9 +2743,14 @@ async function replaceDocumentationForStakeholder(role: string): Promise<void> {
  * Users can optionally create CLAUDE.md for Claude-specific instructions.
  */
 async function updateDocumentationWithEnterprise(enabledServices?: string[]): Promise<void> {
+  console.log(`[updateDocumentationWithEnterprise] Starting with services:`, enabledServices)
+
   try {
     const projectRoot = process.cwd()
     const agentsMdPath = path.join(projectRoot, "AGENTS.md")
+
+    console.log(`[updateDocumentationWithEnterprise] Project root: ${projectRoot}`)
+    console.log(`[updateDocumentationWithEnterprise] AGENTS.md path: ${agentsMdPath}`)
 
     // Generate comprehensive enterprise documentation based on enabled services
     // Default to all services if not specified
@@ -2753,7 +2758,10 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
       ? enabledServices
       : ['jira', 'azdo', 'confluence']
 
+    console.log(`[updateDocumentationWithEnterprise] Using services: ${services.join(', ')}`)
+
     const enterpriseDocSection = generateEnterpriseInstructions(services)
+    console.log(`[updateDocumentationWithEnterprise] Generated doc section length: ${enterpriseDocSection.length} chars`)
 
     // Check markers for both old (short) and new (comprehensive) documentation
     const oldMarker = "## 🚀 Enterprise Features"
@@ -2765,20 +2773,26 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
         const file = Bun.file(filePath)
         const exists = await file.exists()
 
+        console.log(`[updateDocFile] File exists: ${exists}`)
+
         if (!exists) {
           // Create new file with enterprise docs
           await Bun.write(filePath, enterpriseDocSection)
-          console.log(`Created ${filePath} with enterprise documentation`)
+          console.log(`[updateDocFile] Created ${filePath} with enterprise documentation`)
           return
         }
 
         let content = await file.text()
+        console.log(`[updateDocFile] Current file length: ${content.length} chars`)
 
         // Check if comprehensive docs already exist
         if (content.includes(newMarker)) {
           // Already has comprehensive docs - no update needed
+          console.log(`[updateDocFile] SKIPPING: File already contains comprehensive enterprise docs marker`)
           return
         }
+
+        console.log(`[updateDocFile] File does NOT contain marker, proceeding with update...`)
 
         // Remove old short documentation if it exists (replace with comprehensive)
         if (content.includes(oldMarker)) {
