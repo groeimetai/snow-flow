@@ -750,9 +750,12 @@ export const AuthRoute = new Hono()
       // Optional enterprise config
       enterpriseToken: z.string().optional(),
       enterpriseMcpUrl: z.string().optional(),
+      // Optional enterprise services info for documentation update
+      enabledServices: z.array(z.string()).optional(),
+      role: z.string().optional(),
     })),
     async (c) => {
-      const { instanceUrl, authMethod, clientId, clientSecret, enterpriseToken, enterpriseMcpUrl } = c.req.valid("json")
+      const { instanceUrl, authMethod, clientId, clientSecret, enterpriseToken, enterpriseMcpUrl, enabledServices, role } = c.req.valid("json")
 
       try {
         // Clean instance URL (remove protocol and trailing slash)
@@ -772,6 +775,25 @@ export const AuthRoute = new Hono()
         // If enterprise token provided, also update enterprise config
         if (enterpriseToken && enterpriseMcpUrl) {
           await updateEnterpriseMcpConfig(enterpriseToken, enterpriseMcpUrl)
+        }
+
+        // Update documentation with enterprise features if services info provided
+        if (enabledServices && enabledServices.length > 0) {
+          try {
+            await updateDocumentationWithEnterprise(enabledServices)
+            console.log(`[auth-routes] Updated AGENTS.md for: ${enabledServices.join(', ')}`)
+          } catch (err: any) {
+            console.error(`[auth-routes] Failed to update AGENTS.md:`, err.message)
+          }
+        }
+
+        // Handle stakeholder documentation replacement
+        if (role) {
+          try {
+            await replaceDocumentationForStakeholder(role)
+          } catch (err: any) {
+            console.error(`[auth-routes] Failed to update stakeholder docs:`, err.message)
+          }
         }
 
         return c.json({ success: true })
@@ -803,13 +825,36 @@ export const AuthRoute = new Hono()
     validator("json", z.object({
       enterpriseToken: z.string(),
       mcpServerUrl: z.string(),
+      // Optional enterprise services info for documentation update
+      enabledServices: z.array(z.string()).optional(),
+      role: z.string().optional(),
     })),
     async (c) => {
-      const { enterpriseToken, mcpServerUrl } = c.req.valid("json")
+      const { enterpriseToken, mcpServerUrl, enabledServices, role } = c.req.valid("json")
 
       try {
         // Configure enterprise MCP server
         await updateEnterpriseMcpConfig(enterpriseToken, mcpServerUrl)
+
+        // Update documentation with enterprise features if services info provided
+        if (enabledServices && enabledServices.length > 0) {
+          try {
+            await updateDocumentationWithEnterprise(enabledServices)
+            console.log(`[auth-routes] Updated AGENTS.md for: ${enabledServices.join(', ')}`)
+          } catch (err: any) {
+            console.error(`[auth-routes] Failed to update AGENTS.md:`, err.message)
+          }
+        }
+
+        // Handle stakeholder documentation replacement
+        if (role) {
+          try {
+            await replaceDocumentationForStakeholder(role)
+          } catch (err: any) {
+            console.error(`[auth-routes] Failed to update stakeholder docs:`, err.message)
+          }
+        }
+
         return c.json({ success: true })
       } catch (error: any) {
         return c.json({ success: false, error: error.message })

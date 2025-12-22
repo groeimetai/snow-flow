@@ -2313,6 +2313,22 @@ func (a *authDialog) configurePortalServiceNow(instance ServiceNowInstanceFromPo
 	serverURL := a.serverURL
 	enterpriseToken := a.enterpriseToken
 	mcpServerUrl := a.enterpriseMcpServerUrl
+	role := a.completeSetupRole
+
+	// Build enabled services list from enterprise credentials
+	var enabledServices []string
+	if a.enterpriseCredentials != nil {
+		if a.enterpriseCredentials.Jira != nil && a.enterpriseCredentials.Jira.Enabled {
+			enabledServices = append(enabledServices, "jira")
+		}
+		if a.enterpriseCredentials.AzureDevOps != nil && a.enterpriseCredentials.AzureDevOps.Enabled {
+			enabledServices = append(enabledServices, "azdo")
+		}
+		if a.enterpriseCredentials.Confluence != nil && a.enterpriseCredentials.Confluence.Enabled {
+			enabledServices = append(enabledServices, "confluence")
+		}
+	}
+
 	return func() tea.Msg {
 		// Strip protocol and trailing slash from instance URL
 		instanceUrl := instance.InstanceURL
@@ -2334,6 +2350,9 @@ func (a *authDialog) configurePortalServiceNow(instance ServiceNowInstanceFromPo
 			// Also send enterprise config for MCP setup
 			"enterpriseToken":    enterpriseToken,
 			"enterpriseMcpUrl":   mcpServerUrl,
+			// Send enabled services and role for documentation update
+			"enabledServices":    enabledServices,
+			"role":               role,
 		}
 		jsonData, _ := json.Marshal(payload)
 
@@ -2370,11 +2389,30 @@ func (a *authDialog) configureEnterpriseMcp() tea.Cmd {
 	serverURL := a.serverURL
 	enterpriseToken := a.enterpriseToken
 	mcpServerUrl := a.enterpriseMcpServerUrl
+	role := a.completeSetupRole
+
+	// Build enabled services list from enterprise credentials
+	var enabledServices []string
+	if a.enterpriseCredentials != nil {
+		if a.enterpriseCredentials.Jira != nil && a.enterpriseCredentials.Jira.Enabled {
+			enabledServices = append(enabledServices, "jira")
+		}
+		if a.enterpriseCredentials.AzureDevOps != nil && a.enterpriseCredentials.AzureDevOps.Enabled {
+			enabledServices = append(enabledServices, "azdo")
+		}
+		if a.enterpriseCredentials.Confluence != nil && a.enterpriseCredentials.Confluence.Enabled {
+			enabledServices = append(enabledServices, "confluence")
+		}
+	}
+
 	return func() tea.Msg {
 		// Call server endpoint to configure enterprise MCP
 		payload := map[string]interface{}{
-			"enterpriseToken": enterpriseToken,
-			"mcpServerUrl":    mcpServerUrl,
+			"enterpriseToken":  enterpriseToken,
+			"mcpServerUrl":     mcpServerUrl,
+			// Send enabled services and role for documentation update
+			"enabledServices":  enabledServices,
+			"role":             role,
 		}
 		jsonData, _ := json.Marshal(payload)
 
