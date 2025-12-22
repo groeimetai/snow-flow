@@ -231,57 +231,6 @@
             transform: scale(1.08) rotate(-3deg);
         }
 
-        /* ASCII Art Logo Styling */
-        .logo-ascii {
-            font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-            font-size: 1.1rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            display: flex;
-            align-items: center;
-            padding: 0.3rem 0.5rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(0, 217, 255, 0.3);
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-
-        .logo:hover .logo-ascii {
-            background: rgba(0, 217, 255, 0.1);
-            border-color: rgba(0, 217, 255, 0.6);
-            box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
-        }
-
-        .logo-ascii .ascii-bracket {
-            color: var(--text-muted);
-            opacity: 0.6;
-            transition: all 0.3s ease;
-        }
-
-        .logo:hover .logo-ascii .ascii-bracket {
-            color: var(--accent-cyan);
-            opacity: 1;
-        }
-
-        .logo-ascii .snow {
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
-
-        .logo-ascii .flow {
-            color: var(--accent-cyan);
-            transition: all 0.3s ease;
-        }
-
-        .logo:hover .logo-ascii .flow {
-            text-shadow: 0 0 12px rgba(0, 217, 255, 0.6);
-        }
-
-        /* Legacy logo-text support (remove SVG) */
-        .logo-svg {
-            display: none;
-        }
-
         .logo-text {
             font-size: 1.25rem;
             font-weight: 700;
@@ -913,7 +862,7 @@
             letter-spacing: 0.05em;
         }
 
-        /* Scroll indicator - Terminal style */
+        /* Scroll indicator */
         .hero-scroll-indicator {
             position: absolute;
             bottom: 2rem;
@@ -923,35 +872,27 @@
             flex-direction: column;
             align-items: center;
             gap: 0.5rem;
-            opacity: 0.7;
+            opacity: 0.6;
             animation: fade-in 1s ease-out 1.2s backwards, bounce 2s ease-in-out infinite 2s;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: opacity 0.3s ease;
             text-decoration: none;
-            padding: 0.5rem 1rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(0, 217, 255, 0.2);
-            border-radius: 4px;
         }
 
         .hero-scroll-indicator:hover {
             opacity: 1;
-            background: rgba(0, 217, 255, 0.1);
-            border-color: rgba(0, 217, 255, 0.5);
-            box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
         }
 
         .hero-scroll-indicator span {
-            font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
-            font-size: 0.625rem;
+            font-size: 0.6875rem;
             text-transform: uppercase;
             letter-spacing: 0.15em;
             color: var(--text-muted);
         }
 
         .hero-scroll-indicator svg {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             color: var(--accent-cyan);
         }
 
@@ -2189,54 +2130,10 @@
         }
 
         .footer-logo-svg {
-            display: none;
+            width: 48px;
+            height: 48px;
         }
 
-        .footer-logo-ascii {
-            font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            display: flex;
-            align-items: center;
-            padding: 0.4rem 0.7rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(0, 217, 255, 0.3);
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-
-        .footer-logo:hover .footer-logo-ascii {
-            background: rgba(0, 217, 255, 0.1);
-            border-color: rgba(0, 217, 255, 0.6);
-            box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
-        }
-
-        .footer-logo-ascii .ascii-bracket {
-            color: var(--text-muted);
-            opacity: 0.6;
-            transition: all 0.3s ease;
-        }
-
-        .footer-logo:hover .footer-logo-ascii .ascii-bracket {
-            color: var(--accent-cyan);
-            opacity: 1;
-        }
-
-        .footer-logo-ascii .snow {
-            color: var(--text-primary);
-        }
-
-        .footer-logo-ascii .flow {
-            color: var(--accent-cyan);
-            transition: all 0.3s ease;
-        }
-
-        .footer-logo:hover .footer-logo-ascii .flow {
-            text-shadow: 0 0 12px rgba(0, 217, 255, 0.6);
-        }
-
-        /* Legacy footer-logo-text support */
         .footer-logo-text {
             font-size: 1.75rem;
             font-weight: 800;

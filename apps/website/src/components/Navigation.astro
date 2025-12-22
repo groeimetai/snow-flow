@@ -92,8 +92,17 @@ const t = useTranslations(lang);
     <div class="container">
         <div class="navbar-content">
             <a href={`/${lang}/`} class="logo" aria-label="Snow-Flow Home">
-                <span class="logo-ascii">
-                    <span class="ascii-bracket">[</span><span class="snow">SNOW</span><span class="flow">FLOW</span><span class="ascii-bracket">]</span>
+                <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logo-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#FFFFFF"/>
+                            <stop offset="100%" stop-color="#00D9FF"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#logo-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
+                </svg>
+                <span class="logo-text">
+                    <span class="snow">SNOW</span><span class="flow">FLOW</span>
                 </span>
             </a>
 
