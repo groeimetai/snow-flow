@@ -957,7 +957,12 @@ export const AuthRoute = new Hono()
         if (enabledServices.length > 0) {
           try {
             await updateDocumentationWithEnterprise(enabledServices)
-          } catch {}
+            console.log(`[auth-routes] Updated AGENTS.md with enterprise docs for: ${enabledServices.join(', ')}`)
+          } catch (docErr: any) {
+            console.error(`[auth-routes] Failed to update AGENTS.md:`, docErr.message)
+          }
+        } else {
+          console.log('[auth-routes] No enabled services, skipping AGENTS.md update')
         }
 
         // Save enterprise config locally
@@ -1121,7 +1126,12 @@ export const AuthRoute = new Hono()
           if (enabledServices.length > 0) {
             try {
               await updateDocumentationWithEnterprise(enabledServices)
-            } catch {}
+              console.log(`[auth-routes] Updated AGENTS.md with enterprise docs for: ${enabledServices.join(', ')}`)
+            } catch (docErr: any) {
+              console.error(`[auth-routes] Failed to update AGENTS.md:`, docErr.message)
+            }
+          } else {
+            console.log('[auth-routes] No enabled services, skipping AGENTS.md update')
           }
 
           return c.json({
@@ -2284,7 +2294,12 @@ SnowFlowLLMService.prototype = {
         if (enabledServices.length > 0) {
           try {
             await updateDocumentationWithEnterprise(enabledServices)
-          } catch {}
+            console.log(`[auth-routes] Updated AGENTS.md with enterprise docs for: ${enabledServices.join(', ')}`)
+          } catch (docErr: any) {
+            console.error(`[auth-routes] Failed to update AGENTS.md:`, docErr.message)
+          }
+        } else {
+          console.log('[auth-routes] No enabled services, skipping AGENTS.md update')
         }
 
         // Update enterprise MCP config with token
@@ -2419,7 +2434,12 @@ SnowFlowLLMService.prototype = {
         if (enabledServices.length > 0) {
           try {
             await updateDocumentationWithEnterprise(enabledServices)
-          } catch {}
+            console.log(`[auth-routes] Updated AGENTS.md with enterprise docs for: ${enabledServices.join(', ')}`)
+          } catch (docErr: any) {
+            console.error(`[auth-routes] Failed to update AGENTS.md:`, docErr.message)
+          }
+        } else {
+          console.log('[auth-routes] No enabled services, skipping AGENTS.md update')
         }
 
         // Update enterprise MCP config with token
@@ -2743,51 +2763,57 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
     async function updateDocFile(filePath: string): Promise<void> {
       try {
         const file = Bun.file(filePath)
-        if (await file.exists()) {
-          let content = await file.text()
+        const exists = await file.exists()
 
-          // Check if comprehensive docs already exist
-          if (content.includes(newMarker)) {
-            // Already has comprehensive docs - no update needed
-            return
+        if (!exists) {
+          // Create new file with enterprise docs
+          await Bun.write(filePath, enterpriseDocSection)
+          console.log(`Created ${filePath} with enterprise documentation`)
+          return
+        }
+
+        let content = await file.text()
+
+        // Check if comprehensive docs already exist
+        if (content.includes(newMarker)) {
+          // Already has comprehensive docs - no update needed
+          return
+        }
+
+        // Remove old short documentation if it exists (replace with comprehensive)
+        if (content.includes(oldMarker)) {
+          // Find the start of the old enterprise section
+          const oldStart = content.indexOf(oldMarker)
+          // Find the end (next ## heading or end of file)
+          let oldEnd = content.indexOf("\n## ", oldStart + 1)
+          if (oldEnd === -1) {
+            // Check for --- separator
+            oldEnd = content.indexOf("\n---", oldStart + 1)
+          }
+          if (oldEnd === -1) {
+            oldEnd = content.length
           }
 
-          // Remove old short documentation if it exists (replace with comprehensive)
-          if (content.includes(oldMarker)) {
-            // Find the start of the old enterprise section
-            const oldStart = content.indexOf(oldMarker)
-            // Find the end (next ## heading or end of file)
-            let oldEnd = content.indexOf("\n## ", oldStart + 1)
-            if (oldEnd === -1) {
-              // Check for --- separator
-              oldEnd = content.indexOf("\n---", oldStart + 1)
-            }
-            if (oldEnd === -1) {
-              oldEnd = content.length
-            }
+          // Remove the old section
+          content = content.slice(0, oldStart) + content.slice(oldEnd)
+        }
 
-            // Remove the old section
-            content = content.slice(0, oldStart) + content.slice(oldEnd)
-          }
-
-          // Find the best insertion point (before "## Conclusion" or at the end)
-          let insertionPoint = content.lastIndexOf("## Conclusion")
+        // Find the best insertion point (before "## Conclusion" or at the end)
+        let insertionPoint = content.lastIndexOf("## Conclusion")
+        if (insertionPoint === -1) {
+          insertionPoint = content.lastIndexOf("---")
           if (insertionPoint === -1) {
-            insertionPoint = content.lastIndexOf("---")
-            if (insertionPoint === -1) {
-              insertionPoint = content.length
-            }
+            insertionPoint = content.length
           }
-
-          const updatedContent =
-            content.slice(0, insertionPoint) + enterpriseDocSection + "\n\n" + content.slice(insertionPoint)
-
-          await Bun.write(filePath, updatedContent)
         }
+
+        const updatedContent =
+          content.slice(0, insertionPoint) + enterpriseDocSection + "\n\n" + content.slice(insertionPoint)
+
+        await Bun.write(filePath, updatedContent)
+        console.log(`Updated ${filePath} with enterprise documentation`)
       } catch (err: any) {
-        if (err.code !== "ENOENT") {
-          console.error(`Could not update documentation: ${err.message}`)
-        }
+        console.error(`Could not update documentation: ${err.message}`)
       }
     }
 
