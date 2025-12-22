@@ -636,7 +636,8 @@ async function handlePortalAuthSuccess(data: {
   }
 
   prompts.log.info("")
-  prompts.log.info("   Next: Run 'snow-code init' to configure Claude Code")
+  prompts.log.info("   📖 CLAUDE.md will be configured automatically at startup")
+  prompts.log.info("   Next: Run 'snow-flow agent \"<objective>\"' to start developing")
   prompts.log.info("")
 }
 

@@ -2733,8 +2733,10 @@ async function updateEnterpriseMcpConfig(token: string, mcpServerUrl: string) {
 }
 
 /**
- * Replace CLAUDE.md and AGENTS.md with stakeholder-specific read-only documentation
- * This completely replaces the files (not appends) for stakeholder role users
+ * Replace AGENTS.md with stakeholder-specific read-only documentation
+ * This completely replaces the file (not appends) for stakeholder role users
+ *
+ * MODULAR DESIGN: Only updates AGENTS.md - the generic file that works for all LLMs.
  */
 async function replaceDocumentationForStakeholder(role: string): Promise<void> {
   if (role !== 'stakeholder') {
@@ -2743,16 +2745,12 @@ async function replaceDocumentationForStakeholder(role: string): Promise<void> {
 
   try {
     const projectRoot = process.cwd()
-    const claudeMdPath = path.join(projectRoot, "CLAUDE.md")
     const agentsMdPath = path.join(projectRoot, "AGENTS.md")
 
-    // Generate stakeholder-specific documentation (same content for both files)
+    // Generate stakeholder-specific documentation
     const stakeholderDocs = generateStakeholderDocumentation()
 
-    // Completely replace CLAUDE.md with stakeholder version
-    await Bun.write(claudeMdPath, stakeholderDocs)
-
-    // Completely replace AGENTS.md with stakeholder version (same content)
+    // Completely replace AGENTS.md with stakeholder version
     await Bun.write(agentsMdPath, stakeholderDocs)
 
   } catch (error: any) {
@@ -2762,13 +2760,15 @@ async function replaceDocumentationForStakeholder(role: string): Promise<void> {
 }
 
 /**
- * Update project documentation (CLAUDE.md and AGENTS.md) with enterprise server information
+ * Update project documentation (AGENTS.md) with enterprise server information
  * Uses the comprehensive enterprise-docs-generator for detailed workflow instructions
+ *
+ * MODULAR DESIGN: Only updates AGENTS.md - the generic file that works for all LLMs.
+ * Users can optionally create CLAUDE.md for Claude-specific instructions.
  */
 async function updateDocumentationWithEnterprise(enabledServices?: string[]): Promise<void> {
   try {
     const projectRoot = process.cwd()
-    const claudeMdPath = path.join(projectRoot, "CLAUDE.md")
     const agentsMdPath = path.join(projectRoot, "AGENTS.md")
 
     // Generate comprehensive enterprise documentation based on enabled services
@@ -2835,8 +2835,7 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
       }
     }
 
-    // Update both documentation files
-    await updateDocFile(claudeMdPath)
+    // Update AGENTS.md - the generic file that works for all LLMs
     await updateDocFile(agentsMdPath)
 
   } catch (error: any) {

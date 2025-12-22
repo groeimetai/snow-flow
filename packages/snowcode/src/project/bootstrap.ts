@@ -8,9 +8,16 @@ import { Flag } from "../flag/flag"
 import { ToolRegistry } from "../tool/registry"
 import { MemorySync } from "../memory"
 import { BackgroundAgent } from "../agent/background"
+import { initializeBaseDocumentation } from "../init"
 
 export async function InstanceBootstrap() {
   if (Flag.SNOWCODE_EXPERIMENTAL_NO_BOOTSTRAP) return
+
+  // Initialize base documentation (CLAUDE.md, AGENTS.md) if not present
+  // This ensures the AI agent has ServiceNow context from the first interaction
+  // Enterprise auth will later append additional instructions via updateDocumentationWithEnterprise()
+  await initializeBaseDocumentation()
+
   await Plugin.init()
   Share.init()
   Format.init()

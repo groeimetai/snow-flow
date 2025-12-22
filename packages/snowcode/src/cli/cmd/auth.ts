@@ -1304,15 +1304,17 @@ async function updateEnterpriseMcpConfig(jwtToken: string, mcpServerUrl: string)
 }
 
 /**
- * Update project documentation (CLAUDE.md and AGENTS.md) with enterprise server information
+ * Update project documentation (AGENTS.md) with enterprise server information
  * Uses the comprehensive enterprise-docs-generator for detailed workflow instructions
+ *
+ * MODULAR DESIGN: Only updates AGENTS.md - the generic file that works for all LLMs.
+ * Users can optionally create CLAUDE.md for Claude-specific instructions.
  *
  * @param enabledServices - Array of enabled services (e.g., ['jira', 'azdo', 'confluence'])
  */
 async function updateDocumentationWithEnterprise(enabledServices?: string[]): Promise<void> {
   try {
     const projectRoot = process.cwd()
-    const claudeMdPath = path.join(projectRoot, "CLAUDE.md")
     const agentsMdPath = path.join(projectRoot, "AGENTS.md")
 
     // Import the comprehensive documentation generator
@@ -1383,8 +1385,7 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
       }
     }
 
-    // Update both documentation files
-    await updateDocFile(claudeMdPath, "CLAUDE.md")
+    // Update AGENTS.md - the generic file that works for all LLMs
     await updateDocFile(agentsMdPath, "AGENTS.md")
 
   } catch (error: any) {
@@ -1394,9 +1395,11 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[]): Pr
 }
 
 /**
- * Replace CLAUDE.md and AGENTS.md with stakeholder-specific read-only documentation
- * This completely replaces the files (not appends) for stakeholder role users
+ * Replace AGENTS.md with stakeholder-specific read-only documentation
+ * This completely replaces the file (not appends) for stakeholder role users
  * Must be called BEFORE updateDocumentationWithEnterprise() when role is 'stakeholder'
+ *
+ * MODULAR DESIGN: Only updates AGENTS.md - the generic file that works for all LLMs.
  *
  * @param role - User role from enterprise authentication
  */
@@ -1407,20 +1410,15 @@ async function replaceDocumentationForStakeholder(role: string): Promise<void> {
 
   try {
     const projectRoot = process.cwd()
-    const claudeMdPath = path.join(projectRoot, "CLAUDE.md")
     const agentsMdPath = path.join(projectRoot, "AGENTS.md")
 
-    // Import the stakeholder documentation generator (single comprehensive function for both files)
+    // Import the stakeholder documentation generator
     const { generateStakeholderDocumentation } = await import("./enterprise-docs-generator.js")
 
-    // Generate stakeholder-specific documentation (same content for both files)
+    // Generate stakeholder-specific documentation
     const stakeholderDocs = generateStakeholderDocumentation()
 
-    // Completely replace CLAUDE.md with stakeholder version
-    await Bun.write(claudeMdPath, stakeholderDocs)
-    prompts.log.success("📖 CLAUDE.md replaced with stakeholder read-only documentation")
-
-    // Completely replace AGENTS.md with stakeholder version (same content)
+    // Completely replace AGENTS.md with stakeholder version
     await Bun.write(agentsMdPath, stakeholderDocs)
     prompts.log.success("📖 AGENTS.md replaced with stakeholder read-only documentation")
 
@@ -1939,10 +1937,10 @@ export const AuthLoginCommand = cmd({
             prompts.log.info("ℹ️  No sensitive data is stored locally.")
             prompts.log.message("")
             prompts.log.success("✅ Enterprise authentication complete!")
+            prompts.log.success("📖 AGENTS.md configured with ServiceNow + Enterprise development guidelines")
             prompts.log.message("")
             prompts.log.info("Next steps:")
             prompts.log.message("")
-            prompts.log.message('  • Run: snow-code init to configure Claude Code')
             prompts.log.message('  • Run: snow-flow agent "<objective>" to start developing')
             prompts.outro("Done")
             await Instance.dispose()
@@ -2410,10 +2408,10 @@ export const AuthLoginCommand = cmd({
             prompts.log.message("  ✓ Snow-Flow Enterprise (license + Jira/Azure DevOps/Confluence)")
             prompts.log.message("  ✓ ServiceNow instance")
             prompts.log.message("  ✓ LLM Provider")
+            prompts.log.success("📖 AGENTS.md configured with ServiceNow + Enterprise development guidelines")
             prompts.log.message("")
             prompts.log.info("Next steps:")
             prompts.log.message("")
-            prompts.log.message('  • Run: snow-code init to configure Claude Code with MCP servers')
             prompts.log.message('  • Run: snow-flow agent "<objective>" to start developing')
             prompts.outro("Done")
             await Instance.dispose()
@@ -2668,10 +2666,10 @@ export const AuthLoginCommand = cmd({
 
           prompts.log.message("")
           prompts.log.success("✅ Enterprise authentication complete!")
+          prompts.log.success("📖 AGENTS.md configured with ServiceNow + Enterprise development guidelines")
           prompts.log.message("")
           prompts.log.info("Next steps:")
           prompts.log.message("")
-          prompts.log.message('  • Run: snow-code init to configure Claude Code')
           prompts.log.message('  • Run: snow-flow agent "<objective>" to start developing')
           prompts.outro("Done")
           await Instance.dispose()
@@ -3181,10 +3179,10 @@ export const AuthLoginCommand = cmd({
 
             prompts.log.message("")
             prompts.log.success("✅ Enterprise authentication complete!")
+            prompts.log.success("📖 AGENTS.md configured with ServiceNow + Enterprise development guidelines")
             prompts.log.message("")
             prompts.log.info("Next steps:")
             prompts.log.message("")
-            prompts.log.message('  • Run: snow-code init to configure Claude Code')
             prompts.log.message('  • Run: snow-flow agent "<objective>" to start developing')
             prompts.outro("Done")
             await Instance.dispose()
@@ -4146,10 +4144,10 @@ export const AuthLoginCommand = cmd({
 
           prompts.log.message("")
           prompts.log.success("✅ Enterprise authentication complete!")
+          prompts.log.success("📖 AGENTS.md configured with ServiceNow + Enterprise development guidelines")
           prompts.log.message("")
           prompts.log.info("Next steps:")
           prompts.log.message("")
-          prompts.log.message('  • Run: snow-code init to configure Claude Code')
           prompts.log.message('  • Run: snow-flow agent "<objective>" to start developing')
           prompts.outro("Done")
           await Instance.dispose()
