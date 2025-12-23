@@ -20,7 +20,7 @@ import path from "path"
 import { Log } from "../util/log"
 
 // Import the base documentation template (as .txt for TypeScript/Bun compatibility)
-import BASE_DOCUMENTATION from "./templates/base-agents.txt"
+import BASE_DOCUMENTATION from "../../../../templates/base-agents.txt"
 
 /**
  * Version marker for base documentation
