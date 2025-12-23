@@ -631,9 +631,13 @@ const description = t('meta.home.description');
                     loop
                     muted
                     playsinline
+                    poster="/snow-flow-tui.png"
                     class="tui-image"
                     aria-label="Snow-Flow TUI - Interactive terminal interface for ServiceNow development"
-                ></video>
+                >
+                    <!-- Fallback for browsers that don't support video -->
+                    <img src="/snow-flow-tui.png" alt="Snow-Flow TUI - Interactive terminal interface for ServiceNow development" class="tui-image" />
+                </video>
                 <p class="tui-caption">The Snow-Flow TUI - Your AI-powered ServiceNow development environment</p>
             </div>
         </div>
