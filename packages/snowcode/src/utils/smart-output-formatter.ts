@@ -63,6 +63,11 @@ interface FormattedOutput {
 
 /**
  * Auto-detect output type and generate appropriate summary
+ *
+ * DESIGN PRINCIPLE: Keep pattern matching minimal!
+ * - Only match EXTERNAL tools (Jira, Azure DevOps, Confluence) with specific patterns
+ * - All ServiceNow tools should be handled by the smart generic formatter
+ * - This prevents pattern collision bugs
  */
 export function formatToolOutput(toolName: string, output: any): FormattedOutput {
   // Handle null/undefined
@@ -91,123 +96,67 @@ export function formatToolOutput(toolName: string, output: any): FormattedOutput
   }
 
   // Unwrap common { success: true, data: {...} } wrapper pattern
-  // Many MCP tools return this structure
   let data = output;
   if (output.success === true && output.data && typeof output.data === 'object') {
     data = output.data;
   }
 
-  // ServiceNow Artifact Creation (snow_create_artifact, snow_deploy, etc.)
-  if (data.created === true && data.sys_id && data.type) {
-    return formatArtifactCreated(data);
-  }
+  // ============================================================================
+  // EXTERNAL TOOLS ONLY - These have unique structures that need specific handling
+  // ============================================================================
 
-  // ServiceNow Artifact Update
-  if (data.updated === true && data.sys_id) {
-    return formatArtifactUpdated(data);
-  }
-
-  // Pattern matching for known output types
-  // Use unwrapped data for pattern matching
-
-  // Jira (check both output and data)
-  // Must verify it's actually Jira data, not generic "issues" (like validation issues)
+  // Jira - has unique key format (PROJECT-123) and fields structure
   if (data.issue && data.issue.key && isJiraKey(data.issue.key)) return formatJiraIssue(data);
   if (output.issue && output.issue.key && isJiraKey(output.issue.key)) return formatJiraIssue(output);
   if (isJiraIssueList(data)) return formatJiraIssueList(data);
   if (isJiraIssueList(output)) return formatJiraIssueList(output);
 
-  // ServiceNow Instance Info (snow_get_instance_info)
-  // Must check BEFORE property patterns because instance_info also has "properties"
-  if (data.instance_url) return formatInstanceInfo(data);
-  if (output.instance_url) return formatInstanceInfo(output);
-
-  // ServiceNow Property (snow_property_manager)
-  // Only match if it looks like property manager output, not generic "properties"
-  if (data.property !== undefined && typeof data.property === 'object') {
-    return formatProperty(data);
+  // Azure DevOps - has unique System.* field names
+  if (data.workItem && data.workItem.fields && data.workItem.fields['System.Title']) {
+    return formatAzureWorkItem(data);
   }
-  if (output.property !== undefined && typeof output.property === 'object') {
-    return formatProperty(output);
+  if (output.workItem && output.workItem.fields && output.workItem.fields['System.Title']) {
+    return formatAzureWorkItem(output);
   }
-  // Property list - only if properties have name/value structure (not sys_properties raw)
-  if (isPropertyManagerList(data)) return formatPropertyList(data);
-  if (isPropertyManagerList(output)) return formatPropertyList(output);
+  if (isAzureWorkItemList(data)) return formatAzureWorkItemList(data);
+  if (isAzureWorkItemList(output)) return formatAzureWorkItemList(output);
 
-  // ServiceNow Validation (with valid field)
-  if (data.valid !== undefined && typeof data.valid === 'boolean') {
-    return formatValidationResult(data);
+  // Confluence - has unique space/title/content structure
+  if (data.page && data.page.title && (data.page.space || data.page.spaceKey)) {
+    return formatConfluencePage(data);
   }
-  if (output.valid !== undefined && typeof output.valid === 'boolean') {
-    return formatValidationResult(output);
+  if (output.page && output.page.title && (output.page.space || output.page.spaceKey)) {
+    return formatConfluencePage(output);
   }
+  if (isConfluencePageList(data)) return formatConfluencePageList(data);
+  if (isConfluencePageList(output)) return formatConfluencePageList(output);
 
-  // ServiceNow Validation Issues (different from Jira issues!)
-  if (data.issues && Array.isArray(data.issues) && !isJiraIssueList(data)) {
-    return formatValidationIssues(data);
-  }
-  if (output.issues && Array.isArray(output.issues) && !isJiraIssueList(output)) {
-    return formatValidationIssues(output);
-  }
-
-  // ServiceNow Workflows (check both output and data)
-  if (data.workflow && data.workflow.sys_id) return formatWorkflow(data);
-  if (output.workflow && output.workflow.sys_id) return formatWorkflow(output);
-  if (data.workflows && Array.isArray(data.workflows)) return formatWorkflowList(data);
-  if (output.workflows && Array.isArray(output.workflows)) return formatWorkflowList(output);
-
-  // ServiceNow Incidents (check both output and data)
-  if (data.incidents && Array.isArray(data.incidents)) return formatIncidentList(data);
-  if (output.incidents && Array.isArray(output.incidents)) return formatIncidentList(output);
-  if (data.incident && data.incident.number) return formatIncident(data);
-  if (output.incident && output.incident.number) return formatIncident(output);
-
-  // ServiceNow Notifications (check both output and data)
-  if (data.notifications && Array.isArray(data.notifications)) return formatNotificationList(data);
-  if (output.notifications && Array.isArray(output.notifications)) return formatNotificationList(output);
-  if (data.notification && data.notification.sys_id) return formatNotification(data);
-  if (output.notification && output.notification.sys_id) return formatNotification(output);
-
-  // ServiceNow Scheduled Jobs (check both output and data)
-  if (data.jobs && Array.isArray(data.jobs)) return formatScheduledJobList(data);
-  if (output.jobs && Array.isArray(output.jobs)) return formatScheduledJobList(output);
-  if (data.job && data.job.sys_id) return formatScheduledJob(data);
-  if (output.job && output.job.sys_id) return formatScheduledJob(output);
-
-  // ServiceNow Created Record (fallback if no type specified)
-  if (data.created && data.sys_id) return formatCreatedRecord(data);
-  if (output.created && output.sys_id) return formatCreatedRecord(output);
-
-  // ServiceNow Update Set (check both output and data)
-  if (data.update_set || data.updateSet) return formatUpdateSet(data);
-  if (output.update_set || output.updateSet) return formatUpdateSet(output);
-
-  // Generic list results (check both output and data)
-  if (data.count !== undefined && (data.items || data.results || data.records)) {
-    return formatListResult(data);
-  }
-  if (output.count !== undefined && (output.items || output.results || output.records)) {
-    return formatListResult(output);
-  }
-
-  // Azure DevOps (check both output and data)
-  if (data.workItem && data.workItem.id) return formatAzureWorkItem(data);
-  if (output.workItem && output.workItem.id) return formatAzureWorkItem(output);
-  if (data.workItems && Array.isArray(data.workItems)) return formatAzureWorkItemList(data);
-  if (output.workItems && Array.isArray(output.workItems)) return formatAzureWorkItemList(output);
-
-  // Confluence (check both output and data)
-  if (data.page && data.page.id) return formatConfluencePage(data);
-  if (output.page && output.page.id) return formatConfluencePage(output);
-  if (data.pages && Array.isArray(data.pages)) return formatConfluencePageList(data);
-  if (output.pages && Array.isArray(output.pages)) return formatConfluencePageList(output);
-
-  // ServiceNow Query Results (check both output and data)
-  if (data.result && Array.isArray(data.result)) return formatQueryResult(data);
-  if (output.result && Array.isArray(output.result)) return formatQueryResult(output);
-
-  // Generic fallback - use unwrapped data for better field extraction
+  // ============================================================================
+  // ALL OTHER TOOLS - Use smart generic formatter
+  // ============================================================================
   return formatGeneric(toolName, data);
+}
+
+/**
+ * Check if output looks like an Azure DevOps work item list
+ */
+function isAzureWorkItemList(obj: any): boolean {
+  if (!obj || !obj.workItems || !Array.isArray(obj.workItems)) return false;
+  if (obj.workItems.length === 0) return false;
+  const first = obj.workItems[0];
+  return first && first.fields && first.fields['System.Title'] !== undefined;
+}
+
+/**
+ * Check if output looks like a Confluence page list
+ */
+function isConfluencePageList(obj: any): boolean {
+  if (!obj) return false;
+  const pages = obj.pages || obj.results;
+  if (!pages || !Array.isArray(pages)) return false;
+  if (pages.length === 0) return false;
+  const first = pages[0];
+  return first && first.title && (first.space || first.spaceKey || first.type === 'page');
 }
 
 // ============================================================================
@@ -817,64 +766,256 @@ function formatConfluencePageList(output: any): FormattedOutput {
 }
 
 // ============================================================================
-// Generic Fallback Formatting
+// Smart Generic Formatter - Handles ALL ServiceNow tools automatically
 // ============================================================================
 
 function formatGeneric(toolName: string, output: any): FormattedOutput {
   const lines: string[] = [];
 
-  // Determine action from common fields
-  if (output.created === true) {
-    lines.push(`${SYMBOLS.success} Created successfully`);
-  } else if (output.updated === true) {
-    lines.push(`${SYMBOLS.success} Updated successfully`);
-  } else if (output.deleted === true) {
-    lines.push(`${SYMBOLS.success} Deleted successfully`);
-  } else if (output.started === true) {
-    lines.push(`${SYMBOLS.success} Started successfully`);
-  } else if (output.stopped === true) {
-    lines.push(`${SYMBOLS.success} Stopped successfully`);
-  } else if (output.action) {
-    lines.push(`${SYMBOLS.success} ${output.action} completed`);
-  } else if (output.message) {
-    lines.push(`${SYMBOLS.success} ${output.message}`);
-  } else {
-    lines.push(`${SYMBOLS.success} ${toolName} completed`);
+  // 1. Determine the action/status header
+  const header = determineHeader(toolName, output);
+  lines.push(header);
+
+  // 2. Extract key identifiers (most important info first)
+  const identifiers = extractIdentifiers(output);
+  for (const [key, value] of identifiers) {
+    lines.push(`${SYMBOLS.indent}${key}: ${value}`);
   }
 
-  // Add key identifiers (order matters - most important first)
-  const keyFields = ['sys_id', 'id', 'key', 'number', 'name', 'title'];
-  for (const field of keyFields) {
-    if (output[field] && typeof output[field] === 'string') {
-      lines.push(`${SYMBOLS.indent}${field}: ${output[field]}`);
+  // 3. Handle arrays (lists of items)
+  const arrayInfo = extractArrayInfo(output);
+  if (arrayInfo) {
+    lines.push(`${SYMBOLS.indent}${arrayInfo.label}: ${arrayInfo.count}`);
+    // Show first few items
+    for (const item of arrayInfo.preview) {
+      lines.push(`${SYMBOLS.indent}${SYMBOLS.bullet} ${item}`);
+    }
+    if (arrayInfo.hasMore) {
+      lines.push(`${SYMBOLS.indent}... and ${arrayInfo.remaining} more`);
     }
   }
 
-  // Add count if present
-  if (output.count !== undefined) {
-    lines.push(`${SYMBOLS.indent}Count: ${output.count}`);
+  // 4. Extract URL if present
+  if (output.url) {
+    lines.push(`${SYMBOLS.indent}URL: ${output.url}`);
+  } else if (output.instance_url) {
+    lines.push(`${SYMBOLS.indent}Instance: ${output.instance_url}`);
   }
 
-  // Add status fields
-  if (output.status) {
-    lines.push(`${SYMBOLS.indent}Status: ${output.status}`);
-  }
-  if (output.state) {
-    lines.push(`${SYMBOLS.indent}State: ${output.state}`);
+  // 5. Show validation status if present
+  if (output.valid !== undefined) {
+    const validSymbol = output.valid ? SYMBOLS.success : SYMBOLS.warning;
+    lines.push(`${SYMBOLS.indent}Valid: ${validSymbol} ${output.valid}`);
   }
 
-  // If we only have the header, try to show some data
-  if (lines.length === 1 && typeof output === 'object') {
-    const keys = Object.keys(output).slice(0, 5);
-    for (const key of keys) {
-      const value = output[key];
-      if (value !== null && value !== undefined && typeof value !== 'object') {
-        lines.push(`${SYMBOLS.indent}${key}: ${String(value).substring(0, 100)}`);
+  // 6. If we still only have the header, extract some meaningful fields
+  if (lines.length === 1) {
+    const extracted = extractMeaningfulFields(output);
+    for (const line of extracted) {
+      lines.push(`${SYMBOLS.indent}${line}`);
+    }
+  }
+
+  return { summary: lines.join('\n'), hasData: lines.length > 1 };
+}
+
+/**
+ * Determine the header line based on output fields
+ */
+function determineHeader(toolName: string, output: any): string {
+  // Action-based headers
+  if (output.created === true) {
+    const type = output.type ? getTypeName(output.type) : 'Record';
+    const name = output.name || output.title || '';
+    return `${SYMBOLS.success} Created ${type}${name ? ': ' + name : ''}`;
+  }
+  if (output.updated === true) {
+    const type = output.type ? getTypeName(output.type) : 'Record';
+    return `${SYMBOLS.success} Updated ${type}`;
+  }
+  if (output.deleted === true) return `${SYMBOLS.success} Deleted successfully`;
+  if (output.started === true) return `${SYMBOLS.success} Started successfully`;
+  if (output.stopped === true) return `${SYMBOLS.success} Stopped successfully`;
+  if (output.enabled === true) return `${SYMBOLS.success} Enabled successfully`;
+  if (output.disabled === true) return `${SYMBOLS.success} Disabled successfully`;
+  if (output.found === false) return `${SYMBOLS.warning} Not found`;
+
+  // Message-based headers
+  if (output.action && typeof output.action === 'string') {
+    return `${SYMBOLS.success} ${capitalizeFirst(output.action)} completed`;
+  }
+  if (output.message && typeof output.message === 'string') {
+    return `${SYMBOLS.success} ${output.message}`;
+  }
+
+  // Object-type based headers
+  if (output.instance_url) return `${SYMBOLS.success} ServiceNow Instance`;
+  if (output.workflow) return `${SYMBOLS.success} Workflow: ${output.workflow.name || output.workflow.sys_id}`;
+  if (output.incident) return `${SYMBOLS.success} Incident: ${output.incident.number || output.incident.sys_id}`;
+  if (output.job) return `${SYMBOLS.success} Scheduled Job: ${output.job.name || output.job.sys_id}`;
+  if (output.notification) return `${SYMBOLS.success} Notification: ${output.notification.name || output.notification.sys_id}`;
+  if (output.property) return `${SYMBOLS.success} Property: ${output.property.name || 'N/A'}`;
+  if (output.update_set) return `${SYMBOLS.success} Update Set: ${output.update_set.name || output.update_set.sys_id}`;
+
+  // Default - use tool name
+  return `${SYMBOLS.success} ${formatToolName(toolName)} completed`;
+}
+
+/**
+ * Extract key identifiers from output
+ */
+function extractIdentifiers(output: any): [string, string][] {
+  const result: [string, string][] = [];
+  const seen = new Set<string>();
+
+  // Priority order of identifier fields
+  const fields = ['sys_id', 'id', 'key', 'number', 'name', 'title', 'table', 'type', 'scope'];
+
+  for (const field of fields) {
+    if (output[field] && typeof output[field] === 'string' && !seen.has(output[field])) {
+      result.push([field, output[field]]);
+      seen.add(output[field]);
+      if (result.length >= 4) break; // Limit to 4 identifiers
+    }
+  }
+
+  // Also check nested objects (e.g., output.workflow.sys_id)
+  const nestedObjects = ['workflow', 'incident', 'job', 'notification', 'property', 'update_set'];
+  for (const objName of nestedObjects) {
+    if (output[objName] && typeof output[objName] === 'object') {
+      const obj = output[objName];
+      if (obj.sys_id && !seen.has(obj.sys_id)) {
+        result.push(['sys_id', obj.sys_id]);
+        seen.add(obj.sys_id);
       }
     }
   }
 
-  return { summary: lines.join('\n'), hasData: true };
+  return result;
+}
+
+/**
+ * Extract array information for list display
+ */
+function extractArrayInfo(output: any): {
+  label: string;
+  count: number;
+  preview: string[];
+  hasMore: boolean;
+  remaining: number;
+} | null {
+  // Find the first meaningful array
+  const arrayFields = [
+    'items', 'results', 'records', 'result', 'properties', 'workflows',
+    'incidents', 'jobs', 'notifications', 'issues', 'activities', 'transitions'
+  ];
+
+  for (const field of arrayFields) {
+    const arr = output[field];
+    if (arr && Array.isArray(arr) && arr.length > 0) {
+      const preview: string[] = [];
+      const maxPreview = 5;
+
+      for (let i = 0; i < Math.min(arr.length, maxPreview); i++) {
+        const item = arr[i];
+        const itemStr = extractItemSummary(item);
+        preview.push(itemStr);
+      }
+
+      return {
+        label: capitalizeFirst(field),
+        count: output.count !== undefined ? output.count : arr.length,
+        preview,
+        hasMore: arr.length > maxPreview,
+        remaining: arr.length - maxPreview
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract a one-line summary from an array item
+ */
+function extractItemSummary(item: any): string {
+  if (typeof item === 'string') return item;
+  if (typeof item !== 'object' || item === null) return String(item);
+
+  // Try common name fields
+  const name = item.name || item.title || item.number || item.short_description ||
+               item.key || item.label || item.sys_id || 'Item';
+
+  // Add status if available
+  const status = item.state || item.status || (item.active === false ? 'inactive' : '');
+  const statusStr = status ? ` [${status}]` : '';
+
+  const nameStr = String(name);
+  return nameStr.length > 50 ? nameStr.substring(0, 47) + '...' + statusStr : nameStr + statusStr;
+}
+
+/**
+ * Extract meaningful fields when nothing else matched
+ */
+function extractMeaningfulFields(output: any): string[] {
+  const lines: string[] = [];
+  const skipFields = new Set(['success', 'data', 'error', 'message']);
+
+  const keys = Object.keys(output).filter(k => !skipFields.has(k));
+  for (const key of keys.slice(0, 5)) {
+    const value = output[key];
+    if (value !== null && value !== undefined) {
+      if (typeof value === 'boolean') {
+        lines.push(`${key}: ${value ? 'Yes' : 'No'}`);
+      } else if (typeof value === 'number') {
+        lines.push(`${key}: ${value}`);
+      } else if (typeof value === 'string' && value.length > 0) {
+        const display = value.length > 80 ? value.substring(0, 77) + '...' : value;
+        lines.push(`${key}: ${display}`);
+      } else if (Array.isArray(value)) {
+        lines.push(`${key}: ${value.length} item${value.length === 1 ? '' : 's'}`);
+      }
+    }
+  }
+
+  return lines;
+}
+
+/**
+ * Format tool name for display (remove prefix, make readable)
+ */
+function formatToolName(toolName: string): string {
+  // Remove common prefixes
+  let name = toolName
+    .replace(/^snow_/, '')
+    .replace(/^servicenow[-_]unified[-_]/, '')
+    .replace(/^servicenow[-_]/, '');
+
+  // Convert snake_case to Title Case
+  return name.split('_').map(capitalizeFirst).join(' ');
+}
+
+/**
+ * Get human-readable type name
+ */
+function getTypeName(type: string): string {
+  const typeNames: Record<string, string> = {
+    'sp_widget': 'Widget',
+    'sp_page': 'Page',
+    'sp_portal': 'Portal',
+    'sys_script': 'Business Rule',
+    'sys_script_include': 'Script Include',
+    'sys_ui_page': 'UI Page',
+    'sys_ui_action': 'UI Action',
+    'sysauto_script': 'Scheduled Job',
+    'sysevent_email_action': 'Email Notification',
+    'wf_workflow': 'Workflow'
+  };
+  return typeNames[type] || type.replace(/_/g, ' ');
+}
+
+function capitalizeFirst(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 export { SYMBOLS };
