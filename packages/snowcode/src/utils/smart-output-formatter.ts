@@ -131,6 +131,26 @@ export function formatToolOutput(toolName: string, output: any): FormattedOutput
   if (isConfluencePageList(data)) return formatConfluencePageList(data);
   if (isConfluencePageList(output)) return formatConfluencePageList(output);
 
+  // GitHub - has unique structure with user.login, head/base refs
+  if (isGitHubIssue(data)) return formatGitHubIssue(data);
+  if (isGitHubIssue(output)) return formatGitHubIssue(output);
+  if (isGitHubPR(data)) return formatGitHubPR(data);
+  if (isGitHubPR(output)) return formatGitHubPR(output);
+  if (isGitHubRepo(data)) return formatGitHubRepo(data);
+  if (isGitHubRepo(output)) return formatGitHubRepo(output);
+  if (isGitHubIssueList(data)) return formatGitHubIssueList(data);
+  if (isGitHubIssueList(output)) return formatGitHubIssueList(output);
+
+  // GitLab - has unique structure with iid, source_branch/target_branch
+  if (isGitLabIssue(data)) return formatGitLabIssue(data);
+  if (isGitLabIssue(output)) return formatGitLabIssue(output);
+  if (isGitLabMR(data)) return formatGitLabMR(data);
+  if (isGitLabMR(output)) return formatGitLabMR(output);
+  if (isGitLabProject(data)) return formatGitLabProject(data);
+  if (isGitLabProject(output)) return formatGitLabProject(output);
+  if (isGitLabIssueList(data)) return formatGitLabIssueList(data);
+  if (isGitLabIssueList(output)) return formatGitLabIssueList(output);
+
   // ============================================================================
   // ALL OTHER TOOLS - Use smart generic formatter
   // ============================================================================
@@ -157,6 +177,114 @@ function isConfluencePageList(obj: any): boolean {
   if (pages.length === 0) return false;
   const first = pages[0];
   return first && first.title && (first.space || first.spaceKey || first.type === 'page');
+}
+
+// ============================================================================
+// GitHub Detection Functions
+// ============================================================================
+
+/**
+ * Check if output looks like a GitHub issue (not PR)
+ */
+function isGitHubIssue(obj: any): boolean {
+  if (!obj) return false;
+  // GitHub issues have number, title, state, and html_url with github.com
+  // PRs also have these but additionally have head/base refs
+  const issue = obj.issue || obj;
+  return issue.number !== undefined &&
+         issue.title !== undefined &&
+         issue.state !== undefined &&
+         issue.html_url && issue.html_url.includes('github.com') &&
+         !issue.head && !issue.base; // Not a PR
+}
+
+/**
+ * Check if output looks like a GitHub Pull Request
+ */
+function isGitHubPR(obj: any): boolean {
+  if (!obj) return false;
+  const pr = obj.pull_request || obj.pr || obj;
+  return pr.number !== undefined &&
+         pr.title !== undefined &&
+         pr.head && pr.head.ref &&
+         pr.base && pr.base.ref;
+}
+
+/**
+ * Check if output looks like a GitHub repository
+ */
+function isGitHubRepo(obj: any): boolean {
+  if (!obj) return false;
+  const repo = obj.repository || obj.repo || obj;
+  return repo.full_name !== undefined &&
+         repo.html_url && repo.html_url.includes('github.com') &&
+         (repo.stargazers_count !== undefined || repo.owner !== undefined);
+}
+
+/**
+ * Check if output looks like a GitHub issue/PR list
+ */
+function isGitHubIssueList(obj: any): boolean {
+  if (!obj) return false;
+  const items = obj.issues || obj.items || obj;
+  if (!Array.isArray(items) || items.length === 0) return false;
+  const first = items[0];
+  return first.number !== undefined &&
+         first.title !== undefined &&
+         first.html_url && first.html_url.includes('github.com');
+}
+
+// ============================================================================
+// GitLab Detection Functions
+// ============================================================================
+
+/**
+ * Check if output looks like a GitLab issue
+ */
+function isGitLabIssue(obj: any): boolean {
+  if (!obj) return false;
+  const issue = obj.issue || obj;
+  // GitLab uses iid (internal ID) and web_url with gitlab
+  return issue.iid !== undefined &&
+         issue.title !== undefined &&
+         issue.state !== undefined &&
+         issue.web_url && (issue.web_url.includes('gitlab.com') || issue.web_url.includes('gitlab')) &&
+         !issue.source_branch; // Not an MR
+}
+
+/**
+ * Check if output looks like a GitLab Merge Request
+ */
+function isGitLabMR(obj: any): boolean {
+  if (!obj) return false;
+  const mr = obj.merge_request || obj.mr || obj;
+  return mr.iid !== undefined &&
+         mr.title !== undefined &&
+         mr.source_branch !== undefined &&
+         mr.target_branch !== undefined;
+}
+
+/**
+ * Check if output looks like a GitLab project
+ */
+function isGitLabProject(obj: any): boolean {
+  if (!obj) return false;
+  const project = obj.project || obj;
+  return project.path_with_namespace !== undefined &&
+         project.web_url && (project.web_url.includes('gitlab.com') || project.web_url.includes('gitlab'));
+}
+
+/**
+ * Check if output looks like a GitLab issue list
+ */
+function isGitLabIssueList(obj: any): boolean {
+  if (!obj) return false;
+  const items = obj.issues || obj;
+  if (!Array.isArray(items) || items.length === 0) return false;
+  const first = items[0];
+  return first.iid !== undefined &&
+         first.title !== undefined &&
+         first.web_url && (first.web_url.includes('gitlab.com') || first.web_url.includes('gitlab'));
 }
 
 // ============================================================================
@@ -759,6 +887,200 @@ function formatConfluencePageList(output: any): FormattedOutput {
   }
 
   if (pages.length > 10) {
+    lines.push(`${SYMBOLS.indent}... and ${count - 10} more`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+// ============================================================================
+// GitHub Formatting
+// ============================================================================
+
+function formatGitHubIssue(output: any): FormattedOutput {
+  const issue = output.issue || output;
+  const labels = issue.labels || [];
+  const labelStr = labels.length > 0
+    ? labels.map((l: any) => l.name || l).slice(0, 3).join(', ')
+    : '';
+
+  const lines = [
+    `${SYMBOLS.success} GitHub Issue #${issue.number}`,
+    `${SYMBOLS.indent}Title: ${issue.title}`,
+    `${SYMBOLS.indent}State: ${issue.state}`,
+    `${SYMBOLS.indent}Author: ${issue.user?.login || 'Unknown'}`
+  ];
+
+  if (issue.assignees && issue.assignees.length > 0) {
+    const assignees = issue.assignees.map((a: any) => a.login).join(', ');
+    lines.push(`${SYMBOLS.indent}Assignees: ${assignees}`);
+  }
+  if (labelStr) {
+    lines.push(`${SYMBOLS.indent}Labels: ${labelStr}`);
+  }
+  if (issue.html_url) {
+    lines.push(`${SYMBOLS.indent}URL: ${issue.html_url}`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+function formatGitHubPR(output: any): FormattedOutput {
+  const pr = output.pull_request || output.pr || output;
+  const lines = [
+    `${SYMBOLS.success} GitHub PR #${pr.number}`,
+    `${SYMBOLS.indent}Title: ${pr.title}`,
+    `${SYMBOLS.indent}State: ${pr.state}${pr.merged ? ' (merged)' : ''}${pr.draft ? ' (draft)' : ''}`,
+    `${SYMBOLS.indent}Branch: ${pr.head?.ref} → ${pr.base?.ref}`,
+    `${SYMBOLS.indent}Author: ${pr.user?.login || 'Unknown'}`
+  ];
+
+  if (pr.mergeable !== undefined) {
+    lines.push(`${SYMBOLS.indent}Mergeable: ${pr.mergeable ? 'Yes' : 'No'}`);
+  }
+  if (pr.additions !== undefined && pr.deletions !== undefined) {
+    lines.push(`${SYMBOLS.indent}Changes: +${pr.additions} -${pr.deletions}`);
+  }
+  if (pr.html_url) {
+    lines.push(`${SYMBOLS.indent}URL: ${pr.html_url}`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+function formatGitHubRepo(output: any): FormattedOutput {
+  const repo = output.repository || output.repo || output;
+  const lines = [
+    `${SYMBOLS.success} GitHub Repository: ${repo.full_name}`,
+    `${SYMBOLS.indent}Description: ${repo.description || 'No description'}`
+  ];
+
+  if (repo.language) {
+    lines.push(`${SYMBOLS.indent}Language: ${repo.language}`);
+  }
+  if (repo.stargazers_count !== undefined) {
+    lines.push(`${SYMBOLS.indent}Stars: ${repo.stargazers_count}`);
+  }
+  if (repo.forks_count !== undefined) {
+    lines.push(`${SYMBOLS.indent}Forks: ${repo.forks_count}`);
+  }
+  if (repo.default_branch) {
+    lines.push(`${SYMBOLS.indent}Default Branch: ${repo.default_branch}`);
+  }
+  if (repo.html_url) {
+    lines.push(`${SYMBOLS.indent}URL: ${repo.html_url}`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+function formatGitHubIssueList(output: any): FormattedOutput {
+  const items = output.issues || output.items || output;
+  const count = output.total_count || items.length;
+  const lines = [`${SYMBOLS.success} Found ${count} GitHub issue${count === 1 ? '' : 's'}`];
+
+  for (let i = 0; i < Math.min(items.length, 10); i++) {
+    const item = items[i];
+    const title = item.title || 'N/A';
+    const truncatedTitle = title.length > 40 ? title.substring(0, 37) + '...' : title;
+    const isPR = item.pull_request ? ' (PR)' : '';
+    lines.push(`${SYMBOLS.indent}${SYMBOLS.bullet} #${item.number}: ${truncatedTitle} [${item.state}]${isPR}`);
+  }
+
+  if (items.length > 10) {
+    lines.push(`${SYMBOLS.indent}... and ${count - 10} more`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+// ============================================================================
+// GitLab Formatting
+// ============================================================================
+
+function formatGitLabIssue(output: any): FormattedOutput {
+  const issue = output.issue || output;
+  const labels = issue.labels || [];
+  const labelStr = labels.length > 0 ? labels.slice(0, 3).join(', ') : '';
+
+  const lines = [
+    `${SYMBOLS.success} GitLab Issue #${issue.iid}`,
+    `${SYMBOLS.indent}Title: ${issue.title}`,
+    `${SYMBOLS.indent}State: ${issue.state}`,
+    `${SYMBOLS.indent}Author: ${issue.author?.username || issue.author?.name || 'Unknown'}`
+  ];
+
+  if (issue.assignees && issue.assignees.length > 0) {
+    const assignees = issue.assignees.map((a: any) => a.username || a.name).join(', ');
+    lines.push(`${SYMBOLS.indent}Assignees: ${assignees}`);
+  }
+  if (labelStr) {
+    lines.push(`${SYMBOLS.indent}Labels: ${labelStr}`);
+  }
+  if (issue.web_url) {
+    lines.push(`${SYMBOLS.indent}URL: ${issue.web_url}`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+function formatGitLabMR(output: any): FormattedOutput {
+  const mr = output.merge_request || output.mr || output;
+  const lines = [
+    `${SYMBOLS.success} GitLab MR !${mr.iid}`,
+    `${SYMBOLS.indent}Title: ${mr.title}`,
+    `${SYMBOLS.indent}State: ${mr.state}${mr.merged_at ? ' (merged)' : ''}${mr.draft ? ' (draft)' : ''}`,
+    `${SYMBOLS.indent}Branch: ${mr.source_branch} → ${mr.target_branch}`,
+    `${SYMBOLS.indent}Author: ${mr.author?.username || mr.author?.name || 'Unknown'}`
+  ];
+
+  if (mr.merge_status) {
+    lines.push(`${SYMBOLS.indent}Merge Status: ${mr.merge_status}`);
+  }
+  if (mr.web_url) {
+    lines.push(`${SYMBOLS.indent}URL: ${mr.web_url}`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+function formatGitLabProject(output: any): FormattedOutput {
+  const project = output.project || output;
+  const lines = [
+    `${SYMBOLS.success} GitLab Project: ${project.path_with_namespace}`,
+    `${SYMBOLS.indent}Name: ${project.name}`,
+    `${SYMBOLS.indent}Description: ${project.description || 'No description'}`
+  ];
+
+  if (project.star_count !== undefined) {
+    lines.push(`${SYMBOLS.indent}Stars: ${project.star_count}`);
+  }
+  if (project.forks_count !== undefined) {
+    lines.push(`${SYMBOLS.indent}Forks: ${project.forks_count}`);
+  }
+  if (project.default_branch) {
+    lines.push(`${SYMBOLS.indent}Default Branch: ${project.default_branch}`);
+  }
+  if (project.web_url) {
+    lines.push(`${SYMBOLS.indent}URL: ${project.web_url}`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+function formatGitLabIssueList(output: any): FormattedOutput {
+  const items = output.issues || output;
+  const count = items.length;
+  const lines = [`${SYMBOLS.success} Found ${count} GitLab issue${count === 1 ? '' : 's'}`];
+
+  for (let i = 0; i < Math.min(items.length, 10); i++) {
+    const item = items[i];
+    const title = item.title || 'N/A';
+    const truncatedTitle = title.length > 40 ? title.substring(0, 37) + '...' : title;
+    lines.push(`${SYMBOLS.indent}${SYMBOLS.bullet} #${item.iid}: ${truncatedTitle} [${item.state}]`);
+  }
+
+  if (items.length > 10) {
     lines.push(`${SYMBOLS.indent}... and ${count - 10} more`);
   }
 
