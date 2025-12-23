@@ -23,6 +23,12 @@ export const toolDefinition: MCPToolDefinition = {
   - choice_options: For choice fields, provide [{label, value}] array
   - reference_table: Required for reference type fields
 
+⚠️ TABLE NAMING CONVENTIONS (IMPORTANT!):
+- 'u_' prefix = Custom tables in GLOBAL scope (e.g., 'u_hardware_catalog')
+- 'x_<vendor>_<app>_' prefix = Tables in SCOPED applications (e.g., 'x_myco_hw_catalog')
+- Using 'x_' prefix without a scoped application will cause a 403 Forbidden error!
+- Always use 'u_' prefix for global custom tables
+
 📦 APPLICATION SCOPE:
 - By default, artifacts are created in the CURRENT application scope
 - Use application_scope parameter to explicitly specify a scope
@@ -485,6 +491,33 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (!label) {
           throw new Error('label parameter required for table creation');
         }
+
+        // Validate table naming convention
+        const isGlobalScope = !resolvedScopeId || resolvedScopeId === 'global';
+        const startsWithX = name.startsWith('x_');
+        const startsWithU = name.startsWith('u_');
+
+        if (startsWithX && isGlobalScope) {
+          throw new Error(
+            `Table name "${name}" uses the 'x_' prefix which is reserved for scoped applications.\n\n` +
+            `ServiceNow Table Naming Conventions:\n` +
+            `• 'u_' prefix = Custom tables in GLOBAL scope (e.g., 'u_hardware_catalog')\n` +
+            `• 'x_<vendor>_<app>_' prefix = Tables in SCOPED applications (e.g., 'x_myco_hw_catalog')\n\n` +
+            `To fix this:\n` +
+            `1. For global scope: Rename to '${name.replace(/^x_/, 'u_')}'\n` +
+            `2. For scoped app: First create an application with snow_create_application, then create the table with application_scope parameter`
+          );
+        }
+
+        if (!startsWithU && !startsWithX && isGlobalScope) {
+          // Add warning but don't block - ServiceNow might auto-prefix
+          es5Warnings.push(
+            `Table name "${name}" doesn't follow ServiceNow naming conventions. ` +
+            `Custom tables in global scope should start with 'u_' (e.g., 'u_${name}'). ` +
+            `ServiceNow may automatically add the prefix or reject the table creation.`
+          );
+        }
+
         result = await createTable(client, {
           name,
           label,
