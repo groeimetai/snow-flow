@@ -5,6 +5,94 @@
 
 import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
 
+/**
+ * Map priority string to ServiceNow priority number (1=Critical, 2=High, 3=Medium, 4=Low)
+ */
+function mapPriorityToNumber(priority: string): number {
+  const priorityMap: Record<string, number> = {
+    'critical': 1,
+    'high': 2,
+    'medium': 3,
+    'low': 4
+  };
+  return priorityMap[priority.toLowerCase()] || 3;
+}
+
+/**
+ * Calculate impact based on affected systems and threat type
+ */
+function calculateImpact(affectedSystems: string[], threatType: string): number {
+  // Base impact on threat type
+  const threatImpact: Record<string, number> = {
+    'data_breach': 1,
+    'ddos': 1,
+    'malware': 2,
+    'unauthorized_access': 2,
+    'insider_threat': 2,
+    'phishing': 3
+  };
+
+  let impact = threatImpact[threatType] || 3;
+
+  // Increase impact if many systems affected
+  if (affectedSystems.length > 10) {
+    impact = Math.max(1, impact - 1);
+  } else if (affectedSystems.length > 5) {
+    impact = Math.max(1, impact);
+  }
+
+  return impact;
+}
+
+/**
+ * Detect IOC type from indicator value
+ */
+function detectIOCType(ioc: string): string {
+  // IP address pattern (IPv4)
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(ioc)) {
+    return 'ip_address';
+  }
+
+  // IPv6 pattern
+  if (/^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(ioc) ||
+      ioc.includes('::')) {
+    return 'ip_address';
+  }
+
+  // Domain pattern
+  if (/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/.test(ioc)) {
+    return 'domain';
+  }
+
+  // URL pattern
+  if (/^https?:\/\//.test(ioc)) {
+    return 'url';
+  }
+
+  // Email pattern
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ioc)) {
+    return 'email';
+  }
+
+  // Hash patterns (MD5, SHA1, SHA256)
+  if (/^[a-fA-F0-9]{32}$/.test(ioc)) {
+    return 'hash_md5';
+  }
+  if (/^[a-fA-F0-9]{40}$/.test(ioc)) {
+    return 'hash_sha1';
+  }
+  if (/^[a-fA-F0-9]{64}$/.test(ioc)) {
+    return 'hash_sha256';
+  }
+
+  // File path pattern
+  if (ioc.includes('/') || ioc.includes('\\')) {
+    return 'file_path';
+  }
+
+  return 'unknown';
+}
+
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_security_incident',
   description: 'Create security incident with automated threat correlation and priority assignment',

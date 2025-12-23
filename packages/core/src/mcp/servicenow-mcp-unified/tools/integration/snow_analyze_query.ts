@@ -224,7 +224,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     return createSuccessResult({
       analysis,
       performance_rating: analysis.estimated_performance,
-      issues_found: antiPatterns.length + (analysis.index_analysis?.unindexed_query_fields.length || 0),
+      issues_found: antiPatterns.length + (analysis.index_analysis?.unindexed_query_fields?.length || 0),
       optimization_potential: analysis.suggestions.length > 0,
       recommendations: analysis.suggestions
     });
