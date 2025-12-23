@@ -41,6 +41,21 @@ function isJiraIssueList(obj: any): boolean {
   return firstIssue && firstIssue.key && isJiraKey(firstIssue.key) && firstIssue.fields !== undefined;
 }
 
+/**
+ * Check if an object contains a property manager list (not raw sys_properties)
+ * Property manager returns: { properties: [{ name: "x", value: "y" }] }
+ * Instance info returns: { properties: [{ name: "x", sys_id: "...", value: "y" }] } (raw sys_properties)
+ */
+function isPropertyManagerList(obj: any): boolean {
+  if (!obj || !obj.properties || !Array.isArray(obj.properties)) return false;
+  // If it has instance_url, it's instance info, not property manager
+  if (obj.instance_url) return false;
+  // Check if it looks like property manager output (action field present)
+  if (obj.action && typeof obj.action === 'string') return true;
+  // Otherwise, don't match generic properties arrays
+  return false;
+}
+
 interface FormattedOutput {
   summary: string;
   hasData: boolean;
@@ -102,15 +117,22 @@ export function formatToolOutput(toolName: string, output: any): FormattedOutput
   if (isJiraIssueList(data)) return formatJiraIssueList(data);
   if (isJiraIssueList(output)) return formatJiraIssueList(output);
 
+  // ServiceNow Instance Info (snow_get_instance_info)
+  // Must check BEFORE property patterns because instance_info also has "properties"
+  if (data.instance_url) return formatInstanceInfo(data);
+  if (output.instance_url) return formatInstanceInfo(output);
+
   // ServiceNow Property (snow_property_manager)
-  if (data.property !== undefined || (data.name && data.value !== undefined && data.sys_id)) {
+  // Only match if it looks like property manager output, not generic "properties"
+  if (data.property !== undefined && typeof data.property === 'object') {
     return formatProperty(data);
   }
-  if (output.property !== undefined || (output.name && output.value !== undefined && output.sys_id)) {
+  if (output.property !== undefined && typeof output.property === 'object') {
     return formatProperty(output);
   }
-  if (data.properties && Array.isArray(data.properties)) return formatPropertyList(data);
-  if (output.properties && Array.isArray(output.properties)) return formatPropertyList(output);
+  // Property list - only if properties have name/value structure (not sys_properties raw)
+  if (isPropertyManagerList(data)) return formatPropertyList(data);
+  if (isPropertyManagerList(output)) return formatPropertyList(output);
 
   // ServiceNow Validation (with valid field)
   if (data.valid !== undefined && typeof data.valid === 'boolean') {
@@ -201,6 +223,42 @@ function formatError(output: any): FormattedOutput {
   }
   if (output.errorType) {
     lines.push(`${SYMBOLS.indent}Type: ${output.errorType}`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+// ============================================================================
+// ServiceNow Instance Info Formatting
+// ============================================================================
+
+function formatInstanceInfo(output: any): FormattedOutput {
+  const lines = [`${SYMBOLS.success} ServiceNow Instance`];
+
+  lines.push(`${SYMBOLS.indent}URL: ${output.instance_url}`);
+
+  // Extract useful info from properties if available
+  if (output.properties && Array.isArray(output.properties)) {
+    for (const prop of output.properties) {
+      if (prop.name === 'instance.name') {
+        lines.push(`${SYMBOLS.indent}Instance: ${prop.value}`);
+      } else if (prop.name === 'glide.product.version') {
+        lines.push(`${SYMBOLS.indent}Version: ${prop.value}`);
+      } else if (prop.name === 'glide.product.name') {
+        lines.push(`${SYMBOLS.indent}Product: ${prop.value}`);
+      }
+    }
+  }
+
+  // Show count of properties if we have them
+  if (output.properties && output.properties.length > 0) {
+    const shown = output.properties.filter((p: any) =>
+      ['instance.name', 'glide.product.version', 'glide.product.name'].includes(p.name)
+    ).length;
+    const remaining = output.properties.length - shown;
+    if (remaining > 0) {
+      lines.push(`${SYMBOLS.indent}Properties: ${output.properties.length} loaded`);
+    }
   }
 
   return { summary: lines.join('\n'), hasData: true };
