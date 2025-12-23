@@ -84,11 +84,27 @@ export type ToolExecutor = (
 
 /**
  * Tool result structure
+ *
+ * The `summary` field provides a human-readable formatted output
+ * that is displayed at the TOP of tool results in the TUI.
+ * This makes tool output more scannable and user-friendly.
  */
 export interface ToolResult {
   success: boolean;
   data?: any;
   error?: string;
+  /**
+   * Human-readable summary displayed at the top of output.
+   * Format: Multi-line string with key information.
+   * Example:
+   * ```
+   * ✓ Created workflow "Auto-Assign Incidents"
+   *   sys_id: abc123def456
+   *   Table: incident
+   *   Activities: 5
+   * ```
+   */
+  summary?: string;
   metadata?: {
     executionTime?: number;
     apiCalls?: number;

@@ -53,6 +53,7 @@ import { ConfigMarkdown } from "../config/markdown"
 import { SessionSummary } from "./summary"
 import { TokenDebug } from "../util/token-debug"
 import { LargeOutputHandler } from "../util/large-output-handler"
+import { formatToolOutput } from "../utils/smart-output-formatter"
 
 export namespace SessionPrompt {
   const log = Log.create({ service: "session.prompt" })
@@ -1345,13 +1346,18 @@ export namespace SessionPrompt {
                     })
                   }
 
+                  // Format tool output for human-readable display
+                  const formatted = formatToolOutput(match.tool, value.output.output);
+
                   await Session.updatePart({
                     ...match,
                     state: {
                       status: "completed",
                       input: value.input,
-                      // Truncate large tool outputs to prevent token overflow
-                      output: truncateToolOutput(value.output.output),
+                      // Show formatted summary instead of raw JSON
+                      output: formatted.summary,
+                      // Keep raw data available for AI context if needed
+                      outputRaw: value.output.output,
                       metadata: value.output.metadata,
                       title: value.output.title,
                       time: {

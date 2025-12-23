@@ -38,13 +38,13 @@ export * from './data-management/index.js';
 // Import/Export (4 tools)
 export * from './import-export/index.js';
 
-// Workflow (3 tools)
+// Workflow (5 tools) - includes workflow manage, transitions
 export * from './workflow/index.js';
 
-// Scheduled Jobs (3 tools)
+// Scheduled Jobs (4 tools) - includes scheduled job manage
 export * from './scheduled-jobs/index.js';
 
-// Email (3 tools)
+// Email (5 tools) - includes email notification manage, inbound email action
 export * from './email/index.js';
 
 // Forms (3 tools)

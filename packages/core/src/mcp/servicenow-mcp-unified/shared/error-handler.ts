@@ -433,13 +433,21 @@ export function handleError(
 
 /**
  * Create success ToolResult
+ *
+ * @param data - The result data
+ * @param metadata - Optional metadata
+ * @param summary - Optional human-readable summary (displayed at top of output)
  */
-export function createSuccessResult(data: any, metadata: any = {}): ToolResult {
-  return {
+export function createSuccessResult(data: any, metadata: any = {}, summary?: string): ToolResult {
+  var result: ToolResult = {
     success: true,
     data,
     metadata
   };
+  if (summary) {
+    result.summary = summary;
+  }
+  return result;
 }
 
 /**

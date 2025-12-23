@@ -208,7 +208,8 @@ export namespace MessageV2 {
     .object({
       status: z.literal("completed"),
       input: z.record(z.string(), z.any()),
-      output: z.string(),
+      output: z.string(), // Formatted summary for display
+      outputRaw: z.any().optional(), // Original raw output data for AI context
       outputSummary: z.string().optional(), // Summary of output preserved after compaction
       title: z.string(),
       metadata: z.record(z.string(), z.any()),
