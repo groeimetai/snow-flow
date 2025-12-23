@@ -545,10 +545,41 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     return createSuccessResult(successData);
 
   } catch (error: any) {
+    // Enhanced error handling for common ServiceNow API errors
+    let errorMessage = error.message;
+    let errorDetails: any = { originalError: error };
+
+    // Handle 403 Forbidden specifically
+    if (error.response?.status === 403) {
+      errorMessage = `Access denied (403 Forbidden) when creating ${type} "${name}". ` +
+        `This usually means one of the following:\n` +
+        `1. OAuth Application needs additional scopes - check System OAuth > Application Registry\n` +
+        `2. The API user needs 'admin' or specific role (e.g., 'sp_admin' for widgets)\n` +
+        `3. Table API access is restricted - check System Definition > Tables > ${type === 'sp_widget' ? 'sp_widget' : type}\n` +
+        `4. Cross-scope protection is blocking the request\n\n` +
+        `To fix: In ServiceNow, go to System OAuth > Application Registry, find your OAuth app, ` +
+        `and ensure it has the correct scopes enabled. For widgets, the user needs 'sp_admin' role.`;
+      errorDetails.status = 403;
+      errorDetails.table = type;
+      errorDetails.possibleCauses = [
+        'OAuth app missing required scopes',
+        'User missing admin or sp_admin role',
+        'Table API access disabled',
+        'Cross-scope protection'
+      ];
+    }
+
+    // Handle 401 Unauthorized
+    if (error.response?.status === 401) {
+      errorMessage = `Authentication failed (401 Unauthorized). Your OAuth token may have expired. ` +
+        `Try running 'snow-flow auth login' to refresh your credentials.`;
+      errorDetails.status = 401;
+    }
+
     return createErrorResult(
       error instanceof SnowFlowError
         ? error
-        : new SnowFlowError(ErrorType.DEPLOYMENT_FAILED, error.message, { originalError: error })
+        : new SnowFlowError(ErrorType.DEPLOYMENT_FAILED, errorMessage, errorDetails)
     );
   }
 }
