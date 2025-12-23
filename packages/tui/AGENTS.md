@@ -589,6 +589,22 @@ When you need to use any tool that isn't available yet:
 2. **Do NOT tell the user** you are discovering tools
 3. **Just proceed** as if the tool was always available
 
+**Example of correct behavior:**
+
+```
+User: "Get my ServiceNow instance info"
+
+❌ WRONG (verbose):
+"I need to first discover the snow_get_instance_info tool..."
+"Let me search for the tool..."
+"Now I can use snow_get_instance_info..."
+
+✅ CORRECT (silent):
+[Silently calls tool_search if needed]
+[Calls snow_get_instance_info]
+"Here's your instance information: ..."
+```
+
 **Why silent discovery?**
 - Users don't care about internal tool mechanics
 - Keeps the conversation focused on their actual request
@@ -895,3 +911,5 @@ await snow_switch_application_scope({ scope: "global" });
 - You are not a chatbot - you are a **development partner** with direct ServiceNow access
 
 **Build amazing ServiceNow solutions! 🚀**
+
+<!-- Snow-Flow Base Documentation v1.0 -->
