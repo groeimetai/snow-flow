@@ -21,6 +21,26 @@ const SYMBOLS = {
   indent: '  '
 };
 
+/**
+ * Check if a string looks like a Jira issue key (e.g., "PROJECT-123")
+ */
+function isJiraKey(key: any): boolean {
+  if (typeof key !== 'string') return false;
+  // Jira keys are typically: PROJECTKEY-NUMBER (e.g., SNOW-123, ABC-1)
+  return /^[A-Z][A-Z0-9]+-\d+$/.test(key);
+}
+
+/**
+ * Check if an object contains a Jira issue list (not generic validation issues)
+ */
+function isJiraIssueList(obj: any): boolean {
+  if (!obj || !obj.issues || !Array.isArray(obj.issues)) return false;
+  if (obj.issues.length === 0) return false;
+  // Check if first issue has Jira-specific properties
+  const firstIssue = obj.issues[0];
+  return firstIssue && firstIssue.key && isJiraKey(firstIssue.key) && firstIssue.fields !== undefined;
+}
+
 interface FormattedOutput {
   summary: string;
   hasData: boolean;
@@ -76,10 +96,37 @@ export function formatToolOutput(toolName: string, output: any): FormattedOutput
   // Use unwrapped data for pattern matching
 
   // Jira (check both output and data)
-  if (data.issue && data.issue.key) return formatJiraIssue(data);
-  if (output.issue && output.issue.key) return formatJiraIssue(output);
-  if (data.issues && Array.isArray(data.issues)) return formatJiraIssueList(data);
-  if (output.issues && Array.isArray(output.issues)) return formatJiraIssueList(output);
+  // Must verify it's actually Jira data, not generic "issues" (like validation issues)
+  if (data.issue && data.issue.key && isJiraKey(data.issue.key)) return formatJiraIssue(data);
+  if (output.issue && output.issue.key && isJiraKey(output.issue.key)) return formatJiraIssue(output);
+  if (isJiraIssueList(data)) return formatJiraIssueList(data);
+  if (isJiraIssueList(output)) return formatJiraIssueList(output);
+
+  // ServiceNow Property (snow_property_manager)
+  if (data.property !== undefined || (data.name && data.value !== undefined && data.sys_id)) {
+    return formatProperty(data);
+  }
+  if (output.property !== undefined || (output.name && output.value !== undefined && output.sys_id)) {
+    return formatProperty(output);
+  }
+  if (data.properties && Array.isArray(data.properties)) return formatPropertyList(data);
+  if (output.properties && Array.isArray(output.properties)) return formatPropertyList(output);
+
+  // ServiceNow Validation (with valid field)
+  if (data.valid !== undefined && typeof data.valid === 'boolean') {
+    return formatValidationResult(data);
+  }
+  if (output.valid !== undefined && typeof output.valid === 'boolean') {
+    return formatValidationResult(output);
+  }
+
+  // ServiceNow Validation Issues (different from Jira issues!)
+  if (data.issues && Array.isArray(data.issues) && !isJiraIssueList(data)) {
+    return formatValidationIssues(data);
+  }
+  if (output.issues && Array.isArray(output.issues) && !isJiraIssueList(output)) {
+    return formatValidationIssues(output);
+  }
 
   // ServiceNow Workflows (check both output and data)
   if (data.workflow && data.workflow.sys_id) return formatWorkflow(data);
@@ -154,6 +201,123 @@ function formatError(output: any): FormattedOutput {
   }
   if (output.errorType) {
     lines.push(`${SYMBOLS.indent}Type: ${output.errorType}`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+// ============================================================================
+// ServiceNow Property Formatting
+// ============================================================================
+
+function formatProperty(output: any): FormattedOutput {
+  const prop = output.property || output;
+  const name = prop.name || 'Unknown property';
+  const value = prop.value !== undefined ? prop.value : 'N/A';
+
+  // Check if it's a "not found" response
+  if (output.found === false || prop.found === false) {
+    return {
+      summary: `${SYMBOLS.warning} Property not found: ${name}`,
+      hasData: true
+    };
+  }
+
+  const lines = [`${SYMBOLS.success} Property: ${name}`];
+
+  if (typeof value === 'string' && value.length > 100) {
+    lines.push(`${SYMBOLS.indent}Value: ${value.substring(0, 100)}...`);
+  } else {
+    lines.push(`${SYMBOLS.indent}Value: ${value}`);
+  }
+
+  if (prop.sys_id) lines.push(`${SYMBOLS.indent}sys_id: ${prop.sys_id}`);
+  if (prop.description) lines.push(`${SYMBOLS.indent}Description: ${prop.description}`);
+  if (output.action) lines.push(`${SYMBOLS.indent}Action: ${output.action}`);
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+function formatPropertyList(output: any): FormattedOutput {
+  const properties = output.properties || [];
+  const count = output.count || properties.length;
+  const lines = [`${SYMBOLS.success} Found ${count} propert${count === 1 ? 'y' : 'ies'}`];
+
+  for (let i = 0; i < Math.min(properties.length, 10); i++) {
+    const prop = properties[i];
+    const name = prop.name || 'Unknown';
+    const value = prop.value !== undefined ? String(prop.value).substring(0, 40) : 'N/A';
+    lines.push(`${SYMBOLS.indent}${SYMBOLS.bullet} ${name}: ${value}`);
+  }
+
+  if (properties.length > 10) {
+    lines.push(`${SYMBOLS.indent}... and ${count - 10} more`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+function formatValidationResult(output: any): FormattedOutput {
+  const valid = output.valid;
+  const symbol = valid ? SYMBOLS.success : SYMBOLS.warning;
+  const status = valid ? 'Validation passed' : 'Validation failed';
+
+  const lines = [`${symbol} ${status}`];
+
+  if (output.message) {
+    lines.push(`${SYMBOLS.indent}${output.message}`);
+  }
+
+  if (output.issues && Array.isArray(output.issues) && output.issues.length > 0) {
+    lines.push(`${SYMBOLS.indent}Issues: ${output.issues.length}`);
+    for (let i = 0; i < Math.min(output.issues.length, 5); i++) {
+      const issue = output.issues[i];
+      const text = typeof issue === 'string' ? issue : (issue.message || issue.description || JSON.stringify(issue));
+      lines.push(`${SYMBOLS.indent}${SYMBOLS.indent}${SYMBOLS.bullet} ${text}`);
+    }
+  }
+
+  if (output.warnings && Array.isArray(output.warnings) && output.warnings.length > 0) {
+    lines.push(`${SYMBOLS.indent}Warnings: ${output.warnings.length}`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+// ============================================================================
+// Validation Issues Formatting (ServiceNow property validation, etc.)
+// ============================================================================
+
+function formatValidationIssues(output: any): FormattedOutput {
+  const issues = output.issues || [];
+  const valid = output.valid !== false;
+  const symbol = valid ? SYMBOLS.success : SYMBOLS.warning;
+
+  if (issues.length === 0) {
+    return { summary: `${SYMBOLS.success} Validation passed`, hasData: false };
+  }
+
+  const lines = [`${symbol} Found ${issues.length} validation issue${issues.length === 1 ? '' : 's'}`];
+
+  for (let i = 0; i < Math.min(issues.length, 10); i++) {
+    const issue = issues[i];
+    // Handle different issue formats
+    if (typeof issue === 'string') {
+      lines.push(`${SYMBOLS.indent}${SYMBOLS.bullet} ${issue}`);
+    } else if (issue.message) {
+      const severity = issue.severity ? `[${issue.severity}] ` : '';
+      lines.push(`${SYMBOLS.indent}${SYMBOLS.bullet} ${severity}${issue.message}`);
+    } else if (issue.description) {
+      lines.push(`${SYMBOLS.indent}${SYMBOLS.bullet} ${issue.description}`);
+    } else {
+      // Try to extract any meaningful info
+      const text = issue.name || issue.field || issue.property || JSON.stringify(issue).substring(0, 50);
+      lines.push(`${SYMBOLS.indent}${SYMBOLS.bullet} ${text}`);
+    }
+  }
+
+  if (issues.length > 10) {
+    lines.push(`${SYMBOLS.indent}... and ${issues.length - 10} more`);
   }
 
   return { summary: lines.join('\n'), hasData: true };
