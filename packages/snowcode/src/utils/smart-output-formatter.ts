@@ -37,16 +37,7 @@ export function formatToolOutput(toolName: string, output: any): FormattedOutput
 
   // Handle string output
   if (typeof output === 'string') {
-    return { summary: output.substring(0, 500), hasData: true };
-  }
-
-  // Handle non-object
-  if (typeof output !== 'object') {
-    return { summary: String(output), hasData: false };
-  }
-
-  // Try to parse if it's a JSON string
-  if (typeof output === 'string') {
+    // Try to parse JSON strings
     try {
       output = JSON.parse(output);
     } catch {
@@ -54,56 +45,100 @@ export function formatToolOutput(toolName: string, output: any): FormattedOutput
     }
   }
 
+  // Handle non-object
+  if (typeof output !== 'object') {
+    return { summary: String(output), hasData: false };
+  }
+
   // Error handling - check first
   if (output.error || output.success === false) {
     return formatError(output);
   }
 
+  // Unwrap common { success: true, data: {...} } wrapper pattern
+  // Many MCP tools return this structure
+  let data = output;
+  if (output.success === true && output.data && typeof output.data === 'object') {
+    data = output.data;
+  }
+
+  // ServiceNow Artifact Creation (snow_create_artifact, snow_deploy, etc.)
+  if (data.created === true && data.sys_id && data.type) {
+    return formatArtifactCreated(data);
+  }
+
+  // ServiceNow Artifact Update
+  if (data.updated === true && data.sys_id) {
+    return formatArtifactUpdated(data);
+  }
+
   // Pattern matching for known output types
-  // Jira
+  // Use unwrapped data for pattern matching
+
+  // Jira (check both output and data)
+  if (data.issue && data.issue.key) return formatJiraIssue(data);
   if (output.issue && output.issue.key) return formatJiraIssue(output);
+  if (data.issues && Array.isArray(data.issues)) return formatJiraIssueList(data);
   if (output.issues && Array.isArray(output.issues)) return formatJiraIssueList(output);
 
-  // ServiceNow Workflows
+  // ServiceNow Workflows (check both output and data)
+  if (data.workflow && data.workflow.sys_id) return formatWorkflow(data);
   if (output.workflow && output.workflow.sys_id) return formatWorkflow(output);
+  if (data.workflows && Array.isArray(data.workflows)) return formatWorkflowList(data);
   if (output.workflows && Array.isArray(output.workflows)) return formatWorkflowList(output);
 
-  // ServiceNow Incidents
+  // ServiceNow Incidents (check both output and data)
+  if (data.incidents && Array.isArray(data.incidents)) return formatIncidentList(data);
   if (output.incidents && Array.isArray(output.incidents)) return formatIncidentList(output);
+  if (data.incident && data.incident.number) return formatIncident(data);
   if (output.incident && output.incident.number) return formatIncident(output);
 
-  // ServiceNow Notifications
+  // ServiceNow Notifications (check both output and data)
+  if (data.notifications && Array.isArray(data.notifications)) return formatNotificationList(data);
   if (output.notifications && Array.isArray(output.notifications)) return formatNotificationList(output);
+  if (data.notification && data.notification.sys_id) return formatNotification(data);
   if (output.notification && output.notification.sys_id) return formatNotification(output);
 
-  // ServiceNow Scheduled Jobs
+  // ServiceNow Scheduled Jobs (check both output and data)
+  if (data.jobs && Array.isArray(data.jobs)) return formatScheduledJobList(data);
   if (output.jobs && Array.isArray(output.jobs)) return formatScheduledJobList(output);
+  if (data.job && data.job.sys_id) return formatScheduledJob(data);
   if (output.job && output.job.sys_id) return formatScheduledJob(output);
 
-  // ServiceNow Created Record
+  // ServiceNow Created Record (fallback if no type specified)
+  if (data.created && data.sys_id) return formatCreatedRecord(data);
   if (output.created && output.sys_id) return formatCreatedRecord(output);
 
-  // ServiceNow Update Set
+  // ServiceNow Update Set (check both output and data)
+  if (data.update_set || data.updateSet) return formatUpdateSet(data);
   if (output.update_set || output.updateSet) return formatUpdateSet(output);
 
-  // Generic list results
+  // Generic list results (check both output and data)
+  if (data.count !== undefined && (data.items || data.results || data.records)) {
+    return formatListResult(data);
+  }
   if (output.count !== undefined && (output.items || output.results || output.records)) {
     return formatListResult(output);
   }
 
-  // Azure DevOps
+  // Azure DevOps (check both output and data)
+  if (data.workItem && data.workItem.id) return formatAzureWorkItem(data);
   if (output.workItem && output.workItem.id) return formatAzureWorkItem(output);
+  if (data.workItems && Array.isArray(data.workItems)) return formatAzureWorkItemList(data);
   if (output.workItems && Array.isArray(output.workItems)) return formatAzureWorkItemList(output);
 
-  // Confluence
+  // Confluence (check both output and data)
+  if (data.page && data.page.id) return formatConfluencePage(data);
   if (output.page && output.page.id) return formatConfluencePage(output);
+  if (data.pages && Array.isArray(data.pages)) return formatConfluencePageList(data);
   if (output.pages && Array.isArray(output.pages)) return formatConfluencePageList(output);
 
-  // ServiceNow Query Results (generic table query)
+  // ServiceNow Query Results (check both output and data)
+  if (data.result && Array.isArray(data.result)) return formatQueryResult(data);
   if (output.result && Array.isArray(output.result)) return formatQueryResult(output);
 
-  // Generic fallback - extract key fields
-  return formatGeneric(toolName, output);
+  // Generic fallback - use unwrapped data for better field extraction
+  return formatGeneric(toolName, data);
 }
 
 // ============================================================================
@@ -122,6 +157,83 @@ function formatError(output: any): FormattedOutput {
   }
 
   return { summary: lines.join('\n'), hasData: true };
+}
+
+// ============================================================================
+// ServiceNow Artifact Formatting
+// ============================================================================
+
+function formatArtifactCreated(data: any): FormattedOutput {
+  const typeName = getArtifactTypeName(data.type);
+  const lines = [`${SYMBOLS.success} Created ${typeName}: ${data.name || data.title || 'Untitled'}`];
+
+  lines.push(`${SYMBOLS.indent}sys_id: ${data.sys_id}`);
+
+  if (data.table) {
+    lines.push(`${SYMBOLS.indent}Table: ${data.table}`);
+  }
+  if (data.application_scope) {
+    lines.push(`${SYMBOLS.indent}Scope: ${data.application_scope}`);
+  }
+  if (data.url) {
+    lines.push(`${SYMBOLS.indent}URL: ${data.url}`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+function formatArtifactUpdated(data: any): FormattedOutput {
+  const typeName = data.type ? getArtifactTypeName(data.type) : 'Record';
+  const lines = [`${SYMBOLS.success} Updated ${typeName}: ${data.name || data.title || data.sys_id}`];
+
+  lines.push(`${SYMBOLS.indent}sys_id: ${data.sys_id}`);
+
+  if (data.table) {
+    lines.push(`${SYMBOLS.indent}Table: ${data.table}`);
+  }
+  if (data.url) {
+    lines.push(`${SYMBOLS.indent}URL: ${data.url}`);
+  }
+  if (data.changes && Array.isArray(data.changes)) {
+    lines.push(`${SYMBOLS.indent}Changes: ${data.changes.length} field(s) updated`);
+  }
+
+  return { summary: lines.join('\n'), hasData: true };
+}
+
+function getArtifactTypeName(type: string): string {
+  const typeNames: Record<string, string> = {
+    'sp_widget': 'Widget',
+    'sp_page': 'Page',
+    'sp_portal': 'Portal',
+    'sp_theme': 'Theme',
+    'sp_css': 'CSS Include',
+    'sp_js_include': 'JS Include',
+    'sp_header_footer': 'Header/Footer',
+    'sp_instance': 'Widget Instance',
+    'sp_column': 'Column',
+    'sp_container': 'Container',
+    'sp_row': 'Row',
+    'sys_script': 'Business Rule',
+    'sys_script_include': 'Script Include',
+    'sys_ui_script': 'UI Script',
+    'sys_ui_page': 'UI Page',
+    'sys_ui_action': 'UI Action',
+    'sys_ui_policy': 'UI Policy',
+    'sys_dictionary': 'Dictionary Entry',
+    'sys_db_object': 'Table',
+    'sys_choice': 'Choice',
+    'sysauto_script': 'Scheduled Job',
+    'sysevent_email_action': 'Email Notification',
+    'sysevent_in_email_action': 'Inbound Email Action',
+    'wf_workflow': 'Workflow',
+    'sys_ws_operation': 'REST Operation',
+    'sys_rest_message': 'REST Message',
+    'sys_transform_map': 'Transform Map',
+    'sys_atf_test': 'ATF Test',
+    'sys_atf_test_suite': 'ATF Test Suite'
+  };
+  return typeNames[type] || type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 // ============================================================================
