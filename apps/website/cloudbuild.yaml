@@ -4,28 +4,27 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '-t', 'gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA',
-      '-t', 'gcr.io/$PROJECT_ID/snow-flow-website:latest',
-      '--cache-from', 'gcr.io/$PROJECT_ID/snow-flow-website:latest',
-      '-f', 'apps/website/Dockerfile',  # Specify Dockerfile location from root
-      'apps/website/'  # Build context is website directory
+      '-t', 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-website:$COMMIT_SHA',
+      '-t', 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-website:latest',
+      '--cache-from', 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-website:latest',
+      '-f', 'apps/website/Dockerfile',
+      'apps/website/'
     ]
-    # Remove dir: 'website' to run from root
 
-  # Push the Docker image to Container Registry
+  # Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA']
+    args: ['push', 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-website:$COMMIT_SHA']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/snow-flow-website:latest']
+    args: ['push', 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-website:latest']
 
-  # Deploy to Cloud Run
+  # Deploy to Cloud Run (moved to europe-west4 for consistency)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args: [
       'run', 'deploy', 'snow-flow-website',
-      '--image', 'gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA',
-      '--region', 'europe-west1',
+      '--image', 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-website:$COMMIT_SHA',
+      '--region', 'europe-west4',
       '--platform', 'managed',
       '--allow-unauthenticated',
       '--port', '80',
@@ -43,25 +42,25 @@ steps:
     entrypoint: gcloud
     args: [
       'run', 'services', 'describe', 'snow-flow-website',
-      '--region', 'europe-west1',
+      '--region', 'europe-west4',
       '--format', 'value(status.url)'
     ]
 
-# Build options
+# Build options (optimized for cost)
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: 'E2_HIGHCPU_8'
-  diskSizeGb: 100
+  machineType: 'E2_MEDIUM'
+  diskSizeGb: 50
 
 # Substitutions for environment-specific values
 substitutions:
-  _REGION: 'europe-west1'
+  _REGION: 'europe-west4'
   _SERVICE_NAME: 'snow-flow-website'
 
-# Images to be pushed to Container Registry
+# Images to be pushed to Artifact Registry
 images:
-  - 'gcr.io/$PROJECT_ID/snow-flow-website:$COMMIT_SHA'
-  - 'gcr.io/$PROJECT_ID/snow-flow-website:latest'
+  - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-website:$COMMIT_SHA'
+  - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-website:latest'
 
 # Build timeout
 timeout: '1200s'

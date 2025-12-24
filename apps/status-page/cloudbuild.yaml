@@ -55,11 +55,11 @@ images:
   - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:$COMMIT_SHA'
   - 'europe-west4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/snow-flow-status-page:latest'
 
-# Build options
+# Build options (optimized for cost)
 options:
-  machineType: 'E2_HIGHCPU_8'
+  machineType: 'E2_MEDIUM'
   logging: CLOUD_LOGGING_ONLY
-  diskSizeGb: 100
+  diskSizeGb: 50
 
 # Substitutions for environment-specific values
 substitutions:
