@@ -427,11 +427,23 @@ func (m *editorComponent) Content() string {
 
 func (m *editorComponent) Cursor() *tea.Cursor {
 	c := m.textarea.Cursor()
-	if c != nil && m.app.Session.ID != "" {
-		// Only adjust for chat view (not home screen)
-		// The chat layout has different positioning that requires adjustment
-		c.Position.Y -= 1
+	if c == nil {
+		return nil
 	}
+
+	if m.Lines() > 1 {
+		// Content() adds visual overhead: empty line + PaddingTop(1) + Border
+		// This needs to be compensated in the cursor position
+		c.Position.Y += 2
+	}
+
+	if m.app.Session.ID != "" {
+		// Chat view adjustment (only for single line mode)
+		if m.Lines() == 1 {
+			c.Position.Y -= 1
+		}
+	}
+
 	return c
 }
 
