@@ -339,7 +339,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           job_id: runSysId,
           trigger_id: triggerResponse.data.result?.sys_id,
           message: 'Job scheduled for immediate execution',
-          note: 'Use get_history action to check execution results'
+          note: 'Use get_history action to check execution results',
+          important: 'There may be a 30-60 second propagation delay before the job executes and logs appear. If get_history returns empty, wait and try again.'
         });
       }
 
@@ -376,27 +377,37 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           }
         });
 
+        const logs = (logsResponse.data.result || []).map(function(l: any) {
+          return {
+            timestamp: l.sys_created_on,
+            level: l.level,
+            message: l.message
+          };
+        });
+
+        const triggers = (triggerResponse.data.result || []).map(function(t: any) {
+          return {
+            sys_id: t.sys_id,
+            next_action: t.next_action,
+            state: t.state,
+            last_error: t.last_error,
+            processed: t.processed,
+            created: t.sys_created_on
+          };
+        });
+
+        // Add helpful note if no history found
+        const noHistoryNote = logs.length === 0 && triggers.length === 0
+          ? 'No execution history found. If you just triggered run_now, there is typically a 30-60 second propagation delay before logs appear. Please wait and try again.'
+          : undefined;
+
         return createSuccessResult({
           action: 'get_history',
           job_id: historySysId,
           job_name: jobName,
-          logs: (logsResponse.data.result || []).map(function(l: any) {
-            return {
-              timestamp: l.sys_created_on,
-              level: l.level,
-              message: l.message
-            };
-          }),
-          triggers: (triggerResponse.data.result || []).map(function(t: any) {
-            return {
-              sys_id: t.sys_id,
-              next_action: t.next_action,
-              state: t.state,
-              last_error: t.last_error,
-              processed: t.processed,
-              created: t.sys_created_on
-            };
-          })
+          logs,
+          triggers,
+          note: noHistoryNote
         });
       }
 

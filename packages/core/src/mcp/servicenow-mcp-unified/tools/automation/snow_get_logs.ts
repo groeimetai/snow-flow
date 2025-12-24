@@ -112,12 +112,63 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       debug: logs.filter((l: any) => l.level === 'debug').length
     };
 
-    return createSuccessResult({
-      logs,
-      count: logs.length,
-      by_level: byLevel,
-      filters: { level, source, since, search }
-    });
+    // Build a human-readable summary with log excerpts
+    const summaryLines: string[] = [];
+    summaryLines.push(`Found ${logs.length} log entries`);
+
+    // Show level breakdown
+    const levelBreakdown: string[] = [];
+    if (byLevel.error > 0) levelBreakdown.push(`${byLevel.error} errors`);
+    if (byLevel.warn > 0) levelBreakdown.push(`${byLevel.warn} warnings`);
+    if (byLevel.info > 0) levelBreakdown.push(`${byLevel.info} info`);
+    if (byLevel.debug > 0) levelBreakdown.push(`${byLevel.debug} debug`);
+    if (levelBreakdown.length > 0) {
+      summaryLines.push(`Breakdown: ${levelBreakdown.join(', ')}`);
+    }
+
+    if (logs.length > 0) {
+      summaryLines.push('');
+      summaryLines.push('Recent Log Entries:');
+
+      // Show first 10 log entries with message excerpts
+      const previewCount = Math.min(logs.length, 10);
+      for (let i = 0; i < previewCount; i++) {
+        const log = logs[i];
+        const levelIcon = log.level === 'error' ? '❌' : log.level === 'warn' ? '⚠️' : log.level === 'info' ? 'ℹ️' : '🔍';
+        const messagePreview = log.message && log.message.length > 100
+          ? log.message.substring(0, 100) + '...'
+          : log.message || '(no message)';
+
+        summaryLines.push(`  ${levelIcon} [${log.timestamp}] ${log.source || 'unknown'}`);
+        summaryLines.push(`     ${messagePreview}`);
+      }
+
+      if (logs.length > 10) {
+        summaryLines.push(`  ... and ${logs.length - 10} more entries`);
+      }
+    }
+
+    // Add active filters info
+    const activeFilters: string[] = [];
+    if (level !== 'all') activeFilters.push(`level=${level}`);
+    if (source) activeFilters.push(`source=${source}`);
+    if (since) activeFilters.push(`since=${since}`);
+    if (search) activeFilters.push(`search=${search}`);
+    if (activeFilters.length > 0) {
+      summaryLines.push('');
+      summaryLines.push(`Filters applied: ${activeFilters.join(', ')}`);
+    }
+
+    return createSuccessResult(
+      {
+        logs,
+        count: logs.length,
+        by_level: byLevel,
+        filters: { level, source, since, search }
+      },
+      {},
+      summaryLines.join('\n')
+    );
 
   } catch (error: any) {
     return createErrorResult(error.message);

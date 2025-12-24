@@ -598,9 +598,13 @@ export namespace MessageV2 {
                     state: "output-available",
                     toolCallId: part.callID,
                     input: part.state.input,
+                    // Use outputRaw (full data) for LLM context, fall back to output (formatted summary) if not available
+                    // When compacted, use the summary instead
                     output: part.state.time.compacted
                       ? (part.state.outputSummary || "[Old tool result content cleared]")
-                      : part.state.output,
+                      : (part.state.outputRaw !== undefined
+                          ? (typeof part.state.outputRaw === 'string' ? part.state.outputRaw : JSON.stringify(part.state.outputRaw, null, 2))
+                          : part.state.output),
                     callProviderMetadata: part.metadata,
                   },
                 ]

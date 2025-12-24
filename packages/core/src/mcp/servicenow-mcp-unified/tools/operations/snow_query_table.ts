@@ -157,6 +157,43 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const rawRecords = response.data.result;
     const records = truncateRecords(rawRecords, truncate_output);
 
+    // Build a human-readable summary with record preview
+    const summaryLines: string[] = [];
+    summaryLines.push(`Found ${records.length} record(s) in ${table}`);
+
+    if (records.length > 0) {
+      summaryLines.push('');
+      summaryLines.push('Record Preview:');
+
+      // Show first 5 records with key fields
+      const previewCount = Math.min(records.length, 5);
+      for (let i = 0; i < previewCount; i++) {
+        const record = records[i];
+        const sysId = record.sys_id || 'unknown';
+        const identifier = record.number || record.name || record.short_description || record.title || sysId;
+
+        // Show key fields for this record
+        const keyFields: string[] = [`sys_id: ${sysId}`];
+        if (record.number) keyFields.push(`number: ${record.number}`);
+        if (record.name && record.name !== record.number) keyFields.push(`name: ${record.name}`);
+        if (record.short_description) keyFields.push(`short_description: ${record.short_description.substring(0, 50)}${record.short_description.length > 50 ? '...' : ''}`);
+        if (record.state) keyFields.push(`state: ${record.state}`);
+        if (record.active !== undefined) keyFields.push(`active: ${record.active}`);
+
+        summaryLines.push(`  ${i + 1}. ${identifier}`);
+        summaryLines.push(`     ${keyFields.join(' | ')}`);
+      }
+
+      if (records.length > 5) {
+        summaryLines.push(`  ... and ${records.length - 5} more records`);
+      }
+    }
+
+    if (records.length === limit) {
+      summaryLines.push('');
+      summaryLines.push(`Note: Results may be limited. Use offset parameter to paginate.`);
+    }
+
     return createSuccessResult(
       {
         records,
@@ -170,7 +207,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         query,
         limit,
         offset
-      }
+      },
+      summaryLines.join('\n')
     );
 
   } catch (error: any) {

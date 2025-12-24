@@ -127,7 +127,7 @@ export class ServiceNowAuthManager {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      timeout: 30000 // 30 second timeout
+      timeout: 60000 // 60 second timeout (increased from 30s to handle slow operations)
     }) as ExtendedAxiosInstance;
 
     // Add response interceptor for automatic token refresh on 401
