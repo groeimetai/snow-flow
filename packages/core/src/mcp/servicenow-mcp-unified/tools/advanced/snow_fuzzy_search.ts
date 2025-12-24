@@ -12,7 +12,7 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_fuzzy_search',
-  description: 'Perform fuzzy search across tables with relevance scoring. Uses LIKE/CONTAINS queries and ranks results by similarity to the search query.',
+  description: 'Perform fuzzy search across tables with relevance scoring. Returns sys_id + name + relevance_score for each match. Uses LIKE/CONTAINS queries and ranks by similarity.',
   // Metadata for tool discovery (not sent to LLM)
   category: 'advanced',
   subcategory: 'search',

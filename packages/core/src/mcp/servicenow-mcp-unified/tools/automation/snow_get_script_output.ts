@@ -46,8 +46,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const client = await getAuthenticatedClient(context);
 
     // Try to find the output in sys_properties
+    // snow_schedule_script_job stores output as: SNOW_FLOW_EXEC_${executionId}
+    const outputMarker = `SNOW_FLOW_EXEC_${execution_id}`;
+
     const outputResponse = await client.get(
-      `/api/now/table/sys_properties?sysparm_query=nameLIKEsnow_flow.script_output.${execution_id}&sysparm_limit=1`
+      `/api/now/table/sys_properties?sysparm_query=name=${outputMarker}&sysparm_limit=1`
     );
 
     if (outputResponse.data.result && outputResponse.data.result.length > 0) {
@@ -59,16 +62,27 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         await client.delete(`/api/now/table/sys_properties/${property.sys_id}`);
       }
 
+      // Organize output by level (matches snow_schedule_script_job format)
+      const organizedOutput = {
+        print: (scriptOutput.output || []).filter((o: any) => o.level === 'print').map((o: any) => o.message),
+        info: (scriptOutput.output || []).filter((o: any) => o.level === 'info').map((o: any) => o.message),
+        warn: (scriptOutput.output || []).filter((o: any) => o.level === 'warn').map((o: any) => o.message),
+        error: (scriptOutput.output || []).filter((o: any) => o.level === 'error').map((o: any) => o.message)
+      };
+
       return createSuccessResult({
         execution_id: scriptOutput.executionId,
-        executed_at: scriptOutput.executedAt,
+        executed_at: scriptOutput.completedAt,
         success: scriptOutput.success,
-        output: scriptOutput.output || [],
-        errors: scriptOutput.errors || [],
-        exception: scriptOutput.exception || null
+        result: scriptOutput.result,
+        output: organizedOutput,
+        raw_output: scriptOutput.output || [],
+        error: scriptOutput.error || null,
+        execution_time_ms: scriptOutput.executionTimeMs
       }, {
         operation: 'retrieve_script_output',
-        cleanup_performed: cleanup
+        cleanup_performed: cleanup,
+        source: 'sys_properties'
       });
     }
 

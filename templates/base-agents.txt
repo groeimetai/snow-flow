@@ -121,7 +121,7 @@ Examples:
 
 2. **High-level tool > Low-level script**
    - Use complete workspace creation tools instead of manual GlideRecord operations
-   - Use dedicated artifact tools instead of background script execution
+   - Use dedicated artifact tools instead of snow_schedule_script_job
 
 3. **Merged tool > Individual actions**
    - Many tools support multiple actions via an `action` parameter
@@ -651,17 +651,20 @@ You have **direct access** to MCP tools in your environment. They are **already 
 - Call the MCP tool directly once discovered
 - Tools work like built-in functions - just call them
 
-### Anti-Pattern 2: Using Background Scripts for Development
+### Anti-Pattern 2: Using Scheduled Scripts for Development
 
-**Background scripts are for VERIFICATION ONLY, not development!**
+**⚠️ IMPORTANT: `snow_schedule_script_job` is NOT a "background script"!**
 
-**When to use background scripts:**
-- ✅ Testing if a table exists
+It creates a **Scheduled Script Job** (sysauto_script) for VERIFICATION and TESTING only, not for creating artifacts!
+
+**When to use `snow_schedule_script_job`:**
+- ✅ Testing if a table/field exists
 - ✅ Verifying a property value
 - ✅ Checking data before operations
 - ✅ Debugging and diagnostics
+- ✅ Quick GlideRecord queries
 
-**When NOT to use background scripts:**
+**When NOT to use `snow_schedule_script_job`:**
 - ❌ Creating/updating artifacts (use dedicated tools!)
 - ❌ Modifying widget code
 - ❌ Creating business rules
@@ -718,7 +721,7 @@ You have **direct access** to MCP tools in your environment. They are **already 
 2. ❌ Using ES6+ syntax in ServiceNow scripts
 3. ❌ Trying to use bash/node/require for MCP tools
 4. ❌ Mock data or placeholders instead of real implementations
-5. ❌ Using background scripts for development work
+5. ❌ Using snow_schedule_script_job for artifact creation (testing only!)
 6. ❌ Assuming instead of verifying
 7. ❌ Loading all tools instead of lazy loading
 8. ❌ Providing placeholder URLs like [your-instance].service-now.com

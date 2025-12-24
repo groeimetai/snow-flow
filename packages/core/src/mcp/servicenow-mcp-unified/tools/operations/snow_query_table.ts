@@ -47,7 +47,7 @@ function truncateRecords(records: any[], truncate: boolean): any[] {
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_query_table',
-  description: 'Query any ServiceNow table with filtering, pagination, and field selection',
+  description: 'Query any ServiceNow table with filtering, pagination, and field selection. Always returns sys_id for each record.',
   // Metadata for tool discovery (not sent to LLM)
   category: 'core-operations',
   subcategory: 'crud',
@@ -135,7 +135,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     }
 
     if (fields.length > 0) {
-      params.sysparm_fields = fields.join(',');
+      // ALWAYS include sys_id - it's essential for follow-up operations
+      const fieldsWithSysId = fields.includes('sys_id') ? fields : ['sys_id', ...fields];
+      params.sysparm_fields = fieldsWithSysId.join(',');
     }
 
     if (order_by) {
