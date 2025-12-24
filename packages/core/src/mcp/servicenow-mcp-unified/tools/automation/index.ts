@@ -23,5 +23,5 @@ export { toolDefinition as snow_get_script_output_def, execute as snow_get_scrip
 export { toolDefinition as snow_property_manager_def, execute as snow_property_manager_exec } from './snow_property_manager.js';
 export { toolDefinition as snow_rest_message_test_suite_def, execute as snow_rest_message_test_suite_exec } from './snow_rest_message_test_suite.js';
 // snow_test_rest_connection moved to integration folder
-export { toolDefinition as snow_test_scheduled_job_def, execute as snow_test_scheduled_job_exec } from './snow_test_scheduled_job.js';
+// snow_test_scheduled_job removed - redundant with snow_trigger_scheduled_job
 export { toolDefinition as snow_trace_execution_def, execute as snow_trace_execution_exec } from './snow_trace_execution.js';

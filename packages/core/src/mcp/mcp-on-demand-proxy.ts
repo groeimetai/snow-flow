@@ -56,9 +56,12 @@ const TOOL_SERVER_MAP: Record<string, string> = {
   'snow_create_transform_map': 'servicenow-integration',
   
   // Automation tools
-  'snow_create_scheduled_job': 'servicenow-automation',
   'snow_create_event_rule': 'servicenow-automation',
   'snow_create_workflow': 'servicenow-automation',
+
+  // Scheduled Jobs tools (unified server)
+  'snow_trigger_scheduled_job': 'servicenow-unified',
+  'snow_scheduled_job_manage': 'servicenow-unified',
   
   // Security tools
   'snow_create_security_rule': 'servicenow-security-compliance',
