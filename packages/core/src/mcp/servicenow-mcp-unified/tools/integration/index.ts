@@ -2,7 +2,6 @@
  * Integration & Advanced Tools - Export all integration tool modules
  */
 
-export { toolDefinition as snow_batch_api_def, execute as snow_batch_api_exec } from './snow_batch_api.js';
 export { toolDefinition as snow_analyze_query_def, execute as snow_analyze_query_exec } from './snow_analyze_query.js';
 export { toolDefinition as snow_detect_code_patterns_def, execute as snow_detect_code_patterns_exec } from './snow_detect_code_patterns.js';
 export { toolDefinition as snow_create_rest_message_def, execute as snow_create_rest_message_exec } from './snow_create_rest_message.js';

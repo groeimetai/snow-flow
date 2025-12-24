@@ -51,8 +51,7 @@ servicenow-mcp-unified/
 │   │   ├── snow_schedule_script_job.ts    # Schedule script jobs (NOT direct execution!)
 │   │   ├── snow_schedule_job.ts
 │   │   └── index.ts
-│   ├── advanced/                # Batch API, analytics
-│   │   ├── snow_batch_api.ts
+│   ├── advanced/                # Analytics
 │   │   ├── snow_analyze_query.ts
 │   │   └── index.ts
 │   └── local-sync/              # Local development
@@ -110,7 +109,6 @@ Tools are organized by **domain** (functional area), not by original server:
 
 ### 5. Advanced Tools (advanced/)
 **Purpose:** Performance and analytics
-- `snow_batch_api` - Batch operations (80% reduction)
 - `snow_analyze_query` - Query optimization
 - `snow_detect_code_patterns` - Code analysis
 - `snow_get_table_relationships` - Relationship mapping

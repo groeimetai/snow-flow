@@ -74,7 +74,6 @@ const TOOL_SERVER_MAP: Record<string, string> = {
   'snow_get_kpis': 'servicenow-reporting-analytics',
   
   // Intelligent tools
-  'snow_batch_api': 'servicenow-intelligent',
   'snow_analyze_query': 'servicenow-intelligent',
   'snow_predict_change_impact': 'servicenow-intelligent'
 };
