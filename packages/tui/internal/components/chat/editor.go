@@ -431,17 +431,9 @@ func (m *editorComponent) Cursor() *tea.Cursor {
 		return nil
 	}
 
-	if m.Lines() > 1 {
-		// Content() adds visual overhead: empty line + PaddingTop(1) + Border
-		// This needs to be compensated in the cursor position
-		c.Position.Y += 2
-	}
-
+	// Chat view always needs -1 adjustment
 	if m.app.Session.ID != "" {
-		// Chat view adjustment (only for single line mode)
-		if m.Lines() == 1 {
-			c.Position.Y -= 1
-		}
+		c.Position.Y -= 1
 	}
 
 	return c
