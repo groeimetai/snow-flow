@@ -18,7 +18,14 @@ console.log(`Building with version: ${pkg.version}`)
 // Core package path (for MCP servers)
 const corePackagePath = path.resolve(dir, "../core")
 
-import { Script } from "@groeimetai/snow-flow-script"
+// Inline Script configuration (previously from @groeimetai/snow-flow-script)
+// This avoids workspace dependency resolution issues in CI
+const SNOWCODE_CHANNEL = process.env["SNOWCODE_CHANNEL"] || "latest"
+const Script = {
+  channel: SNOWCODE_CHANNEL,
+  version: pkg.version,
+}
+console.log(`Build config:`, JSON.stringify(Script, null, 2))
 
 const GOARCH: Record<string, string> = {
   arm64: "arm64",
