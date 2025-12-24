@@ -77,25 +77,14 @@ jobs:
             sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
           fi
 
-      - name: Cache Bun dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-            node_modules
-          key: ${{ runner.os }}-${{ matrix.arch }}-bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.arch }}-bun-
-
       - name: Install dependencies
         shell: bash
         run: |
           for i in 1 2 3; do
             echo "Attempt $i of 3..."
-            if bun install --network-timeout 120000; then
+            if bun install; then
               break
             fi
-            echo "Install failed, retrying in 10 seconds..."
             sleep 10
           done
 
@@ -193,16 +182,9 @@ jobs:
           mkdir -p dist/mcp/servicenow
           mkdir -p dist/mcp/servicenow-mcp-unified
 
-          # Install dependencies needed for MCP server bundling (with retry)
+          # Install dependencies needed for MCP server bundling
           cd ..
-          for i in 1 2 3; do
-            echo "Installing dependencies (attempt $i of 3)..."
-            if bun install --network-timeout 120000; then
-              break
-            fi
-            echo "Install failed, retrying in 10 seconds..."
-            sleep 10
-          done
+          bun install
           cd snowcode
 
           # Bundle enterprise proxy MCP server (fully bundled for portability)
