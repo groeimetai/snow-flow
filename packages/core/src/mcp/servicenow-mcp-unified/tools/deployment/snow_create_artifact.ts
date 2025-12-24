@@ -532,10 +532,34 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
       case 'field':
         if (!table) {
-          throw new Error(`table parameter required for field creation. When creating a field like "${name}", you must specify which table to add it to. Example: { type: 'field', name: '${name}', table: 'u_my_table', internal_type: 'string', column_label: '${name}' }`);
+          // Check if the name looks like a table name - user might have meant to add fields to that table
+          const looksLikeTableName = name.startsWith('u_') || name.startsWith('x_');
+          if (looksLikeTableName) {
+            throw new Error(
+              `table parameter required for field creation.\n\n` +
+              `It looks like "${name}" might be a TABLE name, not a field name.\n` +
+              `If you want to add fields to the "${name}" table, use:\n\n` +
+              `{ type: 'field', name: 'field_name', table: '${name}', internal_type: 'string', column_label: 'Field Label' }\n\n` +
+              `Common field examples:\n` +
+              `- String field: { type: 'field', name: 'u_description', table: '${name}', internal_type: 'string', column_label: 'Description' }\n` +
+              `- Reference field: { type: 'field', name: 'u_assigned_to', table: '${name}', internal_type: 'reference', reference_table: 'sys_user', column_label: 'Assigned To' }\n` +
+              `- Choice field: { type: 'field', name: 'u_status', table: '${name}', internal_type: 'choice', column_label: 'Status', choice_options: [{label: 'New', value: 'new'}, {label: 'Active', value: 'active'}] }`
+            );
+          }
+          throw new Error(
+            `table parameter required for field creation.\n\n` +
+            `When creating a field, you must specify which table to add it to.\n\n` +
+            `Example: { type: 'field', name: '${name}', table: 'u_my_table', internal_type: 'string', column_label: '${name}' }\n\n` +
+            `If you just created a table, use that table name in the 'table' parameter.`
+          );
         }
         if (!internal_type) {
-          throw new Error(`internal_type parameter required for field creation. When creating field "${name}" on table "${table}", you must specify the field type. Example: { type: 'field', name: '${name}', table: '${table}', internal_type: 'string' }. Valid types: string, integer, boolean, reference, glide_date, glide_date_time, decimal, float, choice, journal, journal_input, html, url, email, phone_number_e164, currency, price, sys_class_name, document_id`);
+          throw new Error(
+            `internal_type parameter required for field creation.\n\n` +
+            `When creating field "${name}" on table "${table}", you must specify the field type.\n\n` +
+            `Valid types: string, integer, boolean, reference, glide_date, glide_date_time, decimal, float, choice, journal, journal_input, html, url, email, phone_number_e164, currency, price\n\n` +
+            `Example: { type: 'field', name: '${name}', table: '${table}', internal_type: 'string' }`
+          );
         }
         result = await createField(client, {
           table,
