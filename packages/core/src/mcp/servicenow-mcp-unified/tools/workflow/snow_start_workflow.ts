@@ -1,8 +1,10 @@
 /**
  * snow_start_workflow - Start a workflow on a record
  *
- * ⚠️ IMPORTANT: This tool starts workflows via the Workflow API.
- * Workflows run asynchronously in ServiceNow.
+ * ⚠️ LEGACY FEATURE WARNING:
+ * ServiceNow Workflow (wf_workflow) is a LEGACY feature. ServiceNow recommends
+ * using Flow Designer for new automation needs. Flow Designer is NOT currently
+ * supported programmatically via Snow-Flow MCP tools.
  *
  * Note: Uses the standard workflow start approach via GlideRecord update
  * which triggers any associated workflow.
@@ -12,9 +14,11 @@ import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/t
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
 
+const LEGACY_WARNING = '⚠️ LEGACY: ServiceNow Workflow is deprecated. For new automations, consider Flow Designer (not programmable via Snow-Flow, but specs can be generated).';
+
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_start_workflow',
-  description: 'Start a workflow on a specific record. Workflows run asynchronously in ServiceNow.',
+  description: '⚠️ LEGACY: Start a workflow on a record (deprecated - ServiceNow recommends Flow Designer). Workflows run asynchronously.',
   // Metadata for tool discovery (not sent to LLM)
   category: 'automation',
   subcategory: 'workflow',
@@ -122,11 +126,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         table,
         context_sys_id: contextResponse.data.result.sys_id,
         message: 'Workflow started successfully. It will run asynchronously.',
-        note: 'Check wf_context table for execution status'
+        note: 'Check wf_context table for execution status',
+        legacy_notice: LEGACY_WARNING
       }, {
         operation: 'start_workflow',
         method: 'wf_context'
-      });
+      }, LEGACY_WARNING);
     }
 
     // Fallback: Try to trigger via record update (which may fire associated workflows)

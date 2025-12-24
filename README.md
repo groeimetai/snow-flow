@@ -4,7 +4,11 @@
   </picture>
 </p>
 
-<h1 align="center">Snow-Flow</h1>
+<pre>
+    ▲  ▲        █▀▀▀ █▀▀▄ █▀▀█ █   █   █▀▀▀ █▀▀█ █▀▀▄ █▀▀▀
+   ▲ ▼▲ ▼▲      ▀▀▀█ █  █ █  █ █ █ █   █    █  █ █  █ █▀▀
+  ▲ ▼  ▼  ▼     ▀▀▀▀ ▀  ▀ ▀▀▀▀ ▀▀▀▀▀   ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀
+</pre>
 <h3 align="center">AI-Powered ServiceNow Development Platform</h3>
 
 <p align="center">

@@ -1,6 +1,10 @@
 /**
  * snow_workflow_transition - Manage workflow transitions between activities
  *
+ * ⚠️ LEGACY FEATURE WARNING:
+ * ServiceNow Workflow (wf_workflow) is a LEGACY feature. ServiceNow recommends
+ * using Flow Designer for new automation needs.
+ *
  * Create, update, and manage transitions (connections) between workflow activities.
  */
 
@@ -8,9 +12,11 @@ import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/t
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
 
+const LEGACY_WARNING = '⚠️ LEGACY: Workflow transitions are deprecated. Consider Flow Designer for new automations (ask Snow-Flow to generate a Flow Designer specification).';
+
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_workflow_transition',
-  description: 'Manage workflow transitions between activities: create, update, delete, list',
+  description: '⚠️ LEGACY: Manage workflow transitions (deprecated - ServiceNow recommends Flow Designer). Actions: create, update, delete, list',
   category: 'automation',
   subcategory: 'workflow',
   use_cases: ['workflow', 'workflow-design', 'activity-connections'],

@@ -1,6 +1,19 @@
 /**
  * snow_workflow_manage - Comprehensive legacy workflow management
  *
+ * ⚠️ LEGACY FEATURE WARNING:
+ * ServiceNow Workflow (wf_workflow) is a LEGACY feature. ServiceNow recommends
+ * using Flow Designer for new automation needs. Flow Designer is NOT currently
+ * supported programmatically via Snow-Flow MCP tools.
+ *
+ * Before using this tool, consider:
+ * 1. Do you need legacy workflow specifically for backwards compatibility?
+ * 2. Would Flow Designer be a better fit for this automation?
+ *
+ * If Flow Designer is preferred, Snow-Flow can generate a specification document
+ * that describes the flow logic, triggers, and actions you need to implement
+ * manually in ServiceNow Flow Designer.
+ *
  * Manage ServiceNow legacy workflows (wf_workflow) with full CRUD operations,
  * execution control, and debugging capabilities.
  */
@@ -10,9 +23,29 @@ import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
 import { summary, formatSysId, formatBoolean } from '../../shared/output-formatter.js';
 
+/**
+ * Legacy workflow warning message to be included in tool responses
+ */
+const LEGACY_WARNING = `
+⚠️ LEGACY FEATURE NOTICE:
+ServiceNow Workflow (wf_workflow) is deprecated in favor of Flow Designer.
+Flow Designer provides a modern, visual interface for building automations.
+
+However, Flow Designer is NOT programmable via Snow-Flow at this time.
+
+RECOMMENDATIONS:
+1. For NEW automations → Consider building manually in Flow Designer
+2. For EXISTING workflows → This tool can manage legacy workflows
+3. Need Flow Designer specs? → Ask Snow-Flow to generate a Flow Designer
+   specification document with the required triggers, actions, and logic.
+
+To generate a Flow Designer specification, ask:
+"Generate a Flow Designer specification for [describe your automation]"
+`;
+
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_workflow_manage',
-  description: 'Manage legacy workflows: list, get details, stop, retry, clone, enable/disable',
+  description: '⚠️ LEGACY: Manage legacy workflows (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer (not programmable via Snow-Flow, but specs can be generated). Actions: list, get, stop, retry, clone, enable/disable',
   category: 'automation',
   subcategory: 'workflow',
   use_cases: ['workflow', 'process-automation', 'workflow-management'],
@@ -117,8 +150,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return createSuccessResult({
           action: 'list',
           count: workflowList.length,
-          workflows: workflowList
-        }, {}, listSummary.build());
+          workflows: workflowList,
+          legacy_notice: LEGACY_WARNING.trim()
+        }, {}, listSummary.build() + '\n\n' + LEGACY_WARNING);
       }
 
       case 'get': {

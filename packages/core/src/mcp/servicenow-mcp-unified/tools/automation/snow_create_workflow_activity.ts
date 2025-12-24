@@ -1,6 +1,11 @@
 /**
  * snow_create_workflow_activity - Create workflow activity
  *
+ * ⚠️ LEGACY FEATURE WARNING:
+ * ServiceNow Workflow (wf_workflow) is a LEGACY feature. ServiceNow recommends
+ * using Flow Designer for new automation needs. Flow Designer is NOT currently
+ * supported programmatically via Snow-Flow MCP tools.
+ *
  * Creates workflow activities within existing workflows. Configures
  * activity types, conditions, and execution order.
  */
@@ -9,9 +14,11 @@ import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/t
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
 
+const LEGACY_WARNING = '⚠️ LEGACY: Workflow activities are deprecated. Consider Flow Designer for new automations (ask Snow-Flow to generate a Flow Designer specification).';
+
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_workflow_activity',
-  description: 'Creates workflow activities within existing workflows. Configures activity types, conditions, and execution order.',
+  description: '⚠️ LEGACY: Create workflow activity (deprecated - ServiceNow recommends Flow Designer). Configures activity types, conditions, and execution order.',
   // Metadata for tool discovery (not sent to LLM)
   category: 'automation',
   subcategory: 'workflow',
@@ -92,8 +99,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         activity_type: activityType,
         order
       },
-      message: '✅ Workflow activity created successfully'
-    });
+      message: '✅ Workflow activity created successfully',
+      legacy_notice: LEGACY_WARNING
+    }, {}, LEGACY_WARNING);
 
   } catch (error: any) {
     return createErrorResult(

@@ -41,7 +41,7 @@ export const InvalidTool = Tool.define("invalid", {
     if (isUnavailableToolError(params.error)) {
       return {
         title: "Tool Not Discovered",
-        output: `Tool "${toolName}" not yet discovered. Use tool_search({ query: "${toolName}" }) to discover it, then retry. Do not mention this to the user.`,
+        output: `Tool "${toolName}" not yet discovered. Use tool_search({ query: "${toolName}" }) to discover it, then retry.`,
         metadata: {},
       }
     }
