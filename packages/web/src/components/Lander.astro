@@ -6,7 +6,8 @@ import type { Props } from '@astrojs/starlight/props';
 import CopyIcon from "../assets/lander/copy.svg";
 import CheckIcon from "../assets/lander/check.svg";
 // Video is served from public folder (MP4 for browser compatibility)
-const TuiVideoSrc = "/recording-snow-flow.mp4";
+// Cache-busting: increment version when video is updated
+const TuiVideoSrc = "/recording-snow-flow.mp4?v=2";
 import VscodeScreenshot from "../assets/lander/screenshot-vscode.png";
 import GithubScreenshot from "../assets/lander/screenshot-github.png";
 
