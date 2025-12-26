@@ -233,5 +233,77 @@
       "title": "Project Statistieken | Snow-Flow",
       "description": "Snow-Flow platform statistieken - 410+ MCP tools, 75+ LLM providers."
     }
+  },
+  "enterprise": {
+    "meta": {
+      "title": "Enterprise | Snow-Flow",
+      "description": "Volledig zicht en controle over je AI-gestuurde ServiceNow development. Dashboard, activiteiten tracking en enterprise integraties."
+    },
+    "hero": {
+      "badge": "Enterprise Portal",
+      "title": "ServiceNow Development, Georkestreerd",
+      "subtitle": "Zie wat je AI bouwt. Sync met je tools. Ship met vertrouwen.",
+      "cta": "Neem Contact Op",
+      "ctaSecondary": "Bekijk Prijzen"
+    },
+    "challenge": {
+      "label": "De Uitdaging",
+      "title": "AI agents zijn krachtig, maar zichtbaarheid is essentieel",
+      "problemTitle": "Zonder Snow-Flow Enterprise",
+      "problem1": "Geen zicht op wat AI agents bouwen",
+      "problem2": "Handmatig Jira, Azure en Confluence bijwerken",
+      "problem3": "Verspreide update sets door ServiceNow",
+      "solutionTitle": "Met Snow-Flow Enterprise",
+      "solution1": "Real-time dashboard met alle agent activiteiten",
+      "solution2": "Automatische sync met je projectmanagement tools",
+      "solution3": "Gecentraliseerd update set beheer en tracking"
+    },
+    "showcase": {
+      "label": "De Portal",
+      "title": "Volledige Controle Binnen Handbereik",
+      "subtitle": "Alles wat je nodig hebt om je AI-gestuurde ServiceNow development te beheren op één plek."
+    },
+    "dashboard": {
+      "badge": "Dashboard",
+      "title": "Volledig Overzicht in Eén Dashboard",
+      "desc": "Krijg een vogelvlucht van je hele Snow-Flow deployment. Monitor connecties, volg gebruik en beheer je team.",
+      "feature1": "Seat allocatie tracking (Developer & Stakeholder)",
+      "feature2": "Real-time API gebruik en account status",
+      "feature3": "Snelle acties voor dagelijkse taken",
+      "feature4": "Licentie informatie altijd zichtbaar"
+    },
+    "activities": {
+      "badge": "Agent Activiteiten",
+      "title": "Volg Elke Agent Activiteit",
+      "desc": "Zie precies wat je AI agents bouwen. Filter op bron, volg voltooiingspercentages en exporteer rapporten.",
+      "feature1": "Activiteit trends met visuele grafieken",
+      "feature2": "Filter op bron (Jira, Azure, etc.)",
+      "feature3": "Voltooiingspercentages en wekelijks overzicht",
+      "feature4": "Doorzoek alle activiteiten"
+    },
+    "updatesets": {
+      "badge": "Update Sets",
+      "title": "Beheer Update Sets Centraal",
+      "desc": "Elke story maakt een geïsoleerde update set. Volg status, beoordeel risico en deploy met vertrouwen.",
+      "feature1": "Status tracking (Klaar, In Progress)",
+      "feature2": "Risicobeoordeling per update set",
+      "feature3": "Directe link naar ServiceNow",
+      "feature4": "Artifact overzicht per set"
+    },
+    "integrations": {
+      "label": "Integraties",
+      "title": "Verbind Je Hele Stack",
+      "subtitle": "Bidirectionele sync houdt je tools en ServiceNow in perfecte harmonie.",
+      "jiraDesc": "Backlog sync, issue tracking, automatische status updates",
+      "azureDesc": "Work items, pipelines, PRs en release management",
+      "confluenceDesc": "Automatisch genereren en syncen van technische documentatie",
+      "badge": "Enterprise Integraties"
+    },
+    "cta": {
+      "title": "Klaar om Je ServiceNow Development te Transformeren?",
+      "subtitle": "Krijg volledig zicht en controle over je AI-gestuurde development workflow.",
+      "primary": "Neem Contact Op",
+      "secondary": "Bekijk Prijzen"
+    }
   }
 }

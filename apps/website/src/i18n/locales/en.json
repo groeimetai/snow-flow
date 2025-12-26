@@ -233,5 +233,77 @@
       "title": "Project Stats | Snow-Flow",
       "description": "Snow-Flow platform statistics - 410+ MCP tools, 75+ LLM providers."
     }
+  },
+  "enterprise": {
+    "meta": {
+      "title": "Enterprise | Snow-Flow",
+      "description": "Full visibility and control over your AI-powered ServiceNow development. Dashboard, activities tracking, and enterprise integrations."
+    },
+    "hero": {
+      "badge": "Enterprise Portal",
+      "title": "ServiceNow Development, Orchestrated",
+      "subtitle": "See what your AI builds. Sync with your tools. Ship with confidence.",
+      "cta": "Contact Sales",
+      "ctaSecondary": "View Pricing"
+    },
+    "challenge": {
+      "label": "The Challenge",
+      "title": "AI agents are powerful, but visibility is essential",
+      "problemTitle": "Without Snow-Flow Enterprise",
+      "problem1": "No visibility into what AI agents are building",
+      "problem2": "Manual updates to Jira, Azure, and Confluence",
+      "problem3": "Scattered update sets across ServiceNow",
+      "solutionTitle": "With Snow-Flow Enterprise",
+      "solution1": "Real-time dashboard with all agent activities",
+      "solution2": "Automatic sync with your project management tools",
+      "solution3": "Centralized update set management and tracking"
+    },
+    "showcase": {
+      "label": "The Portal",
+      "title": "Complete Control at Your Fingertips",
+      "subtitle": "Everything you need to manage your AI-powered ServiceNow development in one place."
+    },
+    "dashboard": {
+      "badge": "Dashboard",
+      "title": "Complete Visibility in One Dashboard",
+      "desc": "Get a bird's eye view of your entire Snow-Flow deployment. Monitor connections, track usage, and manage your team.",
+      "feature1": "Seat allocation tracking (Developer & Stakeholder)",
+      "feature2": "Real-time API usage and account status",
+      "feature3": "Quick actions for daily tasks",
+      "feature4": "License information always visible"
+    },
+    "activities": {
+      "badge": "Agent Activities",
+      "title": "Track Every Agent Activity",
+      "desc": "See exactly what your AI agents are building. Filter by source, track completion rates, and export reports.",
+      "feature1": "Activity trends with visual graphs",
+      "feature2": "Filter by source (Jira, Azure, etc.)",
+      "feature3": "Completion rates and weekly overview",
+      "feature4": "Search through all activities"
+    },
+    "updatesets": {
+      "badge": "Update Sets",
+      "title": "Manage Update Sets Centrally",
+      "desc": "Every story creates an isolated update set. Track status, assess risk, and deploy with confidence.",
+      "feature1": "Status tracking (Ready, In Progress)",
+      "feature2": "Risk assessment per update set",
+      "feature3": "Direct link to ServiceNow",
+      "feature4": "Artifact overview per set"
+    },
+    "integrations": {
+      "label": "Integrations",
+      "title": "Connect Your Entire Stack",
+      "subtitle": "Bidirectional sync keeps your tools and ServiceNow in perfect harmony.",
+      "jiraDesc": "Backlog sync, issue tracking, automatic status updates",
+      "azureDesc": "Work items, pipelines, PRs, and release management",
+      "confluenceDesc": "Auto-generate and sync technical documentation",
+      "badge": "Enterprise Integrations"
+    },
+    "cta": {
+      "title": "Ready to Transform Your ServiceNow Development?",
+      "subtitle": "Get full visibility and control over your AI-powered development workflow.",
+      "primary": "Contact Sales",
+      "secondary": "View Pricing"
+    }
   }
 }
