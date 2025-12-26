@@ -1,0 +1,709 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getLangFromUrl, useTranslations, type Lang } from '../../../i18n/utils';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'nl' } }
+  ];
+}
+
+const lang = getLangFromUrl(Astro.url) as Lang;
+const t = useTranslations(lang);
+
+const title = t('partners.meta.title');
+const description = t('partners.meta.description');
+---
+
+<BaseLayout title={title} description={description}>
+    <link rel="stylesheet" href="/styles/enterprise.css" />
+
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+
+    <!-- Hero Section -->
+    <section class="enterprise-hero">
+        <div class="hero-glow partner-glow"></div>
+        <div class="container">
+            <div class="hero-content">
+                <nav class="breadcrumb">
+                    <a href={`/${lang}/enterprise`}>Enterprise</a>
+                    <span>/</span>
+                    <span>{t('partners.breadcrumb')}</span>
+                </nav>
+
+                <div class="hero-badge partner-badge">
+                    <span class="pulse partner-pulse"></span>
+                    {t('partners.hero.badge')}
+                </div>
+
+                <h1 class="hero-title">
+                    <span class="gradient partner-gradient">{t('partners.hero.title')}</span>
+                </h1>
+
+                <p class="hero-subtitle">
+                    {t('partners.hero.subtitle')}
+                </p>
+
+                <div class="hero-ctas">
+                    <a href="mailto:partners@snow-flow.dev" class="btn btn-partner">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        {t('partners.hero.cta')}
+                    </a>
+                    <a href={`/${lang}/enterprise`} class="btn btn-secondary">
+                        {t('partners.hero.ctaSecondary')}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Partner Section -->
+    <section class="section why-partner-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label partner-label">{t('partners.why.label')}</span>
+                <h2 class="section-title">{t('partners.why.title')}</h2>
+                <p class="section-subtitle">{t('partners.why.subtitle')}</p>
+            </div>
+
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                            <line x1="12" y1="18" x2="12" y2="6"></line>
+                        </svg>
+                    </div>
+                    <h3>{t('partners.why.benefit1Title')}</h3>
+                    <p>{t('partners.why.benefit1Desc')}</p>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                    </div>
+                    <h3>{t('partners.why.benefit2Title')}</h3>
+                    <p>{t('partners.why.benefit2Desc')}</p>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                    </div>
+                    <h3>{t('partners.why.benefit3Title')}</h3>
+                    <p>{t('partners.why.benefit3Desc')}</p>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <h3>{t('partners.why.benefit4Title')}</h3>
+                    <p>{t('partners.why.benefit4Desc')}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Partner Features Section -->
+    <section class="section partner-features-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label partner-label">{t('partners.features.label')}</span>
+                <h2 class="section-title">{t('partners.features.title')}</h2>
+            </div>
+
+            <!-- White-Label Portal -->
+            <div class="feature-block" data-aos="fade-up">
+                <div class="feature-content">
+                    <div class="feature-badge partner-accent">{t('partners.features.whitelabel.badge')}</div>
+                    <h3 class="feature-title">{t('partners.features.whitelabel.title')}</h3>
+                    <p class="feature-desc">{t('partners.features.whitelabel.desc')}</p>
+                    <ul class="feature-list">
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.whitelabel.feature1')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.whitelabel.feature2')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.whitelabel.feature3')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.whitelabel.feature4')}
+                        </li>
+                    </ul>
+                </div>
+                <div class="feature-visual">
+                    <div class="visual-placeholder partner-visual">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span>{t('partners.features.screenshotSoon')}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- License Management -->
+            <div class="feature-block reverse" data-aos="fade-up">
+                <div class="feature-content">
+                    <div class="feature-badge partner-accent">{t('partners.features.license.badge')}</div>
+                    <h3 class="feature-title">{t('partners.features.license.title')}</h3>
+                    <p class="feature-desc">{t('partners.features.license.desc')}</p>
+                    <ul class="feature-list">
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.license.feature1')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.license.feature2')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.license.feature3')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.license.feature4')}
+                        </li>
+                    </ul>
+                </div>
+                <div class="feature-visual">
+                    <div class="license-preview">
+                        <code>SNOW-ENT-YOURCOMPANY-10/5-20261231-A3F2E9C1</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Multi-Tenant Dashboard -->
+            <div class="feature-block" data-aos="fade-up">
+                <div class="feature-content">
+                    <div class="feature-badge partner-accent">{t('partners.features.dashboard.badge')}</div>
+                    <h3 class="feature-title">{t('partners.features.dashboard.title')}</h3>
+                    <p class="feature-desc">{t('partners.features.dashboard.desc')}</p>
+                    <ul class="feature-list">
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.dashboard.feature1')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.dashboard.feature2')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.dashboard.feature3')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('partners.features.dashboard.feature4')}
+                        </li>
+                    </ul>
+                </div>
+                <div class="feature-visual">
+                    <div class="visual-placeholder partner-visual">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>{t('partners.features.screenshotSoon')}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Partner Tiers Section -->
+    <section class="section tiers-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label partner-label">{t('partners.tiers.label')}</span>
+                <h2 class="section-title">{t('partners.tiers.title')}</h2>
+            </div>
+
+            <div class="tiers-grid">
+                <div class="tier-card">
+                    <h3>{t('partners.tiers.referral.title')}</h3>
+                    <p class="tier-desc">{t('partners.tiers.referral.desc')}</p>
+                    <ul>
+                        <li>{t('partners.tiers.referral.feature1')}</li>
+                        <li>{t('partners.tiers.referral.feature2')}</li>
+                        <li>{t('partners.tiers.referral.feature3')}</li>
+                    </ul>
+                </div>
+
+                <div class="tier-card featured">
+                    <div class="tier-badge">{t('partners.tiers.popular')}</div>
+                    <h3>{t('partners.tiers.reseller.title')}</h3>
+                    <p class="tier-desc">{t('partners.tiers.reseller.desc')}</p>
+                    <ul>
+                        <li>{t('partners.tiers.reseller.feature1')}</li>
+                        <li>{t('partners.tiers.reseller.feature2')}</li>
+                        <li>{t('partners.tiers.reseller.feature3')}</li>
+                        <li>{t('partners.tiers.reseller.feature4')}</li>
+                    </ul>
+                </div>
+
+                <div class="tier-card">
+                    <h3>{t('partners.tiers.strategic.title')}</h3>
+                    <p class="tier-desc">{t('partners.tiers.strategic.desc')}</p>
+                    <ul>
+                        <li>{t('partners.tiers.strategic.feature1')}</li>
+                        <li>{t('partners.tiers.strategic.feature2')}</li>
+                        <li>{t('partners.tiers.strategic.feature3')}</li>
+                        <li>{t('partners.tiers.strategic.feature4')}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section cta-section partner-cta">
+        <div class="container">
+            <div class="cta-content">
+                <h2>{t('partners.cta.title')}</h2>
+                <p>{t('partners.cta.subtitle')}</p>
+                <div class="cta-buttons">
+                    <a href="mailto:partners@snow-flow.dev" class="btn btn-partner btn-large">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        {t('partners.cta.primary')}
+                    </a>
+                    <a href={`/${lang}/enterprise/customers`} class="btn btn-secondary btn-large">
+                        {t('partners.cta.secondary')}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-brand">
+                <a href={`/${lang}/`} class="footer-logo" aria-label="Snow-Flow Home">
+                    <svg class="footer-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="footer-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#FFFFFF"/>
+                                <stop offset="100%" stop-color="#00D9FF"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#footer-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="footer-logo-text">
+                        <span class="snow">SNOW</span><span class="flow">FLOW</span>
+                    </span>
+                </a>
+                <p class="footer-tagline">
+                    {t('footer.tagline')}
+                </p>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="footer-copyright">
+                    {t('footer.copyright')}
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll animations
+        const featureBlocks = document.querySelectorAll('.feature-block');
+
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        featureBlocks.forEach(block => {
+            observer.observe(block);
+        });
+    </script>
+</BaseLayout>
+
+<style>
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 24px;
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb a {
+        color: var(--color-text-secondary, #94A3B8);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb a:hover {
+        color: #F59E0B;
+    }
+
+    .breadcrumb span {
+        color: var(--color-text-muted, #64748B);
+    }
+
+    /* Partner Theme */
+    .partner-badge {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: #F59E0B;
+    }
+
+    .partner-pulse {
+        background: #F59E0B;
+    }
+
+    .partner-gradient {
+        background: linear-gradient(135deg, #F59E0B 0%, #EF4444 50%, #F59E0B 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .partner-label {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.2);
+        color: #F59E0B;
+    }
+
+    .partner-accent {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: #F59E0B;
+    }
+
+    .btn-partner {
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        color: #000;
+    }
+
+    .btn-partner:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+    }
+
+    .partner-cta .cta-content {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(239, 68, 68, 0.05) 100%);
+        border-color: rgba(245, 158, 11, 0.2);
+    }
+
+    /* Benefits Grid */
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        margin-top: 48px;
+    }
+
+    @media (max-width: 1024px) {
+        .benefits-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 640px) {
+        .benefits-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .benefit-card {
+        padding: 32px;
+        background: var(--color-card-bg, #0d0d14);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .benefit-card:hover {
+        border-color: rgba(245, 158, 11, 0.3);
+        transform: translateY(-4px);
+    }
+
+    .benefit-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        background: rgba(245, 158, 11, 0.1);
+        color: #F59E0B;
+    }
+
+    .benefit-card h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .benefit-card p {
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    /* Feature Blocks */
+    .partner-features-section {
+        padding: 80px 0;
+    }
+
+    .feature-block {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 48px;
+        align-items: center;
+        margin-bottom: 80px;
+        opacity: 0;
+        transform: translateY(40px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .feature-block.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .feature-block.reverse {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .feature-block.reverse .feature-content {
+        order: 2;
+    }
+
+    .feature-block.reverse .feature-visual {
+        order: 1;
+    }
+
+    @media (max-width: 968px) {
+        .feature-block,
+        .feature-block.reverse {
+            grid-template-columns: 1fr;
+        }
+
+        .feature-block.reverse .feature-content,
+        .feature-block.reverse .feature-visual {
+            order: unset;
+        }
+    }
+
+    .feature-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+        border: 1px solid;
+    }
+
+    .feature-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    .feature-desc {
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 24px;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .feature-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 8px 0;
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.95rem;
+    }
+
+    .feature-list li svg {
+        flex-shrink: 0;
+        color: #F59E0B;
+        margin-top: 2px;
+    }
+
+    .visual-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 80px 40px;
+        background: var(--color-card-bg, #0d0d14);
+        border: 2px dashed rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        text-align: center;
+    }
+
+    .visual-placeholder.partner-visual {
+        border-color: rgba(245, 158, 11, 0.2);
+        color: rgba(245, 158, 11, 0.5);
+    }
+
+    .visual-placeholder span {
+        color: var(--color-text-muted, #64748B);
+        font-size: 0.9rem;
+    }
+
+    .license-preview {
+        padding: 40px;
+        background: var(--color-card-bg, #0d0d14);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-radius: 16px;
+        text-align: center;
+    }
+
+    .license-preview code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
+        color: #F59E0B;
+        background: rgba(245, 158, 11, 0.1);
+        padding: 12px 24px;
+        border-radius: 8px;
+        display: inline-block;
+    }
+
+    /* Tiers Section */
+    .tiers-section {
+        padding: 80px 0;
+        background: linear-gradient(180deg, transparent 0%, rgba(245, 158, 11, 0.02) 50%, transparent 100%);
+    }
+
+    .tiers-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-top: 48px;
+    }
+
+    @media (max-width: 968px) {
+        .tiers-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .tier-card {
+        padding: 32px;
+        background: var(--color-card-bg, #0d0d14);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        position: relative;
+    }
+
+    .tier-card.featured {
+        border-color: rgba(245, 158, 11, 0.5);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(239, 68, 68, 0.05) 100%);
+    }
+
+    .tier-badge {
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 6px 16px;
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        color: #000;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border-radius: 100px;
+    }
+
+    .tier-card h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .tier-card.featured h3 {
+        margin-top: 8px;
+    }
+
+    .tier-desc {
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    .tier-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .tier-card li {
+        padding: 8px 0;
+        padding-left: 24px;
+        position: relative;
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.9rem;
+    }
+
+    .tier-card li::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        color: #F59E0B;
+        font-weight: bold;
+    }
+</style>

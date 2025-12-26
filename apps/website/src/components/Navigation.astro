@@ -31,10 +31,35 @@ const t = useTranslations(lang);
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     {t('nav.pricing')}
                 </a></li>
-                <li><a href={`/${lang}/enterprise`}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                    Enterprise
-                </a></li>
+                <li class="mobile-nav-submenu">
+                    <button class="mobile-submenu-trigger">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                        Enterprise
+                        <svg class="submenu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <ul class="mobile-submenu-items">
+                        <li><a href={`/${lang}/enterprise`}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            {t('nav.enterpriseOverview')}
+                        </a></li>
+                        <li><a href={`/${lang}/enterprise/customers`}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            {t('nav.forCustomers')}
+                        </a></li>
+                        <li><a href={`/${lang}/enterprise/partners`}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            {t('nav.forPartners')}
+                        </a></li>
+                        <li><a href={`/${lang}/enterprise/developers`}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            {t('nav.developers')}
+                        </a></li>
+                        <li><a href={`/${lang}/enterprise/stakeholders`}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            {t('nav.stakeholders')}
+                        </a></li>
+                    </ul>
+                </li>
             </ul>
         </div>
 
@@ -114,7 +139,51 @@ const t = useTranslations(lang);
                 <li><a href={`/${lang}/#why`}>{t('nav.whySnowFlow')}</a></li>
                 <li><a href={`/${lang}/#autonomous`}>{t('nav.features')}</a></li>
                 <li><a href="https://portal.snow-flow.dev/pricing">{t('nav.pricing')}</a></li>
-                <li><a href={`/${lang}/enterprise`}>Enterprise</a></li>
+                <li class="nav-dropdown">
+                    <button class="nav-dropdown-trigger">
+                        Enterprise
+                        <svg class="dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href={`/${lang}/enterprise`} class="dropdown-item">
+                            <span class="dropdown-item-title">{t('nav.enterpriseOverview')}</span>
+                            <span class="dropdown-item-desc">{t('nav.enterpriseOverviewDesc')}</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href={`/${lang}/enterprise/customers`} class="dropdown-item">
+                            <span class="dropdown-item-icon" style="background: rgba(0, 217, 255, 0.1); color: #00D9FF;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            </span>
+                            <div>
+                                <span class="dropdown-item-title">{t('nav.forCustomers')}</span>
+                                <span class="dropdown-item-desc">{t('nav.forCustomersDesc')}</span>
+                            </div>
+                        </a>
+                        <a href={`/${lang}/enterprise/partners`} class="dropdown-item">
+                            <span class="dropdown-item-icon" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            </span>
+                            <div>
+                                <span class="dropdown-item-title">{t('nav.forPartners')}</span>
+                                <span class="dropdown-item-desc">{t('nav.forPartnersDesc')}</span>
+                            </div>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-section-title">{t('nav.userTypes')}</div>
+                        <a href={`/${lang}/enterprise/developers`} class="dropdown-item dropdown-item-small">
+                            <span class="dropdown-item-icon small" style="background: rgba(34, 197, 94, 0.1); color: #22C55E;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            </span>
+                            <span class="dropdown-item-title">{t('nav.developers')}</span>
+                        </a>
+                        <a href={`/${lang}/enterprise/stakeholders`} class="dropdown-item dropdown-item-small">
+                            <span class="dropdown-item-icon small" style="background: rgba(168, 85, 247, 0.1); color: #A855F7;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </span>
+                            <span class="dropdown-item-title">{t('nav.stakeholders')}</span>
+                        </a>
+                    </div>
+                </li>
                 <li><a href={`/${lang}/docs`}>{t('nav.docs')}</a></li>
                 <li><a href="https://github.com/groeimetai/snow-flow">{t('nav.github')}</a></li>
             </ul>
@@ -177,5 +246,42 @@ const t = useTranslations(lang);
     if (e.key === 'Escape' && mobileNav?.classList.contains('active')) {
       toggleMobileMenu();
     }
+  });
+
+  // Desktop dropdown functionality
+  const navDropdowns = document.querySelectorAll('.nav-dropdown');
+  navDropdowns.forEach(dropdown => {
+    const trigger = dropdown.querySelector('.nav-dropdown-trigger');
+    const menu = dropdown.querySelector('.nav-dropdown-menu');
+
+    trigger?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle('active');
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target as Node)) {
+        dropdown.classList.remove('active');
+      }
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        dropdown.classList.remove('active');
+      }
+    });
+  });
+
+  // Mobile submenu functionality
+  const mobileSubmenus = document.querySelectorAll('.mobile-nav-submenu');
+  mobileSubmenus.forEach(submenu => {
+    const trigger = submenu.querySelector('.mobile-submenu-trigger');
+
+    trigger?.addEventListener('click', (e) => {
+      e.preventDefault();
+      submenu.classList.toggle('open');
+    });
   });
 </script>

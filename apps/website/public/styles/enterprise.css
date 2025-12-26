@@ -296,6 +296,75 @@
     display: block;
 }
 
+/* Tall Image Handling */
+.showcase-image.tall {
+    max-height: 600px;
+    overflow: hidden;
+    position: relative;
+}
+
+.showcase-image.tall img {
+    object-fit: cover;
+    object-position: top;
+    height: 600px;
+}
+
+.showcase-image.tall::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to top, var(--color-bg, #050508) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+/* Tall image block - full width layout */
+.showcase-block.tall-image {
+    grid-template-columns: 1fr;
+    gap: 32px;
+}
+
+.showcase-block.tall-image .showcase-content {
+    max-width: 600px;
+}
+
+.showcase-block.tall-image .showcase-image {
+    max-height: 700px;
+    overflow-y: auto;
+    border-radius: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 217, 255, 0.3) transparent;
+}
+
+.showcase-block.tall-image .showcase-image::-webkit-scrollbar {
+    width: 8px;
+}
+
+.showcase-block.tall-image .showcase-image::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.showcase-block.tall-image .showcase-image::-webkit-scrollbar-thumb {
+    background: rgba(0, 217, 255, 0.3);
+    border-radius: 4px;
+}
+
+.showcase-block.tall-image .showcase-image img {
+    height: auto;
+}
+
+@media (min-width: 969px) {
+    .showcase-block.tall-image {
+        grid-template-columns: 0.8fr 1.2fr;
+    }
+
+    .showcase-block.tall-image.reverse {
+        grid-template-columns: 1.2fr 0.8fr;
+    }
+}
+
 /* Integrations Section */
 .integrations-section {
     padding: 80px 0;

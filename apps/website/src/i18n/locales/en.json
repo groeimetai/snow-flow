@@ -15,7 +15,16 @@
     "resources": "Resources",
     "documentation": "Documentation",
     "status": "Status",
-    "getStarted": "Get Started"
+    "getStarted": "Get Started",
+    "enterpriseOverview": "Overview",
+    "enterpriseOverviewDesc": "Discover Snow-Flow for your organization",
+    "forCustomers": "For Customers",
+    "forCustomersDesc": "Manage your Snow-Flow licenses and teams",
+    "forPartners": "For Partners",
+    "forPartnersDesc": "Become a Snow-Flow service integrator",
+    "userTypes": "User Types",
+    "developers": "Developers",
+    "stakeholders": "Stakeholders"
   },
   "hero": {
     "badge": "Open Source · 410+ Tools · Any AI",
@@ -237,10 +246,47 @@
   "enterprise": {
     "meta": {
       "title": "Enterprise | Snow-Flow",
+      "description": "Full visibility and control over your AI-powered ServiceNow development. For customers and service integrators."
+    },
+    "landing": {
+      "title": "Enterprise Solutions",
+      "subtitle": "AI-powered ServiceNow development for organizations and partners.",
+      "customersTitle": "For Customers",
+      "customersDesc": "Deploy Snow-Flow Enterprise directly for your organization. Full control over your AI development workflow.",
+      "customersFeature1": "Central dashboard for all activities",
+      "customersFeature2": "Jira, Azure DevOps & Confluence sync",
+      "customersFeature3": "Free stakeholder seats included",
+      "partnersTitle": "For Service Integrators",
+      "partnersDesc": "Resell Snow-Flow to your clients with white-label branding and license management.",
+      "partnersFeature1": "White-label portal customization",
+      "partnersFeature2": "License key generation",
+      "partnersFeature3": "Multi-tenant customer management",
+      "learnMore": "Learn More",
+      "rolesLabel": "User Types",
+      "rolesTitle": "Two Types of Users",
+      "rolesSubtitle": "Both customers and partners can provision these user types.",
+      "developersTitle": "Developers",
+      "developersDesc": "Full write access to build with Snow-Flow",
+      "stakeholdersTitle": "Stakeholders",
+      "stakeholdersDesc": "Read-only access, included FREE",
+      "writeAccess": "Write",
+      "readOnly": "Read Only",
+      "integrations": "Integrations",
+      "stakeholderTools": "Stakeholder Tools",
+      "ctaTitle": "Ready to Get Started?",
+      "ctaSubtitle": "Whether you're a customer or partner, we're here to help.",
+      "ctaPrimary": "Contact Sales",
+      "ctaSecondary": "View Pricing"
+    }
+  },
+  "customers": {
+    "meta": {
+      "title": "For Customers | Snow-Flow Enterprise",
       "description": "Full visibility and control over your AI-powered ServiceNow development. Dashboard, activities tracking, and enterprise integrations."
     },
+    "breadcrumb": "For Customers",
     "hero": {
-      "badge": "Enterprise Portal",
+      "badge": "For Customers",
       "title": "ServiceNow Development, Orchestrated",
       "subtitle": "See what your AI builds. Sync with your tools. Ship with confidence.",
       "cta": "Contact Sales",
@@ -304,6 +350,99 @@
       "subtitle": "Get full visibility and control over your AI-powered development workflow.",
       "primary": "Contact Sales",
       "secondary": "View Pricing"
+    }
+  },
+  "partners": {
+    "meta": {
+      "title": "For Partners | Snow-Flow Enterprise",
+      "description": "Resell Snow-Flow to your clients. White-label portal, license management, and partner revenue sharing."
+    },
+    "breadcrumb": "For Partners",
+    "hero": {
+      "badge": "Partner Program",
+      "title": "Grow Your Business with Snow-Flow",
+      "subtitle": "Resell AI-powered ServiceNow development to your clients with your own branding.",
+      "cta": "Become a Partner",
+      "ctaSecondary": "Enterprise Overview"
+    },
+    "why": {
+      "label": "Why Partner?",
+      "title": "Expand Your ServiceNow Practice",
+      "subtitle": "Add AI-powered development to your service portfolio.",
+      "benefit1Title": "Revenue Share",
+      "benefit1Desc": "Earn recurring revenue on every license you sell.",
+      "benefit2Title": "Full Platform",
+      "benefit2Desc": "410+ MCP tools and 40+ integrations ready to deploy.",
+      "benefit3Title": "White-Label",
+      "benefit3Desc": "Your brand, your portal, your customer relationships.",
+      "benefit4Title": "Enterprise Grade",
+      "benefit4Desc": "SOC 2 compliant with KMS encryption."
+    },
+    "features": {
+      "label": "Partner Features",
+      "title": "Everything You Need to Resell",
+      "screenshotSoon": "Screenshot coming soon",
+      "whitelabel": {
+        "badge": "White-Label",
+        "title": "Your Brand, Your Portal",
+        "desc": "Customize the entire portal experience with your company's branding.",
+        "feature1": "Custom domain (portal.yourcompany.com)",
+        "feature2": "Your logo and color scheme",
+        "feature3": "Custom email templates",
+        "feature4": "Branded customer communications"
+      },
+      "license": {
+        "badge": "License Management",
+        "title": "Generate & Manage Licenses",
+        "desc": "Create seat-based licenses for your customers with full control.",
+        "feature1": "Seat-based license keys",
+        "feature2": "Developer + Stakeholder allocations",
+        "feature3": "Expiry and renewal management",
+        "feature4": "Usage tracking per customer"
+      },
+      "dashboard": {
+        "badge": "Multi-Tenant",
+        "title": "Manage All Your Customers",
+        "desc": "A single dashboard to oversee all your client deployments.",
+        "feature1": "Customer overview and health",
+        "feature2": "Aggregated usage metrics",
+        "feature3": "Support ticket visibility",
+        "feature4": "Revenue and billing tracking"
+      }
+    },
+    "tiers": {
+      "label": "Partner Tiers",
+      "title": "Choose Your Partnership Level",
+      "popular": "Most Popular",
+      "referral": {
+        "title": "Referral Partner",
+        "desc": "Refer customers and earn commission.",
+        "feature1": "10% referral commission",
+        "feature2": "Partner portal access",
+        "feature3": "Marketing materials"
+      },
+      "reseller": {
+        "title": "Reseller Partner",
+        "desc": "Full resale rights with white-label options.",
+        "feature1": "20-30% margin on licenses",
+        "feature2": "White-label portal",
+        "feature3": "License generation",
+        "feature4": "Dedicated partner manager"
+      },
+      "strategic": {
+        "title": "Strategic Partner",
+        "desc": "Deep integration and co-development.",
+        "feature1": "Custom pricing & margins",
+        "feature2": "Co-marketing opportunities",
+        "feature3": "Product roadmap input",
+        "feature4": "Executive sponsorship"
+      }
+    },
+    "cta": {
+      "title": "Ready to Partner with Snow-Flow?",
+      "subtitle": "Join our partner program and start growing your ServiceNow practice.",
+      "primary": "Become a Partner",
+      "secondary": "For Customers"
     }
   },
   "developers": {

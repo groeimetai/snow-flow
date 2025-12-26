@@ -1,0 +1,522 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getLangFromUrl, useTranslations, type Lang } from '../../../i18n/utils';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'nl' } }
+  ];
+}
+
+const lang = getLangFromUrl(Astro.url) as Lang;
+const t = useTranslations(lang);
+
+const title = t('enterprise.meta.title');
+const description = t('enterprise.meta.description');
+---
+
+<BaseLayout title={title} description={description}>
+    <link rel="stylesheet" href="/styles/enterprise.css" />
+
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+
+    <!-- Hero Section -->
+    <section class="enterprise-hero landing-hero">
+        <div class="hero-glow"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="pulse"></span>
+                    Snow-Flow Enterprise
+                </div>
+
+                <h1 class="hero-title">
+                    <span class="gradient">{t('enterprise.landing.title')}</span>
+                </h1>
+
+                <p class="hero-subtitle">
+                    {t('enterprise.landing.subtitle')}
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Two Audiences Section -->
+    <section class="section audiences-section">
+        <div class="container">
+            <div class="audiences-grid">
+                <!-- For Customers -->
+                <a href={`/${lang}/enterprise/customers`} class="audience-card customer">
+                    <div class="audience-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                    </div>
+                    <div class="audience-content">
+                        <h2>{t('enterprise.landing.customersTitle')}</h2>
+                        <p>{t('enterprise.landing.customersDesc')}</p>
+                        <ul class="audience-features">
+                            <li>{t('enterprise.landing.customersFeature1')}</li>
+                            <li>{t('enterprise.landing.customersFeature2')}</li>
+                            <li>{t('enterprise.landing.customersFeature3')}</li>
+                        </ul>
+                        <span class="audience-cta">
+                            {t('enterprise.landing.learnMore')}
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </span>
+                    </div>
+                </a>
+
+                <!-- For Partners -->
+                <a href={`/${lang}/enterprise/partners`} class="audience-card partner">
+                    <div class="audience-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div class="audience-content">
+                        <h2>{t('enterprise.landing.partnersTitle')}</h2>
+                        <p>{t('enterprise.landing.partnersDesc')}</p>
+                        <ul class="audience-features">
+                            <li>{t('enterprise.landing.partnersFeature1')}</li>
+                            <li>{t('enterprise.landing.partnersFeature2')}</li>
+                            <li>{t('enterprise.landing.partnersFeature3')}</li>
+                        </ul>
+                        <span class="audience-cta">
+                            {t('enterprise.landing.learnMore')}
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- User Types Section -->
+    <section class="section user-roles-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">{t('enterprise.landing.rolesLabel')}</span>
+                <h2 class="section-title">{t('enterprise.landing.rolesTitle')}</h2>
+                <p class="section-subtitle">{t('enterprise.landing.rolesSubtitle')}</p>
+            </div>
+
+            <div class="user-roles-grid">
+                <a href={`/${lang}/enterprise/developers`} class="role-card developer">
+                    <div class="role-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                    </div>
+                    <div class="role-content">
+                        <h3>{t('enterprise.landing.developersTitle')}</h3>
+                        <p>{t('enterprise.landing.developersDesc')}</p>
+                    </div>
+                    <span class="role-badge write">{t('enterprise.landing.writeAccess')}</span>
+                </a>
+
+                <a href={`/${lang}/enterprise/stakeholders`} class="role-card stakeholder">
+                    <div class="role-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </div>
+                    <div class="role-content">
+                        <h3>{t('enterprise.landing.stakeholdersTitle')}</h3>
+                        <p>{t('enterprise.landing.stakeholdersDesc')}</p>
+                    </div>
+                    <span class="role-badge read">{t('enterprise.landing.readOnly')}</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="section stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-value">410+</span>
+                    <span class="stat-label">MCP Tools</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">40+</span>
+                    <span class="stat-label">{t('enterprise.landing.integrations')}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">174</span>
+                    <span class="stat-label">{t('enterprise.landing.stakeholderTools')}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">99.9%</span>
+                    <span class="stat-label">Uptime SLA</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>{t('enterprise.landing.ctaTitle')}</h2>
+                <p>{t('enterprise.landing.ctaSubtitle')}</p>
+                <div class="cta-buttons">
+                    <a href="mailto:sales@snow-flow.dev" class="btn btn-primary btn-large">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        {t('enterprise.landing.ctaPrimary')}
+                    </a>
+                    <a href="https://portal.snow-flow.dev/pricing" class="btn btn-secondary btn-large">
+                        {t('enterprise.landing.ctaSecondary')}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-brand">
+                <a href={`/${lang}/`} class="footer-logo" aria-label="Snow-Flow Home">
+                    <svg class="footer-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="footer-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#FFFFFF"/>
+                                <stop offset="100%" stop-color="#00D9FF"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#footer-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="footer-logo-text">
+                        <span class="snow">SNOW</span><span class="flow">FLOW</span>
+                    </span>
+                </a>
+                <p class="footer-tagline">
+                    {t('footer.tagline')}
+                </p>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="footer-copyright">
+                    {t('footer.copyright')}
+                </p>
+            </div>
+        </div>
+    </footer>
+</BaseLayout>
+
+<style>
+    /* Landing Hero */
+    .landing-hero {
+        min-height: 50vh;
+        padding: 140px 0 60px;
+    }
+
+    /* Audiences Section */
+    .audiences-section {
+        padding: 40px 0 80px;
+    }
+
+    .audiences-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 32px;
+    }
+
+    @media (max-width: 968px) {
+        .audiences-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .audience-card {
+        display: flex;
+        flex-direction: column;
+        padding: 48px;
+        background: var(--color-card-bg, #0d0d14);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.4s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .audience-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .audience-card.customer::before {
+        background: linear-gradient(90deg, #00D9FF, #3B82F6);
+    }
+
+    .audience-card.partner::before {
+        background: linear-gradient(90deg, #F59E0B, #EF4444);
+    }
+
+    .audience-card:hover::before {
+        opacity: 1;
+    }
+
+    .audience-card:hover {
+        transform: translateY(-8px);
+    }
+
+    .audience-card.customer:hover {
+        border-color: rgba(0, 217, 255, 0.4);
+        box-shadow: 0 25px 50px rgba(0, 217, 255, 0.1);
+    }
+
+    .audience-card.partner:hover {
+        border-color: rgba(245, 158, 11, 0.4);
+        box-shadow: 0 25px 50px rgba(245, 158, 11, 0.1);
+    }
+
+    .audience-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+    }
+
+    .audience-card.customer .audience-icon {
+        background: rgba(0, 217, 255, 0.1);
+        color: #00D9FF;
+    }
+
+    .audience-card.partner .audience-icon {
+        background: rgba(245, 158, 11, 0.1);
+        color: #F59E0B;
+    }
+
+    .audience-content h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    .audience-content > p {
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 1.05rem;
+        line-height: 1.6;
+        margin-bottom: 24px;
+    }
+
+    .audience-features {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 24px 0;
+    }
+
+    .audience-features li {
+        padding: 8px 0;
+        padding-left: 24px;
+        position: relative;
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.95rem;
+    }
+
+    .audience-card.customer .audience-features li::before {
+        content: '→';
+        position: absolute;
+        left: 0;
+        color: #00D9FF;
+    }
+
+    .audience-card.partner .audience-features li::before {
+        content: '→';
+        position: absolute;
+        left: 0;
+        color: #F59E0B;
+    }
+
+    .audience-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: auto;
+    }
+
+    .audience-card.customer .audience-cta {
+        color: #00D9FF;
+    }
+
+    .audience-card.partner .audience-cta {
+        color: #F59E0B;
+    }
+
+    /* User Roles Section */
+    .user-roles-section {
+        padding: 80px 0;
+        background: linear-gradient(180deg, rgba(0, 217, 255, 0.02) 0%, transparent 100%);
+    }
+
+    .user-roles-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        margin-top: 48px;
+    }
+
+    @media (max-width: 768px) {
+        .user-roles-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .role-card {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 24px 32px;
+        background: var(--color-card-bg, #0d0d14);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s ease;
+    }
+
+    .role-card:hover {
+        transform: translateX(8px);
+    }
+
+    .role-card.developer:hover {
+        border-color: rgba(34, 197, 94, 0.4);
+    }
+
+    .role-card.stakeholder:hover {
+        border-color: rgba(168, 85, 247, 0.4);
+    }
+
+    .role-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .role-card.developer .role-icon {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22C55E;
+    }
+
+    .role-card.stakeholder .role-icon {
+        background: rgba(168, 85, 247, 0.1);
+        color: #A855F7;
+    }
+
+    .role-content {
+        flex: 1;
+    }
+
+    .role-content h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .role-content p {
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .role-badge {
+        padding: 6px 12px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .role-badge.write {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22C55E;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .role-badge.read {
+        background: rgba(168, 85, 247, 0.1);
+        color: #A855F7;
+        border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    /* Stats Section */
+    .stats-section {
+        padding: 60px 0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 32px;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 24px;
+    }
+
+    .stat-value {
+        display: block;
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #00D9FF 0%, #8B5CF6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+    }
+
+    .stat-label {
+        display: block;
+        margin-top: 8px;
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.9rem;
+    }
+</style>
