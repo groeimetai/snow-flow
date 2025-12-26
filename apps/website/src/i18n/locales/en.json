@@ -355,94 +355,104 @@
   "partners": {
     "meta": {
       "title": "For Partners | Snow-Flow Enterprise",
-      "description": "Resell Snow-Flow to your clients. White-label portal, license management, and partner revenue sharing."
+      "description": "Resell AI-powered ServiceNow development with built-in safety guarantees. Pre-deployment validation, role-based access, and update set isolation."
     },
     "breadcrumb": "For Partners",
     "hero": {
-      "badge": "Partner Program",
-      "title": "Grow Your Business with Snow-Flow",
-      "subtitle": "Resell AI-powered ServiceNow development to your clients with your own branding.",
+      "badge": "Enterprise Safety",
+      "subtitle": "Built-in safeguards prevent AI mistakes before they reach production. Resell with confidence.",
       "cta": "Become a Partner",
       "ctaSecondary": "Enterprise Overview"
     },
-    "why": {
-      "label": "Why Partner?",
-      "title": "Expand Your ServiceNow Practice",
-      "subtitle": "Add AI-powered development to your service portfolio.",
-      "benefit1Title": "Revenue Share",
-      "benefit1Desc": "Earn recurring revenue on every license you sell.",
-      "benefit2Title": "Full Platform",
-      "benefit2Desc": "410+ MCP tools and 40+ integrations ready to deploy.",
-      "benefit3Title": "White-Label",
-      "benefit3Desc": "Your brand, your portal, your customer relationships.",
-      "benefit4Title": "Enterprise Grade",
-      "benefit4Desc": "SOC 2 compliant with KMS encryption."
+    "safety": {
+      "label": "Why Safety Matters",
+      "title": "AI is powerful. Control is essential.",
+      "subtitle": "When you resell AI development tools, your reputation is on the line. Snow-Flow's built-in protection layers ensure your customers can never accidentally break their production environment.",
+      "stat1": "0",
+      "stat1Label": "Production Errors",
+      "stat1Desc": "Validation catches issues before deployment",
+      "stat2": "174",
+      "stat2Label": "Read-Only Tools",
+      "stat2Desc": "Stakeholders can explore, not modify",
+      "stat3": "100%",
+      "stat3Label": "Auditable",
+      "stat3Desc": "Every action tracked in update sets"
     },
-    "features": {
-      "label": "Partner Features",
-      "title": "Everything You Need to Resell",
-      "screenshotSoon": "Screenshot coming soon",
-      "whitelabel": {
-        "badge": "White-Label",
-        "title": "Your Brand, Your Portal",
-        "desc": "Customize the entire portal experience with your company's branding.",
-        "feature1": "Custom domain (portal.yourcompany.com)",
-        "feature2": "Your logo and color scheme",
-        "feature3": "Custom email templates",
-        "feature4": "Branded customer communications"
+    "protection": {
+      "label": "Built-In Protection",
+      "title": "Four Layers of Safety",
+      "subtitle": "Every tool call passes through multiple safety checks before reaching ServiceNow.",
+      "validation": {
+        "title": "Pre-Deployment Validation",
+        "desc": "Automatic checks before any code reaches ServiceNow.",
+        "feature1": "ES5 syntax validation (Rhino engine compatibility)",
+        "feature2": "Security scanning (hardcoded credentials, XSS)",
+        "feature3": "Widget coherence validation (server↔client↔HTML)",
+        "feature4": "Dependency verification (tables, script includes)"
       },
-      "license": {
-        "badge": "License Management",
-        "title": "Generate & Manage Licenses",
-        "desc": "Create seat-based licenses for your customers with full control.",
-        "feature1": "Seat-based license keys",
-        "feature2": "Developer + Stakeholder allocations",
-        "feature3": "Expiry and renewal management",
-        "feature4": "Usage tracking per customer"
+      "preview": {
+        "title": "Widget Preview",
+        "desc": "Test widgets before deployment to production.",
+        "feature1": "Render with test data without saving",
+        "feature2": "Template analysis and binding validation",
+        "feature3": "Data flow verification",
+        "feature4": "Three preview modes (full, template-only, data-only)"
       },
-      "dashboard": {
-        "badge": "Multi-Tenant",
-        "title": "Manage All Your Customers",
-        "desc": "A single dashboard to oversee all your client deployments.",
-        "feature1": "Customer overview and health",
-        "feature2": "Aggregated usage metrics",
-        "feature3": "Support ticket visibility",
-        "feature4": "Revenue and billing tracking"
+      "isolation": {
+        "title": "Update Set Isolation",
+        "desc": "Every story gets its own isolated update set.",
+        "feature1": "Automatic update set per development session",
+        "feature2": "Change tracking with timestamps",
+        "feature3": "Easy rollback via ServiceNow native features",
+        "feature4": "State management (in_progress, complete, released)"
+      },
+      "access": {
+        "title": "Role-Based Access Control",
+        "desc": "Stakeholders get read-only access by design.",
+        "feature1": "Developers: Full write access (410+ tools)",
+        "feature2": "Stakeholders: Read-only access (174 query tools)",
+        "feature3": "Permission validation on EVERY tool call",
+        "feature4": "Cannot accidentally bypass restrictions"
       }
     },
-    "tiers": {
-      "label": "Partner Tiers",
-      "title": "Choose Your Partnership Level",
-      "popular": "Most Popular",
-      "referral": {
-        "title": "Referral Partner",
-        "desc": "Refer customers and earn commission.",
-        "feature1": "10% referral commission",
-        "feature2": "Partner portal access",
-        "feature3": "Marketing materials"
+    "stakeholders": {
+      "label": "Stakeholder Safety",
+      "title": "Give Access Without Risk",
+      "subtitle": "Stakeholder seats are FREE and completely safe. Let your customers explore without fear.",
+      "badge": "174 Read-Only Tools",
+      "canDoTitle": "What Stakeholders CAN Do",
+      "can1": "Query any table in ServiceNow",
+      "can2": "Search knowledge articles",
+      "can3": "View incident and change details",
+      "can4": "Export data for reports",
+      "devDoTitle": "What Only Developers Do",
+      "dev1": "Create or modify records",
+      "dev2": "Deploy widgets and scripts",
+      "dev3": "Manage update sets",
+      "dev4": "Execute background scripts"
+    },
+    "benefits": {
+      "label": "Partner Benefits",
+      "title": "Grow Your Business",
+      "subtitle": "Safety-first means confident selling.",
+      "revenue": {
+        "title": "Revenue Share",
+        "desc": "20-30% margin on every license you sell."
       },
-      "reseller": {
-        "title": "Reseller Partner",
-        "desc": "Full resale rights with white-label options.",
-        "feature1": "20-30% margin on licenses",
-        "feature2": "White-label portal",
-        "feature3": "License generation",
-        "feature4": "Dedicated partner manager"
+      "whitelabel": {
+        "title": "White-Label Ready",
+        "desc": "Your brand, your portal, your customer relationships."
       },
-      "strategic": {
-        "title": "Strategic Partner",
-        "desc": "Deep integration and co-development.",
-        "feature1": "Custom pricing & margins",
-        "feature2": "Co-marketing opportunities",
-        "feature3": "Product roadmap input",
-        "feature4": "Executive sponsorship"
+      "trust": {
+        "title": "Enterprise Trust",
+        "desc": "SOC 2 compliant. Built-in safety. Sell with confidence."
       }
     },
     "cta": {
-      "title": "Ready to Partner with Snow-Flow?",
-      "subtitle": "Join our partner program and start growing your ServiceNow practice.",
+      "title": "Ready to Resell AI Development That's Actually Safe?",
+      "subtitle": "Join our partner program and offer your customers AI-powered ServiceNow development with enterprise-grade protection.",
       "primary": "Become a Partner",
-      "secondary": "For Customers"
+      "secondary": "View Customer Page"
     }
   },
   "developers": {

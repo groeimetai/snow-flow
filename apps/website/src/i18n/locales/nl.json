@@ -355,94 +355,104 @@
   "partners": {
     "meta": {
       "title": "Voor Partners | Snow-Flow Enterprise",
-      "description": "Verkoop Snow-Flow door aan je klanten. White-label portal, licentie beheer en partner revenue sharing."
+      "description": "Verkoop AI-gestuurde ServiceNow development met ingebouwde veiligheidsgaranties. Pre-deployment validatie, role-based access en update set isolatie."
     },
     "breadcrumb": "Voor Partners",
     "hero": {
-      "badge": "Partner Programma",
-      "title": "Groei Je Business met Snow-Flow",
-      "subtitle": "Verkoop AI-gestuurde ServiceNow development aan je klanten met je eigen branding.",
+      "badge": "Enterprise Veiligheid",
+      "subtitle": "Ingebouwde beveiligingen voorkomen AI-fouten voordat ze productie bereiken. Verkoop met vertrouwen.",
       "cta": "Word Partner",
       "ctaSecondary": "Enterprise Overzicht"
     },
-    "why": {
-      "label": "Waarom Partner Worden?",
-      "title": "Breid Je ServiceNow Praktijk Uit",
-      "subtitle": "Voeg AI-gestuurde development toe aan je service portfolio.",
-      "benefit1Title": "Revenue Share",
-      "benefit1Desc": "Verdien terugkerende omzet op elke licentie die je verkoopt.",
-      "benefit2Title": "Volledig Platform",
-      "benefit2Desc": "410+ MCP tools en 40+ integraties klaar om te deployen.",
-      "benefit3Title": "White-Label",
-      "benefit3Desc": "Jouw merk, jouw portal, jouw klantrelaties.",
-      "benefit4Title": "Enterprise Grade",
-      "benefit4Desc": "SOC 2 compliant met KMS encryptie."
+    "safety": {
+      "label": "Waarom Veiligheid Belangrijk Is",
+      "title": "AI is krachtig. Controle is essentieel.",
+      "subtitle": "Wanneer je AI development tools doorverkoopt, staat je reputatie op het spel. Snow-Flow's ingebouwde beschermingslagen zorgen ervoor dat je klanten nooit per ongeluk hun productie-omgeving kunnen breken.",
+      "stat1": "0",
+      "stat1Label": "Productie Fouten",
+      "stat1Desc": "Validatie vangt problemen op voor deployment",
+      "stat2": "174",
+      "stat2Label": "Read-Only Tools",
+      "stat2Desc": "Stakeholders kunnen verkennen, niet wijzigen",
+      "stat3": "100%",
+      "stat3Label": "Auditeerbaar",
+      "stat3Desc": "Elke actie bijgehouden in update sets"
     },
-    "features": {
-      "label": "Partner Features",
-      "title": "Alles Wat Je Nodig Hebt om Door te Verkopen",
-      "screenshotSoon": "Screenshot komt binnenkort",
-      "whitelabel": {
-        "badge": "White-Label",
-        "title": "Jouw Merk, Jouw Portal",
-        "desc": "Pas de hele portal ervaring aan met de branding van je bedrijf.",
-        "feature1": "Custom domein (portal.jouwbedrijf.com)",
-        "feature2": "Jouw logo en kleurenschema",
-        "feature3": "Custom email templates",
-        "feature4": "Branded klant communicatie"
+    "protection": {
+      "label": "Ingebouwde Bescherming",
+      "title": "Vier Lagen van Veiligheid",
+      "subtitle": "Elke tool-aanroep passeert meerdere veiligheidschecks voordat het ServiceNow bereikt.",
+      "validation": {
+        "title": "Pre-Deployment Validatie",
+        "desc": "Automatische checks voordat code ServiceNow bereikt.",
+        "feature1": "ES5 syntax validatie (Rhino engine compatibiliteit)",
+        "feature2": "Security scanning (hardcoded credentials, XSS)",
+        "feature3": "Widget coherentie validatie (server↔client↔HTML)",
+        "feature4": "Dependency verificatie (tabellen, script includes)"
       },
-      "license": {
-        "badge": "Licentie Beheer",
-        "title": "Genereer & Beheer Licenties",
-        "desc": "Maak seat-based licenties voor je klanten met volledige controle.",
-        "feature1": "Seat-based licentie keys",
-        "feature2": "Developer + Stakeholder allocaties",
-        "feature3": "Verloop en verlenging beheer",
-        "feature4": "Gebruik tracking per klant"
+      "preview": {
+        "title": "Widget Preview",
+        "desc": "Test widgets voordat je naar productie deployt.",
+        "feature1": "Render met testdata zonder op te slaan",
+        "feature2": "Template analyse en binding validatie",
+        "feature3": "Data flow verificatie",
+        "feature4": "Drie preview modes (volledig, template-only, data-only)"
       },
-      "dashboard": {
-        "badge": "Multi-Tenant",
-        "title": "Beheer Al Je Klanten",
-        "desc": "Eén dashboard om al je klant deployments te overzien.",
-        "feature1": "Klant overzicht en gezondheid",
-        "feature2": "Geaggregeerde gebruik metrics",
-        "feature3": "Support ticket zichtbaarheid",
-        "feature4": "Omzet en facturatie tracking"
+      "isolation": {
+        "title": "Update Set Isolatie",
+        "desc": "Elke story krijgt zijn eigen geïsoleerde update set.",
+        "feature1": "Automatische update set per development sessie",
+        "feature2": "Wijzigingen bijhouden met timestamps",
+        "feature3": "Makkelijke rollback via native ServiceNow features",
+        "feature4": "State management (in_progress, complete, released)"
+      },
+      "access": {
+        "title": "Role-Based Access Control",
+        "desc": "Stakeholders krijgen read-only toegang by design.",
+        "feature1": "Developers: Volledige schrijftoegang (410+ tools)",
+        "feature2": "Stakeholders: Read-only toegang (174 query tools)",
+        "feature3": "Permissie validatie op ELKE tool-aanroep",
+        "feature4": "Kan restricties niet per ongeluk omzeilen"
       }
     },
-    "tiers": {
-      "label": "Partner Tiers",
-      "title": "Kies Je Partnership Niveau",
-      "popular": "Meest Populair",
-      "referral": {
-        "title": "Referral Partner",
-        "desc": "Verwijs klanten en verdien commissie.",
-        "feature1": "10% referral commissie",
-        "feature2": "Partner portal toegang",
-        "feature3": "Marketing materialen"
+    "stakeholders": {
+      "label": "Stakeholder Veiligheid",
+      "title": "Geef Toegang Zonder Risico",
+      "subtitle": "Stakeholder seats zijn GRATIS en volledig veilig. Laat je klanten verkennen zonder angst.",
+      "badge": "174 Read-Only Tools",
+      "canDoTitle": "Wat Stakeholders WEL Kunnen",
+      "can1": "Elke tabel in ServiceNow opvragen",
+      "can2": "Knowledge artikelen doorzoeken",
+      "can3": "Incident en change details bekijken",
+      "can4": "Data exporteren voor rapporten",
+      "devDoTitle": "Wat Alleen Developers Doen",
+      "dev1": "Records aanmaken of wijzigen",
+      "dev2": "Widgets en scripts deployen",
+      "dev3": "Update sets beheren",
+      "dev4": "Background scripts uitvoeren"
+    },
+    "benefits": {
+      "label": "Partner Voordelen",
+      "title": "Groei Je Business",
+      "subtitle": "Safety-first betekent zelfverzekerd verkopen.",
+      "revenue": {
+        "title": "Revenue Share",
+        "desc": "20-30% marge op elke licentie die je verkoopt."
       },
-      "reseller": {
-        "title": "Reseller Partner",
-        "desc": "Volledige doorverkoop rechten met white-label opties.",
-        "feature1": "20-30% marge op licenties",
-        "feature2": "White-label portal",
-        "feature3": "Licentie generatie",
-        "feature4": "Dedicated partner manager"
+      "whitelabel": {
+        "title": "White-Label Ready",
+        "desc": "Jouw merk, jouw portal, jouw klantrelaties."
       },
-      "strategic": {
-        "title": "Strategic Partner",
-        "desc": "Diepe integratie en co-development.",
-        "feature1": "Custom pricing & marges",
-        "feature2": "Co-marketing mogelijkheden",
-        "feature3": "Product roadmap input",
-        "feature4": "Executive sponsorship"
+      "trust": {
+        "title": "Enterprise Trust",
+        "desc": "SOC 2 compliant. Ingebouwde veiligheid. Verkoop met vertrouwen."
       }
     },
     "cta": {
-      "title": "Klaar om Partner te Worden van Snow-Flow?",
-      "subtitle": "Join ons partner programma en begin met het groeien van je ServiceNow praktijk.",
+      "title": "Klaar om AI Development te Verkopen Dat Écht Veilig Is?",
+      "subtitle": "Join ons partner programma en bied je klanten AI-gestuurde ServiceNow development met enterprise-grade bescherming.",
       "primary": "Word Partner",
-      "secondary": "Voor Klanten"
+      "secondary": "Bekijk Klantenpagina"
     }
   },
   "developers": {
