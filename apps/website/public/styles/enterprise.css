@@ -45,16 +45,67 @@
 
 .enterprise-hero .hero-title {
     font-size: clamp(2.5rem, 6vw, 4rem);
-    font-weight: 800;
+    font-weight: 900;
     line-height: 1.1;
     margin-bottom: 24px;
+    letter-spacing: -0.03em;
+}
+
+.enterprise-hero .hero-title .small {
+    display: block;
+    font-size: 0.4em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(148, 163, 184, 0.8);
+    margin-bottom: 0.5rem;
+    -webkit-text-fill-color: initial;
+    background: none;
 }
 
 .enterprise-hero .hero-title .gradient {
-    background: linear-gradient(135deg, #00D9FF 0%, #8B5CF6 50%, #00D9FF 100%);
+    background: linear-gradient(135deg, #00D9FF 0%, #00A8E8 50%, #8B5CF6 100%);
+    background-size: 200% 200%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation: gradient-shift 4s ease infinite;
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Partner gradient (orange) */
+.enterprise-hero .hero-title .partner-gradient {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #FCD34D 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 4s ease infinite;
+}
+
+/* Developer gradient (green) */
+.enterprise-hero .hero-title .developer-gradient {
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 50%, #86EFAC 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 4s ease infinite;
+}
+
+/* Stakeholder gradient (purple) */
+.enterprise-hero .hero-title .stakeholder-gradient {
+    background: linear-gradient(135deg, #A855F7 0%, #9333EA 50%, #D8B4FE 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 4s ease infinite;
 }
 
 .enterprise-hero .hero-subtitle {
