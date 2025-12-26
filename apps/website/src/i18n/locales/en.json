@@ -305,5 +305,149 @@
       "primary": "Contact Sales",
       "secondary": "View Pricing"
     }
+  },
+  "developers": {
+    "meta": {
+      "title": "For Developers | Snow-Flow Enterprise",
+      "description": "Build ServiceNow solutions with AI-powered development. Full write access, 410+ MCP tools, and seamless integration tracking."
+    },
+    "hero": {
+      "badge": "Developer Access",
+      "title": "Build Faster with AI",
+      "subtitle": "Full access to Snow-Flow's AI-powered development platform. Write code, create artifacts, and ship with confidence.",
+      "cta": "Start Building",
+      "ctaSecondary": "Enterprise Overview"
+    },
+    "features": {
+      "label": "Developer Capabilities",
+      "title": "Everything You Need to Build",
+      "subtitle": "As a developer, you get full write access to Snow-Flow's capabilities.",
+      "feature1Title": "Full Write Access",
+      "feature1Desc": "Create widgets, business rules, flows, and any ServiceNow artifact.",
+      "feature2Title": "Personal Credentials",
+      "feature2Desc": "Manage your own ServiceNow and integration credentials securely.",
+      "feature3Title": "Activity Tracking",
+      "feature3Desc": "Track your personal development activities and progress.",
+      "feature4Title": "Update Set Management",
+      "feature4Desc": "Every story gets its own update set, automatically tracked."
+    },
+    "showcase": {
+      "label": "Your Workspace",
+      "title": "A Dashboard Built for Developers"
+    },
+    "dashboard": {
+      "badge": "Dashboard",
+      "title": "Your Personal Command Center",
+      "desc": "Everything you need at a glance. Track your activities, manage credentials, and monitor your development progress.",
+      "feature1": "Personal activity overview",
+      "feature2": "Quick access to credentials",
+      "feature3": "Connected integrations status",
+      "feature4": "Recent activities with status"
+    },
+    "activities": {
+      "badge": "Activities",
+      "title": "Track Every Build",
+      "desc": "See what your AI agent has built. Filter by source, track completion rates, and export detailed reports.",
+      "feature1": "Visual activity trends",
+      "feature2": "Completion rate tracking",
+      "feature3": "Source filtering (Jira, Azure, etc.)",
+      "feature4": "Delete or update activities"
+    },
+    "updatesets": {
+      "badge": "Update Sets",
+      "title": "Manage Your Deployments",
+      "desc": "Every story creates an isolated update set. Track status, view artifacts, and deploy to ServiceNow.",
+      "feature1": "Status tracking per update set",
+      "feature2": "Risk assessment indicators",
+      "feature3": "Direct ServiceNow links",
+      "feature4": "Artifact count per set"
+    },
+    "tools": {
+      "label": "Your Toolkit",
+      "title": "Powerful Tools at Your Fingertips",
+      "subtitle": "Access the full Snow-Flow toolkit to build anything in ServiceNow.",
+      "mcpTools": "MCP Tools",
+      "aiProviders": "AI Providers",
+      "integrations": "Integrations"
+    },
+    "cta": {
+      "title": "Ready to Start Building?",
+      "subtitle": "Get your developer seat and start building with AI today.",
+      "primary": "Get Started",
+      "secondary": "Enterprise Overview"
+    }
+  },
+  "stakeholders": {
+    "meta": {
+      "title": "For Stakeholders | Snow-Flow Enterprise",
+      "description": "Get answers about your ServiceNow environment without risk. Read-only access included free with developer seats."
+    },
+    "hero": {
+      "badge": "Stakeholder Access",
+      "title": "Answers Without Risk",
+      "subtitle": "Query your ServiceNow environment, get insights, and stay informed—all with read-only safety.",
+      "cta": "Contact Sales",
+      "ctaSecondary": "Enterprise Overview",
+      "freeBadge": "Included FREE with Developer Seats"
+    },
+    "value": {
+      "label": "Why Stakeholder Seats?",
+      "title": "Empower Your Entire Team",
+      "subtitle": "Give business users, managers, and analysts access to AI-powered ServiceNow insights without the risk of changes.",
+      "card1Title": "Completely Free",
+      "card1Desc": "Stakeholder seats are included at no extra cost with every developer license.",
+      "card2Title": "Read-Only Safety",
+      "card2Desc": "Query and explore without any risk of modifying your ServiceNow environment.",
+      "card3Title": "Full AI Power",
+      "card3Desc": "Use the same AI capabilities as developers, just without write permissions."
+    },
+    "usecases": {
+      "label": "Who Benefits?",
+      "title": "Perfect For Every Role",
+      "case1Title": "Executives & Management",
+      "case1Desc": "Get instant answers about ServiceNow metrics and status.",
+      "case1Item1": "Ask about incident volumes",
+      "case1Item2": "Query change success rates",
+      "case1Item3": "Explore CMDB relationships",
+      "case2Title": "Business Analysts",
+      "case2Desc": "Explore data and generate insights without SQL.",
+      "case2Item1": "Natural language queries",
+      "case2Item2": "Export data for reports",
+      "case2Item3": "Investigate workflows",
+      "case3Title": "Project Managers",
+      "case3Desc": "Track progress and understand technical details.",
+      "case3Item1": "View update set status",
+      "case3Item2": "Check deployment progress",
+      "case3Item3": "Understand dependencies",
+      "case4Title": "Compliance Teams",
+      "case4Desc": "Audit configurations and access patterns.",
+      "case4Item1": "Query ACL configurations",
+      "case4Item2": "Check user permissions",
+      "case4Item3": "Review change history"
+    },
+    "tools": {
+      "label": "Capabilities",
+      "title": "Read Everything, Change Nothing",
+      "subtitle": "Stakeholders get access to 174 read-only tools for querying and exploring ServiceNow.",
+      "canDo": "What You Can Do",
+      "can1": "Query any table in ServiceNow",
+      "can2": "Search knowledge articles",
+      "can3": "View incident and change details",
+      "can4": "Explore CMDB relationships",
+      "can5": "Check user and group information",
+      "can6": "Export data for reports",
+      "cantDo": "What Developers Do",
+      "cant1": "Create or modify records",
+      "cant2": "Deploy code or configurations",
+      "cant3": "Manage update sets",
+      "cant4": "Execute background scripts",
+      "readOnlyTools": "Read-Only Tools Available"
+    },
+    "cta": {
+      "title": "Ready to Empower Your Team?",
+      "subtitle": "Stakeholder seats come free with every developer license. Contact us to get started.",
+      "primary": "Contact Sales",
+      "secondary": "Developer Features"
+    }
   }
 }

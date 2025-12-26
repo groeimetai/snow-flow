@@ -305,5 +305,149 @@
       "primary": "Neem Contact Op",
       "secondary": "Bekijk Prijzen"
     }
+  },
+  "developers": {
+    "meta": {
+      "title": "Voor Developers | Snow-Flow Enterprise",
+      "description": "Bouw ServiceNow oplossingen met AI-gestuurde development. Volledige schrijftoegang, 410+ MCP tools en naadloze integratie tracking."
+    },
+    "hero": {
+      "badge": "Developer Toegang",
+      "title": "Bouw Sneller met AI",
+      "subtitle": "Volledige toegang tot Snow-Flow's AI-gestuurde development platform. Schrijf code, maak artifacts en ship met vertrouwen.",
+      "cta": "Start met Bouwen",
+      "ctaSecondary": "Enterprise Overzicht"
+    },
+    "features": {
+      "label": "Developer Mogelijkheden",
+      "title": "Alles Wat Je Nodig Hebt",
+      "subtitle": "Als developer krijg je volledige schrijftoegang tot Snow-Flow's mogelijkheden.",
+      "feature1Title": "Volledige Schrijftoegang",
+      "feature1Desc": "Maak widgets, business rules, flows en elk ServiceNow artifact.",
+      "feature2Title": "Persoonlijke Credentials",
+      "feature2Desc": "Beheer je eigen ServiceNow en integratie credentials veilig.",
+      "feature3Title": "Activiteit Tracking",
+      "feature3Desc": "Volg je persoonlijke development activiteiten en voortgang.",
+      "feature4Title": "Update Set Beheer",
+      "feature4Desc": "Elke story krijgt zijn eigen update set, automatisch getrackt."
+    },
+    "showcase": {
+      "label": "Jouw Werkruimte",
+      "title": "Een Dashboard Gemaakt voor Developers"
+    },
+    "dashboard": {
+      "badge": "Dashboard",
+      "title": "Jouw Persoonlijke Command Center",
+      "desc": "Alles wat je nodig hebt in één oogopslag. Volg je activiteiten, beheer credentials en monitor je development voortgang.",
+      "feature1": "Persoonlijk activiteiten overzicht",
+      "feature2": "Snelle toegang tot credentials",
+      "feature3": "Verbonden integraties status",
+      "feature4": "Recente activiteiten met status"
+    },
+    "activities": {
+      "badge": "Activiteiten",
+      "title": "Volg Elke Build",
+      "desc": "Zie wat je AI agent heeft gebouwd. Filter op bron, volg voltooiingspercentages en exporteer gedetailleerde rapporten.",
+      "feature1": "Visuele activiteit trends",
+      "feature2": "Voltooiingspercentage tracking",
+      "feature3": "Bron filtering (Jira, Azure, etc.)",
+      "feature4": "Verwijder of update activiteiten"
+    },
+    "updatesets": {
+      "badge": "Update Sets",
+      "title": "Beheer Je Deployments",
+      "desc": "Elke story maakt een geïsoleerde update set. Volg status, bekijk artifacts en deploy naar ServiceNow.",
+      "feature1": "Status tracking per update set",
+      "feature2": "Risico-indicatoren",
+      "feature3": "Directe ServiceNow links",
+      "feature4": "Artifact telling per set"
+    },
+    "tools": {
+      "label": "Jouw Toolkit",
+      "title": "Krachtige Tools Binnen Handbereik",
+      "subtitle": "Toegang tot de volledige Snow-Flow toolkit om alles in ServiceNow te bouwen.",
+      "mcpTools": "MCP Tools",
+      "aiProviders": "AI Providers",
+      "integrations": "Integraties"
+    },
+    "cta": {
+      "title": "Klaar om te Beginnen met Bouwen?",
+      "subtitle": "Krijg je developer seat en begin vandaag met bouwen met AI.",
+      "primary": "Aan de Slag",
+      "secondary": "Enterprise Overzicht"
+    }
+  },
+  "stakeholders": {
+    "meta": {
+      "title": "Voor Stakeholders | Snow-Flow Enterprise",
+      "description": "Krijg antwoorden over je ServiceNow omgeving zonder risico. Read-only toegang gratis inbegrepen bij developer seats."
+    },
+    "hero": {
+      "badge": "Stakeholder Toegang",
+      "title": "Antwoorden Zonder Risico",
+      "subtitle": "Query je ServiceNow omgeving, krijg inzichten en blijf geïnformeerd—alles met read-only veiligheid.",
+      "cta": "Neem Contact Op",
+      "ctaSecondary": "Enterprise Overzicht",
+      "freeBadge": "GRATIS Inbegrepen bij Developer Seats"
+    },
+    "value": {
+      "label": "Waarom Stakeholder Seats?",
+      "title": "Versterk Je Hele Team",
+      "subtitle": "Geef business users, managers en analisten toegang tot AI-gestuurde ServiceNow inzichten zonder het risico op wijzigingen.",
+      "card1Title": "Volledig Gratis",
+      "card1Desc": "Stakeholder seats zijn zonder extra kosten inbegrepen bij elke developer licentie.",
+      "card2Title": "Read-Only Veiligheid",
+      "card2Desc": "Query en verken zonder enig risico op het wijzigen van je ServiceNow omgeving.",
+      "card3Title": "Volledige AI Kracht",
+      "card3Desc": "Gebruik dezelfde AI mogelijkheden als developers, alleen zonder schrijfrechten."
+    },
+    "usecases": {
+      "label": "Wie Profiteert?",
+      "title": "Perfect Voor Elke Rol",
+      "case1Title": "Executives & Management",
+      "case1Desc": "Krijg directe antwoorden over ServiceNow metrics en status.",
+      "case1Item1": "Vraag naar incident volumes",
+      "case1Item2": "Query change success rates",
+      "case1Item3": "Verken CMDB relaties",
+      "case2Title": "Business Analisten",
+      "case2Desc": "Verken data en genereer inzichten zonder SQL.",
+      "case2Item1": "Natuurlijke taal queries",
+      "case2Item2": "Exporteer data voor rapporten",
+      "case2Item3": "Onderzoek workflows",
+      "case3Title": "Project Managers",
+      "case3Desc": "Volg voortgang en begrijp technische details.",
+      "case3Item1": "Bekijk update set status",
+      "case3Item2": "Check deployment voortgang",
+      "case3Item3": "Begrijp afhankelijkheden",
+      "case4Title": "Compliance Teams",
+      "case4Desc": "Audit configuraties en toegangspatronen.",
+      "case4Item1": "Query ACL configuraties",
+      "case4Item2": "Check gebruikersrechten",
+      "case4Item3": "Bekijk change history"
+    },
+    "tools": {
+      "label": "Mogelijkheden",
+      "title": "Lees Alles, Wijzig Niets",
+      "subtitle": "Stakeholders krijgen toegang tot 174 read-only tools voor het queryen en verkennen van ServiceNow.",
+      "canDo": "Wat Je Kunt Doen",
+      "can1": "Query elke tabel in ServiceNow",
+      "can2": "Doorzoek knowledge artikelen",
+      "can3": "Bekijk incident en change details",
+      "can4": "Verken CMDB relaties",
+      "can5": "Check gebruiker en groep informatie",
+      "can6": "Exporteer data voor rapporten",
+      "cantDo": "Wat Developers Doen",
+      "cant1": "Records aanmaken of wijzigen",
+      "cant2": "Code of configuraties deployen",
+      "cant3": "Update sets beheren",
+      "cant4": "Background scripts uitvoeren",
+      "readOnlyTools": "Read-Only Tools Beschikbaar"
+    },
+    "cta": {
+      "title": "Klaar om Je Team te Versterken?",
+      "subtitle": "Stakeholder seats komen gratis bij elke developer licentie. Neem contact op om te starten.",
+      "primary": "Neem Contact Op",
+      "secondary": "Developer Features"
+    }
   }
 }

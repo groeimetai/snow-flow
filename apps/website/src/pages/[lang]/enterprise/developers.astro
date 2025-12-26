@@ -1,0 +1,431 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getLangFromUrl, useTranslations, type Lang } from '../../../i18n/utils';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'nl' } }
+  ];
+}
+
+const lang = getLangFromUrl(Astro.url) as Lang;
+const t = useTranslations(lang);
+
+const title = t('developers.meta.title');
+const description = t('developers.meta.description');
+---
+
+<BaseLayout title={title} description={description}>
+    <link rel="stylesheet" href="/styles/enterprise.css" />
+
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+
+    <!-- Hero Section -->
+    <section class="enterprise-hero">
+        <div class="hero-glow"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge developer-badge">
+                    <span class="pulse"></span>
+                    {t('developers.hero.badge')}
+                </div>
+
+                <h1 class="hero-title">
+                    <span class="gradient">{t('developers.hero.title')}</span>
+                </h1>
+
+                <p class="hero-subtitle">
+                    {t('developers.hero.subtitle')}
+                </p>
+
+                <div class="hero-ctas">
+                    <a href="https://portal.snow-flow.dev" class="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                        </svg>
+                        {t('developers.hero.cta')}
+                    </a>
+                    <a href={`/${lang}/enterprise`} class="btn btn-secondary">
+                        {t('developers.hero.ctaSecondary')}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What Developers Get Section -->
+    <section class="section features-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">{t('developers.features.label')}</span>
+                <h2 class="section-title">{t('developers.features.title')}</h2>
+                <p class="section-subtitle">{t('developers.features.subtitle')}</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                    </div>
+                    <h3>{t('developers.features.feature1Title')}</h3>
+                    <p>{t('developers.features.feature1Desc')}</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                    </div>
+                    <h3>{t('developers.features.feature2Title')}</h3>
+                    <p>{t('developers.features.feature2Desc')}</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                    </div>
+                    <h3>{t('developers.features.feature3Title')}</h3>
+                    <p>{t('developers.features.feature3Desc')}</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                    </div>
+                    <h3>{t('developers.features.feature4Title')}</h3>
+                    <p>{t('developers.features.feature4Desc')}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshot Showcase Section -->
+    <section class="section showcase-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">{t('developers.showcase.label')}</span>
+                <h2 class="section-title">{t('developers.showcase.title')}</h2>
+            </div>
+
+            <!-- Dashboard Feature -->
+            <div class="showcase-block" data-aos="fade-up">
+                <div class="showcase-content">
+                    <div class="showcase-badge developer-accent">{t('developers.dashboard.badge')}</div>
+                    <h3 class="showcase-title">{t('developers.dashboard.title')}</h3>
+                    <p class="showcase-desc">{t('developers.dashboard.desc')}</p>
+                    <ul class="showcase-features">
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.dashboard.feature1')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.dashboard.feature2')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.dashboard.feature3')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.dashboard.feature4')}
+                        </li>
+                    </ul>
+                </div>
+                <div class="showcase-image">
+                    <img src="/developer-dashboard.png" alt="Developer Dashboard" loading="lazy" />
+                </div>
+            </div>
+
+            <!-- Activities Feature -->
+            <div class="showcase-block reverse" data-aos="fade-up">
+                <div class="showcase-content">
+                    <div class="showcase-badge developer-accent">{t('developers.activities.badge')}</div>
+                    <h3 class="showcase-title">{t('developers.activities.title')}</h3>
+                    <p class="showcase-desc">{t('developers.activities.desc')}</p>
+                    <ul class="showcase-features">
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.activities.feature1')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.activities.feature2')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.activities.feature3')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.activities.feature4')}
+                        </li>
+                    </ul>
+                </div>
+                <div class="showcase-image">
+                    <img src="/developer-activities.png" alt="Developer Activities" loading="lazy" />
+                </div>
+            </div>
+
+            <!-- Update Sets Feature -->
+            <div class="showcase-block" data-aos="fade-up">
+                <div class="showcase-content">
+                    <div class="showcase-badge developer-accent">{t('developers.updatesets.badge')}</div>
+                    <h3 class="showcase-title">{t('developers.updatesets.title')}</h3>
+                    <p class="showcase-desc">{t('developers.updatesets.desc')}</p>
+                    <ul class="showcase-features">
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.updatesets.feature1')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.updatesets.feature2')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.updatesets.feature3')}
+                        </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {t('developers.updatesets.feature4')}
+                        </li>
+                    </ul>
+                </div>
+                <div class="showcase-image">
+                    <img src="/developer-update-sets.png" alt="Developer Update Sets" loading="lazy" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tools Section -->
+    <section class="section tools-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">{t('developers.tools.label')}</span>
+                <h2 class="section-title">{t('developers.tools.title')}</h2>
+                <p class="section-subtitle">{t('developers.tools.subtitle')}</p>
+            </div>
+
+            <div class="tools-stats">
+                <div class="tool-stat">
+                    <span class="tool-stat-value">410+</span>
+                    <span class="tool-stat-label">{t('developers.tools.mcpTools')}</span>
+                </div>
+                <div class="tool-stat">
+                    <span class="tool-stat-value">75+</span>
+                    <span class="tool-stat-label">{t('developers.tools.aiProviders')}</span>
+                </div>
+                <div class="tool-stat">
+                    <span class="tool-stat-value">40+</span>
+                    <span class="tool-stat-label">{t('developers.tools.integrations')}</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>{t('developers.cta.title')}</h2>
+                <p>{t('developers.cta.subtitle')}</p>
+                <div class="cta-buttons">
+                    <a href="https://portal.snow-flow.dev" class="btn btn-primary btn-large">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                        </svg>
+                        {t('developers.cta.primary')}
+                    </a>
+                    <a href={`/${lang}/enterprise`} class="btn btn-secondary btn-large">
+                        {t('developers.cta.secondary')}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-brand">
+                <a href={`/${lang}/`} class="footer-logo" aria-label="Snow-Flow Home">
+                    <svg class="footer-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="footer-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#FFFFFF"/>
+                                <stop offset="100%" stop-color="#00D9FF"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#footer-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="footer-logo-text">
+                        <span class="snow">SNOW</span><span class="flow">FLOW</span>
+                    </span>
+                </a>
+                <p class="footer-tagline">
+                    {t('footer.tagline')}
+                </p>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="footer-copyright">
+                    {t('footer.copyright')}
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll animations for showcase blocks
+        const showcaseBlocks = document.querySelectorAll('.showcase-block');
+
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        showcaseBlocks.forEach(block => {
+            observer.observe(block);
+        });
+    </script>
+</BaseLayout>
+
+<style>
+    .developer-badge {
+        background: rgba(34, 197, 94, 0.1);
+        border-color: rgba(34, 197, 94, 0.3);
+        color: #22C55E;
+    }
+
+    .developer-accent {
+        background: rgba(34, 197, 94, 0.1);
+        border-color: rgba(34, 197, 94, 0.3);
+        color: #22C55E;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        margin-top: 48px;
+    }
+
+    @media (max-width: 1024px) {
+        .features-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 640px) {
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .feature-card {
+        padding: 32px;
+        background: var(--color-card-bg, #0d0d14);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        text-align: center;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .feature-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        background: rgba(34, 197, 94, 0.1);
+        color: #22C55E;
+    }
+
+    .feature-card h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .feature-card p {
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .tools-section {
+        background: linear-gradient(180deg, transparent 0%, rgba(34, 197, 94, 0.02) 50%, transparent 100%);
+    }
+
+    .tools-stats {
+        display: flex;
+        justify-content: center;
+        gap: 64px;
+        margin-top: 48px;
+    }
+
+    @media (max-width: 640px) {
+        .tools-stats {
+            flex-direction: column;
+            gap: 32px;
+            align-items: center;
+        }
+    }
+
+    .tool-stat {
+        text-align: center;
+    }
+
+    .tool-stat-value {
+        display: block;
+        font-size: 3rem;
+        font-weight: 800;
+        color: #22C55E;
+        line-height: 1;
+    }
+
+    .tool-stat-label {
+        display: block;
+        margin-top: 8px;
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 1rem;
+    }
+</style>

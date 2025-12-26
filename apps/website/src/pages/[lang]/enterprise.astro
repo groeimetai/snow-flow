@@ -202,6 +202,43 @@ const description = t('enterprise.meta.description');
         </div>
     </section>
 
+    <!-- User Types Section -->
+    <section class="section user-types-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">For Your Team</span>
+                <h2 class="section-title">Choose Your Path</h2>
+                <p class="section-subtitle">Snow-Flow Enterprise serves different roles with tailored access levels.</p>
+            </div>
+
+            <div class="user-types-grid">
+                <a href={`/${lang}/enterprise/developers`} class="user-type-card developer">
+                    <div class="user-type-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                    </div>
+                    <h3>Developers</h3>
+                    <p>Full write access to build, deploy, and manage ServiceNow artifacts with AI.</p>
+                    <span class="user-type-cta">Learn More →</span>
+                </a>
+
+                <a href={`/${lang}/enterprise/stakeholders`} class="user-type-card stakeholder">
+                    <div class="user-type-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </div>
+                    <h3>Stakeholders</h3>
+                    <p>Read-only access to query ServiceNow and get answers—included FREE.</p>
+                    <span class="user-type-cta">Learn More →</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <!-- Integrations Section -->
     <section class="section integrations-section">
         <div class="container">

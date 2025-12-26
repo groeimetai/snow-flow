@@ -500,6 +500,105 @@
     line-height: 1.6;
 }
 
+/* User Types Section */
+.user-types-section {
+    padding: 80px 0;
+}
+
+.user-types-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+    margin-top: 48px;
+}
+
+@media (max-width: 768px) {
+    .user-types-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.user-type-card {
+    display: block;
+    padding: 40px;
+    background: var(--color-card-bg, #0d0d14);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.user-type-card:hover {
+    transform: translateY(-8px);
+}
+
+.user-type-card.developer {
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+.user-type-card.developer:hover {
+    border-color: rgba(34, 197, 94, 0.5);
+    box-shadow: 0 20px 40px rgba(34, 197, 94, 0.1);
+}
+
+.user-type-card.stakeholder {
+    border-color: rgba(168, 85, 247, 0.2);
+}
+
+.user-type-card.stakeholder:hover {
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 20px 40px rgba(168, 85, 247, 0.1);
+}
+
+.user-type-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.user-type-card.developer .user-type-icon {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22C55E;
+}
+
+.user-type-card.stakeholder .user-type-icon {
+    background: rgba(168, 85, 247, 0.1);
+    color: #A855F7;
+}
+
+.user-type-card h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.user-type-card p {
+    color: var(--color-text-secondary, #94A3B8);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.user-type-cta {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.user-type-card.developer .user-type-cta {
+    color: #22C55E;
+}
+
+.user-type-card.stakeholder .user-type-cta {
+    color: #A855F7;
+}
+
 /* Responsive adjustments */
 @media (max-width: 640px) {
     .enterprise-hero {

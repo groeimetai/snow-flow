@@ -1,0 +1,526 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getLangFromUrl, useTranslations, type Lang } from '../../../i18n/utils';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'nl' } }
+  ];
+}
+
+const lang = getLangFromUrl(Astro.url) as Lang;
+const t = useTranslations(lang);
+
+const title = t('stakeholders.meta.title');
+const description = t('stakeholders.meta.description');
+---
+
+<BaseLayout title={title} description={description}>
+    <link rel="stylesheet" href="/styles/enterprise.css" />
+
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+
+    <!-- Hero Section -->
+    <section class="enterprise-hero">
+        <div class="hero-glow"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge stakeholder-badge">
+                    <span class="pulse"></span>
+                    {t('stakeholders.hero.badge')}
+                </div>
+
+                <h1 class="hero-title">
+                    <span class="gradient">{t('stakeholders.hero.title')}</span>
+                </h1>
+
+                <p class="hero-subtitle">
+                    {t('stakeholders.hero.subtitle')}
+                </p>
+
+                <div class="hero-ctas">
+                    <a href="mailto:sales@snow-flow.dev" class="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        {t('stakeholders.hero.cta')}
+                    </a>
+                    <a href={`/${lang}/enterprise`} class="btn btn-secondary">
+                        {t('stakeholders.hero.ctaSecondary')}
+                    </a>
+                </div>
+
+                <div class="free-badge">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"></path>
+                    </svg>
+                    {t('stakeholders.hero.freeBadge')}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What Makes Stakeholder Seats Special -->
+    <section class="section value-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">{t('stakeholders.value.label')}</span>
+                <h2 class="section-title">{t('stakeholders.value.title')}</h2>
+                <p class="section-subtitle">{t('stakeholders.value.subtitle')}</p>
+            </div>
+
+            <div class="value-grid">
+                <div class="value-card highlight">
+                    <div class="value-icon free">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                            <line x1="12" y1="18" x2="12" y2="6"></line>
+                        </svg>
+                    </div>
+                    <h3>{t('stakeholders.value.card1Title')}</h3>
+                    <p>{t('stakeholders.value.card1Desc')}</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </div>
+                    <h3>{t('stakeholders.value.card2Title')}</h3>
+                    <p>{t('stakeholders.value.card2Desc')}</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            <polyline points="9 12 11 14 15 10"></polyline>
+                        </svg>
+                    </div>
+                    <h3>{t('stakeholders.value.card3Title')}</h3>
+                    <p>{t('stakeholders.value.card3Desc')}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section class="section usecases-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">{t('stakeholders.usecases.label')}</span>
+                <h2 class="section-title">{t('stakeholders.usecases.title')}</h2>
+            </div>
+
+            <div class="usecases-grid">
+                <div class="usecase-card">
+                    <div class="usecase-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <h3>{t('stakeholders.usecases.case1Title')}</h3>
+                    <p>{t('stakeholders.usecases.case1Desc')}</p>
+                    <ul>
+                        <li>{t('stakeholders.usecases.case1Item1')}</li>
+                        <li>{t('stakeholders.usecases.case1Item2')}</li>
+                        <li>{t('stakeholders.usecases.case1Item3')}</li>
+                    </ul>
+                </div>
+
+                <div class="usecase-card">
+                    <div class="usecase-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </div>
+                    <h3>{t('stakeholders.usecases.case2Title')}</h3>
+                    <p>{t('stakeholders.usecases.case2Desc')}</p>
+                    <ul>
+                        <li>{t('stakeholders.usecases.case2Item1')}</li>
+                        <li>{t('stakeholders.usecases.case2Item2')}</li>
+                        <li>{t('stakeholders.usecases.case2Item3')}</li>
+                    </ul>
+                </div>
+
+                <div class="usecase-card">
+                    <div class="usecase-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </div>
+                    <h3>{t('stakeholders.usecases.case3Title')}</h3>
+                    <p>{t('stakeholders.usecases.case3Desc')}</p>
+                    <ul>
+                        <li>{t('stakeholders.usecases.case3Item1')}</li>
+                        <li>{t('stakeholders.usecases.case3Item2')}</li>
+                        <li>{t('stakeholders.usecases.case3Item3')}</li>
+                    </ul>
+                </div>
+
+                <div class="usecase-card">
+                    <div class="usecase-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path>
+                            <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            <path d="M21 21v-2a4 4 0 0 0-3-3.85"></path>
+                        </svg>
+                    </div>
+                    <h3>{t('stakeholders.usecases.case4Title')}</h3>
+                    <p>{t('stakeholders.usecases.case4Desc')}</p>
+                    <ul>
+                        <li>{t('stakeholders.usecases.case4Item1')}</li>
+                        <li>{t('stakeholders.usecases.case4Item2')}</li>
+                        <li>{t('stakeholders.usecases.case4Item3')}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tools Available Section -->
+    <section class="section tools-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">{t('stakeholders.tools.label')}</span>
+                <h2 class="section-title">{t('stakeholders.tools.title')}</h2>
+                <p class="section-subtitle">{t('stakeholders.tools.subtitle')}</p>
+            </div>
+
+            <div class="tools-comparison">
+                <div class="tools-column read">
+                    <div class="tools-column-header">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <h3>{t('stakeholders.tools.canDo')}</h3>
+                    </div>
+                    <ul>
+                        <li>{t('stakeholders.tools.can1')}</li>
+                        <li>{t('stakeholders.tools.can2')}</li>
+                        <li>{t('stakeholders.tools.can3')}</li>
+                        <li>{t('stakeholders.tools.can4')}</li>
+                        <li>{t('stakeholders.tools.can5')}</li>
+                        <li>{t('stakeholders.tools.can6')}</li>
+                    </ul>
+                </div>
+
+                <div class="tools-column write">
+                    <div class="tools-column-header">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        <h3>{t('stakeholders.tools.cantDo')}</h3>
+                    </div>
+                    <ul>
+                        <li>{t('stakeholders.tools.cant1')}</li>
+                        <li>{t('stakeholders.tools.cant2')}</li>
+                        <li>{t('stakeholders.tools.cant3')}</li>
+                        <li>{t('stakeholders.tools.cant4')}</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tools-stat-highlight">
+                <span class="stat-number">174</span>
+                <span class="stat-label">{t('stakeholders.tools.readOnlyTools')}</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>{t('stakeholders.cta.title')}</h2>
+                <p>{t('stakeholders.cta.subtitle')}</p>
+                <div class="cta-buttons">
+                    <a href="mailto:sales@snow-flow.dev" class="btn btn-primary btn-large">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        {t('stakeholders.cta.primary')}
+                    </a>
+                    <a href={`/${lang}/enterprise/developers`} class="btn btn-secondary btn-large">
+                        {t('stakeholders.cta.secondary')}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-brand">
+                <a href={`/${lang}/`} class="footer-logo" aria-label="Snow-Flow Home">
+                    <svg class="footer-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="footer-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#FFFFFF"/>
+                                <stop offset="100%" stop-color="#00D9FF"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#footer-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="footer-logo-text">
+                        <span class="snow">SNOW</span><span class="flow">FLOW</span>
+                    </span>
+                </a>
+                <p class="footer-tagline">
+                    {t('footer.tagline')}
+                </p>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="footer-copyright">
+                    {t('footer.copyright')}
+                </p>
+            </div>
+        </div>
+    </footer>
+</BaseLayout>
+
+<style>
+    .stakeholder-badge {
+        background: rgba(168, 85, 247, 0.1);
+        border-color: rgba(168, 85, 247, 0.3);
+        color: #A855F7;
+    }
+
+    .free-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 24px;
+        padding: 12px 24px;
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 100px;
+        color: #22C55E;
+        font-weight: 600;
+    }
+
+    .value-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-top: 48px;
+    }
+
+    @media (max-width: 768px) {
+        .value-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .value-card {
+        padding: 32px;
+        background: var(--color-card-bg, #0d0d14);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        text-align: center;
+    }
+
+    .value-card.highlight {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 100%);
+        border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .value-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        background: rgba(168, 85, 247, 0.1);
+        color: #A855F7;
+    }
+
+    .value-icon.free {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22C55E;
+    }
+
+    .value-card h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+
+    .value-card p {
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .usecases-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        margin-top: 48px;
+    }
+
+    @media (max-width: 768px) {
+        .usecases-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .usecase-card {
+        padding: 32px;
+        background: var(--color-card-bg, #0d0d14);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+    }
+
+    .usecase-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        background: rgba(168, 85, 247, 0.1);
+        color: #A855F7;
+    }
+
+    .usecase-card h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .usecase-card > p {
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.9rem;
+        margin-bottom: 16px;
+    }
+
+    .usecase-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .usecase-card li {
+        padding: 6px 0;
+        padding-left: 20px;
+        position: relative;
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.85rem;
+    }
+
+    .usecase-card li::before {
+        content: '→';
+        position: absolute;
+        left: 0;
+        color: #A855F7;
+    }
+
+    .tools-comparison {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 32px;
+        margin-top: 48px;
+    }
+
+    @media (max-width: 768px) {
+        .tools-comparison {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .tools-column {
+        padding: 32px;
+        border-radius: 16px;
+    }
+
+    .tools-column.read {
+        background: rgba(34, 197, 94, 0.05);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .tools-column.write {
+        background: rgba(239, 68, 68, 0.05);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .tools-column-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .tools-column.read .tools-column-header {
+        color: #22C55E;
+    }
+
+    .tools-column.write .tools-column-header {
+        color: #EF4444;
+    }
+
+    .tools-column h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .tools-column ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .tools-column li {
+        padding: 8px 0;
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.95rem;
+    }
+
+    .tools-stat-highlight {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 48px;
+        padding: 32px;
+        background: rgba(168, 85, 247, 0.05);
+        border: 1px solid rgba(168, 85, 247, 0.2);
+        border-radius: 16px;
+    }
+
+    .stat-number {
+        font-size: 4rem;
+        font-weight: 800;
+        color: #A855F7;
+        line-height: 1;
+    }
+
+    .stat-label {
+        margin-top: 8px;
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 1.1rem;
+    }
+</style>
