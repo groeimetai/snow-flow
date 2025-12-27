@@ -75,13 +75,31 @@
 
         .bg-gradient {
             position: fixed;
-            inset: 0;
+            inset: -10%;
+            width: 120%;
+            height: 120%;
             background:
                 radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 217, 255, 0.15), transparent),
                 radial-gradient(ellipse 60% 40% at 80% 60%, rgba(139, 92, 246, 0.1), transparent),
                 radial-gradient(ellipse 50% 30% at 20% 80%, rgba(59, 130, 246, 0.08), transparent);
             pointer-events: none;
             z-index: 0;
+            animation: bg-drift 20s ease-in-out infinite;
+        }
+
+        @keyframes bg-drift {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            25% {
+                transform: translate(2%, -1%) scale(1.02);
+            }
+            50% {
+                transform: translate(-1%, 2%) scale(1.01);
+            }
+            75% {
+                transform: translate(-2%, -1%) scale(1.03);
+            }
         }
 
         .bg-noise {

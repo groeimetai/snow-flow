@@ -135,12 +135,27 @@ const t = useTranslations(lang);
             <a href={`/${lang}/`} class="logo" aria-label="Snow-Flow Home">
                 <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
-                        <linearGradient id="logo-gradient" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
-                            <stop offset="0%" stop-color="#FFFFFF"/>
-                            <stop offset="100%" stop-color="#00D9FF"/>
+                        <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#00D9FF">
+                                <animate attributeName="stop-color" values="#00D9FF; #00A8E8; #8B5CF6; #00A8E8; #00D9FF" dur="4s" repeatCount="indefinite"/>
+                            </stop>
+                            <stop offset="50%" stop-color="#00A8E8">
+                                <animate attributeName="stop-color" values="#00A8E8; #8B5CF6; #00D9FF; #00D9FF; #00A8E8" dur="4s" repeatCount="indefinite"/>
+                            </stop>
+                            <stop offset="100%" stop-color="#8B5CF6">
+                                <animate attributeName="stop-color" values="#8B5CF6; #00D9FF; #00A8E8; #8B5CF6; #8B5CF6" dur="4s" repeatCount="indefinite"/>
+                            </stop>
+                        </linearGradient>
+                        <linearGradient id="logo-stroke-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#00D9FF">
+                                <animate attributeName="stop-color" values="#00D9FF; #8B5CF6; #00D9FF" dur="4s" repeatCount="indefinite"/>
+                            </stop>
+                            <stop offset="100%" stop-color="#8B5CF6">
+                                <animate attributeName="stop-color" values="#8B5CF6; #00D9FF; #8B5CF6" dur="4s" repeatCount="indefinite"/>
+                            </stop>
                         </linearGradient>
                     </defs>
-                    <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#logo-gradient)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
+                    <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#logo-gradient)" stroke="url(#logo-stroke-gradient)" stroke-width="1.2" stroke-linejoin="round"/>
                 </svg>
                 <span class="logo-text">
                     <span class="snow">SNOW</span><span class="flow">FLOW</span>
