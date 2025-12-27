@@ -261,12 +261,22 @@
         }
 
         .logo-text .flow {
-            color: var(--accent-cyan);
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-shift 4s ease infinite;
             transition: text-shadow 0.3s ease;
         }
 
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
         .logo:hover .logo-text .flow {
-            text-shadow: 0 0 12px rgba(0, 217, 255, 0.5);
+            filter: drop-shadow(0 0 12px rgba(0, 217, 255, 0.5));
         }
 
         /* Nav Links - Modern with Subtle Effects */
@@ -698,20 +708,37 @@
 
         .hero-glow {
             position: absolute;
-            top: 15%;
+            top: 10%;
             left: 50%;
             transform: translateX(-50%);
-            width: 600px;
-            height: 400px;
-            background: radial-gradient(ellipse, rgba(0, 217, 255, 0.15) 0%, transparent 70%);
-            filter: blur(50px);
+            width: 800px;
+            height: 500px;
+            background:
+                radial-gradient(ellipse 100% 80% at 30% 20%, rgba(0, 217, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(ellipse 80% 60% at 70% 60%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 50% at 50% 40%, rgba(59, 130, 246, 0.12) 0%, transparent 50%);
+            filter: blur(40px);
             pointer-events: none;
-            animation: pulse-glow 10s ease-in-out infinite;
+            animation: hero-glow-drift 15s ease-in-out infinite;
         }
 
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(1); }
-            50% { opacity: 0.6; transform: translateX(-50%) scale(1.05); }
+        @keyframes hero-glow-drift {
+            0%, 100% {
+                opacity: 0.5;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+            25% {
+                opacity: 0.7;
+                transform: translateX(-45%) translateY(-3%) scale(1.05);
+            }
+            50% {
+                opacity: 0.6;
+                transform: translateX(-55%) translateY(2%) scale(1.02);
+            }
+            75% {
+                opacity: 0.8;
+                transform: translateX(-48%) translateY(-2%) scale(1.08);
+            }
         }
 
         .hero-content {
