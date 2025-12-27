@@ -733,6 +733,53 @@
             50% { opacity: 0.5; transform: scale(0.85); }
         }
 
+        /* Early Access Badge */
+        .early-access-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(0, 217, 255, 0.15) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 100px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #a78bfa;
+            margin-bottom: 1rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            animation: fade-in 0.5s ease-out;
+        }
+
+        .early-access-badge:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(0, 217, 255, 0.25) 100%);
+            border-color: rgba(139, 92, 246, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .early-access-badge svg {
+            transition: transform 0.3s ease;
+        }
+
+        .early-access-badge:hover svg {
+            transform: translateX(3px);
+        }
+
+        .early-access-pulse {
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(135deg, #8B5CF6 0%, #00D9FF 100%);
+            border-radius: 50%;
+            animation: early-access-pulse 2s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+
+        @keyframes early-access-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
+            50% { opacity: 0.7; transform: scale(0.9); box-shadow: 0 0 20px rgba(139, 92, 246, 0.8); }
+        }
+
         .hero-title {
             font-size: clamp(2rem, 6vw, 3.75rem);
             font-weight: 900;

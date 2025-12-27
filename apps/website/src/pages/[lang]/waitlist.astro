@@ -1,0 +1,450 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getLangFromUrl, useTranslations, type Lang } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'nl' } }
+  ];
+}
+
+const lang = getLangFromUrl(Astro.url) as Lang;
+const t = useTranslations(lang);
+
+const title = lang === 'nl' ? 'Wachtlijst - Snow-Flow' : 'Waitlist - Snow-Flow';
+const description = lang === 'nl'
+  ? 'Meld je aan voor General Availability van Snow-Flow'
+  : 'Join the waitlist for Snow-Flow General Availability';
+---
+
+<BaseLayout title={title} description={description}>
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+
+    <section class="waitlist-section">
+        <div class="waitlist-glow"></div>
+        <div class="container">
+            <div class="waitlist-content">
+                <a href={`/${lang}/`} class="back-link">
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                        <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                    </svg>
+                    {lang === 'nl' ? 'Terug naar home' : 'Back to home'}
+                </a>
+
+                <div class="waitlist-badge">
+                    <span class="pulse"></span>
+                    Early Access
+                </div>
+
+                <h1 class="waitlist-title">
+                    {lang === 'nl' ? 'Word als eerste toegelaten' : 'Be the first to get access'}
+                </h1>
+
+                <p class="waitlist-subtitle">
+                    {lang === 'nl'
+                        ? 'Snow-Flow is momenteel in Early Access. Meld je aan voor de wachtlijst en we laten je weten zodra General Availability beschikbaar is.'
+                        : "Snow-Flow is currently in Early Access. Join the waitlist and we'll notify you as soon as General Availability launches."}
+                </p>
+
+                <form id="waitlistForm" class="waitlist-form">
+                    <div class="form-group">
+                        <label for="email">{lang === 'nl' ? 'Email *' : 'Email *'}</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            required
+                            placeholder={lang === 'nl' ? 'je@email.com' : 'you@email.com'}
+                        />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">{lang === 'nl' ? 'Naam' : 'Name'}</label>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                placeholder={lang === 'nl' ? 'Je naam' : 'Your name'}
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="company">{lang === 'nl' ? 'Bedrijf' : 'Company'}</label>
+                            <input
+                                type="text"
+                                id="company"
+                                name="company"
+                                placeholder={lang === 'nl' ? 'Je bedrijf' : 'Your company'}
+                            />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="useCase">{lang === 'nl' ? 'Wat wil je bouwen met Snow-Flow?' : 'What do you want to build with Snow-Flow?'}</label>
+                        <textarea
+                            id="useCase"
+                            name="useCase"
+                            rows="3"
+                            placeholder={lang === 'nl'
+                                ? 'Vertel ons over je use case (optioneel)'
+                                : 'Tell us about your use case (optional)'}
+                        ></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-submit">
+                        <span class="btn-text">{lang === 'nl' ? 'Aanmelden voor wachtlijst' : 'Join the waitlist'}</span>
+                        <span class="btn-loading">
+                            <svg class="spinner" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="32" stroke-dashoffset="32">
+                                    <animate attributeName="stroke-dashoffset" values="32;0;32" dur="1.5s" repeatCount="indefinite"/>
+                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+                                </circle>
+                            </svg>
+                            {lang === 'nl' ? 'Bezig...' : 'Submitting...'}
+                        </span>
+                    </button>
+
+                    <div id="formMessage" class="form-message"></div>
+                </form>
+
+                <div class="waitlist-features">
+                    <h3>{lang === 'nl' ? 'Wat je krijgt met Snow-Flow' : 'What you get with Snow-Flow'}</h3>
+                    <ul>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                            </svg>
+                            {lang === 'nl' ? 'Gebruik je eigen AI modellen (Claude, GPT, DeepSeek, lokaal)' : 'Use your own AI models (Claude, GPT, DeepSeek, local)'}
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                            </svg>
+                            {lang === 'nl' ? '410+ MCP tools voor ServiceNow development' : '410+ MCP tools for ServiceNow development'}
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                            </svg>
+                            {lang === 'nl' ? 'Enterprise integraties (Jira, Azure DevOps, Confluence)' : 'Enterprise integrations (Jira, Azure DevOps, Confluence)'}
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                            </svg>
+                            {lang === 'nl' ? '100% open source core - geen vendor lock-in' : '100% open source core - no vendor lock-in'}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+</BaseLayout>
+
+<style>
+    .waitlist-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6rem 1.5rem 4rem;
+        position: relative;
+    }
+
+    .waitlist-glow {
+        position: absolute;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px;
+        height: 400px;
+        background: radial-gradient(ellipse, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .waitlist-content {
+        max-width: 560px;
+        margin: 0 auto;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.875rem;
+        margin-bottom: 2rem;
+        transition: color 0.2s;
+    }
+
+    .back-link:hover {
+        color: var(--accent-cyan);
+    }
+
+    .waitlist-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(0, 217, 255, 0.15) 100%);
+        border: 1px solid rgba(139, 92, 246, 0.4);
+        border-radius: 100px;
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #a78bfa;
+        margin-bottom: 1.5rem;
+    }
+
+    .waitlist-badge .pulse {
+        width: 8px;
+        height: 8px;
+        background: linear-gradient(135deg, #8B5CF6 0%, #00D9FF 100%);
+        border-radius: 50%;
+        animation: pulse 2s ease-in-out infinite;
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(0.9); }
+    }
+
+    .waitlist-title {
+        font-size: clamp(2rem, 5vw, 3rem);
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        line-height: 1.2;
+    }
+
+    .waitlist-subtitle {
+        font-size: 1.125rem;
+        color: var(--text-secondary);
+        line-height: 1.7;
+        margin-bottom: 2.5rem;
+    }
+
+    .waitlist-form {
+        background: rgba(10, 10, 15, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: left;
+        margin-bottom: 2rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    @media (max-width: 480px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        font-size: 1rem;
+        color: var(--text-primary);
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+        color: var(--text-muted);
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: rgba(139, 92, 246, 0.5);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+
+    .btn-submit .btn-loading {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-submit.loading .btn-text {
+        display: none;
+    }
+
+    .btn-submit.loading .btn-loading {
+        display: flex;
+    }
+
+    .spinner {
+        width: 20px;
+        height: 20px;
+    }
+
+    .form-message {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+        display: none;
+    }
+
+    .form-message.success {
+        display: block;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #10b981;
+    }
+
+    .form-message.error {
+        display: block;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+
+    .waitlist-features {
+        text-align: left;
+        background: rgba(10, 10, 15, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .waitlist-features h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .waitlist-features ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .waitlist-features li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        color: var(--text-secondary);
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        margin-bottom: 0.75rem;
+    }
+
+    .waitlist-features li:last-child {
+        margin-bottom: 0;
+    }
+
+    .waitlist-features li svg {
+        width: 18px;
+        height: 18px;
+        color: var(--accent-green);
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+</style>
+
+<script>
+    const form = document.getElementById('waitlistForm') as HTMLFormElement;
+    const submitBtn = form?.querySelector('.btn-submit') as HTMLButtonElement;
+    const messageDiv = document.getElementById('formMessage') as HTMLDivElement;
+
+    form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Show loading state
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+        messageDiv.className = 'form-message';
+        messageDiv.style.display = 'none';
+
+        const formData = new FormData(form);
+        const data = {
+            email: formData.get('email'),
+            name: formData.get('name') || undefined,
+            company: formData.get('company') || undefined,
+            useCase: formData.get('useCase') || undefined,
+            source: 'website'
+        };
+
+        try {
+            const response = await fetch('https://portal.snow-flow.dev/api/waitlist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                messageDiv.className = 'form-message success';
+                messageDiv.textContent = document.documentElement.lang === 'nl'
+                    ? 'Je bent toegevoegd aan de wachtlijst! Check je email voor bevestiging.'
+                    : "You've been added to the waitlist! Check your email for confirmation.";
+                form.reset();
+            } else if (result.alreadyRegistered) {
+                messageDiv.className = 'form-message error';
+                messageDiv.textContent = document.documentElement.lang === 'nl'
+                    ? 'Dit emailadres staat al op de wachtlijst.'
+                    : 'This email is already on the waitlist.';
+            } else {
+                throw new Error(result.error || 'Failed to join waitlist');
+            }
+        } catch (error) {
+            messageDiv.className = 'form-message error';
+            messageDiv.textContent = document.documentElement.lang === 'nl'
+                ? 'Er ging iets mis. Probeer het opnieuw.'
+                : 'Something went wrong. Please try again.';
+        } finally {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+        }
+    });
+</script>
