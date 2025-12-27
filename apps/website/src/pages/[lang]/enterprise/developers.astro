@@ -24,22 +24,20 @@ const description = t('developers.meta.description');
     <div class="bg-gradient"></div>
     <div class="bg-noise"></div>
 
-    <!-- Breadcrumb -->
-    <div class="container">
-        <nav class="breadcrumb">
-            <div class="breadcrumb-nav developer">
-                <a href={`/${lang}/enterprise`}>{t('enterprise.landing.title')}</a>
-                <span class="separator">/</span>
-                <span class="current">{t('developers.breadcrumb')}</span>
-            </div>
-        </nav>
-    </div>
-
     <!-- Hero Section -->
     <section class="enterprise-hero">
         <div class="hero-glow"></div>
         <div class="container">
             <div class="hero-content">
+                <!-- Breadcrumb -->
+                <nav class="breadcrumb">
+                    <div class="breadcrumb-nav developer">
+                        <a href={`/${lang}/enterprise`}>{t('enterprise.landing.title')}</a>
+                        <span class="separator">/</span>
+                        <span class="current">{t('developers.breadcrumb')}</span>
+                    </div>
+                </nav>
+
                 <div class="hero-badge developer-badge">
                     <span class="pulse"></span>
                     {t('developers.hero.badge')}
