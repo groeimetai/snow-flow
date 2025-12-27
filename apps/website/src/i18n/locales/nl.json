@@ -260,10 +260,10 @@
       "customersFeature2": "Jira, Azure DevOps & Confluence sync",
       "customersFeature3": "Stakeholder seats inbegrepen",
       "partnersTitle": "Voor Service Integrators",
-      "partnersDesc": "Rust je ServiceNow consultants uit met AI-gestuurde development tools.",
-      "partnersFeature1": "Snellere projectoplevering voor klanten",
+      "partnersDesc": "Lever ServiceNow implementaties sneller met AI-gestuurde development.",
+      "partnersFeature1": "Rond projecten 10x sneller af",
       "partnersFeature2": "Ingebouwde veiligheid voor klantomgevingen",
-      "partnersFeature3": "Schaal je praktijk met AI",
+      "partnersFeature3": "Win meer deals met AI capabilities",
       "learnMore": "Meer Info",
       "rolesLabel": "Gebruikerstypen",
       "rolesTitle": "Twee Soorten Gebruikers",
@@ -425,28 +425,28 @@
   "partners": {
     "meta": {
       "title": "Voor Service Integrators | Snow-Flow",
-      "description": "Rust je ServiceNow consultants uit met AI-gestuurde development tools. Ingebouwde veiligheid, snellere oplevering, tevreden klanten."
+      "description": "Lever ServiceNow projecten sneller met AI. Ingebouwde veiligheid voor klantomgevingen, 145 integratie tools, en tevreden klanten."
     },
     "breadcrumb": "Voor Service Integrators",
     "hero": {
       "badge": "Voor Service Integrators",
-      "subtitle": "Geef je ServiceNow consultants AI-gestuurde tools die oplevering versnellen en klantomgevingen veilig houden.",
+      "subtitle": "Implementeer ServiceNow projecten sneller met AI-gestuurde development. Ingebouwde beveiligingen beschermen klantomgevingen.",
       "cta": "Aan de Slag",
       "ctaSecondary": "Enterprise Overzicht"
     },
     "safety": {
-      "label": "Waarom Je Consultants Het Geweldig Vinden",
-      "title": "Snellere oplevering. Veiligere deployments.",
-      "subtitle": "Snow-Flow is een development tool die je consultants dagelijks gebruiken. Ingebouwde beveiligingen vangen fouten op voordat ze de productieomgeving van je klant bereiken.",
-      "stat1": "500+",
-      "stat1Label": "MCP Tools",
-      "stat1Desc": "AI handelt stories af van ticket tot Update Set",
-      "stat2": "174",
-      "stat2Label": "Read-Only Tools",
-      "stat2Desc": "Stakeholders kunnen verkennen, niet wijzigen",
-      "stat3": "Volledig",
-      "stat3Label": "Auditeerbaar",
-      "stat3Desc": "Acties bijgehouden via ServiceNow update sets"
+      "label": "Win Meer Deals",
+      "title": "Lever sneller. Imponeer klanten.",
+      "subtitle": "Rond implementaties af in dagen, niet weken. AI doet het zware werk terwijl ingebouwde beveiligingen klantomgevingen beschermen.",
+      "stat1": "10x",
+      "stat1Label": "Sneller",
+      "stat1Desc": "Rond implementaties sneller af dan handmatige development",
+      "stat2": "145",
+      "stat2Label": "Integratie Tools",
+      "stat2Desc": "Jira, Azure DevOps, GitHub, GitLab, Confluence",
+      "stat3": "100%",
+      "stat3Label": "Audit Trail",
+      "stat3Desc": "Elke wijziging bijgehouden in ServiceNow update sets"
     },
     "protection": {
       "label": "Ingebouwde Bescherming",
@@ -509,19 +509,19 @@
     },
     "benefits": {
       "label": "Waarom Service Integrators Kiezen voor Snow-Flow",
-      "title": "Betere Tools, Betere Resultaten",
-      "subtitle": "Geef je team een oneerlijk voordeel.",
+      "title": "Betere Resultaten voor Je Klanten",
+      "subtitle": "Lever meer waarde bij elke opdracht.",
       "speed": {
-        "title": "Snellere Projectoplevering",
-        "desc": "Rond ServiceNow projecten af in een fractie van de tijd."
+        "title": "Snellere Time-to-Value",
+        "desc": "Je klanten zien resultaat in dagen, niet weken. AI versnelt elke fase."
       },
       "quality": {
-        "title": "Minder Fouten",
-        "desc": "Ingebouwde validatie vangt errors op voor ze productie bereiken."
+        "title": "Productie-klare Code",
+        "desc": "Ingebouwde validatie zorgt dat code werkt voordat het klantomgevingen bereikt."
       },
       "capacity": {
-        "title": "Schaal Je Praktijk",
-        "desc": "Bedien meer klanten zonder meer consultants aan te nemen."
+        "title": "Neem Meer Klanten Aan",
+        "desc": "Handel meer implementaties af zonder je team uit te breiden."
       }
     },
     "whitelabel": {
