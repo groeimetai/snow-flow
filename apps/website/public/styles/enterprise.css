@@ -1187,9 +1187,39 @@
     color: #0052CC;
 }
 
+.integration-logo.github {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.integration-logo.gitlab {
+    background: rgba(252, 109, 38, 0.1);
+    color: #FC6D26;
+}
+
 .integration-count {
     font-weight: 600;
     color: #fff;
+}
+
+.integration-total {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+}
+
+.integration-total .total-count {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #8B5CF6;
+}
+
+.integration-total .total-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary, #94A3B8);
+    margin-top: 2px;
 }
 
 .stakeholder-stats {
