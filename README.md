@@ -4,24 +4,34 @@
   </picture>
 </p>
 
-<pre>
+<pre align="center">
     ▲  ▲        █▀▀▀ █▀▀▄ █▀▀█ █   █   █▀▀▀ █▀▀█ █▀▀▄ █▀▀▀
    ▲ ▼▲ ▼▲      ▀▀▀█ █  █ █  █ █ █ █   █    █  █ █  █ █▀▀
   ▲ ▼  ▼  ▼     ▀▀▀▀ ▀  ▀ ▀▀▀▀ ▀▀▀▀▀   ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀
 </pre>
+
 <h3 align="center">AI-Powered ServiceNow Development Platform</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=flat-square&logo=npm&color=CB3837" /></a>
   <a href="https://github.com/groeimetai/snow-flow"><img alt="GitHub stars" src="https://img.shields.io/github/stars/groeimetai/snow-flow?style=flat-square&logo=github" /></a>
   <a href="https://www.elastic.co/licensing/elastic-license"><img alt="License" src="https://img.shields.io/badge/license-Elastic--2.0-blue?style=flat-square" /></a>
-  <a href="#"><img alt="Tools" src="https://img.shields.io/badge/MCP_tools-410+-purple?style=flat-square" /></a>
+  <a href="https://snow-flow.dev/en/mcp-reference"><img alt="Tools" src="https://img.shields.io/badge/MCP_tools-379+-purple?style=flat-square" /></a>
   <a href="https://portal.snow-flow.dev"><img alt="Enterprise" src="https://img.shields.io/badge/enterprise-available-green?style=flat-square" /></a>
 </p>
 
 <p align="center">
-  <strong>The Free ServiceNow Build Agent Alternative</strong><br>
-  410+ MCP tools | Any LLM provider | Local development | Open source
+  <strong>The Open-Source ServiceNow Build Agent Alternative</strong><br>
+  379+ MCP tools | 75+ LLM providers | Any IDE | 100% open source
+</p>
+
+<p align="center">
+  <a href="https://snow-flow.dev/en/docs">Quick Start</a> •
+  <a href="https://snow-flow.dev/en/mcp-reference">MCP Tools</a> •
+  <a href="https://snow-flow.dev/en/tui-guide">TUI Guide</a> •
+  <a href="https://snow-flow.dev/en/cli-reference">CLI Reference</a> •
+  <a href="https://snow-flow.dev/en/oauth-setup">OAuth Setup</a> •
+  <a href="https://portal.snow-flow.dev">Enterprise</a>
 </p>
 
 ---
@@ -29,28 +39,34 @@
 ## Quick Start
 
 ```bash
+# Install
 npm install -g snow-flow
+
+# Start the TUI
 snow-flow
+
+# Authenticate (in the TUI)
+/auth
 ```
 
-That's it. Snow-Flow starts an interactive TUI that auto-initializes on first run. Type `/auth` to authenticate with ServiceNow and your preferred LLM provider.
+That's it. Snow-Flow auto-initializes on first run and guides you through authentication with ServiceNow and your preferred LLM provider.
 
 ---
 
 ## What is Snow-Flow?
 
-Snow-Flow is an AI-powered development platform for ServiceNow. It uses the **Model Context Protocol (MCP)** to give AI assistants direct access to your ServiceNow instance through 410+ specialized tools.
+Snow-Flow is an **open-source** AI development platform for ServiceNow. It uses the **Model Context Protocol (MCP)** to give AI assistants direct access to your ServiceNow instance through **379+ specialized tools**.
 
 **Talk to your ServiceNow instance in plain English:**
 
 ```
-You: Create a dashboard widget showing P1 incidents with SLA countdown timers
+> Create a dashboard widget showing P1 incidents with SLA countdown timers
 
-You: Build a business rule to auto-assign incidents based on category and location
+> Build a business rule to auto-assign incidents based on category
 
-You: Pull the incident form widget to local files so I can debug it
+> Show me all incidents assigned to my team from the last week
 
-You: Analyze incident trends from the last 30 days and create a knowledge article
+> Create a knowledge article explaining the password reset process
 ```
 
 Snow-Flow handles everything: Update Set creation, ES5 validation, widget coherence checks, and deployment.
@@ -63,23 +79,24 @@ Snow-Flow handles everything: Update Set creation, ES5 validation, widget cohere
 
 | Feature | Snow-Flow | ServiceNow Build Agent |
 |---------|-----------|------------------------|
-| **Cost** | **Free** (open source) | $100-200/user/month + Pro Plus |
-| **AI Model** | **Any** - Claude, GPT-4, Gemini, Llama, Ollama | NowLLM only |
-| **Development** | **Local IDE** - VS Code, Cursor, terminal | Browser-based Studio |
-| **Enterprise Tools** | **Jira, Azure DevOps, Confluence** | ServiceNow ecosystem only |
-| **Open Source** | Yes | No |
+| **Cost** | **Free** (open source) | $150K-$4.5M implementation |
+| **AI Model** | **75+ providers** - Claude, GPT-4, Gemini, DeepSeek, Ollama | NowLLM only |
+| **Development** | **Any IDE** - VS Code, Cursor, terminal, JetBrains | Browser-based Studio |
+| **Integrations** | Jira, Azure DevOps, Confluence, GitHub | ServiceNow only |
+| **Source Code** | 100% open source | Proprietary |
 | **Self-hosted** | Yes | No |
+| **Architecture** | Multi-agent orchestration | Single agent |
 
-### What You Get
+### Key Features
 
-- **410+ MCP Tools** - Complete ServiceNow API coverage across 18 specialized servers
-- **Any LLM Provider** - Claude, GPT-4, Gemini, Mistral, DeepSeek, Groq, or 100% free with Ollama
-- **Built-in TUI** - Interactive terminal interface for conversational development
-- **Local Development** - Pull artifacts to local files, edit with your favorite IDE, push back
-- **ES5 Validation** - Catches Rhino engine errors before deployment (ServiceNow uses ES5)
-- **Update Set Management** - Automatic change tracking for all development work
-- **Widget Coherence** - Validates HTML/Client/Server script communication
-- **Multi-IDE Support** - Works with Claude Desktop, Cursor, Windsurf, Continue.dev
+- **379+ MCP Tools** - Complete ServiceNow coverage across 15 categories
+- **Any LLM Provider** - Claude, GPT-4, Gemini, DeepSeek, Llama, or free with Ollama
+- **Built-in TUI** - Interactive terminal interface with keyboard shortcuts
+- **ES5 Validation** - Catches Rhino engine errors before deployment
+- **Update Set Management** - Automatic change tracking
+- **Widget Coherence** - Validates HTML/Client/Server communication
+- **Local Development** - Pull artifacts to local files, edit with your IDE, push back
+- **Multi-IDE Support** - Claude Desktop, Cursor, Windsurf, Continue.dev
 
 ---
 
@@ -108,46 +125,35 @@ Snow-Flow handles everything: Update Set creation, ES5 validation, widget cohere
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Snow-Flow's MCP servers give your AI assistant direct access to ServiceNow APIs. When you make a request:
-
-1. **Update Set** - Automatically created to track all changes
-2. **Development** - AI builds the artifact using appropriate MCP tools
-3. **Validation** - ES5 syntax check, widget coherence, schema validation
-4. **Deployment** - Direct deployment to your ServiceNow instance
-5. **Verification** - Confirms deployment and provides direct URLs
-
 ---
 
 ## MCP Tools Overview
 
-Snow-Flow provides **410+ tools** across **18 specialized MCP servers**:
+Snow-Flow provides **379 tools** across **15 categories**:
 
-| Server | Tools | Capabilities |
-|--------|-------|--------------|
-| **Operations** | 24 | CRUD operations, queries, user management |
-| **Automation** | 15 | Background scripts, scheduled jobs, events |
-| **Deployment** | 12 | Widgets, pages, flows, artifact management |
-| **Platform Dev** | 18 | Business rules, client scripts, UI policies |
-| **Integration** | 14 | REST messages, transform maps, MID Server management |
-| **Update Sets** | 8 | Create, complete, export, switch |
-| **CMDB** | 22 | CI management, relationships, discovery |
-| **Reporting** | 16 | Reports, dashboards, KPIs, analytics |
-| **Machine Learning** | 12 | Predictive Intelligence, TensorFlow.js |
-| **Flow Designer** | 10 | Flows, subflows, actions |
-| **Workspace** | 8 | Agent Workspace, UI Builder |
-| **Knowledge** | 10 | Articles, categories, feedback |
-| **Service Catalog** | 14 | Items, variables, workflows |
-| **Security** | 12 | ACLs, policies, compliance |
-| **Local Dev** | 6 | Pull/push artifacts, local file sync |
-| **Orchestration** | 8 | Multi-agent coordination |
-| **Memory** | 6 | Persistent context, search |
-| **Performance** | 8 | Metrics, optimization, monitoring |
+| Category | Tools | Read | Write | Description |
+|----------|-------|------|-------|-------------|
+| **Platform Development** | 78 | 25 | 53 | Script includes, client scripts, UI development |
+| **Automation** | 57 | 24 | 33 | Script execution, scheduled jobs, events |
+| **Advanced AI/ML** | 52 | 44 | 8 | Classification, anomaly detection, predictions |
+| **ITSM** | 45 | 17 | 28 | Incident, change, problem management |
+| **Integration** | 33 | 13 | 20 | REST messages, transform maps, import sets |
+| **Core Operations** | 30 | 14 | 16 | CRUD operations, queries, bulk operations |
+| **UI Frameworks** | 19 | 4 | 15 | Portal widgets, UI pages, forms |
+| **Security** | 18 | 9 | 9 | ACLs, policies, compliance |
+| **CMDB** | 14 | 10 | 4 | CI management, relationships, discovery |
+| **Reporting** | 10 | 3 | 7 | Reports, dashboards, KPIs |
+| **UI Builder** | 9 | 2 | 7 | Now Experience components |
+| **Asset Management** | 8 | 1 | 7 | Asset lifecycle, contracts |
+| **Performance Analytics** | 3 | 2 | 1 | PA indicators, breakdowns |
+| **ML Analytics** | 2 | 2 | 0 | Native ML features |
+| **Workspace** | 1 | 0 | 1 | Agent Workspace config |
 
-**All tools follow the `snow_*` naming convention** and are automatically available to any MCP-compatible AI assistant.
+**Browse all tools:** [snow-flow.dev/en/mcp-reference](https://snow-flow.dev/en/mcp-reference)
 
 ---
 
-## Setup
+## Setup Guide
 
 ### 1. Install Snow-Flow
 
@@ -155,7 +161,7 @@ Snow-Flow provides **410+ tools** across **18 specialized MCP servers**:
 npm install -g snow-flow
 ```
 
-### 2. Start Snow-Flow
+### 2. Start the TUI
 
 ```bash
 snow-flow
@@ -163,21 +169,16 @@ snow-flow
 
 On first run, Snow-Flow automatically creates:
 - `.mcp.json` - MCP server configuration
-- `.env` - Environment variables template
 - `CLAUDE.md` / `AGENTS.md` - AI instructions
 
 ### 3. Authenticate
 
-In the TUI, type:
+In the TUI, type `/auth` to authenticate:
 
-```
-/auth
-```
+1. **LLM Provider** - Claude, GPT-4, Gemini, Ollama, etc.
+2. **ServiceNow** - OAuth 2.0 (requires OAuth app in ServiceNow)
 
-This opens an interactive authentication flow for:
-- **LLM Provider** - Claude, GPT-4, Gemini, Ollama, etc.
-- **ServiceNow** - OAuth 2.0 authentication
-- **Enterprise** - Jira, Azure DevOps, Confluence (optional)
+**Detailed OAuth setup:** [snow-flow.dev/en/oauth-setup](https://snow-flow.dev/en/oauth-setup)
 
 ---
 
@@ -189,245 +190,163 @@ Create an OAuth application in your ServiceNow instance:
 2. Click **New → Create an OAuth API endpoint for external clients**
 3. Configure:
    - **Name**: `Snow-Flow`
-   - **Redirect URL**: `http://localhost:3005/callback`
-   - **Refresh Token Lifespan**: `0` (unlimited)
+   - **Redirect URL**: `http://localhost:9777/callback`
 4. Copy **Client ID** and **Client Secret**
 
-Add to your `.env` file:
-
-```bash
-SNOW_INSTANCE=your-instance.service-now.com
-SNOW_CLIENT_ID=your-client-id
-SNOW_CLIENT_SECRET=your-client-secret
+In Snow-Flow TUI:
 ```
+/auth
+```
+
+Follow the prompts to enter your instance URL and OAuth credentials.
 
 ---
 
 ## LLM Provider Configuration
 
-Snow-Flow supports **75+ AI providers** via [models.dev](https://models.dev). Configure in `.env`:
+Snow-Flow supports **75+ AI providers**. Configure via environment variables or `/auth`:
 
 ### Claude (Recommended)
 
 ```bash
-DEFAULT_LLM_PROVIDER=anthropic
-ANTHROPIC_API_KEY=sk-ant-api03-...
+export ANTHROPIC_API_KEY=sk-ant-api03-...
 ```
 
-Or use Claude Pro/Max subscription (browser-based auth via `/auth`).
+Or use Claude Pro/Max subscription via browser auth.
 
-### OpenAI GPT-4
+### OpenAI
 
 ```bash
-DEFAULT_LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-...
+export OPENAI_API_KEY=sk-...
 ```
 
 ### Google Gemini
 
 ```bash
-DEFAULT_LLM_PROVIDER=google
-GOOGLE_API_KEY=AIza...
+export GOOGLE_API_KEY=AIza...
 ```
 
 ### 100% Free - Local Ollama
 
 ```bash
-# Install Ollama: https://ollama.com
+# Install: https://ollama.com
 ollama pull llama3.3
 
-# Configure
-DEFAULT_LLM_PROVIDER=ollama
-OLLAMA_BASE_URL=http://localhost:11434
-DEFAULT_OLLAMA_MODEL=llama3.3
+export OLLAMA_BASE_URL=http://localhost:11434
 ```
-
-### Other Providers
-
-DeepSeek, Mistral, Groq, Together, Replicate, and 70+ more. See [models.dev](https://models.dev) for the full list.
 
 ---
 
-## Commands Reference
+## TUI Keyboard Shortcuts
 
-### TUI Commands (inside Snow-Flow)
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+X` | Leader key (prefix for commands) |
+| `Tab` | Switch to next agent |
+| `F2` | Cycle through recent models |
+| `Enter` | Submit message |
+| `Shift+Enter` | Insert newline |
+| `Esc` | Interrupt operation |
+| `Ctrl+X H` | Show help |
+| `Ctrl+X N` | New session |
+| `Ctrl+X M` | List models |
 
-| Command | Description |
-|---------|-------------|
-| `/auth` | Authenticate with LLM, ServiceNow, and Enterprise |
-| `/help` | Show available commands |
-| `/clear` | Clear conversation history |
-| `/compact` | Toggle compact output mode |
-| `/exit` | Exit Snow-Flow |
+**Full keyboard reference:** [snow-flow.dev/en/tui-guide](https://snow-flow.dev/en/tui-guide)
 
-### CLI Commands
+---
+
+## CLI Commands
 
 ```bash
-snow-flow              # Start the TUI (auto-initializes on first run)
-snow-flow --version    # Show Snow-Flow version
-snow-flow --help       # Show help information
+snow-flow                    # Start TUI
+snow-flow auth login         # Authenticate
+snow-flow auth list          # Show auth status
+snow-flow sessions list      # List sessions
+snow-flow config show        # Show configuration
+snow-flow models             # List available models
+snow-flow run "prompt"       # Run single prompt
+snow-flow stats              # Show usage stats
 ```
+
+**Full CLI reference:** [snow-flow.dev/en/cli-reference](https://snow-flow.dev/en/cli-reference)
 
 ---
 
 ## Use With Any AI IDE
 
-Snow-Flow works with any MCP-compatible AI tool:
+Snow-Flow works with any MCP-compatible tool:
 
-| Tool | Config Location | Setup |
-|------|-----------------|-------|
-| **Snow-Flow TUI** | Built-in | Just run `snow-flow` |
-| **Claude Desktop** | `~/Library/Application Support/Claude/claude_desktop_config.json` | Copy MCP config |
-| **Cursor** | `.cursor/mcp.json` | Copy `.mcp.json` |
-| **Windsurf** | `mcp_config.json` | Copy `.mcp.json` |
-| **Continue.dev** | `~/.continue/config.json` | Add to `mcpServers` |
-
-After running `snow-flow` once, copy the generated `.mcp.json` to your AI tool's configuration location.
+| Tool | Setup |
+|------|-------|
+| **Snow-Flow TUI** | Built-in, just run `snow-flow` |
+| **Claude Desktop** | Copy `.mcp.json` to `~/Library/Application Support/Claude/` |
+| **Cursor** | Copy to `.cursor/mcp.json` |
+| **Windsurf** | Copy to `mcp_config.json` |
+| **Continue.dev** | Add to `~/.continue/config.json` |
 
 ---
 
 ## Local Development Workflow
 
-Snow-Flow supports pulling ServiceNow artifacts to local files for debugging:
+Pull ServiceNow artifacts for local editing:
 
 ```
-You: Pull the incident_dashboard widget to local files
+> Pull the incident_dashboard widget to local files
 
-Snow-Flow: Pulling widget to local files...
+Snow-Flow: Pulling widget...
   Created: .snow-flow/artifacts/sp_widget/incident_dashboard/
     - template.html
     - client_script.js
     - server_script.js
     - style.scss
 
-You: [Edit files locally with your favorite IDE]
+# Edit files with your IDE...
 
-You: Push the incident_dashboard widget back to ServiceNow
+> Push the incident_dashboard widget back to ServiceNow
 
-Snow-Flow: Validating changes...
+Snow-Flow: Validating...
   ✓ ES5 syntax valid
   ✓ Widget coherence validated
-  Deploying to ServiceNow...
-  ✓ Widget updated successfully
+  Deploying...
+  ✓ Widget updated
 ```
-
-This workflow gives you:
-- **Full IDE features** - Search, refactor, version control
-- **Offline editing** - Work without constant API calls
-- **Diff support** - See exactly what changed
-- **Team collaboration** - Share artifacts via git
-
----
-
-## MID Server Management
-
-Snow-Flow includes tools for managing ServiceNow MID Servers for on-premise integrations and Discovery:
-
-### Available Tools
-
-| Tool | Description |
-|------|-------------|
-| `snow_configure_mid_server` | List, configure, validate, and restart MID Servers |
-| `snow_test_mid_connectivity` | Test connectivity to external endpoints |
-| `snow_manage_mid_capabilities` | Manage MID Server capabilities |
-
-### Example Usage
-
-```
-You: List all MID Servers and their status
-
-You: Test connectivity from MID-Server-01 to api.example.com:443
-
-You: Validate and configure the new MID Server for Discovery
-
-You: Run a full diagnostic from MID-Server-02 to our database server
-```
-
-### MID Server Actions
-
-- **list** - List all MID Servers with status and capabilities
-- **status** - Get detailed status and health score
-- **configure** - Update IP address, network range, memory settings
-- **validate** - Mark a MID Server as validated
-- **restart** - Queue a restart command
-- **assign_application** - Assign applications to MID Servers
-
-### Connectivity Tests
-
-- **test_endpoint** - Test HTTP/HTTPS endpoint accessibility
-- **test_port** - Test TCP/UDP port connectivity
-- **ping** - ICMP ping test
-- **dns_lookup** - DNS resolution test
-- **full_diagnostic** - Run all tests at once
 
 ---
 
 ## Enterprise Features
 
-For teams that need external tool integrations:
+For teams needing external integrations:
 
-### Jira Integration
-- Bidirectional story/epic sync
-- JQL queries from your AI assistant
-- Automatic status updates
-- Sprint and backlog management
-
-### Azure DevOps Integration
-- Work item sync (Stories, Tasks, Bugs)
-- Pipeline status monitoring
-- Pull request tracking
-- Board management
-
-### Confluence Integration
-- Documentation sync
-- Knowledge article generation
-- Architecture diagram management
-- Space and page management
-
-### Stakeholder Seats
-- Read-only access for non-developers
-- Safe querying without deployment risk
-- Perfect for managers and analysts
+| Integration | Features |
+|-------------|----------|
+| **Jira** | Bidirectional sync, JQL queries, sprint management |
+| **Azure DevOps** | Work items, pipelines, PR tracking |
+| **Confluence** | Documentation sync, KB generation |
+| **Stakeholder Seats** | Read-only access for managers/analysts |
 
 **Pricing:**
-| Plan | Price | Features |
-|------|-------|----------|
-| **Individual** | $99/month | 1 developer, all integrations |
-| **Teams** | $79/user/month | 3+ users, shared workspace |
-| **Enterprise** | $49/seat/month | 25+ seats, white-label, SSO |
 
-Start at [portal.snow-flow.dev](https://portal.snow-flow.dev)
+| Plan | Price | Users |
+|------|-------|-------|
+| Individual | $29/mo | 1 developer |
+| Teams | $99/user/mo | 3+ users |
+| Enterprise | Custom | 25+ seats, SSO, white-label |
+
+**Start:** [portal.snow-flow.dev](https://portal.snow-flow.dev)
 
 ---
 
 ## Project Structure
 
-After running `snow-flow`:
-
 ```
 your-project/
-├── .env                    # Environment configuration (DO NOT COMMIT)
-├── .env.example            # Template for environment variables
+├── .env                    # Credentials (git-ignored)
 ├── .mcp.json               # MCP server configuration
-├── CLAUDE.md               # AI instructions for Claude Code
-├── AGENTS.md               # AI instructions for other LLMs
-├── .snow-code/             # Snow-Flow TUI configuration
-│   └── config.json         # MCP servers config
-├── .claude/                # Claude Code configuration
-│   └── config.json         # Claude-specific MCP config
-└── .snow-flow/             # Snow-Flow workspace
-    ├── memory/             # Persistent agent memory
+├── CLAUDE.md               # AI instructions
+└── .snow-flow/
     ├── artifacts/          # Local artifact cache
-    └── token-cache.json    # OAuth token cache
+    └── token-cache.json    # OAuth tokens
 ```
-
----
-
-## Requirements
-
-- **Node.js** 18 or higher
-- **ServiceNow** instance with OAuth 2.0 configured
-- **LLM Provider** - Any provider supported by [models.dev](https://models.dev)
 
 ---
 
@@ -435,42 +354,38 @@ your-project/
 
 ### "ServiceNow authentication failed"
 
-1. Verify OAuth credentials in `.env`
-2. Check OAuth app configuration in ServiceNow
-3. Ensure redirect URL is `http://localhost:3005/callback`
-4. Run `/auth` again in the TUI
-
-### "MCP servers not loading"
-
-1. Ensure you ran `snow-flow` at least once (creates config files)
-2. Check `.mcp.json` exists in your project directory
-3. Restart Snow-Flow
+1. Verify OAuth app in ServiceNow has Redirect URL: `http://localhost:9777/callback`
+2. Check Client ID and Client Secret
+3. Run `/auth` again
 
 ### "ES5 validation errors"
 
-ServiceNow runs on Mozilla Rhino (ES5 only). Common fixes:
-- Use `var` instead of `const`/`let`
-- Use `function() {}` instead of arrow functions `() => {}`
-- Use string concatenation instead of template literals
-- Use traditional `for` loops instead of `for...of`
+ServiceNow uses Rhino (ES5). Use:
+- `var` instead of `const`/`let`
+- `function(){}` instead of `() => {}`
+- String concatenation instead of template literals
 
 ### "Widget coherence failed"
 
-Ensure your widget's HTML, client script, and server script communicate properly:
-- Every `data.property` in server script is used in HTML
-- Every `ng-click="method()"` in HTML has matching `c.method` in client script
-- Every `c.server.get({action})` has matching `if(input.action)` in server script
+Ensure HTML/client/server scripts communicate:
+- Every `data.property` in server is used in HTML
+- Every `ng-click="method()"` has matching `c.method` in client
+- Every `c.server.get({action})` has matching handler in server
 
 ---
 
-## Security
+## Documentation
 
-- **Credentials** - Stored locally in `.env` (git-ignored by default)
-- **OAuth Tokens** - Cached locally, auto-refreshed
-- **Enterprise** - JWT-based authentication, credentials never leave your machine
-- **API Calls** - Direct to ServiceNow, no proxy (except Enterprise MCP features)
-
-**Never commit `.env` files to version control.**
+| Resource | URL |
+|----------|-----|
+| **Quick Start** | [snow-flow.dev/en/docs](https://snow-flow.dev/en/docs) |
+| **MCP Tools Reference** | [snow-flow.dev/en/mcp-reference](https://snow-flow.dev/en/mcp-reference) |
+| **TUI Guide** | [snow-flow.dev/en/tui-guide](https://snow-flow.dev/en/tui-guide) |
+| **CLI Reference** | [snow-flow.dev/en/cli-reference](https://snow-flow.dev/en/cli-reference) |
+| **OAuth Setup** | [snow-flow.dev/en/oauth-setup](https://snow-flow.dev/en/oauth-setup) |
+| **Enterprise Portal** | [portal.snow-flow.dev](https://portal.snow-flow.dev) |
+| **GitHub** | [github.com/groeimetai/snow-flow](https://github.com/groeimetai/snow-flow) |
+| **npm** | [npmjs.com/package/snow-flow](https://www.npmjs.com/package/snow-flow) |
 
 ---
 
@@ -483,34 +398,22 @@ We welcome contributions! Snow-Flow is open source under the Elastic License 2.0
 
 ---
 
-## Links
-
-| Resource | URL |
-|----------|-----|
-| **npm** | [npmjs.com/package/snow-flow](https://www.npmjs.com/package/snow-flow) |
-| **GitHub** | [github.com/groeimetai/snow-flow](https://github.com/groeimetai/snow-flow) |
-| **Documentation** | [snow-flow.dev/docs](https://snow-flow.dev/docs) |
-| **Enterprise Portal** | [portal.snow-flow.dev](https://portal.snow-flow.dev) |
-
----
-
 ## License
 
 **Elastic License 2.0**
 
 - Free to use, modify, and redistribute
-- Can be used commercially
+- Commercial use allowed
 - Full source code access
-- Cannot provide Snow-Flow as a managed service to third parties
-- Cannot remove licensing/copyright notices
+- Cannot provide as a managed service to third parties
 
-See [LICENSE](LICENSE) for full details.
+See [LICENSE](LICENSE) for details.
 
 ---
 
 <p align="center">
-  <strong>Snow-Flow</strong> - The free, open-source ServiceNow Build Agent alternative.<br>
-  Built by developers, for developers.
+  <strong>Snow-Flow</strong> - Break free from vendor lock-in.<br>
+  Use YOUR AI. Keep your freedom.
 </p>
 
 <p align="center">
