@@ -179,7 +179,7 @@
       "onprem": "On-Premise Option"
     }
   },
-  "developers": {
+  "devPhilosophy": {
     "title": "Built by developers.",
     "titleBreak": "For developers.",
     "subtitle": "We've been in the ServiceNow trenches. We built Snow-Flow because we needed it ourselves.",

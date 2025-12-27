@@ -179,7 +179,7 @@
       "onprem": "On-Premise Optie"
     }
   },
-  "developers": {
+  "devPhilosophy": {
     "title": "Gebouwd door developers.",
     "titleBreak": "Voor developers.",
     "subtitle": "We hebben in de ServiceNow loopgraven gezeten. We bouwden Snow-Flow omdat we het zelf nodig hadden.",
