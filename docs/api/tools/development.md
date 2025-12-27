@@ -1266,9 +1266,9 @@ const result = await snow_orchestrate_development({
 
 ---
 
-## snow_preview_widget
+## snow_validate_widget_coherence
 
-Renders widget preview with test data for validation before deployment. Simulates Service Portal environment, checks dependencies, and validates data binding.
+Validates widget coherence by analyzing server/client/HTML component communication. Checks data bindings, action handlers, and method implementations to ensure all parts work together correctly.
 
 | Property | Value |
 |----------|-------|
@@ -1280,8 +1280,10 @@ Renders widget preview with test data for validation before deployment. Simulate
 ### Example
 
 ```javascript
-// Using snow_preview_widget
-const result = await snow_preview_widget({
+// Using snow_validate_widget_coherence
+const result = await snow_validate_widget_coherence({
+  sys_id: 'widget_sys_id',
+  validation_mode: 'full'
 });
 ```
 

@@ -454,7 +454,7 @@
       "subtitle": "Every action your consultants take passes through multiple safety checks before reaching client environments.",
       "tabs": {
         "validation": "Validation",
-        "preview": "Preview",
+        "coherence": "Coherence",
         "isolation": "Isolation",
         "access": "Access"
       },
@@ -466,13 +466,13 @@
         "feature3": "Widget coherence validation (server↔client↔HTML)",
         "feature4": "Dependency verification (tables, script includes)"
       },
-      "preview": {
-        "title": "Widget Preview",
-        "desc": "Test widgets before deployment to production.",
-        "feature1": "Render with test data without saving",
-        "feature2": "Template analysis and binding validation",
-        "feature3": "Data flow verification",
-        "feature4": "Three preview modes (full, template-only, data-only)"
+      "coherence": {
+        "title": "Widget Coherence Validation",
+        "desc": "Validate that widget components communicate correctly.",
+        "feature1": "Server↔Client↔HTML communication check",
+        "feature2": "Data binding validation (template vs server)",
+        "feature3": "Action handler verification (client calls vs server handlers)",
+        "feature4": "Method implementation check (ng-click vs $scope methods)"
       },
       "isolation": {
         "title": "Update Set Isolation",

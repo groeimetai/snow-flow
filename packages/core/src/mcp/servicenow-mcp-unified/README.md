@@ -80,7 +80,7 @@ Tools are organized by **domain** (functional area), not by original server:
 - `snow_create_artifact` - Create widgets, pages, scripts, and more
 - `snow_validate_deployment` - Pre-deployment validation
 - `snow_rollback_deployment` - Safe rollback
-- `snow_preview_widget` - Widget preview
+- `snow_validate_widget_coherence` - Widget preview
 - `snow_validate_artifact_coherence` - Widget coherence
 
 ### 2. Operations Tools (operations/)

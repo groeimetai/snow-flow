@@ -33,7 +33,7 @@ const EDGE_CASE_CLASSIFICATIONS: Record<string, { permission: 'read' | 'write'; 
 
   // Validation/Testing/Preview - READ (only validate, don't modify)
   'snow_widget_test': { permission: 'read', reason: 'Testing function - validates widget without modifying' },
-  'snow_preview_widget': { permission: 'read', reason: 'Preview function - renders widget without saving' },
+  'snow_validate_widget_coherence': { permission: 'read', reason: 'Preview function - renders widget without saving' },
   'snow_debug_widget_fetch': { permission: 'read', reason: 'Debug function - fetches widget data for debugging' },
 
   // Discovery/Inspection - READ

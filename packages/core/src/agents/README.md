@@ -21,7 +21,7 @@ Specializes in creating ServiceNow Service Portal widgets.
 
 **MCP Tools Used:**
 - `snow_create_artifact` - Create and deploy widgets to ServiceNow
-- `snow_preview_widget` - Preview widget rendering
+- `snow_validate_widget_coherence` - Preview widget rendering
 - `snow_widget_test` - Test widget functionality
 
 ### 2. Flow Builder Agent (`flow-builder-agent.ts`)

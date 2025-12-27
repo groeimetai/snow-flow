@@ -176,22 +176,21 @@ class ServiceNowDeploymentMCP {
           },
         },
         {
-          name: 'snow_preview_widget',
-          description: 'Renders widget preview with test data for validation before deployment. Simulates Service Portal environment, checks dependencies, and validates data binding.',
+          name: 'snow_validate_widget_coherence',
+          description: 'Validates widget coherence by analyzing server/client/HTML component communication. Checks data bindings, action handlers, and method implementations.',
           inputSchema: {
             type: 'object',
             properties: {
-              sys_id: { type: 'string', description: 'Widget sys_id to preview (optional if providing code)' },
+              sys_id: { type: 'string', description: 'Widget sys_id to validate (optional if providing code)' },
               template: { type: 'string', description: 'HTML template code (optional if using sys_id)' },
               css: { type: 'string', description: 'CSS styles (optional)' },
               client_script: { type: 'string', description: 'Client controller script (optional)' },
               server_script: { type: 'string', description: 'Server script (optional)' },
-              test_data: { type: 'string', description: 'JSON test data for server script' },
               option_schema: { type: 'string', description: 'Widget options schema JSON' },
-              render_mode: { 
-                type: 'string', 
+              validation_mode: {
+                type: 'string',
                 enum: ['full', 'template_only', 'data_only'],
-                description: 'Preview mode: full (render everything), template_only (no JS), data_only (server data)',
+                description: 'Validation mode: full (all components), template_only (HTML bindings), data_only (server data)',
                 default: 'full'
               },
             },
@@ -341,8 +340,8 @@ class ServiceNowDeploymentMCP {
           case 'snow_auth_diagnostics':
             result = await this.runAuthDiagnostics(args);
             break;
-          case 'snow_preview_widget':
-            result = await this.previewWidget(args);
+          case 'snow_validate_widget_coherence':
+            result = await this.validateWidgetCoherence(args);
             break;
           case 'snow_widget_test':
             result = await this.testWidget(args);
@@ -1322,7 +1321,7 @@ ${args._coherenceWarnings || ''}
 1. Check authentication: snow_auth_diagnostics()
 2. Verify Update Set: snow_update_set_current()
 3. Check permissions: Ensure user has sp_admin role
-4. Try widget preview: snow_preview_widget()
+4. Validate widget coherence: snow_validate_widget_coherence()
 
 💡 Alternative Approaches:
 • Use snow_create_artifact with smaller components first
@@ -1416,7 +1415,7 @@ ${is403Error ? '\n⚠️  **Possible False Negative**: Widget may have been crea
 
 💡 Alternative Approaches:
 • Check if widget actually exists in ServiceNow manually
-• Use snow_preview_widget() to test first
+• Use snow_validate_widget_coherence() to validate first
 • Deploy components separately
 • Use snow_widget_test() for validation
 
@@ -5179,9 +5178,9 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
   }
 
   /**
-   * Preview widget with test data
+   * Validate widget coherence - checks server/client/HTML component communication
    */
-  private async previewWidget(args: any) {
+  private async validateWidgetCoherence(args: any) {
     try {
       // Check authentication first
       const authResult = await this.deploymentAuthManager.ensureDeploymentAuth();
@@ -5196,7 +5195,7 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
         };
       }
 
-      this.logger.info('Previewing widget', args);
+      this.logger.info('Validating widget coherence', args);
       
       let widgetData: any = {};
       
@@ -5232,7 +5231,7 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
       let serverData: Record<string, any> = {};
       let serverError = null;
       
-      if (widgetData.server_script && args.render_mode !== 'template_only') {
+      if (widgetData.server_script && args.validation_mode !== 'template_only') {
         try {
           // Parse test data
           const testData = args.test_data ? JSON.parse(args.test_data) : {};
@@ -5337,7 +5336,7 @@ ${dependencies.length > 0 ? dependencies.map(d => `- ${d.name}: ${d.status}\n  $
 🔗 **Integration Check:**
 ${this.checkIntegration(integration)}
 
-${args.render_mode === 'data_only' ? `
+${args.validation_mode === 'data_only' ? `
 📊 **Server Data Output:**
 \`\`\`json
 ${JSON.stringify(serverData, null, 2)}
@@ -5357,7 +5356,7 @@ Use \`snow_widget_test\` to run automated tests with different scenarios.`,
         ],
       };
     } catch (error) {
-      throw new Error(`Widget preview failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Widget coherence validation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -5541,7 +5540,7 @@ ${warningTests > 0 ? '1. Review warnings and consider improvements\n' : ''}
 3. Deploy to a test portal page for user testing
 4. Consider adding more comprehensive test scenarios
 
-Use \`snow_preview_widget\` to see a detailed preview of the widget rendering.`,
+Use \`snow_validate_widget_coherence\` to validate the widget component communication.`,
           },
         ],
       };

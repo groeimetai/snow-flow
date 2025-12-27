@@ -454,7 +454,7 @@
       "subtitle": "Elke actie die je consultants uitvoeren passeert meerdere veiligheidschecks voordat het de klantomgeving bereikt.",
       "tabs": {
         "validation": "Validatie",
-        "preview": "Preview",
+        "coherence": "Coherentie",
         "isolation": "Isolatie",
         "access": "Toegang"
       },
@@ -466,13 +466,13 @@
         "feature3": "Widget coherentie validatie (server↔client↔HTML)",
         "feature4": "Dependency verificatie (tabellen, script includes)"
       },
-      "preview": {
-        "title": "Widget Preview",
-        "desc": "Test widgets voordat je naar productie deployt.",
-        "feature1": "Render met testdata zonder op te slaan",
-        "feature2": "Template analyse en binding validatie",
-        "feature3": "Data flow verificatie",
-        "feature4": "Drie preview modes (volledig, template-only, data-only)"
+      "coherence": {
+        "title": "Widget Coherentie Validatie",
+        "desc": "Valideer dat widget componenten correct communiceren.",
+        "feature1": "Server↔Client↔HTML communicatie check",
+        "feature2": "Data binding validatie (template vs server)",
+        "feature3": "Action handler verificatie (client calls vs server handlers)",
+        "feature4": "Method implementatie check (ng-click vs $scope methods)"
       },
       "isolation": {
         "title": "Update Set Isolatie",

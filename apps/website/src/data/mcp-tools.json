@@ -2351,8 +2351,8 @@
           "parameters": []
         },
         {
-          "name": "snow_preview_widget",
-          "description": "Renders widget preview with test data for validation before deployment. Simulates Service Portal environment, checks dependencies, and validates data binding.",
+          "name": "snow_validate_widget_coherence",
+          "description": "Validates widget coherence by analyzing server/client/HTML component communication. Checks data bindings, action handlers, and method implementations.",
           "permission": "read",
           "complexity": "intermediate",
           "parameters": []
