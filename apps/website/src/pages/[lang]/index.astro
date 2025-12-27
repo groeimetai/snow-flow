@@ -546,6 +546,110 @@ const description = t('meta.home.description');
         </div>
     </section>
 
+    <!-- Getting Started Section -->
+    <section id="quickstart" class="section getting-started-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">{t('developers.getStarted.label')}</span>
+                <h2 class="section-title">{t('developers.getStarted.title')}</h2>
+                <p class="section-subtitle">{t('developers.getStarted.subtitle')}</p>
+            </div>
+
+            <div class="getting-started-steps">
+                <!-- Step 1: Install -->
+                <div class="step-block">
+                    <div class="step-number-large">1</div>
+                    <div class="step-content">
+                        <h3>{t('developers.getStarted.step1Title')}</h3>
+                        <div class="terminal-block">
+                            <div class="terminal-header">
+                                <div class="terminal-dots">
+                                    <span class="red"></span>
+                                    <span class="yellow"></span>
+                                    <span class="green"></span>
+                                </div>
+                                <span class="terminal-title">Terminal</span>
+                                <button class="terminal-copy" data-command="npm install -g snow-flow" aria-label="Copy command">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="terminal-body">
+                                <div class="terminal-line">
+                                    <span class="terminal-prompt">$</span>
+                                    <span class="terminal-command">npm install -g snow-flow</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Start TUI & Authenticate -->
+                <div class="step-block">
+                    <div class="step-number-large">2</div>
+                    <div class="step-content">
+                        <h3>{t('developers.getStarted.step2Title')}</h3>
+                        <div class="terminal-block">
+                            <div class="terminal-header">
+                                <div class="terminal-dots">
+                                    <span class="red"></span>
+                                    <span class="yellow"></span>
+                                    <span class="green"></span>
+                                </div>
+                                <span class="terminal-title">Terminal</span>
+                                <div></div>
+                            </div>
+                            <div class="terminal-body">
+                                <div class="terminal-line">
+                                    <span class="terminal-prompt">$</span>
+                                    <span class="terminal-command">snow-flow</span>
+                                </div>
+                                <div class="terminal-box">
+                                    <div class="terminal-box-title">SNOW-FLOW v8.30.20</div>
+                                    <div class="terminal-box-content">500+ MCP Tools Ready</div>
+                                </div>
+                                <div class="terminal-line" style="margin-top: 12px;">
+                                    <span class="terminal-prompt">&gt;</span>
+                                    <span class="terminal-command">/auth</span>
+                                </div>
+                                <div class="terminal-output">? Select provider: <span class="terminal-highlight">ServiceNow MID Server</span></div>
+                                <div class="terminal-output"><span class="terminal-success">✓</span> Connected to ServiceNow</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Start Building -->
+                <div class="step-block">
+                    <div class="step-number-large">3</div>
+                    <div class="step-content">
+                        <h3>{t('developers.getStarted.step3Title')}</h3>
+                        <div class="terminal-block">
+                            <div class="terminal-header">
+                                <div class="terminal-dots">
+                                    <span class="red"></span>
+                                    <span class="yellow"></span>
+                                    <span class="green"></span>
+                                </div>
+                                <span class="terminal-title">Terminal</span>
+                                <div></div>
+                            </div>
+                            <div class="terminal-body">
+                                <div class="terminal-output">{t('developers.getStarted.prompt')}</div>
+                                <div class="terminal-line" style="margin-top: 8px;">
+                                    <span class="terminal-prompt">&gt;</span>
+                                    <span class="terminal-command">{t('developers.getStarted.examplePrompt')}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Pricing Section -->
     <section id="pricing" class="section pricing-section">
         <div class="container">

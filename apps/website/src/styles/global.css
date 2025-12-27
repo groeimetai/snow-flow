@@ -3231,3 +3231,173 @@
         }
 
 
+
+        /* ================================
+           GETTING STARTED TERMINAL STYLES
+           ================================ */
+        .getting-started-section {
+            padding: 80px 0;
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 217, 255, 0.02) 50%, transparent 100%);
+        }
+
+        .getting-started-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            margin-top: 48px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .step-block {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        .step-number-large {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .terminal-block {
+            background: #0d0d14;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .terminal-dots span {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dots .red { background: #FF5F56; }
+        .terminal-dots .yellow { background: #FFBD2E; }
+        .terminal-dots .green { background: #27C93F; }
+
+        .terminal-title {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .terminal-copy {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .terminal-copy:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .terminal-body {
+            padding: 16px;
+        }
+
+        .terminal-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .terminal-line:last-child {
+            margin-bottom: 0;
+        }
+
+        .terminal-prompt {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .terminal-command {
+            color: var(--text-primary);
+        }
+
+        .terminal-output {
+            color: var(--text-secondary);
+            padding-left: 16px;
+        }
+
+        .terminal-success {
+            color: var(--accent-green);
+        }
+
+        .terminal-highlight {
+            color: var(--accent-cyan);
+        }
+
+        .terminal-box {
+            margin-top: 8px;
+            padding: 12px 16px;
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        .terminal-box-title {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .terminal-box-content {
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 640px) {
+            .step-block {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .step-number-large {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+        }
