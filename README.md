@@ -190,7 +190,7 @@ Create an OAuth application in your ServiceNow instance:
 2. Click **New → Create an OAuth API endpoint for external clients**
 3. Configure:
    - **Name**: `Snow-Flow`
-   - **Redirect URL**: `http://localhost:9777/callback`
+   - **Redirect URL**: `http://localhost:3005/callback`
 4. Copy **Client ID** and **Client Secret**
 
 In Snow-Flow TUI:
@@ -354,7 +354,7 @@ your-project/
 
 ### "ServiceNow authentication failed"
 
-1. Verify OAuth app in ServiceNow has Redirect URL: `http://localhost:9777/callback`
+1. Verify OAuth app in ServiceNow has Redirect URL: `http://localhost:3005/callback`
 2. Check Client ID and Client Secret
 3. Run `/auth` again
 

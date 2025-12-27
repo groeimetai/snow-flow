@@ -34,7 +34,7 @@ const steps = [
             { label: 'Name', value: 'Snow-Flow MCP', desc: lang === 'en' ? 'Descriptive name for the application' : 'Beschrijvende naam voor de applicatie' },
             { label: 'Client ID', value: lang === 'en' ? '(auto-generated)' : '(automatisch gegenereerd)', desc: lang === 'en' ? 'Copy this value after saving' : 'Kopieer deze waarde na opslaan' },
             { label: 'Client Secret', value: lang === 'en' ? '(auto-generated)' : '(automatisch gegenereerd)', desc: lang === 'en' ? 'Copy this value after saving' : 'Kopieer deze waarde na opslaan' },
-            { label: 'Redirect URL', value: 'http://localhost:9777/callback', desc: lang === 'en' ? 'Required for OAuth flow' : 'Vereist voor OAuth flow' },
+            { label: 'Redirect URL', value: 'http://localhost:3005/callback', desc: lang === 'en' ? 'Required for OAuth flow' : 'Vereist voor OAuth flow' },
             { label: 'Active', value: lang === 'en' ? 'Checked' : 'Aangevinkt', desc: '' },
         ]
     },
@@ -156,8 +156,8 @@ const steps = [
                         <div>
                             <strong>{lang === 'en' ? 'Tip:' : 'Tip:'}</strong>
                             {lang === 'en'
-                                ? ' The redirect URL must be exactly http://localhost:9777/callback. Snow-Flow starts a temporary local server on this port to receive the OAuth callback.'
-                                : ' De redirect URL moet exact http://localhost:9777/callback zijn. Snow-Flow start een tijdelijke lokale server op deze poort om de OAuth callback te ontvangen.'}
+                                ? ' The redirect URL must be exactly http://localhost:3005/callback. Snow-Flow starts a temporary local server on this port to receive the OAuth callback.'
+                                : ' De redirect URL moet exact http://localhost:3005/callback zijn. Snow-Flow start een tijdelijke lokale server op deze poort om de OAuth callback te ontvangen.'}
                         </div>
                     </div>
                 </div>
@@ -361,14 +361,14 @@ SERVICENOW_CLIENT_SECRET=your-client-secret`}</pre>
                     <div class="trouble-card">
                         <h4>{lang === 'en' ? 'Redirect URI Mismatch' : 'Redirect URI Mismatch'}</h4>
                         <p>{lang === 'en'
-                            ? 'Ensure the Redirect URL in ServiceNow is exactly: http://localhost:9777/callback'
-                            : 'Zorg dat de Redirect URL in ServiceNow exact is: http://localhost:9777/callback'}</p>
+                            ? 'Ensure the Redirect URL in ServiceNow is exactly: http://localhost:3005/callback'
+                            : 'Zorg dat de Redirect URL in ServiceNow exact is: http://localhost:3005/callback'}</p>
                     </div>
                     <div class="trouble-card">
-                        <h4>{lang === 'en' ? 'Port 9777 Already in Use' : 'Poort 9777 Al in Gebruik'}</h4>
+                        <h4>{lang === 'en' ? 'Port 3005 Already in Use' : 'Poort 3005 Al in Gebruik'}</h4>
                         <p>{lang === 'en'
-                            ? 'Close other applications using port 9777, or check for stuck Snow-Flow processes.'
-                            : 'Sluit andere applicaties die poort 9777 gebruiken, of controleer op vastgelopen Snow-Flow processen.'}</p>
+                            ? 'Close other applications using port 3005, or check for stuck Snow-Flow processes.'
+                            : 'Sluit andere applicaties die poort 3005 gebruiken, of controleer op vastgelopen Snow-Flow processen.'}</p>
                     </div>
                     <div class="trouble-card">
                         <h4>{lang === 'en' ? 'Token Expired' : 'Token Verlopen'}</h4>
