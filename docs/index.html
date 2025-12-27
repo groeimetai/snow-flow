@@ -1131,10 +1131,10 @@
             </div>
 
             <div class="sidebar-section">
-                <div class="sidebar-title">CLI & TUI Reference</div>
+                <div class="sidebar-title">TUI Reference</div>
                 <ul class="sidebar-links">
-                    <li><a href="#cli-commands">CLI Commands</a></li>
-                    <li><a href="#tui-usage">TUI Guide</a></li>
+                    <li><a href="#cli-commands">Starting Snow-Flow</a></li>
+                    <li><a href="#tui-usage">Commands & Shortcuts</a></li>
                 </ul>
             </div>
 
@@ -1573,237 +1573,55 @@ ollama pull llama3.3
 
             <div class="section-divider"></div>
 
-            <!-- CLI Commands -->
+            <!-- Starting Snow-Flow -->
             <section id="cli-commands">
-                <h2>CLI Reference</h2>
+                <h2>Starting Snow-Flow</h2>
 
-                <p>Complete reference of all Snow-Flow CLI commands, options, and usage examples.</p>
+                <p>Snow-Flow is a TUI-first application. Simply run the command to start your interactive ServiceNow development session.</p>
 
-                <!-- Main Command -->
-                <h3>snow-flow</h3>
-                <p>Start the TUI (Terminal User Interface)</p>
                 <div class="code-block">
                     <div class="code-header">
                         <span class="code-lang">bash</span>
                         <button class="code-copy" onclick="copyCode(this)">Copy</button>
                     </div>
                     <div class="code-content">
-<pre>snow-flow [project]</pre>
-                    </div>
-                </div>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Option</th><th>Description</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>--model, -m</code></td><td>Initial model to use</td></tr>
-                            <tr><td><code>--prompt, -p</code></td><td>Initial prompt to send</td></tr>
-                            <tr><td><code>--agent, -a</code></td><td>Initial agent mode (build, plan, general)</td></tr>
-                            <tr><td><code>--session, -s</code></td><td>Resume a specific session</td></tr>
-                            <tr><td><code>--version</code></td><td>Show version number</td></tr>
-                            <tr><td><code>--help</code></td><td>Show help information</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">Examples</span>
-                    </div>
-                    <div class="code-content">
-<pre>snow-flow
+<pre><span class="comment"># Start Snow-Flow TUI</span>
+snow-flow
+
+<span class="comment"># Start with a specific AI model</span>
 snow-flow --model anthropic/claude-sonnet-4
-snow-flow --agent plan
+
+<span class="comment"># Resume a previous session</span>
 snow-flow --session abc123</pre>
                     </div>
                 </div>
 
-                <!-- Auth Command -->
-                <h3>snow-flow auth</h3>
-                <p>Authentication and provider management</p>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">bash</span>
-                    </div>
-                    <div class="code-content">
-<pre>snow-flow auth &lt;action&gt;</pre>
-                    </div>
-                </div>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Subcommand</th><th>Description</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>login [url]</code></td><td>Authenticate with providers and ServiceNow</td></tr>
-                            <tr><td><code>logout</code></td><td>Clear authentication tokens</td></tr>
-                            <tr><td><code>list</code></td><td>Show configured authentication</td></tr>
-                            <tr><td><code>enterprise-login</code></td><td>Login to Snow-Flow Enterprise</td></tr>
-                            <tr><td><code>enterprise-status</code></td><td>Show enterprise connection status</td></tr>
-                            <tr><td><code>portal-login</code></td><td>Login via portal (Individual/Teams)</td></tr>
-                            <tr><td><code>portal-status</code></td><td>Show portal authentication status</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">Examples</span>
-                    </div>
-                    <div class="code-content">
-<pre>snow-flow auth login
-snow-flow auth login https://dev12345.service-now.com
-snow-flow auth list
-snow-flow auth enterprise-login</pre>
-                    </div>
-                </div>
-
-                <!-- Sessions Command -->
-                <h3>snow-flow sessions</h3>
-                <p>Manage conversation sessions</p>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">bash</span>
-                    </div>
-                    <div class="code-content">
-<pre>snow-flow sessions &lt;action&gt;</pre>
-                    </div>
-                </div>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Subcommand</th><th>Description</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>list</code></td><td>List all sessions</td></tr>
-                            <tr><td><code>recent</code></td><td>Show recently used sessions</td></tr>
-                            <tr><td><code>search</code></td><td>Search sessions by query</td></tr>
-                            <tr><td><code>tree</code></td><td>Show session fork tree</td></tr>
-                            <tr><td><code>rename</code></td><td>Rename a session</td></tr>
-                            <tr><td><code>info</code></td><td>Show session details</td></tr>
-                            <tr><td><code>resume</code></td><td>Resume a session in TUI</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <h3>Startup Options</h3>
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr><th>Option</th><th>Description</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td><code>--session, -s</code></td><td>Session ID</td></tr>
-                            <tr><td><code>--limit, -l</code></td><td>Maximum results (default: 20)</td></tr>
-                            <tr><td><code>--format, -f</code></td><td>Output format: table, json, tree, compact</td></tr>
-                            <tr><td><code>--all, -a</code></td><td>Show all sessions (not just current project)</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">Examples</span>
-                    </div>
-                    <div class="code-content">
-<pre>snow-flow sessions list
-snow-flow sessions search --query "incident"
-snow-flow sessions tree --session abc123</pre>
-                    </div>
-                </div>
-
-                <!-- Config Command -->
-                <h3>snow-flow config</h3>
-                <p>Manage Snow-Flow configuration</p>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">bash</span>
-                    </div>
-                    <div class="code-content">
-<pre>snow-flow config &lt;action&gt;</pre>
-                    </div>
-                </div>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Subcommand</th><th>Description</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>show</code></td><td>Show current configuration</td></tr>
-                            <tr><td><code>get</code></td><td>Get specific config value</td></tr>
-                            <tr><td><code>set</code></td><td>Set config value</td></tr>
-                            <tr><td><code>edit</code></td><td>Open config in editor</td></tr>
-                            <tr><td><code>paths</code></td><td>Show config file locations</td></tr>
-                            <tr><td><code>reset</code></td><td>Reset to defaults</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">Examples</span>
-                    </div>
-                    <div class="code-content">
-<pre>snow-flow config show
-snow-flow config get --key defaultModel
-snow-flow config set --key theme --value dracula
-snow-flow config paths</pre>
-                    </div>
-                </div>
-
-                <!-- Provider Command -->
-                <h3>snow-flow provider</h3>
-                <p>Manage LLM provider configuration</p>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Subcommand</th><th>Description</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>list</code></td><td>List available providers</td></tr>
-                            <tr><td><code>configure</code></td><td>Configure a provider</td></tr>
-                            <tr><td><code>test</code></td><td>Test provider connection</td></tr>
-                            <tr><td><code>models</code></td><td>List available models for provider</td></tr>
+                            <tr><td><code>--model, -m</code></td><td>Start with a specific AI model</td></tr>
+                            <tr><td><code>--agent, -a</code></td><td>Start in specific agent mode (build, plan, general)</td></tr>
+                            <tr><td><code>--session, -s</code></td><td>Resume a previous session</td></tr>
+                            <tr><td><code>--version</code></td><td>Show version number</td></tr>
                         </tbody>
                     </table>
                 </div>
 
-                <!-- MCP Command -->
-                <h3>snow-flow mcp</h3>
-                <p>MCP server management</p>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Subcommand</th><th>Description</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>list</code></td><td>List configured MCP servers</td></tr>
-                            <tr><td><code>add</code></td><td>Add an MCP server</td></tr>
-                            <tr><td><code>remove</code></td><td>Remove an MCP server</td></tr>
-                            <tr><td><code>test</code></td><td>Test MCP server connection</td></tr>
-                            <tr><td><code>sync</code></td><td>Sync MCP configuration to IDEs</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Doctor Command -->
-                <h3>snow-flow doctor</h3>
-                <p>Diagnose and fix common issues</p>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Subcommand</th><th>Description</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>check</code></td><td>Run all diagnostic checks</td></tr>
-                            <tr><td><code>fix</code></td><td>Auto-fix detected issues</td></tr>
-                            <tr><td><code>auth</code></td><td>Check authentication status</td></tr>
-                            <tr><td><code>mcp</code></td><td>Check MCP server status</td></tr>
-                        </tbody>
-                    </table>
+                <div class="callout info">
+                    <div class="callout-title">Everything Happens in the TUI</div>
+                    <p>Once Snow-Flow starts, all operations happen within the TUI. Use slash commands like <code>/auth</code>, <code>/models</code>, and <code>/sessions</code> for configuration and management.</p>
                 </div>
             </section>
 
-            <!-- TUI Usage -->
+            <!-- TUI Guide -->
             <section id="tui-usage">
-                <h2>TUI Guide</h2>
+                <h2>TUI Reference</h2>
 
-                <p>Complete guide to the Snow-Flow Terminal User Interface. Learn keyboard shortcuts, slash commands, and agent modes to maximize productivity.</p>
+                <p>The Snow-Flow TUI is your complete development environment. Master keyboard shortcuts, slash commands, and agent modes to build ServiceNow solutions efficiently.</p>
 
                 <!-- Interface Overview -->
                 <h3>Interface Overview</h3>
@@ -1822,8 +1640,93 @@ snow-flow config paths</pre>
                     </div>
                 </div>
 
+                <!-- Slash Commands -->
+                <h3>Slash Commands</h3>
+                <p>Type these commands directly in the TUI input area:</p>
+
+                <h4>Session Management</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Command</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>/new</code>, <code>/clear</code></td><td>Start a new session</td></tr>
+                            <tr><td><code>/sessions</code>, <code>/resume</code></td><td>List and resume previous sessions</td></tr>
+                            <tr><td><code>/timeline</code>, <code>/history</code></td><td>Show session timeline and forks</td></tr>
+                            <tr><td><code>/compact</code>, <code>/summarize</code></td><td>Compact session history to save context</td></tr>
+                            <tr><td><code>/export</code></td><td>Export conversation to file</td></tr>
+                            <tr><td><code>/share</code></td><td>Share current session</td></tr>
+                            <tr><td><code>/unshare</code></td><td>Stop sharing session</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Configuration</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Command</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>/auth</code>, <code>/login</code></td><td>Authenticate with ServiceNow and LLM providers</td></tr>
+                            <tr><td><code>/models</code></td><td>List and select AI models</td></tr>
+                            <tr><td><code>/agents</code></td><td>List and switch between agents</td></tr>
+                            <tr><td><code>/themes</code></td><td>Switch color theme</td></tr>
+                            <tr><td><code>/init</code></td><td>Initialize project (create AGENTS.md)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>View Options</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Command</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>/details</code></td><td>Toggle tool execution details</td></tr>
+                            <tr><td><code>/thinking</code></td><td>Toggle AI thinking blocks visibility</td></tr>
+                            <tr><td><code>/editor</code></td><td>Open external editor for long input</td></tr>
+                            <tr><td><code>/debug</code></td><td>Toggle debug mode</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Edit & Navigation</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Command</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>/undo</code></td><td>Undo last message</td></tr>
+                            <tr><td><code>/redo</code></td><td>Redo message</td></tr>
+                            <tr><td><code>/help</code></td><td>Show all available commands</td></tr>
+                            <tr><td><code>/exit</code>, <code>/quit</code>, <code>/q</code></td><td>Exit Snow-Flow</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <!-- Keyboard Shortcuts -->
                 <h3>Keyboard Shortcuts</h3>
+
+                <h4>Essential Shortcuts</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Shortcut</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>Enter</code></td><td>Submit message</td></tr>
+                            <tr><td><code>Shift+Enter</code></td><td>Insert newline (multi-line input)</td></tr>
+                            <tr><td><code>Esc</code></td><td>Interrupt running operation</td></tr>
+                            <tr><td><code>Tab</code></td><td>Switch to next agent</td></tr>
+                            <tr><td><code>Shift+Tab</code></td><td>Switch to previous agent</td></tr>
+                            <tr><td><code>F2</code></td><td>Cycle through recent models</td></tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <h4>Navigation</h4>
                 <div class="table-wrapper">
@@ -1832,52 +1735,17 @@ snow-flow config paths</pre>
                             <tr><th>Shortcut</th><th>Action</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td><code>Ctrl+X</code></td><td>Leader key (prefix for most commands)</td></tr>
-                            <tr><td><code>Tab</code></td><td>Switch to next agent</td></tr>
-                            <tr><td><code>Shift+Tab</code></td><td>Switch to previous agent</td></tr>
-                            <tr><td><code>F2</code></td><td>Cycle to next recent model</td></tr>
-                            <tr><td><code>Shift+F2</code></td><td>Cycle to previous recent model</td></tr>
-                            <tr><td><code>Ctrl+Right</code></td><td>Next child session</td></tr>
+                            <tr><td><code>PgUp</code> / <code>PgDown</code></td><td>Scroll through conversation</td></tr>
+                            <tr><td><code>Ctrl+G</code></td><td>Jump to first message</td></tr>
+                            <tr><td><code>Ctrl+Alt+G</code></td><td>Jump to last message</td></tr>
+                            <tr><td><code>Ctrl+Right</code></td><td>Next child session (fork)</td></tr>
                             <tr><td><code>Ctrl+Left</code></td><td>Previous child session</td></tr>
                         </tbody>
                     </table>
                 </div>
 
-                <h4>Input</h4>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Shortcut</th><th>Action</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>Enter</code></td><td>Submit message</td></tr>
-                            <tr><td><code>Shift+Enter</code></td><td>Insert newline</td></tr>
-                            <tr><td><code>Ctrl+J</code></td><td>Insert newline (alternative)</td></tr>
-                            <tr><td><code>Ctrl+C</code></td><td>Clear input / Exit</td></tr>
-                            <tr><td><code>Ctrl+V</code></td><td>Paste content</td></tr>
-                            <tr><td><code>Esc</code></td><td>Interrupt running operation</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <h4>Scrolling</h4>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Shortcut</th><th>Action</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>PgUp</code></td><td>Page up</td></tr>
-                            <tr><td><code>PgDown</code></td><td>Page down</td></tr>
-                            <tr><td><code>Ctrl+Alt+U</code></td><td>Half page up</td></tr>
-                            <tr><td><code>Ctrl+Alt+D</code></td><td>Half page down</td></tr>
-                            <tr><td><code>Ctrl+G</code></td><td>Jump to first message</td></tr>
-                            <tr><td><code>Ctrl+Alt+G</code></td><td>Jump to last message</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
                 <h4>Leader Key Commands (Ctrl+X + key)</h4>
+                <p>Press <code>Ctrl+X</code> first, then the second key:</p>
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -1887,18 +1755,16 @@ snow-flow config paths</pre>
                             <tr><td><code>Ctrl+X H</code></td><td>Show help</td></tr>
                             <tr><td><code>Ctrl+X N</code></td><td>New session</td></tr>
                             <tr><td><code>Ctrl+X L</code></td><td>List sessions</td></tr>
-                            <tr><td><code>Ctrl+X G</code></td><td>Show timeline</td></tr>
-                            <tr><td><code>Ctrl+X S</code></td><td>Share session</td></tr>
-                            <tr><td><code>Ctrl+X C</code></td><td>Compact session</td></tr>
-                            <tr><td><code>Ctrl+X X</code></td><td>Export conversation</td></tr>
                             <tr><td><code>Ctrl+X M</code></td><td>List models</td></tr>
                             <tr><td><code>Ctrl+X A</code></td><td>List agents</td></tr>
                             <tr><td><code>Ctrl+X T</code></td><td>List themes</td></tr>
+                            <tr><td><code>Ctrl+X S</code></td><td>Share session</td></tr>
+                            <tr><td><code>Ctrl+X C</code></td><td>Compact session</td></tr>
+                            <tr><td><code>Ctrl+X X</code></td><td>Export conversation</td></tr>
                             <tr><td><code>Ctrl+X E</code></td><td>Open external editor</td></tr>
                             <tr><td><code>Ctrl+X D</code></td><td>Toggle tool details</td></tr>
                             <tr><td><code>Ctrl+X B</code></td><td>Toggle thinking blocks</td></tr>
-                            <tr><td><code>Ctrl+X I</code></td><td>Initialize project (AGENTS.md)</td></tr>
-                            <tr><td><code>Ctrl+X Y</code></td><td>Copy message</td></tr>
+                            <tr><td><code>Ctrl+X Y</code></td><td>Copy message to clipboard</td></tr>
                             <tr><td><code>Ctrl+X U</code></td><td>Undo last message</td></tr>
                             <tr><td><code>Ctrl+X R</code></td><td>Redo message</td></tr>
                             <tr><td><code>Ctrl+X Q</code></td><td>Exit application</td></tr>
@@ -1906,81 +1772,75 @@ snow-flow config paths</pre>
                     </table>
                 </div>
 
-                <!-- Slash Commands -->
-                <h3>Slash Commands</h3>
-                <p>Type these commands directly in the input area:</p>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr><th>Command</th><th>Description</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>/help</code></td><td>Show available commands</td></tr>
-                            <tr><td><code>/new, /clear</code></td><td>Start a new session</td></tr>
-                            <tr><td><code>/sessions, /resume</code></td><td>List and resume sessions</td></tr>
-                            <tr><td><code>/timeline, /history</code></td><td>Show session timeline</td></tr>
-                            <tr><td><code>/models</code></td><td>List and select AI models</td></tr>
-                            <tr><td><code>/agents</code></td><td>List available agents</td></tr>
-                            <tr><td><code>/themes</code></td><td>Switch color theme</td></tr>
-                            <tr><td><code>/share</code></td><td>Share current session</td></tr>
-                            <tr><td><code>/unshare</code></td><td>Stop sharing session</td></tr>
-                            <tr><td><code>/compact, /summarize</code></td><td>Compact session history</td></tr>
-                            <tr><td><code>/export</code></td><td>Export conversation</td></tr>
-                            <tr><td><code>/editor</code></td><td>Open external editor</td></tr>
-                            <tr><td><code>/init</code></td><td>Create/update AGENTS.md</td></tr>
-                            <tr><td><code>/details</code></td><td>Toggle tool details view</td></tr>
-                            <tr><td><code>/thinking</code></td><td>Toggle thinking blocks</td></tr>
-                            <tr><td><code>/undo</code></td><td>Undo last message</td></tr>
-                            <tr><td><code>/redo</code></td><td>Redo message</td></tr>
-                            <tr><td><code>/auth, /login</code></td><td>Authenticate with providers</td></tr>
-                            <tr><td><code>/debug</code></td><td>Toggle debug mode</td></tr>
-                            <tr><td><code>/exit, /quit, /q</code></td><td>Exit application</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
                 <!-- Agent Modes -->
                 <h3>Agent Modes</h3>
-                <p>Snow-Flow provides three specialized agents for different tasks:</p>
+                <p>Snow-Flow provides three specialized agents. Switch between them with <code>Tab</code> or <code>/agents</code>:</p>
 
                 <div class="card-grid">
                     <div class="card">
-                        <div class="card-title">Build Agent</div>
-                        <div class="card-desc">General purpose agent for building and implementing features. Can read, write, and execute code. Use this for creating widgets, business rules, and other ServiceNow artifacts.</div>
+                        <div class="card-title">🔨 Build Agent</div>
+                        <div class="card-desc">Full-power agent for creating and modifying ServiceNow artifacts. Can read, write, and execute code. Use for widgets, business rules, scripts, and deployments.</div>
                     </div>
                     <div class="card">
-                        <div class="card-title">Plan Agent</div>
-                        <div class="card-desc">Planning agent that creates detailed implementation plans before coding. Focuses on architecture and design. Use this for complex projects that need careful planning.</div>
+                        <div class="card-title">📋 Plan Agent</div>
+                        <div class="card-desc">Strategic planning before implementation. Creates detailed plans, analyzes requirements, and designs architecture. Use for complex projects.</div>
                     </div>
                     <div class="card">
-                        <div class="card-title">General Agent</div>
-                        <div class="card-desc">Read-only agent for questions and exploration. Cannot make changes to your codebase. Use this for research, documentation, and understanding your instance.</div>
+                        <div class="card-title">🔍 General Agent</div>
+                        <div class="card-desc">Read-only exploration and research. Cannot modify your instance. Use for documentation, analysis, and understanding existing code.</div>
                     </div>
                 </div>
 
-                <div class="callout info">
-                    <div class="callout-title">Switching Agents</div>
-                    <p>Use <code>Tab</code> to cycle through agents, or type <code>/agents</code> to see the full list and select one.</p>
+                <!-- Workflow Examples -->
+                <h3>Example Workflows</h3>
+
+                <h4>First Time Setup</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">TUI Session</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># 1. Start Snow-Flow</span>
+$ snow-flow
+
+<span class="comment"># 2. Authenticate (in TUI)</span>
+/auth
+
+<span class="comment"># 3. Start building!</span>
+<span class="string">"Show me my open incidents"</span></pre>
+                    </div>
                 </div>
 
-                <!-- Workflow Example -->
-                <h3>Example Workflow</h3>
+                <h4>Building a Widget</h4>
                 <div class="code-block">
                     <div class="code-header">
                         <span class="code-lang">TUI Conversation</span>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># Create a widget</span>
-<span class="string">"Create a dashboard widget for incident metrics"</span>
+<pre><span class="comment"># Switch to Build agent (Tab or /agents)</span>
 
-<span class="comment"># Automate a process</span>
-<span class="string">"Create business rule to auto-assign incidents by category"</span>
+<span class="string">"Create a dashboard widget showing high-priority incidents
+with their assignment group and age in days"</span>
 
-<span class="comment"># Query and analyze</span>
-<span class="string">"Analyze incident trends from the past month"</span>
+<span class="comment"># Snow-Flow creates the widget, you can iterate:</span>
+<span class="string">"Add a click handler to open the incident in a new tab"</span>
+<span class="string">"Change the color scheme to match our portal theme"</span></pre>
+                    </div>
+                </div>
 
-<span class="comment"># Complex task with multiple agents</span>
-<span class="string">"Build a complete workspace for IT support"</span></pre>
+                <h4>Planning a Complex Project</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">TUI Conversation</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Switch to Plan agent first</span>
+
+<span class="string">"I need to build an automated incident routing system
+based on CI relationships and support group skills"</span>
+
+<span class="comment"># Plan agent creates implementation plan</span>
+<span class="comment"># Then switch to Build agent to implement</span></pre>
                     </div>
                 </div>
 
@@ -2898,54 +2758,189 @@ c.loadItems = <span class="keyword">function</span>() {
 
             <!-- Enterprise Features -->
             <section id="enterprise-features">
-                <h2>Enterprise Features <span class="badge badge-enterprise">Enterprise</span></h2>
+                <h2>Snow-Flow Enterprise</h2>
 
-                <p>Snow-Flow Enterprise adds powerful integrations for team workflows:</p>
+                <p>Snow-Flow Enterprise extends the open-source platform with team collaboration features, enterprise security, and 40+ integrations.</p>
 
+                <!-- Comparison Table -->
+                <h3>Open Source vs Enterprise</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Open Source</th>
+                                <th>Enterprise</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>410+ MCP Tools</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                            <tr>
+                                <td>TUI with AI Agents</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                            <tr>
+                                <td>Self-Hosted</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                            <tr>
+                                <td>Community Support</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                            <tr>
+                                <td>Web Portal <span class="badge badge-enterprise">Enterprise</span></td>
+                                <td style="color: var(--text-muted);">—</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                            <tr>
+                                <td>40+ Integrations <span class="badge badge-enterprise">Enterprise</span></td>
+                                <td style="color: var(--text-muted);">—</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                            <tr>
+                                <td>Stakeholder Seats <span class="badge badge-enterprise">Enterprise</span></td>
+                                <td style="color: var(--text-muted);">—</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                            <tr>
+                                <td>Managed SaaS Option <span class="badge badge-enterprise">Enterprise</span></td>
+                                <td style="color: var(--text-muted);">—</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                            <tr>
+                                <td>SSO/SAML <span class="badge badge-enterprise">Enterprise</span></td>
+                                <td style="color: var(--text-muted);">—</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                            <tr>
+                                <td>Audit Logging <span class="badge badge-enterprise">Enterprise</span></td>
+                                <td style="color: var(--text-muted);">—</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                            <tr>
+                                <td>Priority Support <span class="badge badge-enterprise">Enterprise</span></td>
+                                <td style="color: var(--text-muted);">—</td>
+                                <td style="color: var(--accent-green);">✓</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Enterprise Features -->
+                <h3>Enterprise-Only Features</h3>
                 <div class="card-grid">
                     <div class="card">
-                        <div class="card-title">Jira Integration</div>
-                        <div class="card-desc">Pull stories, auto-update tickets, bidirectional sync with your sprint backlog.</div>
-                    </div>
-                    <div class="card">
-                        <div class="card-title">Azure DevOps</div>
-                        <div class="card-desc">Connect to Azure Boards, complete work items, integrate with pipelines.</div>
-                    </div>
-                    <div class="card">
-                        <div class="card-title">Confluence</div>
-                        <div class="card-desc">Auto-generate technical documentation, keep wiki in sync with code.</div>
+                        <div class="card-title">Web Portal</div>
+                        <div class="card-desc">Browser-based access to Snow-Flow. No terminal required. Perfect for non-technical stakeholders.</div>
                     </div>
                     <div class="card">
                         <div class="card-title">Stakeholder Seats</div>
-                        <div class="card-desc">Read-only access for non-developers to query and get answers safely.</div>
+                        <div class="card-desc">Read-only access for managers and business analysts to query ServiceNow data safely.</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">SSO/SAML</div>
+                        <div class="card-desc">Enterprise authentication with your identity provider. Support for Okta, Azure AD, and more.</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Audit Logging</div>
+                        <div class="card-desc">Complete audit trail of all actions. Compliance-ready logs for security teams.</div>
                     </div>
                 </div>
             </section>
 
             <!-- Integrations -->
             <section id="integrations">
-                <h3>Integration Setup</h3>
+                <h3>40+ Enterprise Integrations</h3>
+                <p>Connect Snow-Flow to your existing tools and workflows:</p>
 
+                <h4>Project Management</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Integration</th><th>Capabilities</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>Jira</strong></td><td>Pull stories, auto-update tickets, bidirectional sync with sprint backlog</td></tr>
+                            <tr><td><strong>Azure DevOps</strong></td><td>Connect to Azure Boards, complete work items, integrate with pipelines</td></tr>
+                            <tr><td><strong>Asana</strong></td><td>Sync tasks, update project status, manage workflows</td></tr>
+                            <tr><td><strong>Monday.com</strong></td><td>Board integration, status updates, automation triggers</td></tr>
+                            <tr><td><strong>Trello</strong></td><td>Card management, list automation, board sync</td></tr>
+                            <tr><td><strong>Linear</strong></td><td>Issue tracking, sprint planning, release management</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Source Control & CI/CD</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Integration</th><th>Capabilities</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>GitHub</strong></td><td>PR automation, issue linking, code review integration</td></tr>
+                            <tr><td><strong>GitLab</strong></td><td>Merge request automation, pipeline triggers, issue sync</td></tr>
+                            <tr><td><strong>Bitbucket</strong></td><td>Repository sync, pull request management</td></tr>
+                            <tr><td><strong>Jenkins</strong></td><td>Build triggers, deployment automation</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Documentation</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Integration</th><th>Capabilities</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>Confluence</strong></td><td>Auto-generate technical documentation, keep wiki in sync</td></tr>
+                            <tr><td><strong>Notion</strong></td><td>Page creation, database updates, template automation</td></tr>
+                            <tr><td><strong>SharePoint</strong></td><td>Document management, site integration</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Communication</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Integration</th><th>Capabilities</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>Slack</strong></td><td>Notifications, slash commands, channel updates</td></tr>
+                            <tr><td><strong>Microsoft Teams</strong></td><td>Bot integration, channel notifications, adaptive cards</td></tr>
+                            <tr><td><strong>Discord</strong></td><td>Webhook notifications, bot commands</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Connecting Integrations</h4>
                 <div class="code-block">
                     <div class="code-header">
-                        <span class="code-lang">bash</span>
+                        <span class="code-lang">TUI Session</span>
                         <button class="code-copy" onclick="copyCode(this)">Copy</button>
                     </div>
                     <div class="code-content">
-<pre><span class="comment"># In the TUI, authenticate with enterprise features</span>
+<pre><span class="comment"># In the TUI, authenticate and connect integrations</span>
 /auth
 
-<span class="comment"># Connect Jira</span>
-<span class="comment"># (Follow prompts to authorize)</span>
-
-<span class="comment"># Then in the TUI, complete a Jira story:</span>
-<span class="string">"Complete JIRA-1234"</span></pre>
+<span class="comment"># Once connected, use natural language:</span>
+<span class="string">"Complete JIRA-1234"</span>
+<span class="string">"Create a Confluence page documenting this widget"</span>
+<span class="string">"Update the Azure DevOps work item with my progress"</span>
+<span class="string">"Post a summary to Slack #dev-updates"</span></pre>
                     </div>
                 </div>
 
                 <div class="callout info">
                     <div class="callout-title">Enterprise Portal</div>
-                    <p>Manage licenses, users, and integrations at <a href="https://portal.snow-flow.dev">portal.snow-flow.dev</a></p>
+                    <p>Manage licenses, users, and integrations at <a href="https://portal.snow-flow.dev">portal.snow-flow.dev</a>. Contact <a href="mailto:enterprise@snow-flow.dev">enterprise@snow-flow.dev</a> for pricing.</p>
                 </div>
             </section>
 
