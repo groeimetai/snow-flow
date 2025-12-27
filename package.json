@@ -9,9 +9,12 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "build:full": "npm run docs:generate && turbo build",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "docs:generate": "npx tsx scripts/generate-mcp-docs.ts",
+    "docs:generate:dry-run": "npx tsx scripts/generate-mcp-docs.ts --dry-run"
   },
   "workspaces": {
     "packages": [

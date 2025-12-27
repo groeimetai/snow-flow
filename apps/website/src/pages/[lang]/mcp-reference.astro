@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getLangFromUrl, useTranslations, type Lang } from '../../i18n/utils';
+import mcpToolsData from '../../data/mcp-tools.json';
 
 export function getStaticPaths() {
   return [
@@ -14,103 +15,43 @@ const t = useTranslations(lang);
 
 const title = lang === 'en' ? 'MCP Tools Reference | Snow-Flow' : 'MCP Tools Referentie | Snow-Flow';
 const description = lang === 'en'
-  ? 'Complete reference of 410+ MCP tools for ServiceNow development across 18 specialized servers.'
-  : 'Complete referentie van 410+ MCP tools voor ServiceNow ontwikkeling verdeeld over 18 gespecialiseerde servers.';
+  ? `Complete reference of ${mcpToolsData.totalTools}+ MCP tools for ServiceNow development across ${mcpToolsData.totalCategories} categories.`
+  : `Complete referentie van ${mcpToolsData.totalTools}+ MCP tools voor ServiceNow ontwikkeling verdeeld over ${mcpToolsData.totalCategories} categorieën.`;
 
-const servers = [
-  {
-    name: 'Operations Server',
-    icon: '⚙️',
-    description: lang === 'en' ? 'Core ServiceNow operations and queries' : 'Core ServiceNow operaties en queries',
-    tools: ['snow_query_table', 'snow_query_incidents', 'snow_cmdb_search', 'snow_user_lookup', 'snow_operational_metrics', 'snow_knowledge_search', 'snow_create_incident', 'snow_update_incident']
-  },
-  {
-    name: 'Deployment Server',
-    icon: '🚀',
-    description: lang === 'en' ? 'Widget & artifact deployment with validation' : 'Widget & artifact deployment met validatie',
-    tools: ['snow_create_artifact', 'snow_update', 'snow_delete', 'snow_validate_deployment', 'snow_rollback_deployment', 'snow_preview_widget', 'snow_widget_test', 'snow_batch_deploy']
-  },
-  {
-    name: 'Automation Server',
-    icon: '⚡',
-    description: lang === 'en' ? 'Script execution and automation' : 'Script executie en automatisering',
-    tools: ['snow_execute_background_script', 'snow_execute_script_with_output', 'snow_get_script_output', 'snow_execute_script_sync', 'snow_get_logs', 'snow_schedule_job', 'snow_create_event']
-  },
-  {
-    name: 'Platform Development',
-    icon: '🏗️',
-    description: lang === 'en' ? 'Business rules, client scripts, UI actions' : 'Business rules, client scripts, UI actions',
-    tools: ['snow_create_business_rule', 'snow_create_client_script', 'snow_create_ui_action', 'snow_create_script_include', 'snow_create_ui_page', 'snow_create_ui_policy']
-  },
-  {
-    name: 'Integration Server',
-    icon: '🔗',
-    description: lang === 'en' ? 'REST, SOAP, data transforms' : 'REST, SOAP, data transforms',
-    tools: ['snow_create_rest_message', 'snow_create_transform_map', 'snow_create_import_set', 'snow_test_web_service', 'snow_configure_email']
-  },
-  {
-    name: 'System Properties',
-    icon: '🔧',
-    description: lang === 'en' ? 'System property management' : 'Systeem property beheer',
-    tools: ['snow_property_get', 'snow_property_set', 'snow_property_list', 'snow_property_delete', 'snow_property_bulk_update', 'snow_property_export', 'snow_property_import']
-  },
-  {
-    name: 'Update Set Server',
-    icon: '📦',
-    description: lang === 'en' ? 'Change management and deployment' : 'Change management en deployment',
-    tools: ['snow_update_set_create', 'snow_update_set_switch', 'snow_update_set_current', 'snow_update_set_complete', 'snow_update_set_export', 'snow_ensure_active_update_set']
-  },
-  {
-    name: 'Development Assistant',
-    icon: '🤖',
-    description: lang === 'en' ? 'Intelligent artifact search & editing' : 'Intelligente artifact zoek & bewerking',
-    tools: ['snow_find_artifact', 'snow_edit_artifact', 'snow_get_by_sysid', 'snow_analyze_artifact', 'snow_comprehensive_search', 'snow_analyze_requirements']
-  },
-  {
-    name: 'Security & Compliance',
-    icon: '🔒',
-    description: lang === 'en' ? 'Security policies and compliance' : 'Security policies en compliance',
-    tools: ['snow_create_security_policy', 'snow_audit_compliance', 'snow_scan_vulnerabilities', 'snow_assess_risk', 'snow_review_access_control']
-  },
-  {
-    name: 'Reporting & Analytics',
-    icon: '📊',
-    description: lang === 'en' ? 'Reports, dashboards, KPIs' : 'Reports, dashboards, KPIs',
-    tools: ['snow_create_report', 'snow_create_dashboard', 'snow_define_kpi', 'snow_schedule_report', 'snow_analyze_data_quality']
-  },
-  {
-    name: 'Machine Learning',
-    icon: '🧠',
-    description: lang === 'en' ? 'AI/ML capabilities with TensorFlow.js' : 'AI/ML mogelijkheden met TensorFlow.js',
-    tools: ['ml_train_incident_classifier', 'ml_predict_change_risk', 'ml_detect_anomalies', 'ml_forecast_incidents', 'ml_performance_analytics']
-  },
-  {
-    name: 'Knowledge & Catalog',
-    icon: '📚',
-    description: lang === 'en' ? 'Knowledge articles and service catalog' : 'Knowledge artikelen en service catalog',
-    tools: ['snow_create_kb_article', 'snow_create_catalog_item', 'snow_manage_catalog_variables', 'snow_create_catalog_category']
-  },
-  {
-    name: 'CMDB & Events',
-    icon: '🌐',
-    description: lang === 'en' ? 'CI management and event correlation' : 'CI beheer en event correlatie',
-    tools: ['snow_create_ci', 'snow_manage_ci_relationships', 'snow_event_correlation', 'snow_alert_management', 'snow_discovery_status']
-  },
-  {
-    name: 'Flow & Workspace',
-    icon: '🔄',
-    description: lang === 'en' ? 'Flow Designer and workspace config' : 'Flow Designer en workspace config',
-    tools: ['snow_create_flow', 'snow_create_subflow', 'snow_configure_workspace', 'snow_create_action', 'snow_create_spoke']
-  },
-  {
-    name: 'Change & Virtual Agent',
-    icon: '🎯',
-    description: lang === 'en' ? 'Change management and NLU' : 'Change management en NLU',
-    tools: ['snow_create_change', 'snow_create_va_topic', 'snow_train_nlu', 'snow_manage_intents', 'snow_analyze_conversations']
-  }
-];
+// Category icons mapping
+const categoryIcons: Record<string, string> = {
+  'advanced': '🧠',
+  'asset-management': '📦',
+  'automation': '⚡',
+  'cmdb': '🌐',
+  'core-operations': '⚙️',
+  'development': '🏗️',
+  'integration': '🔗',
+  'itsm': '🎫',
+  'ml-analytics': '🤖',
+  'performance-analytics': '📈',
+  'reporting': '📊',
+  'security': '🔒',
+  'ui-builder': '🎨',
+  'ui-frameworks': '🖼️',
+  'workspace': '💼'
+};
 
-const totalTools = servers.reduce((sum, server) => sum + server.tools.length, 0) + 300; // Add 300 for unlisted tools
+// Transform data for display
+const categories = mcpToolsData.categories.map(cat => ({
+  id: cat.id,
+  name: cat.name,
+  icon: categoryIcons[cat.id] || '🔧',
+  description: lang === 'en' ? cat.description.en : cat.description.nl,
+  toolCount: cat.toolCount,
+  readCount: cat.readCount,
+  writeCount: cat.writeCount,
+  tools: cat.tools
+}));
+
+const totalTools = mcpToolsData.totalTools;
+const totalRead = categories.reduce((sum, cat) => sum + cat.readCount, 0);
+const totalWrite = categories.reduce((sum, cat) => sum + cat.writeCount, 0);
 ---
 
 <BaseLayout title={title} description={description}>
@@ -123,13 +64,13 @@ const totalTools = servers.reduce((sum, server) => sum + server.tools.length, 0)
         <div class="container">
             <div class="hero-badge">
                 <span class="pulse"></span>
-                410+ MCP Tools
+                {totalTools}+ MCP Tools
             </div>
             <h1>{lang === 'en' ? 'MCP Tools Reference' : 'MCP Tools Referentie'}</h1>
             <p class="hero-subtitle">
                 {lang === 'en'
-                    ? 'Complete reference of all Snow-Flow MCP tools across 18 specialized servers for comprehensive ServiceNow development.'
-                    : 'Complete referentie van alle Snow-Flow MCP tools verdeeld over 18 gespecialiseerde servers.'}
+                    ? `Complete reference of all Snow-Flow MCP tools across ${categories.length} categories for comprehensive ServiceNow development.`
+                    : `Complete referentie van alle Snow-Flow MCP tools verdeeld over ${categories.length} categorieën.`}
             </p>
         </div>
     </section>
@@ -152,43 +93,48 @@ const totalTools = servers.reduce((sum, server) => sum + server.tools.length, 0)
         <div class="container">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-number">410+</div>
+                    <div class="stat-number">{totalTools}+</div>
                     <div class="stat-label">MCP Tools</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">{servers.length}</div>
-                    <div class="stat-label">{lang === 'en' ? 'Servers' : 'Servers'}</div>
+                    <div class="stat-number">{categories.length}</div>
+                    <div class="stat-label">{lang === 'en' ? 'Categories' : 'Categorieën'}</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">75+</div>
-                    <div class="stat-label">{lang === 'en' ? 'LLM Providers' : 'LLM Providers'}</div>
+                    <div class="stat-number">{totalRead}</div>
+                    <div class="stat-label">{lang === 'en' ? 'Read Tools' : 'Lees Tools'}</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">100%</div>
-                    <div class="stat-label">Open Source</div>
+                    <div class="stat-number">{totalWrite}</div>
+                    <div class="stat-label">{lang === 'en' ? 'Write Tools' : 'Schrijf Tools'}</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Servers -->
+    <!-- Categories -->
     <section class="servers-section">
         <div class="container">
             <div class="servers-list">
-                {servers.map((server) => (
-                    <div class="server-section" data-server={server.name.toLowerCase()}>
+                {categories.map((category) => (
+                    <div class="server-section" data-server={category.id}>
                         <div class="server-header">
-                            <span class="server-icon">{server.icon}</span>
+                            <span class="server-icon">{category.icon}</span>
                             <div>
-                                <h2>{server.name}</h2>
-                                <p>{server.description}</p>
+                                <h2>{category.name}</h2>
+                                <p>{category.description}</p>
                             </div>
-                            <span class="tool-badge">{server.tools.length}+ tools</span>
+                            <div class="tool-badges">
+                                <span class="tool-badge">{category.toolCount} tools</span>
+                                <span class="tool-badge read-badge">{category.readCount} read</span>
+                                <span class="tool-badge write-badge">{category.writeCount} write</span>
+                            </div>
                         </div>
                         <div class="tools-grid">
-                            {server.tools.map((tool) => (
-                                <div class="tool-card" data-tool={tool.toLowerCase()}>
-                                    <code>{tool}</code>
+                            {category.tools.map((tool) => (
+                                <div class="tool-card" data-tool={tool.name.toLowerCase()} data-permission={tool.permission}>
+                                    <code>{tool.name}</code>
+                                    <span class={`permission-badge ${tool.permission}`}>{tool.permission}</span>
                                 </div>
                             ))}
                         </div>
@@ -223,12 +169,12 @@ const totalTools = servers.reduce((sum, server) => sum + server.tools.length, 0)
         "@type": "ItemList",
         "name": "Snow-Flow MCP Tools",
         "description": description,
-        "numberOfItems": 410,
-        "itemListElement": servers.map((server, index) => ({
+        "numberOfItems": totalTools,
+        "itemListElement": categories.map((category, index) => ({
             "@type": "ListItem",
             "position": index + 1,
-            "name": server.name,
-            "description": server.description
+            "name": category.name,
+            "description": category.description
         }))
     })} />
 </BaseLayout>
@@ -416,14 +362,30 @@ const totalTools = servers.reduce((sum, server) => sum + server.tools.length, 0)
         font-size: 0.875rem;
     }
 
-    .tool-badge {
+    .tool-badges {
+        display: flex;
+        gap: 0.5rem;
         margin-left: auto;
+        flex-wrap: wrap;
+    }
+
+    .tool-badge {
         background: rgba(0, 217, 255, 0.1);
         color: var(--accent-cyan);
         padding: 0.375rem 0.875rem;
         border-radius: 100px;
         font-size: 0.75rem;
         font-weight: 600;
+    }
+
+    .tool-badge.read-badge {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+
+    .tool-badge.write-badge {
+        background: rgba(249, 115, 22, 0.1);
+        color: #f97316;
     }
 
     .tools-grid {
@@ -445,10 +407,34 @@ const totalTools = servers.reduce((sum, server) => sum + server.tools.length, 0)
         background: rgba(0, 217, 255, 0.05);
     }
 
+    .tool-card {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
     .tool-card code {
         font-family: var(--font-mono);
         font-size: 0.8rem;
         color: var(--accent-cyan);
+    }
+
+    .permission-badge {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .permission-badge.read {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+    }
+
+    .permission-badge.write {
+        background: rgba(249, 115, 22, 0.15);
+        color: #f97316;
     }
 
     /* CTA */

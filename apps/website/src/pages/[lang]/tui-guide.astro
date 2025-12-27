@@ -1,0 +1,813 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getLangFromUrl, useTranslations, type Lang } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'nl' } }
+  ];
+}
+
+const lang = getLangFromUrl(Astro.url) as Lang;
+const t = useTranslations(lang);
+
+const title = lang === 'en' ? 'TUI Guide | Snow-Flow' : 'TUI Handleiding | Snow-Flow';
+const description = lang === 'en'
+  ? 'Complete guide to the Snow-Flow Terminal User Interface (TUI). Learn keyboard shortcuts, commands, agent modes, and tips.'
+  : 'Complete handleiding voor de Snow-Flow Terminal User Interface (TUI). Leer toetsenbordsnelkoppelingen, commando\'s, agent-modi en tips.';
+
+// Keyboard shortcuts organized by category
+const shortcuts = {
+    navigation: [
+        { key: 'Ctrl+X', action: lang === 'en' ? 'Leader key (prefix for most commands)' : 'Leider toets (prefix voor meeste commando\'s)' },
+        { key: 'Tab', action: lang === 'en' ? 'Switch to next agent' : 'Wissel naar volgende agent' },
+        { key: 'Shift+Tab', action: lang === 'en' ? 'Switch to previous agent' : 'Wissel naar vorige agent' },
+        { key: 'F2', action: lang === 'en' ? 'Cycle to next recent model' : 'Wissel naar volgend recent model' },
+        { key: 'Shift+F2', action: lang === 'en' ? 'Cycle to previous recent model' : 'Wissel naar vorig recent model' },
+        { key: 'Ctrl+Right', action: lang === 'en' ? 'Next child session' : 'Volgende child sessie' },
+        { key: 'Ctrl+Left', action: lang === 'en' ? 'Previous child session' : 'Vorige child sessie' },
+    ],
+    input: [
+        { key: 'Enter', action: lang === 'en' ? 'Submit message' : 'Bericht verzenden' },
+        { key: 'Shift+Enter', action: lang === 'en' ? 'Insert newline' : 'Nieuwe regel invoegen' },
+        { key: 'Ctrl+J', action: lang === 'en' ? 'Insert newline (alternative)' : 'Nieuwe regel (alternatief)' },
+        { key: 'Ctrl+C', action: lang === 'en' ? 'Clear input / Exit' : 'Input wissen / Afsluiten' },
+        { key: 'Ctrl+V', action: lang === 'en' ? 'Paste content' : 'Inhoud plakken' },
+        { key: 'Esc', action: lang === 'en' ? 'Interrupt running operation' : 'Lopende operatie onderbreken' },
+    ],
+    scrolling: [
+        { key: 'PgUp', action: lang === 'en' ? 'Page up' : 'Pagina omhoog' },
+        { key: 'PgDown', action: lang === 'en' ? 'Page down' : 'Pagina omlaag' },
+        { key: 'Ctrl+Alt+U', action: lang === 'en' ? 'Half page up' : 'Halve pagina omhoog' },
+        { key: 'Ctrl+Alt+D', action: lang === 'en' ? 'Half page down' : 'Halve pagina omlaag' },
+        { key: 'Ctrl+G', action: lang === 'en' ? 'Jump to first message' : 'Spring naar eerste bericht' },
+        { key: 'Ctrl+Alt+G', action: lang === 'en' ? 'Jump to last message' : 'Spring naar laatste bericht' },
+    ],
+    leader: [
+        { key: 'Ctrl+X H', action: lang === 'en' ? 'Show help' : 'Toon hulp' },
+        { key: 'Ctrl+X N', action: lang === 'en' ? 'New session' : 'Nieuwe sessie' },
+        { key: 'Ctrl+X L', action: lang === 'en' ? 'List sessions' : 'Sessies weergeven' },
+        { key: 'Ctrl+X G', action: lang === 'en' ? 'Show timeline' : 'Tijdlijn tonen' },
+        { key: 'Ctrl+X S', action: lang === 'en' ? 'Share session' : 'Sessie delen' },
+        { key: 'Ctrl+X C', action: lang === 'en' ? 'Compact session' : 'Sessie comprimeren' },
+        { key: 'Ctrl+X X', action: lang === 'en' ? 'Export conversation' : 'Gesprek exporteren' },
+        { key: 'Ctrl+X M', action: lang === 'en' ? 'List models' : 'Modellen weergeven' },
+        { key: 'Ctrl+X A', action: lang === 'en' ? 'List agents' : 'Agents weergeven' },
+        { key: 'Ctrl+X T', action: lang === 'en' ? 'List themes' : 'Thema\'s weergeven' },
+        { key: 'Ctrl+X E', action: lang === 'en' ? 'Open external editor' : 'Externe editor openen' },
+        { key: 'Ctrl+X D', action: lang === 'en' ? 'Toggle tool details' : 'Tool details schakelen' },
+        { key: 'Ctrl+X B', action: lang === 'en' ? 'Toggle thinking blocks' : 'Thinking blocks schakelen' },
+        { key: 'Ctrl+X I', action: lang === 'en' ? 'Initialize project (AGENTS.md)' : 'Project initialiseren (AGENTS.md)' },
+        { key: 'Ctrl+X Y', action: lang === 'en' ? 'Copy message' : 'Bericht kopiëren' },
+        { key: 'Ctrl+X U', action: lang === 'en' ? 'Undo last message' : 'Laatste bericht ongedaan maken' },
+        { key: 'Ctrl+X R', action: lang === 'en' ? 'Redo message' : 'Bericht herhalen' },
+        { key: 'Ctrl+X Q', action: lang === 'en' ? 'Exit application' : 'Applicatie sluiten' },
+    ]
+};
+
+const commands = [
+    { cmd: '/help', desc: lang === 'en' ? 'Show available commands' : 'Beschikbare commando\'s tonen' },
+    { cmd: '/new, /clear', desc: lang === 'en' ? 'Start a new session' : 'Nieuwe sessie starten' },
+    { cmd: '/sessions, /resume', desc: lang === 'en' ? 'List and resume sessions' : 'Sessies weergeven en hervatten' },
+    { cmd: '/timeline, /history', desc: lang === 'en' ? 'Show session timeline' : 'Sessie tijdlijn tonen' },
+    { cmd: '/models', desc: lang === 'en' ? 'List and select AI models' : 'AI modellen weergeven en selecteren' },
+    { cmd: '/agents', desc: lang === 'en' ? 'List available agents' : 'Beschikbare agents tonen' },
+    { cmd: '/themes', desc: lang === 'en' ? 'Switch color theme' : 'Kleurthema wisselen' },
+    { cmd: '/share', desc: lang === 'en' ? 'Share current session' : 'Huidige sessie delen' },
+    { cmd: '/unshare', desc: lang === 'en' ? 'Stop sharing session' : 'Stop met sessie delen' },
+    { cmd: '/compact, /summarize', desc: lang === 'en' ? 'Compact session history' : 'Sessiegeschiedenis comprimeren' },
+    { cmd: '/export', desc: lang === 'en' ? 'Export conversation' : 'Gesprek exporteren' },
+    { cmd: '/editor', desc: lang === 'en' ? 'Open external editor' : 'Externe editor openen' },
+    { cmd: '/init', desc: lang === 'en' ? 'Create/update AGENTS.md' : 'AGENTS.md aanmaken/bijwerken' },
+    { cmd: '/details', desc: lang === 'en' ? 'Toggle tool details view' : 'Tool details weergave schakelen' },
+    { cmd: '/thinking', desc: lang === 'en' ? 'Toggle thinking blocks' : 'Thinking blocks schakelen' },
+    { cmd: '/undo', desc: lang === 'en' ? 'Undo last message' : 'Laatste bericht ongedaan maken' },
+    { cmd: '/redo', desc: lang === 'en' ? 'Redo message' : 'Bericht herhalen' },
+    { cmd: '/auth, /login', desc: lang === 'en' ? 'Authenticate with providers' : 'Authenticeren bij providers' },
+    { cmd: '/debug', desc: lang === 'en' ? 'Toggle debug mode' : 'Debug modus schakelen' },
+    { cmd: '/exit, /quit, /q', desc: lang === 'en' ? 'Exit application' : 'Applicatie afsluiten' },
+];
+
+const agents = [
+    {
+        name: 'Build',
+        desc: lang === 'en'
+            ? 'General purpose agent for building and implementing features. Can read, write, and execute code.'
+            : 'Algemene agent voor het bouwen en implementeren van features. Kan code lezen, schrijven en uitvoeren.'
+    },
+    {
+        name: 'Plan',
+        desc: lang === 'en'
+            ? 'Planning agent that creates detailed implementation plans before coding. Focuses on architecture and design.'
+            : 'Planning agent die gedetailleerde implementatieplannen maakt voor het coderen. Focust op architectuur en ontwerp.'
+    },
+    {
+        name: 'General',
+        desc: lang === 'en'
+            ? 'Read-only agent for questions and exploration. Cannot make changes to your codebase.'
+            : 'Alleen-lezen agent voor vragen en verkenning. Kan geen wijzigingen aanbrengen in je codebase.'
+    },
+];
+---
+
+<BaseLayout title={title} description={description}>
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+
+    <!-- Main Content -->
+    <main class="tui-guide-page">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-badge">
+                    <span class="badge-icon">💻</span>
+                    <span class="badge-text">Terminal User Interface</span>
+                </div>
+                <h1>{lang === 'en' ? 'TUI Guide' : 'TUI Handleiding'}</h1>
+                <p class="hero-desc">
+                    {lang === 'en'
+                        ? 'Master the Snow-Flow terminal interface. Learn keyboard shortcuts, commands, and agent modes to maximize your productivity.'
+                        : 'Beheers de Snow-Flow terminal interface. Leer toetsenbordsnelkoppelingen, commando\'s en agent-modi om je productiviteit te maximaliseren.'}
+                </p>
+            </section>
+
+            <!-- Interface Overview -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Interface Overview' : 'Interface Overzicht'}</h2>
+                <div class="interface-diagram">
+                    <div class="interface-part header-bar">
+                        <span class="part-label">{lang === 'en' ? 'Status Bar' : 'Statusbalk'}</span>
+                        <span class="part-desc">{lang === 'en' ? 'Shows agent, model, and session info' : 'Toont agent, model en sessie info'}</span>
+                    </div>
+                    <div class="interface-part message-pane">
+                        <span class="part-label">{lang === 'en' ? 'Message Pane' : 'Berichten Paneel'}</span>
+                        <span class="part-desc">{lang === 'en' ? 'Conversation history with AI responses' : 'Gespreksgeschiedenis met AI-antwoorden'}</span>
+                    </div>
+                    <div class="interface-part input-area">
+                        <span class="part-label">{lang === 'en' ? 'Input Area' : 'Invoerveld'}</span>
+                        <span class="part-desc">{lang === 'en' ? 'Type your prompts here' : 'Typ hier je prompts'}</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Agent Modes -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Agent Modes' : 'Agent Modi'}</h2>
+                <p class="section-intro">
+                    {lang === 'en'
+                        ? 'Switch between agents using Tab or /agents. Each agent has different capabilities:'
+                        : 'Wissel tussen agents met Tab of /agents. Elke agent heeft verschillende mogelijkheden:'}
+                </p>
+                <div class="agents-grid">
+                    {agents.map(agent => (
+                        <div class="agent-card">
+                            <div class="agent-header">
+                                <span class="agent-icon">{agent.name === 'Build' ? '🔨' : agent.name === 'Plan' ? '📋' : '💬'}</span>
+                                <h3>{agent.name}</h3>
+                            </div>
+                            <p>{agent.desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <!-- Keyboard Shortcuts -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Keyboard Shortcuts' : 'Toetsenbordsnelkoppelingen'}</h2>
+
+                <div class="shortcuts-group">
+                    <h3>{lang === 'en' ? 'Navigation' : 'Navigatie'}</h3>
+                    <div class="shortcuts-table">
+                        {shortcuts.navigation.map(s => (
+                            <div class="shortcut-row">
+                                <kbd>{s.key}</kbd>
+                                <span>{s.action}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div class="shortcuts-group">
+                    <h3>{lang === 'en' ? 'Input' : 'Invoer'}</h3>
+                    <div class="shortcuts-table">
+                        {shortcuts.input.map(s => (
+                            <div class="shortcut-row">
+                                <kbd>{s.key}</kbd>
+                                <span>{s.action}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div class="shortcuts-group">
+                    <h3>{lang === 'en' ? 'Scrolling' : 'Scrollen'}</h3>
+                    <div class="shortcuts-table">
+                        {shortcuts.scrolling.map(s => (
+                            <div class="shortcut-row">
+                                <kbd>{s.key}</kbd>
+                                <span>{s.action}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div class="shortcuts-group leader-group">
+                    <h3>{lang === 'en' ? 'Leader Key Commands' : 'Leider Toets Commando\'s'}</h3>
+                    <p class="leader-note">
+                        {lang === 'en'
+                            ? 'Press Ctrl+X first, then the second key. Leader key can be customized in config.'
+                            : 'Druk eerst Ctrl+X, dan de tweede toets. Leider toets kan worden aangepast in config.'}
+                    </p>
+                    <div class="shortcuts-table leader-table">
+                        {shortcuts.leader.map(s => (
+                            <div class="shortcut-row">
+                                <kbd>{s.key}</kbd>
+                                <span>{s.action}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slash Commands -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Slash Commands' : 'Slash Commando\'s'}</h2>
+                <p class="section-intro">
+                    {lang === 'en'
+                        ? 'Type these commands in the input area. All commands start with /'
+                        : 'Typ deze commando\'s in het invoerveld. Alle commando\'s beginnen met /'}
+                </p>
+                <div class="commands-grid">
+                    {commands.map(c => (
+                        <div class="command-row">
+                            <code>{c.cmd}</code>
+                            <span>{c.desc}</span>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <!-- Tips & Tricks -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Tips & Tricks' : 'Tips & Trucs'}</h2>
+                <div class="tips-grid">
+                    <div class="tip-card">
+                        <div class="tip-icon">💡</div>
+                        <h4>{lang === 'en' ? 'Multi-line Input' : 'Meerdere Regels'}</h4>
+                        <p>{lang === 'en'
+                            ? 'Use Shift+Enter to write multi-line prompts. Perfect for code blocks or detailed instructions.'
+                            : 'Gebruik Shift+Enter voor prompts met meerdere regels. Perfect voor codeblokken of gedetailleerde instructies.'}</p>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">🔄</div>
+                        <h4>{lang === 'en' ? 'Quick Model Switch' : 'Snel Model Wisselen'}</h4>
+                        <p>{lang === 'en'
+                            ? 'Press F2 to quickly cycle through your recently used models without opening the model list.'
+                            : 'Druk F2 om snel door je recent gebruikte modellen te wisselen zonder de modellijst te openen.'}</p>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">📦</div>
+                        <h4>{lang === 'en' ? 'Session Compacting' : 'Sessie Comprimeren'}</h4>
+                        <p>{lang === 'en'
+                            ? 'Use /compact when context gets long. It summarizes history while keeping important context.'
+                            : 'Gebruik /compact wanneer de context lang wordt. Het vat geschiedenis samen maar behoudt belangrijke context.'}</p>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">⏪</div>
+                        <h4>{lang === 'en' ? 'Undo/Redo' : 'Ongedaan maken/Herhalen'}</h4>
+                        <p>{lang === 'en'
+                            ? 'Made a mistake? Use Ctrl+X U to undo or /undo. This reverts to the previous conversation state.'
+                            : 'Fout gemaakt? Gebruik Ctrl+X U om ongedaan te maken of /undo. Dit keert terug naar de vorige gespreksstand.'}</p>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">🎨</div>
+                        <h4>{lang === 'en' ? 'Custom Themes' : 'Aangepaste Thema\'s'}</h4>
+                        <p>{lang === 'en'
+                            ? 'Use /themes to switch themes. You can also create custom themes in your config directory.'
+                            : 'Gebruik /themes om thema\'s te wisselen. Je kunt ook aangepaste thema\'s maken in je config map.'}</p>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">📤</div>
+                        <h4>{lang === 'en' ? 'Share Sessions' : 'Sessies Delen'}</h4>
+                        <p>{lang === 'en'
+                            ? 'Use /share to create a shareable link to your conversation. Great for collaboration.'
+                            : 'Gebruik /share om een deelbare link naar je gesprek te maken. Ideaal voor samenwerking.'}</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuration -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Configuration' : 'Configuratie'}</h2>
+                <p class="section-intro">
+                    {lang === 'en'
+                        ? 'Customize the TUI through your config file:'
+                        : 'Pas de TUI aan via je configuratiebestand:'}
+                </p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">~/.config/snow-flow/config.json</span>
+                    </div>
+                    <div class="code-content">
+<pre>{`{
+  "theme": "snow-dark",
+  "keybinds": {
+    "leader": "ctrl+x"
+  },
+  "tui": {
+    "scrollSpeed": 3
+  }
+}`}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CTA -->
+            <section class="docs-cta">
+                <h2>{lang === 'en' ? 'Ready to Start?' : 'Klaar om te Beginnen?'}</h2>
+                <p>{lang === 'en'
+                    ? 'Install Snow-Flow and launch the TUI to start building ServiceNow solutions.'
+                    : 'Installeer Snow-Flow en start de TUI om ServiceNow oplossingen te bouwen.'}</p>
+                <div class="cta-buttons">
+                    <a href={`/${lang}/docs`} class="btn btn-primary">
+                        {lang === 'en' ? 'Quick Start' : 'Snelle Start'} →
+                    </a>
+                    <a href={`/${lang}/mcp-reference`} class="btn btn-secondary">
+                        {lang === 'en' ? 'Browse MCP Tools' : 'Bekijk MCP Tools'}
+                    </a>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": title,
+        "description": description,
+        "author": { "@type": "Organization", "name": "Snow-Flow Team" },
+        "publisher": { "@type": "Organization", "name": "Snow-Flow" }
+    })} />
+</BaseLayout>
+
+<style>
+    .tui-guide-page {
+        min-height: 100vh;
+        padding: 100px 0 60px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(138, 43, 226, 0.15);
+        border: 1px solid rgba(138, 43, 226, 0.3);
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .badge-icon {
+        font-size: 1rem;
+    }
+
+    .badge-text {
+        color: #a855f7;
+        font-weight: 500;
+    }
+
+    .hero-section h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--text-primary), #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero-desc {
+        font-size: 1.25rem;
+        color: var(--text-secondary);
+        max-width: 650px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* Sections */
+    .section {
+        margin-bottom: 4rem;
+    }
+
+    .section h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: var(--text-primary);
+    }
+
+    .section-intro {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+    }
+
+    /* Interface Diagram */
+    .interface-diagram {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 1.5rem;
+        overflow: hidden;
+    }
+
+    .interface-part {
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-bar {
+        background: rgba(138, 43, 226, 0.15);
+        border: 1px solid rgba(138, 43, 226, 0.3);
+        height: 50px;
+    }
+
+    .message-pane {
+        background: rgba(0, 217, 255, 0.08);
+        border: 1px solid rgba(0, 217, 255, 0.2);
+        height: 200px;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .input-area {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        height: 60px;
+    }
+
+    .part-label {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .part-desc {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+
+    /* Agent Cards */
+    .agents-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+
+    .agent-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: all 0.3s;
+    }
+
+    .agent-card:hover {
+        border-color: rgba(138, 43, 226, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .agent-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .agent-icon {
+        font-size: 1.5rem;
+    }
+
+    .agent-card h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .agent-card p {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    /* Shortcuts */
+    .shortcuts-group {
+        margin-bottom: 2rem;
+    }
+
+    .shortcuts-group h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .shortcuts-group h3::before {
+        content: '';
+        width: 4px;
+        height: 1.1rem;
+        background: var(--accent-cyan);
+        border-radius: 2px;
+    }
+
+    .leader-note {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+        padding-left: 1rem;
+        border-left: 2px solid rgba(138, 43, 226, 0.4);
+    }
+
+    .shortcuts-table {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .leader-table {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .shortcut-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+    }
+
+    .shortcut-row kbd {
+        background: rgba(0, 217, 255, 0.1);
+        border: 1px solid rgba(0, 217, 255, 0.3);
+        color: var(--accent-cyan);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+        font-weight: 500;
+        white-space: nowrap;
+        min-width: 90px;
+        text-align: center;
+    }
+
+    .shortcut-row span {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    /* Commands */
+    .commands-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .command-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+    }
+
+    .command-row code {
+        background: rgba(249, 115, 22, 0.1);
+        border: 1px solid rgba(249, 115, 22, 0.3);
+        color: #f97316;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+        font-weight: 500;
+        white-space: nowrap;
+        min-width: 120px;
+    }
+
+    .command-row span {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    /* Tips */
+    .tips-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+
+    .tip-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: all 0.3s;
+    }
+
+    .tip-card:hover {
+        border-color: rgba(0, 217, 255, 0.3);
+    }
+
+    .tip-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .tip-card h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .tip-card p {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    /* Code Block */
+    .code-block {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        overflow: hidden;
+        max-width: 500px;
+    }
+
+    .code-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .code-lang {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .code-content {
+        padding: 1rem;
+    }
+
+    .code-content pre {
+        margin: 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        color: var(--accent-cyan);
+        line-height: 1.6;
+    }
+
+    /* CTA */
+    .docs-cta {
+        text-align: center;
+        padding: 3rem;
+        background: var(--bg-card);
+        border-radius: 20px;
+        border: 1px solid var(--border-subtle);
+    }
+
+    .docs-cta h2 {
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .docs-cta p {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: var(--accent-cyan);
+        color: var(--bg-primary);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 217, 255, 0.35);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border-medium);
+        color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+        border-color: var(--accent-cyan);
+        color: var(--accent-cyan);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .agents-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .shortcuts-table,
+        .leader-table,
+        .commands-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .tips-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 600px) {
+        .container {
+            padding: 0 1rem;
+        }
+
+        .hero-section h1 {
+            font-size: 2rem;
+        }
+
+        .hero-desc {
+            font-size: 1rem;
+        }
+
+        .tips-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .interface-part {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+
+        .message-pane {
+            height: 120px;
+        }
+
+        .cta-buttons {
+            flex-direction: column;
+        }
+    }
+</style>

@@ -1,0 +1,858 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getLangFromUrl, useTranslations, type Lang } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'nl' } }
+  ];
+}
+
+const lang = getLangFromUrl(Astro.url) as Lang;
+const t = useTranslations(lang);
+
+const title = lang === 'en' ? 'CLI Reference | Snow-Flow' : 'CLI Referentie | Snow-Flow';
+const description = lang === 'en'
+  ? 'Complete CLI command reference for Snow-Flow. All commands, options, and examples for the terminal interface.'
+  : 'Complete CLI command referentie voor Snow-Flow. Alle commando\'s, opties en voorbeelden voor de terminal interface.';
+
+const commands = [
+    {
+        name: 'snow-flow',
+        desc: lang === 'en' ? 'Start the TUI (Terminal User Interface)' : 'Start de TUI (Terminal User Interface)',
+        usage: 'snow-flow [project]',
+        options: [
+            { flag: '--model, -m', desc: lang === 'en' ? 'Initial model to use' : 'Initieel model om te gebruiken' },
+            { flag: '--prompt, -p', desc: lang === 'en' ? 'Initial prompt to send' : 'Initiële prompt om te verzenden' },
+            { flag: '--agent, -a', desc: lang === 'en' ? 'Initial agent mode' : 'Initiële agent modus' },
+            { flag: '--session, -s', desc: lang === 'en' ? 'Resume a specific session' : 'Hervat een specifieke sessie' },
+        ],
+        examples: [
+            'snow-flow',
+            'snow-flow --model anthropic/claude-sonnet-4',
+            'snow-flow --agent plan',
+        ]
+    },
+    {
+        name: 'auth',
+        desc: lang === 'en' ? 'Authentication and provider management' : 'Authenticatie en provider beheer',
+        usage: 'snow-flow auth <action>',
+        subcommands: [
+            { name: 'login [url]', desc: lang === 'en' ? 'Authenticate with providers and ServiceNow' : 'Authenticeer met providers en ServiceNow' },
+            { name: 'logout', desc: lang === 'en' ? 'Clear authentication tokens' : 'Wis authenticatie tokens' },
+            { name: 'list', desc: lang === 'en' ? 'Show configured authentication' : 'Toon geconfigureerde authenticatie' },
+            { name: 'enterprise-login', desc: lang === 'en' ? 'Login to Snow-Flow Enterprise' : 'Inloggen bij Snow-Flow Enterprise' },
+            { name: 'enterprise-status', desc: lang === 'en' ? 'Show enterprise connection status' : 'Toon enterprise verbindingsstatus' },
+            { name: 'portal-login', desc: lang === 'en' ? 'Login via portal (Individual/Teams)' : 'Inloggen via portal (Individueel/Teams)' },
+            { name: 'portal-status', desc: lang === 'en' ? 'Show portal authentication status' : 'Toon portal authenticatie status' },
+        ],
+        examples: [
+            'snow-flow auth login',
+            'snow-flow auth login https://dev12345.service-now.com',
+            'snow-flow auth list',
+            'snow-flow auth enterprise-login',
+        ]
+    },
+    {
+        name: 'sessions',
+        desc: lang === 'en' ? 'Manage conversation sessions' : 'Beheer gespreksessies',
+        usage: 'snow-flow sessions <action>',
+        subcommands: [
+            { name: 'list', desc: lang === 'en' ? 'List all sessions' : 'Toon alle sessies' },
+            { name: 'recent', desc: lang === 'en' ? 'Show recently used sessions' : 'Toon recent gebruikte sessies' },
+            { name: 'search', desc: lang === 'en' ? 'Search sessions by query' : 'Zoek sessies op query' },
+            { name: 'tree', desc: lang === 'en' ? 'Show session fork tree' : 'Toon sessie fork tree' },
+            { name: 'rename', desc: lang === 'en' ? 'Rename a session' : 'Hernoem een sessie' },
+            { name: 'info', desc: lang === 'en' ? 'Show session details' : 'Toon sessie details' },
+            { name: 'resume', desc: lang === 'en' ? 'Resume a session in TUI' : 'Hervat een sessie in TUI' },
+        ],
+        options: [
+            { flag: '--session, -s', desc: lang === 'en' ? 'Session ID' : 'Sessie ID' },
+            { flag: '--limit, -l', desc: lang === 'en' ? 'Maximum results (default: 20)' : 'Maximum resultaten (standaard: 20)' },
+            { flag: '--format, -f', desc: lang === 'en' ? 'Output format: table, json, tree, compact' : 'Uitvoerformaat: table, json, tree, compact' },
+            { flag: '--all, -a', desc: lang === 'en' ? 'Show all sessions (not just current project)' : 'Toon alle sessies (niet alleen huidig project)' },
+        ],
+        examples: [
+            'snow-flow sessions list',
+            'snow-flow sessions search --query "incident"',
+            'snow-flow sessions tree --session abc123',
+        ]
+    },
+    {
+        name: 'config',
+        desc: lang === 'en' ? 'Manage Snow-Flow configuration' : 'Beheer Snow-Flow configuratie',
+        usage: 'snow-flow config <action>',
+        subcommands: [
+            { name: 'show', desc: lang === 'en' ? 'Show current configuration' : 'Toon huidige configuratie' },
+            { name: 'get', desc: lang === 'en' ? 'Get specific config value' : 'Haal specifieke config waarde op' },
+            { name: 'set', desc: lang === 'en' ? 'Set config value' : 'Zet config waarde' },
+            { name: 'edit', desc: lang === 'en' ? 'Open config in editor' : 'Open config in editor' },
+            { name: 'paths', desc: lang === 'en' ? 'Show config file locations' : 'Toon config bestand locaties' },
+            { name: 'reset', desc: lang === 'en' ? 'Reset to defaults' : 'Reset naar standaard' },
+        ],
+        options: [
+            { flag: '--key, -k', desc: lang === 'en' ? 'Configuration key' : 'Configuratie sleutel' },
+            { flag: '--value, -v', desc: lang === 'en' ? 'Configuration value' : 'Configuratie waarde' },
+            { flag: '--global, -g', desc: lang === 'en' ? 'Use global config' : 'Gebruik globale config' },
+        ],
+        examples: [
+            'snow-flow config show',
+            'snow-flow config get --key model',
+            'snow-flow config set --key model --value anthropic/claude-sonnet-4',
+            'snow-flow config edit',
+        ]
+    },
+    {
+        name: 'memory',
+        desc: lang === 'en' ? 'Manage persistent memory' : 'Beheer persistent geheugen',
+        usage: 'snow-flow memory <action>',
+        subcommands: [
+            { name: 'list', desc: lang === 'en' ? 'List all memory entries' : 'Toon alle geheugen entries' },
+            { name: 'search', desc: lang === 'en' ? 'Search memory entries' : 'Zoek geheugen entries' },
+            { name: 'add', desc: lang === 'en' ? 'Add memory entry' : 'Voeg geheugen entry toe' },
+            { name: 'clear', desc: lang === 'en' ? 'Clear all memory' : 'Wis alle geheugen' },
+        ],
+        examples: [
+            'snow-flow memory list',
+            'snow-flow memory search --query "api"',
+        ]
+    },
+    {
+        name: 'tasks',
+        desc: lang === 'en' ? 'View and manage background tasks' : 'Bekijk en beheer achtergrond taken',
+        usage: 'snow-flow tasks <action>',
+        subcommands: [
+            { name: 'list', desc: lang === 'en' ? 'List all tasks' : 'Toon alle taken' },
+            { name: 'status', desc: lang === 'en' ? 'Show task status' : 'Toon taak status' },
+            { name: 'cancel', desc: lang === 'en' ? 'Cancel a running task' : 'Annuleer een lopende taak' },
+        ],
+        examples: [
+            'snow-flow tasks list',
+            'snow-flow tasks status --id task123',
+        ]
+    },
+    {
+        name: 'mcp',
+        desc: lang === 'en' ? 'Manage MCP server configuration' : 'Beheer MCP server configuratie',
+        usage: 'snow-flow mcp <action>',
+        subcommands: [
+            { name: 'add', desc: lang === 'en' ? 'Add MCP server to configuration' : 'Voeg MCP server toe aan configuratie' },
+        ],
+        examples: [
+            'snow-flow mcp add',
+        ]
+    },
+    {
+        name: 'models',
+        desc: lang === 'en' ? 'List available AI models' : 'Toon beschikbare AI modellen',
+        usage: 'snow-flow models',
+        examples: [
+            'snow-flow models',
+        ]
+    },
+    {
+        name: 'run',
+        desc: lang === 'en' ? 'Run a single prompt without TUI' : 'Voer een enkele prompt uit zonder TUI',
+        usage: 'snow-flow run [message..]',
+        options: [
+            { flag: '--model, -m', desc: lang === 'en' ? 'Model to use' : 'Te gebruiken model' },
+            { flag: '--agent, -a', desc: lang === 'en' ? 'Agent mode' : 'Agent modus' },
+            { flag: '--no-stream', desc: lang === 'en' ? 'Disable streaming output' : 'Schakel streaming output uit' },
+        ],
+        examples: [
+            'snow-flow run "Create a new incident widget"',
+            'snow-flow run --model openai/gpt-4o "Explain this code"',
+        ]
+    },
+    {
+        name: 'agent',
+        desc: lang === 'en' ? 'Create and manage custom agents' : 'Maak en beheer aangepaste agents',
+        usage: 'snow-flow agent <action>',
+        subcommands: [
+            { name: 'create', desc: lang === 'en' ? 'Create a new agent configuration' : 'Maak een nieuwe agent configuratie' },
+        ],
+        examples: [
+            'snow-flow agent create',
+        ]
+    },
+    {
+        name: 'export',
+        desc: lang === 'en' ? 'Export a session conversation' : 'Exporteer een sessie gesprek',
+        usage: 'snow-flow export [sessionID]',
+        options: [
+            { flag: '--format, -f', desc: lang === 'en' ? 'Output format: markdown, json' : 'Uitvoerformaat: markdown, json' },
+            { flag: '--output, -o', desc: lang === 'en' ? 'Output file path' : 'Uitvoer bestandspad' },
+        ],
+        examples: [
+            'snow-flow export abc123',
+            'snow-flow export --format markdown --output chat.md',
+        ]
+    },
+    {
+        name: 'stats',
+        desc: lang === 'en' ? 'View usage statistics' : 'Bekijk gebruiksstatistieken',
+        usage: 'snow-flow stats [view]',
+        subcommands: [
+            { name: 'summary', desc: lang === 'en' ? 'Show usage summary' : 'Toon gebruiksoverzicht' },
+            { name: 'tokens', desc: lang === 'en' ? 'Show token usage' : 'Toon token gebruik' },
+            { name: 'costs', desc: lang === 'en' ? 'Show cost breakdown' : 'Toon kostenspecificatie' },
+        ],
+        examples: [
+            'snow-flow stats',
+            'snow-flow stats tokens',
+        ]
+    },
+    {
+        name: 'serve',
+        desc: lang === 'en' ? 'Start the Snow-Flow server' : 'Start de Snow-Flow server',
+        usage: 'snow-flow serve',
+        options: [
+            { flag: '--port, -p', desc: lang === 'en' ? 'Port to listen on' : 'Poort om op te luisteren' },
+        ],
+        examples: [
+            'snow-flow serve',
+            'snow-flow serve --port 3000',
+        ]
+    },
+    {
+        name: 'upgrade',
+        desc: lang === 'en' ? 'Upgrade Snow-Flow to latest version' : 'Upgrade Snow-Flow naar laatste versie',
+        usage: 'snow-flow upgrade [target]',
+        examples: [
+            'snow-flow upgrade',
+            'snow-flow upgrade latest',
+        ]
+    },
+    {
+        name: 'github',
+        desc: lang === 'en' ? 'GitHub integration commands' : 'GitHub integratie commando\'s',
+        usage: 'snow-flow github <action>',
+        subcommands: [
+            { name: 'install', desc: lang === 'en' ? 'Install GitHub app integration' : 'Installeer GitHub app integratie' },
+            { name: 'run', desc: lang === 'en' ? 'Run on GitHub issue/PR' : 'Voer uit op GitHub issue/PR' },
+        ],
+        examples: [
+            'snow-flow github install',
+            'snow-flow github run --issue 123',
+        ]
+    },
+    {
+        name: 'acp',
+        desc: lang === 'en' ? 'Git add, commit, and push in one command' : 'Git add, commit en push in één commando',
+        usage: 'snow-flow acp',
+        examples: [
+            'snow-flow acp',
+        ]
+    },
+    {
+        name: 'generate',
+        desc: lang === 'en' ? 'Generate project files and configurations' : 'Genereer project bestanden en configuraties',
+        usage: 'snow-flow generate',
+        examples: [
+            'snow-flow generate',
+        ]
+    },
+    {
+        name: 'attach',
+        desc: lang === 'en' ? 'Attach to a running MCP server' : 'Verbind met een draaiende MCP server',
+        usage: 'snow-flow attach <server>',
+        examples: [
+            'snow-flow attach servicenow',
+        ]
+    },
+];
+
+const debugCommands = [
+    { name: 'debug paths', desc: lang === 'en' ? 'Show all configuration paths' : 'Toon alle configuratie paden' },
+    { name: 'debug config', desc: lang === 'en' ? 'Show debug configuration' : 'Toon debug configuratie' },
+    { name: 'debug lsp diagnostics <file>', desc: lang === 'en' ? 'Show LSP diagnostics for file' : 'Toon LSP diagnostics voor bestand' },
+    { name: 'debug lsp symbols <query>', desc: lang === 'en' ? 'Search LSP symbols' : 'Zoek LSP symbolen' },
+    { name: 'debug file search <query>', desc: lang === 'en' ? 'Search files by query' : 'Zoek bestanden op query' },
+    { name: 'debug file read <path>', desc: lang === 'en' ? 'Read file contents' : 'Lees bestand inhoud' },
+    { name: 'debug file list <path>', desc: lang === 'en' ? 'List directory contents' : 'Toon map inhoud' },
+    { name: 'debug rg search <pattern>', desc: lang === 'en' ? 'Search with ripgrep' : 'Zoek met ripgrep' },
+    { name: 'debug snapshot', desc: lang === 'en' ? 'Manage file snapshots' : 'Beheer bestand snapshots' },
+];
+---
+
+<BaseLayout title={title} description={description}>
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+
+    <!-- Main Content -->
+    <main class="cli-reference-page">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-badge">
+                    <span class="badge-icon">$</span>
+                    <span class="badge-text">Command Line Interface</span>
+                </div>
+                <h1>{lang === 'en' ? 'CLI Reference' : 'CLI Referentie'}</h1>
+                <p class="hero-desc">
+                    {lang === 'en'
+                        ? 'Complete reference for all Snow-Flow CLI commands. Use these commands in your terminal alongside the TUI.'
+                        : 'Complete referentie voor alle Snow-Flow CLI commando\'s. Gebruik deze commando\'s in je terminal naast de TUI.'}
+                </p>
+            </section>
+
+            <!-- Quick Start -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Quick Start' : 'Snelle Start'}</h2>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                    </div>
+                    <div class="code-content">
+<pre>{`# Install Snow-Flow globally
+npm install -g snow-flow
+
+# Start the TUI
+snow-flow
+
+# Or run a single command
+snow-flow run "Create a new incident widget"`}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Commands -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Commands' : 'Commando\'s'}</h2>
+
+                {commands.map(cmd => (
+                    <div class="command-card" id={cmd.name}>
+                        <div class="command-header">
+                            <code class="command-name">snow-flow {cmd.name}</code>
+                            <span class="command-desc">{cmd.desc}</span>
+                        </div>
+
+                        <div class="command-usage">
+                            <span class="usage-label">{lang === 'en' ? 'Usage:' : 'Gebruik:'}</span>
+                            <code>{cmd.usage}</code>
+                        </div>
+
+                        {cmd.subcommands && cmd.subcommands.length > 0 && (
+                            <div class="command-section">
+                                <h4>{lang === 'en' ? 'Subcommands' : 'Subcommando\'s'}</h4>
+                                <div class="subcommands-list">
+                                    {cmd.subcommands.map(sub => (
+                                        <div class="subcommand-row">
+                                            <code>{sub.name}</code>
+                                            <span>{sub.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {cmd.options && cmd.options.length > 0 && (
+                            <div class="command-section">
+                                <h4>{lang === 'en' ? 'Options' : 'Opties'}</h4>
+                                <div class="options-list">
+                                    {cmd.options.map(opt => (
+                                        <div class="option-row">
+                                            <code>{opt.flag}</code>
+                                            <span>{opt.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {cmd.examples && cmd.examples.length > 0 && (
+                            <div class="command-section">
+                                <h4>{lang === 'en' ? 'Examples' : 'Voorbeelden'}</h4>
+                                <div class="examples-block">
+                                    {cmd.examples.map(ex => (
+                                        <code class="example-line">{ex}</code>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </section>
+
+            <!-- Debug Commands -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Debug Commands' : 'Debug Commando\'s'}</h2>
+                <p class="section-intro">
+                    {lang === 'en'
+                        ? 'Advanced debugging commands for troubleshooting and development:'
+                        : 'Geavanceerde debug commando\'s voor troubleshooting en development:'}
+                </p>
+                <div class="debug-commands-grid">
+                    {debugCommands.map(cmd => (
+                        <div class="debug-command">
+                            <code>snow-flow {cmd.name}</code>
+                            <span>{cmd.desc}</span>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <!-- Environment Variables -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Environment Variables' : 'Omgevingsvariabelen'}</h2>
+                <div class="env-vars-grid">
+                    <div class="env-var">
+                        <code>SNOWCODE_SERVER</code>
+                        <span>{lang === 'en' ? 'Custom server URL' : 'Aangepaste server URL'}</span>
+                    </div>
+                    <div class="env-var">
+                        <code>OPENCODE_THEME</code>
+                        <span>{lang === 'en' ? 'Theme override' : 'Thema overschrijving'}</span>
+                    </div>
+                    <div class="env-var">
+                        <code>SERVICENOW_INSTANCE</code>
+                        <span>{lang === 'en' ? 'ServiceNow instance URL' : 'ServiceNow instance URL'}</span>
+                    </div>
+                    <div class="env-var">
+                        <code>SERVICENOW_CLIENT_ID</code>
+                        <span>{lang === 'en' ? 'OAuth Client ID' : 'OAuth Client ID'}</span>
+                    </div>
+                    <div class="env-var">
+                        <code>SERVICENOW_CLIENT_SECRET</code>
+                        <span>{lang === 'en' ? 'OAuth Client Secret' : 'OAuth Client Secret'}</span>
+                    </div>
+                    <div class="env-var">
+                        <code>ANTHROPIC_API_KEY</code>
+                        <span>{lang === 'en' ? 'Anthropic API key for Claude' : 'Anthropic API sleutel voor Claude'}</span>
+                    </div>
+                    <div class="env-var">
+                        <code>OPENAI_API_KEY</code>
+                        <span>{lang === 'en' ? 'OpenAI API key' : 'OpenAI API sleutel'}</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CTA -->
+            <section class="docs-cta">
+                <h2>{lang === 'en' ? 'Need More Help?' : 'Meer Hulp Nodig?'}</h2>
+                <p>{lang === 'en'
+                    ? 'Check out the TUI Guide for keyboard shortcuts or explore all MCP tools.'
+                    : 'Bekijk de TUI Handleiding voor toetsenbordsnelkoppelingen of verken alle MCP tools.'}</p>
+                <div class="cta-buttons">
+                    <a href={`/${lang}/tui-guide`} class="btn btn-primary">
+                        {lang === 'en' ? 'TUI Guide' : 'TUI Handleiding'} →
+                    </a>
+                    <a href={`/${lang}/mcp-reference`} class="btn btn-secondary">
+                        {lang === 'en' ? 'MCP Tools Reference' : 'MCP Tools Referentie'}
+                    </a>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": title,
+        "description": description,
+        "author": { "@type": "Organization", "name": "Snow-Flow Team" },
+        "publisher": { "@type": "Organization", "name": "Snow-Flow" }
+    })} />
+</BaseLayout>
+
+<style>
+    .cli-reference-page {
+        min-height: 100vh;
+        padding: 100px 0 60px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .badge-icon {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1rem;
+        color: #22c55e;
+    }
+
+    .badge-text {
+        color: #22c55e;
+        font-weight: 500;
+    }
+
+    .hero-section h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--text-primary), #22c55e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero-desc {
+        font-size: 1.25rem;
+        color: var(--text-secondary);
+        max-width: 650px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* Sections */
+    .section {
+        margin-bottom: 4rem;
+    }
+
+    .section h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: var(--text-primary);
+    }
+
+    .section-intro {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+    }
+
+    /* Code Block */
+    .code-block {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .code-header {
+        padding: 0.75rem 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .code-lang {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .code-content {
+        padding: 1rem;
+    }
+
+    .code-content pre {
+        margin: 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        color: var(--accent-cyan);
+        line-height: 1.6;
+    }
+
+    /* Command Cards */
+    .command-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .command-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .command-name {
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #22c55e;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .command-desc {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .command-usage {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+    }
+
+    .usage-label {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .command-usage code {
+        color: var(--accent-cyan);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+    }
+
+    .command-section {
+        margin-top: 1rem;
+    }
+
+    .command-section h4 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+
+    .subcommands-list,
+    .options-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .subcommand-row,
+    .option-row {
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+        padding: 0.5rem 0.75rem;
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 6px;
+    }
+
+    .subcommand-row code,
+    .option-row code {
+        color: #f97316;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        min-width: 180px;
+    }
+
+    .subcommand-row span,
+    .option-row span {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+    }
+
+    .examples-block {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 0.75rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+    }
+
+    .example-line {
+        color: var(--accent-cyan);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+    }
+
+    .example-line::before {
+        content: '$ ';
+        color: var(--text-muted);
+    }
+
+    /* Debug Commands */
+    .debug-commands-grid {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .debug-command {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+    }
+
+    .debug-command code {
+        color: #a855f7;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        min-width: 280px;
+    }
+
+    .debug-command span {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+    }
+
+    /* Environment Variables */
+    .env-vars-grid {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .env-var {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+    }
+
+    .env-var code {
+        background: rgba(0, 217, 255, 0.1);
+        border: 1px solid rgba(0, 217, 255, 0.3);
+        color: var(--accent-cyan);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+        min-width: 220px;
+    }
+
+    .env-var span {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+    }
+
+    /* CTA */
+    .docs-cta {
+        text-align: center;
+        padding: 3rem;
+        background: var(--bg-card);
+        border-radius: 20px;
+        border: 1px solid var(--border-subtle);
+    }
+
+    .docs-cta h2 {
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .docs-cta p {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: var(--accent-cyan);
+        color: var(--bg-primary);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 217, 255, 0.35);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border-medium);
+        color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+        border-color: var(--accent-cyan);
+        color: var(--accent-cyan);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .container {
+            padding: 0 1rem;
+        }
+
+        .hero-section h1 {
+            font-size: 2rem;
+        }
+
+        .hero-desc {
+            font-size: 1rem;
+        }
+
+        .command-header {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .subcommand-row,
+        .option-row {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .subcommand-row code,
+        .option-row code {
+            min-width: auto;
+        }
+
+        .debug-command,
+        .env-var {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .debug-command code,
+        .env-var code {
+            min-width: auto;
+        }
+
+        .cta-buttons {
+            flex-direction: column;
+        }
+    }
+</style>

@@ -2,6 +2,10 @@
   "$schema": "https://turborepo.com/schema.json",
   "tasks": {
     "typecheck": {},
+    "docs:generate": {
+      "outputs": ["apps/website/src/data/mcp-tools.json", "docs/api/tools/**"],
+      "cache": true
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]

@@ -1,0 +1,2855 @@
+{
+  "generatedAt": "2025-12-27T10:43:33.192Z",
+  "totalTools": 379,
+  "totalCategories": 15,
+  "categories": [
+    {
+      "id": "advanced",
+      "name": "Advanced AI/ML",
+      "description": {
+        "en": "AI classification, anomaly detection, and ML predictions",
+        "nl": "AI classificatie, anomalie detectie en ML voorspellingen"
+      },
+      "toolCount": 52,
+      "readCount": 44,
+      "writeCount": 8,
+      "tools": [
+        {
+          "name": "snow_backup_instance",
+          "description": "Create instance backup",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_clone_instance",
+          "description": "Clone ServiceNow instance",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_ai_classify",
+          "description": "Classify text using AI",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_anomaly_detection",
+          "description": "Detect anomalies in data",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_autocomplete",
+          "description": "Get autocomplete suggestions",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_duplicate_detection",
+          "description": "Detect duplicate records",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_fuzzy_search",
+          "description": "Perform fuzzy search across tables with relevance scoring. Returns sys_id + name + relevance_score for each match. Uses LIKE/CONTAINS queries and ranks by similarity.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_ml_predict",
+          "description": "Make ML prediction using trained model",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_recommendation_engine",
+          "description": "Generate recommendations based on user behavior",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_sentiment_analysis",
+          "description": "Analyze text sentiment",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_check_health",
+          "description": "Check ServiceNow instance health",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_data_convert",
+          "description": "Unified data conversion (csv_to_json, json_to_csv, json_to_xml, xml_to_json)",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_data_export",
+          "description": "Export table data to CSV/XML/JSON format. Always includes sys_id. Returns records array with full data.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_jwt_decode",
+          "description": "Decode JWT token",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_devops_change",
+          "description": "Create automated DevOps change request for deployments",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_devops_pipeline",
+          "description": "Create DevOps pipeline for CI/CD automation",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_devops_insights",
+          "description": "Retrieve DevOps metrics and insights",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_track_deployment",
+          "description": "Track application deployment through DevOps pipeline",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_velocity_tracking",
+          "description": "Track team velocity and delivery metrics",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_decode_base64",
+          "description": "Decode Base64 to string",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_decode_url",
+          "description": "URL decode string",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_encode_base64",
+          "description": "Encode string to Base64",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_encode_url",
+          "description": "URL encode string",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_hash_string",
+          "description": "Hash string using various algorithms",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_date_filter",
+          "description": "Build date-based query filter",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_field_filter",
+          "description": "Create field-based filter",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_query_filter",
+          "description": "Build ServiceNow encoded query filter",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_format_date",
+          "description": "Format date for ServiceNow",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_format_number",
+          "description": "Format number with locale",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_format_text",
+          "description": "Format text with various transformations",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_generate_records",
+          "description": "Generate multiple test records",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_cache_get",
+          "description": "Get value from cache",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_cache_set",
+          "description": "Set value in cache",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_diff_objects",
+          "description": "Compare two objects and get differences",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_paginate",
+          "description": "Calculate pagination parameters",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_rate_limit",
+          "description": "Apply rate limiting to operations",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_retry_operation",
+          "description": "Retry failed operation with backoff",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_data_mapper",
+          "description": "Advanced data mapping with transformations",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_field_mapper",
+          "description": "Map fields between schemas",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_parse_json",
+          "description": "Parse and validate JSON",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_activate_plugin",
+          "description": "Activate ServiceNow plugin",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_custom_plugin",
+          "description": "Execute custom plugin logic",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_list_plugins",
+          "description": "List installed plugins",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_analyze_data_quality",
+          "description": "Analyze data quality including completeness, consistency, and accuracy metrics",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_transform_data",
+          "description": "Transform data using field mappings",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_convert_es6_to_es5",
+          "description": "Convert ES6+ JavaScript to ES5 for ServiceNow compatibility. Use this when debugging SyntaxErrors.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_generate_guid",
+          "description": "Generate GUID/UUID",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_merge_objects",
+          "description": "Deep merge multiple objects",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_random_string",
+          "description": "Generate random string",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_sanitize_input",
+          "description": "Sanitize input for security",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_sleep",
+          "description": "Sleep for specified milliseconds",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_timestamp",
+          "description": "Get current timestamp in various formats",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "asset-management",
+      "name": "Asset Management",
+      "description": {
+        "en": "Tools for asset-management",
+        "nl": "Tools voor asset-management"
+      },
+      "toolCount": 8,
+      "readCount": 1,
+      "writeCount": 7,
+      "tools": [
+        {
+          "name": "snow_asset_compliance_report",
+          "description": "Generate comprehensive asset compliance reports for auditing",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_asset_discovery",
+          "description": "Discover and normalize assets from multiple sources",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_asset",
+          "description": "Create hardware/software asset",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_manage_software_license",
+          "description": "Manage software licenses with compliance tracking and optimization",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_optimize_licenses",
+          "description": "Analyze license usage and provide optimization recommendations",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_retire_asset",
+          "description": "Retire/dispose asset",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_track_asset_lifecycle",
+          "description": "Track complete asset lifecycle from procurement to disposal",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_transfer_asset",
+          "description": "Transfer asset to user/location",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "automation",
+      "name": "Automation",
+      "description": {
+        "en": "Script execution, scheduled jobs, and event management",
+        "nl": "Script executie, geplande taken en event beheer"
+      },
+      "toolCount": 57,
+      "readCount": 24,
+      "writeCount": 33,
+      "tools": [
+        {
+          "name": "snow_confirm_script_execution",
+          "description": "⚡ Confirms and schedules script after user approval (use after snow_schedule_script_job with requireConfirmation=true). Note: Uses same scheduled job approach.",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_escalation_rule",
+          "description": "Creates escalation rules for time-based actions. Defines escalation timing, conditions, and automated responses.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_event_rule",
+          "description": "Creates event-driven automation rules. Triggers scripts based on system events with conditional logic.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_sla_definition",
+          "description": "Creates Service Level Agreement definitions. Sets duration targets, business schedules, and breach conditions.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_workflow_activity",
+          "description": "⚠️ LEGACY: Create workflow activity (deprecated - ServiceNow recommends Flow Designer). Configures activity types, conditions, and execution order.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_automation_jobs",
+          "description": "Discovers automation jobs (scheduled scripts, executions) in the instance.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_events",
+          "description": "Discovers system events registered in the instance.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_schedules",
+          "description": "Discovers schedules (business hours, maintenance windows) in the instance.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_email_logs",
+          "description": "Retrieve sent/received email logs from sys_email table for monitoring and debugging",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_flow_execution_logs",
+          "description": "Retrieve Flow Designer execution logs for monitoring flow runs, debugging failures, and analyzing performance",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_inbound_http_logs",
+          "description": "Retrieve inbound REST API transaction logs for monitoring API usage and debugging incoming requests",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_logs",
+          "description": "Retrieve ServiceNow system logs with filtering by level, source, and time range",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_outbound_http_logs",
+          "description": "Retrieve outbound HTTP request logs for monitoring REST/SOAP integrations and external API calls",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_scheduled_job_logs",
+          "description": "Retrieve scheduled job execution history and logs for monitoring automation, identifying failures, and tracking performance",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_script_output",
+          "description": "Retrieve output from previously executed script using execution ID",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_slow_queries",
+          "description": "Retrieve slow database query logs for identifying performance issues, optimizing GlideRecord queries, and improving system responsiveness",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_property_manager",
+          "description": "Enhanced property management with get, set, and validation in one tool",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_rest_message_test_suite",
+          "description": "Comprehensive testing suite for REST messages including authentication, endpoints, headers, and response validation.",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_schedule_script_job",
+          "description": "⚠️ SCHEDULES (not executes directly) server-side JavaScript via Scheduled Script Job. Creates sysauto_script + sys_trigger. Returns executed=false if scheduler doesn\\",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_trace_execution",
+          "description": "Set up execution tracing configuration. Creates a trace session that scripts can write to. Use snow_get_script_output to retrieve trace data later.",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_email_template",
+          "description": "Create email notification template",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_notification",
+          "description": "Create automated notification",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_email_notification_manage",
+          "description": "Manage email notifications: list, get, create, update, delete, enable/disable",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_inbound_email_action",
+          "description": "Manage inbound email actions: list, get, create, update, delete, enable/disable",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_send_email",
+          "description": "Send email notification via sys_email table (supports username, email, or sys_id)",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_alert",
+          "description": "Create system alert for monitoring",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_alert_rule",
+          "description": "Create alert rules for automated monitoring and notifications",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_event",
+          "description": "Create system event for event management",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_event_queue",
+          "description": "Get event queue status and pending events",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_monitor_metrics",
+          "description": "Monitor system metrics and performance indicators",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_callback_handler",
+          "description": "Create callback handler for async operations",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_event_handler",
+          "description": "Create event handler",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_schedule_job",
+          "description": "Create scheduled job with cron expression or repeat interval",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_collect_metric",
+          "description": "Collect metric data",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_send_push_notification",
+          "description": "Sends a push notification to mobile devices. Can target specific users, groups, or all users.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_notification_template",
+          "description": "Create reusable notification template with multi-channel support",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_emergency_broadcast",
+          "description": "Send emergency broadcast notification to all users or specific groups",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_notification_analytics",
+          "description": "Analyze notification delivery rates, engagement, and effectiveness",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_notification_preferences",
+          "description": "Manage user notification preferences and routing rules",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_schedule_notification",
+          "description": "Schedule future notification delivery with advanced scheduling options",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_send_notification",
+          "description": "Send email/SMS notification",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_send_push",
+          "description": "Send mobile push notification",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_scheduled_job_manage",
+          "description": "Manage scheduled jobs: list, get details, create, update, delete, enable/disable, run now, get history",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_trigger_scheduled_job",
+          "description": "⚠️ TRIGGERS (not executes directly) an existing scheduled job via sys_trigger. Job runs asynchronously when scheduler picks it up.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_add_schedule_entry",
+          "description": "Add entry to schedule",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_schedule",
+          "description": "Create work schedule",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_va_topic",
+          "description": "Create Virtual Agent conversation topic",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_va_topic_block",
+          "description": "Creates a conversation block within a Virtual Agent topic. Blocks define conversation steps and responses.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_va_conversation",
+          "description": "Retrieves Virtual Agent conversation history and context for a specific session.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_handoff_to_agent",
+          "description": "Initiates handoff from Virtual Agent to a live agent when automated assistance is insufficient.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_send_va_message",
+          "description": "Sends a message to Virtual Agent and gets the response. Simulates user interaction with the chatbot.",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_train_va_nlu",
+          "description": "Train Virtual Agent NLU model",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_workflow",
+          "description": "⚠️ LEGACY: Create workflow definition (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer and ask Snow-Flow to generate a specification document.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_workflow_activity",
+          "description": "⚠️ LEGACY: Create workflow activity/stage (deprecated - ServiceNow recommends Flow Designer)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_start_workflow",
+          "description": "⚠️ LEGACY: Start a workflow on a record (deprecated - ServiceNow recommends Flow Designer). Workflows run asynchronously.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_workflow_manage",
+          "description": "⚠️ LEGACY: Manage legacy workflows (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer (not programmable via Snow-Flow, but specs can be generated). Actions: list, get, stop, retry, clone, enable/disable",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_workflow_transition",
+          "description": "⚠️ LEGACY: Manage workflow transitions (deprecated - ServiceNow recommends Flow Designer). Actions: create, update, delete, list",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "cmdb",
+      "name": "CMDB",
+      "description": {
+        "en": "Configuration item management and relationships",
+        "nl": "Configuratie item beheer en relaties"
+      },
+      "toolCount": 14,
+      "readCount": 10,
+      "writeCount": 4,
+      "tools": [
+        {
+          "name": "snow_ci_health_check",
+          "description": "Check CI health and compliance status",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ci",
+          "description": "Create Configuration Item in CMDB",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ci_relationship",
+          "description": "Create relationship between Configuration Items",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_ci_details",
+          "description": "Retrieve Configuration Item details including relationships and history",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_ci_history",
+          "description": "Get Configuration Item change history",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_ci_impact",
+          "description": "Calculate impact analysis for CI outage",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_ci_relationships",
+          "description": "Get all relationships for a Configuration Item",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_event_correlation",
+          "description": "Get event correlation results showing how events are grouped into alerts",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_impact_analysis",
+          "description": "Perform impact analysis to identify affected services when a CI changes",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_reconcile_ci",
+          "description": "Reconcile CI data from multiple sources",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_run_discovery",
+          "description": "Trigger CMDB discovery scan",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_search_cmdb",
+          "description": "Search the CMDB for Configuration Items with various filters",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_update_ci",
+          "description": "Update Configuration Item attributes",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_cmdb_search",
+          "description": "Searches Configuration Management Database (CMDB) for configuration items with relationship mapping",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "core-operations",
+      "name": "Core Operations",
+      "description": {
+        "en": "Tools for core-operations",
+        "nl": "Tools voor core-operations"
+      },
+      "toolCount": 30,
+      "readCount": 14,
+      "writeCount": 16,
+      "tools": [
+        {
+          "name": "snow_get_user_roles",
+          "description": "Get all roles assigned to user",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_delete_attachment",
+          "description": "Delete attachment",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_attachments",
+          "description": "Get attachments for record",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_upload_attachment",
+          "description": "Upload attachment to record",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_instance_info",
+          "description": "Get ServiceNow instance information",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_bulk_update",
+          "description": "Bulk update multiple records",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_by_sysid",
+          "description": "Retrieves artifacts by sys_id for precise, fast lookups. Auto-detects large responses and suggests efficient field-specific queries using snow_query_table when needed. More reliable than text-based searches when sys_id is known.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_file_download",
+          "description": "Download file from ServiceNow",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_file_upload",
+          "description": "Upload file to ServiceNow",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_add_comment",
+          "description": "Add comment/work note to record",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_journal_entries",
+          "description": "Get journal entries for record",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_mobile_configs",
+          "description": "Discovers mobile application configurations including layouts, actions, and offline sync settings.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_assign_task",
+          "description": "Assign task to user or group with workload balancing and skill matching",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_attach_file",
+          "description": "Attach files to ServiceNow records with validation and content type detection",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_search_artifacts",
+          "description": "Search ServiceNow development artifacts (widgets, pages, scripts, flows, UI actions, client scripts). For data/table searches, use snow_query_table or snow_fuzzy_search instead.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_user_group",
+          "description": "Creates a new user group in ServiceNow with specified properties",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_by_sysid",
+          "description": "Get any ServiceNow record by sys_id with optional field selection",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_manage_group_membership",
+          "description": "Manage group memberships: add/remove users, list members",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_query_table",
+          "description": "Query any ServiceNow table with filtering, pagination, and field selection. Always returns sys_id for each record.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_record_manage",
+          "description": "Unified record management (create, update, delete) with validation",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_user_lookup",
+          "description": "Retrieves user information including roles, groups, and permissions. Supports lookup by ID, email, or name.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_platform_tables",
+          "description": "Discover platform development tables by category (ui, script, policy, action, security, system). Optimized for fast parallel queries with timeout handling.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_table_schema_discovery",
+          "description": "Discover comprehensive table schema including fields, relationships, ACLs, and business rules",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_property_bulk",
+          "description": "Bulk system property operations (get/set multiple)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_property_io",
+          "description": "System property I/O operations (import, export, history)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_property_manage",
+          "description": "Unified tool for system property management (get, set, delete, validate)",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_property_query",
+          "description": "Query system properties (list, search, categories)",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_apply_template",
+          "description": "Apply template to create record",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_role_group_manage",
+          "description": "Unified role and group management (create_role, assign_role, create_group)",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_user_manage",
+          "description": "Unified user management (create, deactivate)",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "integration",
+      "name": "Integration",
+      "description": {
+        "en": "REST messages, transform maps, and import sets",
+        "nl": "REST berichten, transform maps en import sets"
+      },
+      "toolCount": 33,
+      "readCount": 13,
+      "writeCount": 20,
+      "tools": [
+        {
+          "name": "snow_batch_request",
+          "description": "Execute batch REST requests",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_configure_connection",
+          "description": "Configure ServiceNow connection alias",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_test_connection",
+          "description": "Test ServiceNow connection",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_custom_api",
+          "description": "Call custom API endpoint",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_graphql_query",
+          "description": "Execute GraphQL query",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_scripted_rest_api",
+          "description": "Call scripted REST API",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_import_set",
+          "description": "Create import set for data import",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_transform_map",
+          "description": "Create transform map for import sets",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_execute_transform",
+          "description": "Execute transform map on import set",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_export_to_xml",
+          "description": "Export records to XML format",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_analyze_query",
+          "description": "Analyze and optimize ServiceNow queries for performance",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_configure_mid_server",
+          "description": "Configure MID Server settings for on-premise integrations and Discovery",
+          "permission": "admin",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_connection_alias",
+          "description": "Create connection alias for IntegrationHub/Flow Designer to reference external credentials",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_credential_alias",
+          "description": "Create credential alias for secure storage of API keys, passwords, and OAuth tokens",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_email_config",
+          "description": "Create email server configuration for SMTP, POP3, or IMAP",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_field_map",
+          "description": "Create field mapping within transform map for data transformation",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_flow_action",
+          "description": "Create custom IntegrationHub action for Flow Designer",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_oauth_profile",
+          "description": "Create OAuth 2.0 profile for external API authentication (Jira, Azure, Salesforce, etc.)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_rest_message",
+          "description": "Create REST message for external API integration",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_web_service",
+          "description": "Create SOAP web service integration from WSDL definition",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_detect_code_patterns",
+          "description": "Detect code patterns, anti-patterns, and best practices in ServiceNow scripts",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_data_sources",
+          "description": "Discover available data sources for integration including import sets and REST endpoints",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_integration_endpoints",
+          "description": "Discover existing integration endpoints (REST, SOAP, LDAP, EMAIL)",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_generate_docs",
+          "description": "Generate documentation for ServiceNow artifacts",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_install_spoke",
+          "description": "Install and manage IntegrationHub Spokes (Jira, Slack, Azure DevOps, etc.)",
+          "permission": "admin",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_manage_mid_capabilities",
+          "description": "Manage MID Server capabilities for Discovery, Orchestration, and integrations",
+          "permission": "admin",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_manage_oauth_tokens",
+          "description": "Manage OAuth tokens: view status, refresh tokens, troubleshoot authentication issues",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_manage_spoke_connection",
+          "description": "Manage IntegrationHub spoke connections: configure, test, and troubleshoot",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_rest_message_manage",
+          "description": "Action to perform",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_test_integration",
+          "description": "Test REST/SOAP integrations and external connections with validation",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_test_mid_connectivity",
+          "description": "Test MID Server connectivity to external endpoints and diagnose network issues",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_test_rest_connection",
+          "description": "Test REST API connection with timeout and response validation",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_workflow_analyze",
+          "description": "Analyze workflow executions for performance and errors",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "itsm",
+      "name": "Itsm",
+      "description": {
+        "en": "Tools for itsm",
+        "nl": "Tools voor itsm"
+      },
+      "toolCount": 45,
+      "readCount": 17,
+      "writeCount": 28,
+      "tools": [
+        {
+          "name": "snow_approve_reject",
+          "description": "Approve or reject approval request",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_pending_approvals",
+          "description": "Get pending approvals for user",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_request_approval",
+          "description": "Request approval for record",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_calculate_sla_duration",
+          "description": "Calculate SLA duration with schedule",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_catalog_client_script",
+          "description": "Creates client scripts for catalog items to add custom JavaScript behavior to forms.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_catalog_ui_policy",
+          "description": "Creates comprehensive UI policies for catalog items with conditions and actions to control form behavior dynamically.",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_catalogs",
+          "description": "Discovers available service catalogs and their categories in the ServiceNow instance.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_catalog_item_details",
+          "description": "Gets detailed information about a catalog item including variables, pricing, and availability.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_order_catalog_item",
+          "description": "Orders a catalog item programmatically, creating a request (RITM) with specified variable values.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_search_catalog",
+          "description": "Searches service catalog for items, categories, or catalogs. Returns available items for ordering.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_change_manage",
+          "description": "Unified change management (create, update_state, approve, create_task, schedule_cab)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_change_query",
+          "description": "Unified change query (get, search, assess_risk)",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_customer_account",
+          "description": "Create customer account for tracking relationships and entitlements",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_entitlement",
+          "description": "Create service entitlement for customer",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_customer_history",
+          "description": "Retrieve complete customer interaction history",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_hr_task",
+          "description": "Create HR task for case fulfillment",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_employee_offboarding",
+          "description": "Initiate employee offboarding workflow",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_customer_case",
+          "description": "Create CSM customer case",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_hr_case",
+          "description": "Create HR service case",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_employee_onboarding",
+          "description": "Trigger employee onboarding workflow",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_catalog_item",
+          "description": "Create service catalog item",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_catalog_variable",
+          "description": "Create catalog item variable",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_knowledge_base",
+          "description": "Creates a new knowledge base for organizing articles by topic, department, or audience.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_knowledge_bases",
+          "description": "Discovers available knowledge bases and their categories in the ServiceNow instance.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_knowledge_article_manage",
+          "description": "Unified knowledge article management (create, update, get, publish, retire, search)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_order_catalog_item",
+          "description": "Order service catalog item",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_analyze_incident",
+          "description": "Analyzes specific incidents with pattern recognition, similar incident matching, and automated resolution suggestions",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_auto_resolve_incident",
+          "description": "Attempts automated resolution of technical incidents based on known patterns and previous solutions. Includes dry-run mode for safety.",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_catalog_item_manager",
+          "description": "Create, update, or manage service catalog items",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_catalog_item_search",
+          "description": "Search service catalog items with filtering options",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_incident",
+          "description": "Create ServiceNow incident with smart defaults and assignment",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_query_incidents",
+          "description": "Query incidents with advanced filtering and analysis capabilities. Optimized for performance with optional content inclusion.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_query_problems",
+          "description": "Queries problem records with root cause analysis and optional inclusion of related incidents",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_query_requests",
+          "description": "Queries service requests with optional inclusion of request items and fulfillment details",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_update_incident",
+          "description": "Update incident with state validation and automatic work notes",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_approve_procurement",
+          "description": "Approve procurement request",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_purchase_order",
+          "description": "Create purchase order",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_project",
+          "description": "Create project",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_project_task",
+          "description": "Create project task",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_queue",
+          "description": "Create assignment queue",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_queue_items",
+          "description": "Get items in queue",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_sla",
+          "description": "Create Service Level Agreement",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_sla_status",
+          "description": "Get SLA status for record",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_variable",
+          "description": "Create catalog variable",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_variable_set",
+          "description": "Create reusable variable set",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "ml-analytics",
+      "name": "Ml Analytics",
+      "description": {
+        "en": "Tools for ml-analytics",
+        "nl": "Tools voor ml-analytics"
+      },
+      "toolCount": 2,
+      "readCount": 2,
+      "writeCount": 0,
+      "tools": [
+        {
+          "name": "snow_operational_metrics",
+          "description": "Provides operational metrics and analytics including incident trends, resolution times, and performance indicators",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_predictive_analysis",
+          "description": "Provides predictive analysis for incident volumes, system failures, and resource issues based on historical patterns",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "performance-analytics",
+      "name": "Performance Analytics",
+      "description": {
+        "en": "Tools for performance-analytics",
+        "nl": "Tools voor performance-analytics"
+      },
+      "toolCount": 3,
+      "readCount": 2,
+      "writeCount": 1,
+      "tools": [
+        {
+          "name": "snow_pa_create",
+          "description": "Unified PA creation (indicator, breakdown, threshold, widget, visualization, scheduled_report)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_pa_discover",
+          "description": "Unified PA discovery (indicators, report_fields, reporting_tables)",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_pa_operate",
+          "description": "Unified PA operations (collect_data, export_report, generate_insights, get_scores)",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "development",
+      "name": "Platform Development",
+      "description": {
+        "en": "Script includes, client scripts, and UI development",
+        "nl": "Script includes, client scripts en UI development"
+      },
+      "toolCount": 78,
+      "readCount": 25,
+      "writeCount": 53,
+      "tools": [
+        {
+          "name": "snow_create_acl",
+          "description": "Create Access Control List rule",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_acl_role",
+          "description": "Create ACL role association",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_test_acl",
+          "description": "Test ACL access for user",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_cicd_deploy",
+          "description": "Trigger CI/CD deployment pipeline",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_application",
+          "description": "Application name (e.g., ",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_current_scope",
+          "description": "Include information about the current Update Set (default: true)",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_install_application",
+          "description": "Install application from store",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_list_applications",
+          "description": "Search term to filter applications by name or scope (partial match)",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_switch_application_scope",
+          "description": "Target scope to switch to. Can be ",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_atf_test",
+          "description": "Create Automated Test Framework (ATF) test for automated testing",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_atf_test_step",
+          "description": "Adds a test step to an existing ATF test. Steps define the actions and assertions for testing using the sys_atf_step table.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_atf_test_suite",
+          "description": "Creates an ATF test suite to group and run multiple tests together using sys_atf_test_suite table.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_atf_tests",
+          "description": "Discovers ATF tests in the instance with filtering and search capabilities.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_execute_atf_test",
+          "description": "Executes an ATF test or test suite and returns the results. Tests run asynchronously in ServiceNow using sys_atf_test_result table.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_atf_results",
+          "description": "Retrieves ATF test execution results including pass/fail status, error details, and execution time from sys_atf_test_result table.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_business_rule",
+          "description": "Create server-side business rule with full configuration options (ES5 only for scripts!)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_disable_business_rule",
+          "description": "Disable business rule",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_choice",
+          "description": "Create choice list value for field",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_field",
+          "description": "Create table field/column",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_table",
+          "description": "Create new database table",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_data_policy",
+          "description": "Create data policy",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_data_policy_rule",
+          "description": "Create data policy rule",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_auth_diagnostics",
+          "description": "Performs comprehensive authentication and permission diagnostics. Tests OAuth tokens, API access, table permissions, and provides specific remediation steps.",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_clone_instance_artifact",
+          "description": "Clones artifacts directly between ServiceNow instances (dev→test→prod). Handles authentication, dependency resolution, and data migration.",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_artifact",
+          "description": "Artifact type to create",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_solution_package",
+          "description": "Creates comprehensive solution packages containing multiple related artifacts (widgets, scripts, rules). Manages dependencies and generates deployment documentation.",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_deployment_debug",
+          "description": "Provides detailed debugging information including authentication status, permissions, active sessions, and recent deployment logs for troubleshooting.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_deployment_status",
+          "description": "Retrieves comprehensive deployment status including active deployments, recent history, success rates, and performance metrics.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_export_artifact",
+          "description": "Exports ServiceNow artifacts (widgets, applications) to JSON/XML format for backup, version control, or migration purposes.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_import_artifact",
+          "description": "Imports previously exported artifacts from JSON/XML files into ServiceNow. Validates compatibility and handles dependencies automatically.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_rollback_deployment",
+          "description": "Rollback failed deployment by reverting to previous version or deleting artifact",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_update",
+          "description": "Update existing ServiceNow artifacts (widgets, pages, scripts, flows, etc.)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_validate_deployment",
+          "description": "Validate artifact before deployment (ES5, coherence, dependencies, security)",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_analyze_artifact",
+          "description": "Performs comprehensive analysis of artifacts including dependencies, usage patterns, and optimization opportunities. Caches results for improved performance.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_analyze_requirements",
+          "description": "Analyzes development requirements to identify dependencies, suggest reusable components, and create implementation roadmaps.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_edit_artifact",
+          "description": "Modifies ServiceNow artifacts using natural language instructions. Includes automatic error handling, retry logic, and validation of changes.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_edit_by_sysid",
+          "description": "Updates specific fields of an artifact using sys_id. Provides direct field-level modifications with validation.",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_find_artifact",
+          "description": "Finds ServiceNow artifacts using natural language queries. Searches cached memory first for performance, then queries ServiceNow directly if needed.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_memory_search",
+          "description": "Searches cached ServiceNow artifacts in local memory for instant results without API calls.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_orchestrate_development",
+          "description": "Orchestrates complex development workflows with intelligent agent coordination, shared memory, and real-time progress tracking.",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_sync_data_consistency",
+          "description": "Synchronizes cached data with ServiceNow, validates sys_id mappings, and repairs consistency issues. Includes automatic cache refresh and reindexing.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_validate_live_connection",
+          "description": "Validates ServiceNow connection status, authentication tokens, and user permissions. Returns detailed diagnostics with response times.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_saved_filter",
+          "description": "Create a saved filter for any ServiceNow table that appears in the filter dropdown",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_add_form_field",
+          "description": "Add field to form section",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_form_layout",
+          "description": "Create custom form layout",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_form_section",
+          "description": "Create form section",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_error_handler",
+          "description": "Create error handler",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_exception_handler",
+          "description": "Handle exceptions with logging",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_add_list_column",
+          "description": "Add column to list view",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_list_layout",
+          "description": "Create a complete list layout with multiple columns for any ServiceNow table",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_list_view",
+          "description": "Create custom list view",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_related_list",
+          "description": "Create related list on form",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_convert_to_es5",
+          "description": "Convert modern JavaScript (ES6+) to ES5 for ServiceNow Rhino engine",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_list_supported_artifacts",
+          "description": "List all ServiceNow artifact types supported by local sync",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_pull_artifact",
+          "description": "Pull ServiceNow artifact to local files for editing with native tools",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_push_artifact",
+          "description": "Push locally edited artifact files back to ServiceNow with validation",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_sync_cleanup",
+          "description": "Clean up local artifact files after sync with retention policies",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_sync_status",
+          "description": "Get status of locally synced artifacts including changes and validation",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_menu",
+          "description": "Create application menu",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_menu_item",
+          "description": "Create menu item",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_cleanup_test_artifacts",
+          "description": "Safely cleanup test artifacts from ServiceNow (dry-run enabled by default for safety)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_table_fields",
+          "description": "Discover table schema with fields, types, relationships, and metadata",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_client_script",
+          "description": "Create client-side script for form with type and field targeting",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_script_include",
+          "description": "Create reusable Script Include with client-callable support",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ui_action",
+          "description": "Create UI Action (button, context menu, form link) with client/server scripts",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ui_page",
+          "description": "Create custom UI Page with Jelly/HTML template and processing script",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ui_policy",
+          "description": "Create UI Policy for form field control (visibility, mandatory, readonly)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_processor",
+          "description": "Create script processor (ES5 only!)",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_template",
+          "description": "Create record template",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ui_policy_action",
+          "description": "Create UI policy action",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_ensure_active_update_set",
+          "description": "Ensure Update Set is active and optionally set as current for user",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_update_set_manage",
+          "description": "Management action to perform",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_update_set_query",
+          "description": "Query Update Sets (get current or list multiple)",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_preview_widget",
+          "description": "Renders widget preview with test data for validation before deployment. Simulates Service Portal environment, checks dependencies, and validates data binding.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_validate_field",
+          "description": "Validate field value",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_validate_record",
+          "description": "Validate record against business rules",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_validate_sysid",
+          "description": "Validates sys_id existence and consistency across tables. Maintains artifact tracking for deployment integrity and rollback capabilities.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_widget_test",
+          "description": "Executes comprehensive widget testing with multiple data scenarios. Validates client/server scripts, API calls, dependencies, and generates coverage reports.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "reporting",
+      "name": "Reporting",
+      "description": {
+        "en": "Reports, dashboards, and KPIs",
+        "nl": "Rapporten, dashboards en KPIs"
+      },
+      "toolCount": 10,
+      "readCount": 3,
+      "writeCount": 7,
+      "tools": [
+        {
+          "name": "snow_aggregate_metrics",
+          "description": "Aggregate table metrics",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_add_dashboard_widget",
+          "description": "Add widget to dashboard",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_dashboard",
+          "description": "Create dashboard",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_metric",
+          "description": "Create system metric",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_get_mobile_analytics",
+          "description": "Retrieves mobile application usage analytics including active users, sessions, and feature usage.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_pattern_analysis",
+          "description": "Analyzes patterns across incidents, requests, and problems to identify trends, common issues, and improvement opportunities",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_dashboard",
+          "description": "Create interactive dashboards with multiple widgets",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_report",
+          "description": "Create ServiceNow report",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_define_kpi",
+          "description": "Define Key Performance Indicators for monitoring",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_schedule_report_delivery",
+          "description": "Schedule automated report delivery via email",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "description": {
+        "en": "Security policies and compliance",
+        "nl": "Security policies en compliance"
+      },
+      "toolCount": 18,
+      "readCount": 9,
+      "writeCount": 9,
+      "tools": [
+        {
+          "name": "snow_analyze_threat_intelligence",
+          "description": "Analyzethreatintelligence",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_audit_trail_analysis",
+          "description": "Audittrailanalysis",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_automate_threat_response",
+          "description": "Automatethreatresponse",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_access_control",
+          "description": "Createaccesscontrol",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_audit_rule",
+          "description": "Createauditrule",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_compliance_rule",
+          "description": "Creates compliance rules for regulatory frameworks (SOX, GDPR, HIPAA). Defines validation, remediation, and severity levels.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_security_incident",
+          "description": "Create security incident with automated threat correlation and priority assignment",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_security_policy",
+          "description": "Creates security policies for access control and data protection. Configures enforcement levels, scope, and rule sets.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_vulnerability_scan",
+          "description": "Creates vulnerability scanning configurations. Schedules scans, sets severity thresholds, and enables auto-remediation.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_security_frameworks",
+          "description": "Discovers security and compliance frameworks available in the instance for policy creation and auditing.",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_security_policies",
+          "description": "Lists existing security policies and rules with filtering by category and active status.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_escalate_permissions",
+          "description": "Escalate user permissions with approval workflow and time-based access controls",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_execute_security_playbook",
+          "description": "Execute automated security response playbook with orchestrated actions",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_run_compliance_scan",
+          "description": "Run compliance scans against security frameworks (SOX, GDPR, HIPAA, PCI-DSS)",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_scan_vulnerabilities",
+          "description": "Scan for security vulnerabilities",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_security_dashboard",
+          "description": "Generate real-time security operations dashboard with key metrics",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_security_risk_assessment",
+          "description": "Perform comprehensive security risk assessment analyzing access controls, vulnerabilities, and security posture",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_vulnerability_risk_assessment",
+          "description": "Assess vulnerability risk with automated CVSS scoring and remediation planning",
+          "permission": "read",
+          "complexity": "intermediate",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "ui-builder",
+      "name": "UI Builder",
+      "description": {
+        "en": "Now Experience UI components and pages",
+        "nl": "Now Experience UI componenten en paginas"
+      },
+      "toolCount": 9,
+      "readCount": 2,
+      "writeCount": 7,
+      "tools": [
+        {
+          "name": "snow_analyze_uib_page_performance",
+          "description": "Analyze UI Builder page performance and get optimization recommendations",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_configure_uib_data_broker",
+          "description": "Update data broker configuration including queries, caching, and refresh settings",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_uib_client_script",
+          "description": "Create client-side JavaScript for UI Builder pages",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_uib_client_state",
+          "description": "Create client state management for UI Builder pages",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_uib_data_broker",
+          "description": "Create data broker to connect UI Builder pages to ServiceNow data sources",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_uib_event",
+          "description": "Create custom events for UI Builder component communication",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_uib_page_registry",
+          "description": "Configure URL routing and access control for UI Builder pages",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_debug_widget_fetch",
+          "description": "Debug widget data fetching and server communication issues",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_uib_page_manage",
+          "description": "Unified UIB page management (create, delete, add_element, remove_element)",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "ui-frameworks",
+      "name": "Ui Frameworks",
+      "description": {
+        "en": "Tools for ui-frameworks",
+        "nl": "Tools voor ui-frameworks"
+      },
+      "toolCount": 19,
+      "readCount": 4,
+      "writeCount": 15,
+      "tools": [
+        {
+          "name": "snow_configure_mobile_app",
+          "description": "Configure ServiceNow mobile app",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_configure_offline_sync",
+          "description": "Configure offline synchronization settings for mobile applications. Controls which data is available offline.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_mobile_action",
+          "description": "Creates a mobile action that users can trigger from the mobile app. Actions can navigate, execute scripts, or open forms.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_mobile_layout",
+          "description": "Creates a custom mobile layout for forms and lists in the mobile app.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_sp_page",
+          "description": "Create Service Portal page",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_sp_widget",
+          "description": "Create Service Portal widget",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_uib_component_manage",
+          "description": "Unified UIB component management (create, clone)",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        },
+        {
+          "name": "snow_uib_discover",
+          "description": "Unified UI Builder discovery (pages, components, routes, page_usage)",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_va_topics",
+          "description": "Discovers available Virtual Agent topics and their configurations.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_complete_workspace",
+          "description": "Create Complete UX Workspace - Executes all 6 steps automatically: Experience → App Config → Page Macroponent → Page Registry → Route → Landing Page Route. Creates a fully functional workspace.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_configurable_agent_workspace",
+          "description": "Create Configurable Agent Workspace using UX App architecture (sys_ux_app_route, sys_ux_screen_type). Creates workspace with screen collections for multiple tables.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ux_app_config",
+          "description": "STEP 2: Create UX App Configuration Record (sys_ux_app_config) - Contains workspace settings and links to the experience from Step 1.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ux_app_route",
+          "description": "STEP 5: Create Route Record (sys_ux_app_route) - Defines the URL slug that leads to the page.",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ux_experience",
+          "description": "STEP 1: Create UX Experience Record (sys_ux_experience) - The top-level container for the workspace. ⚠️ REQUIRES: Now Experience Framework (UXF) enabled. ALTERNATIVE: Use traditional form/list configurations if UXF unavailable.",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ux_page_macroponent",
+          "description": "STEP 3: Create Page Macroponent Record (sys_ux_macroponent) - Defines the actual page content that will be displayed.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_create_ux_page_registry",
+          "description": "STEP 4: Create Page Registry Record (sys_ux_page_registry) - Registers the page for use within the workspace configuration.",
+          "permission": "write",
+          "complexity": "intermediate",
+          "parameters": []
+        },
+        {
+          "name": "snow_discover_all_workspaces",
+          "description": "Discover all workspaces (UX Experiences, Agent Workspaces, UI Builder pages) with comprehensive details and usage analytics.",
+          "permission": "read",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_update_ux_app_config_landing_page",
+          "description": "STEP 6: Update App Configuration with Landing Page Route - Sets the default landing page for the workspace.",
+          "permission": "write",
+          "complexity": "beginner",
+          "parameters": []
+        },
+        {
+          "name": "snow_validate_workspace_configuration",
+          "description": "Validate workspace configuration for completeness, best practices, and potential issues across all workspace types.",
+          "permission": "read",
+          "complexity": "advanced",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "id": "workspace",
+      "name": "Workspace",
+      "description": {
+        "en": "Agent Workspace configuration",
+        "nl": "Agent Workspace configuratie"
+      },
+      "toolCount": 1,
+      "readCount": 0,
+      "writeCount": 1,
+      "tools": [
+        {
+          "name": "snow_create_workspace",
+          "description": "Create complete Agent Workspace with experience, config, routes, and lists",
+          "permission": "write",
+          "complexity": "advanced",
+          "parameters": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,947 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getLangFromUrl, useTranslations, type Lang } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'nl' } }
+  ];
+}
+
+const lang = getLangFromUrl(Astro.url) as Lang;
+const t = useTranslations(lang);
+
+const title = lang === 'en' ? 'ServiceNow OAuth Setup | Snow-Flow' : 'ServiceNow OAuth Setup | Snow-Flow';
+const description = lang === 'en'
+  ? 'Step-by-step guide to configure ServiceNow OAuth for Snow-Flow. Set up your OAuth application and authenticate securely.'
+  : 'Stapsgewijze handleiding voor het configureren van ServiceNow OAuth voor Snow-Flow. Stel je OAuth applicatie in en authenticeer veilig.';
+
+const steps = [
+    {
+        num: 1,
+        title: lang === 'en' ? 'Create OAuth Application in ServiceNow' : 'Maak OAuth Applicatie in ServiceNow',
+        content: lang === 'en' ? [
+            'Navigate to <strong>System OAuth > Application Registry</strong> in your ServiceNow instance',
+            'Click <strong>New</strong> and select <strong>"Create an OAuth API endpoint for external clients"</strong>',
+            'Fill in the application details:',
+        ] : [
+            'Navigeer naar <strong>System OAuth > Application Registry</strong> in je ServiceNow instance',
+            'Klik op <strong>New</strong> en selecteer <strong>"Create an OAuth API endpoint for external clients"</strong>',
+            'Vul de applicatie details in:',
+        ],
+        fields: [
+            { label: 'Name', value: 'Snow-Flow MCP', desc: lang === 'en' ? 'Descriptive name for the application' : 'Beschrijvende naam voor de applicatie' },
+            { label: 'Client ID', value: lang === 'en' ? '(auto-generated)' : '(automatisch gegenereerd)', desc: lang === 'en' ? 'Copy this value after saving' : 'Kopieer deze waarde na opslaan' },
+            { label: 'Client Secret', value: lang === 'en' ? '(auto-generated)' : '(automatisch gegenereerd)', desc: lang === 'en' ? 'Copy this value after saving' : 'Kopieer deze waarde na opslaan' },
+            { label: 'Redirect URL', value: 'http://localhost:9777/callback', desc: lang === 'en' ? 'Required for OAuth flow' : 'Vereist voor OAuth flow' },
+            { label: 'Active', value: lang === 'en' ? 'Checked' : 'Aangevinkt', desc: '' },
+        ]
+    },
+    {
+        num: 2,
+        title: lang === 'en' ? 'Copy OAuth Credentials' : 'Kopieer OAuth Credentials',
+        content: lang === 'en' ? [
+            'After saving the application, copy the following values:',
+        ] : [
+            'Na het opslaan van de applicatie, kopieer de volgende waarden:',
+        ],
+        credentials: [
+            { name: 'Client ID', example: 'abc123def456ghi789jkl012mno345pq' },
+            { name: 'Client Secret', example: 'xyz987wvu654tsr321qpo098nml765kj' },
+            { name: 'Instance URL', example: 'https://dev12345.service-now.com' },
+        ]
+    },
+    {
+        num: 3,
+        title: lang === 'en' ? 'Authenticate in Snow-Flow' : 'Authenticeer in Snow-Flow',
+        content: lang === 'en' ? [
+            'Start Snow-Flow and use the <code>/auth</code> command:',
+        ] : [
+            'Start Snow-Flow en gebruik het <code>/auth</code> commando:',
+        ],
+    },
+    {
+        num: 4,
+        title: lang === 'en' ? 'Verify Connection' : 'Verifieer Verbinding',
+        content: lang === 'en' ? [
+            'After authentication, verify the connection works:',
+        ] : [
+            'Na authenticatie, verifieer dat de verbinding werkt:',
+        ],
+    }
+];
+---
+
+<BaseLayout title={title} description={description}>
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+
+    <!-- Main Content -->
+    <main class="oauth-setup-page">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-badge">
+                    <span class="badge-icon">🔐</span>
+                    <span class="badge-text">OAuth 2.0 Setup</span>
+                </div>
+                <h1>{lang === 'en' ? 'ServiceNow OAuth Setup' : 'ServiceNow OAuth Setup'}</h1>
+                <p class="hero-desc">
+                    {lang === 'en'
+                        ? 'Connect Snow-Flow to your ServiceNow instance using OAuth 2.0. This guide walks you through creating an OAuth application and authenticating securely.'
+                        : 'Verbind Snow-Flow met je ServiceNow instance via OAuth 2.0. Deze handleiding leidt je door het maken van een OAuth applicatie en veilige authenticatie.'}
+                </p>
+            </section>
+
+            <!-- Prerequisites -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Prerequisites' : 'Vereisten'}</h2>
+                <div class="prereqs-grid">
+                    <div class="prereq-card">
+                        <div class="prereq-icon">✓</div>
+                        <div>
+                            <h4>{lang === 'en' ? 'ServiceNow Instance' : 'ServiceNow Instance'}</h4>
+                            <p>{lang === 'en' ? 'Access to a ServiceNow instance with admin rights' : 'Toegang tot een ServiceNow instance met admin rechten'}</p>
+                        </div>
+                    </div>
+                    <div class="prereq-card">
+                        <div class="prereq-icon">✓</div>
+                        <div>
+                            <h4>{lang === 'en' ? 'Snow-Flow Installed' : 'Snow-Flow Geïnstalleerd'}</h4>
+                            <p>{lang === 'en' ? 'Snow-Flow CLI installed via npm' : 'Snow-Flow CLI geïnstalleerd via npm'}</p>
+                        </div>
+                    </div>
+                    <div class="prereq-card">
+                        <div class="prereq-icon">✓</div>
+                        <div>
+                            <h4>{lang === 'en' ? 'OAuth Plugin Active' : 'OAuth Plugin Actief'}</h4>
+                            <p>{lang === 'en' ? 'System OAuth plugin enabled in ServiceNow' : 'System OAuth plugin ingeschakeld in ServiceNow'}</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 1: Create OAuth App -->
+            <section class="section step-section">
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    <h2>{steps[0].title}</h2>
+                </div>
+                <div class="step-content">
+                    <ol class="step-list">
+                        {steps[0].content.map(item => (
+                            <li set:html={item}></li>
+                        ))}
+                    </ol>
+
+                    <div class="fields-table">
+                        <div class="fields-header">
+                            <span>{lang === 'en' ? 'Field' : 'Veld'}</span>
+                            <span>{lang === 'en' ? 'Value' : 'Waarde'}</span>
+                            <span>{lang === 'en' ? 'Notes' : 'Opmerkingen'}</span>
+                        </div>
+                        {steps[0].fields.map(field => (
+                            <div class="field-row">
+                                <code>{field.label}</code>
+                                <span class="field-value">{field.value}</span>
+                                <span class="field-desc">{field.desc}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-icon">💡</div>
+                        <div>
+                            <strong>{lang === 'en' ? 'Tip:' : 'Tip:'}</strong>
+                            {lang === 'en'
+                                ? ' The redirect URL must be exactly http://localhost:9777/callback. Snow-Flow starts a temporary local server on this port to receive the OAuth callback.'
+                                : ' De redirect URL moet exact http://localhost:9777/callback zijn. Snow-Flow start een tijdelijke lokale server op deze poort om de OAuth callback te ontvangen.'}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 2: Copy Credentials -->
+            <section class="section step-section">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    <h2>{steps[1].title}</h2>
+                </div>
+                <div class="step-content">
+                    <ol class="step-list">
+                        {steps[1].content.map(item => (
+                            <li set:html={item}></li>
+                        ))}
+                    </ol>
+
+                    <div class="credentials-cards">
+                        {steps[1].credentials.map(cred => (
+                            <div class="credential-card">
+                                <span class="cred-label">{cred.name}</span>
+                                <code class="cred-example">{cred.example}</code>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div class="warning-box">
+                        <div class="warning-icon">⚠️</div>
+                        <div>
+                            <strong>{lang === 'en' ? 'Security Note:' : 'Beveiligingsopmerking:'}</strong>
+                            {lang === 'en'
+                                ? ' Keep your Client Secret secure. Never commit it to version control or share it publicly.'
+                                : ' Houd je Client Secret veilig. Commit het nooit naar version control en deel het niet publiekelijk.'}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 3: Authenticate -->
+            <section class="section step-section">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    <h2>{steps[2].title}</h2>
+                </div>
+                <div class="step-content">
+                    <p set:html={steps[2].content[0]}></p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang">Terminal</span>
+                        </div>
+                        <div class="code-content">
+<pre>{`# Start Snow-Flow
+snow-flow
+
+# In the TUI, type:
+/auth
+
+# Follow the prompts:
+# 1. Enter your ServiceNow instance URL
+# 2. Enter the Client ID
+# 3. Enter the Client Secret
+# 4. A browser window opens for OAuth consent
+# 5. Authorize the application in ServiceNow
+# 6. You'll be redirected back automatically`}</pre>
+                        </div>
+                    </div>
+
+                    <div class="auth-flow-diagram">
+                        <div class="flow-step">
+                            <div class="flow-icon">1</div>
+                            <span>{lang === 'en' ? 'Enter credentials' : 'Voer credentials in'}</span>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step">
+                            <div class="flow-icon">2</div>
+                            <span>{lang === 'en' ? 'Browser opens' : 'Browser opent'}</span>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step">
+                            <div class="flow-icon">3</div>
+                            <span>{lang === 'en' ? 'Authorize in ServiceNow' : 'Autoriseer in ServiceNow'}</span>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step success">
+                            <div class="flow-icon">✓</div>
+                            <span>{lang === 'en' ? 'Connected!' : 'Verbonden!'}</span>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-icon">📁</div>
+                        <div>
+                            <strong>{lang === 'en' ? 'Credentials stored at:' : 'Credentials opgeslagen in:'}</strong>
+                            <code>~/.local/share/snow-code/auth.json</code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 4: Verify -->
+            <section class="section step-section">
+                <div class="step-header">
+                    <span class="step-number">4</span>
+                    <h2>{steps[3].title}</h2>
+                </div>
+                <div class="step-content">
+                    <p set:html={steps[3].content[0]}></p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang">Snow-Flow TUI</span>
+                        </div>
+                        <div class="code-content">
+<pre>{`# Check authentication status
+/auth list
+
+# Or ask the AI to query something
+> Show me the latest 5 incidents
+
+# If successful, you'll see real data from your instance!`}</pre>
+                        </div>
+                    </div>
+
+                    <div class="success-box">
+                        <div class="success-icon">🎉</div>
+                        <div>
+                            <strong>{lang === 'en' ? 'Success!' : 'Gelukt!'}</strong>
+                            {lang === 'en'
+                                ? ' You\'re now connected to ServiceNow. All 379+ MCP tools are ready to use.'
+                                : ' Je bent nu verbonden met ServiceNow. Alle 379+ MCP tools zijn klaar voor gebruik.'}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alternative Methods -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Alternative Configuration Methods' : 'Alternatieve Configuratie Methoden'}</h2>
+
+                <div class="alt-methods">
+                    <div class="alt-method">
+                        <h3>{lang === 'en' ? 'Environment Variables' : 'Omgevingsvariabelen'}</h3>
+                        <p>{lang === 'en'
+                            ? 'Set credentials as environment variables for CI/CD or server deployments:'
+                            : 'Stel credentials in als omgevingsvariabelen voor CI/CD of server deployments:'}</p>
+                        <div class="code-block small">
+                            <div class="code-content">
+<pre>{`export SERVICENOW_INSTANCE_URL="https://dev12345.service-now.com"
+export SERVICENOW_CLIENT_ID="your-client-id"
+export SERVICENOW_CLIENT_SECRET="your-client-secret"`}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alt-method">
+                        <h3>{lang === 'en' ? '.env File' : '.env Bestand'}</h3>
+                        <p>{lang === 'en'
+                            ? 'Store credentials in a .env file in your project directory:'
+                            : 'Sla credentials op in een .env bestand in je project map:'}</p>
+                        <div class="code-block small">
+                            <div class="code-content">
+<pre>{`# .env
+SERVICENOW_INSTANCE_URL=https://dev12345.service-now.com
+SERVICENOW_CLIENT_ID=your-client-id
+SERVICENOW_CLIENT_SECRET=your-client-secret`}</pre>
+                            </div>
+                        </div>
+                        <div class="warning-box small">
+                            <div class="warning-icon">⚠️</div>
+                            <span>{lang === 'en' ? 'Add .env to .gitignore!' : 'Voeg .env toe aan .gitignore!'}</span>
+                        </div>
+                    </div>
+
+                    <div class="alt-method">
+                        <h3>{lang === 'en' ? 'Direct Login Command' : 'Direct Login Commando'}</h3>
+                        <p>{lang === 'en'
+                            ? 'Pass the instance URL directly to the auth command:'
+                            : 'Geef de instance URL direct mee aan het auth commando:'}</p>
+                        <div class="code-block small">
+                            <div class="code-content">
+<pre>{`snow-flow auth login https://dev12345.service-now.com`}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Troubleshooting -->
+            <section class="section">
+                <h2>{lang === 'en' ? 'Troubleshooting' : 'Probleemoplossing'}</h2>
+
+                <div class="troubleshooting-grid">
+                    <div class="trouble-card">
+                        <h4>{lang === 'en' ? 'OAuth Error: Invalid Client' : 'OAuth Error: Invalid Client'}</h4>
+                        <p>{lang === 'en'
+                            ? 'Double-check your Client ID and Client Secret. Make sure there are no extra spaces.'
+                            : 'Controleer je Client ID en Client Secret. Zorg dat er geen extra spaties zijn.'}</p>
+                    </div>
+                    <div class="trouble-card">
+                        <h4>{lang === 'en' ? 'Redirect URI Mismatch' : 'Redirect URI Mismatch'}</h4>
+                        <p>{lang === 'en'
+                            ? 'Ensure the Redirect URL in ServiceNow is exactly: http://localhost:9777/callback'
+                            : 'Zorg dat de Redirect URL in ServiceNow exact is: http://localhost:9777/callback'}</p>
+                    </div>
+                    <div class="trouble-card">
+                        <h4>{lang === 'en' ? 'Port 9777 Already in Use' : 'Poort 9777 Al in Gebruik'}</h4>
+                        <p>{lang === 'en'
+                            ? 'Close other applications using port 9777, or check for stuck Snow-Flow processes.'
+                            : 'Sluit andere applicaties die poort 9777 gebruiken, of controleer op vastgelopen Snow-Flow processen.'}</p>
+                    </div>
+                    <div class="trouble-card">
+                        <h4>{lang === 'en' ? 'Token Expired' : 'Token Verlopen'}</h4>
+                        <p>{lang === 'en'
+                            ? 'Tokens are automatically refreshed. If issues persist, run /auth again to re-authenticate.'
+                            : 'Tokens worden automatisch vernieuwd. Bij aanhoudende problemen, voer /auth opnieuw uit om te herauthenticeren.'}</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CTA -->
+            <section class="docs-cta">
+                <h2>{lang === 'en' ? 'Ready to Build?' : 'Klaar om te Bouwen?'}</h2>
+                <p>{lang === 'en'
+                    ? 'You\'re all set! Explore the MCP tools or learn more about the TUI.'
+                    : 'Je bent helemaal klaar! Verken de MCP tools of leer meer over de TUI.'}</p>
+                <div class="cta-buttons">
+                    <a href={`/${lang}/mcp-reference`} class="btn btn-primary">
+                        {lang === 'en' ? 'Explore MCP Tools' : 'Verken MCP Tools'} →
+                    </a>
+                    <a href={`/${lang}/tui-guide`} class="btn btn-secondary">
+                        {lang === 'en' ? 'TUI Guide' : 'TUI Handleiding'}
+                    </a>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": title,
+        "description": description,
+        "step": steps.map((s, i) => ({
+            "@type": "HowToStep",
+            "position": i + 1,
+            "name": s.title
+        }))
+    })} />
+</BaseLayout>
+
+<style>
+    .oauth-setup-page {
+        min-height: 100vh;
+        padding: 100px 0 60px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(249, 115, 22, 0.15);
+        border: 1px solid rgba(249, 115, 22, 0.3);
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .badge-icon {
+        font-size: 1rem;
+    }
+
+    .badge-text {
+        color: #f97316;
+        font-weight: 500;
+    }
+
+    .hero-section h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--text-primary), #f97316);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero-desc {
+        font-size: 1.15rem;
+        color: var(--text-secondary);
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* Sections */
+    .section {
+        margin-bottom: 3rem;
+    }
+
+    .section h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        color: var(--text-primary);
+    }
+
+    /* Prerequisites */
+    .prereqs-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .prereq-card {
+        display: flex;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+    }
+
+    .prereq-icon {
+        width: 24px;
+        height: 24px;
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+    }
+
+    .prereq-card h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: var(--text-primary);
+    }
+
+    .prereq-card p {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    /* Step Sections */
+    .step-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+
+    .step-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .step-number {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--accent-cyan), #a855f7);
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.25rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .step-header h2 {
+        margin-bottom: 0;
+    }
+
+    .step-content {
+        padding-left: 56px;
+    }
+
+    .step-list {
+        margin-bottom: 1.25rem;
+        padding-left: 1.25rem;
+    }
+
+    .step-list li {
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        line-height: 1.5;
+    }
+
+    .step-list li :global(strong) {
+        color: var(--text-primary);
+    }
+
+    .step-list li :global(code) {
+        background: rgba(0, 217, 255, 0.1);
+        color: var(--accent-cyan);
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+
+    /* Fields Table */
+    .fields-table {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 1.25rem;
+    }
+
+    .fields-header {
+        display: grid;
+        grid-template-columns: 120px 1fr 1fr;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .field-row {
+        display: grid;
+        grid-template-columns: 120px 1fr 1fr;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        border-top: 1px solid var(--border-subtle);
+    }
+
+    .field-row code {
+        color: #f97316;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+    }
+
+    .field-value {
+        color: var(--accent-cyan);
+        font-size: 0.85rem;
+    }
+
+    .field-desc {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+
+    /* Credentials Cards */
+    .credentials-cards {
+        display: grid;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .credential-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+    }
+
+    .cred-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        min-width: 120px;
+    }
+
+    .cred-example {
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+    }
+
+    /* Info/Warning/Success Boxes */
+    .info-box, .warning-box, .success-box {
+        display: flex;
+        gap: 0.75rem;
+        padding: 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+    }
+
+    .info-box {
+        background: rgba(0, 217, 255, 0.1);
+        border: 1px solid rgba(0, 217, 255, 0.2);
+    }
+
+    .warning-box {
+        background: rgba(249, 115, 22, 0.1);
+        border: 1px solid rgba(249, 115, 22, 0.2);
+    }
+
+    .success-box {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .info-box.small, .warning-box.small {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+        margin-top: 0.75rem;
+    }
+
+    .info-icon, .warning-icon, .success-icon {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .info-box code {
+        background: rgba(0, 217, 255, 0.15);
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        color: var(--accent-cyan);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+    }
+
+    /* Code Block */
+    .code-block {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+
+    .code-block.small {
+        margin: 0.75rem 0;
+    }
+
+    .code-header {
+        padding: 0.5rem 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .code-lang {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .code-content {
+        padding: 1rem;
+    }
+
+    .code-content pre {
+        margin: 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        color: var(--accent-cyan);
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    /* Auth Flow Diagram */
+    .auth-flow-diagram {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        padding: 1.5rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        margin: 1.25rem 0;
+    }
+
+    .flow-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .flow-icon {
+        width: 36px;
+        height: 36px;
+        background: rgba(0, 217, 255, 0.2);
+        color: var(--accent-cyan);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .flow-step.success .flow-icon {
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+    }
+
+    .flow-step span {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-align: center;
+    }
+
+    .flow-arrow {
+        color: var(--text-muted);
+        font-size: 1.25rem;
+    }
+
+    /* Alternative Methods */
+    .alt-methods {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .alt-method {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 1.25rem;
+    }
+
+    .alt-method h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .alt-method p {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+    }
+
+    /* Troubleshooting */
+    .troubleshooting-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .trouble-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 1.25rem;
+    }
+
+    .trouble-card h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #f97316;
+    }
+
+    .trouble-card p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    /* CTA */
+    .docs-cta {
+        text-align: center;
+        padding: 3rem;
+        background: var(--bg-card);
+        border-radius: 20px;
+        border: 1px solid var(--border-subtle);
+    }
+
+    .docs-cta h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .docs-cta p {
+        color: var(--text-secondary);
+        margin-bottom: 1.25rem;
+    }
+
+    .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: var(--accent-cyan);
+        color: var(--bg-primary);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 217, 255, 0.35);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border-medium);
+        color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+        border-color: var(--accent-cyan);
+        color: var(--accent-cyan);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .container {
+            padding: 0 1rem;
+        }
+
+        .hero-section h1 {
+            font-size: 2rem;
+        }
+
+        .prereqs-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .step-content {
+            padding-left: 0;
+            margin-top: 1rem;
+        }
+
+        .fields-header,
+        .field-row {
+            grid-template-columns: 1fr;
+            gap: 0.25rem;
+        }
+
+        .fields-header span:not(:first-child) {
+            display: none;
+        }
+
+        .troubleshooting-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .auth-flow-diagram {
+            flex-direction: column;
+        }
+
+        .flow-arrow {
+            transform: rotate(90deg);
+        }
+
+        .cta-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
