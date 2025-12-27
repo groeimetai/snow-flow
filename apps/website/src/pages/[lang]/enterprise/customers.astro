@@ -110,6 +110,49 @@ const description = t('customers.meta.description');
         </div>
     </section>
 
+    <!-- Community Section -->
+    <section class="section community-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">{t('customers.community.label')}</span>
+                <h2 class="section-title">{t('customers.community.title')}</h2>
+                <p class="section-subtitle">{t('customers.community.subtitle')}</p>
+            </div>
+
+            <div class="community-stats">
+                <div class="community-stat">
+                    <div class="community-stat-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00D9FF" stroke-width="2">
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                        </svg>
+                    </div>
+                    <span class="community-stat-label">{t('customers.community.githubLabel')}</span>
+                </div>
+                <div class="community-stat">
+                    <div class="community-stat-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="#CB3837">
+                            <path d="M0 7.334v8h6.666v1.332H12v-1.332h12v-8H0zm6.666 6.664H5.334v-4H3.999v4H1.335V8.667h5.331v5.331zm4 0v1.336H8.001V8.667h5.334v5.332h-2.669v-.001zm12.001 0h-1.33v-4h-1.336v4h-1.335v-4h-1.33v4h-2.671V8.667h8.002v5.331zM10.665 10H12v2.667h-1.335V10z"/>
+                        </svg>
+                    </div>
+                    <span class="community-stat-label">{t('customers.community.npmLabel')}</span>
+                </div>
+                <div class="community-stat">
+                    <span class="community-stat-value">500+</span>
+                    <span class="community-stat-label">{t('customers.community.toolsLabel')}</span>
+                </div>
+            </div>
+
+            <div class="community-badges">
+                <a href="https://github.com/groeimetai/snow-flow" target="_blank" rel="noopener noreferrer">
+                    <img src="https://img.shields.io/github/stars/groeimetai/snow-flow?style=for-the-badge&logo=github&color=00D9FF" alt="GitHub Stars" loading="lazy" />
+                </a>
+                <a href="https://www.npmjs.com/package/snow-flow" target="_blank" rel="noopener noreferrer">
+                    <img src="https://img.shields.io/npm/dw/snow-flow?style=for-the-badge&logo=npm&color=CB3837" alt="npm Downloads" loading="lazy" />
+                </a>
+            </div>
+        </div>
+    </section>
+
     <!-- Screenshot Showcase Section -->
     <section class="section showcase-section">
         <div class="container">
@@ -253,8 +296,67 @@ const description = t('customers.meta.description');
             </div>
 
             <div class="integrations-badge">
-                <span class="badge-number">40+</span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span class="badge-text">{t('customers.integrations.badge')}</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="section faq-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">{t('customers.faq.label')}</span>
+                <h2 class="section-title">{t('customers.faq.title')}</h2>
+            </div>
+
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>{t('customers.faq.q1')}</span>
+                        <span class="faq-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </span>
+                    </button>
+                    <div class="faq-answer">
+                        <p class="faq-answer-content">{t('customers.faq.a1')}</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>{t('customers.faq.q2')}</span>
+                        <span class="faq-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </span>
+                    </button>
+                    <div class="faq-answer">
+                        <p class="faq-answer-content">{t('customers.faq.a2')}</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>{t('customers.faq.q3')}</span>
+                        <span class="faq-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </span>
+                    </button>
+                    <div class="faq-answer">
+                        <p class="faq-answer-content">{t('customers.faq.a3')}</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -331,6 +433,22 @@ const description = t('customers.meta.description');
 
         showcaseBlocks.forEach(block => {
             observer.observe(block);
+        });
+
+        // FAQ toggle functionality
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            question.addEventListener('click', () => {
+                // Close other open items
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item && otherItem.classList.contains('open')) {
+                        otherItem.classList.remove('open');
+                    }
+                });
+                // Toggle current item
+                item.classList.toggle('open');
+            });
         });
     </script>
 </BaseLayout>

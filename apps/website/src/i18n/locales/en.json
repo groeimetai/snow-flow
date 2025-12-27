@@ -27,7 +27,7 @@
     "stakeholders": "Stakeholders"
   },
   "hero": {
-    "badge": "Open Source · 410+ Tools · Any AI",
+    "badge": "Open Source · 500+ Tools · Any AI",
     "title": "Break Free from ServiceNow Vendor Lock-in",
     "subtitle": "The open-source alternative to ServiceNow Build Agent. Use YOUR approved AI models. Built by developers, for developers. Autonomous story completion from Jira & Azure DevOps.",
     "cta": "Get Started Free",
@@ -46,7 +46,7 @@
     "storyDesc": "As a ServiceNow developer, I want to use my preferred AI model so that I'm not locked into a single vendor's ecosystem.",
     "acceptance": "Acceptance Criteria",
     "criteria1": "Support for 75+ AI providers including Claude, GPT-4, Gemini, and local models",
-    "criteria2": "Full MCP protocol implementation with 410+ specialized tools",
+    "criteria2": "Full MCP protocol implementation with 500+ specialized tools",
     "criteria3": "Integration with Jira, Azure DevOps, and GitHub for autonomous story completion",
     "criteria4": "Zero vendor lock-in - switch AI models without changing workflows",
     "points": "8 pts"
@@ -114,7 +114,7 @@
     "integrationsSnowFlow": "Jira, Azure DevOps, GitHub, GitLab, Confluence",
     "integrationsBuildAgent": "ServiceNow ecosystem only",
     "tools": "MCP Tools",
-    "toolsSnowFlow": "410+ specialized tools",
+    "toolsSnowFlow": "500+ specialized tools",
     "toolsBuildAgent": "Limited, proprietary toolset",
     "agents": "Agent Architecture",
     "agentsSnowFlow": "Multi-agent orchestration",
@@ -155,7 +155,7 @@
       "cta": "Contact Sales"
     },
     "features": {
-      "mcpTools": "410+ MCP Tools",
+      "mcpTools": "500+ MCP Tools",
       "anyProvider": "Any LLM Provider",
       "cliIde": "CLI & IDE Integration",
       "communitySupport": "Community Support",
@@ -189,8 +189,8 @@
     "subtitle": "Snow-Flow combines MCP tools, a built-in TUI, and optional enterprise integrations.",
     "snowFlow": {
       "name": "Snow-Flow",
-      "tools": "410+ Tools",
-      "desc": "The core platform. 410+ MCP tools for ServiceNow development. Widgets, business rules, flows, integrations—everything you need."
+      "tools": "500+ Tools",
+      "desc": "The core platform. 500+ MCP tools for ServiceNow development. Widgets, business rules, flows, integrations—everything you need."
     },
     "snowFlowTUI": {
       "name": "Snow-Flow TUI",
@@ -240,7 +240,7 @@
     },
     "stats": {
       "title": "Project Stats | Snow-Flow",
-      "description": "Snow-Flow platform statistics - 410+ MCP tools, 75+ LLM providers."
+      "description": "Snow-Flow platform statistics - 500+ MCP tools, 75+ LLM providers."
     }
   },
   "enterprise": {
@@ -255,12 +255,12 @@
       "customersDesc": "Deploy Snow-Flow Enterprise directly for your organization. Full control over your AI development workflow.",
       "customersFeature1": "Central dashboard for all activities",
       "customersFeature2": "Jira, Azure DevOps & Confluence sync",
-      "customersFeature3": "Free stakeholder seats included",
+      "customersFeature3": "Stakeholder seats included",
       "partnersTitle": "For Service Integrators",
-      "partnersDesc": "Resell Snow-Flow to your clients with white-label branding and license management.",
-      "partnersFeature1": "White-label portal customization",
-      "partnersFeature2": "License key generation",
-      "partnersFeature3": "Multi-tenant customer management",
+      "partnersDesc": "Equip your ServiceNow consultants with AI-powered development tools.",
+      "partnersFeature1": "Faster project delivery for clients",
+      "partnersFeature2": "Built-in safety for client environments",
+      "partnersFeature3": "Scale your practice with AI",
       "learnMore": "Learn More",
       "rolesLabel": "User Types",
       "rolesTitle": "Two Types of Users",
@@ -268,7 +268,7 @@
       "developersTitle": "Developers",
       "developersDesc": "Full write access to build with Snow-Flow",
       "stakeholdersTitle": "Stakeholders",
-      "stakeholdersDesc": "Read-only access, included FREE",
+      "stakeholdersDesc": "Read-only access for exploration",
       "writeAccess": "Write",
       "readOnly": "Read Only",
       "integrations": "Integrations",
@@ -276,7 +276,55 @@
       "ctaTitle": "Ready to Get Started?",
       "ctaSubtitle": "Whether you're a customer or partner, we're here to help.",
       "ctaPrimary": "Contact Sales",
-      "ctaSecondary": "View Pricing"
+      "ctaSecondary": "View Pricing",
+
+      "comparisonLabel": "Open Source vs Enterprise",
+      "comparisonTitle": "Choose the right plan for your team",
+      "feature": "Feature",
+      "openSource": "Open Source",
+      "enterprisePlan": "Enterprise",
+      "freeForever": "Free Forever",
+      "customPricing": "Custom Pricing",
+      "compMcpTools": "500+ MCP Tools",
+      "compCliTui": "CLI & TUI Interface",
+      "compSelfHosted": "Self-hosted Option",
+      "compCommunitySupport": "Community Support",
+      "compPortal": "Portal Dashboard & Monitoring",
+      "compIntegrations": "External Integrations (Jira, Azure, Confluence)",
+      "compStakeholderSeats": "Stakeholder Seats (Read-only)",
+      "compManagedSaas": "Managed SaaS",
+      "compEnterpriseSecurity": "Enterprise Security & Compliance",
+      "compSsoSaml": "SSO/SAML Authentication",
+
+      "workflowLabel": "End-to-End Automation",
+      "workflowTitle": "See the Complete Autonomous Workflow",
+      "workflowSubtitle": "From story to documentation - fully automated. Only available in Enterprise.",
+      "workflowStep1Title": "Pick Up Story",
+      "workflowStep1Desc": "Agent automatically picks up stories from Jira or Azure DevOps backlog",
+      "workflowStep2Title": "Autonomous Development",
+      "workflowStep2Desc": "AI develops widgets, business rules, script includes, and creates isolated update sets",
+      "workflowStep3Title": "Real-time Visibility",
+      "workflowStep3Desc": "Track all activities in the Snow-Flow Portal dashboard",
+      "workflowStep3Feature1": "Activity monitoring dashboard",
+      "workflowStep3Feature2": "Update set tracking",
+      "workflowStep3Feature3": "Analytics & reporting",
+      "workflowStep4Title": "Auto Documentation",
+      "workflowStep4Desc": "Technical documentation automatically generated and synced to Confluence",
+      "workflowCta": "This complete autonomous workflow is only available in Snow-Flow Enterprise",
+
+      "featuresLabel": "Enterprise-Only Features",
+      "featuresTitle": "What Sets Enterprise Apart",
+      "featurePortalTitle": "Portal Dashboard & Monitoring",
+      "featurePortalDesc": "Complete visibility into your AI-powered development workflow with real-time updates",
+      "featurePortal30s": "Real-time 30-second refresh",
+      "featurePortalCreds": "Centralized credentials management",
+      "featurePortalAnalytics": "Analytics & activity tracking",
+      "featureIntegrationsTitle": "External Integrations",
+      "featureIntegrationsDesc": "Bidirectional sync with your project management and documentation tools",
+      "featureStakeholderTitle": "Stakeholder Seats",
+      "featureStakeholderDesc": "Give business users safe, read-only access to explore ServiceNow without risk",
+      "readOnlyTools": "Read-only query tools",
+      "extraUsers": "Safe access for non-developers"
     }
   },
   "customers": {
@@ -312,29 +360,29 @@
     "dashboard": {
       "badge": "Dashboard",
       "title": "Complete Visibility in One Dashboard",
-      "desc": "Get a bird's eye view of your entire Snow-Flow deployment. Monitor connections, track usage, and manage your team.",
+      "desc": "Get a bird's eye view of your entire Snow-Flow deployment. Monitor connections, track usage, and manage your team with real-time updates.",
       "feature1": "Seat allocation tracking (Developer & Stakeholder)",
-      "feature2": "Real-time API usage and account status",
+      "feature2": "Real-time status with 30-second auto-refresh",
       "feature3": "Quick actions for daily tasks",
-      "feature4": "License information always visible"
+      "feature4": "305+ REST API endpoints for full control"
     },
     "activities": {
       "badge": "Agent Activities",
       "title": "Track Every Agent Activity",
-      "desc": "See exactly what your AI agents are building. Filter by source, track completion rates, and export reports.",
+      "desc": "See exactly what your AI agents are building. Filter by source, track completion rates, and export reports for stakeholders.",
       "feature1": "Activity trends with visual graphs",
-      "feature2": "Filter by source (Jira, Azure, etc.)",
+      "feature2": "Filter by source (Jira, Azure DevOps, manual)",
       "feature3": "Completion rates and weekly overview",
-      "feature4": "Search through all activities"
+      "feature4": "Full activity history with export"
     },
     "updatesets": {
       "badge": "Update Sets",
       "title": "Manage Update Sets Centrally",
-      "desc": "Every story creates an isolated update set. Track status, assess risk, and deploy with confidence.",
-      "feature1": "Status tracking (Ready, In Progress)",
-      "feature2": "Risk assessment per update set",
-      "feature3": "Direct link to ServiceNow",
-      "feature4": "Artifact overview per set"
+      "desc": "Every story creates an isolated update set. Track status, view artifacts, and deploy with confidence.",
+      "feature1": "Status tracking (In Progress, Ready, Released)",
+      "feature2": "Artifact count per update set",
+      "feature3": "Direct deep-link to ServiceNow",
+      "feature4": "Risk indicators and deployment readiness"
     },
     "integrations": {
       "label": "Integrations",
@@ -343,7 +391,25 @@
       "jiraDesc": "Backlog sync, issue tracking, automatic status updates",
       "azureDesc": "Work items, pipelines, PRs, and release management",
       "confluenceDesc": "Auto-generate and sync technical documentation",
-      "badge": "Enterprise Integrations"
+      "badge": "Sync with Your Project & Documentation Tools"
+    },
+    "community": {
+      "label": "Open Source Community",
+      "title": "Built in the Open",
+      "subtitle": "Join thousands of developers using Snow-Flow for ServiceNow development.",
+      "githubLabel": "GitHub Stars",
+      "npmLabel": "npm Downloads",
+      "toolsLabel": "MCP Tools"
+    },
+    "faq": {
+      "label": "Frequently Asked Questions",
+      "title": "Common Questions",
+      "q1": "What makes Snow-Flow different from ServiceNow Build Agent?",
+      "a1": "Snow-Flow is open source and lets you use any AI model your organization has approved (75+ providers including Claude, GPT-4, DeepSeek, and local models). Build Agent locks you into NowLLM only. Snow-Flow also works in any IDE, not just the browser-based Studio.",
+      "q2": "How does the Enterprise portal help my team?",
+      "a2": "The Enterprise portal provides real-time visibility into all AI agent activities, centralized update set management, and automatic sync with Jira, Azure DevOps, and Confluence. Stakeholders can safely query ServiceNow without write access.",
+      "q3": "Can I try Snow-Flow before committing to Enterprise?",
+      "a3": "Absolutely! Snow-Flow is 100% open source and free to use. Install it with npm, connect to your ServiceNow instance, and start building. Enterprise adds the portal, integrations, and stakeholder seats when you're ready to scale."
     },
     "cta": {
       "title": "Ready to Transform Your ServiceNow Development?",
@@ -354,34 +420,40 @@
   },
   "partners": {
     "meta": {
-      "title": "For Partners | Snow-Flow Enterprise",
-      "description": "Resell AI-powered ServiceNow development with built-in safety guarantees. Pre-deployment validation, role-based access, and update set isolation."
+      "title": "For Service Integrators | Snow-Flow",
+      "description": "Equip your ServiceNow consultants with AI-powered development tools. Built-in safety, faster delivery, happy clients."
     },
-    "breadcrumb": "For Partners",
+    "breadcrumb": "For Service Integrators",
     "hero": {
-      "badge": "Enterprise Safety",
-      "subtitle": "Built-in safeguards prevent AI mistakes before they reach production. Resell with confidence.",
-      "cta": "Become a Partner",
+      "badge": "For Service Integrators",
+      "subtitle": "Give your ServiceNow consultants AI-powered tools that speed up delivery while keeping client environments safe.",
+      "cta": "Get Started",
       "ctaSecondary": "Enterprise Overview"
     },
     "safety": {
-      "label": "Why Safety Matters",
-      "title": "AI is powerful. Control is essential.",
-      "subtitle": "When you resell AI development tools, your reputation is on the line. Snow-Flow's built-in protection layers catch issues before they reach production, while dramatically speeding up development and administration.",
-      "stat1": "10x",
-      "stat1Label": "Faster Development",
-      "stat1Desc": "AI handles stories from Jira to Update Set",
+      "label": "Why Your Consultants Will Love It",
+      "title": "Faster delivery. Safer deployments.",
+      "subtitle": "Snow-Flow is a development tool your consultants use daily. Built-in safeguards catch mistakes before they reach your client's production environment.",
+      "stat1": "500+",
+      "stat1Label": "MCP Tools",
+      "stat1Desc": "AI handles stories from ticket to Update Set",
       "stat2": "174",
       "stat2Label": "Read-Only Tools",
       "stat2Desc": "Stakeholders can explore, not modify",
-      "stat3": "100%",
+      "stat3": "Fully",
       "stat3Label": "Auditable",
-      "stat3Desc": "Every action tracked in update sets"
+      "stat3Desc": "Actions tracked via ServiceNow update sets"
     },
     "protection": {
       "label": "Built-In Protection",
-      "title": "Four Layers of Safety",
-      "subtitle": "Every tool call passes through multiple safety checks before reaching ServiceNow.",
+      "title": "Safety Your Clients Can Trust",
+      "subtitle": "Every action your consultants take passes through multiple safety checks before reaching client environments.",
+      "tabs": {
+        "validation": "Validation",
+        "preview": "Preview",
+        "isolation": "Isolation",
+        "access": "Access"
+      },
       "validation": {
         "title": "Pre-Deployment Validation",
         "desc": "Automatic checks before any code reaches ServiceNow.",
@@ -409,7 +481,7 @@
       "access": {
         "title": "Role-Based Access Control",
         "desc": "Stakeholders get read-only access by design.",
-        "feature1": "Developers: Full write access (410+ tools)",
+        "feature1": "Developers: Full write access (500+ tools)",
         "feature2": "Stakeholders: Read-only access (174 query tools)",
         "feature3": "Permission validation on EVERY tool call",
         "feature4": "Cannot accidentally bypass restrictions"
@@ -418,7 +490,7 @@
     "stakeholders": {
       "label": "Stakeholder Safety",
       "title": "Give Access Without Risk",
-      "subtitle": "Stakeholder seats are FREE and completely safe. Let your customers explore without fear.",
+      "subtitle": "Stakeholder seats are completely safe. Let your customers explore without fear.",
       "badge": "174 Read-Only Tools",
       "canDoTitle": "What Stakeholders CAN Do",
       "can1": "Query any table in ServiceNow",
@@ -432,33 +504,61 @@
       "dev4": "Execute background scripts"
     },
     "benefits": {
-      "label": "Partner Benefits",
-      "title": "Grow Your Business",
-      "subtitle": "Safety-first means confident selling.",
-      "revenue": {
-        "title": "Revenue Share",
-        "desc": "20-30% margin on every license you sell."
+      "label": "Why Service Integrators Choose Snow-Flow",
+      "title": "Better Tools, Better Results",
+      "subtitle": "Give your team an unfair advantage.",
+      "speed": {
+        "title": "Faster Project Delivery",
+        "desc": "Complete ServiceNow projects in a fraction of the time."
       },
-      "whitelabel": {
-        "title": "White-Label Ready",
-        "desc": "Your brand, your portal, your customer relationships."
+      "quality": {
+        "title": "Fewer Mistakes",
+        "desc": "Built-in validation catches errors before they reach production."
       },
-      "trust": {
-        "title": "Enterprise Trust",
-        "desc": "SOC 2 compliant. Built-in safety. Sell with confidence."
+      "capacity": {
+        "title": "Scale Your Practice",
+        "desc": "Handle more clients without hiring more consultants."
+      }
+    },
+    "whitelabel": {
+      "label": "Enterprise Features",
+      "title": "Your Brand, Your Portal",
+      "subtitle": "Offer Snow-Flow to your clients under your own brand.",
+      "branding": {
+        "title": "Custom Branding",
+        "desc": "Your logo, colors, and favicon throughout the portal."
+      },
+      "domain": {
+        "title": "Custom Domain",
+        "desc": "Host on your own subdomain like ai.yourcompany.com."
+      },
+      "email": {
+        "title": "Branded Emails",
+        "desc": "All notifications come from your domain."
       }
     },
     "cta": {
-      "title": "Ready to Resell AI Development That's Actually Safe?",
-      "subtitle": "Join our partner program and offer your customers AI-powered ServiceNow development with enterprise-grade protection.",
-      "primary": "Become a Partner",
-      "secondary": "View Customer Page"
+      "title": "Ready to Equip Your Team?",
+      "subtitle": "Give your ServiceNow consultants the AI-powered tools they deserve.",
+      "primary": "Get Started",
+      "secondary": "View Pricing"
     }
   },
   "developers": {
     "meta": {
       "title": "For Developers | Snow-Flow Enterprise",
-      "description": "Build ServiceNow solutions with AI-powered development. Full write access, 410+ MCP tools, and seamless integration tracking."
+      "description": "Build ServiceNow solutions with AI-powered development. Full write access, 500+ MCP tools, and seamless integration tracking."
+    },
+    "breadcrumb": "For Developers",
+    "getStarted": {
+      "label": "Get Started",
+      "title": "Up and Running in Minutes",
+      "subtitle": "Three simple steps to start building with Snow-Flow.",
+      "step1Title": "Install Snow-Flow",
+      "step2Title": "Start TUI & Authenticate",
+      "step3Title": "Start Building",
+      "prompt": "What would you like to build today?",
+      "examplePrompt": "Create a new widget for my portal"
     },
     "hero": {
       "badge": "Developer Access",
@@ -529,22 +629,23 @@
   "stakeholders": {
     "meta": {
       "title": "For Stakeholders | Snow-Flow Enterprise",
-      "description": "Get answers about your ServiceNow environment without risk. Read-only access included free with developer seats."
+      "description": "Get answers about your ServiceNow environment without risk. Read-only access for safe exploration."
     },
+    "breadcrumb": "For Stakeholders",
     "hero": {
       "badge": "Stakeholder Access",
       "title": "Answers Without Risk",
       "subtitle": "Query your ServiceNow environment, get insights, and stay informed—all with read-only safety.",
       "cta": "Contact Sales",
       "ctaSecondary": "Enterprise Overview",
-      "freeBadge": "Included FREE with Developer Seats"
+      "freeBadge": "Read-Only Access"
     },
     "value": {
       "label": "Why Stakeholder Seats?",
       "title": "Empower Your Entire Team",
       "subtitle": "Give business users, managers, and analysts access to AI-powered ServiceNow insights without the risk of changes.",
-      "card1Title": "Completely Free",
-      "card1Desc": "Stakeholder seats are included at no extra cost with every developer license.",
+      "card1Title": "Safe Exploration",
+      "card1Desc": "Stakeholders can explore your ServiceNow environment with complete confidence.",
       "card2Title": "Read-Only Safety",
       "card2Desc": "Query and explore without any risk of modifying your ServiceNow environment.",
       "card3Title": "Full AI Power",
@@ -594,7 +695,7 @@
     },
     "cta": {
       "title": "Ready to Empower Your Team?",
-      "subtitle": "Stakeholder seats come free with every developer license. Contact us to get started.",
+      "subtitle": "Give your team safe, read-only access to ServiceNow insights. Contact us to get started.",
       "primary": "Contact Sales",
       "secondary": "Developer Features"
     }

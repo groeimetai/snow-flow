@@ -48,6 +48,379 @@ const description = t('enterprise.meta.description');
         </div>
     </section>
 
+    <!-- Comparison Table Section -->
+    <section class="section comparison-table-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label enterprise-label">{t('enterprise.landing.comparisonLabel')}</span>
+                <h2 class="section-title">{t('enterprise.landing.comparisonTitle')}</h2>
+            </div>
+
+            <div class="comparison-table">
+                <div class="comparison-header">
+                    <div class="comparison-cell feature">{t('enterprise.landing.feature')}</div>
+                    <div class="comparison-cell opensource-header">
+                        <span class="plan-name">{t('enterprise.landing.openSource')}</span>
+                        <span class="plan-price">{t('enterprise.landing.freeForever')}</span>
+                    </div>
+                    <div class="comparison-cell enterprise-header">
+                        <span class="enterprise-badge-small">ENTERPRISE</span>
+                        <span class="plan-name">{t('enterprise.landing.enterprisePlan')}</span>
+                        <span class="plan-price">{t('enterprise.landing.customPricing')}</span>
+                    </div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">{t('enterprise.landing.compMcpTools')}</div>
+                    <div class="comparison-cell check">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div class="comparison-cell check highlight">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">{t('enterprise.landing.compCliTui')}</div>
+                    <div class="comparison-cell check">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div class="comparison-cell check highlight">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">{t('enterprise.landing.compSelfHosted')}</div>
+                    <div class="comparison-cell check">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div class="comparison-cell check highlight">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell feature">{t('enterprise.landing.compCommunitySupport')}</div>
+                    <div class="comparison-cell check">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div class="comparison-cell check highlight">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+
+                <div class="comparison-row enterprise-only">
+                    <div class="comparison-cell feature">
+                        {t('enterprise.landing.compPortal')}
+                        <span class="enterprise-badge">Enterprise</span>
+                    </div>
+                    <div class="comparison-cell cross">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </div>
+                    <div class="comparison-cell check highlight">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+
+                <div class="comparison-row enterprise-only">
+                    <div class="comparison-cell feature">
+                        {t('enterprise.landing.compIntegrations')}
+                        <span class="enterprise-badge">Enterprise</span>
+                    </div>
+                    <div class="comparison-cell cross">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </div>
+                    <div class="comparison-cell check highlight">40+</div>
+                </div>
+
+                <div class="comparison-row enterprise-only">
+                    <div class="comparison-cell feature">
+                        {t('enterprise.landing.compStakeholderSeats')}
+                        <span class="enterprise-badge">Enterprise</span>
+                    </div>
+                    <div class="comparison-cell cross">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </div>
+                    <div class="comparison-cell check highlight">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+
+                <div class="comparison-row enterprise-only">
+                    <div class="comparison-cell feature">
+                        {t('enterprise.landing.compManagedSaas')}
+                        <span class="enterprise-badge">Enterprise</span>
+                    </div>
+                    <div class="comparison-cell cross">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </div>
+                    <div class="comparison-cell check highlight">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+
+                <div class="comparison-row enterprise-only">
+                    <div class="comparison-cell feature">
+                        {t('enterprise.landing.compEnterpriseSecurity')}
+                        <span class="enterprise-badge">Enterprise</span>
+                    </div>
+                    <div class="comparison-cell cross">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </div>
+                    <div class="comparison-cell check highlight">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+
+                <div class="comparison-row enterprise-only">
+                    <div class="comparison-cell feature">
+                        {t('enterprise.landing.compSsoSaml')}
+                        <span class="enterprise-badge">Enterprise</span>
+                    </div>
+                    <div class="comparison-cell cross">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </div>
+                    <div class="comparison-cell check highlight">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Autonomous Workflow Section -->
+    <section class="section autonomous-workflow-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label enterprise-label">{t('enterprise.landing.workflowLabel')}</span>
+                <h2 class="section-title">{t('enterprise.landing.workflowTitle')}</h2>
+                <p class="section-subtitle">{t('enterprise.landing.workflowSubtitle')}</p>
+            </div>
+
+            <div class="workflow-timeline">
+                <!-- Step 1: Pick Up Story -->
+                <div class="workflow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-card">
+                        <span class="enterprise-badge">Enterprise</span>
+                        <div class="step-icons">
+                            <div class="step-icon jira">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M11.571 11.513H0a5.218 5.218 0 0 0 5.232 5.215h2.13v2.057A5.215 5.215 0 0 0 12.575 24V12.518a1.005 1.005 0 0 0-1.005-1.005z"/>
+                                </svg>
+                            </div>
+                            <span class="or-divider">or</span>
+                            <div class="step-icon azure">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M0 8.877L2.247 5.91l8.405-3.416V.022l7.37 5.393L2.966 8.338v8.225L0 15.707z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3>{t('enterprise.landing.workflowStep1Title')}</h3>
+                        <p>{t('enterprise.landing.workflowStep1Desc')}</p>
+                    </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="workflow-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </div>
+
+                <!-- Step 2: Autonomous Development -->
+                <div class="workflow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-card">
+                        <div class="step-icon servicenow">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                            </svg>
+                        </div>
+                        <h3>{t('enterprise.landing.workflowStep2Title')}</h3>
+                        <p>{t('enterprise.landing.workflowStep2Desc')}</p>
+                        <ul class="step-features">
+                            <li>Widgets</li>
+                            <li>Business Rules</li>
+                            <li>Script Includes</li>
+                            <li>Update Sets</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="workflow-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </div>
+
+                <!-- Step 3: Real-time Visibility -->
+                <div class="workflow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-card">
+                        <span class="enterprise-badge">Enterprise</span>
+                        <div class="step-icon portal-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="3" y1="9" x2="21" y2="9"></line>
+                                <line x1="9" y1="21" x2="9" y2="9"></line>
+                            </svg>
+                        </div>
+                        <h3>{t('enterprise.landing.workflowStep3Title')}</h3>
+                        <p>{t('enterprise.landing.workflowStep3Desc')}</p>
+                        <ul class="step-features">
+                            <li>{t('enterprise.landing.workflowStep3Feature1')}</li>
+                            <li>{t('enterprise.landing.workflowStep3Feature2')}</li>
+                            <li>{t('enterprise.landing.workflowStep3Feature3')}</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="workflow-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </div>
+
+                <!-- Step 4: Auto Documentation -->
+                <div class="workflow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-card">
+                        <span class="enterprise-badge">Enterprise</span>
+                        <div class="step-icon confluence-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M.87 18.257c-.248.382-.53.875-.763 1.245a.764.764 0 0 0 .255 1.04l4.965 3.054a.764.764 0 0 0 1.058-.26c.199-.332.454-.763.733-1.221 1.967-3.247 3.945-2.853 7.508-1.146l4.957 2.377a.764.764 0 0 0 1.028-.382l2.36-5.203a.764.764 0 0 0-.382-1.028c-1.689-.81-4.676-2.233-6.678-3.191-6.003-2.871-10.507-2.731-15.041 4.715z"/>
+                            </svg>
+                        </div>
+                        <h3>{t('enterprise.landing.workflowStep4Title')}</h3>
+                        <p>{t('enterprise.landing.workflowStep4Desc')}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="workflow-cta">
+                <p>{t('enterprise.landing.workflowCta')}</p>
+                <a href="mailto:sales@snow-flow.dev" class="btn btn-primary">
+                    {t('enterprise.landing.ctaPrimary')}
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Spotlight Section -->
+    <section class="section features-spotlight-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label enterprise-label">{t('enterprise.landing.featuresLabel')}</span>
+                <h2 class="section-title">{t('enterprise.landing.featuresTitle')}</h2>
+            </div>
+
+            <div class="feature-spotlight-grid">
+                <!-- Portal Dashboard Card (Large) -->
+                <div class="feature-spotlight-card large">
+                    <span class="enterprise-badge feature-badge">Enterprise</span>
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                    </div>
+                    <h3>{t('enterprise.landing.featurePortalTitle')}</h3>
+                    <p>{t('enterprise.landing.featurePortalDesc')}</p>
+                    <ul class="feature-highlights">
+                        <li>
+                            <span class="highlight-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                            </span>
+                            {t('enterprise.landing.featurePortal30s')}
+                        </li>
+                        <li>
+                            <span class="highlight-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            </span>
+                            {t('enterprise.landing.featurePortalCreds')}
+                        </li>
+                        <li>
+                            <span class="highlight-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                            </span>
+                            {t('enterprise.landing.featurePortalAnalytics')}
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- External Integrations Card -->
+                <div class="feature-spotlight-card">
+                    <span class="enterprise-badge feature-badge">Enterprise</span>
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                    </div>
+                    <h3>{t('enterprise.landing.featureIntegrationsTitle')}</h3>
+                    <p>{t('enterprise.landing.featureIntegrationsDesc')}</p>
+                    <div class="integration-breakdown">
+                        <div class="integration-item">
+                            <span class="integration-logo jira">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M11.571 11.513H0a5.218 5.218 0 0 0 5.232 5.215h2.13v2.057A5.215 5.215 0 0 0 12.575 24V12.518a1.005 1.005 0 0 0-1.005-1.005z"/>
+                                </svg>
+                            </span>
+                            <span class="integration-count">8 tools</span>
+                        </div>
+                        <div class="integration-item">
+                            <span class="integration-logo azure">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M0 8.877L2.247 5.91l8.405-3.416V.022l7.37 5.393L2.966 8.338v8.225L0 15.707z"/>
+                                </svg>
+                            </span>
+                            <span class="integration-count">10 tools</span>
+                        </div>
+                        <div class="integration-item">
+                            <span class="integration-logo confluence">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M.87 18.257c-.248.382-.53.875-.763 1.245a.764.764 0 0 0 .255 1.04l4.965 3.054a.764.764 0 0 0 1.058-.26c.199-.332.454-.763.733-1.221 1.967-3.247 3.945-2.853 7.508-1.146l4.957 2.377a.764.764 0 0 0 1.028-.382l2.36-5.203a.764.764 0 0 0-.382-1.028c-1.689-.81-4.676-2.233-6.678-3.191-6.003-2.871-10.507-2.731-15.041 4.715z"/>
+                                </svg>
+                            </span>
+                            <span class="integration-count">8 tools</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stakeholder Seats Card -->
+                <div class="feature-spotlight-card">
+                    <span class="enterprise-badge feature-badge">Enterprise</span>
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <h3>{t('enterprise.landing.featureStakeholderTitle')}</h3>
+                    <p>{t('enterprise.landing.featureStakeholderDesc')}</p>
+                    <div class="stakeholder-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">174</span>
+                            <span class="stat-label">{t('enterprise.landing.readOnlyTools')}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Two Audiences Section -->
     <section class="section audiences-section">
         <div class="container">
@@ -156,20 +529,20 @@ const description = t('enterprise.meta.description');
         <div class="container">
             <div class="stats-grid">
                 <div class="stat-item">
-                    <span class="stat-value">410+</span>
+                    <span class="stat-value">500+</span>
                     <span class="stat-label">MCP Tools</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-value">40+</span>
-                    <span class="stat-label">{t('enterprise.landing.integrations')}</span>
+                    <span class="stat-value">75+</span>
+                    <span class="stat-label">AI Providers</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-value">174</span>
                     <span class="stat-label">{t('enterprise.landing.stakeholderTools')}</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-value">99.9%</span>
-                    <span class="stat-label">Uptime SLA</span>
+                    <span class="stat-value">40+</span>
+                    <span class="stat-label">{t('enterprise.landing.integrations')}</span>
                 </div>
             </div>
         </div>

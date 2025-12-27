@@ -27,7 +27,7 @@
     "stakeholders": "Stakeholders"
   },
   "hero": {
-    "badge": "Open Source · 410+ Tools · Elke AI",
+    "badge": "Open Source · 500+ Tools · Elke AI",
     "title": "Breek Vrij van ServiceNow Vendor Lock-in",
     "subtitle": "Het open-source alternatief voor ServiceNow Build Agent. Gebruik JOUW goedgekeurde AI-modellen. Gebouwd door developers, voor developers. Autonome story-afronding vanuit Jira & Azure DevOps.",
     "cta": "Start Gratis",
@@ -46,7 +46,7 @@
     "storyDesc": "Als ServiceNow developer wil ik mijn favoriete AI-model gebruiken zodat ik niet vast zit aan het ecosysteem van één leverancier.",
     "acceptance": "Acceptatiecriteria",
     "criteria1": "Ondersteuning voor 75+ AI providers inclusief Claude, GPT-4, Gemini en lokale modellen",
-    "criteria2": "Volledige MCP protocol implementatie met 410+ gespecialiseerde tools",
+    "criteria2": "Volledige MCP protocol implementatie met 500+ gespecialiseerde tools",
     "criteria3": "Integratie met Jira, Azure DevOps en GitHub voor autonome story-afronding",
     "criteria4": "Geen vendor lock-in - wissel van AI-model zonder workflows aan te passen",
     "points": "8 pts"
@@ -114,7 +114,7 @@
     "integrationsSnowFlow": "Jira, Azure DevOps, GitHub, GitLab, Confluence",
     "integrationsBuildAgent": "Alleen ServiceNow ecosysteem",
     "tools": "MCP Tools",
-    "toolsSnowFlow": "410+ gespecialiseerde tools",
+    "toolsSnowFlow": "500+ gespecialiseerde tools",
     "toolsBuildAgent": "Beperkte, proprietary toolset",
     "agents": "Agent Architectuur",
     "agentsSnowFlow": "Multi-agent orchestratie",
@@ -155,7 +155,7 @@
       "cta": "Neem Contact Op"
     },
     "features": {
-      "mcpTools": "410+ MCP Tools",
+      "mcpTools": "500+ MCP Tools",
       "anyProvider": "Elke LLM Provider",
       "cliIde": "CLI & IDE Integratie",
       "communitySupport": "Community Support",
@@ -189,8 +189,8 @@
     "subtitle": "Snow-Flow is gebouwd op drie onderling verbonden open-source projecten.",
     "snowFlow": {
       "name": "Snow-Flow",
-      "tools": "410+ Tools",
-      "desc": "De MCP servers. 410+ tools voor ServiceNow development. Widgets, business rules, flows, integraties—alles wat je nodig hebt."
+      "tools": "500+ Tools",
+      "desc": "De MCP servers. 500+ tools voor ServiceNow development. Widgets, business rules, flows, integraties—alles wat je nodig hebt."
     },
     "snowCode": {
       "name": "Snow-Code",
@@ -240,7 +240,7 @@
     },
     "stats": {
       "title": "Project Statistieken | Snow-Flow",
-      "description": "Snow-Flow platform statistieken - 410+ MCP tools, 75+ LLM providers."
+      "description": "Snow-Flow platform statistieken - 500+ MCP tools, 75+ LLM providers."
     }
   },
   "enterprise": {
@@ -255,12 +255,12 @@
       "customersDesc": "Deploy Snow-Flow Enterprise direct voor je organisatie. Volledige controle over je AI development workflow.",
       "customersFeature1": "Centraal dashboard voor alle activiteiten",
       "customersFeature2": "Jira, Azure DevOps & Confluence sync",
-      "customersFeature3": "Gratis stakeholder seats inbegrepen",
+      "customersFeature3": "Stakeholder seats inbegrepen",
       "partnersTitle": "Voor Service Integrators",
-      "partnersDesc": "Verkoop Snow-Flow door aan je klanten met white-label branding en licentie beheer.",
-      "partnersFeature1": "White-label portal customization",
-      "partnersFeature2": "Licentie key generatie",
-      "partnersFeature3": "Multi-tenant klant beheer",
+      "partnersDesc": "Rust je ServiceNow consultants uit met AI-gestuurde development tools.",
+      "partnersFeature1": "Snellere projectoplevering voor klanten",
+      "partnersFeature2": "Ingebouwde veiligheid voor klantomgevingen",
+      "partnersFeature3": "Schaal je praktijk met AI",
       "learnMore": "Meer Info",
       "rolesLabel": "Gebruikerstypen",
       "rolesTitle": "Twee Soorten Gebruikers",
@@ -268,7 +268,7 @@
       "developersTitle": "Developers",
       "developersDesc": "Volledige schrijftoegang om te bouwen met Snow-Flow",
       "stakeholdersTitle": "Stakeholders",
-      "stakeholdersDesc": "Read-only toegang, GRATIS inbegrepen",
+      "stakeholdersDesc": "Read-only toegang voor exploratie",
       "writeAccess": "Schrijven",
       "readOnly": "Alleen Lezen",
       "integrations": "Integraties",
@@ -276,7 +276,55 @@
       "ctaTitle": "Klaar om te Starten?",
       "ctaSubtitle": "Of je nu klant of partner bent, wij zijn er om te helpen.",
       "ctaPrimary": "Neem Contact Op",
-      "ctaSecondary": "Bekijk Prijzen"
+      "ctaSecondary": "Bekijk Prijzen",
+
+      "comparisonLabel": "Open Source vs Enterprise",
+      "comparisonTitle": "Kies het juiste plan voor jouw team",
+      "feature": "Functie",
+      "openSource": "Open Source",
+      "enterprisePlan": "Enterprise",
+      "freeForever": "Voor Altijd Gratis",
+      "customPricing": "Op Maat Geprijsd",
+      "compMcpTools": "500+ MCP Tools",
+      "compCliTui": "CLI & TUI Interface",
+      "compSelfHosted": "Self-hosted Optie",
+      "compCommunitySupport": "Community Support",
+      "compPortal": "Portal Dashboard & Monitoring",
+      "compIntegrations": "Externe Integraties (Jira, Azure, Confluence)",
+      "compStakeholderSeats": "Stakeholder Seats (Read-only)",
+      "compManagedSaas": "Managed SaaS",
+      "compEnterpriseSecurity": "Enterprise Security & Compliance",
+      "compSsoSaml": "SSO/SAML Authenticatie",
+
+      "workflowLabel": "End-to-End Automatisering",
+      "workflowTitle": "Bekijk de Complete Autonome Workflow",
+      "workflowSubtitle": "Van story tot documentatie - volledig geautomatiseerd. Alleen beschikbaar in Enterprise.",
+      "workflowStep1Title": "Story Oppakken",
+      "workflowStep1Desc": "Agent pakt automatisch stories op uit Jira of Azure DevOps backlog",
+      "workflowStep2Title": "Autonome Development",
+      "workflowStep2Desc": "AI ontwikkelt widgets, business rules, script includes en maakt geïsoleerde update sets",
+      "workflowStep3Title": "Real-time Zichtbaarheid",
+      "workflowStep3Desc": "Volg alle activiteiten in het Snow-Flow Portal dashboard",
+      "workflowStep3Feature1": "Activiteit monitoring dashboard",
+      "workflowStep3Feature2": "Update set tracking",
+      "workflowStep3Feature3": "Analytics & rapportage",
+      "workflowStep4Title": "Auto Documentatie",
+      "workflowStep4Desc": "Technische documentatie automatisch gegenereerd en gesynchroniseerd naar Confluence",
+      "workflowCta": "Deze complete autonome workflow is alleen beschikbaar in Snow-Flow Enterprise",
+
+      "featuresLabel": "Enterprise-Only Features",
+      "featuresTitle": "Wat Enterprise Anders Maakt",
+      "featurePortalTitle": "Portal Dashboard & Monitoring",
+      "featurePortalDesc": "Volledig zicht in je AI-gestuurde development workflow met real-time updates",
+      "featurePortal30s": "Real-time 30-seconden refresh",
+      "featurePortalCreds": "Gecentraliseerd credentials beheer",
+      "featurePortalAnalytics": "Analytics & activiteit tracking",
+      "featureIntegrationsTitle": "Externe Integraties",
+      "featureIntegrationsDesc": "Bidirectionele sync met je projectmanagement en documentatie tools",
+      "featureStakeholderTitle": "Stakeholder Seats",
+      "featureStakeholderDesc": "Geef business users veilige, read-only toegang om ServiceNow te verkennen zonder risico",
+      "readOnlyTools": "Read-only query tools",
+      "extraUsers": "Veilige toegang voor non-developers"
     }
   },
   "customers": {
@@ -312,29 +360,29 @@
     "dashboard": {
       "badge": "Dashboard",
       "title": "Volledig Overzicht in Eén Dashboard",
-      "desc": "Krijg een vogelvlucht van je hele Snow-Flow deployment. Monitor connecties, volg gebruik en beheer je team.",
+      "desc": "Krijg een vogelvlucht van je hele Snow-Flow deployment. Monitor connecties, volg gebruik en beheer je team met real-time updates.",
       "feature1": "Seat allocatie tracking (Developer & Stakeholder)",
-      "feature2": "Real-time API gebruik en account status",
+      "feature2": "Real-time status met 30-seconden auto-refresh",
       "feature3": "Snelle acties voor dagelijkse taken",
-      "feature4": "Licentie informatie altijd zichtbaar"
+      "feature4": "305+ REST API endpoints voor volledige controle"
     },
     "activities": {
       "badge": "Agent Activiteiten",
       "title": "Volg Elke Agent Activiteit",
-      "desc": "Zie precies wat je AI agents bouwen. Filter op bron, volg voltooiingspercentages en exporteer rapporten.",
+      "desc": "Zie precies wat je AI agents bouwen. Filter op bron, volg voltooiingspercentages en exporteer rapporten voor stakeholders.",
       "feature1": "Activiteit trends met visuele grafieken",
-      "feature2": "Filter op bron (Jira, Azure, etc.)",
+      "feature2": "Filter op bron (Jira, Azure DevOps, handmatig)",
       "feature3": "Voltooiingspercentages en wekelijks overzicht",
-      "feature4": "Doorzoek alle activiteiten"
+      "feature4": "Volledige activiteitenhistorie met export"
     },
     "updatesets": {
       "badge": "Update Sets",
       "title": "Beheer Update Sets Centraal",
-      "desc": "Elke story maakt een geïsoleerde update set. Volg status, beoordeel risico en deploy met vertrouwen.",
-      "feature1": "Status tracking (Klaar, In Progress)",
-      "feature2": "Risicobeoordeling per update set",
-      "feature3": "Directe link naar ServiceNow",
-      "feature4": "Artifact overzicht per set"
+      "desc": "Elke story maakt een geïsoleerde update set. Volg status, bekijk artifacts en deploy met vertrouwen.",
+      "feature1": "Status tracking (In Progress, Klaar, Released)",
+      "feature2": "Artifact telling per update set",
+      "feature3": "Directe deep-link naar ServiceNow",
+      "feature4": "Risico-indicatoren en deployment gereedheid"
     },
     "integrations": {
       "label": "Integraties",
@@ -343,7 +391,25 @@
       "jiraDesc": "Backlog sync, issue tracking, automatische status updates",
       "azureDesc": "Work items, pipelines, PRs en release management",
       "confluenceDesc": "Automatisch genereren en syncen van technische documentatie",
-      "badge": "Enterprise Integraties"
+      "badge": "Sync met Je Project- & Documentatietools"
+    },
+    "community": {
+      "label": "Open Source Community",
+      "title": "Gebouwd in het Open",
+      "subtitle": "Sluit je aan bij duizenden developers die Snow-Flow gebruiken voor ServiceNow development.",
+      "githubLabel": "GitHub Stars",
+      "npmLabel": "npm Downloads",
+      "toolsLabel": "MCP Tools"
+    },
+    "faq": {
+      "label": "Veelgestelde Vragen",
+      "title": "Veelgestelde Vragen",
+      "q1": "Wat maakt Snow-Flow anders dan ServiceNow Build Agent?",
+      "a1": "Snow-Flow is open source en laat je elk AI-model gebruiken dat je organisatie heeft goedgekeurd (75+ providers waaronder Claude, GPT-4, DeepSeek en lokale modellen). Build Agent beperkt je tot alleen NowLLM. Snow-Flow werkt ook in elke IDE, niet alleen de browser-gebaseerde Studio.",
+      "q2": "Hoe helpt de Enterprise portal mijn team?",
+      "a2": "De Enterprise portal biedt real-time zicht op alle AI agent activiteiten, gecentraliseerd update set beheer en automatische sync met Jira, Azure DevOps en Confluence. Stakeholders kunnen veilig ServiceNow bevragen zonder schrijftoegang.",
+      "q3": "Kan ik Snow-Flow uitproberen voordat ik Enterprise neem?",
+      "a3": "Absoluut! Snow-Flow is 100% open source en gratis te gebruiken. Installeer het met npm, verbind met je ServiceNow instance en begin met bouwen. Enterprise voegt de portal, integraties en stakeholder seats toe wanneer je klaar bent om te schalen."
     },
     "cta": {
       "title": "Klaar om Je ServiceNow Development te Transformeren?",
@@ -354,34 +420,40 @@
   },
   "partners": {
     "meta": {
-      "title": "Voor Partners | Snow-Flow Enterprise",
-      "description": "Verkoop AI-gestuurde ServiceNow development met ingebouwde veiligheidsgaranties. Pre-deployment validatie, role-based access en update set isolatie."
+      "title": "Voor Service Integrators | Snow-Flow",
+      "description": "Rust je ServiceNow consultants uit met AI-gestuurde development tools. Ingebouwde veiligheid, snellere oplevering, tevreden klanten."
     },
-    "breadcrumb": "Voor Partners",
+    "breadcrumb": "Voor Service Integrators",
     "hero": {
-      "badge": "Enterprise Veiligheid",
-      "subtitle": "Ingebouwde beveiligingen voorkomen AI-fouten voordat ze productie bereiken. Verkoop met vertrouwen.",
-      "cta": "Word Partner",
+      "badge": "Voor Service Integrators",
+      "subtitle": "Geef je ServiceNow consultants AI-gestuurde tools die oplevering versnellen en klantomgevingen veilig houden.",
+      "cta": "Aan de Slag",
       "ctaSecondary": "Enterprise Overzicht"
     },
     "safety": {
-      "label": "Waarom Veiligheid Belangrijk Is",
-      "title": "AI is krachtig. Controle is essentieel.",
-      "subtitle": "Wanneer je AI development tools doorverkoopt, staat je reputatie op het spel. Snow-Flow's ingebouwde beschermingslagen vangen problemen op voordat ze productie bereiken, terwijl development en administratie drastisch versnellen.",
-      "stat1": "10x",
-      "stat1Label": "Snellere Development",
-      "stat1Desc": "AI handelt stories af van Jira tot Update Set",
+      "label": "Waarom Je Consultants Het Geweldig Vinden",
+      "title": "Snellere oplevering. Veiligere deployments.",
+      "subtitle": "Snow-Flow is een development tool die je consultants dagelijks gebruiken. Ingebouwde beveiligingen vangen fouten op voordat ze de productieomgeving van je klant bereiken.",
+      "stat1": "500+",
+      "stat1Label": "MCP Tools",
+      "stat1Desc": "AI handelt stories af van ticket tot Update Set",
       "stat2": "174",
       "stat2Label": "Read-Only Tools",
       "stat2Desc": "Stakeholders kunnen verkennen, niet wijzigen",
-      "stat3": "100%",
+      "stat3": "Volledig",
       "stat3Label": "Auditeerbaar",
-      "stat3Desc": "Elke actie bijgehouden in update sets"
+      "stat3Desc": "Acties bijgehouden via ServiceNow update sets"
     },
     "protection": {
       "label": "Ingebouwde Bescherming",
-      "title": "Vier Lagen van Veiligheid",
-      "subtitle": "Elke tool-aanroep passeert meerdere veiligheidschecks voordat het ServiceNow bereikt.",
+      "title": "Veiligheid Waar Je Klanten Op Vertrouwen",
+      "subtitle": "Elke actie die je consultants uitvoeren passeert meerdere veiligheidschecks voordat het de klantomgeving bereikt.",
+      "tabs": {
+        "validation": "Validatie",
+        "preview": "Preview",
+        "isolation": "Isolatie",
+        "access": "Toegang"
+      },
       "validation": {
         "title": "Pre-Deployment Validatie",
         "desc": "Automatische checks voordat code ServiceNow bereikt.",
@@ -409,7 +481,7 @@
       "access": {
         "title": "Role-Based Access Control",
         "desc": "Stakeholders krijgen read-only toegang by design.",
-        "feature1": "Developers: Volledige schrijftoegang (410+ tools)",
+        "feature1": "Developers: Volledige schrijftoegang (500+ tools)",
         "feature2": "Stakeholders: Read-only toegang (174 query tools)",
         "feature3": "Permissie validatie op ELKE tool-aanroep",
         "feature4": "Kan restricties niet per ongeluk omzeilen"
@@ -418,7 +490,7 @@
     "stakeholders": {
       "label": "Stakeholder Veiligheid",
       "title": "Geef Toegang Zonder Risico",
-      "subtitle": "Stakeholder seats zijn GRATIS en volledig veilig. Laat je klanten verkennen zonder angst.",
+      "subtitle": "Stakeholder seats zijn volledig veilig. Laat je klanten verkennen zonder angst.",
       "badge": "174 Read-Only Tools",
       "canDoTitle": "Wat Stakeholders WEL Kunnen",
       "can1": "Elke tabel in ServiceNow opvragen",
@@ -432,33 +504,61 @@
       "dev4": "Background scripts uitvoeren"
     },
     "benefits": {
-      "label": "Partner Voordelen",
-      "title": "Groei Je Business",
-      "subtitle": "Safety-first betekent zelfverzekerd verkopen.",
-      "revenue": {
-        "title": "Revenue Share",
-        "desc": "20-30% marge op elke licentie die je verkoopt."
+      "label": "Waarom Service Integrators Kiezen voor Snow-Flow",
+      "title": "Betere Tools, Betere Resultaten",
+      "subtitle": "Geef je team een oneerlijk voordeel.",
+      "speed": {
+        "title": "Snellere Projectoplevering",
+        "desc": "Rond ServiceNow projecten af in een fractie van de tijd."
       },
-      "whitelabel": {
-        "title": "White-Label Ready",
-        "desc": "Jouw merk, jouw portal, jouw klantrelaties."
+      "quality": {
+        "title": "Minder Fouten",
+        "desc": "Ingebouwde validatie vangt errors op voor ze productie bereiken."
       },
-      "trust": {
-        "title": "Enterprise Trust",
-        "desc": "SOC 2 compliant. Ingebouwde veiligheid. Verkoop met vertrouwen."
+      "capacity": {
+        "title": "Schaal Je Praktijk",
+        "desc": "Bedien meer klanten zonder meer consultants aan te nemen."
+      }
+    },
+    "whitelabel": {
+      "label": "Enterprise Features",
+      "title": "Jouw Merk, Jouw Portal",
+      "subtitle": "Bied Snow-Flow aan je klanten aan onder jouw eigen merk.",
+      "branding": {
+        "title": "Custom Branding",
+        "desc": "Jouw logo, kleuren en favicon door de hele portal."
+      },
+      "domain": {
+        "title": "Custom Domein",
+        "desc": "Host op je eigen subdomein zoals ai.jouwbedrijf.nl."
+      },
+      "email": {
+        "title": "Branded E-mails",
+        "desc": "Alle notificaties komen van jouw domein."
       }
     },
     "cta": {
-      "title": "Klaar om AI Development te Verkopen Dat Écht Veilig Is?",
-      "subtitle": "Join ons partner programma en bied je klanten AI-gestuurde ServiceNow development met enterprise-grade bescherming.",
-      "primary": "Word Partner",
-      "secondary": "Bekijk Klantenpagina"
+      "title": "Klaar om Je Team Uit te Rusten?",
+      "subtitle": "Geef je ServiceNow consultants de AI-gestuurde tools die ze verdienen.",
+      "primary": "Aan de Slag",
+      "secondary": "Bekijk Prijzen"
     }
   },
   "developers": {
     "meta": {
       "title": "Voor Developers | Snow-Flow Enterprise",
-      "description": "Bouw ServiceNow oplossingen met AI-gestuurde development. Volledige schrijftoegang, 410+ MCP tools en naadloze integratie tracking."
+      "description": "Bouw ServiceNow oplossingen met AI-gestuurde development. Volledige schrijftoegang, 500+ MCP tools en naadloze integratie tracking."
+    },
+    "breadcrumb": "Voor Developers",
+    "getStarted": {
+      "label": "Aan de Slag",
+      "title": "Binnen Minuten Operationeel",
+      "subtitle": "Drie simpele stappen om te beginnen met Snow-Flow.",
+      "step1Title": "Installeer Snow-Flow",
+      "step2Title": "Start TUI & Authenticeer",
+      "step3Title": "Begin met Bouwen",
+      "prompt": "Wat wil je vandaag bouwen?",
+      "examplePrompt": "Maak een nieuwe widget voor mijn portal"
     },
     "hero": {
       "badge": "Developer Toegang",
@@ -529,22 +629,23 @@
   "stakeholders": {
     "meta": {
       "title": "Voor Stakeholders | Snow-Flow Enterprise",
-      "description": "Krijg antwoorden over je ServiceNow omgeving zonder risico. Read-only toegang gratis inbegrepen bij developer seats."
+      "description": "Krijg antwoorden over je ServiceNow omgeving zonder risico. Read-only toegang voor veilige exploratie."
     },
+    "breadcrumb": "Voor Stakeholders",
     "hero": {
       "badge": "Stakeholder Toegang",
       "title": "Antwoorden Zonder Risico",
       "subtitle": "Query je ServiceNow omgeving, krijg inzichten en blijf geïnformeerd—alles met read-only veiligheid.",
       "cta": "Neem Contact Op",
       "ctaSecondary": "Enterprise Overzicht",
-      "freeBadge": "GRATIS Inbegrepen bij Developer Seats"
+      "freeBadge": "Read-Only Toegang"
     },
     "value": {
       "label": "Waarom Stakeholder Seats?",
       "title": "Versterk Je Hele Team",
       "subtitle": "Geef business users, managers en analisten toegang tot AI-gestuurde ServiceNow inzichten zonder het risico op wijzigingen.",
-      "card1Title": "Volledig Gratis",
-      "card1Desc": "Stakeholder seats zijn zonder extra kosten inbegrepen bij elke developer licentie.",
+      "card1Title": "Veilige Exploratie",
+      "card1Desc": "Stakeholders kunnen je ServiceNow omgeving verkennen met volledig vertrouwen.",
       "card2Title": "Read-Only Veiligheid",
       "card2Desc": "Query en verken zonder enig risico op het wijzigen van je ServiceNow omgeving.",
       "card3Title": "Volledige AI Kracht",
@@ -594,7 +695,7 @@
     },
     "cta": {
       "title": "Klaar om Je Team te Versterken?",
-      "subtitle": "Stakeholder seats komen gratis bij elke developer licentie. Neem contact op om te starten.",
+      "subtitle": "Geef je team veilige, read-only toegang tot ServiceNow inzichten. Neem contact op om te starten.",
       "primary": "Neem Contact Op",
       "secondary": "Developer Features"
     }

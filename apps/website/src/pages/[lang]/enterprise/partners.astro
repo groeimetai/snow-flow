@@ -42,8 +42,8 @@ const description = t('partners.meta.description');
 
                 <h1 class="hero-title">
                     <span class="small">{t('partners.hero.badge')}</span>
-                    <span class="gradient safety-gradient">AI DEVELOPMENT</span><br />
-                    YOU CAN TRUST.
+                    <span class="gradient safety-gradient">EQUIP YOUR</span><br />
+                    CONSULTANTS.
                 </h1>
 
                 <p class="hero-subtitle">
@@ -51,12 +51,9 @@ const description = t('partners.meta.description');
                 </p>
 
                 <div class="hero-ctas">
-                    <a href="mailto:partners@snow-flow.dev" class="btn btn-safety">
+                    <a href="mailto:enterprise@snow-flow.dev" class="btn btn-safety">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                         </svg>
                         {t('partners.hero.cta')}
                     </a>
@@ -106,78 +103,173 @@ const description = t('partners.meta.description');
                 <p class="section-subtitle">{t('partners.protection.subtitle')}</p>
             </div>
 
-            <div class="protection-grid">
-                <!-- Pre-Deployment Validation -->
-                <div class="protection-card" data-aos="fade-up">
-                    <div class="protection-icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="protection-tabs">
+                <!-- Tab Buttons -->
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="validation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                             <polyline points="9 12 11 14 15 10"></polyline>
                         </svg>
-                    </div>
-                    <h3>{t('partners.protection.validation.title')}</h3>
-                    <p class="protection-desc">{t('partners.protection.validation.desc')}</p>
-                    <ul class="protection-features">
-                        <li>{t('partners.protection.validation.feature1')}</li>
-                        <li>{t('partners.protection.validation.feature2')}</li>
-                        <li>{t('partners.protection.validation.feature3')}</li>
-                        <li>{t('partners.protection.validation.feature4')}</li>
-                    </ul>
-                </div>
-
-                <!-- Widget Preview -->
-                <div class="protection-card" data-aos="fade-up" data-aos-delay="100">
-                    <div class="protection-icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        {t('partners.protection.tabs.validation')}
+                    </button>
+                    <button class="tab-button" data-tab="preview">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
-                    </div>
-                    <h3>{t('partners.protection.preview.title')}</h3>
-                    <p class="protection-desc">{t('partners.protection.preview.desc')}</p>
-                    <ul class="protection-features">
-                        <li>{t('partners.protection.preview.feature1')}</li>
-                        <li>{t('partners.protection.preview.feature2')}</li>
-                        <li>{t('partners.protection.preview.feature3')}</li>
-                        <li>{t('partners.protection.preview.feature4')}</li>
-                    </ul>
-                </div>
-
-                <!-- Update Set Isolation -->
-                <div class="protection-card" data-aos="fade-up" data-aos-delay="200">
-                    <div class="protection-icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        {t('partners.protection.tabs.preview')}
+                    </button>
+                    <button class="tab-button" data-tab="isolation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
                         </svg>
-                    </div>
-                    <h3>{t('partners.protection.isolation.title')}</h3>
-                    <p class="protection-desc">{t('partners.protection.isolation.desc')}</p>
-                    <ul class="protection-features">
-                        <li>{t('partners.protection.isolation.feature1')}</li>
-                        <li>{t('partners.protection.isolation.feature2')}</li>
-                        <li>{t('partners.protection.isolation.feature3')}</li>
-                        <li>{t('partners.protection.isolation.feature4')}</li>
-                    </ul>
-                </div>
-
-                <!-- Role-Based Access Control -->
-                <div class="protection-card" data-aos="fade-up" data-aos-delay="300">
-                    <div class="protection-icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        {t('partners.protection.tabs.isolation')}
+                    </button>
+                    <button class="tab-button" data-tab="access">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
+                        {t('partners.protection.tabs.access')}
+                    </button>
+                </div>
+
+                <!-- Tab Content: Validation -->
+                <div class="tab-content active" data-tab-content="validation">
+                    <div class="tab-panel">
+                        <div class="tab-panel-header">
+                            <div class="tab-panel-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    <polyline points="9 12 11 14 15 10"></polyline>
+                                </svg>
+                            </div>
+                            <h3>{t('partners.protection.validation.title')}</h3>
+                        </div>
+                        <p class="tab-panel-desc">{t('partners.protection.validation.desc')}</p>
+                        <ul class="tab-panel-features">
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.validation.feature1')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.validation.feature2')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.validation.feature3')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.validation.feature4')}
+                            </li>
+                        </ul>
                     </div>
-                    <h3>{t('partners.protection.access.title')}</h3>
-                    <p class="protection-desc">{t('partners.protection.access.desc')}</p>
-                    <ul class="protection-features">
-                        <li>{t('partners.protection.access.feature1')}</li>
-                        <li>{t('partners.protection.access.feature2')}</li>
-                        <li>{t('partners.protection.access.feature3')}</li>
-                        <li>{t('partners.protection.access.feature4')}</li>
-                    </ul>
+                </div>
+
+                <!-- Tab Content: Preview -->
+                <div class="tab-content" data-tab-content="preview">
+                    <div class="tab-panel">
+                        <div class="tab-panel-header">
+                            <div class="tab-panel-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </div>
+                            <h3>{t('partners.protection.preview.title')}</h3>
+                        </div>
+                        <p class="tab-panel-desc">{t('partners.protection.preview.desc')}</p>
+                        <ul class="tab-panel-features">
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.preview.feature1')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.preview.feature2')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.preview.feature3')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.preview.feature4')}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Isolation -->
+                <div class="tab-content" data-tab-content="isolation">
+                    <div class="tab-panel">
+                        <div class="tab-panel-header">
+                            <div class="tab-panel-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                </svg>
+                            </div>
+                            <h3>{t('partners.protection.isolation.title')}</h3>
+                        </div>
+                        <p class="tab-panel-desc">{t('partners.protection.isolation.desc')}</p>
+                        <ul class="tab-panel-features">
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.isolation.feature1')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.isolation.feature2')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.isolation.feature3')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.isolation.feature4')}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Access -->
+                <div class="tab-content" data-tab-content="access">
+                    <div class="tab-panel">
+                        <div class="tab-panel-header">
+                            <div class="tab-panel-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </div>
+                            <h3>{t('partners.protection.access.title')}</h3>
+                        </div>
+                        <p class="tab-panel-desc">{t('partners.protection.access.desc')}</p>
+                        <ul class="tab-panel-features">
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.access.feature1')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.access.feature2')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.access.feature3')}
+                            </li>
+                            <li>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                {t('partners.protection.access.feature4')}
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -245,35 +337,82 @@ const description = t('partners.meta.description');
                 <div class="benefit-card-small">
                     <div class="benefit-icon-small">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
-                            <line x1="12" y1="18" x2="12" y2="6"></line>
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                         </svg>
                     </div>
-                    <h3>{t('partners.benefits.revenue.title')}</h3>
-                    <p>{t('partners.benefits.revenue.desc')}</p>
+                    <h3>{t('partners.benefits.speed.title')}</h3>
+                    <p>{t('partners.benefits.speed.desc')}</p>
                 </div>
 
                 <div class="benefit-card-small">
                     <div class="benefit-icon-small">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <h3>{t('partners.benefits.quality.title')}</h3>
+                    <p>{t('partners.benefits.quality.desc')}</p>
+                </div>
+
+                <div class="benefit-card-small">
+                    <div class="benefit-icon-small">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="20" x2="12" y2="10"></line>
+                            <line x1="18" y1="20" x2="18" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="16"></line>
+                        </svg>
+                    </div>
+                    <h3>{t('partners.benefits.capacity.title')}</h3>
+                    <p>{t('partners.benefits.capacity.desc')}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- White-Label Section -->
+    <section class="section whitelabel-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label partner-label">{t('partners.whitelabel.label')}</span>
+                <h2 class="section-title">{t('partners.whitelabel.title')}</h2>
+                <p class="section-subtitle">{t('partners.whitelabel.subtitle')}</p>
+            </div>
+
+            <div class="whitelabel-grid">
+                <div class="whitelabel-card">
+                    <div class="whitelabel-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="3" y1="9" x2="21" y2="9"></line>
-                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
                         </svg>
                     </div>
-                    <h3>{t('partners.benefits.whitelabel.title')}</h3>
-                    <p>{t('partners.benefits.whitelabel.desc')}</p>
+                    <h3>{t('partners.whitelabel.branding.title')}</h3>
+                    <p>{t('partners.whitelabel.branding.desc')}</p>
                 </div>
 
-                <div class="benefit-card-small">
-                    <div class="benefit-icon-small">
+                <div class="whitelabel-card">
+                    <div class="whitelabel-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
                         </svg>
                     </div>
-                    <h3>{t('partners.benefits.trust.title')}</h3>
-                    <p>{t('partners.benefits.trust.desc')}</p>
+                    <h3>{t('partners.whitelabel.domain.title')}</h3>
+                    <p>{t('partners.whitelabel.domain.desc')}</p>
+                </div>
+
+                <div class="whitelabel-card">
+                    <div class="whitelabel-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </div>
+                    <h3>{t('partners.whitelabel.email.title')}</h3>
+                    <p>{t('partners.whitelabel.email.desc')}</p>
                 </div>
             </div>
         </div>
@@ -286,16 +425,13 @@ const description = t('partners.meta.description');
                 <h2>{t('partners.cta.title')}</h2>
                 <p>{t('partners.cta.subtitle')}</p>
                 <div class="cta-buttons">
-                    <a href="mailto:partners@snow-flow.dev" class="btn btn-safety btn-large">
+                    <a href="mailto:enterprise@snow-flow.dev" class="btn btn-safety btn-large">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                         </svg>
                         {t('partners.cta.primary')}
                     </a>
-                    <a href={`/${lang}/enterprise/customers`} class="btn btn-secondary btn-large">
+                    <a href={`/${lang}/pricing`} class="btn btn-secondary btn-large">
                         {t('partners.cta.secondary')}
                     </a>
                 </div>
@@ -335,24 +471,25 @@ const description = t('partners.meta.description');
     </footer>
 
     <script>
-        // Scroll animations
-        const protectionCards = document.querySelectorAll('.protection-card');
+        // Tab switching functionality
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
 
-        const observerOptions = {
-            threshold: 0.15,
-            rootMargin: '0px 0px -50px 0px'
-        };
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
+                // Remove active class from all buttons and contents
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                // Add active class to clicked button and corresponding content
+                button.classList.add('active');
+                const activeContent = document.querySelector(`[data-tab-content="${tabId}"]`);
+                if (activeContent) {
+                    activeContent.classList.add('active');
                 }
             });
-        }, observerOptions);
-
-        protectionCards.forEach(card => {
-            observer.observe(card);
         });
     </script>
 </BaseLayout>
@@ -626,17 +763,22 @@ const description = t('partners.meta.description');
         text-align: center;
     }
 
-    .badge-number {
-        font-size: 4rem;
-        font-weight: 900;
+    .badge-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(34, 197, 94, 0.1);
         color: #22C55E;
-        line-height: 1;
     }
 
     .badge-text {
         font-size: 0.9rem;
         color: var(--color-text-secondary, #94A3B8);
-        margin-top: 8px;
+        margin-top: 12px;
+        text-align: center;
     }
 
     /* Benefits Grid Small */
@@ -684,6 +826,62 @@ const description = t('partners.meta.description');
     }
 
     .benefit-card-small p {
+        color: var(--color-text-secondary, #94A3B8);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    /* White-Label Section */
+    .whitelabel-section {
+        background: linear-gradient(180deg, transparent 0%, rgba(245, 158, 11, 0.02) 50%, transparent 100%);
+    }
+
+    .whitelabel-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-top: 48px;
+    }
+
+    @media (max-width: 768px) {
+        .whitelabel-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .whitelabel-card {
+        padding: 32px;
+        background: var(--color-card-bg, #0d0d14);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .whitelabel-card:hover {
+        border-color: rgba(245, 158, 11, 0.3);
+        transform: translateY(-4px);
+    }
+
+    .whitelabel-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        background: rgba(245, 158, 11, 0.1);
+        color: #F59E0B;
+    }
+
+    .whitelabel-card h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .whitelabel-card p {
         color: var(--color-text-secondary, #94A3B8);
         font-size: 0.9rem;
         line-height: 1.5;

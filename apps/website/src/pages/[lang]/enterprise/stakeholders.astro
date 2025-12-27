@@ -24,6 +24,17 @@ const description = t('stakeholders.meta.description');
     <div class="bg-gradient"></div>
     <div class="bg-noise"></div>
 
+    <!-- Breadcrumb -->
+    <div class="container">
+        <nav class="breadcrumb">
+            <div class="breadcrumb-nav stakeholder">
+                <a href={`/${lang}/enterprise`}>{t('enterprise.landing.title')}</a>
+                <span class="separator">/</span>
+                <span class="current">{t('stakeholders.breadcrumb')}</span>
+            </div>
+        </nav>
+    </div>
+
     <!-- Hero Section -->
     <section class="enterprise-hero">
         <div class="hero-glow"></div>
@@ -514,16 +525,21 @@ const description = t('stakeholders.meta.description');
         border-radius: 16px;
     }
 
-    .stat-number {
-        font-size: 4rem;
-        font-weight: 800;
+    .stat-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(168, 85, 247, 0.1);
         color: #A855F7;
-        line-height: 1;
     }
 
-    .stat-label {
-        margin-top: 8px;
+    .tools-stat-highlight .stat-label {
+        margin-top: 16px;
         color: var(--color-text-secondary, #94A3B8);
         font-size: 1.1rem;
+        text-align: center;
     }
 </style>
