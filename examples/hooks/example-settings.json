@@ -1,0 +1,51 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "snow_create_table",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '⚠️  Table creation requires approval. Please confirm.' >&2 && exit 2",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "snow_push_artifact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date)] Pre-push: $SNOW_FLOW_TOOL_NAME\" >> ~/.snow-flow/deploy.log",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "snow_push_artifact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date)] Push completed: $(echo $SNOW_FLOW_TOOL_INPUT | jq -r '.type // \"artifact\"')\" >> ~/.snow-flow/deploy.log",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"Session started: $SNOW_FLOW_SESSION_ID at $(date)\" >> ~/.snow-flow/sessions.log",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}

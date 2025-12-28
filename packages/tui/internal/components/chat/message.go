@@ -909,6 +909,18 @@ func renderToolTitle(
 		return styles.NewStyle().Background(t.BackgroundPanel()).Width(width - 6).Render(titleWithIndicator)
 	}
 
+	// Check for hook phase (when a hook is running before/after tool execution)
+	if toolCall.State.Status == opencode.ToolPartStateStatusRunning {
+		if metadata, ok := toolCall.State.Metadata.(map[string]any); ok {
+			if hookPhase := renderHookPhase(metadata); hookPhase != "" {
+				t := theme.CurrentTheme()
+				shiny := util.Shimmer(hookPhase, t.BackgroundPanel(), t.TextMuted(), t.Accent())
+				titleWithIndicator := statusIndicator + " " + shiny
+				return styles.NewStyle().Background(t.BackgroundPanel()).Width(width - 6).Render(titleWithIndicator)
+			}
+		}
+	}
+
 	toolArgsMap := make(map[string]any)
 	if toolCall.State.Input != nil {
 		value := toolCall.State.Input
@@ -1034,6 +1046,17 @@ func renderToolAction(name string) string {
 		return "Preparing patch..."
 	}
 	return "Working..."
+}
+
+// renderHookPhase returns the hook phase display text if a hook is running
+func renderHookPhase(metadata map[string]any) string {
+	if metadata == nil {
+		return ""
+	}
+	if hookPhase, ok := metadata["hookPhase"].(string); ok && hookPhase != "" {
+		return fmt.Sprintf("Running %s hook…", hookPhase)
+	}
+	return ""
 }
 
 func renderArgs(args *map[string]any, titleKey string) string {

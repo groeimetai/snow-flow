@@ -48,6 +48,7 @@ import { Snapshot } from "../snapshot"
 import { ulid } from "ulid"
 import { spawn } from "child_process"
 import { Command } from "../command"
+import { CommandHook } from "../hooks"
 import { $, fileURLToPath } from "bun"
 import { ConfigMarkdown } from "../config/markdown"
 import { SessionSummary } from "./summary"
@@ -724,6 +725,57 @@ export namespace SessionPrompt {
         description: item.description,
         inputSchema: jsonSchema(schema as any),
         async execute(args, options) {
+          // Update tool state to show hook is running
+          const toolPart = input.processor.partFromToolCall(options.toolCallId)
+          if (toolPart) {
+            await Session.updatePart({
+              ...toolPart,
+              state: {
+                ...toolPart.state,
+                status: "running",
+                input: args,
+                metadata: {
+                  ...(toolPart.state.metadata as object || {}),
+                  hookPhase: "PreToolUse",
+                },
+                time: { start: Date.now() },
+              },
+            })
+          }
+
+          // Execute PreToolUse shell command hooks
+          const preHookResult = await CommandHook.preToolUse(toolInfo.id, args, {
+            sessionID: input.sessionID,
+          })
+          if (!preHookResult.allow) {
+            log.warn("Tool blocked by PreToolUse hook", {
+              tool: toolInfo.id,
+              reason: preHookResult.output || preHookResult.error,
+            })
+            return {
+              title: "Blocked by hook",
+              metadata: { blocked: true },
+              output: `Tool execution blocked: ${preHookResult.output || preHookResult.error || "Blocked by PreToolUse hook"}`,
+            }
+          }
+
+          // Clear hook phase after PreToolUse completes
+          if (toolPart) {
+            await Session.updatePart({
+              ...toolPart,
+              state: {
+                ...toolPart.state,
+                status: "running",
+                input: args,
+                metadata: {
+                  ...(toolPart.state.metadata as object || {}),
+                  hookPhase: undefined,
+                },
+                time: { start: Date.now() },
+              },
+            })
+          }
+
           await Plugin.trigger(
             "tool.execute.before",
             {
@@ -773,6 +825,12 @@ export namespace SessionPrompt {
             },
             result,
           )
+
+          // Execute PostToolUse shell command hooks
+          await CommandHook.postToolUse(toolInfo.id, args, result, {
+            sessionID: input.sessionID,
+          })
+
           return result
         },
         toModelOutput(result) {
@@ -812,6 +870,24 @@ export namespace SessionPrompt {
       const execute = item.execute
       if (!execute) continue
       item.execute = async (args, opts) => {
+        // Execute PreToolUse shell command hooks for MCP tools
+        const preHookResult = await CommandHook.preToolUse(key, args, {
+          sessionID: input.sessionID,
+        })
+        if (!preHookResult.allow) {
+          log.warn("MCP tool blocked by PreToolUse hook", {
+            tool: key,
+            reason: preHookResult.output || preHookResult.error,
+          })
+          return {
+            content: [{
+              type: "text",
+              text: `Tool execution blocked: ${preHookResult.output || preHookResult.error || "Blocked by PreToolUse hook"}`,
+            }],
+            metadata: { blocked: true },
+          }
+        }
+
         await Plugin.trigger(
           "tool.execute.before",
           {
@@ -834,6 +910,11 @@ export namespace SessionPrompt {
           },
           result,
         )
+
+        // Execute PostToolUse shell command hooks for MCP tools
+        await CommandHook.postToolUse(key, args, result, {
+          sessionID: input.sessionID,
+        })
 
         const output = result.content
           .filter((x: any) => x.type === "text")

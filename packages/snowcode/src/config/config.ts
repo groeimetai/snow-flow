@@ -21,6 +21,7 @@ import { LSPServer } from "../lsp/server"
 import { BunProc } from "@/bun"
 import { Installation } from "@/installation"
 import { ConfigMarkdown } from "./markdown"
+import { HooksConfig } from "../hooks/types"
 
 export namespace Config {
   const log = Log.create({ service: "config" })
@@ -780,6 +781,9 @@ export namespace Config {
         })
         .optional(),
       tools: z.record(z.string(), z.boolean()).optional(),
+      hooks: HooksConfig.optional().describe(
+        "Shell command hooks configuration (Claude Code style). Configure hooks for lifecycle events, tool execution, and ServiceNow-specific actions."
+      ),
       experimental: z
         .object({
           hook: z

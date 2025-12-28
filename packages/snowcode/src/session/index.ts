@@ -19,6 +19,7 @@ import { Instance } from "../project/instance"
 import { SessionPrompt } from "./prompt"
 import { fn } from "@/util/fn"
 import { Snapshot } from "@/snapshot"
+import { CommandHook } from "../hooks"
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -176,6 +177,13 @@ export namespace Session {
     Bus.publish(Event.Started, {
       info: result,
     })
+
+    // Execute SessionStart shell command hooks
+    CommandHook.sessionStart(result.id, {
+      projectDir: input.directory,
+    }).catch((err) => {
+      log.warn("SessionStart hook failed", { error: err.message })
+    })
     const cfg = await Config.get()
     if (!result.parentID && (Flag.SNOWCODE_AUTO_SHARE || cfg.share === "auto"))
       share(result.id)
@@ -320,6 +328,13 @@ export namespace Session {
       await Storage.remove(["session", project.id, sessionID])
       Bus.publish(Event.Deleted, {
         info: session,
+      })
+
+      // Execute SessionEnd shell command hooks
+      CommandHook.sessionEnd(sessionID, {
+        projectDir: session.directory,
+      }).catch((err) => {
+        log.warn("SessionEnd hook failed", { error: err.message })
       })
     } catch (e) {
       log.error(e)
