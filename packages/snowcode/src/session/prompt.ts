@@ -743,9 +743,11 @@ export namespace SessionPrompt {
             })
           }
 
-          // Execute PreToolUse shell command hooks
+          // Execute PreToolUse hooks (includes default approval hooks)
           const preHookResult = await CommandHook.preToolUse(toolInfo.id, args, {
             sessionID: input.sessionID,
+            messageID: input.processor.message.id,
+            callID: options.toolCallId,
           })
           if (!preHookResult.allow) {
             log.warn("Tool blocked by PreToolUse hook", {

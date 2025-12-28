@@ -1,7 +1,9 @@
 import { Log } from "../util/log"
 import { Config } from "../config/config"
 import { Instance } from "../project/instance"
-import type { HookEntry, HookResult, HookContext, HookType, HooksConfig } from "./types"
+import { Permission } from "../permission"
+import type { HookEntry, HookResult, HookContext, HookType, HooksConfig, HookAction, HookApproval } from "./types"
+import { DEFAULT_HOOKS } from "./types"
 
 const log = Log.create({ service: "hooks" })
 
@@ -192,16 +194,103 @@ export namespace CommandHook {
   }
 
   /**
-   * Get hooks configuration from config
+   * Execute an approval hook - shows TUI permission dialog
    */
-  async function getHooksConfig(): Promise<HooksConfig | undefined> {
+  async function executeApproval(
+    approval: HookApproval,
+    context: HookContext,
+    toolName: string
+  ): Promise<HookResult> {
+    const startTime = Date.now()
+
+    try {
+      log.info("requesting approval", {
+        title: approval.title,
+        toolName,
+      })
+
+      // Use the Permission system to show approval dialog
+      await Permission.ask({
+        type: "hook_approval",
+        title: approval.title,
+        pattern: toolName,
+        sessionID: context.sessionID || "",
+        messageID: context.messageID || "",
+        callID: context.callID,
+        metadata: {
+          message: approval.message,
+          toolName,
+          toolInput: context.toolInput,
+          hookType: "PreToolUse",
+        },
+      })
+
+      // If we get here, user approved
+      log.info("approval granted", { toolName })
+      return {
+        allow: true,
+        output: "Approved by user",
+        exitCode: 0,
+        executionTime: Date.now() - startTime,
+      }
+    } catch (error) {
+      // Permission.RejectedError means user rejected
+      if (error instanceof Permission.RejectedError) {
+        log.info("approval rejected", { toolName })
+        return {
+          allow: false,
+          output: "User rejected the operation",
+          exitCode: 2,
+          executionTime: Date.now() - startTime,
+        }
+      }
+
+      // Other errors - log but allow (don't block on errors)
+      log.error("approval error", { error })
+      return {
+        allow: true,
+        error: error instanceof Error ? error.message : String(error),
+        exitCode: -1,
+        executionTime: Date.now() - startTime,
+      }
+    }
+  }
+
+  /**
+   * Get hooks configuration from config, merged with defaults
+   */
+  async function getHooksConfig(): Promise<HooksConfig> {
     try {
       const config = await Config.get()
-      // Check both new hooks field and experimental.hook
-      return (config as any).hooks as HooksConfig | undefined
+      const userHooks = (config as any).hooks as HooksConfig | undefined
+
+      // Merge user hooks with default hooks
+      // User hooks take precedence (can override defaults)
+      return mergeHooksConfig(DEFAULT_HOOKS, userHooks)
     } catch {
-      return undefined
+      return DEFAULT_HOOKS
     }
+  }
+
+  /**
+   * Merge two hooks configurations
+   * Second config entries are appended after first config entries
+   */
+  function mergeHooksConfig(base: HooksConfig, override?: HooksConfig): HooksConfig {
+    if (!override) return base
+
+    const result: HooksConfig = { ...base }
+
+    for (const hookType of Object.keys(override) as (keyof HooksConfig)[]) {
+      const overrideEntries = override[hookType]
+      if (!overrideEntries) continue
+
+      const baseEntries = result[hookType] || []
+      // Append override entries after base entries
+      result[hookType] = [...baseEntries, ...overrideEntries] as any
+    }
+
+    return result
   }
 
   /**
@@ -219,15 +308,6 @@ export namespace CommandHook {
   ): Promise<HookResult> {
     const startTime = Date.now()
     const hooksConfig = await getHooksConfig()
-
-    if (!hooksConfig) {
-      return {
-        allow: true,
-        exitCode: 0,
-        executionTime: 0,
-      }
-    }
-
     const entries = hooksConfig[hookType] as HookEntry[] | undefined
 
     if (!entries || entries.length === 0) {
@@ -243,6 +323,8 @@ export namespace CommandHook {
       projectDir: context.projectDir || Instance.directory,
       instanceURL: context.instanceURL,
       sessionID: context.sessionID,
+      messageID: context.messageID,
+      callID: context.callID,
       toolName: context.toolName || toolName,
       toolInput: context.toolInput,
       toolOutput: context.toolOutput,
@@ -266,12 +348,26 @@ export namespace CommandHook {
       })
 
       for (const hook of entry.hooks) {
-        const result = await executeCommand(
-          hook.command,
-          fullContext,
-          hookType,
-          hook.timeout
-        )
+        let result: HookResult
+
+        // Handle different hook types
+        if (hook.type === "command") {
+          result = await executeCommand(
+            hook.command,
+            fullContext,
+            hookType,
+            hook.timeout
+          )
+        } else if (hook.type === "approval") {
+          result = await executeApproval(
+            hook,
+            fullContext,
+            toolName
+          )
+        } else {
+          log.warn("unknown hook type", { hook })
+          continue
+        }
 
         if (result.output) {
           outputs.push(result.output)
@@ -303,7 +399,7 @@ export namespace CommandHook {
   export async function preToolUse(
     toolName: string,
     toolInput: any,
-    context: Partial<HookContext> = {}
+    context: Partial<HookContext> & { messageID?: string; callID?: string } = {}
   ): Promise<HookResult> {
     return execute("PreToolUse", toolName, {
       ...context,
