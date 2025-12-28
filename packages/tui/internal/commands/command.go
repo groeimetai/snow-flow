@@ -161,6 +161,7 @@ const (
 	AppExitCommand                  CommandName = "app_exit"
 	DebugTokensCommand              CommandName = "debug_tokens"
 	AuthLoginCommand                CommandName = "auth_login"
+	BudgetCommand                   CommandName = "budget"
 )
 
 func (k Command) Matches(msg tea.KeyPressMsg, leader bool) bool {
@@ -403,6 +404,12 @@ func LoadFromConfig(config *opencode.Config, customCommands []opencode.Command) 
 			Description: "authenticate with providers",
 			Keybindings: parseBindings(),
 			Trigger:     []string{"auth", "login"},
+		},
+		{
+			Name:        BudgetCommand,
+			Description: "configure budget limits",
+			Keybindings: parseBindings(),
+			Trigger:     []string{"budget"},
 		},
 	}
 	registry := make(CommandRegistry)

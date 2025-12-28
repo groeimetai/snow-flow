@@ -1829,6 +1829,152 @@ export namespace Server {
           const report = await TokenDebug.generateReport()
           return c.text(report)
         },
+      )
+      // Enterprise Status Check
+      .get(
+        "/api/enterprise/status",
+        describeRoute({
+          description: "Check if user has enterprise authentication",
+          operationId: "enterprise.status",
+          responses: {
+            200: {
+              description: "Enterprise status",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    z.object({
+                      isEnterprise: z.boolean(),
+                      hasConfig: z.boolean(),
+                    }),
+                  ),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          const config = await Config.get()
+          const enterpriseUrl = (config as any).enterprise?.url
+
+          // Check if enterprise auth exists
+          const auth = await Auth.get("snow-flow-enterprise")
+          const hasAuth = !!auth?.accessToken
+
+          // Check if enterprise MCP is configured
+          const mcpConfig = (config as any).mcp || {}
+          const hasMcpConfig = !!mcpConfig["snow-flow-enterprise"]
+
+          return c.json({
+            isEnterprise: hasAuth || hasMcpConfig,
+            hasConfig: !!enterpriseUrl,
+          })
+        },
+      )
+      // Enterprise Budget Configuration
+      .post(
+        "/api/enterprise/budget",
+        describeRoute({
+          description: "Configure enterprise budget limits",
+          operationId: "enterprise.budget.configure",
+          responses: {
+            200: {
+              description: "Budget configured successfully",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    z.object({
+                      success: z.boolean(),
+                    }),
+                  ),
+                },
+              },
+            },
+            ...errors(400),
+          },
+        }),
+        validator(
+          "json",
+          z.object({
+            monthlyTokens: z.number().int().positive(),
+            dailyCost: z.number().positive(),
+            action: z.enum(["warn", "throttle", "block"]),
+          }),
+        ),
+        async (c) => {
+          const { monthlyTokens, dailyCost, action } = c.req.valid("json")
+          const config = await Config.get()
+          const enterpriseUrl = (config as any).enterprise?.url
+
+          if (!enterpriseUrl) {
+            return c.json({ success: false, error: "Enterprise not configured" }, { status: 400 })
+          }
+
+          // Get auth token
+          const auth = await Auth.get("snow-flow-enterprise")
+          if (!auth?.accessToken) {
+            return c.json({ success: false, error: "Enterprise authentication required" }, { status: 401 })
+          }
+
+          const headers = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${auth.accessToken}`,
+          }
+
+          try {
+            // Create/update monthly token budget
+            const monthlyRes = await fetch(`${enterpriseUrl}/mcp/hooks/budgets`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                name: "Monthly Token Budget",
+                scope: "organization",
+                scopeId: "default",
+                period: "monthly",
+                limitType: "tokens",
+                limitValue: monthlyTokens,
+                action,
+                alertThresholds: [0.5, 0.75, 0.9],
+              }),
+            })
+
+            if (!monthlyRes.ok) {
+              const error = await monthlyRes.text()
+              log.error("Failed to create monthly budget", { error })
+              return c.json({ success: false, error: "Failed to create monthly budget" }, { status: 500 })
+            }
+
+            // Create/update daily cost limit
+            const dailyRes = await fetch(`${enterpriseUrl}/mcp/hooks/budgets`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                name: "Daily Cost Limit",
+                scope: "organization",
+                scopeId: "default",
+                period: "daily",
+                limitType: "cost",
+                limitValue: dailyCost,
+                action,
+                alertThresholds: [0.5, 0.75, 0.9],
+              }),
+            })
+
+            if (!dailyRes.ok) {
+              const error = await dailyRes.text()
+              log.error("Failed to create daily budget", { error })
+              return c.json({ success: false, error: "Failed to create daily budget" }, { status: 500 })
+            }
+
+            log.info("Enterprise budget configured", { monthlyTokens, dailyCost, action })
+            return c.json({ success: true })
+          } catch (error) {
+            log.error("Failed to configure enterprise budget", { error })
+            return c.json(
+              { success: false, error: error instanceof Error ? error.message : "Unknown error" },
+              { status: 500 },
+            )
+          }
+        },
       ),
   )
 

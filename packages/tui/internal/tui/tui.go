@@ -1609,6 +1609,10 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 		// Show auth dialog with server URL from app
 		authDialog := dialog.NewAuthDialog(a.app.BaseURL)
 		a.modal = authDialog
+	case commands.BudgetCommand:
+		// Show budget configuration dialog
+		budgetDialog := dialog.NewBudgetDialog()
+		a.modal = budgetDialog
 	case commands.AppExitCommand:
 		return a, tea.Quit
 	}
