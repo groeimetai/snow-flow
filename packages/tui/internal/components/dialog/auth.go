@@ -1223,19 +1223,29 @@ func (a *authDialog) handleEnter() (tea.Model, tea.Cmd) {
 		}
 
 	case stepInputEnterpriseSubdomain:
-		if len(a.inputs) > 0 && a.inputs[0].Value() != "" {
+		if len(a.inputs) > 0 {
 			subdomain := strings.TrimSpace(a.inputs[0].Value())
 			// Remove any .snow-flow.dev suffix if user typed it
 			subdomain = strings.TrimSuffix(subdomain, ".snow-flow.dev")
 			subdomain = strings.ToLower(subdomain)
+
+			// If empty, default to "portal" (Individual/Teams users without custom subdomain)
+			if subdomain == "" {
+				subdomain = "portal"
+			}
+
 			a.enterpriseSubdomain = subdomain
 			// Now start browser auth
 			a.step = stepBrowserAuth
 			a.waitingForBrowser = true
-			a.browserMessage = fmt.Sprintf("Opening browser for %s.snow-flow.dev...", subdomain)
+			if subdomain == "portal" {
+				a.browserMessage = "Opening browser for portal.snow-flow.dev..."
+			} else {
+				a.browserMessage = fmt.Sprintf("Opening browser for %s.snow-flow.dev...", subdomain)
+			}
 			return a, a.startBrowserAuth("enterprise")
 		}
-		return a, toast.NewErrorToast("Please enter your organization subdomain")
+		return a, toast.NewErrorToast("Unexpected error: no input field")
 
 	case stepInputEnterpriseCode:
 		if len(a.inputs) > 0 && a.inputs[0].Value() != "" {
@@ -2752,8 +2762,8 @@ func (a *authDialog) setupEnterpriseSubdomainInput() {
 	}
 
 	input := textinput.New()
-	input.Placeholder = "e.g., acme (for acme.snow-flow.dev)"
-	if a.enterpriseSubdomain != "" {
+	input.Placeholder = "acme (or leave empty for portal.snow-flow.dev)"
+	if a.enterpriseSubdomain != "" && a.enterpriseSubdomain != "portal" {
 		input.SetValue(a.enterpriseSubdomain)
 	}
 	input.Focus()
@@ -2761,7 +2771,7 @@ func (a *authDialog) setupEnterpriseSubdomainInput() {
 	input.SetWidth(50)
 	a.inputs = []textinput.Model{input}
 	a.focusedInput = 0
-	a.inputLabels = []string{"Your organization subdomain"}
+	a.inputLabels = []string{"Organization subdomain"}
 	a.modal = modal.New(modal.WithTitle("Enterprise Portal"), modal.WithMaxWidth(60))
 }
 
@@ -2860,13 +2870,16 @@ func (a *authDialog) Render(background string) string {
 			lines = append(lines, helpTextStyle.Render("Enter your organization's subdomain to login."))
 			lines = append(lines, helpTextStyle.Render("Example: if your portal is acme.snow-flow.dev, enter 'acme'"))
 			lines = append(lines, "")
+			optionalStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
+			lines = append(lines, optionalStyle.Render("Leave empty and press Enter for portal.snow-flow.dev (Individual/Teams)"))
+			lines = append(lines, "")
 			for i, input := range a.inputs {
 				label := a.inputLabels[i]
 				labelStyle := styles.NewStyle().Foreground(t.TextMuted())
 				if i == a.focusedInput {
 					labelStyle = labelStyle.Foreground(t.Primary()).Bold(true)
 				}
-				lines = append(lines, labelStyle.Render(label+":"))
+				lines = append(lines, labelStyle.Render(label+" (optional):"))
 				lines = append(lines, input.View())
 			}
 			lines = append(lines, "")
