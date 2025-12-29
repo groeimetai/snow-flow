@@ -761,16 +761,36 @@ export const AuthRoute = new Hono()
         // Clean instance URL (remove protocol and trailing slash)
         const cleanInstance = instanceUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")
 
-        // Save to .env file
-        await updateEnvFile([
-          { key: "SNOW_INSTANCE", value: cleanInstance },
-          { key: "SNOW_AUTH_METHOD", value: authMethod },
-          { key: "SNOW_CLIENT_ID", value: clientId },
-          { key: "SNOW_CLIENT_SECRET", value: clientSecret },
-        ])
+        // SECURITY: For enterprise users, DON'T store credentials locally!
+        // The MCP server will fetch credentials at runtime from the enterprise portal.
+        // This is more secure because ServiceNow secrets are never stored on the developer's machine.
+        const isEnterpriseUser = !!enterpriseToken
 
-        // Update MCP configs
-        await updateSnowCodeMCPConfigs(cleanInstance, clientId, clientSecret)
+        if (isEnterpriseUser) {
+          // Enterprise mode: Only store instance URL (for reference), no secrets!
+          console.log("[Auth] Enterprise user detected - using secure mode (no local secrets)")
+          await updateEnvFile([
+            { key: "SNOW_INSTANCE", value: cleanInstance },
+            { key: "SNOW_AUTH_METHOD", value: "enterprise" }, // Mark as enterprise auth
+            // IMPORTANT: We intentionally DON'T store clientId/clientSecret for enterprise users
+            // The MCP server will fetch these at runtime from the enterprise portal
+          ])
+
+          // Update MCP configs with instance only (no secrets)
+          // The MCP server will fetch credentials at runtime using the enterprise JWT
+          await updateSnowCodeMCPConfigs(cleanInstance, "", "")
+        } else {
+          // Free/local mode: Store credentials locally (backward compatible)
+          await updateEnvFile([
+            { key: "SNOW_INSTANCE", value: cleanInstance },
+            { key: "SNOW_AUTH_METHOD", value: authMethod },
+            { key: "SNOW_CLIENT_ID", value: clientId },
+            { key: "SNOW_CLIENT_SECRET", value: clientSecret },
+          ])
+
+          // Update MCP configs with credentials
+          await updateSnowCodeMCPConfigs(cleanInstance, clientId, clientSecret)
+        }
 
         // If enterprise token provided, also update enterprise config
         if (enterpriseToken && enterpriseMcpUrl) {

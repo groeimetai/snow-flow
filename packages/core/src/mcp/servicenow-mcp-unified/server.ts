@@ -7,6 +7,9 @@
  * - Unified error handling
  * - Dynamic tool registration
  *
+ * Security: Enterprise users get ServiceNow credentials fetched at runtime
+ * from the enterprise portal - no local secrets stored.
+ *
  * This eliminates ~15,000 LOC of duplicate code.
  */
 
@@ -21,6 +24,8 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import https from 'https';
+import http from 'http';
 
 import { toolRegistry } from './shared/tool-registry.js';
 import { authManager } from './shared/auth.js';
@@ -132,13 +137,198 @@ export class ServiceNowUnifiedServer {
   }
 
   /**
+   * Enterprise auth data structure (from ~/.snow-flow/auth.json)
+   */
+  private loadEnterpriseAuth(): { jwt: string; portalUrl: string; subdomain?: string } | undefined {
+    // Check for enterprise auth from device authorization flow
+    const enterpriseAuthPaths = [
+      // 1. Snow-Code enterprise config (from device auth flow)
+      path.join(os.homedir(), '.snow-code', 'enterprise.json'),
+      // 2. Snow-Flow enterprise auth (legacy)
+      path.join(os.homedir(), '.snow-flow', 'auth.json'),
+    ];
+
+    for (const authPath of enterpriseAuthPaths) {
+      try {
+        if (!fs.existsSync(authPath)) {
+          continue;
+        }
+
+        const authData = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
+
+        // Check for JWT token in different possible structures
+        let jwt: string | undefined;
+        let subdomain: string | undefined;
+
+        // Structure 1: { token: "jwt...", subdomain: "acme" } (snow-code device auth)
+        if (authData.token) {
+          jwt = authData.token;
+          subdomain = authData.subdomain;
+        }
+        // Structure 2: { jwt: "jwt...", customer: { ... } } (snow-flow enterprise auth)
+        else if (authData.jwt) {
+          jwt = authData.jwt;
+        }
+
+        if (!jwt) {
+          continue;
+        }
+
+        // Check if token is expired (basic check - full validation happens on portal)
+        try {
+          const payload = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64').toString());
+          if (payload.exp && payload.exp * 1000 < Date.now()) {
+            console.warn('[Auth] Enterprise JWT expired, skipping enterprise portal fetch');
+            continue;
+          }
+        } catch {
+          // Can't parse JWT, skip
+          continue;
+        }
+
+        // Determine portal URL based on subdomain
+        let portalUrl = 'https://portal.snow-flow.dev';
+        if (subdomain && subdomain !== 'portal') {
+          portalUrl = `https://${subdomain}.snow-flow.dev`;
+        }
+
+        console.log('[Auth] Found enterprise auth from:', authPath);
+        console.log('[Auth]   Portal URL:', portalUrl);
+        return { jwt, portalUrl, subdomain };
+      } catch (error: any) {
+        console.warn('[Auth] Failed to load enterprise auth from', authPath, ':', error.message);
+        continue;
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Fetch ServiceNow credentials from enterprise portal (runtime, no local secrets!)
+   *
+   * SECURITY: This is the preferred method for enterprise users.
+   * ServiceNow credentials are fetched at runtime using the enterprise JWT,
+   * so no client secrets are stored locally on the developer's machine.
+   */
+  private async loadFromEnterprisePortal(): Promise<ServiceNowContext | undefined> {
+    const enterpriseAuth = this.loadEnterpriseAuth();
+    if (!enterpriseAuth) {
+      return undefined;
+    }
+
+    console.log('[Auth] 🔐 Fetching ServiceNow credentials from enterprise portal (secure mode)...');
+
+    try {
+      // Call the portal API to get ServiceNow credentials
+      const response = await this.fetchFromPortal(
+        `${enterpriseAuth.portalUrl}/api/user-credentials/servicenow/default`,
+        enterpriseAuth.jwt
+      );
+
+      if (!response.success || !response.instance) {
+        console.warn('[Auth] Enterprise portal returned no ServiceNow instance');
+        console.warn('[Auth] Response:', JSON.stringify(response));
+        return undefined;
+      }
+
+      const instance = response.instance;
+
+      // Validate required fields
+      if (!instance.instanceUrl || !instance.clientId || !instance.clientSecret) {
+        console.warn('[Auth] Enterprise portal returned incomplete credentials');
+        return undefined;
+      }
+
+      console.log('[Auth] ✅ Fetched ServiceNow credentials from enterprise portal');
+      console.log('[Auth]    Instance:', instance.instanceUrl);
+      console.log('[Auth]    Client ID:', instance.clientId ? '***' + instance.clientId.slice(-4) : 'MISSING');
+      console.log('[Auth]    Environment:', instance.environmentType || 'unknown');
+
+      return {
+        instanceUrl: instance.instanceUrl,
+        clientId: instance.clientId,
+        clientSecret: instance.clientSecret,
+        refreshToken: undefined, // Enterprise uses M2M OAuth, no refresh token needed
+        username: undefined,
+        password: undefined,
+        enterprise: {
+          tier: 'enterprise',
+          company: enterpriseAuth.subdomain,
+          features: ['secure-credentials', 'runtime-fetch'],
+        }
+      };
+    } catch (error: any) {
+      console.warn('[Auth] Failed to fetch credentials from enterprise portal:', error.message);
+      return undefined;
+    }
+  }
+
+  /**
+   * Make HTTPS request to enterprise portal
+   */
+  private fetchFromPortal(url: string, jwt: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const parsedUrl = new URL(url);
+      const isHttps = parsedUrl.protocol === 'https:';
+      const httpModule = isHttps ? https : http;
+
+      const options = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || (isHttps ? 443 : 80),
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${jwt}`,
+          'Accept': 'application/json',
+          'User-Agent': 'Snow-Flow-MCP/1.0'
+        }
+      };
+
+      const req = httpModule.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            if (res.statusCode === 401 || res.statusCode === 403) {
+              reject(new Error('Unauthorized - enterprise JWT may be expired'));
+              return;
+            }
+            if (res.statusCode !== 200) {
+              reject(new Error(`Portal returned status ${res.statusCode}: ${data}`));
+              return;
+            }
+            const parsed = JSON.parse(data);
+            resolve(parsed);
+          } catch (e: any) {
+            reject(new Error(`Failed to parse portal response: ${e.message}`));
+          }
+        });
+      });
+
+      req.on('error', (e) => {
+        reject(new Error(`Portal request failed: ${e.message}`));
+      });
+
+      req.setTimeout(10000, () => {
+        req.destroy();
+        reject(new Error('Portal request timed out'));
+      });
+
+      req.end();
+    });
+  }
+
+  /**
    * Load ServiceNow context from environment variables OR auth.json fallback
    * Note: Server will start even without credentials (unauthenticated mode)
    *
-   * Priority:
+   * Priority (for synchronous loading):
    * 1. Environment variables (SERVICENOW_* or SNOW_*)
    * 2. snow-code auth.json (~/.local/share/snow-code/auth.json)
    * 3. Unauthenticated mode (empty credentials)
+   *
+   * Note: Enterprise portal fetch (highest priority) happens in initialize() because it's async
    */
   private loadContext(): ServiceNowContext {
     // STEP 1: Try environment variables first
@@ -174,21 +364,21 @@ export class ServiceNowUnifiedServer {
       };
     }
 
-    // STEP 2: Try snow-code auth.json fallback
+    // STEP 2: Try snow-code auth.json fallback (free users / local credentials)
     const authJsonContext = this.loadFromAuthJson();
     if (authJsonContext) {
       return authJsonContext;
     }
 
     // STEP 3: No valid credentials found - start in unauthenticated mode
-    console.error('[Auth] Warning: No ServiceNow credentials found');
-    console.error('[Auth] Checked:');
-    console.error('[Auth]   1. Environment variables (SERVICENOW_* or SNOW_*)');
-    console.error('[Auth]   2. snow-code auth.json (~/.local/share/snow-code/auth.json)');
-    console.error('[Auth] Server starting in UNAUTHENTICATED mode - tools will return authentication errors');
-    console.error('[Auth] To configure credentials, run: snow-flow auth login');
+    // Note: Enterprise users will get credentials from portal in initialize()
+    console.warn('[Auth] No local ServiceNow credentials found');
+    console.warn('[Auth] Checked:');
+    console.warn('[Auth]   1. Environment variables (SERVICENOW_* or SNOW_*)');
+    console.warn('[Auth]   2. snow-code auth.json (~/.local/share/snow-code/auth.json)');
+    console.warn('[Auth] Will attempt enterprise portal fetch in initialize()...');
 
-    // Return empty context - tools will fail with clear auth errors
+    // Return empty context - may be updated in initialize() if enterprise auth exists
     return {
       instanceUrl: '',
       clientId: '',
@@ -197,6 +387,13 @@ export class ServiceNowUnifiedServer {
       username: undefined,
       password: undefined
     };
+  }
+
+  /**
+   * Check if current context has valid credentials
+   */
+  private hasValidCredentials(): boolean {
+    return !!(this.context.instanceUrl && this.context.clientId && this.context.clientSecret);
   }
 
   /**
@@ -381,12 +578,34 @@ export class ServiceNowUnifiedServer {
 
   /**
    * Initialize server (discover tools, validate, start)
+   *
+   * Credential Priority (highest to lowest):
+   * 1. Enterprise portal (runtime fetch - no local secrets!) [ASYNC]
+   * 2. Environment variables (SERVICENOW_* or SNOW_*) [already loaded in constructor]
+   * 3. Local auth.json files [already loaded in constructor]
    */
   async initialize(): Promise<void> {
     console.log('[Server] ServiceNow Unified MCP Server starting...');
-    console.log('[Server] Instance:', this.context.instanceUrl);
 
     try {
+      // STEP 0: Try enterprise portal fetch FIRST (secure mode - no local secrets!)
+      // This takes priority over local credentials if enterprise auth is available
+      if (!this.hasValidCredentials() || this.loadEnterpriseAuth()) {
+        console.log('[Server] Checking enterprise portal for credentials...');
+        const enterpriseContext = await this.loadFromEnterprisePortal();
+        if (enterpriseContext) {
+          this.context = enterpriseContext;
+          console.log('[Server] ✅ Using SECURE enterprise credentials (fetched at runtime)');
+          console.log('[Server]    No ServiceNow secrets stored locally!');
+        } else if (!this.hasValidCredentials()) {
+          console.warn('[Server] No credentials available from enterprise portal');
+          console.warn('[Server] Falling back to local credentials (if any)...');
+        }
+      }
+
+      console.log('[Server] Instance:', this.context.instanceUrl || 'NOT CONFIGURED');
+      console.log('[Server] Auth Mode:', this.context.enterprise ? 'ENTERPRISE (secure)' : 'LOCAL');
+
       // Initialize tool registry with auto-discovery
       console.log('[Server] Discovering tools...');
       const discoveryResult = await toolRegistry.initialize();
@@ -405,14 +624,22 @@ export class ServiceNowUnifiedServer {
         });
       }
 
-      // Test authentication
-      console.log('[Server] Testing authentication...');
-      try {
-        await authManager.getAuthenticatedClient(this.context);
-        console.log('[Server] Authentication successful');
-      } catch (error: any) {
-        console.warn('[Server] Authentication test failed:', error.message);
-        console.warn('[Server] Server will start, but tool calls may fail until credentials are valid');
+      // Test authentication (only if we have credentials)
+      if (this.hasValidCredentials()) {
+        console.log('[Server] Testing authentication...');
+        try {
+          await authManager.getAuthenticatedClient(this.context);
+          console.log('[Server] Authentication successful');
+        } catch (error: any) {
+          console.warn('[Server] Authentication test failed:', error.message);
+          console.warn('[Server] Server will start, but tool calls may fail until credentials are valid');
+        }
+      } else {
+        console.error('[Server] ⚠️  No ServiceNow credentials configured!');
+        console.error('[Server] Tools will return authentication errors.');
+        console.error('[Server] To configure:');
+        console.error('[Server]   Enterprise users: snow-code auth login');
+        console.error('[Server]   Free users: Configure environment variables or auth.json');
       }
 
       // Get server statistics
