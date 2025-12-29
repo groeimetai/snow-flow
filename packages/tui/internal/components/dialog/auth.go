@@ -391,6 +391,27 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.completeSetupCompany = msg.CustomerCompany
 			a.completeSetupRole = msg.Role
 			a.completeSetupPlan = "Enterprise"
+
+			// Save slug to enterprise.json for future auth redirects
+			if msg.Slug != "" {
+				configPath := os.ExpandEnv("$HOME/.snow-code/enterprise.json")
+				// Ensure .snow-code directory exists
+				configDir := os.ExpandEnv("$HOME/.snow-code")
+				os.MkdirAll(configDir, 0755)
+				// Read existing config or create new one
+				config := map[string]interface{}{}
+				if data, err := os.ReadFile(configPath); err == nil {
+					json.Unmarshal(data, &config)
+				}
+				// Update subdomain
+				config["subdomain"] = msg.Slug
+				// Write back
+				if configData, err := json.MarshalIndent(config, "", "  "); err == nil {
+					os.WriteFile(configPath, configData, 0644)
+					slog.Info("Saved subdomain for future auth", "slug", msg.Slug)
+				}
+			}
+
 			a.loading = true
 			a.loadingMessage = fmt.Sprintf("Fetching credentials for %s...", msg.CustomerCompany)
 			return a, a.fetchEnterpriseCredentials()
@@ -2196,6 +2217,7 @@ type EnterpriseVerifyMsg struct {
 	Token           string
 	CustomerName    string
 	CustomerCompany string
+	Slug            string // Subdomain slug for future auth redirects
 	Role            string
 	EnabledServices []string
 	Error           string
@@ -2286,7 +2308,13 @@ func (a *authDialog) verifyEnterpriseCode() tea.Cmd {
 			Customer struct {
 				Name    string `json:"name"`
 				Company string `json:"company"`
+				Slug    string `json:"slug"`
 			} `json:"customer"`
+			ServiceIntegrator struct {
+				Name    string `json:"name"`
+				Company string `json:"company"`
+				Slug    string `json:"slug"`
+			} `json:"serviceIntegrator"`
 			Error string `json:"error"`
 		}
 		json.Unmarshal(body, &result)
@@ -2299,15 +2327,31 @@ func (a *authDialog) verifyEnterpriseCode() tea.Cmd {
 			return EnterpriseVerifyMsg{Success: false, Error: errMsg}
 		}
 
+		// Extract slug from customer or serviceIntegrator response
+		slug := result.Customer.Slug
+		if slug == "" {
+			slug = result.ServiceIntegrator.Slug
+		}
+
+		// Determine name and company from available data
+		name := result.Customer.Name
+		company := result.Customer.Company
+		if name == "" {
+			name = result.ServiceIntegrator.Name
+			company = result.ServiceIntegrator.Company
+		}
+
 		slog.Info("Enterprise auth successful",
-			"customer", result.Customer.Name,
-			"company", result.Customer.Company)
+			"customer", name,
+			"company", company,
+			"slug", slug)
 
 		return EnterpriseVerifyMsg{
 			Success:         true,
 			Token:           result.Token,
-			CustomerName:    result.Customer.Name,
-			CustomerCompany: result.Customer.Company,
+			CustomerName:    name,
+			CustomerCompany: company,
+			Slug:            slug,
 		}
 	}
 }
