@@ -169,6 +169,7 @@ const (
 	stepInputServiceNow
 	stepSelectServiceNowAuthMethod
 	stepInputServiceNowBasic
+	stepInputEnterpriseSubdomain // New: ask for enterprise/SI subdomain
 	stepInputEnterpriseCode
 	stepInputOAuthCode // New: input OAuth code (Claude Pro/Max style)
 	stepBrowserAuth
@@ -275,6 +276,7 @@ type authDialog struct {
 	deviceCode        string
 
 	// Enterprise auth state
+	enterpriseSubdomain      string // Subdomain for enterprise portal (e.g., "acme" for acme.snow-flow.dev)
 	enterpriseSessionId      string
 	enterpriseAuthCode       string
 	enterpriseToken          string // JWT token from enterprise portal
@@ -868,13 +870,13 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, util.CmdHandler(modal.CloseModalMsg{})
 
 		case "tab", "down":
-			if len(a.inputs) > 0 && (a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode) {
+			if len(a.inputs) > 0 && (a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseSubdomain || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode) {
 				a.focusedInput = (a.focusedInput + 1) % len(a.inputs)
 				return a, a.updateInputFocus()
 			}
 
 		case "shift+tab", "up":
-			if len(a.inputs) > 0 && (a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode) {
+			if len(a.inputs) > 0 && (a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseSubdomain || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode) {
 				a.focusedInput--
 				if a.focusedInput < 0 {
 					a.focusedInput = len(a.inputs) - 1
@@ -913,7 +915,7 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Update text inputs if in input step
-	if a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode {
+	if a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseSubdomain || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode {
 		for i := range a.inputs {
 			var cmd tea.Cmd
 			a.inputs[i], cmd = a.inputs[i].Update(msg)
@@ -954,15 +956,14 @@ func (a *authDialog) handleEnter() (tea.Model, tea.Cmd) {
 		if item, idx := a.list.GetSelectedItem(); idx >= 0 {
 			if opt, ok := item.(authOption); ok {
 				if opt.value == "portal" {
-					// Portal - ask which auth method (browser/email/magic-link)
+					// Portal (Individual/Teams) - ask which auth method (browser/email/magic-link)
+					// Uses portal.snow-flow.dev directly
 					a.step = stepSelectPortalAuthMethod
 					a.setupPortalAuthMethodList()
 				} else {
-					// Enterprise - browser device auth
-					a.step = stepBrowserAuth
-					a.waitingForBrowser = true
-					a.browserMessage = "Opening browser for Enterprise device authorization..."
-					return a, a.startBrowserAuth("enterprise")
+					// Enterprise - ask for subdomain first (e.g., acme.snow-flow.dev)
+					a.step = stepInputEnterpriseSubdomain
+					a.setupEnterpriseSubdomainInput()
 				}
 			}
 		}
@@ -972,11 +973,9 @@ func (a *authDialog) handleEnter() (tea.Model, tea.Cmd) {
 		if item, idx := a.list.GetSelectedItem(); idx >= 0 {
 			if opt, ok := item.(authOption); ok {
 				if opt.value == "enterprise" {
-					// Enterprise login - starts browser auth, then auto-configures ServiceNow + moves to LLM
-					a.step = stepBrowserAuth
-					a.waitingForBrowser = true
-					a.browserMessage = "Opening browser for Enterprise device authorization..."
-					return a, a.startBrowserAuth("enterprise")
+					// Enterprise login - ask for subdomain first
+					a.step = stepInputEnterpriseSubdomain
+					a.setupEnterpriseSubdomainInput()
 				} else {
 					// Manual setup - go to ServiceNow configuration first
 					a.step = stepSelectServiceNowAuthMethod
@@ -1223,6 +1222,21 @@ func (a *authDialog) handleEnter() (tea.Model, tea.Cmd) {
 			return a, a.saveServiceNowBasic()
 		}
 
+	case stepInputEnterpriseSubdomain:
+		if len(a.inputs) > 0 && a.inputs[0].Value() != "" {
+			subdomain := strings.TrimSpace(a.inputs[0].Value())
+			// Remove any .snow-flow.dev suffix if user typed it
+			subdomain = strings.TrimSuffix(subdomain, ".snow-flow.dev")
+			subdomain = strings.ToLower(subdomain)
+			a.enterpriseSubdomain = subdomain
+			// Now start browser auth
+			a.step = stepBrowserAuth
+			a.waitingForBrowser = true
+			a.browserMessage = fmt.Sprintf("Opening browser for %s.snow-flow.dev...", subdomain)
+			return a, a.startBrowserAuth("enterprise")
+		}
+		return a, toast.NewErrorToast("Please enter your organization subdomain")
+
 	case stepInputEnterpriseCode:
 		if len(a.inputs) > 0 && a.inputs[0].Value() != "" {
 			a.enterpriseAuthCode = strings.TrimSpace(a.inputs[0].Value())
@@ -1371,9 +1385,12 @@ func (a *authDialog) goBack() {
 			a.step = stepSelectServiceNowAuthMethod
 			a.setupServiceNowAuthMethodList()
 		}
-	case stepInputEnterpriseCode:
+	case stepInputEnterpriseSubdomain:
 		a.step = stepSelectLicenseType
 		a.setupLicenseTypeList()
+	case stepInputEnterpriseCode:
+		a.step = stepInputEnterpriseSubdomain
+		a.setupEnterpriseSubdomainInput()
 	case stepBrowserAuth:
 		a.waitingForBrowser = false
 		if a.authType == "snow-flow" {
@@ -2129,18 +2146,28 @@ func (a *authDialog) saveServiceNowBasic() tea.Cmd {
 }
 
 func (a *authDialog) startBrowserAuth(authType string) tea.Cmd {
+	// Capture subdomain for enterprise auth (used for subdomain-specific portal URLs)
+	subdomain := a.enterpriseSubdomain
 	return func() tea.Msg {
 		switch authType {
 		case "portal", "enterprise":
-			// Both portal (Individual/Teams) and enterprise use the same device authorization flow
-			// The portal API distinguishes between user types based on the account
+			// Determine portal URL
+			// - Enterprise users: use their subdomain (e.g., acme.snow-flow.dev)
+			// - Portal (Individual/Teams): use portal.snow-flow.dev
+			var portalURL string
+			if authType == "enterprise" && subdomain != "" && subdomain != "portal" {
+				portalURL = fmt.Sprintf("https://%s.snow-flow.dev", subdomain)
+			} else {
+				portalURL = getEnterprisePortalURL() // Falls back to portal.snow-flow.dev or saved config
+			}
+
 			hostname, _ := os.Hostname()
 			machineInfo := fmt.Sprintf("%s@%s (%s)", os.Getenv("USER"), hostname, "darwin")
 
 			payload := map[string]string{"machineInfo": machineInfo}
 			jsonData, _ := json.Marshal(payload)
 
-			resp, err := http.Post(getEnterprisePortalURL()+"/api/auth/device/request", "application/json", bytes.NewBuffer(jsonData))
+			resp, err := http.Post(portalURL+"/api/auth/device/request", "application/json", bytes.NewBuffer(jsonData))
 			if err != nil {
 				return EnterpriseSessionMsg{Success: false, Error: err.Error()}
 			}
@@ -2287,7 +2314,16 @@ type OAuthModelSavedMsg struct {
 func (a *authDialog) verifyEnterpriseCode() tea.Cmd {
 	sessionId := a.enterpriseSessionId
 	authCode := a.enterpriseAuthCode
+	subdomain := a.enterpriseSubdomain
 	return func() tea.Msg {
+		// Determine portal URL based on subdomain
+		var portalURL string
+		if subdomain != "" && subdomain != "portal" {
+			portalURL = fmt.Sprintf("https://%s.snow-flow.dev", subdomain)
+		} else {
+			portalURL = getEnterprisePortalURL()
+		}
+
 		// Call enterprise portal directly, same as CLI
 		payload := map[string]string{
 			"sessionId": sessionId,
@@ -2295,7 +2331,7 @@ func (a *authDialog) verifyEnterpriseCode() tea.Cmd {
 		}
 		jsonData, _ := json.Marshal(payload)
 
-		resp, err := http.Post(getEnterprisePortalURL()+"/api/auth/device/verify", "application/json", bytes.NewBuffer(jsonData))
+		resp, err := http.Post(portalURL+"/api/auth/device/verify", "application/json", bytes.NewBuffer(jsonData))
 		if err != nil {
 			return EnterpriseVerifyMsg{Success: false, Error: err.Error()}
 		}
@@ -2698,6 +2734,31 @@ func (a *authDialog) portalMagicLinkVerify() tea.Cmd {
 	}
 }
 
+func (a *authDialog) setupEnterpriseSubdomainInput() {
+	// Check if we already have a saved subdomain
+	configPath := os.ExpandEnv("$HOME/.snow-code/enterprise.json")
+	if data, err := os.ReadFile(configPath); err == nil {
+		var config struct {
+			Subdomain string `json:"subdomain"`
+		}
+		if json.Unmarshal(data, &config) == nil && config.Subdomain != "" {
+			a.enterpriseSubdomain = config.Subdomain
+		}
+	}
+
+	input := textinput.New()
+	input.Placeholder = "e.g., acme (for acme.snow-flow.dev)"
+	if a.enterpriseSubdomain != "" {
+		input.SetValue(a.enterpriseSubdomain)
+	}
+	input.Focus()
+	input.CharLimit = 50
+	a.inputs = []textinput.Model{input}
+	a.focusedInput = 0
+	a.inputLabels = []string{"Your organization subdomain"}
+	a.modal = modal.New(modal.WithTitle("Enterprise Portal"), modal.WithMaxWidth(60))
+}
+
 func (a *authDialog) setupEnterpriseCodeInput() {
 	input := textinput.New()
 	input.Placeholder = "Paste your authorization code here..."
@@ -2781,6 +2842,29 @@ func (a *authDialog) Render(background string) string {
 			}
 			helpStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
 			lines = append(lines, helpStyle.Render("Tab: next field • Enter: save • Esc: back"))
+			content = strings.Join(lines, "\n")
+
+		case stepInputEnterpriseSubdomain:
+			var lines []string
+			msgStyle := styles.NewStyle().Foreground(t.Primary())
+			lines = append(lines, msgStyle.Render("🏢 Enterprise Portal"))
+			lines = append(lines, "")
+			helpTextStyle := styles.NewStyle().Foreground(t.TextMuted())
+			lines = append(lines, helpTextStyle.Render("Enter your organization's subdomain to login."))
+			lines = append(lines, helpTextStyle.Render("Example: if your portal is acme.snow-flow.dev, enter 'acme'"))
+			lines = append(lines, "")
+			for i, input := range a.inputs {
+				label := a.inputLabels[i]
+				labelStyle := styles.NewStyle().Foreground(t.TextMuted())
+				if i == a.focusedInput {
+					labelStyle = labelStyle.Foreground(t.Primary()).Bold(true)
+				}
+				lines = append(lines, labelStyle.Render(label+":"))
+				lines = append(lines, input.View())
+			}
+			lines = append(lines, "")
+			helpStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
+			lines = append(lines, helpStyle.Render("Enter: continue • Esc: back"))
 			content = strings.Join(lines, "\n")
 
 		case stepInputEnterpriseCode:
