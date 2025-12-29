@@ -282,6 +282,7 @@ type authDialog struct {
 	portalServiceNowInstances []ServiceNowInstanceFromPortal
 	enterpriseMcpServerUrl   string
 	enterpriseTheme          map[string]interface{}
+	appliedThemeName         string // Theme name applied during auth (for persistence)
 
 	// Stored credentials
 	instanceURL       string
@@ -411,6 +412,29 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.enterpriseMcpServerUrl = msg.McpServerUrl
 		a.enterpriseTheme = msg.Theme
 
+		// Apply enterprise theme if provided
+		if msg.Theme != nil && len(msg.Theme) > 0 {
+			themeName := "enterprise-custom"
+			if nameVal, ok := msg.Theme["name"]; ok {
+				if name, ok := nameVal.(string); ok && name != "" {
+					themeName = name
+				}
+			}
+			if parsedTheme, err := theme.ParseEnterpriseTheme(themeName, msg.Theme); err == nil {
+				theme.RegisterTheme(themeName, parsedTheme)
+				if err := theme.SetTheme(themeName); err == nil {
+					slog.Info("Enterprise theme applied", "theme", themeName)
+					// Send message to persist theme in app state
+					// This will be handled by the main app's Update loop
+					a.appliedThemeName = themeName
+				} else {
+					slog.Warn("Failed to set enterprise theme", "error", err)
+				}
+			} else {
+				slog.Warn("Failed to parse enterprise theme", "error", err)
+			}
+		}
+
 		// Log enabled services for info
 		var enabledServices []string
 		if msg.Credentials != nil {
@@ -448,10 +472,14 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, a.configureEnterpriseMcp()
 		}
 		// No MCP URL either - just complete
-		return a, tea.Sequence(
+		cmds := []tea.Cmd{
 			util.CmdHandler(modal.CloseModalMsg{}),
 			toast.NewSuccessToast("Enterprise authentication completed!"),
-		)
+		}
+		if a.appliedThemeName != "" {
+			cmds = append(cmds, util.CmdHandler(ThemeSelectedMsg{ThemeName: a.appliedThemeName}))
+		}
+		return a, tea.Batch(cmds...)
 
 	case PortalServiceNowConfigMsg:
 		a.loading = false
@@ -466,10 +494,14 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					a.loadProviders(),
 				)
 			}
-			return a, tea.Sequence(
+			cmds := []tea.Cmd{
 				util.CmdHandler(modal.CloseModalMsg{}),
 				toast.NewSuccessToast("Enterprise auth + ServiceNow configured!"),
-			)
+			}
+			if a.appliedThemeName != "" {
+				cmds = append(cmds, util.CmdHandler(ThemeSelectedMsg{ThemeName: a.appliedThemeName}))
+			}
+			return a, tea.Batch(cmds...)
 		}
 		// Config failed but auth succeeded - in Complete Setup, still continue to LLM
 		if a.authType == "complete" {
@@ -516,10 +548,14 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(services) > 0 {
 				successMsg = fmt.Sprintf("Enterprise MCP configured! Services: %s", strings.Join(services, ", "))
 			}
-			return a, tea.Sequence(
+			cmds := []tea.Cmd{
 				util.CmdHandler(modal.CloseModalMsg{}),
 				toast.NewSuccessToast(successMsg),
-			)
+			}
+			if a.appliedThemeName != "" {
+				cmds = append(cmds, util.CmdHandler(ThemeSelectedMsg{ThemeName: a.appliedThemeName}))
+			}
+			return a, tea.Batch(cmds...)
 		}
 		// Config failed - in Complete Setup, still continue to LLM
 		if a.authType == "complete" {

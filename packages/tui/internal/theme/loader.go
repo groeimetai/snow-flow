@@ -298,6 +298,23 @@ func parseColorValue(value any) (color.Color, error) {
 	}
 }
 
+// ParseEnterpriseTheme creates a theme from enterprise portal theme data.
+// The themeData is a map[string]interface{} received from the enterprise portal API.
+func ParseEnterpriseTheme(name string, themeData map[string]interface{}) (Theme, error) {
+	if themeData == nil {
+		return nil, fmt.Errorf("theme data is nil")
+	}
+
+	// Convert map to JSON for parsing
+	jsonData, err := json.Marshal(themeData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal theme data: %w", err)
+	}
+
+	// Use existing JSON parser
+	return parseJSONTheme(name, jsonData)
+}
+
 func setThemeColor(theme *LoadedTheme, key string, color compat.AdaptiveColor) error {
 	switch key {
 	case "primary":
