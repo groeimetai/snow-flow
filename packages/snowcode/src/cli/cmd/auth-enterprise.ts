@@ -90,7 +90,7 @@ interface EnterpriseConfig {
   customerId: number
   customerName: string
   company: string
-  // Subdomain for custom portal URL (e.g., 'groeimetai' for groeimetai.snow-flow.dev)
+  // Subdomain for custom portal URL (e.g., 'acme' for acme.snow-flow.dev)
   subdomain?: string
   // Auth method: 'browser' for enterprise user login, 'license-key' for admin login
   authMethod: 'browser' | 'license-key'
@@ -181,7 +181,7 @@ export const AuthEnterpriseLoginCommand = cmd({
       }
 
       if (!subdomain) {
-        prompts.log.info("Enter your organization's subdomain (e.g., 'groeimetai' for groeimetai.snow-flow.dev)")
+        prompts.log.info("Enter your organization's subdomain (e.g., 'acme' for acme.snow-flow.dev)")
         prompts.log.info("Press Enter for default portal (portal.snow-flow.dev)")
         prompts.log.info("")
 
