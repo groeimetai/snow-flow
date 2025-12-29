@@ -1516,11 +1516,13 @@ func (a *authDialog) setupPortalEmailInputs() {
 	emailInput := textinput.New()
 	emailInput.Placeholder = "your@email.com"
 	emailInput.CharLimit = 100
+	emailInput.SetWidth(50)
 
 	passwordInput := textinput.New()
 	passwordInput.Placeholder = "••••••••"
 	passwordInput.EchoMode = textinput.EchoPassword
 	passwordInput.CharLimit = 100
+	passwordInput.SetWidth(50)
 
 	a.inputs = []textinput.Model{emailInput, passwordInput}
 	a.focusedInput = 0
@@ -1534,6 +1536,7 @@ func (a *authDialog) setupPortalMagicLinkEmailInput() {
 	input.Placeholder = "your@email.com"
 	input.Focus()
 	input.CharLimit = 100
+	input.SetWidth(50)
 	a.inputs = []textinput.Model{input}
 	a.focusedInput = 0
 	a.inputLabels = []string{"Email"}
@@ -1545,6 +1548,7 @@ func (a *authDialog) setupPortalMagicLinkCodeInput() {
 	input.Placeholder = "Paste the code from your email..."
 	input.Focus()
 	input.CharLimit = 100
+	input.SetWidth(50)
 	a.inputs = []textinput.Model{input}
 	a.focusedInput = 0
 	a.inputLabels = []string{"Verification Code"}
@@ -1589,6 +1593,7 @@ func (a *authDialog) setupOAuthCodeInput() {
 	input.Placeholder = "Paste authorization code here..."
 	input.Focus()
 	input.CharLimit = 200
+	input.SetWidth(50)
 	a.inputs = []textinput.Model{input}
 	a.focusedInput = 0
 	a.inputLabels = []string{"Authorization Code"}
@@ -2753,6 +2758,7 @@ func (a *authDialog) setupEnterpriseSubdomainInput() {
 	}
 	input.Focus()
 	input.CharLimit = 50
+	input.SetWidth(50)
 	a.inputs = []textinput.Model{input}
 	a.focusedInput = 0
 	a.inputLabels = []string{"Your organization subdomain"}
@@ -2764,6 +2770,7 @@ func (a *authDialog) setupEnterpriseCodeInput() {
 	input.Placeholder = "Paste your authorization code here..."
 	input.Focus()
 	input.CharLimit = 100
+	input.SetWidth(50)
 	a.inputs = []textinput.Model{input}
 	a.focusedInput = 0
 	a.inputLabels = []string{"Authorization Code"}
