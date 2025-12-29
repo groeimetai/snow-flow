@@ -35,8 +35,33 @@ func getServerURL() string {
 	return strings.TrimSuffix(serverURL, "/")
 }
 
-// Enterprise portal URL (same as CLI)
-const enterprisePortalURL = "https://portal.snow-flow.dev"
+// Enterprise portal URL - supports custom subdomains
+// Reads from env var, saved config, or defaults to portal.snow-flow.dev
+func getEnterprisePortalURL() string {
+	// Check environment variable first
+	if envURL := os.Getenv("SNOW_FLOW_PORTAL_URL"); envURL != "" {
+		return strings.TrimSuffix(envURL, "/")
+	}
+
+	// Check for subdomain in environment
+	if subdomain := os.Getenv("SNOW_FLOW_SUBDOMAIN"); subdomain != "" && subdomain != "portal" {
+		return fmt.Sprintf("https://%s.snow-flow.dev", subdomain)
+	}
+
+	// Try to read subdomain from saved enterprise config
+	configPath := os.ExpandEnv("$HOME/.snow-code/enterprise.json")
+	if data, err := os.ReadFile(configPath); err == nil {
+		var config struct {
+			Subdomain string `json:"subdomain"`
+		}
+		if json.Unmarshal(data, &config) == nil && config.Subdomain != "" && config.Subdomain != "portal" {
+			return fmt.Sprintf("https://%s.snow-flow.dev", config.Subdomain)
+		}
+	}
+
+	// Default to main portal
+	return "https://portal.snow-flow.dev"
+}
 
 // Provider from server API
 type Provider struct {
@@ -2058,7 +2083,7 @@ func (a *authDialog) startBrowserAuth(authType string) tea.Cmd {
 			payload := map[string]string{"machineInfo": machineInfo}
 			jsonData, _ := json.Marshal(payload)
 
-			resp, err := http.Post(enterprisePortalURL+"/api/auth/device/request", "application/json", bytes.NewBuffer(jsonData))
+			resp, err := http.Post(getEnterprisePortalURL()+"/api/auth/device/request", "application/json", bytes.NewBuffer(jsonData))
 			if err != nil {
 				return EnterpriseSessionMsg{Success: false, Error: err.Error()}
 			}
@@ -2212,7 +2237,7 @@ func (a *authDialog) verifyEnterpriseCode() tea.Cmd {
 		}
 		jsonData, _ := json.Marshal(payload)
 
-		resp, err := http.Post(enterprisePortalURL+"/api/auth/device/verify", "application/json", bytes.NewBuffer(jsonData))
+		resp, err := http.Post(getEnterprisePortalURL()+"/api/auth/device/verify", "application/json", bytes.NewBuffer(jsonData))
 		if err != nil {
 			return EnterpriseVerifyMsg{Success: false, Error: err.Error()}
 		}
@@ -2257,7 +2282,7 @@ func (a *authDialog) fetchEnterpriseCredentials() tea.Cmd {
 	return func() tea.Msg {
 		// Call enterprise portal to get credentials (including ServiceNow instances)
 		client := &http.Client{Timeout: 30 * time.Second}
-		req, err := http.NewRequest("GET", enterprisePortalURL+"/api/auth/enterprise/credentials", nil)
+		req, err := http.NewRequest("GET", getEnterprisePortalURL()+"/api/auth/enterprise/credentials", nil)
 		if err != nil {
 			return EnterpriseCredentialsMsg{Success: false, Error: err.Error()}
 		}

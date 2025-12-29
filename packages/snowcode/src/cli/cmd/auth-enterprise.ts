@@ -14,9 +14,20 @@ import open from "open"
 import { UI } from "../ui"
 import { detectHeadlessEnvironment } from "../../util/headless"
 
-// Enterprise portal URL
-const PORTAL_URL = process.env.SNOW_FLOW_PORTAL_URL || "https://portal.snow-flow.dev"
-const API_URL = process.env.SNOW_FLOW_API_URL || "https://portal.snow-flow.dev"
+// Enterprise portal URL - supports custom subdomains
+const DEFAULT_PORTAL_URL = "https://portal.snow-flow.dev"
+const PORTAL_DOMAIN = "snow-flow.dev"
+
+// Get portal URL from subdomain or use default
+function getPortalUrl(subdomain?: string): string {
+  if (process.env.SNOW_FLOW_PORTAL_URL) {
+    return process.env.SNOW_FLOW_PORTAL_URL
+  }
+  if (subdomain && subdomain !== 'portal') {
+    return `https://${subdomain}.${PORTAL_DOMAIN}`
+  }
+  return DEFAULT_PORTAL_URL
+}
 
 // Config directory
 const CONFIG_DIR = path.join(os.homedir(), ".snow-code")
@@ -79,6 +90,8 @@ interface EnterpriseConfig {
   customerId: number
   customerName: string
   company: string
+  // Subdomain for custom portal URL (e.g., 'groeimetai' for groeimetai.snow-flow.dev)
+  subdomain?: string
   // Auth method: 'browser' for enterprise user login, 'license-key' for admin login
   authMethod: 'browser' | 'license-key'
   // Enterprise user info (when authMethod is 'browser')
@@ -147,11 +160,62 @@ export const AuthEnterpriseLoginCommand = cmd({
     prompts.log.info("")
 
     try {
+      // Check for existing config to get saved subdomain
+      const existingConfig = readEnterpriseConfig()
+      let subdomain: string | undefined = existingConfig?.subdomain
+
+      // Ask user for subdomain (or confirm existing)
+      if (subdomain) {
+        const useExisting = await prompts.confirm({
+          message: `Use saved portal: ${subdomain}.${PORTAL_DOMAIN}?`,
+          initialValue: true
+        })
+        if (prompts.isCancel(useExisting)) {
+          prompts.log.info("")
+          prompts.log.warn("⚠️  Authentication cancelled")
+          process.exit(0)
+        }
+        if (!useExisting) {
+          subdomain = undefined
+        }
+      }
+
+      if (!subdomain) {
+        prompts.log.info("Enter your organization's subdomain (e.g., 'groeimetai' for groeimetai.snow-flow.dev)")
+        prompts.log.info("Press Enter for default portal (portal.snow-flow.dev)")
+        prompts.log.info("")
+
+        const subdomainResponse = await prompts.text({
+          message: "Subdomain:",
+          placeholder: "portal",
+          validate: (value) => {
+            if (value && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(value)) {
+              return "Subdomain must be lowercase alphanumeric with hyphens"
+            }
+            return undefined
+          }
+        })
+
+        if (prompts.isCancel(subdomainResponse)) {
+          prompts.log.info("")
+          prompts.log.warn("⚠️  Authentication cancelled")
+          process.exit(0)
+        }
+
+        subdomain = (subdomainResponse as string)?.trim() || undefined
+      }
+
+      // Get the portal URL based on subdomain
+      const portalUrl = getPortalUrl(subdomain)
+      prompts.log.info("")
+      prompts.log.info(`   Using portal: ${portalUrl}`)
+      prompts.log.info("")
+
       // Step 1: Request device authorization session
       prompts.log.step("Requesting device authorization...")
 
       const machineInfo = getMachineInfo()
-      const requestResponse = await fetch(`${API_URL}/api/auth/device/request`, {
+      const requestResponse = await fetch(`${portalUrl}/api/auth/device/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ machineInfo })
@@ -223,7 +287,7 @@ export const AuthEnterpriseLoginCommand = cmd({
       // Step 4: Verify code and get token
       prompts.log.step("Verifying authorization code...")
 
-      const verifyResponse = await fetch(`${API_URL}/api/auth/device/verify`, {
+      const verifyResponse = await fetch(`${portalUrl}/api/auth/device/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, authCode })
@@ -274,7 +338,7 @@ export const AuthEnterpriseLoginCommand = cmd({
 
       // For enterprise users, use fetch-for-cli to get both user and org credentials
       const credentialsResponse = isEnterpriseUser
-        ? await fetch(`${API_URL}/api/credentials/fetch-for-cli`, {
+        ? await fetch(`${portalUrl}/api/credentials/fetch-for-cli`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -285,7 +349,7 @@ export const AuthEnterpriseLoginCommand = cmd({
               userId: user?.id
             })
           })
-        : await fetch(`${API_URL}/api/auth/enterprise/credentials`, {
+        : await fetch(`${portalUrl}/api/auth/enterprise/credentials`, {
             method: "GET",
             headers: { "Authorization": `Bearer ${token}` }
           })
@@ -397,6 +461,7 @@ export const AuthEnterpriseLoginCommand = cmd({
         customerId: customer.id,
         customerName: customer.name,
         company: customer.company,
+        subdomain, // Save subdomain for future logins
         // NOTE: licenseKey is NOT stored - JWT token is used for authentication
         authMethod: isEnterpriseUser ? 'browser' : 'license-key',
         ...(isEnterpriseUser && user && {
@@ -519,10 +584,15 @@ export const AuthEnterpriseSyncCommand = cmd({
         process.exit(1)
       }
 
+      // Get portal URL from saved subdomain
+      const portalUrl = getPortalUrl(existingConfig.subdomain)
+      prompts.log.info(`   Using portal: ${portalUrl}`)
+      prompts.log.info("")
+
       // Fetch configuration info from portal (not credentials - those stay server-side)
       prompts.log.step("Fetching latest configuration...")
 
-      const configResponse = await fetch(`${API_URL}/api/auth/enterprise/credentials`, {
+      const configResponse = await fetch(`${portalUrl}/api/auth/enterprise/credentials`, {
         method: "GET",
         headers: { "Authorization": `Bearer ${existingConfig.token}` }
       })
