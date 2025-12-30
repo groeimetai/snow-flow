@@ -1241,7 +1241,7 @@ func (a *authDialog) handleEnter() (tea.Model, tea.Cmd) {
 			if subdomain == "portal" {
 				a.browserMessage = "Opening browser for portal.snow-flow.dev..."
 			} else {
-				a.browserMessage = fmt.Sprintf("Opening browser for %s.snow-flow.dev...", subdomain)
+				a.browserMessage = fmt.Sprintf("Opening browser for %s.snow-flow.dev... [DEBUG: subdomain=%s, input=%s]", subdomain, subdomain, a.inputs[0].Value())
 			}
 			return a, a.startBrowserAuth("enterprise")
 		}
@@ -2163,6 +2163,8 @@ func (a *authDialog) saveServiceNowBasic() tea.Cmd {
 func (a *authDialog) startBrowserAuth(authType string) tea.Cmd {
 	// Capture subdomain for enterprise auth (used for subdomain-specific portal URLs)
 	subdomain := a.enterpriseSubdomain
+	// DEBUG: Log captured values
+	fmt.Printf("[DEBUG startBrowserAuth] authType=%s, subdomain=%s, a.enterpriseSubdomain=%s\n", authType, subdomain, a.enterpriseSubdomain)
 	return func() tea.Msg {
 		switch authType {
 		case "portal", "enterprise":
@@ -2172,8 +2174,10 @@ func (a *authDialog) startBrowserAuth(authType string) tea.Cmd {
 			var portalURL string
 			if authType == "enterprise" && subdomain != "" && subdomain != "portal" {
 				portalURL = fmt.Sprintf("https://%s.snow-flow.dev", subdomain)
+				fmt.Printf("[DEBUG] Using custom subdomain URL: %s\n", portalURL)
 			} else {
 				portalURL = getEnterprisePortalURL() // Falls back to portal.snow-flow.dev or saved config
+				fmt.Printf("[DEBUG] Using fallback URL: %s (authType=%s, subdomain=%s)\n", portalURL, authType, subdomain)
 			}
 
 			hostname, _ := os.Hostname()
