@@ -12,7 +12,9 @@ export function getStaticPaths() {
 const lang = getLangFromUrl(Astro.url) as Lang;
 const t = useTranslations(lang);
 
-const title = lang === 'en' ? 'TUI Guide | Snow-Flow' : 'TUI Handleiding | Snow-Flow';
+const title = lang === 'en'
+  ? 'TUI Guide - Terminal Interface for ServiceNow Development | Snow-Flow'
+  : 'TUI Handleiding - Terminal Interface voor ServiceNow | Snow-Flow';
 const description = lang === 'en'
   ? 'Complete guide to the Snow-Flow Terminal User Interface (TUI). Learn keyboard shortcuts, commands, agent modes, and tips.'
   : 'Complete handleiding voor de Snow-Flow Terminal User Interface (TUI). Leer toetsenbordsnelkoppelingen, commando\'s, agent-modi en tips.';

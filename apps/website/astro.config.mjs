@@ -7,6 +7,9 @@ export default defineConfig({
   // Static Site Generation
   output: 'static',
 
+  // Enforce trailing slashes for consistent URLs (SEO best practice)
+  trailingSlash: 'always',
+
   // i18n configuration
   i18n: {
     defaultLocale: 'en',
@@ -30,8 +33,29 @@ export default defineConfig({
       },
       filter: (page) => !page.includes('/api/'),
       changefreq: 'weekly',
-      priority: 0.7,
-      lastmod: new Date()
+      lastmod: new Date(),
+      // Custom priority based on page type
+      serialize(item) {
+        // Homepage gets highest priority
+        if (item.url.match(/\/(en|nl)\/$/)) {
+          item.priority = 1.0;
+          item.changefreq = 'daily';
+        }
+        // Enterprise pages
+        else if (item.url.includes('/enterprise/')) {
+          item.priority = 0.9;
+        }
+        // Documentation pages
+        else if (item.url.includes('/docs') || item.url.includes('/cli-reference') || item.url.includes('/mcp-reference')) {
+          item.priority = 0.8;
+          item.changefreq = 'weekly';
+        }
+        // Other pages
+        else {
+          item.priority = 0.7;
+        }
+        return item;
+      }
     })
   ],
 

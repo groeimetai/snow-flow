@@ -12,7 +12,9 @@ export function getStaticPaths() {
 const lang = getLangFromUrl(Astro.url) as Lang;
 const t = useTranslations(lang);
 
-const title = lang === 'nl' ? 'Wachtlijst - Snow-Flow' : 'Waitlist - Snow-Flow';
+const title = lang === 'nl'
+  ? 'Wachtlijst - Krijg Vroege Toegang tot Snow-Flow Platform'
+  : 'Join the Waitlist - Get Early Access to Snow-Flow Platform';
 const description = lang === 'nl'
   ? 'Meld je aan voor General Availability van Snow-Flow'
   : 'Join the waitlist for Snow-Flow General Availability';

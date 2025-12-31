@@ -9,9 +9,10 @@ interface Props {
   description: string;
   type?: 'website' | 'article';
   image?: string;
+  noindex?: boolean;
 }
 
-const { title, description, type = 'website', image } = Astro.props;
+const { title, description, type = 'website', image, noindex = false } = Astro.props;
 
 const lang = getLangFromUrl(Astro.url) as Lang;
 const t = useTranslations(lang);
@@ -25,6 +26,8 @@ const locale = lang === 'nl' ? 'nl_NL' : 'en_US';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <title>{title}</title>
+
+  {noindex && <meta name="robots" content="noindex, nofollow" />}
 
   <SEO
     title={title}

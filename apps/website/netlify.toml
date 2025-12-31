@@ -2,6 +2,26 @@
   command = "npm run build"
   publish = "dist"
 
+# Force HTTPS (SEO: prevent HTTP indexing)
+[[redirects]]
+  from = "http://snow-flow.dev/*"
+  to = "https://snow-flow.dev/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.snow-flow.dev/*"
+  to = "https://snow-flow.dev/:splat"
+  status = 301
+  force = true
+
+# Redirect www to non-www (canonical domain)
+[[redirects]]
+  from = "https://www.snow-flow.dev/*"
+  to = "https://snow-flow.dev/:splat"
+  status = 301
+  force = true
+
 # Redirect root to default language
 [[redirects]]
   from = "/"

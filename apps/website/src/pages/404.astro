@@ -1,0 +1,134 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="404 - Page Not Found | Snow-Flow"
+  description="The page you're looking for doesn't exist."
+  noindex={true}
+>
+
+  <main class="error-page">
+    <div class="error-container">
+      <div class="error-icon">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="mountain404" x1="16" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#FFFFFF"/>
+              <stop offset="100%" stop-color="#00D9FF"/>
+            </linearGradient>
+          </defs>
+          <path d="M4 23 L10 9 L16 15 L22 9 L28 23 Z" fill="url(#mountain404)" stroke="#00D9FF" stroke-width="1.2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <h1>404</h1>
+      <p class="error-message">Page not found</p>
+      <p class="error-description">The page you're looking for doesn't exist or has been moved.</p>
+
+      <div class="error-actions">
+        <a href="/en/" class="btn-primary">Go to Homepage</a>
+        <a href="/en/docs/" class="btn-secondary">View Documentation</a>
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .error-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+    padding: 2rem;
+  }
+
+  .error-container {
+    text-align: center;
+    max-width: 500px;
+  }
+
+  .error-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 2rem;
+    opacity: 0.8;
+  }
+
+  .error-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  h1 {
+    font-size: 8rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #00D9FF, #0066CC);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .error-message {
+    font-size: 1.5rem;
+    color: #ffffff;
+    margin: 1rem 0;
+    font-weight: 600;
+  }
+
+  .error-description {
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 2rem;
+    font-size: 1rem;
+  }
+
+  .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #00D9FF, #0066CC);
+    color: #ffffff;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 217, 255, 0.3);
+  }
+
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 5rem;
+    }
+
+    .error-actions {
+      flex-direction: column;
+    }
+  }
+</style>

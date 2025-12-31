@@ -12,7 +12,9 @@ export function getStaticPaths() {
 const lang = getLangFromUrl(Astro.url) as Lang;
 const t = useTranslations(lang);
 
-const title = lang === 'en' ? 'CLI Reference | Snow-Flow' : 'CLI Referentie | Snow-Flow';
+const title = lang === 'en'
+  ? 'CLI Reference - Command Line Documentation | Snow-Flow'
+  : 'CLI Referentie - Command Line Documentatie | Snow-Flow';
 const description = lang === 'en'
   ? 'Complete CLI command reference for Snow-Flow. All commands, options, and examples for the terminal interface.'
   : 'Complete CLI command referentie voor Snow-Flow. Alle commando\'s, opties en voorbeelden voor de terminal interface.';

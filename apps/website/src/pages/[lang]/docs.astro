@@ -12,7 +12,9 @@ export function getStaticPaths() {
 const lang = getLangFromUrl(Astro.url) as Lang;
 const t = useTranslations(lang);
 
-const title = lang === 'en' ? 'Quick Start | Snow-Flow' : 'Snelle Start | Snow-Flow';
+const title = lang === 'en'
+  ? 'Quick Start Guide - ServiceNow AI Development | Snow-Flow'
+  : 'Snelstart Handleiding - ServiceNow AI Development | Snow-Flow';
 const description = lang === 'en'
   ? 'Get started with Snow-Flow - the AI-powered ServiceNow development platform. Install, authenticate, and start building in minutes.'
   : 'Begin met Snow-Flow - het AI-aangedreven ServiceNow ontwikkelplatform. Installeer, authenticeer en begin binnen minuten met bouwen.';
