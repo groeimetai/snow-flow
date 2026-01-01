@@ -47,6 +47,15 @@ const locale = lang === 'nl' ? 'nl_NL' : 'en_US';
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
+  <!-- DNS Prefetch for external resources -->
+  <link rel="dns-prefetch" href="https://github.com">
+  <link rel="dns-prefetch" href="https://portal.snow-flow.dev">
+  <link rel="dns-prefetch" href="https://img.shields.io">
+
+  <!-- Preload critical assets -->
+  <link rel="preload" href="/snow-flow-tui.png" as="image" type="image/png">
+  <link rel="preload" href="/logos/icon-only-256.png" as="image" type="image/png">
+
   <!-- JSON-LD Organization Schema -->
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",

@@ -14,9 +14,70 @@ const t = useTranslations(lang);
 
 const title = t('meta.home.title');
 const description = t('meta.home.description');
+
+// FAQ Schema for comparison section (improves featured snippets)
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": lang === 'en' ? "What AI models does Snow-Flow support?" : "Welke AI-modellen ondersteunt Snow-Flow?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": lang === 'en'
+          ? "Snow-Flow supports 75+ AI providers including Claude, GPT-4, Gemini, DeepSeek, Llama, and local models. Unlike ServiceNow Build Agent which only supports NowLLM, Snow-Flow lets you use any AI model your organization has approved."
+          : "Snow-Flow ondersteunt 75+ AI-providers waaronder Claude, GPT-4, Gemini, DeepSeek, Llama en lokale modellen. In tegenstelling tot ServiceNow Build Agent die alleen NowLLM ondersteunt, kun je met Snow-Flow elk AI-model gebruiken dat je organisatie heeft goedgekeurd."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": lang === 'en' ? "Is Snow-Flow open source?" : "Is Snow-Flow open source?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": lang === 'en'
+          ? "Yes, Snow-Flow is 100% open source under the Elastic License 2.0. You can self-host it for free or use the managed cloud version for $99/month. ServiceNow Build Agent is proprietary and closed source with implementation costs ranging from $150K to $4.5M."
+          : "Ja, Snow-Flow is 100% open source onder de Elastic License 2.0. Je kunt het gratis zelf hosten of de managed cloud versie gebruiken voor €99/maand. ServiceNow Build Agent is proprietary en closed source met implementatiekosten van €140K tot €4,2M."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": lang === 'en' ? "What IDEs work with Snow-Flow?" : "Welke IDE's werken met Snow-Flow?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": lang === 'en'
+          ? "Snow-Flow works with any IDE including VS Code, Cursor, JetBrains IDEs, Vim, and terminal. It also includes a built-in Terminal User Interface (TUI). ServiceNow Build Agent is browser-only and requires the ServiceNow Studio environment."
+          : "Snow-Flow werkt met elke IDE, inclusief VS Code, Cursor, JetBrains IDE's, Vim en terminal. Het bevat ook een ingebouwde Terminal User Interface (TUI). ServiceNow Build Agent is alleen browser-gebaseerd en vereist de ServiceNow Studio-omgeving."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": lang === 'en' ? "How many tools does Snow-Flow have?" : "Hoeveel tools heeft Snow-Flow?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": lang === 'en'
+          ? "Snow-Flow includes 500+ specialized MCP (Model Context Protocol) tools across 18 servers for ServiceNow development, integration, automation, and more. It also supports multi-agent orchestration for complex tasks."
+          : "Snow-Flow bevat 500+ gespecialiseerde MCP (Model Context Protocol) tools over 18 servers voor ServiceNow development, integratie, automatisering en meer. Het ondersteunt ook multi-agent orchestratie voor complexe taken."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": lang === 'en' ? "What integrations does Snow-Flow support?" : "Welke integraties ondersteunt Snow-Flow?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": lang === 'en'
+          ? "Snow-Flow integrates with Jira, Azure DevOps, GitHub, GitLab, and Confluence for autonomous story completion and documentation. ServiceNow Build Agent is limited to the ServiceNow ecosystem only."
+          : "Snow-Flow integreert met Jira, Azure DevOps, GitHub, GitLab en Confluence voor autonome story-afronding en documentatie. ServiceNow Build Agent is beperkt tot alleen het ServiceNow ecosysteem."
+      }
+    }
+  ]
+};
 ---
 
 <BaseLayout title={title} description={description}>
+    <!-- FAQ Schema for SEO -->
+    <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+
     <!-- Background Effects -->
     <div class="bg-grid"></div>
     <div class="bg-gradient"></div>

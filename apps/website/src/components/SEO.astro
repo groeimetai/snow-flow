@@ -28,6 +28,65 @@ const {
 const absoluteImage = new URL(image, Astro.site).href;
 const alternateLocales = getAlternateLocales(Astro.url.pathname, lang);
 const defaultUrl = canonical.replace(/\/(nl)\//, '/en/');
+
+// Generate breadcrumb data
+const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
+const breadcrumbLabels: Record<string, Record<string, string>> = {
+  en: {
+    'enterprise': 'Enterprise',
+    'customers': 'For Customers',
+    'partners': 'For Partners',
+    'developers': 'For Developers',
+    'stakeholders': 'For Stakeholders',
+    'docs': 'Documentation',
+    'cli-reference': 'CLI Reference',
+    'tui-guide': 'TUI Guide',
+    'mcp-reference': 'MCP Tools',
+    'oauth-setup': 'OAuth Setup',
+    'stats': 'Statistics',
+    'waitlist': 'Waitlist'
+  },
+  nl: {
+    'enterprise': 'Enterprise',
+    'customers': 'Voor Klanten',
+    'partners': 'Voor Partners',
+    'developers': 'Voor Developers',
+    'stakeholders': 'Voor Stakeholders',
+    'docs': 'Documentatie',
+    'cli-reference': 'CLI Referentie',
+    'tui-guide': 'TUI Handleiding',
+    'mcp-reference': 'MCP Tools',
+    'oauth-setup': 'OAuth Setup',
+    'stats': 'Statistieken',
+    'waitlist': 'Wachtlijst'
+  }
+};
+
+const breadcrumbs = [
+  { name: 'Home', url: `https://snow-flow.dev/${lang}/` }
+];
+
+let currentPath = `/${lang}`;
+for (let i = 1; i < pathSegments.length; i++) {
+  const segment = pathSegments[i];
+  currentPath += `/${segment}`;
+  const label = breadcrumbLabels[lang]?.[segment] || segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
+  breadcrumbs.push({
+    name: label,
+    url: `https://snow-flow.dev${currentPath}/`
+  });
+}
+
+const breadcrumbSchema = breadcrumbs.length > 1 ? {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": breadcrumbs.map((crumb, index) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "name": crumb.name,
+    "item": crumb.url
+  }))
+} : null;
 ---
 
 <!-- Primary Meta Tags -->
@@ -64,3 +123,8 @@ const defaultUrl = canonical.replace(/\/(nl)\//, '/en/');
 <!-- Article specific -->
 {publishedTime && <meta property="article:published_time" content={publishedTime} />}
 {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+
+<!-- JSON-LD Breadcrumb Schema (only for non-homepage) -->
+{breadcrumbSchema && (
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+)}
