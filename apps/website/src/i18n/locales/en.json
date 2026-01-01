@@ -235,21 +235,21 @@
   "meta": {
     "home": {
       "title": "Snow-Flow | Break Free from ServiceNow Vendor Lock-in",
-      "description": "The open-source alternative to ServiceNow Build Agent. Use YOUR approved AI models. Built by developers, for developers."
+      "description": "The open-source alternative to ServiceNow Build Agent. Use YOUR approved AI models with 75+ providers. Zero vendor lock-in. Built by developers."
     },
     "docs": {
       "title": "Documentation | Snow-Flow",
-      "description": "Complete documentation for Snow-Flow - the open-source ServiceNow development platform."
+      "description": "Complete documentation for Snow-Flow - the open-source ServiceNow development platform. Quick start guides, CLI reference, and MCP tools documentation."
     },
     "stats": {
       "title": "Platform Statistics - 500+ Tools & 75+ AI Providers | Snow-Flow",
-      "description": "Snow-Flow platform statistics - 500+ MCP tools, 75+ LLM providers."
+      "description": "Explore Snow-Flow platform statistics: 500+ MCP tools across 18 servers, 75+ AI providers supported, and growing open-source community contributions."
     }
   },
   "enterprise": {
     "meta": {
       "title": "Enterprise Solutions - AI ServiceNow Development | Snow-Flow",
-      "description": "Full visibility and control over your AI-powered ServiceNow development. For customers and service integrators."
+      "description": "Full visibility and control over your AI-powered ServiceNow development. Dashboard, activities tracking, Jira and Azure DevOps sync for teams and partners."
     },
     "landing": {
       "title": "Enterprise Solutions",
@@ -334,7 +334,7 @@
   "customers": {
     "meta": {
       "title": "For Customers | Snow-Flow Enterprise",
-      "description": "Full visibility and control over your AI-powered ServiceNow development. Dashboard, activities tracking, and enterprise integrations."
+      "description": "Deploy Snow-Flow Enterprise for your organization. Central dashboard, activities tracking, Jira and Azure DevOps sync, and stakeholder seats included."
     },
     "breadcrumb": "For Customers",
     "hero": {
@@ -425,7 +425,7 @@
   "partners": {
     "meta": {
       "title": "For Service Integrators | Snow-Flow",
-      "description": "Deliver ServiceNow projects faster with AI. Built-in safety for client environments, 145 integration tools, and happier clients."
+      "description": "Deliver ServiceNow implementations 10x faster with AI-powered development. Built-in client environment safety, white-label options, and partner portal."
     },
     "breadcrumb": "For Service Integrators",
     "hero": {
@@ -551,7 +551,7 @@
   "developers": {
     "meta": {
       "title": "For Developers | Snow-Flow Enterprise",
-      "description": "Build ServiceNow solutions with AI-powered development. Full write access, 500+ MCP tools, and seamless integration tracking."
+      "description": "Build ServiceNow solutions with AI-powered development. Full write access to 500+ MCP tools, personal credentials, and automatic update set tracking."
     },
     "breadcrumb": "For Developers",
     "getStarted": {
@@ -633,7 +633,7 @@
   "stakeholders": {
     "meta": {
       "title": "For Stakeholders | Snow-Flow Enterprise",
-      "description": "Get answers about your ServiceNow environment without risk. Read-only access for safe exploration."
+      "description": "Get answers about your ServiceNow environment without risk. Read-only access with 174 query tools for executives, analysts, and compliance teams."
     },
     "breadcrumb": "For Stakeholders",
     "hero": {

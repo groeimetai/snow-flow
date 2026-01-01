@@ -56,6 +56,50 @@ const locale = lang === 'nl' ? 'nl_NL' : 'en_US';
     "logo": "https://snow-flow.dev/logos/icon-only-512.png",
     "sameAs": ["https://github.com/groeimetai/snow-flow"]
   })} />
+
+  <!-- JSON-LD SoftwareApplication Schema -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Snow-Flow",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Windows, macOS, Linux",
+    "description": "AI-powered ServiceNow development platform with 500+ MCP tools and 75+ AI providers. Open-source alternative to ServiceNow Build Agent.",
+    "url": "https://snow-flow.dev",
+    "downloadUrl": "https://github.com/groeimetai/snow-flow",
+    "softwareVersion": "1.0.0",
+    "author": {
+      "@type": "Organization",
+      "name": "GroeiMetAI",
+      "url": "https://groeimetai.nl"
+    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Open Source",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "description": "Free forever, self-hosted"
+      },
+      {
+        "@type": "Offer",
+        "name": "Enterprise",
+        "price": "99",
+        "priceCurrency": "EUR",
+        "priceValidUntil": "2025-12-31",
+        "description": "Managed cloud with enterprise features"
+      }
+    ],
+    "featureList": [
+      "500+ MCP Tools",
+      "75+ AI Providers",
+      "Jira Integration",
+      "Azure DevOps Integration",
+      "Multi-agent Orchestration",
+      "Terminal UI (TUI)"
+    ],
+    "screenshot": "https://snow-flow.dev/snow-flow-tui.png"
+  })} />
 </head>
 <body>
   <Navigation />

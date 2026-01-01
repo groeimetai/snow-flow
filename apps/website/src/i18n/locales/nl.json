@@ -235,21 +235,21 @@
   "meta": {
     "home": {
       "title": "Snow-Flow | Breek Vrij van ServiceNow Vendor Lock-in",
-      "description": "Het open-source alternatief voor ServiceNow Build Agent. Gebruik JOUW goedgekeurde AI-modellen. Gebouwd door developers, voor developers."
+      "description": "Het open-source alternatief voor ServiceNow Build Agent. Gebruik JOUW goedgekeurde AI-modellen met 75+ providers. Zero vendor lock-in."
     },
     "docs": {
       "title": "Documentatie | Snow-Flow",
-      "description": "Complete documentatie voor Snow-Flow - het open-source ServiceNow development platform."
+      "description": "Complete documentatie voor Snow-Flow - het open-source ServiceNow development platform. Snelstart handleidingen, CLI referentie en MCP tools documentatie."
     },
     "stats": {
       "title": "Platform Statistieken - 500+ Tools & 75+ AI Providers | Snow-Flow",
-      "description": "Snow-Flow platform statistieken - 500+ MCP tools, 75+ LLM providers."
+      "description": "Ontdek Snow-Flow platform statistieken: 500+ MCP tools over 18 servers, 75+ AI providers ondersteund, en groeiende open-source community bijdragen."
     }
   },
   "enterprise": {
     "meta": {
       "title": "Enterprise Oplossingen - AI ServiceNow Development | Snow-Flow",
-      "description": "Volledig zicht en controle over je AI-gestuurde ServiceNow development. Voor klanten en service integrators."
+      "description": "Volledig zicht en controle over je AI-gestuurde ServiceNow development. Dashboard, activiteiten tracking, Jira en Azure DevOps sync voor teams."
     },
     "landing": {
       "title": "Enterprise Oplossingen",
@@ -334,7 +334,7 @@
   "customers": {
     "meta": {
       "title": "Voor Klanten | Snow-Flow Enterprise",
-      "description": "Volledig zicht en controle over je AI-gestuurde ServiceNow development. Dashboard, activiteiten tracking en enterprise integraties."
+      "description": "Deploy Snow-Flow Enterprise voor je organisatie. Centraal dashboard, activiteiten tracking, Jira en Azure DevOps sync, en stakeholder seats inbegrepen."
     },
     "breadcrumb": "Voor Klanten",
     "hero": {
@@ -425,7 +425,7 @@
   "partners": {
     "meta": {
       "title": "Voor Service Integrators | Snow-Flow",
-      "description": "Lever ServiceNow projecten sneller met AI. Ingebouwde veiligheid voor klantomgevingen, 145 integratie tools, en tevreden klanten."
+      "description": "Lever ServiceNow implementaties 10x sneller met AI-gestuurde development. Ingebouwde klantomgeving veiligheid, white-label opties en partner portaal."
     },
     "breadcrumb": "Voor Service Integrators",
     "hero": {
@@ -551,7 +551,7 @@
   "developers": {
     "meta": {
       "title": "Voor Developers | Snow-Flow Enterprise",
-      "description": "Bouw ServiceNow oplossingen met AI-gestuurde development. Volledige schrijftoegang, 500+ MCP tools en naadloze integratie tracking."
+      "description": "Bouw ServiceNow oplossingen met AI-gestuurde development. Volledige schrijftoegang tot 500+ MCP tools, persoonlijke credentials en automatische update set tracking."
     },
     "breadcrumb": "Voor Developers",
     "getStarted": {
@@ -633,7 +633,7 @@
   "stakeholders": {
     "meta": {
       "title": "Voor Stakeholders | Snow-Flow Enterprise",
-      "description": "Krijg antwoorden over je ServiceNow omgeving zonder risico. Read-only toegang voor veilige exploratie."
+      "description": "Krijg antwoorden over je ServiceNow omgeving zonder risico. Read-only toegang met 174 query tools voor executives, analisten en compliance teams."
     },
     "breadcrumb": "Voor Stakeholders",
     "hero": {
