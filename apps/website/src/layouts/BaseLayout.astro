@@ -109,6 +109,30 @@ const locale = lang === 'nl' ? 'nl_NL' : 'en_US';
     ],
     "screenshot": "https://snow-flow.dev/snow-flow-tui.png"
   })} />
+
+  <!-- JSON-LD WebSite Schema with SearchAction (enables sitelinks search box) -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Snow-Flow",
+    "alternateName": ["Snow Flow", "SnowFlow"],
+    "url": "https://snow-flow.dev",
+    "description": "AI-powered ServiceNow development platform. Open-source alternative to Build Agent.",
+    "inLanguage": ["en", "nl"],
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://snow-flow.dev/en/docs/?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "GroeiMetAI",
+      "url": "https://groeimetai.nl"
+    }
+  })} />
 </head>
 <body>
   <Navigation />

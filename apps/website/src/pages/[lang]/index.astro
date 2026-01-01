@@ -1009,31 +1009,38 @@ const faqSchema = {
                     <h4>{t('footer.product')}</h4>
                     <ul>
                         <li><a href="https://portal.snow-flow.dev/pricing">{t('nav.pricing')}</a></li>
-                        <li><a href="#autonomous">{t('nav.features')}</a></li>
-                        <li><a href="https://docs.snow-flow.dev/">{t('nav.documentation')}</a></li>
+                        <li><a href={`/${lang}/#autonomous`}>{t('nav.features')}</a></li>
+                        <li><a href={`/${lang}/docs/`}>{t('nav.documentation')}</a></li>
+                        <li><a href={`/${lang}/mcp-reference/`}>{t('nav.mcpReference')}</a></li>
                         <li><a href="https://status.snow-flow.dev">{t('nav.status')}</a></li>
                     </ul>
                 </div>
                 <div class="footer-column">
                     <h4>Enterprise</h4>
                     <ul>
-                        <li><a href="mailto:sales@snow-flow.dev">{t('footer.contact')}</a></li>
-                        <li><a href="https://portal.snow-flow.dev">Portal</a></li>
-                        <li><a href="#comparison">{t('nav.vsBuildAgent')}</a></li>
+                        <li><a href={`/${lang}/enterprise/`}>{t('nav.enterpriseOverview')}</a></li>
+                        <li><a href={`/${lang}/enterprise/customers/`}>{t('nav.forCustomers')}</a></li>
+                        <li><a href={`/${lang}/enterprise/partners/`}>{t('nav.forPartners')}</a></li>
+                        <li><a href={`/${lang}/enterprise/developers/`}>{t('nav.developers')}</a></li>
+                        <li><a href={`/${lang}/enterprise/stakeholders/`}>{t('nav.stakeholders')}</a></li>
+                        <li><a href={`/${lang}/#comparison`}>{t('nav.vsBuildAgent')}</a></li>
                     </ul>
                 </div>
                 <div class="footer-column">
                     <h4>{t('footer.resources')}</h4>
                     <ul>
+                        <li><a href={`/${lang}/tui-guide/`}>{t('nav.tuiGuide')}</a></li>
+                        <li><a href={`/${lang}/cli-reference/`}>{t('nav.cliReference')}</a></li>
+                        <li><a href={`/${lang}/oauth-setup/`}>{t('nav.oauthSetup')}</a></li>
                         <li><a href="https://github.com/groeimetai/snow-flow">{t('nav.github')}</a></li>
                         <li><a href="https://discord.gg/snowflow">Discord</a></li>
-                        <li><a href="https://github.com/groeimetai/snow-flow">Snow-Flow TUI</a></li>
                     </ul>
                 </div>
                 <div class="footer-column">
                     <h4>{t('footer.company')}</h4>
                     <ul>
                         <li><a href="mailto:hello@snow-flow.dev">{t('footer.about')}</a></li>
+                        <li><a href="https://portal.snow-flow.dev">Portal</a></li>
                         <li><a href="https://github.com/groeimetai/snow-flow/issues">Support</a></li>
                         <li><a href="mailto:sales@snow-flow.dev">{t('footer.contact')}</a></li>
                     </ul>
