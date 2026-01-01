@@ -16,6 +16,29 @@ const title = t('meta.home.title');
 const description = t('meta.home.description');
 
 // FAQ Schema for comparison section (improves featured snippets)
+// Video Schema for the demo video (improves video SEO)
+const videoSchema = {
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": lang === 'en' ? "Snow-Flow TUI Demo - AI-Powered ServiceNow Development" : "Snow-Flow TUI Demo - AI-Gestuurde ServiceNow Development",
+  "description": lang === 'en'
+    ? "Demo of Snow-Flow Terminal User Interface (TUI) for ServiceNow development. See how to use any AI model (Claude, GPT, DeepSeek) to build ServiceNow solutions in your favorite IDE."
+    : "Demo van Snow-Flow Terminal User Interface (TUI) voor ServiceNow development. Zie hoe je elk AI-model (Claude, GPT, DeepSeek) kunt gebruiken om ServiceNow oplossingen te bouwen in je favoriete IDE.",
+  "thumbnailUrl": "https://snow-flow.dev/snow-flow-tui.png",
+  "uploadDate": "2024-12-25",
+  "contentUrl": "https://snow-flow.dev/recording-snow-flow-v2.mp4",
+  "embedUrl": "https://snow-flow.dev/recording-snow-flow-v2.mp4",
+  "duration": "PT1M30S",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Snow-Flow",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://snow-flow.dev/logo.svg"
+    }
+  }
+};
+
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -75,6 +98,8 @@ const faqSchema = {
 ---
 
 <BaseLayout title={title} description={description}>
+    <!-- Video Schema for SEO -->
+    <script type="application/ld+json" set:html={JSON.stringify(videoSchema)} />
     <!-- FAQ Schema for SEO -->
     <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 
