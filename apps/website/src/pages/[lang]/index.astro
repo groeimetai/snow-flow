@@ -824,20 +824,42 @@ const faqSchema = {
 
             <div class="tui-screenshot">
                 <video
+                    id="tui-video"
                     src="/recording-snow-flow-v2.mp4?v=2"
                     autoplay
                     loop
                     muted
                     playsinline
-                    poster="/snow-flow-tui.png"
+                    preload="auto"
                     class="tui-image"
                     aria-label="Snow-Flow TUI - Interactive terminal interface for ServiceNow development"
-                >
-                    <!-- Fallback for browsers that don't support video -->
-                    <img src="/snow-flow-tui.png" alt="Snow-Flow TUI - Interactive terminal interface for ServiceNow development" class="tui-image" loading="lazy" decoding="async" />
-                </video>
+                ></video>
                 <p class="tui-caption">The Snow-Flow TUI - Your AI-powered ServiceNow development environment</p>
             </div>
+            <script>
+                // Retry video loading if it fails
+                const video = document.getElementById('tui-video');
+                if (video) {
+                    let retryCount = 0;
+                    const maxRetries = 3;
+
+                    video.addEventListener('error', function() {
+                        if (retryCount < maxRetries) {
+                            retryCount++;
+                            setTimeout(function() {
+                                video.src = '/recording-snow-flow-v2.mp4?v=2&retry=' + retryCount;
+                                video.load();
+                                video.play().catch(function() {});
+                            }, 1000 * retryCount);
+                        }
+                    });
+
+                    // Ensure video plays after load
+                    video.addEventListener('loadeddata', function() {
+                        video.play().catch(function() {});
+                    });
+                }
+            </script>
         </div>
     </section>
 

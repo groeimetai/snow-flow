@@ -14,9 +14,6 @@ Disallow: /*.json$
 # Block Cloudflare internal paths
 Disallow: /cdn-cgi/
 
-# Block HTTP versions (force HTTPS crawling)
-# Search engines should only index HTTPS versions
-
 # Allow all major search engines
 User-agent: Googlebot
 Allow: /
@@ -33,5 +30,42 @@ Allow: /
 User-agent: Slurp
 Allow: /
 
-# Sitemap locations (HTTPS only - canonical)
+# Explicitly allow LLM crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claudebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Gemini
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Sitemap locations
 Sitemap: https://snow-flow.dev/sitemap-index.xml
+
+# LLMs.txt for AI assistants
+# See: https://snow-flow.dev/llms.txt
