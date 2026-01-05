@@ -239,6 +239,9 @@ func CurrentThemeUsesAnsiColors() bool {
 
 // isAnsiColor checks if a color represents an ANSI 0-16 color
 func isAnsiColor(c color.Color) bool {
+	if c == nil {
+		return false
+	}
 	if _, ok := c.(lipgloss.NoColor); ok {
 		return false
 	}

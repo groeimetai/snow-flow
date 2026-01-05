@@ -7,8 +7,12 @@ import (
 	"github.com/charmbracelet/lipgloss/v2/compat"
 )
 
-// IsNoColor checks if a color is the special NoColor type
+// IsNoColor checks if a color is nil or the special NoColor type.
+// This prevents nil pointer panics when rendering styles with uninitialized colors.
 func IsNoColor(c color.Color) bool {
+	if c == nil {
+		return true
+	}
 	_, ok := c.(lipgloss.NoColor)
 	return ok
 }
