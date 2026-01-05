@@ -86,7 +86,93 @@ func CurrentTheme() Theme {
 		return t
 	}
 
-	return nil
+	// Return emergency fallback theme instead of nil to prevent panic
+	return getEmergencyFallbackTheme()
+}
+
+// emergencyFallbackTheme is a singleton fallback theme instance
+var emergencyFallbackTheme Theme
+
+// getEmergencyFallbackTheme returns a minimal theme that prevents nil pointer panics.
+// This should only be reached in exceptional circumstances when no themes are registered.
+func getEmergencyFallbackTheme() Theme {
+	if emergencyFallbackTheme != nil {
+		return emergencyFallbackTheme
+	}
+
+	// Create a simple dark/light adaptive theme with safe defaults
+	emergencyFallbackTheme = &LoadedTheme{
+		name: "emergency-fallback",
+		BaseTheme: BaseTheme{
+			// Background colors
+			BackgroundColor:        compat.AdaptiveColor{Dark: lipgloss.Color("#0a0a0a"), Light: lipgloss.Color("#ffffff")},
+			BackgroundPanelColor:   compat.AdaptiveColor{Dark: lipgloss.Color("#141414"), Light: lipgloss.Color("#fafafa")},
+			BackgroundElementColor: compat.AdaptiveColor{Dark: lipgloss.Color("#1e1e1e"), Light: lipgloss.Color("#f5f5f5")},
+
+			// Border colors
+			BorderSubtleColor: compat.AdaptiveColor{Dark: lipgloss.Color("#3c3c3c"), Light: lipgloss.Color("#d4d4d4")},
+			BorderColor:       compat.AdaptiveColor{Dark: lipgloss.Color("#484848"), Light: lipgloss.Color("#b8b8b8")},
+			BorderActiveColor: compat.AdaptiveColor{Dark: lipgloss.Color("#606060"), Light: lipgloss.Color("#a0a0a0")},
+
+			// Brand colors
+			PrimaryColor:   compat.AdaptiveColor{Dark: lipgloss.Color("#fab283"), Light: lipgloss.Color("#3b7dd8")},
+			SecondaryColor: compat.AdaptiveColor{Dark: lipgloss.Color("#5c9cf5"), Light: lipgloss.Color("#7b5bb6")},
+			AccentColor:    compat.AdaptiveColor{Dark: lipgloss.Color("#9d7cd8"), Light: lipgloss.Color("#d68c27")},
+
+			// Text colors
+			TextColor:      compat.AdaptiveColor{Dark: lipgloss.Color("#eeeeee"), Light: lipgloss.Color("#1a1a1a")},
+			TextMutedColor: compat.AdaptiveColor{Dark: lipgloss.Color("#808080"), Light: lipgloss.Color("#8a8a8a")},
+
+			// Status colors
+			ErrorColor:   compat.AdaptiveColor{Dark: lipgloss.Color("#e06c75"), Light: lipgloss.Color("#d1383d")},
+			WarningColor: compat.AdaptiveColor{Dark: lipgloss.Color("#f5a742"), Light: lipgloss.Color("#d68c27")},
+			SuccessColor: compat.AdaptiveColor{Dark: lipgloss.Color("#7fd88f"), Light: lipgloss.Color("#3d9a57")},
+			InfoColor:    compat.AdaptiveColor{Dark: lipgloss.Color("#56b6c2"), Light: lipgloss.Color("#318795")},
+
+			// Diff view colors
+			DiffAddedColor:               compat.AdaptiveColor{Dark: lipgloss.Color("#4fd6be"), Light: lipgloss.Color("#1e725c")},
+			DiffRemovedColor:             compat.AdaptiveColor{Dark: lipgloss.Color("#c53b53"), Light: lipgloss.Color("#c53b53")},
+			DiffContextColor:             compat.AdaptiveColor{Dark: lipgloss.Color("#828bb8"), Light: lipgloss.Color("#7086b5")},
+			DiffHunkHeaderColor:          compat.AdaptiveColor{Dark: lipgloss.Color("#828bb8"), Light: lipgloss.Color("#7086b5")},
+			DiffHighlightAddedColor:      compat.AdaptiveColor{Dark: lipgloss.Color("#b8db87"), Light: lipgloss.Color("#4db380")},
+			DiffHighlightRemovedColor:    compat.AdaptiveColor{Dark: lipgloss.Color("#e26a75"), Light: lipgloss.Color("#f52a65")},
+			DiffAddedBgColor:             compat.AdaptiveColor{Dark: lipgloss.Color("#20303b"), Light: lipgloss.Color("#d5e5d5")},
+			DiffRemovedBgColor:           compat.AdaptiveColor{Dark: lipgloss.Color("#37222c"), Light: lipgloss.Color("#f7d8db")},
+			DiffContextBgColor:           compat.AdaptiveColor{Dark: lipgloss.Color("#141414"), Light: lipgloss.Color("#fafafa")},
+			DiffLineNumberColor:          compat.AdaptiveColor{Dark: lipgloss.Color("#1e1e1e"), Light: lipgloss.Color("#f5f5f5")},
+			DiffAddedLineNumberBgColor:   compat.AdaptiveColor{Dark: lipgloss.Color("#1b2b34"), Light: lipgloss.Color("#c5d5c5")},
+			DiffRemovedLineNumberBgColor: compat.AdaptiveColor{Dark: lipgloss.Color("#2d1f26"), Light: lipgloss.Color("#e7c8cb")},
+
+			// Markdown colors
+			MarkdownTextColor:            compat.AdaptiveColor{Dark: lipgloss.Color("#eeeeee"), Light: lipgloss.Color("#1a1a1a")},
+			MarkdownHeadingColor:         compat.AdaptiveColor{Dark: lipgloss.Color("#9d7cd8"), Light: lipgloss.Color("#d68c27")},
+			MarkdownLinkColor:            compat.AdaptiveColor{Dark: lipgloss.Color("#fab283"), Light: lipgloss.Color("#3b7dd8")},
+			MarkdownLinkTextColor:        compat.AdaptiveColor{Dark: lipgloss.Color("#56b6c2"), Light: lipgloss.Color("#318795")},
+			MarkdownCodeColor:            compat.AdaptiveColor{Dark: lipgloss.Color("#7fd88f"), Light: lipgloss.Color("#3d9a57")},
+			MarkdownBlockQuoteColor:      compat.AdaptiveColor{Dark: lipgloss.Color("#e5c07b"), Light: lipgloss.Color("#b0851f")},
+			MarkdownEmphColor:            compat.AdaptiveColor{Dark: lipgloss.Color("#e5c07b"), Light: lipgloss.Color("#b0851f")},
+			MarkdownStrongColor:          compat.AdaptiveColor{Dark: lipgloss.Color("#f5a742"), Light: lipgloss.Color("#d68c27")},
+			MarkdownHorizontalRuleColor:  compat.AdaptiveColor{Dark: lipgloss.Color("#808080"), Light: lipgloss.Color("#8a8a8a")},
+			MarkdownListItemColor:        compat.AdaptiveColor{Dark: lipgloss.Color("#fab283"), Light: lipgloss.Color("#3b7dd8")},
+			MarkdownListEnumerationColor: compat.AdaptiveColor{Dark: lipgloss.Color("#56b6c2"), Light: lipgloss.Color("#318795")},
+			MarkdownImageColor:           compat.AdaptiveColor{Dark: lipgloss.Color("#fab283"), Light: lipgloss.Color("#3b7dd8")},
+			MarkdownImageTextColor:       compat.AdaptiveColor{Dark: lipgloss.Color("#56b6c2"), Light: lipgloss.Color("#318795")},
+			MarkdownCodeBlockColor:       compat.AdaptiveColor{Dark: lipgloss.Color("#eeeeee"), Light: lipgloss.Color("#1a1a1a")},
+
+			// Syntax highlighting colors
+			SyntaxCommentColor:     compat.AdaptiveColor{Dark: lipgloss.Color("#808080"), Light: lipgloss.Color("#8a8a8a")},
+			SyntaxKeywordColor:     compat.AdaptiveColor{Dark: lipgloss.Color("#9d7cd8"), Light: lipgloss.Color("#d68c27")},
+			SyntaxFunctionColor:    compat.AdaptiveColor{Dark: lipgloss.Color("#fab283"), Light: lipgloss.Color("#3b7dd8")},
+			SyntaxVariableColor:    compat.AdaptiveColor{Dark: lipgloss.Color("#e06c75"), Light: lipgloss.Color("#d1383d")},
+			SyntaxStringColor:      compat.AdaptiveColor{Dark: lipgloss.Color("#7fd88f"), Light: lipgloss.Color("#3d9a57")},
+			SyntaxNumberColor:      compat.AdaptiveColor{Dark: lipgloss.Color("#f5a742"), Light: lipgloss.Color("#d68c27")},
+			SyntaxTypeColor:        compat.AdaptiveColor{Dark: lipgloss.Color("#e5c07b"), Light: lipgloss.Color("#b0851f")},
+			SyntaxOperatorColor:    compat.AdaptiveColor{Dark: lipgloss.Color("#56b6c2"), Light: lipgloss.Color("#318795")},
+			SyntaxPunctuationColor: compat.AdaptiveColor{Dark: lipgloss.Color("#eeeeee"), Light: lipgloss.Color("#1a1a1a")},
+		},
+	}
+
+	return emergencyFallbackTheme
 }
 
 // CurrentThemeName returns the name of the currently active theme.

@@ -969,6 +969,11 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (a Model) View() (string, *tea.Cursor) {
 	t := theme.CurrentTheme()
+	// Defensive nil check - should never happen after fallback theme implementation,
+	// but prevents panic if theme system is not properly initialized
+	if t == nil {
+		return "Loading theme...", nil
+	}
 
 	var mainLayout string
 
@@ -1015,6 +1020,10 @@ func (a Model) Cleanup() {
 
 func (a Model) home() (string, int, int) {
 	t := theme.CurrentTheme()
+	// Defensive nil check - should never happen after fallback theme implementation
+	if t == nil {
+		return "Loading...", 0, 0
+	}
 	effectiveWidth := a.width - 4
 	baseStyle := styles.NewStyle().Foreground(t.Text()).Background(t.Background())
 	base := baseStyle.Render
@@ -1150,6 +1159,10 @@ func (a Model) home() (string, int, int) {
 func (a Model) chat() (string, int, int) {
 	effectiveWidth := a.width - 4
 	t := theme.CurrentTheme()
+	// Defensive nil check - should never happen after fallback theme implementation
+	if t == nil {
+		return "Loading...", 0, 0
+	}
 	editorView := a.editor.View()
 	lines := a.editor.Lines()
 	messagesView := a.messages.View()
