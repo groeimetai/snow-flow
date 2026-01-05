@@ -243,6 +243,23 @@ func parseANSISequence(seq string) ansiStyle {
 	return style
 }
 
+// isValidAdaptiveColor checks if an AdaptiveColor has valid (non-nil) color values
+func isValidAdaptiveColor(c *compat.AdaptiveColor) bool {
+	if c == nil {
+		return false
+	}
+	// Check if both Light and Dark are nil or NoColor
+	if c.Light == nil && c.Dark == nil {
+		return false
+	}
+	if _, ok := c.Light.(lipgloss.NoColor); ok {
+		if _, ok2 := c.Dark.(lipgloss.NoColor); ok2 {
+			return false
+		}
+	}
+	return true
+}
+
 // combineStyles creates an ANSI sequence that combines background from one style with foreground from another
 func combineStyles(bgStyle ansiStyle, fgColor *compat.AdaptiveColor) string {
 	if fgColor == nil && bgStyle.bgColor == "" && len(bgStyle.attrs) == 0 {
@@ -259,8 +276,8 @@ func combineStyles(bgStyle ansiStyle, fgColor *compat.AdaptiveColor) string {
 		parts = append(parts, bgStyle.bgColor)
 	}
 
-	// Add foreground color if specified
-	if fgColor != nil {
+	// Add foreground color if specified - check for valid color to prevent nil panic
+	if isValidAdaptiveColor(fgColor) {
 		// Use the adaptive color which automatically selects based on terminal background
 		// The RGBA method already handles light/dark selection
 		r, g, b, _ := fgColor.RGBA()
