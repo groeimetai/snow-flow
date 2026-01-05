@@ -186,14 +186,20 @@ func New(
 		slog.Warn("Failed to load themes from directories", "error", err)
 	}
 
-	if appState.Theme != "" {
-		if appState.Theme == "system" && styles.Terminal != nil {
-			theme.UpdateSystemTheme(
-				styles.Terminal.Background,
-				styles.Terminal.BackgroundIsDark,
-			)
-		}
-		theme.SetTheme(appState.Theme)
+	// Set theme - use configured theme or fall back to "snowcode" default
+	themeToSet := appState.Theme
+	if themeToSet == "" {
+		themeToSet = "snowcode"
+	}
+	if themeToSet == "system" && styles.Terminal != nil {
+		theme.UpdateSystemTheme(
+			styles.Terminal.Background,
+			styles.Terminal.BackgroundIsDark,
+		)
+	}
+	if err := theme.SetTheme(themeToSet); err != nil {
+		slog.Warn("Failed to set theme, falling back to snowcode", "theme", themeToSet, "error", err)
+		theme.SetTheme("snowcode")
 	}
 
 	slog.Debug("Loaded config", "config", configInfo)

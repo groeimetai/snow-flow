@@ -63,16 +63,30 @@ func SetTheme(name string) error {
 }
 
 // CurrentTheme returns the currently active theme.
-// If no theme is set, it returns nil.
+// If no theme is set, it tries to use "snowcode" as default, then falls back to the first available theme.
+// Returns nil only if no themes are registered at all.
 func CurrentTheme() Theme {
 	globalManager.mu.RLock()
 	defer globalManager.mu.RUnlock()
 
-	if globalManager.currentName == "" {
-		return nil
+	// If a theme is already selected, return it
+	if globalManager.currentName != "" {
+		if t, exists := globalManager.themes[globalManager.currentName]; exists {
+			return t
+		}
 	}
 
-	return globalManager.themes[globalManager.currentName]
+	// Try snowcode as default
+	if t, exists := globalManager.themes["snowcode"]; exists {
+		return t
+	}
+
+	// Fall back to first available theme
+	for _, t := range globalManager.themes {
+		return t
+	}
+
+	return nil
 }
 
 // CurrentThemeName returns the name of the currently active theme.
