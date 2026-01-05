@@ -158,7 +158,185 @@ func parseJSONTheme(name string, data []byte) (Theme, error) {
 		}
 	}
 
+	// Fill in any missing colors with safe defaults to prevent nil pointer panics
+	fillMissingColors(theme)
+
 	return theme, nil
+}
+
+// fillMissingColors ensures all theme colors have valid values.
+// This prevents nil pointer panics when a theme JSON doesn't define all required colors.
+func fillMissingColors(theme *LoadedTheme) {
+	// Default gray color for missing colors
+	defaultGray := compat.AdaptiveColor{
+		Dark:  lipgloss.Color("#808080"),
+		Light: lipgloss.Color("#808080"),
+	}
+	// Default background (transparent/unset)
+	defaultBg := compat.AdaptiveColor{
+		Dark:  lipgloss.NoColor{},
+		Light: lipgloss.NoColor{},
+	}
+
+	// Check and fill each color field
+	if isEmptyColor(theme.PrimaryColor) {
+		theme.PrimaryColor = compat.AdaptiveColor{Dark: lipgloss.Color("#fab283"), Light: lipgloss.Color("#3b7dd8")}
+	}
+	if isEmptyColor(theme.SecondaryColor) {
+		theme.SecondaryColor = theme.PrimaryColor
+	}
+	if isEmptyColor(theme.AccentColor) {
+		theme.AccentColor = theme.PrimaryColor
+	}
+	if isEmptyColor(theme.ErrorColor) {
+		theme.ErrorColor = compat.AdaptiveColor{Dark: lipgloss.Color("#e06c75"), Light: lipgloss.Color("#d1383d")}
+	}
+	if isEmptyColor(theme.WarningColor) {
+		theme.WarningColor = compat.AdaptiveColor{Dark: lipgloss.Color("#f5a742"), Light: lipgloss.Color("#d68c27")}
+	}
+	if isEmptyColor(theme.SuccessColor) {
+		theme.SuccessColor = compat.AdaptiveColor{Dark: lipgloss.Color("#7fd88f"), Light: lipgloss.Color("#3d9a57")}
+	}
+	if isEmptyColor(theme.InfoColor) {
+		theme.InfoColor = compat.AdaptiveColor{Dark: lipgloss.Color("#56b6c2"), Light: lipgloss.Color("#318795")}
+	}
+	if isEmptyColor(theme.TextColor) {
+		theme.TextColor = compat.AdaptiveColor{Dark: lipgloss.Color("#eeeeee"), Light: lipgloss.Color("#1a1a1a")}
+	}
+	if isEmptyColor(theme.TextMutedColor) {
+		theme.TextMutedColor = defaultGray
+	}
+	if isEmptyColor(theme.BackgroundColor) {
+		theme.BackgroundColor = defaultBg
+	}
+	if isEmptyColor(theme.BackgroundPanelColor) {
+		theme.BackgroundPanelColor = compat.AdaptiveColor{Dark: lipgloss.Color("#141414"), Light: lipgloss.Color("#fafafa")}
+	}
+	if isEmptyColor(theme.BackgroundElementColor) {
+		theme.BackgroundElementColor = compat.AdaptiveColor{Dark: lipgloss.Color("#1e1e1e"), Light: lipgloss.Color("#f5f5f5")}
+	}
+	if isEmptyColor(theme.BorderSubtleColor) {
+		theme.BorderSubtleColor = compat.AdaptiveColor{Dark: lipgloss.Color("#3c3c3c"), Light: lipgloss.Color("#d4d4d4")}
+	}
+	if isEmptyColor(theme.BorderColor) {
+		theme.BorderColor = compat.AdaptiveColor{Dark: lipgloss.Color("#484848"), Light: lipgloss.Color("#b8b8b8")}
+	}
+	if isEmptyColor(theme.BorderActiveColor) {
+		theme.BorderActiveColor = theme.PrimaryColor
+	}
+	// Diff colors
+	if isEmptyColor(theme.DiffAddedColor) {
+		theme.DiffAddedColor = theme.SuccessColor
+	}
+	if isEmptyColor(theme.DiffRemovedColor) {
+		theme.DiffRemovedColor = theme.ErrorColor
+	}
+	if isEmptyColor(theme.DiffContextColor) {
+		theme.DiffContextColor = theme.TextMutedColor
+	}
+	if isEmptyColor(theme.DiffHunkHeaderColor) {
+		theme.DiffHunkHeaderColor = theme.TextMutedColor
+	}
+	if isEmptyColor(theme.DiffHighlightAddedColor) {
+		theme.DiffHighlightAddedColor = theme.SuccessColor
+	}
+	if isEmptyColor(theme.DiffHighlightRemovedColor) {
+		theme.DiffHighlightRemovedColor = theme.ErrorColor
+	}
+	if isEmptyColor(theme.DiffAddedBgColor) {
+		theme.DiffAddedBgColor = compat.AdaptiveColor{Dark: lipgloss.Color("#20303b"), Light: lipgloss.Color("#d5e5d5")}
+	}
+	if isEmptyColor(theme.DiffRemovedBgColor) {
+		theme.DiffRemovedBgColor = compat.AdaptiveColor{Dark: lipgloss.Color("#37222c"), Light: lipgloss.Color("#f7d8db")}
+	}
+	if isEmptyColor(theme.DiffContextBgColor) {
+		theme.DiffContextBgColor = defaultBg
+	}
+	if isEmptyColor(theme.DiffLineNumberColor) {
+		theme.DiffLineNumberColor = theme.TextMutedColor
+	}
+	if isEmptyColor(theme.DiffAddedLineNumberBgColor) {
+		theme.DiffAddedLineNumberBgColor = theme.DiffAddedBgColor
+	}
+	if isEmptyColor(theme.DiffRemovedLineNumberBgColor) {
+		theme.DiffRemovedLineNumberBgColor = theme.DiffRemovedBgColor
+	}
+	// Markdown colors
+	if isEmptyColor(theme.MarkdownTextColor) {
+		theme.MarkdownTextColor = theme.TextColor
+	}
+	if isEmptyColor(theme.MarkdownHeadingColor) {
+		theme.MarkdownHeadingColor = theme.PrimaryColor
+	}
+	if isEmptyColor(theme.MarkdownLinkColor) {
+		theme.MarkdownLinkColor = theme.PrimaryColor
+	}
+	if isEmptyColor(theme.MarkdownLinkTextColor) {
+		theme.MarkdownLinkTextColor = theme.InfoColor
+	}
+	if isEmptyColor(theme.MarkdownCodeColor) {
+		theme.MarkdownCodeColor = theme.SuccessColor
+	}
+	if isEmptyColor(theme.MarkdownBlockQuoteColor) {
+		theme.MarkdownBlockQuoteColor = theme.WarningColor
+	}
+	if isEmptyColor(theme.MarkdownEmphColor) {
+		theme.MarkdownEmphColor = theme.WarningColor
+	}
+	if isEmptyColor(theme.MarkdownStrongColor) {
+		theme.MarkdownStrongColor = theme.TextColor
+	}
+	if isEmptyColor(theme.MarkdownHorizontalRuleColor) {
+		theme.MarkdownHorizontalRuleColor = theme.BorderColor
+	}
+	if isEmptyColor(theme.MarkdownListItemColor) {
+		theme.MarkdownListItemColor = theme.PrimaryColor
+	}
+	if isEmptyColor(theme.MarkdownListEnumerationColor) {
+		theme.MarkdownListEnumerationColor = theme.InfoColor
+	}
+	if isEmptyColor(theme.MarkdownImageColor) {
+		theme.MarkdownImageColor = theme.PrimaryColor
+	}
+	if isEmptyColor(theme.MarkdownImageTextColor) {
+		theme.MarkdownImageTextColor = theme.InfoColor
+	}
+	if isEmptyColor(theme.MarkdownCodeBlockColor) {
+		theme.MarkdownCodeBlockColor = theme.TextColor
+	}
+	// Syntax colors
+	if isEmptyColor(theme.SyntaxCommentColor) {
+		theme.SyntaxCommentColor = theme.TextMutedColor
+	}
+	if isEmptyColor(theme.SyntaxKeywordColor) {
+		theme.SyntaxKeywordColor = theme.AccentColor
+	}
+	if isEmptyColor(theme.SyntaxFunctionColor) {
+		theme.SyntaxFunctionColor = theme.PrimaryColor
+	}
+	if isEmptyColor(theme.SyntaxVariableColor) {
+		theme.SyntaxVariableColor = theme.TextColor
+	}
+	if isEmptyColor(theme.SyntaxStringColor) {
+		theme.SyntaxStringColor = theme.SuccessColor
+	}
+	if isEmptyColor(theme.SyntaxNumberColor) {
+		theme.SyntaxNumberColor = theme.WarningColor
+	}
+	if isEmptyColor(theme.SyntaxTypeColor) {
+		theme.SyntaxTypeColor = theme.InfoColor
+	}
+	if isEmptyColor(theme.SyntaxOperatorColor) {
+		theme.SyntaxOperatorColor = theme.InfoColor
+	}
+	if isEmptyColor(theme.SyntaxPunctuationColor) {
+		theme.SyntaxPunctuationColor = theme.TextColor
+	}
+}
+
+// isEmptyColor checks if an AdaptiveColor has nil or zero-value colors
+func isEmptyColor(c compat.AdaptiveColor) bool {
+	return c.Light == nil && c.Dark == nil
 }
 
 type colorResolver struct {
