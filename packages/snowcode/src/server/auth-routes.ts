@@ -768,7 +768,6 @@ export const AuthRoute = new Hono()
 
         if (isEnterpriseUser) {
           // Enterprise mode: Only store instance URL (for reference), no secrets!
-          console.log("[Auth] Enterprise user detected - using secure mode (no local secrets)")
           await updateEnvFile([
             { key: "SNOW_INSTANCE", value: cleanInstance },
             { key: "SNOW_AUTH_METHOD", value: "enterprise" }, // Mark as enterprise auth
