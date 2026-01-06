@@ -1626,6 +1626,10 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 		// Show budget configuration dialog
 		budgetDialog := dialog.NewBudgetDialog()
 		a.modal = budgetDialog
+	case commands.AppVersionCommand:
+		// Show version info dialog
+		versionDialog := dialog.NewVersionDialog(a.app)
+		a.modal = versionDialog
 	case commands.AppExitCommand:
 		return a, tea.Quit
 	}

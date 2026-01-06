@@ -162,6 +162,7 @@ const (
 	DebugTokensCommand              CommandName = "debug_tokens"
 	AuthLoginCommand                CommandName = "auth_login"
 	BudgetCommand                   CommandName = "budget"
+	AppVersionCommand               CommandName = "app_version"
 )
 
 func (k Command) Matches(msg tea.KeyPressMsg, leader bool) bool {
@@ -410,6 +411,12 @@ func LoadFromConfig(config *opencode.Config, customCommands []opencode.Command) 
 			Description: "configure budget limits",
 			Keybindings: parseBindings(),
 			Trigger:     []string{"budget"},
+		},
+		{
+			Name:        AppVersionCommand,
+			Description: "show version info",
+			Keybindings: parseBindings(),
+			Trigger:     []string{"version", "v"},
 		},
 	}
 	registry := make(CommandRegistry)

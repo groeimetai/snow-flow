@@ -70,12 +70,8 @@ func (m *statusComponent) logo() string {
 	triangles := base("▲▼ ")
 	snow := base("snow-")
 	flow := emphasis("flow")
-	version := base(" " + m.app.Version)
 
 	content := triangles + snow + flow
-	if m.width > 40 {
-		content += version
-	}
 	return styles.NewStyle().
 		Background(t.BackgroundElement()).
 		Padding(0, 1).
