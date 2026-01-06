@@ -685,7 +685,10 @@ await TodoWrite({
     // Log each artifact you create
     { content: "Log artifact with activity_add_artifact", status: "pending", activeForm: "Logging artifact" },
 
-    // Complete the activity at the end
+    // Submit for code reuse review (RECOMMENDED for development!)
+    { content: "Submit for code reuse review (activity_update status='review')", status: "pending", activeForm: "Submitting for review" },
+
+    // Complete the activity at the end (if not using review)
     { content: "Complete activity with activity_complete", status: "pending", activeForm: "Completing activity" },
 
     // If update set was created, complete it
@@ -703,7 +706,7 @@ await TodoWrite({
     { content: "Create HR Request widget", status: "in_progress", activeForm: "Creating HR Request widget" },
     { content: "Log widget artifact to activity", status: "pending", activeForm: "Logging widget artifact" },
     { content: "Test widget functionality", status: "pending", activeForm: "Testing widget" },
-    { content: "Complete activity with summary", status: "pending", activeForm: "Completing activity" },
+    { content: "Submit for code reuse review", status: "pending", activeForm: "Submitting for code review" },
     { content: "Complete update set: HR Request Widget", status: "pending", activeForm: "Completing update set" }
   ]
 });
@@ -728,6 +731,54 @@ Before finishing any task:
 | \`task\` | Specific development task | "Create a business rule for...", "Add a widget that..." |
 | \`feature\` | New functionality request | "I need a dashboard that...", "Build me a portal for..." |
 | \`bug\` | Bug fix or issue resolution | "Fix the login error", "This widget is broken" |
+
+## 🔄 ACTIVITY STATUSES
+
+| Status | Meaning | Set By |
+|--------|---------|--------|
+| \`started\` | Activity just created | \`activity_start\` |
+| \`in_progress\` | Work is ongoing | \`activity_update\` |
+| \`review\` | **Code awaiting automated review** | \`activity_update\` (triggers Code Reuse Reviewer) |
+| \`completed\` | Work finished successfully | \`activity_complete\` |
+| \`failed\` | Work failed | \`activity_update\` |
+| \`cancelled\` | Work cancelled | \`activity_update\` |
+
+### ⚠️ SPECIAL: 'review' Status and Code Reuse Review
+
+When you set an activity to \`review\` status, the **Code Reuse Reviewer Agent** is automatically triggered. This agent:
+
+1. **Analyzes all artifacts** created during the activity
+2. **Searches for existing Script Includes** that could be reused
+3. **Identifies duplicate code patterns** across the codebase
+4. **Suggests refactoring opportunities** for better maintainability
+
+**Workflow with Review:**
+\`\`\`
+in_progress → review → completed
+     ↑           ↓
+     └── (if revision needed)
+\`\`\`
+
+**When to use \`review\` status:**
+- After creating Business Rules, Script Includes, Client Scripts, or Widgets
+- When you want automated DRY (Don't Repeat Yourself) analysis
+- Before finalizing an Update Set
+
+**Example:**
+\`\`\`javascript
+// After development is done, set to review for automated code analysis
+await activity_update({
+  activityId: activityId,
+  status: 'review',
+  summary: 'Development complete. Submitting for code reuse review.'
+});
+
+// The Code Reuse Reviewer Agent will:
+// 1. Analyze your artifacts
+// 2. Search for existing Script Includes you could have used
+// 3. Identify duplicate code patterns
+// 4. Either approve (→ completed) or provide feedback
+\`\`\`
 
 ---
 
@@ -793,15 +844,25 @@ await activity_add_artifact({
   artifactSysId: br.sys_id
 });
 
-// STEP 5: Complete the activity
-await activity_complete({
+// STEP 5: Submit for Code Reuse Review (RECOMMENDED for development work!)
+await activity_update({
   activityId: activityId,
-  summary: 'Created Business Rule for auto-assignment. Update Set: Feature: Auto-Assignment.',
-  metadata: {
-    updateSetName: 'Feature: Auto-Assignment',
-    artifactsCreated: 1
-  }
+  status: 'review',
+  summary: 'Development complete. Submitting for automated code reuse review.'
 });
+
+// The Code Reuse Reviewer Agent will automatically:
+// - Analyze your artifacts for reuse opportunities
+// - Check for existing Script Includes you could have used
+// - Identify duplicate code patterns
+// - Set status to 'completed' if approved, or provide feedback
+
+// NOTE: If you want to skip review, you can call activity_complete directly:
+// await activity_complete({
+//   activityId: activityId,
+//   summary: 'Created Business Rule for auto-assignment. Update Set: Feature: Auto-Assignment.',
+//   metadata: { updateSetName: 'Feature: Auto-Assignment', artifactsCreated: 1 }
+// });
 \`\`\`
 
 ### For JIRA/AZURE DEVOPS stories:
@@ -841,6 +902,7 @@ const activity = await activity_start({
 3. **Use storyType: 'query'** - For all data retrieval and questions!
 4. **Include meaningful summaries** - Stakeholders read these!
 5. **Track artifacts** - Use activity_add_artifact for anything you create
+6. **Use 'review' status for development** - Triggers automated Code Reuse Review before completion!
 
 ### 🚫 FAILURE TO TRACK = INVISIBLE WORK!
 
