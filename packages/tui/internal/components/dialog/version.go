@@ -9,9 +9,11 @@ import (
 	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/modal"
+	"github.com/sst/opencode/internal/components/toast"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
+	"github.com/sst/opencode/internal/util"
 	"github.com/sst/opencode/internal/viewport"
 )
 
@@ -36,6 +38,17 @@ func (v *versionDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		v.height = msg.Height
 		maxWidth := min(60, msg.Width-8)
 		v.viewport = viewport.New(viewport.WithWidth(maxWidth-4), viewport.WithHeight(msg.Height-6))
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "c", "y":
+			// Copy version info to clipboard
+			return v, tea.Sequence(
+				app.SetClipboard(v.getPlainTextContent()),
+				toast.NewSuccessToast("Version info copied to clipboard!"),
+			)
+		case "esc":
+			return v, util.CmdHandler(modal.CloseModalMsg{})
+		}
 	}
 
 	v.viewport.SetContent(v.renderContent())
@@ -45,6 +58,43 @@ func (v *versionDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, vpCmd)
 
 	return v, tea.Batch(cmds...)
+}
+
+// getPlainTextContent returns the version info as plain text for clipboard
+func (v *versionDialog) getPlainTextContent() string {
+	var content string
+
+	content += "=== Snow-Flow TUI ===\n\n"
+	content += fmt.Sprintf("Version:     %s\n", v.app.Version)
+	content += fmt.Sprintf("Go Version:  %s\n", runtime.Version())
+	content += fmt.Sprintf("OS/Arch:     %s/%s\n", runtime.GOOS, runtime.GOARCH)
+
+	content += "\n=== Project ===\n\n"
+	content += fmt.Sprintf("Worktree:    %s\n", v.app.Project.Worktree)
+
+	content += "\n=== Current Model ===\n\n"
+	if v.app.Provider != nil {
+		content += fmt.Sprintf("Provider:    %s\n", v.app.Provider.Name)
+	}
+	if v.app.Model != nil {
+		content += fmt.Sprintf("Model:       %s\n", v.app.Model.Name)
+		content += fmt.Sprintf("Model ID:    %s\n", v.app.Model.ID)
+	}
+
+	content += "\n=== Agent ===\n\n"
+	agent := v.app.Agent()
+	content += fmt.Sprintf("Name:        %s\n", agent.Name)
+	content += fmt.Sprintf("Mode:        %s\n", string(agent.Mode))
+
+	content += "\n=== Environment ===\n\n"
+	if baseURL := v.app.BaseURL; baseURL != "" {
+		content += fmt.Sprintf("Server URL:  %s\n", baseURL)
+	}
+	if snowInstance := os.Getenv("SNOW_INSTANCE"); snowInstance != "" {
+		content += fmt.Sprintf("ServiceNow:  %s\n", snowInstance)
+	}
+
+	return content
 }
 
 func (v *versionDialog) renderContent() string {
@@ -66,6 +116,11 @@ func (v *versionDialog) renderContent() string {
 		Bold(true).
 		MarginTop(1).
 		MarginBottom(1)
+
+	hintStyle := styles.NewStyle().
+		Foreground(t.TextMuted()).
+		Background(t.BackgroundPanel()).
+		Faint(true)
 
 	var content string
 
@@ -109,6 +164,9 @@ func (v *versionDialog) renderContent() string {
 		content += labelStyle.Render("ServiceNow:") + valueStyle.Render(snowInstance) + "\n"
 	}
 
+	// Add hint for copy
+	content += "\n" + hintStyle.Render("Press 'c' or 'y' to copy • 'esc' to close")
+
 	return content
 }
 
@@ -132,7 +190,7 @@ type VersionDialog interface {
 }
 
 func NewVersionDialog(app *app.App) VersionDialog {
-	vp := viewport.New(viewport.WithHeight(20))
+	vp := viewport.New(viewport.WithHeight(22))
 	return &versionDialog{
 		app:      app,
 		modal:    modal.New(modal.WithTitle("Version Info"), modal.WithMaxWidth(60)),
