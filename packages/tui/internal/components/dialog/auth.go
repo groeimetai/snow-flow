@@ -437,6 +437,7 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Apply enterprise theme if provided
 		if msg.Theme != nil && len(msg.Theme) > 0 {
+			// Full theme object provided - parse and register it
 			themeName := "enterprise-custom"
 			if nameVal, ok := msg.Theme["name"]; ok {
 				if name, ok := nameVal.(string); ok && name != "" {
@@ -446,15 +447,32 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if parsedTheme, err := theme.ParseEnterpriseTheme(themeName, msg.Theme); err == nil {
 				theme.RegisterTheme(themeName, parsedTheme)
 				if err := theme.SetTheme(themeName); err == nil {
-					slog.Info("Enterprise theme applied", "theme", themeName)
-					// Send message to persist theme in app state
-					// This will be handled by the main app's Update loop
+					slog.Info("Enterprise theme applied from object", "theme", themeName)
 					a.appliedThemeName = themeName
 				} else {
 					slog.Warn("Failed to set enterprise theme", "error", err)
 				}
 			} else {
 				slog.Warn("Failed to parse enterprise theme", "error", err)
+			}
+		} else if msg.ThemeName != "" {
+			// No full theme object, but theme name provided - try to use embedded theme
+			if existingTheme := theme.GetTheme(msg.ThemeName); existingTheme != nil {
+				// Theme already loaded (embedded), just set it
+				if err := theme.SetTheme(msg.ThemeName); err == nil {
+					slog.Info("Enterprise theme applied from embedded", "theme", msg.ThemeName)
+					a.appliedThemeName = msg.ThemeName
+				} else {
+					slog.Warn("Failed to set embedded enterprise theme", "theme", msg.ThemeName, "error", err)
+				}
+			} else {
+				// Theme not found, default to snowcode if available
+				slog.Info("Enterprise theme not found, using default", "requested", msg.ThemeName)
+				if snowcodeTheme := theme.GetTheme("snowcode"); snowcodeTheme != nil {
+					if err := theme.SetTheme("snowcode"); err == nil {
+						a.appliedThemeName = "snowcode"
+					}
+				}
 			}
 		}
 
@@ -2272,6 +2290,7 @@ type EnterpriseCredentialsMsg struct {
 	ServiceNowInstances  []ServiceNowInstanceFromPortal
 	McpServerUrl         string
 	Theme                map[string]interface{}
+	ThemeName            string // Fallback: theme name to load from embedded themes
 	Error                string
 }
 
@@ -2444,15 +2463,27 @@ func (a *authDialog) fetchEnterpriseCredentials() tea.Cmd {
 			ServiceNowInstances  []ServiceNowInstanceFromPortal `json:"servicenowInstances"`
 			McpServerUrl         string                        `json:"mcpServerUrl"`
 			Theme                map[string]interface{}        `json:"theme"`
+			ThemeName            string                        `json:"themeName"` // Theme name if full theme not provided
+			Customer             *struct {
+				Theme string `json:"theme"` // Theme name from customer object
+			} `json:"customer"`
 		}
 		if err := json.Unmarshal(body, &result); err != nil {
 			return EnterpriseCredentialsMsg{Success: false, Error: "Failed to parse credentials: " + err.Error()}
 		}
 
+		// Determine theme name from various sources
+		themeName := result.ThemeName
+		if themeName == "" && result.Customer != nil && result.Customer.Theme != "" {
+			themeName = result.Customer.Theme
+		}
+
 		slog.Info("Enterprise credentials fetched",
 			"hasCredentials", result.Credentials != nil,
 			"serviceNowInstances", len(result.ServiceNowInstances),
-			"mcpServerUrl", result.McpServerUrl)
+			"mcpServerUrl", result.McpServerUrl,
+			"themeName", themeName,
+			"hasThemeObject", result.Theme != nil)
 
 		return EnterpriseCredentialsMsg{
 			Success:             true,
@@ -2460,6 +2491,7 @@ func (a *authDialog) fetchEnterpriseCredentials() tea.Cmd {
 			ServiceNowInstances: result.ServiceNowInstances,
 			McpServerUrl:        result.McpServerUrl,
 			Theme:               result.Theme,
+			ThemeName:           themeName,
 		}
 	}
 }
