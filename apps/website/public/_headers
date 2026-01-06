@@ -1,0 +1,59 @@
+# Cloudflare Pages Headers
+# https://developers.cloudflare.com/pages/configuration/headers/
+
+# Cache static assets for 1 year (immutable)
+/*.mp4
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.jpeg
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.gif
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.woff
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache Astro-generated CSS/JS with hashed filenames for 1 year
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache logos folder
+/logos/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML pages - cache briefly with revalidation
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/en/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/nl/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Security headers for all pages
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()

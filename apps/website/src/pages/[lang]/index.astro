@@ -597,7 +597,7 @@ const faqSchema = {
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M16 8l-4 4-4-4"></path><path d="M12 12v6"></path></svg>
                     </div>
                     <div class="comparison-summary-content">
-                        <h4>No Vendor Lock-in</h4>
+                        <h3 class="comparison-summary-title">No Vendor Lock-in</h3>
                         <p>Switch AI models anytime. Your prompts, your data, your choice.</p>
                     </div>
                 </div>
@@ -606,7 +606,7 @@ const faqSchema = {
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     </div>
                     <div class="comparison-summary-content">
-                        <h4><span class="comparison-summary-stat">90%</span> Cost Reduction</h4>
+                        <h3 class="comparison-summary-title"><span class="comparison-summary-stat">90%</span> Cost Reduction</h3>
                         <p>Open source core vs $150K+ implementation fees.</p>
                     </div>
                 </div>
@@ -615,7 +615,7 @@ const faqSchema = {
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                     </div>
                     <div class="comparison-summary-content">
-                        <h4>Developer Freedom</h4>
+                        <h3 class="comparison-summary-title">Developer Freedom</h3>
                         <p>Code in your IDE, not a browser. Works with your existing workflow.</p>
                     </div>
                 </div>
@@ -624,7 +624,7 @@ const faqSchema = {
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
                     </div>
                     <div class="comparison-summary-content">
-                        <h4>Full Transparency</h4>
+                        <h3 class="comparison-summary-title">Full Transparency</h3>
                         <p>Every line on GitHub. Audit, customize, and contribute freely.</p>
                     </div>
                 </div>
@@ -825,40 +825,36 @@ const faqSchema = {
             <div class="tui-screenshot">
                 <video
                     id="tui-video"
-                    src="/recording-snow-flow-v2.mp4?v=2"
+                    src="/recording-snow-flow-v2.mp4"
                     autoplay
                     loop
                     muted
                     playsinline
-                    preload="auto"
+                    preload="metadata"
+                    loading="lazy"
                     class="tui-image"
                     aria-label="Snow-Flow TUI - Interactive terminal interface for ServiceNow development"
                 ></video>
                 <p class="tui-caption">The Snow-Flow TUI - Your AI-powered ServiceNow development environment</p>
             </div>
             <script>
-                // Retry video loading if it fails
-                const video = document.getElementById('tui-video');
-                if (video) {
-                    let retryCount = 0;
-                    const maxRetries = 3;
+                // Lazy load video when it comes into view
+                (function() {
+                    const video = document.getElementById('tui-video');
+                    if (!video) return;
 
-                    video.addEventListener('error', function() {
-                        if (retryCount < maxRetries) {
-                            retryCount++;
-                            setTimeout(function() {
-                                video.src = '/recording-snow-flow-v2.mp4?v=2&retry=' + retryCount;
-                                video.load();
+                    const observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(entry) {
+                            if (entry.isIntersecting) {
+                                video.preload = 'auto';
                                 video.play().catch(function() {});
-                            }, 1000 * retryCount);
-                        }
-                    });
+                                observer.disconnect();
+                            }
+                        });
+                    }, { rootMargin: '100px' });
 
-                    // Ensure video plays after load
-                    video.addEventListener('loadeddata', function() {
-                        video.play().catch(function() {});
-                    });
-                }
+                    observer.observe(video);
+                })();
             </script>
         </div>
     </section>
@@ -1011,7 +1007,7 @@ const faqSchema = {
                             <path d="M12 16v-4M12 8h.01"></path>
                         </svg>
                     </div>
-                    <h4>Why Open Source?</h4>
+                    <h3 class="philosophy-title">Why Open Source?</h3>
                     <p>We believe ServiceNow development should be accessible to everyone. Open source means you can verify what runs on your systems, customize for your needs, and never get locked into a single vendor. Snow-Flow and Snow-Code will always be free.</p>
                 </div>
                 <div class="philosophy-card closed-source">
@@ -1021,7 +1017,7 @@ const faqSchema = {
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
                     </div>
-                    <h4>Why Enterprise is Closed?</h4>
+                    <h3 class="philosophy-title">Why Enterprise is Closed?</h3>
                     <p>Enterprise stores your Jira, Azure DevOps, and Confluence credentials. This requires bank-grade encryption (Google Cloud KMS), SOC 2 compliance, and audit trails. We keep this closed to protect your secrets and maintain security certifications.</p>
                 </div>
             </div>
@@ -1384,8 +1380,12 @@ const faqSchema = {
                 }
             }
 
-            // Fetch stars on page load
-            fetchGitHubStars();
+            // Defer GitHub API call to after page is idle (non-blocking)
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(fetchGitHubStars, { timeout: 3000 });
+            } else {
+                setTimeout(fetchGitHubStars, 2000);
+            }
 
             const statsObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {

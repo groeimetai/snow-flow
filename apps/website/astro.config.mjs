@@ -60,7 +60,8 @@ export default defineConfig({
   ],
 
   build: {
-    inlineStylesheets: 'auto'
+    // Inline small stylesheets to reduce render-blocking
+    inlineStylesheets: 'always'
   },
 
   vite: {
