@@ -1472,6 +1472,8 @@ func (m *Model) MoveToEnd() {
 // It is important that the width of the textarea be exactly the given width
 // and no more.
 func (m *Model) SetWidth(w int) {
+	oldWidth := m.width
+
 	// Update prompt width only if there is no prompt function as
 	// [SetPromptFunc] updates the prompt width when it is called.
 	if m.promptFunc == nil {
@@ -1512,6 +1514,11 @@ func (m *Model) SetWidth(w int) {
 	// the reserved width from them.
 
 	m.width = inputWidth - reservedOuter - reservedInner
+
+	// Invalidate wrap cache when width changes to prevent cursor drift
+	if oldWidth != m.width && m.cache != nil {
+		m.cache = NewMemoCache[line, [][]any](m.MaxHeight)
+	}
 }
 
 // SetPromptFunc supersedes the Prompt field and sets a dynamic prompt instead.
@@ -1975,7 +1982,7 @@ func (m Model) Cursor() *tea.Cursor {
 		baseStyle.GetPaddingLeft() +
 		baseStyle.GetBorderLeftSize()
 
-	yOffset := m.cursorLineNumber() -
+	yOffset := m.cursorLineNumber() +
 		baseStyle.GetMarginTop() +
 		baseStyle.GetPaddingTop() +
 		baseStyle.GetBorderTopSize()
