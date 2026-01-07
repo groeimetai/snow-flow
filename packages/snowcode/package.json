@@ -44,8 +44,8 @@
     "@groeimetai/snow-flow-script": "workspace:*",
     "@groeimetai/snow-flow-sdk": "workspace:*",
     "@groeimetai/snow-flow-plugin": "workspace:*",
-    "@ai-sdk/amazon-bedrock": "2.2.10",
-    "@ai-sdk/google-vertex": "3.0.16",
+    "@ai-sdk/amazon-bedrock": "^4.0.10",
+    "@ai-sdk/google-vertex": "^4.0.9",
     "@octokit/webhooks-types": "7.6.1",
     "@parcel/watcher-darwin-arm64": "2.5.1",
     "@parcel/watcher-darwin-x64": "2.5.1",
@@ -68,6 +68,10 @@
     "@actions/core": "1.11.1",
     "@actions/github": "6.0.1",
     "@agentclientprotocol/sdk": "0.4.9",
+    "@ai-sdk/anthropic": "^3.0.8",
+    "@ai-sdk/google": "^3.0.5",
+    "@ai-sdk/openai": "^3.0.7",
+    "@ai-sdk/provider": "^3.0.2",
     "@clack/prompts": "1.0.0-alpha.1",
     "@hono/standard-validator": "0.1.5",
     "@hono/zod-validator": "0.7.4",
@@ -81,7 +85,7 @@
     "@standard-community/standard-openapi": "0.2.4",
     "@standard-schema/spec": "1.0.0",
     "@zip.js/zip.js": "2.7.62",
-    "ai": "5.0.8",
+    "ai": "^6.0.16",
     "axios": "1.7.9",
     "chokidar": "4.0.3",
     "decimal.js": "10.5.0",
@@ -96,6 +100,7 @@
     "open": "10.1.2",
     "remeda": "2.26.0",
     "tree-sitter-bash": "0.25.0",
+    "tsx": "4.20.6",
     "turndown": "7.2.0",
     "ulid": "3.0.1",
     "vscode-jsonrpc": "8.2.1",
@@ -103,7 +108,6 @@
     "xdg-basedir": "5.1.0",
     "yargs": "17.7.2",
     "zod": "3.25.76",
-    "zod-to-json-schema": "3.24.5",
-    "tsx": "4.20.6"
+    "zod-to-json-schema": "3.24.5"
   }
 }

@@ -80,5 +80,12 @@
     "tree-sitter-bash",
     "web-tree-sitter",
     "better-sqlite3"
-  ]
+  ],
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.8",
+    "@ai-sdk/google": "^3.0.5",
+    "@ai-sdk/openai": "^3.0.7",
+    "@ai-sdk/provider": "^3.0.2",
+    "ai": "^6.0.16"
+  }
 }
