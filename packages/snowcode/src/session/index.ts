@@ -387,14 +387,14 @@ export namespace Session {
     return part
   })
 
-  // Helper to safely extract numeric cost values (handles objects/undefined)
-  function safeNumericCost(value: unknown): number {
-    if (typeof value === "number" && !isNaN(value)) return value
+  // Helper to safely extract numeric values (handles objects/undefined/NaN)
+  function safeNumber(value: unknown, defaultValue = 0): number {
+    if (typeof value === "number" && !isNaN(value) && isFinite(value)) return value
     if (typeof value === "string") {
       const parsed = parseFloat(value)
-      return isNaN(parsed) ? 0 : parsed
+      return isNaN(parsed) ? defaultValue : parsed
     }
-    return 0
+    return defaultValue
   }
 
   export const getUsage = fn(
@@ -404,23 +404,25 @@ export namespace Session {
       metadata: z.custom<ProviderMetadata>().optional(),
     }) as any,
     (input) => {
+      // Safely extract token counts (handles objects/undefined)
       const tokens = {
-        input: input.usage.inputTokens ?? 0,
-        output: input.usage.outputTokens ?? 0,
-        reasoning: input.usage?.reasoningTokens ?? 0,
+        input: safeNumber(input.usage?.inputTokens),
+        output: safeNumber(input.usage?.outputTokens),
+        reasoning: safeNumber(input.usage?.reasoningTokens),
         cache: {
-          write: (input.metadata?.["anthropic"]?.["cacheCreationInputTokens"] ??
-            (input.metadata as any)?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"] ??
-            0) as number,
-          read: input.usage.cachedInputTokens ?? 0,
+          write: safeNumber(
+            input.metadata?.["anthropic"]?.["cacheCreationInputTokens"] ??
+            (input.metadata as any)?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"]
+          ),
+          read: safeNumber(input.usage?.cachedInputTokens),
         },
       }
 
-      // Safely extract cost values, handling objects/undefined
-      const costInput = safeNumericCost(input.model.cost?.input)
-      const costOutput = safeNumericCost(input.model.cost?.output)
-      const costCacheRead = safeNumericCost(input.model.cost?.cache_read)
-      const costCacheWrite = safeNumericCost(input.model.cost?.cache_write)
+      // Safely extract cost values (handles objects/undefined)
+      const costInput = safeNumber(input.model?.cost?.input)
+      const costOutput = safeNumber(input.model?.cost?.output)
+      const costCacheRead = safeNumber(input.model?.cost?.cache_read)
+      const costCacheWrite = safeNumber(input.model?.cost?.cache_write)
 
       return {
         cost: new Decimal(0)
