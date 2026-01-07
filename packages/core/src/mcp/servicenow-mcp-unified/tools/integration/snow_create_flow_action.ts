@@ -48,6 +48,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       inputs: {
         type: 'array',
+        items: { type: 'string' },
         description: 'Input parameters for the action',
         items: {
           type: 'object',
@@ -62,6 +63,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       outputs: {
         type: 'array',
+        items: { type: 'string' },
         description: 'Output parameters for the action',
         items: {
           type: 'object',

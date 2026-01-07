@@ -35,6 +35,7 @@ export const toolDefinition: MCPToolDefinition = {
       // IMPORT parameters
       properties: {
         type: 'array',
+        items: { type: 'string' },
         description: '[import] Array of properties to import',
         items: {
           type: 'object',

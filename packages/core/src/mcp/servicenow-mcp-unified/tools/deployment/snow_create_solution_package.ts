@@ -29,6 +29,7 @@ export const toolDefinition: MCPToolDefinition = {
       description: { type: 'string', description: 'Package description' },
       artifacts: {
         type: 'array',
+        items: { type: 'string' },
         description: 'Artifacts to include in the package',
         items: {
           type: 'object',

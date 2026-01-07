@@ -28,6 +28,7 @@ export const toolDefinition: MCPToolDefinition = {
       sys_id: { type: 'string', description: 'Widget sys_id to test' },
       test_scenarios: {
         type: 'array',
+        items: { type: 'string' },
         description: 'Array of test scenarios with input data and expected outputs',
         items: {
           type: 'object',

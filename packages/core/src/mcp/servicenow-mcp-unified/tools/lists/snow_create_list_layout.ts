@@ -37,6 +37,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       columns: {
         type: 'array',
+        items: { type: 'string' },
         description: 'Array of column definitions with field names, positions, and optional widths',
         items: {
           type: 'object',
