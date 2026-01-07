@@ -2,7 +2,7 @@ import z from "zod/v4"
 import { Bus } from "../bus"
 import { NamedError } from "../util/error"
 import { Message } from "./message"
-import { APICallError, convertToModelMessages, LoadAPIKeyError, type ModelMessage, type UIMessage } from "ai"
+import { APICallError, convertToModelMessages, LoadAPIKeyError, NoOutputGeneratedError, type ModelMessage, type UIMessage } from "ai"
 import { Identifier } from "../id/id"
 import { LSP } from "../lsp"
 import { Snapshot } from "@/snapshot"
@@ -671,6 +671,14 @@ export namespace MessageV2 {
       case e instanceof DOMException && e.name === "AbortError":
         return new MessageV2.AbortedError(
           { message: e.message },
+          {
+            cause: e,
+          },
+        ).toObject()
+      case NoOutputGeneratedError.isInstance(e):
+        // AI SDK v6: NoOutputGeneratedError is thrown when stream is interrupted (e.g., ESC key)
+        return new MessageV2.AbortedError(
+          { message: e.message || "Stream interrupted - no output generated" },
           {
             cause: e,
           },
