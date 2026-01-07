@@ -869,73 +869,72 @@ export namespace SessionPrompt {
 
     for (const [key, item] of enabledMcpTools) {
       if (Wildcard.all(key, enabledTools) === false) continue
-      const execute = item.execute
-      if (!execute) continue
-      item.execute = async (args, opts) => {
-        // Execute PreToolUse shell command hooks for MCP tools
-        const preHookResult = await CommandHook.preToolUse(key, args, {
-          sessionID: input.sessionID,
-        })
-        if (!preHookResult.allow) {
-          log.warn("MCP tool blocked by PreToolUse hook", {
-            tool: key,
-            reason: preHookResult.output || preHookResult.error,
+      const originalExecute = item.execute
+      if (!originalExecute) continue
+
+      // Create a wrapper tool instead of mutating the MCP tool directly
+      // This is required for AI SDK v6 compatibility where MCP tools may be immutable
+      tools[key] = tool({
+        id: key as any,
+        description: (item as any).description || `MCP tool: ${key}`,
+        inputSchema: (item as any).inputSchema || (item as any).parameters,
+        async execute(args, opts) {
+          // Execute PreToolUse shell command hooks for MCP tools
+          const preHookResult = await CommandHook.preToolUse(key, args, {
+            sessionID: input.sessionID,
           })
-          return {
-            content: [{
-              type: "text",
-              text: `Tool execution blocked: ${preHookResult.output || preHookResult.error || "Blocked by PreToolUse hook"}`,
-            }],
-            metadata: { blocked: true },
+          if (!preHookResult.allow) {
+            log.warn("MCP tool blocked by PreToolUse hook", {
+              tool: key,
+              reason: preHookResult.output || preHookResult.error,
+            })
+            return {
+              title: "Blocked by hook",
+              metadata: { blocked: true },
+              output: `Tool execution blocked: ${preHookResult.output || preHookResult.error || "Blocked by PreToolUse hook"}`,
+            }
           }
-        }
 
-        await Plugin.trigger(
-          "tool.execute.before",
-          {
-            tool: key,
+          await Plugin.trigger(
+            "tool.execute.before",
+            {
+              tool: key,
+              sessionID: input.sessionID,
+              callID: opts.toolCallId,
+            },
+            {
+              args,
+            },
+          )
+          const result = await originalExecute(args, opts)
+
+          await Plugin.trigger(
+            "tool.execute.after",
+            {
+              tool: key,
+              sessionID: input.sessionID,
+              callID: opts.toolCallId,
+            },
+            result,
+          )
+
+          // Execute PostToolUse shell command hooks for MCP tools
+          await CommandHook.postToolUse(key, args, result, {
             sessionID: input.sessionID,
-            callID: opts.toolCallId,
-          },
-          {
-            args,
-          },
-        )
-        const result = await execute(args, opts)
+          })
 
-        await Plugin.trigger(
-          "tool.execute.after",
-          {
-            tool: key,
-            sessionID: input.sessionID,
-            callID: opts.toolCallId,
-          },
-          result,
-        )
+          const output = (result.content || [])
+            .filter((x: any) => x.type === "text")
+            .map((x: any) => x.text)
+            .join("\n\n")
 
-        // Execute PostToolUse shell command hooks for MCP tools
-        await CommandHook.postToolUse(key, args, result, {
-          sessionID: input.sessionID,
-        })
-
-        const output = result.content
-          .filter((x: any) => x.type === "text")
-          .map((x: any) => x.text)
-          .join("\n\n")
-
-        return {
-          title: "",
-          metadata: result.metadata ?? {},
-          output,
-        }
-      }
-      item.toModelOutput = (result) => {
-        return {
-          type: "text",
-          value: result.output,
-        }
-      }
-      tools[key] = item
+          return {
+            title: "",
+            metadata: (result as any).metadata ?? {},
+            output,
+          }
+        },
+      })
     }
     return tools
   }
