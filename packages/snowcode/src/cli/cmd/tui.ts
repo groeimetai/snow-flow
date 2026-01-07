@@ -69,8 +69,29 @@ export const TuiCommand = cmd({
         type: "string",
         describe: "hostname to listen on",
         default: "127.0.0.1",
+      })
+      .option("debug", {
+        alias: ["d"],
+        type: "boolean",
+        describe: "enable debug mode (verbose logging, debug tokens, tools, MCP)",
+        default: false,
+      })
+      .option("debug-level", {
+        type: "string",
+        describe: "set log level (DEBUG, INFO, WARN, ERROR)",
+        choices: ["DEBUG", "INFO", "WARN", "ERROR"],
       }),
   handler: async (args) => {
+    // Show debug mode status
+    if (args.debug) {
+      UI.println(UI.Style.TEXT_YELLOW + "Debug mode enabled" + UI.Style.RESET)
+      UI.println(UI.Style.TEXT_DIM + "  SNOWCODE_DEBUG=true (all debug flags)" + UI.Style.RESET)
+      if (args["debug-level"]) {
+        UI.println(UI.Style.TEXT_DIM + `  SNOWCODE_LOG_LEVEL=${args["debug-level"]}` + UI.Style.RESET)
+      }
+      UI.empty()
+    }
+
     while (true) {
       const cwd = args.project ? path.resolve(args.project) : process.cwd()
       try {
@@ -197,6 +218,17 @@ export const TuiCommand = cmd({
             CGO_ENABLED: "0",
             SNOWCODE_SERVER: server.url.toString(),
             OPENCODE_SERVER: server.url.toString(), // Fallback for compatibility
+            // Debug mode environment variables
+            ...(args.debug ? {
+              SNOWCODE_DEBUG: "true",
+              SNOWCODE_DEBUG_TOKENS: "true",
+              SNOWCODE_DEBUG_TOOLS: "true",
+              SNOWCODE_DEBUG_MCP: "true",
+              SNOWCODE_DEBUG_PROVIDERS: "true",
+              SNOWCODE_DEBUG_SESSIONS: "true",
+              SNOWCODE_DEBUG_COST: "true",
+            } : {}),
+            ...(args["debug-level"] ? { SNOWCODE_LOG_LEVEL: args["debug-level"] } : {}),
           },
           onExit: () => {
             server.stop()

@@ -387,6 +387,16 @@ export namespace Session {
     return part
   })
 
+  // Helper to safely extract numeric cost values (handles objects/undefined)
+  function safeNumericCost(value: unknown): number {
+    if (typeof value === "number" && !isNaN(value)) return value
+    if (typeof value === "string") {
+      const parsed = parseFloat(value)
+      return isNaN(parsed) ? 0 : parsed
+    }
+    return 0
+  }
+
   export const getUsage = fn(
     z.object({
       model: z.custom<ModelsDev.Model>(),
@@ -405,12 +415,19 @@ export namespace Session {
           read: input.usage.cachedInputTokens ?? 0,
         },
       }
+
+      // Safely extract cost values, handling objects/undefined
+      const costInput = safeNumericCost(input.model.cost?.input)
+      const costOutput = safeNumericCost(input.model.cost?.output)
+      const costCacheRead = safeNumericCost(input.model.cost?.cache_read)
+      const costCacheWrite = safeNumericCost(input.model.cost?.cache_write)
+
       return {
         cost: new Decimal(0)
-          .add(new Decimal(tokens.input).mul(input.model.cost?.input ?? 0).div(1_000_000))
-          .add(new Decimal(tokens.output).mul(input.model.cost?.output ?? 0).div(1_000_000))
-          .add(new Decimal(tokens.cache.read).mul(input.model.cost?.cache_read ?? 0).div(1_000_000))
-          .add(new Decimal(tokens.cache.write).mul(input.model.cost?.cache_write ?? 0).div(1_000_000))
+          .add(new Decimal(tokens.input).mul(costInput).div(1_000_000))
+          .add(new Decimal(tokens.output).mul(costOutput).div(1_000_000))
+          .add(new Decimal(tokens.cache.read).mul(costCacheRead).div(1_000_000))
+          .add(new Decimal(tokens.cache.write).mul(costCacheWrite).div(1_000_000))
           .toNumber(),
         tokens,
       }
