@@ -646,14 +646,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
  */
 async function createServicePortalWidget(client: any, config: any) {
   const widgetData: any = {
-    id: config.id,
-    name: config.name,
-    description: config.description || '',
-    template: config.template || '',
-    script: config.script || '',
-    client_script: config.client_script || '',
-    css: config.css || '',
-    option_schema: config.option_schema || '',
+    id: sanitizeString(config.id),
+    name: sanitizeString(config.name),
+    description: sanitizeString(config.description),
+    template: sanitizeString(config.template),
+    script: sanitizeString(config.script),
+    client_script: sanitizeString(config.client_script),
+    css: sanitizeString(config.css),
+    option_schema: sanitizeString(config.option_schema),
     data_table: config.data_table_enabled !== false // Default to true - ServiceNow field is 'data_table'
   };
 
@@ -684,9 +684,9 @@ async function createServicePortalWidget(client: any, config: any) {
  */
 async function createServicePortalPage(client: any, config: any) {
   const pageData: any = {
-    id: config.id,
-    title: config.title,
-    description: config.description || ''
+    id: sanitizeString(config.id),
+    title: sanitizeString(config.title),
+    description: sanitizeString(config.description)
   };
 
   // Add scope if specified
@@ -703,9 +703,9 @@ async function createServicePortalPage(client: any, config: any) {
  */
 async function createUIBuilderPage(client: any, config: any) {
   const pageData: any = {
-    name: config.name,
-    title: config.title,
-    description: config.description || ''
+    name: sanitizeString(config.name),
+    title: sanitizeString(config.title),
+    description: sanitizeString(config.description)
   };
 
   // Add scope if specified
@@ -722,10 +722,10 @@ async function createUIBuilderPage(client: any, config: any) {
  */
 async function createScriptInclude(client: any, config: any) {
   const scriptData: any = {
-    name: config.name,
-    api_name: config.api_name,
-    script: config.script,
-    description: config.description || '',
+    name: sanitizeString(config.name),
+    api_name: sanitizeString(config.api_name),
+    script: sanitizeString(config.script),
+    description: sanitizeString(config.description),
     active: config.active
   };
 
@@ -743,10 +743,10 @@ async function createScriptInclude(client: any, config: any) {
  */
 async function createBusinessRule(client: any, config: any) {
   const ruleData: any = {
-    name: config.name,
+    name: sanitizeString(config.name),
     collection: config.table,
-    script: config.script,
-    description: config.description || '',
+    script: sanitizeString(config.script),
+    description: sanitizeString(config.description),
     when: config.when,
     insert: config.insert,
     update: config.update,
@@ -769,10 +769,10 @@ async function createBusinessRule(client: any, config: any) {
  */
 async function createClientScript(client: any, config: any) {
   const scriptData: any = {
-    name: config.name,
+    name: sanitizeString(config.name),
     table: config.table,
-    script: config.script,
-    description: config.description || '',
+    script: sanitizeString(config.script),
+    description: sanitizeString(config.description),
     active: config.active
   };
 
@@ -790,11 +790,11 @@ async function createClientScript(client: any, config: any) {
  */
 async function createUIPolicy(client: any, config: any) {
   const policyData: any = {
-    short_description: config.name,
+    short_description: sanitizeString(config.name),
     table: config.table,
-    script_true: config.script_true || '',
-    description: config.description || '',
-    conditions: config.condition || '',
+    script_true: sanitizeString(config.script_true),
+    description: sanitizeString(config.description),
+    conditions: sanitizeString(config.condition),
     on_load: config.on_load,
     reverse_if_false: config.reverse_if_false,
     active: config.active,
@@ -815,11 +815,11 @@ async function createUIPolicy(client: any, config: any) {
  */
 async function createUIAction(client: any, config: any) {
   const actionData: any = {
-    name: config.name,
+    name: sanitizeString(config.name),
     table: config.table,
-    script: config.script,
-    comments: config.description || '',
-    condition: config.condition || '',
+    script: sanitizeString(config.script),
+    comments: sanitizeString(config.description),
+    condition: sanitizeString(config.condition),
     form_action: config.form_action,
     form_style: config.form_style || '',
     list_action: config.list_action,
@@ -841,9 +841,9 @@ async function createUIAction(client: any, config: any) {
  */
 async function createRESTMessage(client: any, config: any) {
   const messageData: any = {
-    name: config.name,
-    description: config.description || '',
-    rest_endpoint: config.rest_endpoint || '',
+    name: sanitizeString(config.name),
+    description: sanitizeString(config.description),
+    rest_endpoint: sanitizeString(config.rest_endpoint),
     authentication_type: config.authentication_type || 'no_authentication'
   };
 
@@ -861,9 +861,9 @@ async function createRESTMessage(client: any, config: any) {
  */
 async function createScheduledJob(client: any, config: any) {
   const jobData: any = {
-    name: config.name,
-    script: config.script,
-    comments: config.description || '',
+    name: sanitizeString(config.name),
+    script: sanitizeString(config.script),
+    comments: sanitizeString(config.description),
     active: config.active
   };
 
@@ -896,11 +896,11 @@ async function createScheduledJob(client: any, config: any) {
  */
 async function createTransformMap(client: any, config: any) {
   const mapData: any = {
-    name: config.name,
+    name: sanitizeString(config.name),
     source_table: config.source_table,
     target_table: config.target_table,
-    script: config.script || '',
-    description: config.description || '',
+    script: sanitizeString(config.script),
+    description: sanitizeString(config.description),
     active: config.active
   };
 
@@ -918,9 +918,9 @@ async function createTransformMap(client: any, config: any) {
  */
 async function createFixScript(client: any, config: any) {
   const scriptData: any = {
-    name: config.name,
-    script: config.script,
-    description: config.description || ''
+    name: sanitizeString(config.name),
+    script: sanitizeString(config.script),
+    description: sanitizeString(config.description)
   };
 
   // Add scope if specified
@@ -938,8 +938,8 @@ async function createFixScript(client: any, config: any) {
 async function createTable(client: any, config: any, context: any) {
   // Build table data
   const tableData: any = {
-    name: config.name,
-    label: config.label,
+    name: sanitizeString(config.name),
+    label: sanitizeString(config.label),
     is_extendable: config.is_extendable !== false
   };
 
@@ -1070,8 +1070,8 @@ async function createField(client: any, config: any, context: any) {
   // Build field data
   const fieldData: any = {
     name: config.table,
-    element: config.column_name,
-    column_label: config.column_label || config.column_name,
+    element: sanitizeString(config.column_name),
+    column_label: sanitizeString(config.column_label || config.column_name),
     internal_type: config.internal_type,
     mandatory: config.mandatory || false
   };
@@ -1150,6 +1150,30 @@ async function createField(client: any, config: any, context: any) {
   }
 
   return createdField;
+}
+
+/**
+ * Sanitize string to remove control characters that cause issues in ServiceNow
+ * Preserves newlines (\n) and tabs (\t) but removes other control characters
+ */
+function sanitizeString(str: string | undefined | null): string {
+  if (!str) return '';
+
+  // Remove control characters (U+0000-U+001F) except:
+  // - \t (U+0009) - tab
+  // - \n (U+000A) - newline
+  // - \r (U+000D) - carriage return (will be normalized to \n)
+  // Also remove U+007F (DEL) and U+0080-U+009F (C1 control characters)
+
+  return str
+    // Replace \r\n with \n first
+    .replace(/\r\n/g, '\n')
+    // Replace standalone \r with \n
+    .replace(/\r/g, '\n')
+    // Remove all control characters except \t and \n
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x80-\x9F]/g, '')
+    // Remove zero-width characters that can cause issues
+    .replace(/[\u200B-\u200D\uFEFF]/g, '');
 }
 
 /**

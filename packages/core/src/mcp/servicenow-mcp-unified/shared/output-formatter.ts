@@ -459,4 +459,36 @@ export function quickList(
   };
 }
 
+/**
+ * Extract value from ServiceNow API response field
+ *
+ * When using sysparm_display_value='all', ServiceNow returns fields as objects:
+ * { value: "actual_value", display_value: "display_value" }
+ *
+ * This helper safely extracts the value regardless of format.
+ */
+export function getFieldValue(field: any): string {
+  if (field === null || field === undefined) return '';
+  if (typeof field === 'string') return field;
+  if (typeof field === 'number') return String(field);
+  if (typeof field === 'boolean') return String(field);
+  if (typeof field === 'object' && 'value' in field) return String(field.value ?? '');
+  if (typeof field === 'object' && 'display_value' in field) return String(field.display_value ?? '');
+  return String(field);
+}
+
+/**
+ * Extract display value from ServiceNow API response field
+ * Falls back to value if display_value not available
+ */
+export function getDisplayValue(field: any): string {
+  if (field === null || field === undefined) return '';
+  if (typeof field === 'string') return field;
+  if (typeof field === 'number') return String(field);
+  if (typeof field === 'boolean') return String(field);
+  if (typeof field === 'object' && 'display_value' in field) return String(field.display_value ?? '');
+  if (typeof field === 'object' && 'value' in field) return String(field.value ?? '');
+  return String(field);
+}
+
 export { SYMBOLS };

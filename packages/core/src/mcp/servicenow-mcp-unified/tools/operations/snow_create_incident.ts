@@ -8,6 +8,7 @@
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { getFieldValue } from '../../shared/output-formatter.js';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_incident',
@@ -214,26 +215,27 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     });
 
     const incident = response.data.result;
+    const sysId = getFieldValue(incident.sys_id);
 
     return createSuccessResult({
       created: true,
-      number: incident.number,
-      sys_id: incident.sys_id,
-      priority: incident.priority,
-      state: incident.state,
+      number: getFieldValue(incident.number),
+      sys_id: sysId,
+      priority: getFieldValue(incident.priority),
+      state: getFieldValue(incident.state),
       incident: {
-        number: incident.number,
-        sys_id: incident.sys_id,
-        short_description: incident.short_description,
-        priority: incident.priority,
-        urgency: incident.urgency,
-        impact: incident.impact,
-        state: incident.state,
-        assignment_group: incident.assignment_group,
-        assigned_to: incident.assigned_to,
-        caller: incident.caller_id
+        number: getFieldValue(incident.number),
+        sys_id: sysId,
+        short_description: getFieldValue(incident.short_description),
+        priority: getFieldValue(incident.priority),
+        urgency: getFieldValue(incident.urgency),
+        impact: getFieldValue(incident.impact),
+        state: getFieldValue(incident.state),
+        assignment_group: getFieldValue(incident.assignment_group),
+        assigned_to: getFieldValue(incident.assigned_to),
+        caller: getFieldValue(incident.caller_id)
       },
-      url: `${context.instanceUrl}/incident.do?sys_id=${incident.sys_id}`
+      url: `${context.instanceUrl}/incident.do?sys_id=${sysId}`
     });
 
   } catch (error: any) {

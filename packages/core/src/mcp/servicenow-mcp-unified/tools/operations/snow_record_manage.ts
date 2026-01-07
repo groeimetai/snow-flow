@@ -10,6 +10,7 @@
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
+import { getFieldValue } from '../../shared/output-formatter.js';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_record_manage',
@@ -210,7 +211,7 @@ async function executeCreate(args: any, context: ServiceNowContext): Promise<Too
     return createSuccessResult({
       action: 'create',
       created: true,
-      sys_id: record.sys_id,
+      sys_id: getFieldValue(record.sys_id),
       table,
       record,
       display_values: display_value
@@ -298,11 +299,11 @@ async function executeUpdate(args: any, context: ServiceNowContext): Promise<Too
   return createSuccessResult({
     action: 'update',
     updated: true,
-    sys_id: updatedRecord.sys_id,
+    sys_id: getFieldValue(updatedRecord.sys_id),
     table,
     record: updatedRecord,
     changed_fields: changedFields,
-    new_version: updatedRecord.sys_mod_count,
+    new_version: getFieldValue(updatedRecord.sys_mod_count),
     display_values: display_value
   });
 }

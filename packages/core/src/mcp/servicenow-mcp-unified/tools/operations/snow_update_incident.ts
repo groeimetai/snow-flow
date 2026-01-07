@@ -8,6 +8,7 @@
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
+import { getFieldValue } from '../../shared/output-formatter.js';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_update_incident',
@@ -255,21 +256,22 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     });
 
     const updatedIncident = response.data.result;
+    const sysId = getFieldValue(updatedIncident.sys_id);
 
     return createSuccessResult({
       updated: true,
-      number: updatedIncident.number,
-      sys_id: updatedIncident.sys_id,
-      previous_state: incident.state,
-      current_state: updatedIncident.state,
+      number: getFieldValue(updatedIncident.number),
+      sys_id: sysId,
+      previous_state: getFieldValue(incident.state),
+      current_state: getFieldValue(updatedIncident.state),
       incident: {
-        number: updatedIncident.number,
-        sys_id: updatedIncident.sys_id,
-        state: updatedIncident.state,
-        assignment_group: updatedIncident.assignment_group,
-        assigned_to: updatedIncident.assigned_to
+        number: getFieldValue(updatedIncident.number),
+        sys_id: sysId,
+        state: getFieldValue(updatedIncident.state),
+        assignment_group: getFieldValue(updatedIncident.assignment_group),
+        assigned_to: getFieldValue(updatedIncident.assigned_to)
       },
-      url: `${context.instanceUrl}/incident.do?sys_id=${updatedIncident.sys_id}`
+      url: `${context.instanceUrl}/incident.do?sys_id=${sysId}`
     });
 
   } catch (error: any) {
