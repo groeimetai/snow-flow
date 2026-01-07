@@ -237,49 +237,51 @@ query: 'short_descriptionLIKEpassword'       // Contains 'password'
 
 ---
 
-## 🛠️ AVAILABLE MCP TOOLS (READ-ONLY)
+## 🛠️ AVAILABLE CAPABILITIES (READ-ONLY)
 
-You have access to **179 READ-ONLY tools**. Here are the most important categories:
+You have access to **179 READ-ONLY tools**. Use \`tool_search\` to discover them!
 
-### Core Query Tools (Very High Frequency)
+**⚠️ IMPORTANT: Always use \`tool_search\` to find the exact tool name before calling it!**
 
-| Tool | Purpose | Example Use |
-|------|---------|-------------|
-| \`snow_query_table\` | Query any table with filters | General-purpose queries |
-| \`snow_query_incidents\` | Specialized incident queries | Incident analysis with metrics |
-| \`snow_get_by_sysid\` | Get specific record by ID | Record lookup |
-| \`snow_comprehensive_search\` | Search across multiple tables | Finding related data |
-| \`snow_user_lookup\` | Find user information | User details, roles |
+### Core Query Capabilities
 
-### CMDB & Asset Tools
+| Capability | How to Find |
+|------------|-------------|
+| Query any table | \`tool_search({query: "query table"})\` |
+| Query incidents | \`tool_search({query: "incident"})\` |
+| Get record by ID | \`tool_search({query: "sysid"})\` |
+| Search multiple tables | \`tool_search({query: "comprehensive search"})\` |
+| Find user info | \`tool_search({query: "user lookup"})\` |
 
-| Tool | Purpose |
-|------|---------|
-| \`snow_cmdb_search\` | Search Configuration Items |
-| \`snow_cmdb_get_relationships\` | CI relationship traversal |
-| \`snow_asset_discovery\` | View discovered assets |
+### CMDB & Asset Capabilities
 
-### Analytics & Metrics Tools
+| Capability | How to Find |
+|------------|-------------|
+| Search CIs | \`tool_search({query: "cmdb search"})\` |
+| CI relationships | \`tool_search({query: "cmdb relationship"})\` |
+| Asset discovery | \`tool_search({query: "asset"})\` |
 
-| Tool | Purpose |
-|------|---------|
-| \`snow_operational_metrics\` | Get operational KPIs |
-| \`snow_aggregate_metrics\` | Data aggregation and analysis |
-| \`snow_get_dashboard_data\` | Dashboard widget data |
+### Analytics & Metrics Capabilities
 
-### Knowledge & Catalog Tools
+| Capability | How to Find |
+|------------|-------------|
+| Operational KPIs | \`tool_search({query: "metrics"})\` |
+| Data aggregation | \`tool_search({query: "aggregate"})\` |
+| Dashboard data | \`tool_search({query: "dashboard"})\` |
 
-| Tool | Purpose |
-|------|---------|
-| \`snow_knowledge_search\` | Search knowledge base |
-| \`snow_catalog_browse\` | Browse service catalog |
+### Knowledge & Catalog Capabilities
 
-### Discovery & Schema Tools
+| Capability | How to Find |
+|------------|-------------|
+| Search knowledge base | \`tool_search({query: "knowledge"})\` |
+| Browse catalog | \`tool_search({query: "catalog"})\` |
 
-| Tool | Purpose |
-|------|---------|
-| \`snow_discover_table_fields\` | Explore table schema |
-| \`snow_get_table_structure\` | Table metadata |
+### Discovery & Schema Capabilities
+
+| Capability | How to Find |
+|------------|-------------|
+| Explore table schema | \`tool_search({query: "discover fields"})\` |
+| Table metadata | \`tool_search({query: "table structure"})\` |
 
 ---
 
@@ -490,14 +492,16 @@ const url = \`\${info.data.instance_url}/incident.do?sys_id=\${incident.sys_id}\
 
 ## 📋 QUICK REFERENCE
 
-### High-Frequency Tools
-- \`snow_query_table\` - Universal table querying
-- \`snow_query_incidents\` - Incident-specific queries
-- \`snow_get_by_sysid\` - Record lookup by sys_id
-- \`snow_user_lookup\` - User information
-- \`snow_comprehensive_search\` - Multi-table search
+### How to Find Common Tools
 
-### Common Queries
+Use \`tool_search\` with these queries:
+- Table querying: \`tool_search({query: "query table"})\`
+- Incident queries: \`tool_search({query: "incident"})\`
+- Record by ID: \`tool_search({query: "sysid"})\`
+- User info: \`tool_search({query: "user lookup"})\`
+- Multi-table search: \`tool_search({query: "comprehensive search"})\`
+
+### Common Query Patterns (once you find the query tool)
 \`\`\`javascript
 // Active P1/P2 incidents
 { table: 'incident', query: 'active=true^priority<=2' }
@@ -583,54 +587,62 @@ function generateDirectToolCallInstructions(): string {
 
 ### ✅ Tool Discovery with tool_search
 
-**To save tokens, specialized tools are not loaded by default.**
-Use \`tool_search\` to discover and enable tools, then call them directly.
+**⚠️ CRITICAL: Specialized tools are NOT loaded by default to save tokens.**
 
-**After tool_search returns, discovered tools become IMMEDIATELY AVAILABLE for direct calls.**
+You MUST use \`tool_search\` to discover tools before calling them!
 
 ---
 
-### 📋 Workflow: Discover → Call Directly
+### 📋 Workflow: Discover → Call
 
 \`\`\`javascript
 // Step 1: Search for the tools you need
 await tool_search({ query: "jira" });
-// Output: Found snow-flow-enterprise_jira_get_issue, snow-flow-enterprise_jira_search_issues, etc.
+// Output shows discovered tools with their exact names
 
-// Step 2: Call the discovered tool DIRECTLY by its exact name
-const issue = await snow-flow-enterprise_jira_get_issue({
-  issueKey: "PROJ-123"
-});
+// Step 2: Call the discovered tool by the name returned from tool_search
+// The tool name will be shown in the tool_search results
 \`\`\`
 
 ---
 
-### 🔍 Example Searches
+### 🔍 How to Find Tools
 
-| Need | Search Query | Example Tool Found |
-|------|--------------|-------------------|
-| Jira issues | \`tool_search({query: "jira"})\` | \`snow-flow-enterprise_jira_search_issues\` |
-| Azure DevOps | \`tool_search({query: "azure devops"})\` | \`snow-flow-enterprise_azure_devops_get_work_item\` |
-| Confluence | \`tool_search({query: "confluence"})\` | \`snow-flow-enterprise_confluence_get_page\` |
-| ServiceNow incidents | \`tool_search({query: "incident"})\` | \`servicenow-unified_snow_query_incidents\` |
-| ServiceNow widgets | \`tool_search({query: "widget"})\` | \`servicenow-unified_snow_create_widget\` |
+| Need | Search Query |
+|------|--------------|
+| Jira integration | \`tool_search({query: "jira"})\` |
+| Azure DevOps integration | \`tool_search({query: "azure devops"})\` |
+| Confluence documentation | \`tool_search({query: "confluence"})\` |
+| GitHub integration | \`tool_search({query: "github"})\` |
+| GitLab integration | \`tool_search({query: "gitlab"})\` |
+| ServiceNow incidents | \`tool_search({query: "incident"})\` |
+| ServiceNow widgets | \`tool_search({query: "widget"})\` |
+| ServiceNow CMDB | \`tool_search({query: "cmdb"})\` |
+| Activity tracking | \`tool_search({query: "activity"})\` |
 
 ---
 
 ### 📋 Tool Categories
 
-| Category | Prefix | How to Find |
-|----------|--------|-------------|
-| **Core tools** | \`bash\`, \`read\`, \`edit\`, etc. | Always available |
-| **Enterprise tools** | \`snow-flow-enterprise_*\` | \`tool_search({query: "jira/azure/confluence"})\` |
-| **ServiceNow tools** | \`servicenow-unified_*\` | \`tool_search({query: "incident/widget/cmdb"})\` |
+| Category | How to Find |
+|----------|-------------|
+| **Core tools** | Always available: bash, read, edit, etc. |
+| **Enterprise tools** | \`tool_search({query: "jira/azure/confluence/github/gitlab"})\` |
+| **ServiceNow tools** | \`tool_search({query: "snow"})\` or specific feature |
+| **Activity tracking** | \`tool_search({query: "activity"})\` |
 
-### 🔑 Benefits
+### 🔑 Benefits of Tool Discovery
 
 1. **Token Efficient**: Only load tools when needed (saves ~85% tokens)
 2. **Full JSON Response**: Direct calls return complete API responses
 3. **No Data Loss**: No formatting or compression applied
 4. **Fast Discovery**: tool_search finds tools instantly
+
+### ⚠️ IMPORTANT
+
+- **NEVER assume tool names** - always use tool_search first!
+- Tool names are returned by tool_search, use those exact names
+- If a tool doesn't exist, tool_search will tell you
 
 ---
 
@@ -1118,19 +1130,21 @@ await jira_transition_issue({
 
 ---
 
-## 🎯 AVAILABLE JIRA TOOLS
+## 🎯 JIRA CAPABILITIES
 
-| Tool | Purpose | Key Parameters |
-|------|---------|----------------|
-| **jira_search_issues** | Find stories with JQL | jql, maxResults, expand |
-| **jira_get_issue** | Get story details | issueKey, expand |
-| **jira_get_current_user** | Get current user's accountId | - |
-| **jira_create_issue** | Create stories/bugs/subtasks | project, summary, issueType |
-| **jira_update_issue** | Update fields | issueKey, fields |
-| **jira_transition_issue** | Move through workflow | issueKey, transitionIdOrName, fields |
-| **jira_add_comment** | Add development updates | issueKey, comment |
-| **jira_add_worklog** | Log time spent | issueKey, timeSpent, comment |
-| **jira_link_issues** | Link related issues | inwardIssue, outwardIssue, linkType |
+**⚠️ IMPORTANT: Use \`tool_search({ query: "jira" })\` to discover available Jira tools first!**
+
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| Search issues | Find stories with JQL queries | \`tool_search({ query: "jira search" })\` |
+| Get issue details | Retrieve full issue information | \`tool_search({ query: "jira get issue" })\` |
+| Get current user | Get authenticated user's info | \`tool_search({ query: "jira user" })\` |
+| Create issues | Create stories/bugs/subtasks | \`tool_search({ query: "jira create" })\` |
+| Update issues | Modify issue fields | \`tool_search({ query: "jira update" })\` |
+| Transition issues | Move through workflow states | \`tool_search({ query: "jira transition" })\` |
+| Add comments | Document progress on issues | \`tool_search({ query: "jira comment" })\` |
+| Log work time | Track time spent | \`tool_search({ query: "jira worklog" })\` |
+| Link issues | Create relationships between issues | \`tool_search({ query: "jira link" })\` |
 
 ---
 
@@ -1223,16 +1237,18 @@ await azure_update_work_item({
 });
 \`\`\`
 
-### 🎯 AVAILABLE AZURE DEVOPS TOOLS
+### 🎯 AZURE DEVOPS CAPABILITIES
 
-| Tool | Purpose |
-|------|---------|
-| **azure_search_work_items** | Find work items with WIQL |
-| **azure_get_work_item** | Get work item details |
-| **azure_create_work_item** | Create new work items |
-| **azure_update_work_item** | Update fields/state |
-| **azure_add_work_item_comment** | Add development updates |
-| **azure_link_work_items** | Link related items |
+**⚠️ IMPORTANT: Use \`tool_search({ query: "azure devops" })\` to discover available tools first!**
+
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| Search work items | Find work items with WIQL queries | \`tool_search({ query: "azure search" })\` |
+| Get work item details | Retrieve full work item info | \`tool_search({ query: "azure get work item" })\` |
+| Create work items | Create new tasks/stories/bugs | \`tool_search({ query: "azure create" })\` |
+| Update work items | Modify fields and state | \`tool_search({ query: "azure update" })\` |
+| Add comments | Document progress | \`tool_search({ query: "azure comment" })\` |
+| Link work items | Create relationships | \`tool_search({ query: "azure link" })\` |
 
 `;
 }
@@ -1287,15 +1303,17 @@ await jira_add_comment({
 });
 \`\`\`
 
-### 🎯 AVAILABLE CONFLUENCE TOOLS
+### 🎯 CONFLUENCE CAPABILITIES
 
-| Tool | Purpose |
-|------|---------|
-| **confluence_create_page** | Create new documentation |
-| **confluence_update_page** | Update existing pages |
-| **confluence_get_page** | Retrieve page content |
-| **confluence_search_content** | Search documentation |
-| **confluence_get_space_pages** | List all pages in space |
+**⚠️ IMPORTANT: Use \`tool_search({ query: "confluence" })\` to discover available tools first!**
+
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| Create pages | Create new documentation | \`tool_search({ query: "confluence create" })\` |
+| Update pages | Modify existing pages | \`tool_search({ query: "confluence update" })\` |
+| Get page content | Retrieve page details | \`tool_search({ query: "confluence get page" })\` |
+| Search content | Search across documentation | \`tool_search({ query: "confluence search" })\` |
+| List space pages | Browse pages in a space | \`tool_search({ query: "confluence space" })\` |
 
 `;
 }
@@ -1478,62 +1496,52 @@ const latest = await github_get_latest_release({
 
 ---
 
-## 🎯 AVAILABLE GITHUB TOOLS
+## 🎯 GITHUB CAPABILITIES
 
-### Discovery Tools
-| Tool | Purpose |
-|------|---------|
-| **github_get_current_user** | Get authenticated user info |
-| **github_list_repositories** | List accessible repositories |
-| **github_get_repository** | Get repository details |
-| **github_discover_configuration** | Complete environment discovery |
+**⚠️ IMPORTANT: Use \`tool_search({ query: "github" })\` to discover available GitHub tools first!**
 
-### Issue Tools
-| Tool | Purpose |
-|------|---------|
-| **github_list_issues** | List repository issues |
-| **github_get_issue** | Get issue details |
-| **github_create_issue** | Create new issue |
-| **github_update_issue** | Update issue |
-| **github_add_issue_comment** | Add comment to issue |
-| **github_search_issues** | Search issues with query |
+### Discovery Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| Get current user | Get authenticated user info | \`tool_search({ query: "github user" })\` |
+| List repositories | List accessible repos | \`tool_search({ query: "github repositories" })\` |
+| Discover configuration | Complete environment discovery | \`tool_search({ query: "github discover" })\` |
 
-### Pull Request Tools
-| Tool | Purpose |
-|------|---------|
-| **github_list_pull_requests** | List PRs |
-| **github_get_pull_request** | Get PR details |
-| **github_create_pull_request** | Create new PR |
-| **github_merge_pull_request** | Merge PR |
-| **github_list_pr_files** | List changed files |
+### Issue Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| List/search issues | Find repository issues | \`tool_search({ query: "github issues" })\` |
+| Get issue details | Retrieve issue information | \`tool_search({ query: "github get issue" })\` |
+| Create issues | Create new issues | \`tool_search({ query: "github create issue" })\` |
+| Update issues | Modify issue fields | \`tool_search({ query: "github update issue" })\` |
+| Add comments | Document progress | \`tool_search({ query: "github comment" })\` |
 
-### Branch & Commit Tools
-| Tool | Purpose |
-|------|---------|
-| **github_list_branches** | List branches |
-| **github_list_commits** | List commits |
-| **github_get_commit** | Get commit details |
+### Pull Request Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| List PRs | List pull requests | \`tool_search({ query: "github pull request" })\` |
+| Create PRs | Create new PR | \`tool_search({ query: "github create pr" })\` |
+| Merge PRs | Merge pull requests | \`tool_search({ query: "github merge" })\` |
+| List changed files | See PR changes | \`tool_search({ query: "github pr files" })\` |
 
-### Workflow Tools
-| Tool | Purpose |
-|------|---------|
-| **github_list_workflow_runs** | List workflow runs |
-| **github_get_workflow_run** | Get run details |
-| **github_rerun_workflow** | Rerun a workflow |
-| **github_cancel_workflow_run** | Cancel running workflow |
+### Workflow Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| List workflow runs | View CI/CD runs | \`tool_search({ query: "github workflow" })\` |
+| Rerun workflows | Retry failed runs | \`tool_search({ query: "github rerun" })\` |
+| Cancel workflows | Stop running workflows | \`tool_search({ query: "github cancel" })\` |
 
-### Release Tools
-| Tool | Purpose |
-|------|---------|
-| **github_list_releases** | List releases |
-| **github_create_release** | Create release |
-| **github_get_latest_release** | Get latest release |
+### Release Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| List releases | View releases | \`tool_search({ query: "github releases" })\` |
+| Create releases | Publish new release | \`tool_search({ query: "github create release" })\` |
 
-### Search Tools
-| Tool | Purpose |
-|------|---------|
-| **github_search_code** | Search code |
-| **github_search_repositories** | Search repositories |
+### Search Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| Search code | Find code snippets | \`tool_search({ query: "github search code" })\` |
+| Search repos | Find repositories | \`tool_search({ query: "github search repo" })\` |
 
 ---
 
@@ -1741,67 +1749,54 @@ const releases = await gitlab_list_releases({
 
 ---
 
-## 🎯 AVAILABLE GITLAB TOOLS
+## 🎯 GITLAB CAPABILITIES
 
-### Discovery Tools
-| Tool | Purpose |
-|------|---------|
-| **gitlab_get_current_user** | Get authenticated user info |
-| **gitlab_list_projects** | List accessible projects |
-| **gitlab_get_project** | Get project details |
-| **gitlab_discover_configuration** | Complete environment discovery |
+**⚠️ IMPORTANT: Use \`tool_search({ query: "gitlab" })\` to discover available GitLab tools first!**
 
-### Issue Tools
-| Tool | Purpose |
-|------|---------|
-| **gitlab_list_issues** | List project issues |
-| **gitlab_get_issue** | Get issue details |
-| **gitlab_create_issue** | Create new issue |
-| **gitlab_update_issue** | Update issue |
-| **gitlab_add_issue_note** | Add comment to issue |
+### Discovery Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| Get current user | Get authenticated user info | \`tool_search({ query: "gitlab user" })\` |
+| List projects | List accessible projects | \`tool_search({ query: "gitlab projects" })\` |
+| Discover configuration | Complete environment discovery | \`tool_search({ query: "gitlab discover" })\` |
 
-### Merge Request Tools
-| Tool | Purpose |
-|------|---------|
-| **gitlab_list_merge_requests** | List MRs |
-| **gitlab_get_merge_request** | Get MR details |
-| **gitlab_create_merge_request** | Create new MR |
-| **gitlab_accept_merge_request** | Accept/merge MR |
-| **gitlab_list_mr_changes** | List changed files |
-| **gitlab_add_mr_note** | Add comment to MR |
+### Issue Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| List issues | List project issues | \`tool_search({ query: "gitlab issues" })\` |
+| Get issue details | Retrieve issue information | \`tool_search({ query: "gitlab get issue" })\` |
+| Create issues | Create new issues | \`tool_search({ query: "gitlab create issue" })\` |
+| Update issues | Modify issue fields | \`tool_search({ query: "gitlab update issue" })\` |
+| Add notes | Document progress | \`tool_search({ query: "gitlab note" })\` |
 
-### Branch & Commit Tools
-| Tool | Purpose |
-|------|---------|
-| **gitlab_list_branches** | List branches |
-| **gitlab_list_commits** | List commits |
-| **gitlab_get_commit** | Get commit details |
+### Merge Request Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| List MRs | List merge requests | \`tool_search({ query: "gitlab merge request" })\` |
+| Create MRs | Create new MR | \`tool_search({ query: "gitlab create mr" })\` |
+| Accept MRs | Merge requests | \`tool_search({ query: "gitlab accept" })\` |
+| List changes | See MR changes | \`tool_search({ query: "gitlab mr changes" })\` |
 
-### Pipeline Tools
-| Tool | Purpose |
-|------|---------|
-| **gitlab_list_pipelines** | List pipelines |
-| **gitlab_get_pipeline** | Get pipeline details |
-| **gitlab_retry_pipeline** | Retry failed pipeline |
-| **gitlab_cancel_pipeline** | Cancel running pipeline |
-| **gitlab_list_pipeline_jobs** | List jobs in pipeline |
+### Pipeline Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| List pipelines | View CI/CD pipelines | \`tool_search({ query: "gitlab pipeline" })\` |
+| Retry pipelines | Retry failed runs | \`tool_search({ query: "gitlab retry" })\` |
+| Cancel pipelines | Stop running pipelines | \`tool_search({ query: "gitlab cancel" })\` |
+| List jobs | View pipeline jobs | \`tool_search({ query: "gitlab jobs" })\` |
 
-### Release Tools
-| Tool | Purpose |
-|------|---------|
-| **gitlab_list_releases** | List releases |
-| **gitlab_create_release** | Create release |
+### Release Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| List releases | View releases | \`tool_search({ query: "gitlab releases" })\` |
+| Create releases | Publish new release | \`tool_search({ query: "gitlab create release" })\` |
 
-### Labels & Milestones
-| Tool | Purpose |
-|------|---------|
-| **gitlab_list_labels** | List project labels |
-| **gitlab_list_milestones** | List milestones |
-
-### Search Tools
-| Tool | Purpose |
-|------|---------|
-| **gitlab_search_projects** | Search GitLab projects |
+### Other Capabilities
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| Labels | Project labels | \`tool_search({ query: "gitlab labels" })\` |
+| Milestones | Project milestones | \`tool_search({ query: "gitlab milestones" })\` |
+| Search | Search projects | \`tool_search({ query: "gitlab search" })\` |
 
 ---
 
