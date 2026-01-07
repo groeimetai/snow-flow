@@ -17,6 +17,14 @@ export namespace Log {
 
   let level: Level = "INFO"
 
+  export function setLevel(newLevel: Level) {
+    level = newLevel
+  }
+
+  export function getLevel(): Level {
+    return level
+  }
+
   function shouldLog(input: Level): boolean {
     return levelPriority[input] >= levelPriority[level]
   }
@@ -111,7 +119,15 @@ export namespace Log {
   }
 
   export async function init(options: Options) {
-    if (options.level) level = options.level
+    // Priority: explicit option > env var > default
+    if (options.level) {
+      level = options.level
+    } else {
+      const envLevel = process.env["SNOWCODE_LOG_LEVEL"] || process.env["OPENCODE_LOG_LEVEL"]
+      if (envLevel && Level.safeParse(envLevel).success) {
+        level = envLevel as Level
+      }
+    }
     cleanup(Global.Path.log)
     if (options.print) return
     logpath = path.join(

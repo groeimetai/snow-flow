@@ -91,6 +91,11 @@ export const TuiCommand = cmd({
   handler: async (args) => {
     const cwd = args.project ? path.resolve(args.project) : process.cwd()
 
+    // Set log level if specified (works independently of --debug flag)
+    if (args["debug-level"]) {
+      Log.setLevel(args["debug-level"] as Log.Level)
+    }
+
     // Show debug mode status and initialize debug file
     if (args.debug || args["debug-file"]) {
       UI.println(UI.Style.TEXT_YELLOW + "Debug mode enabled" + UI.Style.RESET)
