@@ -26,7 +26,7 @@ export const toolDefinition: MCPToolDefinition = {
       name: { type: 'string', description: 'Dashboard name' },
       description: { type: 'string', description: 'Dashboard description' },
       layout: { type: 'string', description: 'Dashboard layout (grid, tabs, accordion)', enum: ['grid', 'tabs', 'accordion'] },
-      widgets: { type: 'array', description: 'Dashboard widgets configuration' },
+      widgets: { type: 'array', items: { type: 'string' }, description: 'Dashboard widgets configuration' },
       permissions: { type: 'array', description: 'User/role permissions', items: { type: 'string' } },
       refresh_interval: { type: 'number', description: 'Auto-refresh interval in minutes' },
       public: { type: 'boolean', description: 'Public dashboard' }

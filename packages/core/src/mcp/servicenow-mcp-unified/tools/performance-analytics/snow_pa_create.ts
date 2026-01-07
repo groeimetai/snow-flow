@@ -67,14 +67,14 @@ export const toolDefinition: MCPToolDefinition = {
       dataSource: { type: 'string', description: '[visualization] Data source table/report' },
       xAxis: { type: 'string', description: '[visualization] X-axis field' },
       yAxis: { type: 'string', description: '[visualization] Y-axis field' },
-      series: { type: 'array', description: '[visualization] Data series config' },
-      filters: { type: 'array', description: '[visualization] Chart filters' },
-      colors: { type: 'array', description: '[visualization] Color palette' },
+      series: { type: 'array', items: { type: 'string' }, description: '[visualization] Data series config' },
+      filters: { type: 'array', items: { type: 'string' }, description: '[visualization] Chart filters' },
+      colors: { type: 'array', items: { type: 'string' }, description: '[visualization] Color palette' },
       interactive: { type: 'boolean', description: '[visualization] Interactive chart' },
       // SCHEDULED_REPORT parameters
       reportName: { type: 'string', description: '[scheduled_report] Source report name' },
       schedule: { type: 'string', description: '[scheduled_report] Schedule frequency' },
-      recipients: { type: 'array', description: '[scheduled_report] Email recipients' },
+      recipients: { type: 'array', items: { type: 'string' }, description: '[scheduled_report] Email recipients' },
       format: { type: 'string', description: '[scheduled_report] Report format (PDF, Excel, CSV)' },
       subject: { type: 'string', description: '[scheduled_report] Email subject' },
       message: { type: 'string', description: '[scheduled_report] Email message' }

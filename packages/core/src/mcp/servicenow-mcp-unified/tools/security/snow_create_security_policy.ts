@@ -27,7 +27,7 @@ export const toolDefinition: MCPToolDefinition = {
       description: { type: 'string', description: 'Policy description' },
       enforcement: { type: 'string', description: 'Enforcement level (strict, moderate, advisory)' },
       scope: { type: 'string', description: 'Policy scope (global, application, table)' },
-      rules: { type: 'array', description: 'Security rules and conditions' },
+      rules: { type: 'array', items: { type: 'string' }, description: 'Security rules and conditions' },
       active: { type: 'boolean', description: 'Policy active status' }
     },
     required: ['name', 'type', 'rules']
