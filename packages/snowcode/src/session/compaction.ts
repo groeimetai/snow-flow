@@ -295,7 +295,7 @@ export namespace SessionCompaction {
       },
     })) as MessageV2.TextPart
 
-    const doStream = () =>
+    const doStream = async () =>
       streamText({
         // set to 0, we handle loop
         maxRetries: 0,
@@ -314,7 +314,7 @@ export namespace SessionCompaction {
               content: x,
             }),
           ),
-          ...MessageV2.toModelMessage(toSummarize),
+          ...(await MessageV2.toModelMessage(toSummarize)),
           {
             role: "user",
             content: [

@@ -84,6 +84,7 @@ export namespace SessionSummary {
           m.info.role === "assistant" && m.parts.some((p) => p.type === "step-finish" && p.reason !== "tool-calls"),
       )
     ) {
+      const modelMessages = await MessageV2.toModelMessage(messages)
       const result = await generateText({
         model: small.language,
         maxOutputTokens: 50,
@@ -93,7 +94,7 @@ export namespace SessionSummary {
             content: `
             Summarize the following conversation into 2 sentences MAX explaining what the assistant did and why. Do not explain the user's input. Do not speak in the third person about the assistant.
             <conversation>
-            ${JSON.stringify(MessageV2.toModelMessage(messages))}
+            ${JSON.stringify(modelMessages)}
             </conversation>
             `,
           },

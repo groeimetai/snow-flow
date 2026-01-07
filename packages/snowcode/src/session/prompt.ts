@@ -335,7 +335,7 @@ export namespace SessionPrompt {
         ),
       })
 
-      const doStream = () =>
+      const doStream = async () =>
         streamText({
           onError(error) {
             log.error("stream error", {
@@ -391,7 +391,7 @@ export namespace SessionPrompt {
                 content: x,
               }),
             ),
-            ...MessageV2.toModelMessage(
+            ...(await MessageV2.toModelMessage(
               msgs.filter((m) => {
                 if (m.info.role !== "assistant" || m.info.error === undefined) {
                   return true
@@ -405,7 +405,7 @@ export namespace SessionPrompt {
 
                 return false
               }),
-            ),
+            )),
           ],
           tools: model.info.tool_call === false ? undefined : tools,
           model: wrapLanguageModel({
@@ -2184,6 +2184,19 @@ export namespace SessionPrompt {
         thinkingBudget: 0,
       }
     }
+    const titleMessages = await MessageV2.toModelMessage([
+      {
+        info: {
+          id: Identifier.ascending("message"),
+          role: "user",
+          sessionID: input.session.id,
+          time: {
+            created: Date.now(),
+          },
+        },
+        parts: input.message.parts,
+      },
+    ])
     generateText({
       maxOutputTokens: small.info.reasoning ? 1500 : 20,
       providerOptions: ProviderTransform.providerOptions(small.npm, small.providerID, options),
@@ -2194,19 +2207,7 @@ export namespace SessionPrompt {
             content: x,
           }),
         ),
-        ...MessageV2.toModelMessage([
-          {
-            info: {
-              id: Identifier.ascending("message"),
-              role: "user",
-              sessionID: input.session.id,
-              time: {
-                created: Date.now(),
-              },
-            },
-            parts: input.message.parts,
-          },
-        ]),
+        ...titleMessages,
       ],
       model: small.language,
     })
