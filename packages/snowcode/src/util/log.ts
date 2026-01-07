@@ -39,9 +39,14 @@ export namespace Log {
     return debugFilePath
   }
 
-  export async function initDebugFile(cwd: string) {
-    const debugPath = Flag.SNOWCODE_DEBUG_FILE
-    if (!debugPath && !Flag.SNOWCODE_DEBUG) return
+  export async function initDebugFile(cwd: string, forceEnable = false) {
+    // Check environment variables at runtime (not at module load time)
+    const debugPath = process.env["SNOWCODE_DEBUG_FILE"] || process.env["OPENCODE_DEBUG_FILE"]
+    const debugEnabled = forceEnable ||
+      process.env["SNOWCODE_DEBUG"]?.toLowerCase() === "true" ||
+      process.env["OPENCODE_DEBUG"]?.toLowerCase() === "true"
+
+    if (!debugPath && !debugEnabled) return
 
     // Use provided path or default to .snow-flow-debug.json in working directory
     debugFilePath = debugPath || path.join(cwd, ".snow-flow-debug.json")
@@ -49,6 +54,9 @@ export namespace Log {
     // Initialize with empty array
     debugLogEntries = []
     await writeDebugFile()
+
+    // Log that debug file is initialized
+    console.error(`[Debug] Writing debug logs to: ${debugFilePath}`)
   }
 
   async function writeDebugFile() {

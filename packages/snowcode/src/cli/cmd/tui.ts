@@ -105,7 +105,8 @@ export const TuiCommand = cmd({
       }
 
       // Initialize debug JSON file in working directory
-      await Log.initDebugFile(cwd)
+      // Pass forceEnable=true since we know debug is requested
+      await Log.initDebugFile(cwd, true)
       const debugFile = Log.debugFile()
       if (debugFile) {
         UI.println(UI.Style.TEXT_DIM + `  Debug file: ${debugFile}` + UI.Style.RESET)
