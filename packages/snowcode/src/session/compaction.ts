@@ -359,7 +359,16 @@ export namespace SessionCompaction {
                 metadata: value.providerMetadata,
               })
               msg.cost += (usage as any).cost
-              msg.tokens = (usage as any).tokens
+              // Accumulate tokens across all steps (each step = separate API call)
+              msg.tokens = {
+                input: msg.tokens.input + usage.tokens.input,
+                output: msg.tokens.output + usage.tokens.output,
+                reasoning: msg.tokens.reasoning + usage.tokens.reasoning,
+                cache: {
+                  read: msg.tokens.cache.read + usage.tokens.cache.read,
+                  write: msg.tokens.cache.write + usage.tokens.cache.write,
+                },
+              }
               await Session.updateMessage(msg)
               continue
             }

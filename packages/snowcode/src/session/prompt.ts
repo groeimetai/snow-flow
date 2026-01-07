@@ -1506,7 +1506,16 @@ export namespace SessionPrompt {
                   metadata: value.providerMetadata,
                 })
                 assistantMsg.cost += usage.cost
-                assistantMsg.tokens = usage.tokens
+                // Accumulate tokens across all steps (each step = separate API call)
+                assistantMsg.tokens = {
+                  input: assistantMsg.tokens.input + usage.tokens.input,
+                  output: assistantMsg.tokens.output + usage.tokens.output,
+                  reasoning: assistantMsg.tokens.reasoning + usage.tokens.reasoning,
+                  cache: {
+                    read: assistantMsg.tokens.cache.read + usage.tokens.cache.read,
+                    write: assistantMsg.tokens.cache.write + usage.tokens.cache.write,
+                  },
+                }
                 // Safely convert finishReason to string (handles objects)
                 const finishReason = typeof value.finishReason === "string"
                   ? value.finishReason

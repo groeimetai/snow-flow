@@ -38,7 +38,7 @@ export const toolDefinition: MCPToolDefinition = {
       title: { type: 'string', description: '[create] Page title (display name)' },
       description: { type: 'string', description: '[create] Page description' },
       route: { type: 'string', description: '[create] URL route (e.g., "/my-page")' },
-      roles: { type: 'array', description: '[create] Required roles to access page' },
+      roles: { type: 'array', items: { type: 'string' }, description: '[create] Required roles to access page' },
       public: { type: 'boolean', description: '[create] Make page publicly accessible' },
       // DELETE parameters
       page_id: { type: 'string', description: '[delete/add_element/remove_element] Page sys_id' },
@@ -52,7 +52,7 @@ export const toolDefinition: MCPToolDefinition = {
       data_broker: { type: 'string', description: '[add_element] Data broker sys_id' },
       responsive_config: { type: 'object', description: '[add_element] Responsive layout config' },
       conditional_display: { type: 'string', description: '[add_element] Condition script for visibility' },
-      css_classes: { type: 'array', description: '[add_element] CSS classes to apply' },
+      css_classes: { type: 'array', items: { type: 'string' }, description: '[add_element] CSS classes to apply' },
       inline_styles: { type: 'object', description: '[add_element] Inline styles config' },
       // REMOVE_ELEMENT parameters
       element_id: { type: 'string', description: '[remove_element] Page element sys_id to remove' },
