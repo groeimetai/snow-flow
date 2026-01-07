@@ -675,6 +675,7 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, tea.Sequence(
 				util.CmdHandler(modal.CloseModalMsg{}),
 				toast.NewSuccessToast(successMsg),
+				util.CmdHandler(AuthSelectedMsg{AuthType: a.authType, Success: true}),
 			)
 		}
 		return a, toast.NewErrorToast("Failed to save model: " + msg.Error)
@@ -709,6 +710,7 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, tea.Sequence(
 				util.CmdHandler(modal.CloseModalMsg{}),
 				toast.NewSuccessToast(msg.Message),
+				util.CmdHandler(AuthSelectedMsg{AuthType: a.authType, Success: true}),
 			)
 		}
 		return a, toast.NewErrorToast("Save failed: " + msg.Error)

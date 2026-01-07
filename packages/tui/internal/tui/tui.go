@@ -800,9 +800,11 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.app.State.Theme = msg.ThemeName
 		cmds = append(cmds, a.app.SaveState())
 	case dialog.AuthSelectedMsg:
-		// Auth completed, show result
+		// Auth completed, show result and reload providers to pick up new model
 		if msg.Success {
 			cmds = append(cmds, toast.NewSuccessToast("Authentication completed"))
+			// Reload providers to pick up the newly configured model
+			cmds = append(cmds, a.app.InitializeProvider())
 		}
 	case dialog.BrowserAuthWaitingMsg:
 		// Browser auth in progress - nothing to do, dialog handles it
