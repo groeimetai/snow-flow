@@ -404,7 +404,7 @@ export namespace SessionCompaction {
       }
     }
 
-    let stream = doStream()
+    let stream = await doStream()
     let result = await process(stream, {
       count: 0,
       max: MAX_RETRIES,
@@ -444,7 +444,7 @@ export namespace SessionCompaction {
           if (stop) break
         }
 
-        stream = doStream()
+        stream = await doStream()
         result = await process(stream, {
           count: retry,
           max: MAX_RETRIES,

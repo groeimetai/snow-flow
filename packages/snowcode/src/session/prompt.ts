@@ -424,7 +424,7 @@ export namespace SessionPrompt {
           }),
         })
 
-      let stream = doStream()
+      let stream = await doStream()
       let result = await processor.process(stream, {
         count: 0,
         max: MAX_RETRIES,
@@ -464,7 +464,7 @@ export namespace SessionPrompt {
             if (stop) break
           }
 
-          stream = doStream()
+          stream = await doStream()
           result = await processor.process(stream, {
             count: retry,
             max: MAX_RETRIES,
