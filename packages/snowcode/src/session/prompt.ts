@@ -19,6 +19,7 @@ import {
   type StreamTextResult,
   stepCountIs,
   jsonSchema,
+  NoOutputGeneratedError,
 } from "ai"
 import { SessionCompaction } from "./compaction"
 import { SessionLock } from "./lock"
@@ -338,6 +339,11 @@ export namespace SessionPrompt {
       const doStream = async () =>
         streamText({
           onError(error) {
+            // Don't log NoOutputGeneratedError - it's expected when stream is aborted (ESC key)
+            if (NoOutputGeneratedError.isInstance(error.error)) {
+              log.debug("stream aborted - no output generated")
+              return
+            }
             log.error("stream error", {
               error,
             })
