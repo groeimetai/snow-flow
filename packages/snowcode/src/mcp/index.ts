@@ -1,7 +1,6 @@
 import { createMCPClient } from "@ai-sdk/mcp"
 import type { Tool } from "ai"
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
-import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js"
+// StdioClientTransport still needed for local MCP servers
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { Config } from "../config/config"
 import { Log } from "../util/log"
@@ -359,29 +358,31 @@ export namespace MCP {
     let mcpClient: MCPClient | undefined
 
     if (mcp.type === "remote") {
-      const transports = [
+      // AI SDK 6: Use the new simplified transport config format
+      // Try HTTP first (StreamableHTTP), then fall back to SSE
+      const transportConfigs: Array<{ name: string; config: { type: 'http' | 'sse'; url: string; headers?: Record<string, string> } }> = [
         {
-          name: "StreamableHTTP",
-          transport: new StreamableHTTPClientTransport(new URL(mcp.url), {
-            requestInit: {
-              headers: mcp.headers,
-            },
-          }),
+          name: "HTTP",
+          config: {
+            type: 'http',
+            url: mcp.url,
+            headers: mcp.headers,
+          },
         },
         {
           name: "SSE",
-          transport: new SSEClientTransport(new URL(mcp.url), {
-            requestInit: {
-              headers: mcp.headers,
-            },
-          }),
+          config: {
+            type: 'sse',
+            url: mcp.url,
+            headers: mcp.headers,
+          },
         },
       ]
       let lastError: Error | undefined
-      for (const { name: transportName, transport } of transports) {
+      for (const { name: transportName, config } of transportConfigs) {
         const client = await createMCPClient({
           name: "opencode",
-          transport,
+          transport: config,
         }).catch((error) => {
           lastError = error instanceof Error ? error : new Error(String(error))
           log.debug("transport connection failed", {
