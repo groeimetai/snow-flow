@@ -1,4 +1,5 @@
-import { experimental_createMCPClient, type Tool } from "ai"
+import { createMCPClient } from "@ai-sdk/mcp"
+import type { Tool } from "ai"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js"
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
@@ -120,7 +121,7 @@ export namespace MCP {
     ),
   }
 
-  type MCPClient = Awaited<ReturnType<typeof experimental_createMCPClient>>
+  type MCPClient = Awaited<ReturnType<typeof createMCPClient>>
 
   interface ManagedClient {
     client: MCPClient
@@ -378,7 +379,7 @@ export namespace MCP {
       ]
       let lastError: Error | undefined
       for (const { name: transportName, transport } of transports) {
-        const client = await experimental_createMCPClient({
+        const client = await createMCPClient({
           name: "opencode",
           transport,
         }).catch((error) => {
@@ -408,7 +409,7 @@ export namespace MCP {
 
     if (mcp.type === "local") {
       const [cmd, ...args] = mcp.command
-      const client = await experimental_createMCPClient({
+      const client = await createMCPClient({
         name: "opencode",
         transport: new StdioClientTransport({
           stderr: "ignore",

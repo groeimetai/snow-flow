@@ -119,6 +119,7 @@
         "snowcode-with-mcp": "./bin/snowcode-with-mcp",
       },
       "dependencies": {
+        "@ai-sdk/mcp": "^1.0.5",
         "@anthropic-ai/claude-agent-sdk": "0.1.1",
         "@anthropic-ai/sdk": "0.67.0",
         "@clack/prompts": "^0.11.0",
@@ -303,6 +304,7 @@
         "@agentclientprotocol/sdk": "0.4.9",
         "@ai-sdk/anthropic": "^3.0.8",
         "@ai-sdk/google": "^3.0.5",
+        "@ai-sdk/mcp": "^1.0.5",
         "@ai-sdk/openai": "^3.0.7",
         "@ai-sdk/provider": "^3.0.2",
         "@clack/prompts": "1.0.0-alpha.1",
@@ -483,6 +485,8 @@
     "@ai-sdk/google": ["@ai-sdk/google@3.0.5", "", { "dependencies": { "@ai-sdk/provider": "3.0.2", "@ai-sdk/provider-utils": "4.0.4" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-+aaq8HEdEqJdXt/7ULHlc4oRL9RGdSNfJ8ptF/q1lWvuvH+Rz0c8zVk9DELCjQYxreuFgEMdtLtMD6cejNKjJg=="],
 
     "@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@4.0.9", "", { "dependencies": { "@ai-sdk/anthropic": "3.0.8", "@ai-sdk/google": "3.0.5", "@ai-sdk/provider": "3.0.2", "@ai-sdk/provider-utils": "4.0.4", "google-auth-library": "^10.5.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-BoLp32Ss/O+5najB7SAhgtYR0kIf2kzqEVYuAX6tm2k+CyrfE3vSta7uYGQVNFDIALJZLnIJ9IkFRpXABkcNWw=="],
+
+    "@ai-sdk/mcp": ["@ai-sdk/mcp@1.0.5", "", { "dependencies": { "@ai-sdk/provider": "3.0.2", "@ai-sdk/provider-utils": "4.0.4", "pkce-challenge": "^5.0.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-ViLrt9ybjtwSubMBhnV3Wjaq+ZITx1UlFU5mnLAgWj2HAxoEIwpZGRAqdD/ojJlV950wEM/OCha/1rtGdUy/bw=="],
 
     "@ai-sdk/openai": ["@ai-sdk/openai@3.0.7", "", { "dependencies": { "@ai-sdk/provider": "3.0.2", "@ai-sdk/provider-utils": "4.0.4" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-CBoYn1U59Lop8yBL9KuVjHCKc/B06q9Qo0SasRwHoyMEq+X4I8LQZu3a8Ck1jwwcZTTxfyiExB70LtIRSynBDA=="],
 

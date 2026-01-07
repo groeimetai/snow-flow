@@ -10,12 +10,12 @@ export async function loadMCPTools(start: MCPStartup): Promise<{ tools: any[]; c
   // Prefer using AI SDK's experimental MCP client to yield ready-to-use Tool[]
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { experimental_createMCPClient } = require('ai');
+    const { createMCPClient } = require('@ai-sdk/mcp');
     // Use SDK-provided stdio transport
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio');
 
-    const client = await experimental_createMCPClient({
+    const client = await createMCPClient({
       name: 'snow-flow',
       transport: new StdioClientTransport({
         command: start.cmd,
