@@ -26,6 +26,8 @@ export namespace Flag {
   export const SNOWCODE_DEBUG_PROVIDERS = SNOWCODE_DEBUG || truthy("SNOWCODE_DEBUG_PROVIDERS") || truthy("OPENCODE_DEBUG_PROVIDERS")
   export const SNOWCODE_DEBUG_SESSIONS = SNOWCODE_DEBUG || truthy("SNOWCODE_DEBUG_SESSIONS") || truthy("OPENCODE_DEBUG_SESSIONS")
   export const SNOWCODE_DEBUG_COST = SNOWCODE_DEBUG || truthy("SNOWCODE_DEBUG_COST") || truthy("OPENCODE_DEBUG_COST")
+  // Debug output to JSON file in working directory
+  export const SNOWCODE_DEBUG_FILE = process.env["SNOWCODE_DEBUG_FILE"] || process.env["OPENCODE_DEBUG_FILE"]
 
   // Legacy aliases for backwards compatibility (deprecated - map to SNOWCODE_)
   export const OPENCODE_AUTO_SHARE = SNOWCODE_AUTO_SHARE

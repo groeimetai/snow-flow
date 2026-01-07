@@ -2,6 +2,7 @@ import path from "path"
 import fs from "fs/promises"
 import { Global } from "../global"
 import z from "zod/v4"
+import { Flag } from "../flag/flag"
 
 export namespace Log {
   export const Level = z.enum(["DEBUG", "INFO", "WARN", "ERROR"]).meta({ ref: "LogLevel", description: "Log level" })
@@ -18,6 +19,56 @@ export namespace Log {
 
   function shouldLog(input: Level): boolean {
     return levelPriority[input] >= levelPriority[level]
+  }
+
+  // JSON debug file for pretty-printed structured logs
+  interface DebugLogEntry {
+    timestamp: string
+    level: Level
+    service?: string
+    message?: string
+    extra?: Record<string, any>
+    duration?: number
+  }
+
+  let debugFilePath: string | null = null
+  let debugLogEntries: DebugLogEntry[] = []
+  let debugFileWriter: ReturnType<typeof Bun.file>["writer"] | null = null
+
+  export function debugFile() {
+    return debugFilePath
+  }
+
+  export async function initDebugFile(cwd: string) {
+    const debugPath = Flag.SNOWCODE_DEBUG_FILE
+    if (!debugPath && !Flag.SNOWCODE_DEBUG) return
+
+    // Use provided path or default to .snow-flow-debug.json in working directory
+    debugFilePath = debugPath || path.join(cwd, ".snow-flow-debug.json")
+
+    // Initialize with empty array
+    debugLogEntries = []
+    await writeDebugFile()
+  }
+
+  async function writeDebugFile() {
+    if (!debugFilePath) return
+    try {
+      await Bun.write(debugFilePath, JSON.stringify(debugLogEntries, null, 2))
+    } catch {
+      // Silently ignore write errors
+    }
+  }
+
+  function addDebugEntry(entry: DebugLogEntry) {
+    if (!debugFilePath) return
+    debugLogEntries.push(entry)
+    // Keep only last 1000 entries to prevent file from growing too large
+    if (debugLogEntries.length > 1000) {
+      debugLogEntries = debugLogEntries.slice(-1000)
+    }
+    // Write async, don't await
+    writeDebugFile()
   }
 
   export type Logger = {
@@ -120,23 +171,39 @@ export namespace Log {
       last = next.getTime()
       return [next.toISOString().split(".")[0], "+" + diff + "ms", prefix, message].filter(Boolean).join(" ") + "\n"
     }
+    // Helper to write to debug JSON file
+    function logToDebugFile(level: Level, message?: any, extra?: Record<string, any>) {
+      if (!debugFilePath) return
+      addDebugEntry({
+        timestamp: new Date().toISOString(),
+        level,
+        service: tags?.["service"],
+        message: message instanceof Error ? formatError(message) : String(message ?? ""),
+        extra: extra ? { ...tags, ...extra } : tags,
+      })
+    }
+
     const result: Logger = {
       debug(message?: any, extra?: Record<string, any>) {
+        logToDebugFile("DEBUG", message, extra)
         if (shouldLog("DEBUG")) {
           process.stderr.write("DEBUG " + build(message, extra))
         }
       },
       info(message?: any, extra?: Record<string, any>) {
+        logToDebugFile("INFO", message, extra)
         if (shouldLog("INFO")) {
           process.stderr.write("INFO  " + build(message, extra))
         }
       },
       error(message?: any, extra?: Record<string, any>) {
+        logToDebugFile("ERROR", message, extra)
         if (shouldLog("ERROR")) {
           process.stderr.write("ERROR " + build(message, extra))
         }
       },
       warn(message?: any, extra?: Record<string, any>) {
+        logToDebugFile("WARN", message, extra)
         if (shouldLog("WARN")) {
           process.stderr.write("WARN  " + build(message, extra))
         }

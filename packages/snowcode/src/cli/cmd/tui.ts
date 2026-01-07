@@ -16,6 +16,9 @@ import { Session } from "../../session"
 import { $ } from "bun"
 import { bootstrap } from "../bootstrap"
 
+// Re-export for use by debug command
+export { Log }
+
 declare global {
   const SNOWCODE_TUI_PATH: string
 }
@@ -80,20 +83,37 @@ export const TuiCommand = cmd({
         type: "string",
         describe: "set log level (DEBUG, INFO, WARN, ERROR)",
         choices: ["DEBUG", "INFO", "WARN", "ERROR"],
+      })
+      .option("debug-file", {
+        type: "string",
+        describe: "path for debug JSON output file (default: .snow-flow-debug.json)",
       }),
   handler: async (args) => {
-    // Show debug mode status
-    if (args.debug) {
+    const cwd = args.project ? path.resolve(args.project) : process.cwd()
+
+    // Show debug mode status and initialize debug file
+    if (args.debug || args["debug-file"]) {
       UI.println(UI.Style.TEXT_YELLOW + "Debug mode enabled" + UI.Style.RESET)
       UI.println(UI.Style.TEXT_DIM + "  SNOWCODE_DEBUG=true (all debug flags)" + UI.Style.RESET)
       if (args["debug-level"]) {
         UI.println(UI.Style.TEXT_DIM + `  SNOWCODE_LOG_LEVEL=${args["debug-level"]}` + UI.Style.RESET)
       }
+
+      // Set debug file env var if custom path provided
+      if (args["debug-file"]) {
+        process.env["SNOWCODE_DEBUG_FILE"] = path.resolve(args["debug-file"])
+      }
+
+      // Initialize debug JSON file in working directory
+      await Log.initDebugFile(cwd)
+      const debugFile = Log.debugFile()
+      if (debugFile) {
+        UI.println(UI.Style.TEXT_DIM + `  Debug file: ${debugFile}` + UI.Style.RESET)
+      }
       UI.empty()
     }
 
     while (true) {
-      const cwd = args.project ? path.resolve(args.project) : process.cwd()
       try {
         process.chdir(cwd)
       } catch (e) {
@@ -219,7 +239,7 @@ export const TuiCommand = cmd({
             SNOWCODE_SERVER: server.url.toString(),
             OPENCODE_SERVER: server.url.toString(), // Fallback for compatibility
             // Debug mode environment variables
-            ...(args.debug ? {
+            ...((args.debug || args["debug-file"]) ? {
               SNOWCODE_DEBUG: "true",
               SNOWCODE_DEBUG_TOKENS: "true",
               SNOWCODE_DEBUG_TOOLS: "true",
@@ -229,6 +249,7 @@ export const TuiCommand = cmd({
               SNOWCODE_DEBUG_COST: "true",
             } : {}),
             ...(args["debug-level"] ? { SNOWCODE_LOG_LEVEL: args["debug-level"] } : {}),
+            ...(args["debug-file"] ? { SNOWCODE_DEBUG_FILE: path.resolve(args["debug-file"]) } : {}),
           },
           onExit: () => {
             server.stop()

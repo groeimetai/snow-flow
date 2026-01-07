@@ -1502,9 +1502,15 @@ export namespace SessionPrompt {
                 })
                 assistantMsg.cost += usage.cost
                 assistantMsg.tokens = usage.tokens
+                // Safely convert finishReason to string (handles objects)
+                const finishReason = typeof value.finishReason === "string"
+                  ? value.finishReason
+                  : typeof value.finishReason === "object" && value.finishReason !== null
+                    ? JSON.stringify(value.finishReason)
+                    : String(value.finishReason ?? "unknown")
                 await Session.updatePart({
                   id: Identifier.ascending("part"),
-                  reason: value.finishReason,
+                  reason: finishReason,
                   snapshot: await Snapshot.track(),
                   messageID: assistantMsg.id,
                   sessionID: assistantMsg.sessionID,
