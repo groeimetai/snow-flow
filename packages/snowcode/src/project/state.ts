@@ -26,9 +26,16 @@ export namespace State {
   }
 
   export async function dispose(key: string) {
-    for (const [_, entry] of entries.get(key)?.entries() ?? []) {
-      if (!entry.dispose) continue
-      await entry.dispose(await entry.state)
+    const collection = entries.get(key)
+    if (!collection) return
+
+    for (const [_, entry] of collection.entries()) {
+      if (entry.dispose) {
+        await entry.dispose(await entry.state)
+      }
     }
+
+    // Clear the cache so next state() call reloads from disk
+    entries.delete(key)
   }
 }
