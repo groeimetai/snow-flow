@@ -750,12 +750,14 @@ Before finishing any task:
 |--------|---------|--------|
 | \`started\` | Activity just created | \`activity_start\` |
 | \`in_progress\` | Work is ongoing | \`activity_update\` |
-| \`review\` | **Code awaiting automated review** | \`activity_update\` (triggers Code Reuse Reviewer) |
+| \`review\` | **Code awaiting automated review** 🏢 | \`activity_update\` (triggers Code Reuse Reviewer) |
 | \`completed\` | Work finished successfully | \`activity_complete\` |
 | \`failed\` | Work failed | \`activity_update\` |
 | \`cancelled\` | Work cancelled | \`activity_update\` |
 
-### ⚠️ SPECIAL: 'review' Status and Code Reuse Review
+### ⚠️ SPECIAL: 'review' Status and Code Reuse Review (Enterprise Feature)
+
+> **🏢 Enterprise Feature**: The Code Reuse Reviewer agent and the \`review\` status are exclusive to Snow-Flow Enterprise.
 
 When you set an activity to \`review\` status, the **Code Reuse Reviewer Agent** is automatically triggered. This agent:
 
