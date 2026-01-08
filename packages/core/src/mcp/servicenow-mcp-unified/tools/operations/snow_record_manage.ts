@@ -948,7 +948,7 @@ async function executeCreate(args: any, context: ServiceNowContext, tableInfo: a
       table: table,
       table_label: tableInfo.label,
       record: record,
-      url: context.instanceUrl + '/nav_to.do?uri=' + table + '.do?sys_id=' + record.sys_id
+      url: context.instanceUrl + '/nav_to.do?uri=' + table + '.do?sys_id=' + getFieldValue(record.sys_id)
     };
 
     result[tableInfo.numberField] = getFieldValue(numberValue);
@@ -1107,7 +1107,7 @@ async function executeUpdate(args: any, context: ServiceNowContext, tableInfo: a
     changed_fields: changedFields,
     record: updatedRecord,
     new_version: getFieldValue(updatedRecord.sys_mod_count),
-    url: context.instanceUrl + '/nav_to.do?uri=' + table + '.do?sys_id=' + updatedRecord.sys_id
+    url: context.instanceUrl + '/nav_to.do?uri=' + table + '.do?sys_id=' + getFieldValue(updatedRecord.sys_id)
   };
 
   result[tableInfo.numberField] = getFieldValue(updatedRecord[tableInfo.numberField] || updatedRecord.number || updatedRecord.name);
@@ -1296,7 +1296,7 @@ async function executeQuery(args: any, context: ServiceNowContext, tableInfo: an
       var rec: any = {
         sys_id: getFieldValue(r.sys_id),
         ...r,
-        _url: context.instanceUrl + '/nav_to.do?uri=' + table + '.do?sys_id=' + r.sys_id
+        _url: context.instanceUrl + '/nav_to.do?uri=' + table + '.do?sys_id=' + getFieldValue(r.sys_id)
       };
       rec[tableInfo.numberField] = getFieldValue(r[tableInfo.numberField] || r.number || r.name);
       return rec;
