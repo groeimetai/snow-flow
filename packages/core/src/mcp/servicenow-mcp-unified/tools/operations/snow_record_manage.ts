@@ -279,34 +279,38 @@ const HELPER_FIELDS: Record<string, string[]> = {
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_record_manage',
-  description: `Unified record management for ANY ServiceNow table (create, get, update, delete, query)
+  description: `🔥 PRIMARY TOOL for ALL ServiceNow record operations. USE THIS for: create incident, update incident, get incident, delete incident, query incidents, create change, update change, create problem, update problem, create user, update user, create asset, update asset, create CI, and ANY other record operation.
 
-⚡ ACTIONS:
-- create: Create a new record
-- get: Retrieve a single record by sys_id or number
-- update: Update an existing record
-- delete: Delete a record (supports soft delete)
-- query: Search/list records with filters
+⚡ ACTIONS: create | get | update | delete | query
 
-📋 TABLE PRESETS:
-ITSM: incident, problem, change, change_request, change_task, request, request_item, task
-CMDB: ci, cmdb_ci, server, computer, ci_relationship
-Users: user, sys_user, group, sys_user_group, group_member
-Assets: asset, alm_asset, hardware_asset, software_license
-HR/CSM: hr_case, hr_task, customer_case, customer_account, customer_contact
-Projects: project, project_task
-Other: purchase_order, knowledge_article, security_incident
+📋 SUPPORTED TABLES (use friendly names):
+• ITSM: incident, problem, change, change_request, change_task, request, task
+• CMDB: ci, server, computer, ci_relationship
+• Users: user, group, group_member
+• Assets: asset, hardware_asset, software_license
+• HR/CSM: hr_case, hr_task, customer_case, customer_account
+• Projects: project, project_task
+• Other: purchase_order, knowledge_article
 
-💡 HELPER SHORTCUTS: Use top-level params instead of data object:
-- Incident: short_description, urgency, impact, priority, caller_id, category, assignment_group, assigned_to, auto_assign
-- Change: short_description, type, risk, impact, start_date, end_date, cab_required
-- Problem: short_description, priority, category, assignment_group
-- User: user_name, first_name, last_name, email, department
-- CI: name, ip_address, os, operational_status
-- Asset: display_name, asset_tag, model, serial_number`,
+💡 EXAMPLES:
+• Update incident: { action: 'update', table: 'incident', sys_id: '...', state: 6 }
+• Create incident: { action: 'create', table: 'incident', short_description: '...', urgency: 2 }
+• Query incidents: { action: 'query', table: 'incident', query: 'state=1' }
+• Get by number: { action: 'get', table: 'incident', number: 'INC0010001' }`,
   category: 'core-operations',
   subcategory: 'crud',
-  use_cases: ['create', 'read', 'update', 'delete', 'query', 'records', 'incidents', 'changes', 'problems', 'users', 'assets', 'ci'],
+  use_cases: [
+    'create incident', 'update incident', 'get incident', 'delete incident', 'query incidents',
+    'create change', 'update change', 'get change', 'delete change', 'query changes',
+    'create problem', 'update problem', 'get problem', 'delete problem', 'query problems',
+    'create user', 'update user', 'get user', 'delete user', 'query users',
+    'create asset', 'update asset', 'get asset', 'delete asset', 'query assets',
+    'create ci', 'update ci', 'get ci', 'delete ci', 'query ci',
+    'create record', 'update record', 'get record', 'delete record', 'query records',
+    'incident management', 'change management', 'problem management', 'user management',
+    'modify incident', 'edit incident', 'change incident state', 'assign incident',
+    'modify change', 'edit change', 'modify problem', 'edit problem'
+  ],
   complexity: 'intermediate',
   frequency: 'high',
 
