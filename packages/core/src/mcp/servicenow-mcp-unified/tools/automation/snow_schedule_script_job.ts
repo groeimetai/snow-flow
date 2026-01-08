@@ -349,15 +349,15 @@ gs.info('${outputMarker}:DONE');
     }
   }
 
-  // Step 4: Cleanup - delete the scheduled job
-  try {
-    await client.delete(`/api/now/table/sysauto_script/${jobSysId}`);
-  } catch (cleanupError) {
-    // Ignore cleanup errors
-  }
-
-  // Step 5: Format and return results
+  // Step 4: Format and return results
   if (result) {
+    // Execution was confirmed - cleanup the job
+    try {
+      await client.delete(`/api/now/table/sysauto_script/${jobSysId}`);
+    } catch (cleanupError) {
+      // Ignore cleanup errors
+    }
+
     // Organize output by level
     const organized = {
       print: result.output.filter((o: any) => o.level === 'print').map((o: any) => o.message),
@@ -392,14 +392,17 @@ gs.info('${outputMarker}:DONE');
     });
   } else {
     // Script was saved but execution couldn't be confirmed
+    // DO NOT delete the job - user may want to trigger it manually
     const pendingData: any = {
       executed: false,
       execution_id: executionId,
       scheduled_job_sys_id: jobSysId,
+      job_name: jobName,
       auto_confirmed: autoConfirm,
       security_analysis: securityAnalysis,
       message: 'Script was saved as scheduled job but automatic execution could not be confirmed. The sys_trigger may not have been created (permissions) or the scheduler has not yet picked it up.',
-      action_required: `Navigate to System Scheduler > Scheduled Jobs and run: ${jobName}`
+      action_required: `Navigate to System Scheduler > Scheduled Jobs and run: ${jobName}`,
+      manual_url: `${context.instanceUrl}/sysauto_script.do?sys_id=${jobSysId}`
     };
 
     // Add ES5 warnings if any (non-blocking, informational only)
