@@ -1000,7 +1000,9 @@ export namespace Config {
   }
 
   export async function update(config: Info) {
-    const filepath = path.join(Instance.directory, "config.json")
+    // Write to .snow-code/config.json in the project directory
+    const snowCodeDir = path.join(Instance.directory, ".snow-code")
+    const filepath = path.join(snowCodeDir, "config.json")
     const existing = await loadFile(filepath)
     await Bun.write(filepath, JSON.stringify(mergeDeep(existing, config), null, 2))
     await Instance.dispose()
