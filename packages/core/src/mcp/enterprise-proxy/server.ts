@@ -1,23 +1,30 @@
 #!/usr/bin/env node
 /**
- * Snow-Flow Enterprise MCP Proxy
+ * @deprecated This local proxy server is deprecated. Use remote SSE connection instead.
  *
- * Forwards MCP tool requests from Claude Code to the Enterprise License Server.
- * This allows the open source Snow-Flow to use enterprise-hosted tools.
+ * Snow-Flow Enterprise MCP Proxy (DEPRECATED)
  *
- * Architecture:
+ * DEPRECATION NOTICE:
+ * This local proxy approach is being phased out in favor of direct remote SSE
+ * connections. The enterprise MCP server at enterprise.snow-flow.dev/mcp/sse
+ * should be used directly with JWT authentication via headers.
+ *
+ * New configuration format:
+ * {
+ *   "type": "remote",
+ *   "url": "https://enterprise.snow-flow.dev/mcp/sse",
+ *   "headers": { "Authorization": "Bearer <jwt_token>" }
+ * }
+ *
+ * OLD Architecture (DEPRECATED):
  * Claude Code → stdio → This Proxy → HTTPS → License Server → External APIs
+ *
+ * NEW Architecture:
+ * Claude Code → HTTPS SSE → Enterprise MCP Server → External APIs
  *
  * IMPORTANT: Credentials (Jira, Azure DevOps, Confluence, GitHub, GitLab) are
  * fetched by the enterprise MCP server from the Portal API using the JWT token.
- * No local credentials are needed - just SNOW_ENTERPRISE_URL and SNOW_LICENSE_KEY.
- *
- * Usage:
- * node server.js
- *
- * Environment Variables:
- * - SNOW_ENTERPRISE_URL: License server URL (required)
- * - SNOW_LICENSE_KEY: JWT token for authentication (required)
+ * No local credentials are needed.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';

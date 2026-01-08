@@ -65,6 +65,11 @@ export namespace Ide {
     })
 
     if (p.exitCode !== 0) {
+      // Check if it's a "not found" error - extension not published yet
+      if (stderr.includes("not found") || (stderr.includes("Extension") && stderr.includes("not found"))) {
+        log.warn("VS Code extension not yet published, skipping installation", { ide, stderr })
+        return // Don't throw error, gracefully skip
+      }
       throw new InstallFailedError({ stderr })
     }
     if (stdout.includes("already installed")) {

@@ -2640,47 +2640,15 @@ function getEnterpriseProxyPath(): string {
   return enterpriseProxyPath
 }
 
-// Update enterprise MCP config using LOCAL proxy (same as snow-flow auth login)
+// Update enterprise MCP config using REMOTE SSE (credentials stay server-side)
 async function updateEnterpriseMcpConfig(token: string, mcpServerUrl: string) {
   const configPaths = [
     path.join(process.cwd(), ".mcp.json"),
     path.join(os.homedir(), ".config", "snow-code", "opencode.json"),
   ]
 
-  // Get enterprise proxy path
-  let enterpriseProxyPath: string
-  try {
-    enterpriseProxyPath = getEnterpriseProxyPath()
-  } catch (err: any) {
-    console.error(`Could not find enterprise proxy: ${err.message}`)
-    // Fallback to remote SSE if proxy not found
-    for (const configPath of configPaths) {
-      try {
-        const file = Bun.file(configPath)
-        let config: any = {}
-
-        if (await file.exists()) {
-          config = JSON.parse(await file.text())
-        }
-
-        config.mcp = config.mcp || {}
-        config.mcp["snow-flow-enterprise"] = {
-          type: "remote",
-          url: `${mcpServerUrl}/sse`,
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        }
-
-        await Bun.write(configPath, JSON.stringify(config, null, 2))
-      } catch {
-        // Skip on error
-      }
-    }
-    return
-  }
-
-  // Use LOCAL proxy approach (same as snow-flow auth login)
+  // Use remote SSE - credentials are fetched server-side by the enterprise MCP server
+  // Only the JWT token is passed in the Authorization header
   for (const configPath of configPaths) {
     try {
       const file = Bun.file(configPath)
@@ -2692,13 +2660,11 @@ async function updateEnterpriseMcpConfig(token: string, mcpServerUrl: string) {
 
       config.mcp = config.mcp || {}
       config.mcp["snow-flow-enterprise"] = {
-        type: "local",
-        command: ["node", enterpriseProxyPath],
-        environment: {
-          SNOW_ENTERPRISE_URL: mcpServerUrl,
-          SNOW_LICENSE_KEY: token, // JWT token
+        type: "remote",
+        url: `${mcpServerUrl}/mcp/sse`,
+        headers: {
+          "Authorization": `Bearer ${token}`,
         },
-        enabled: true,
       }
 
       await Bun.write(configPath, JSON.stringify(config, null, 2))
@@ -2719,13 +2685,11 @@ async function updateEnterpriseMcpConfig(token: string, mcpServerUrl: string) {
       }
 
       config.mcpServers["snow-flow-enterprise"] = {
-        type: "local",
-        command: ["node", enterpriseProxyPath],
-        environment: {
-          SNOW_ENTERPRISE_URL: mcpServerUrl,
-          SNOW_LICENSE_KEY: token,
+        type: "remote",
+        url: `${mcpServerUrl}/mcp/sse`,
+        headers: {
+          "Authorization": `Bearer ${token}`,
         },
-        enabled: true,
       }
 
       await Bun.write(claudeMcpConfigPath, JSON.stringify(config, null, 2))

@@ -188,29 +188,20 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     logger.debug(`Developer seats: ${authData.customer?.developerSeats || 'N/A'}`);
     logger.debug(`Stakeholder seats: ${authData.customer?.stakeholderSeats || 'N/A'}`);
 
-    // 🔥 FIX: Use LOCAL proxy instead of REMOTE SSE
-    // The proxy runs locally via stdio and connects to enterprise.snow-flow.dev via HTTPS
-    // This keeps proprietary enterprise code private while enabling enterprise tools
+    // 🔥 FIX: Use REMOTE SSE - credentials stay server-side
+    // The enterprise MCP server fetches credentials from portal API using JWT token
+    // This is more secure as credentials never touch the local machine
 
-    // 🚀 DYNAMIC PATH RESOLUTION - Works for ANY user setup!
-    const enterpriseProxyPath = getEnterpriseProxyPath();
-    logger.debug(`Found enterprise proxy at: ${enterpriseProxyPath}`);
+    // NOTE: Credentials (Jira/Azure/Confluence) are fetched by the enterprise MCP server
+    // directly from the Portal API using the JWT token. No local storage needed.
 
-    // NOTE: Credentials (Jira/Azure/Confluence) are now fetched by the enterprise MCP server
-    // directly from the Portal API using the JWT token. No need to pass them via environment.
-    // This is more secure as credentials never leave the server-side.
-
-    // Add or update enterprise MCP server with LOCAL proxy configuration
+    // Add or update enterprise MCP server with REMOTE SSE configuration
     mcpConfig.mcp['snow-flow-enterprise'] = {
-      type: 'local',
-      command: ['node', enterpriseProxyPath],
-      environment: {
-        SNOW_ENTERPRISE_URL: mcpServerUrl,
-        SNOW_LICENSE_KEY: jwtToken,
-        // Credentials are fetched from portal API by enterprise MCP server
-        // No local credentials needed - JWT token is sufficient
+      type: 'remote',
+      url: `${mcpServerUrl}/mcp/sse`,
+      headers: {
+        'Authorization': `Bearer ${jwtToken}`,
       },
-      enabled: true,
     };
 
     // Write updated .mcp.json
@@ -228,16 +219,13 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
           snowCodeConfig.mcp = {};
         }
 
-        // Update enterprise server with LOCAL proxy config (same as .mcp.json)
+        // Update enterprise server with REMOTE SSE config (same as .mcp.json)
         snowCodeConfig.mcp['snow-flow-enterprise'] = {
-          type: 'local',
-          command: ['node', enterpriseProxyPath],
-          environment: {
-            SNOW_ENTERPRISE_URL: mcpServerUrl,
-            SNOW_LICENSE_KEY: jwtToken,
-            // Credentials are fetched from portal API by enterprise MCP server
+          type: 'remote',
+          url: `${mcpServerUrl}/mcp/sse`,
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
           },
-          enabled: true,
         };
 
         await fs.writeFile(snowCodeConfigPath, JSON.stringify(snowCodeConfig, null, 2), 'utf-8');
@@ -258,16 +246,13 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
           claudeMcpConfig.mcpServers = {};
         }
 
-        // Update enterprise server with LOCAL proxy config (same as .mcp.json)
+        // Update enterprise server with REMOTE SSE config (same as .mcp.json)
         claudeMcpConfig.mcpServers['snow-flow-enterprise'] = {
-          type: 'local',
-          command: ['node', enterpriseProxyPath],
-          environment: {
-            SNOW_ENTERPRISE_URL: mcpServerUrl,
-            SNOW_LICENSE_KEY: jwtToken,
-            // Credentials are fetched from portal API by enterprise MCP server
+          type: 'remote',
+          url: `${mcpServerUrl}/mcp/sse`,
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
           },
-          enabled: true,
         };
 
         await fs.writeFile(claudeMcpConfigPath, JSON.stringify(claudeMcpConfig, null, 2), 'utf-8');
@@ -319,20 +304,14 @@ export async function addEnterpriseMcpServerWithToken(config: EnterpriseMcpConfi
     logger.debug('Using existing JWT token from snow-code auth login');
     const jwtToken = config.token;
 
-    // Get enterprise proxy path
-    const enterpriseProxyPath = getEnterpriseProxyPath();
-    logger.debug(`Found enterprise proxy at: ${enterpriseProxyPath}`);
-
-    // Configure enterprise MCP server with LOCAL proxy
+    // Configure enterprise MCP server with REMOTE SSE
+    // Credentials are fetched server-side by the enterprise MCP server using JWT
     mcpConfig.mcp['snow-flow-enterprise'] = {
-      type: 'local',
-      command: ['node', enterpriseProxyPath],
-      environment: {
-        SNOW_ENTERPRISE_URL: mcpServerUrl,
-        SNOW_LICENSE_KEY: jwtToken,  // JWT token, not license key!
-        // Credentials are fetched from portal API by enterprise MCP server
+      type: 'remote',
+      url: `${mcpServerUrl}/mcp/sse`,
+      headers: {
+        'Authorization': `Bearer ${jwtToken}`,
       },
-      enabled: true,
     };
 
     // Write updated .mcp.json
@@ -351,13 +330,11 @@ export async function addEnterpriseMcpServerWithToken(config: EnterpriseMcpConfi
         }
 
         snowCodeConfig.mcp['snow-flow-enterprise'] = {
-          type: 'local',
-          command: ['node', enterpriseProxyPath],
-          environment: {
-            SNOW_ENTERPRISE_URL: mcpServerUrl,
-            SNOW_LICENSE_KEY: jwtToken,
+          type: 'remote',
+          url: `${mcpServerUrl}/mcp/sse`,
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
           },
-          enabled: true,
         };
 
         await fs.writeFile(snowCodeConfigPath, JSON.stringify(snowCodeConfig, null, 2), 'utf-8');
@@ -379,13 +356,11 @@ export async function addEnterpriseMcpServerWithToken(config: EnterpriseMcpConfi
         }
 
         claudeMcpConfig.mcpServers['snow-flow-enterprise'] = {
-          type: 'local',
-          command: ['node', enterpriseProxyPath],
-          environment: {
-            SNOW_ENTERPRISE_URL: mcpServerUrl,
-            SNOW_LICENSE_KEY: jwtToken,
+          type: 'remote',
+          url: `${mcpServerUrl}/mcp/sse`,
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
           },
-          enabled: true,
         };
 
         await fs.writeFile(claudeMcpConfigPath, JSON.stringify(claudeMcpConfig, null, 2), 'utf-8');
