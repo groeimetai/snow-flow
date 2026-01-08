@@ -1504,6 +1504,7 @@ export namespace SessionPrompt {
                   model: input.model,
                   usage: value.usage,
                   metadata: value.providerMetadata,
+                  providerID: input.providerID,
                 })
                 assistantMsg.cost += usage.cost
                 // Accumulate tokens across all steps (each step = separate API call)

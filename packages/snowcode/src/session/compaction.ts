@@ -357,6 +357,7 @@ export namespace SessionCompaction {
                 model: model.info,
                 usage: value.usage,
                 metadata: value.providerMetadata,
+                providerID: model.providerID,
               })
               msg.cost += (usage as any).cost
               // Accumulate tokens across all steps (each step = separate API call)

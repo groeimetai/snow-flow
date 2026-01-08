@@ -402,11 +402,30 @@ export namespace Session {
       model: z.custom<ModelsDev.Model>(),
       usage: z.custom<LanguageModelUsage>(),
       metadata: z.custom<ProviderMetadata>().optional(),
+      providerID: z.string().optional(),
     }) as any,
     (input) => {
-      // Safely extract token counts (handles objects/undefined)
+      // Safely extract raw token counts (handles objects/undefined)
+      const rawInputTokens = safeNumber(input.usage?.inputTokens)
+      const cachedInputTokens = safeNumber(input.usage?.cachedInputTokens)
+
+      // Provider-specific normalization for cached input tokens:
+      // - OpenAI: inputTokens INCLUDES cachedInputTokens (cached is a subset)
+      // - Anthropic: inputTokens EXCLUDES cachedInputTokens (they are separate)
+      // We normalize so that tokens.input = NEW tokens (not from cache)
+      // This ensures tokens.input + tokens.cache.read = total input tokens
+      const isOpenAIStyle = input.providerID?.includes("openai") ||
+                           input.providerID?.includes("azure") ||
+                           input.providerID?.includes("openrouter")
+
+      // For OpenAI-style providers: subtract cached from input to get new tokens
+      // For Anthropic-style providers: input already excludes cached
+      const normalizedInput = isOpenAIStyle
+        ? Math.max(0, rawInputTokens - cachedInputTokens)
+        : rawInputTokens
+
       const tokens = {
-        input: safeNumber(input.usage?.inputTokens),
+        input: normalizedInput,
         output: safeNumber(input.usage?.outputTokens),
         reasoning: safeNumber(input.usage?.reasoningTokens),
         cache: {
@@ -414,7 +433,7 @@ export namespace Session {
             input.metadata?.["anthropic"]?.["cacheCreationInputTokens"] ??
             (input.metadata as any)?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"]
           ),
-          read: safeNumber(input.usage?.cachedInputTokens),
+          read: cachedInputTokens,
         },
       }
 
