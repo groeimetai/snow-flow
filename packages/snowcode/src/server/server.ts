@@ -189,6 +189,96 @@ export namespace Server {
         },
       )
       .get(
+        "/features",
+        describeRoute({
+          description: "Get feature toggles (Context7, WebSearch, WebFetch)",
+          operationId: "features.get",
+          responses: {
+            200: {
+              description: "Feature toggles",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    z
+                      .object({
+                        context7: z.boolean(),
+                        webSearch: z.boolean(),
+                        webFetch: z.boolean(),
+                      })
+                      .meta({ ref: "Features" }),
+                  ),
+                },
+              },
+            },
+          },
+        }),
+        async (c) => {
+          const config = await Config.get()
+          return c.json({
+            context7: config.features?.context7 ?? true,
+            webSearch: config.features?.webSearch ?? true,
+            webFetch: config.features?.webFetch ?? true,
+          })
+        },
+      )
+      .post(
+        "/features",
+        describeRoute({
+          description: "Update feature toggles (Context7, WebSearch, WebFetch)",
+          operationId: "features.update",
+          responses: {
+            200: {
+              description: "Updated feature toggles",
+              content: {
+                "application/json": {
+                  schema: resolver(
+                    z
+                      .object({
+                        context7: z.boolean(),
+                        webSearch: z.boolean(),
+                        webFetch: z.boolean(),
+                      })
+                      .meta({ ref: "Features" }),
+                  ),
+                },
+              },
+            },
+            ...errors(400),
+          },
+        }),
+        validator(
+          "json",
+          z.object({
+            context7: z.boolean().optional(),
+            webSearch: z.boolean().optional(),
+            webFetch: z.boolean().optional(),
+          }),
+        ),
+        async (c) => {
+          const body = c.req.valid("json")
+          const config = await Config.get()
+
+          // Merge with existing features
+          const updatedFeatures = {
+            context7: body.context7 ?? config.features?.context7 ?? true,
+            webSearch: body.webSearch ?? config.features?.webSearch ?? true,
+            webFetch: body.webFetch ?? config.features?.webFetch ?? true,
+          }
+
+          // Update config with new features and sync tools/mcp
+          await Config.update({
+            features: updatedFeatures,
+            tools: {
+              ...(config.tools ?? {}),
+              WebSearch: updatedFeatures.webSearch,
+              webfetch: updatedFeatures.webFetch,
+            },
+          })
+
+          return c.json(updatedFeatures)
+        },
+      )
+      .get(
         "/experimental/tool/ids",
         describeRoute({
           description: "List all tool IDs (including built-in and dynamically registered)",

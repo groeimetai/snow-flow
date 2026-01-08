@@ -163,6 +163,7 @@ const (
 	AuthLoginCommand                CommandName = "auth_login"
 	BudgetCommand                   CommandName = "budget"
 	AppVersionCommand               CommandName = "app_version"
+	SettingsCommand                 CommandName = "settings"
 )
 
 func (k Command) Matches(msg tea.KeyPressMsg, leader bool) bool {
@@ -417,6 +418,12 @@ func LoadFromConfig(config *opencode.Config, customCommands []opencode.Command) 
 			Description: "show version info",
 			Keybindings: parseBindings(),
 			Trigger:     []string{"version", "v"},
+		},
+		{
+			Name:        SettingsCommand,
+			Description: "toggle features",
+			Keybindings: parseBindings("<leader>f"),
+			Trigger:     []string{"settings", "features", "prefs"},
 		},
 	}
 	registry := make(CommandRegistry)

@@ -1632,6 +1632,10 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 		// Show version info dialog
 		versionDialog := dialog.NewVersionDialog(a.app)
 		a.modal = versionDialog
+	case commands.SettingsCommand:
+		// Show settings dialog for feature toggles
+		settingsDialog := dialog.NewSettingsDialog()
+		a.modal = settingsDialog
 	case commands.AppExitCommand:
 		return a, tea.Quit
 	}

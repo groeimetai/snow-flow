@@ -781,6 +781,26 @@ export namespace Config {
         })
         .optional(),
       tools: z.record(z.string(), z.boolean()).optional(),
+      features: z
+        .object({
+          context7: z
+            .boolean()
+            .optional()
+            .default(true)
+            .describe("Enable Context7 MCP server for documentation search (default: true)"),
+          webSearch: z
+            .boolean()
+            .optional()
+            .default(true)
+            .describe("Enable WebSearch tool for web searches (default: true)"),
+          webFetch: z
+            .boolean()
+            .optional()
+            .default(true)
+            .describe("Enable WebFetch tool for fetching web content (default: true)"),
+        })
+        .optional()
+        .describe("Feature toggles for optional capabilities like Context7, WebSearch, and WebFetch"),
       hooks: HooksConfig.optional().describe(
         "Shell command hooks configuration (Claude Code style). Configure hooks for lifecycle events, tool execution, and ServiceNow-specific actions."
       ),
