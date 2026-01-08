@@ -1636,6 +1636,7 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 		// Show settings dialog for feature toggles
 		settingsDialog := dialog.NewSettingsDialog()
 		a.modal = settingsDialog
+		cmds = append(cmds, settingsDialog.Init())
 	case commands.AppExitCommand:
 		return a, tea.Quit
 	}
