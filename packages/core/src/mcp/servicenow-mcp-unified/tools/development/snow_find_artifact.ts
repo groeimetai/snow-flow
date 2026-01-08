@@ -1,6 +1,13 @@
 /**
  * snow_find_artifact - Find ServiceNow artifacts using natural language
  *
+ * @deprecated Use snow_artifact_manage with action='find' instead.
+ * This tool is maintained for backwards compatibility.
+ *
+ * Example migration:
+ *   OLD: snow_find_artifact({ query: 'incident widget', type: 'widget' })
+ *   NEW: snow_artifact_manage({ action: 'find', type: 'widget', query: 'incident widget' })
+ *
  * Searches cached memory first for performance, then queries ServiceNow directly if needed.
  */
 

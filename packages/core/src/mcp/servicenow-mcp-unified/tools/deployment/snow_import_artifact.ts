@@ -1,6 +1,13 @@
 /**
  * snow_import_artifact - Import ServiceNow artifacts
  *
+ * @deprecated Use snow_artifact_manage with action='import' instead.
+ * This tool is maintained for backwards compatibility.
+ *
+ * Example migration:
+ *   OLD: snow_import_artifact({ type: 'widget', file_path: './widget.json' })
+ *   NEW: snow_artifact_manage({ action: 'import', type: 'widget', file_path: './widget.json' })
+ *
  * Imports previously exported artifacts from JSON/XML files into ServiceNow
  */
 

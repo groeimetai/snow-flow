@@ -1,6 +1,13 @@
 /**
  * snow_analyze_artifact - Analyze artifact structure and dependencies
  *
+ * @deprecated Use snow_artifact_manage with action='analyze' instead.
+ * This tool is maintained for backwards compatibility.
+ *
+ * Example migration:
+ *   OLD: snow_analyze_artifact({ sys_id: '...', table: 'sp_widget' })
+ *   NEW: snow_artifact_manage({ action: 'analyze', type: 'widget', sys_id: '...' })
+ *
  * Performs comprehensive analysis including dependencies, usage patterns, and optimization opportunities.
  */
 

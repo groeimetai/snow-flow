@@ -1,6 +1,13 @@
 /**
  * snow_export_artifact - Export ServiceNow artifacts
  *
+ * @deprecated Use snow_artifact_manage with action='export' instead.
+ * This tool is maintained for backwards compatibility.
+ *
+ * Example migration:
+ *   OLD: snow_export_artifact({ type: 'widget', sys_id: '...', format: 'json' })
+ *   NEW: snow_artifact_manage({ action: 'export', type: 'widget', sys_id: '...', format: 'json' })
+ *
  * Exports widgets, applications to JSON/XML format for backup or migration
  */
 

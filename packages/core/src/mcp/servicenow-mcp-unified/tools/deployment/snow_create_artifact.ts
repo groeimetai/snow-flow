@@ -1,6 +1,13 @@
 /**
  * snow_create_artifact - Universal artifact creation for ServiceNow
  *
+ * @deprecated Use snow_artifact_manage with action='create' instead.
+ * This tool is maintained for backwards compatibility.
+ *
+ * Example migration:
+ *   OLD: snow_create_artifact({ type: 'sp_widget', name: 'my_widget', ... })
+ *   NEW: snow_artifact_manage({ action: 'create', type: 'sp_widget', name: 'my_widget', ... })
+ *
  * Create any ServiceNow artifact (widgets, pages, scripts, etc.) with a unified interface.
  * Replaces the deprecated snow_deploy tool with a more flexible approach.
  */

@@ -1,6 +1,13 @@
 /**
  * snow_update - Update ServiceNow artifacts
  *
+ * @deprecated Use snow_artifact_manage with action='update' instead.
+ * This tool is maintained for backwards compatibility.
+ *
+ * Example migration:
+ *   OLD: snow_update({ type: 'widget', identifier: 'my_widget', config: { template: '...' } })
+ *   NEW: snow_artifact_manage({ action: 'update', type: 'widget', identifier: 'my_widget', config: { template: '...' } })
+ *
  * Universal artifact update tool supporting widgets, pages, scripts, flows, and more.
  */
 
