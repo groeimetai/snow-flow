@@ -410,17 +410,22 @@ export namespace Session {
       const cachedInputTokens = safeNumber(input.usage?.cachedInputTokens)
 
       // Provider-specific normalization for cached input tokens:
-      // - OpenAI: inputTokens INCLUDES cachedInputTokens (cached is a subset)
+      // - OpenAI/Google: inputTokens INCLUDES cachedInputTokens (cached is a subset)
       // - Anthropic: inputTokens EXCLUDES cachedInputTokens (they are separate)
       // We normalize so that tokens.input = NEW tokens (not from cache)
       // This ensures tokens.input + tokens.cache.read = total input tokens
-      const isOpenAIStyle = input.providerID?.includes("openai") ||
-                           input.providerID?.includes("azure") ||
-                           input.providerID?.includes("openrouter")
+      //
+      // Sources:
+      // - OpenAI: https://github.com/vercel/ai/issues/8794
+      // - Google: https://discuss.ai.google.dev/t/how-to-count-tokens-when-using-context-caching/37300
+      const isInclusiveCacheProvider = input.providerID?.includes("openai") ||
+                                       input.providerID?.includes("azure") ||
+                                       input.providerID?.includes("openrouter") ||
+                                       input.providerID?.includes("google")
 
-      // For OpenAI-style providers: subtract cached from input to get new tokens
+      // For inclusive-cache providers: subtract cached from input to get new tokens
       // For Anthropic-style providers: input already excludes cached
-      const normalizedInput = isOpenAIStyle
+      const normalizedInput = isInclusiveCacheProvider
         ? Math.max(0, rawInputTokens - cachedInputTokens)
         : rawInputTokens
 
