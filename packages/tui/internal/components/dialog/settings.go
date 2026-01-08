@@ -37,8 +37,8 @@ type FeaturesLoadedMsg struct {
 	Error    string
 }
 
-// FeatureToggledMsg is sent when a feature is toggled
-type FeatureToggledMsg struct {
+// FeaturesSavedMsg is sent when features are saved to server
+type FeaturesSavedMsg struct {
 	Features FeatureState
 	Error    string
 }
@@ -106,14 +106,41 @@ func (h headerItem) Selectable() bool {
 	return false
 }
 
+type actionItem struct {
+	label  string
+	action string
+}
+
+func (a actionItem) Render(selected bool, width int, baseStyle styles.Style) string {
+	t := theme.CurrentTheme()
+
+	style := baseStyle.
+		Foreground(t.Text()).
+		MarginTop(1).
+		Bold(true)
+
+	if selected {
+		style = style.Foreground(t.Success())
+	}
+
+	return style.Render("[ " + a.label + " ]")
+}
+
+func (a actionItem) Selectable() bool {
+	return true
+}
+
 type settingsDialog struct {
-	width    int
-	height   int
-	modal    *modal.Modal
-	list     list.List[list.Item]
-	features FeatureState
-	loading  bool
-	error    string
+	width            int
+	height           int
+	modal            *modal.Modal
+	list             list.List[list.Item]
+	originalFeatures FeatureState // Features loaded from server
+	pendingFeatures  FeatureState // Features being edited (not yet saved)
+	loading          bool
+	saving           bool
+	error            string
+	hasChanges       bool
 }
 
 func (d *settingsDialog) Init() tea.Cmd {
@@ -148,60 +175,68 @@ func (d *settingsDialog) loadFeatures() tea.Cmd {
 	}
 }
 
-func (d *settingsDialog) toggleFeature(key string) tea.Cmd {
+func (d *settingsDialog) saveFeatures() tea.Cmd {
 	return func() tea.Msg {
-		// Toggle locally first
-		newFeatures := d.features
-		switch key {
-		case "context7":
-			newFeatures.Context7 = !newFeatures.Context7
-		case "webSearch":
-			newFeatures.WebSearch = !newFeatures.WebSearch
-		case "webFetch":
-			newFeatures.WebFetch = !newFeatures.WebFetch
-		}
-
 		serverURL := os.Getenv("SNOWCODE_SERVER")
 		if serverURL == "" {
 			serverURL = "http://127.0.0.1:3006"
 		}
 		serverURL = strings.TrimSuffix(serverURL, "/")
 
-		jsonData, err := json.Marshal(newFeatures)
+		jsonData, err := json.Marshal(d.pendingFeatures)
 		if err != nil {
-			return FeatureToggledMsg{Features: d.features, Error: err.Error()}
+			return FeaturesSavedMsg{Features: d.originalFeatures, Error: err.Error()}
 		}
 
 		resp, err := http.Post(serverURL+"/features", "application/json", bytes.NewBuffer(jsonData))
 		if err != nil {
-			return FeatureToggledMsg{Features: d.features, Error: err.Error()}
+			return FeaturesSavedMsg{Features: d.originalFeatures, Error: err.Error()}
 		}
 		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return FeatureToggledMsg{Features: d.features, Error: err.Error()}
+			return FeaturesSavedMsg{Features: d.originalFeatures, Error: err.Error()}
 		}
 
-		var updatedFeatures FeatureState
-		if err := json.Unmarshal(body, &updatedFeatures); err != nil {
-			return FeatureToggledMsg{Features: d.features, Error: err.Error()}
+		var savedFeatures FeatureState
+		if err := json.Unmarshal(body, &savedFeatures); err != nil {
+			return FeaturesSavedMsg{Features: d.originalFeatures, Error: err.Error()}
 		}
 
-		return FeatureToggledMsg{Features: updatedFeatures}
+		return FeaturesSavedMsg{Features: savedFeatures}
 	}
+}
+
+func (d *settingsDialog) toggleFeatureLocally(key string) {
+	switch key {
+	case "context7":
+		d.pendingFeatures.Context7 = !d.pendingFeatures.Context7
+	case "webSearch":
+		d.pendingFeatures.WebSearch = !d.pendingFeatures.WebSearch
+	case "webFetch":
+		d.pendingFeatures.WebFetch = !d.pendingFeatures.WebFetch
+	}
+	d.updateHasChanges()
+	d.refreshList()
+}
+
+func (d *settingsDialog) updateHasChanges() {
+	d.hasChanges = d.pendingFeatures.Context7 != d.originalFeatures.Context7 ||
+		d.pendingFeatures.WebSearch != d.originalFeatures.WebSearch ||
+		d.pendingFeatures.WebFetch != d.originalFeatures.WebFetch
 }
 
 func (d *settingsDialog) refreshList() {
 	items := []list.Item{}
 
 	// Context7 is enterprise-only
-	if d.features.IsEnterprise {
+	if d.pendingFeatures.IsEnterprise {
 		items = append(items, headerItem{title: "External Services (Enterprise)"})
 		items = append(items, settingItem{
 			name:        "Context7",
 			description: "(documentation search)",
-			enabled:     d.features.Context7,
+			enabled:     d.pendingFeatures.Context7,
 			key:         "context7",
 		})
 	}
@@ -210,15 +245,22 @@ func (d *settingsDialog) refreshList() {
 	items = append(items, settingItem{
 		name:        "WebSearch",
 		description: "(search the web)",
-		enabled:     d.features.WebSearch,
+		enabled:     d.pendingFeatures.WebSearch,
 		key:         "webSearch",
 	})
 	items = append(items, settingItem{
 		name:        "WebFetch",
 		description: "(fetch web pages)",
-		enabled:     d.features.WebFetch,
+		enabled:     d.pendingFeatures.WebFetch,
 		key:         "webFetch",
 	})
+
+	// Add Save button
+	saveLabel := "Save"
+	if d.hasChanges {
+		saveLabel = "Save *"
+	}
+	items = append(items, actionItem{label: saveLabel, action: "save"})
 
 	d.list.SetItems(items)
 }
@@ -230,19 +272,27 @@ func (d *settingsDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Error != "" {
 			d.error = msg.Error
 		} else {
-			d.features = msg.Features
+			d.originalFeatures = msg.Features
+			d.pendingFeatures = msg.Features
+			d.hasChanges = false
 			d.refreshList()
 		}
 		return d, nil
 
-	case FeatureToggledMsg:
+	case FeaturesSavedMsg:
+		d.saving = false
 		if msg.Error != "" {
 			d.error = msg.Error
-		} else {
-			d.features = msg.Features
-			d.refreshList()
+			return d, nil
 		}
-		return d, util.CmdHandler(SettingsUpdatedMsg{Features: d.features})
+		// Success! Update original features and close
+		d.originalFeatures = msg.Features
+		d.pendingFeatures = msg.Features
+		d.hasChanges = false
+		return d, tea.Batch(
+			util.CmdHandler(SettingsUpdatedMsg{Features: msg.Features}),
+			util.CmdHandler(modal.CloseModalMsg{}),
+		)
 
 	case tea.WindowSizeMsg:
 		d.width = msg.Width
@@ -251,13 +301,22 @@ func (d *settingsDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter", " ":
-			// Toggle selected item
+			// Handle selected item
 			if item, idx := d.list.GetSelectedItem(); idx >= 0 {
 				if si, ok := item.(settingItem); ok {
-					return d, d.toggleFeature(si.key)
+					// Toggle the setting locally
+					d.toggleFeatureLocally(si.key)
+					return d, nil
+				}
+				if ai, ok := item.(actionItem); ok {
+					if ai.action == "save" {
+						d.saving = true
+						return d, d.saveFeatures()
+					}
 				}
 			}
 		case "esc":
+			// Cancel without saving
 			return d, util.CmdHandler(modal.CloseModalMsg{})
 		}
 	}
@@ -271,6 +330,9 @@ func (d *settingsDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (d *settingsDialog) View() string {
 	if d.loading {
 		return "Loading settings..."
+	}
+	if d.saving {
+		return "Saving..."
 	}
 	if d.error != "" {
 		return "Error: " + d.error
@@ -290,7 +352,7 @@ func (d *settingsDialog) Close() tea.Cmd {
 func NewSettingsDialog() SettingsDialog {
 	listComponent := list.NewListComponent(
 		list.WithItems([]list.Item{}),
-		list.WithMaxVisibleHeight[list.Item](8),
+		list.WithMaxVisibleHeight[list.Item](10),
 		list.WithFallbackMessage[list.Item]("Loading settings..."),
 		list.WithAlphaNumericKeys[list.Item](false),
 		list.WithRenderFunc(func(item list.Item, selected bool, width int, baseStyle styles.Style) string {
@@ -305,7 +367,12 @@ func NewSettingsDialog() SettingsDialog {
 	return &settingsDialog{
 		list:  listComponent,
 		modal: modal.New(modal.WithTitle("Settings"), modal.WithMaxWidth(46)),
-		features: FeatureState{
+		originalFeatures: FeatureState{
+			Context7:  true,
+			WebSearch: true,
+			WebFetch:  true,
+		},
+		pendingFeatures: FeatureState{
 			Context7:  true,
 			WebSearch: true,
 			WebFetch:  true,
