@@ -482,20 +482,34 @@ export namespace SessionPrompt {
       }
       await processor.end()
 
+      // Safely get finish reason - may throw NoOutputGeneratedError if stream was aborted
+      let finishReason: string = "unknown"
+      try {
+        finishReason = (await stream.finishReason) || "unknown"
+      } catch (finishError) {
+        // Stream was aborted (ESC key) - NoOutputGeneratedError is expected
+        if (NoOutputGeneratedError.isInstance(finishError)) {
+          log.debug("stream aborted - finish reason unavailable")
+          finishReason = "aborted"
+        } else {
+          throw finishError
+        }
+      }
+
       // Debug: Log response with actual token usage
       await TokenDebug.logResponse({
         sessionID: input.sessionID,
         requestID,
         tokens: result.info.tokens,
         cost: result.info.cost,
-        finishReason: (await stream.finishReason) || "unknown",
+        finishReason,
         startTime: requestStartTime,
       })
 
       const queued = state().queued.get(input.sessionID) ?? []
 
       if (!result.blocked && !result.info.error) {
-        if ((await stream.finishReason) === "tool-calls") {
+        if (finishReason === "tool-calls") {
           continue
         }
 
@@ -513,6 +527,31 @@ export namespace SessionPrompt {
       return result
     }
     } catch (e) {
+      // Check if this is an abort-related error (user pressed ESC)
+      const isAbortError =
+        (e instanceof DOMException && e.name === "AbortError") ||
+        NoOutputGeneratedError.isInstance(e)
+
+      if (isAbortError) {
+        // User intentionally aborted - handle gracefully without re-throwing
+        log.debug("prompt aborted by user", { error: e })
+
+        const error = MessageV2.fromError(e, { providerID: model.providerID })
+
+        // Force complete the message with abort status
+        await processor.forceCompleteWithError(error)
+
+        // Return the result with abort error - don't re-throw
+        const currentMessage = processor.currentMessage
+        if (currentMessage) {
+          const parts = await Session.getParts(currentMessage.id)
+          return { info: currentMessage, parts }
+        }
+
+        // If no message was started, create a minimal response
+        throw e
+      }
+
       // Check if this is a token overflow error that we can recover from via compaction
       const isTokenOverflow =
         e instanceof Error &&
