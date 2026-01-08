@@ -204,6 +204,7 @@ export namespace Server {
                         context7: z.boolean(),
                         webSearch: z.boolean(),
                         webFetch: z.boolean(),
+                        isEnterprise: z.boolean(),
                       })
                       .meta({ ref: "Features" }),
                   ),
@@ -214,10 +215,14 @@ export namespace Server {
         }),
         async (c) => {
           const config = await Config.get()
+          // Check if enterprise is configured by looking for snow-flow-enterprise MCP
+          const isEnterprise = !!(config.mcp?.["snow-flow-enterprise"]?.enabled !== false &&
+            config.mcp?.["snow-flow-enterprise"])
           return c.json({
             context7: config.features?.context7 ?? true,
             webSearch: config.features?.webSearch ?? true,
             webFetch: config.features?.webFetch ?? true,
+            isEnterprise,
           })
         },
       )

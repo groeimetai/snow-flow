@@ -20,9 +20,10 @@ import (
 
 // FeatureState represents the feature toggle states
 type FeatureState struct {
-	Context7  bool `json:"context7"`
-	WebSearch bool `json:"webSearch"`
-	WebFetch  bool `json:"webFetch"`
+	Context7     bool `json:"context7"`
+	WebSearch    bool `json:"webSearch"`
+	WebFetch     bool `json:"webFetch"`
+	IsEnterprise bool `json:"isEnterprise"`
 }
 
 // SettingsUpdatedMsg is sent when settings are changed
@@ -192,28 +193,33 @@ func (d *settingsDialog) toggleFeature(key string) tea.Cmd {
 }
 
 func (d *settingsDialog) refreshList() {
-	items := []list.Item{
-		headerItem{title: "External Services"},
-		settingItem{
+	items := []list.Item{}
+
+	// Context7 is enterprise-only
+	if d.features.IsEnterprise {
+		items = append(items, headerItem{title: "External Services (Enterprise)"})
+		items = append(items, settingItem{
 			name:        "Context7",
 			description: "(documentation search)",
 			enabled:     d.features.Context7,
 			key:         "context7",
-		},
-		headerItem{title: "Web Tools"},
-		settingItem{
-			name:        "WebSearch",
-			description: "(search the web)",
-			enabled:     d.features.WebSearch,
-			key:         "webSearch",
-		},
-		settingItem{
-			name:        "WebFetch",
-			description: "(fetch web pages)",
-			enabled:     d.features.WebFetch,
-			key:         "webFetch",
-		},
+		})
 	}
+
+	items = append(items, headerItem{title: "Web Tools"})
+	items = append(items, settingItem{
+		name:        "WebSearch",
+		description: "(search the web)",
+		enabled:     d.features.WebSearch,
+		key:         "webSearch",
+	})
+	items = append(items, settingItem{
+		name:        "WebFetch",
+		description: "(fetch web pages)",
+		enabled:     d.features.WebFetch,
+		key:         "webFetch",
+	})
+
 	d.list.SetItems(items)
 }
 
