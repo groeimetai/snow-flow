@@ -28,6 +28,28 @@ const AUTH_PROVIDERS: Record<string, BuiltInAuthProvider> = {
 // State storage for OAuth flows (in-memory, keyed by session ID)
 const oauthSessions: Map<string, { verifier: string; callback: (code: string) => Promise<any> }> = new Map()
 
+// State storage for headless ServiceNow OAuth sessions
+interface HeadlessOAuthSession {
+  instance: string
+  clientId: string
+  clientSecret: string
+  state: string
+  codeVerifier: string
+  redirectUri: string
+  createdAt: number
+}
+const headlessServiceNowSessions: Map<string, HeadlessOAuthSession> = new Map()
+
+// Clean up expired headless sessions (10 minute timeout)
+setInterval(() => {
+  const now = Date.now()
+  for (const [sessionId, session] of headlessServiceNowSessions) {
+    if (now - session.createdAt > 10 * 60 * 1000) {
+      headlessServiceNowSessions.delete(sessionId)
+    }
+  }
+}, 60 * 1000)
+
 // Known provider baseURLs for providers where models.dev doesn't specify one
 const PROVIDER_BASE_URLS: Record<string, string> = {
   "openai": "https://api.openai.com/v1",
@@ -562,6 +584,11 @@ export const AuthRoute = new Hono()
                 accessToken: z.string().optional(),
                 error: z.string().optional(),
                 reused: z.boolean().optional(), // true if existing token was reused
+                // Headless mode response fields
+                needsManualAuth: z.boolean().optional(),
+                authUrl: z.string().optional(),
+                sessionId: z.string().optional(),
+                headlessReason: z.string().optional(),
               })),
             },
           },
@@ -578,73 +605,80 @@ export const AuthRoute = new Hono()
       const { instance, clientId, clientSecret, forceReauth } = c.req.valid("json")
 
       try {
-        // If forceReauth is true, skip token reuse and always do full OAuth
-        if (forceReauth) {
-          const oauth = new ServiceNowOAuth()
-          const result = await oauth.authenticate({
-            instance,
-            clientId,
-            clientSecret,
-            silent: true,
-          })
+        // Check if we already have valid ServiceNow OAuth credentials (unless forceReauth)
+        if (!forceReauth) {
+          const existingAuth = await Auth.get("servicenow")
 
-          if (result.success) {
-            await updateEnvFile([
-              { key: "SNOW_INSTANCE", value: instance },
-              { key: "SNOW_AUTH_METHOD", value: "oauth" },
-              { key: "SNOW_CLIENT_ID", value: clientId },
-              { key: "SNOW_CLIENT_SECRET", value: clientSecret },
-            ])
-            await updateSnowCodeMCPConfigs(instance, clientId, clientSecret)
-            return c.json({ success: true, accessToken: result.accessToken, reused: false })
-          }
-          return c.json({ success: false, error: result.error })
-        }
+          if (existingAuth && existingAuth.type === "servicenow-oauth") {
+            const normalizedInstance = instance.replace(/^https?:\/\//, "").replace(/\/$/, "")
+            const existingInstance = existingAuth.instance?.replace(/^https?:\/\//, "").replace(/\/$/, "")
 
-        // Otherwise, check if we already have valid ServiceNow OAuth credentials
-        const existingAuth = await Auth.get("servicenow")
-
-        if (existingAuth && existingAuth.type === "servicenow-oauth") {
-          const normalizedInstance = instance.replace(/^https?:\/\//, "").replace(/\/$/, "")
-          const existingInstance = existingAuth.instance?.replace(/^https?:\/\//, "").replace(/\/$/, "")
-
-          // Check if it's for the same instance
-          if (existingInstance === normalizedInstance || existingAuth.instance?.includes(normalizedInstance)) {
-            // Check if token is still valid (not expired)
-            if (existingAuth.accessToken && (!existingAuth.expiresAt || existingAuth.expiresAt > Date.now())) {
-              // Token is valid, reuse it
-              return c.json({
-                success: true,
-                accessToken: existingAuth.accessToken,
-                reused: true
-              })
-            }
-
-            // Token expired, try to refresh
-            if (existingAuth.refreshToken && existingAuth.expiresAt && existingAuth.expiresAt < Date.now()) {
-              const oauth = new ServiceNowOAuth()
-              const instanceUrl = instance.startsWith("http") ? instance : `https://${instance}`
-              const refreshResult = await oauth.refreshAccessToken(
-                instanceUrl,
-                existingAuth.clientId || clientId,
-                existingAuth.clientSecret || clientSecret,
-                existingAuth.refreshToken
-              )
-
-              if (refreshResult.success && refreshResult.accessToken) {
-                // Token refreshed successfully
+            // Check if it's for the same instance
+            if (existingInstance === normalizedInstance || existingAuth.instance?.includes(normalizedInstance)) {
+              // Check if token is still valid (not expired)
+              if (existingAuth.accessToken && (!existingAuth.expiresAt || existingAuth.expiresAt > Date.now())) {
+                // Token is valid, reuse it
                 return c.json({
                   success: true,
-                  accessToken: refreshResult.accessToken,
+                  accessToken: existingAuth.accessToken,
                   reused: true
                 })
               }
-              // Refresh failed, fall through to full OAuth
+
+              // Token expired, try to refresh
+              if (existingAuth.refreshToken && existingAuth.expiresAt && existingAuth.expiresAt < Date.now()) {
+                const oauth = new ServiceNowOAuth()
+                const instanceUrl = instance.startsWith("http") ? instance : `https://${instance}`
+                const refreshResult = await oauth.refreshAccessToken(
+                  instanceUrl,
+                  existingAuth.clientId || clientId,
+                  existingAuth.clientSecret || clientSecret,
+                  existingAuth.refreshToken
+                )
+
+                if (refreshResult.success && refreshResult.accessToken) {
+                  // Token refreshed successfully
+                  return c.json({
+                    success: true,
+                    accessToken: refreshResult.accessToken,
+                    reused: true
+                  })
+                }
+                // Refresh failed, fall through to full OAuth
+              }
             }
           }
         }
 
-        // No valid token, do full OAuth flow
+        // Check if we're in a headless environment
+        const headlessEnv = detectHeadlessEnvironment()
+
+        if (headlessEnv.isHeadless) {
+          // Headless environment - return auth URL for manual authentication
+          const oauth = new ServiceNowOAuth()
+          const prepResult = oauth.prepareHeadlessAuth({ instance, clientId, clientSecret })
+
+          if (!prepResult.success || !prepResult.sessionData) {
+            return c.json({ success: false, error: prepResult.error || "Failed to prepare OAuth" })
+          }
+
+          // Generate session ID and store session data
+          const sessionId = crypto.randomBytes(16).toString("hex")
+          headlessServiceNowSessions.set(sessionId, {
+            ...prepResult.sessionData,
+            createdAt: Date.now(),
+          })
+
+          return c.json({
+            success: false, // Not complete yet
+            needsManualAuth: true,
+            authUrl: prepResult.authUrl,
+            sessionId,
+            headlessReason: headlessEnv.reason,
+          })
+        }
+
+        // Normal environment - do full OAuth flow with browser
         const oauth = new ServiceNowOAuth()
         const result = await oauth.authenticate({
           instance,
@@ -667,6 +701,79 @@ export const AuthRoute = new Hono()
 
           // Return the access token for MID Server LLM configuration
           return c.json({ success: true, accessToken: result.accessToken, reused: false })
+        }
+
+        return c.json({ success: false, error: result.error })
+      } catch (error: any) {
+        return c.json({ success: false, error: error.message })
+      }
+    }
+  )
+  // Complete headless ServiceNow OAuth with manual code
+  .post(
+    "/servicenow/oauth/complete",
+    describeRoute({
+      description: "Complete headless ServiceNow OAuth with manually provided authorization code",
+      operationId: "auth.servicenow.oauth.complete",
+      responses: {
+        200: {
+          description: "OAuth completion result",
+          content: {
+            "application/json": {
+              schema: resolver(z.object({
+                success: z.boolean(),
+                accessToken: z.string().optional(),
+                error: z.string().optional(),
+              })),
+            },
+          },
+        },
+      },
+    }),
+    validator("json", z.object({
+      sessionId: z.string(),
+      code: z.string(),
+    })),
+    async (c) => {
+      const { sessionId, code } = c.req.valid("json")
+
+      try {
+        // Get session data
+        const sessionData = headlessServiceNowSessions.get(sessionId)
+        if (!sessionData) {
+          return c.json({ success: false, error: "Session expired or invalid. Please start OAuth again." })
+        }
+
+        // Remove session (one-time use)
+        headlessServiceNowSessions.delete(sessionId)
+
+        // Complete OAuth
+        const oauth = new ServiceNowOAuth()
+        const result = await oauth.completeHeadlessAuth({
+          code,
+          sessionData: {
+            instance: sessionData.instance,
+            clientId: sessionData.clientId,
+            clientSecret: sessionData.clientSecret,
+            state: sessionData.state,
+            codeVerifier: sessionData.codeVerifier,
+            redirectUri: sessionData.redirectUri,
+          },
+        })
+
+        if (result.success) {
+          // Save to .env file
+          await updateEnvFile([
+            { key: "SNOW_INSTANCE", value: sessionData.instance },
+            { key: "SNOW_AUTH_METHOD", value: "oauth" },
+            { key: "SNOW_CLIENT_ID", value: sessionData.clientId },
+            { key: "SNOW_CLIENT_SECRET", value: sessionData.clientSecret },
+          ])
+
+          // Update MCP configs
+          await updateSnowCodeMCPConfigs(sessionData.instance, sessionData.clientId, sessionData.clientSecret)
+
+          return c.json({ success: true, accessToken: result.accessToken })
         }
 
         return c.json({ success: false, error: result.error })

@@ -850,6 +850,117 @@ export class ServiceNowOAuth {
   }
 
   /**
+   * Prepare OAuth for headless environment - returns auth URL without starting callback server
+   * Used when browser can't be auto-opened (Codespaces, SSH, Docker, etc.)
+   */
+  prepareHeadlessAuth(options: {
+    instance: string
+    clientId: string
+    clientSecret: string
+  }): {
+    success: boolean
+    authUrl?: string
+    sessionData?: {
+      instance: string
+      clientId: string
+      clientSecret: string
+      state: string
+      codeVerifier: string
+      redirectUri: string
+    }
+    error?: string
+  } {
+    try {
+      const normalizedInstance = this.normalizeInstanceUrl(options.instance)
+
+      // Validate client secret
+      const secretValidation = this.validateClientSecret(options.clientSecret)
+      if (!secretValidation.valid) {
+        return { success: false, error: secretValidation.reason }
+      }
+
+      // Generate PKCE and state
+      this.stateParameter = this.generateState()
+      this.generatePKCE()
+
+      // Use localhost callback - user will need to paste the redirect URL
+      const redirectUri = "http://localhost:3005/callback"
+
+      // Generate auth URL
+      const authUrl = this.generateAuthUrlWithCallback(normalizedInstance, options.clientId, redirectUri)
+
+      return {
+        success: true,
+        authUrl,
+        sessionData: {
+          instance: normalizedInstance,
+          clientId: options.clientId,
+          clientSecret: options.clientSecret,
+          state: this.stateParameter,
+          codeVerifier: this.codeVerifier!,
+          redirectUri,
+        },
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      }
+    }
+  }
+
+  /**
+   * Complete OAuth flow with manually provided authorization code
+   * Used in headless environments where user completes OAuth in external browser
+   */
+  async completeHeadlessAuth(options: {
+    code: string
+    sessionData: {
+      instance: string
+      clientId: string
+      clientSecret: string
+      state: string
+      codeVerifier: string
+      redirectUri: string
+    }
+  }): Promise<ServiceNowAuthResult> {
+    try {
+      // Restore PKCE state
+      this.codeVerifier = options.sessionData.codeVerifier
+      this.stateParameter = options.sessionData.state
+
+      // Exchange code for token
+      const tokenResult = await this.exchangeCodeForToken(
+        options.code,
+        options.sessionData.instance,
+        options.sessionData.clientId,
+        options.sessionData.clientSecret,
+        options.sessionData.redirectUri
+      )
+
+      if (tokenResult.success && tokenResult.accessToken) {
+        // Save to auth store
+        await Auth.set("servicenow", {
+          type: "servicenow-oauth",
+          instance: options.sessionData.instance,
+          clientId: options.sessionData.clientId,
+          clientSecret: options.sessionData.clientSecret,
+          accessToken: tokenResult.accessToken,
+          refreshToken: tokenResult.refreshToken,
+          expiresAt: tokenResult.expiresIn ? Date.now() + tokenResult.expiresIn * 1000 : undefined,
+        })
+      }
+
+      return tokenResult
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      }
+    }
+  }
+
+  /**
    * Auto-open browser
    */
   private openBrowser(url: string): void {

@@ -191,6 +191,9 @@ const (
 	stepInputPortalEmail        // Input email and password
 	stepInputPortalMagicLinkEmail // Input email for magic link
 	stepInputPortalMagicLinkCode  // Input code from magic link email
+	// Headless OAuth steps (for Codespaces, SSH, Docker, etc.)
+	stepHeadlessOAuthUrl  // Display auth URL for manual copy
+	stepHeadlessOAuthCode // Input authorization code
 )
 
 // AuthSelectedMsg is sent when auth completes
@@ -323,6 +326,11 @@ type authDialog struct {
 	selectedMidServerModel string
 	snowAccessToken      string  // ServiceNow OAuth access token for MID Server API calls
 	deployedApiBaseUri   string  // Base URI of deployed Snow-Flow LLM API
+
+	// Headless OAuth state (for Codespaces, SSH, Docker, etc.)
+	headlessSessionId    string // Session ID for completing headless OAuth
+	headlessAuthUrl      string // Auth URL to display to user
+	headlessReason       string // Why we detected headless environment
 
 	// Loading state
 	loading        bool
@@ -803,6 +811,14 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// MID Server LLM Configuration handlers
 	case ServiceNowOAuthCompleteMsg:
 		a.loading = false
+		// Check if headless environment needs manual auth
+		if msg.NeedsManualAuth {
+			a.headlessSessionId = msg.SessionId
+			a.headlessAuthUrl = msg.AuthUrl
+			a.headlessReason = msg.HeadlessReason
+			a.step = stepHeadlessOAuthUrl
+			return a, nil
+		}
 		if !msg.Success {
 			return a, toast.NewErrorToast("ServiceNow auth failed: " + msg.Error)
 		}
@@ -890,13 +906,13 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, util.CmdHandler(modal.CloseModalMsg{})
 
 		case "tab", "down":
-			if len(a.inputs) > 0 && (a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseSubdomain || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode) {
+			if len(a.inputs) > 0 && (a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseSubdomain || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode || a.step == stepHeadlessOAuthCode) {
 				a.focusedInput = (a.focusedInput + 1) % len(a.inputs)
 				return a, a.updateInputFocus()
 			}
 
 		case "shift+tab", "up":
-			if len(a.inputs) > 0 && (a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseSubdomain || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode) {
+			if len(a.inputs) > 0 && (a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseSubdomain || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode || a.step == stepHeadlessOAuthCode) {
 				a.focusedInput--
 				if a.focusedInput < 0 {
 					a.focusedInput = len(a.inputs) - 1
@@ -935,7 +951,7 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Update text inputs if in input step
-	if a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseSubdomain || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode {
+	if a.step == stepInputAPIKey || a.step == stepInputServiceNow || a.step == stepInputServiceNowBasic || a.step == stepInputEnterpriseSubdomain || a.step == stepInputEnterpriseCode || a.step == stepInputOAuthCode || a.step == stepHeadlessOAuthCode {
 		for i := range a.inputs {
 			var cmd tea.Cmd
 			a.inputs[i], cmd = a.inputs[i].Update(msg)
@@ -1345,6 +1361,21 @@ func (a *authDialog) handleEnter() (tea.Model, tea.Cmd) {
 			return a, a.portalMagicLinkVerify()
 		}
 		return a, toast.NewErrorToast("Please enter the code from your email")
+
+	case stepHeadlessOAuthUrl:
+		// User acknowledged the URL, move to code input
+		a.step = stepHeadlessOAuthCode
+		a.setupHeadlessOAuthCodeInput()
+		return a, nil
+
+	case stepHeadlessOAuthCode:
+		if len(a.inputs) > 0 && a.inputs[0].Value() != "" {
+			code := strings.TrimSpace(a.inputs[0].Value())
+			a.loading = true
+			a.loadingMessage = "Completing OAuth..."
+			return a, a.completeHeadlessOAuth(code)
+		}
+		return a, toast.NewErrorToast("Please enter the authorization code")
 	}
 
 	return a, nil
@@ -1491,6 +1522,16 @@ func (a *authDialog) goBack() {
 	case stepInputPortalMagicLinkCode:
 		a.step = stepInputPortalMagicLinkEmail
 		a.setupPortalMagicLinkEmailInput()
+	// Headless OAuth steps
+	case stepHeadlessOAuthUrl:
+		// Go back to ServiceNow input
+		a.step = stepInputServiceNow
+		a.setupServiceNowInputs()
+		a.headlessSessionId = ""
+		a.headlessAuthUrl = ""
+	case stepHeadlessOAuthCode:
+		// Go back to URL display
+		a.step = stepHeadlessOAuthUrl
 	}
 }
 
@@ -1583,6 +1624,51 @@ func (a *authDialog) setupPortalMagicLinkCodeInput() {
 	a.focusedInput = 0
 	a.inputLabels = []string{"Verification Code"}
 	a.modal = modal.New(modal.WithTitle("Magic Link - Enter Code"), modal.WithMaxWidth(60))
+}
+
+func (a *authDialog) setupHeadlessOAuthCodeInput() {
+	input := textinput.New()
+	input.Placeholder = "Paste the authorization code here..."
+	input.Focus()
+	input.CharLimit = 500
+	input.SetWidth(60)
+	a.inputs = []textinput.Model{input}
+	a.focusedInput = 0
+	a.inputLabels = []string{"Authorization Code"}
+	a.modal = modal.New(modal.WithTitle("ServiceNow OAuth - Enter Code"), modal.WithMaxWidth(70))
+}
+
+// completeHeadlessOAuth completes OAuth with manually provided authorization code
+func (a *authDialog) completeHeadlessOAuth(code string) tea.Cmd {
+	serverURL := a.serverURL
+	sessionId := a.headlessSessionId
+	return func() tea.Msg {
+		payload := map[string]string{
+			"sessionId": sessionId,
+			"code":      code,
+		}
+		jsonData, _ := json.Marshal(payload)
+
+		resp, err := http.Post(serverURL+"/auth/servicenow/oauth/complete", "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			return ServiceNowOAuthCompleteMsg{Success: false, Error: err.Error()}
+		}
+		defer resp.Body.Close()
+
+		body, _ := io.ReadAll(resp.Body)
+		var result struct {
+			Success     bool   `json:"success"`
+			AccessToken string `json:"accessToken"`
+			Error       string `json:"error"`
+		}
+		json.Unmarshal(body, &result)
+
+		if !result.Success {
+			return ServiceNowOAuthCompleteMsg{Success: false, Error: result.Error}
+		}
+
+		return ServiceNowOAuthCompleteMsg{Success: true, AccessToken: result.AccessToken}
+	}
 }
 
 func (a *authDialog) setupServiceNowAuthMethodList() {
@@ -1885,6 +1971,11 @@ type ServiceNowOAuthCompleteMsg struct {
 	Success     bool
 	AccessToken string
 	Error       string
+	// Headless mode fields
+	NeedsManualAuth bool
+	AuthUrl         string
+	SessionId       string
+	HeadlessReason  string
 }
 
 func (a *authDialog) loadProviders() tea.Cmd {
@@ -2121,12 +2212,15 @@ func (a *authDialog) saveAPIKey() tea.Cmd {
 
 func (a *authDialog) saveServiceNowOAuth() tea.Cmd {
 	serverURL := a.serverURL
+	instanceURL := a.instanceURL
+	clientID := a.clientID
+	clientSecret := a.clientSecret
 	return func() tea.Msg {
 		// Use forceReauth: true for explicit /auth flow (user wants to re-authenticate)
 		payload := map[string]interface{}{
-			"instance":     a.instanceURL,
-			"clientId":     a.clientID,
-			"clientSecret": a.clientSecret,
+			"instance":     instanceURL,
+			"clientId":     clientID,
+			"clientSecret": clientSecret,
 			"forceReauth":  true, // Always do full OAuth for explicit auth flow
 		}
 
@@ -2139,10 +2233,25 @@ func (a *authDialog) saveServiceNowOAuth() tea.Cmd {
 
 		body, _ := io.ReadAll(resp.Body)
 		var result struct {
-			Success bool   `json:"success"`
-			Error   string `json:"error"`
+			Success         bool   `json:"success"`
+			Error           string `json:"error"`
+			NeedsManualAuth bool   `json:"needsManualAuth"`
+			AuthUrl         string `json:"authUrl"`
+			SessionId       string `json:"sessionId"`
+			HeadlessReason  string `json:"headlessReason"`
 		}
 		json.Unmarshal(body, &result)
+
+		// Check if headless environment - needs manual auth
+		if result.NeedsManualAuth {
+			return ServiceNowOAuthCompleteMsg{
+				Success:         false,
+				NeedsManualAuth: true,
+				AuthUrl:         result.AuthUrl,
+				SessionId:       result.SessionId,
+				HeadlessReason:  result.HeadlessReason,
+			}
+		}
 
 		if result.Success {
 			return AuthSavedMsg{Success: true, Message: "ServiceNow OAuth configured!"}
@@ -3016,6 +3125,67 @@ func (a *authDialog) Render(background string) string {
 			helpStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
 			content = msgStyle.Render("🧪 Testing MID Server LLM") + "\n\n" +
 				helpStyle.Render("Sending test message to LLM via MID Server...\nPlease wait.")
+
+		// Headless OAuth steps (for Codespaces, SSH, Docker, etc.)
+		case stepHeadlessOAuthUrl:
+			var lines []string
+			warningStyle := styles.NewStyle().Foreground(t.Warning())
+			msgStyle := styles.NewStyle().Foreground(t.Primary())
+			urlStyle := styles.NewStyle().Foreground(t.Primary()).Bold(true)
+			helpStyle := styles.NewStyle().Foreground(t.TextMuted())
+			instructStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
+
+			lines = append(lines, warningStyle.Render("⚠️  Headless Environment Detected"))
+			if a.headlessReason != "" {
+				lines = append(lines, helpStyle.Render("   "+a.headlessReason))
+			}
+			lines = append(lines, "")
+			lines = append(lines, msgStyle.Render("🔗 Open this URL in your browser to authenticate:"))
+			lines = append(lines, "")
+			// Wrap URL if too long
+			url := a.headlessAuthUrl
+			if len(url) > 70 {
+				// Show URL in multiple parts
+				lines = append(lines, urlStyle.Render(url[:70]))
+				lines = append(lines, urlStyle.Render(url[70:]))
+			} else {
+				lines = append(lines, urlStyle.Render(url))
+			}
+			lines = append(lines, "")
+			lines = append(lines, instructStyle.Render("After approving in ServiceNow:"))
+			lines = append(lines, instructStyle.Render("1. You'll be redirected to localhost (will fail)"))
+			lines = append(lines, instructStyle.Render("2. Copy the 'code' parameter from the URL"))
+			lines = append(lines, instructStyle.Render("3. Press Enter to input the code"))
+			lines = append(lines, "")
+			footerStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
+			lines = append(lines, footerStyle.Render("Enter: input code • Esc: cancel"))
+			content = strings.Join(lines, "\n")
+			a.modal = modal.New(modal.WithTitle("ServiceNow OAuth - Headless Mode"), modal.WithMaxWidth(80))
+
+		case stepHeadlessOAuthCode:
+			var lines []string
+			msgStyle := styles.NewStyle().Foreground(t.Primary())
+			helpStyle := styles.NewStyle().Foreground(t.TextMuted())
+
+			lines = append(lines, msgStyle.Render("📋 Enter Authorization Code"))
+			lines = append(lines, "")
+			lines = append(lines, helpStyle.Render("Paste the 'code' parameter from the callback URL."))
+			lines = append(lines, helpStyle.Render("Example: localhost:3005/callback?code=XXXXX&state=..."))
+			lines = append(lines, helpStyle.Render("Copy the XXXXX part (the code value)."))
+			lines = append(lines, "")
+			for i, input := range a.inputs {
+				label := a.inputLabels[i]
+				labelStyle := styles.NewStyle().Foreground(t.TextMuted())
+				if i == a.focusedInput {
+					labelStyle = labelStyle.Foreground(t.Primary()).Bold(true)
+				}
+				lines = append(lines, labelStyle.Render(label+":"))
+				lines = append(lines, input.View())
+			}
+			lines = append(lines, "")
+			footerStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
+			lines = append(lines, footerStyle.Render("Enter: complete OAuth • Esc: back"))
+			content = strings.Join(lines, "\n")
 		}
 	}
 
@@ -3139,11 +3309,26 @@ func (a *authDialog) authenticateServiceNowForMidServer() tea.Cmd {
 
 		body, _ := io.ReadAll(resp.Body)
 		var result struct {
-			Success     bool   `json:"success"`
-			AccessToken string `json:"accessToken"`
-			Error       string `json:"error"`
+			Success         bool   `json:"success"`
+			AccessToken     string `json:"accessToken"`
+			Error           string `json:"error"`
+			NeedsManualAuth bool   `json:"needsManualAuth"`
+			AuthUrl         string `json:"authUrl"`
+			SessionId       string `json:"sessionId"`
+			HeadlessReason  string `json:"headlessReason"`
 		}
 		json.Unmarshal(body, &result)
+
+		// Check if headless environment - needs manual auth
+		if result.NeedsManualAuth {
+			return ServiceNowOAuthCompleteMsg{
+				Success:         false,
+				NeedsManualAuth: true,
+				AuthUrl:         result.AuthUrl,
+				SessionId:       result.SessionId,
+				HeadlessReason:  result.HeadlessReason,
+			}
+		}
 
 		if !result.Success {
 			return ServiceNowOAuthCompleteMsg{Success: false, Error: result.Error}
