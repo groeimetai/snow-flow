@@ -278,6 +278,11 @@ type authDialog struct {
 	browserMessage    string
 	deviceCode        string
 
+	// LLM OAuth headless state
+	llmOAuthHeadless       bool   // True if in headless environment during LLM OAuth
+	llmOAuthHeadlessUrl    string // OAuth URL to show user in headless mode
+	llmOAuthHeadlessReason string // Reason for headless detection
+
 	// Enterprise auth state
 	enterpriseSubdomain      string // Subdomain for enterprise portal (e.g., "acme" for acme.snow-flow.dev)
 	enterpriseSessionId      string
@@ -751,6 +756,18 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.oauthSessionId = msg.SessionId
 		a.oauthMethod = msg.Method
 		a.oauthInstructions = msg.Instructions
+
+		// Store headless state for LLM OAuth
+		a.llmOAuthHeadless = msg.Headless
+		a.llmOAuthHeadlessUrl = msg.URL
+		a.llmOAuthHeadlessReason = msg.HeadlessReason
+
+		// Write URL to temp file for headless environments
+		if msg.Headless && msg.URL != "" {
+			if err := os.WriteFile("/tmp/snow-oauth-url.txt", []byte(msg.URL), 0600); err != nil {
+				slog.Warn("Could not write OAuth URL to temp file", "error", err)
+			}
+		}
 
 		if msg.Method == "code" {
 			// Show code input
@@ -1979,12 +1996,14 @@ type AuthMethodsLoadedMsg struct {
 
 // OAuthAuthorizeMsg is sent when OAuth authorization is started
 type OAuthAuthorizeMsg struct {
-	Success      bool
-	SessionId    string
-	URL          string
-	Instructions string
-	Method       string // "code" or "auto"
-	Error        string
+	Success        bool
+	SessionId      string
+	URL            string
+	Instructions   string
+	Method         string // "code" or "auto"
+	Error          string
+	Headless       bool   // True if running in headless environment
+	HeadlessReason string // Reason for headless detection
 }
 
 // OAuthExchangeMsg is sent when OAuth code exchange completes
@@ -2158,22 +2177,26 @@ func (a *authDialog) startOAuth(providerId string, methodIndex int) tea.Cmd {
 
 		body, _ := io.ReadAll(resp.Body)
 		var result struct {
-			Success      bool   `json:"success"`
-			SessionId    string `json:"sessionId"`
-			URL          string `json:"url"`
-			Instructions string `json:"instructions"`
-			Method       string `json:"method"`
-			Error        string `json:"error"`
+			Success        bool   `json:"success"`
+			SessionId      string `json:"sessionId"`
+			URL            string `json:"url"`
+			Instructions   string `json:"instructions"`
+			Method         string `json:"method"`
+			Error          string `json:"error"`
+			Headless       bool   `json:"headless"`
+			HeadlessReason string `json:"headlessReason"`
 		}
 		json.Unmarshal(body, &result)
 
 		return OAuthAuthorizeMsg{
-			Success:      result.Success,
-			SessionId:    result.SessionId,
-			URL:          result.URL,
-			Instructions: result.Instructions,
-			Method:       result.Method,
-			Error:        result.Error,
+			Success:        result.Success,
+			SessionId:      result.SessionId,
+			URL:            result.URL,
+			Instructions:   result.Instructions,
+			Method:         result.Method,
+			Error:          result.Error,
+			Headless:       result.Headless,
+			HeadlessReason: result.HeadlessReason,
 		}
 	}
 }
@@ -3124,15 +3147,39 @@ func (a *authDialog) Render(background string) string {
 			if provider != nil {
 				providerName = provider.Name
 			}
-			lines = append(lines, msgStyle.Render("🌐 Browser opened for "+providerName+" authorization"))
-			lines = append(lines, "")
-			helpTextStyle := styles.NewStyle().Foreground(t.TextMuted())
-			if a.oauthInstructions != "" {
-				lines = append(lines, helpTextStyle.Render(a.oauthInstructions))
+
+			// Check if in headless mode
+			if a.llmOAuthHeadless && a.llmOAuthHeadlessUrl != "" {
+				// Headless mode - show URL for manual copy
+				warningStyle := styles.NewStyle().Foreground(t.Warning())
+				urlStyle := styles.NewStyle().Foreground(t.Primary()).Bold(true)
+				helpTextStyle := styles.NewStyle().Foreground(t.TextMuted())
+
+				lines = append(lines, warningStyle.Render("⚠️  Headless Environment Detected"))
+				if a.llmOAuthHeadlessReason != "" {
+					lines = append(lines, helpTextStyle.Render("   "+a.llmOAuthHeadlessReason))
+				}
+				lines = append(lines, "")
+				lines = append(lines, msgStyle.Render("🔗 Open this URL in your browser for "+providerName+":"))
+				lines = append(lines, "")
+				lines = append(lines, helpTextStyle.Render("1. Cmd+Click (or Ctrl+Click) the URL below"))
+				lines = append(lines, helpTextStyle.Render("2. Or run: cat /tmp/snow-oauth-url.txt"))
+				lines = append(lines, "")
+				lines = append(lines, urlStyle.Render(a.llmOAuthHeadlessUrl))
+				lines = append(lines, "")
+				lines = append(lines, helpTextStyle.Render("After authorization, paste the code below:"))
 			} else {
-				lines = append(lines, helpTextStyle.Render("1. Complete authorization in your browser"))
-				lines = append(lines, helpTextStyle.Render("2. Copy the code shown after approval"))
-				lines = append(lines, helpTextStyle.Render("3. Paste it below and press Enter"))
+				// Normal mode - browser was opened
+				lines = append(lines, msgStyle.Render("🌐 Browser opened for "+providerName+" authorization"))
+				lines = append(lines, "")
+				helpTextStyle := styles.NewStyle().Foreground(t.TextMuted())
+				if a.oauthInstructions != "" {
+					lines = append(lines, helpTextStyle.Render(a.oauthInstructions))
+				} else {
+					lines = append(lines, helpTextStyle.Render("1. Complete authorization in your browser"))
+					lines = append(lines, helpTextStyle.Render("2. Copy the code shown after approval"))
+					lines = append(lines, helpTextStyle.Render("3. Paste it below and press Enter"))
+				}
 			}
 			lines = append(lines, "")
 			for i, input := range a.inputs {
@@ -3148,8 +3195,13 @@ func (a *authDialog) Render(background string) string {
 			helpStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
 			lines = append(lines, helpStyle.Render("Enter: submit code • Esc: cancel"))
 			content = strings.Join(lines, "\n")
+			// Use wider modal for headless mode to fit URL
+			if a.llmOAuthHeadless {
+				a.modal = modal.New(modal.WithTitle(providerName+" OAuth - Headless Mode"), modal.WithMaxWidth(100))
+			}
 
 		case stepOAuthPolling:
+			var lines []string
 			msgStyle := styles.NewStyle().Foreground(t.Primary())
 			helpStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
 			provider := a.findProvider(a.llmProvider)
@@ -3157,13 +3209,40 @@ func (a *authDialog) Render(background string) string {
 			if provider != nil {
 				providerName = provider.Name
 			}
-			instructions := a.browserMessage
-			if instructions == "" {
-				instructions = "Complete authorization in your browser"
+
+			// Check if in headless mode
+			if a.llmOAuthHeadless && a.llmOAuthHeadlessUrl != "" {
+				// Headless mode - show URL for manual copy
+				warningStyle := styles.NewStyle().Foreground(t.Warning())
+				urlStyle := styles.NewStyle().Foreground(t.Primary()).Bold(true)
+				helpTextStyle := styles.NewStyle().Foreground(t.TextMuted())
+
+				lines = append(lines, warningStyle.Render("⚠️  Headless Environment Detected"))
+				if a.llmOAuthHeadlessReason != "" {
+					lines = append(lines, helpTextStyle.Render("   "+a.llmOAuthHeadlessReason))
+				}
+				lines = append(lines, "")
+				lines = append(lines, msgStyle.Render("🔗 Open this URL in your browser for "+providerName+":"))
+				lines = append(lines, "")
+				lines = append(lines, helpTextStyle.Render("1. Cmd+Click (or Ctrl+Click) the URL below"))
+				lines = append(lines, helpTextStyle.Render("2. Or run: cat /tmp/snow-oauth-url.txt"))
+				lines = append(lines, "")
+				lines = append(lines, urlStyle.Render(a.llmOAuthHeadlessUrl))
+				lines = append(lines, "")
+				lines = append(lines, helpStyle.Render("Waiting for authorization... (polling)"))
+				lines = append(lines, helpStyle.Render("Press Esc to cancel."))
+				content = strings.Join(lines, "\n")
+				a.modal = modal.New(modal.WithTitle(providerName+" OAuth - Headless Mode"), modal.WithMaxWidth(100))
+			} else {
+				// Normal mode
+				instructions := a.browserMessage
+				if instructions == "" {
+					instructions = "Complete authorization in your browser"
+				}
+				content = msgStyle.Render("🌐 "+providerName+" Authorization") + "\n\n" +
+					instructions + "\n\n" +
+					helpStyle.Render("Waiting for authorization...\nPress Esc to cancel.")
 			}
-			content = msgStyle.Render("🌐 "+providerName+" Authorization") + "\n\n" +
-				instructions + "\n\n" +
-				helpStyle.Render("Waiting for authorization...\nPress Esc to cancel.")
 
 		case stepBrowserAuth:
 			msgStyle := styles.NewStyle().Foreground(t.Primary())
