@@ -1383,6 +1383,81 @@ await tool_search({ query: "github releases" });
 | Search code | Find code snippets | \`tool_search({ query: "github search code" })\` |
 | Search repos | Find repositories | \`tool_search({ query: "github search repo" })\` |
 
+### Repository Sync Capabilities (NEW!)
+| Capability | Description | How to Find |
+|------------|-------------|-------------|
+| Download repository | Clone/download repo to local directory | \`tool_search({ query: "github download repository" })\` |
+| Upload files | Push files to GitHub with optional PR | \`tool_search({ query: "github upload files" })\` |
+
+---
+
+## 📦 GITHUB ↔ SERVICENOW BI-DIRECTIONAL SYNC
+
+### Repository Download/Upload for ServiceNow Artifacts
+
+You can sync ServiceNow artifacts (widgets, scripts, etc.) between GitHub repositories and ServiceNow instances.
+
+### Import Flow: GitHub → Local → ServiceNow
+
+\`\`\`javascript
+// Step 1: Discover download tool
+await tool_search({ query: "github download repository" });
+
+// Step 2: Download repo or specific folder to local directory
+// Parameters: owner, repo, localPath, path (optional subfolder), method ("tarball" or "git")
+// Returns: { localPath, files[], ref }
+
+// Step 3: Use snow_artifact_manage with artifact_directory
+await tool_search({ query: "snow artifact manage" });
+// Parameters: action: "create", type: "widget", name, artifact_directory: "/tmp/downloaded-widget"
+// Auto-maps: template.html → template, server.js → script, client.js → client_script, etc.
+\`\`\`
+
+### Export Flow: ServiceNow → Local → GitHub
+
+\`\`\`javascript
+// Step 1: Export artifact to local files
+await tool_search({ query: "snow artifact manage" });
+// Parameters: action: "export", type: "widget", identifier, export_path, format: "files"
+// Creates: template.html, server.js, client.js, style.css, metadata.json
+
+// Step 2: Discover upload tool
+await tool_search({ query: "github upload files" });
+
+// Step 3: Upload to GitHub with optional PR
+// Parameters: owner, repo, localPath, remotePath, commitMessage, createBranch, createPR, prTitle
+// Returns: { commitSha, filesUploaded[], branch, prUrl }
+\`\`\`
+
+### File Mapping Convention
+
+When using \`artifact_directory\`, files are auto-mapped:
+
+| File Name | Widget Field | Other Artifact Types |
+|-----------|--------------|---------------------|
+| template.html | template | - |
+| server.js | script (server) | script |
+| client.js | client_script | - |
+| style.css | css | - |
+| options.json | option_schema | - |
+| condition.js | - | condition |
+| metadata.json | (non-script fields) | (non-script fields) |
+
+### Explicit File Mapping
+
+For non-standard file names, use explicit \`_file\` parameters:
+
+\`\`\`javascript
+// Discover artifact manage tool
+await tool_search({ query: "snow artifact manage" });
+
+// Create with explicit file paths:
+// template_file: "/path/to/view.htm"
+// server_script_file: "/path/to/backend.js"
+// client_script_file: "/path/to/frontend.js"
+// css_file: "/path/to/styles.scss"
+\`\`\`
+
 ---
 
 ## 💡 BEST PRACTICES
@@ -1393,12 +1468,16 @@ await tool_search({ query: "github releases" });
 3. **Comment progress** - Keep issues updated with work status
 4. **Use labels** - Categorize and prioritize effectively
 5. **Monitor workflows** - Check CI/CD status after changes
+6. **Use artifact_directory** - For standard file naming conventions
+7. **Create PRs for sync** - Use createPR option when uploading to GitHub
 
 ### ❌ DON'T
 1. Create PRs without linked issues
 2. Merge without reviewing workflow status
 3. Work in silence without issue updates
 4. Force push to protected branches
+5. Upload sensitive data to public repositories
+6. Skip the file list check after download
 
 `;
 }
