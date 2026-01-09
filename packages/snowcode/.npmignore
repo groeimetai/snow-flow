@@ -19,6 +19,14 @@ gen/
 dist/snow-flow-*/
 dist/*.tar.gz
 
+# Compiled binaries in bin/ (must NOT be published - downloaded via postinstall)
+bin/snow-code
+bin/snow-code.exe
+bin/tui
+bin/tui.exe
+# Keep the JavaScript launcher:
+!bin/snow-code.cjs
+
 # MCP bundles (downloaded during postinstall)
 dist/mcp/
 

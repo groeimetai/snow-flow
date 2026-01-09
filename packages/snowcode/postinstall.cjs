@@ -31,10 +31,22 @@ function getVersion() {
 function getBinaryVersion() {
   try {
     if (!fs.existsSync(binaryPath)) return null;
-    const result = execSync(`"${binaryPath}" --version`, { encoding: 'utf8', stdio: 'pipe' });
+    const result = execSync(`"${binaryPath}" --version`, { encoding: 'utf8', stdio: 'pipe', timeout: 5000 });
     return result.trim();
   } catch {
     return null;
+  }
+}
+
+// Verify binary is executable on this platform (catches architecture mismatches)
+function verifyBinaryWorks() {
+  try {
+    if (!fs.existsSync(binaryPath)) return false;
+    execSync(`"${binaryPath}" --version`, { encoding: 'utf8', stdio: 'pipe', timeout: 5000 });
+    return true;
+  } catch {
+    // Binary exists but can't execute (wrong architecture, corrupted, etc.)
+    return false;
   }
 }
 
@@ -154,10 +166,18 @@ async function downloadMcpServers() {
 async function main() {
   const packageVersion = getVersion();
   const binaryVersion = getBinaryVersion();
+  const binaryWorks = verifyBinaryWorks();
 
-  // Download binary if missing or version mismatch
+  // Download binary if missing, incompatible, or version mismatch
   if (!fs.existsSync(binaryPath)) {
     console.log('Binary not found, downloading...');
+    await downloadBinary();
+  } else if (!binaryWorks) {
+    // Binary exists but can't execute (wrong architecture, corrupted, etc.)
+    console.log('Binary incompatible with this platform, downloading correct version...');
+    try {
+      fs.unlinkSync(binaryPath);
+    } catch {}
     await downloadBinary();
   } else if (packageVersion && binaryVersion && packageVersion !== binaryVersion) {
     console.log(`Version mismatch: binary is ${binaryVersion}, package is ${packageVersion}`);

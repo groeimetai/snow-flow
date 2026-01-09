@@ -2,3 +2,9 @@ research
 dist
 gen
 app.log
+
+# Compiled binaries (downloaded via postinstall, not committed)
+bin/snow-code
+bin/snow-code.exe
+bin/tui
+bin/tui.exe
