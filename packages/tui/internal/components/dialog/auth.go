@@ -19,7 +19,6 @@ import (
 	list "github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/components/toast"
-	"github.com/sst/opencode/internal/clipboard"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -926,12 +925,12 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "c":
 			// Copy URL to clipboard in headless OAuth URL step
+			// Use tea.SetClipboard which uses OSC52 escape sequences - works over SSH/headless
 			if a.step == stepHeadlessOAuthUrl && a.headlessAuthUrl != "" {
-				if err := clipboard.Init(); err == nil {
-					clipboard.Write(clipboard.FmtText, []byte(a.headlessAuthUrl))
-					return a, toast.NewSuccessToast("URL copied to clipboard!")
-				}
-				return a, toast.NewErrorToast("Could not access clipboard")
+				return a, tea.Batch(
+					tea.SetClipboard(a.headlessAuthUrl),
+					toast.NewSuccessToast("URL copied to clipboard (via terminal)"),
+				)
 			}
 		}
 	}
@@ -3154,17 +3153,10 @@ func (a *authDialog) Render(background string) string {
 			lines = append(lines, "")
 			lines = append(lines, msgStyle.Render("🔗 Open this URL in your browser to authenticate:"))
 			lines = append(lines, "")
-			// Wrap URL if too long
-			url := a.headlessAuthUrl
-			if len(url) > 70 {
-				// Show URL in multiple parts
-				lines = append(lines, urlStyle.Render(url[:70]))
-				lines = append(lines, urlStyle.Render(url[70:]))
-			} else {
-				lines = append(lines, urlStyle.Render(url))
-			}
+			// Show URL on single line - let terminal handle wrapping for easier selection
+			lines = append(lines, urlStyle.Render(a.headlessAuthUrl))
 			lines = append(lines, "")
-			lines = append(lines, copyHintStyle.Render("Press 'c' to copy URL to clipboard"))
+			lines = append(lines, copyHintStyle.Render("👆 Press 'c' to copy URL to clipboard"))
 			lines = append(lines, "")
 			lines = append(lines, instructStyle.Render("After approving in ServiceNow:"))
 			lines = append(lines, instructStyle.Render("1. You'll be redirected to localhost (will fail)"))
@@ -3174,7 +3166,7 @@ func (a *authDialog) Render(background string) string {
 			footerStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
 			lines = append(lines, footerStyle.Render("c: copy URL • Enter: input code • Esc: cancel"))
 			content = strings.Join(lines, "\n")
-			a.modal = modal.New(modal.WithTitle("ServiceNow OAuth - Headless Mode"), modal.WithMaxWidth(80))
+			a.modal = modal.New(modal.WithTitle("ServiceNow OAuth - Headless Mode"), modal.WithMaxWidth(100))
 
 		case stepHeadlessOAuthCode:
 			var lines []string
