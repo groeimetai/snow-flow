@@ -1387,12 +1387,26 @@ func (a *authDialog) handleEnter() (tea.Model, tea.Cmd) {
 
 	case stepHeadlessOAuthCode:
 		if len(a.inputs) > 0 && a.inputs[0].Value() != "" {
-			code := strings.TrimSpace(a.inputs[0].Value())
+			input := strings.TrimSpace(a.inputs[0].Value())
+			code := input
+			// If user pasted the full callback URL, extract the code parameter
+			if strings.Contains(input, "code=") {
+				// Parse the URL to extract the code parameter
+				if strings.Contains(input, "?") {
+					queryPart := input[strings.Index(input, "?")+1:]
+					for _, param := range strings.Split(queryPart, "&") {
+						if strings.HasPrefix(param, "code=") {
+							code = strings.TrimPrefix(param, "code=")
+							break
+						}
+					}
+				}
+			}
 			a.loading = true
 			a.loadingMessage = "Completing OAuth..."
 			return a, a.completeHeadlessOAuth(code)
 		}
-		return a, toast.NewErrorToast("Please enter the authorization code")
+		return a, toast.NewErrorToast("Please enter the authorization code or paste the callback URL")
 	}
 
 	return a, nil
@@ -3168,8 +3182,8 @@ func (a *authDialog) Render(background string) string {
 			lines = append(lines, "")
 			lines = append(lines, instructStyle.Render("After approving in ServiceNow:"))
 			lines = append(lines, instructStyle.Render("1. You'll be redirected to localhost (will fail)"))
-			lines = append(lines, instructStyle.Render("2. Copy the 'code' parameter from the URL"))
-			lines = append(lines, instructStyle.Render("3. Press Enter to input the code"))
+			lines = append(lines, instructStyle.Render("2. Copy the entire URL from your browser"))
+			lines = append(lines, instructStyle.Render("3. Press Enter and paste the URL"))
 			lines = append(lines, "")
 			footerStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
 			lines = append(lines, footerStyle.Render("c: copy (if supported) • Enter: input code • Esc: cancel"))
@@ -3180,12 +3194,14 @@ func (a *authDialog) Render(background string) string {
 			var lines []string
 			msgStyle := styles.NewStyle().Foreground(t.Primary())
 			helpStyle := styles.NewStyle().Foreground(t.TextMuted())
+			successStyle := styles.NewStyle().Foreground(t.Success())
 
-			lines = append(lines, msgStyle.Render("📋 Enter Authorization Code"))
+			lines = append(lines, msgStyle.Render("📋 Paste the Callback URL"))
 			lines = append(lines, "")
-			lines = append(lines, helpStyle.Render("Paste the 'code' parameter from the callback URL."))
+			lines = append(lines, successStyle.Render("Just paste the entire URL from your browser!"))
+			lines = append(lines, helpStyle.Render("We'll automatically extract the code for you."))
+			lines = append(lines, "")
 			lines = append(lines, helpStyle.Render("Example: localhost:3005/callback?code=XXXXX&state=..."))
-			lines = append(lines, helpStyle.Render("Copy the XXXXX part (the code value)."))
 			lines = append(lines, "")
 			for i, input := range a.inputs {
 				label := a.inputLabels[i]
