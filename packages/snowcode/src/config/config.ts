@@ -36,6 +36,19 @@ export namespace Config {
         result = mergeDeep(result, await loadFile(resolved))
       }
     }
+    // Load from project config directories (.snow-code/config.json, .snowcode/config.json, .opencode/config.json)
+    // These are settings saved by the TUI /settings command
+    for (const configDir of [".snow-code", ".snowcode", ".opencode"]) {
+      const configFiles = await Filesystem.findUp(
+        path.join(configDir, "config.json"),
+        Instance.directory,
+        Instance.worktree
+      )
+      for (const resolved of configFiles.toReversed()) {
+        result = mergeDeep(result, await loadFile(resolved))
+        log.debug("loaded project config", { path: resolved })
+      }
+    }
     // Load from .mcp.json (OpenCode/Claude Code format - uses "mcpServers" instead of "mcp")
     const mcpJsonFiles = await Filesystem.findUp(".mcp.json", Instance.directory, Instance.worktree)
     for (const mcpJsonPath of mcpJsonFiles.toReversed()) {
