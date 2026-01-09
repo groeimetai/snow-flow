@@ -817,11 +817,17 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.headlessAuthUrl = msg.AuthUrl
 			a.headlessReason = msg.HeadlessReason
 			a.step = stepHeadlessOAuthUrl
+			// Write URL to temp file for easy access in headless environments
+			if err := os.WriteFile("/tmp/snow-oauth-url.txt", []byte(msg.AuthUrl), 0600); err != nil {
+				slog.Warn("Could not write OAuth URL to temp file", "error", err)
+			}
 			return a, nil
 		}
 		if !msg.Success {
 			return a, toast.NewErrorToast("ServiceNow auth failed: " + msg.Error)
 		}
+		// Clean up temp file on successful OAuth completion
+		os.Remove("/tmp/snow-oauth-url.txt")
 		a.snowAccessToken = msg.AccessToken
 		// After ServiceNow auth, start MID Server discovery
 		a.loading = true
@@ -925,11 +931,12 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "c":
 			// Copy URL to clipboard in headless OAuth URL step
-			// Use tea.SetClipboard which uses OSC52 escape sequences - works over SSH/headless
+			// Use tea.SetClipboard which uses OSC52 escape sequences - works in some terminals
+			// Note: OSC52 doesn't work in GitHub Codespaces web terminal
 			if a.step == stepHeadlessOAuthUrl && a.headlessAuthUrl != "" {
 				return a, tea.Batch(
 					tea.SetClipboard(a.headlessAuthUrl),
-					toast.NewSuccessToast("URL copied to clipboard (via terminal)"),
+					toast.NewSuccessToast("URL copied (may not work in all terminals)"),
 				)
 			}
 		}
@@ -1539,6 +1546,8 @@ func (a *authDialog) goBack() {
 		a.setupServiceNowInputs()
 		a.headlessSessionId = ""
 		a.headlessAuthUrl = ""
+		// Clean up temp file
+		os.Remove("/tmp/snow-oauth-url.txt")
 	case stepHeadlessOAuthCode:
 		// Go back to URL display
 		a.step = stepHeadlessOAuthUrl
@@ -3144,19 +3153,18 @@ func (a *authDialog) Render(background string) string {
 			urlStyle := styles.NewStyle().Foreground(t.Primary()).Bold(true)
 			helpStyle := styles.NewStyle().Foreground(t.TextMuted())
 			instructStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
-			copyHintStyle := styles.NewStyle().Foreground(t.Success()).Bold(true)
 
 			lines = append(lines, warningStyle.Render("⚠️  Headless Environment Detected"))
 			if a.headlessReason != "" {
 				lines = append(lines, helpStyle.Render("   "+a.headlessReason))
 			}
 			lines = append(lines, "")
-			lines = append(lines, msgStyle.Render("🔗 Open this URL in your browser to authenticate:"))
+			lines = append(lines, msgStyle.Render("🔗 Open this URL in your browser:"))
 			lines = append(lines, "")
-			// Show URL on single line - let terminal handle wrapping for easier selection
+			lines = append(lines, helpStyle.Render("1. Cmd+Click (or Ctrl+Click) the URL below"))
+			lines = append(lines, helpStyle.Render("2. Or run: cat /tmp/snow-oauth-url.txt"))
+			lines = append(lines, "")
 			lines = append(lines, urlStyle.Render(a.headlessAuthUrl))
-			lines = append(lines, "")
-			lines = append(lines, copyHintStyle.Render("👆 Press 'c' to copy URL to clipboard"))
 			lines = append(lines, "")
 			lines = append(lines, instructStyle.Render("After approving in ServiceNow:"))
 			lines = append(lines, instructStyle.Render("1. You'll be redirected to localhost (will fail)"))
@@ -3164,7 +3172,7 @@ func (a *authDialog) Render(background string) string {
 			lines = append(lines, instructStyle.Render("3. Press Enter to input the code"))
 			lines = append(lines, "")
 			footerStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
-			lines = append(lines, footerStyle.Render("c: copy URL • Enter: input code • Esc: cancel"))
+			lines = append(lines, footerStyle.Render("c: copy (if supported) • Enter: input code • Esc: cancel"))
 			content = strings.Join(lines, "\n")
 			a.modal = modal.New(modal.WithTitle("ServiceNow OAuth - Headless Mode"), modal.WithMaxWidth(100))
 
