@@ -315,6 +315,7 @@ type authDialog struct {
 	completeSetupRole        string
 	completeSetupCompany     string
 	completeSetupServiceNow  string // Instance URL that was configured
+	isCompleteSetupFlow      bool   // True when in Complete Setup flow (needs LLM after ServiceNow)
 
 	// MID Server LLM configuration state
 	midServers           []MidServer
@@ -830,12 +831,20 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		os.Remove("/tmp/snow-oauth-url.txt")
 		a.snowAccessToken = msg.AccessToken
 
-		// Check if we're in the MID Server LLM flow or direct ServiceNow auth
+		// Check which flow we're in and what to do next
 		if a.llmProvider == "midserver-llm" {
 			// MID Server LLM flow - continue to MID Server discovery
 			a.loading = true
 			a.loadingMessage = "Discovering MID Servers..."
 			return a, a.discoverMidServers()
+		}
+
+		if a.isCompleteSetupFlow {
+			// Complete Setup flow - continue to LLM Provider selection
+			a.step = stepSelectLLMProvider
+			a.loading = true
+			a.loadingMessage = "Loading providers..."
+			return a, a.loadProviders()
 		}
 
 		// Direct ServiceNow auth - we're done, show success and close
@@ -998,6 +1007,7 @@ func (a *authDialog) handleEnter() (tea.Model, tea.Cmd) {
 				switch opt.value {
 				case "complete":
 					// Complete Setup: First ask about Snow-Flow account
+					a.isCompleteSetupFlow = true
 					a.step = stepCompleteSelectAccount
 					a.setupCompleteAccountList()
 				case "snow-flow":
