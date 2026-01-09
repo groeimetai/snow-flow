@@ -834,7 +834,9 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.headlessSessionId = msg.SessionId
 			a.headlessAuthUrl = msg.AuthUrl
 			a.headlessReason = msg.HeadlessReason
-			a.step = stepHeadlessOAuthUrl
+			// Go directly to combined URL + input step (skip stepHeadlessOAuthUrl)
+			a.step = stepHeadlessOAuthCode
+			a.setupHeadlessOAuthCodeInput()
 			// Write URL to temp file for easy access in headless environments
 			if err := os.WriteFile("/tmp/snow-oauth-url.txt", []byte(msg.AuthUrl), 0600); err != nil {
 				slog.Warn("Could not write OAuth URL to temp file", "error", err)
@@ -966,10 +968,10 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a.handleEnter()
 
 		case "c":
-			// Copy URL to clipboard in headless OAuth URL step
+			// Copy URL to clipboard in headless OAuth steps
 			// Use tea.SetClipboard which uses OSC52 escape sequences - works in some terminals
 			// Note: OSC52 doesn't work in GitHub Codespaces web terminal
-			if a.step == stepHeadlessOAuthUrl && a.headlessAuthUrl != "" {
+			if (a.step == stepHeadlessOAuthUrl || a.step == stepHeadlessOAuthCode) && a.headlessAuthUrl != "" {
 				return a, tea.Batch(
 					tea.SetClipboard(a.headlessAuthUrl),
 					toast.NewSuccessToast("URL copied (may not work in all terminals)"),
@@ -1416,12 +1418,6 @@ func (a *authDialog) handleEnter() (tea.Model, tea.Cmd) {
 		}
 		return a, toast.NewErrorToast("Please enter the code from your email")
 
-	case stepHeadlessOAuthUrl:
-		// User acknowledged the URL, move to code input
-		a.step = stepHeadlessOAuthCode
-		a.setupHeadlessOAuthCodeInput()
-		return a, nil
-
 	case stepHeadlessOAuthCode:
 		if len(a.inputs) > 0 && a.inputs[0].Value() != "" {
 			input := strings.TrimSpace(a.inputs[0].Value())
@@ -1609,8 +1605,13 @@ func (a *authDialog) goBack() {
 		// Clean up temp file
 		os.Remove("/tmp/snow-oauth-url.txt")
 	case stepHeadlessOAuthCode:
-		// Go back to URL display
-		a.step = stepHeadlessOAuthUrl
+		// Go back to ServiceNow input (combined URL + input screen)
+		a.step = stepInputServiceNow
+		a.setupServiceNowInputs()
+		a.headlessSessionId = ""
+		a.headlessAuthUrl = ""
+		// Clean up temp file
+		os.Remove("/tmp/snow-oauth-url.txt")
 	}
 }
 
@@ -3299,17 +3300,27 @@ func (a *authDialog) Render(background string) string {
 			a.modal = modal.New(modal.WithTitle("ServiceNow OAuth - Headless Mode"), modal.WithMaxWidth(100))
 
 		case stepHeadlessOAuthCode:
+			// Combined URL display + input screen
 			var lines []string
+			warningStyle := styles.NewStyle().Foreground(t.Warning())
 			msgStyle := styles.NewStyle().Foreground(t.Primary())
+			urlStyle := styles.NewStyle().Foreground(t.Primary()).Bold(true)
 			helpStyle := styles.NewStyle().Foreground(t.TextMuted())
 			successStyle := styles.NewStyle().Foreground(t.Success())
 
-			lines = append(lines, msgStyle.Render("📋 Paste the Callback URL"))
+			lines = append(lines, warningStyle.Render("⚠️  Headless Environment Detected"))
+			if a.headlessReason != "" {
+				lines = append(lines, helpStyle.Render("   "+a.headlessReason))
+			}
 			lines = append(lines, "")
-			lines = append(lines, successStyle.Render("Just paste the entire URL from your browser!"))
-			lines = append(lines, helpStyle.Render("We'll automatically extract the code for you."))
+			lines = append(lines, msgStyle.Render("🔗 Open this URL in your browser:"))
 			lines = append(lines, "")
-			lines = append(lines, helpStyle.Render("Example: localhost:3005/callback?code=XXXXX&state=..."))
+			lines = append(lines, helpStyle.Render("Cmd+Click the URL below, or run: cat /tmp/snow-oauth-url.txt"))
+			lines = append(lines, "")
+			lines = append(lines, urlStyle.Render(a.headlessAuthUrl))
+			lines = append(lines, "")
+			lines = append(lines, successStyle.Render("After approving, paste the callback URL below:"))
+			lines = append(lines, helpStyle.Render("(We'll automatically extract the code for you)"))
 			lines = append(lines, "")
 			for i, input := range a.inputs {
 				label := a.inputLabels[i]
@@ -3322,8 +3333,9 @@ func (a *authDialog) Render(background string) string {
 			}
 			lines = append(lines, "")
 			footerStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
-			lines = append(lines, footerStyle.Render("Enter: complete OAuth • Esc: back"))
+			lines = append(lines, footerStyle.Render("c: copy URL • Enter: complete OAuth • Esc: cancel"))
 			content = strings.Join(lines, "\n")
+			a.modal = modal.New(modal.WithTitle("ServiceNow OAuth - Headless Mode"), modal.WithMaxWidth(100))
 		}
 	}
 
