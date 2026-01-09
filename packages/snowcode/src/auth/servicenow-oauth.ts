@@ -930,7 +930,7 @@ export class ServiceNowOAuth {
       this.stateParameter = options.sessionData.state
 
       // Exchange code for token
-      const tokenResult = await this.exchangeCodeForToken(
+      const tokenResult = await this.exchangeCodeForTokens(
         options.code,
         options.sessionData.instance,
         options.sessionData.clientId,
