@@ -288,6 +288,7 @@ type authDialog struct {
 	enterpriseSessionId      string
 	enterpriseAuthCode       string
 	enterpriseToken          string // JWT token from enterprise portal
+	enterpriseVerificationUrl string // URL for enterprise auth (shown in headless environments)
 	enterpriseCredentials    *EnterpriseCredentials
 	portalServiceNowInstances []ServiceNowInstanceFromPortal
 	enterpriseMcpServerUrl   string
@@ -391,10 +392,17 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !msg.Success {
 			return a, toast.NewErrorToast("Enterprise auth failed: " + msg.Error)
 		}
-		// Store session ID and show code input step
+		// Store session ID and verification URL, show code input step
 		a.enterpriseSessionId = msg.SessionId
+		a.enterpriseVerificationUrl = msg.VerificationURL
 		a.step = stepInputEnterpriseCode
 		a.setupEnterpriseCodeInput()
+		// Write URL to temp file for easy access in headless environments
+		if msg.VerificationURL != "" {
+			if err := os.WriteFile("/tmp/snow-oauth-url.txt", []byte(msg.VerificationURL), 0600); err != nil {
+				slog.Warn("Could not write OAuth URL to temp file", "error", err)
+			}
+		}
 		a.browserMessage = "Browser opened. After approving, paste the code below."
 
 	case EnterpriseVerifyMsg:
@@ -968,12 +976,19 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a.handleEnter()
 
 		case "c":
-			// Copy URL to clipboard in headless OAuth steps
+			// Copy URL to clipboard in OAuth steps
 			// Use tea.SetClipboard which uses OSC52 escape sequences - works in some terminals
 			// Note: OSC52 doesn't work in GitHub Codespaces web terminal
 			if (a.step == stepHeadlessOAuthUrl || a.step == stepHeadlessOAuthCode) && a.headlessAuthUrl != "" {
 				return a, tea.Batch(
 					tea.SetClipboard(a.headlessAuthUrl),
+					toast.NewSuccessToast("URL copied (may not work in all terminals)"),
+				)
+			}
+			// Enterprise auth URL
+			if a.step == stepInputEnterpriseCode && a.enterpriseVerificationUrl != "" {
+				return a, tea.Batch(
+					tea.SetClipboard(a.enterpriseVerificationUrl),
 					toast.NewSuccessToast("URL copied (may not work in all terminals)"),
 				)
 			}
@@ -2419,8 +2434,12 @@ func (a *authDialog) startBrowserAuth(authType string) tea.Cmd {
 				return EnterpriseSessionMsg{Success: false, Error: errMsg}
 			}
 
-			// Open browser for user to approve
-			exec.Command("open", result.VerificationUrl).Start()
+			// Check for headless environment - only open browser if not headless
+			isHeadless, _ := isHeadlessEnvironment()
+			if !isHeadless {
+				// Open browser for user to approve
+				exec.Command("open", result.VerificationUrl).Start()
+			}
 
 			// Return session ID for code verification step
 			return EnterpriseSessionMsg{
@@ -3119,12 +3138,27 @@ func (a *authDialog) Render(background string) string {
 		case stepInputEnterpriseCode:
 			var lines []string
 			msgStyle := styles.NewStyle().Foreground(t.Primary())
-			lines = append(lines, msgStyle.Render("🌐 Browser opened for authorization"))
-			lines = append(lines, "")
 			helpTextStyle := styles.NewStyle().Foreground(t.TextMuted())
-			lines = append(lines, helpTextStyle.Render("1. Approve the authorization in your browser"))
-			lines = append(lines, helpTextStyle.Render("2. Copy the code shown in the browser"))
-			lines = append(lines, helpTextStyle.Render("3. Paste it below and press Enter"))
+			urlStyle := styles.NewStyle().Foreground(t.Primary()).Bold(true)
+
+			// Show URL for easy access (especially in headless environments)
+			if a.enterpriseVerificationUrl != "" {
+				lines = append(lines, msgStyle.Render("🏢 Enterprise Portal Authorization"))
+				lines = append(lines, "")
+				lines = append(lines, helpTextStyle.Render("Open this URL in your browser (Cmd+Click or Ctrl+Click):"))
+				lines = append(lines, helpTextStyle.Render("Or run: cat /tmp/snow-oauth-url.txt"))
+				lines = append(lines, "")
+				lines = append(lines, urlStyle.Render(a.enterpriseVerificationUrl))
+				lines = append(lines, "")
+				successStyle := styles.NewStyle().Foreground(t.Success())
+				lines = append(lines, successStyle.Render("After approving, paste the code below:"))
+			} else {
+				lines = append(lines, msgStyle.Render("🌐 Browser opened for authorization"))
+				lines = append(lines, "")
+				lines = append(lines, helpTextStyle.Render("1. Approve the authorization in your browser"))
+				lines = append(lines, helpTextStyle.Render("2. Copy the code shown in the browser"))
+				lines = append(lines, helpTextStyle.Render("3. Paste it below and press Enter"))
+			}
 			lines = append(lines, "")
 			for i, input := range a.inputs {
 				label := a.inputLabels[i]
@@ -3137,7 +3171,12 @@ func (a *authDialog) Render(background string) string {
 			}
 			lines = append(lines, "")
 			helpStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
-			lines = append(lines, helpStyle.Render("Enter: verify code • Esc: cancel"))
+			if a.enterpriseVerificationUrl != "" {
+				lines = append(lines, helpStyle.Render("c: copy URL • Enter: verify code • Esc: cancel"))
+				a.modal = modal.New(modal.WithTitle("Enterprise Portal - Authorization"), modal.WithMaxWidth(100))
+			} else {
+				lines = append(lines, helpStyle.Render("Enter: verify code • Esc: cancel"))
+			}
 			content = strings.Join(lines, "\n")
 
 		case stepInputOAuthCode:
@@ -3749,6 +3788,47 @@ func (a *authDialog) showCompleteSetupSummary(llmProviderName string, modelName 
 	summary := strings.Join(parts, " | ")
 
 	return toast.NewSuccessToast(summary)
+}
+
+// isHeadlessEnvironment detects if running in a headless environment
+// where browsers cannot be auto-opened (Codespaces, SSH, Docker, etc.)
+func isHeadlessEnvironment() (bool, string) {
+	// GitHub Codespaces
+	if os.Getenv("CODESPACES") == "true" || (os.Getenv("CODESPACE_NAME") != "" && os.Getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN") != "") {
+		return true, "GitHub Codespaces detected"
+	}
+
+	// Gitpod
+	if os.Getenv("GITPOD_WORKSPACE_ID") != "" || os.Getenv("GITPOD_INSTANCE_ID") != "" {
+		return true, "Gitpod workspace detected"
+	}
+
+	// SSH connection
+	if os.Getenv("SSH_CLIENT") != "" || os.Getenv("SSH_CONNECTION") != "" || os.Getenv("SSH_TTY") != "" {
+		return true, "SSH connection detected"
+	}
+
+	// Docker container
+	if _, err := os.Stat("/.dockerenv"); err == nil {
+		return true, "Docker container detected"
+	}
+
+	// CI/CD environments
+	if os.Getenv("CI") == "true" || os.Getenv("GITHUB_ACTIONS") == "true" || os.Getenv("GITLAB_CI") == "true" {
+		return true, "CI/CD environment detected"
+	}
+
+	// WSL without display
+	if os.Getenv("WSL_DISTRO_NAME") != "" && os.Getenv("DISPLAY") == "" {
+		return true, "WSL without display detected"
+	}
+
+	// Remote container (VS Code)
+	if os.Getenv("REMOTE_CONTAINERS") == "true" {
+		return true, "Remote container detected"
+	}
+
+	return false, ""
 }
 
 // NewAuthDialog creates a new auth dialog with the given server URL
