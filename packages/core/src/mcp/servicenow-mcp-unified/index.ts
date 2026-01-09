@@ -34,12 +34,12 @@ async function main() {
       const parentResult = dotenv.config({ path: parentEnvPath });
 
       if (parentResult.error) {
-        console.warn('[Main] No .env file found - using environment variables from MCP configuration');
+        console.error('[Main] No .env file found - using environment variables from MCP configuration');
       } else {
-        console.log('[Main] Loaded environment from parent directory:', parentEnvPath);
+        console.error('[Main] Loaded environment from parent directory:', parentEnvPath);
       }
     } else {
-      console.log('[Main] Loaded environment from .env file');
+      console.error('[Main] Loaded environment from .env file');
     }
 
     // Create server instance

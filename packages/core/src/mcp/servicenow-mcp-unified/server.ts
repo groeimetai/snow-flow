@@ -108,10 +108,10 @@ export class ServiceNowUnifiedServer {
           continue;
         }
 
-        console.log('[Auth] ✅ Loaded credentials from:', authPath);
-        console.log('[Auth]    Instance:', instance);
-        console.log('[Auth]    Client ID:', clientId ? '***' + clientId.slice(-4) : 'MISSING');
-        console.log('[Auth]    Has Refresh Token:', !!servicenowCreds.refreshToken);
+        console.error('[Auth] ✅ Loaded credentials from:', authPath);
+        console.error('[Auth]    Instance:', instance);
+        console.error('[Auth]    Client ID:', clientId ? '***' + clientId.slice(-4) : 'MISSING');
+        console.error('[Auth]    Has Refresh Token:', !!servicenowCreds.refreshToken);
 
         return {
           instanceUrl: instance.startsWith('http')
@@ -124,15 +124,15 @@ export class ServiceNowUnifiedServer {
           password: undefined
         };
       } catch (error: any) {
-        console.warn('[Auth] Failed to load from', authPath, ':', error.message);
+        console.error('[Auth] Failed to load from', authPath, ':', error.message);
         continue;
       }
     }
 
     // No valid auth.json found
-    console.warn('[Auth] No valid auth.json found in any location');
-    console.warn('[Auth] Checked paths:');
-    authPaths.forEach(p => console.warn('[Auth]   -', p));
+    console.error('[Auth] No valid auth.json found in any location');
+    console.error('[Auth] Checked paths:');
+    authPaths.forEach(p => console.error('[Auth]   -', p));
     return undefined;
   }
 
@@ -178,7 +178,7 @@ export class ServiceNowUnifiedServer {
         try {
           const payload = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64').toString());
           if (payload.exp && payload.exp * 1000 < Date.now()) {
-            console.warn('[Auth] Enterprise JWT expired, skipping enterprise portal fetch');
+            console.error('[Auth] Enterprise JWT expired, skipping enterprise portal fetch');
             continue;
           }
         } catch {
@@ -192,11 +192,11 @@ export class ServiceNowUnifiedServer {
           portalUrl = `https://${subdomain}.snow-flow.dev`;
         }
 
-        console.log('[Auth] Found enterprise auth from:', authPath);
-        console.log('[Auth]   Portal URL:', portalUrl);
+        console.error('[Auth] Found enterprise auth from:', authPath);
+        console.error('[Auth]   Portal URL:', portalUrl);
         return { jwt, portalUrl, subdomain };
       } catch (error: any) {
-        console.warn('[Auth] Failed to load enterprise auth from', authPath, ':', error.message);
+        console.error('[Auth] Failed to load enterprise auth from', authPath, ':', error.message);
         continue;
       }
     }
@@ -217,7 +217,7 @@ export class ServiceNowUnifiedServer {
       return undefined;
     }
 
-    console.log('[Auth] 🔐 Fetching ServiceNow credentials from enterprise portal (secure mode)...');
+    console.error('[Auth] 🔐 Fetching ServiceNow credentials from enterprise portal (secure mode)...');
 
     try {
       // Call the portal API to get ServiceNow credentials
@@ -227,8 +227,8 @@ export class ServiceNowUnifiedServer {
       );
 
       if (!response.success || !response.instance) {
-        console.warn('[Auth] Enterprise portal returned no ServiceNow instance');
-        console.warn('[Auth] Response:', JSON.stringify(response));
+        console.error('[Auth] Enterprise portal returned no ServiceNow instance');
+        console.error('[Auth] Response:', JSON.stringify(response));
         return undefined;
       }
 
@@ -236,14 +236,14 @@ export class ServiceNowUnifiedServer {
 
       // Validate required fields
       if (!instance.instanceUrl || !instance.clientId || !instance.clientSecret) {
-        console.warn('[Auth] Enterprise portal returned incomplete credentials');
+        console.error('[Auth] Enterprise portal returned incomplete credentials');
         return undefined;
       }
 
-      console.log('[Auth] ✅ Fetched ServiceNow credentials from enterprise portal');
-      console.log('[Auth]    Instance:', instance.instanceUrl);
-      console.log('[Auth]    Client ID:', instance.clientId ? '***' + instance.clientId.slice(-4) : 'MISSING');
-      console.log('[Auth]    Environment:', instance.environmentType || 'unknown');
+      console.error('[Auth] ✅ Fetched ServiceNow credentials from enterprise portal');
+      console.error('[Auth]    Instance:', instance.instanceUrl);
+      console.error('[Auth]    Client ID:', instance.clientId ? '***' + instance.clientId.slice(-4) : 'MISSING');
+      console.error('[Auth]    Environment:', instance.environmentType || 'unknown');
 
       return {
         instanceUrl: instance.instanceUrl,
@@ -259,7 +259,7 @@ export class ServiceNowUnifiedServer {
         }
       };
     } catch (error: any) {
-      console.warn('[Auth] Failed to fetch credentials from enterprise portal:', error.message);
+      console.error('[Auth] Failed to fetch credentials from enterprise portal:', error.message);
       return undefined;
     }
   }
@@ -353,7 +353,7 @@ export class ServiceNowUnifiedServer {
                            !isPlaceholder(clientSecret);
 
     if (hasValidEnvVars) {
-      console.log('[Auth] Using credentials from environment variables');
+      console.error('[Auth] Using credentials from environment variables');
       return {
         instanceUrl: instanceUrl!,
         clientId: clientId!,
@@ -372,11 +372,11 @@ export class ServiceNowUnifiedServer {
 
     // STEP 3: No valid credentials found - start in unauthenticated mode
     // Note: Enterprise users will get credentials from portal in initialize()
-    console.warn('[Auth] No local ServiceNow credentials found');
-    console.warn('[Auth] Checked:');
-    console.warn('[Auth]   1. Environment variables (SERVICENOW_* or SNOW_*)');
-    console.warn('[Auth]   2. snow-code auth.json (~/.local/share/snow-code/auth.json)');
-    console.warn('[Auth] Will attempt enterprise portal fetch in initialize()...');
+    console.error('[Auth] No local ServiceNow credentials found');
+    console.error('[Auth] Checked:');
+    console.error('[Auth]   1. Environment variables (SERVICENOW_* or SNOW_*)');
+    console.error('[Auth]   2. snow-code auth.json (~/.local/share/snow-code/auth.json)');
+    console.error('[Auth] Will attempt enterprise portal fetch in initialize()...');
 
     // Return empty context - may be updated in initialize() if enterprise auth exists
     return {
@@ -409,7 +409,7 @@ export class ServiceNowUnifiedServer {
       const allTools = toolRegistry.getToolDefinitions();
       const filteredTools = filterToolsByRole(allTools, jwtPayload);
 
-      console.log(
+      console.error(
         `[Server] Listing ${filteredTools.length}/${allTools.length} tools for role: ${userRole}`
       );
 
@@ -428,9 +428,9 @@ export class ServiceNowUnifiedServer {
 
       // Enhanced logging: show tool name AND key parameters
       const logArgs = this.formatArgsForLogging(args);
-      console.log(`[Server] Executing tool: ${name}`);
+      console.error(`[Server] Executing tool: ${name}`);
       if (logArgs) {
-        console.log(`[Server]   Parameters: ${logArgs}`);
+        console.error(`[Server]   Parameters: ${logArgs}`);
       }
 
       try {
@@ -585,32 +585,32 @@ export class ServiceNowUnifiedServer {
    * 3. Local auth.json files [already loaded in constructor]
    */
   async initialize(): Promise<void> {
-    console.log('[Server] ServiceNow Unified MCP Server starting...');
+    console.error('[Server] ServiceNow Unified MCP Server starting...');
 
     try {
       // STEP 0: Try enterprise portal fetch FIRST (secure mode - no local secrets!)
       // This takes priority over local credentials if enterprise auth is available
       if (!this.hasValidCredentials() || this.loadEnterpriseAuth()) {
-        console.log('[Server] Checking enterprise portal for credentials...');
+        console.error('[Server] Checking enterprise portal for credentials...');
         const enterpriseContext = await this.loadFromEnterprisePortal();
         if (enterpriseContext) {
           this.context = enterpriseContext;
-          console.log('[Server] ✅ Using SECURE enterprise credentials (fetched at runtime)');
-          console.log('[Server]    No ServiceNow secrets stored locally!');
+          console.error('[Server] ✅ Using SECURE enterprise credentials (fetched at runtime)');
+          console.error('[Server]    No ServiceNow secrets stored locally!');
         } else if (!this.hasValidCredentials()) {
-          console.warn('[Server] No credentials available from enterprise portal');
-          console.warn('[Server] Falling back to local credentials (if any)...');
+          console.error('[Server] No credentials available from enterprise portal');
+          console.error('[Server] Falling back to local credentials (if any)...');
         }
       }
 
-      console.log('[Server] Instance:', this.context.instanceUrl || 'NOT CONFIGURED');
-      console.log('[Server] Auth Mode:', this.context.enterprise ? 'ENTERPRISE (secure)' : 'LOCAL');
+      console.error('[Server] Instance:', this.context.instanceUrl || 'NOT CONFIGURED');
+      console.error('[Server] Auth Mode:', this.context.enterprise ? 'ENTERPRISE (secure)' : 'LOCAL');
 
       // Initialize tool registry with auto-discovery
-      console.log('[Server] Discovering tools...');
+      console.error('[Server] Discovering tools...');
       const discoveryResult = await toolRegistry.initialize();
 
-      console.log('[Server] Tool discovery complete:');
+      console.error('[Server] Tool discovery complete:');
       console.log(`  - Domains: ${discoveryResult.domains.length}`);
       console.log(`  - Tools found: ${discoveryResult.toolsFound}`);
       console.log(`  - Tools registered: ${discoveryResult.toolsRegistered}`);
@@ -618,7 +618,7 @@ export class ServiceNowUnifiedServer {
       console.log(`  - Duration: ${discoveryResult.duration}ms`);
 
       if (discoveryResult.toolsFailed > 0) {
-        console.warn('[Server] Some tools failed to load:');
+        console.error('[Server] Some tools failed to load:');
         discoveryResult.errors.forEach(err => {
           console.warn(`  - ${err.filePath}: ${err.error}`);
         });
@@ -626,13 +626,13 @@ export class ServiceNowUnifiedServer {
 
       // Test authentication (only if we have credentials)
       if (this.hasValidCredentials()) {
-        console.log('[Server] Testing authentication...');
+        console.error('[Server] Testing authentication...');
         try {
           await authManager.getAuthenticatedClient(this.context);
-          console.log('[Server] Authentication successful');
+          console.error('[Server] Authentication successful');
         } catch (error: any) {
-          console.warn('[Server] Authentication test failed:', error.message);
-          console.warn('[Server] Server will start, but tool calls may fail until credentials are valid');
+          console.error('[Server] Authentication test failed:', error.message);
+          console.error('[Server] Server will start, but tool calls may fail until credentials are valid');
         }
       } else {
         console.error('[Server] ⚠️  No ServiceNow credentials configured!');
@@ -644,7 +644,7 @@ export class ServiceNowUnifiedServer {
 
       // Get server statistics
       const stats = toolRegistry.getStatistics();
-      console.log('[Server] Server statistics:');
+      console.error('[Server] Server statistics:');
       console.log(`  - Total tools: ${stats.totalTools}`);
       console.log(`  - Total domains: ${stats.totalDomains}`);
       console.log('  - Tools by domain:');
@@ -652,7 +652,7 @@ export class ServiceNowUnifiedServer {
         console.log(`    - ${domain}: ${count} tools`);
       });
 
-      console.log('[Server] Initialization complete ✅');
+      console.error('[Server] Initialization complete ✅');
 
     } catch (error: any) {
       console.error('[Server] Initialization failed:', error.message);
@@ -666,17 +666,17 @@ export class ServiceNowUnifiedServer {
   async start(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.log('[Server] Connected via stdio transport');
+    console.error('[Server] Connected via stdio transport');
   }
 
   /**
    * Stop server gracefully
    */
   async stop(): Promise<void> {
-    console.log('[Server] Stopping server...');
+    console.error('[Server] Stopping server...');
     await this.server.close();
     authManager.clearCache();
-    console.log('[Server] Server stopped');
+    console.error('[Server] Server stopped');
   }
 
   /**

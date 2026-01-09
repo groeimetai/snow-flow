@@ -45,7 +45,7 @@ export class ServiceNowAuthManager {
   constructor() {
     // Load cached tokens on initialization
     this.loadTokenCache().catch(err => {
-      console.warn('[Auth] Failed to load token cache:', err.message);
+      console.error('[Auth] Failed to load token cache:', err.message);
     });
 
     // Load enterprise license on initialization
@@ -65,14 +65,14 @@ export class ServiceNowAuthManager {
         loadLicenseFromEnv = require('../../../../enterprise/src/auth/enterprise-validator').loadLicenseFromEnv;
       } catch (err) {
         // Enterprise package not installed - use community license
-        console.log('[Auth] Enterprise features not available, using community tier');
+        console.error('[Auth] Enterprise features not available, using community tier');
         (this as any)._enterpriseLicense = this.getCommunityLicense();
         return;
       }
 
       const license: EnterpriseLicense = loadLicenseFromEnv();
 
-      console.log('[Auth] Enterprise License:', {
+      console.error('[Auth] Enterprise License:', {
         tier: license.tier,
         company: license.companyName || 'N/A',
         theme: license.theme,
@@ -83,7 +83,7 @@ export class ServiceNowAuthManager {
       // Store license for context enrichment
       (this as any)._enterpriseLicense = license;
     } catch (error: any) {
-      console.warn('[Auth] Failed to load enterprise license:', error.message);
+      console.error('[Auth] Failed to load enterprise license:', error.message);
       // Fallback to community license
       (this as any)._enterpriseLicense = this.getCommunityLicense();
     }
@@ -190,7 +190,7 @@ export class ServiceNowAuthManager {
 
     // Check if refresh already in progress for this instance
     if (this.tokenRefreshPromises.has(cacheKey)) {
-      console.log('[Auth] Token refresh already in progress, awaiting...');
+      console.error('[Auth] Token refresh already in progress, awaiting...');
       return await this.tokenRefreshPromises.get(cacheKey)!;
     }
 
@@ -211,7 +211,7 @@ export class ServiceNowAuthManager {
    */
   private async refreshAccessToken(context: ServiceNowContext): Promise<string> {
     const cacheKey = this.getCacheKey(context.instanceUrl);
-    console.log('[Auth] Refreshing access token for:', context.instanceUrl);
+    console.error('[Auth] Refreshing access token for:', context.instanceUrl);
 
     // Check if credentials are placeholders or empty
     if (!context.instanceUrl || !context.clientId || !context.clientSecret ||
@@ -230,7 +230,7 @@ export class ServiceNowAuthManager {
 
     if (refreshToken) {
       try {
-        console.log('[Auth] Attempting OAuth refresh token flow...');
+        console.error('[Auth] Attempting OAuth refresh token flow...');
         // OAuth token refresh request
         const tokenUrl = `${context.instanceUrl}/oauth_token.do`;
         const response = await axios.post<OAuthTokenResponse>(
@@ -263,18 +263,18 @@ export class ServiceNowAuthManager {
         // Persist to disk
         await this.saveTokenCache();
 
-        console.log('[Auth] Access token refreshed successfully (OAuth Refresh Token)');
+        console.error('[Auth] Access token refreshed successfully (OAuth Refresh Token)');
         return tokenData.access_token;
 
       } catch (error: any) {
-        console.warn('[Auth] OAuth refresh token flow failed:', error.message);
-        console.log('[Auth] Will try OAuth client credentials flow...');
+        console.error('[Auth] OAuth refresh token flow failed:', error.message);
+        console.error('[Auth] Will try OAuth client credentials flow...');
       }
     }
 
     // STEP 2: Try OAuth Client Credentials Grant (initial token acquisition)
     try {
-      console.log('[Auth] Attempting OAuth client credentials flow...');
+      console.error('[Auth] Attempting OAuth client credentials flow...');
       const tokenUrl = `${context.instanceUrl}/oauth_token.do`;
       const response = await axios.post<OAuthTokenResponse>(
         tokenUrl,
@@ -305,18 +305,18 @@ export class ServiceNowAuthManager {
       // Persist to disk
       await this.saveTokenCache();
 
-      console.log('[Auth] Access token acquired successfully (OAuth Client Credentials)');
+      console.error('[Auth] Access token acquired successfully (OAuth Client Credentials)');
       return tokenData.access_token;
 
     } catch (error: any) {
-      console.warn('[Auth] OAuth client credentials flow failed:', error.message);
+      console.error('[Auth] OAuth client credentials flow failed:', error.message);
 
       // Only try username/password if explicitly provided
       const hasBasicAuth = context.username && context.password &&
                           context.username.trim() !== '' && context.password.trim() !== '';
 
       if (hasBasicAuth) {
-        console.log('[Auth] Will try username/password fallback...');
+        console.error('[Auth] Will try username/password fallback...');
         return await this.authenticateWithPassword(context);
       } else {
         console.error('[Auth] No username/password credentials available for fallback');
@@ -344,7 +344,7 @@ export class ServiceNowAuthManager {
         throw new Error('No username/password available for basic authentication');
       }
 
-      console.log('[Auth] Using username/password authentication');
+      console.error('[Auth] Using username/password authentication');
 
       // Create Basic Auth token
       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
@@ -369,7 +369,7 @@ export class ServiceNowAuthManager {
           timeout: 10000
         });
 
-        console.log('[Auth] Username/password authentication successful');
+        console.error('[Auth] Username/password authentication successful');
         return accessToken;
 
       } catch (testError: any) {
@@ -401,7 +401,7 @@ export class ServiceNowAuthManager {
   private invalidateToken(cacheKey: string): void {
     this.tokenCache.delete(cacheKey);
     this.clients.delete(cacheKey);
-    console.log('[Auth] Invalidated token for:', cacheKey);
+    console.error('[Auth] Invalidated token for:', cacheKey);
   }
 
   /**
@@ -432,11 +432,11 @@ export class ServiceNowAuthManager {
         }
       });
 
-      console.log('[Auth] Loaded', this.tokenCache.size, 'cached tokens');
+      console.error('[Auth] Loaded', this.tokenCache.size, 'cached tokens');
     } catch (error: any) {
       // Cache file doesn't exist or is corrupted - not critical
       if (error.code !== 'ENOENT') {
-        console.warn('[Auth] Failed to load cache:', error.message);
+        console.error('[Auth] Failed to load cache:', error.message);
       }
     }
   }
@@ -459,7 +459,7 @@ export class ServiceNowAuthManager {
 
       // Write cache file
       await fs.writeFile(cachePath, JSON.stringify(cacheData, null, 2), 'utf-8');
-      console.log('[Auth] Token cache saved');
+      console.error('[Auth] Token cache saved');
     } catch (error: any) {
       console.error('[Auth] Failed to save cache:', error.message);
     }
@@ -480,7 +480,7 @@ export class ServiceNowAuthManager {
   clearCache(): void {
     this.tokenCache.clear();
     this.clients.clear();
-    console.log('[Auth] Cache cleared');
+    console.error('[Auth] Cache cleared');
   }
 
   /**

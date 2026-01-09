@@ -164,7 +164,7 @@ export class ToolRegistry {
    * Initialize tool registry with auto-discovery or static fallback
    */
   async initialize(): Promise<ToolDiscoveryResult> {
-    console.log('[ToolRegistry] Initializing...');
+    console.error('[ToolRegistry] Initializing...');
 
     const startTime = Date.now();
     const result: ToolDiscoveryResult = {
@@ -181,9 +181,9 @@ export class ToolRegistry {
 
     if (domains.length > 0) {
       // File discovery worked - use dynamic loading
-      console.log('[ToolRegistry] Using file-based discovery mode');
+      console.error('[ToolRegistry] Using file-based discovery mode');
       result.domains = domains;
-      console.log(`[ToolRegistry] Found ${domains.length} domains: ${domains.join(', ')}`);
+      console.error(`[ToolRegistry] Found ${domains.length} domains: ${domains.join(', ')}`);
 
       for (const domain of domains) {
         const domainPath = path.join(this.config.toolsDirectory, domain);
@@ -196,7 +196,7 @@ export class ToolRegistry {
       }
     } else {
       // File discovery failed - use static imports (bundled mode)
-      console.log('[ToolRegistry] File discovery failed, using static imports (bundled mode)');
+      console.error('[ToolRegistry] File discovery failed, using static imports (bundled mode)');
       this.useStaticMode = true;
 
       const staticResult = await this.loadStaticTools();
@@ -209,7 +209,7 @@ export class ToolRegistry {
 
     result.duration = Date.now() - startTime;
 
-    console.log('[ToolRegistry] Initialization complete:');
+    console.error('[ToolRegistry] Initialization complete:');
     console.log(`  - Mode: ${this.useStaticMode ? 'static (bundled)' : 'dynamic (file-based)'}`);
     console.log(`  - Domains: ${result.domains.length}`);
     console.log(`  - Tools found: ${result.toolsFound}`);
@@ -277,7 +277,7 @@ export class ToolRegistry {
       }
     }
 
-    console.log(`[ToolRegistry] Loaded ${result.toolsRegistered} tools from ${result.domains.length} domains (static mode)`);
+    console.error(`[ToolRegistry] Loaded ${result.toolsRegistered} tools from ${result.domains.length} domains (static mode)`);
     return result;
   }
 
@@ -393,7 +393,7 @@ export class ToolRegistry {
       };
 
       this.tools.set(definition.name, registeredTool);
-      console.log(`[ToolRegistry] Registered: ${definition.name} (${domain})`);
+      console.error(`[ToolRegistry] Registered: ${definition.name} (${domain})`);
 
     } catch (error: any) {
       throw new Error(`Failed to load tool from ${filePath}: ${error.message}`);
@@ -471,9 +471,9 @@ export class ToolRegistry {
     }
 
     try {
-      console.log(`[ToolRegistry] Executing: ${name}`);
+      console.error(`[ToolRegistry] Executing: ${name}`);
       const result = await tool.executor(args, context);
-      console.log(`[ToolRegistry] Success: ${name}`);
+      console.error(`[ToolRegistry] Success: ${name}`);
       return result;
     } catch (error: any) {
       console.error(`[ToolRegistry] Failed: ${name}`, error.message);
@@ -536,7 +536,7 @@ export class ToolRegistry {
     try {
       await fs.mkdir(path.dirname(configPath), { recursive: true });
       await fs.writeFile(configPath, JSON.stringify(metadata, null, 2), 'utf-8');
-      console.log(`[ToolRegistry] Exported ${metadata.length} tool definitions to ${configPath}`);
+      console.error(`[ToolRegistry] Exported ${metadata.length} tool definitions to ${configPath}`);
     } catch (error: any) {
       console.error('[ToolRegistry] Failed to export tool definitions:', error.message);
     }
@@ -546,7 +546,7 @@ export class ToolRegistry {
    * Reload tools from disk (for development hot-reload)
    */
   async reload(): Promise<ToolDiscoveryResult> {
-    console.log('[ToolRegistry] Reloading tools...');
+    console.error('[ToolRegistry] Reloading tools...');
     this.tools.clear();
     return await this.initialize();
   }
@@ -556,7 +556,7 @@ export class ToolRegistry {
    */
   clear(): void {
     this.tools.clear();
-    console.log('[ToolRegistry] Cleared all registered tools');
+    console.error('[ToolRegistry] Cleared all registered tools');
   }
 }
 

@@ -154,7 +154,7 @@ export async function retryWithBackoff<T>(
 
   for (let attempt = 1; attempt <= retryConfig.maxAttempts; attempt++) {
     try {
-      console.log(`[ErrorHandler] Attempt ${attempt}/${retryConfig.maxAttempts}`);
+      console.error(`[ErrorHandler] Attempt ${attempt}/${retryConfig.maxAttempts}`);
       return await operation();
     } catch (error: any) {
       lastError = error;
@@ -174,7 +174,7 @@ export async function retryWithBackoff<T>(
 
       // Calculate backoff delay
       const delay = calculateBackoff(attempt, retryConfig);
-      console.log(`[ErrorHandler] Retrying in ${delay}ms (attempt ${attempt}/${retryConfig.maxAttempts})`);
+      console.error(`[ErrorHandler] Retrying in ${delay}ms (attempt ${attempt}/${retryConfig.maxAttempts})`);
 
       // Wait before retry
       await sleep(delay);
