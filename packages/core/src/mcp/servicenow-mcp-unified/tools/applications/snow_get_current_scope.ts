@@ -171,11 +171,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                             (us.application === 'global' && currentScope.is_global)
             };
 
-            // Check for scope mismatch
+            // Check for scope mismatch - this is informational, not blocking
             if (!result.update_set.scope_matches) {
               result.recommendations.push(
-                `⚠️ SCOPE MISMATCH: Current scope is "${currentScope.name}" but Update Set is in "${usAppName}". ` +
-                `Consider switching scope or creating a new Update Set.`
+                `ℹ️ Note: Current scope is "${currentScope.name}" but Update Set "${us.name}" is in "${usAppName}". ` +
+                `This is fine for global artifacts. If you need scoped artifacts, switch scope first.`
               );
             }
           }
@@ -233,12 +233,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     if (result.update_set) {
       message += ` | Update Set: "${result.update_set.name}" (${result.update_set.state})`;
       if (!result.update_set.scope_matches) {
-        message += ' ⚠️ SCOPE MISMATCH';
+        message += ` (Update Set in ${result.update_set.application.name} - OK for global artifacts)`;
       }
     } else {
       message += ' | No active Update Set';
     }
     result.message = message;
+
+    // Add explicit "ready to proceed" indicator to prevent agent loops
+    result.ready_to_proceed = true;
+    result.status = 'ok';
 
     return createSuccessResult(result);
   } catch (error: any) {
