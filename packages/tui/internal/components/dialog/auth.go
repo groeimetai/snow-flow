@@ -19,6 +19,7 @@ import (
 	list "github.com/sst/opencode/internal/components/list"
 	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/components/toast"
+	"github.com/sst/opencode/internal/clipboard"
 	"github.com/sst/opencode/internal/layout"
 	"github.com/sst/opencode/internal/styles"
 	"github.com/sst/opencode/internal/theme"
@@ -922,6 +923,16 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			return a.handleEnter()
+
+		case "c":
+			// Copy URL to clipboard in headless OAuth URL step
+			if a.step == stepHeadlessOAuthUrl && a.headlessAuthUrl != "" {
+				if err := clipboard.Init(); err == nil {
+					clipboard.Write(clipboard.FmtText, []byte(a.headlessAuthUrl))
+					return a, toast.NewSuccessToast("URL copied to clipboard!")
+				}
+				return a, toast.NewErrorToast("Could not access clipboard")
+			}
 		}
 	}
 
@@ -3134,6 +3145,7 @@ func (a *authDialog) Render(background string) string {
 			urlStyle := styles.NewStyle().Foreground(t.Primary()).Bold(true)
 			helpStyle := styles.NewStyle().Foreground(t.TextMuted())
 			instructStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
+			copyHintStyle := styles.NewStyle().Foreground(t.Success()).Bold(true)
 
 			lines = append(lines, warningStyle.Render("⚠️  Headless Environment Detected"))
 			if a.headlessReason != "" {
@@ -3152,13 +3164,15 @@ func (a *authDialog) Render(background string) string {
 				lines = append(lines, urlStyle.Render(url))
 			}
 			lines = append(lines, "")
+			lines = append(lines, copyHintStyle.Render("Press 'c' to copy URL to clipboard"))
+			lines = append(lines, "")
 			lines = append(lines, instructStyle.Render("After approving in ServiceNow:"))
 			lines = append(lines, instructStyle.Render("1. You'll be redirected to localhost (will fail)"))
 			lines = append(lines, instructStyle.Render("2. Copy the 'code' parameter from the URL"))
 			lines = append(lines, instructStyle.Render("3. Press Enter to input the code"))
 			lines = append(lines, "")
 			footerStyle := styles.NewStyle().Foreground(t.TextMuted()).Italic(true)
-			lines = append(lines, footerStyle.Render("Enter: input code • Esc: cancel"))
+			lines = append(lines, footerStyle.Render("c: copy URL • Enter: input code • Esc: cancel"))
 			content = strings.Join(lines, "\n")
 			a.modal = modal.New(modal.WithTitle("ServiceNow OAuth - Headless Mode"), modal.WithMaxWidth(80))
 
