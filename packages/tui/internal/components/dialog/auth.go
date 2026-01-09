@@ -200,6 +200,8 @@ const (
 type AuthSelectedMsg struct {
 	AuthType string
 	Success  bool
+	Provider string // Provider ID (e.g., "openai", "anthropic")
+	Model    string // Model ID (e.g., "gpt-4", "claude-sonnet-4-20250514")
 }
 
 // AuthDialog interface for the auth dialog
@@ -697,7 +699,7 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, tea.Sequence(
 				util.CmdHandler(modal.CloseModalMsg{}),
 				toast.NewSuccessToast(successMsg),
-				util.CmdHandler(AuthSelectedMsg{AuthType: a.authType, Success: true}),
+				util.CmdHandler(AuthSelectedMsg{AuthType: a.authType, Success: true, Provider: a.llmProvider, Model: a.selectedModel}),
 			)
 		}
 		return a, toast.NewErrorToast("Failed to save model: " + msg.Error)
@@ -732,7 +734,7 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, tea.Sequence(
 				util.CmdHandler(modal.CloseModalMsg{}),
 				toast.NewSuccessToast(msg.Message),
-				util.CmdHandler(AuthSelectedMsg{AuthType: a.authType, Success: true}),
+				util.CmdHandler(AuthSelectedMsg{AuthType: a.authType, Success: true, Provider: a.llmProvider, Model: a.selectedModel}),
 			)
 		}
 		return a, toast.NewErrorToast("Save failed: " + msg.Error)

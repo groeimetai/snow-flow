@@ -803,6 +803,13 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Auth completed, show result and reload providers to pick up new model
 		if msg.Success {
 			cmds = append(cmds, toast.NewSuccessToast("Authentication completed"))
+			// Set authenticated provider/model as default
+			if msg.Provider != "" && msg.Model != "" {
+				a.app.State.Provider = msg.Provider
+				a.app.State.Model = msg.Model
+				a.app.State.UpdateModelUsage(msg.Provider, msg.Model)
+				cmds = append(cmds, a.app.SaveState())
+			}
 			// Reload providers to pick up the newly configured model
 			cmds = append(cmds, a.app.InitializeProvider())
 		}
