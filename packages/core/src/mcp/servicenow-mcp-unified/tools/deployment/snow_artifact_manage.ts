@@ -13,6 +13,8 @@ import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/t
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
 import * as fs from 'fs/promises';
+import * as path from 'path';
+import { existsSync } from 'fs';
 
 // ==================== ARTIFACT TYPE MAPPING ====================
 const ARTIFACT_TABLE_MAP: Record<string, string> = {
@@ -54,6 +56,74 @@ const ARTIFACT_IDENTIFIER_FIELD: Record<string, string> = {
   sys_dictionary: 'element',
   sys_hub_flow: 'name',
   sys_app: 'name'
+};
+
+// ==================== FILE MAPPINGS FOR IMPORT (artifact_directory) ====================
+const FILE_MAPPINGS: Record<string, Record<string, string[]>> = {
+  sp_widget: {
+    template: ['template.html', 'index.html', 'widget.html'],
+    script: ['server.js', 'server-script.js', 'script.js'],
+    client_script: ['client.js', 'client-script.js', 'controller.js'],
+    css: ['style.css', 'styles.css', 'widget.css'],
+    option_schema: ['options.json', 'option_schema.json', 'schema.json']
+  },
+  sys_script: {  // business_rule
+    script: ['script.js', 'index.js', 'main.js'],
+    condition: ['condition.js', 'condition.txt']
+  },
+  sys_script_include: {
+    script: ['script.js', 'index.js', 'main.js', '{name}.js']
+  },
+  sys_script_client: {
+    script: ['script.js', 'client.js', 'index.js']
+  },
+  sp_page: {
+    // SP pages don't have script content
+  },
+  sys_ux_page: {
+    // UIB pages don't have script content in same way
+  },
+  sys_ui_action: {
+    script: ['script.js', 'action.js', 'index.js'],
+    condition: ['condition.js']
+  },
+  sysauto_script: {  // scheduled_job
+    script: ['script.js', 'job.js', 'index.js']
+  },
+  sys_script_fix: {
+    script: ['script.js', 'fix.js', 'index.js']
+  }
+};
+
+// ==================== FILE MAPPINGS FOR EXPORT ====================
+const EXPORT_FILE_MAPPINGS: Record<string, Record<string, string>> = {
+  sp_widget: {
+    template: 'template.html',
+    script: 'server.js',
+    client_script: 'client.js',
+    css: 'style.css',
+    option_schema: 'options.json'
+  },
+  sys_script: {  // business_rule
+    script: 'script.js',
+    condition: 'condition.js'
+  },
+  sys_script_include: {
+    script: 'script.js'
+  },
+  sys_script_client: {
+    script: 'script.js'
+  },
+  sys_ui_action: {
+    script: 'script.js',
+    condition: 'condition.js'
+  },
+  sysauto_script: {
+    script: 'script.js'
+  },
+  sys_script_fix: {
+    script: 'script.js'
+  }
 };
 
 export const toolDefinition: MCPToolDefinition = {
@@ -317,12 +387,16 @@ export const toolDefinition: MCPToolDefinition = {
       // EXPORT parameters
       format: {
         type: 'string',
-        enum: ['json', 'xml'],
-        description: '[export] Export format',
+        enum: ['json', 'xml', 'files'],
+        description: '[export] Export format. Use "files" to export to separate files per field (template.html, server.js, etc.)',
         default: 'json'
       },
+      export_path: {
+        type: 'string',
+        description: '[export] Directory path to export files to (required for format="files")'
+      },
 
-      // IMPORT parameters
+      // IMPORT/CREATE parameters with file support
       file_path: {
         type: 'string',
         description: '[import] Path to the artifact file'
@@ -330,6 +404,39 @@ export const toolDefinition: MCPToolDefinition = {
       data: {
         type: 'object',
         description: '[import] Artifact data object (alternative to file_path)'
+      },
+      artifact_directory: {
+        type: 'string',
+        description: '[create] Directory containing artifact files. Auto-maps files like template.html→template, server.js→script, etc.'
+      },
+      // Generic _file suffix parameters for explicit file mapping
+      template_file: {
+        type: 'string',
+        description: '[create] Path to HTML template file (widgets)'
+      },
+      server_script_file: {
+        type: 'string',
+        description: '[create] Path to server-side script file'
+      },
+      client_script_file: {
+        type: 'string',
+        description: '[create] Path to client-side script file'
+      },
+      css_file: {
+        type: 'string',
+        description: '[create] Path to CSS stylesheet file (widgets)'
+      },
+      option_schema_file: {
+        type: 'string',
+        description: '[create] Path to option schema JSON file (widgets)'
+      },
+      script_file: {
+        type: 'string',
+        description: '[create] Path to script file (for script includes, business rules, etc.)'
+      },
+      condition_file: {
+        type: 'string',
+        description: '[create] Path to condition script file (business rules, UI actions)'
       },
 
       // Scope
@@ -382,7 +489,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   } catch (error: any) {
     return createErrorResult(
       error instanceof SnowFlowError ? error : new SnowFlowError(
-        ErrorType.OPERATION_FAILED,
+        ErrorType.SERVICENOW_API_ERROR,
         `Artifact ${action} failed: ${error.message}`,
         { originalError: error }
       )
@@ -427,7 +534,16 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
     max_length = 255,
     mandatory = false,
     default_value,
-    choice_options
+    choice_options,
+    // File-based input parameters
+    artifact_directory,
+    template_file,
+    server_script_file,
+    client_script_file,
+    css_file,
+    option_schema_file,
+    script_file,
+    condition_file
   } = args;
 
   if (!name) {
@@ -435,6 +551,61 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
   }
 
   const client = await getAuthenticatedClient(context);
+
+  // ==================== RESOLVE FILE-BASED CONTENT ====================
+  // Priority: inline content > _file params > artifact_directory
+  const resolvedFields: Record<string, string> = {};
+  const fileSourceInfo: string[] = [];
+
+  // Step 1: Process artifact_directory if provided (lowest priority)
+  if (artifact_directory) {
+    const mappings = FILE_MAPPINGS[tableName];
+    if (mappings) {
+      for (const [field, filenames] of Object.entries(mappings)) {
+        for (const filename of filenames) {
+          const resolvedFilename = filename.replace('{name}', name);
+          const fullPath = path.join(artifact_directory, resolvedFilename);
+          if (existsSync(fullPath)) {
+            try {
+              resolvedFields[field] = await fs.readFile(fullPath, 'utf-8');
+              fileSourceInfo.push(`${field} ← ${resolvedFilename}`);
+            } catch (e) {
+              // Skip files that can't be read
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Step 2: Process individual _file parameters (medium priority - override directory)
+  const fileParams: Record<string, string | undefined> = {
+    template: template_file,
+    script: script_file,
+    client_script: client_script_file,
+    css: css_file,
+    option_schema: option_schema_file,
+    condition: condition_file,
+    server_script: server_script_file
+  };
+
+  for (const [field, filePath] of Object.entries(fileParams)) {
+    if (filePath && typeof filePath === 'string') {
+      if (existsSync(filePath)) {
+        try {
+          resolvedFields[field] = await fs.readFile(filePath, 'utf-8');
+          fileSourceInfo.push(`${field} ← ${path.basename(filePath)} (explicit)`);
+        } catch (e: any) {
+          return createErrorResult(`Failed to read file '${filePath}': ${e.message}`);
+        }
+      } else {
+        return createErrorResult(`File not found: ${filePath}`);
+      }
+    }
+  }
+
+  // Step 3: Inline content has highest priority (will override in artifact building below)
 
   // ES5 validation warnings
   const warnings: string[] = [];
@@ -484,6 +655,8 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
   var result: any;
 
   // Build artifact data based on type
+  // Note: inline content has highest priority, then _file params, then artifact_directory
+  // resolvedFields already contains file-based content with proper priority
   switch (type) {
     case 'sp_widget':
     case 'widget':
@@ -491,11 +664,12 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
         id: sanitizeString(name),
         name: sanitizeString(title || name),
         description: sanitizeString(description),
-        template: sanitizeString(template || ''),
-        script: sanitizeString(server_script || ''),
-        client_script: sanitizeString(client_script || ''),
-        css: sanitizeString(css || ''),
-        option_schema: sanitizeString(option_schema || ''),
+        // Inline content overrides resolved fields
+        template: sanitizeString(template || resolvedFields.template || ''),
+        script: sanitizeString(server_script || resolvedFields.script || resolvedFields.server_script || ''),
+        client_script: sanitizeString(client_script || resolvedFields.client_script || ''),
+        css: sanitizeString(css || resolvedFields.css || ''),
+        option_schema: sanitizeString(option_schema || resolvedFields.option_schema || ''),
         data_table: true
       };
       break;
@@ -522,7 +696,7 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
       artifactData = {
         name: sanitizeString(name),
         api_name: sanitizeString(api_name || name),
-        script: sanitizeString(script || ''),
+        script: sanitizeString(script || resolvedFields.script || ''),
         description: sanitizeString(description),
         active: active
       };
@@ -535,7 +709,7 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
       artifactData = {
         name: sanitizeString(name),
         collection: table,
-        script: sanitizeString(script || ''),
+        script: sanitizeString(script || resolvedFields.script || ''),
         description: sanitizeString(description),
         when: when || 'before',
         insert: insert || false,
@@ -544,6 +718,10 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
         query: query_trigger || false,
         active: active
       };
+      // Add condition if available
+      if (resolvedFields.condition) {
+        artifactData.condition = sanitizeString(resolvedFields.condition);
+      }
       break;
 
     case 'client_script':
@@ -553,7 +731,7 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
       artifactData = {
         name: sanitizeString(name),
         table: table,
-        script: sanitizeString(script || ''),
+        script: sanitizeString(script || resolvedFields.script || ''),
         description: sanitizeString(description),
         active: active
       };
@@ -566,7 +744,7 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
       artifactData = {
         short_description: sanitizeString(name),
         table: table,
-        script_true: sanitizeString(script || ''),
+        script_true: sanitizeString(script || resolvedFields.script || ''),
         description: sanitizeString(description),
         active: active,
         on_load: true,
@@ -581,11 +759,15 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
       artifactData = {
         name: sanitizeString(name),
         table: table,
-        script: sanitizeString(script || ''),
+        script: sanitizeString(script || resolvedFields.script || ''),
         comments: sanitizeString(description),
         active: active,
         form_action: true
       };
+      // Add condition if available
+      if (resolvedFields.condition) {
+        artifactData.condition = sanitizeString(resolvedFields.condition);
+      }
       break;
 
     case 'rest_message':
@@ -600,7 +782,7 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
     case 'scheduled_job':
       artifactData = {
         name: sanitizeString(name),
-        script: sanitizeString(script || ''),
+        script: sanitizeString(script || resolvedFields.script || ''),
         comments: sanitizeString(description),
         active: active
       };
@@ -617,7 +799,7 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
     case 'fix_script':
       artifactData = {
         name: sanitizeString(name),
-        script: sanitizeString(script || ''),
+        script: sanitizeString(script || resolvedFields.script || ''),
         description: sanitizeString(description)
       };
       break;
@@ -794,6 +976,12 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
 
   if (warnings.length > 0) {
     successData.warnings = warnings;
+  }
+
+  // Add file source info if files were used
+  if (fileSourceInfo.length > 0) {
+    successData.file_sources = fileSourceInfo;
+    successData.artifact_directory = artifact_directory;
   }
 
   return createSuccessResult(successData);
@@ -1226,10 +1414,15 @@ async function executeAnalyze(args: any, context: ServiceNowContext, tableName: 
 
 // ==================== EXPORT ====================
 async function executeExport(args: any, context: ServiceNowContext, tableName: string): Promise<ToolResult> {
-  const { type, sys_id, identifier, format = 'json' } = args;
+  const { type, sys_id, identifier, format = 'json', export_path } = args;
 
   if (!sys_id && !identifier) {
     return createErrorResult('sys_id or identifier is required for export action');
+  }
+
+  // Validate export_path is provided for 'files' format
+  if (format === 'files' && !export_path) {
+    return createErrorResult('export_path is required when using format="files"');
   }
 
   const client = await getAuthenticatedClient(context);
@@ -1242,7 +1435,65 @@ async function executeExport(args: any, context: ServiceNowContext, tableName: s
 
   var exportedData: any;
 
-  if (format === 'json') {
+  if (format === 'files') {
+    // Export to separate files per field
+    const exportedFiles: string[] = [];
+
+    try {
+      // Create export directory
+      await fs.mkdir(export_path, { recursive: true });
+
+      // Get field mappings for this artifact type
+      const fieldMappings = EXPORT_FILE_MAPPINGS[tableName];
+
+      if (fieldMappings) {
+        for (const [field, filename] of Object.entries(fieldMappings)) {
+          if (artifact[field] && artifact[field].trim()) {
+            const filePath = path.join(export_path, filename);
+            await fs.writeFile(filePath, artifact[field], 'utf-8');
+            exportedFiles.push(filename);
+          }
+        }
+      }
+
+      // Always write metadata.json with non-script fields
+      const metadata: any = {
+        sys_id: artifact.sys_id,
+        name: artifact.name || artifact.id,
+        type: type,
+        table: tableName,
+        exported_at: new Date().toISOString()
+      };
+
+      // Add non-script metadata fields
+      const skipFields = new Set(['template', 'script', 'client_script', 'css', 'option_schema', 'condition', 'script_true']);
+      for (const [key, value] of Object.entries(artifact)) {
+        if (!key.startsWith('sys_') && !skipFields.has(key) && value !== null && value !== undefined) {
+          metadata[key] = value;
+        }
+      }
+
+      const metadataPath = path.join(export_path, 'metadata.json');
+      await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2), 'utf-8');
+      exportedFiles.push('metadata.json');
+
+      return createSuccessResult({
+        action: 'export',
+        exported: true,
+        sys_id: artifact.sys_id,
+        name: artifact.name || artifact.id,
+        type: type,
+        table: tableName,
+        format: format,
+        export_path: export_path,
+        files: exportedFiles
+      });
+
+    } catch (e: any) {
+      return createErrorResult(`Failed to export files: ${e.message}`);
+    }
+
+  } else if (format === 'json') {
     exportedData = {
       type: type,
       table: tableName,
@@ -1251,6 +1502,28 @@ async function executeExport(args: any, context: ServiceNowContext, tableName: s
       exported_at: new Date().toISOString(),
       data: artifact
     };
+
+    // Write to file if export_path is provided
+    if (export_path) {
+      try {
+        const jsonPath = export_path.endsWith('.json') ? export_path : export_path + '.json';
+        await fs.writeFile(jsonPath, JSON.stringify(exportedData, null, 2), 'utf-8');
+        return createSuccessResult({
+          action: 'export',
+          exported: true,
+          sys_id: artifact.sys_id,
+          name: artifact.name || artifact.id,
+          type: type,
+          table: tableName,
+          format: format,
+          export_path: jsonPath,
+          data: exportedData
+        });
+      } catch (e: any) {
+        return createErrorResult(`Failed to write JSON file: ${e.message}`);
+      }
+    }
+
   } else if (format === 'xml') {
     var xmlParts = ['<?xml version="1.0" encoding="UTF-8"?>'];
     xmlParts.push(`<${type}>`);
@@ -1265,8 +1538,30 @@ async function executeExport(args: any, context: ServiceNowContext, tableName: s
     }
     xmlParts.push(`</${type}>`);
     exportedData = xmlParts.join('\n');
+
+    // Write to file if export_path is provided
+    if (export_path) {
+      try {
+        const xmlPath = export_path.endsWith('.xml') ? export_path : export_path + '.xml';
+        await fs.writeFile(xmlPath, exportedData, 'utf-8');
+        return createSuccessResult({
+          action: 'export',
+          exported: true,
+          sys_id: artifact.sys_id,
+          name: artifact.name || artifact.id,
+          type: type,
+          table: tableName,
+          format: format,
+          export_path: xmlPath,
+          data: exportedData
+        });
+      } catch (e: any) {
+        return createErrorResult(`Failed to write XML file: ${e.message}`);
+      }
+    }
+
   } else {
-    return createErrorResult(`Unsupported format: ${format}`);
+    return createErrorResult(`Unsupported format: ${format}. Valid formats: json, xml, files`);
   }
 
   return createSuccessResult({
