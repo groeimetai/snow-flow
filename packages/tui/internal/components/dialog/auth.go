@@ -1389,19 +1389,28 @@ func (a *authDialog) handleEnter() (tea.Model, tea.Cmd) {
 		if len(a.inputs) > 0 && a.inputs[0].Value() != "" {
 			input := strings.TrimSpace(a.inputs[0].Value())
 			code := input
-			// If user pasted the full callback URL, extract the code parameter
+
+			// Extract code from various input formats:
+			// 1. Full URL: http://localhost:3005/callback?code=XXX&state=YYY
+			// 2. Query string: code=XXX&state=YYY
+			// 3. Value with params: XXX&state=YYY (user copied from after code=)
+			// 4. Just the code: XXX
+
 			if strings.Contains(input, "code=") {
-				// Parse the URL to extract the code parameter
-				if strings.Contains(input, "?") {
-					queryPart := input[strings.Index(input, "?")+1:]
-					for _, param := range strings.Split(queryPart, "&") {
-						if strings.HasPrefix(param, "code=") {
-							code = strings.TrimPrefix(param, "code=")
-							break
-						}
-					}
+				// Case 1 or 2: Extract code parameter value
+				startIdx := strings.Index(input, "code=") + 5
+				endIdx := len(input)
+				if ampIdx := strings.Index(input[startIdx:], "&"); ampIdx != -1 {
+					endIdx = startIdx + ampIdx
 				}
+				code = input[startIdx:endIdx]
+			} else if strings.Contains(input, "&") {
+				// Case 3: User copied value including extra params like &state=
+				// Take everything before the first &
+				code = input[:strings.Index(input, "&")]
 			}
+			// Case 4: input is already just the code
+
 			a.loading = true
 			a.loadingMessage = "Completing OAuth..."
 			return a, a.completeHeadlessOAuth(code)
