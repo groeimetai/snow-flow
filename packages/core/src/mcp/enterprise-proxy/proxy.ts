@@ -1,20 +1,6 @@
 /**
- * @deprecated This local proxy is deprecated. Use remote SSE connection instead.
- *
- * Enterprise MCP Proxy (DEPRECATED)
+ * Enterprise MCP Proxy
  * Handles HTTPS communication with enterprise license server
- *
- * DEPRECATION NOTICE:
- * This local proxy approach is being phased out in favor of direct remote SSE
- * connections. The enterprise MCP server at enterprise.snow-flow.dev/mcp/sse
- * should be used directly with JWT authentication via headers.
- *
- * New configuration format:
- * {
- *   "type": "remote",
- *   "url": "https://enterprise.snow-flow.dev/mcp/sse",
- *   "headers": { "Authorization": "Bearer <jwt_token>" }
- * }
  *
  * IMPORTANT: Credentials (Jira, Azure DevOps, Confluence, GitHub, GitLab) are
  * fetched by the enterprise MCP server from the Portal API using the JWT token.

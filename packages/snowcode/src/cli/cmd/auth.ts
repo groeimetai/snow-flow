@@ -1235,7 +1235,7 @@ async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promise<void
 }
 
 /**
- * Update enterprise MCP configuration with JWT token using REMOTE SSE.
+ * Update enterprise MCP configuration with JWT token.
  * SECURITY: This function only uses the JWT token - NO credentials are stored locally.
  * All credentials (Jira, Azure DevOps, Confluence, ServiceNow) are fetched server-side
  * by the enterprise MCP server using the JWT token for authentication.
@@ -1259,14 +1259,20 @@ async function updateEnterpriseMcpConfig(jwtToken: string, mcpServerUrl: string)
     path.join(globalConfigDir, "config.json"),
   ]
 
-  // Enterprise MCP server configuration - REMOTE SSE
-  // SECURITY: Only JWT token is passed in headers - credentials are fetched server-side
+  // Find enterprise proxy path dynamically
+  const enterpriseProxyPath = await findEnterpriseProxyPath()
+
+  // Enterprise MCP server configuration
+  // SECURITY: Only JWT token is passed - credentials are fetched server-side
   const enterpriseMcpConfig = {
-    type: "remote",
-    url: `${mcpServerUrl || "https://enterprise.snow-flow.dev"}/mcp/sse`,
-    headers: {
-      "Authorization": `Bearer ${jwtToken}`,
+    type: "local",
+    command: enterpriseProxyPath === "npx" ? ["npx", "snow-flow-enterprise-proxy"] : ["node", enterpriseProxyPath],
+    environment: {
+      SNOW_LICENSE_KEY: jwtToken,  // JWT token for authentication - NOT the raw license key
+      SNOW_ENTERPRISE_URL: mcpServerUrl || "https://enterprise.snow-flow.dev",
+      // NOTE: NO credentials are stored here - they are fetched server-side by the enterprise MCP server
     },
+    enabled: true,
   }
 
   for (const configPath of configPaths) {

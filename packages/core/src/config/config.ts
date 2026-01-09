@@ -189,22 +189,16 @@ export namespace Config {
         ["node_modules", "package.json", "bun.lock", ".gitignore"].join("\n"),
       )
 
-    // NOTE: @groeimetai/snow-flow-plugin is not published yet
-    // Gracefully skip if package is not available
-    try {
-      await BunProc.run(
-        [
-          "add",
-          "@groeimetai/snow-flow-plugin@" + (Installation.isLocal() ? "latest" : Installation.VERSION),
-          "--exact",
-        ],
-        {
-          cwd: dir,
-        },
-      )
-    } catch {
-      // Package not available, skip silently
-    }
+    await BunProc.run(
+      [
+        "add",
+        "@groeimetai/snow-flow-plugin@" + (Installation.isLocal() ? "latest" : Installation.VERSION),
+        "--exact",
+      ],
+      {
+        cwd: dir,
+      },
+    )
   }
 
   const COMMAND_GLOB = new Bun.Glob("command/**/*.md")
