@@ -931,10 +931,10 @@ export class ServiceNowOAuth {
 
       // Exchange code for token
       const tokenResult = await this.exchangeCodeForTokens(
-        options.code,
         options.sessionData.instance,
         options.sessionData.clientId,
         options.sessionData.clientSecret,
+        options.code,
         options.sessionData.redirectUri
       )
 
