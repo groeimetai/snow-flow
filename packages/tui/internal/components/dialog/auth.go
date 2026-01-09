@@ -829,10 +829,20 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Clean up temp file on successful OAuth completion
 		os.Remove("/tmp/snow-oauth-url.txt")
 		a.snowAccessToken = msg.AccessToken
-		// After ServiceNow auth, start MID Server discovery
-		a.loading = true
-		a.loadingMessage = "Discovering MID Servers..."
-		return a, a.discoverMidServers()
+
+		// Check if we're in the MID Server LLM flow or direct ServiceNow auth
+		if a.llmProvider == "midserver-llm" {
+			// MID Server LLM flow - continue to MID Server discovery
+			a.loading = true
+			a.loadingMessage = "Discovering MID Servers..."
+			return a, a.discoverMidServers()
+		}
+
+		// Direct ServiceNow auth - we're done, show success and close
+		return a, tea.Sequence(
+			util.CmdHandler(modal.CloseModalMsg{}),
+			toast.NewSuccessToast("ServiceNow OAuth configured successfully!"),
+		)
 
 	case MidServersLoadedMsg:
 		a.loading = false
