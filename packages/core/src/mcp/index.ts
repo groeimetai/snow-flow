@@ -263,25 +263,40 @@ export namespace MCP {
 
     if (mcp.type === "remote") {
       // AI SDK 6: Use the new simplified transport config format
-      // Try HTTP first (StreamableHTTP), then fall back to SSE
-      const transportConfigs: Array<{ name: string; config: { type: 'http' | 'sse'; url: string; headers?: Record<string, string> } }> = [
-        {
-          name: "HTTP",
-          config: {
-            type: 'http',
-            url: mcp.url,
-            headers: mcp.headers,
-          },
-        },
-        {
-          name: "SSE",
-          config: {
-            type: 'sse',
-            url: mcp.url,
-            headers: mcp.headers,
-          },
-        },
-      ]
+      // Detect SSE-only endpoints (URLs ending in /sse) and skip HTTP transport
+      const isSSEEndpoint = mcp.url.endsWith('/sse') || mcp.url.includes('/sse?')
+
+      const transportConfigs: Array<{ name: string; config: { type: 'http' | 'sse'; url: string; headers?: Record<string, string> } }> = isSSEEndpoint
+        ? [
+            // SSE-only endpoint - skip HTTP transport entirely
+            {
+              name: "SSE",
+              config: {
+                type: 'sse',
+                url: mcp.url,
+                headers: mcp.headers,
+              },
+            },
+          ]
+        : [
+            // Try HTTP first (StreamableHTTP), then fall back to SSE
+            {
+              name: "HTTP",
+              config: {
+                type: 'http',
+                url: mcp.url,
+                headers: mcp.headers,
+              },
+            },
+            {
+              name: "SSE",
+              config: {
+                type: 'sse',
+                url: mcp.url,
+                headers: mcp.headers,
+              },
+            },
+          ]
       let lastError: Error | undefined
       for (const { name: transportName, config } of transportConfigs) {
         const client = await createMCPClient({
